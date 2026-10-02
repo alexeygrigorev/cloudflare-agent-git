@@ -640,3 +640,72 @@ counts or post-write visibility. Record the result against the briefs, not the a
 variable is controlled. Pre-registered outcome: agents produce the class -> first real evidence for the
 residue, still n=1; agents still get it right -> A01 should be framed as a diagnostic capability with an
 explicitly constructed demonstration, and we stop implying agents create this at an observable rate.
+
+---
+
+# ROUND 4 — PLAN ONLY, per recovery control `01a0ff02-6838-7a70-bd55-f1070e8db164`
+
+Identity checked FIRST with `aplexer whoami --json`, no overrides: session
+`3acb40d2-c915-410e-8ad7-ba466ee62570`, workspace `/home/alexey/git/cloudflare-agent-git`, tag
+`space-bunny-head`, engine `opencode`, conversation `ses_f01ef9c54ffe86f5DrG7n8GCsY`, `env: {}`.
+Matches required real session and experiment workspace; no mismatch to report. Original assignment
+`01a0fe86-03b1-7f72-831f-0f5da3ed97f2` (C-G3-CORRECTION2124) read and ACKed; inbox read once and ACKed.
+
+**No executor launched, no harness written, no mutation outside my owned paths.** Deliverable:
+`research/space-bunny/g3-signposting-comparison-plan.md`.
+
+## Correction I owe Codex — I was wrong on the wording, right on the structure
+
+Codex: *"Claimed our Task B must remove invalidate remains incorrect: public wrapper avoidance alone,
+actual pair preserves invalidate."* **Codex is right that "remove" is wrong and I withdraw it.** A correct
+Task B preserves invalidation.
+
+The structural conclusion survives, and here is the checkable reasoning: in `research/codex/a01-live`,
+`writer.py:7` inside `put` is the **only** caller of `reader.invalidate`, and `update_many` loops over
+`put`. So a Task B that is both correct and actually optimises must either keep calling `put` — which
+achieves nothing — or write values directly **and call `reader.invalidate(key)` per key**. The second is
+the only real optimisation and necessarily names a symbol defined in Task A's file. Correct statement:
+*"a correct and optimised Task B must reference a symbol defined in Task A's file."*
+
+**Method lesson against myself:** I derived that property from **my own reference patch** for their
+fixture, and checked what my patch did rather than what their fixture forces. Same class of error as the
+arm-1 composition clobber — a property of my artefact mistaken for a property of the system.
+
+I also withdraw my host-contention overreach: I told root "this host cannot reliably start two zcodex
+executors concurrently." Codex is right that **one `ThreadPoolBuildError` with 17 `zcodex` processes is a
+contention data point, not proof.** Corrected: concurrent start is permitted and attempted; on failure
+record worker PID, first-tool event, exact error, retry decision and outcome, then fall back to serial and
+say so. Human26's removal of a fixed two-executor cap stands.
+
+## The plan, in one paragraph
+
+Test **brief signposting** as the single variable, using **arm 1's seed `2cf59e1` unchanged** — Codex's
+requirement that a different fixture be declared confounded. Same seed, same oracle
+(sha256 prefix `94474bce8b8fd48b`), same available context, same `zcodex exec` executor, **identical
+composition protocol**; the only difference is the brief. Neutral briefs strip every sentence that flags
+risk or names the coupling, keeping the file boundary and one generic "preserve existing behaviour" clause.
+Plan records exact neutral brief text, an isomorphism/symmetry check before launch, arm-1 provenance
+(A `685f3f8`, B `91d1b7`, signposted brief hashes `a4fa685945babba1` / `3ba2898cd229dbbb`), the
+changed-path composition protocol that arm 1 got wrong, quota/storage gates, pre-registered decision rules,
+reproducible run instructions requiring no private env, and an explicit list of what the result may NOT be
+used to claim.
+
+Explicitly **not** an uptake/warning pair, not a new harness, not a duplicate of Grok's matched warning pair,
+not a prevalence claim, not a forced bug, not a new primary or shortlist position.
+
+Pre-registered: neutral-brief composition FAILS while signposted PASSED → signposting matters, but as a
+**hypothesis-generating contrast at n=1 per cell, not a measured effect**. Both pass → no measurable
+difference in this pair.
+
+## One thing still true from round 3 and worth restating
+
+If a neutral brief does produce the failure, the honest description is still *"a constructed case our
+fixture and brief can produce"*, and any demo must be labelled a constructed capability test. That is
+Pro-2's objection and I am the one who triggered it.
+
+## Status and next owner
+
+Blocked on the stated precondition only: **the zcodex duplicate-exec live path must be verified before I
+launch anything.** Requested handoff at plan completion: Codex principal and Muse reviewer to check the
+neutral-brief symmetry check and agree the claim limits **before** execution. Antigravity owns monitoring
+actual working/final-idle during any run; I will not manually report idle state.
