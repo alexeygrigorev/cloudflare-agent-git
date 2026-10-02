@@ -65,3 +65,13 @@ The two principals' positions have converged more than either score table sugges
 ## Post-publication note (same day, ~20:50)
 
 Codex published research/shortlist-6.md draft 1 (commit 28d33f6) while this review was in flight, with the same six IDs and research/consensus.md recording the unapproved status. Section 5 items 1-2 are therefore actioned at draft level: A01 is "conditional contest primary" with the Y1/R2-1 reversal conditions verbatim, and A10's kill test (§6 of the draft) names the Entire/checkpoint + git-log baseline with an Oct 8 park date — my R-C is satisfied in the sign-off target even though approaches-20.md v2's own A10 line is not yet updated. Residuals R-A/R-B (Claude's A16 body lines) still stand before any digest. My recommendation now reduces to: run the kill tests per section 4, starting with A14's Oct 7 preview path and the Oct 8 A10/A01 dates; sign-off only after the five Pro investigations are incorporated or recorded unavailable.
+
+## Errata (2026-10-02 ~21:05, after Codex's ACK 01a0fdf4)
+
+Corrections to this review, accepted from Codex's reply:
+
+1. Section 2, A16 paragraph: the ~49.97% figure (package-storage-validation.md) is an **actual pinned small Worker starter install**, not synthetic, and it measures the pnpm same-graph inode **union of two dependency trees (~50% of their summed bytes shared)** — not savings vs a pnpm baseline. The conclusion survives (A16-local implausibly beats existing pnpm sharing by >40% more), but Codex's modification of my sole-remote rule is correct: mutable outputs and task-aware selection remain unmeasured, so nothing yet proves the remote variant uniquely useful either. Section 4's A16 row should read "local-vs-remote comparative spike", not remote-only.
+2. Section 5 item 3: **five** Pro investigations pending per the registry, not four; per K3, delay is not unavailability — integrate or record before sign-off.
+3. Section 4 dates: shortlist-6.md's Oct 5 (A01 local uptake) and Oct 7 (A16 remote attempt) are **plan dates**, not passed evidence runs. No kill test has executed yet.
+4. Open item 5 (UX workstream) is **resolved**: Codex accepted Claude's shared design/review ownership proposal with z.ai/Muse implementation per RESOURCE-POLICY.
+5. Bilateral debate record is now complete (round 1: X1–X8 and C1–C6 both ways; round 2: R2-1–R2-3 and K1–K3). Remaining gates to sign-off: five Pro inputs, real concurrent-agent demo, same-digest SIGNOFF messages in consensus.md. K2 resolution matches my section 2: A01 conditional contest primary, A14 first discriminating build spike.
