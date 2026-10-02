@@ -120,3 +120,7 @@ what's the current status? are they exploring the ideas for now?
 ## Message 25 — use prior books and research, parallel exploration
 
 check my research-dump git repo for books that I read and other ideas let's see which of these ideas we should use for these projects - launch multiple subagents to explore it
+
+## Message 26 — headless and harness capacity; principals monitor
+
+we can start as many headless agents as we need - also subagents within the harness (except principals - they should be focused on monitoring everyone )
