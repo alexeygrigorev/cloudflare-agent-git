@@ -1,0 +1,79 @@
+{
+  "timestamp": "2026-10-02T20:00:34.656+00:00",
+  "runner": "zcode-independent (aplexer d54c1e11)",
+  "purpose": "harness skeleton v0 for a01-uptake-protocol.md rev 2: watcher + vector/dedup/stale/fence machinery on real worktrees with scripted stand-in agents; NOT the R2-1/Y1 kill test (no live agents; deliver->consume and consume->action latencies unmeasured)",
+  "poll_interval_s": 0.4,
+  "watcher_lag_budget_ms": 800.0,
+  "schema_extensions_declared": {
+    "emit": [
+      "duplicate"
+    ],
+    "agent_action": [
+      "classification"
+    ],
+    "push_observed": [
+      "watcher_lag_ms"
+    ]
+  },
+  "schema_errors": [],
+  "wall_seconds": 7.7,
+  "scenarios": {
+    "seeded": {
+      "scenario": "seeded_collision_watchloop",
+      "warning_delivered_to_wip_agent": true,
+      "emit_while_agentA_uncommitted": true,
+      "wip_basis_kind": "uncommitted_diff",
+      "vector_scoped": true,
+      "consume_vector_current": true,
+      "action_classification": "uptake",
+      "watcher_lag_ms": 299,
+      "merge_tree_clean_after_resolution": true,
+      "duplicate_journaled_not_delivered": true,
+      "emit_events_for_warning": 3,
+      "warning_id": "warn-43d83f4d030d"
+    },
+    "stale": {
+      "scenario": "stale_vector_advance",
+      "consume_vector_current": false,
+      "action_classification": "stale",
+      "stale_not_counted_as_uptake": true
+    },
+    "fence": {
+      "scenario": "generation_fence",
+      "generation_at_mint": 1,
+      "generation_after_crash": 2,
+      "action_classification": "fenced",
+      "fenced_action_rejected": true
+    },
+    "control": {
+      "scenario": "no_overlap_control",
+      "emitted": 0,
+      "no_false_positive": true
+    },
+    "real_repo": {
+      "scenario": "real_repo_scan",
+      "repo_files": 146,
+      "wip_symbols_extracted": [
+        "_def_spans"
+      ],
+      "expected_symbol_present": true,
+      "scan_ms": 152
+    }
+  },
+  "checks": {
+    "warning_delivered_to_wip_agent": true,
+    "emit_while_agentA_uncommitted": true,
+    "wip_basis_uncommitted_diff": true,
+    "vector_scoped_notice": true,
+    "watcher_lag_within_budget": true,
+    "uptake_classified_on_current_vector": true,
+    "merge_clean_after_resolution": true,
+    "duplicate_journaled_not_delivered": true,
+    "stale_detected_not_uptake": true,
+    "fenced_action_rejected": true,
+    "no_false_positive_disjoint": true,
+    "real_repo_wip_symbols_found": true,
+    "journal_schema_valid": true
+  },
+  "all_checks_pass": true
+}
