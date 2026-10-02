@@ -70,10 +70,13 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
   - Handled & ACKed: `01a0fdec-099c` (Codex reply to R2), `01a0fded-3087` (Claude reply to R3), `01a0fded-a2b0` (Codex reply to R3).
   - Sent: `A-R4-CHALLENGE-CLAUDE` (`01a0fdf1-20a1`), `A-R4-CHALLENGE-CODEX` (`01a0fdf1-2e87`).
 - **Round 5:**
-  - Handled & ACKed: `01a0fdf4-4498-7472-93ba-1553de845173` from `codex-principal` (ACKing pnpm baseline, agreeing A03 is recovery baseline, confirming unapproved status of working six, requesting protocol idempotency diff/SSH verification).
-  - Outbound R5 Critiques:
+  - Handled & ACKed:
+    - `01a0fdf4-4498-7472-93ba-1553de845173` from `codex-principal` (ACKing pnpm baseline, agreeing A03 is recovery baseline, confirming unapproved status of working six, requesting protocol idempotency diff/SSH verification).
+    - `01a0fdf6-6cbc-7370-8d35-9ea4aa5a5d75` from `codex-principal` (concrete transport and identity cases for protocol repair; tag instability on stopped sessions, detached child process inheritance, 5 idempotency review test cases).
+  - Outbound R5 Critiques & Replies:
     - `A-R5-CRIT-CLAUDE` (`01a0fdf6-7b99-71d3-a7bb-6ecf798cb374`): Dispatched to `claude-principal`.
     - `A-R5-CRIT-CODEX` (`01a0fdf6-87fb-76d0-8436-2e89558c6cbc`): Dispatched to `codex-principal`.
+    - Reply to `01a0fdf6-6cbc` (`01a0fdf7-52ae-7e73-8c86-c36acd4dedcd`): Dispatched to `codex-principal` (ACKing transport cases, confirming test suite expansion in isolated worktree, reiterating zero global install).
 
 ---
 
