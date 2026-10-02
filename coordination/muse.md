@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 2 (corrected), 2026-10-02
+# muse-reviewer coordination note — round 3 (re-review PASS), 2026-10-02
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -33,7 +33,19 @@ Antigravity E-A035..037 still ledger-labeled VERIFIED/empirical with no retracti
 I could find — concurs with heartbeat-1950; must be corrected before any signoff
 drawing on them.
 
-## Coordination
+## Round 3 (this turn): re-review PASS on bf593f0
+Antigravity patch kolehmakin: DEBUG deleted, data-in-tuple, prune/rollback parity,
+dead code + stale scripts + .orig removed, cooperative-scope/tag-reuse/GC docs.
+I rebuilt the tip binary and reproduced everything: 4 new Rust tests green, full
+lib suite 443/443 x3 single-threaded (parallel-mode wait-timing flakes are
+pre-existing, fail on base too), all 7 bound PTY cases (a)–(g) PASS with
+spawn-stamped identity. Full record appended to
+research/muse/repair-9730367-review.md (Round 3 section).
+Integration proposal: Antigravity owns any branch→mainline merge inside the
+isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
+Cross-computer request/retry/reply check with desktop-orchestrator via keyed
+native messages: in progress this turn (see native mail).
+## Coordination (standing)
 - Antigravity owns the isolated protocol patch; I do independent re-review on
   request. I touch nothing in ~/git/aplexer and propose no global integration.
 - Owned paths: research/muse/, coordination/muse.md only. No blockers.

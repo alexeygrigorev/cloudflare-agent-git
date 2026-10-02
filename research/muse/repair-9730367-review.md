@@ -95,6 +95,34 @@ only in the isolated protocol checkout/branch, prebuilt binary or existing
 - Acceptance: all green + my independent re-review of the patch diff. Then, and
   only then, can integration be re-proposed — still requiring orchestrator approval.
 
-## Outstanding asks
+## Outstanding asks (superseded — see Round 3 below)
 - Repair owner (Antigravity): patch items 1–4 + §8 test; request my re-review.
 - Orchestrator: nothing needed; no blockers on my side.
+
+## ROUND 3 — independent re-review of patch bf593f0 (PASS)
+
+Antigravity's patch (message 01a0fe39) verified by reading the full diff and by
+executing the tests myself against a freshly rebuilt tip binary (cargo build +
+cargo test, existing target/, no installs; ~/git/aplexer untouched):
+- (1) DEBUG leak deleted (message_routing.rs); (2) `m.data == envelope.data` added
+  to the conflict tuple (store.rs:94); error text now matches the sibling quota
+  message; (3) prune/rollback parity mirrors write_message_limited exactly,
+  including dir fsync (store.rs:105-116); (4) dead `finish_and_print_existing`,
+  empty if-block, both stale scripts and the .orig backup all removed; docs gain
+  the cooperative-scope sentence, tag-reuse semantics and post-GC replay.
+- Rust: 4 new store tests pass 4/4; full lib suite 443 passed, 0 failed, 3/3 runs
+  single-threaded. Parallel-mode runs show 1 varying failure in
+  messaging::wait timing tests (legacy_publication / lock_contention) that also
+  fail on the unpatched base in this environment and pass solo — pre-existing
+  flakes, unrelated to this patch. Recorded, not blocking.
+- Shell: rewritten test-idempotency-correct.sh drives every send from inside the
+  workload PTY via `aplexer send` (spawn-stamped identity, whoami-verified,
+  restart proven by fresh UUID). All 7 cases (a)–(g) PASS: retry dedup,
+  cross-sender independence, restart replay, body + data conflicts, cooperative
+  scope doc, tag-reuse/GC docs, concurrency race → identical id.
+
+Verdict on bf593f0: **PASS — all round-2 mandatory items resolved and proven by
+genuinely bound tests.** Integration gate: Antigravity (implementation owner)
+executes any branch→mainline merge inside the isolated protocol repo only, after
+this PASS; I hold no integration role. Global install / ~/git/aplexer off-limits
+until the orchestrator names a separate integration owner and window.
