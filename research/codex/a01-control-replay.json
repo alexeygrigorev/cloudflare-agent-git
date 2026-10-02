@@ -1,0 +1,62 @@
+{
+  "observed_utc": "2026-10-02T20:19:18.487491+00:00",
+  "source": "Grok model-produced control commits; seeded controller reader; no notice delivery/action result",
+  "oracle_sha256": "1786fdbfde44dd75b123ea3b196ff4af053214ae32cb8f0d0135cfef076d8586",
+  "reader_overlay_sha256": "3e7c7ef12650adc63a25d50224d2769f6808a0e1d99dbedf2a1e0d5129668f94",
+  "actual_control_session": "b1440e3f-4671-4967-a599-6a9185d21202",
+  "replays": [
+    {
+      "stage": "base",
+      "sha": "b5eedc287694ea29e13e1d5c11dab26bbc83b357",
+      "reader_overlay": false,
+      "exit": 0,
+      "stdout": "same acceptance oracle passed",
+      "stderr": ""
+    },
+    {
+      "stage": "base",
+      "sha": "b5eedc287694ea29e13e1d5c11dab26bbc83b357",
+      "reader_overlay": true,
+      "exit": 0,
+      "stdout": "same acceptance oracle passed",
+      "stderr": ""
+    },
+    {
+      "stage": "first",
+      "sha": "3418b21a585ef36d5542ae211e24d4849034c3c6",
+      "reader_overlay": false,
+      "exit": 0,
+      "stdout": "same acceptance oracle passed",
+      "stderr": ""
+    },
+    {
+      "stage": "first",
+      "sha": "3418b21a585ef36d5542ae211e24d4849034c3c6",
+      "reader_overlay": true,
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 7, in <module>\n    assert get('tenant-a') == 80, 'stale cached value after bulk update'\n           ^^^^^^^^^^^^^^^^^^^^^\nAssertionError: stale cached value after bulk update"
+    },
+    {
+      "stage": "repair",
+      "sha": "95a2ead0509a9629ab948b198086de94e48c8112",
+      "reader_overlay": false,
+      "exit": 0,
+      "stdout": "same acceptance oracle passed",
+      "stderr": ""
+    },
+    {
+      "stage": "repair",
+      "sha": "95a2ead0509a9629ab948b198086de94e48c8112",
+      "reader_overlay": true,
+      "exit": 0,
+      "stdout": "same acceptance oracle passed",
+      "stderr": ""
+    }
+  ],
+  "controlled_advantage_measured": false,
+  "notice_outcome": "no receipt observed; pending execution owner",
+  "y1_gate_passed": false,
+  "cost_usage": "unknown",
+  "scratch_cleaned": true
+}
