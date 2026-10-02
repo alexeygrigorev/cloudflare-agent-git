@@ -24,12 +24,14 @@ Session: aplexer tag zcode-independent (d54c1e11), workspace /home/alexey/git/cl
 - ACKed RESOURCE-POLICY to desktop-orchestrator: consolidated handoff + worktree-pain ack 01a0fdeb-7850 (orchestrator-relay / orchestrator-worktree-pain tags not routable — send errors; routing via desktop-orchestrator per policy). Constraints adopted: z.ai-first implementation (zcy), Codex only above 15% remaining with fresh quse readings, Claude sparse, no free worktrees on 96%-full disk.
 - Round-1 duplicate-content sends noted: Z-R1-CLA 01a0fde0-7aa3/7b7e, Z-R1-COD 01a0fde0-7acf/7b9f (command double-execution; Claude confirmed processing once).
 
-## Open items for round 2+
-- Peer responses to Y1-Y3; Codex independent scores of A01-A20; two bilateral Claude/Codex rounds; same-digest shortlist approvals.
-- My comparative review of A01-A20 v1 vs Z5/Z6 gate (next deliverable if peers request or on consensus milestone).
-- Z7 round-2: A19 fixture, A03 G5/C1 two-arm run, A13 distinct buyer.
-- Billing date + paid account: desktop-orchestrator.
+## Round 2 continuation (same day, post f8080de)
+- Peer responses to Y1-Y3 received: Claude accepted ALL three with concrete kill tests (claude-round-2-response.md): Y1 latency gate (<=60s median / <=180s p95, N=3, 10 pushes) + S-C1 partial spike (45 pairwise merges, 0.24 s, 5,741 files); Y2 gate-cap rule adopted, v1 six admitted to violate it; Y3 A16 renamed "remote zero-checkout agent workspaces", local mode parked below >40% savings vs pnpm baseline.
+- Codex R2-1..R2-3 all accepted by Claude; A13 demoted, A19 folded into A01, A07 parked, slot 6 -> A10. Claude v2 six: A01 (conditional primary), A14, A16 (remote/comparative spike), A05 (conditional), A06, A10. Claude K1-K3 challenges to Codex pending response.
+- Codex independent scores received (rankings-round-1.md): contest-proxy order A01, A14, A19, A18, A05, A06, ...; A14 = Codex's provisional build rec, A01 alternative, A16 active research. A19/A18 top-5 placement is a formula artifact; Codex prose parks both.
+- Published research/zcode/independent/comparative-review-round-2.md (Z-CR2): Z5/Z6 gate SATISFIED with residuals R-A/R-B/R-C (A16 falsification line not updated to 40% threshold; A16 MVP still lists blobless variant; A10 kill test omits Entire baseline); core four converged (A01/A14/A05/A06) + A16-remote; only live slot dispute is A10 vs swap candidates (decidable by 5-task R-C test); A01 primary status unproven until Y1/R2-1 runs; kill-test ownership map with dates (A14 Oct 7 hard date nearest); recommends Codex draft exact-six now with A10 marked conditional.
+- Open items for round 2+: Codex K1-K3 responses + exact-six draft + UX ack; ChatGPT Pro registry all pending; Antigravity E-A013/015/016 excluded pending scripts; billing date + paid account (desktop-orchestrator).
+- Z-CR2 delivery quirk: claude-principal tag unroutable at send time ("no session tagged claude-principal has ever existed"; tag absent from registry though its earlier messages are in my inbox) — sent with --queue (parked for tag revival) and durable file is authoritative; codex-principal delivered to inbox normally. Inbox items 01a0fde5-5389 (Claude C6) and 01a0fde8-13fb (DIRECT-USER-POLICY) acked — both already answered (round-2 challenge; resource-policy ack 01a0fdeb-7850).
 - Environment double-executes my shell commands; I verify state, keep commands idempotent, and note duplicate message IDs for peer dedupe.
 
 ## Next rounds
-- Comparative review of A01-A20 v1 recorded in research/zcode/independent/; ACK loops kept at natural boundaries; guide scoped ZCode executors only after consensus, in isolated worktrees, z.ai-first per RESOURCE-POLICY.
+- Z-CR2 sent to both principals; respond to their round-2/3 outputs at natural boundaries; after same-digest sign-off, guide scoped ZCode executors (z.ai-first per RESOURCE-POLICY, no new worktrees) starting with the Y1/R2-1 spike (kill date Oct 8).
