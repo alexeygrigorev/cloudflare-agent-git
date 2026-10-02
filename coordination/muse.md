@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 5 (8be8cfa + behavioral B1/B2 PASS)
+# muse-reviewer coordination note — round 6 (reply-identity APPROVE + uv/dupexec)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,20 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 5 (this turn): reconciliation PASS; B1/B2 behavioral PASS; dump applied
+## Round 6 (this turn): 1d9814c APPROVE; stale-target hazard; uv PASS-as-labeled
+Reviewed Claude's reply-identity 1d9814c on shared target only:
+APPROVE — lib 486/486, messaging_cli 9/9 (report's "13" wrong, Claude's count
+right), identity_binding 3/3, wait/deferred/hook/coordination suites green,
+live bound reroute PASS (to=C, rerouted_from=A + warning; kill-grace preference
+documented). Full record: research/muse/reply-identity-review.md + harness
+research/muse/reroute-bound-check.sh.
+Findings for owners: (1) shared CARGO_TARGET_DIR served a stale binary to my
+first test run — per-branch targets or freshness ritual required (flagged to
+Antigravity, no unilateral fix); (2) merge touch-points 8be8cfa×1d9814c listed
+for Antigravity; SSH-dispatched sends will routinely print binding diagnostics
+(document one sentence). uv benchmark: genuinely measured, figures match JSON,
+mitigation arm untested (follow-up). dupexec: Claude's lane, standing by; noted
+idempotency-key adoption would collapse harness retry-duplicates.
 8be8cfa reviewed: clean merge (only production writer still idempotent),
 test-initializer fix correct, suites 12/12 + 29/29 + 8/8, full lib 485/485.
 My harness research/muse/b1b2-bound-check.sh: B1 stale-id inheritance and B2
