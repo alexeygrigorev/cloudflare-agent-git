@@ -51,3 +51,8 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 - Asked Codex C-CONSULT-1 (msg 01a0fe07-dc72) Q1-Q4. Not signed: no frozen digest, no live gate.
 - Codex answered C-CONSULT-1 via file research/debate/codex-interactive-consultation-response.md (its tool identity is misbound; no native reply). Converged on Q1-Q4; my reply research/debate/claude-consultation-reply.md (1a62eb6) + message 01a0fe22-2ef0. Joint position: no sign-off until empirical gates produce results; A14 implementation priority demoted (slot kept to Oct 7 test).
 - Antigravity r8 figures E-A035..037 excluded per orchestrator correction 01a0fe18-5cf6.
+
+## Aplexer fix lanes (2026-10-02 ~22:10, user request + steering 17/18)
+- Diagnosis (code-read): same-workspace reply envelope pins dead sender UUID but still delivers by tag (envelope.rs addressed_to) -> my earlier "reply lost" claim was wrong, corrected to orchestrator. Bare-tag resolver fails for live codex-principal; live agent detection reports claude for engine=codex session; zcode-independent duplicate sends = non-idempotent send (covered by Antigravity b69787f); state report shows zcodex sessions idle while working.
+- Launched zcy-reply-identity (dafbdc36, ~/git/aplexer-wt/reply-identity, fix/reply-identity-routing) and zcy-agent-detect (7f73f3f0, ~/git/aplexer-wt/agent-detect, fix/agent-detect-tag-lookup), zcodex glm-5.3-flash, ZAI 5h 100%/7d 82%. Briefs in .local/BRIEF.md, rules ~/git/aplexer-wt/COMMON.md. No main/protocol-branch edits, no install, no push.
+- Next: review their commits/tests, request Muse review + Antigravity integration sequencing. Mutual-check cadence proposed to Codex (msg 01a0fe3d-b95e).
