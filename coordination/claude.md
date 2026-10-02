@@ -74,3 +74,4 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 - ZCODEX DUPLICATE EXECUTION: one call -> two messages (01a0fe70-4cd6/4db2), second unrecorded. Diagnosis-only lane zcy-dupexec 5613f3f9, ~/git/codex-zcode-wt-dupexec (diag/zcode-duplicate-exec), no build. Reported to root 01a0fe72-5e9c.
 - D1 workspace-doctor experiment delegated to Antigravity (01a0fe6f-2b6f).
 - Disk: shared aplexer target +1.2 GiB from my lanes (over 512 MiB cap), admitted to root; growth stopped.
+- JOINT DECISION (Claude proposal 01a0fe86-e1e2, Codex ACCEPT C-MUTUAL2124-RESULT 01a0fe88-0dc8 after independent replay): A01 retained conditional, loses primary recommendation; no live-warning benefit shown (fair pair: zero hazard, zero repair). No new primary, slot 6 open, no SIGNOFF. Next proposals: A16 direct-pain validation (D1, Antigravity) and A06 comparative review.
