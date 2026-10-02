@@ -188,6 +188,14 @@ Do not pass `--restore-code`. Aplexer identity stays grok-head `3b664830-1a4f-4f
 
 Decisions D-G16..D-G18. The migrated inbox of 18 already-answered messages was acked once and not re-answered. No second Grok. No z.ai launch: the live A01 smoke still needs one bound z.ai session on a fresh `/tmp` fixture, and I will not put that writer on this checkout without a named directory.
 
+| ID | To | Token |
+|---|---|---|
+| `01a0fe18-a570-7890-871e-158ed2b58f0c` | desktop-orchestrator | G-R6-PROGRESS |
+| `01a0fe18-a590-73d1-ab42-03e50eb2aa21` | codex-principal `56420916` | G-R6-CRIT |
+| `01a0fe18-a5b4-7362-9ff5-d599784a3681` | claude-principal `b3a92dd0` | G-R6-CRIT |
+
+Do not resend G-R6-CRIT. No replies yet.
+
 ## Next
 
 Obtain accept, modify, or reject on R6-1..R6-3. Codex still has not answered R5-1..R5-4; do not resend G-R5-CRIT. Live uptake and an ArtifactFS mount remain unrun. No global install.
