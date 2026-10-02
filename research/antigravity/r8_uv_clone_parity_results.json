@@ -1,0 +1,143 @@
+{
+  "benchmark": "workspace-doctor-d1-clone-parity",
+  "timestamp": "2026-10-02T22:19:52Z",
+  "python_version": "3.12.3",
+  "uv_version": "uv 0.10.11",
+  "pinned_packages": [
+    "fastapi==0.115.0",
+    "pydantic==2.9.2",
+    "httpx==0.27.2"
+  ],
+  "filesystem": "ext4 (/tmp on /dev/nvme1n1)",
+  "arms": {
+    "arm_a_naive_copy": {
+      "link_mode": "copy",
+      "mitigation_applied": false,
+      "pkg_file_mode": "0o664",
+      "shared_package_inode": false,
+      "ino_t1": 27164703,
+      "ino_t2": 27165193,
+      "source_isolated": true,
+      "output_isolated": true,
+      "value_parity_pass": true,
+      "mutation_blocked_by_permission": false,
+      "mutation_error": null,
+      "mutation_leaked_to_t2": false,
+      "bytes": {
+        "prerun_t1": 11313152,
+        "prerun_t2": 11313152,
+        "prerun_trees_union": 22626304,
+        "postrun_t1": 13709312,
+        "postrun_t2": 13709312,
+        "postrun_trees_union": 27418624,
+        "whole_footprint_union": 49782784,
+        "apparent_union": 44976883
+      }
+    },
+    "arm_b_default_clone": {
+      "link_mode": "clone",
+      "mitigation_applied": false,
+      "pkg_file_mode": "0o664",
+      "shared_package_inode": true,
+      "ino_t1": 27162541,
+      "ino_t2": 27162541,
+      "source_isolated": true,
+      "output_isolated": true,
+      "value_parity_pass": true,
+      "mutation_blocked_by_permission": false,
+      "mutation_error": null,
+      "mutation_leaked_to_t2": true,
+      "bytes": {
+        "prerun_t1": 11313152,
+        "prerun_t2": 11313152,
+        "prerun_trees_union": 11788288,
+        "postrun_t1": 13709312,
+        "postrun_t2": 13709312,
+        "postrun_trees_union": 16580608,
+        "whole_footprint_union": 28114944,
+        "apparent_union": 25108370
+      }
+    },
+    "arm_c_hardlink_mitigated": {
+      "link_mode": "hardlink",
+      "mitigation_applied": true,
+      "pkg_file_mode": "0o444",
+      "shared_package_inode": true,
+      "ino_t1": 27162541,
+      "ino_t2": 27162541,
+      "source_isolated": true,
+      "output_isolated": true,
+      "value_parity_pass": true,
+      "mutation_blocked_by_permission": true,
+      "mutation_error": "PermissionError: [Errno 13] Permission denied: '/tmp/aplexer-uv-clone-parity-spike/arm_c_hardlink_mitigated/t1/.venv/lib/python3.12/site-packages/fastapi/__init__.py'",
+      "mutation_leaked_to_t2": false,
+      "bytes": {
+        "prerun_t1": 11313152,
+        "prerun_t2": 11313152,
+        "prerun_trees_union": 11788288,
+        "postrun_t1": 11317248,
+        "postrun_t2": 11317248,
+        "postrun_trees_union": 11796480,
+        "whole_footprint_union": 23339008,
+        "apparent_union": 21005682
+      }
+    },
+    "arm_d_symlink_doctor": {
+      "link_mode": "symlink",
+      "mitigation_applied": false,
+      "pkg_file_mode": "0o444",
+      "shared_package_inode": true,
+      "ino_t1": 27162541,
+      "ino_t2": 27162541,
+      "source_isolated": true,
+      "output_isolated": true,
+      "value_parity_pass": true,
+      "mutation_blocked_by_permission": true,
+      "mutation_error": "PermissionError: [Errno 13] Permission denied: '/tmp/aplexer-uv-clone-parity-spike/arm_d_symlink_doctor/t1/.venv/lib/python3.12/site-packages/fastapi/__init__.py'",
+      "mutation_leaked_to_t2": false,
+      "bytes": {
+        "prerun_t1": 2043904,
+        "prerun_t2": 2043904,
+        "prerun_trees_union": 4087808,
+        "postrun_t1": 4440064,
+        "postrun_t2": 4440064,
+        "postrun_trees_union": 8880128,
+        "whole_footprint_union": 31268864,
+        "apparent_union": 25191524
+      }
+    }
+  },
+  "shared_cache_baseline_bytes": 22355968,
+  "summary": {
+    "arm_a_naive_copy": {
+      "postrun_worktree_savings_percent": 0.0,
+      "whole_footprint_savings_percent": 0.0,
+      "passed_worktree_50pct_gate": false,
+      "passed_whole_footprint_50pct_gate": false,
+      "mutation_safe": true
+    },
+    "arm_b_default_clone": {
+      "postrun_worktree_savings_percent": 39.53,
+      "whole_footprint_savings_percent": 43.52,
+      "passed_worktree_50pct_gate": false,
+      "passed_whole_footprint_50pct_gate": false,
+      "mutation_safe": false
+    },
+    "arm_c_hardlink_mitigated": {
+      "postrun_worktree_savings_percent": 56.98,
+      "whole_footprint_savings_percent": 53.12,
+      "passed_worktree_50pct_gate": true,
+      "passed_whole_footprint_50pct_gate": true,
+      "mutation_safe": true
+    },
+    "arm_d_symlink_doctor": {
+      "postrun_worktree_savings_percent": 67.61,
+      "whole_footprint_savings_percent": 37.19,
+      "passed_worktree_50pct_gate": true,
+      "passed_whole_footprint_50pct_gate": false,
+      "mutation_safe": true
+    }
+  },
+  "peak_scratch_bytes": 65409024,
+  "scratch_budget_ok": true
+}

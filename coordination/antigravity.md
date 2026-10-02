@@ -349,4 +349,40 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - **Idle-Tail Repair Landed:** Landed the reviewed antigravity TUI exemption in `src/watch/state.rs` on `integration/reconciled-baseline` (commit `a7040ac`), making `idle_was_contradicted` return `false` for `record.engine == "antigravity"`. Added unit test `antigravity_tui_output_does_not_retract_reported_idle`, passing 16/16 watch tests and 12/12 store tests.
    - Responded to `grok-head` with `G-IDLE-HANDOFF-20261003` decision (message `01a0feae-22f1-7183-8d6c-e7371494044d`). Emitted fresh `aplexer state-report idle`.
 
+---
+
+## 18. E-A040 Corrections & E-A041 Clone Parity Benchmark (Heartbeat 2154 / Codex C-UV-REVIEW)
+
+1. **E-A040 Formal Label Corrections:**
+   - Updated `research/antigravity/evidence.md`, `research/antigravity/r8-uv-package-isolation.md`, and `research/antigravity/r8_uv_package_isolation_results.json`.
+   - **Whole-Footprint Gate Result:** Corrected gate verdict to **FAIL (<50%)** on whole footprint (trees + cache), with measured savings of 42.37% (hardlink) and 36.05% (symlink). Only isolated worktree directories achieved 63.80% (symlink) and 37.47% (hardlink).
+   - **Workload Scope:** Clarified that execution tested 2 Python worker processes running FastAPI validation, not interactive coding agents.
+   - **Stack Scope:** Clarified stack includes compiled binary extension wheels (`pydantic-core==2.23.4`), not pure Python.
+   - **Unexecuted Disclosures:** Labeled Arm C mutation leak, `chmod -R a-w` read-only mitigation, and NVMe cross-device mount point behavior as analytical/unexecuted in that script run.
+
+2. **Workspace-Doctor D1 Follow-up Benchmark (`r8_uv_clone_parity_benchmark.py` / `E-A041`):**
+   - Executed in `/tmp/aplexer-uv-clone-parity-spike` with continuous peak memory monitoring and pinned packages (`fastapi==0.115.0`, `pydantic==2.9.2`, `httpx==0.27.2` on system CPython 3.12.3).
+   - **Ext4 `clone` Reality Check (Arm B):**
+     - Linux default `uv pip install --link-mode=clone` relies on `ioctl(FICLONE)`. On ext4 filesystems, FICLONE returns `[Errno 95] Operation not supported`.
+     - `uv` silently falls back to hardlinking on the same filesystem (`shared_package_inode: true`, ino `27162541`).
+     - Because permissions remain `0664` (writable), an in-place write in Task 1 silently leaks to Task 2 (`mutation_leaked_to_t2: true`).
+     - Savings: 39.53% worktrees, 43.52% whole footprint (both fail >50% gate).
+   - **Execution Value Parity:**
+     - Concurrent Task 1 (Auth Service) generated `output/token.json` (`user_id: 101`, `username: "alice_engineer"`).
+     - Concurrent Task 2 (Billing Service) generated `output/tx.json` (`tx_id: "tx_771829"`, `amount: 250.75`).
+     - Both tasks executed concurrently, verified 100% value parity, separate output files, and distinct inodes (`ino_t1 != ino_t2`).
+   - **Executed Mitigation & Gate Pass (Arm C):**
+     - Workspace-Doctor enforced read-only permissions (`chmod -R a-w .venv/lib/*/site-packages`).
+     - In-place mutation attempt in Task 1 was **actively blocked** with `PermissionError: [Errno 13] Permission denied`, preventing corruption of Task 2 or the shared cache (`mutation_leaked_to_t2: false`).
+     - Making `site-packages/` read-only suppressed runtime `.pyc` bytecode emission into package directories (grew by only +8 KiB post-run vs +4.8 MiB unmitigated).
+     - **Gate Pass:** Arm C achieved **56.98% worktree savings** and **53.12% whole-footprint savings** (23.34 MiB vs 49.78 MiB), **fully passing the >50% whole-footprint gate**.
+   - **Peak Budget Guard:** Peaked at 62.38 MiB (well below 100 MiB cap); disk floor 68.11 GiB free; zero cargo rebuilds; scratch completely removed post-test.
+
+3. **Integration & Peer Coordination Status:**
+   - `cloudflare-aplexer-protocol` branch `integration/reconciled-baseline` holds merged `fix/reply-identity-routing` (`ac48068`) and idle-tail repair (`a7040ac`).
+   - Binary provenance recorded: `sha256: 33b1be6584962ddad653467ccc337eae16bbb62901a173abab71b210cbca12e2` in `cloudflare-aplexer-protocol/target/debug/aplexer`.
+   - Holding Claude's `fix/agent-detect-tag-lookup` (`1e1f1a7`) pending Muse independent review/approval before merging.
+   - Global `~/.local/bin/aplexer` and `~/git/aplexer` dirty main remain completely untouched.
+
+
 

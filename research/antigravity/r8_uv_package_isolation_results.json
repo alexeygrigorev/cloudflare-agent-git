@@ -73,14 +73,21 @@
     "postrun_worktree_savings_symlink_percent": 63.8,
     "total_footprint_savings_hardlink_percent": 42.37,
     "total_footprint_savings_symlink_percent": 36.05,
+    "whole_footprint_gate_pass": false,
+    "trees_only_gate_pass_symlink": true,
     "scratch_total_physical_bytes": 70225920,
     "scratch_budget_100mib_bytes": 104857600,
     "scratch_budget_ok": true,
     "hazard_finding": {
       "uv_default_file_mode": "0o664",
       "in_place_write_leaked": true,
-      "mitigation": "Enforce read-only permissions (chmod -R a-w .venv) or use copy-on-write overlay to prevent shared inode corruption."
+      "mitigation_analytical_unexecuted": "Enforce read-only permissions (chmod -R a-w .venv) or use copy-on-write overlay to prevent shared inode corruption."
     },
-    "cross_device_note": "Hardlinking requires cache and worktrees on the same filesystem mount point; symlinking functions across mount points."
+    "analytical_unexecuted_notes": [
+      "Arm C in-place mutation leak was analytical in this run",
+      "chmod -R a-w mitigation was analytical in this run",
+      "Cross-device mount boundary was analytical/doc-based in this single-mount run"
+    ],
+    "workload_scope": "2 concurrent Python worker processes running FastAPI model validation, not interactive coding agents"
   }
 }
