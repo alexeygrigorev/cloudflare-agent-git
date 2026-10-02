@@ -48,3 +48,21 @@ Corrected per desktop-orchestrator RECOVERY-PROVENANCE-CORRECTION1920: the deskt
 - **No further headless rounds**: `coordination/space-bunny-head.stop` (created 21:29 by orchestrator/root, committed in 77491f0) gates my wrapper at the next attempt boundary without touching the active turn; my wrapper by design runs only one round on success. My own future launches obey the interactive-head policy; this helper's mandate ends after this update, reply, and commit.
 
 Launch command actually used for the record (headless round 1 only, now superseded by interactive policy): `aplexer start --tag <role> --memory 1536M -- bash scripts/opencode-recovery-peer.sh <role>` — my two `start` calls at ~21:27 returned "already belongs to session", i.e. both tags were live before my calls; the adopting party was not the desktop orchestrator (per its correction) and I have no receipt naming it, so provenance is left as "another local actor adopted the prepared launcher"; exact session ids above are the authoritative record.
+
+## Helper close-out (21:45 Europe/Berlin)
+
+- Provenance-correction section above confirmed present in the committed file (verified via `git show HEAD:` at 21:40); no follow-up commit was needed for it.
+- `space-bunny-head` (session 7564a895) ended its headless turn cleanly per the 21:2x CHECKPOINT REQUEST: after commit 9214e86 it added self-corrections 9c6480c + 8e75d71 (including its own disclosure of three misattributed peer paths in 9c6480c — my `coordination/opencode-recovery.md` was not touched by it), journaled its round-1 major-decision entry, and sent native ROUND-1-DELIVERED + CORRECTION messages to desktop-orchestrator. aplexer records are now gone with no unacknowledged warnings — clean exit, not a crash. Interactive resume stays with the orchestrator per USER14; this helper did not relaunch it.
+- `muse-reviewer` (interactive 07d34106) still running, worker alive and reachable at close-out.
+- Negative finding: my final RECOVERY-VERIFIED message to desktop-orchestrator was sent twice (msg ids 01a0fe1e-33f1… and 01a0fe1e-356b…, byte-identical) — double-send, content identical, no correction needed.
+- `experiment/events.jsonl` carries one still-uncommitted journal line from space-bunny-head (2026-10-02T19:34:24Z, round-1 major decision). Not my owned path; left in the working tree for its owner/the orchestrator to commit.
+- Mandate complete; this helper ends. No further headless launches; wrapper stays gated by `coordination/space-bunny-head.stop`.
+
+## Helper close-out (21:45 Europe/Berlin)
+
+- Provenance-correction section above confirmed present in the committed file (verified via `git show HEAD:` at 21:40); no follow-up commit was needed for it.
+- `space-bunny-head` (session 7564a895) ended its headless turn cleanly per the 21:2x CHECKPOINT REQUEST: after commit 9214e86 it added self-corrections 9c6480c + 8e75d71 (including its own disclosure of three misattributed peer paths in 9c6480c — my `coordination/opencode-recovery.md` was not touched by it), journaled its round-1 major-decision entry, and sent native ROUND-1-DELIVERED + CORRECTION messages to desktop-orchestrator. aplexer records are now gone with no unacknowledged warnings — clean exit, not a crash. Interactive resume stays with the orchestrator per USER14; this helper did not relaunch it.
+- `muse-reviewer` (interactive 07d34106) still running, worker alive and reachable at close-out.
+- Negative finding: my final RECOVERY-VERIFIED message to desktop-orchestrator was sent twice (msg ids 01a0fe1e-33f1… and 01a0fe1e-356b…, byte-identical) — double-send, content identical, no correction needed.
+- `experiment/events.jsonl` carries one still-uncommitted journal line from space-bunny-head (2026-10-02T19:34:24Z, round-1 major decision). Not my owned path; left in the working tree for its owner/the orchestrator to commit.
+- Mandate complete; this helper ends. No further headless launches; wrapper stays gated by `coordination/space-bunny-head.stop`.
