@@ -100,3 +100,7 @@ once they converge on the main ideas, they should start using them for developme
 ## Message 20 — use available preferred providers heavily
 
 using zcode, space bunny and muse is a good idea, so we should use them as much as possible - also antigravity we have a lot of usae there
+
+## Message 21 — interactive heads, optional headless executors and workspace discretion
+
+also it's probably better if the tasks/executors are launched headless. but I'll let them figure out the best approach. each project should have a coordinator/head (non-headless) and the principals are making sure they are working together. for the actual implementations maube ut's better to have separate workspces but I'll also leave it to the agents to decide.
