@@ -1,0 +1,75 @@
+# Six approach working draft — not approved
+
+Version: Codex draft 1, 2026-10-02. Input: Claude approaches-20 v2 SHA-256 `edd5f34fd52af7f9de6beaf24d8da7ee7ac63dc11067df7c5cc95f090b1926f9`, independent Codex scores and two bilateral debate rounds. Exactly six working candidates: **A01, A14, A16, A05, A06, A10**. No candidate has passed the real concurrent-agent Workers/Artifacts gate. Neither principal has approved this file/digest. All five presently registered Pro investigations remain pending. This is a falsifiable integration draft, not final consensus.
+
+## Recommendation and shared rules
+
+Conditional contest primary: **A01 Live Integration Radar**; reverse if actual WIP warnings do not change live agent work, or full-loop latency fails. First discriminating build spike: A14 runtime/data isolation against ordinary Workers previews. A16 remains active because U7 is direct user pain, with existing pnpm sharing as the baseline. This keeps long-term value separate from prospective contest scores; all 20 survive in approaches-20.md with dispositions.
+
+Shared implementation: Worker API/orchestrator, Artifacts fork per task, Durable Object state coordination, external Sandbox/CI/native-Git runner for merge/test, sole canonical publisher. Fork tokens cannot write canonical; TTL is not path/ref enforcement. Publisher rechecks exact head, uses non-force updates and rejects stale receipts. Queue events are deduplicated and treated as unordered observations, not pre-push guards. Baseline/task-policy changes require independent approval; candidate agents cannot approve their own tests. Receipts identify base/candidate/merged/deployed SHAs, tree, policy, environment and runner; they attest a run, not correctness. See [engineering feasibility](codex/engineering-feasibility.md) and [Artifacts binding](https://developers.cloudflare.com/artifacts/api/workers-binding/).
+
+Each lane requires permissive source (this repository is MIT), concrete local/run instructions, **at least two actual coding agents running concurrently**, an Artifacts-backed fork/push lifecycle and a plausible 5–10 minute recording. Scripts pretending to be agents do not satisfy that gate. No cloud credential is needed for this plan; remote validation will require machine-local credentials from the orchestrator later. No final submission authorized.
+
+## 1. A01 — Live Integration Radar
+
+- Target/job: operator of 3–20 different tasks, detect composition failure while agents still work rather than after their completion.
+- Pain: Claude E-C101–110 and Codex [E-X018 retrospective study](https://arxiv.org/html/2607.04697v2); [our clean-merge fixture](codex/local-validation.md) reproduces individually green, combined-red behavior synthetically. Study is textual/observational; no live uptake result.
+- Workflow/architecture: WIP pushes into forks -> deduplicated Worker event -> runner pairwise textual and budgeted combined-tree tests -> head-vector-specific warning via agent endpoint/MCP + view. Agent changes plan or pauses before final publication; DO invalidates stale warnings. Bounded repair and batch landing are experiments within this workflow.
+- Oct-14 MVP: two actual agents on one small Worker project, one conflicting task pair; show live warning consumption, scope preserved, final merged tests, exact-head publication receipt.
+- Competitors: [GitHub merge queue](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue), Foremerge, Collide, agent merge tools. Landing-time tests alone are insufficient novelty.
+- Risks/kill: malformed WIP commits, ignored messages, N² runner overhead, stale heads. By Oct 5 local live-agent uptake comparison; by Oct 7 remote full-loop attempt. Proposed median <=60s/p95 <=180s at three agents and ten pushes, with explicit sample limits. Kill primary if no earlier adjustment or outcome/time advantage over isolated worktrees + completion-time tests. Current status: local synthetic failure verified; live/cloud gate pending.
+- Video: start concurrent tasks, show WIP warning with SHAs, show agent reaction and conflict resolution, test combined result and stale-head refusal.
+
+## 2. A14 — Agent runtime and data isolation
+
+- Target/job: Workers/web developers whose parallel tasks collide through ports, devices or shared data; let each agent verify its exact running result.
+- Pain: E-X002 simulator claims and E-X005 parallel runtime app collision; Claude E-C321/322/363. Promotional competitor anecdotes are not independently reproduced security guarantees.
+- Workflow/architecture: candidate fork -> runner deploy/mirror supported branch into connected integration repo -> isolated preview Worker and per-task D1/KV resource IDs -> agent runtime checks -> receipt linking deployed SHA, namespace and test results. Agent only receives its task capabilities; preview Access/TTL policy explicit.
+- MVP: two agents independently alter endpoints; same logical IDs in two datasets; runtime-only leakage fixture missed by fresh-data unit/merged-tree tests is prevented/caught. Third preview optional, not minimum-agent rule.
+- Competitors: Cloudflare Workers Builds previews, Pages/Vercel previews, unique ports/container isolation, simulator managers. Preview URL alone is already an incumbent feature.
+- Risks/kill: binding reuse, migration cleanup, public preview defaults, build latency and API limits. By Oct 7 actual per-agent data state and SHA identity; if ordinary wrangler+Workers Builds reproduces whole workflow in ten minutes or state isn't isolated, fold into A01 verification rather than select as product. Current status: documentation-backed plan; runtime/cloud gate pending.
+- Video: two agents produce live URLs, write identical IDs with distinct values, each checks its own data, deliberately attempt cross-task observation, land one without changing sibling state.
+
+## 3. A16 — Storage-aware agent workspaces
+
+- Target/job: U7 user/operator constrained by local disk; maintain concurrent writable tasks without duplicated immutable dependencies or uncontrolled build caches.
+- Pain: [direct message 7](../experiment/USER-INSTRUCTIONS.md). [Synthetic benchmark](codex/storage-validation.md) and [actual small Worker dependency benchmark](codex/package-storage-validation.md) establish limited mechanisms, not market-wide distributions.
+- Workflow/architecture: measure a task's source/dependency/output budget, compare ordinary full/sparse worktrees + shared immutable pnpm store with remote Sandbox per Artifacts fork. Remote mode moves execution/allocation to cloud; Worker reports local and remote bytes, setup time and accepted test outcomes separately. Local writable source/build outputs remain isolated.
+- MVP: two real coding agents, equivalent tasks/tests in measured baseline and chosen mode; report unique allocated bytes incl. store/build/logs and task startup. Remote instance/cloud cost separate. No Artifacts partial-clone filter: [protocol lists it unsupported](https://developers.cloudflare.com/artifacts/api/git-protocol/).
+- Competitors: sparse checkout, pnpm, reflink where supported, Codespaces/Gitpod/remote agent runtimes. Actual pnpm union ~49.97% below summed individual trees is a strong killing baseline.
+- Risks/kill: immutable package mutation/postinstall, mutable outputs, remote secrets/network/cost, workload portability. By Oct 7 equivalent real build/test comparison, initially two tasks then larger counts when disk budget permits. Kill Artifacts-specific local product if ordinary package setup is sufficient; preserve workspace-doctor/remote research. No exactly-zero or 1.0x footprint claim. Current status: synthetic 1/5/10/20 source fixture and two-install tsc baseline verified; real agent/build/cloud gate pending.
+- Video: disk inventory, start two concurrent tasks, show isolated edits/checks and measured byte changes vs baseline, inspect logs/resource accounting, recover completed work.
+
+## 4. A05 — Behavior-based fork tournament
+
+- Target/job: existing best-of-N users, select and land one attempt by behavior with bounded review rather than manually reconstructing differences.
+- Pain: Claude E-C320/323 best-of-N integration gap, E-C326/364 review workload; not evidence all developers want N attempts.
+- Workflow/architecture: versioned task/rubric -> up to three Artifacts forks and actual parallel agents -> runner/preview per candidate -> independent accepted hidden tests and behavior comparison -> reviewer selection -> guarded winner publication, read-only losers with reasons. Shared publisher does not itself differentiate this candidate.
+- MVP: two or three agents implement same small Worker feature, one seeded plausible-but-wrong behavior; independent tests and blind reviewer reveal winner, preserve losers.
+- Competitors: Cursor best-of-N, Agent HQ, Codex Cloud attempts, ordinary multiple worktrees. Current working vendor capability must be refreshed before claiming a gap.
+- Risks/kill: model cost, judge collusion, self-written tests, weak comparator. By Oct 8 compare single attempt and existing vendor-style selection on five tasks, hidden-test outcome and review time; proposed >=3/5 outcome wins plus review advantage. Park if equal outcomes with higher usage/complexity. Current status: hypothesis and existing-user evidence; comparative/live gate pending.
+- Video: same task concurrently, compare actual endpoints, expose failing behavior, choose winner, show canonical head and retained losing evidence.
+
+## 5. A06 — Change-story review queue for internal teams
+
+- Target/job: accountable reviewer in an AI-accepting team, assess behavioral changes and integration risks with less time and equal defect catch.
+- Pain: Claude maintainer E-C201–252 synthesis; anti-AI projects are non-buyers. HN E-X014 says human quality review remains needed, not that more transcripts help.
+- Workflow/architecture: push Worker groups task contract/diff/current base -> runner derives tested behavior and impacted consumers -> short review artifact with exact evidence links -> reviewer decision -> shared publisher. Original trace/transcript stays optional; assertions are not proof.
+- MVP: two actual agents on independent features, concise combined review of their behavioral changes; seeded hidden bug reveals whether reviewer misses it. Agent-facing status tracks requested revisions and accepted policy.
+- Competitors: PR diffs/checks, CodeRabbit/Copilot review, Entire context checkpoints; generated summaries alone are commodity.
+- Risks/kill: inaccurate story, anchoring, more text rather than less work. By Oct 8 blind seeded-bug comparison versus PR list; proposed >=30% shorter review with equal catch rate, measured on a declared small sample. Park if summary hides a bug or reviewer time does not improve. Current status: strong review pain, no comparison/live gate.
+- Video: two changes, reviewer sees behavior/evidence, identifies seeded risk and requests repair, verifies approved resulting SHA.
+
+## 6. A10 — Durable task handoff tied to code state
+
+- Target/job: operator restarting or replacing an agent mid-task, resume the right work on the right base without reconstructing long transcripts.
+- Pain: E-X003 stale worktree PSA (incidental tool issue, not sole justification), E-X008 stale-base workflow; contextual recovery needs additional firsthand corroboration. Entire is a strong current competitor, not absent.
+- Workflow/architecture: Worker stores versioned task manifest: base/current fork SHA, accepted intent, unresolved decisions, actual checks, parent attempt and handoff ACK. Resumed agent fetches exact state, checks canonical drift and asks for approved intent update only when required. Git notes/Artifacts hold versioned evidence; private traces/secrets excluded.
+- MVP: two live coding agents, one produces a partial task then hands it off to the other while sibling work advances canonical; receiver actually ACKs SHA/intent and completes with accepted tests.
+- Competitors: Entire independent checkpoint refs + resume, git log + structured task file, agent session resume. Metadata storage alone is not novel.
+- Risks/kill: stale manifests, fabricated summaries, secret leakage, unnecessary setup. By Oct 8 five restart/drift tasks vs Entire/checkpoint + git-log baseline; measure correct-base recovery, preserved acceptance, time and review effort. Park if no advantage. Current status: evidence-backed hypothesis; recovery/live gate pending.
+- Video: partial task, head advances, durable handoff identifies drift, receiver accepts precise state, resumes and verifies accepted task without transcript replay.
+
+## Approval and continuation
+
+Do not sign this draft. Remote/live results, five Pro inputs and competitor refresh may replace entries. Draft does not authorize codex.done. Once gates and research are met, freeze exact bytes, each principal independently hashes and sends `SIGNOFF <sha256>` with reasons, and record durable message IDs in consensus.md. Any file edit invalidates approval. Implementation leaders use z.ai primarily and quota-aware alternatives; guided ZCode owns named plans/spikes in isolated storage-budgeted worktrees after genuine selection agreement. Claude needs only a compact targeted consultation, not automatic relaunch.

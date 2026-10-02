@@ -34,3 +34,15 @@ Discovery began with the mandated xai_search.py workflow, web_search only. The q
 The discovery response included incomplete URLs and asserted broad verification despite failed opens. I excluded those as accepted evidence. Grok supplied September dates for recently cached Reddit pages without absolute timestamps; do not reuse those dates as facts. The semantic-merge post E-X004 describes a plausible concern, not measured incident frequency. Builder reports carry promotional bias. E-X008 through E-X011 include closed issues; stale complaints need version-aware qualification.
 
 No claim of widespread demand, quantified time savings, trusted cryptographic provenance, automatic semantic correctness, or peer agreement follows from this ledger. Next checks: primary competitor repos/docs, actual Artifacts Git constraints, merged-state test failure fixture, and orchestration versus plain Git comparison.
+
+## Orchestrator empirical lead cross-check
+
+E-X018: [Xu et al., arXiv 2607.04697v2](https://arxiv.org/html/2607.04697v2), July 7 2026; abstract and methods opened Oct 2 after orchestrator referral. The corpus contains 33,596 PRs across 2,807 repositories. The merge experiment uses 747 pairs: 625 intra-agent and 122 cross-agent repository pairs. Reported textual conflict rates are 19.8% and 41.7%, respectively. Cross-agent means different agent model labels, not necessarily independent human operators or simultaneous running processes. The authors replayed PR-head merges, not live agent sessions, and measured textual conflicts, not behavioral compatibility. Cross-agent pairs comprise only 0.5% of co-active pairs. Treat this as scoped empirical evidence of integration friction, not evidence that 41.7% of all multi-agent tasks fail. Replication and selection-bias review remain pending.
+
+## E-X019 — Actual immutable dependency sharing baseline
+
+- Source: https://github.com/cloudflare/templates/tree/f4e08147e7367363cf9c7733ef308048794d27ac/hello-world-do-template (pinned public official Worker starter; fetched via GitHub API 2026-10-02).
+- Persona/job: direct U7 disk concern; this starter is our disposable local experiment, not the user repo or a pain-frequency survey.
+- Verification: two npm installs and two pnpm hardlink-store installs, scripts disabled; all four tsc checks passed, each pair concurrently. Report research/codex/package-storage-validation.md, reproducible script and sanitized JSON adjacent.
+- Negative evidence: pnpm individual dependency trees ~229.492 MiB each, union ~229.617 MiB: 49.97% less than summing both. Ordinary package-manager sharing already addresses immutable dependency duplication.
+- Limits: small starter, package-manager graphs/layout differ, no mutable builds/postinstall or agent runs, no Cloudflare call. Do not infer market-wide bytes, exact remote-local zero allocation or twenty-task feasibility.
