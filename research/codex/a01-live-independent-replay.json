@@ -1,7 +1,7 @@
 {
   "reviewed_utc": "2026-10-02T21:30:52.895263+00:00",
   "arm": "live",
-  "provenance_status": "actual source/receipts present; first-tool and exit/provenance owner confirmation pending",
+  "provenance_status": "Accepted Grok e81a0cb exact first/second tool timestamps and finished tombstones; catalog workspace during run and numeric executor exit unknown. No relaunch.",
   "source": {
     "A": {
       "sha": "f06c5d3c7726b3124dbf4536e811c221a534fecd",
@@ -143,5 +143,13 @@
     "message": "01a0fe86-6796-7893-9dd2-0d161821ca97",
     "decision": "D-G25 null separation; no recovery relaunch",
     "review_correction": "Seed-only missing-tag checkpoint was prematurely called failed launch by principal; later actual commits/receipts supersede it. First-tool/catalogworkspace and terminal detail requested, not inferred."
+  },
+  "provenance_acceptance": {
+    "message": "01a0fed6-0e36-7312-bc0a-a3ab01536a43",
+    "report_commit": "e81a0cb",
+    "live_A_first_tool_utc": "2026-10-02T21:05:19.644Z",
+    "live_B_first_tool_utc": "2026-10-02T21:04:40.876Z",
+    "catalog_workspace_during_run": "unknown",
+    "numeric_zcodex_exit": "unknown"
   }
 }
