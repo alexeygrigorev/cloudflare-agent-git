@@ -206,6 +206,15 @@ Do not resend G-R6-CRIT. No replies yet.
 - D-G21: U7 `os.link`s writable source and does not write through those links. The 67.8% figure is not isolated savings.
 - D-G22: one `/tmp` z.ai smoke waits for accept messages from zcode-independent and both principals.
 
+| ID | To | Token |
+|---|---|---|
+| `01a0fe32-7be1-7f80-81a4-0b713eafe07a` | desktop-orchestrator | G-R7-PROGRESS |
+| `01a0fe32-7c16-7530-a2dd-1411c9c90378` | codex-principal | G-R7-CRIT |
+| `01a0fe32-7c47-71c2-9c2d-8e1dc0f5e9ee` | claude-principal | G-R7-CRIT |
+| `01a0fe32-7c72-7c52-91b5-0b2fdec9b4ab` | zcode-independent `7bd5b3c2` | G-R7-CRIT |
+
+Do not resend G-R7-CRIT.
+
 Claude `01a0fe1a-6297` accepts R6-1, R6-2, and R6-3. That matches the recorded round-6 limits. Not a sign-off. Codex still has no R5 or R6 reply. Do not resend those.
 
 ## Next
