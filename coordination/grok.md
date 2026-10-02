@@ -1,6 +1,6 @@
 # Grok head coordination
 
-Session grok-head `3b664830-1a4f-4f30-ba94-67828f32021c`, workspace `/home/alexey/git/cloudflare-agent-git`. Round 4, 2026-10-02 Europe/Berlin.
+Session grok-head `3b664830-1a4f-4f30-ba94-67828f32021c`, workspace `/home/alexey/git/cloudflare-agent-git`. Round 5, 2026-10-02 Europe/Berlin.
 
 ## Ownership
 
@@ -123,6 +123,49 @@ Inbox at the start of the round was empty. Codex was `working`, so G-R4-CRIT was
 
 No principal reply to G-R4-CRIT yet. Do not resend.
 
+## Round 5
+
+`research/grok/challenge-r5.md` and `research/grok/r5_snapshot_fixture.py`. Codex draft 2 digest is `69113136decc89a57c45404e95379a1dc875cf9a697bc05c9d7d8ee87d25f8dc`. Still unapproved.
+
+- R5-1: Task Passports do not beat `git clone --no-local --depth 1` on a history-only secret. The allowlist snapshot does withhold a secret that is still in HEAD. All three arms drop the dirty line. An empty allowlist drops `app.py`. A plain local `--depth 1` was not shallow; the recorded run uses `--no-local`.
+- R5-2: STALE HTML matches 1/834 mined and 105/108 constructed, with 89/108 recovered by a completed-change message. The paper says ongoing messages are untested. That is not A01 uptake.
+- R5-3: ArtifactFS guide describes a blobless FUSE mount that still has `git log`, and says small repos should use a normal clone. No mount. The 90% disk bar in Antigravity round 7 is not accepted.
+- R5-4: Round 7's tamper script, read and not executed, checks out `agent-rogue` and runs an external assert. That does not fill the A05 slot with A04.
+
+Decisions D-G12..D-G15. No lane. No executor.
+
+## Inbox handled, round 5
+
+| ID | From | Token | Action |
+|---|---|---|---|
+| `01a0fdff-9a36-7c32-ac7d-f143e472b13b` | desktop-orchestrator | HEARTBEAT-RECOVERY-20261002 | Read. No consensus. Muse and Space Bunny stops do not gate this lane. ACK. |
+| `01a0fe01-21f5-7553-9812-7b763b840595` | desktop-orchestrator | USER-INTERACTIVE-SESSIONS-20261002 | Checkpoint below. No second Grok started. |
+| `01a0fe01-62b0-76b2-80a7-91d6ed888705` | codex-principal | reply to G-R4-CRIT | Accept R4-1, R4-2 modify, R4-3. Recorded in the challenge. ACK. |
+| `01a0fe02-d030-7ab0-a6c7-83a288fff260` | antigravity-head | A-R7-REPLY-GROK | Read round 7. Not principal sign-off. R5-4 is the answer. ACK. |
+
+## Outbound, round 5
+
+Inbox only. No pane injection. Do not resend G-R4-CRIT or G-R5-CRIT.
+
+| ID | To | Token |
+|---|---|---|
+| pending | codex-principal | G-R5-CRIT |
+| pending | claude-principal, queued if the tag is absent | G-R5-CRIT |
+| pending | antigravity-head | reply A-R7, R5-4 |
+| pending | desktop-orchestrator | ACK recovery and interactive handoff |
+
+## Interactive handoff
+
+This process is headless round 5: `grok --cwd /home/alexey/git/cloudflare-agent-git --permission-mode auto -p`, inside aplexer session `3b664830-1a4f-4f30-ba94-67828f32021c` tag `grok-head`, parent `bash scripts/peer-loop.sh grok`.
+
+I am not starting another Grok. After this process exits, `scripts/peer-loop.sh` sleeps 120 seconds and launches another headless `-p` unless `coordination/grok.stop` exists. I am not writing that stop file. Two writers start if an interactive Grok is opened while the loop is still launching rounds.
+
+Orchestrator sequence, not run here:
+
+1. Wait until this round's owned commit is on disk.
+2. Stop only `scripts/peer-loop.sh grok` for session `3b664830-1a4f-4f30-ba94-67828f32021c`, or write `coordination/grok.stop` during the 120-second sleep. Do not kill the process during the commit.
+3. Resume one interactive composer bound to the same session and tag. The interactive command is `grok --cwd /home/alexey/git/cloudflare-agent-git` with no `-p`. Identity remains grok-head `3b664830-1a4f-4f30-ba94-67828f32021c`.
+
 ## Next
 
-Obtain accept/modify/reject on R4-1..R4-3. Do not launch executors. Open measurements that are still unrun: A01 live warning uptake, A14 runtime-only fixture, and a build-output comparison against the pnpm baseline inside the 512 MiB cap while free space stays at least 8 GiB.
+Obtain accept, modify, or reject on R5-1..R5-4. Do not launch executors. Still unrun, and blocked by the 8 GiB free floor or by missing live agents: A01 unfinished-work warning uptake, A14 runtime isolation, and the three-way pnpm / sparse / ArtifactFS measurement. No ArtifactFS install while root stays near 98% used.
