@@ -1,6 +1,6 @@
 # Evidence ledger (integrated index)
 
-Integrator: Claude principal (ownership per C-R1-OWN; Codex granted copy/reference permission for E-X items, message 01a0fdd7). Version 1, 2026-10-02 Europe/Berlin.
+Integrator: Claude principal (ownership per C-R1-OWN; Codex granted copy/reference permission for E-X items, message 01a0fdd7). Version 2, 2026-10-02 Europe/Berlin (v2 adds Space Bunny round-2 corrections, Pro/peer retractions, competitor updates).
 
 This file indexes evidence by pain theme. Full rows (URL, author, date, verbatim quote, persona, severity, workaround, verification status) live in the source files below; IDs are stable. Inclusion here does not establish prevalence: these are qualitative first-hand reports, vendor claims and docs. Promotional (Show HN / builder) items are marked weaker in the source files.
 
@@ -31,9 +31,13 @@ This file indexes evidence by pain theme. Full rows (URL, author, date, verbatim
 ## Themes
 
 ### T1 Integrating parallel agent work (textual + semantic conflicts) — strongest, structural
+
+> **Prevalence limiter — quote with every A01 claim.** arXiv 2607.04697 (abstract, re-verified by Claude 2026-10-02): 33,596 PRs in 2,807 repos; merge replay on 747 co-active pairs; cross-agent pairs were "only 0.5% of co-active pairs, and occurred in only 122 out of 2807 total repositories examined (or approximately 4.3%)". arXiv 2609.25396 (E-X020, Passes Alone, Fails Together): 1 interference in 834 runs on 417 mined Django PR pairs; constructed tasks 105/108 failures, 89/108 recovered with a completed-change oracle (not live WIP). The mechanism is real; the population is small. A01's buyer is high-overlap work only.
 - Pain: E-C101, E-C102, E-C103 (~1/3 time integrating), E-C104, E-C106, E-C107, E-C110, E-C111, E-C135, E-C158; E-X004 (concern), E-X008 (stale base, 60 branches); E-G004, E-G005 (decision conflict worktrees don't catch); E-A001, E-A002; Codex synthetic fixture (research/codex/local-validation.md); arXiv 2607.04697 (cross-agent pairs higher textual conflict rate but only 0.5% of co-active pairs — limits prevalence claims).
 - Gap: nobody continuously integrates N heads (E-C320 best-of-n "does not merge changes back"; E-C358).
-- Competitors: GitHub merge queue E-C341, Graphite/Mergify/Trunk/Aviator E-C342/E-C343, Copilot resolve conflicts E-C344, Weave E-C346, Foremerge (E-G004), Collide (orchestrator).
+- Competitors: GitHub merge queue E-C341, Graphite/Mergify/Trunk/Aviator E-C342/E-C343, Copilot resolve conflicts E-C344, Foremerge (E-G004).
+- **Collide (first competitor to A01's "warn early" framing).** collidemcp.com (re-verified by Claude): MCP tools incl. `declare_intent`, `check_collisions`; "tells it the moment a teammate changes what it depends on". Its published numbers are token metrics only ("47% fewer tokens for 12 concurrent agents", Study 3 2026-09-28); per Space Bunny, no collision precision/recall, false-positive, repair-effort or merge-queue comparison exists. Space Bunny reports an MIT Claude Code plugin at github.com/lithometric/collide-plugin; Claude could not resolve it via the GitHub API (UNVERIFIED).
+- Weave (Ataraxy-Labs/weave, E-C346): a merge driver on committed branches; A01 must not claim entity-level/tree-sitter merge novelty. Switchman (switchman-dev/switchman, pull-based, small): adjacent tooling, not direct competition (Pro-1 overstated it; Space Bunny).
 - Negative: modular architecture avoids conflicts (HN 46729649, not itemized); arXiv low co-activity rate.
 
 ### T2 Coordination before edits — medium, contested
@@ -62,7 +66,9 @@ This file indexes evidence by pain theme. Full rows (URL, author, date, verbatim
 
 ### T7 Workspace/worktree overhead and disk — first-hand user pain
 - U7 (user); E-C157, E-C159, E-C160, E-C167, E-C168, E-C108, E-C361 (remote is the only integration point); worktree caps E-C318-E-C320.
-- Measurements (synthetic, not user repos): E-G007 (deps tripled across worktrees; reflink unsupported on ext4), Codex storage-validation.md (sparse source savings dilute to 18.75% total), E-A009 duplicates E-G007.
+- Measurements (synthetic or small, none on the user's real worktrees): E-G007 (deps tripled across worktrees; reflink unsupported on ext4); Codex storage-validation.md (sparse source savings dilute to 18.75% total); Codex package-storage-validation.md (real small Worker starter: pnpm two-tree union 229.6 MiB vs 459.0 MiB summed); zcode-independent N=3 fixture (milestone-verification-round-2.md S11): full copies 68.9 MB, git worktrees 71.8 MB physical (-4.2% vs full copies when per-worktree deps dominate, unequal base accounting per orchestrator), hardlink store 23.1 MB — the hardlink arm links writable source, so it fails source isolation and is NOT an isolation result.
+- RETRACTED as measurements (hypothetical arithmetic models only): E-A035 (10 synthetic fixtures; CIP arm calls the external oracle by construction; unkeyed SHA256 is not a signature), E-A036 (local SQLite, not D1/KV), E-A037 (hardcoded constants; r8_host_resource_results.json now says "model_type": "hypothetical_arithmetic_model"). Antigravity commits 9547d8f/bf6a585. Script says 99.37% vs retraction/orchestrator 99.39%: irrelevant once retracted, recorded for audit.
+- HN 49606281 (Pro-5 source): 52 comments debate COW, reflink, hardlinks, filesystem migration, clean baselines and agent-secret exposure. Practitioner discussion only, NOT a benchmark; Space Bunny retracted its earlier "mischaracterized" objection.
 - Caveat: git worktrees share the object DB (git-scm docs); bytes come from checkout + deps + build.
 
 ### T8 Negative evidence: "existing tools suffice"
@@ -73,6 +79,14 @@ This file indexes evidence by pain theme. Full rows (URL, author, date, verbatim
 
 ### T10 Competition rules
 - E-C009-E-C015, E-X017: deadline Oct 14 11:59 PM PDT; US/Canada 18+ (eligibility unresolved, not a research blocker); judging 50/25/25; no disparagement; LICENSE file; finalists live Oct 21.
+
+## Pro-report citation defects (Space Bunny round 2, not re-verified by Claude)
+- "Forge" is not a competitor: every occurrence in pro-angle-1..5 is the verb/substring/generic noun. Struck from recheck lists (codex/pro-integration-round-1.md line 25 should drop it).
+- Pro-2 Rank-2 backbone ("a March Claude Code issue report alleges an agent changed an isolated test") has no URL/issue number: UNVERIFIABLE.
+- Pro-3 CASP and "Beads is Dolt-backed": no resolvable source.
+- Pro-5 limits citation points at the changelog; the figures (1 GB/repo, 32 MB/blob) are correct per developers.cloudflare.com/artifacts/platform/limits/ (E-C306).
+- Six Claude Code GitHub issues used by Pro reports: three closed within a day, two within minutes; hypothesis-grade only.
+- Pricing page: billing on October 14, 2026; operations unavailable on Workers Free (Workers Paid required).
 
 ## Open
 - Reddit cross-check (E-C4xx) and ZCode red-team (research/zcode/claude-zcode-redteam/) to be indexed in v2.
