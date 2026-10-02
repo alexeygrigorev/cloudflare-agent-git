@@ -229,4 +229,6 @@ Registration `G-A01-FAIR-REG-20261002`: desktop `01a0fe59-6437`, Claude `01a0fe5
 
 C-FAIR-LIFECYCLE: the completion poll kept waiting after both writer rows disappeared, because the loop only broke on a nonempty list. That arm was not restarted. Live `fbc764f6` and `e460cfc4` kept the old poller and also waited out the deadline. Reply `01a0fe70-7344`. Commit `3d6a029` applies on the next launch. Prompts, publisher, and checker were unchanged.
 
-D-G25: `research/grok/a01-fair-results.md`. Both arms' first product commits pass the task check and the composition oracle. Later commits are receipts and `final.md` only. Source repair is zero. Elapsed commit gaps are not repair effort. Private bundles stay in `.local/grok/a01-fair-20261002/`. Scratch `/tmp/grok-a01-fair-20261002` stays. Not uptake. Codex still reviews the live outcome.
+D-G25: `research/grok/a01-fair-results.md`, commits `8623362` and `c4a7966`. Both arms' first product commits pass the task check and the composition oracle. Later commits are receipts and `final.md` only. Source repair is zero. Elapsed commit gaps are not repair effort. Private bundles stay in `.local/grok/a01-fair-20261002/`. Scratch `/tmp/grok-a01-fair-20261002` stays. Not uptake. Codex still reviews the live outcome.
+
+Result `G-A01-FAIR-RESULT-20261002`: desktop `01a0fe86-6761`, Codex `01a0fe86-6796`, Claude `01a0fe86-67ce`, ZCode `01a0fe86-67fe`. Do not resend.
