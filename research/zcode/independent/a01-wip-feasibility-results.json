@@ -1,0 +1,81 @@
+{
+  "timestamp": "2026-10-02T19:36:59+00:00",
+  "runner": "zcode-independent (aplexer d54c1e11)",
+  "purpose": "local feasibility for a01-uptake-protocol.md rev 2 unfinished-WIP constraint; NOT the R2-1/Y1 kill test",
+  "git_version": "git version 2.43.0",
+  "wall_seconds": 3.9,
+  "scenarios": {
+    "overlap": {
+      "scenario": "overlap_uncommitted",
+      "warning_emitted_before_agent_commit": true,
+      "wip_margin_to_commit_ms": 400.1,
+      "completed_change_oracle_margin_ms": 0.0,
+      "warning_lead_over_completed_oracle_ms": 400.1,
+      "scan_latency_ms": {
+        "scan1_wip_only": 6.2,
+        "scan2_with_peer_head": 4.15,
+        "b_commit_step_ms": 14.41,
+        "a_commit_step_ms": 10.85
+      },
+      "merge_tree_at_completion_ms": 3.29,
+      "merge_tree_at_completion_rc": 1,
+      "emitted_schema_conformant": true,
+      "emitted": [
+        {
+          "warning_id": "warn-fcc631702080",
+          "run_id": "fixture-overlap-001",
+          "base_sha": "f5753f95c6f5",
+          "head_vector": [
+            "f5753f95c6f5",
+            "182a431a0657"
+          ],
+          "pair": [
+            "agentA",
+            "agentB"
+          ],
+          "failing": true,
+          "oracle_id": "symbol-overlap-wip-v0",
+          "test_digest": "5eab5b9ec821be25",
+          "ts_emitted": "2026-10-02T19:36:55.518+00:00",
+          "generation": 1,
+          "wip_basis": {
+            "kind": "uncommitted_diff",
+            "artifact_ref": "wtA:util.py@56180fb19f36"
+          }
+        }
+      ]
+    },
+    "no_overlap": {
+      "scenario": "disjoint_symbols",
+      "wip_symbols": [
+        "format_receipt"
+      ],
+      "peer_symbols": [
+        "calc_total"
+      ],
+      "warning_emitted": false,
+      "expected": false,
+      "pass": true
+    },
+    "scale": {
+      "scenario": "scan_cost_bounds",
+      "n_files": 4000,
+      "worktree_mb": "94",
+      "base_sha": "4f8708e47064",
+      "timings_ms": {
+        "diff_cold_ms": 306.6,
+        "diff_warm_ms": 330.9,
+        "status_cold_ms": 344.3,
+        "status_warm_ms": 320.9
+      },
+      "note": "per-scan cost term for Y1 latency decomposition; harness-side only"
+    }
+  },
+  "checks": {
+    "wip_warning_fires_before_commit": true,
+    "schema_conformant_emit": true,
+    "no_false_positive_disjoint": true,
+    "cold_diff_under_2s_at_4k_files": true
+  },
+  "all_checks_pass": true
+}
