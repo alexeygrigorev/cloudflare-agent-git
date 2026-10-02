@@ -416,6 +416,27 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - Identified vulnerability in unconditional `idle_was_contradicted` exemption (`a7040ac`): if `PreInvocation` hook fails to fire or is absent, active agent execution with PTY output is falsely masked as `idle`, risking premature pane message injection.
    - Coordinating with `muse-reviewer` on a safe idle delivery guard: verifying that `idle` state is cross-checked against process count (`processes > 3`) and CPU activity before pane delivery, preventing message injection during active turn execution.
 
+---
+
+## 20. Protocol Baseline Merge, Hook-Gated Idle Exemption, and Dupexec COUNT 2->1 Empirical Verification (Heartbeat 2224 Continuation)
+
+1. **Protocol Baseline Reconciled & Claude `1e1f1a7` Merged:**
+   - In `cloudflare-aplexer-protocol`, cleanly merged Claude's approved `fix/agent-detect-tag-lookup` (`1e1f1a7`) into `integration/reconciled-baseline` at commit `8956fcc` following Muse's round 7 approval.
+   - Implemented Muse's required follow-ups in commit `9de9527`:
+     - Added `uv`, `bun`, `deno` to `INTERPRETER_BASENAMES` in `src/agent_kind/profile.rs` to prevent launcher variation-token poisoning, with regression tests in `src/agent_kind/tests.rs` (37/37 passing).
+     - Hook-gated the Antigravity TUI redraw exemption in `src/watch/state.rs`: replaced unconditional `engine == "antigravity"` with `record.engine == "antigravity" && crate::hooks::antigravity_has_lifecycle_hooks()`.
+     - Added hermetic positive and missing-hooks negative unit tests in `src/watch.rs` (`antigravity_missing_hooks_retracts_idle_on_pty_activity`, `antigravity_tui_output_does_not_retract_reported_idle_when_hooks_installed`). All 17/17 watch unit tests green.
+   - Built `--bin aplexer` and recorded fresh binary SHA-256 digest: `7efbec171a5ba59c44907a1f628deb05d9cbc77db29dfd29d4c00b6618dd18d1`.
+   - Verified 100% green across all integration suites: `agent_detection` (6/6), `session_lookup` (6/6), `status_json_state` (3/3).
+   - Zero modifications to dirty main `~/git/aplexer`; zero global installs.
+
+2. **Dupexec Side-Effect COUNT (2 -> 1) Empirical Verification (`r8_dupexec_count_benchmark.py` / `r8-dupexec-count-verification.md`):**
+   - Executed live empirical side-effect benchmark using installed `/home/alexey/.local/lib/zcodex/zcodex` (`sha256: dce345ed47fb4190bb85771ad8ff1dc39cc8c19665fa433475c715689f7268e9`) via `ZCODE_NODE` argv adapter in unique ephemeral scratch:
+     - **Arm 1 (Baseline `--mode yolo`):** Produced **COUNT = 2** side-effects per operation (inner execution pid=3295237 + outer ToolCallRuntime pid=3295268). Live reproduction of the bug!
+     - **Arm 2 (Patched `--mode build`):** Produced **COUNT = 1** side-effect per operation (outer ToolCallRuntime pid=3295856 only; inner execution cleanly denied).
+     - **Arm 3 (Retry / Resume Continuity):** Retries and sequential operations maintain strictly **1 side-effect per operation ID** (cumulative 2 side effects for 2 distinct operations).
+   - Complete raw output saved in `research/antigravity/r8_dupexec_count_results.json` and documented in `research/antigravity/r8-dupexec-count-verification.md`. Zero cargo rebuilds of the 24 GB target.
+
 
 
 

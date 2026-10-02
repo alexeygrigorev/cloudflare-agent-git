@@ -1,0 +1,55 @@
+{
+  "timestamp": "2026-10-02T23:11:42Z",
+  "zcodex_binary": "/home/alexey/.local/lib/zcodex/zcodex",
+  "zcodex_sha256": "dce345ed47fb4190bb85771ad8ff1dc39cc8c19665fa433475c715689f7268e9",
+  "arm1_baseline_yolo": {
+    "op_id": "op_arm1_baseline",
+    "returncode": 0,
+    "duration_sec": 1.166,
+    "stdout_snippet": "completed",
+    "probe_lines": [
+      "inner [op=op_arm1_baseline] [pid=3295237]",
+      "outer [op=op_arm1_baseline] [pid=3295268]"
+    ],
+    "count": 2
+  },
+  "arm2_patched_build": {
+    "op_id": "op_arm2_patched",
+    "returncode": 0,
+    "duration_sec": 1.066,
+    "stdout_snippet": "completed",
+    "probe_lines": [
+      "outer [op=op_arm2_patched] [pid=3295856]"
+    ],
+    "count": 1
+  },
+  "arm3_retry_continuation": {
+    "attempt_1": {
+      "op_id": "op_arm3_retry",
+      "returncode": 0,
+      "duration_sec": 1.151,
+      "stdout_snippet": "completed",
+      "probe_lines": [
+        "outer [op=op_arm3_retry] [pid=3296647]"
+      ],
+      "count": 1
+    },
+    "cumulative_attempt_2": {
+      "op_id": "op_arm3_retry_attempt2",
+      "returncode": 0,
+      "duration_sec": 1.133,
+      "stdout_snippet": "completed",
+      "probe_lines": [
+        "outer [op=op_arm3_retry] [pid=3296647]",
+        "outer [op=op_arm3_retry_attempt2] [pid=3297508]"
+      ],
+      "count": 2
+    }
+  },
+  "verdict": {
+    "count_reduction": "2 -> 1 (CONFIRMED)",
+    "inner_side_effect_eliminated": true,
+    "outer_runtime_execution_preserved": true,
+    "retry_continuity_verified": true
+  }
+}
