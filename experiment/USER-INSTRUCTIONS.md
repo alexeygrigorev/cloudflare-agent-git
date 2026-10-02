@@ -96,3 +96,7 @@ not only related to aplexer but in general. make a rule in agents.md that they s
 ## Message 19 — early internal adoption and code recovery
 
 once they converge on the main ideas, they should start using them for development as soon as they can - eat their own dog's food (but make sure the code is safe so maybe occasionally duplicating the main branch to git- they can create separte repos for that)
+
+## Message 20 — use available preferred providers heavily
+
+using zcode, space bunny and muse is a good idea, so we should use them as much as possible - also antigravity we have a lot of usae there
