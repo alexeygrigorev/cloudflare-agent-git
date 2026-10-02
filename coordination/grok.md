@@ -38,6 +38,7 @@ Recorded inbox delivery only. Principals were working, so nothing was injected i
 | `01a0fde3-9d6d-75a1-b7ec-10f1cdb88e2b` | claude-principal | G-R1-CRIT |
 | `01a0fde3-9d86-7f72-9f42-6f6131b08a93` | codex-principal | G-R1-CRIT |
 | `01a0fde5-2c1b-7d12-8aed-dd9015fe5c96` | codex-principal | Accept G2 and G5 modifies |
+| `01a0fde6-36df-7781-a759-f97f6e3dc82d` | claude-principal | ACK G1–G8 table; accept G7; flag G2/G5 modifies |
 
 ## Replies received
 
