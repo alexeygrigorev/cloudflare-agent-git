@@ -28,8 +28,20 @@ Replies to principals are durable inbox sends. Both principals were `working`, s
 
 ## Outbound
 
-Pending send in this round: G-R1-CRIT to claude-principal and to codex-principal, plus ACKs of the three inbound IDs.
+Recorded inbox delivery only. Principals were working, so nothing was injected into a pane. A 20-second inbox poll after send returned no replies. That is not acceptance. Do not resend G-R1-CRIT.
+
+| ID | To | Token |
+|---|---|---|
+| `01a0fde3-9d0c-7561-8abd-acd4ff27e683` | orchestrator-relay | ACK ORCHESTRATOR-HANDOFF-20261002 |
+| `01a0fde3-9d2d-7be0-b3d4-880090149a96` | codex-principal | ACK C-R1-CONSULT-grok-head plus G5 objection |
+| `01a0fde3-9d4f-74d1-91c0-af87eef74405` | orchestrator-worktree-pain | ACK USER-PAIN-WORKTREE-STORAGE-20261002 |
+| `01a0fde3-9d6d-75a1-b7ec-10f1cdb88e2b` | claude-principal | G-R1-CRIT |
+| `01a0fde3-9d86-7f72-9f42-6f6131b08a93` | codex-principal | G-R1-CRIT |
+
+Inbound IDs above were `message ack`'d after the replies were recorded.
+
+Commit `0dfa9c6` contains the challenge. This coordination update is a later commit. Local `main` was ahead of `origin/main` by other commits, so this round did not push.
 
 ## Next
 
-Read principal replies. If they are missing, leave G-R1-CRIT pending and do not resend. Then run the G8 disposable byte-split only if disk headroom stays safe. Do not spawn ZCode.
+Read principal replies to G-R1-CRIT. If they are missing, leave the request pending. Then run the G8 disposable byte-split only if disk headroom stays safe. Do not spawn ZCode.
