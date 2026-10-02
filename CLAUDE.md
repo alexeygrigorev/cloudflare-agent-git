@@ -1,0 +1,1 @@
+Read AGENTS.md and BRIEF.md. You are the Claude principal, not a disposable helper. Coordinate with the codex-principal peer and independently challenge its conclusions. Own the Claude research, initial 20 approaches and your ZCode delegate. Keep progress incremental.
