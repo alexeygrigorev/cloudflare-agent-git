@@ -22,6 +22,7 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
   - Critique of Claude's Seed 22 ("re-derive don't rebase": nondeterminism, latency, scope creep).
   - Critique of Codex's provisional direction ("intent reapplication + exact-SHA": prior art collision with Foremerge + GitHub Merge Queue, lack of edge differentiation, exact-SHA invalidation fragility).
   - Cloudflare execution reality: no server-side merge API, non-blocking post-hoc events, 128MB DO memory limits, prohibition of single-shared-queue repos.
+  - Integration of User Message 7 (worktree storage amplification): local worktrees duplicate heavy node_modules/build caches (10x-50x amplification). Ephemeral Quarantine Forks (EQ-2PP) on Artifacts DOs keep workspaces remote and eliminate local disk exhaustion.
   - Three distinct edge-native paradigms:
     1. *Ephemeral Quarantine & Dual-Phase Promotion (EQ-2PP)*
     2. *Contract-Enforced Invariant Proofs (CEIP) & Semantic Gating*
@@ -30,15 +31,20 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
 
 ---
 
-## 3. Durable Messages Dispatched
-- `A-R1-CHALLENGE-CLAUDE`: Dispatched to `claude-principal`. Critique of Seeds 18 & 22, request to incorporate E-A evidence into `research/approaches-20.md` and `research/evidence-ledger.md`.
-- `A-R1-CHALLENGE-CODEX`: Dispatched to `codex-principal`. Critique of Foremerge/Entire overlap, challenge of physical Artifacts API constraints, request for ZCode feasibility delegation on `isomorphic-git` vs Cloudflare CI runner execution.
+## 3. Durable Messages Log
+- **Dispatched Critiques:**
+  - `A-R1-CHALLENGE-CLAUDE` (`01a0fde0-109b-79b2-b7d2-dc2f95783225`): Sent to `claude-principal`. Critique of Seeds 18 & 22, request to incorporate E-A evidence into `research/approaches-20.md` and `research/evidence-ledger.md`.
+  - `A-R1-CHALLENGE-CODEX` (`01a0fde0-1c78-7412-be5f-3edf65875396`): Sent to `codex-principal`. Critique of Foremerge/Entire overlap, challenge of physical Artifacts API constraints, request for ZCode feasibility delegation on `isomorphic-git` vs Cloudflare CI runner execution.
+- **Received & Acknowledged:**
+  - `01a0fdde-3579-7a32-a86a-26dadee77210` from `orchestrator-relay`: Replied (`01a0fde0-ad51`) with actual role, owned files, current milestone, and core critique; ACKed.
+  - `01a0fdde-99c3-7780-8a5a-c62a1243827b` from `codex-principal`: Replied (`01a0fde0-b877`) with independent challenge path, objections to intent replay, and proposal of EQ-2PP + CEIP; ACKed.
+  - `01a0fddf-8abd-7353-bd83-9ebd9ead8f19` from `orchestrator-worktree-pain`: Replied (`01a0fde0-c764`) endorsing worktree storage amplification as a critical first-hand pain, solved by remote Artifacts quarantine forks; ACKed.
 
 ---
 
 ## 4. Pending / Next Actions
-1. Await acknowledgements and challenge responses from `claude-principal` and `codex-principal`.
-2. Inspect `research/approaches-20.md` when published by Claude, and independently score the 20 approaches.
+1. Await challenge responses from `claude-principal` and `codex-principal`.
+2. Review `research/approaches-20.md` upon publication by Claude, and independently score the 20 approaches.
 3. Prepare scoped worktree guidance for delegated ZCode executors once shortlist consensus is reached.
 4. Standup reporting: daily at 09:00 Europe/Berlin in `experiment/standups/YYYY-MM-DD.md`.
 
