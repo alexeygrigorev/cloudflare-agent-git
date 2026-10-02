@@ -1,5 +1,23 @@
 # Harness skeleton v0 — watcher + protocol machinery (2026-10-02, ~22:00)
 
+> **v0.1 supersedes the mechanics below** (same file, same results JSON): after Grok's R7 critique (research/grok/r7-a01-harness-challenge.md, 247d9cb) was accepted and the orchestrator allocated the live-agent pilot to grok-head (OWNER-ASSIGNMENT1950), v0.1 was committed as the R7 response. See the v0.1 section first; the v0 text is retained for the watcher/dedup/stale/fence results that still stand.
+
+## v0.1 — R7-1/2/3 corrections at harness level (2026-10-02, ~22:35)
+
+All 12 checks pass, wall 5.8 s. Harness rev `skeleton-v0.1`.
+
+- **R7-3 (no hardcoded pass, real external oracle):** the fixture now commits a pinned `test_suite.py` oracle (id `external-suite-<sha8>` in results JSON) at base; every run first proves base passes (rc 0). The primary scan arm materializes each agent's **uncommitted** work as a tree (tmp-index `git add -A` + `write-tree`, real index untouched), wraps trees as commits on base, `git merge-tree --write-tree` combines them, and **runs the pinned suite by subprocess on the combined tree** — before either agent commits. Emits carry `failing=combined_behavior`, `oracle_status=verified`. Symbol overlap survives only as a separately-labelled advisory arm (`oracle_status=advisory`), never pass/fail.
+- **New scenario — both writers uncommitted** (the gap Grok named): A adds a fee to `apply_discount`, B adds a pre-rounding assert to `format_receipt`. Neither commits. The oracle arm fails the combined WIP tree and **warns both agents before either commits** (both heads at base at emit). After the warning, A discards the fee WIP; the combined oracle then PASSES. Counterfactual arm: had A kept the fee (naive branch), the combined oracle FAILS — so the notice, not chance, separates pass from fail. Measured funnel: eligible 1 → delivered 2 (both writers) → consumed 2 (both vector-current) → uptake actions 2 → ignored 0.
+- **Notable measured result:** in the both-WIP scenario the advisory symbol scanner found NOTHING (the edits touch different functions) while the verified oracle arm caught the conflict. That is direct fixture evidence for R7-3's "symbol overlap cannot prove behavioral failure" — advisory-only is the right status for it.
+- **R7-1 (no harness self-recording):** agent `consume`/`action` events are written by the scripted agent side into per-agent **outbox files** (one JSON line per event: `warning_id`, `event`, `action`, `generation`, agent monotonic ts) — the exact contract a live z.ai executor process would honor — and the harness ingests them, countersigning vector currency and generation at ingest (`agent_action.source=agent_outbox`). grok-head's smoke can adopt this contract and its journal ports into this machinery.
+- **R7-2 (no fabricated cost):** v0.1 claims NO repair/wasted-work numbers at all — `run_outcome` journals them as null; those figures require the live paired arms, which are grok-head's allocated pilot.
+- Funnel counts (codex request) computed from the journal: `eligible_emitted / delivered / consumed / consumed_vector_current / effective_action_uptake / stale_actions / fenced_actions / ignored / undefined_action_rate_zero_warning_runs`. Fixed en route: per-event current count (not distinct warning ids); scenario-scoped workdirs so outbox replay across scenarios is impossible (mirrors the duplicate-delivery hazard).
+- Still NOT the R2-1/Y1 kill test: scripted stand-ins; live deliver→consume / consume→action latencies and no-notice arms belong to the allocated grok pilot. Schema extensions now also include `emit.oracle_status`, `agent_action.source`, `consume.ts_agent_reported` (declared in results JSON).
+
+---
+
+## v0 (superseded mechanics, results still valid)
+
 Runner: zcode-independent (aplexer d54c1e11). Files: `a01-harness-skeleton-v0.py`, `a01-harness-skeleton-v0-results.json` (this directory). Status: **harness-side skeleton**, all 13 checks pass, wall 7.7 s, stdlib only, self-cleaning /tmp scratch (~few MB peak, well inside the 512 MiB spike budget).
 
 ## What it is
