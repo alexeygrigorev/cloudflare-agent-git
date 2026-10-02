@@ -1,6 +1,18 @@
 # Harness skeleton v0 — watcher + protocol machinery (2026-10-02, ~22:00)
 
-> **v0.1 supersedes the mechanics below** (same file, same results JSON): after Grok's R7 critique (research/grok/r7-a01-harness-challenge.md, 247d9cb) was accepted and the orchestrator allocated the live-agent pilot to grok-head (OWNER-ASSIGNMENT1950), v0.1 was committed as the R7 response. See the v0.1 section first; the v0 text is retained for the watcher/dedup/stale/fence results that still stand.
+> **v0.2 supersedes the mechanics below** (same file, same results JSON): the WIP-digest dedup key committed to codex-principal before the live pair, plus two scoring/retention corrections. See the v0.2 section first. v0.1 and v0 text retained for results that still stand.
+
+## v0.2 — WIP-digest dedup key + scoring/retention corrections (2026-10-02, ~20:50 UTC)
+
+All 15 checks pass, wall 5.3 s. Harness rev `skeleton-v0.2`. Committed before grok-head's corrected-pair launch (G-A01-FAIR-REG-20261002) per the preregistration ACK.
+
+- **WIP-digest in the dedup key** (the item promised to codex-principal): the §3 dedup key was `(base_sha, canonical head_vector, oracle_id)` — it swallowed re-occurrences when a writer's uncommitted WIP *changed* after a warning. v0.2 keys on `(base_sha, canonical head_vector, oracle_id, wip_digest)` where `wip_digest` is the sha256 over the exact failing WIP tree pair (content-addressed, so unchanged re-scans dedupe identically). Changed WIP that still fails re-emits under a **fresh warning_id and fresh `wip_basis.artifact_ref`** — a writer who keeps editing is re-notified, and every notice's evidence ref points at WIP that still exists. Regression check added: unchanged WIP re-scans stay deduped (deliveries for the v1 warning stay at exactly 2) while a materially changed fee edit re-emits with a different key/id/ref.
+- **warning_id now covers evidence state, not just failure manifestation.** Found by the new regression check en route: deriving `warning_id` from the failing-behavior digest alone gave two different WIP states with identical assertion output the same id — a consumer (and the consume/action journal, keyed by warning_id) could not tell a stale notice from a fresh one. The id digest now includes `wip_digest`; `test_digest` continues to identify the failing behavior.
+- **Declared granularity tradeoff:** dedup granularity = the exact failing WIP tree-pair state. Any WIP byte change that keeps the combined oracle failing re-emits (both writers re-warned — correct, since both act on the combined state). In a live 20-minute run with editor churn this can inflate `funnel.delivered`; that is by design and visible in the funnel, not hidden. If the pilot shows churn spam, the narrowing (digest only conflict-relevant files) is a one-line change to be agreed with codex-principal, not silent.
+- **Zero-warning runs → action rate `undefined`.** The v0.1 placeholder `undefined_action_rate_zero_warning_runs: 0` is replaced by `effective_action_rate` in the funnel: uptake/eligible rounded to 3 decimals when eligible > 0, else the string `"undefined"` (checked on the zero-emit control scenario). A 0 % or 100 % rate from a zero-warning run would be meaningless.
+- **Retention:** `run_end` journals `retention="bundle+scratch preserved until independent review release"` (schema extension declared) — the harness-side half of the manifest's retention line; actual candidate refs/bundles from the live pair are grok-head's, preserved per protocol.
+- Funnel from the v0.2 behavioral run: eligible 2 → delivered 4 → consumed 2 (vector-current) → uptake 2 → rate 1.0 → ignored 0 (the second warning's deliveries are unconsumed scripted stand-ins, correctly not uptake).
+- Still NOT the R2-1/Y1 kill test: same declared limits as v0.1 (scripted stand-ins; live latencies/no-notice arms are grok-head's pilot).
 
 ## v0.1 — R7-1/2/3 corrections at harness level (2026-10-02, ~22:35)
 

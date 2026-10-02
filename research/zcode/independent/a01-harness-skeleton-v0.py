@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A01 uptake protocol rev 2: harness skeleton v0.1. ZCode independent, 2026-10-02.
+"""A01 uptake protocol rev 2: harness skeleton v0.2. ZCode independent, 2026-10-02.
 
 v0.1 incorporates the accepted Grok R7-1/2/3 corrections (research/grok/
 r7-a01-harness-challenge.md, commit 247d9cb) at the harness-machinery level:
@@ -77,10 +77,11 @@ SCHEMA = {
     "run_end": {"run_id", "ts"},
 }
 SCHEMA_EXTENSIONS = {
-    "emit": {"duplicate", "oracle_status"},          # sec 3 dedup; advisory|verified
+    "emit": {"duplicate", "oracle_status", "wip_digest"},  # dedup incl. WIP content
     "agent_action": {"classification", "source"},    # sec 4 class; agent_outbox|test
     "push_observed": {"watcher_lag_ms"},
     "consume": {"ts_agent_reported"},
+    "run_end": {"retention"},
 }
 SUITE_NAME = "test_suite.py"
 
@@ -317,7 +318,7 @@ class UptakeHarness:
     harness-observed vector/generation countersigns.
     """
 
-    HARNESS_REV = "skeleton-v0.1"
+    HARNESS_REV = "skeleton-v0.2"
     ADVISORY_ORACLE = "symbol-overlap-wip-v0"
     REACTION_WINDOW_MS = 600_000  # sec 4 default; not binding in the skeleton
 
@@ -395,7 +396,9 @@ class UptakeHarness:
                 if not res["pass_"]:
                     if self._emit(aid, peer, heads, failing="combined_behavior",
                                   oracle=self._oracle_ref(), status="verified",
-                                  detail=res["detail"]):
+                                  detail=res["detail"],
+                                  wip_digest=sha256(wip_trees[aid]
+                                                    + wip_trees[peer])):
                         emitted_now += 1
         # arm 2: advisory symbol-overlap scan (WIP vs peer committed/WIP)
         wip = {aid: wip_evidence(spec["wt"]) for aid, spec in self.agents.items()}
@@ -418,7 +421,9 @@ class UptakeHarness:
                 if my_syms & peer_syms:
                     if self._emit(aid, peer, heads, failing="textual",
                                   oracle=self.ADVISORY_ORACLE, status="advisory",
-                                  detail="symbol overlap"):
+                                  detail="symbol overlap",
+                                  wip_digest=sha256(
+                                      "|".join(sorted(my_syms & peer_syms)))):
                         emitted_now += 1
         return {"push_observed": new_pushes, "emitted": emitted_now,
                 "scan_ms": monotonic_ms() - t0}
@@ -434,10 +439,18 @@ class UptakeHarness:
     def _oracle_ref(self):
         return f"{oracle_id()}@suite:{SUITE_NAME}"
 
-    def _emit(self, aid, peer, heads, failing, oracle, status, detail):
+    def _emit(self, aid, peer, heads, failing, oracle, status, detail,
+              wip_digest):
+        # v0.2: the dedup key includes the digest of the triggering WIP
+        # evidence. Unchanged WIP re-scans still dedupe (no spam); MATERIALLY
+        # CHANGED WIP re-emits under a fresh warning_id so a writer who keeps
+        # editing after a warning gets re-notified.
         pair = sorted([aid, peer])
-        tdigest = sha256(detail + "|".join(pair) + oracle)
-        key = (self.base_sha, self.canonical_vector(heads), oracle)
+        # warning_id covers BOTH the failing behavior and the exact WIP
+        # evidence state: two WIP states with the same failure manifestation
+        # are distinct notices (a consumer must tell stale from fresh).
+        tdigest = sha256(detail + "|".join(pair) + oracle + wip_digest)
+        key = (self.base_sha, self.canonical_vector(heads), oracle, wip_digest)
         fields = dict(
             warning_id=f"warn-{tdigest[:12]}",
             run_id=self.run_id, base_sha=self.base_sha[:12],
@@ -445,8 +458,8 @@ class UptakeHarness:
             oracle_id=oracle, test_digest=tdigest[:16],
             ts_emitted=monotonic_ms(), generation=self.generation,
             wip_basis={"kind": "uncommitted_diff",
-                       "artifact_ref": f"{aid}:uncommitted@{tdigest[:12]}"},
-            oracle_status=status)
+                       "artifact_ref": f"{aid}:uncommitted@{wip_digest[:12]}"},
+            oracle_status=status, wip_digest=wip_digest)
         if key in self.emitted_keys:
             fields["duplicate"] = True
             self.journal.append("emit", **fields)
@@ -533,7 +546,11 @@ class UptakeHarness:
                             wasted_work_seconds=wasted_work_seconds)
 
     def run_end(self):
-        self.journal.append("run_end", run_id=self.run_id, ts=monotonic_ms())
+        # retention: the run's journal, notices, outboxes and any candidate
+        # bundles stay on disk until an independent reviewer releases them
+        self.journal.append("run_end", run_id=self.run_id, ts=monotonic_ms(),
+                            retention="bundle+scratch preserved until "
+                                      "independent review release")
 
     def funnel(self):
         """codex-requested counts, computed from the journal."""
@@ -545,6 +562,7 @@ class UptakeHarness:
         current = {c["warning_id"] for c in consumed if c["vector_current"]}
         actions = j.all("agent_action")
         acted = {a["warning_id"] for a in actions}
+        uptake = len([a for a in actions if a["classification"] == "uptake"])
         return {
             "eligible_emitted": len(emitted),
             "delivered": len(delivered),
@@ -552,14 +570,14 @@ class UptakeHarness:
             # per-event count (two agents consuming one warning = 2 events)
             "consumed_vector_current": len([c for c in consumed
                                             if c["vector_current"]]),
-            "effective_action_uptake": len([a for a in actions
-                                            if a["classification"] == "uptake"]),
+            "effective_action_uptake": uptake,
+            "effective_action_rate": (round(uptake / len(emitted), 3)
+                                      if emitted else "undefined"),
             "stale_actions": len([a for a in actions
                                   if a["classification"] == "stale"]),
             "fenced_actions": len([a for a in actions
                                    if a["classification"] == "fenced"]),
             "ignored": len(current - acted),
-            "undefined_action_rate_zero_warning_runs": 0,
         }
 
     def start_watcher(self, stop_event):
@@ -659,6 +677,25 @@ def scenario_behavioral_both_wip(base):
     classes = {a["agent_id"]: a["classification"]
                for a in journal.all("agent_action", source="agent_outbox")}
 
+    # v0.2 regression: UNCHANGED WIP re-scans must stay deduped (no notice
+    # spam), MATERIALLY CHANGED WIP must re-emit under a fresh key so a
+    # writer who keeps editing after a warning is re-notified.
+    wid_v1 = verified_emit["warning_id"]
+    digest_v1 = verified_emit["wip_digest"]
+    dedup_no_spam = len([d for d in journal.all("deliver")
+                         if d["warning_id"] == wid_v1]) == 2
+    (agents["agentA"]["wt"] / "util.py").write_text(
+        make_util_py().replace("return total * (1 - pct / 100.0)",
+                               "return total * (1 - pct / 100.0) + 0.777  # A fee v2"))
+    time.sleep(POLL_INTERVAL_S * 3)      # watcher ticks: changed WIP -> re-emit
+    ver2 = [e for e in journal.all("emit")
+            if e.get("oracle_status") == "verified" and not e.get("duplicate")]
+    changed_reemitted = (len(ver2) == 2
+                         and ver2[1]["warning_id"] != wid_v1
+                         and ver2[1]["wip_digest"] != digest_v1
+                         and ver2[1]["wip_basis"]["artifact_ref"]
+                         != verified_emit["wip_basis"]["artifact_ref"])
+
     # resolution: A discards the fee WIP entirely (the uptake action); B keeps
     # the assert. A's head stays at base - no commit is needed to adjust WIP.
     must(agents["agentA"]["wt"], "checkout", "--", "util.py")
@@ -694,6 +731,9 @@ def scenario_behavioral_both_wip(base):
         "failing_class": verified_emit["failing"] if verified_emit else None,
         "oracle_status": verified_emit.get("oracle_status") if verified_emit else None,
         "actions_classified": classes,
+        "wip_digest_dedup_v1": wid_v1,
+        "unchanged_wip_dedup_no_spam": dedup_no_spam,
+        "changed_wip_reemitted_new_key": changed_reemitted,
         "resolution_combined_clean": outcome["clean"],
         "resolution_oracle_pass": outcome["pass_"],
         "counterfactual_naive_combined_fails": not counterfactual["pass_"],
@@ -803,6 +843,8 @@ def scenario_control(base):
         "emitted": res["emitted"],
         "no_false_positive": res["emitted"] == 0,
         "control_combined_oracle_pass": outcome["pass_"],
+        # v0.2: zero-warning run -> action rate must be "undefined", not 0
+        "zero_warning_action_rate": h.funnel()["effective_action_rate"],
     }
 
 
@@ -860,6 +902,11 @@ def main():
         "resolution_oracle_pass": behavioral["resolution_oracle_pass"],
         "counterfactual_naive_combined_fails":
             behavioral["counterfactual_naive_combined_fails"],
+        "unchanged_wip_dedup_no_spam": behavioral["unchanged_wip_dedup_no_spam"],
+        "changed_wip_reemits_new_key": behavioral["changed_wip_reemitted_new_key"],
+        "zero_warning_rate_undefined":
+            behavioral["funnel"]["effective_action_rate"] != "undefined"
+            and control["zero_warning_action_rate"] == "undefined",
         "stale_detected_not_uptake": stale["stale_not_counted_as_uptake"],
         "fenced_action_rejected": fence["fenced_action_rejected"],
         "control_no_emit_and_oracle_pass": control["no_false_positive"]
@@ -870,10 +917,16 @@ def main():
     results = {
         "timestamp": wall_iso(),
         "runner": "zcode-independent (aplexer d54c1e11)",
-        "purpose": ("harness skeleton v0.1: grok R7-1/2/3 corrections at harness level - "
+        "purpose": ("harness skeleton v0.2: grok R7-1/2/3 corrections at harness level - "
                     "external pinned oracle at base/A/B/combined, both-writers-uncommitted "
-                    "warning, agent-side outbox emission, funnel counts; NOT the R2-1/Y1 "
-                    "kill test (scripted stand-ins; live arms are grok-head's pilot)"),
+                    "warning, agent-side outbox emission, funnel counts; v0.2 adds "
+                    "WIP-digest dedup key (unchanged WIP dedupes, changed WIP re-emits), "
+                    "zero-warning action rate = undefined, run-end retention; NOT the "
+                    "R2-1/Y1 kill test (scripted stand-ins; live arms are grok-head's pilot)"),
+        "dedup_granularity": ("digest over the exact failing WIP tree pair "
+                              "(content-addressed); one notice per distinct "
+                              "failing WIP state; WIP churn re-emits by design "
+                              "and shows up in funnel.delivered"),
         "oracle_id": oracle_id(),
         "poll_interval_s": POLL_INTERVAL_S,
         "watcher_lag_budget_ms": WATCHER_LAG_BUDGET_MS,

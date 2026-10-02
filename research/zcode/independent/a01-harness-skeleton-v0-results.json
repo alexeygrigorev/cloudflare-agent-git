@@ -1,14 +1,16 @@
 {
-  "timestamp": "2026-10-02T20:36:29.537+00:00",
+  "timestamp": "2026-10-02T20:48:46.128+00:00",
   "runner": "zcode-independent (aplexer d54c1e11)",
-  "purpose": "harness skeleton v0.1: grok R7-1/2/3 corrections at harness level - external pinned oracle at base/A/B/combined, both-writers-uncommitted warning, agent-side outbox emission, funnel counts; NOT the R2-1/Y1 kill test (scripted stand-ins; live arms are grok-head's pilot)",
+  "purpose": "harness skeleton v0.2: grok R7-1/2/3 corrections at harness level - external pinned oracle at base/A/B/combined, both-writers-uncommitted warning, agent-side outbox emission, funnel counts; v0.2 adds WIP-digest dedup key (unchanged WIP dedupes, changed WIP re-emits), zero-warning action rate = undefined, run-end retention; NOT the R2-1/Y1 kill test (scripted stand-ins; live arms are grok-head's pilot)",
+  "dedup_granularity": "digest over the exact failing WIP tree pair (content-addressed); one notice per distinct failing WIP state; WIP churn re-emits by design and shows up in funnel.delivered",
   "oracle_id": "external-suite-e27d8738",
   "poll_interval_s": 0.4,
   "watcher_lag_budget_ms": 800.0,
   "schema_extensions_declared": {
     "emit": [
       "duplicate",
-      "oracle_status"
+      "oracle_status",
+      "wip_digest"
     ],
     "agent_action": [
       "classification",
@@ -19,10 +21,13 @@
     ],
     "consume": [
       "ts_agent_reported"
+    ],
+    "run_end": [
+      "retention"
     ]
   },
   "schema_errors": [],
-  "wall_seconds": 5.1,
+  "wall_seconds": 5.3,
   "scenarios": {
     "behavioral": {
       "scenario": "behavioral_both_wip",
@@ -34,19 +39,22 @@
         "agentA": "uptake",
         "agentB": "uptake"
       },
+      "wip_digest_dedup_v1": "warn-2420b3e886d2",
+      "unchanged_wip_dedup_no_spam": true,
+      "changed_wip_reemitted_new_key": true,
       "resolution_combined_clean": true,
       "resolution_oracle_pass": true,
       "counterfactual_naive_combined_fails": true,
       "funnel": {
-        "eligible_emitted": 1,
-        "delivered": 2,
+        "eligible_emitted": 2,
+        "delivered": 4,
         "consumed": 2,
         "consumed_vector_current": 2,
         "effective_action_uptake": 2,
+        "effective_action_rate": 1.0,
         "stale_actions": 0,
         "fenced_actions": 0,
-        "ignored": 0,
-        "undefined_action_rate_zero_warning_runs": 0
+        "ignored": 0
       }
     },
     "stale": {
@@ -66,16 +74,17 @@
       "scenario": "disjoint_control",
       "emitted": 0,
       "no_false_positive": true,
-      "control_combined_oracle_pass": true
+      "control_combined_oracle_pass": true,
+      "zero_warning_action_rate": "undefined"
     },
     "real_repo": {
       "scenario": "real_repo_scan",
-      "repo_files": 184,
+      "repo_files": 199,
       "wip_symbols_extracted": [
         "_def_spans"
       ],
       "expected_symbol_present": true,
-      "scan_ms": 100
+      "scan_ms": 52
     }
   },
   "checks": {
@@ -86,6 +95,9 @@
     "actions_from_agent_outbox_uptake": true,
     "resolution_oracle_pass": true,
     "counterfactual_naive_combined_fails": true,
+    "unchanged_wip_dedup_no_spam": true,
+    "changed_wip_reemits_new_key": true,
+    "zero_warning_rate_undefined": true,
     "stale_detected_not_uptake": true,
     "fenced_action_rejected": true,
     "control_no_emit_and_oracle_pass": true,
