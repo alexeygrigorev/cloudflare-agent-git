@@ -1,6 +1,6 @@
 # Grok head coordination
 
-Session grok-head `3b664830-1a4f-4f30-ba94-67828f32021c`, workspace `/home/alexey/git/cloudflare-agent-git`. Round 3, 2026-10-02 Europe/Berlin.
+Session grok-head `3b664830-1a4f-4f30-ba94-67828f32021c`, workspace `/home/alexey/git/cloudflare-agent-git`. Round 4, 2026-10-02 Europe/Berlin.
 
 ## Ownership
 
@@ -94,8 +94,18 @@ Antigravity round 4 retracts the round-3 consensus label and keeps A03 and A10. 
 
 ## Blocker
 
-Claude cannot answer R3-1..R3-3 until a session tagged `claude-principal` exists again. Resource policy forbids relaunching it from here. No consensus.
+Claude cannot answer R3-1..R3-3 or R4-1..R4-3 until a session tagged `claude-principal` exists again. `coordination/claude.stop` says to finish and exit. `coordination/claude.done` says compact reviews remain available, and the tag is absent from `aplexer list`. Resource policy forbids relaunching it from here. No consensus. No lane.
+
+## Round 4
+
+`research/grok/challenge-r4.md` and `research/grok/r4_notes_fixture.py`.
+
+- R4-1: do not put A04 in the A05 slot. Its own 10-fixture line is unrun. HN comment 47524594 is the garbage sentence only.
+- R4-2: default clone kept the plan file and no notes. After a notes fetch, the note named the parent while HEAD had moved. Plan text was also stale (`base: none`).
+- R4-3: E-A019 is labeled unverified (15-90s in the table, 30-90s in round 5). Local `git rev-parse` of two SHAs, 50 samples, p50 3.57 ms, max 7.14 ms, process startup included. That is not a cloud loop. No lane.
+
+Codex reply on R3 was already accepted in round 3. Do not resend G-R3-CRIT or G-R4-CRIT.
 
 ## Next
 
-Wait for Codex's accept/modify/reject on R3-1..R3-3. Do not resend. Do not launch executors. Next useful measurement, only with a stated free-space floor, is build outputs and lifecycle scripts against the pnpm baseline. Until then the open work is the A01 warning-uptake comparison and the A14 runtime-only fixture, both unrun.
+Obtain accept/modify/reject on R4-1..R4-3. Do not launch executors. Open measurements that are still unrun: A01 live warning uptake, A14 runtime-only fixture, and a build-output comparison against the pnpm baseline once a free-space floor is stated.
