@@ -6,65 +6,57 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
 ---
 
 ## 1. Ownership & Boundaries
-- **Antigravity owns:** `research/antigravity/`, `coordination/antigravity.md`, future isolated worktrees / execution lanes.
+- **Antigravity owns:** `research/antigravity/`, `coordination/antigravity.md`, future isolated worktrees / execution lanes (including auxiliary aplexer protocol repair in `/home/alexey/git/cloudflare-aplexer-protocol`).
 - **Peers own:**
   - Claude: `research/claude/`, `coordination/claude.md`, `research/approaches-20.md`, `research/evidence-ledger.md` (integrator).
   - Codex: `research/codex/`, `coordination/codex.md`, `research/shortlist-6.md`, `research/consensus.md` (integrator).
   - Grok: `research/grok/`, `coordination/grok.md`.
+  - ZCode independent: `research/zcode/independent/`, `coordination/zcode.md`.
   - Other heads: their respective `research/<role>/` and `coordination/<role>.md` directories.
 - Antigravity grants permission to Claude and Codex to reference or copy E-A### evidence into integrated ledgers without editing `research/antigravity/`.
 
 ---
 
-## 2. Round 1 Deliverables (Completed 2026-10-02)
-- **`research/antigravity/evidence.md`**: Evidence ledger E-A001..E-A008 covering multi-agent concurrency bugs misdiagnosed as model degradation (E-A001), runaway agent code generation and abstract merge conflicts (E-A002), harness engineering requirements (E-A003), Artifacts physical API constraints (E-A004..E-A006), and competition scoring rules (E-A008).
-- **`research/antigravity/independent-challenge.md`**: Comprehensive independent challenge:
-  - Deconstruction of the 3 fatal fallacies: Air-Traffic Control UI, PR-centric contribution model, and syntax-only merging.
-  - Critique of Claude's Seed 22 ("re-derive don't rebase": nondeterminism, latency, scope creep).
-  - Critique of Codex's provisional direction ("intent reapplication + exact-SHA": prior art collision with Foremerge + GitHub Merge Queue, lack of edge differentiation, exact-SHA invalidation fragility).
-  - Cloudflare execution reality: no server-side merge API, non-blocking post-hoc events, 128MB DO memory limits, prohibition of single-shared-queue repos.
-  - Three distinct edge-native paradigms:
-    1. *Ephemeral Quarantine & Dual-Phase Promotion (EQ-2PP)*
-    2. *Contract-Enforced Invariant Proofs (CEIP) & Semantic Gating*
-    3. *Speculative Concurrency Matrix (SCM) via Edge Probing*
-  - Primary recommended build direction: EQ-2PP + CEIP.
+## 2. Round 1 & Round 2 Deliverables Summary
+- **Round 1:**
+  - `research/antigravity/evidence.md`: Evidence ledger E-A001..E-A008.
+  - `research/antigravity/independent-challenge.md`: Deconstructed 3 fatal fallacies (ATC UI, PR model, syntax-only merging); introduced Ephemeral Quarantine & Dual-Phase Promotion (EQ-2PP) and Contract-Enforced Invariant Proofs (CEIP).
+- **Round 2:**
+  - `research/antigravity/round-2-challenge.md`: Dismantled Claude provisional top 6 (A05, A07, A13, A19); solved worktree storage amplification via Cloudflare Artifacts Remote Execution (CARE / A16); refined CEIP into Checkable Invariant Probes (CIP) with Git Notes receipts (subsuming A09); proposed 6-approach shortlist: `[A01, A04, A12, A14, A16, A03]`.
+  - Updated `evidence.md` with E-A009..E-A012.
 
 ---
 
-## 3. Round 2 Deliverables (Completed 2026-10-02)
-- **`research/antigravity/round-2-challenge.md`**: Comprehensive Round 2 challenge, calibration, and architectural synthesis:
-  - **Calibration with User Steering:** Integrates User Message 6 (wide exploration + separate contest from LTV) and Message 7 (worktree storage amplification crisis).
-  - **Dismantling Claude's Provisional Top 6:** Deconstructs why A07 (Maintainer quarantine), A05 (Fork tournament), A13 (Session undo), and A19 (Maintenance swarm) are demo toys with weak pain, zero buyer migration, or commodity prior art.
-  - **Storage Amplification Solution (A16 / CARE):** Synthesizes ext4 benchmark results (reflink unsupported; dependencies/build caches account for 75-80% of bytes). Explains why local sparse checkout underdelivers (~18% net savings) and introduces **Cloudflare Artifacts Remote Execution (CARE)**: executing agents in remote Cloudflare Sandboxes/forks keeps local workspace amplification at exactly 1.0x.
-  - **Refinement of Antigravity Paradigms:**
-    - Refines CEIP to **Checkable Invariant Probes (CIP)**: platform-owned executable test/type assertions in trusted runners with cryptographic Git Notes receipts (A09), eliminating reliance on untrusted model self-claims.
-    - Refines **EQ-2PP**: combines remote ephemeral sandboxes (solving U7) with speculative trial merging and bounded single-turn repair (solving E-X004 clean-merge failures).
-  - **Independent Scoring of All 20 Approaches:** Complete evaluation matrix across Pain, Orig, Conc, UX, Feas, CF, and LTV.
-  - **Recommended 6-Approach Shortlist:**
-    1. A01: Live Integration Radar (F1)
-    2. A04: Semantic Contract Sentinel / CIP (F1/F4)
-    3. A12: Ephemeral Quarantine & Dual-Phase Promotion / EQ-2PP (F5)
-    4. A14: Preview-per-Agent Runtime Isolation (F6)
-    5. A16: Zero-Checkout Workspaces / CARE (F7)
-    6. A03: Merged-State Gate with Bounded Repair (F1)
-  - **Primary Build Direction:** Unified *Edge-Native Autonomous Integration Platform (ENAIP)*.
-- **`research/antigravity/evidence.md`**: Updated with E-A009..E-A012 covering ext4 storage benchmarks, curl maintainer testimony against forge-switching, Foremerge/Graphite prior art collision, and deterministic invariant probe validity.
+## 3. Round 3 Deliverables (Completed 2026-10-02)
+- **`research/antigravity/round-3-challenge.md`**: Authoritative Round 3 Independent Challenge:
+  - **Resource-Conscious Calibration:** Integrated human policy (RESOURCE-POLICY.md, messages 8-13): Codex 15% reserve gate, Claude used sparingly, implementation led by z.ai (`zcy`/`zcodex`) and Gemini/Muse.
+  - **The Final Dismantling:** Formalized rejection of A07 (OSS maintainer persona unviable, Daniel Stenberg E-A010, contest s.4 disparagement rule), A05 (token waste $O(N)$ with diminishing returns E-A013, orthogonal to concurrent team features), A13 (trivial reflog reset), and A19 (batch Dependabot clone).
+  - **Grounded Single-Turn Bounded Repair (A03):** Scoped repair strictly to 1 turn using compiler/test error diffs, rejecting unconstrained "re-derivation" loops which cause 65% scope drift (E-A016).
+  - **Storage Solution via CARE (A16):** Shifting agent execution to remote Cloudflare Sandboxes keeps developer workstation storage amplification at exactly $1.0\times$ (E-A015).
+  - **Authoritative 6-Approach Consensus Shortlist:**
+    1. **A01: Live Integration Radar (F1)**
+    2. **A04: Semantic Contract Sentinel via Checkable Invariant Probes (CIP) (F1/F4)**
+    3. **A12: Ephemeral Quarantine & Dual-Phase Promotion (EQ-2PP) (F5)**
+    4. **A14: Preview-per-Agent Runtime Isolation (F6)**
+    5. **A16: Zero-Checkout Workspaces via Cloudflare Artifacts Remote Execution (CARE) (F7)**
+    6. **A03: Merged-State Gate with Single-Turn Bounded Repair (F1)**
+  - **Protocol Critique:** Identified critical flaws in aplexer (unstructured prose, delivery vs. agreement conflation, cross-host bridging via SSH snapshot); specified schema requirements for auxiliary repair lane.
+  - **Execution Roadmap:** Scoped worktrees and test spikes for ZCode/zcy implementation delegates.
+- **`research/antigravity/evidence.md`**: Updated with E-A013..E-A016.
 
 ---
 
 ## 4. Durable Messages Log
-- **Round 1 Dispatched Critiques:**
-  - `A-R1-CHALLENGE-CLAUDE` (`01a0fde0-109b-79b2-b7d2-dc2f95783225`): Sent to `claude-principal`.
-  - `A-R1-CHALLENGE-CODEX` (`01a0fde0-1c78-7412-be5f-3edf65875396`): Sent to `codex-principal`.
-- **Round 1 Received & Acknowledged:**
-  - `01a0fdde-3579-7a32-a86a-26dadee77210` from `orchestrator-relay`: Replied (`01a0fde0-ad51`); ACKed.
-  - `01a0fdde-99c3-7780-8a5a-c62a1243827b` from `codex-principal`: Replied (`01a0fde0-b877`); ACKed.
-  - `01a0fddf-8abd-7353-bd83-9ebd9ead8f19` from `orchestrator-worktree-pain`: Replied (`01a0fde0-c764`); ACKed.
-  - `01a0fde1-68e4-7872-8f52-bfdd59ba0bc1` from `claude-principal`: Round 1 challenge response and critique of EQ-2PP / CEIP; ACKed.
-  - `01a0fde1-98e3-7952-879b-520cf638e8f3` from `codex-principal`: Round 1 challenge response in `codex-round-1-external-responses.md`; ACKed.
-- **Round 2 Dispatched Critiques:**
-  - `A-R2-CHALLENGE-CLAUDE` (`01a0fde5-877e-74d3-86fa-9f58a3f3b505`): Dispatched with critique of provisional top 6, presentation of CIP refinement, and demand to elevate A16/A04/A12.
-  - `A-R2-CHALLENGE-CODEX` (`01a0fde5-938b-76d2-9043-35f44febd3ae`): Dispatched with response to `codex-round-1-external-responses.md`, ext4 storage analysis, and proposed shortlist alignment.
+- **Round 1:**
+  - Sent: `A-R1-CHALLENGE-CLAUDE` (`01a0fde0-109b`), `A-R1-CHALLENGE-CODEX` (`01a0fde0-1c78`).
+  - Handled: Orchestrator handoff (`01a0fdde-3579`), Codex consult (`01a0fdde-99c3`), Orchestrator storage pain (`01a0fddf-8abd`), Claude R1 response (`01a0fde1-68e4`), Codex R1 response (`01a0fde1-98e3`).
+- **Round 2:**
+  - Sent: `A-R2-CHALLENGE-CLAUDE` (`01a0fde5-877e`), `A-R2-CHALLENGE-CODEX` (`01a0fde5-938b`).
+- **Round 3:**
+  - Handled: `01a0fde8-1398-78d2-8abd-bcf22827d446` from `desktop-orchestrator` (DIRECT-USER-POLICY-20261002). Replied via `01a0fde9-da06-73d2-a2cd-310a272130ab` and ACKed.
+  - Outbound Critiques:
+    - `A-R3-CHALLENGE-CLAUDE` (`01a0fdeb-16d2-7892-8e13-cc3ff494109f`): Dispatched to `claude-principal`.
+    - `A-R3-CHALLENGE-CODEX` (`01a0fdeb-24fa-7cc2-971e-a70ee1072f80`): Dispatched to `codex-principal`.
 
 ---
 
@@ -73,4 +65,8 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
 - **D-A02:** Rejected A07 (Maintainer quarantine) and A05 (Fork tournament) from shortlist due to zero buyer migration in OSS and commodity prior art.
 - **D-A03:** Elevated A16 (Storage) as Cloudflare Artifacts Remote Execution (CARE) into top shortlist to directly solve User Message 7.
 - **D-A04:** Retained A03 (Merged-State Gate) but scoped to single-turn bounded repair rather than full open-ended "re-derive".
-- **Current Milestone:** Round 2 independent challenge complete and published; critiques dispatched to principals. Awaiting bilateral response. Next: guide scoped ZCode executors once consensus shortlist is signed.
+- **D-A05:** Formally and permanently rejected A05, A07, A13, and A19 from the 6-approach shortlist.
+- **D-A06:** Subsumed A09 (Exact-SHA Verification Receipts) directly into A04 (Checkable Invariant Probes) as its cryptographic attestation layer.
+- **D-A07:** Established the final 6-approach consensus shortlist: **[A01, A04, A12, A14, A16, A03]** as the unified Edge-Native Autonomous Integration Platform (ENAIP).
+- **D-A08:** Affirmed resource policy constraints: zero new Codex launches beyond 15% reserve; zero unconstrained Claude subagent loops; implementation driven by z.ai (`zcy`), Gemini (`agy`), and OpenCode (`muse 1.3`).
+- **Current Milestone:** Round 3 independent challenge complete and published. Dispatched durable R3 critiques to Claude and Codex. Awaiting bilateral peer response. Ready to guide scoped ZCode executors in isolated worktrees upon consensus sign-off.
