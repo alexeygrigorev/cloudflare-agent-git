@@ -19,3 +19,7 @@ Grok39e95f91, Antigravity46fdb644 and ZCode7bd5b3c2 now have verified interactiv
 ## Space Bunny and idle continuation verified
 
 Space Bunny0066a53b-3675-41da-b6f2-19cd40f5bc68 resumed original OpenCode conversation ses_f01ef9c54ffe86f5DrG7n8GCsY, actual UI verified. All requested heads have normal UIs. Muse and Bunny resume-time prompt did not visibly start continuation; root submitted focused tasks at verified idle composers and observed real Working state. Codex actual process binding is correct, but tool binding still wrong after exact stale snapshot declarations removed, including login=false. Bounded helper f008e45a waits for stable idle then quota-gated same-conversation resume with shell_snapshot disabled; pending actual tool verification, never impersonate principal. Old status mirror remains stopped.
+
+## Latest state at20:24UTC
+
+Heads remain normal interactive; task executors may be headless or interactive at their discretion under human21/22. desktop-orchestrator auxiliary mailbox safely rebound as79ffb8c7 with actual native threaded replies and keyed scoped-binary requests. Principal snapshot20minute safe-idle watcher timed out while Codex working; recovery NOT verified. One new50minute watcher5d47d025 waits stableidle, rechecksquota then sameconversation resume with shell_snapshot disabled. No duplicate principal or busy injection. See heartbeat2024 actual transport test, pilot limitations and owner assignments.
