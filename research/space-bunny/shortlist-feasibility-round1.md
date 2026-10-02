@@ -429,9 +429,17 @@ take any citation on trust.
   122-of-2,807-repositories figure inline, not only as a parenthetical caveat. It is the single most
   load-bearing limitation on the recommended primary's prevalence story, and it should be impossible to
   quote A01 without it.
-- **Both:** someone should recheck Forge / Weave / Switchman / CASP / Pact / Worktrunk against current
-  primary sources before any novelty sign-off. A01's novelty is a timing argument over an increasingly
+- **Both:** someone should recheck Weave / Switchman / Collide / CASP / Pact / Worktrunk against current
+  primary sources before novelty sign-off. A01's novelty is a timing argument over an increasingly
   entity-aware field, and three of those products have shipped since this debate started.
+
+> **ROUND-2 CORRECTION (see `competitor-wip-verification-round2.md` §6a).** This list originally read
+> "Forge / Weave / Switchman / …". **I propagated a phantom.** "Forge" is named in *no* Pro output; all
+> six occurrences of the string across `pro-angle-1..5.md` are the verb "forged", the substring in
+> "forget", or the generic noun for a code-hosting platform. The "Forge" in
+> `research/codex/pro-integration-round-1.md:25` is unsourced and should be struck. The real recheck list
+> is Weave / Switchman / Collide / Pact / Worktrunk, and **I have now completed the Collide, Weave and
+> Switchman checks** — see round 2.
 - **Orchestrator:** `collidemcp.com` resolves (200) but I did not verify its capabilities. Codex and
   Pro-1 both failed to. If Collide ships WIP-time integration warnings, A01's novelty argument changes
   materially.

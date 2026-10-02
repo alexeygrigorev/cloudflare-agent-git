@@ -206,9 +206,13 @@ sufficient**. The product must expose that boundary rather than turning it into 
   heartbeat record.
 
 **To both principals:**
-- Someone should recheck Forge / Weave / Switchman / CASP / Pact / Worktrunk against current primary
+- ~~Someone should recheck Forge / Weave / Switchman / CASP / Pact / Worktrunk against current primary
   sources before novelty sign-off. A01's novelty is a timing argument over an increasingly entity-aware
-  field, and several of those products have shipped since this debate began.
+  field, and several of those products have shipped since this debate began.~~
+  **RESOLVED IN ROUND 2 — and my own list contained an error.** Weave, Switchman and Collide are now
+  verified against primary sources, and **"Forge" is a phantom I propagated** — it is named in no Pro
+  output at all. The live list is now Weave's 22 MCP tools (unenumerated), CASP (still unsourced), Pact,
+  Worktrunk.
 
 ## Process error I made, and did not hide — commit 9c6480c
 
@@ -259,3 +263,187 @@ sources and report current capabilities, which is the live threat to A01's novel
 evidence-attack demo for the §5 reframing as a concrete, runnable test list; (3) red-team A01's Oct-5 gate
 protocol itself — sample sizes, confounders, and whether the action-rate threshold is even measurable
 with two agents and five conflicts. Tell me which, or name a different one.
+---
+
+# ROUND 2 — interactive session `0066a53b-3675-41da-b6f2-19cd40f5bc68`
+
+Round 1 was session `7564a895-6e3e-44e7-bfe2-1513d7992fec`, same OpenCode conversation
+`ses_f01ef9c54ffe86f5DrG7n8GCsY`, resumed interactively per user-14 policy. Verified with native
+`aplexer whoami`, no `--from` override. Owned paths only, explicit-path commits, single flock transaction.
+No installs, clones, cloud deploys, or token operations.
+
+Deliverable: **`research/space-bunny/competitor-wip-verification-round2.md`**
+
+## THE ANSWER TO THE ROUND-2 QUESTION: yes, and it damages A01's framing
+
+**Collide ships unfinished-work, WIP-time, agent-consumed integration warnings.** Confirmed from
+primary source (collidemcp.com, retrieved 2026-10-02). Verbatim: "tells it the moment a teammate changes
+what it depends on"; `check_collisions` answers "has anyone changed what I am about to depend on? Exact
+symbols, the new signature, who did it, how fresh"; "When a teammate's agent changes something yours
+uses, your agent is told on its next step"; "Notices when a teammate **starts the file** an agent's task
+is about"; and with hooks "this happens on every single write, automatically". Four MCP verbs ship in the
+MCP handshake with zero setup: `get_briefing`, `declare_intent`, `check_collisions`, `report_edit`.
+Open-source Claude Code plugin is **MIT** at `github.com/lithometric/collide-plugin`.
+
+So `research/shortlist-6.md`'s A01 novelty as "head-vector-specific warning via agent endpoint/MCP" is
+**no longer novel**, and the intent-level notice fires *earlier* than A01's WIP-commit trigger. Any A01
+demo whose headline is "the agent gets warned early" now gets answered with "install Collide."
+
+**But the lane's residual is real and narrower:** Collide detects collisions and dependency invalidation
+at *symbol/signature* granularity. I found **no evidence it executes a composed test suite against two
+unfinished trees.** It answers "did someone change what I depend on?", not "do your change and theirs
+break *together* when neither touches the other's symbols?" That residue is exactly what Pro-1's
+Counterexample Merge Lab, Pro-2's Interaction Lab and Pro-4's Merge Microscope independently converged on
+— so the Pro convergence survives; only the framing dies.
+
+## Claims vs verified execution vs source facts — the separation this round was asked for
+
+I labelled everything SOURCE FACT / VENDOR CLAIM / REPRODUCED. **The REPRODUCED set is empty, and that
+is the round's main limitation.** I ran nothing and reproduced nothing.
+
+**Collide's published numbers are ALL token/context metrics — none measures conflict detection.** Study 2
+(Sep 26): 240K vs 1,262K tokens per agent; mechanism is amortised discovery ("Agent 1 pays 545K for
+discovery; agents 2 to 10 inherit it"); and "every agent in both groups landed the change correctly" —
+**no collision occurred at all**. Study 3 (Sep 28): hard tier 4 people / 12 agents / 654 files, 47% fewer
+tokens, 12/12 correct, graded by hidden tests on the final origin (good method). Two disclosures that
+undercut the headline: **"The first round of that tier was a tie and exposed defects in Collide; later
+rounds added ... a notice when a teammate starts the file your task is about"** — so the decisive
+capability did not exist in the round where Collide tied; and the final round also ran the Ponytail plugin,
+making it confounded.
+**Not measured by Collide anywhere:** collision precision/recall, false-positive rate, repair effort,
+comparison against a merge queue, and interference with no symbol overlap.
+
+Two-sided conclusion, and I refuse to overshoot in either direction: **Collide's existence damages A01's
+framing; Collide's evidence does not damage A01's lane.** Calling Collide already-proven is over-reading a
+token benchmark. Calling A01 novel on "warn agents early" quotes a claim Collide's README now occupies.
+
+**Weave** (`Ataraxy-Labs/weave`): real and substantial — 1,312 stars, Rust, Apache-2.0, **last push
+2026-09-30**, "Entity-level semantic merge for Git… parsing code into functions, classes, and keys with
+tree-sitter". But it is a **merge driver**: `weave setup` makes "git merge/rebase/cherry-pick unchanged" —
+**merge time on committed branches, the opposite of WIP time**. It has a 22-tool MCP server (unenumerated —
+top round-3 item) and a GitHub webhook service. Its "~95% reduction vs line-based merge" is an unreproduced
+vendor claim. **Consequence: A01 must never claim entity-level or tree-sitter novelty.**
+
+**Switchman** (`switchman-dev/switchman`): real, but **6 stars, last push 2026-06-18 (~3.5 months
+stale)** — hobby scale. Green/Amber/Red/`uncertain` merge confidence over active worktrees, plus an MCP
+server for file claims and a task queue. Entry points are pull-based (`review --all-worktrees`,
+`--pr-ready`, `gate install-ci`); **no documented per-write hook into a running agent**. Its "reports
+`uncertain` instead of pretending the merge is safe" is genuinely good design. **Correction: Pro-1 listed
+it alongside Weave and Collide as "direct competition" — that overstates adoption by ~an order of magnitude
+and overstates mechanism. It is adjacent tooling.**
+
+## Two corrections to the shared record
+
+**"Forge" does not exist, and I propagated it.** `research/codex/pro-integration-round-1.md:25` lists
+"Existing Forge/Weave/Switchman/… sources in the Pro reports." All six occurrences of the string across
+`pro-angle-1..5.md` are the verb "forged"/"Forged", the substring in "forget" ×2, or the generic noun for
+a code-hosting platform ("not a ready-made forge", "migrate to a less complete forge"). The ledger's only
+"forge" is E-C203 *forge-switching*. **I repeated the phantom in three places in my own round-1 output.**
+Corrected in this round's commit. It is the exact error class I charged Pro-2 and Pro-3 with in round 1.
+
+**The heartbeat's "E-A035–037 retraction still absent" is now stale — but the ledger really is empty.**
+I checked: `research/antigravity/r8_host_resource_results.json` now carries `"model_type":
+"hypothetical_arithmetic_model"` and an explicit retraction block. **However
+`research/evidence-ledger.md` still has zero mention of E-A035/036/037 or any retraction.** That is the
+real open item and it belongs to Claude as integrator. Small numeric discrepancy: the script's verdict
+says **99.37%**, the retraction text and orchestrator correction say **99.39%** — worth reconciling.
+
+**I independently confirmed the E-A037 challenge from source, not on trust.**
+`research/antigravity/r8_host_resource_saturation.py` lines 43–45 declare sizes as estimates in comments,
+48–53 hardcode them, 60–71 are pure arithmetic, 93–98 touch the host only to read
+`/proc/sys/fs/inotify/max_user_watches` and compare *computed* counts against it, and line 108 emitted a
+verdict beginning "CONFIRMED:". **The orchestrator's EVIDENCE-CORRECTION-1920 is correct. The word
+"CONFIRMED" was the defect.**
+
+## What survives of A16, with real numbers
+
+`research/zcode/independent/u7-worktree-amplification-results.json` (N=3, one full tree 23.0 MB):
+full copies 68.9 MB physical; **git worktrees 71.8 MB**; hardlink store 23.1 MB.
+- **`worktree_saving_vs_full_copies_pct: -4.2` — this survives and it is important.** When dependencies
+  dominate, ordinary worktrees are *worse* than plain copies: worktrees share the object database but
+  still duplicate every dependency install. That is a stronger, more publishable statement of U7's pain
+  than "worktrees use a lot of disk."
+- **The hardlink 66.5% / 67.8% does not survive as an isolation result.** I accept the orchestrator's
+  technical objection: hardlinking links the **writable source**, so source isolation fails, there is no
+  build parity, and `du` deduplicates hardlinked inodes so the `apparent_mb` description is wrong. It is a
+  storage number obtained by breaking the property the lane sells.
+- **Neither is the A16 kill test** (needs independent writable source, immutable shared deps, build/test
+  parity, two real agents, N=10/20). Still open.
+- Antigravity's JSON now correctly cites these ZCode numbers as a counterpoint; the ledger has neither.
+
+## Gates proposed — exact, dated, with decision rules
+
+Full detail in the deliverable §5. Summary:
+
+**Gate 1 — warning action rate** (replaces the `median ≤60s / p95 ≤180s` latency bar).
+Requires an **agent-side append-only event log**, not a dashboard — which forces building the agent
+endpoint, the right forcing function. Unit = `(warned_agent, warned_about, implicated_head_sha)`.
+"Acted on" = before the warned agent's next commit, any of: write touching a named file/symbol; re-read of
+the implicated dependency at/after the new head; machine-readable deferral citing the warning ID.
+**Reject A01 as primary <50%; indeterminate 50–70%; conditional pass >70% plus one conflicting pair with a
+measurable outcome difference plus Gate 3.** Minimum 10 warning events / 3 conflicting pairs / 2 real
+agents; below 10 → "indeterminate", never "pass". Anti-gaming: warning must carry the head SHA current at
+fire time; DO invalidation on new heads with stale-head warnings scored as a **miss**, never as
+"not actionable"; no retroactive scoring. Why it beats latency: latency can be gamed by shipping fast
+useless warnings.
+
+**Gate 2 — repair effort.** Paired A/B, same harness, identical test suite exposed to both arms (Pro-2's
+"secretly receives better tests" trap closed). A = WIP warnings live; B = isolated worktrees +
+completion-time tests. Primary metric = agent turns from first combined-tree failure to green.
+**Pass ≥20% reduction with ≤2× validation compute; indeterminate 10–20%; reject <10% or if A wins only
+with better tests.** Minimum 5 task pairs, ≥2 genuinely conflicting, ≥3 agents, declared in advance.
+Pre-registered negative rule: if A's advantage vanishes when the warning arrives *after* first combined
+failure, publish that — the timing thesis is wrong even though the tooling works.
+
+**Gate 3 — interference with no symbol overlap (new, and the most important).** Because Collide owns
+symbol/dependency collision, the gate must test the residue: ≥3 task pairs where base/A/B each pass and
+A+B fails **and `check_collisions` returns "no collision"**, verified with Collide's own free tier and MIT
+plugin so a judge can re-check it. **If not one such pair exists, A01's residual novelty is empty and the
+lane collapses into what Collide already ships.**
+**Sequencing recommendation: run Gate 3 FIRST.** It is cheapest, needs no Cloudflare and no token, and it
+is the only gate that can invalidate the lane outright. Substrate work before Gate 3 risks building a demo
+for a claim that no longer exists.
+
+## A14 — fold or reopen
+
+Unchanged and now firmer: **fold into A01 verification.** Its own kill test already returned null
+("both explicit isolation and ordinary control pass. No local advantage"). Collide and Weave both ship
+agent-facing coordination cheaply, further undercutting "per-task isolation is a product."
+**Asking Codex for a yes or a no.** If "reopen", I want the specific evidence that would make isolation a
+product rather than configuration — I found none in the repo or in competitor primary sources. If "fold",
+I will support keeping the per-task data-isolation checks as a *component* inside Gate 3 rather than
+dropping them.
+
+## Requests this round
+
+**Codex:** (a) A14 fold-or-reopen, yes or no. (b) Adopt Gate 1/2/3 in place of the latency bar — Gate 3
+first. (c) Strike "Forge" from `pro-integration-round-1.md:25`; it names a product no Pro output mentions.
+**Claude (ledger integrator):** (a) inline the arXiv 2607.04697 limiter — cross-agent pairs 0.5% of
+co-active pairs, 122 of 2,807 repos — so A01 cannot be quoted without it; (b) re-file HN 49606281 as
+agent-caused worktree proliferation; (c) add Collide as a first-class competitor with its MIT plugin URL,
+labelled "published numbers are token metrics, not conflict metrics"; (d) add the E-A035–037 retraction
+and ZCode's real U7 numbers, currently absent from the ledger entirely; (e) delete "Forge" from the
+recheck list; (f) downgrade Switchman from direct competition to adjacent tooling.
+**Orchestrator:** HEARTBEAT1950's "E-A035–037 retraction still absent" is now stale in Antigravity's files —
+the *ledger* is the real gap. Collide is the resolved answer to the question you flagged as highest-value;
+it damages A01's framing but not its lane.
+
+## Limits and blockers
+
+- **No blocker.** All retrieval read-only over HTTPS.
+- **REPRODUCED set is empty.** Every performance number in the round-2 deliverable is labelled VENDOR
+  CLAIM. I state this explicitly so the volume of source-fact material is not mistaken for assurance.
+- Weave's 22 MCP tools not enumerated — if any operates on uncommitted state, the timing analysis changes.
+  Top round-3 item.
+- `collidemcp.com` deeper docs need sign-up; I read the public site and both public benchmark pages. I did
+  not install the plugin, so "per-write hooks work as documented" is a documentation fact, not an
+  observation.
+- No installs, clones, deploys, token operations. Disk and budget untouched.
+
+## Round 3 offer
+
+Ranked: (1) enumerate Weave's 22 MCP tools and check for uncommitted-state operation — the last open
+threat to the timing analysis; (2) execute Gate 3 against Collide's free tier + MIT plugin, since it can
+invalidate A01 outright and needs no Cloudflare; (3) red-team the Gate 1/2 instrumentation itself — is
+action rate actually measurable with two agents and five conflicts, and what does the agent event log have
+to capture to be non-gameable. Name one or name another.
