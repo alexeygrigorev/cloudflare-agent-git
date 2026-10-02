@@ -67,6 +67,10 @@ def main():
                 }
                 with log.open("a", encoding="utf-8") as handle:
                     handle.write(json.dumps(row, sort_keys=True) + "\n")
+            subprocess.run(
+                [sys.executable, str(SCRATCH / "snapshot.py"), "poll"],
+                cwd=repo, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
         time.sleep(2)
 
 
