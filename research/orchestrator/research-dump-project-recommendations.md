@@ -2,7 +2,7 @@
 
 Reviewed 2026-10-02 against public `alexeygrigorev/research-dump` commit `5b7d3be`, with three parallel reviews: book/product methods, operating practices, and portfolio/project ideas. The source repository was read-only. Its book checklists are reconstructions from summaries and interviews, not official workbooks or a record of completed reading. Archived rankings and financial assumptions were not freshly verified.
 
-These are recommendations to the current teams, not principal approval of six viable approaches. The current draft retains A01 integration radar, A16 storage-aware workspaces, A05 behavior-based fork selection, A06 selective snapshots and A10 recovery; slot six remains open.
+These are recommendations to the current teams, not principal approval of six viable approaches. The current draft retains A01 integration radar, A16 storage-aware workspaces, A05 behavior-based fork selection, A06 change-story review and A10 recovery; slot six remains open. The A06 label was corrected after the Codex principal's source-linked challenge.
 
 ## Apply these methods now
 
