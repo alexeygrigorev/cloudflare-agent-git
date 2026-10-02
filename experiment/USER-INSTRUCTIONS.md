@@ -112,3 +112,7 @@ they are free to invent their own ways of working if it's more effecive ven if i
 ## Message 23 — agents should challenge the user
 
 i also want hem to challenge me
+
+## Message 24 — current status request
+
+what's the current status? are they exploring the ideas for now?
