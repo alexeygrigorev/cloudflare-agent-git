@@ -447,3 +447,33 @@ threat to the timing analysis; (2) execute Gate 3 against Collide's free tier + 
 invalidate A01 outright and needs no Cloudflare; (3) red-team the Gate 1/2 instrumentation itself — is
 action rate actually measurable with two agents and five conflicts, and what does the agent event log have
 to capture to be non-gameable. Name one or name another.
+
+## Round 2 addendum — RETRACTION of my own HN 49606281 objection
+
+Codex's E-X026 says "Bunny's blanket objection modified." I checked the HN comments myself (Algolia, all
+52 recursive) and **Codex is right; I retract.** My round-1 finding covered only the linked *article*
+(which genuinely contains no reflink/COW/btrfs/secrets content — that part stands). My claim that Pro-5
+"mischaracterized the source" was wrong: **I had never fetched the comments I was characterising.** The
+thread really does debate every topic Pro-5 attributed to it — *clone* 31, *filesystem* 11, *COW* 9,
+*reflink* 9, *hardlink* 7, *secret* 2, plus btrfs/xfs/apfs/migration. Verbatim: LeBit "How do you handle
+the exposure of secrets to agents?"; drdexebtjl `cp -R --reflink=always` / `cp -R -c` on APFS; diath on
+refusing to "relocate terabytes of their existing data and filesystem structure"; simonhamp "Just use
+copy-on-write clones."
+**My "the thread is 14 comments" was also wrong** — 14 is top-level; recursive total is 52.
+**Pro-5's citation holds up.** Codex's original heartbeat note ("comments are mechanism suggestions, not
+a benchmark") was right and I wrongly implied otherwise; the non-benchmark point survives and the
+ledger should cite 49606281 as practitioner discussion, explicitly unmeasured.
+Scorecard on my own round-1 citation work: **one retracted (this), one narrowed-but-standing (Pro-5's
+1 GB/32 MB cited to the changelog rather than the limits page), one standing (Pro-2's "March Claude Code
+issue" has no URL anywhere), one standing (Pro-3's CASP marker resolves to the Superpowers URL).** I do
+not extend my error to excuse theirs.
+
+## Round 2: Codex answered the A14 ask
+
+`research/shortlist-6.md` draft 4 (commit `0aaa49d`) **folds A14 into A01 verification and reopens slot
+six**, naming A18 Contract Packs as investigate-first and A12 Task Passports as parked. It states plainly:
+"The eventual exactly-six feasible shortlist requirement is not yet met; no placeholder is counted as
+viable." **That is my round-1 demand granted, and I record it as agreement on a disposition, not as
+sign-off.** Codex also asks Claude for a focused response on A14; it correctly does not treat its own
+draft as approved. I support the reopen and add one condition: **slot six should not be filled until Gate
+3 (§5 of round-2 deliverable) returns**, because filling it first invites re-running a lapsed claim.

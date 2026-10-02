@@ -294,6 +294,47 @@ Running Cloudflare substrate work before Gate 3 risks building a demo for a clai
 
 ## 6. Two corrections to the shared record, both evidence-based
 
+### 6a-0. RETRACTION: my HN 49606281 objection was wrong. Pro-5's citation holds up.
+
+I got this wrong in round 1 and I am retracting it here rather than letting a softened version stand.
+Codex's E-X026 checked the *comments*; I had only fetched the *article*. I have now read all of them via
+Algolia. **Codex is right and I am wrong.**
+
+- **Fact I stated incorrectly:** I wrote "The thread is 14 comments." Algolia returns 14 at the top level
+  but **52 recursive** comments. My count was of top-level children only.
+- **The thread genuinely debates every topic Pro-5 attributed to it.** Keyword counts across all 52
+  comments: *clone* 31, *filesystem* 11, *COW* 9, *reflink* 9, *hardlink* 7, *secret* 2,
+  *copy-on-write* 1, *btrfs* 1, *xfs* 1, *apfs* 1, *migrat* 1. Verbatim examples:
+  - COW/reflink: "**Just use copy-on-write clones.** They're way more flexible, faster and easier to
+    reason about." (simonhamp)
+  - reflink recipe: "Assuming you're using a filesystem that supports it like ZFS, Btrfs, XFS, etc, it's
+    as simple as: `cp -R --reflink=always`... On macOS with APFS: `cp -R -c`" (drdexebtjl)
+  - filesystem migration: "They are the right abstraction for people that do not want to relocate
+    terabytes of their existing data and filesystem structure to migrate to some sort of an esoteric
+    filesystem just so they can let a tool work 'properly'." (diath)
+  - **copied secrets**: "How do you handle the exposure of secrets to agents? One thing I like about
+    worktrees is that you get a clean copy (with share git objects though), so you have to copy over what
+    the agent will need, not remove what you don't want the agent to see." (LeBit)
+  - clean baselines: "You get other things like mutual exclusion, a clean baseline regardless of whats in
+    the main directory..." (JamesSwift)
+- **Pro-5's wording was "A September 2026 HN discussion debated COW copies, filesystem migration, clean
+  baselines, copied secrets, and worktree-management tools."** That is an accurate description of the
+  *thread*. My round-1 claim that "it is not the comments that overreach, it is Pro-5's characterization
+  of the source article itself" was based on reading only the article and inferring about comments I had
+  not fetched. That inference was wrong.
+- **What still stands, narrowly:** the linked *article* genuinely contains none of these mechanisms (my
+  article extraction stands, including "disk" appearing once), and none of the 52 comments is a
+  **measurement** — they are mechanism suggestions, anecdotes and opinion. So Codex's original note was
+  right and I wrongly implied otherwise: **HN 49606281 is not a benchmark and must not be indexed as one.**
+  The correct ledger handling is: cite it as first-hand practitioner discussion of COW/reflink trade-offs
+  and agent-secret exposure, explicitly labelled non-measured.
+
+Two of my three citation challenges in round 1 were about this item. One held (Pro-2's uncited
+"March Claude Code issue", no URL anywhere), one now stands in narrowed form (Pro-5's 1 GB / 32 MB
+limits cited to the *changelog* rather than the limits page), and this one is **retracted**. Pro-2 and
+Pro-3 do not get a pass from my error: their specific defects were absence of a URL and a marker resolving
+to the wrong source, both of which I verified directly and both of which stand.
+
 ### 6a. I propagated a phantom competitor in round 1 — "Forge" does not exist
 
 `research/codex/pro-integration-round-1.md:25` lists "Existing Forge/Weave/Switchman/CASP/Pact/Worktrunk

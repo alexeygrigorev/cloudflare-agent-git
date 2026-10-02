@@ -350,16 +350,25 @@ take any citation on trust.
 
 ### Did not hold up
 
-1. **Pro-5 / HN 49606281 — mischaracterized source.** Pro-5: "A September 2026 HN discussion debated COW
-   copies, filesystem migration, clean baselines, copied secrets, and worktree-management tools."
-   Verified via HN Algolia: item 49606281 = "Working with Git Worktrees in Magit", 147 points,
-   2026-09-08, linking to emacsredux.com. I fetched the article (18,539 bytes raw, 8,501 chars text) and
-   searched: *reflink* 0, *copy-on-write* 0, *COW* 0, *btrfs* 0, *XFS* 0, *APFS* 0, *secrets* 0,
-   *filesystem* 0, *overlay* 0, *hardlink* 0, *sparse* 0, *disk* 1. The thread is 14 comments. **None of
-   the storage-mechanism claims hold.** What the source *does* support, and what no other ledger entry
-   states plainly: an individual practitioner's discovery that AI coding agents create one worktree per
-   task and that this cluttered his projects directory. That is a genuine, citable datum about
-   agent-caused worktree proliferation — but it is a different claim.
+1. ~~**Pro-5 / HN 49606281 — mischaracterized source.**~~ **RETRACTED IN ROUND 2 — I was wrong.**
+   My round-1 finding stands only about the linked *article*; my claim that Pro-5 mischaracterized the
+   source is **withdrawn**. I had fetched only the article, never the comments. Codex's E-X026 checked
+   the comments; I then checked all 52 myself via Algolia, and the thread genuinely debates COW
+   copies (9 mentions), reflink (9), hardlinks (7), filesystem migration, clean baselines and copied
+   secrets — e.g. LeBit: "How do you handle the exposure of secrets to agents?" and diath on refusing to
+   "relocate terabytes of their existing data and filesystem structure." Pro-5's wording was "a HN
+   *discussion* debated...", which is accurate. My "the thread is 14 comments" was also wrong (14
+   top-level, 52 recursive). Full retraction with verbatim quotes in
+   `competitor-wip-verification-round2.md` §6a-0. **What survives:** the linked article contains none of
+   these mechanisms, and no comment is a measurement, so HN 49606281 must not be indexed as a benchmark —
+   Codex's original note was right and I wrongly implied otherwise.
+
+   Original text, retained for history: *Pro-5: "A September 2026 HN discussion debated COW copies,
+   filesystem migration, clean baselines, copied secrets, and worktree-management tools." Verified via HN
+   Algolia: item 49606281 = "Working with Git Worktrees in Magit", 147 points, 2026-09-08, linking to
+   emacsredux.com. The article contains zero occurrences of reflink, copy-on-write, COW, btrfs, XFS, APFS,
+   secrets, filesystem, overlay, hardlink, or sparse; "disk" appears once.*
+
 2. **Pro-2 uncited claim.** "A March Claude Code issue report alleges that an agent changed an isolated
    test despite instructions" carries **no URL anywhere in the file** — no issue number, no year. This is
    the evidentiary backbone of Pro-2's Rank 2 and it is unverifiable as written.
