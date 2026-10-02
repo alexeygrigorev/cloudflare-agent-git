@@ -276,3 +276,42 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - **Physical Category Split:** Dependencies 98.44% (21.39 MiB), Git metadata 1.04% (232 KiB), Mutable build outputs 0.36% (80 KiB), Writable source 0.09% (20 KiB).
    - **Scope Discipline:** Scoped strictly as a synthetic multi-file Worker benchmark. Explicitly affirms that no claim of fixing user disk is made until validated on real developer workflows.
 
+---
+
+## 16. Behavioral Boundary Verification (B1/B2) & Storage Step Proposal (Heartbeat 2054)
+
+1. **Behavioral Boundary Verification (B1 & B2):**
+   - Implemented and executed comprehensive genuine-bound behavioral boundary tests in `/home/alexey/git/cloudflare-aplexer-protocol/test-idempotency-boundaries.sh` (commit `33fd1f2`), running against the prebuilt scoped binary (`target/debug/aplexer`).
+   - **Boundary B1 (Tag-Reuse & Identity Lifecycle):**
+     - Terminated session `worker-a` (session $S_1$) after sending key $K_1$ (minted $ID_1$).
+     - Spawned fresh session `worker-a` (asserted distinct session UUID $S_2 \ne S_1$).
+     - Verified replay of $K_1$ with identical payload dedups against existing envelope and inherits stale message ID ($ID_1$).
+     - Verified replay of $K_1$ with altered payload triggers strict 409 `idempotency conflict` rejection.
+     - Verified send of $K_1$ from distinct tag `worker-b` mints an independent message ID (zero cross-tag namespace pollution).
+   - **Boundary B2 (Post-GC / Capacity Eviction Boundary):**
+     - Sent key $K_2 \to ID_2$. Verified envelope persisted in mailbox via `message show`.
+     - Pushed filler messages inside peer workload PTY past the 10 MiB workspace mailbox quota limit.
+     - Confirmed original envelope $ID_2$ was evicted (`message show` fails).
+     - Replaying $K_2$ with identical payload minted a **new** message ID ($ID_3 \ne ID_2$).
+     - Physically confirmed the duplicate downstream delivery boundary: once an envelope is evicted by GC or capacity limits, idempotency tracking expires and downstream systems must handle retries as fresh deliveries.
+   - **Dual Verification:** Both Muse's independent test harness (`research/muse/b1b2-bound-check.sh`) and Antigravity's expanded protocol harness (`test-idempotency-boundaries.sh`) passed 100% green. Muse certified Round 5 with PASS (`d122c3d`).
+
+2. **Integration Ownership & Claude Fixlane Status:**
+   - Evaluated Claude's fix branches against `integration/reconciled-baseline`:
+     - `fix/reply-identity-routing` (commit `1d9814c`): Reconcilable with zero semantic divergence across 5 overlapping files (`envelope.rs`, `message_delivery.rs`, `message_routing.rs`, `coordination/tests.rs`, `wait.rs`). Both `idempotency_key` tracking and live-tag rerouting (`reply_target_same_workspace`) coexist cleanly.
+     - `fix/agent-detect-tag-lookup`: Active implementation in progress.
+   - Preserved dirty main (`~/git/aplexer`) and global install (`~/.local/bin/aplexer`) completely untouched. Zero target rebuilding performed (reused prebuilt `target/debug/aplexer`, strictly 0 bytes target growth).
+
+3. **Methodological Adoption of Research-Dump Recommendations (Human 25):**
+   - **The Mom Test:** Reject praise; require observed incidents. For storage, focus on what actually exhausted host disk (57.3 GiB across 215 `.venv` copies on developer host) rather than generic claims of fixing disk.
+   - **The Lean Product Playbook:** Smallest working slice with falsification tests. A16 storage claims must test real supported package managers, not synthetic text files alone.
+   - **Obviously Awesome:** Position against actual existing alternatives (e.g. `uv` cache / hardlinks, `pnpm` store) rather than a vague "Git for agents" platform.
+   - **Fair Comparison / Crash Test:** In-lane testing against real process restarts, envelope eviction, and stale state.
+
+4. **Next Storage Step Proposal (Real Package/Build Isolation in NEW Tiny Trees):**
+   - Proposing narrow, bounded experiment for A16 Workspace-Doctor:
+     - **Target:** Evaluate real supported package manager isolation: Python `uv` shared immutable cache with hardlinked `.venv` vs naive duplicated `.venv` across concurrent tasks.
+     - **Location & Cap:** NEW ephemeral tiny tree `/tmp/aplexer-uv-isolation-spike/`, strictly bounded $\le 100$ MiB, zero modification/deletion of existing user worktrees, zero Cargo rebuilds.
+     - **Metrics:** (1) Physical byte union (`du -c -s -B1`), (2) Source isolation (independent edits do not leak), (3) Concurrent execution safety (no lock/socket collisions during parallel runs).
+     - **Status:** Proposing to `desktop-orchestrator` and `claude-principal` to agree on narrow ownership and budget before launching.
+
