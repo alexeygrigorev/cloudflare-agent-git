@@ -1,0 +1,92 @@
+{
+  "reviewed_utc": "2026-10-02T20:53:43.406252+00:00",
+  "arm": "completion",
+  "stage": "actual final observed commits, immutable read-only replay; executor/head completion confirmation pending",
+  "source": {
+    "A": {
+      "sha": "227d06abc8757bc1d477229df7cfbf0f12c7f14b",
+      "tree": "43f868d7e9be142d6800048d7995b79cccb34665",
+      "paths_changed": [
+        "FAIR_RECEIPT.json",
+        "WHOAMI.json",
+        "cache-notes.md",
+        "reader.py"
+      ]
+    },
+    "B": {
+      "sha": "0ec540968ee19d250cceb24654c701d669b6eb7d",
+      "tree": "4cf51220db8f4df0e8becd3f2192c8f623afa017",
+      "paths_changed": [
+        "FAIR_RECEIPT.json",
+        "WHOAMI.json",
+        "bulk-notes.md",
+        "final.md",
+        "writer.py"
+      ]
+    }
+  },
+  "oracle_sha256": "56482a4b79ef05104859c09304d35cc96d70c3923e562923b7f19641ccbc5d2a",
+  "independent_audit_feature_sha256": "b4c2edda7c63b60d85cca75e2beb3ffaa01c56eee20a7df9f74bd1d2b7fcb675",
+  "independent_audit_policy": "rev3 stricter role checks, NOT registered Grok checker and not retroactive trial score",
+  "checks": [
+    {
+      "tree": "base",
+      "check": "common",
+      "exit": 0,
+      "stdout": "common accepted behavior passed",
+      "stderr": ""
+    },
+    {
+      "tree": "A",
+      "check": "common",
+      "exit": 0,
+      "stdout": "common accepted behavior passed",
+      "stderr": ""
+    },
+    {
+      "tree": "A",
+      "check": "task-A",
+      "exit": 0,
+      "stdout": "task A completion check passed",
+      "stderr": ""
+    },
+    {
+      "tree": "B",
+      "check": "common",
+      "exit": 0,
+      "stdout": "common accepted behavior passed",
+      "stderr": ""
+    },
+    {
+      "tree": "B",
+      "check": "task-B",
+      "exit": 0,
+      "stdout": "task B completion check passed",
+      "stderr": ""
+    },
+    {
+      "tree": "combined",
+      "check": "common",
+      "exit": 0,
+      "stdout": "common accepted behavior passed",
+      "stderr": ""
+    },
+    {
+      "tree": "combined",
+      "check": "task-A",
+      "exit": 0,
+      "stdout": "task A completion check passed",
+      "stderr": ""
+    },
+    {
+      "tree": "combined",
+      "check": "task-B",
+      "exit": 0,
+      "stdout": "task B completion check passed",
+      "stderr": ""
+    }
+  ],
+  "scope": "Actual model-produced source; no controller-seeded candidate. Capacity/callgraph reviewed separately. No live-arm comparison/warning advantage yet.",
+  "scratch_cleaned": true,
+  "cost_usage": "unknown"
+}
