@@ -29,11 +29,11 @@ claim was wrong — Claude parked it as an A12 refinement with R-TP1..4 and Code
 agrees. Retracted with standing notes (run cheap R-TP2 early; A18 first substitute
 for A10). A14-fold and A01 action-rate-gate points stand, concurring with
 space-bunny; heartbeat-1950 items addressed short of signoff, which I am not giving.
-Antigravity E-A035..037 still ledger-labeled VERIFIED/empirical with no retraction
-I could find — concurs with heartbeat-1950; must be corrected before any signoff
-drawing on them.
+Antigravity E-A035..037 retractions have since landed (9547d8f/bf6a585 per
+OWNER-ASSIGNMENT1950) — my earlier no-retraction note is superseded; signoff
+evidence must cite the retracted versions.
 
-## Round 3 (this turn): re-review PASS on bf593f0
+## Round 3 (last turn): re-review PASS on bf593f0
 Antigravity patch kolehmakin: DEBUG deleted, data-in-tuple, prune/rollback parity,
 dead code + stale scripts + .orig removed, cooperative-scope/tag-reuse/GC docs.
 I rebuilt the tip binary and reproduced everything: 4 new Rust tests green, full
@@ -43,8 +43,15 @@ spawn-stamped identity. Full record appended to
 research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
-Cross-computer request/retry/reply check with desktop-orchestrator via keyed
-native messages: in progress this turn (see native mail).
+
+## Round 4 (this turn): live roundtrip verified; e/f relabeled; B1/B2 requested
+Desktop reply 01a0fe4d-bf9b envelope-verified (reply_to + rebound sender, no
+override). Disk check: exactly one file carries my key — retry persisted nothing.
+Characterization recorded: SSH-accessed mailbox roundtrip only, not cross-host
+product or outage proof. Cases (e)/(f) corrected to docs-assertions; behavioral
+boundary tests B1 (tag-reuse) + B2 (post-GC) requested from Antigravity, the
+designated scoped integration owner. Claude's zcy lanes scope out idempotency —
+no conflict. ACKed steering 17–23; proactivity loop continues.
 ## Coordination (standing)
 - Antigravity owns the isolated protocol patch; I do independent re-review on
   request. I touch nothing in ~/git/aplexer and propose no global integration.

@@ -126,3 +126,34 @@ genuinely bound tests.** Integration gate: Antigravity (implementation owner)
 executes any branch→mainline merge inside the isolated protocol repo only, after
 this PASS; I hold no integration role. Global install / ~/git/aplexer off-limits
 until the orchestrator names a separate integration owner and window.
+
+## ROUND 4 — live roundtrip verification + label corrections (2026-10-02, SSH mailbox)
+
+Desktop replied to my keyed request with 01a0fe4d-bf9b-7993-8b18-7f35fc5dcf3b.
+Envelope-verified via `message show --json`: reply_to = 01a0fe3d (my request),
+from = desktop-orchestrator/79ffb8c7 (rebound workload, distinct from the older
+125a55f4 UUID — no sender override). Filesystem check: exactly ONE file under
+~/.local/state/aplexer/messages/*/msgs contains key muse-xcheck-20261002-r3
+(ff8f632e…/01a0fe3d.json) — the same-key retry preserved the id and persisted
+nothing new. The "lost receipt replayed without another native message" claim is
+therefore proven at the disk layer, not just the CLI return value.
+CHARACTERIZATION (mandatory): this is an SSH-accessed shared-disk mailbox
+roundtrip. It is NOT a native cross-host routing product and NOT a network-outage
+test — no partition, no transport drop, no remote daemon was involved. Claims
+must stay inside that boundary.
+LABEL CORRECTION (root is right): shell cases (e) and (f) are documentation grep
+(cooperative-scope sentence, tag-reuse/GC paragraphs present), NOT runtime proof
+of tag-reuse or post-GC behavior. Relabeled: docs-assertions, not behavioral
+tests. Requested from Antigravity (implementation owner): two behavioral boundary
+tests in the isolated repo — (B1) tag-reuse replay: kill holder, new session same
+tag replays key → returns stale id (assert the documented semantic, including
+reply_to inheritance); (B2) post-GC replay: force GC past retention (or unit-level
+prune), replay key → new id minted (assert duplicate-delivery boundary + docs).
+My round-3 PASS stands for items (1)–(4),(a)–(d),(g); B1/B2 are the remaining
+acceptance gap, owned by Antigravity, reviewed by me.
+LANE DIVISION (no conflict): Claude's zcy lanes (reply-identity-routing,
+agent-detect-tag-lookup; isolated worktrees from aplexer main bc0d3d7) explicitly
+scope OUT idempotency/cross-host; results return via Claude with Muse review +
+Antigravity sequencing. Antigravity is designated scoped integration owner
+(+ baseline reconciliation per Claude fixes); routine reviewed reversible rollout
+needs no further root approval. Dirty ~/git/aplexer preserved by all lanes.
