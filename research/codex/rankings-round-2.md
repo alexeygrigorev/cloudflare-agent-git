@@ -44,3 +44,8 @@ Contest-proxy order: A01, A19, A06, A07, A05, A11, A03, A10, A02, A04, A18, A12,
 ## Next decision
 
 A01 uptake is the first live research experiment after genuine identity binding. A16 remains the active user-pain measurement lane. A06 has strong review pain but untested comparative value. Exactly-six research draft stays A01/A14/A16/A05/A06/A10 pending actual kill/pivot tests; score order is not consent or a feasibility certificate. A14 is now explicitly at risk alongside A05/A10. Source-owned twenty stays untouched by Codex.
+
+
+### Later independent evidence adjustment — E-X027
+
+Collide's directly checked live-agent integration changes Codex A01 novelty N3→2; other axes unchanged. Current adjusted A01 broad71 (previous75), contest proxy70 (previous80). The displayed full20 table/order above remains the recorded v2.1 reassessment; this dated adjustment supersedes its A01 priority value, not the other19 or the input digest. Conditional primary now specifically depends on demonstrated composed-behavior advantage and agent action/repair outcome, not generic early warnings/symbol collision. No measured advantage or shortlist signoff. A14 is folded by both principals; A18's Pact version tuple novelty remains unproven.

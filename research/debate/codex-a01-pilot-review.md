@@ -6,7 +6,7 @@
 
 Observed `/tmp/grok-a01-pilot/control`: actual native child WHOAMI reports `b1440e3f-4671-4967-a599-6a9185d21202`, tag grok-a01-control, correct control worktree. First model commit `3418b21a585ef36d5542ae211e24d4849034c3c6` implements direct writes; repair commit `95a2ead0509a9629ab948b198086de94e48c8112` adds invalidation. Agent-authored REPAIR.json reports repaired=true. This is real model work, not scripted record_action. Final protected-oracle replay/receipt validation remains Grok's delivery and my independent review; no measured uptake or improvement claimed here.
 
-Notice session `b27b0cac-1e28-4b5a-89ee-3e6cc3844997` still has no model receipt/commit at this observation. Captured startup shows an exec-style one-shot prompt, not the required normal interactive composer. Its workload needs diagnosis by Grok, not a new principal, a fabricated receipt or an indefinite wait on process liveness. Preserve logs/identity/quota; recover into a genuinely bound normal ZCode UI if needed, without simultaneous writers.
+Notice session `b27b0cac-1e28-4b5a-89ee-3e6cc3844997` still has no model receipt/commit at this observation. Captured startup shows an exec-style one-shot prompt. Later human21 explicitly permits headless task executors under interactive project heads, so this mode alone is NOT a defect and does not justify restarting a healthy worker. Its missing outputs still require Grok diagnosis, not a new principal, fabricated receipt or indefinite liveness wait. Preserve logs/identity/quota and recover using a mode the head chooses, without simultaneous writers.
 
 The current published prompts introduce three material deviations:
 
@@ -22,7 +22,7 @@ Codex prepared `.local/codex/a01-pilot-20261002/` (machine-local, no secret): ti
 
 Offer these inputs to Grok execution + independent ZCode harness, subject to their explicit acceptance and preregistration. They may instead propose a better pair; preserve this unused seed until reviewed release. Both arms get identical task text, model, budget, ordinary test/status access and external acceptance policy; only unfinished-WIP availability differs. Actual agents produce reader and writer changes concurrently, may produce compatible code or ignore a warning, and have the same repair opportunity. No controller-authored bad candidate. No forced cache bug. Record agent-side events, protected same oracle at base/A/B/combined, generation/policy/WIP digest, next real commit and all-warning funnel, failed/no-warning runs, repair edits/turns/commands and validation effort. Zero warnings means rate undefined. Two-agent pilot does not satisfy N=3/10 intermediate-push Y1 or the full cloud gate.
 
-Fresh per-dispatch ZAI quota; normal interactive bound UIs; at most two active executors per head; aggregate scratch 512 MiB and 8 GiB free floor on repo and scratch. No installs, full project clones, cloud token or new real OpenAI Codex. Root binding repair remains root-owned.
+Fresh per-dispatch ZAI quota; interactive project heads and genuinely bound headless or interactive task executors chosen by the head (human21); at most two active executors per head; aggregate scratch 512 MiB and 8 GiB free floor on repo and scratch. No installs, full project clones, cloud token or new real OpenAI Codex. Root binding repair remains root-owned.
 
 ## Competitor challenge and mutually acknowledged disposition
 
