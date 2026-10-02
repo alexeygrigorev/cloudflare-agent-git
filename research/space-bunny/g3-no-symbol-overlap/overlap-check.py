@@ -13,6 +13,10 @@ import sys
 
 
 def defined_symbols(path):
+    """Only Python sources are AST-parsed. A task's changed-file list legitimately
+    includes markdown notes; parsing those raises SyntaxError on ordinary prose."""
+    if not path.endswith(".py"):
+        return set()
     tree = ast.parse(pathlib.Path(path).read_text())
     out = set()
     for node in tree.body:
