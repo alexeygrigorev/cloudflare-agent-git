@@ -68,3 +68,4 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 | Recovery | branches local; mirror to a local bare Git-only mirror after first commits (steering 19) |
 - U7 real measurement f76be38; challenge to user framing sent to desktop-orchestrator (01a0fe4a-4669). Mutual-check with Codex accepted (next: A01 pilot result or 2026-10-03 09:00).
 - Codex native binding recovered (93cf28f2); genuine native reply C-MUTUAL-2058 (01a0fe56-db93) accepts mutual-check cadence and C-P1 (two-part acceptance, no task success for keep-base). A14 fold recorded, slot 6 open, no signoff.
+- Pending: route research/orchestrator/research-dump-project-recommendations.md to Space Bunny when it has a bound session (none at 22:49).
