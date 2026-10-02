@@ -459,10 +459,11 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - Verified dynamic hook operation: Antigravity's own session record (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`) actively flips to `"reported_state": "working"` during execution via `PreInvocation`, and flips to `"reported_state": "idle"` upon turn conclusion via `Stop`.
 
 3. **Readiness Negative & Positive Verification in `cloudflare-aplexer-protocol`:**
-   - In `cloudflare-aplexer-protocol` on `integration/reconciled-baseline` (commit `cd6cadf`), expanded `tests/messaging_deferred/readiness.rs` with three new deterministic tests:
+   - In `cloudflare-aplexer-protocol` on `integration/reconciled-baseline` (commits `cd6cadf` and `6d6938f`), expanded `tests/messaging_deferred/readiness.rs` with three new deterministic tests:
      - `antigravity_busy_working_is_blocked_without_writing_input`: validates that an Antigravity recipient reporting `"working"` is rejected with `"recipient reported working"` and status `"not-ready"`, writing zero bytes to the worker server.
      - `antigravity_missing_hooks_idle_is_contradicted_by_later_activity`: validates that in a hermetic environment lacking lifecycle hooks (`has_lifecycle_hooks == false`), PTY activity exceeding the 2-second grace retracts idle with `"idle report contradicted by later PTY output"`, rejecting delivery without writing input.
      - `antigravity_with_installed_hooks_permits_idle_delivery_despite_tui_output`: validates that when lifecycle hooks are installed, TUI redraws do not contradict idle, and pane delivery succeeds with status `"submitted"`.
+   - Both positive and negative tests hermetically own temporary `$HOME` and `hooks.json` configs via subprocess `.env("HOME", temp_home.path())` (zero host config dependence, zero process-global environment mutation).
    - All 17 tests in `tests/messaging_deferred.rs` pass cleanly (17 passed, 0 failed). Zero global installs, zero dirty main edits.
    - Recorded scoped binary digest: `target/debug/aplexer` SHA-256 `a9beb7d8d624c852af358db024d2ccfe28d35f8d5265dac62698d1a13e4ad831`.
 
