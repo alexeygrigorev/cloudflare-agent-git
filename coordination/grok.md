@@ -1,6 +1,6 @@
 # Grok head coordination
 
-Session grok-head `3b664830-1a4f-4f30-ba94-67828f32021c`, workspace `/home/alexey/git/cloudflare-agent-git`. Round 1, 2026-10-02 Europe/Berlin.
+Session grok-head `3b664830-1a4f-4f30-ba94-67828f32021c`, workspace `/home/alexey/git/cloudflare-agent-git`. Round 3, 2026-10-02 Europe/Berlin.
 
 ## Ownership
 
@@ -49,6 +49,53 @@ Inbound IDs in the inbox table, plus Codex's reply, were `message ack`'d.
 
 Commit `0dfa9c6` contains the challenge. This coordination update is a later commit. Local `main` was ahead of `origin/main` by other commits, so this round did not push.
 
+## Round 2
+
+The round-2 process exited 0 without writing a file. Approaches v1 was already superseded. No second copy of G-R1-CRIT was sent.
+
+## Round 3
+
+`research/grok/challenge-r3.md` challenges the unapproved working six in `research/shortlist-6.md` (SHA-256 `891f6b2dcdf5ced2f593f3f338e94a10d88ab9cc005da4b27a5ed5ca8b328da9`), which matches Claude v2's provisional IDs. Approaches v2 digest `edd5f34fd52af7f9de6beaf24d8da7ee7ac63dc11067df7c5cc95f090b1926f9`.
+
+- R3-1: remove A05 until a hidden-test comparison beats one attempt. Do not substitute A03 or A04.
+- R3-2: remove A10 as a side store. `research/grok/r3_fixture.py` shows a plan file committed with the code survives clone; a second repo can name a stale SHA.
+- R3-3: Antigravity's A01/A04/A12/A14/A16/A03 set is not consensus. E-A015's exactly-1.0x claim contradicts Codex's package measurement. The same fixture: hardlinked files union to 163,840 bytes; distinct outputs union to 131,072. A16 stays a measurement.
+
+Codex pnpm numbers were not re-run. Root disk was about 98% full. No ZCode, no new Codex, no Claude relaunch. Decisions D-G6..D-G8. Nothing here is a sign-off.
+
+## Inbox handled, round 3
+
+| ID | From | Token | Action |
+|---|---|---|---|
+| `01a0fde8-1376-7f90-a62c-23073184599b` | desktop-orchestrator | DIRECT-USER-POLICY-20261002 | Read resource policy and messages 8–13. ACK. No shortlist agreement. |
+| `01a0fdf0-b0df-7f41-bf3b-08c85c05852c` | codex-principal | package baseline | Preserved the stated limits. G-R3-CRIT sent on the same reply. |
+
+Both were `message ack`'d.
+
+## Outbound, round 3
+
+Inbox only. Codex was `working`, so no pane injection. Do not resend G-R3-CRIT.
+
+| ID | To | Token |
+|---|---|---|
+| `01a0fdf2-fe29-7951-80f7-fef2c23f794a` | desktop-orchestrator | ACK DIRECT-USER-POLICY-20261002 |
+| `01a0fdf2-fe3f-7e43-8d78-e3905ae2885c` | codex-principal | ACK package note plus G-R3-CRIT |
+| `01a0fdf2-fe57-7892-b150-2ae16a84cb81` | claude-principal | G-R3-CRIT, queued |
+| `01a0fdf5-2740-78d0-869d-066925e3553b` | codex-principal | Accept R3-1 and R3-2 modifies; accept R3-3 |
+
+Direct send to `claude-principal` failed: this aplexer reported that no session with that tag has ever existed in the workspace. `--queue` parked the note. `coordination/claude.stop` is present and the tag is absent from `aplexer list`. Resource policy forbids relaunching Claude to obtain the reply. The queued ID is not a response.
+
+## Replies received, round 3
+
+- Codex `01a0fdf4-4525-7880-8246-bb442eb4dd94`, reply to G-R3-CRIT. R3-1 modify accepted: A05 stays listed only as conditional and unapproved, not a build lane. R3-2 modify accepted: in-commit prose can still be semantically stale; incumbent is the plan file plus an Entire checkpoint. R3-3 accepted. No sign-off. They reported a draft checkpoint push `28d33f6`; I did not verify that remote SHA.
+- Claude: no reply. Queued note is still not a response.
+
+Antigravity round 4 retracts the round-3 consensus label and keeps A03 and A10. That is not a principal answer.
+
+## Blocker
+
+Claude cannot answer R3-1..R3-3 until a session tagged `claude-principal` exists again. Resource policy forbids relaunching it from here. No consensus.
+
 ## Next
 
-Round 2: read `research/approaches-20.md` v1 and send at most three falsification challenges. Do not resend G-R1-CRIT. Next measurement is package-manager behavior on a disposable copy if disk headroom is safe. Do not spawn ZCode.
+Wait for Codex's accept/modify/reject on R3-1..R3-3. Do not resend. Do not launch executors. Next useful measurement, only with a stated free-space floor, is build outputs and lifecycle scripts against the pnpm baseline. Until then the open work is the A01 warning-uptake comparison and the A14 runtime-only fixture, both unrun.
