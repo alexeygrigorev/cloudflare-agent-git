@@ -1,6 +1,6 @@
 # Codex principal coordination
 
-Updated 2026-10-02 execution round 1. Native aplexer session codex-principal 338df944-a3fc-4973-9ed0-17708c73769c in /home/alexey/git/cloudflare-agent-git. Resume these durable files; do not repeat discovery.
+Updated 2026-10-02 interactive continuation. Original headless session338df944 is historical. Orchestrator records current UI session codex-principal56420916-7c6a-4ba9-a95a-79790dd9dce7, same native conversation01a0fdd7-109e-7972-9199-e082a7a1383d. Actual tool-process whoami currently resolves outside this experiment, so native principal messaging is withheld; no identity override. Resume these durable files, not old discovery. Latest continuation below supersedes historical pending/priority statements.
 
 ## Ownership and steering
 
@@ -67,3 +67,29 @@ User steering relayed in01a0fe01-21d8-7602-83d3-385b47013ae3: conclude current h
 Created coordination/codex.stop so principal-loop.sh exits after this turn rather than starting another headless round; it is NOT codex.done or a pause of the research objective. Orchestrator handles interactive migration, no simultaneous principal writer. All owned late files committed in final checkpoint; raw ZCode packet deliberately remains uncommitted pending documented corrections. Other untracked/dirty peer files left untouched. No owned live model helper remains.
 
 Next continuation priorities: read pro-integration-round-1.md + corrected shortlist draft2, check current inbox (including separately bound ZCode uptake-protocol ownership ACK), complete remaining primary-source/novelty checks, obtain compact Claude challenge to Task Passports/refined A10/A05 when ready, then real-agent research gates and honest identical-digest approvals. Do not repeat completed source/dependency fixtures. Source-owned approaches-20 still needs body/protocol corrections by Claude or acknowledged handoff; do not edit it silently. Future guided ZCode requires own genuine aplexer binding and fresh quota. Root budget512MiB/new spike, no installs/large clones, free floor8GiB.
+
+
+## Interactive continuation — 2026-10-02 evening
+
+Read user message14, steering/resource policy, all completed Pro integration, current peer files and experiment workspace native message log. Native inbox/tool notices resolve to another workspace; did not act on or ACK unrelated mail. Tool-process mismatch persists despite genuine principal UI migration recorded in INTERACTIVE-SESSIONS.md. Required fix: orchestrator/real owner must align actual principal tool binding, then verify whoami in that tool process before replies. No fake principal, sender override, headless loop or pane status injection. coordination/codex.stop remains a historical loop migration guard, never completion.
+
+Claude compact consultation delivered in file and message01a0fe07-dc72-72d2-bda8-5f1b8468239c; approaches-20 v2.1 corrected body/protocol/competitors, exact digest7f6eea8a975b4cfa113b9a424b1934564dedc5be97730ccebfa63a60422246c3. Own response research/debate/codex-interactive-consultation-response.md answers Q1–4, UX, Grok R5 and Antigravity R8; this is a durable fallback, not a native reply or peer agreement. Request compact Claude response only on material A14 priority change and proposed A12/A18 dispositions when binding is repaired; no repeat implementation consultation. Choose actual viability evidence before sign-offs, no plan-only exception requested.
+
+Independent ZCode delivered a01-uptake-protocol.md and rev2 unfinished-WIP requirement (delivery ACK message01a0fe05-529e exists in experiment event log). Do not repeat that assignment or edit its files. Own response requests generation/policy-aware dedup, all-warning denominators, prevention/repair distinction and controlled arm order. Transport/semantic ACK from this resumed principal still pending because actual tool binding differs.
+
+New evidence E-X023: current Workers Previews incumbent. New local runtime-isolation-fixture.py/JSON/report: fresh task checks pass; shared SQLite binding lets A see B's value; explicit per-task and ordinary separate-resource control both pass. Two simultaneously live HTTP processes, deliberately ordered requests, NOT actual coding agents/cloud/security boundary/merged-code proof.8MiB scratch cap and floor8GiB on both repository and /tmp mounts;86,016 allocated file bytes, cleaned. No installs. E-X024 checks Copilot exclusions as existing capability, not buyer demand.
+
+rankings-round-2.md independently re-scores all20 against v2.1. A14 novelty3→1 and priority demoted; A16 novelty3→2 against stronger incumbent; A01 narrowed high-overlap buyer. shortlist draft3 retains exact sixA01/A14/A16/A05/A06/A10 unapproved, marks A14 at risk, adds unfinished-WIP/equal-evidence/dirty-state baselines. No automatic substitution or approvals. A12 parked; A18 is proposed substitute for investigation only.
+
+### Genuinely bound interactive ZCode guide
+
+Fresh quse ZAI82%weekly/100%5h, statusok/no limit, no resets redeemed. Started ONE separately bound native aplexer session codex-feasibility-review cf3e7fb7-53e0-4b7a-9fd5-9f44da7cc0a7, workspace verified by child's nativewhoami BEFORE exec. Resumed existing ZCode CLI conversation01a0fdd8-0baa-7a42-a91b-e09ca6e40c64 with normal UI/composer; captured screen shows glm-5.3-flash and Working. Explicittimeout90m. Private mode600 prompt/launcher/identity/terminal log under.local/codex/. Native aplexer statusidle conflicts with renderedWorking; do not inject into its composer. Delegate owns ONLY research/zcode/codex-feasibility/*.md; independent correction/review, no code/worktrees/installs/new agents/commits/pushes. Required real-agent prototype still post-selection. No new real OpenAI Codex launched.
+
+### Next autonomous milestone
+
+1. Review incremental interactive ZCode corrections, publish only exact owned/handoff-approved paths after contradictions resolved. Preserve useful negative findings; no guide-loop restart.
+2. Orchestrator/real native principal resolves tool binding. Then ACK reviewed experiment messages once and send the existing durable response as one compact native handoff; obtain explicit Claude/ZCode responses, not inferred assent.
+3. Register A01 controlled live uptake repetition using the independent protocol plus clarifications: three actual agents/at least ten intermediate pushes, same accepted oracle/tasks/budgets, unfinished evidence, invalidation/fencing, delivery-consume-action and elapsed/active-time distinction. Prefer two scoped z.ai executors in isolated tiny worktrees and an acknowledged existing third head, with fresh quota and512MiB per spike/floor8GiB. Do not launch until helper identities/third ownership and schema are genuinely settled. This is local research; no token prerequisite.
+4. Record arm outcomes and negative results, revisit failed slots with Claude, update exact20/current scores, then remote Workers/Artifacts loop and same-byte separate principal SIGNOFFs. No codex.done.
+
+Draft3 exact SHA-256: `4133312b5d48ee7721cc65a0225a49a7c81156ab4d4be662e2d261563ff5a52d`. No approval. Review/source/publication checkpoint includes the owned research files and appended sanitized experiment event; peer-owned dirty paths and raw guided packet are excluded.

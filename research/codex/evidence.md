@@ -58,3 +58,12 @@ Sources independently fetched2026-10-02: https://developers.cloudflare.com/artif
 ## E-X022 — Fixed-oracle interaction reproduction
 
 Own local synthetic run2026-10-02, interaction-fixture.py/interaction-measurements.json. Same externally supplied oracle passes base/A/B; Git clean merge exits0; A+B fails stale cached value. Scripted patches, not actual agents, market prevalence, a security sandbox or Artifacts run. Existing merged-tree CI catches this same case; differentiation requires earlier actionable delivery or better diagnosis. Earlier greeting fixture used different branch suites and illustrates a stale-contract hazard only.
+
+
+## E-X023 — Current A14 incumbent and local negative control
+
+Independently opened2026-10-02: [Workers Previews resource reference](https://developers.cloudflare.com/workers/previews/resources/), [workflow comparison](https://developers.cloudflare.com/workers/previews/compare-workflows/), [overview](https://developers.cloudflare.com/workers/previews/). The documented baseline is stronger than our generic preview description; see runtime-isolation-validation.md. Local HTTP/SQLite fixture reproduces shared-binding contamination; proposed and ordinary separate-resource arms both pass. No agents, cloud service run, merged-code test or security boundary. Does not establish product advantage. A14 novelty score reduced in rankings-round-2.md.
+
+## E-X024 — Task Passports incumbent capability, demand still unverified
+
+Independently opened2026-10-02: [September2 Copilot app/CLI exclusions changelog](https://github.blog/changelog/2026-09-02-content-exclusions-generally-available-in-copilot-app-and-cli/) and [content-exclusion documentation](https://docs.github.com/en/copilot/concepts/security-governance-and-network-settings/content-exclusion). Existing provider-specific controls and limitations matter; see ../debate/codex-interactive-consultation-response.md. Vendor capability is not a firsthand blocked-adoption report. No Copilot or projection/reintegration run performed. A12 remains outside the six with reopen tests.

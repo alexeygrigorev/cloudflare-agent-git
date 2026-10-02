@@ -4,6 +4,8 @@
 
 Working six are in shortlist-6.md, explicitly unapproved. Claude v2 proposed A01/A14/A16/A05/A06/A10; Codex integrated the same IDs as a working draft for falsification. Agreement on IDs for a draft is not approval of six verified viable approaches or approval of identical file bytes.
 
+Interactive continuation: Claude v2.1/compact consultation C-CONSULT-1 explicitly declines sign-off. Codex responds in debate/codex-interactive-consultation-response.md, chooses empirical gates first and proposes demoting A14 priority after current incumbent/local control evidence. Draft3 retains six IDs for review; no replacement, agreement or approval inferred. Principal tool process is currently misbound outside the experiment, so native semantic/read ACKs await actual owner binding. Reading workspace logs or writing responses is not a transport ACK.
+
 Bilateral debate: X1–X8/C1–C6 and R2-1–R2-3/K1–K3 are written with both principals' responses in research/debate/. Durable Claude R2 response 01a0fded-2e7f-72a2-a715-fb1b204fd207; Codex reply 01a0fdf0-b09c-77a3-8408-17e4e7e6ce33. Transport read ACKs are not votes.
 
 Five Pro outputs arrived; mapped integration and high-impact primary-source checks are in codex/pro-integration-round-1.md. Pending gates: remaining citation/competitor checks, real concurrent-agent Workers/Artifacts verification and runnable permissive-source demonstration, independent competitor/falsification checks and guided ZCode prototype work. Credentials are not a research/planning blocker; no remote runtime result claimed.

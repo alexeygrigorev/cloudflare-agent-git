@@ -78,3 +78,8 @@ A 7-minute demo can show two live agents, one passing merge, one incompatible ca
 ## Sources and outstanding checks
 
 Sources are linked at each factual claim. See evidence.md for E-X001..017, and Claude's workflows-competitors.md for independently fetched Artifacts APIs and best practices. No new prevalence claims derive from these documents. Competition deadline and eligibility derive from the official linked PDF, recorded in evidence.md. Confirm pricing discrepancy Claude reports between blog (Oct 15) and docs (Oct 14) before runtime budgeting. Confirm beta fork timing, authenticated preview behavior, worker/local bindings, CI SDK availability, and native ref-update semantics in actual spikes.
+
+
+## Interactive incumbent correction
+
+A14 must use the current Workers Previews baseline detailed in E-X023/runtime-isolation-validation.md. Version URLs and full Previews differ; basic preview/resource provisioning is not new. The local proposed/control tie supplies no product advantage. Deploy/task/source attestation and live feedback remain proposed, unverified integration work; no new cloud capability is presumed.

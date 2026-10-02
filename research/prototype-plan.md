@@ -1,13 +1,13 @@
 # Comparative research plan and post-selection prototype gates
 
-2026-10-02 execution round 1. **Planning only; six draft candidates remain unapproved.** Derived from the required guided ZCode comparison, corrected by Codex review, both principal debate rounds and actual package baseline. No Artifacts/cloud prototype run is claimed. Source constraints and MVP architecture: [engineering feasibility](codex/engineering-feasibility.md); selection tests: [working six](shortlist-6.md); [delegate review](codex/zcode-guidance-review.md).
+2026-10-02 interactive continuation. **Planning and bounded local research; six draft candidates remain unapproved.** Derived from guided ZCode comparison, principal debate/consultation and actual local baselines. No Artifacts/cloud prototype run is claimed. Source constraints and MVP architecture: [engineering feasibility](codex/engineering-feasibility.md); selection tests: [working six](shortlist-6.md); [delegate review](codex/zcode-guidance-review.md).
 
 ## Immediate discriminating research
 
 | Comparison | Controlled input / baseline | Recorded outcome needed | Present state |
 |---|---|---|---|
-| A01 uptake | Same versioned task pair, actual two concurrent coding agents, ordinary isolated tasks + completion-time publisher tests versus WIP warnings | Exact canonical/candidate head vector, event key, emit/consume/action times, warning invalidation, preserved acceptance, wall/runner time and observed usage | Synthetic green/green/clean-merge/red hazard reproduced; no live uptake trial |
-| A14 runtime/data | Same logical row IDs, independent tasks, unit/merged tests on clean data; ordinary Workers previews versus task-specific bindings and agent self-check | Deployed SHA/resource/task tuple, HTTP results, cross-task writes/reads, cleanup and runtime-only regression | No runtime/cloud trial |
+| A01 uptake | Same versioned task pair, actual concurrent coding agents, ordinary isolated tasks + completion-time publisher tests versus unfinished-WIP warnings | Exact canonical/candidate head vector, event key, emit/consume/action times, warning invalidation, preserved acceptance, wall/runner time and observed usage | Next first live experiment. Independent ZCode protocol delivered; execution clarifications in Codex consultation response. No live uptake trial |
+| A14 runtime/data | Same logical row IDs; current Workers Previews, not Version URLs, versus task-specific orchestration/agent self-check | Deployed SHA/resource/task tuple, HTTP results, cross-task writes/reads, cleanup and runtime-only regression | Local HTTP/SQLite shared-binding hazard reproduced; proposed/control isolation tie. Cloud/agent gate unrun; novelty at risk |
 | A16 allocation | Full/sparse task views, equivalent direct deps and accepted tests, shared immutable pnpm control, writable outputs separate; compare remote placement separately | Unique file allocation incl. store/builds/logs, apparent bytes, setup time, local and remote allocation, edit/build/test parity | Synthetic source fixture and real small starter install/tsc complete; mutable builds untested |
 | A03 recovery | Red combined tree repair versus original intent rerun on fresh base; same approved policy/environment/model and bounded retry budget | Acceptance, allowed scope and behavior preserved, wall time, observed tokens/compute if exposed, reviewer effort | Neither arm run; tiny fixture can be repaired with one caller line |
 | A05 selection | Existing best-of-N/single attempt, hidden acceptance tests owned independently, same task and bounded attempts | Outcome accuracy and blind review time, usage or unknown, reason for rejected attempts | No hidden-test comparison |
@@ -28,7 +28,11 @@ Each independent head must ACK a distinct buyer, fixture, files, branch/worktree
 
 The required Codex delegate's current raw files need the recorded corrections first. Relaunch/resume only in a genuinely separate aplexer identity after stopping the previous invocation; no inherited principal mailbox. Every run has a generous explicit timeout, private mode-600 logs and incremental sanitized deliverables. Delegates cannot commit or edit peer-owned files unless their owner explicitly hands them off. No reset/overwriting shared edits.
 
+Interactive continuation: existing ZCode conversation resumed under genuinely bound `codex-feasibility-review` session cf3e7fb7-53e0-4b7a-9fd5-9f44da7cc0a7. Child whoami verified before launch, actual UI/composer captured, explicit90minute bound, fresh ZAI82%weekly/100%5h observation. Markdown-only correction scope in its original directory. No new implementation lane, recursive delegate or headless principal. Principal's own tool binding currently resolves outside experiment; native replies wait for a real-owner correction, while durable research proceeds.
+
 Proposed UX coordination: Claude design/review proposal accepted by Codex, z.ai/Muse implementation; Claude final ACK unavailable because the session stopped. Orchestrator received the failed-route report and may request the later compact consultation. Thus this is an intended assignment, not a fully acknowledged handoff. Agent-facing status/conflict/receipt API is the primary interface; rendered view explains exact task/head state and actionable next steps.
+
+Claude now has a resumed interactive UI and delivered its compact consultation. Codex's file response chooses actual gates before sign-off and keeps A12 parked/A18 a proposed substitute only. A14 priority change remains a new peer-review question. No ongoing Claude implementation or automatic consultation loop is assigned.
 
 ## Completion evidence
 
