@@ -1,0 +1,30 @@
+# Experiment: user instructions
+
+Recorded verbatim from this chat on 2026-10-02 (Europe/Berlin). Message order is known; individual send timestamps were not provided. Typos are retained. System, developer and tool messages are excluded. The external open-page marker had page_id null and contained no instruction.
+
+## Message 1
+
+[https://blog.cloudflare.com/next-git-platform-on-cloudflare/](https://blog.cloudflare.com/next-git-platform-on-cloudflare/) here we have a new competition
+
+1) create a public git repo for that
+2) log in to hetzner via ssh, clone that repo in ~/git and start two sessions there - claude and codex
+3) have them research reddit and hackernews and other websites that mention about different problems that peope have with git and agents, also use the reearch skill from telegram-writing-assitant for social research (use proxy from youtube download skill if you need
+4) they coordinate research efforts with each other
+5) you also do some research using browser use on twitter and linkedin, then based on what you found launch chatgpt in pro mode multipe parallel researches from different angles
+6) at the end, choose 20 approaches and then shortlist them to 6 viable approaches - the claude and the codex sessions should agree on that and challenge each other
+7) let codex and claude start zcode sessions and guide them, they can also start grok and antigravity sessions
+8) if you need keys like artifacts from cloudflare use browser use and then pass it via ssh
+
+you're the main orchestrator but once the main codex and claude sessiosn start working don't babysit them too much, wake up every 30 minutes to check them
+
+## Message 2
+
+add a recurrent task every day to check the agents and see what's their status. once the viable approaches are identified they should mainly use them for driving the zcode sessions and then once per day we check their progress in a "standup" and then also see if we should correct. the agents shuold be working non-stop and also validating that their approach is viable. at some point we will have 5 heads that will lead their teams independently
+
+## Message 3
+
+for the rest let the agents coordinate. I also want you to start grok and antigravity and zcode and opencode with space bunny and oepncode muse 1.3 and discuss this too periodically and ifnd the best approaches
+
+## Message 4
+
+document everything - I want to make it an experiment so note down everything I write here
