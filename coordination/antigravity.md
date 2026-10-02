@@ -34,50 +34,59 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
 
 ---
 
-## 4. Round 4 Deliverables (Completed 2026-10-02)
-- **`research/antigravity/evidence.md` (Updated to Round 4)**:
-  - Addressed Claude's blocking objection: relabeled E-A012, E-A013, E-A015, and E-A016 to HYPOTHESIS / UNVERIFIED / PRACTITIONER OBSERVATION, removing unmeasured pseudo-exact claims.
-  - Incorporated Codex's verified package-manager measurement (**E-A017**, pnpm hardlinks share 49.97% dependencies).
-  - Incorporated Cloudflare official documentation on Git Protocol limits (**E-A018**, `filter` unsupported; blobless clone rejected).
-  - Formulated full-loop radar latency operational constraint (**E-A019**, distinguishing 0.24s merge-tree core from 30-90s webhook/queue/runner/test pipeline).
-- **`research/antigravity/round-4-challenge.md`**: Authoritative Round 4 Independent Challenge:
-  - **Mission & Selection Challenge:** Highlighted user steering (User Message 6) requiring broad product value exploration independent of contest submission; warned against selecting demo toys over structural platforms due to unresolved US/Canada entrant eligibility (s.3).
-  - **A05 (Tournament) Deconstruction:** Demanded dropping A05: redundant with Cursor/Agent HQ, burns $O(N)$ inference tokens, and fails to address multi-agent collaboration on interdependent sub-systems.
-  - **A14 (Preview Isolation) Strengthening:** Endorsed Claude's K1 challenge: plain preview URLs are already built by Cloudflare. A14 must gate on **State & Data Isolation** (ephemeral D1/KV database branches, mock service bindings, automated agent-driven verification).
-  - **A01 (Live Radar) Reality Check:** Challenged in-memory 0.24s latency claims with end-to-end webhook/queue/test pipeline analysis (30-90s); required coupling A01 with single-turn diagnostic repair (A03).
-  - **A16 (Storage) Hybrid Architecture:** Addressed Codex's pnpm baseline; proved that local worktrees fail on mutable build caches (`dist/`) and OS watcher/process limits; proposed Tier 1 local pnpm + Tier 2 remote Cloudflare Sandboxes (CARE).
-  - **Converged Shortlist Recommendation:** `[A01, A03, A14, A16, A06, A10]`, treating A12 (quarantine/tokens) and A04/A09 (invariant probes/receipts) as foundational shared infrastructure.
-  - **Auxiliary Aplexer Protocol Lane:** Outlined idempotency key schema, delivery vs read vs agreement state separation, and safe SSH routing in `cloudflare-aplexer-protocol`.
+## 4. Round 4 Deliverables Summary
+- **`research/antigravity/evidence.md`**: Addressed Claude's blocking objection (relabeled E-A012..E-A016); incorporated E-A017 (pnpm 49.97% baseline), E-A018 (Artifacts no `filter`), E-A019 (full-loop radar latency 30-90s).
+- **`research/antigravity/round-4-challenge.md`**: Mission challenge (User Message 6 broad value exploration); A05 deconstruction; A14 preview strengthening; A01 latency reality check; A16 CARE remote sandboxes; retracted consensus label; proposed `[A01, A03, A14, A16, A06, A10]`.
 
 ---
 
-## 5. Durable Messages Log
+## 5. Round 5 Deliverables (Completed 2026-10-02)
+- **`research/antigravity/evidence.md` (Updated to Round 5)**:
+  - Added **E-A020**: HN 47520220 practitioner core objection to autonomous agent PRs ("And what stops it making total garbage that wrecks your codebase?"), proving necessity of automated contract-enforced invariant gating.
+  - Added **E-A021**: Operational constraint establishing agent tool turn duration (25-60s) vs edge asynchronous notification latency (30-90s), demonstrating out-of-phase feedback without turn boundary guards.
+- **`research/antigravity/round-5-challenge.md` (Authoritative Round 5 Challenge)**:
+  - **C5-1 (A01 Radar Latency Fallacy):** Micro-benchmarking bare object merges (<6ms) fails to reflect the 30-90s end-to-end edge pipeline (E-A019). Introduced **Vector-Guarded Turn Boundaries (VGTB)** to prevent stale-vector agent thrashing via synchronous pre-execution head checks.
+  - **C5-2 (A05 Commodity Redundancy vs A04 Elevation):** Demanded dropping A05: Best-of-N is commodity (Cursor/Agent HQ) and ignores the 25% concurrency judging criteria (multi-agent coordination on interdependent parts). Elevated **A04 (Contract-Enforced Invariant Probes / CIP)** with signed Git Notes receipts to formally gate merges and trigger A01's bounded single-turn repair.
+  - **C5-3 (A14 State & Data Isolation):** Mandated gating A14 strictly on ephemeral D1/KV namespaces and mock service bindings, as generic preview URLs are already an incumbent feature of Cloudflare Workers Builds and Vercel.
+  - **C5-4 (A16 Storage Architecture):** Proved local blobless sparse checkouts are dead due to Artifacts' lack of Git protocol `filter` support (E-A018) and Codex's 49.97% pnpm hardlink baseline (E-A017). Advanced **Cloudflare Artifacts Remote Execution (CARE)** as the sole surviving architecture.
+  - **C5-5 (A10 State Manifests in Git Notes):** Replaced expensive, non-portable transcript replays with cryptographic state manifests in Git Notes.
+  - **C5-6 (A06 Verification Receipts):** Mandated linking all narrative change-story claims to immutable Git Notes test receipts to eliminate reviewer anchoring and summary slop.
+  - **Kill-Test Execution Map:** Detailed a comprehensive execution matrix with hard kill dates (Oct 7-11) across all six candidates.
+  - **Protocol Idempotency Verification:** Confirmed that native `--idempotency-key` support remains safely isolated in `cloudflare-aplexer-protocol` and requires end-to-end SSH roundtrip tests before global adoption.
+  - **Lane & ZCode Execution Plan:** Defined Antigravity's role in guiding scoped ZCode executors (max 2 live workers, 2 GB disk budget, 60-90m bounded timeouts) for CIP or CARE prototyping.
+
+---
+
+## 6. Durable Messages Log
 - **Round 1:**
   - Sent: `A-R1-CHALLENGE-CLAUDE` (`01a0fde0-109b`), `A-R1-CHALLENGE-CODEX` (`01a0fde0-1c78`).
   - Handled: Orchestrator handoff (`01a0fdde-3579`), Codex consult (`01a0fdde-99c3`), Orchestrator storage pain (`01a0fddf-8abd`), Claude R1 response (`01a0fde1-68e4`), Codex R1 response (`01a0fde1-98e3`).
 - **Round 2:**
   - Sent: `A-R2-CHALLENGE-CLAUDE` (`01a0fde5-877e`), `A-R2-CHALLENGE-CODEX` (`01a0fde5-938b`).
 - **Round 3:**
-  - Handled: `01a0fde8-1398` from `desktop-orchestrator` (DIRECT-USER-POLICY-20261002). Replied via `01a0fde9-da06` and ACKed.
+  - Handled: `01a0fde8-1398` from `desktop-orchestrator`. Replied via `01a0fde9-da06` and ACKed.
   - Sent: `A-R3-CHALLENGE-CLAUDE` (`01a0fdeb-16d2`), `A-R3-CHALLENGE-CODEX` (`01a0fdeb-24fa`).
 - **Round 4:**
-  - Handled & ACKed inbound messages:
-    - `01a0fdec-099c-73d3-89ad-3490aec4ebe7` from `codex-principal` (reply to A-R2).
-    - `01a0fded-3087-7ff0-9da4-99bade9b7366` from `claude-principal` (reply to A-R3; evidence objection).
-    - `01a0fded-a2b0-7111-91e8-dace8218782c` from `codex-principal` (reply to A-R3; rejection of unratified consensus label, protocol requests).
-  - Outbound R4 Critiques:
-    - `A-R4-CHALLENGE-CLAUDE` (`01a0fdf1-20a1-7f92-91f0-611fbbe06084`): Dispatched to `claude-principal`.
-    - `A-R4-CHALLENGE-CODEX` (`01a0fdf1-2e87-78c1-819f-bfadaa9d9adf`): Dispatched to `codex-principal`.
+  - Handled & ACKed: `01a0fdec-099c` (Codex reply to R2), `01a0fded-3087` (Claude reply to R3), `01a0fded-a2b0` (Codex reply to R3).
+  - Sent: `A-R4-CHALLENGE-CLAUDE` (`01a0fdf1-20a1`), `A-R4-CHALLENGE-CODEX` (`01a0fdf1-2e87`).
+- **Round 5:**
+  - Handled & ACKed: `01a0fdf4-4498-7472-93ba-1553de845173` from `codex-principal` (ACKing pnpm baseline, agreeing A03 is recovery baseline, confirming unapproved status of working six, requesting protocol idempotency diff/SSH verification).
+  - Outbound R5 Critiques:
+    - `A-R5-CRIT-CLAUDE` (`01a0fdf6-7b99-71d3-a7bb-6ecf798cb374`): Dispatched to `claude-principal`.
+    - `A-R5-CRIT-CODEX` (`01a0fdf6-87fb-76d0-8436-2e89558c6cbc`): Dispatched to `codex-principal`.
 
 ---
 
-## 6. Decisions & Status
+## 7. Decisions & Status
 - **D-A01:** Replaced "CEIP Proofs" with Checkable Invariant Probes (CIP) backed by trusted runner cryptographic receipts in Git Notes.
 - **D-A02:** Rejected A07 (Maintainer quarantine) and A05 (Fork tournament) from shortlist due to zero buyer migration in OSS and commodity prior art.
 - **D-A03:** Elevated A16 (Storage) as Cloudflare Artifacts Remote Execution (CARE) into top shortlist to directly solve User Message 7.
 - **D-A04:** Retained A03 (Merged-State Gate) scoped strictly to single-turn bounded diagnostic repair rather than unconstrained re-derivation.
 - **D-A05:** Acknowledged peer evidence objections; updated evidence ledger E-A012..E-A016 with honest hypothesis statuses and incorporated E-A017..E-A019.
 - **D-A06:** Subsumed A12 (quarantine tokens) and A09 (receipts) as foundational platform plumbing rather than standalone candidate slots.
-- **D-A07:** Proposed unified 6-approach shortlist for Codex/Claude integration: **[A01, A03, A14, A16, A06, A10]**.
-- **D-A08:** Implemented native `--idempotency-key` in `cloudflare-aplexer-protocol` worktree to guarantee safe coordinate recovery across SSH retries.
-- **Current Milestone:** Round 4 independent challenge complete and published. Dispatched durable R4 critiques to Claude and Codex. Awaiting bilateral response and preparation for post-consensus ZCode team guidance.
+- **D-A07:** Proposed unified 6-approach shortlist for Codex/Claude integration: **[A01, A14, A16, A04, A06, A10]**.
+- **D-A08:** Implemented native `--idempotency-key` in `cloudflare-aplexer-protocol` worktree; required isolated SSH testing before integration.
+- **D-A09:** Formulated Vector-Guarded Turn Boundaries (VGTB) to resolve A01's out-of-phase latency hazard ($T_{\text{loop}} \ge T_{\text{turn}}$).
+- **D-A10:** Formalized A14 gate strictly on ephemeral database/KV state isolation, rejecting generic preview URLs as insufficient differentiation.
+- **D-A11:** Committed to guided ZCode execution plan under strict RESOURCE-POLICY constraints (max 2 executors, max 2 GB disk, z.ai-first).
+- **Current Milestone:** Round 5 independent challenge complete and published. Dispatched durable R5 critiques to Claude and Codex. Awaiting peer responses and preparing for guided ZCode implementation spikes.
