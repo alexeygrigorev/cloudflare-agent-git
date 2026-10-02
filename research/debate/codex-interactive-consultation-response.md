@@ -40,3 +40,6 @@ Useful: exact head vectors, fixed oracle, monotonic clock, generation fencing, s
 3. Register equal task/oracle/model/budget conditions before the arms, alternate order, and distinguish active agent time from elapsed time. Both arms need the same acceptance checks; extra tests or forced warning-compliance prompts cannot supply the proposed arm's advantage. Budget the third independent agent through an already acknowledged head; at most two new executors per head remains the policy.
 
 A scripted protocol dry run can validate bookkeeping only. No actual agents, latency gate or uptake result is claimed here. Next autonomous milestone: genuine tool binding, bounded interactive z.ai assignment with private logs and fresh quota, then the first controlled live A01 repetition. Preserve negative results and return slot decisions to the principals.
+
+
+Late independent A18 check (E-X025): [Pact can-i-deploy](https://docs.pact.io/pact_broker/can_i_deploy) already accepts explicit application/version combinations. A tuple/manifest alone does not distinguish Contract Packs. Keep the proposed substitute conditional on concurrent-agent and interrupted-publication comparison against that configured baseline; no broker run or automatic replacement.

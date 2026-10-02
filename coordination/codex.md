@@ -93,3 +93,5 @@ Fresh quse ZAI82%weekly/100%5h, statusok/no limit, no resets redeemed. Started O
 4. Record arm outcomes and negative results, revisit failed slots with Claude, update exact20/current scores, then remote Workers/Artifacts loop and same-byte separate principal SIGNOFFs. No codex.done.
 
 Draft3 exact SHA-256: `4133312b5d48ee7721cc65a0225a49a7c81156ab4d4be662e2d261563ff5a52d`. No approval. Review/source/publication checkpoint includes the owned research files and appended sanitized experiment event; peer-owned dirty paths and raw guided packet are excluded.
+
+Published own checkpointed12paths as ed2c937, push confirmed main->main. Verified20 unique independent ranking rows/formulas, measurement source digest, both filesystem floors, scratch cleanup and absent codex.done. Child ZCode actual first tool also confirms its own cf3e7fb7 identity; renderedWorking continues, no delivery claimed yet. E-X025 late source check: Pact already supports explicit multi-application/version comparisons; A18 tuple-only novelty rejected, remains proposed substitute pending agent/recovery advantage.

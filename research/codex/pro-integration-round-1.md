@@ -31,3 +31,8 @@ A01 remains conditional, now framed around a reproducible counterexample rather 
 The existing seven-axis scores are independent v1 judgments, not updated measured rankings. A materially revised20 requires a new version and reassessment. Current shortlist draft is still unapproved; matching prior six IDs cannot substitute for review of these new findings. Pro arrival gate is now complete; source verification, actual-agent tests, corrected initial20, current digest and both explicit approvals remain open.
 
 New storage policy from heartbeat: no new installs/large clones; each bounded spike grows at most512MiB, stops below8GiB free, preserves existing worktrees. Our new same-oracle fixture is tiny and cleans its own directory. No new model executor launched.
+
+
+## Interactive continuation source checks
+
+E-X023/024/025 added to evidence.md: current Workers Previews baseline and local A14 negative control; Copilot exclusions capability/limitations; Pact's version-combination and environment-aware compatibility checks. These further constrain Pro4 replacement proposals and A14 novelty. Current rankings-round-2 and Codex compact-consultation response incorporate them. Raw remaining Pro citations are still not all independently verified; no completion or approvals inferred.

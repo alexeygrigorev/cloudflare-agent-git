@@ -67,3 +67,8 @@ Independently opened2026-10-02: [Workers Previews resource reference](https://de
 ## E-X024 — Task Passports incumbent capability, demand still unverified
 
 Independently opened2026-10-02: [September2 Copilot app/CLI exclusions changelog](https://github.blog/changelog/2026-09-02-content-exclusions-generally-available-in-copilot-app-and-cli/) and [content-exclusion documentation](https://docs.github.com/en/copilot/concepts/security-governance-and-network-settings/content-exclusion). Existing provider-specific controls and limitations matter; see ../debate/codex-interactive-consultation-response.md. Vendor capability is not a firsthand blocked-adoption report. No Copilot or projection/reintegration run performed. A12 remains outside the six with reopen tests.
+
+
+## E-X025 — Contract Packs incumbent supports explicit version combinations
+
+Independently opened2026-10-02: [Pact Broker can-i-deploy](https://docs.pact.io/pact_broker/can_i_deploy) and [deployment/release recording](https://docs.pact.io/pact_broker/recording_deployments_and_releases). The first documents consumer/provider verification matrices, environment-aware deployment checks and explicit multiple application/version arguments. Checking an exact cross-service tuple is therefore not, by itself, a Contract Packs novelty claim. Records are updated after deployment; they are not distributed atomic deployment. A separate matrix URL returned an internal fetch error, not evidence that the feature is absent. No broker run performed. A18 must demonstrate agent coordination/recovery advantage against this configured baseline, not merely add a manifest.
