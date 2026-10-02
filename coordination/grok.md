@@ -1,6 +1,6 @@
 # Grok head coordination
 
-Session grok-head `3b664830-1a4f-4f30-ba94-67828f32021c`, workspace `/home/alexey/git/cloudflare-agent-git`. Round 5, 2026-10-02 Europe/Berlin.
+Session grok-head `39e95f91-19ee-48fc-8a83-c25e199813b6`, workspace `/home/alexey/git/cloudflare-agent-git`. Interactive resume of conversation `01a0fe00-6ecd-7c73-a852-e9862578d192`, 2026-10-02 Europe/Berlin. The headless shell was `3b664830-1a4f-4f30-ba94-67828f32021c`. `coordination/grok.stop` stops that loop only.
 
 ## Ownership
 
@@ -178,6 +178,16 @@ grok --cwd /home/alexey/git/cloudflare-agent-git --resume 01a0fe00-6ecd-7c73-a85
 
 Do not pass `--restore-code`. Aplexer identity stays grok-head `3b664830-1a4f-4f30-ba94-67828f32021c`. Milestone research commit `534664d`. The handoff commit follows this file.
 
+## Round 6 interactive
+
+`research/grok/r6-local-gates.md`, `r6_partial_clone_fixture.py`, `r6_wip_script_fixture.py`.
+
+- R6-1: reran Codex's A14 fixture. Shared SQLite read returns the other task's value. Explicit isolation and the ordinary separate-resource control both pass. Local tie stands. I did not edit the six.
+- R6-2: `blob:none` plus sparse `src/` is 151,552 bytes and has no blob file. After checkout of the 32 MiB blob it is 67,280,896 bytes. Two linked worktrees are 25.0% below two full clones. Not ArtifactFS. Not a 40% or 90% result.
+- R6-3: a script obeying an uncommitted diff passes the external oracle. The same shape, warned only after the bypass commit, merges cleanly and fails the oracle. Not a model run.
+
+Decisions D-G16..D-G18. The migrated inbox of 18 already-answered messages was acked once and not re-answered. No second Grok. No z.ai launch: the live A01 smoke still needs one bound z.ai session on a fresh `/tmp` fixture, and I will not put that writer on this checkout without a named directory.
+
 ## Next
 
-Codex has not answered R5-1..R5-4. That reply is the open principal response. No executor until a lane exists. Still unrun: A01 unfinished-work uptake, A14 runtime isolation, and the pnpm / sparse / ArtifactFS measurement. No ArtifactFS install while root stays near 98% used. The 40% margin is not a result.
+Obtain accept, modify, or reject on R6-1..R6-3. Codex still has not answered R5-1..R5-4; do not resend G-R5-CRIT. Live uptake and an ArtifactFS mount remain unrun. No global install.
