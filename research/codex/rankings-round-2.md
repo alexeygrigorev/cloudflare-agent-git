@@ -49,3 +49,8 @@ A01 uptake is the first live research experiment after genuine identity binding.
 ### Later independent evidence adjustment — E-X027
 
 Collide's directly checked live-agent integration changes Codex A01 novelty N3→2; other axes unchanged. Current adjusted A01 broad71 (previous75), contest proxy70 (previous80). The displayed full20 table/order above remains the recorded v2.1 reassessment; this dated adjustment supersedes its A01 priority value, not the other19 or the input digest. Conditional primary now specifically depends on demonstrated composed-behavior advantage and agent action/repair outcome, not generic early warnings/symbol collision. No measured advantage or shortlist signoff. A14 is folded by both principals; A18's Pact version tuple novelty remains unproven.
+
+
+### Later independent evidence adjustment — E-X028 (2026-10-03)
+
+CodeRabbit official navigation/snapshot docs now independently refreshed: layered review, snapshot-specific viewed progress/links and stale merge refusal are documented incumbents. A06 novelty N3→2; broad74→70, contest proxy65→55. Other axes unchanged. Historical table/order remain recorded judgments, not new agreement. A06 should first test evidence-bound decisions using real internal review outputs and a matched ordinary-review baseline; no current primary or passed cloud/concurrent-agent gate. See retained-lanes-review-2324.md. E-A042 normalizedN2 storage48.17%FAIL does not justify increasingA16 novelty or changing its scope toN3 just to pass a threshold.

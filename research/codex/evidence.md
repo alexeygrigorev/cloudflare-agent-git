@@ -82,3 +82,12 @@ Opened2026-10-02: [Magit article](https://emacsredux.com/blog/2026/09/02/working
 ## E-X027 — Collide documented live-agent integration (2026-10-02)
 
 Primary source https://collidemcp.com fetched directlyHTTP200 after web-reader failure. It describes agent intent/collision/edit hooks and live in-flight dependency awareness; its reported47% reduction measures tokens, not collision precision/repair effort. No vendor performance reproduced. It advertises an MIT plugin at https://github.com/lithometric/collide-plugin, but primaryAPI https://api.github.com/repos/lithometric/collide-plugin returned404 in this check; source/license availability unresolved. Generic early-warning novelty is rejected. Composed behavioral checks over two unfinished trees remain a hypothesis to compare, not a capability absence inferred from marketing. Bunny's further study claims are peer-reported until independently checked.
+
+
+## E-X028 — A06 review navigation and freshness incumbent (2026-10-03)
+
+Official [CodeRabbit navigation](https://docs.coderabbit.ai/change-stack/navigation) and [snapshots/freshness](https://docs.coderabbit.ai/change-stack/snapshots) independently opened. Documented layered review, snapshot-specific read progress/links, retained review-run/head material and stale merge refusal. No performance reproduced. Inference: our generic review grouping, remembered review state and exact-head freshness are not standalone novelty; compare evidence-bound decisions and effort. A06 independent novelty reduced in retained-lanes-review-2324.md. This is vendor capability evidence, not new user-pain prevalence.
+
+## E-X029 — Build provenance source refresh and A10 limitation (2026-10-03)
+
+Official [GitHub artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations) independently opened: build provenance is an existing primitive; inference, it is not behavioral acceptance. Entire resume docs refresh at https://docs.entire.io/guides/sessions/resume-sessions returned reader internal error; narrow official-domain search empty. Does not establish competitor absence/defect. Retain Pro3/Claude baseline requirement without falsely presenting this as fresh verification.
