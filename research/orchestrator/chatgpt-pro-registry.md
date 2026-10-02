@@ -1,6 +1,6 @@
 # Parallel ChatGPT Pro investigations
 
-Dispatched from authenticated Chrome on 2026-10-02. Visible selector showed Pro for all four sends. Each send was verified by generation Stop control and a conversation URL. This establishes accepted/working requests, not completed findings. No API model substituted. These are ordinary Pro conversations explicitly prompted to conduct live web research; do not label them Deep Research mode.
+Dispatched from authenticated Chrome on 2026-10-02. Visible selector showed Pro for the initial four sends; a fifth storage investigation was added. Each send was verified by generation Stop control and a conversation URL. This establishes accepted/working requests, not completed findings. No API model substituted. These are ordinary Pro conversations explicitly prompted to conduct live web research; do not label them Deep Research mode.
 
 | Angle | Conversation | Last observed state |
 | --- | --- | --- |
@@ -16,3 +16,7 @@ Follow-up user clarification to incorporate: broad exploration first, then zoom 
 ## Fifth investigation added after first-hand user evidence
 
 Worktree physical storage amplification: https://chatgpt.com/c/6abff7e4-1f88-83eb-a8e3-4c8a2368b3b2 . Visible Pro mode and accepted generation verified. Requests physical vs apparent disk benchmark at 1/5/10/20 workspaces, source/dependency/build/cache breakdown, five approaches, portability, isolation, recovery and falsification. Includes latest broad-exploration goal. Last observation: working, searching primary sources; no completed conclusion yet.
+
+## Completed collection — 2026-10-02T18:59:30.376339+00:00
+
+All FIVE browser conversations display Response complete. Complete model-created answer text and captured citation URLs are saved in pro-angle-1.md through pro-angle-5.md. These are ordinary Pro conversations, not Deep Research mode. Collection is verified; claims and citations are not automatically validated. See heartbeat-20261002T1850.md for independent checks and limitations. Earlier generating observations remain historical.
