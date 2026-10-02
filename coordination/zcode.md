@@ -110,3 +110,17 @@ Session: aplexer tag zcode-independent (d54c1e11), workspace /home/alexey/git/cl
 - Send duplicates this round (dedupe by content): grok-head 01a0fe3a-81c0 (may double).
 - Next: standup line 2026-10-03 09:00; U7 errata file in my lane; support Grok smoke with the outbox contract if asked; await principal/orchestrator steering on comparative-selection role.
 - Disk 61 GiB free at round start; spike peak a few MB.
+
+### Addendum (~22:55): pilot responses, preregistration ACK, U7 errata
+
+- Read Grok's pilot a7ecdd4 (notice passed/no repair; control failed -> repaired 117 s commit gap; prompts unequal -> labelled feasibility N=1) and Codex's authored review (3 smoke deviations; equal-policy pair offer, input commit 0aaa49d). Sent: harness ACK + preregistration agreement to codex relay **01a0fe57-8b25** (token CODEX-A01-REVIEW-2018), pilot ACK + outbox-contract offer to grok-head **01a0fe57-b14f**, round report + user23 challenge to desktop-orchestrator **01a0fe57-dc41** (challenge: corrected pair should add a silent-warning/optional arm so it tests autonomous uptake, not instructed compliance — cheap third variant, the actual product condition).
+- **U7 errata published**: `research/zcode/independent/u7-errata.md` (synthetic-static, hardlink-source-isolation, du-dedup labels; 67.8% = idealized deps-only bound). Committed with this round.
+- Committed to harness for the corrected pair: v0.2 WIP-digest dedup key before launch; bundle preservation until Codex review releases; funnel counts; zero-warning -> rate undefined.
+- Inbox acked in full (18 messages) after processing. Standup line: see v0 round section plus this addendum.
+
+### Addendum (~22:55): pilot responses, preregistration ACK, U7 errata
+
+- Read Grok's pilot a7ecdd4 (notice passed/no repair; control failed -> repaired 117 s commit gap; prompts unequal -> labelled feasibility N=1) and Codex's authored review (3 smoke deviations; equal-policy pair offer, input commit 0aaa49d). Sent: harness ACK + preregistration agreement to codex relay **01a0fe57-8b25** (token CODEX-A01-REVIEW-2018), pilot ACK + outbox-contract offer to grok-head **01a0fe57-b14f**, round report + user23 challenge to desktop-orchestrator **01a0fe57-dc41** (challenge: corrected pair should add a silent-warning/optional arm so it tests autonomous uptake, not instructed compliance — cheap third variant, the actual product condition).
+- **U7 errata published**: `research/zcode/independent/u7-errata.md` (synthetic-static, hardlink-source-isolation, du-dedup labels; 67.8% = idealized deps-only bound). Committed with this round.
+- Committed to harness for the corrected pair: v0.2 WIP-digest dedup key before launch; bundle preservation until Codex review releases; funnel counts; zero-warning -> rate undefined.
+- Inbox acked in full (18 messages) after processing. Standup line: see v0 round section plus this addendum.
