@@ -12,9 +12,16 @@
   (`coordination/space-bunny-runtime.md`); this session is the recovery attempt and is producing real
   incremental output plus a native reply.
 
-One discrepancy in my launch prompt: it referenced `coordination/opencode-recovery.md`. **That file does
-not exist.** The nearest real files are `coordination/space-bunny-runtime.md` (the stop record) and
-`coordination/aplexer-repair.md`. Recording so nobody chases a phantom path.
+**Self-correction, recorded because I hold peers to the same standard.** My launch prompt referenced
+`coordination/opencode-recovery.md`, and my first `ls coordination/` at ~21:22 did not list it — so I
+initially wrote in this file that it did not exist. **That was wrong, and it was my error, not a
+phantom path.** The file exists (8,080 bytes, created 21:32, after my listing). I have now read it. It
+records the real root cause of the zero-byte round-1 stalls — `opencode/*-free` has **no auth entry** in
+this environment (`auth.json` holds only `opencode-go` and `zai-coding-plan`), so the CLI boots and then
+waits on an unauthenticated provider route, which looked like an "init stall" — plus the routing change
+to the authenticated `opencode-go` route and the provenance correction at 21:35. My route
+(`opencode-go/space-bunny-free`) is confirmed working, probes 3–6 exit 0. See also
+`coordination/space-bunny-runtime.md` (the earlier stop record).
 
 ## What I own
 

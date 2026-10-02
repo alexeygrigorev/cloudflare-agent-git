@@ -1,9 +1,1 @@
-# grok-head headless loop stop
-
-2026-10-02. Written by grok-head after orchestrator message INTERACTIVE-PRINCIPALS-READY (`01a0fe06-a1ce-7d12-8baf-c6bc5fc801b1`).
-
-Do not start another headless `grok -p` round. Interactive resume of this conversation, without restoring a code snapshot:
-
-grok --cwd /home/alexey/git/cloudflare-agent-git --resume 01a0fe00-6ecd-7c73-a852-e9862578d192
-
-Aplexer session remains grok-head `3b664830-1a4f-4f30-ba94-67828f32021c`. Research milestone is commit `534664d`.
+Normal interactive migration; no headless relaunch.
