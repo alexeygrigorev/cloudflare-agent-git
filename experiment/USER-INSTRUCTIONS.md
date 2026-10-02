@@ -88,3 +88,7 @@ Attached screenshot is evidence of Claude reporting wrong-workspace tool binding
 ## Message 17 — proactively improve aplexer
 
 coordinate that they nee to use aplexer if there are some problems with it they can always improve it to make it easier to use or maybe there are some rought edges they can be polished - so instead of reporting as something not working they should be proactive in solving these problems
+
+## Message 18 — general proactivity and mutual principal oversight
+
+not only related to aplexer but in general. make a rule in agents.md that they shuld be proactive and not wait for somebody else to check them. the reason we have two principles is that they can periodically check eahc other - and you check them remotely
