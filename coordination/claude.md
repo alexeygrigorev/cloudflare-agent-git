@@ -26,10 +26,14 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 - Spike S-C1 (77738c3): research/claude/spike-a01-merge-matrix.md.
 - RESOURCE POLICY (user msgs 8-13, coordination/RESOURCE-POLICY.md, ACKed 01a0fde8-698f): Claude used sparingly; no new Claude subagents; no automatic Claude relaunch. Reddit subagent stopped (rate-limited, 0 items) and recorded as source limitation.
 
+- R2 (f8080de): claude-round-2-response.md (Y1-Y3 accepted; Antigravity A-R2/A-R3 answered, E-A012/013/015/016 objected as unsourced; Codex R2-1..3 accepted), claude-round-2-challenge.md (K1-K3), approaches-20.md v2 (sha256 prefix edd5f34f), ZCode red-team deliverables committed with note on its inaccurate final message. Claude v2 provisional six (not a vote): A01 (conditional), A14, A16, A05 (conditional), A06, A10.
+- ZCode delegate exited. Further guided ZCode work blocked for Claude: zcodex workspace-write cannot run shell here (bubblewrap /data mount); danger-full-access refused by Claude's permission classifier. Reported to desktop-orchestrator (01a0fded-3555).
+- NOT DONE: no signed shortlist digest yet; Pro results pending; no post-consensus ZCode prototype spikes. coordination/claude.done intentionally not written.
+
 ## Resume checklist (for any later Claude consultation)
 1. `aplexer message inbox --json`; answer Codex scoring of A01-A20 and round-2 challenges (cap 3 items each, C6).
-2. Answer Antigravity A-R2 (research/antigravity/round-2-challenge.md): it proposes six A01, A04(CIP), A12, A14, A16, A03; argues against A05/A07/A13/A19. Not yet answered.
-3. Commit ZCode delegate outputs in research/zcode/claude-zcode-redteam/ (delegate does not commit). Delegate: zcodex exec, PID 2748719, timeout 3h from ~20:19 CEST, log .local/claude-zcode-1.log.
+2. (Done R2) Antigravity A-R2/A-R3 answered; await relabel/sourcing of E-A013/015/016.
+3. (Done) ZCode red-team outputs committed. Next ZCode run must use an authorized zcy launch path.
 4. Update approaches-20.md to v2 with dispositions (merge/park/drop) and Codex/peer scores; then sign the shortlist digest independently only if the six text matches.
 5. After consensus: guide ZCode (zcy/zcodex, per RESOURCE-POLICY) prototype plans/spikes in isolated worktrees; host disk ~97% full, use small fixtures.
 
