@@ -12,7 +12,9 @@ All timestamps: milliseconds from one monotonic clock on the harness host. Cross
 run_start      {run_id, protocol_version, fixture_id, harness_rev, agents[], seed_pairs[]}
 push_observed  {run_id, agent_id, sha, parent_sha, ts_push_observed, branch}
 emit           {warning_id, run_id, base_sha, head_vector, pair[], failing, oracle_id,
-                test_digest, ts_emitted, generation}
+                test_digest, ts_emitted, generation,
+                wip_basis: {kind: uncommitted_diff|intermediate_commit|declared_intent,
+                            artifact_ref}}
 deliver        {warning_id, ts_delivered, channel}            // endpoint accepted it
 consume        {warning_id, ts_consumed, agent_id, vector_current: bool}
 agent_action   {warning_id, run_id, agent_id, action, ts_action_started, ts_action_ended,
@@ -26,6 +28,7 @@ run_end        {run_id, ts}
 - **base/head vector** = `base_sha` + ordered `head_vector` `[{agent_id, fork, sha}]`. Every notice is scoped to one exact vector; consumers must echo it back. A notice whose vector no longer matches observable heads at action time is stale (see §3), and its handling is logged, never silently retried as fresh.
 - `failing` ∈ {textual, combined_build, combined_behavior}; `oracle_id`/`test_digest` pin the exact harness so a verdict is replayable (base/A/B/combined under the same suite, per E-X020 discipline; the synthetic counterpart is codex/interaction-fixture.py, which this protocol does not modify).
 - `wasted_work_seconds`: agent work-time accrued after the interaction came into existence and before the agent adjusted — the quantity the plain-worktree comparator cannot reduce.
+- **Unfinished-WIP derivation constraint** (rev 2, 2026-10-02, per Antigravity A-R8-REVIEW-ZCODE; grounds: arXiv 2609.25396 measured recovery only on completed-change messages, Grok R5-2): every warning must be derived from in-flight WIP evidence — uncommitted changes, intermediate commits, or the agent's declared plan/intent — and `emit.wip_basis` records which. A fixture whose warnings materialize only after both patches complete measures the STALE completed-change oracle, not R2-1 live uptake; such runs do not satisfy this protocol's uptake gate. Uptake results may be stratified by `wip_basis.kind`, never pooled across kinds without saying so.
 
 ## 2. Latency accounting (Y1)
 
@@ -56,7 +59,7 @@ A01 passes the comparative gate only if the live arm shows **earlier effective a
 ## 6. Procedure (per repetition)
 
 1. `run_start`; launch 3 agents on distinct tasks incl. one seeded interaction pair; baseline tasks keep all agents independent.
-2. Agents work normally; harness observes pushes (`push_observed`), builds candidates, runs base/A/B/combined with the pinned oracle, emits/delivers warnings per §1.
+2. Agents work normally; harness observes pushes (`push_observed`), builds candidates, runs base/A/B/combined with the pinned oracle, emits/delivers warnings per §1 — each warning derived from unfinished-WIP evidence per the §1 constraint, not from completed patches only.
 3. Record consume/action/outcome events; apply fences on any crash/restart.
 4. Repeat until ≥10 pushes and ≥1 interaction pair realized; keep raw JSONL private; publish the sanitized roll-up (medians, p95, uptake table, wasted-work comparison, failures).
 5. State every deviation from this protocol in the roll-up; unrecorded deviations invalidate the run's gate claim.
