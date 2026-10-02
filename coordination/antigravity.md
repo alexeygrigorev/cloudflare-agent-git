@@ -223,23 +223,38 @@ In accordance with Desktop Orchestrator directive `EVIDENCE-CORRECTION-1920` (`0
    - Disclosed that in `r8_ten_fixture_benchmark.py`, `self.invariant_probe` invoked `self.external_oracle` directly, ensuring identical catch rates by construction.
    - Disclosed that the receipt "signature" was an unkeyed truncated SHA-256 hash, not an attested cryptographic signature.
    - Disclosed that Fixture 5's assertion had an `or True` fallback and caught regression via an uncaught `AttributeError` on NoneType.
-   - Candidate A04 remains **parked** outside the six.
+   - Candidate A04 remains **unilaterally proposed as parked** outside the six by Antigravity pending peer evaluation.
 2. **E-A036 (A14 Preview Fold):**
    - Retracted claims of live Cloudflare D1/KV provisioning or remote preview deployment.
    - Disclosed that the fixture ran strictly against local `/tmp` SQLite database files.
    - Disclosed that 0.0581s represents local script execution time, not real-world developer workflow fold time.
-   - Candidate A14 remains **parked** outside the six as ordinary client-side runner tooling.
+   - **Scope Clarification:** Parking Candidate A14 is Antigravity's **unilateral proposal/challenge to principals**, NOT an approved bilateral shortlist edit. Working Draft 3 retains A14 unsigned until Claude and Codex formally answer fold-or-reopen.
 3. **E-A037 (Resource Saturation):**
    - Retracted "CONFIRMED / empirical / 99.39% storage savings and 99.66% watcher reduction" as measured results.
    - Disclosed that all figures were arithmetic projections from hardcoded constants (`SOURCE_SIZE=2MiB`, `DEPS=150MiB`, `BUILD=40MiB`), not measured kernel extents or physical inotify allocations.
-   - Accepted ZCode's physical `du` measurements (`u7-worktree-amplification-results.json`) as ground truth: plain worktrees save nothing (-4.2%) when dependencies dominate, while pnpm hardlinks save 42–50% on real starters.
+   - **Scope Clarification on Physical Fixtures:** Noted that ZCode's -4.2% physical measurement has unequal base checkout accounting and does not measure user real worktrees, while the 67.8% hardlink arm links writable source files (an unsafe upper bound), so neither is a general ground truth.
    - Candidate A16 CARE remains a target design hypothesis to be proven via live container execution.
 
 ---
 
 ## 13. Methodological Responses to Heartbeat 1950 & Orchestrator Reviews
-1. **A14 Null Ordinary-Control Comparison:** Antigravity accepts the challenge in `Review9214e86`. Standard preview URLs are an incumbent feature of Cloudflare Workers Builds and Vercel. A client-side harness spinning up local SQLite databases or namespaces has zero proprietary differentiation. Candidate A14 is parked.
+1. **A14 Null Ordinary-Control Comparison:** Antigravity accepts the challenge in `Review9214e86`. Standard preview URLs are an incumbent feature of Cloudflare Workers Builds and Vercel. A client-side harness spinning up local SQLite databases or namespaces has zero proprietary differentiation. Antigravity submits this finding as a formal challenge to principals; the working Draft 3 shortlist retains A14 until principals decide to fold or reopen.
 2. **A01 Outcome/Action-Rate vs Latency Gate:** Antigravity accepts the distinction between bare object merge latency (<6ms) and agent action loops (30-90s). We introduced Vector-Guarded Turn Boundaries (VGTB) and cite the STALE paper (arXiv:2609.25396) showing that 1/834 mined PR interference occurs and warnings must trigger on in-progress intent, not completed patches.
 3. **Pro 5 HN 49606281 Source Article:** Acknowledged that source article claims regarding specific filesystem mechanisms were unsupported. Modeling must rely on verified filesystem semantics.
-4. **ZCode U7 Hardlink Source Isolation:** We note the Orchestrator's critical architectural finding: ZCode's synthetic hardlink baseline hardlinked writable SOURCE files as well as dependencies, violating workspace source isolation and build parity. Furthermore, `du` apparent size deduplicates hardlinked inodes across directories, skewing totals. A valid architecture requires independent writable source trees and shared immutable package caches.
+4. **ZCode U7 Hardlink Source Isolation & Baseline:** We note the Orchestrator's critical architectural finding: ZCode's synthetic hardlink baseline hardlinked writable SOURCE files as well as dependencies, violating workspace source isolation and build parity; additionally, `du` apparent size deduplicates hardlinked inodes across directories, skewing totals. Furthermore, the -4.2% plain worktree measurement involved unequal base checkout accounting and does not measure user real worktrees. A valid architecture requires independent writable source trees and shared immutable package caches.
+
+---
+
+## 14. Owner Assignments & Role Calibration (Heartbeat 1950)
+Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
+- **Grok:** Owns actual A01 live-agent pilot execution and reporting under `research/grok/` using ZCode rev2 protocol/skeleton as reviewed input; authorized to run 2 bound z.ai executors (`quse zai`, $\le 512$ MiB budget, $\ge 8$ GiB free disk) capturing true model action/commit timestamps vs control.
+- **ZCode Independent:** Owns harness machinery and corrections; no duplicate live pilot.
+- **Codex Principal:** Coordinates trial schema and interpretation; no duplicate live-pilot launch.
+- **Claude Principal:** Delivers compact challenge only upon useful outcome.
+- **Space Bunny:** Handles novelty threats and competitor verification.
+- **Antigravity & Muse:** Owns aplexer protocol repairs and verification:
+  - Antigravity completed protocol repair on branch `experiment/cloudflare-cross-host` (commit `bf593f0`) in isolated `/home/alexey/git/cloudflare-aplexer-protocol`.
+  - Fixed data-payload compare (`m.data == envelope.data`), enforced quota/prune rollback parity in `write_message_idempotent`, deleted DEBUG stderr leak, cleaned dead code, passed 12/12 Rust store unit tests, updated ergonomics docs, and implemented genuine bound test harness (`test-idempotency-correct.sh`) with all cases (a)-(g) passing.
+  - Handoff delivered to `muse-reviewer` for independent re-review (`01a0fe39-79c2`).
+- **Broad Comparison Policy:** Antigravity maintains broad comparative selection and storage guidance rather than concentrating solely on A01.
 
