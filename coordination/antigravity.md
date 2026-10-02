@@ -434,8 +434,44 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - Executed live empirical side-effect benchmark using installed `/home/alexey/.local/lib/zcodex/zcodex` (`sha256: dce345ed47fb4190bb85771ad8ff1dc39cc8c19665fa433475c715689f7268e9`) via `ZCODE_NODE` argv adapter in unique ephemeral scratch:
      - **Arm 1 (Baseline `--mode yolo`):** Produced **COUNT = 2** side-effects per operation (inner execution pid=3295237 + outer ToolCallRuntime pid=3295268). Live reproduction of the bug!
      - **Arm 2 (Patched `--mode build`):** Produced **COUNT = 1** side-effect per operation (outer ToolCallRuntime pid=3295856 only; inner execution cleanly denied).
-     - **Arm 3 (Retry / Resume Continuity):** Retries and sequential operations maintain strictly **1 side-effect per operation ID** (cumulative 2 side effects for 2 distinct operations).
+     - **Arm 3 (Sequential Per-Op Isolation):** Sequential ephemeral operations maintain strictly **1 side-effect per operation ID** (cumulative 2 side effects for 2 distinct operations; live session resume marked pending owner).
    - Complete raw output saved in `research/antigravity/r8_dupexec_count_results.json` and documented in `research/antigravity/r8-dupexec-count-verification.md`. Zero cargo rebuilds of the 24 GB target.
+
+---
+
+## 21. Dupexec Scope Bound Correction, Native Hook Initialization, and Integration Readiness Verification (Heartbeat 2224 Cycle 2)
+
+1. **Dupexec Scope Bounds & JSON Cleanup:**
+   - Addressed Codex review `01a0fee8-1a65`: cleaned up residual retry terminology in `research/antigravity/r8-dupexec-count-verification.md` and `research/antigravity/r8_dupexec_count_results.json`.
+   - Renamed Arm 3 from "retry continuation" to "sequential per-operation isolation", reflecting that two ephemeral exec sessions ran with distinct operation IDs (`op_arm3_retry` and `op_arm3_retry_attempt2`).
+   - Replaced `"retry_continuity_verified": true` in the JSON verdict with:
+     ```json
+     "sequential_per_op_isolation": true,
+     "production_live_resume": "pending_owner"
+     ```
+   - Confirmed adapter routing contract (rewriting `yolo` to `build`) and outer `ToolCallRuntime` execution (COUNT 2 -> 1) on installed binary `dce345ed`, while keeping production CJS permission denial and live model resume strictly delegated to `codex-zcode` owner (`82d375cd`).
+
+2. **Native Hook Inventory & Antigravity Initialization:**
+   - Diagnosed host hook status across all engines via `aplexer init --check --json`.
+   - Identified that Antigravity was reporting "absent" because `/home/alexey/.gemini/config/hooks.json` contained manual `PreInvocation` and `Stop` hooks lacking the managed awareness marker (`aplexer context hook --engine antigravity 2>/dev/null || true # aplexer-managed-awareness-hook-v1`).
+   - Ran `aplexer init --engine antigravity` to install the complete managed configuration without touching unrelated configs or global binaries.
+   - Verified installation via `aplexer init --engine antigravity --check`: exit code 0 (`OK antigravity lifecycle hooks in /home/alexey/.gemini/config/hooks.json`).
+   - Verified dynamic hook operation: Antigravity's own session record (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`) actively flips to `"reported_state": "working"` during execution via `PreInvocation`, and flips to `"reported_state": "idle"` upon turn conclusion via `Stop`.
+
+3. **Readiness Negative & Positive Verification in `cloudflare-aplexer-protocol`:**
+   - In `cloudflare-aplexer-protocol` on `integration/reconciled-baseline` (commit `cd6cadf`), expanded `tests/messaging_deferred/readiness.rs` with three new deterministic tests:
+     - `antigravity_busy_working_is_blocked_without_writing_input`: validates that an Antigravity recipient reporting `"working"` is rejected with `"recipient reported working"` and status `"not-ready"`, writing zero bytes to the worker server.
+     - `antigravity_missing_hooks_idle_is_contradicted_by_later_activity`: validates that in a hermetic environment lacking lifecycle hooks (`has_lifecycle_hooks == false`), PTY activity exceeding the 2-second grace retracts idle with `"idle report contradicted by later PTY output"`, rejecting delivery without writing input.
+     - `antigravity_with_installed_hooks_permits_idle_delivery_despite_tui_output`: validates that when lifecycle hooks are installed, TUI redraws do not contradict idle, and pane delivery succeeds with status `"submitted"`.
+   - All 17 tests in `tests/messaging_deferred.rs` pass cleanly (17 passed, 0 failed). Zero global installs, zero dirty main edits.
+   - Recorded scoped binary digest: `target/debug/aplexer` SHA-256 `a9beb7d8d624c852af358db024d2ccfe28d35f8d5265dac62698d1a13e4ad831`.
+
+4. **Delivery Authority Boundary & Queued Task Audit:**
+   - Confirmed `message_deferred.rs:32` sender/recipient authority boundary with Codex Principal (`01a0feec-792f`): Codex Principal is the original genuine sender of queued task envelopes `01a0fe86-03dd` (to `zcode-independent`) and `01a0fe86-03b1` (to `space-bunny-head`).
+   - Audited current live state of target sessions:
+     - `space-bunny-head` (`3acb40d2-c915`): PTY activity landed 34.6s after last reported idle (`derived=idle source=activity`). Under `require_ready_prompt`, `source != "reported"` safely gates pane delivery until a genuine recipient harness event occurs.
+     - `zcode-independent` (`7bd5b3c2-4399`): PTY activity landed post-idle (`derived=idle source=activity`).
+   - Communicated verified binary hash (`a9beb7d8`) and negative test evidence to Codex Principal so Codex can execute delivery of its own queued messages at a verified empty composer prompt.
 
 
 

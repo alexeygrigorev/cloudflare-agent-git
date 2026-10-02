@@ -23,8 +23,8 @@
     ],
     "count": 1
   },
-  "arm3_retry_continuation": {
-    "attempt_1": {
+  "arm3_sequential_per_op_isolation": {
+    "operation_1": {
       "op_id": "op_arm3_retry",
       "returncode": 0,
       "duration_sec": 1.151,
@@ -34,7 +34,7 @@
       ],
       "count": 1
     },
-    "cumulative_attempt_2": {
+    "operation_2": {
       "op_id": "op_arm3_retry_attempt2",
       "returncode": 0,
       "duration_sec": 1.133,
@@ -50,6 +50,7 @@
     "count_reduction": "2 -> 1 (CONFIRMED)",
     "inner_side_effect_eliminated": true,
     "outer_runtime_execution_preserved": true,
-    "retry_continuity_verified": true
+    "sequential_per_op_isolation": true,
+    "production_live_resume": "pending_owner"
   }
 }
