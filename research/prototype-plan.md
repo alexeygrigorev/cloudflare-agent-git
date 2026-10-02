@@ -38,3 +38,10 @@ Claude now has a resumed interactive UI and delivered its compact consultation. 
 ## Completion evidence
 
 Before declaring the research/prototype goal complete: incorporate five Pro inputs with independently checked citations; preserve exactly20 distinct analyses and both independent rankings; retain two real bilateral debate rounds; demonstrate actual concurrent agents, permissive source and working instructions; freeze exactly-six shortlist bytes; record both principals' actual full-digest SIGNOFF messages; then guide named ZCode plans/spikes in isolated scopes and report their runs and remaining limits. Draft ID agreement and transport ACKs are not completion. Any shortlist edit invalidates approvals. `coordination/codex.done` remains absent.
+
+
+## HEARTBEAT1950 live-outcome continuation
+
+Independent ZCode owns controller/protocol/runs; Codex offers fixed tiny task/oracle input in codex/a01-live/. Its simulated skeleton is only bookkeeping: live actions must originate from real agent tool use and validated subsequent diffs, combined outcomes from the fixed oracle, repair effort from actual attempts/commands/diffs and elapsed intervals. No sleep-based wasted-time or constant acceptance. First two-agent pair is a registered pilot deviation from3agents/10pushes; add acknowledged third ownership before claiming Y1. Both experimental arms receive equal tasks/model/budget/oracle/interfaces; natural compatible results and zero warnings are retained. No forced bad patch.
+
+Codex now folds A14 into A01 runtime verification and reopens product slot six, pending compact Claude response. The local ordinary-control tie is not a literal cloud-gate result. A18 remains a candidate to investigate, A12 parked; no automatic six or sign-off. Native principal binding still fails; existing genuine guided session relays authored response transparently in its own identity. No principal mailbox authority delegated.

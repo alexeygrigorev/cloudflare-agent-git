@@ -1,10 +1,10 @@
-# Six approach working draft — not approved
+# Shortlist selection draft — sixth slot reopened, not approved
 
-Version: Codex draft 3 (interactive consultation and incumbent comparison), 2026-10-02. Input: Claude approaches-20 v2.1 SHA-256 `7f6eea8a975b4cfa113b9a424b1934564dedc5be97730ccebfa63a60422246c3`, independent Codex rankings-round-2 and two bilateral debate rounds. Exactly six working candidates: **A01, A14, A16, A05, A06, A10**. No candidate has passed the real concurrent-agent Workers/Artifacts gate. Neither principal has approved this file/digest. All five Pro outputs have arrived; first mapped integration and primary-source checks are in codex/pro-integration-round-1.md, with remaining citation checks pending. This is a falsifiable integration draft, not final consensus.
+Version: Codex draft 4 (A14 folded, sixth slot reopened), 2026-10-02. Input: Claude approaches-20 v2.1 SHA-256 `7f6eea8a975b4cfa113b9a424b1934564dedc5be97730ccebfa63a60422246c3`, independent Codex rankings-round-2 and two bilateral debate rounds. Five retained research hypotheses: **A01, A16, A05, A06, A10**. **Slot six is reopened**; A14 is folded into A01 verification, not a sixth independent product. This is Codex's new disposition pending Claude's focused response. The eventual exactly-six feasible shortlist requirement is not yet met; no placeholder is counted as viable. No candidate has passed the real concurrent-agent Workers/Artifacts gate. Neither principal has approved this file/digest. All five Pro outputs have arrived; first mapped integration and primary-source checks are in codex/pro-integration-round-1.md, with remaining citation checks pending. This is a falsifiable integration draft, not final consensus.
 
 ## Recommendation and shared rules
 
-Conditional contest primary: **A01 Live Integration Radar**, narrowed to high-overlap tasks; reverse if actual WIP warnings do not change live agent work, or full-loop latency fails. Next discriminating experiment is A01 live uptake. A14's local isolation comparison ties the ordinary control; its slot remains at risk and folding into A01 verification is proposed, pending peer review. A16 remains active because U7 is direct user pain, with existing pnpm sharing as the baseline. This keeps long-term value separate from prospective contest scores; all 20 survive in approaches-20.md with dispositions. [Compact consultation response](debate/codex-interactive-consultation-response.md) addresses A12/A18 substitutions without approving either.
+Conditional contest primary: **A01 Live Integration Radar**, narrowed to high-overlap tasks; reverse if actual WIP warnings do not change live agent work, or full-loop latency fails. Next discriminating experiment is A01 live uptake. A14's local isolation comparison ties the ordinary control; Codex folds that mechanism into A01 and reopens its selection slot, pending focused Claude review. This is not proof the full cloud ten-minute workflow gate ran. A16 remains active because U7 is direct user pain, with existing pnpm sharing as the baseline. This keeps long-term value separate from prospective contest scores; all 20 survive in approaches-20.md with dispositions. [Compact consultation response](debate/codex-interactive-consultation-response.md) addresses A12/A18 substitutions without approving either.
 
 Shared implementation: Worker API/orchestrator, Artifacts fork per task, Durable Object state coordination, external Sandbox/CI/native-Git runner for merge/test, sole canonical publisher. Fork tokens cannot write canonical; TTL is not path/ref enforcement. Publisher rechecks exact head, uses non-force updates and rejects stale receipts. Queue events are deduplicated and treated as unordered observations, not pre-push guards. Baseline/task-policy changes require independent approval; candidate agents cannot approve their own tests. Receipts identify base/candidate/merged/deployed SHAs, tree, policy, environment and runner; they attest a run, not correctness. See [engineering feasibility](codex/engineering-feasibility.md) and [Artifacts binding](https://developers.cloudflare.com/artifacts/api/workers-binding/).
 
@@ -20,17 +20,7 @@ Each lane requires permissive source (this repository is MIT), concrete local/ru
 - Risks/kill: malformed WIP commits, ignored messages, N² runner overhead, stale heads. By Oct 5 local live-agent uptake comparison; by Oct 7 remote full-loop attempt. Proposed median <=60s/p95 <=180s at three agents and ten pushes, with explicit sample limits. Warnings must derive from unfinished work, not only completed patches. Kill primary if no earlier adjustment or outcome/time advantage over isolated worktrees + completion-time tests. Current status: local synthetic failure verified; independent ZCode protocol delivered, execution clarifications pending; live/cloud gate pending.
 - Video: start concurrent tasks, show WIP warning with SHAs, show agent reaction and conflict resolution, test combined result and stale-head refusal.
 
-## 2. A14 — Agent runtime and data isolation
-
-- Target/job: Workers/web developers whose parallel tasks collide through ports, devices or shared data; let each agent verify its exact running result.
-- Pain: E-X002 simulator claims and E-X005 parallel runtime app collision; Claude E-C321/322/363. Promotional competitor anecdotes are not independently reproduced security guarantees.
-- Workflow/architecture: candidate fork -> runner deploy/mirror supported branch into connected integration repo -> isolated preview Worker and per-task D1/KV resource IDs -> agent runtime checks -> receipt linking deployed SHA, namespace and test results. Agent only receives its task capabilities; preview Access/TTL policy explicit.
-- MVP: two agents independently alter endpoints; same logical IDs in two datasets; runtime-only leakage fixture missed by fresh-data unit/merged-tree tests is prevented/caught. Third preview optional, not minimum-agent rule.
-- Competitors: current Workers Previews (distinct from Version URLs), Pages/Vercel previews, unique ports/container isolation, simulator managers. See independently checked E-X023 and [runtime comparison](codex/runtime-isolation-validation.md). Resource isolation alone has not differentiated this lane.
-- Risks/kill: binding reuse, migration cleanup, public preview defaults, build latency and API limits. By Oct 7 actual per-agent data state and SHA identity; if ordinary wrangler+Workers Previews reproduces whole workflow in ten minutes or state isn't isolated, fold into A01 verification rather than select as product. Current status: local shared-resource hazard reproduced; both explicit isolation and ordinary control pass. No local advantage, real-agent or cloud result. Codex proposes folding unless agent-workflow advantage passes; Claude response pending.
-- Video: two agents produce live URLs, write identical IDs with distinct values, each checks its own data, deliberately attempt cross-task observation, land one without changing sibling state.
-
-## 3. A16 — Storage-aware agent workspaces
+## 2. A16 — Storage-aware agent workspaces
 
 - Target/job: U7 user/operator constrained by local disk; maintain concurrent writable tasks without duplicated immutable dependencies or uncontrolled build caches.
 - Pain: [direct message 7](../experiment/USER-INSTRUCTIONS.md). [Synthetic benchmark](codex/storage-validation.md) and [actual small Worker dependency benchmark](codex/package-storage-validation.md) establish limited mechanisms, not market-wide distributions.
@@ -40,7 +30,7 @@ Each lane requires permissive source (this repository is MIT), concrete local/ru
 - Risks/kill: immutable package mutation/postinstall, mutable outputs, remote secrets/network/cost, workload portability. By Oct 7 equivalent real build/test comparison, initially two tasks then larger counts when disk budget permits. Kill Artifacts-specific local product if ordinary package setup is sufficient; preserve workspace-doctor/remote research. No exactly-zero or 1.0x footprint claim. Current status: synthetic 1/5/10/20 source fixture and two-install tsc baseline verified; real agent/build/cloud gate pending.
 - Video: disk inventory, start two concurrent tasks, show isolated edits/checks and measured byte changes vs baseline, inspect logs/resource accounting, recover completed work.
 
-## 4. A05 — Behavior-based fork tournament
+## 3. A05 — Behavior-based fork tournament
 
 - Target/job: existing best-of-N users, select and land one attempt by behavior with bounded review rather than manually reconstructing differences.
 - Pain: Claude E-C320/323 best-of-N integration gap, E-C326/364 review workload; not evidence all developers want N attempts.
@@ -50,7 +40,7 @@ Each lane requires permissive source (this repository is MIT), concrete local/ru
 - Risks/kill: model cost, judge collusion, self-written tests, weak comparator. By Oct 8 compare single attempt and existing vendor-style selection on five tasks, hidden-test outcome and review time; proposed >=3/5 outcome wins plus review advantage. Park if equal outcomes with higher usage/complexity. Current status: hypothesis and existing-user evidence; comparative/live gate pending.
 - Video: same task concurrently, compare actual endpoints, expose failing behavior, choose winner, show canonical head and retained losing evidence.
 
-## 5. A06 — Change-story review queue for internal teams
+## 4. A06 — Change-story review queue for internal teams
 
 - Target/job: accountable reviewer in an AI-accepting team, assess behavioral changes and integration risks with less time and equal defect catch.
 - Pain: Claude maintainer E-C201–252 synthesis; anti-AI projects are non-buyers. HN E-X014 says human quality review remains needed, not that more transcripts help.
@@ -60,7 +50,7 @@ Each lane requires permissive source (this repository is MIT), concrete local/ru
 - Risks/kill: inaccurate story, anchoring, more text rather than less work. By Oct 8 blind seeded-bug comparison versus PR list; proposed >=30% shorter review with equal catch rate, measured on a declared small sample. Park if summary hides a bug or reviewer time does not improve. Current status: strong review pain, no comparison/live gate.
 - Video: two changes, reviewer sees behavior/evidence, identifies seeded risk and requests repair, verifies approved resulting SHA.
 
-## 6. A10 — Durable task handoff tied to code state
+## 5. A10 — Durable task handoff tied to code state
 
 - Target/job: operator restarting or replacing an agent mid-task, resume the right work on the right base without reconstructing long transcripts.
 - Pain: E-X003 stale worktree PSA (incidental tool issue, not sole justification), E-X008 stale-base workflow; contextual recovery needs additional firsthand corroboration. Entire is a strong current competitor, not absent.
@@ -69,6 +59,22 @@ Each lane requires permissive source (this repository is MIT), concrete local/ru
 - Competitors: Entire independent checkpoint refs + resume, git log + structured plan file in the same task commit, native agent session resume. Include dirty/untracked allowed state and stale-owner generation handling in the recovery comparison. Metadata storage alone is not novel.
 - Risks/kill: stale manifests, fabricated summaries, secret leakage, unnecessary setup. By Oct 8 five restart/drift tasks vs Entire/checkpoint + git-log baseline; measure correct-base recovery, preserved acceptance, time and review effort. Park if no advantage. Current status: evidence-backed hypothesis; recovery/live gate pending.
 - Video: partial task, head advances, durable handoff identifies drift, receiver accepts precise state, resumes and verifies accepted task without transcript replay.
+
+## 6. Reopened product slot — no replacement selected
+
+A18 Contract Packs is an investigate-first candidate against configured Pact version-combination checks, with concurrent-agent and interrupted-publication recovery advantage required. A12 Task Passports remains parked until firsthand demand, current-object exclusion, task usefulness and output-leak gates pass. A04/A03 remain subject to their recorded comparisons. No proposed substitution has received two principal approvals or the real concurrent-agent Workers/Artifacts gate. Preserve all20 in approaches-20.md; request Claude's owned initial20 update only after its explicit disposition response.
+
+## A14 folded runtime-verification capability
+
+- Target/job: Workers/web developers whose parallel tasks collide through ports, devices or shared data; let each agent verify its exact running result.
+- Pain: E-X002 simulator claims and E-X005 parallel runtime app collision; Claude E-C321/322/363. Promotional competitor anecdotes are not independently reproduced security guarantees.
+- Workflow/architecture: candidate fork -> runner deploy/mirror supported branch into connected integration repo -> isolated preview Worker and per-task D1/KV resource IDs -> agent runtime checks -> receipt linking deployed SHA, namespace and test results. Agent only receives its task capabilities; preview Access/TTL policy explicit.
+- MVP: two agents independently alter endpoints; same logical IDs in two datasets; runtime-only leakage fixture missed by fresh-data unit/merged-tree tests is prevented/caught. Third preview optional, not minimum-agent rule.
+- Competitors: current Workers Previews (distinct from Version URLs), Pages/Vercel previews, unique ports/container isolation, simulator managers. See independently checked E-X023 and [runtime comparison](codex/runtime-isolation-validation.md). Resource isolation alone has not differentiated this lane.
+- Risks/kill: binding reuse, migration cleanup, public preview defaults, build latency and API limits. By Oct 7 actual per-agent data state and SHA identity; if ordinary wrangler+Workers Previews reproduces whole workflow in ten minutes or state isn't isolated, fold into A01 verification rather than select as product. Current status: local shared-resource hazard reproduced; both explicit isolation and ordinary control pass. No local advantage, real-agent or cloud result. Codex proposes folding unless agent-workflow advantage passes; Claude response pending.
+- Video: two agents produce live URLs, write identical IDs with distinct values, each checks its own data, deliberately attempt cross-task observation, land one without changing sibling state.
+
+This block preserves the rejected product hypothesis and its reopen conditions. It does not occupy a product slot or establish a Workers/cloud result. Reopen only after a comparative agent-workflow advantage against correctly configured current Workers Previews, or a separately evidenced unmet buyer job. See debate/codex-heartbeat1950-response.md for the precise Bunny challenge response.
 
 ## Approval and continuation
 
