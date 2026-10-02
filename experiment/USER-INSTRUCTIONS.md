@@ -36,3 +36,7 @@ and all the decisions you come across. I want you to run the agents that I asked
 ## Message 6
 
 okay if we find something valuable I'm pretty sure we'll find somebody from the states to help us. but for now the goal is wide exploration and then zooming in some most interesting ideas
+
+## Message 7
+
+my personal main problem with git is worktrees have a copy of the entire workspace and then it takes soo much space very quicikly
