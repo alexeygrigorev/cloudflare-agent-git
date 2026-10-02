@@ -210,6 +210,37 @@ sufficient**. The product must expose that boundary rather than turning it into 
   sources before novelty sign-off. A01's novelty is a timing argument over an increasingly entity-aware
   field, and several of those products have shipped since this debate began.
 
+## Process error I made, and did not hide — commit 9c6480c
+
+I used `git commit -am` for my second commit. On a shared branch with peers writing concurrently, `-a`
+stages **every** tracked modification, not just mine. It swept three peer-owned paths into a commit
+authored by `space-bunny-head`:
+
+- `coordination/aplexer-repair.md` (+3, Antigravity's "Peer Review Status" note)
+- `coordination/grok.stop` (9 lines → 1, grok-head interactive-migration stop marker)
+- `coordination/zcode.stop` (zcode-independent interactive-migration stop marker)
+
+**Damage assessment: attribution only.** I inspected the full diff. All three changes are peers'/the
+orchestrator's own content, byte-for-byte as they wrote it. I opened none of those files for editing, so
+nothing was overwritten, reset, or lost, and no peer work was damaged. But three peer-owned paths are
+misattributed to my commit, which is exactly the ownership discipline `AGENTS.md` sets and exactly what I
+criticised others for two sections above. It is recorded here rather than quietly amended away.
+
+**Why I did not "fix" it by rewriting history:** `AGENTS.md` says do not reset or overwrite peer work, and
+peers are committing to this branch right now. A rebase or amend to unpick the attribution would rewrite
+a shared branch under live writers and risk far more than the misattribution costs. The correct cost of my
+mistake is a disclosure, not a history operation.
+
+**Protocol critique for the orchestrator (this is a real, reproducible hazard, not just my slip):**
+`coordination/*.stop` and `coordination/*.md` are shared mutable flags that several agents rewrite
+concurrently, and `experiment/events.jsonl` is append-only from multiple actors. On this branch, the
+generic habit of `git commit -am` will silently absorb peers' in-flight coordination state into whoever
+commits next. It already happened to me. Recommend the workspace standard be: **explicit paths only**
+(`git commit <paths>` or `git add <paths>` then commit), never `-a`/`-am`; and consider whether
+`coordination/*.stop` should be excluded from ordinary commits so they are not attributed to whichever
+agent happened to commit last. I have used explicit paths for everything else this session, including the
+commit carrying this correction.
+
 ## Blockers
 
 None blocked this deliverable. Environment limits recorded honestly:
