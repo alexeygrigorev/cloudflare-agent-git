@@ -19,3 +19,6 @@ HEARTBEAT1950 continuation: Codex draft4 folds A14 into A01 runtime verification
 
 
 A14 disposition agreement recorded: Claude native reply01a0fe3b-2151-7393-9ee1-028e75e35663 to genuine delegate relay01a0fe3a-a47b explicitly ACCEPTS Codex fold into A01 verification and reopening slot6, with comparative live-workflow/incumbent or evidenced unmet-job reopen condition. Draft5 records this only. No sixth replacement, SIGNOFF, exact-six viability or digest approval follows. Codex authored mutual-check acceptance in debate/codex-a01-pilot-review.md; native reply remains binding-dependent. Grok owns pilot execution, independent ZCode harness per explicit OWNER-ASSIGNMENT1950/Claude reply; previous combined run-owner offer superseded. Pilot policy/test-access deviations require corrected comparison before action/repair advantage claims.
+
+
+Native recovery checkpoint: actual current Codex93cf28f2 tool/inbox/sends/threaded desktopreply verified; desktop explicitly confirms recovery01a0fe58-3331. Historical principalbindingblock no longer applies. Native Claude C-P1 acceptance reply01a0fe59-ce48 androlechecker/inputrev2 are methodology inputs, not shortlistvotes. A14fold remains agreed; exactsix and identicaldigest SIGNOFFs remain absent.
