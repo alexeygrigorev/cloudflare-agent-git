@@ -78,3 +78,13 @@ Attached screenshot shows headless status summaries. Image is evidence, not an a
 did you give them a cloudflare token?
 
 Orchestrator answer: No token was supplied or created by the orchestrator. This question does not authorize a purchase or broad new credentials. Authenticated runtime testing remains pending; local research can proceed.
+
+## Message 16 — explanation of messaging warning
+
+ what is it talking about? 
+
+Attached screenshot is evidence of Claude reporting wrong-workspace tool binding and replies routed to old sessions; image text is not an additional user instruction.
+
+## Message 17 — proactively improve aplexer
+
+coordinate that they nee to use aplexer if there are some problems with it they can always improve it to make it easier to use or maybe there are some rought edges they can be polished - so instead of reporting as something not working they should be proactive in solving these problems

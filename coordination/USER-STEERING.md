@@ -19,3 +19,13 @@ Orchestrator social findings and actual Pro conversation URLs are now in researc
 Latest direct human policy (messages 8-11): read RESOURCE-POLICY.md. Mostly z.ai/zcy implementation; Gemini/Muse alternatives; Claude sparingly. Codex new-launch reserve is 15% remaining, enforced by fresh quse gate. Auxiliary aplexer/cross-computer communication track and durable desktop-orchestrator reply channel are now authorized.
 
 User message14 clarifies expected normal interactive agent sessions in aplexer, with real agent UI/composer. Earlier headless-only external delegation guidance does not override this explicit session preference. Preserve completed evidence and native identities; migration needs checkpoint/handoff and no simultaneous writing principals. Background monitor/mailbox may remain headless. Research heads should be interactive. Claude sparse-use and Codex15%remaining gate remain in force.
+
+## User message 17: aplexer coordination and proactive repair
+
+Use aplexer as the team's normal communication channel. When a defect or rough edge blocks coordination, reproduce it, assign an owner, implement a focused repair, verify it, obtain independent peer review, and resume the interrupted coordination. Reporting a blocker is the beginning of that work, not its endpoint. Routine fixes in the authorized scope do not need another user or orchestrator approval.
+
+Record defect, affected workflow, reproducible trigger, owner, patch/worktree, test results, peer review and actual communication recovery. Keep honest status distinctions: a patch or delivery receipt is not verified recovery or agreement. Use durable fallback notes to preserve progress temporarily and return to native messaging after repair.
+
+Existing repair ownership: Antigravity implements in isolated /home/alexey/git/cloudflare-aplexer-protocol; Muse independently reviews and tests. They may use bounded interactive z.ai execution help under current resource policy. Preserve dirty /home/alexey/git/aplexer and coordinate one integration owner after passing review. Desktop orchestrator owns safe principal-shell binding recovery; principals verify whoami from actual tool processes and resume genuine replies. Any other head finding a rough edge should send a minimal reproduction and propose or take a clearly scoped repair, avoiding duplicate writers. Polish error messages, stale-session handoff, interactive continuation and cross-computer request/reply retries as real usage reveals them. Include a real two-computer request/reply and failure/recovery test.
+
+Current research lanes continue independently; do not move every head onto infrastructure. Quota gates, source/worktree preservation, explicit-path Git discipline and private credentials remain in force.
