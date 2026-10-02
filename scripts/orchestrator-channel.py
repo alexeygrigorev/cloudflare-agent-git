@@ -23,8 +23,14 @@ while not (local/'orchestrator-channel.stop').exists():
                 continue
             replies=[]
             for tag in req['recipients']:
+                part=local/'orchestrator-sent'/f'{token}-{tag}.json'
+                if part.exists():
+                    replies.append(json.loads(part.read_text()))
+                    continue
                 sent=call(['message','send','--to',tag,'--json',req['body']])
-                replies.append(json.loads(sent.stdout))
+                item=json.loads(sent.stdout)
+                part.write_text(json.dumps(item))
+                replies.append(item)
             receipt.write_text(json.dumps({'token':token,'receipts':replies},indent=2))
         # ACK only IDs explicitly reviewed by the desktop; never ACK merely on polling.
         ackfile=local/'orchestrator-ack.json'

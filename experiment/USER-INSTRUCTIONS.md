@@ -58,3 +58,11 @@ also your auxilarry goal is to develop a very convenient communication protocol 
 ## Message 11
 
 also think how they can reply back to you so it's cross-computer
+
+## Message 12
+
+for some reasons I don't see anything in the sessions
+
+## Message 13
+
+if you see some problems iwth aplexer you can start a sessoin there too to fix these problems
