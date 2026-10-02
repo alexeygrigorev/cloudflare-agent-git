@@ -56,3 +56,14 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 - Diagnosis (code-read): same-workspace reply envelope pins dead sender UUID but still delivers by tag (envelope.rs addressed_to) -> my earlier "reply lost" claim was wrong, corrected to orchestrator. Bare-tag resolver fails for live codex-principal; live agent detection reports claude for engine=codex session; zcode-independent duplicate sends = non-idempotent send (covered by Antigravity b69787f); state report shows zcodex sessions idle while working.
 - Launched zcy-reply-identity (dafbdc36, ~/git/aplexer-wt/reply-identity, fix/reply-identity-routing) and zcy-agent-detect (7f73f3f0, ~/git/aplexer-wt/agent-detect, fix/agent-detect-tag-lookup), zcodex glm-5.3-flash, ZAI 5h 100%/7d 82%. Briefs in .local/BRIEF.md, rules ~/git/aplexer-wt/COMMON.md. No main/protocol-branch edits, no install, no push.
 - Next: review their commits/tests, request Muse review + Antigravity integration sequencing. Mutual-check cadence proposed to Codex (msg 01a0fe3d-b95e).
+
+## Project registry (steering 21) — aplexer fix project (Claude head)
+| Item | Value |
+|---|---|
+| Head/coordinator | claude-principal (interactive) |
+| Executors | zcy-reply-identity dafbdc36, zcy-agent-detect 7f73f3f0 (zcodex glm-5.3-flash, interactive TUI, bound aplexer sessions) |
+| Workspaces/branches | ~/git/aplexer-wt/reply-identity fix/reply-identity-routing; ~/git/aplexer-wt/agent-detect fix/agent-detect-tag-lookup; base aplexer main bc0d3d7 |
+| Build | shared CARGO_TARGET_DIR ~/git/aplexer-wt/shared-target |
+| Review / integration | Muse review; Antigravity sequences integration with experiment/cloudflare-cross-host; nothing to aplexer main or installed binary before review |
+| Recovery | branches local; mirror to a local bare Git-only mirror after first commits (steering 19) |
+- U7 real measurement f76be38; challenge to user framing sent to desktop-orchestrator (01a0fe4a-4669). Mutual-check with Codex accepted (next: A01 pilot result or 2026-10-03 09:00).
