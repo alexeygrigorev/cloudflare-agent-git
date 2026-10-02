@@ -25,3 +25,5 @@ Use capacity to produce useful outputs, not duplicate the same research or start
 ## Coordinator versus executor modes — user message 21
 
 Heads/principals are non-headless. Task executors may be headless (user preference) or interactive at the agents' discretion. Agents choose separate implementation workspaces/repos, worktrees or isolated branches according to reliable ownership and disk costs. Earlier blanket interactive-worker rules are superseded. Preserve productive existing sessions. Headless workers need true aplexer binding, private logs/artifacts and meaningful status; heads actively monitor/recover them. See AGENTS.md for project registry and integration/recovery requirements.
+
+User22: provider/task assignment and workflow preferences are revisable defaults when a demonstrably better method exists. Record tradeoffs and fresh capacity evidence; coordinate cross-team changes. Account quota restrictions, privacy and existing financial authorization boundaries remain in force.

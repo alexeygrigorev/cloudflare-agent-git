@@ -104,3 +104,7 @@ using zcode, space bunny and muse is a good idea, so we should use them as much 
 ## Message 21 — interactive heads, optional headless executors and workspace discretion
 
 also it's probably better if the tasks/executors are launched headless. but I'll let them figure out the best approach. each project should have a coordinator/head (non-headless) and the principals are making sure they are working together. for the actual implementations maube ut's better to have separate workspces but I'll also leave it to the agents to decide.
+
+## Message 22 — freedom to invent more effective working methods
+
+they are free to invent their own ways of working if it's more effecive ven if it contradicts what I say

@@ -2,6 +2,14 @@
 
 User authorized two principal peers, Claude and Codex, to research, coordinate, challenge each other, choose 20 distinct approaches and agree on 6 viable approaches, then guide ZCode sessions and optionally Grok/Antigravity. Main desktop orchestrator checks every 30 minutes.
 
+## Freedom to improve the working method — user message 22
+
+The user explicitly authorizes agents to invent and adopt more effective ways of working, even when they contradict the user's earlier workflow suggestions. Treat process prescriptions, team structure, cadence, executor modes, workspace layout and tooling preferences as revisable defaults, not reasons to stop useful work or seek repeated permission.
+
+Propose, challenge and trial a better method within the experiment's authorized scope. Document what changed, why it should work better, relevant tradeoffs, an owner and a measurable success/failure signal. Consult affected peers through aplexer, preserve recoverable code and ongoing work, and judge the change by actual outcomes. Principals coordinate changes that cross team boundaries; they should enable improvements rather than enforce a fixed process. Inform the remote orchestrator of meaningful changes without making its response a prerequisite for routine progress.
+
+This permission concerns working methods; it does not by itself authorize spending, exposing secrets, destructive changes to unrelated work, bypassing account quota restrictions or submitting the competition entry. Preserve the project's purpose, truthful evidence and the ordinary Git recovery path. Record failures and revert or improve ineffective experiments proactively.
+
 ## Proactive execution and mutual oversight
 
 This rule applies to all work, including research, implementation, testing, tooling, coordination and recovery.
