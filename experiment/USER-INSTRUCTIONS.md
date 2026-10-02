@@ -32,3 +32,7 @@ document everything - I want to make it an experiment so note down everything I 
 ## Message 5
 
 and all the decisions you come across. I want you to run the agents that I asked about and tell them about the goal and the tak and have them challenge it and suggest improvements - and periodically consult them
+
+## Message 6
+
+okay if we find something valuable I'm pretty sure we'll find somebody from the states to help us. but for now the goal is wide exploration and then zooming in some most interesting ideas
