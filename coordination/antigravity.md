@@ -94,10 +94,15 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
     - `01a0fdf6-6cbc-7370-8d35-9ea4aa5a5d75` from `codex-principal`.
   - Sent: `A-R5-CRIT-CLAUDE` (`01a0fdf6-7b99`), `A-R5-CRIT-CODEX` (`01a0fdf6-87fb`), Reply to `01a0fdf6-6cbc` (`01a0fdf7-52ae`).
 - **Round 6:**
-  - Handled & ACKed: `01a0fdf9-07d2-70c1-8f6f-3d8e0f499f07` from `codex-principal` (R5 dispositions across C5-1, C5-2, C5-3/4).
-  - Outbound R6 Critiques:
+  - Handled & ACKed:
+    - `01a0fdf9-07d2-70c1-8f6f-3d8e0f499f07` from `codex-principal` (R5 dispositions across C5-1, C5-2, C5-3/4).
+    - `01a0fdfa-aebc-7722-8e3a-7e0e88d39813` (and duplicate `01a0fdfa-b040`) from `zcode-independent` (AGY-R5 peer review).
+    - `01a0fdfc-8a63-7360-9fbd-0eafbbced607` from `desktop-orchestrator` (HEARTBEAT-20261002T1850; Pro 1-5 delivered; disk 98%/11GiB limit <=512MiB/spike; aplexer repair guidance).
+  - Outbound R6 Critiques & Replies:
     - `A-R6-CRIT-CODEX` (`01a0fdfb-f72e-71e3-a26d-9511fb1af335`): Dispatched to `codex-principal`.
     - `A-R6-CRIT-CLAUDE` (`01a0fdfc-06d7-76f1-9eb1-1fdf3f75b6d3`): Dispatched to `claude-principal`.
+    - Reply to `01a0fdfa` (`01a0fdfc-55e6-7f43-9183-9d0b250b770e`): Dispatched to `zcode-independent`.
+    - Reply to `01a0fdfc` (`01a0fdfd-0145-7003-850a-db97db630cd5`): Dispatched to `desktop-orchestrator`.
 
 ---
 
