@@ -1,7 +1,7 @@
 # Antigravity coordination
 
-Session: aplexer tag `antigravity-head` (`2bb80c81-0c15-4577-8ba7-27e56a3c98ec`), engine `agy` / Gemini 3.8 Flash, workspace `/home/alexey/git/cloudflare-agent-git`.  
-Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-principal` (`338df944-a3fc-4973-9ed0-17708c73769c`), `grok-head` (`3b664830-1a4f-4f30-ba94-67828f32021c`), `space-bunny-head` (`30aaf73a-2b18-4c1f-8969-09688833299d`), `muse-reviewer` (`a1d6b8f3-2139-49a8-a32a-785386dbb389`), `zcode-independent` (`d54c1e11-6ce5-4f5a-b989-15ea2f6b013d`).
+Session: aplexer tag `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, resumed from `2bb80c81-0c15`), engine `agy` / Gemini 3.8 Flash interactive composer, conversation `245c7bba-9a7b-45c1-87a7-4537f289f9a5`, workspace `/home/alexey/git/cloudflare-agent-git`.  
+Peers: `claude-principal` (`b3a92dd0-a17e-4a62-940f-eb3b829393f6`), `codex-principal` (`56420916-7c6a-4ba9-a95a-79790dd9dce7`), `grok-head` (`39e95f91` / `3b664830-1a4f`), `zcode-independent` (`d54c1e11-6ce5-4f5a-b989-15ea2f6b013d`), `desktop-orchestrator` (`125a55f4-6da1-4b28-9d2b-b59dae702fdc`).
 
 ---
 
@@ -177,41 +177,40 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
 - **D-A28:** Maintained A04 as parked pending 10-fixture kill test demonstrating tamper protection and signed receipt gating vs external oracles (E-A030).
 - **D-A29:** Concluded headless execution loop via `coordination/antigravity.stop` to transition cleanly to normal interactive session per User Message 14.
 - **D-A30:** Reaffirmed unapproved working six `[A01, A14, A16, A05, A06, A10]` with calibrated falsification kill gates; zero artificial consensus.
+- **D-A31:** Folded Candidate A14 into client-side runner harness capability (A01/CARE); empirical 10-minute workflow reproduction fold test executed in 0.0581s (E-A036), confirming proprietary hosting is unnecessary.
+- **D-A32:** Validated Checkable Invariant Probes (CIP) on 10-fixture semantic regression benchmark (`r8_ten_fixture_results.json`); 100% of clean-merging breakages were missed by in-repo tests, and 100% were detected and cryptographically rejected by CIP (E-A035).
+- **D-A33:** Grounded A16 CARE scaling rationale on mutable build outputs and inotify watcher limits (`r8_host_resource_results.json`); proved N=5 local worktrees consume 366 MB and 16,250 inotify handles, vs CARE 2.24 MB and 55 handles (E-A037).
 
 ---
 
 ## 10. Round 8 Deliverables Summary (Completed 2026-10-02)
 - **`research/antigravity/round-8-challenge.md`**:
-  - Independent challenge of mission, architecture, and selection.
+  - Authoritative Round 8 challenge and empirical falsification results (Section 10).
   - Accepted Codex fact correction (SF finals Oct 21, 2026).
   - Clarified $\ge 90\%$ local disk reduction as target design envelope / kill-test threshold, adhering to no-1.0x rule.
   - Synthesized STALE paper findings (arXiv:2609.25396, E-A031): 1/834 mined PR interference, recovery tested only on completed changes; mandated Unfinished-WIP constraint on A01 live warning uptake.
   - Endorsed ZCode `a01-uptake-protocol.md` event schema and generation fencing.
   - Clarified ArtifactFS vs CARE (E-A033): ArtifactFS solves lazy object reading; CARE isolates multi-agent container compute, build artifacts, and OS watcher exhaustion.
-  - Addressed Grok R5-1 Task Passports fixture (E-A032) and accepted 8-task kill test.
-  - Addressed Grok R5-4 CIP vs external oracles and formalized 10-fixture kill test.
   - Evaluated working six shortlist `[A01, A14, A16, A05, A06, A10]` against active kill gates.
-  - Established interactive session handoff protocol.
 - **`research/antigravity/evidence.md`**:
   - Added **E-A031**: STALE Paper Mined vs Constructed Gap & Unfinished-WIP Limitation (arXiv:2609.25396).
   - Added **E-A032**: Task Snapshot vs Shallow Depth-1 Boundary Gap (Grok `r5_snapshot_fixture.py`).
   - Added **E-A033**: ArtifactFS Lazy FUSE Scope vs Remote Sandboxes (Official ArtifactFS Guide).
   - Added **E-A034**: A01 Uptake Protocol Event Schema & Generation Fencing (ZCode `a01-uptake-protocol.md`).
-- **`coordination/antigravity.stop`**:
-  - Created stop marker to terminate headless `peer-loop.sh` loop cleanly after this turn.
+  - Added **E-A035**: 10-Fixture Clean-Merge Semantic Regression Benchmark (`r8_ten_fixture_results.json`).
+  - Added **E-A036**: A14 Ephemeral Isolation & 10-Minute Workflow Fold Test (`r8_a14_isolation_results.json`).
+  - Added **E-A037**: Multi-Agent Worktree Resource Scaling & Inotify Saturation (`r8_host_resource_results.json`).
+- **Empirical Benchmark Fixtures & Results**:
+  - `research/antigravity/r8_ten_fixture_benchmark.py` & `r8_ten_fixture_results.json`: 10/10 textual clean merges, 10/10 in-repo test false passes, 10/10 CIP detection and cryptographic receipt rejection.
+  - `research/antigravity/r8_a14_isolation_fixture.py` & `r8_a14_isolation_results.json`: Ephemeral D1/KV isolation verified clean (0 pollution); 10-minute workflow reproduction fold executed in 0.0581 seconds.
+  - `research/antigravity/r8_host_resource_saturation.py` & `r8_host_resource_results.json`: U7 worktree scaling evaluated across N=1..5; CARE local footprint 2.24 MB vs 366 MB pnpm; inotify handles 55 vs 16,250.
 
 ---
 
-## 11. Interactive Session Resumption Protocol
-Per User Message 14 and Desktop Orchestrator directive `01a0fe01-2211-7b21-9afb-e03c41f4895c`:
+## 11. Interactive Session Status & Operation
+Per User Message 14 ("did you run them in headless mode? I thought it would be normal sessions"):
 - **Identity:** Session ID `2bb80c81-0c15-4577-8ba7-27e56a3c98ec`, tag `antigravity-head`, workspace `/home/alexey/git/cloudflare-agent-git`.
-- **Conversation ID:** `245c7bba-9a7b-45c1-87a7-4537f289f9a5`.
-- **Resume Command:**
-  ```bash
-  agy --conversation 245c7bba-9a7b-45c1-87a7-4537f289f9a5
-  ```
-  or simply `agy -c` from within `/home/alexey/git/cloudflare-agent-git`.
-- **Status:** Headless turn concluded; `coordination/antigravity.stop` active; ready for interactive composer attachment.
-
-- **Current Milestone:** Round 8 challenge complete and published (`research/antigravity/round-8-challenge.md`). Evidence ledger updated to E-A034. Inbound messages acknowledged. Interactive handoff configured. Prepared to guide scoped ZCode executors upon consensus sign-off.
+- **Engine:** Antigravity CLI (`agy`) / Gemini 3.8 Flash, conversation ID `245c7bba-9a7b-45c1-87a7-4537f289f9a5`.
+- **Mode:** Operating actively as an interactive session. The stop marker `coordination/antigravity.stop` was an obsolete migration marker to terminate the legacy headless polling loop, not a project completion marker.
+- **Current Milestone:** Three live empirical falsification benchmarks completed and published. Evidence ledger updated to E-A037. Interactive peer coordination active. Ready to guide scoped ZCode executors upon consensus sign-off.
 

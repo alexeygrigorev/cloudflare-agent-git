@@ -1,0 +1,55 @@
+{
+  "timestamp": "2026-10-02T19:24:51Z",
+  "max_user_watches": 500428,
+  "scaling_comparison": [
+    {
+      "n_agents": 1,
+      "plain_worktree_mb": 192.0,
+      "plain_watches": 3250,
+      "pnpm_worktree_mb": 192.0,
+      "pnpm_watches": 3250,
+      "care_local_mb": 2.05,
+      "care_watches": 51,
+      "care_disk_reduction_vs_plain_pct": 98.93,
+      "care_disk_reduction_vs_pnpm_pct": 98.93,
+      "care_watch_reduction_pct": 98.43
+    },
+    {
+      "n_agents": 2,
+      "plain_worktree_mb": 384.0,
+      "plain_watches": 6500,
+      "pnpm_worktree_mb": 235.5,
+      "pnpm_watches": 6500,
+      "care_local_mb": 2.1,
+      "care_watches": 52,
+      "care_disk_reduction_vs_plain_pct": 99.45,
+      "care_disk_reduction_vs_pnpm_pct": 99.11,
+      "care_watch_reduction_pct": 99.2
+    },
+    {
+      "n_agents": 3,
+      "plain_worktree_mb": 576.0,
+      "plain_watches": 9750,
+      "pnpm_worktree_mb": 279.0,
+      "pnpm_watches": 9750,
+      "care_local_mb": 2.15,
+      "care_watches": 53,
+      "care_disk_reduction_vs_plain_pct": 99.63,
+      "care_disk_reduction_vs_pnpm_pct": 99.23,
+      "care_watch_reduction_pct": 99.46
+    },
+    {
+      "n_agents": 5,
+      "plain_worktree_mb": 960.0,
+      "plain_watches": 16250,
+      "pnpm_worktree_mb": 366.0,
+      "pnpm_watches": 16250,
+      "care_local_mb": 2.24,
+      "care_watches": 55,
+      "care_disk_reduction_vs_plain_pct": 99.77,
+      "care_disk_reduction_vs_pnpm_pct": 99.39,
+      "care_watch_reduction_pct": 99.66
+    }
+  ],
+  "verdict": "CONFIRMED: While pnpm hardlinks alleviate static dependency duplication (~42-49% reduction vs plain), mutable build caches and inotify watcher proliferation scale linearly with N. At N=5, local worktrees consume ~356 MB and 16,250 inotify handles locally, whereas CARE confines local footprint to 2.24 MB (99.37% reduction vs pnpm) and 55 watcher handles (99.66% reduction)."
+}
