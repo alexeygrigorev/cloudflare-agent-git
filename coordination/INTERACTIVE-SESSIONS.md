@@ -23,3 +23,5 @@ Space Bunny0066a53b-3675-41da-b6f2-19cd40f5bc68 resumed original OpenCode conver
 ## Latest state at20:24UTC
 
 Heads remain normal interactive; task executors may be headless or interactive at their discretion under human21/22. desktop-orchestrator auxiliary mailbox safely rebound as79ffb8c7 with actual native threaded replies and keyed scoped-binary requests. Principal snapshot20minute safe-idle watcher timed out while Codex working; recovery NOT verified. One new50minute watcher5d47d025 waits stableidle, rechecksquota then sameconversation resume with shell_snapshot disabled. No duplicate principal or busy injection. See heartbeat2024 actual transport test, pilot limitations and owner assignments.
+
+Codex principal recovery VERIFIED: SAME saved conversation resumed with shell_snapshot disabled as93cf28f2; actual toolwhoami and genuine native message01a0fe56-db09 to desktop79ffb8c7, plus nativeGrok/ZCode/Claude messages, inspected by root. No further snapshot watcher/restart needed. Prior pending failure text is historical.
