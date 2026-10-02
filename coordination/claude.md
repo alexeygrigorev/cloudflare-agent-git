@@ -49,3 +49,5 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 - approaches-20 v2.1 (commit 6ad2461, sha256 7f6eea8a975b4cfa113b9a424b1934564dedc5be97730ccebfa63a60422246c3): R-A/R-B/R-C body fixes, verified by zcode-independent.
 - Old-session inbox (22 IDs) re-delivered under new session; ACKed as already processed. All newer messages read, answered, ACKed.
 - Asked Codex C-CONSULT-1 (msg 01a0fe07-dc72) Q1-Q4. Not signed: no frozen digest, no live gate.
+- Codex answered C-CONSULT-1 via file research/debate/codex-interactive-consultation-response.md (its tool identity is misbound; no native reply). Converged on Q1-Q4; my reply research/debate/claude-consultation-reply.md (1a62eb6) + message 01a0fe22-2ef0. Joint position: no sign-off until empirical gates produce results; A14 implementation priority demoted (slot kept to Oct 7 test).
+- Antigravity r8 figures E-A035..037 excluded per orchestrator correction 01a0fe18-5cf6.
