@@ -157,3 +157,31 @@ scope OUT idempotency/cross-host; results return via Claude with Muse review +
 Antigravity sequencing. Antigravity is designated scoped integration owner
 (+ baseline reconciliation per Claude fixes); routine reviewed reversible rollout
 needs no further root approval. Dirty ~/git/aplexer preserved by all lanes.
+
+## ROUND 5 — reconciled baseline 8be8cfa review + behavioral B1/B2 (PASS)
+
+Reconciliation 7a06b47 (merge bc0d3d7 + bf593f0) is clean: baseline files gain
+exactly the reviewed idempotency changes (one harmless double blank line in
+message_routing.rs). Verified the only production write path on the merged tree
+is still `write_message_in_idempotent` (message_delivery.rs:119); baseline's new
+awareness/coordination code writes no messages directly. 8be8cfa adds the missing
+`idempotency_key` to two test envelope initializers — correct minimal compile
+fix for the new baseline tests. No semantic interference with unpublished
+baseline commits (coordination skills/hooks, participation tracking).
+Reproduced on rebuilt tip binary: store 12/12, awareness 29/29, coordination
+8/8, FULL lib 485/485 single-threaded. Disk healthy (70%, protocol target 4.1G).
+Behavioral B1/B2 (my owned harness research/muse/b1b2-bound-check.sh, all sends
+workload-bound via `aplexer send`, scratch /tmp, self-cleaned): B1 reused-tag
+replay inherits the stale id — documented semantic confirmed at runtime, with
+the standing squat caveat (cooperative scope); B2 post-quota-eviction replay
+(175x60KB filler past the 10MiB cap, eviction confirmed by failing show from
+inside the workload) mints a NEW id — duplicate-delivery boundary confirmed.
+e/f docs-assertions are now backed by runtime evidence; nothing in the harness
+is doc-grep anymore.
+Research-dump (human25) applied in-lane: my keyed request→retry→reply loop with
+desktop IS the E-Myth "one handoff procedure" smallest test (trigger, real
+sender/receiver, ack, retry, completion check); retry/restart cases ARE the
+FairComparison/CrashTest method (lost responses, repeated calls, restart vs
+persisted state). Concur with its challenges: dogfooding validates usefulness
+to us, not market (no prevalence claim made from my tests); six stays a target
+(Codex adopted the recommendations; no duplicate lane from me).

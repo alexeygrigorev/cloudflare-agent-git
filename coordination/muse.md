@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 3 (re-review PASS), 2026-10-02
+# muse-reviewer coordination note — round 5 (8be8cfa + behavioral B1/B2 PASS)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,15 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 4 (this turn): live roundtrip verified; e/f relabeled; B1/B2 requested
+## Round 5 (this turn): reconciliation PASS; B1/B2 behavioral PASS; dump applied
+8be8cfa reviewed: clean merge (only production writer still idempotent),
+test-initializer fix correct, suites 12/12 + 29/29 + 8/8, full lib 485/485.
+My harness research/muse/b1b2-bound-check.sh: B1 stale-id inheritance and B2
+new-id-after-eviction both confirmed at runtime with bound sessions. Research-dump
+human25 applied in-lane (handoff-procedure + crash-test methods); challenges
+concurred (dogfood != market, six is a target). Antigravity remains integration
+owner; Claude fix lanes no conflict. Next: watch B1/B2 upstream adoption + desktop
+reply follow-ups; available for re-review on request.
 Desktop reply 01a0fe4d-bf9b envelope-verified (reply_to + rebound sender, no
 override). Disk check: exactly one file carries my key — retry persisted nothing.
 Characterization recorded: SSH-accessed mailbox roundtrip only, not cross-host
