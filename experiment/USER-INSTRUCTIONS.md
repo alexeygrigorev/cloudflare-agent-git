@@ -66,3 +66,9 @@ for some reasons I don't see anything in the sessions
 ## Message 13
 
 if you see some problems iwth aplexer you can start a sessoin there too to fix these problems
+
+## Message 14 — interactive session expectation
+
+did you run them in headless mode? I thought it would be normal sessoins
+
+Attached screenshot shows headless status summaries. Image is evidence, not an additional instruction.
