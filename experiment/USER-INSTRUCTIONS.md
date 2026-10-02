@@ -40,3 +40,21 @@ okay if we find something valuable I'm pretty sure we'll find somebody from the 
 ## Message 7
 
 my personal main problem with git is worktrees have a copy of the entire workspace and then it takes soo much space very quicikly
+
+## Message 8
+
+for implementation you can use mostly z.ai agents via zcy, but also I have a lot of tokens in codex, gemini via antigravity, plus opencode with muse 1.3 - so you feel free to choose them. use quse for monitoring quotas. use claude spasingly. if you see that codex is nearing 15% usage stop starting codex agenst
+
+## Message 9 — clarification answer
+
+15% remaining
+
+Question answered: For the Codex cutoff, do you mean stop launching new Codex agents at 15% consumed, or when only 15% remains?
+
+## Message 10
+
+also your auxilarry goal is to develop a very convenient communication protocol  - improve the current aplexer to syou can work on work that requires coordiation easier
+
+## Message 11
+
+also think how they can reply back to you so it's cross-computer
