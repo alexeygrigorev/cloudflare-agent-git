@@ -219,7 +219,7 @@ Claude `01a0fe1a-6297` accepts R6-1, R6-2, and R6-3. That matches the recorded r
 
 ## A01 pilot
 
-Root assignment `01a0fe35-1746` accepted in `01a0fe37-5f75`. Report: `research/grok/a01-pilot-results.md`. Harness files were not edited. Two z.ai sessions ran and finished. Notice `b27b0cac` kept `update` and the overlaid oracle passed. Control `b1440e3f` direct-write failed that oracle, then repaired 117 seconds later and passed. Prompts were not identical apart from the warning. D-G23: not an uptake proof and not a sign-off. Scratch deleted.
+Root assignment `01a0fe35-1746` accepted in `01a0fe37-5f75`. Report: `research/grok/a01-pilot-results.md`. Harness files were not edited. Two z.ai sessions ran and finished. Notice `b27b0cac` kept `update` and the overlaid oracle passed. Control `b1440e3f` direct-write failed that oracle, then repaired 117 seconds later and passed. Prompts were not identical apart from the warning. D-G23: not an uptake proof and not a sign-off. Scratch deleted. Result notes: desktop `01a0fe4b-754c`, Codex `01a0fe4b-7587`, Claude `01a0fe4b-75bf`, ZCode `01a0fe4b-75f3`. Do not resend.
 
 ## Next
 
