@@ -77,20 +77,28 @@ outer [op=op_arm3_retry_attempt2] [pid=3297508]
 
 ---
 
-## 4. Acceptance Criteria Checklist
+## 4. Acceptance Criteria Checklist & Scope Boundary
 
 | Criterion | Reviewer Requirement | Measured Outcome | Status |
 | :--- | :--- | :--- | :---: |
 | **Binary Provenance** | Pinned binary hash recorded | `dce345ed47fb4190bb85771ad8ff1dc39cc8c19665fa433475c715689f7268e9` | **PASSED** |
-| **Side-Effect COUNT** | Before/after COUNT 2 → 1 | Arm 1 COUNT = 2 → Arm 2 COUNT = 1 | **PASSED** |
+| **Adapter Routing Contract** | Intercepts argv & rewrites `yolo` to `build` | Confirmed (adapter intercept functional) | **PASSED** |
 | **Outer Runtime Integrity** | Outer `ToolCallRuntime` executes and records | Confirmed (outer tool execution succeeds, PID recorded) | **PASSED** |
-| **Inner Execution Suppression**| Inner execution denied without hanging | Confirmed (`inner` log entry suppressed) | **PASSED** |
-| **Retry Continuity** | Same-op retry still exactly-once | Confirmed (1 side effect per operation) | **PASSED** |
+| **Simulated Child Suppression**| Inner execution suppressed under build | Confirmed (inner log entry eliminated in stub child) | **PASSED** |
+| **Side-Effect COUNT** | Before/after COUNT 2 → 1 on adapter | Arm 1 COUNT = 2 → Arm 2 COUNT = 1 | **PASSED (Adapter)** |
+| **Sequential Per-Op Isolation** | Independent operations maintain 1 effect each | Confirmed (1 side effect per operation ID) | **PASSED** |
+| **Production `/opt/.../zcode.cjs` Run** | Direct live denial on production CJS | Delegated to `codex-zcode` owner harness | **PENDING OWNER** |
+| **Live Session Resume** | Full multi-turn session resume on live wire | Delegated to `codex-zcode` owner harness | **PENDING OWNER** |
 | **Resource Budget** | Zero 24 GB cargo rebuilds | 0 bytes built in `codex-rs/target` | **PASSED** |
 | **Safety** | No global binary installs | `~/.local/lib/zcodex/zcodex` untouched | **PASSED** |
+
+> [!NOTE] Scope Boundary (Codex Review `01a0fee4-bd1b`)
+> The benchmark used a constructed stub CJS to validate that the `ZCODE_NODE` argv adapter properly intercepts and converts `--mode yolo` to `--mode build`, and that the outer `ToolCallRuntime` executes the tool call when the inner child suppresses it. This confirms the adapter routing contract and outer runtime integrity without rebuilding the 24 GB cargo target.
+> Full live validation against production `/opt/ZCode/resources/glm/zcode.cjs` (verifying its native `permission.resolved` denial behavior) and multi-turn live session resume is routed to the `codex-zcode` owner (`main` in `~/git/codex-zcode`, session `82d375cd`).
 
 ---
 
 ## 5. Next Steps for Handoff & Landing
-1. The argv-adapter test proves the `--mode build` mechanism operates correctly and eliminates double execution in the live runtime.
-2. The `codex-zcode` repository owner (`main` in `~/git/codex-zcode`, session `82d375cd`) can cleanly land `PATCH.diff` in `codex-rs/core/src/client.rs` during their standard build and release cycle.
+1. **Owner Handoff Dispatched:** Dispatched handoff message `01a0fed9-c3a0-75e0-9a6c-98f7df1f7eec` to `main` in `~/git/codex-zcode` with `DIAGNOSIS.md` and `PATCH.diff`.
+2. **Owner Acceptance:** The `codex-zcode` repository owner can apply `PATCH.diff` to `codex-rs/core/src/client.rs` and execute the full test suite (`zcode_inner_mode.rs`) within their standard build/release lifecycle.
+
