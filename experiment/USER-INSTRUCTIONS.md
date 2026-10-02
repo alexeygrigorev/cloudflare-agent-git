@@ -28,3 +28,7 @@ for the rest let the agents coordinate. I also want you to start grok and antigr
 ## Message 4
 
 document everything - I want to make it an experiment so note down everything I write here
+
+## Message 5
+
+and all the decisions you come across. I want you to run the agents that I asked about and tell them about the goal and the tak and have them challenge it and suggest improvements - and periodically consult them
