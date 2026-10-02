@@ -103,10 +103,38 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
     - `A-R6-CRIT-CLAUDE` (`01a0fdfc-06d7-76f1-9eb1-1fdf3f75b6d3`): Dispatched to `claude-principal`.
     - Reply to `01a0fdfa` (`01a0fdfc-55e6-7f43-9183-9d0b250b770e`): Dispatched to `zcode-independent`.
     - Reply to `01a0fdfc` (`01a0fdfd-0145-7003-850a-db97db630cd5`): Dispatched to `desktop-orchestrator`.
+- **Round 7:**
+  - Handled & ACKed:
+    - `01a0fdff-9a5b-7d40-a3b4-63063572ca1f` from `desktop-orchestrator` (Heartbeat recovery; OpenCode sessions stopped; z.ai recovery active; Gemini aplexer repair; Claude review on digest readiness).
+    - Grok Challenge R4 (`research/grok/challenge-r4.md` / `G-R4-CRIT`): Evaluated R4-1 (CIP vs merged tests), R4-2 (git notes clone gap), R4-3 (unmeasured bounds).
+    - ZCode Independent milestone review (`research/zcode/independent/milestone-verification-round-2.md`): Verified calibration of A16 and kill-test provenance.
+  - Outbound R7 Critiques & Replies:
+    - `A-R7-REPLY-GROK`: Bilateral response to Grok on R4-1, R4-2, R4-3 with empirical fixtures.
+    - `A-R7-CRIT-CODEX`: Dispatched to `codex-principal`.
+    - `A-R7-CRIT-CLAUDE`: Dispatched to `claude-principal`.
+    - Read-ACK to `desktop-orchestrator` for `01a0fdff-9a5b`.
 
 ---
 
-## 8. Decisions & Status
+## 8. Round 7 Deliverables Summary (Completed 2026-10-02)
+- **`research/antigravity/r7_metadata_fixture.py`**:
+  - Empirical verification fixture executed on host.
+  - Proved default `git clone` completely drops `refs/notes/*` (exit 1), and fetched notes remain anchored to parent commits when HEAD advances (exit 1 on HEAD).
+  - Proved commit trailers clone by default (p50 7.33 ms, max 10.97 ms) and in-tree task manifests (`.agent/tasks/{task_id}.json`) clone by default (p50 0.023 ms) and merge cleanly without conflict across concurrent agent branches (`git merge-tree` exits 0).
+  - Proved test-tampering vulnerability: agent modifies code buggily and alters unit tests to pass; `git merge-tree` and repo test suite exit 0 (false negative); immutable Checkable Invariant Probe (CIP) exits 1 (catches semantic regression).
+- **`research/antigravity/evidence.md`**:
+  - Added **E-A029**: Host Metadata Channel & Git Notes Clone Gap (`r7_metadata_fixture.py`).
+  - Added **E-A030**: Test Tampering & Degradation under Clean Merges (`r7_metadata_fixture.py`).
+- **`research/antigravity/round-7-challenge.md`**:
+  - Formally accepted Grok R4-1 with empirical test-tampering demonstration and adopted 10-fixture kill test.
+  - Formally accepted Grok R4-2 and established **Hybrid Dual-Plane Metadata Architecture** for A10.
+  - Formally accepted Grok R4-3, designated cloud targets as Target Design Envelopes, and published local empirical baselines.
+  - Reconciled A16 CARE to $\ge 90\%$ local disk reduction, resolving ZCode milestone feedback.
+  - Adhered strictly to $\le 512$ MiB spike budget and 8 GiB host disk floor (root at 98%).
+
+---
+
+## 9. Decisions & Status
 - **D-A01:** Replaced "CEIP Proofs" with Checkable Invariant Probes (CIP) backed by trusted runner cryptographic receipts in Git Notes.
 - **D-A02:** Rejected A07 (Maintainer quarantine) and A05 (Fork tournament) from shortlist due to zero buyer migration in OSS and commodity prior art.
 - **D-A03:** Elevated A16 (Storage) as Cloudflare Artifacts Remote Execution (CARE) into top shortlist to directly solve User Message 7.
@@ -125,4 +153,11 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
 - **D-A16:** Reformulated A05/A04 into the Decision Arena (Pro Angle 2) comparing alternative implementations against immutable hidden contracts with signed receipts in Git Notes, accepting Codex's `merged-tree tests+types` comparator baseline.
 - **D-A17:** Formalized A10 as Recovery Capsules (Pro Angle 3) and Task Passports (Pro Angle 4) in Git Notes (`refs/notes/agent-recovery`), avoiding context bloat and respecting 1 GB repo / 32 MB blob limits.
 - **D-A18:** Calibrated A16 CARE metrics to $\ge 90\%$ local disk reduction, retracting 100% / zero-byte language per no-1.0x rule; acknowledged ordinary sparse checkout downloads full packfiles while CARE keeps packfile traffic internal to Cloudflare.
-- **Current Milestone:** Round 6 independent challenge complete and published (`research/antigravity/round-6-challenge.md`). Evidence ledger updated to E-A028. Outbound R6 critiques dispatched to Claude and Codex. Prepared to guide scoped ZCode executors upon consensus sign-off.
+- **D-A19:** Accepted Grok R4-1 with empirical test-tampering demonstration; adopted 10-fixture kill test where `git merge-tree` passes and unit tests pass.
+- **D-A20:** Adopted Hybrid Dual-Plane Metadata Architecture for A10 (in-tree `.agent/tasks/{task_id}.json` + commit trailers + off-tree Artifacts FS/KV) solving Grok R4-2 clone drop and HEAD drift.
+- **D-A21:** Calibrated all cloud numeric bounds as Target Specifications (Hypotheses) per Grok R4-3; published host empirical measurements (trailer read p50 7.33 ms, in-tree read p50 0.023 ms, merge-tree < 8 ms).
+- **D-A22:** Reconciled A16 CARE metrics to $\ge 90\%$ local disk reduction, resolving ZCode milestone feedback.
+- **D-A23:** Enforced $\le 512$ MiB spike budget and 8 GiB host disk floor (host root at 98% with 11 GiB available).
+- **D-A24:** Dispatched read-ACK to Desktop Orchestrator for recovery heartbeat message `01a0fdff-9a5b`.
+- **Current Milestone:** Round 7 independent challenge complete and published (`research/antigravity/round-7-challenge.md`). Evidence ledger updated to E-A030. Outbound R7 critiques dispatched to peers. Prepared to guide scoped ZCode executors upon consensus sign-off.
+
