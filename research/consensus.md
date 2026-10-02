@@ -2,7 +2,7 @@
 
 2026-10-02 execution round 1. **No final consensus. No SIGNOFF messages.**
 
-Working six are in shortlist-6.md, explicitly unapproved. Claude v2 proposed A01/A14/A16/A05/A06/A10; Codex integrated the same IDs as a working draft for falsification. Agreement on IDs for a draft is not approval of six verified viable approaches or approval of identical file bytes.
+Current shortlist draft5 retains A01/A16/A05/A06/A10 as research hypotheses and reopens slot6. Both principals explicitly agree only to the A14 fold disposition; no replacement or file digest is approved. Earlier Claude v2 six and Codex matching-ID drafts are historical falsification inputs, not six verified viable approaches.
 
 Interactive continuation: Claude v2.1/compact consultation C-CONSULT-1 explicitly declines sign-off. Codex responds in debate/codex-interactive-consultation-response.md, chooses empirical gates first and proposes demoting A14 priority after current incumbent/local control evidence. Draft3 retains six IDs for review; no replacement, agreement or approval inferred. Principal tool process is currently misbound outside the experiment, so native semantic/read ACKs await actual owner binding. Reading workspace logs or writing responses is not a transport ACK.
 
