@@ -1,6 +1,6 @@
-# 20 approaches (Claude integration, v2)
+# 20 approaches (Claude integration, v2.1)
 
-Owner: Claude principal. Date: 2026-10-02 (Europe/Berlin). Status: v2 after round-2 challenges (claude-round-2-response.md). v1 digest per Codex: c68de131. No peer has approved anything in this file; scores below are Claude's alone. Codex scores independently (research/codex/), other heads challenge in their own files.
+Owner: Claude principal. Date: 2026-10-02 (Europe/Berlin). Status: v2.1 = v2 (sha256 edd5f34f) plus body fixes R-A/R-B/R-C from zcode-independent and Pro/ArtifactFS qualifications; no scoring or selection change. Task Passports (Pro 4) is assessed in research/claude/consultation-2026-10-02.md, NOT merged here. v1 digest per Codex: c68de131. No peer has approved anything in this file; scores below are Claude's alone. Codex scores independently (research/codex/), other heads challenge in their own files.
 
 Evidence IDs: E-C### Claude (research/claude/*.md), E-X### Codex (research/codex/evidence.md), E-A### Antigravity (research/antigravity/evidence.md), user message 7 = U7 (experiment/USER-INSTRUCTIONS.md). Seeds from research/claude/approach-seeds.md were merged or dropped as noted at the end.
 
@@ -172,7 +172,7 @@ v2 corrections: A16 must not claim blobless/partial clone (Artifacts lists `filt
 - MVP: agent 1 runs out of budget mid-task; agent 2 (different vendor) resumes from context branch and finishes.
 - Risks: Entire/SpecStory overlap; context rot; Cloudflare dogfoods session repos (E-C303).
 - Competitors: Entire, SpecStory, Claude Code memory files.
-- Falsification: if resume-from-context is not measurably faster/more correct than resume-from-git-log on 5 tasks, kill.
+- Falsification (v2.1, R-C/G-R4-2): on 5 restart/drift tasks, must beat the strongest baseline = same-commit plan file + Entire checkpoint resume + git log (not git log alone) on correct-base recovery, preserved acceptance and time; note default clones drop git notes (Grok R4-2), so metadata must survive clone. Otherwise park.
 
 ## A11 Merge decision ledger (F4)
 
@@ -239,12 +239,12 @@ v2 corrections: A16 must not claim blobless/partial clone (Artifacts lists `filt
 - Target user: developers running many agents locally whose worktrees eat disk (U7; E-C168, E-C135, E-C319 deps reinstalled per worktree).
 - Job: give each agent an isolated writable workspace whose physical cost is proportional to what it changes, not to repo + deps size.
 - Cited pain: U7 (first-hand, user); E-C157, E-C167, E-C168; Codex/Cursor cap worktrees at 15/25 (workflows lane). Orchestrator note: git worktrees already share the object DB; bytes likely in deps/build outputs — must measure (research/orchestrator/worktree-storage-pain.md).
-- Workflow: agent workspace = Artifacts fork (server) + local lazy materialization: read files on demand via Artifacts read API or sparse/partial clone (blobless), deps from one shared content-addressed store (pnpm store / reflink COW), writes in a thin overlay; commit = push overlay diff to fork. Remote mode: agent runs in a Sandbox near Artifacts with zero local checkout.
+- Workflow: agent workspace = Artifacts fork (server) + local lazy materialization: sparse checkout (working-tree savings only; Artifacts documents v1 `filter` unsupported, E-G001; v2/ArtifactFS lazy hydration documented but untested by us, E-X021), deps from one shared immutable store (pnpm), private writable build outputs per task; commit = push to fork. Remote mode: agent runs in a Sandbox against its fork, moving (not removing) allocation to the cloud; local and remote bytes reported separately.
 - Architecture: Artifacts fork + token; local mode (sparse checkout of a full clone — Artifacts does not support `filter`, E-G001 — plus shared immutable deps store) or Cloudflare Sandbox workspace; Worker API for file reads (E-C305 readFile).
-- MVP: measurement harness: 1/5/10/20 workspaces of a real JS repo, physical bytes (du --apparent vs physical, btrfs/xfs reflink), creation latency, build/test parity, for: plain worktrees, worktrees + pnpm store, blobless sparse clones, reflink snapshots, Artifacts-remote sandbox.
+- MVP: measurement harness: 1/5/10/20 workspaces of a real JS repo, physical bytes (du --apparent vs physical, btrfs/xfs reflink), creation latency, build/test parity, for: plain worktrees, sparse worktrees + npm, sparse worktrees + pnpm shared store (killing baseline; Codex measured pnpm two-tree union 229.6 MiB vs 459.0 MiB summed on one small Worker starter, package-storage-validation.md), ArtifactFS (incumbent control, E-X021), reflink only where the FS supports it (ext4 here does not, E-G007), Artifacts-remote sandbox (local + remote bytes).
 - Risks: local tools may already solve it (pnpm, reflinks) -> product value is the integration and remote mode; FS portability; not obviously "Git platform" to judges.
 - Competitors: git worktree/sparse-checkout, pnpm, Nix store, Dagger container-use, devcontainers, Cursor/Codex cloud agents.
-- Falsification: if worktrees + pnpm store + reflinks already get <1.2x amplification at 20 workspaces with acceptable latency, the problem is configuration not product; pivot to a "workspace doctor" tool.
+- Falsification (v2.1, Y3 threshold): the Artifacts-specific mode must cut total physical bytes (source + store + build outputs + logs, local plus remote reported separately) by >40% versus sparse worktrees + pnpm shared store at build/test parity with two concurrent writable tasks; otherwise park the product, keep a "workspace doctor" (configure pnpm/sparse/cleanup) as the user-facing answer to U7. ArtifactFS must also be beaten or it is the incumbent.
 
 ## A17 Fork-is-the-task board (F1/F9)
 
