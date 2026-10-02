@@ -70,6 +70,16 @@ No five-lane assignment. The experiment's zoom (user message 6) happens after a 
 | D-G10 | Treat notes-only handoff as a failing side ref on this fixture. | Accept E-G002 as a resume win. | Default clone had no notes. Fetched note named the parent. | R4-2's five-restart arm B wins. |
 | D-G11 | Refuse the round-5 numeric bounds as results. Record only the local rev-parse sample. | Use 30-90s or sub-10ms to design the primary. | No cloud call. No lane. | A timed loop with sample size is published. |
 
+## Note after Antigravity round 6
+
+`research/antigravity/round-6-challenge.md` was untracked while this file was being committed. I read the summary and the recovery, VGTB, and storage sections. I did not verify the five Pro files. `research/orchestrator/pro-angle-1.md` says it is model-generated research, citations need independent verification, and that conversation ran no benchmark. R6's synthesis of those files is not incorporated evidence.
+
+Round 6 says the 30–90 second loop and the 25–60 second turn are estimates, and it retracts write-tool interception and absolute zero-byte language. I accept those sentences as their statements. The same file then specifies an MCP head check in under 15 ms, a resume from a notes capsule in under 5 seconds, and a workstation with zero checked-out code. Those are new unmeasured bounds. R4-3 still applies to them.
+
+Round 6 still stores the recovery capsule in `refs/notes/agent-recovery` and decision receipts in `refs/notes/decision-receipts`. R4-2 applies to that store. A default clone does not carry the capsule.
+
+I then read the heartbeat `research/orchestrator/heartbeat-20261002T1850.md` and the recommendation sections of `pro-angle-2.md` and `pro-angle-3.md`. The heartbeat says those files are proposed research, not measured validation. Pro angle 3's falsification is 20 interruptions against native resume, worktrees, a handoff file, and Entire. The same file records an HN comment that a self-built conversation-to-git-notes tool delivered too little value to keep. That is negative evidence about notes, and it is one comment, not a survey. The heartbeat also says the Entire resume URL was inaccessible to its verifier, so Entire stays a named incumbent, not a result I reproduced. Pro angle 2 recommends a Decision Arena. That recommendation is not a hidden-test win, so it does not fill the A05 slot.
+
 ## Requests
 
 Reply accept, modify, or reject on R4-1, R4-2, and R4-3. A queued message to a missing `claude-principal` tag is not a reply. I will not relaunch Claude to obtain one.

@@ -106,6 +106,23 @@ Claude cannot answer R3-1..R3-3 or R4-1..R4-3 until a session tagged `claude-pri
 
 Codex reply on R3 was already accepted in round 3. Do not resend G-R3-CRIT or G-R4-CRIT.
 
+Inbox at the start of the round was empty. Codex was `working`, so G-R4-CRIT was inbox-only. No pane injection.
+
+| ID | To | Token |
+|---|---|---|
+| `01a0fdfc-9f69-7702-984c-0c0f84b1a825` | codex-principal | G-R4-CRIT |
+| `01a0fdfc-9f9a-75c3-9291-abfb91d2c6c2` | claude-principal, queued, tag absent | G-R4-CRIT |
+| `01a0fdfc-9fc6-72a2-9309-8862d7ab7c27` | desktop-orchestrator | G-R4-BLOCKER |
+| `01a0fdfd-bc68-7b73-9ab2-edf126b27f65` | desktop-orchestrator | reply to HEARTBEAT-20261002T1850 |
+
+## Inbox handled, round 4
+
+| ID | From | Token | Action |
+|---|---|---|---|
+| `01a0fdfc-8a39-7343-89f3-7a68dcf3c7e3` | desktop-orchestrator | HEARTBEAT-20261002T1850 | Read `research/orchestrator/heartbeat-20261002T1850.md`. Pro files are proposed research. Disk cap noted: 512 MiB per spike, stop if free space is under 8 GiB. No install. ACK is read-only. |
+
+No principal reply to G-R4-CRIT yet. Do not resend.
+
 ## Next
 
-Obtain accept/modify/reject on R4-1..R4-3. Do not launch executors. Open measurements that are still unrun: A01 live warning uptake, A14 runtime-only fixture, and a build-output comparison against the pnpm baseline once a free-space floor is stated.
+Obtain accept/modify/reject on R4-1..R4-3. Do not launch executors. Open measurements that are still unrun: A01 live warning uptake, A14 runtime-only fixture, and a build-output comparison against the pnpm baseline inside the 512 MiB cap while free space stays at least 8 GiB.
