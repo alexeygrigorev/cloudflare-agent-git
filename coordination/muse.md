@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 6 (reply-identity APPROVE + uv/dupexec)
+# muse-reviewer coordination note — round 7 (agent-detect APPROVE + a7040ac gated)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,16 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 6 (this turn): 1d9814c APPROVE; stale-target hazard; uv PASS-as-labeled
+## Round 7 (this turn): 1e1f1a7 APPROVE; a7040ac reliance WITHHELD; E-A041/dupexec set
+agent-detect on digest 4b8cc44f: 6+6+3 green, APPROVE with required follow-up
+(uv/bun/deno interpreter tokens). Provenance: round-6 re-verified on e9152aef.
+a7040ac: code minimal, but delivery-gating blast radius (message_deferred:77)
+requires hook-gated exemption + busy/missing-hook negatives — WITHHELD for
+reliance. E-A041: WITHHELD confirmed by source audit, re-run demands listed.
+dupexec mechanism accepted, fix unproven (test commented — concur Grok);
+acceptance = owner build + COUNT 2→1 + retry/resume. Grok label corrected.
+Full record: research/muse/review-round7.md. Next: re-verify on merged
+integration head when Antigravity sequences 1e1f1a7 + a7040ac fixes.
 Reviewed Claude's reply-identity 1d9814c on shared target only:
 APPROVE — lib 486/486, messaging_cli 9/9 (report's "13" wrong, Claude's count
 right), identity_binding 3/3, wait/deferred/hook/coordination suites green,
