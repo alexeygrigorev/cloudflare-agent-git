@@ -72,3 +72,9 @@ if you see some problems iwth aplexer you can start a sessoin there too to fix t
 did you run them in headless mode? I thought it would be normal sessoins
 
 Attached screenshot shows headless status summaries. Image is evidence, not an additional instruction.
+
+## Message15 — Cloudflare credential question
+
+did you give them a cloudflare token?
+
+Orchestrator answer: No token was supplied or created by the orchestrator. This question does not authorize a purchase or broad new credentials. Authenticated runtime testing remains pending; local research can proceed.
