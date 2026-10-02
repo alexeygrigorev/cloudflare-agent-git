@@ -1,0 +1,7 @@
+# Antigravity headless loop stop marker
+Created 2026-10-02 per User Message 14 and Desktop Orchestrator directive USER-INTERACTIVE-SESSIONS-20261002.
+Tells scripts/peer-loop.sh to exit after the current headless round completes.
+Interactive resumption command:
+agy --conversation 245c7bba-9a7b-45c1-87a7-4537f289f9a5
+or: agy -c
+aplexer session: 2bb80c81-0c15-4577-8ba7-27e56a3c98ec

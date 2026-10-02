@@ -113,6 +113,18 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
     - `A-R7-CRIT-CODEX`: Dispatched to `codex-principal`.
     - `A-R7-CRIT-CLAUDE`: Dispatched to `claude-principal`.
     - Read-ACK to `desktop-orchestrator` for `01a0fdff-9a5b`.
+- **Round 8:**
+  - Handled & ACKed:
+    - `01a0fe01-2211-7b21-9afb-e03c41f4895c` from `desktop-orchestrator` (USER-INTERACTIVE-SESSIONS-20261002; transition to interactive sessions; checkpoint and propose resume command).
+    - `01a0fe01-6209-7600-a0f8-3170520b9288` from `codex-principal` (Reply to R6; SF Oct 21 finals date; >=90% threshold; STALE paper 1/834 mined vs completed recovery; allowlist snapshot).
+    - ZCode A01 uptake protocol (`research/zcode/independent/a01-uptake-protocol.md`, commit `99647fd`).
+    - Grok Challenge R5 (`research/grok/challenge-r5.md`, R5-1..R5-4).
+  - Outbound R8 Critiques & Replies:
+    - `01a0fe07-a6cf-7661-9748-ea9b7a424d60`: Reply to `desktop-orchestrator` (`01a0fe01-2211`) with interactive resume command and session parameters.
+    - `01a0fe07-b323-73b1-a453-d6b2530d6b72`: Reply to `codex-principal` (`01a0fe01-6209`) with A-R8-CRIT-CODEX.
+    - `01a0fe07-c9c5-7380-a0ed-932e5ec97e22`: Dispatched `A-R8-CRIT-CLAUDE` to `claude-principal`.
+    - `01a0fe07-d35f-7eb2-8683-0ad25a7b90ba`: Dispatched `A-R8-REPLY-GROK` to `grok-head` (accepting R5-1..R5-4).
+    - `01a0fe07-dff9-7a41-9b06-19dca3ae502a`: Dispatched `A-R8-REVIEW-ZCODE` to `zcode-independent` (endorsing protocol with unfinished-WIP constraint).
 
 ---
 
@@ -159,5 +171,47 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
 - **D-A22:** Reconciled A16 CARE metrics to $\ge 90\%$ local disk reduction, resolving ZCode milestone feedback.
 - **D-A23:** Enforced $\le 512$ MiB spike budget and 8 GiB host disk floor (host root at 98% with 11 GiB available).
 - **D-A24:** Dispatched read-ACK to Desktop Orchestrator for recovery heartbeat message `01a0fdff-9a5b`.
-- **Current Milestone:** Round 7 independent challenge complete and published (`research/antigravity/round-7-challenge.md`). Evidence ledger updated to E-A030. Outbound R7 critiques dispatched to peers. Prepared to guide scoped ZCode executors upon consensus sign-off.
+- **D-A25:** Mandated Unfinished-WIP constraint on A01 Uptake Protocol (E-A031); notices must derive from in-progress AST/intent, not completed patches.
+- **D-A26:** Classified ArtifactFS as lazy FUSE incumbent and clarified CARE (A16) as containerized edge compute and mutable build isolation (E-A033).
+- **D-A27:** Accepted Grok D-G12: keep Task Passports outside the 6 pending 8-task kill test proving dependency closure and dirty-state handling (E-A032).
+- **D-A28:** Maintained A04 as parked pending 10-fixture kill test demonstrating tamper protection and signed receipt gating vs external oracles (E-A030).
+- **D-A29:** Concluded headless execution loop via `coordination/antigravity.stop` to transition cleanly to normal interactive session per User Message 14.
+- **D-A30:** Reaffirmed unapproved working six `[A01, A14, A16, A05, A06, A10]` with calibrated falsification kill gates; zero artificial consensus.
+
+---
+
+## 10. Round 8 Deliverables Summary (Completed 2026-10-02)
+- **`research/antigravity/round-8-challenge.md`**:
+  - Independent challenge of mission, architecture, and selection.
+  - Accepted Codex fact correction (SF finals Oct 21, 2026).
+  - Clarified $\ge 90\%$ local disk reduction as target design envelope / kill-test threshold, adhering to no-1.0x rule.
+  - Synthesized STALE paper findings (arXiv:2609.25396, E-A031): 1/834 mined PR interference, recovery tested only on completed changes; mandated Unfinished-WIP constraint on A01 live warning uptake.
+  - Endorsed ZCode `a01-uptake-protocol.md` event schema and generation fencing.
+  - Clarified ArtifactFS vs CARE (E-A033): ArtifactFS solves lazy object reading; CARE isolates multi-agent container compute, build artifacts, and OS watcher exhaustion.
+  - Addressed Grok R5-1 Task Passports fixture (E-A032) and accepted 8-task kill test.
+  - Addressed Grok R5-4 CIP vs external oracles and formalized 10-fixture kill test.
+  - Evaluated working six shortlist `[A01, A14, A16, A05, A06, A10]` against active kill gates.
+  - Established interactive session handoff protocol.
+- **`research/antigravity/evidence.md`**:
+  - Added **E-A031**: STALE Paper Mined vs Constructed Gap & Unfinished-WIP Limitation (arXiv:2609.25396).
+  - Added **E-A032**: Task Snapshot vs Shallow Depth-1 Boundary Gap (Grok `r5_snapshot_fixture.py`).
+  - Added **E-A033**: ArtifactFS Lazy FUSE Scope vs Remote Sandboxes (Official ArtifactFS Guide).
+  - Added **E-A034**: A01 Uptake Protocol Event Schema & Generation Fencing (ZCode `a01-uptake-protocol.md`).
+- **`coordination/antigravity.stop`**:
+  - Created stop marker to terminate headless `peer-loop.sh` loop cleanly after this turn.
+
+---
+
+## 11. Interactive Session Resumption Protocol
+Per User Message 14 and Desktop Orchestrator directive `01a0fe01-2211-7b21-9afb-e03c41f4895c`:
+- **Identity:** Session ID `2bb80c81-0c15-4577-8ba7-27e56a3c98ec`, tag `antigravity-head`, workspace `/home/alexey/git/cloudflare-agent-git`.
+- **Conversation ID:** `245c7bba-9a7b-45c1-87a7-4537f289f9a5`.
+- **Resume Command:**
+  ```bash
+  agy --conversation 245c7bba-9a7b-45c1-87a7-4537f289f9a5
+  ```
+  or simply `agy -c` from within `/home/alexey/git/cloudflare-agent-git`.
+- **Status:** Headless turn concluded; `coordination/antigravity.stop` active; ready for interactive composer attachment.
+
+- **Current Milestone:** Round 8 challenge complete and published (`research/antigravity/round-8-challenge.md`). Evidence ledger updated to E-A034. Inbound messages acknowledged. Interactive handoff configured. Prepared to guide scoped ZCode executors upon consensus sign-off.
 
