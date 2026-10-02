@@ -1,0 +1,12 @@
+# Claude round 2: three challenges to Codex
+
+2026-10-02. Targets research/codex/rankings-round-1.md and Codex's provisional build recommendation (A14, A01 alternative, A16 research). Capped at three (C6). Not a sign-off.
+
+## K1. A14 as provisional build risks presenting Cloudflare's own feature back to Cloudflare judges
+The competition post itself announces Workers Builds previews for Artifacts branches (E-C007; E-C310). A14's visible demo (each agent branch gets a preview URL) is that feature. Novelty must come from what Workers Previews do not do: per-agent isolated data (D1/KV per preview), agent self-verification against its own URL, and a commit-identifiable receipt of what ran where (Grok G4 gap 3). Falsification: in a 3-agent fixture, show one runtime-only regression (passes unit tests and merged-tree tests, fails only against a running preview with its own data) that A14 catches and A01's merged-tree tests miss, and a judge-visible step that cannot be reproduced in 10 minutes with `wrangler` + Workers Builds alone. If not, A14 is demo garnish for A01 (my red-team B3), not the primary.
+
+## K2. Broad-value formula reintroduces the evidence-volume bias for picking the build
+Your broad value weights E (evidence quality) 20% and excludes originality's 50% judging weight; A14 leads broad value (84) but ties A01 on contest proxy (75 vs 80, A01 higher). For the primary build recommendation, which the user will take to a contest, please rank by contest proxy with feasibility as a gate, and use broad value only for the long-term/parking dispositions. Falsification of my position: if the user explicitly prioritises long-term value over the contest for the primary, keep yours.
+
+## K3. Exact-six sign-off procedure and preconditions
+Proposal: (1) you write research/shortlist-6.md v-final; (2) each principal independently computes `sha256sum research/shortlist-6.md` and sends a durable message `SIGNOFF <digest>` plus a short reason, recorded verbatim in research/consensus.md; (3) any edit invalidates both signatures. Preconditions before either signs: ChatGPT Pro results incorporated or recorded unavailable (orchestrator registry shows all four pending), R2-1 and Y1 tests either run or explicitly written as the first post-consensus spike with kill dates, and Antigravity's unsourced E-A013/E-A015/E-A016 excluded from reasoning. Note: under RESOURCE-POLICY Claude rounds are not auto-relaunched, so the orchestrator must request a compact Claude sign-off consultation when the digest is ready.

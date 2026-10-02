@@ -1,6 +1,6 @@
-# 20 approaches (Claude integration, draft v1)
+# 20 approaches (Claude integration, v2)
 
-Owner: Claude principal. Date: 2026-10-02 (Europe/Berlin). Status: DRAFT v1 for challenge. No peer has approved anything in this file; scores below are Claude's alone. Codex scores independently (research/codex/), other heads challenge in their own files.
+Owner: Claude principal. Date: 2026-10-02 (Europe/Berlin). Status: v2 after round-2 challenges (claude-round-2-response.md). v1 digest per Codex: c68de131. No peer has approved anything in this file; scores below are Claude's alone. Codex scores independently (research/codex/), other heads challenge in their own files.
 
 Evidence IDs: E-C### Claude (research/claude/*.md), E-X### Codex (research/codex/evidence.md), E-A### Antigravity (research/antigravity/evidence.md), user message 7 = U7 (experiment/USER-INSTRUCTIONS.md). Seeds from research/claude/approach-seeds.md were merged or dropped as noted at the end.
 
@@ -48,7 +48,9 @@ Common architecture vocabulary: **canonical repo** (only the platform publisher 
 | A19 | Maintenance swarm with batch landing | F8 | M | 3 | 5 | 4 | 75 | 4 | 5 | 3 |
 | A20 | Earned-autonomy policy per agent config | F9 | W | 3 | 3 | 3 | 60 | 4 | 3 | 3 |
 
-Claude's provisional top 6 by contest score with Feas >= 3 tie-break, while keeping LTV visible: A01, A05, A07, A14, A13, A19. Strong LTV but low Feas (A03, A16, A18, A04) are flagged as "research/long-term" candidates rather than eliminated. This is input to debate, not a shortlist.
+v1 provisional six (A01, A05, A07, A14, A13, A19) is SUPERSEDED. v2 Claude provisional six after Y2 gate-cap rule and R2-3 dispositions: A01 (conditional primary, R2-1/Y1 tests), A14, A16 (remote/comparative spike; Orig 4 only for remote mode), A05 (conditional), A06, A10. Parked with reopen tests: A13, A07, A19 (folded into A01 batch mode), A03 (G5 fixture), A04, A18. Codex's independent scores: research/codex/rankings-round-1.md. Input to Codex's shortlist, not a vote.
+
+v2 corrections: A16 must not claim blobless/partial clone (Artifacts lists `filter` unsupported, E-G001); A01 kill test adds median push-to-flag <=60 s at N=3 (Y1) and live WIP-warning uptake (Codex R2-1); every approach adopts an agent-facing API as primary surface (ZCode red-team D1) and an explicit 'why plain worktrees + merge queue lose' fixture (D3).
 
 ---
 
@@ -76,7 +78,7 @@ Claude's provisional top 6 by contest score with Feas >= 3 tie-break, while keep
 - Competitors: Foremerge, GitButler locks, CODEOWNERS.
 - Falsification: expired-lease/remote-publisher race (Codex X2): if a racing publisher can land a diff inside another's live lease, or if claims reduce conflicts by <30% vs no claims on replayed tasks, kill.
 
-## A03 Merged-state gate + bounded intent reapplication (F1) — Codex's provisional preference
+## A03 Merged-state gate + bounded intent reapplication (F1)
 
 - Target user: teams whose agents produce individually green branches that break when combined.
 - Job: land the combination safely; when a candidate breaks the combined state, regenerate it on the fresh base instead of hand-resolving.
@@ -238,7 +240,7 @@ Claude's provisional top 6 by contest score with Feas >= 3 tie-break, while keep
 - Job: give each agent an isolated writable workspace whose physical cost is proportional to what it changes, not to repo + deps size.
 - Cited pain: U7 (first-hand, user); E-C157, E-C167, E-C168; Codex/Cursor cap worktrees at 15/25 (workflows lane). Orchestrator note: git worktrees already share the object DB; bytes likely in deps/build outputs — must measure (research/orchestrator/worktree-storage-pain.md).
 - Workflow: agent workspace = Artifacts fork (server) + local lazy materialization: read files on demand via Artifacts read API or sparse/partial clone (blobless), deps from one shared content-addressed store (pnpm store / reflink COW), writes in a thin overlay; commit = push overlay diff to fork. Remote mode: agent runs in a Sandbox near Artifacts with zero local checkout.
-- Architecture: Artifacts fork + token; local daemon (FUSE-free: sparse checkout + `--filter=blob:none` clone + reflink deps) or Cloudflare Sandbox workspace; Worker API for file reads (E-C305 readFile).
+- Architecture: Artifacts fork + token; local mode (sparse checkout of a full clone — Artifacts does not support `filter`, E-G001 — plus shared immutable deps store) or Cloudflare Sandbox workspace; Worker API for file reads (E-C305 readFile).
 - MVP: measurement harness: 1/5/10/20 workspaces of a real JS repo, physical bytes (du --apparent vs physical, btrfs/xfs reflink), creation latency, build/test parity, for: plain worktrees, worktrees + pnpm store, blobless sparse clones, reflink snapshots, Artifacts-remote sandbox.
 - Risks: local tools may already solve it (pnpm, reflinks) -> product value is the integration and remote mode; FS portability; not obviously "Git platform" to judges.
 - Competitors: git worktree/sparse-checkout, pnpm, Nix store, Dagger container-use, devcontainers, Cursor/Codex cloud agents.
