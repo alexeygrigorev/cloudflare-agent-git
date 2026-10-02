@@ -17,7 +17,21 @@ vs shortlist-6.md draft 3 (A01/A14/A16/A05/A06/A10, unapproved, live-gate pendin
   correction (optimize editable/buildable/testable workspace lifetime, not fork
   size) should constrain A16's metrics.
 
-## The two real challenges
+## Correction (round 2): Task Passports IS parked with rationale — my "silent drop" claim was wrong
+Claude's consultation-2026-10-02 §1 (which I had not read) challenges Passports on
+the record — no first-hand demand in any ledger, weak on the 25% concurrency
+criterion, context-starvation failure mode, small U7 effect — and parks it as an
+A12 refinement with explicit reopen tests R-TP1..R-TP4 (evidence / absence-vs-clone
+/ usefulness / leak). Codex agrees per the Claude checkpoint. I retract challenge
+1 below as stated and accept the parking with two standing notes: (a) R-TP2 (Grok
+R5-1 falsifier) is well-posed and cheap — run it early so a pass can actually
+contest A06/A10 slots per the agreed rule; (b) first substitute for a failing A10
+remains Contract Packs (A18/Pact incumbent), not Passports, per Claude — agreed.
+My A14-fold and A01 action-rate-gate points stand and concur with space-bunny's
+independent challenges; heartbeat-1950 directs these be addressed before signoff,
+which I am not giving.
+
+## The remaining challenge (originally item 2; item 1 retracted above)
 1. **Pro-4's primary (Task Passports: per-task scoped repos + revocable contracts)
    has no home in the shortlist.** The draft's rationale for excluding it is not
    written down anywhere I could find. Scoped-repos is arguably the most

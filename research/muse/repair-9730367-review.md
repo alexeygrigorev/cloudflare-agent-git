@@ -1,111 +1,100 @@
-# Peer review: aplexer idempotency repair (9730367 → tip b69787f)
+# Peer review: aplexer idempotency repair (9730367 → tip b69787f) — ROUND 2 (corrected)
 
-Reviewer: muse-reviewer (bound session c0838d96, engine shell, OpenCode Muse Spark 1.3).
+Reviewer: muse-reviewer, genuinely interactive session
+`07d34106-3a36-44f9-baa5-f98a27cb8dd9` (prior headless round: c0838d96).
 Repo: /home/alexey/git/cloudflare-aplexer-protocol, branch experiment/cloudflare-cross-host.
-Method: read actual code at tip; diffed 9730367 vs b69787f; ran test-idempotency-correct.sh
-against the tip binary (target/debug/aplexer, built Oct 2 21:10, has --idempotency-key).
-No builds, no installs, no peer files touched.
+Inputs since round 1: heartbeat-1920, heartbeat-1950 snapshot, desktop-orchestrator
+USER14-CORRECTION + EVIDENCE-CORRECTION, recovery addendum (four review dimensions),
+Claude consultation-2026-10-02 (Task Passports disposition), Antigravity evidence.md
+(E-A035..037 status). Re-read identity.rs resolve_identity; no new builds.
 
-## Overall verdict: APPROVE-WITH-CORRECTIONS
+## Overall verdict: WITHHOLD INTEGRATION (corrected from approve-with-corrections)
 
-The tip genuinely fixes the four load-bearing flaws the orchestrator's heartbeat
-withheld 9730367 for (unscoped key dedup, silent payload clobbering, list-then-write
-race, reply bypass). The bounds test provisions real sessions with valid syntax and
-passes. Integration should wait for the small corrections below — none requires
-re-architecture.
+Round 1 was wrong in two places: it certified the bounds test as "genuine binding"
+and graded the data/quota defects as low-priority. Corrected position: the tip's
+direction (scoped keys, conflict rejection, lock-held write, reply inheritance) is
+sound, but **no global integration and no dirty-checkout touch** until the mandatory
+items below are fixed AND a genuinely bound test passes. Review alone never
+authorizes integration.
 
-## Per-target findings (file:line evidence)
+## Correction 1 (retraction): APLEXER_SESSION_ID override is impersonation, not binding proof
+Round 1 §7 claimed "Genuine binding." Retracted. `test-idempotency-correct.sh` does
+start two real sessions, but every send is stamped `APLEXER_SESSION_ID=$SENDER_ID`
+from an unbound caller. Per `process.rs:73-76` + `identity.rs:116-128`, that env var
+is exactly the identity the resolver trusts, so the test exercises the
+storage-layer dedup keyed on *asserted* identity — it proves nothing about whether
+a message attributed to a tag originated inside that tag's workload. Worse,
+`identity.rs:107-115` shows `--from <tag>` needs no proof of possession either:
+any local process can send as any tag that ever existed in the workspace.
+Consequences, all confirmed by code:
+- **Scope is cooperative, not a security boundary.** A buggy or hostile local actor
+  can squat another actor's (tag, key): first writer with (victim-tag, K, attack
+  payload) wins, and the victim's legitimate send then fails as "conflict" —
+  a key-squat DoS. Keys are safe only among mutually-trusting local actors.
+  The docs (§4 correctly limits correlation to routing geometry) should say this
+  sentence explicitly.
+- The unsets at correct.sh L9–11 prevent *accidental* inheritance but the explicit
+  per-command overrides are deliberate impersonation mechanics. A genuine bound
+  test must originate sends inside the workload (see §8).
 
-### 1. src/messaging/store.rs — write_message_idempotent (lines 64–106): approve with corrections
-- Scoping (L81–88) compares logical identity: `m.from.tag == envelope.from.tag &&
-  m.from.workspace == envelope.from.workspace`, recipient Tag match on tag string only
-  (session_id ignored). Restarted sender sessions replaying a key dedup correctly;
-  a different sender reusing a key falls through to a fresh write. Correct.
-- Payload conflict (L91–95): same key + different `body`/`reply_to`/`kind` → hard
-  `bail!("idempotency conflict...")`. Correct as far as it goes.
-- Atomicity (L74, L77): exclusive `FileLock::exclusive(&mailbox_lock_path(mp))` is held
-  across scan (`list_messages_in`, itself lock-free) and write. All other writers
-  (`write_message_limited` L122, `submit_message_in`, cursor, GC) take the same
-  per-mailbox lock, so scan+write is race-free among cooperating writers. Concurrent
-  `list` takes no lock, but persistence is temp-file+rename (`atomic_write_bytes`,
-  L103), so readers see whole old or whole new files — no torn reads. Pre-existing
-  list-during-prune sensitivity is unchanged, not introduced here.
-- CONFIRMED ISSUE (medium-low): `data` is part of the payload (`envelope.rs:93-94`,
-  set from `--data` in both send and reply) but is NOT in the conflict comparison
-  (L91). Same key + same body + different `--data` silently returns the old message.
-  Fix: add `m.data == envelope.data` to L91, or document that keys cover
-  body/kind/reply_to only.
-- CONFIRMED ISSUE (low): anonymous senders (`MessageFrom::anonymous`, tag None,
-  workspace None) all satisfy `None == None`, so distinct anonymous actors sharing a
-  key collide. Document or mix in `external`/session fallback.
-- CONFIRMED ISSUE (low): prune failure is swallowed (`let _ =` L104) while the
-  sibling `write_message_limited` (L133–144) rolls the write back on quota failure.
-  An idempotent send can report success with the mailbox over hard limits. Make them
-  consistent.
+## Correction 2 (severity upgrades — all MANDATORY, integration-blocking)
+1. **DEBUG body leak** (`message_routing.rs:161`): every send/reply body to stderr —
+   observed in my own run. Mandatory: delete. (Was already must-fix; confirmed mandatory.)
+2. **`data` excluded from conflict compare** (`store.rs:91` vs `envelope.rs:93-94`):
+   same key + same body + different `--data` silently returns the old message.
+   Recovery addendum dimension 2 requires `data` in the tuple. Mandatory: add
+   `m.data == envelope.data`, no document-instead option.
+3. **Quota/prune rollback parity** (`store.rs:104` `let _ = prune_workspace_locked`):
+   sibling `write_message_limited` (L133–144) rolls the write back when quota
+   enforcement fails; the idempotent path reports success over hard limits.
+   Sibling quota paths audited: `check_body_size` (send/reply entry), envelope cap
+   in `serialized_envelope`, and the `too large` bail all fail loudly — the prune
+   swallow is the lone silent path (plus best-effort `maybe_gc_in`, acceptable as
+   cleanup). Mandatory: mirror the rollback contract.
+4. Dead code (`finish_and_print_existing`, empty `if` at `message_delivery.rs:120–122`)
+   and the two stale scripts (duplicate.sh asserts the old clobbering behavior and
+   fails on tip by design; test-idempotency.sh uses invalid start syntax): remove/
+   retire before integration so no runner mistakes them for spec. Stray
+   `src/messaging/tests/wait.rs.orig`: remove.
 
-### 2. src/bin/aplexer/cli_message_args.rs: approve
-Both `MessageSendArgs` (L138–139) and `MessageReplyArgs` (L160–161) expose
-`--idempotency-key`. Clean.
+## Unchanged approvals (re-affirmed)
+Scoping on logical tag+workspace ignoring session ids (`store.rs:81-88`); conflict
+rejection for body/reply_to/kind; lock-held scan+write with all writers on the same
+mailbox lock and rename-atomic reads for lock-free listers; reply inheritance via
+the single `finish_send` choke point; pane-retry safety via the submission
+reservation (`submission.rs:45-63`), not the empty if-block; envelope
+backward-compat; docs retractions (§3 two-computer, §4 geometry-vs-consensus, §2.5
+GC window) match code.
 
-### 3. src/bin/aplexer/message_routing.rs: approve with corrections
-- Reply inherits dedup: `cmd_message_reply` (L262–295) builds the envelope with the
-  key and funnels through `finish_and_print` → `finish_send` → idempotent write.
-  Inherited, as docs claim. `reply_to` is in the conflict tuple, so replies to
-  different originals under one key correctly conflict.
-- CONFIRMED ISSUE (must-fix, trivial): stray `eprintln!("DEBUG: body={}", ...)`
-  (L161) prints every message body to stderr on every send/reply — observed twice in
-  my own test run. Leaks content into logs. Delete.
-- CONFIRMED ISSUE (must-fix, trivial): `finish_and_print_existing` (L143–150) is
-  now dead code — the Phase-1 early-dedup block in `cmd_message_send` was correctly
-  removed (diff confirms), leaving no caller. Delete or the build will carry
-  dead-code warnings.
+## New: tag-reuse / GC-boundary semantics (addendum dimension 4)
+- Tag match ignores `session_id`, so after kill + same-tag restart, replay dedups
+  (intended), but a *different* actor later holding a reused tag replaying the same
+  key also dedups against the stale message and inherits its id/reply chain.
+  That is the documented logical-identity semantic, but it is currently neither
+  documented nor tested. Require a docs sentence + a tag-reuse test case.
+- Post-GC replay mints a new message (duplicate downstream delivery). Docs §2.5
+  admits the retention bound — sufficient, but needs the matching test case.
+  True cross-host SSH roundtrip and concurrent-send races remain unproven; they are
+  the acceptance bar, not review material.
 
-### 4. src/bin/aplexer/message_delivery.rs — finish_send (L109–128): approve with cleanup
-- The idempotent write is the single choke point for send and reply. Correct placement.
-- Pane double-delivery on retry is SAFE, but via the submission layer, not this
-  function: a retried key returns the same envelope id, and `submit_message_in`
-  (`submission.rs:45-47,57-63`) short-circuits on `delivery == Pane` /
-  `.attempt` marker / recipient ack. No second PTY injection. Verified by reading,
-  not by live pane test.
-- CONFIRMED ISSUE (trivial): empty no-op block L120–122
-  (`if envelope.delivery == Delivery::Pane && !pane.pane { // duplicate... }`)
-  does nothing. Delete it to avoid implying a check that doesn't exist.
+## §8. Genuine bound-test design (proposal for Antigravity's repair lane)
+Antigravity owns the isolated protocol patch; I review independently and never
+touch `~/git/aplexer` (dirty, unrelated) or integrate globally. Constraints: work
+only in the isolated protocol checkout/branch, prebuilt binary or existing
+`target/`, ≤512MiB/≤120s per run, no package installs. Design:
+- Start sessions A, B in a scratch workspace. Drive sends **from inside the
+  workload**: `aplexer send <tag> -- 'aplexer message send --to ... --idempotency-key K ...'`
+  (spawn-stamped identity; harness never exports APLEXER_SESSION_ID).
+- Cases: (a) A retry same key+payload → same id; (b) B same key+payload, B's own
+  identity → NEW id (no cross-sender dedup); (c) kill A, start A′ same tag, A′
+  retries K → same id (logical-identity replay); (d) same key different body and
+  different `--data` → both conflict; (e) squat case: B sends as… (must use
+  workload B's own identity; `--from` spoof case asserts the cooperative-scope
+  warning, not a pass); (f) tag-reuse + GC-window documented behaviors; (g) two
+  shells in A racing the same K (concurrency smoke).
+- Acceptance: all green + my independent re-review of the patch diff. Then, and
+  only then, can integration be re-proposed — still requiring orchestrator approval.
 
-### 5. src/messaging/envelope.rs: approve
-`idempotency_key: Option<String>` (L96–97) with serde default + skip — old mailbox
-files without the field still load. Backward compatible.
-
-### 6. docs/experiment-cross-host-ergonomics.md: approve (retractions match code)
-- §3 retracts the two-computer roundtrip claim; §4 limits correlation fields to
-  routing geometry, not consensus; §2.5 bounds the dedup window by GC retention;
-  §5 records child-mailbox inheritance and expired-peer routing. All verified
-  against code. "No concurrent retries can race" (§2.3) holds among lock-taking
-  writers in one workspace mailbox — accurate for every current writer.
-  "Completely closing the crash-after-send window" is true for inbox sends; pane
-  sends are equally safe via the submission reservation (above).
-
-### 7. Shell bounds tests: correct.sh passes; two legacy scripts are stale
-- Ran `test-idempotency-correct.sh` (timeout 110s) against the tip binary: PASSED —
-  duplicate returns same id, differing payload rejected with "idempotency conflict",
-  reply dedup returns same id. It provisions two strictly bound sessions with valid
-  `start --tag ... --workspace ...` syntax (help-verified) and unsets inherited
-  `APLEXER_SESSION_ID`/`APLEXER_WORKSPACE`/`APLEXER_TAG` (L9–11). Genuine binding.
-- Coverage gaps (not failures): no cross-sender same-key case, no restarted-sender
-  same-tag replay, no concurrent parallel sends, no `--data`-divergence case.
-  Recommend adding the first two; they are the exact behaviors the repair claims.
-- CONFIRMED ISSUE (must-fix): `test-idempotency-duplicate.sh` asserts the OLD buggy
-  behavior — same id for "hello world" vs "hello world 2" under one key — and
-  therefore FAILS on tip code by design. `test-idempotency.sh` uses invalid
-  `start shell test-recipient` positional syntax and rebuilds via `cargo run`.
-  Retire or clearly mark both superseded by `test-idempotency-correct.sh`, or a
-  future runner will read them as the spec.
-- Hygiene: stray `src/messaging/tests/wait.rs.orig` file present in the repo —
-  remove.
-
-## Must-fix before global integration (all small)
-1. Delete DEBUG eprintln (message_routing.rs:161).
-2. Delete dead `finish_and_print_existing` and dead empty if-block (message_delivery.rs:120–122).
-3. Retire/annotate the two legacy idempotency scripts; extend correct.sh with
-   cross-sender and restarted-sender cases.
-4. Include `data` in the conflict comparison, or document the exclusion.
-Recommended soon: anonymous-sender scope note; prune-error consistency; remove .orig file.
+## Outstanding asks
+- Repair owner (Antigravity): patch items 1–4 + §8 test; request my re-review.
+- Orchestrator: nothing needed; no blockers on my side.
