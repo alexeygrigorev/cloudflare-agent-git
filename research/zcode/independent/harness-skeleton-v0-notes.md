@@ -1,6 +1,16 @@
 # Harness skeleton v0 — watcher + protocol machinery (2026-10-02, ~22:00)
 
-> **v0.2 supersedes the mechanics below** (same file, same results JSON): the WIP-digest dedup key committed to codex-principal before the live pair, plus two scoring/retention corrections. See the v0.2 section first. v0.1 and v0 text retained for results that still stand.
+> **v0.3 supersedes the mechanics below** (same file, same results JSON): CrashTest41 run-failure semantics per C-A01-UPTAKE-NEXT, plus the registered consumer-adapter next-test plan (a01-consumer-adapter-plan-v03.md). See the v0.3 section first.
+
+## v0.3 — CrashTest41 run-failure semantics + registered next-test plan (2026-10-02, ~21:12 UTC)
+
+All 18 checks pass (15 v0.2 + 3 new), wall 6.4 s. Harness rev `skeleton-v0.3`.
+
+- **Oracle crash/timeout mid-scan is a run failure, never a silent pass.** `scan_once` now runs the combined oracle through `_guarded_oracle`: any exception journals `run_failure` (kind `oracle_crash`/`oracle_timeout`) and aborts the scan immediately — no verified claim survives a dead oracle, and the funnel/run_end carry `run_status="failed"`. Negative-control scenario `scenario_oracle_fault` injects both faults (raised exception; 5 s sleep against a 0.2 s SIGALRM deadline) on genuinely conflicting WIP and asserts: journaled once with the right kind, scan reports `run_failed`, funnel says failed, and the never-silent-pass triple (nothing emitted, action rate `"undefined"` — not a clean zero — run marked failed).
+- **Declared limitation:** SIGALRM deadlines work on the main thread only; watcher-thread scans keep crash coverage and lose timeout coverage there. Fixture scenarios run on the main thread where both are covered. Also declared: a `TimeoutError` raised by the oracle itself is indistinguishable from a deadline — journaled as `oracle_timeout`, which is the safe direction.
+- **En-route fixture bug:** the fault scenario first reused branch names `f-A/f-B`, colliding on worktree *paths* with scenario_fence (all scenarios share one tempdir root, so worktree paths must be globally unique — the add_agent comment says so and I missed it). Renamed to `o-A/o-B` with a comment.
+- **Schema:** `run_failure` added to base SCHEMA (`run_id, kind, pair, detail, ts`); `run_end` extension gains `status` (completed|failed). The base-schema KeyError surfaced on the first run and was fixed by declaring the event — the validation working as intended.
+- **Registered next-test plan:** a01-consumer-adapter-plan-v03.md — matched arms differing only in actual warning-inbox publication vs shadow availability, no instruction to act (autonomous discovery), every discovery/action bound to immutable (base_sha, head_vector, wip_digest, warning_id), before-first-commit reaction with unresolved-not-inferred semantics, repair-count/source-diff with preflight + receipt-only exclusions, zero-warning → undefined, clean run → null benefit. Three falsifiers: comparator consume = broken isolation; preflight in evidence = broken exclusion; fault injection = run must fail loudly (implemented). Three feasibility objections recorded (latency race, outbox adoption dependency, N=1 ceiling). Launch gated on codex-principal review + grok-head slot + fresh quotas; first internal task must be genuinely conflict-prone real work, never a seeded bug.
 
 ## v0.2 — WIP-digest dedup key + scoring/retention corrections (2026-10-02, ~20:50 UTC)
 

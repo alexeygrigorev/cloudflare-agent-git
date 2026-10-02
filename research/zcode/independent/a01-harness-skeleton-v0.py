@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A01 uptake protocol rev 2: harness skeleton v0.2. ZCode independent, 2026-10-02.
+"""A01 uptake protocol rev 2: harness skeleton v0.3. ZCode independent, 2026-10-02.
 
 v0.1 incorporates the accepted Grok R7-1/2/3 corrections (research/grok/
 r7-a01-harness-challenge.md, commit 247d9cb) at the harness-machinery level:
@@ -75,13 +75,15 @@ SCHEMA = {
                     "wasted_work_seconds"},
     "fence_event": {"run_id", "kind", "old_generation", "new_generation", "ts"},
     "run_end": {"run_id", "ts"},
+    # v0.3 CrashTest41: oracle crash/timeout mid-scan (run must fail loudly)
+    "run_failure": {"run_id", "kind", "pair", "detail", "ts"},
 }
 SCHEMA_EXTENSIONS = {
     "emit": {"duplicate", "oracle_status", "wip_digest"},  # dedup incl. WIP content
     "agent_action": {"classification", "source"},    # sec 4 class; agent_outbox|test
     "push_observed": {"watcher_lag_ms"},
     "consume": {"ts_agent_reported"},
-    "run_end": {"retention"},
+    "run_end": {"retention", "status"},  # v0.3: completed|failed
 }
 SUITE_NAME = "test_suite.py"
 
@@ -318,7 +320,7 @@ class UptakeHarness:
     harness-observed vector/generation countersigns.
     """
 
-    HARNESS_REV = "skeleton-v0.2"
+    HARNESS_REV = "skeleton-v0.3"
     ADVISORY_ORACLE = "symbol-overlap-wip-v0"
     REACTION_WINDOW_MS = 600_000  # sec 4 default; not binding in the skeleton
 
@@ -363,6 +365,42 @@ class UptakeHarness:
                             fixture_id=fixture_id, harness_rev=self.HARNESS_REV,
                             agents=sorted(self.agents), seed_pairs=seed_pairs)
 
+    ORACLE_TIMEOUT_S = 30
+
+    def _guarded_oracle(self, fn, repo, base, ta, tb):
+        """v0.3 CrashTest41: run the oracle under a wall-clock deadline.
+        Crash or timeout returns (None, exc) - the caller must journal a
+        run_failure and mark the run failed, never report a silent pass.
+        SIGALRM deadlines work on the main thread only; watcher-thread
+        scans keep crash coverage and lose timeout coverage (declared
+        limitation, harmless for the negative-control scenario which runs
+        on the main thread)."""
+        import signal
+        use_alarm = threading.current_thread() is threading.main_thread()
+        if use_alarm:
+            def _bang(signum, frame):
+                raise TimeoutError("oracle deadline exceeded")
+            old = signal.signal(signal.SIGALRM, _bang)
+            signal.setitimer(signal.ITIMER_REAL, self.ORACLE_TIMEOUT_S)
+        try:
+            return fn(repo, base, ta, tb), None
+        except Exception as exc:
+            return None, exc
+        finally:
+            if use_alarm:
+                signal.setitimer(signal.ITIMER_REAL, 0)
+                signal.signal(signal.SIGALRM, old)
+
+    def _record_run_failure(self, kind, aid, peer, exc):
+        # CrashTest41 semantics: an oracle crash/timeout mid-scan is a RUN
+        # FAILURE - journaled, run marked failed, never a silent pass. The
+        # scan aborts immediately: no verified claim survives a dead oracle.
+        self.run_failure = {"kind": kind, "pair": sorted([aid, peer]),
+                            "detail": repr(exc)[:300], "ts": monotonic_ms()}
+        self.journal.append("run_failure", run_id=self.run_id,
+                            kind=kind, pair=sorted([aid, peer]),
+                            detail=repr(exc)[:300], ts=monotonic_ms())
+
     def scan_once(self):
         t0 = monotonic_ms()
         new_pushes = 0
@@ -389,10 +427,18 @@ class UptakeHarness:
             spec["wt"], "status", "--porcelain").strip() else None)
             for aid, spec in self.agents.items()}
         active = [aid for aid, t in wip_trees.items() if t]
+        oracle_fn = getattr(self, "oracle_fn", combined_oracle)
         for i, aid in enumerate(active):
             for peer in active[i + 1:]:
-                res = combined_oracle(self._main_repo(), self.base_sha,
-                                      wip_trees[aid], wip_trees[peer])
+                res, err = self._guarded_oracle(
+                    oracle_fn, self._main_repo(), self.base_sha,
+                    wip_trees[aid], wip_trees[peer])
+                if err is not None:
+                    kind = ("oracle_timeout" if isinstance(err, TimeoutError)
+                            else "oracle_crash")
+                    self._record_run_failure(kind, aid, peer, err)
+                    return {"push_observed": new_pushes, "emitted": 0,
+                            "scan_ms": monotonic_ms() - t0, "run_failed": True}
                 if not res["pass_"]:
                     if self._emit(aid, peer, heads, failing="combined_behavior",
                                   oracle=self._oracle_ref(), status="verified",
@@ -426,7 +472,8 @@ class UptakeHarness:
                                       "|".join(sorted(my_syms & peer_syms)))):
                         emitted_now += 1
         return {"push_observed": new_pushes, "emitted": emitted_now,
-                "scan_ms": monotonic_ms() - t0}
+                "scan_ms": monotonic_ms() - t0,
+                "run_failed": getattr(self, "run_failure", None) is not None}
 
     def _main_repo(self):
         # all fixture worktrees share one main repo; store it on first use
@@ -548,7 +595,9 @@ class UptakeHarness:
     def run_end(self):
         # retention: the run's journal, notices, outboxes and any candidate
         # bundles stay on disk until an independent reviewer releases them
+        failure = getattr(self, "run_failure", None)
         self.journal.append("run_end", run_id=self.run_id, ts=monotonic_ms(),
+                            status="failed" if failure else "completed",
                             retention="bundle+scratch preserved until "
                                       "independent review release")
 
@@ -563,7 +612,12 @@ class UptakeHarness:
         actions = j.all("agent_action")
         acted = {a["warning_id"] for a in actions}
         uptake = len([a for a in actions if a["classification"] == "uptake"])
+        failure = getattr(self, "run_failure", None)
         return {
+            # v0.3: a run whose oracle crashed/timed out is FAILED - its
+            # counts are never interpretable as a clean zero-warning pass
+            "run_status": "failed" if failure else "completed",
+            "run_failure_kind": failure["kind"] if failure else None,
             "eligible_emitted": len(emitted),
             "delivered": len(delivered),
             "consumed": len(consumed),
@@ -848,6 +902,57 @@ def scenario_control(base):
     }
 
 
+def scenario_oracle_fault(base):
+    """v0.3 CrashTest41 negative control: an oracle crash/timeout mid-scan
+    must journal run_failure, mark the run failed, and emit nothing - a
+    broken oracle must never masquerade as a clean zero-warning pass."""
+    repo = base / "repo_fault"
+    base_sha = seed_fixture(repo)
+    # branch/worktree names must be unique across ALL scenarios sharing the
+    # tempdir root (fence already claims f-A/f-B)
+    agents = {aid: add_agent(repo, aid, f"o-{aid[-1]}")
+              for aid in ("agentA", "agentB")}
+    # conflicting WIP so the scan genuinely reaches the combined-oracle call
+    (agents["agentA"]["wt"] / "util.py").write_text(
+        make_util_py().replace("return total * (1 - pct / 100.0)",
+                               "return total * (1 - pct / 100.0) - 1  # A"))
+    (agents["agentB"]["wt"] / "util.py").write_text(
+        make_util_py().replace("return total * (1 - pct / 100.0)",
+                               "return (total * (1 - pct / 100.0)) * 0.9  # B"))
+
+    def boom(_r, _b, _ta, _tb):
+        raise RuntimeError("injected oracle fault (CrashTest41)")
+
+    def slow(_r, _b, _ta, _tb):
+        time.sleep(5)
+        return {"pass_": False, "detail": "unreachable after deadline"}
+
+    out = {"scenario": "oracle_fault_negative_control"}
+    for kind, poison in (("crash", boom), ("timeout", slow)):
+        journal = Journal(base / f"fault_{kind}.jsonl")
+        h = UptakeHarness(f"skel-fault-{kind}", base_sha, agents, journal,
+                          base / f"ws_fault_{kind}")
+        h.run_start(fixture_id=f"oracle-{kind}", seed_pairs=[])
+        h.oracle_fn = poison
+        if kind == "timeout":
+            h.ORACLE_TIMEOUT_S = 0.2
+        res = h.scan_once()
+        failures = journal.all("run_failure")
+        f = h.funnel()
+        out[f"{kind}_journaled"] = (len(failures) == 1
+                                    and failures[0]["kind"] == f"oracle_{kind}")
+        out[f"{kind}_scan_reports_failed"] = bool(res.get("run_failed"))
+        out[f"{kind}_funnel_failed"] = f["run_status"] == "failed"
+        # the silent-pass falsifier: nothing emitted, rate undefined (not a
+        # clean zero), and the run itself carries the failed status
+        out[f"{kind}_no_silent_pass"] = (res["emitted"] == 0
+                                         and f["effective_action_rate"]
+                                         == "undefined"
+                                         and f["run_status"] == "failed")
+        h.run_end()
+    return out
+
+
 def scenario_real_repo(base):
     src = Path(__file__).resolve().parents[3]
     clone = base / "realrepo"
@@ -887,6 +992,7 @@ def main():
         stale = scenario_stale(base)
         fence = scenario_fence(base)
         control = scenario_control(base)
+        fault = scenario_oracle_fault(base)
         real = scenario_real_repo(base)
 
     wall_s = round(time.perf_counter() - t_start, 1)
@@ -911,18 +1017,29 @@ def main():
         "fenced_action_rejected": fence["fenced_action_rejected"],
         "control_no_emit_and_oracle_pass": control["no_false_positive"]
             and control["control_combined_oracle_pass"],
+        "oracle_crash_journeled_run_failed":
+            fault["crash_journaled"] and fault["crash_scan_reports_failed"]
+            and fault["crash_funnel_failed"],
+        "oracle_timeout_journeled_run_failed":
+            fault["timeout_journaled"] and fault["timeout_scan_reports_failed"]
+            and fault["timeout_funnel_failed"],
+        "oracle_fault_never_silent_pass":
+            fault["crash_no_silent_pass"] and fault["timeout_no_silent_pass"],
         "real_repo_wip_symbols_found": real.get("expected_symbol_present", False),
         "journal_schema_valid": not ALL_SCHEMA_ERRORS,
     }
     results = {
         "timestamp": wall_iso(),
         "runner": "zcode-independent (aplexer d54c1e11)",
-        "purpose": ("harness skeleton v0.2: grok R7-1/2/3 corrections at harness level - "
+        "purpose": ("harness skeleton v0.3: grok R7-1/2/3 corrections at harness level - "
                     "external pinned oracle at base/A/B/combined, both-writers-uncommitted "
                     "warning, agent-side outbox emission, funnel counts; v0.2 adds "
                     "WIP-digest dedup key (unchanged WIP dedupes, changed WIP re-emits), "
-                    "zero-warning action rate = undefined, run-end retention; NOT the "
-                    "R2-1/Y1 kill test (scripted stand-ins; live arms are grok-head's pilot)"),
+                    "zero-warning action rate = undefined, run-end retention; v0.3 adds "
+                    "CrashTest41 negative control (oracle crash/timeout mid-scan journals "
+                    "run_failure, run marked failed, never a silent pass) per C-A01-"
+                    "UPTAKE-NEXT; NOT the R2-1/Y1 kill test (scripted stand-ins; live "
+                    "arms are grok-head's pilot)"),
         "dedup_granularity": ("digest over the exact failing WIP tree pair "
                               "(content-addressed); one notice per distinct "
                               "failing WIP state; WIP churn re-emits by design "
@@ -935,7 +1052,8 @@ def main():
         "schema_errors": ALL_SCHEMA_ERRORS,
         "wall_seconds": wall_s,
         "scenarios": {"behavioral": behavioral, "stale": stale, "fence": fence,
-                      "control": control, "real_repo": real},
+                      "control": control, "oracle_fault": fault,
+                      "real_repo": real},
         "checks": checks,
         "all_checks_pass": all(checks.values()),
     }
