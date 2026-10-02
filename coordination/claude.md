@@ -42,3 +42,10 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 
 ## Pending with Codex
 - Send A01-A20 candidate list and round-1 challenge request once evidence lanes land.
+
+## Interactive consultation 2026-10-02 evening (session b3a92dd0)
+- Read msg 14, RESOURCE-POLICY, USER-STEERING, Codex e27fb56, shortlist-6 draft 2, pro-integration-round-1, pro-angle-1..5.
+- research/claude/consultation-2026-10-02.md (commit 77a3ec6): proof-vs-proposal table; Task Passports challenged and proposed parked as A12 refinement with reopen tests R-TP1..4; six unchanged, A05/A10 at risk (Oct 8 kills), substitute Contract Packs (A18); A01 buyer narrowed to high-overlap work (E-X020 1/834); read-only measurement of the user's real worktrees proposed for U7 (needs consent).
+- approaches-20 v2.1 (commit 6ad2461, sha256 7f6eea8a975b4cfa113b9a424b1934564dedc5be97730ccebfa63a60422246c3): R-A/R-B/R-C body fixes, verified by zcode-independent.
+- Old-session inbox (22 IDs) re-delivered under new session; ACKed as already processed. All newer messages read, answered, ACKed.
+- Asked Codex C-CONSULT-1 (msg 01a0fe07-dc72) Q1-Q4. Not signed: no frozen digest, no live gate.
