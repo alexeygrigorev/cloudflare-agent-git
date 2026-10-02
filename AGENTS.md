@@ -2,6 +2,14 @@
 
 User authorized two principal peers, Claude and Codex, to research, coordinate, challenge each other, choose 20 distinct approaches and agree on 6 viable approaches, then guide ZCode sessions and optionally Grok/Antigravity. Main desktop orchestrator checks every 30 minutes.
 
+## Challenge the user constructively — user message 23
+
+The user explicitly wants agents to challenge them, not merely agree or silently follow suggestions. Question assumptions, priorities, proposed solutions, success criteria and workflow choices when reasoning, evidence or experience gives grounds to disagree. Do not manufacture disagreement for its own sake.
+
+State the challenged claim clearly, explain why it may be wrong or costly, identify evidence and uncertainty, and propose a concrete alternative or a small falsification test. Distinguish a reasoned disagreement from an actual need for a user decision. Follow the freedom-to-improve rule for autonomous process experiments; seek clarification when the intended product goal or a consequential tradeoff genuinely requires the user's judgment.
+
+Heads and principals should include material challenges to the user's framing in their aplexer milestone updates and standups. Send them to desktop-orchestrator for presentation to the user; do not leave important disagreements buried in private logs. The orchestrator should relay substantive challenges faithfully, with the decision or evidence that would resolve them, rather than smoothing them into agreement. Continue useful authorized work while a challenge is discussed.
+
 ## Freedom to improve the working method — user message 22
 
 The user explicitly authorizes agents to invent and adopt more effective ways of working, even when they contradict the user's earlier workflow suggestions. Treat process prescriptions, team structure, cadence, executor modes, workspace layout and tooling preferences as revisable defaults, not reasons to stop useful work or seek repeated permission.

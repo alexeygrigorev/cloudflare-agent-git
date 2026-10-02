@@ -108,3 +108,7 @@ also it's probably better if the tasks/executors are launched headless. but I'll
 ## Message 22 — freedom to invent more effective working methods
 
 they are free to invent their own ways of working if it's more effecive ven if it contradicts what I say
+
+## Message 23 — agents should challenge the user
+
+i also want hem to challenge me
