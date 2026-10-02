@@ -74,8 +74,14 @@ def start_agent(arm, role, prompt):
 
 
 def session_states(tags):
+    """Return matching rows, or None when the list command itself fails."""
     proc = subprocess.run(["aplexer", "list", "--json"], capture_output=True, text=True)
-    rows = json.loads(proc.stdout)
+    if proc.returncode != 0:
+        return None
+    try:
+        rows = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return None
     found = {}
     for row in rows:
         if row.get("tag") in tags:
@@ -112,18 +118,64 @@ def main():
     try:
         tags = [start_agent(arm, "A", prompt_a), start_agent(arm, "B", prompt_b)]
         deadline = time.time() + 22 * 60
+        observed = {}
+        ever_running = set()
+        absent_streak = 0
+        reason = "deadline"
         while time.time() < deadline:
             states = session_states(tags)
+            if states is None:
+                absent_streak = 0
+                (SCRATCH / f"poll-{arm}.jsonl").open("a", encoding="utf-8").write(
+                    json.dumps({"list": "unknown"}) + "\n"
+                )
+                time.sleep(20)
+                continue
+            for tag, row in states.items():
+                observed[tag] = row
+                if row.get("state") == "running":
+                    ever_running.add(tag)
             running = [tag for tag, row in states.items() if row.get("state") == "running"]
+            reaped = bool(tags) and all(tag in ever_running for tag in tags) and not states
+            absent_streak = absent_streak + 1 if reaped else 0
             (SCRATCH / f"poll-{arm}.jsonl").open("a", encoding="utf-8").write(
-                json.dumps({"running": running, "states": states}) + "\n"
+                json.dumps({
+                    "running": running,
+                    "states": states,
+                    "absent_streak": absent_streak,
+                }) + "\n"
             )
             if states and not running:
+                reason = "all-listed-not-running"
+                break
+            if absent_streak >= 2:
+                reason = "absent-after-observed-running"
                 break
             time.sleep(20)
         else:
-            print(json.dumps({"timeout": tags}), flush=True)
-        (SCRATCH / f"sessions-{arm}.json").write_text(json.dumps(session_states(tags), indent=2) + "\n")
+            if not all(tag in ever_running for tag in tags):
+                reason = "start-unobserved"
+            print(json.dumps({"timeout": tags, "reason": reason}), flush=True)
+        final = session_states(tags)
+        disposition = {}
+        for tag in tags:
+            if tag not in ever_running:
+                disposition[tag] = "start-unobserved"
+            elif final and tag in final:
+                disposition[tag] = "listed-" + str(final[tag].get("state"))
+            else:
+                disposition[tag] = "absent-after-observed-running"
+        terminal = {
+            "reason": reason,
+            "tags": tags,
+            "ever_running": sorted(ever_running),
+            "last_observed": observed,
+            "final_list": final if final is not None else {},
+            "list_unknown": final is None,
+            "disposition": disposition,
+        }
+        (SCRATCH / f"sessions-{arm}.json").write_text(json.dumps(terminal, indent=2) + "\n")
+        print(json.dumps({"lifecycle": reason, "disposition": disposition}), flush=True)
     finally:
         stop.write_text("stop\n")
         publisher.wait(timeout=30)

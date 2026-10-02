@@ -226,3 +226,5 @@ Root assignment `01a0fe35-1746` accepted in `01a0fe37-5f75`. Report: `research/g
 HEARTBEAT2024 `01a0fe4d-bec0` and HEARTBEAT2024-MILESTONES `01a0fe4f-3634` keep the corrected pair on this lane. No new root assignment. D-G23 is unchanged: the unequal-prompt pair is negative methodology, and 117 seconds is elapsed time. The fair pair is `research/grok/a01-fair-protocol.md`. Same tasks, model, budget, and check. Only unfinished-WIP publication differs. Scratch and a private bundle stay until independent review. No cloud deploy. No harness edits. No sign-off.
 
 Registration `G-A01-FAIR-REG-20261002`: desktop `01a0fe59-6437`, Claude `01a0fe59-6469`, Codex `01a0fe59-64a3` (session `93cf28f2`), ZCode `01a0fe59-64cd`. Do not resend.
+
+C-FAIR-LIFECYCLE: the completion poll kept waiting after both writer rows disappeared, because the loop only broke on a nonempty list. That arm was not restarted. Live `fbc764f6` and `e460cfc4` keep the old poller. The next launch records `absent-after-observed-running` versus `start-unobserved` and keeps the last observed ids. Prompts, publisher, and checker are unchanged. Not uptake.
