@@ -313,5 +313,36 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
      - **Target:** Evaluate real supported package manager isolation: Python `uv` shared immutable cache with hardlinked `.venv` vs naive duplicated `.venv` across concurrent tasks.
      - **Location & Cap:** NEW ephemeral tiny tree `/tmp/aplexer-uv-isolation-spike/`, strictly bounded $\le 100$ MiB, zero modification/deletion of existing user worktrees, zero Cargo rebuilds.
      - **Metrics:** (1) Physical byte union (`du -c -s -B1`), (2) Source isolation (independent edits do not leak), (3) Concurrent execution safety (no lock/socket collisions during parallel runs).
-     - **Status:** Proposing to `desktop-orchestrator` and `claude-principal` to agree on narrow ownership and budget before launching.
+     - **Status:** Approved and authorized by Orchestrator and Claude (Heartbeat 2124); executed below in Section 17.
+
+---
+
+## 17. Workspace-Doctor D1 Real Package Isolation Benchmark & Fixlane Merging (Heartbeat 2124)
+
+1. **Workspace-Doctor D1 Real Package Benchmark (`r8_uv_package_isolation.py` / `E-A040`):**
+   - Executed authorized spike in `/tmp/aplexer-uv-isolation-spike` evaluating a real Python web stack (`fastapi`, `pydantic`, `pydantic-core`, `httpx`, `starlette`, `anyio` — 14 packages, ~11.5 MiB) across 2 concurrent tasks.
+   - **Scratch Budget & Safety:** Max allocated scratch was 70.2 MiB (strictly $\le 100$ MiB cap); disk floor 68.3 GiB free ($\ge 8$ GiB floor); 0 host worktrees touched; 0 cargo rebuilds; scratch completely cleaned up post-test.
+   - **Physical Allocation Metrics:**
+     - Pre-run worktree physical union: Arm A (naive copies) 23,142,400 B vs Arm B (hardlinks) 12,095,488 B (**47.73% savings**) and Arm C (symlinks) 4,333,568 B (**81.27% savings**).
+     - Post-run worktree physical union: Arm A 29,483,008 B vs Arm B 18,436,096 B (**37.47% savings**) and Arm C 10,674,176 B (**63.80% savings** — exceeds $>50\%$ pass criterion).
+     - Total physical footprint (trees + shared cache): Arm A 52,129,792 B vs Arm B 30,044,160 B (**42.37% total savings**).
+   - **Isolation Parity:** Source code (`src/app.py`) and test outputs (`output/result.json`) maintained 100% separate inodes across tasks (`source_isolated: true`, `output_isolated: true`). Both tasks executed real FastAPI models and validated outputs.
+   - **Crucial Hazard Analysis (The Inode Mutation Leak):**
+     - Package files installed via `uv` retain wheel permissions (`0664` — writable by user).
+     - In-place mutation of a package file in `t1` mutated the underlying shared inode, silently leaking the modification to `t2` and corrupting the shared `uv` cache (`mutation_leaked_to_t2: True`).
+     - In contrast, Arm A copies were fully isolated (`mutation_leaked_to_t2: False`).
+     - **Mitigation Requirement:** Workspace-Doctor must enforce read-only permissions (`chmod -R a-w .venv/lib/*/site-packages`) like `pnpm` (`0444`) to make accidental mutations fail-fast with `PermissionError`.
+   - **Python Runtime Bytecode Divergence:** Python generates un-deduplicated `.pyc` bytecode files into `site-packages/` during execution, reducing hardlink savings from 47.7% to 37.5%. Symlinks point into the cache, maintaining 63.8% physical savings post-run.
+   - **Cross-Device Boundary:** Hardlinks fail across mount points (`/` to `/tmp`), whereas symlinks operate seamlessly.
+
+2. **Integration Ownership: `reply-identity` Reconciled Baseline Merged:**
+   - As integration owner, merged reviewed `fix/reply-identity-routing` (commit `1d9814c`) into `integration/reconciled-baseline` in `/home/alexey/git/cloudflare-aplexer-protocol` (merge commit `ac48068`).
+   - Clean automatic merge across all 5 overlapping files (`envelope.rs`, `message_delivery.rs`, `message_routing.rs`, `coordination/tests.rs`, `wait.rs`). Both `idempotency_key` tracking and live-tag rerouting (`reply_target_same_workspace`) with binding diagnostics (`warn_binding_drift`) operate harmoniously.
+   - **Post-Merge Verification:** Re-ran behavioral boundary suite `test-idempotency-boundaries.sh`; all B1 (tag-reuse, conflict rejection, distinct tag minting) and B2 (quota eviction, post-GC fresh minting) tests passed 100% on commit `ac48068`.
+   - **Git Identity Note:** Confirmed repo-local identity `Repair Engineer <repair@engineer.local>` matches unpublished main commits `981056b..bc0d3d7`. Preserving for root publication decision.
+   - Preserved dirty main (`~/git/aplexer`) and global binary (`~/.local/bin/aplexer`) completely untouched.
+
+3. **Dupexec Diagnosis Coordination Handoff:**
+   - Formally accepted project-head coordination of lane `zcy-dupexec` (session `5613f3f9`, worktree `~/git/codex-zcode-wt-dupexec`, branch `diag/zcode-duplicate-exec`).
+   - Verified session status: running, 8 processes active, brief `.local/BRIEF.md` inspected. Awaiting `DIAGNOSIS.md` and `PATCH.diff` without running builds or modifying clean repo trees.
 
