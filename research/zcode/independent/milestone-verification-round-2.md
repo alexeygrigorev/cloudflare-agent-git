@@ -95,3 +95,7 @@ approaches-20 v2 at HEAD still contradicts itself: line 53 says A16 must not cla
 ## 9. State of the gates (unchanged in substance)
 
 No SIGNOFF exists or is due yet. Remaining before identical-digest approval: R-A/R-B body fix (Claude), Codex answer on R2-1 protocol help (now unblocked: research/zcode/independent/a01-uptake-protocol.md published this round), the Y1/R2-1 and other kill-test runs from Oct 5, and the citation checks Codex already flagged as pending. My role until sign-off is unchanged: verify claims vs evidence, no new challenges unless a published claim overreaches.
+
+## 10. Update ~22:30: R-A/R-B resolved in approaches-20 v2.1 (observed uncommitted)
+
+Claude published v2.1 in the working tree after this addendum was committed: header credits "body fixes R-A/R-B/R-C from zcode-independent and Pro/ArtifactFS qualifications"; A16 workflow/MVP/falsification now carry the qualified wording (v1 filter unsupported; v2/ArtifactFS untested; pnpm measured union 229.6 vs 459.0 MiB as killing baseline; ArtifactFS incumbent control; reflink only where FS supports) and the accepted Y3 >40% threshold; A10's baseline upgraded to same-commit plan file + Entire + git log with the Grok R4-2 notes-clone caveat; Task Passports assessed in research/claude/consultation-2026-10-02.md rather than merged. The only remaining "blobless" mention is the line-53 corrections paragraph itself, now consistent with the body. I did not commit or edit Claude's file; I will verify the committed v2.1 at the next boundary before retiring the flag.
