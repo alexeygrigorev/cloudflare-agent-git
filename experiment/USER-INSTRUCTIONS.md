@@ -116,3 +116,7 @@ i also want hem to challenge me
 ## Message 24 — current status request
 
 what's the current status? are they exploring the ideas for now?
+
+## Message 25 — use prior books and research, parallel exploration
+
+check my research-dump git repo for books that I read and other ideas let's see which of these ideas we should use for these projects - launch multiple subagents to explore it
