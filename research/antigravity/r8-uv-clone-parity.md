@@ -19,6 +19,14 @@ This follow-up benchmark directly addresses the mutual challenges and reviews fr
 5. **Executed `chmod -R a-w` Mitigation:** Directly tested the Workspace-Doctor read-only mitigation on hardlinked virtualenvs.
 6. **Continuous Peak Allocation Guard:** Polled peak physical scratch usage continuously; peaked at 62.38 MiB (strictly within 100 MiB cap).
 
+> [!WARNING]
+> **D1 Safe Product Gate Verdict: WITHHELD (Fixture Measurement Only)**  
+> While Arm C observed 53.12% whole-footprint reduction, the D1 safe product gate is **WITHHELD** due to identified source confounds:
+> 1. **Shared Cache Inode Coupling:** All arms reused a single shared cache; Arm B mutated the package file before Arm C ran, and Arm C's `chmod a-w` modified underlying cache inodes before Arm D ran.
+> 2. **Bytecode Policy Confound:** Arm C savings were driven primarily by `chmod a-w` suppressing `.pyc` writes into `site-packages/` (+8 KiB vs +4.8 MiB in Arm B), which was not controlled in Arm A copy (`PYTHONDONTWRITEBYTECODE=1` was omitted).
+> 3. **Threat Model & Owner Permissions:** `chmod a-w` is owner-reversible (`chmod u+w`); it is an accidental-write guard, not a security sandbox or process isolation boundary.
+> 4. **Scratch & Budget Controls:** Fixed scratch path with startup rmtree was used rather than unique-owned `mkdtemp`, and PeakMonitor asserted post-hoc rather than actively terminating processes.
+
 ---
 
 ## 2. Empirical Matrix
@@ -36,10 +44,10 @@ This follow-up benchmark directly addresses the mutual challenges and reviews fr
 | In-Place Mutation   | No leak (safe)    | LEAKED TO T2!     | BLOCKED (PermissionError) | BLOCKED (PermError) | Hazard|
 | Pre-run Trees Union | 22,626,304 B      | 11,788,288 B      | 11,788,288 B              | 4,087,808 B         | Static|
 | Post-run Trees Union| 27,418,624 B      | 16,580,608 B      | 11,796,480 B              | 8,880,128 B         | Exec  |
-| Post-run Trees Sav. | Baseline (0.0%)   | 39.53% savings    | 56.98% savings (PASS >50%)| 67.61% (PASS >50%)  | Trees |
+| Post-run Trees Sav. | Baseline (0.0%)   | 39.53% savings    | 56.98% savings            | 67.61% savings      | Trees |
 | Whole Footprint     | 49,782,784 B      | 28,114,944 B      | 23,339,008 B              | 31,268,864 B        | Total |
-| Whole Footprint Sav.| Baseline (0.0%)   | 43.52% savings    | 53.12% savings (PASS >50%)| 37.19% savings      | Gate  |
-| Whole Gate Verdict  | FAIL (<50%)       | FAIL (<50%)       | PASS (>50% Gate Met!)     | FAIL (<50%)         | Gate  |
+| Whole Footprint Sav.| Baseline (0.0%)   | 43.52% savings    | 53.12% savings            | 37.19% savings      | Gate  |
+| Whole Gate Verdict  | FAIL (<50%)       | FAIL (<50%)       | WITHHELD (Confounded)     | FAIL (<50%)         | Gate  |
 +---------------------+-------------------+-------------------+---------------------------+---------------------+-------+
 ```
 
@@ -55,11 +63,11 @@ This follow-up benchmark directly addresses the mutual challenges and reviews fr
 - **Hazard Consequence:** Because default `clone` degrades to hardlinks without setting read-only permissions, an in-place edit in Task 1 silently leaks to Task 2 (`mutation_leaked_to_t2: True`).
 - **Gate Result:** Arm B achieved **39.53%** worktree savings and **43.52%** whole-footprint savings, **failing both >50% gates**.
 
-### B. Workspace-Doctor Arm C Passes the Whole-Footprint Gate (>50%)
+### B. Workspace-Doctor Arm C Mitigation & Gate Withholding
 - When Workspace-Doctor applies the read-only mitigation (`chmod -R a-w .venv/lib/*/site-packages`):
-  1. **Safety:** An accidental in-place write by Task 1 fails immediately with `PermissionError: [Errno 13] Permission denied`, preventing any silent mutation of Task 2 or the shared cache (`mutation_leaked_to_t2: False`).
-  2. **Bytecode Suppression:** Because `site-packages/` is read-only, Python does not emit local unlinked `.pyc` bytecode files into `site-packages/` during execution (post-run trees union grew by only +8 KiB vs +4.8 MiB in Arm B).
-  3. **Whole Footprint Savings:** With bytecode growth suppressed and static packages deduplicated, Arm C achieved **56.98% worktree savings** and **53.12% whole-footprint savings** (23.34 MiB vs 49.78 MiB), **fully passing the >50% whole-footprint gate**.
+  1. **Accidental Mutation Guard:** An in-place write by Task 1 fails immediately with `PermissionError: [Errno 13] Permission denied`, preventing accidental silent mutation of Task 2 or the shared cache (`mutation_leaked_to_t2: False`). Threat model note: this is an accidental-write guard; the owner or a process with write permissions can reverse it (`chmod u+w`).
+  2. **Bytecode Suppression Confound:** Because `site-packages/` was marked read-only, Python did not write `.pyc` bytecode files into `site-packages/` during execution (post-run trees union grew by only +8 KiB vs +4.8 MiB in Arm B).
+  3. **Gate Status WITHHELD:** Although Arm C recorded 53.12% whole-footprint savings, the D1 safe product gate is **WITHHELD** pending clean-state identical-cache and normalized-bytecode re-evaluation.
 
 ### C. Symlink Mode (Arm D)
 - Symlink mode achieves the highest worktree savings (**67.61%** post-run), but because the shared cache (22.36 MiB) is included in the whole-footprint calculation across 2 small tasks, its whole-footprint savings is **37.19%** (below the 50% gate).

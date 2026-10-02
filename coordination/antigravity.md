@@ -371,11 +371,11 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
      - Concurrent Task 1 (Auth Service) generated `output/token.json` (`user_id: 101`, `username: "alice_engineer"`).
      - Concurrent Task 2 (Billing Service) generated `output/tx.json` (`tx_id: "tx_771829"`, `amount: 250.75`).
      - Both tasks executed concurrently, verified 100% value parity, separate output files, and distinct inodes (`ino_t1 != ino_t2`).
-   - **Executed Mitigation & Gate Pass (Arm C):**
+   - **Executed Mitigation & Gate Verdict WITHHELD (Arm C):**
      - Workspace-Doctor enforced read-only permissions (`chmod -R a-w .venv/lib/*/site-packages`).
      - In-place mutation attempt in Task 1 was **actively blocked** with `PermissionError: [Errno 13] Permission denied`, preventing corruption of Task 2 or the shared cache (`mutation_leaked_to_t2: false`).
      - Making `site-packages/` read-only suppressed runtime `.pyc` bytecode emission into package directories (grew by only +8 KiB post-run vs +4.8 MiB unmitigated).
-     - **Gate Pass:** Arm C achieved **56.98% worktree savings** and **53.12% whole-footprint savings** (23.34 MiB vs 49.78 MiB), **fully passing the >50% whole-footprint gate**.
+     - **Gate Verdict: WITHHELD (Confounded):** While Arm C recorded 53.12% footprint reduction on the fixture, the D1 safe product gate is **WITHHELD** due to identified source confounds (Heartbeat 2224 Storage Review): all arms reused a single shared cache (Arm B mutation and Arm C chmod modified underlying cache inodes before Arm D); Arm C savings were driven by `.pyc` suppression rather than pure sharing; `chmod a-w` is owner-reversible (accidental-write guard, not security sandbox); and fixed-path scratch was used.
    - **Peak Budget Guard:** Peaked at 62.38 MiB (well below 100 MiB cap); disk floor 68.11 GiB free; zero cargo rebuilds; scratch completely removed post-test.
 
 3. **Integration & Peer Coordination Status:**
@@ -383,6 +383,39 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - Binary provenance recorded: `sha256: 33b1be6584962ddad653467ccc337eae16bbb62901a173abab71b210cbca12e2` in `cloudflare-aplexer-protocol/target/debug/aplexer`.
    - Holding Claude's `fix/agent-detect-tag-lookup` (`1e1f1a7`) pending Muse independent review/approval before merging.
    - Global `~/.local/bin/aplexer` and `~/git/aplexer` dirty main remain completely untouched.
+
+---
+
+## 19. Clean-State Controlled Benchmark, Dupexec Handoff, and Hook Delivery Review (Heartbeat 2224)
+
+1. **Workspace-Doctor D1 Clean-State Controlled Benchmark (`r8_uv_clean_state_benchmark.py` / `E-A042`):**
+   - Executed fully controlled benchmark in unique `tempfile.mkdtemp(prefix="aplexer-uv-spike-", dir="/tmp")`, resolving all 5 confounds:
+     - **Unique Scratch Control:** Created ephemeral directory; strictly cleaned up only its own path on exit, with zero startup rmtree on fixed paths.
+     - **Cache Isolation:** Populated template clean cache once (455 files, sha256 manifest recorded). Every arm received an independent, pristine copy of the cache (`shutil.copytree(..., symlinks=True)`) with pre- and post-run manifest checks. No arm shared or mutated another arm's cache.
+     - **Controlled Bytecode Normalization:** Evaluated arms under both (a) default execution and (b) normalized bytecode (`PYTHONDONTWRITEBYTECODE=1` across all arms, including baseline copy).
+     - **Active Process-Group Peak Guard:** Polling thread monitored usage with active `os.killpg(SIGKILL)` capability. Peaked at 68.80 MiB (well under 100 MiB cap); 67.93 GiB disk floor.
+   - **Key Finding: Bytecode Asymmetry Dissected:**
+     - Under default execution (Part A), Arm C recorded 53.15% footprint savings because `chmod a-w` suppressed `.pyc` creation in `site-packages/`.
+     - Under normalized bytecode (Part B, `PYTHONDONTWRITEBYTECODE=1` all arms), baseline copy footprint dropped from 49.78 MiB to 44.99 MiB, and Arm C's true static sharing savings was **48.17% whole footprint** (23.32 MiB vs 44.99 MiB).
+     - **Gate Verdict: NOT MET / FAILED on $N=2$ (48.17% < 50.0% threshold).** Proves mathematically that for 2 concurrent tasks, static dependency deduplication alone saves 48.17% of the total footprint; crossing 50% requires $N \ge 3$ tasks.
+   - **Threat Model Validation:**
+     - Accidental write caught by `PermissionError: [Errno 13] Permission denied` (`mutation_leaked_to_t2: false`).
+     - Owner reversal (`chmod u+w`) succeeded, proving `chmod a-w` is an accidental-write coordination guard, not a security sandbox.
+
+2. **Dupexec Handoff & Scoped No-Build Adapter Plan (`codex-zcode`):**
+   - Coordinated project-head handoff with `codex-zcode` owner (`main` in `~/git/codex-zcode`, session `82d375cd`).
+   - Dispatched concrete proposal: rather than triggering an unbudgeted 24 GB cargo build in `codex-rs/target`, test the cold-spawn fix (`--mode build` instead of `--mode yolo`) via a lightweight `ZCODE_NODE` argv-adapter wrapper.
+   - The adapter intercepts the cold child launch (`codex-rs/core/src/client.rs:3481-3494`), rewrites `--mode yolo` to `--mode build`, and validates that:
+     1. Tool calls are emitted with complete JSON schemas to the outer runtime,
+     2. The inner harness immediately denies its own Bash execution (`No permission client configured`),
+     3. Total side-effect count is exactly ONE (asserting side effects per operation ID, not distinct PIDs),
+     4. Model denial-retry and continuity behavior are validated.
+
+3. **Native Hooks & Safe Idle Delivery Coordination with Muse:**
+   - Investigated hook wiring on host: `/home/alexey/.gemini/config/hooks.json` maps `PreInvocation` to `aplexer state-report working` and `Stop` to `aplexer state-report idle`.
+   - Identified vulnerability in unconditional `idle_was_contradicted` exemption (`a7040ac`): if `PreInvocation` hook fails to fire or is absent, active agent execution with PTY output is falsely masked as `idle`, risking premature pane message injection.
+   - Coordinating with `muse-reviewer` on a safe idle delivery guard: verifying that `idle` state is cross-checked against process count (`processes > 3`) and CPU activity before pane delivery, preventing message injection during active turn execution.
+
 
 
 

@@ -127,7 +127,8 @@
       "postrun_worktree_savings_percent": 56.98,
       "whole_footprint_savings_percent": 53.12,
       "passed_worktree_50pct_gate": true,
-      "passed_whole_footprint_50pct_gate": true,
+      "passed_whole_footprint_50pct_gate": false,
+      "whole_footprint_gate_status": "WITHHELD (Confounded)",
       "mutation_safe": true
     },
     "arm_d_symlink_doctor": {
@@ -135,9 +136,16 @@
       "whole_footprint_savings_percent": 37.19,
       "passed_worktree_50pct_gate": true,
       "passed_whole_footprint_50pct_gate": false,
+      "whole_footprint_gate_status": "FAIL (<50%)",
       "mutation_safe": true
     }
   },
+  "confounds_identified": [
+    "Shared cache reuse across arms: Arm B mutated package file and Arm C chmod modified underlying cache inodes before Arm D",
+    "Bytecode suppression confound: Arm C savings were driven primarily by chmod a-w suppressing .pyc writes into site-packages, whereas Arm A copy lacked normalized PYTHONDONTWRITEBYTECODE control",
+    "Threat model limitation: chmod a-w is owner-reversible (accidental-write guard, not security sandbox)",
+    "Scratch & budget controls: fixed scratch path with startup rmtree was used rather than unique mkdtemp, and PeakMonitor asserted post-hoc rather than active termination"
+  ],
   "peak_scratch_bytes": 65409024,
   "scratch_budget_ok": true
 }
