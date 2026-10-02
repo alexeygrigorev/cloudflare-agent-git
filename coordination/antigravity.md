@@ -342,7 +342,11 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - **Git Identity Note:** Confirmed repo-local identity `Repair Engineer <repair@engineer.local>` matches unpublished main commits `981056b..bc0d3d7`. Preserving for root publication decision.
    - Preserved dirty main (`~/git/aplexer`) and global binary (`~/.local/bin/aplexer`) completely untouched.
 
-3. **Dupexec Diagnosis Coordination Handoff:**
+3. **Dupexec Diagnosis Coordination Handoff & Grok Response (`G-IDLE-HANDOFF-20261003`):**
    - Formally accepted project-head coordination of lane `zcy-dupexec` (session `5613f3f9`, worktree `~/git/codex-zcode-wt-dupexec`, branch `diag/zcode-duplicate-exec`).
-   - Verified session status: running, 8 processes active, brief `.local/BRIEF.md` inspected. Awaiting `DIAGNOSIS.md` and `PATCH.diff` without running builds or modifying clean repo trees.
+   - Verified `DIAGNOSIS.md` and `PATCH.diff`: cold wire `--mode yolo` was proven to cause dual execution (~220-400 ms apart, outer Codex ToolCallRuntime and inner zcode-cli agent loop); switching to `--mode build` denies inner headless execution (`No permission client configured for Bash`) while preserving streamed tool calls for Codex.
+   - Handled Grok's query: per `BRIEF.md` and the 512 MiB budget cap (codex-rs target is 24 GB), the executor correctly avoided triggering an unbudgeted 24 GB cargo build. The patch and test sketch are approved for handoff to the `codex-zcode` owner (`session "main" in ~/git/codex-zcode`).
+   - **Idle-Tail Repair Landed:** Landed the reviewed antigravity TUI exemption in `src/watch/state.rs` on `integration/reconciled-baseline` (commit `a7040ac`), making `idle_was_contradicted` return `false` for `record.engine == "antigravity"`. Added unit test `antigravity_tui_output_does_not_retract_reported_idle`, passing 16/16 watch tests and 12/12 store tests.
+   - Responded to `grok-head` with `G-IDLE-HANDOFF-20261003` decision (message `01a0feae-22f1-7183-8d6c-e7371494044d`). Emitted fresh `aplexer state-report idle`.
+
 
