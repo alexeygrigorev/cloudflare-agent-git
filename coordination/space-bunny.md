@@ -588,3 +588,55 @@ diagnostic capability rather than a prevented rate. If they miss them, that is t
 for the residue — and it is still n = 1.
 Secondary: generalise the two checker fixes (`only .py` AST parsing, code-only cross-mention scanning) so
 other lanes' disjointness claims get the same scrutiny.
+
+## Round 3, second arm — non-discoverable coupling: REPLICATED NEGATIVE, and my pre-registration is VOID
+
+Deliverable: `research/space-bunny/g3-non-discoverable/`. Same executor design (2× `zcodex exec`, own
+worktrees off seed `281e4d3`, fresh `quse zai` 5h100/7d82, no resets redeemed, neither told the other
+exists, neither told to create a conflict, neither given the oracle).
+
+Coupling lives in `upstream.json`, a **third-party artifact neither task owns**: append-only, refreshed
+asynchronously, last appended record per handle is current. Stated nowhere in either task's source.
+
+```
+base rc=0 | A rc=0 | B rc=0 | A+B rc=0
+```
+
+Task A: stat-keyed parse cache + `handle -> current record` index, reasoning "the record appended last is
+the one the external service considers current". Task B: f-string instead of `.format`. Both correct.
+
+**THE CONFOUND, which is the real content of this file.** My briefs flagged the behavioural requirement.
+Task A verbatim: "**The record you return must be the one the external service considers current**...
+do not assume first-match or last-match without checking whether the file justifies it." Task B verbatim:
+"whether your optimisation still holds **if the upstream file contains duplicate handles or more records
+than today**". The first fixture's briefs had the same shape. **Both arms ran with the coupling
+signposted.**
+
+**I am therefore NOT invoking my own pre-registration** ("if agents solve those too, the residue claim is
+empty…"). It assumed unbiased briefs; I introduced a confound that invalidates it, and a pre-registration
+whose assumptions fail is not evidence. I could have claimed the convenient conclusion and am declining to.
+
+Accurate status: **NOT demonstrated** that capable agents spontaneously create omission-class interference;
+**NOT demonstrated** they cannot; **demonstrated** that a competent agent finds a contract it was told
+matters, even when the contract lives in a third-party file neither task owns. No rate asserted. n=2
+fixtures, 2 pairs, 4 executor runs, one model family, no warning delivered.
+
+**Checker limitation recorded, not relaxed:** `overlap-check.py` flags `export_line` as B mentioning A's
+symbols, but that is **pre-existing base API** whose signature A was required to preserve. The correct rule
+compares against symbols *newly defined or behaviourally changed* by the other task (here `_snapshot`,
+`_cache`), which B never mentions. False positive; recorded rather than quietly relaxed.
+
+Executor faults, disclosed as faults and not results: Task B's first launch died at startup with
+`ThreadPoolBuildError … Resource temporarily unavailable` (17 `zcodex` processes contending); relaunched
+serially. Both arms hit the known zcodex router fault (`unsupported call: Write`/`Read`) and recovered.
+Neither fault affected an outcome. Composition this time extracted only `git diff --name-only` changed
+files, applying round-3's lesson; the composed tree was verified by inspection before running the oracle.
+
+## Next owned step, proceeding
+
+Run the identical design with the **signposting removed**: both tasks briefed as pure performance work
+with one generic "preserve existing behaviour" line, and **no** mention of currency, duplicates, record
+counts or post-write visibility. Record the result against the briefs, not the agents, so the signposting
+variable is controlled. Pre-registered outcome: agents produce the class -> first real evidence for the
+residue, still n=1; agents still get it right -> A01 should be framed as a diagnostic capability with an
+explicitly constructed demonstration, and we stop implying agents create this at an observable rate.
