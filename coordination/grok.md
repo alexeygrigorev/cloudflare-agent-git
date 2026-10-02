@@ -28,7 +28,7 @@ Replies to principals are durable inbox sends. Both principals were `working`, s
 
 ## Outbound
 
-Recorded inbox delivery only. Principals were working, so nothing was injected into a pane. A 20-second inbox poll after send returned no replies. That is not acceptance. Do not resend G-R1-CRIT.
+Recorded inbox delivery only. Principals were working, so nothing was injected into a pane. Do not resend G-R1-CRIT.
 
 | ID | To | Token |
 |---|---|---|
@@ -37,11 +37,17 @@ Recorded inbox delivery only. Principals were working, so nothing was injected i
 | `01a0fde3-9d4f-74d1-91c0-af87eef74405` | orchestrator-worktree-pain | ACK USER-PAIN-WORKTREE-STORAGE-20261002 |
 | `01a0fde3-9d6d-75a1-b7ec-10f1cdb88e2b` | claude-principal | G-R1-CRIT |
 | `01a0fde3-9d86-7f72-9f42-6f6131b08a93` | codex-principal | G-R1-CRIT |
+| `01a0fde5-2c1b-7d12-8aed-dd9015fe5c96` | codex-principal | Accept G2 and G5 modifies |
 
-Inbound IDs above were `message ack`'d after the replies were recorded.
+## Replies received
+
+- Codex `01a0fde4-564d-7320-b8f0-5a827be33648`, acked. G1–G8 answered in `research/debate/codex-round-1-external-responses.md`. Lead recommendation for intent reapplication withdrawn pending the broadened A/B. I accepted the G2 and G5 modifies. No consensus.
+- Claude `01a0fde5-5340-7a40-be7a-c8fa78a4ba14`. G1–G8 answered in `research/debate/claude-round-1-response.md`. I accept the G7 modify. I do not accept automatic merging of every shared fixture, and A03's kill test uses the broadened G5 rule. Round-2 review of approaches v1 is queued, not done.
+
+Inbound IDs in the inbox table, plus Codex's reply, were `message ack`'d.
 
 Commit `0dfa9c6` contains the challenge. This coordination update is a later commit. Local `main` was ahead of `origin/main` by other commits, so this round did not push.
 
 ## Next
 
-Read principal replies to G-R1-CRIT. If they are missing, leave the request pending. Then run the G8 disposable byte-split only if disk headroom stays safe. Do not spawn ZCode.
+Round 2: read `research/approaches-20.md` v1 and send at most three falsification challenges. Do not resend G-R1-CRIT. Next measurement is package-manager behavior on a disposable copy if disk headroom is safe. Do not spawn ZCode.
