@@ -10,7 +10,8 @@
 | Linked worktrees | 472 |
 | Linked worktrees, sum of per-directory du | 131.7 GiB |
 | Linked worktrees, physical union (single du, hardlinks counted once) | **111.7 GiB** (disk is 436 GB) |
-| Dependency/build dirs inside linked worktrees (per-dir sum) | ~90 GiB: Python `.venv` ~59 GiB, `node_modules` ~26 GiB, Rust `target` 4 GiB, dist/build <1 GiB |
+| Dependency/build dirs, **physical union** (like-for-like, corrected) | **69.4 GiB = 62.1%** of linked physical: Python `.venv` 57.3 GiB (215 dirs), `node_modules` 7.9 GiB (244 dirs; ~26 GiB if summed per dir, so mostly already shared), Rust `target` 3.9 GiB, dist/build 0.2 GiB |
+| Remainder (source checkouts + untracked/other) | ~42 GiB physical |
 | Linked worktrees whose HEAD is already contained in origin/main | **264 worktrees, 82.4 GiB** (per-dir sum) |
 | Index last touched >3 days ago | 199 worktrees, 43.9 GiB (per-dir sum) |
 
@@ -28,9 +29,9 @@ Caveats: "HEAD contained in origin/main" is necessary but not sufficient for saf
 ## What this says about the user's framing (challenge, per steering 23)
 
 User message 7: "worktrees have a copy of the entire workspace". The data partially disagrees:
-1. Git itself is not the pile. Checked-out source is a minority; per-worktree dependency environments are ~80% of linked-worktree bytes, and Python venvs created in copy mode (R1, R4) share nothing at all.
+1. Git itself is not the pile. Checked-out source is a minority; dependency/build dirs are 62.1% of linked-worktree physical bytes (an earlier ~80% figure mixed a per-directory sum with a physical union; corrected after root review HEARTBEAT2024). Copied Python venvs alone are 57.3 GiB physical and share nothing (R1, R4); node_modules is already mostly shared.
 2. Accumulation is the bigger lever than per-copy size. 264 worktrees (82 GiB summed) already sit on merged commits; the pain is worktrees never being cleaned up after agents finish.
-3. Implication for our product work: a new Git platform (A16 remote workspaces) is not the cheapest fix for this user. The concrete better alternative, testable this week: (a) a "workspace doctor" that, per repo, switches new worktrees to shared/hardlinked environments (uv cache with hardlink link-mode, pnpm store) and (b) lists merged, clean, inactive worktrees for one-confirmation cleanup. Falsification: if, after (a)+(b) on R1 and R2, linked-worktree physical bytes do not drop by >50% with tests still passing in two concurrent worktrees, the doctor is insufficient and A16's remote mode regains priority.
+3. Implication for our product work: a new Git platform (A16 remote workspaces) is not the cheapest fix for this user. The concrete better alternative, testable this week: (a) a "workspace doctor" that, per repo, switches new worktrees to shared/hardlinked environments (uv cache with hardlink link-mode, pnpm store) and (b) lists merged, clean, inactive worktrees for one-confirmation cleanup. "HEAD contained in origin/main" is not safe-delete proof; no deletion is proposed without a dirty/untracked check and owner confirmation. First experiment runs in new tiny trees only, never on the user's existing worktrees (root HEARTBEAT2024). Falsification: if, after (a)+(b) on R1 and R2, linked-worktree physical bytes do not drop by >50% with tests still passing in two concurrent worktrees, the doctor is insufficient and A16's remote mode regains priority.
 4. A16 as a contest product should be judged on its own (concurrent-agent remote workspaces), not justified by U7 alone.
 
 ## Dogfood link (steering 19)
