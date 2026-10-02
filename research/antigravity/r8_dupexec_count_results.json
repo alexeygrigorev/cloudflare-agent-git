@@ -48,9 +48,10 @@
   },
   "verdict": {
     "count_reduction": "2 -> 1 (CONFIRMED)",
-    "inner_side_effect_eliminated": true,
+    "inner_stub_execution_suppressed": true,
     "outer_runtime_execution_preserved": true,
     "sequential_per_op_isolation": true,
+    "production_inner_denial": "pending_owner",
     "production_live_resume": "pending_owner"
   }
 }

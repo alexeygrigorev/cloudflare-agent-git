@@ -18,7 +18,7 @@ By leveraging `ZcodeRuntime::from_env`'s resolution of `ZCODE_NODE` (`codex-rs/c
 
 The benchmark confirmed:
 1. **Arm 1 (Baseline `--mode yolo`):** Produced **COUNT = 2** side-effects per operation (inner child PID 3295237 + outer runtime PID 3295268).
-2. **Arm 2 (Patched `--mode build`):** Produced **COUNT = 1** side-effect per operation (outer runtime PID 3295856 only; inner headless execution was cleanly denied).
+2. **Arm 2 (Patched `--mode build`):** Produced **COUNT = 1** side-effect per operation (outer runtime PID 3295856 only; inner stub execution was suppressed; production CJS denial pending owner validation).
 3. **Arm 3 (Sequential Per-Op Isolation):** Total side-effects remained exactly **1 per operation ID** across sequential ephemeral operations (note: ephemeral execution runs with distinct operation IDs; live multi-turn session resume and production model retry loops remain pending owner validation).
 
 Zero cargo builds performed, zero global installs modified, and zero edits to host checkouts.
@@ -50,9 +50,9 @@ Rather than recompiling the 24 GB `codex-rs/target` directory, the test harness 
 | Arm | Mode | Target Operation | Inner Execution (PID) | Outer Execution (PID) | Total Side-Effects (COUNT) | Exit Code |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
 | **Arm 1 (Baseline)** | `yolo` | `op_arm1_baseline` | Yes (`pid=3295237`) | Yes (`pid=3295268`) | **2** | 0 |
-| **Arm 2 (Patched)** | `build` | `op_arm2_patched` | **No** (denied) | Yes (`pid=3295856`) | **1** | 0 |
-| **Arm 3 (Op 1)** | `build` | `op_arm3_retry` | **No** (denied) | Yes (`pid=3296647`) | **1** | 0 |
-| **Arm 3 (Op 2)** | `build` | `op_arm3_retry_attempt2` | **No** (denied) | Yes (`pid=3297508`) | **2** (1 per op) | 0 |
+| **Arm 2 (Patched)** | `build` | `op_arm2_patched` | **No** (suppressed in stub) | Yes (`pid=3295856`) | **1** | 0 |
+| **Arm 3 (Op 1)** | `build` | `op_arm3_retry` | **No** (suppressed in stub) | Yes (`pid=3296647`) | **1** | 0 |
+| **Arm 3 (Op 2)** | `build` | `op_arm3_retry_attempt2` | **No** (suppressed in stub) | Yes (`pid=3297508`) | **2** (1 per op) | 0 |
 
 ### 3.1 Raw Probe Logs
 **Arm 1 (`probe_arm1.log`):**

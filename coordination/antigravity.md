@@ -474,6 +474,44 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
      - `zcode-independent` (`7bd5b3c2-4399`): PTY activity landed post-idle (`derived=idle source=activity`).
    - Communicated verified binary hash (`a9beb7d8`) and negative test evidence to Codex Principal so Codex can execute delivery of its own queued messages at a verified empty composer prompt.
 
+---
+
+## 22. Generalization of Hook-Gated Idle Exemption, Per-Turn Working Enforcement, and Target Readiness Recovery
+
+1. **Root Cause Diagnosis of Stop-Tail Contradiction in TUI Engines:**
+   - Target peer sessions `zcode-independent` (`7bd5b3c2`, `zcodex`) and `space-bunny-head` (`3acb40d2`, `opencode`) both successfully executed their native turn-finish hooks (`reported_state: "idle"`).
+   - However, interactive TUI engines continually write escape sequences to the PTY while resting at the prompt (e.g. OpenCode live elapsed status timer `60 · 23m 35s`, ZCodex ratatui cursor blinks).
+   - In `cloudflare-aplexer-protocol/src/watch/state.rs`, `idle_was_contradicted_with_hooks` hardcoded `if record.engine == "antigravity" && has_lifecycle_hooks { return false; }`. For any other engine, PTY output after `IDLE_ACTIVITY_GRACE_MS` (2,000 ms) marked the idle report contradicted by later PTY output, demoting state to `("idle", "activity")` (`source: "heuristic"`), which failed `require_ready_prompt` in `message deliver`.
+
+2. **Adversarial Review Resolution (Codex Principal `01a0fefb-dcd6`):**
+   - Codex Principal reviewed the uncommitted generic diff and identified two critical safety requirements:
+     1. `check_opencode_lifecycle` must not accept arbitrary text containing `state-report`; it must strictly require both per-turn working (`session.status busy`/`retry` or `tool.execute.before`) and idle (`session.status idle`) handlers.
+     2. For Codex, Claude, Grok, and Gemini, checkers must strictly require per-turn working hooks (`UserPromptSubmit` for Codex/Claude/Grok, `BeforeAgent` for Gemini). `SessionStart` was explicitly rejected as a sufficient working condition because it fires only once at session startup, which would leave subsequent turns permanently stuck in false-idle during active output.
+   - Implemented strict per-turn checks across `src/hooks/files.rs` and `src/hooks/mod.rs`:
+     - `check_opencode_lifecycle`: verifies `has_idle`, `has_working`, and `has_per_turn` (`session.status` / `tool.execute.before`).
+     - `check_codex_lifecycle`: strictly requires `[("Stop", "idle"), ("UserPromptSubmit", "working")]`.
+     - `check_claude_lifecycle`: strictly requires `[("Stop", "idle"), ("UserPromptSubmit", "working")]`.
+     - `check_grok_lifecycle`: strictly requires `[("Stop", "idle"), ("UserPromptSubmit", "working")]`.
+     - `check_gemini_lifecycle`: strictly requires `[("AfterAgent", "idle"), ("BeforeAgent", "working")]`.
+
+3. **Hermetic Integration & Multi-Turn Verification:**
+   - In `tests/messaging_deferred/readiness.rs`, added hermetic positive and negative tests for `opencode` and `zcodex` with isolated temporary homes.
+   - Added multi-turn behavioral transition tests (`zcodex_multi_turn_working_and_idle_transitions_preserve_delivery_integrity` and `opencode_multi_turn_...`):
+     - Turn 1 active working: delivery rejected with `not-ready` (`recipient reported working`), zero worker bytes written.
+     - Turn 1 resting idle: delivery succeeds (`submitted`, 4 bytes written).
+     - Turn 2 active working (prompt submitted): delivery rejected again with `not-ready`.
+   - All 23 tests in `tests/messaging_deferred.rs` pass cleanly (23 passed, 0 failed, 0 warnings).
+   - Recompiled scoped binary: `target/debug/aplexer` SHA-256 `196d8d8e75900a1072faca13505f46a4afc0e213e68305089b52e3ac6da1c5f1` at commit `d67c071`.
+
+4. **Live Target Verification:**
+   - Ran scoped binary against live target sessions:
+     - `zcode-independent` (`7bd5b3c2`): `zcode-independent ○ idle`, `lifecycle: running`, `source: reported`.
+     - `space-bunny-head` (`3acb40d2`): `space-bunny-head ○ idle`, `lifecycle: running`, `source: reported`.
+   - Screen capture of `space-bunny-head` confirms normal, clean, empty composer prompt (`Build auto · Space Bunny Free OpenCode Go`, `ctrl+p commands`) with zero active task writers.
+   - Both targets are organically derived as `○ idle` without artificial state reports or process manipulation.
+   - Coordinated with Codex Principal (`01a0feff-9a88`) for bounded first-use recovery on existing Bunny (`space-bunny-head`) for delivery referencing `01a0fe86-03b1`.
+
+
 
 
 
