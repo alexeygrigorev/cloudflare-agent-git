@@ -55,9 +55,28 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
   - **Protocol Idempotency Verification:** Confirmed that native `--idempotency-key` support remains safely isolated in `cloudflare-aplexer-protocol` and requires end-to-end SSH roundtrip tests before global adoption.
   - **Lane & ZCode Execution Plan:** Defined Antigravity's role in guiding scoped ZCode executors (max 2 live workers, 2 GB disk budget, 60-90m bounded timeouts) for CIP or CARE prototyping.
 
+## 6. Round 6 Deliverables Summary (Completed 2026-10-02)
+- **`research/antigravity/evidence.md` (Updated to Round 6)**:
+  - Added **E-A022**: Cloudflare Artifacts platform limits (1 GB repo, 32 MB blob) and billing cutoff date conflict (Announcement Oct 15 vs Pricing Docs Oct 14).
+  - Added **E-A023**: Counterexample Merge Lab & semantic failure gap (arXiv 2607.04697 / Pro Angle 1) mapping clean-merging test failures to diff boundaries.
+  - Added **E-A024**: Recovery Capsules vs Chat Replay (Pro Angle 3 & Entire docs); structured recovery manifest in Git Notes beats context-bloating chat history.
+  - Added **E-A025**: Task Passports & scope authorization boundaries (Pro Angle 4); limits multi-agent blast radius on shared repositories.
+  - Added **E-A026**: Workspace lifetime cost & host saturation (Worktrunk docs & Pro Angle 5); local worktrees collapse under dependencies, build caches, and inotify limits.
+  - Added **E-A027**: Official competition eligibility (Section 3 US/Canada 18+ residency & in-person Cloudflare Connect requirement); tracked separately from broad product value per User Steering U6.
+  - Added **E-A028**: Artifacts protocol semantics & commit transport; binding is read/control only, requiring standard Git HTTP transport for pushes/commits.
+- **`research/antigravity/round-6-challenge.md` (Authoritative Round 6 Challenge)**:
+  - **Mission & Eligibility Resolution:** Gated competition rules against User Steering U6; distinguished broad platform value from contest MVP; set strict October 14 billing budget.
+  - **Pro Investigations Integration:** Synthesized all 5 completed ChatGPT Pro investigations (`pro-angle-1..5`) into candidate definitions (Counterexample Merge Lab, Decision Arena, Recovery Capsules, Task Passports, and CARE Workspace Cost).
+  - **Codex R5 Pushback Resolution:**
+    - Reformulated VGTB from arbitrary write interception to dual-layer architecture: agent-side advisory MCP head check + central publisher lease gate; retracted unmeasured latency claims.
+    - Accepted `merged-tree tests+types` as baseline comparator for A04/Decision Arena; reaffirmed A05 clone tournaments receive no dedicated build lane.
+    - Retracted 100% / zero-byte language per no-1.0x rule; calibrated CARE to $\ge 90\%$ local disk reduction; proved ordinary sparse checkout still downloads 100% of object packfiles over the wire.
+  - **Comprehensive Kill-Test Map:** Upgraded all 6 candidates with calibrated baselines, non-zero thresholds, and explicit kill dates (Oct 7-11).
+  - **Guided ZCode Architecture:** Prepared for post-consensus ZCode guidance on CARE (A16) or Decision Arena (A04/Pro 2) under strict resource policy limits.
+
 ---
 
-## 6. Durable Messages Log
+## 7. Durable Messages Log
 - **Round 1:**
   - Sent: `A-R1-CHALLENGE-CLAUDE` (`01a0fde0-109b`), `A-R1-CHALLENGE-CODEX` (`01a0fde0-1c78`).
   - Handled: Orchestrator handoff (`01a0fdde-3579`), Codex consult (`01a0fdde-99c3`), Orchestrator storage pain (`01a0fddf-8abd`), Claude R1 response (`01a0fde1-68e4`), Codex R1 response (`01a0fde1-98e3`).
@@ -71,16 +90,18 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
   - Sent: `A-R4-CHALLENGE-CLAUDE` (`01a0fdf1-20a1`), `A-R4-CHALLENGE-CODEX` (`01a0fdf1-2e87`).
 - **Round 5:**
   - Handled & ACKed:
-    - `01a0fdf4-4498-7472-93ba-1553de845173` from `codex-principal` (ACKing pnpm baseline, agreeing A03 is recovery baseline, confirming unapproved status of working six, requesting protocol idempotency diff/SSH verification).
-    - `01a0fdf6-6cbc-7370-8d35-9ea4aa5a5d75` from `codex-principal` (concrete transport and identity cases for protocol repair; tag instability on stopped sessions, detached child process inheritance, 5 idempotency review test cases).
-  - Outbound R5 Critiques & Replies:
-    - `A-R5-CRIT-CLAUDE` (`01a0fdf6-7b99-71d3-a7bb-6ecf798cb374`): Dispatched to `claude-principal`.
-    - `A-R5-CRIT-CODEX` (`01a0fdf6-87fb-76d0-8436-2e89558c6cbc`): Dispatched to `codex-principal`.
-    - Reply to `01a0fdf6-6cbc` (`01a0fdf7-52ae-7e73-8c86-c36acd4dedcd`): Dispatched to `codex-principal` (ACKing transport cases, confirming test suite expansion in isolated worktree, reiterating zero global install).
+    - `01a0fdf4-4498-7472-93ba-1553de845173` from `codex-principal`.
+    - `01a0fdf6-6cbc-7370-8d35-9ea4aa5a5d75` from `codex-principal`.
+  - Sent: `A-R5-CRIT-CLAUDE` (`01a0fdf6-7b99`), `A-R5-CRIT-CODEX` (`01a0fdf6-87fb`), Reply to `01a0fdf6-6cbc` (`01a0fdf7-52ae`).
+- **Round 6:**
+  - Handled & ACKed: `01a0fdf9-07d2-70c1-8f6f-3d8e0f499f07` from `codex-principal` (R5 dispositions across C5-1, C5-2, C5-3/4).
+  - Outbound R6 Critiques:
+    - `A-R6-CRIT-CODEX` (`01a0fdfb-f72e-71e3-a26d-9511fb1af335`): Dispatched to `codex-principal`.
+    - `A-R6-CRIT-CLAUDE` (`01a0fdfc-06d7-76f1-9eb1-1fdf3f75b6d3`): Dispatched to `claude-principal`.
 
 ---
 
-## 7. Decisions & Status
+## 8. Decisions & Status
 - **D-A01:** Replaced "CEIP Proofs" with Checkable Invariant Probes (CIP) backed by trusted runner cryptographic receipts in Git Notes.
 - **D-A02:** Rejected A07 (Maintainer quarantine) and A05 (Fork tournament) from shortlist due to zero buyer migration in OSS and commodity prior art.
 - **D-A03:** Elevated A16 (Storage) as Cloudflare Artifacts Remote Execution (CARE) into top shortlist to directly solve User Message 7.
@@ -92,4 +113,11 @@ Peers: `claude-principal` (`92336dc8-cc9a-4c14-a49b-8eef0780cf4b`), `codex-princ
 - **D-A09:** Formulated Vector-Guarded Turn Boundaries (VGTB) to resolve A01's out-of-phase latency hazard ($T_{\text{loop}} \ge T_{\text{turn}}$).
 - **D-A10:** Formalized A14 gate strictly on ephemeral database/KV state isolation, rejecting generic preview URLs as insufficient differentiation.
 - **D-A11:** Committed to guided ZCode execution plan under strict RESOURCE-POLICY constraints (max 2 executors, max 2 GB disk, z.ai-first).
-- **Current Milestone:** Round 5 independent challenge complete and published. Dispatched durable R5 critiques to Claude and Codex. Awaiting peer responses and preparing for guided ZCode implementation spikes.
+- **D-A12:** Reconciled Section 3 US/Canada eligibility with User Steering U6 (broad product value exploration precedes contest cutoff optimization; keep eligibility separate from architectural decisions).
+- **D-A13:** Operationalized billing cutoff discrepancy (Announcement Oct 15 vs Pricing Docs Oct 14; budget and prototype must assume Oct 14).
+- **D-A14:** Integrated Pro Angle 1 "Counterexample Merge Lab" into A01 to synthesize minimal executable failing test cases when clean merges fail semantically.
+- **D-A15:** Reformulated VGTB into dual-layer architecture: agent-side advisory MCP head-freshness check + publisher generation lease gate, retracting arbitrary write-tool interception.
+- **D-A16:** Reformulated A05/A04 into the Decision Arena (Pro Angle 2) comparing alternative implementations against immutable hidden contracts with signed receipts in Git Notes, accepting Codex's `merged-tree tests+types` comparator baseline.
+- **D-A17:** Formalized A10 as Recovery Capsules (Pro Angle 3) and Task Passports (Pro Angle 4) in Git Notes (`refs/notes/agent-recovery`), avoiding context bloat and respecting 1 GB repo / 32 MB blob limits.
+- **D-A18:** Calibrated A16 CARE metrics to $\ge 90\%$ local disk reduction, retracting 100% / zero-byte language per no-1.0x rule; acknowledged ordinary sparse checkout downloads full packfiles while CARE keeps packfile traffic internal to Cloudflare.
+- **Current Milestone:** Round 6 independent challenge complete and published (`research/antigravity/round-6-challenge.md`). Evidence ledger updated to E-A028. Outbound R6 critiques dispatched to Claude and Codex. Prepared to guide scoped ZCode executors upon consensus sign-off.
