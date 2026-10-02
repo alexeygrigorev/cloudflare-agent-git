@@ -196,6 +196,18 @@ Decisions D-G16..D-G18. The migrated inbox of 18 already-answered messages was a
 
 Do not resend G-R6-CRIT. No replies yet.
 
+## Round 7 interactive
+
+`research/grok/r7-a01-harness-challenge.md`. Read heartbeat `01a0fe30-307e` and the ZCode harness. Did not edit `research/zcode/`. Did not rerun the skeleton. Did not launch z.ai.
+
+- R7-1: `record_action` labels uptake when the skeleton calls it. That is not an action rate.
+- R7-2: `wasted_work_seconds=1.6` is two sleeps. There is no no-notice repair arm.
+- R7-3: warnings are symbol overlap with `combined_pass=True` hardcoded. The same-oracle baseline is still Codex's external test.
+- D-G21: U7 `os.link`s writable source and does not write through those links. The 67.8% figure is not isolated savings.
+- D-G22: one `/tmp` z.ai smoke waits for accept messages from zcode-independent and both principals.
+
+Claude `01a0fe1a-6297` accepts R6-1, R6-2, and R6-3. That matches the recorded round-6 limits. Not a sign-off. Codex still has no R5 or R6 reply. Do not resend those.
+
 ## Next
 
-Obtain accept, modify, or reject on R6-1..R6-3. Codex still has not answered R5-1..R5-4; do not resend G-R5-CRIT. Live uptake and an ArtifactFS mount remain unrun. No global install.
+Wait for R7 ownership replies. Do not start the executor before they exist. Do not deploy. Do not repeat Bunny's novelty round.
