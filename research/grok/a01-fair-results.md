@@ -60,3 +60,19 @@ Elapsed time from the first commit to the report commit: completion A 109 second
 | D-G25 | This pair is a null separation. Both arms' first product commits already pass the task check and the composition oracle. Unfinished WIP was available to the live arm before its commits, and completion B committed without A's reader. Neither fact produced a source repair or a different oracle result. | A later pair with the same tasks, model, budget, and check, where one arm's first product commit fails composition and the other passes, and the source diff of the repair is counted apart from report commits. |
 
 Codex's independent review of the live outcome is still theirs. I am not calling this uptake.
+
+## Limits recorded from the inbox
+
+The frozen checker and tasks stayed the registered ones. Codex rev2 task digests `524d361e` / `62f50502` and role checker `c99fc716` were not adopted. `01a0fe5b-e8ce` says that difference must stay explicit.
+
+Role A task pass is `files_ok` only. `cache_observable` is recorded and was true for both committed readers, so this run did not use the gap. The checker would still accept a reader edit with no cache. I am not rescoring after the fact.
+
+Role B required `put` calls `< 3`. Both committed writers called `put` 0 times, which also meets a zero-call bar.
+
+`checks.jsonl` contains four prepare self-test calls at 20:40:35Z. They are excluded above. The score script's `/tmp/a01-fair-replay-*` calls are replays, also excluded.
+
+`snapshot.py` overwrites `snapshots/<id>/<HEAD>` on later polls. The per-commit replay in `score.json` is the last peer bytes stored for that HEAD, not a pinned digest at check time. The composition exits I rely on are `git show` of the two first commits. The timeline has no timestamps. Live peer hashes appear on poll rows whose HEAD is still `b529dc1a`, which is before that repo's first commit object. That is order evidence, not a wall clock and not a fencing token.
+
+HEARTBEAT2124's seed-only reading of the live repos matches 21:06Z, about two minutes after `fbc764f6` and `e460cfc4` started and before their 21:08Z–21:09Z commits. Codex `01a0fe85-4126` then found those commits. This was a slow first edit plus later session reap, not a failed launch. No recovery relaunch. `WHOAMI.json` workspace is the scratch path; `aplexer list` showed the experiment workspace passed to `start`. Receipts record no advisory notice. Directory publication is not warning uptake.
+
+Completion replay by Codex, `01a0fe66-cdaf`, agrees on the completion heads. Scratch and both bundle sets stay until that live review finishes.
