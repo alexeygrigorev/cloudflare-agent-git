@@ -1,11 +1,17 @@
 {
+  "model_type": "local_sqlite_demonstration_model",
   "unisolated_cross_agent_pollution_confirmed": true,
   "isolated_ephemeral_clean_verified": true,
   "agent_provision_latencies_ms": [
-    34.9219236522913,
-    31.389360781759024
+    34.92,
+    31.39
   ],
-  "workflow_fold_time_seconds": 0.0581,
+  "local_sqlite_execution_time_seconds": 0.0581,
   "reproduction_under_10_minutes": true,
-  "verdict": "CONFIRMED: Ordinary per-task scripting easily reproduces ephemeral data isolation in <1 second (far below 10-minute threshold). This confirms the shortlist gate: A14 does NOT require proprietary hosting infrastructure; it can be implemented as an open-source client-side wrapper / worker harness."
+  "retraction_and_caveats": {
+    "scope": "Raw local sqlite3 file operations in /tmp only; not real Cloudflare D1/KV/Workers Builds preview deployments",
+    "timing": "0.0581s measures local Python SQLite queries and file deletions, not real developer implementation / fold time",
+    "status": "The recorded wrangler/Workers-Builds gate was NOT executed on live Cloudflare edge infrastructure"
+  },
+  "verdict": "LOCAL DEMONSTRATION ONLY: Per-task SQLite directories demonstrate that separate files prevent dirty reads in local runners. Does not prove live Cloudflare D1/KV platform behavior."
 }

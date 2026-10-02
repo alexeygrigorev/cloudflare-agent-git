@@ -1,6 +1,12 @@
 {
   "timestamp": "2026-10-02T19:24:51Z",
+  "model_type": "hypothetical_arithmetic_model",
   "max_user_watches": 500428,
+  "retraction_and_caveats": {
+    "nature": "Pure arithmetic calculation on hardcoded constants (SOURCE_SIZE=2MiB, DEPS=150MiB, BUILD=40MiB, presumed 50KiB CARE manifest)",
+    "retraction": "Retract 'CONFIRMED / empirical / 99.39% storage savings and 99.66% watcher reduction' as measured results. No physical du extents, running build caches, or allocated inotify watcher tables were measured.",
+    "physical_counterpoint": "ZCode measured actual du extents at N=3 (u7-worktree-amplification-results.json): plain worktrees save -4.2% when deps dominate; hardlink stores save 42-50% on real starters (upper bound -67.8%)."
+  },
   "scaling_comparison": [
     {
       "n_agents": 1,
@@ -51,5 +57,5 @@
       "care_watch_reduction_pct": 99.66
     }
   ],
-  "verdict": "CONFIRMED: While pnpm hardlinks alleviate static dependency duplication (~42-49% reduction vs plain), mutable build caches and inotify watcher proliferation scale linearly with N. At N=5, local worktrees consume ~356 MB and 16,250 inotify handles locally, whereas CARE confines local footprint to 2.24 MB (99.37% reduction vs pnpm) and 55 watcher handles (99.66% reduction)."
+  "verdict": "HYPOTHETICAL ARITHMETIC PROJECTION ONLY: Illustrates theoretical scaling of build caches and watchers under assumed constants. Physical host allocation and kernel watcher tables remain unmeasured by Antigravity."
 }

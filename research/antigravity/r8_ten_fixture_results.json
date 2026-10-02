@@ -1,10 +1,17 @@
 {
   "timestamp": "2026-10-02T19:24:21Z",
+  "model_type": "synthetic_demonstration_model",
   "total_fixtures": 10,
   "merge_tree_clean_rate": 1.0,
   "in_repo_test_miss_rate": 1.0,
   "external_oracle_catch_rate": 1.0,
   "cip_catch_rate": 1.0,
+  "retraction_and_caveats": {
+    "population_rates": "Seeded fixtures only; does not establish real-world population incidence or live agent uptake",
+    "cip_power": "CIP arm delegates to external oracle by construction; zero demonstrated independent detection superiority over a merge queue running the same protected oracle",
+    "signature_disclosure": "The 'signature' field is an unkeyed truncated SHA-256 hash, not an attested cryptographic signature",
+    "fixture_5_note": "Fixture 5 detection resulted from uncaught AttributeError on NoneType, not a verified assertion"
+  },
   "fixtures": [
     {
       "id": 1,
