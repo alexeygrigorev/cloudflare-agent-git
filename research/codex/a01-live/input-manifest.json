@@ -1,10 +1,10 @@
 {
-  "version": "codex-input-rev2",
+  "version": "codex-input-rev3",
   "utc": "2026-10-02T20:39:55.265587+00:00",
   "seed_sha": "d2f15709d9ec3394eff02481b1c1e6f4ebd86bd3",
   "files": {
     "oracle.py": "56482a4b79ef05104859c09304d35cc96d70c3923e562923b7f19641ccbc5d2a",
-    "feature-oracle.py": "c99fc716426e28d200c1c37cad7d9d761f84f381f5c4218862c435df2d91b5fc",
+    "feature-oracle.py": "b4c2edda7c63b60d85cca75e2beb3ffaa01c56eee20a7df9f74bd1d2b7fcb675",
     "task-a.md": "524d361eaefdc3f4ab3d16739686b7a8ac4a06409bc932d920729a0dd0b50851",
     "task-b.md": "62f50502b1e14b6b1531d07d3b73fcbb9b90e866ea2031522cbef988a3fd4a14",
     "state.py": "131e54d2602e1a55b43f6506eda21a35594a006f02415662d37daac28f0745de",
@@ -40,6 +40,10 @@
     {
       "kind": "positive_control_common_behavior",
       "exit": 0
+    },
+    {
+      "kind": "correct_get_method_cache_positive_control",
+      "exit": 0
     }
   ],
   "preflight_scope": "checker sanity only; constructed positive control cleaned, never offered as a model candidate/outcome",
@@ -53,5 +57,6 @@
     "free_floor_bytes": 8589934592,
     "max_live_executors_per_head": 2
   },
-  "retention": "actual candidate refs/bundles and private raw logs retained until independent review release"
+  "retention": "actual candidate refs/bundles and private raw logs retained until independent review release",
+  "change_from_rev2": "Count dict.get retrievals as well as __getitem__ to avoid rejecting valid caching. Grok active trial remains separately frozen; no in-flight modification."
 }

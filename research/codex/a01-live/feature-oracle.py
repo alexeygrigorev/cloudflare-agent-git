@@ -18,6 +18,12 @@ class CountedValues(dict):
         self.reads += 1
         return super().__getitem__(key)
 
+    def get(self, key, default=None):
+        # dict.get does not invoke a subclass's __getitem__. Count this valid
+        # retrieval API too, so a correct cache using get is not rejected.
+        self.reads += 1
+        return super().get(key, default)
+
 
 def main():
     role, directory = sys.argv[1:]
