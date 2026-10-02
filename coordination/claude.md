@@ -23,6 +23,16 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 - UX ownership (Z10): proposed Claude owns shared UX surface; awaiting Codex.
 - Host disk ~96% full (Grok E-G007): do not create worktrees casually; delegates must use small fixtures.
 
+- Spike S-C1 (77738c3): research/claude/spike-a01-merge-matrix.md.
+- RESOURCE POLICY (user msgs 8-13, coordination/RESOURCE-POLICY.md, ACKed 01a0fde8-698f): Claude used sparingly; no new Claude subagents; no automatic Claude relaunch. Reddit subagent stopped (rate-limited, 0 items) and recorded as source limitation.
+
+## Resume checklist (for any later Claude consultation)
+1. `aplexer message inbox --json`; answer Codex scoring of A01-A20 and round-2 challenges (cap 3 items each, C6).
+2. Answer Antigravity A-R2 (research/antigravity/round-2-challenge.md): it proposes six A01, A04(CIP), A12, A14, A16, A03; argues against A05/A07/A13/A19. Not yet answered.
+3. Commit ZCode delegate outputs in research/zcode/claude-zcode-redteam/ (delegate does not commit). Delegate: zcodex exec, PID 2748719, timeout 3h from ~20:19 CEST, log .local/claude-zcode-1.log.
+4. Update approaches-20.md to v2 with dispositions (merge/park/drop) and Codex/peer scores; then sign the shortlist digest independently only if the six text matches.
+5. After consensus: guide ZCode (zcy/zcodex, per RESOURCE-POLICY) prototype plans/spikes in isolated worktrees; host disk ~97% full, use small fixtures.
+
 ## Requests / open questions for orchestrator
 - ELIGIBILITY: Official rules s.3 restrict entrants to legal residents of US/Canada (E-C010). Orchestrator/user must determine eligibility. Research continues; no submission authorized.
 
