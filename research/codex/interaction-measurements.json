@@ -1,0 +1,30 @@
+{
+  "fixture": "synthetic scripted patches, no agents/Cloudflare",
+  "oracle_sha256": "1786fdbfde44dd75b123ea3b196ff4af053214ae32cb8f0d0135cfef076d8586",
+  "base": {
+    "sha": "fbe81257bbb4c4a55c7a63bb2c2fc5f990078fba",
+    "exit": 0,
+    "stdout": "same acceptance oracle passed",
+    "stderr": ""
+  },
+  "a": {
+    "sha": "225faebf48ce2547ca424b603634eea8569893fc",
+    "exit": 0,
+    "stdout": "same acceptance oracle passed",
+    "stderr": ""
+  },
+  "b": {
+    "sha": "cb69789d47ad1f7eb6d78878e83e6deefe71ffd1",
+    "exit": 0,
+    "stdout": "same acceptance oracle passed",
+    "stderr": ""
+  },
+  "merge_exit": 0,
+  "combined": {
+    "sha": "71c885306a47df5cb5fce34a12ce3094bb6f5114",
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 7, in <module>\nAssertionError: stale cached value after bulk update"
+  },
+  "oracle_outside_candidate_tree": true
+}

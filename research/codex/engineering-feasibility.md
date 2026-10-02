@@ -4,7 +4,7 @@
 
 ## Documented boundary
 
-Artifacts is a Git-compatible storage/control plane, not a documented semantic merge service. The [binding](https://developers.cloudflare.com/artifacts/api/workers-binding/) offers repo lifecycle, inspection and token methods. [Git protocol docs](https://developers.cloudflare.com/artifacts/api/git-protocol/) describe normal clone/fetch/pull/push, v1 receive-pack, v1/v2 fetch, and missing optional filter/include-tag support. [Authentication](https://developers.cloudflare.com/artifacts/guides/authentication/) distinguishes Cloudflare control-plane credentials from repo-scoped Git read/write credentials.
+Artifacts is a Git-compatible storage/control plane, not a documented semantic merge service. The [binding](https://developers.cloudflare.com/artifacts/api/workers-binding/) offers repo lifecycle, inspection and token methods. [Git protocol docs](https://developers.cloudflare.com/artifacts/api/git-protocol/) describe normal clone/fetch/pull/push, v1 receive-pack, v1/v2 fetch, and missing optional v1 filter/include-tag support; actual v2 filtering must be probed (late ArtifactFS finding in pro-integration-round-1.md). [Authentication](https://developers.cloudflare.com/artifacts/guides/authentication/) distinguishes Cloudflare control-plane credentials from repo-scoped Git read/write credentials.
 
 Give each untrusted writer its own repository token. Keep the canonical repository's write credential exclusively with the publisher. A path-policy check on a candidate can reject publication, but it cannot prevent an agent changing arbitrary files in its own fork. A new Git smart-HTTP policy proxy is unnecessary for that boundary and too risky for the first MVP.
 

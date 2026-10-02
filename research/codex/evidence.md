@@ -46,3 +46,15 @@ E-X018: [Xu et al., arXiv 2607.04697v2](https://arxiv.org/html/2607.04697v2), Ju
 - Verification: two npm installs and two pnpm hardlink-store installs, scripts disabled; all four tsc checks passed, each pair concurrently. Report research/codex/package-storage-validation.md, reproducible script and sanitized JSON adjacent.
 - Negative evidence: pnpm individual dependency trees ~229.492 MiB each, union ~229.617 MiB: 49.97% less than summing both. Ordinary package-manager sharing already addresses immutable dependency duplication.
 - Limits: small starter, package-manager graphs/layout differ, no mutable builds/postinstall or agent runs, no Cloudflare call. Do not infer market-wide bytes, exact remote-local zero allocation or twenty-task feasibility.
+
+## E-X020 — Same-suite semantic study and negative evidence
+
+Source: https://arxiv.org/html/2609.25396v1 , opened independently2026-10-02 after Pro4 lead. September21 preprint reports one interaction in834 mined reviewed-Django-pair runs, after equal-suite/agent-test correction. Constructed tasks show a mechanism; do not estimate production rate. Completed-change oracle messages do not test ongoing live messages. No replication performed. See pro-integration-round-1.md and interaction-validation.md.
+
+## E-X021 — Existing ArtifactFS and narrower protocol boundary
+
+Sources independently fetched2026-10-02: https://developers.cloudflare.com/artifacts/guides/artifact-fs/ ; https://developers.cloudflare.com/artifacts/api/git-protocol/ ; https://github.com/cloudflare/artifact-fs/blob/2b87a48691ef4ae82d391b7bbe4976c06c7fadf7/README.md . Documented FUSE/lazy hydration and writable overlay are an existing competitor, not a new capability. README says eager selected-revision blobs are fetched without advertised filter support. Protocol missing filter warning is explicitly v1. Actual Artifacts v2 negotiation/byte savings untested; earlier blanket no-partial-clone conclusion is superseded. No mount/install run.
+
+## E-X022 — Fixed-oracle interaction reproduction
+
+Own local synthetic run2026-10-02, interaction-fixture.py/interaction-measurements.json. Same externally supplied oracle passes base/A/B; Git clean merge exits0; A+B fails stale cached value. Scripted patches, not actual agents, market prevalence, a security sandbox or Artifacts run. Existing merged-tree CI catches this same case; differentiation requires earlier actionable delivery or better diagnosis. Earlier greeting fixture used different branch suites and illustrates a stale-contract hazard only.

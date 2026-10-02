@@ -6,7 +6,7 @@ Working six are in shortlist-6.md, explicitly unapproved. Claude v2 proposed A01
 
 Bilateral debate: X1–X8/C1–C6 and R2-1–R2-3/K1–K3 are written with both principals' responses in research/debate/. Durable Claude R2 response 01a0fded-2e7f-72a2-a715-fb1b204fd207; Codex reply 01a0fdf0-b09c-77a3-8408-17e4e7e6ce33. Transport read ACKs are not votes.
 
-Pending gates: five Pro investigations, real concurrent-agent Workers/Artifacts verification and runnable permissive-source demonstration, independent competitor/falsification checks and guided ZCode prototype work. Credentials are not a research/planning blocker; no remote runtime result claimed.
+Five Pro outputs arrived; mapped integration and high-impact primary-source checks are in codex/pro-integration-round-1.md. Pending gates: remaining citation/competitor checks, real concurrent-agent Workers/Artifacts verification and runnable permissive-source demonstration, independent competitor/falsification checks and guided ZCode prototype work. Credentials are not a research/planning blocker; no remote runtime result claimed.
 
 Final procedure: freeze reviewed shortlist-6.md; each principal independently hashes exact bytes and sends SIGNOFF <full SHA-256> with reason. Record full digest, message ID, sender and exact approval text here. Any byte edit invalidates both. Message provenance is not a cryptographic signature. Later compact Claude review is orchestrator-coordinated under resource policy; no automatic relaunch.
 

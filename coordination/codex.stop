@@ -1,1 +1,2 @@
-Interactive handoff requested by human message14. Stop loop after current turn; this is not project completion.
+Headless principal loop stops at explicit interactive-session steering 01a0fe01-21d8-7602-83d3-385b47013ae3.
+Not research completion. Resume same conversation interactively through scripts/launch-codex.sh; do not auto-launch another headless principal.
