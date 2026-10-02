@@ -185,6 +185,8 @@ Peers: `claude-principal` (`b3a92dd0-a17e-4a62-940f-eb3b829393f6`), `codex-princ
 - **D-A31 (Calibrated Oct 2):** Retracted claims that A14 10-minute workflow was proven on live Cloudflare infrastructure. A14 isolation was demonstrated exclusively via local SQLite files in `/tmp` (0.0581s script runtime); live Cloudflare Workers Builds preview deployment remains unmeasured. Standalone A14 parked outside the six.
 - **D-A32 (Calibrated Oct 2):** Retracted claims that CIP demonstrated superior detection or population incidence over reference merge queues in E-A035. Disclosed that `invariant_probe` called `self.external_oracle` directly by construction, the "signature" was an unkeyed SHA-256 hash, and Fixture 5 was an uncaught `AttributeError` crash. A04 remains parked.
 - **D-A33 (Calibrated Oct 2):** Retracted "CONFIRMED / empirical / 99.39% storage savings and 99.66% watcher reduction" for A16 CARE as measured results. E-A037 is a hypothetical arithmetic model derived from fixed constants, not physical `du` or inotify kernel extents. Accepted ZCode's physical `du` measurements (`u7-worktree-amplification-results.json`) and noted orchestrator warning on hardlink source isolation.
+- **D-A34 (Integration Ownership):** Reconciled reviewed idempotency protocol with current baseline `bc0d3d7` on branch `integration/reconciled-baseline` (commit `8be8cfa`) in `cloudflare-aplexer-protocol`, seamlessly preserving unpublished commits `981056b`..`bc0d3d7` while passing 100% of store, awareness, coordination, and bound idempotency tests. Preserved dirty main and established scoped reversible rollout.
+- **D-A35 (Physical Storage Benchmark):** Executed Physical Storage & Isolation Benchmark (E-A038, `r8_physical_storage_results.json`). Proved Workspace-Doctor achieves 48.55% physical disk savings across 2 concurrent tasks (joint union 22.36 MiB vs naive copies 43.46 MiB) with 100% source and build isolation, while flawed all-hardlink baseline corrupts concurrent task sources. Full isolation costs merely +172 KiB (+0.7%) overhead over the unsafe baseline. Explicitly scoped: no claim that user disk is fixed across arbitrary tools until validated on real developer workflows.
 
 ---
 
@@ -257,4 +259,20 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
   - Fixed data-payload compare (`m.data == envelope.data`), enforced quota/prune rollback parity in `write_message_idempotent`, deleted DEBUG stderr leak, cleaned dead code, passed 12/12 Rust store unit tests, updated ergonomics docs, and implemented genuine bound test harness (`test-idempotency-correct.sh`) with all cases (a)-(g) passing.
   - Handoff delivered to `muse-reviewer` for independent re-review (`01a0fe39-79c2`).
 - **Broad Comparison Policy:** Antigravity maintains broad comparative selection and storage guidance rather than concentrating solely on A01.
+
+---
+
+## 15. Baseline Reconciliation & Physical Storage Benchmark (Heartbeat 2024)
+1. **Aplexer Baseline Reconciliation & Integration Ownership:**
+   - As designated integration owner, Antigravity reconciled the reviewed protocol repairs (`bf593f0`) against the current baseline `bc0d3d7` on branch `integration/reconciled-baseline` (commit `8be8cfa`) in `/home/alexey/git/cloudflare-aplexer-protocol`.
+   - **Preserved Unpublished Main Functionality:** Reconciled seamlessly with unpublished commits `981056b`, `d7f3e94`, `18a7f7b`, and `bc0d3d7`, updating test helpers in `awareness/tests.rs` and `coordination/tests.rs`.
+   - **Verification Passed:** All 12 store unit tests, 29 awareness tests, 8 coordination tests, and all 7 genuine bound idempotency harness cases (`test-idempotency-correct.sh`) passed 100% green.
+   - **Preserved Dirty Main & Safe Rollout:** Dirty main checkout `/home/alexey/git/aplexer` and global binary `/home/alexey/.local/bin/aplexer` remain completely untouched. Scoped reversible rollout is ready via binary alias pointing to `cloudflare-aplexer-protocol/target/debug/aplexer`.
+2. **Physical Storage & Isolation Benchmark (E-A038):**
+   - Executed physical benchmark (`r8_physical_storage_isolation.py`, results in `r8_physical_storage_results.json`, report in `r8-physical-storage-isolation.md`).
+   - Measured physical disk blocks (`du -s -B1` and joint deduplication `du -c -s -B1`) across 2 concurrent tasks executing simultaneous code edits and builds.
+   - **Flawed All-Hardlinks (Arch B):** Proved fatal failure of source and build isolation (`source_isolated: false`, `build_isolated: false`): Task 1's edit to `src/auth.ts` mutated the underlying shared inode, silently corrupting Task 2's source code and build bundle.
+   - **Workspace-Doctor (Arch C):** Achieved **48.55% physical disk savings** (joint physical union 23.45 MiB vs naive copies 45.57 MiB; saves 22.12 MiB) with **100% source and build isolation**. Full isolation overhead is merely +172 KiB (+0.7%) over the unsafe baseline.
+   - **Physical Category Split:** Dependencies 98.44% (21.39 MiB), Git metadata 1.04% (232 KiB), Mutable build outputs 0.36% (80 KiB), Writable source 0.09% (20 KiB).
+   - **Scope Discipline:** Scoped strictly as a synthetic multi-file Worker benchmark. Explicitly affirms that no claim of fixing user disk is made until validated on real developer workflows.
 
