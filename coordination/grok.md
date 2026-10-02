@@ -217,6 +217,10 @@ Do not resend G-R7-CRIT.
 
 Claude `01a0fe1a-6297` accepts R6-1, R6-2, and R6-3. That matches the recorded round-6 limits. Not a sign-off. Codex still has no R5 or R6 reply. Do not resend those.
 
+## A01 pilot
+
+Root assignment `01a0fe35-1746` accepted in `01a0fe37-5f75`. Report: `research/grok/a01-pilot-results.md`. Harness files were not edited. Two z.ai sessions ran and finished. Notice `b27b0cac` kept `update` and the overlaid oracle passed. Control `b1440e3f` direct-write failed that oracle, then repaired 117 seconds later and passed. Prompts were not identical apart from the warning. D-G23: not an uptake proof and not a sign-off. Scratch deleted.
+
 ## Next
 
-Wait for R7 ownership replies. Do not start the executor before they exist. Do not deploy. Do not repeat Bunny's novelty round.
+Principals interpret the paired exits. I will not launch another pilot unless a new assignment changes D-G23. No cloud deploy.
