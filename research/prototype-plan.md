@@ -1,6 +1,6 @@
 # Comparative research plan and post-selection prototype gates
 
-2026-10-02 interactive continuation. **Planning and bounded local research; six draft candidates remain unapproved.** Derived from guided ZCode comparison, principal debate/consultation and actual local baselines. No Artifacts/cloud prototype run is claimed. Source constraints and MVP architecture: [engineering feasibility](codex/engineering-feasibility.md); selection tests: [working six](shortlist-6.md); [delegate review](codex/zcode-guidance-review.md).
+2026-10-02 interactive continuation. **Planning, bounded research and early internal adoption; five hypotheses plus a reopened sixth slot remain unapproved.** Derived from guided ZCode comparison, principal debate/consultation and actual local baselines. No Artifacts/cloud prototype run is claimed. Source constraints and MVP architecture: [engineering feasibility](codex/engineering-feasibility.md); selection tests: [working six](shortlist-6.md); [delegate review](codex/zcode-guidance-review.md).
 
 ## Immediate discriminating research
 
@@ -23,11 +23,11 @@ Once machine-local account credentials are supplied, inspect on disposable repos
 
 Missing credentials do not block local research or planning. No purchase/account change/final competition submission is part of this plan.
 
-## Guided implementation after selection agreement
+## Guided implementation and early internal adoption
 
 Each independent head must ACK a distinct buyer, fixture, files, branch/worktree, disk/compute budget and test ownership before implementation. Prefer z.ai via installed zcodex/zcy; fresh quota check per dispatch, no banked resets. Real OpenAI Codex launches require the repository quota gate and stop at <=15% remaining/unknown/limit reached. Claude supplies compact design/selection critique and sign-off, not a continuous implementation loop. At most two scoped ZCode executors per head; do not duplicate existing independent heads.
 
-The required Codex delegate's current raw files need the recorded corrections first. Relaunch/resume only in a genuinely separate aplexer identity after stopping the previous invocation; no inherited principal mailbox. Every run has a generous explicit timeout, private mode-600 logs and incremental sanitized deliverables. Delegates cannot commit or edit peer-owned files unless their owner explicitly hands them off. No reset/overwriting shared edits.
+The required Codex delegate corrected the recorded packet defects and continues in its existing genuine interactive identity; publish only reviewed/handoff-approved files. No inherited principal mailbox. Every run has a generous explicit timeout, private mode-600 logs and incremental sanitized deliverables. Delegates cannot commit or edit peer-owned files unless their owner explicitly hands them off. No reset/overwriting shared edits.
 
 Interactive continuation: existing ZCode conversation resumed under genuinely bound `codex-feasibility-review` session cf3e7fb7-53e0-4b7a-9fd5-9f44da7cc0a7. Child whoami verified before launch, actual UI/composer captured, explicit90minute bound, fresh ZAI82%weekly/100%5h observation. Markdown-only correction scope in its original directory. No new implementation lane, recursive delegate or headless principal. Principal's own tool binding currently resolves outside experiment; native replies wait for a real-owner correction, while durable research proceeds.
 
@@ -45,3 +45,10 @@ Before declaring the research/prototype goal complete: incorporate five Pro inpu
 Independent ZCode owns controller/protocol/runs; Codex offers fixed tiny task/oracle input in codex/a01-live/. Its simulated skeleton is only bookkeeping: live actions must originate from real agent tool use and validated subsequent diffs, combined outcomes from the fixed oracle, repair effort from actual attempts/commands/diffs and elapsed intervals. No sleep-based wasted-time or constant acceptance. First two-agent pair is a registered pilot deviation from3agents/10pushes; add acknowledged third ownership before claiming Y1. Both experimental arms receive equal tasks/model/budget/oracle/interfaces; natural compatible results and zero warnings are retained. No forced bad patch.
 
 Codex now folds A14 into A01 runtime verification and reopens product slot six, pending compact Claude response. The local ordinary-control tie is not a literal cloud-gate result. A18 remains a candidate to investigate, A12 parked; no automatic six or sign-off. Native principal binding still fails; existing genuine guided session relays authored response transparently in its own identity. No principal mailbox authority delegated.
+
+
+## Early internal user milestone (human19/20)
+
+Build/adopt useful bounded prototypes before final six selection, while preserving all approval gates. First internal A01 user/task: Grok plus independent ZCode controlling concurrent reader/bulk-writer development, with Codex reviewing actual warning/action and repair events. Ordinary Git seed and independent task refs remain the recovery path; the unused Codex tiny seed gives a recovery baseline without copying dependencies. The current smoke's asymmetric instructions are excluded from effectiveness claims (debate/codex-a01-pilot-review.md). Next useful adoption after equal-policy pilot: run read-only unfinished-work status in the team's real harness/receipt integration work, with exact owned task boundaries and independent ordinary-Git checkpoint. The system cannot authorize main-branch writes, change accepted tests or release leases; human/project task scope still controls edits. Measured benefit: actual changes before next commit, accepted combined behavior and observed repair work versus completion-only information; publish null/no-action results. Fallback: ordinary worktrees and controller-owned completion checks. Native pilot registration and fresh quotas/resource floors precede dispatch; remote Artifacts remains an additional unpassed gate, not prerequisite for this local use.
+
+Other heads propose distinct actual internal users/tasks, recoverable code paths and useful adoption metrics at their own milestones; no five-head/full-six handoff is fabricated. ZCode/Antigravity implementation and Space Bunny/Muse independent development/review are the preferred pool per human20, with at most two executors/head and no duplicate principal.
