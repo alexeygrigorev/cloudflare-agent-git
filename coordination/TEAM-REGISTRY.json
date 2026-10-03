@@ -690,13 +690,119 @@
           "provider": "opencode-go/muse-spark-1.3-contributor",
           "pid": 2778028,
           "workspace": "/home/alexey/git/cloudflare-agent-git",
-          "status": "running",
-          "started_at": "2026-10-04T01:21:15+02:00",
+          "status": "completed",
+          "completed_at": "2026-10-04T01:23:19+02:00",
           "task": "Independent review and verification of commit fe312c7 (supervision safe fallback removal, fail-closed delivery semantics, runtime provenance, C1462 Task 6)",
           "owned_paths": [
             "research/antigravity/reviews/REV-SUPERVISION-FE312C7.md"
           ],
           "first_tool_evidence": "opencode run -m opencode-go/muse-spark-1.3-contributor (PROMPT-REV-FE312-MUSE.txt)",
+          "memory_cap": "1500M",
+          "result": "VERDICT ACCEPT (commit fe312c7): Independent review verified complete removal of INSTALLED_BINARY and fallback logic in scripts/supervision/service.py, fallback_binary removed from manifest, not-ready refusal preserved verbatim in delivery records and pending state. 26/26 unit tests PASS in 0.08s. Runtime provenance verified: supervisor PID 3915539 started 19:07 UTC / 21:07 CEST predates c14b474 and never loaded the fallback variant. Report: research/antigravity/reviews/REV-SUPERVISION-FE312C7.md."
+        },
+        {
+          "tag": "zcode-auth-reads",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "f0bb98e2-c2c8-4c6e-ad91-94e7b2876678",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-auth-reads",
+          "branch": "proto/auth-reads",
+          "status": "running",
+          "started_at": "2026-10-04T01:23:00+02:00",
+          "task": "Implement bearer authentication for GET /status and GET /tasks/:id in prototype/src/core/router.ts with negative test suite (C1462 Task 1)",
+          "owned_paths": [
+            "prototype/src/core/router.ts",
+            "prototype/test/node/router.test.ts"
+          ],
+          "first_tool_evidence": "aplexer whoami --json / a message inbox",
+          "memory_cap": "1500M"
+        },
+        {
+          "tag": "zcode-l2-client",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "72528de0-c1c1-46c7-915d-f7552af927fd",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-l2-client",
+          "branch": "proto/l2-client",
+          "status": "running",
+          "started_at": "2026-10-04T01:26:41+02:00",
+          "task": "C1462 Task 5: SDK client 409 stale vector resync, token expiry & revocation test suite",
+          "owned_paths": [
+            "tests/test_client.py",
+            "agent_branches/client.py",
+            "tests/mock_l1_server.py"
+          ],
+          "first_tool_evidence": "a work join / a message inbox",
+          "memory_cap": "1500M"
+        },
+        {
+          "tag": "zcode-webhook-auth",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "bfa644c6-1ab6-4769-a12e-3f283cbaa566",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-webhook",
+          "branch": "proto/webhook-auth",
+          "status": "running",
+          "started_at": "2026-10-04T01:26:43+02:00",
+          "task": "C1462 Task 3: Webhook sender auth, replay protection, and error redaction in prototype router",
+          "owned_paths": [
+            "prototype/src/core/router.ts",
+            "prototype/test/node/webhook-auth.test.ts"
+          ],
+          "first_tool_evidence": "a work join / a message inbox",
+          "memory_cap": "1500M"
+        },
+        {
+          "tag": "zcode-recovery-test",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "4abc725c-b6ef-4ae6-af9c-978c31cdf151",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-recovery",
+          "branch": "proto/recovery-test",
+          "status": "running",
+          "started_at": "2026-10-04T01:26:45+02:00",
+          "task": "C1462 Task 7: Independent disposable clone recovery & clean build/test verification",
+          "owned_paths": [
+            "research/antigravity/recovery/**"
+          ],
+          "first_tool_evidence": "a context / fresh disposable clone",
+          "memory_cap": "1500M"
+        },
+        {
+          "tag": "muse-radar-bench",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "0e11d6e4-ea48-4795-8d49-e732940c5c84",
+          "mode": "interactive",
+          "engine": "opencode",
+          "model": "opencode-go/muse-spark-1.3-contributor",
+          "workspace": "/home/alexey/git/agent-branches-l3-bench",
+          "branch": "proto/l3-radar-bench",
+          "status": "running",
+          "started_at": "2026-10-04T01:26:47+02:00",
+          "task": "C1462 Task 8: Radar multi-vector incremental benchmark & real repository git tree stress",
+          "owned_paths": [
+            "tests/test_radar_bench.py",
+            "research/antigravity/radar-bench/**"
+          ],
+          "first_tool_evidence": "opencode run / build auto",
           "memory_cap": "1500M"
         }
       ]
