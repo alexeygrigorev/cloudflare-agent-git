@@ -1,0 +1,16 @@
+{
+  // aplexer global bus — local prototype config. No deploy in this prototype.
+  // Demo tokens only; production would set BUS_MACHINES via `wrangler secret put`.
+  "name": "aplexer-bus",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-09-01",
+  "durable_objects": {
+    "bindings": [{ "name": "CHANNEL", "class_name": "ChannelDO" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ChannelDO"] }],
+  "vars": {
+    "CHANNEL_ID": "global",
+    "RATE_LIMIT_PER_MINUTE": "60",
+    "BUS_MACHINES": "{\"alpha\":\"alpha-local-demo-token\",\"beta\":\"beta-local-demo-token\"}"
+  }
+}
