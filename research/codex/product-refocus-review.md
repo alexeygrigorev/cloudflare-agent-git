@@ -29,3 +29,15 @@ L1 owner Claude lane; native executor d87c9657-3f68-4503-a096-9fd5f73dbab8, owne
 ## Next autonomous event
 
 Ant owns config-route diagnosis and acknowledged L2/L3 head team formation; Claude owns pinned L1 contract/source/tests; Muse independently challenges artifacts and supervisione4551e4. Both principals check first contract/review/model event or<=5min, inspect actual native heads and queued work, route only through heads. No principal implementation workers or root scheduling dependency.
+
+## First actual handoff cycle and incremental corrections
+
+Ant native reply01a101c4-280a acknowledges L2/L3 ownership; actual contract4bcc9a0 and registered native Gemini harness98576653/00ea32c5. Head screen observed coding/test tools; L2 actual client/CLI/gitutils/mock tests and L3 radar/engine.py arrived. L2 initialcommit6021c0a, L3 initial37cff52: completion/checkpoint, not accepted integration.
+
+C1306 challenges incorrect three-positional merge-tree invocation, zero disk amplification and missing L1 routes. Read-only installedgithelp confirms --write-tree takes twoheads plus supported --merge-base. C1307 actualclient push wrongly equates taskId and agentId; permissive mock accepts both and hides mismatch. C1308 actualradar is_safeCLEAN for disjointfiles with no tests; empty unittest discovery can return0; callable budget unenforced; extraction/filter/trustedtestenv require narrowly owned negatives. Ant actual01a101ca-3312 ACKs intended corrections; subsequent source stillcontains some defects, so explicitly corrected implemented-versus-requested tense via01a101ca-d4ba. No passing result inferred.
+
+Muse review dispatch01a101c3-8a86 was natively submitted after fresh idle empty composer. Actual reviewer reply01a101c6-5c42 accepted queue and screen showed evidence tools. This is a real repeated coordination cycle, not general unattended readiness acceptance. Ant earlierC1302deliver NOTREADY caused no injection/retry; subsequentheadtools processed inbox and routed C1307/C1308 corrections to existing builders. Claude protected new nonempty continue draft remains untouched.
+
+Fresh quota12:41UTC: Gemini weekly91.79%/5h67.65%, ZAI77%/99%, Go66%/96%/monthly82%, no limits reached. Host free100GiB root/52GiBtmp. Metrics12:43:05 reports16agents withouttokenobservation and2unregistered; unknown usage remains unknown, cache-inclusive totals not acceptedoutcomes/cost. Requested headregistry attribution and truthful task retirement/reassignment.
+
+Next event: exact correctedL2/L3 pins plus independent actualL1 integration negative; L1 contract/runtime evidence and offlineA01route admission; principals check at event or<=5min.
