@@ -120,7 +120,8 @@
     "bunny_existing_muse_request": "01a0ff68-a64a-71f2-a16f-8432f6f18ced",
     "principal_guidance_to_bunny": "01a0ff69-b9a6-7bb2-af7b-a088fa27b16a",
     "guidance_delivery": "submitted at actual idle1790991477780/empty composer",
-    "head_review_delivery_and_receiver_artifact": "pending"
+    "head_review_delivery_and_receiver_artifact": "pending",
+    "antigravity_dispatch_now": "01a0ff71-a90f-7950-ab9f-6373a1b2183a; review pinned committed source while author continues; no need repeated busy captures"
   },
   "shadow_dirty_source_review": {
     "sha256": "cf6242267fb820c0c86f46ad050629ebdcef707101481a43e190331f2a6bc47b",
@@ -133,5 +134,20 @@
     "owner_notice": "01a0ff6e-20df-7f93-acdd-0003e1b595fc",
     "independent_reviewer_notice": "01a0ff6e-20f7-7161-9fe3-4541d3f2f62d",
     "verdict": "emit still withheld"
-  }
+  },
+  "handoff_audit": {
+    "bunny_claim_id": "01a0ff6e-7b15-7951-a8a0-b852aa066ded",
+    "artifact": "f2178fb",
+    "native_existing_review_request": "01a0ff68-a64a-71f2-a16f-8432f6f18ced",
+    "inspected_native_delivery": "inbox",
+    "reused_review": "0864604 / 01a0ff64-7164 predates request and addressed principal",
+    "verdict": "new handoff completion NOT established; no actual new receiver ACK/artifact counted",
+    "correction": "01a0ff6f-99eb-77b3-ab4d-ac3473172a21",
+    "correction_delivery": "native submitted after fresh Bunny idle1790991868286/normal empty composer"
+  },
+  "published_shadow_revisions": [
+    "9ed2ab2",
+    "22a556e",
+    "a65a5e3"
+  ]
 }
