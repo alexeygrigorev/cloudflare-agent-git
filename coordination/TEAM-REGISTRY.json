@@ -758,15 +758,17 @@
           "model": "glm-5.3-flash max",
           "workspace": "/home/alexey/git/agent-branches-webhook",
           "branch": "proto/webhook-auth",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T01:26:43+02:00",
+          "completed_at": "2026-10-04T01:44:36+02:00",
           "task": "C1462 Task 3: Webhook sender auth, replay protection, and error redaction in prototype router",
           "owned_paths": [
             "prototype/src/core/router.ts",
             "prototype/test/node/webhook-auth.test.ts"
           ],
           "first_tool_evidence": "a work join / a message inbox",
-          "memory_cap": "1500M"
+          "memory_cap": "1500M",
+          "result": "HMAC webhook sender authentication (x-webhook-signature verified before parsing), timestamp tolerance (+/-300s), and MemoryReplayGuard nonce store implemented on POST /events/push and /events/artifacts. 500 error bodies redacted to safe message. node --test 47/47 PASS (18 new tests); vitest 91/91 PASS; sidecar 16/16 PASS. Committed at f3f06d2 on proto/webhook-auth."
         },
         {
           "tag": "zcode-recovery-test",
@@ -868,13 +870,77 @@
           "model": "opencode-go/muse-spark-1.3-contributor",
           "workspace": "/home/alexey/git/ab-readme",
           "branch": "proto/readme",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T01:37:27+02:00",
+          "completed_at": "2026-10-04T01:43:19+02:00",
           "task": "C1474: CLI quickstart runbook & newcomer zero-assumptions verification",
           "owned_paths": [
             "README.md",
             "docs/**",
             "research/antigravity/runbook/**"
+          ],
+          "first_tool_evidence": "a work join / a message inbox",
+          "memory_cap": "1500M",
+          "result": "Zero-assumptions newcomer quickstart verified end-to-end. README updated with quickstart instructions and live path corrections. Report committed at f802645 on proto/readme and mirrored to research/antigravity/runbook/CLI-NEWCOMER-REPORT.md."
+        },
+        {
+          "tag": "muse-reviewer-auth-ui",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "ab8ad22c-5f03-472d-b414-cebc81870159",
+          "mode": "interactive",
+          "engine": "opencode",
+          "model": "opencode-go/muse-spark-1.3-contributor",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "status": "completed",
+          "started_at": "2026-10-04T01:43:09+02:00",
+          "completed_at": "2026-10-04T01:46:00+02:00",
+          "task": "Independent review of auth-reads 2302d70 and UI auth 66d48b7 API wire contract",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-AUTH-READS-UI-INTEGRATION.md"
+          ],
+          "first_tool_evidence": "opencode read / test verification",
+          "memory_cap": "1500M",
+          "result": "VERDICT ACCEPT. Both commits verified: 2302d70 enforces bearer auth on GET /status and GET /tasks/:id (expiry/revocation applies to reads, foreign token 403, auth precedes 404); 66d48b7 wires bearer tokens into fetchJson, handles 401 prompt and 403 diagnostics. 37/37 tests pass. Report: research/antigravity/reviews/REV-AUTH-READS-UI-INTEGRATION.md (commit 547eb6d)."
+        },
+        {
+          "tag": "muse-reviewer-webhook",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "37e342aa-25e8-4ff8-b479-e6612f867fc6",
+          "mode": "interactive",
+          "engine": "opencode",
+          "model": "opencode-go/muse-spark-1.3-contributor",
+          "workspace": "/home/alexey/git/agent-branches-webhook",
+          "branch": "proto/webhook-auth",
+          "status": "running",
+          "started_at": "2026-10-04T01:47:44+02:00",
+          "task": "Independent review of webhook-auth f3f06d2 (HMAC signature, replay tolerance, nonce store, 500 error redaction)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-WEBHOOK-AUTH-F3F06D2.md"
+          ],
+          "first_tool_evidence": "a work join / a message inbox",
+          "memory_cap": "1500M"
+        },
+        {
+          "tag": "zcode-limiter-fix",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "31436338-ef83-4187-9593-a50cb7d46d45",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-adopt",
+          "branch": "proto/ab-adoption",
+          "status": "running",
+          "started_at": "2026-10-04T01:47:44+02:00",
+          "task": "C1481: Fix B1/B2 limiter test boundaries (XFF spoofing tests, exact window arithmetic, undefined rateLimiter behavior)",
+          "owned_paths": [
+            "prototype/test/node/router.test.ts",
+            "prototype/test/node/core.test.ts"
           ],
           "first_tool_evidence": "a work join / a message inbox",
           "memory_cap": "1500M"
