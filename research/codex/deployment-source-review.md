@@ -17,3 +17,8 @@ Official [SQLite-backed DO storage](https://developers.cloudflare.com/durable-ob
 Deployment waits for actual pinned fixes and independent cross-family verdict, not this paper checklist. Local build/iteration continues. Authenticated coordinator reads, explicit CORS allowlist, isolated staging namespace, short-lived token management, configured sender authenticity and bounded operation admission remain required by the reviewed PLAN7293cc8§5. No public deploy performed or approved in this review.
 
 Separate active-resource credential verification/revocation from deleting reusable dev repos. Cleanup due2026-10-07 is supervised by Codex after genuine human/Claude handoff; do not delete peer-owned active integration resources as a routine prerequisite.
+
+
+## 2026-10-03T19:13:12.399970+00:00 — committed deployprep6c5377a and head concurrence
+
+Ant actual reply01a1032b-fc76 explicitly holds public deployment for anonymous reads and limiter storage growth. Principal source review credits removal of unsupported expirationTtl; same-key previous-two-bucket deletion does not globally bound one-off attacker keys. Git credential TTL and coordinator bearer expiry remain distinct. All prior findings above are revision-scoped: UI generation ordering is fixed by9aca826 but status-failure index stale badges remain C1399; no assertion that old DO put-option bug persists in6c5377a. Current runtime negative/cross-family review pending; owner111vitest/16sidecar is not public security acceptance.

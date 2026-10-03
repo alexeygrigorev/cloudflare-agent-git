@@ -1,12 +1,11 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T19:05:00.000000+00:00",
+  "updated_at": "2026-10-03T19:11:16.344708+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
     "claude-principal"
   ],
   "teams": [
-
     {
       "id": "a06-a10",
       "name": "Change-story review and task handoff",
@@ -465,7 +464,6 @@
       ]
     },
     {
-
       "id": "independent-review",
       "name": "Independent negative tests and review",
       "head_tag": "muse-reviewer",
@@ -816,7 +814,6 @@
           "schedule": "morning-only",
           "supervision_excluded": true
         },
-
         {
           "tag": "desktop-orchestrator",
           "role": "observer",
@@ -1422,7 +1419,7 @@
       "tag": "zc-facade",
       "session_id": "52b589ff-0705-46df-b6f0-0c43add37106",
       "team_id": "product-integration",
-      "role": "worker",
+      "role": "executor",
       "mode": "headless",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "implementation_workspace": "/home/alexey/git/agent-branches-l1",
@@ -1444,13 +1441,14 @@
         "conversation_id": "01a102cc-b226-7983-9d48-d815b1aa4ff7"
       },
       "expected_checkpoint": "task completion event or bounded20min no-output check; no PID-only acceptance",
-      "usage_coverage": "outerrollout may omit warm childcalls; cumulativecontext/cache nonadditive, not billedusage"
+      "usage_coverage": "Completed outer native rollout only; warm child usage coverage unknown; not billed experiment expenditure",
+      "status": "completed-awaiting-review"
     },
     {
       "tag": "zc-deploy-prep",
       "session_id": "50a0e8c7-9bdd-4362-b3af-71f44db46702",
       "team_id": "product-integration",
-      "role": "worker",
+      "role": "executor",
       "mode": "headless",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "implementation_workspace": "/home/alexey/git/ab-deploy",
@@ -1469,13 +1467,14 @@
         "conversation_id": "01a102fd-126a-7f10-b541-ca79c02dc48c"
       },
       "expected_checkpoint": "task completion event or bounded20min no-output check; no PID-only acceptance",
-      "usage_coverage": "outerrollout may omit warm childcalls; cumulativecontext/cache nonadditive, not billedusage"
+      "usage_coverage": "Completed outer native rollout only; warm child usage coverage unknown; not billed experiment expenditure",
+      "status": "completed-awaiting-review"
     },
     {
       "tag": "zc-readme",
       "session_id": "23a0b424-83f5-4b4a-bf37-6e1c73b19342",
       "team_id": "product-integration",
-      "role": "worker",
+      "role": "executor",
       "mode": "headless",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "implementation_workspace": "/home/alexey/git/ab-readme",
@@ -1495,13 +1494,14 @@
         "conversation_id": "01a102fd-1120-7951-b749-46ec042fffcd"
       },
       "expected_checkpoint": "task completion event or bounded20min no-output check; no PID-only acceptance",
-      "usage_coverage": "outerrollout may omit warm childcalls; cumulativecontext/cache nonadditive, not billedusage"
+      "usage_coverage": "Completed outer native rollout only; warm child usage coverage unknown; not billed experiment expenditure",
+      "status": "completed-awaiting-review"
     },
     {
       "tag": "zc-ui-live",
       "session_id": "1514b4b3-2966-47d6-9c3f-52e22be1fbc0",
       "team_id": "product-integration",
-      "role": "worker",
+      "role": "executor",
       "mode": "headless",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "implementation_workspace": "/home/alexey/git/agent-branches-l4",
@@ -1520,7 +1520,8 @@
         "conversation_id": "01a102fd-1334-7e10-aebd-60940a3c795e"
       },
       "expected_checkpoint": "task completion event or bounded20min no-output check; no PID-only acceptance",
-      "usage_coverage": "outerrollout may omit warm childcalls; cumulativecontext/cache nonadditive, not billedusage"
+      "usage_coverage": "Completed outer native rollout only; warm child usage coverage unknown; not billed experiment expenditure",
+      "status": "completed-awaiting-review"
     }
   ]
 }
