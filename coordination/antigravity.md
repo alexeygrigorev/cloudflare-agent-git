@@ -511,6 +511,37 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - Both targets are organically derived as `○ idle` without artificial state reports or process manipulation.
    - Coordinated with Codex Principal (`01a0feff-9a88`) for bounded first-use recovery on existing Bunny (`space-bunny-head`) for delivery referencing `01a0fe86-03b1`.
 
+---
+
+## 23. Live Falsifier Resolution: OpenCode `--pure` Hook Isolation & Idle Derivation Repair
+
+1. **Empirical Diagnosis of Codex Live Falsifier (`01a0ff03-9bf4-71c0-9bf1-ccbb10fbb033`):**
+   - Codex Principal executed native scoped delivery `01a0ff02-6838` into Bunny (`space-bunny-head`, `3acb40d2`).
+   - Bunny transitioned into active execution (`Build busy with animated esc interrupt`, `cpu_percent: 140.2%`), but `a list` and `reported_state` remained stuck at stale `idle` timestamp `1790976124539` (from 2 hours prior).
+   - **Root Cause 1 (Runtime `--pure` flag):** OpenCode was launched with `--pure --auto ...` (per interactive session recovery specifications). In OpenCode's binary/runtime (`let A = Q.pure ? [] : w.plugin_origins;`), `--pure` explicitly disables all external plugins. The plugin in `~/.config/opencode/plugin/aplexer-state-report.js` was therefore never loaded or executed by Bunny's process.
+   - **Root Cause 2 (Static vs Process Hook Check):** `session_engine_has_lifecycle_hooks` checked only the static presence of the plugin file on disk, ignoring process flags like `--pure` in `record.command`.
+   - **Root Cause 3 (Over-broad Idle Exemption in State Derivation):** `idle_was_contradicted_with_hooks` had generalized the Antigravity TUI idle exemption to all engines. Antigravity's interactive terminal TUI continuously outputs background cursor/timer redraws while resting at the prompt, whereas OpenCode, Codex, and Claude have completely silent idle composers. Treating OpenCode as exempt from PTY contradiction caused Bunny's active execution to be masked by the stale idle timestamp, creating a hazardous window where automated delivery could inject concurrent input into a busy agent.
+
+2. **Protocol & State Derivation Repairs (`cloudflare-aplexer-protocol` @ commit `cf6b2bb`):**
+   - **Process-Aware Hook Detection:** Implemented `session_record_has_lifecycle_hooks` and `session_record_has_lifecycle_hooks_at`. For OpenCode, if `record.command` contains `--pure`, lifecycle hooks are recognized as not active (`false`).
+   - **Strict Idle Contradiction Bounds:** Updated `idle_was_contradicted_with_hooks`:
+     - PTY activity within `IDLE_ACTIVITY_GRACE_MS` (2,000 ms) is accepted as post-Stop render/flush across all engines.
+     - PTY activity past the 2,000 ms grace window strictly contradicts the idle report for all non-Antigravity engines (`record.engine != "antigravity"`), retracting the stale idle report and falling back to heuristic derivation (`running`).
+     - Only Antigravity preserves the background PTY redraw exemption while resting at the prompt.
+   - **Plugin Hardening:** Added `step-start` hook to OpenCode plugin source to report `working` upon step start, and added fallback execution to `a` on PATH.
+   - **Binary Digest:** Recompiled scoped binary `target/debug/aplexer` SHA-256: `931699d497d972a7b91c98ab222999da95801f35ccf46adb1882d4e38fcfebdc`.
+
+3. **Hermetic Test Verification (100% Green):**
+   - Full test suite passing across all units and integration modules (`cargo test` exit code 0).
+   - `tests/messaging_deferred.rs`: Verified that trailing render output within grace (1500 ms) permits idle delivery; verified that activity past grace (3001 ms) retracts idle and returns `not-ready`; verified that `--pure` command line disables hooks.
+   - Live check against Bunny: With `cf6b2bb`, `a status 3acb40d2` now reports `○ idle (inferred from output activity)` with `source: heuristic` instead of stale `reported`, safely preventing automated message delivery into unhooked/pure sessions without explicit operator/sender verification.
+
+4. **Recipient Output & Milestone Completion:**
+   - Bunny executed its assigned neutral-brief signposting plan without further input, authoring `research/space-bunny/g3-signposting-comparison-plan.md` and appending Section 13 to `coordination/space-bunny.md`.
+   - Bunny finished its turn cleanly (2m 22s total run time) and is at rest at its empty composer prompt. Zero outside state injections performed.
+   - Automatic readiness remains withheld per protocol until verified loaded lifecycle events are established.
+
+
 
 
 
