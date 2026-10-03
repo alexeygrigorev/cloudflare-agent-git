@@ -357,9 +357,24 @@ test("agent token gate: expiry boundary, fail-closed garbage expiry, revocation 
   });
   strictEqual(await reopened2.credentialAgent(token), null, "missing expiresAt denies");
 
-  // ANY non-null revokedAt marker denies, including the empty string (C-1430).
+  // ANY non-null revokedAt marker denies, including the empty string (C-1430, C-1437).
   const revokedEmpty = await rig.store.get<CoordinatorModel>("model");
   ok(revokedEmpty, "model expected for empty-string revocation");
+  // Restore known valid future expiresAt and prove the token is accepted FIRST
+  // (guards against vacuous passes where missing/garbage expiry caused the deny, C-1437).
+  revokedEmpty.agentTokens[created.agentId].expiresAt = new Date(Date.now() + 3600_000).toISOString();
+  revokedEmpty.agentTokens[created.agentId].revokedAt = null;
+  await rig.store.put("model", revokedEmpty);
+  const validCheck = new CoordinatorCore({
+    store: rig.store,
+    git: rig.git,
+    radar: new StubRadar(),
+    clock: fakeClock(),
+    ids: fixedIds,
+  });
+  strictEqual(await validCheck.credentialAgent(token), created.agentId, "valid future token accepted before revocation");
+
+  // Now set revokedAt to empty string: must strictly deny even though unexpired and valid.
   revokedEmpty.agentTokens[created.agentId].revokedAt = "";
   await rig.store.put("model", revokedEmpty);
   const reopened3 = new CoordinatorCore({
@@ -369,7 +384,7 @@ test("agent token gate: expiry boundary, fail-closed garbage expiry, revocation 
     clock: fakeClock(),
     ids: fixedIds,
   });
-  strictEqual(await reopened3.credentialAgent(token), null, "empty-string revokedAt denies");
+  strictEqual(await reopened3.credentialAgent(token), null, "empty-string revokedAt denies unexpired token");
 
   // Revocation denies the SAME plaintext and is idempotent; unknown agents are false.
   const rev = makeRig();
