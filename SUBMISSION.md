@@ -36,9 +36,9 @@ once. Today that breaks in three ways:
    tests*. Intent lives in a prompt that is gone by review time.
 3. **Resource blow-up.** The naive remedy — a full checkout/worktree per agent
    — multiplies build and dependency state. On this project's own host,
-   472 linked worktrees hold 131.7 GiB per-directory of which 62.1% is
+   472 linked worktrees hold 131.7 GiB per-directory (69.4 GiB of 111.7 GiB physical disk denominator, 62.1%) in
    duplicated dependencies/build output, one Rust debug build alone added
-   12.26 GiB, and a 2 GiB-cgroup agent died of OOM from parallel children
+   12.26 GB (11.42 GiB; 12,259,708,928 bytes), and a 2 GiB-cgroup agent died of OOM from parallel children
    (`research/claude/dogfood-resource-evidence.md`). Queues that run combined
    tests with no admission control turn "verify everything" into "OOM the
    host".
@@ -47,9 +47,8 @@ once. Today that breaks in three ways:
 
 - **One fork per agent.** `POST /tasks` forks the canonical repo and mints a
   per-task write token (default TTL **1 hour**: the request field is
-  `ttlSeconds` in **seconds**, default 3600; the response carries an ISO
-  `expiresAt`, and the store rejects an expired token on use. Stored hashed —
-  the coordinator keeps only a SHA-256 digest). Agents clone and push with
+  `ttlSeconds` in **seconds**, default 3600, while `base_sha` specifies the starting commit; the response carries an ISO
+  `expiresAt`. Stored hashed — the coordinator keeps only a SHA-256 digest; note that while the Git sidecar rejects expired tokens on push, the coordinator mutating auth currently verifies the SHA-256 digest without checking the expiration timestamp pending an auth gate fix). Agents clone and push with
   ordinary git; read-scope tokens cannot push. Each task records its
   **intent** (what the agent was asked) and **base_sha** (the exact commit it
   started from).
@@ -60,8 +59,7 @@ once. Today that breaks in three ways:
   advance the head vector. The Worker **never runs git and never runs tests**
   — coordination only. SQLite-backed DO storage has **no per-key
   `expirationTtl`** (that option does not exist on DO storage), so nothing
-  expires silently: token expiry is an explicit timestamp the store checks on
-  use, and retention is enforced deterministically in code at write time by
+  expires silently: retention is enforced deterministically in code at write time by
   bounded caps — the push-dedup ring keeps the latest **16** accepted pushes
   per agent, warnings the newest **200**, and the radar log the newest
   **50** entries.
@@ -146,7 +144,7 @@ Evidence-first; every row cites its file.
 | "Unknown ≠ clean" semantics incl. failed push-report ledger forcing `not_checked` | ✅ Verified locally + in worker unit suites (no headline count recorded; `npm run test:all` = typecheck + vitest worker suites + sidecar tests) | `prototype/CONTRACT.md` §0.1.2 change 3; `prototype/` vitest suites |
 | Real Cloudflare Artifacts: create namespace/repo, fork ×2, mint tokens, clone, push, read-scope push rejected, cross-checked via wrangler CLI — **28 evidenced ops** | ✅ Verified **against the real service** (2026-10-03) | `artifacts-spike/RESULTS.md` (branch `proto/artifacts-spike`) |
 | Real Artifacts latencies (reads 120–450 ms, fork 3.4–4.5 s, clone 500 ms, push 346–416 ms) fit the demo budget | ✅ Measured once, spike scale | `artifacts-spike/RESULTS.md` §latencies |
-| Resource rationale: worktree/build duplication and parallel-test memory (disk 3.0× at N=3 on a zero-dep crate; 62.1% of 111.7 GiB worktree bytes are deps/build; single Rust build +12.26 GiB) | ✅ Measured on our host, small scale, honestly caveated | `rust-demo/bench/README.md` (branch `proto/rust-demo`); `research/claude/dogfood-resource-evidence.md` |
+| Resource rationale: worktree/build duplication and parallel-test memory (disk 3.0× at N=3 on a zero-dep crate; 62.1% of 111.7 GiB physical disk are deps/build; single Rust build +12.26 GB / 11.42 GiB) | ✅ Measured on our host, small scale, honestly caveated | `rust-demo/bench/README.md` (branch `proto/rust-demo`); `research/claude/dogfood-resource-evidence.md` |
 | **Worker deployed to Cloudflare** | ❌ **Pending** — not authorized/deployed yet; `wrangler dev` only | `prototype/README.md` §"Switch to real Artifacts" |
 | **Coordinator running against real Artifacts** (binding `ArtifactsPort` behind a live Worker) | ❌ **Pending** — binding path is designed and its ops individually verified, but never run end to end | `artifacts-spike/RESULTS.md` §Assumption scorecard (D, E unverified) |
 | **Real coding agents as the pushers** in the E2E run | ❌ **Pending** — run 3's three agents are scripted reference patches applied via authenticated pushes; task intents/SHAs/warnings/UI are all real | `live/README.md` §"What the script does" step 4 |
