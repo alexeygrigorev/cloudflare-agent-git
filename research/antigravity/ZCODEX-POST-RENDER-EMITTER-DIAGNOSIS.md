@@ -19,21 +19,24 @@ The composer is completely empty and resting. However, `aplexer show 64049aa2` r
 zcode-independent  ○ idle
   (inferred from output activity)
 ```
-Crucially, the session has `reported_state == None` (it only has inferred idle via PTY inactivity). When a peer attempts to deliver a coordination message using `aplexer message deliver <msg_id>`, aplexer's fail-closed delivery gate rejects with `exit 1` (`NOTREADY`):
-> *readiness unavailable: recipient missing reported state prior to any turn event*
+Native status inspection confirms that `reported_state = "idle"` was recorded at timestamp `1791013582627` (from 07:46 UTC / earlier session turn). However, subsequent workload/PTY activity continued running until 09:46 AM (`last_activity_ms = 1791022588348`). Because `last_activity_ms > reported_state_at_ms + 250ms`, aplexer's fail-closed activity contradiction detector (`activity_contradiction_delta`) invalidated the stale idle timestamp. When a peer attempts to deliver a coordination message using `aplexer message deliver <msg_id>`, aplexer rejects with `exit 1` (`NOTREADY`):
+> *readiness unavailable: recipient reported idle contradicted by subsequent pty activity*
 
-### Root Cause Breakdown
-1. **Interactive TUI vs. Headless Mode:**
-   - In headless `codex exec` mode, Codex invokes the external `notify` script configured in `~/.codex/config.toml` with `{"type": "agent-turn-complete"}`.
-   - However, in interactive TUI mode (`zcodex resume ...`), the TUI event loop in `codex-rs/tui` renders the composer and finishes the turn internally without invoking the `notify` hook.
-2. **Hook Non-Clobbering Invariant in aplexer:**
-   - `~/.codex/config.toml` already contained `notify = ["python3", "/home/alexey/.local/share/pocketshell/hooks/codex_notify.py"]`.
-   - `aplexer`'s hook installation driver (`aplexer/src/hooks/drivers.rs:ensure_codex_notify_file`) deliberately follows a strict non-clobbering policy: if `notify` is already present, aplexer preserves it and does not overwrite it.
-   - The existing `codex_notify.py` only updates pocketshell event logs and tmux options; it does not call `a state-report`.
-3. **Absence of Native Post-Render Emitter:**
-   - `zcodex` lacks an in-process end-of-turn or post-render event emission hook.
-   - Consequently, when `zcodex` finishes thinking/tool execution and settles into the resting composer, zero state reports are pushed to aplexer.
-4. **Rejection of "Root Nudge" Fallback:**
+### Root Cause & Code Path Reconciliation
+1. **Interactive TUI vs. Headless Mode & `turn.rs:699`:**
+   - In `codex-rs/core/src/session/turn.rs:699`, at the conclusion of an agent turn, `run_legacy_after_agent_hook` is called.
+   - In `codex-rs/hooks/src/legacy_notify.rs`, this dispatches `HookEvent::AfterAgent`, which serializes `UserNotification::AgentTurnComplete` and spawns the external `notify` binary configured in `~/.codex/config.toml`.
+2. **Hook Chain Gap in `codex_notify.py`:**
+   - `~/.codex/config.toml` configures `notify = ["python3", "/home/alexey/.local/share/pocketshell/hooks/codex_notify.py"]`.
+   - Inspection of `/home/alexey/.local/share/pocketshell/hooks/codex_notify.py` reveals that it only appends a record to `/home/alexey/.cache/pocketshell/hooks/events.jsonl` and sets the tmux option `@ps_agent_state`.
+   - `codex_notify.py` does **NOT** call `a state-report` or report semantic state back to `aplexer`.
+3. **Aplexer Non-Clobbering Invariant:**
+   - Aplexer's hook driver (`aplexer/src/hooks/drivers.rs:ensure_codex_notify_file`) deliberately follows a strict non-clobbering policy: because `notify` was already present in `~/.codex/config.toml`, aplexer preserved it and did not install an aplexer notify bridge.
+4. **Resulting Stale Reported State & Contradiction:**
+   - Because `codex_notify.py` does not call `a state-report idle`, `reported_state_at_ms` remained frozen at `1791013582627`.
+   - As PTY activity occurred during the 3-hour turn, `last_activity_ms` advanced to `1791022588348`.
+   - Without an authentic post-turn / post-render event emission calling `a state-report idle` at 09:46 AM, aplexer correctly and safely refused delivery due to `activity_contradiction_delta`.
+5. **Rejection of "Root Nudge" Fallback:**
    - Claude principal suggested an out-of-band "root nudge" (raw keystroke injection / Enter into the pane) to force a state transition.
    - Codex principal strongly challenged this fallback: raw keystrokes risk pane corruption, draft clobbering, and violate the fail-closed safety model.
    - Genuine autonomous continuation requires an authentic post-render emitter, not out-of-band operator pokes.
