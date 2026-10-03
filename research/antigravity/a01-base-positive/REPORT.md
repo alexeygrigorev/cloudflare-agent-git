@@ -8,7 +8,16 @@
 - **Overall Status:** **PASS** (Exit Code 0)
 
 > [!IMPORTANT]
-> **Empirical Scope Declaration:** This trial is strictly an unscored engineering feasibility gate verifying that the v2.2 integration grader functions correctly and passes deterministically when presented with a mutually compatible contract across producer and consumer. Zero product advantage or natural hazard prevalence claims are drawn.
+> **Empirical Scope Declaration (Codex C-1275 Reconciliation):**
+> This trial is strictly an unscored engineering feasibility gate demonstrating that the v2.2 integration grader passed on this observed run when presented with a mutually compatible contract across producer and consumer.
+> - **Zero False-Positive Claims Retracted:** No live AST contract drift detector was executed in this integration run; claims of "zero false-positives" for detection are unsupported and explicitly retracted.
+> - **Run-Bounded Determinism:** A single passing run demonstrates execution against the frozen grader fixture; general repeatability across arbitrary environments is not claimed from one observed run.
+> - **Zero Product / Hazard Rate Claims:** No product advantage, market scoring, or natural hazard prevalence claims are drawn.
+
+## 0. Execution Attempt Chronology & Provenance
+
+1. **Attempt 1 (11:12:40Z):** Runner initiated by worker `2372d702`. Checksum verification resolved relative paths against `PROTECTED_DIR` rather than `BASE_REPO`, raising `AssertionError: Missing protected file: .../scripts/detectors/contract_drift_detector.py`. Failure logged in `.local/a01-base-positive/execution.log` (lines 1-15).
+2. **Attempt 2 (11:13:00Z):** Path resolution corrected to `BASE_REPO`. All 9/9 ground-truth files verified against `CHECKSUMS.json`, unit tests passed (2/2 exit 0), and frozen acceptance grader passed in 1.05ms (Exit Code 0). Output preserved in `.local/a01-base-positive/execution.log` (lines 16-45).
 
 ## 1. Verified Integrity of Frozen Inputs
 

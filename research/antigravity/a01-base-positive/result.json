@@ -40,5 +40,5 @@
     "duration_ms": 1.05
   },
   "overall_status": "PASS",
-  "scope_declaration": "Unscored engineering feasibility verification of v2.2 integration grader. Confirms the grader passes on a compatible contract with zero false-positives. Zero product advantage or efficacy score claimed."
+  "scope_declaration": "Unscored engineering feasibility verification of v2.2 integration grader. Confirms the grader passed on this observed run against a compatible contract. Zero false-positive detection claims, and zero product advantage or hazard rate claims drawn."
 }
