@@ -1,0 +1,8 @@
+{
+  "error": "stale vector: heads have moved since the runner fetched them; re-fetch /status and retry",
+  "currentHeads": {
+    "demo-t1-0001": "126cceecea790e7f554fe1027613bfbddc0778e4",
+    "demo-t2-0002": "d49548c3fd473a426bb878af43ac2c114656b63b",
+    "demo-t3-0003": "8335941c9c268bb4a869da26e89968a4059491e9"
+  }
+}

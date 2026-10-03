@@ -1,21 +1,28 @@
 #!/usr/bin/env bash
-# Agent Branches — real end-to-end demo run (run 2, zc-live-2).
+# Agent Branches — real end-to-end demo run (run 3, zc-live-5).
 #
-# Flow per prototype/CONTRACT.md v0.1 (L1 @ 762ff3d):
+# Flow per prototype/CONTRACT.md v0.1.2 (L1 @ 3e9983b):
 #   sidecar (L1 local-artifacts) + wrangler dev -> POST /setup -> canonical seed
-#   push (per-repo write token) -> POST /tasks x3 -> agent pushes (reference
-#   patches) -> radar matrix -> POST /checks (RUNNER_TOKEN) -> stale 409 probe
-#   -> radar pass 2 -> UI screenshot -> assertions.
+#   push (per-repo write token) -> POST /tasks x3 (intent + base_sha per task) ->
+#   agent pushes (reference patches) -> radar matrix -> POST /checks with the
+#   radar's typed contract-"0.1" payload VERBATIM (no down-conversion) ->
+#   stale 409 probe -> radar pass 2 -> UI screenshots (index + a task page) ->
+#   assertions.
 #
 # Idempotency: data steps leave a marker under live/state/ and are skipped on
 # re-runs; services are health-checked and started only when down.
-# Server processes: started with </dev/null, output to log files, PID recorded
-# in live/state/, cleaned up by the EXIT trap. Never pkill by pattern.
+# Server processes (gap G1): each one starts via setsid in its OWN process
+# group; the pid recorded in live/state/ is the group leader. Cleanup kills
+# the recorded GROUP (-PGID) only after verifying the cmdline matches the
+# expected server AND the group is not this script's own — so killing
+# wrangler also reaps its workerd child and no orphan keeps the port.
+# Never kill by pattern.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LIVE="$ROOT/live"
-STATE="$LIVE/state"; EVIDENCE="$LIVE/evidence"; WORK="$LIVE/work"; ART="$LIVE/artifacts"
+RUN_TAG="run-3"
+STATE="$LIVE/state"; EVIDENCE="$LIVE/evidence/$RUN_TAG"; WORK="$LIVE/work"; ART="$LIVE/artifacts"
 mkdir -p "$STATE" "$EVIDENCE" "$WORK" "$ART"
 cd "$ROOT"  # radar resolves python3 -m radar relative to the repo root
 
@@ -36,20 +43,66 @@ export SIDECAR_TOKEN
 export SIDECAR_NOTIFY_URL="$WORKER/events/push"
 
 SIDE_PIDS=()
-# Dogfooding the process-hygiene rule (gap G1): only PIDs this script itself
-# recorded in live/state/ are ever killed, and only after the /proc cmdline
-# matches a known demo server. Never kill by pattern, cwd or exe.
-safe_stop() { # pid
-  local pid="$1" cmd
+# Dogfooding the process-hygiene rule (gap G1): every demo server starts in
+# its own process group (setsid), only groups this script recorded are ever
+# signalled, and only after the /proc cmdline matches the expected server and
+# the target group is not our own. Killing the GROUP takes the wrangler CLI
+# and its workerd child down together — no orphan keeps the port.
+MY_PGID="$(ps -o pgid= -p $$ | tr -d ' ')"
+safe_stop_group() { # pid expected_substring
+  local pid="$1" want="$2" pgid cmd
   case "$pid" in ''|"$$") return 0 ;; esac
   cmd="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)"
   case "$cmd" in
-    *wrangler*|*local-artifacts*|*http.server*) kill "$pid" 2>/dev/null || true ;;
-    *) log "safe_stop: pid $pid is not a demo server (cmdline: ${cmd:0:80}); leaving it alone" ;;
+    *"$want"*) : ;;
+    *) log "safe_stop_group: pid $pid is not a '$want' server (cmdline: ${cmd:0:100}); leaving it alone"; return 0 ;;
   esac
+  pgid="$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')"
+  if [ -z "$pgid" ]; then
+    log "safe_stop_group: pid $pid already gone"; return 0
+  fi
+  if [ "$pgid" = "$MY_PGID" ]; then
+    log "safe_stop_group: REFUSED — group $pgid is this script's own group"; return 0
+  fi
+  if [ "$pgid" != "$pid" ]; then
+    # Not the setsid group leader we created; kill only the exact pid.
+    log "safe_stop_group: pid $pid not a group leader (pgid=$pgid); signalling only the pid"
+    kill -TERM "$pid" 2>/dev/null || true
+    return 0
+  fi
+  if kill -TERM -- "-$pgid" 2>/dev/null; then
+    log "safe_stop_group: TERM -> process group -$pgid ($want)"
+  else
+    kill -TERM "$pid" 2>/dev/null || true
+  fi
+  for _ in $(seq 1 10); do
+    kill -0 -- "-$pgid" 2>/dev/null || return 0
+    sleep 1
+  done
+  if kill -0 -- "-$pgid" 2>/dev/null; then
+    log "safe_stop_group: group -$pgid survived TERM; sending KILL"
+    kill -KILL -- "-$pgid" 2>/dev/null || true
+  fi
+}
+port_holders() { # port -> log who listens (never kills)
+  ss -ltnp "sport = :$1" 2>/dev/null | tail -n +2 | while read -r line; do
+    log "port $1 still held: $line"
+  done
 }
 cleanup() {
-  for pid in "${SIDE_PIDS[@]:-}"; do safe_stop "$pid"; done
+  for pid in "${SIDE_PIDS[@]:-}"; do
+    case "${PID_WANT[$pid]:-}" in
+      '') : ;;
+      *) safe_stop_group "$pid" "${PID_WANT[$pid]}" ;;
+    esac
+  done
+  # G1 assertion: after cleanup no demo port may stay held by a leftover child.
+  for port in "${WORKER_PORT:-8787}" "${SIDECAR_PORT:-8799}" "${UI_PORT:-8788}"; do
+    if ss -ltn "sport = :$port" 2>/dev/null | tail -n +2 | grep -q .; then
+      port_holders "$port"
+      log "WARN: port $port still held after cleanup (holders logged above)"
+    fi
+  done
 }
 trap cleanup EXIT
 
@@ -60,18 +113,38 @@ mark() { touch "$STATE/$1.done"; }
 wait_for() { # url name tries [extra curl args...]
   local url="$1" name="$2" tries="${3:-60}"; shift 3
   for _ in $(seq 1 "$tries"); do
-    if curl -sf -o /dev/null "$url" "$@"; then return 0; fi
+    if curl -sf --connect-timeout 2 --max-time 5 -o /dev/null "$url" "$@"; then return 0; fi
     sleep 1
   done
   echo "FATAL: $name did not come up at $url" >&2
   return 1
 }
 
-start_bg() { # logfile pidfile cmd...
-  local logfile="$1" pidfile="$2"; shift 2
-  nohup "$@" > "$logfile" 2>&1 < /dev/null &
+start_bg() { # logfile pidfile expected_substring cmd...
+  local logfile="$1" pidfile="$2" want="$3"; shift 3
+  # setsid: the child becomes leader of a fresh process group (pgid == pid),
+  # so its whole tree (wrangler -> workerd, python http.server) dies with it.
+  nohup setsid "$@" > "$logfile" 2>&1 < /dev/null &
   echo $! > "$pidfile"
   SIDE_PIDS+=("$(cat "$pidfile")")
+  PID_WANT[$(cat "$pidfile")]="$want"
+  log "started '$want' pid $(cat "$pidfile") (process group $(ps -o pgid= -p "$(cat "$pidfile")" 2>/dev/null | tr -d ' '))"
+}
+
+# Refuse to fight a port held by something that is NOT the expected healthy
+# service: record the holder instead of guessing (G1).
+assert_port_or_service() { # port health_url name [curl args...]
+  local port="$1" url="$2" name="$3"; shift 3
+  if ss -ltn "sport = :$port" 2>/dev/null | tail -n +2 | grep -q .; then
+    if curl -sf --connect-timeout 2 --max-time 5 -o /dev/null "$url" "$@"; then
+      log "$name already up on :$port"
+      return 0
+    fi
+    log "FATAL precondition: port $port is held but $name does not answer; holders:"
+    port_holders "$port"
+    exit 1
+  fi
+  return 1
 }
 
 mem_guard() {
@@ -98,21 +171,22 @@ mint_token() { # repo scope -> plaintext on stdout
 
 mem_guard
 
-if curl -sf "$SIDECAR/api/health" -H "Authorization: Bearer $SIDECAR_TOKEN" >/dev/null 2>&1; then
-  log "sidecar already up on :${SIDECAR_PORT}"
+if assert_port_or_service "$SIDECAR_PORT" "$SIDECAR/api/health" sidecar \
+    -H "Authorization: Bearer $SIDECAR_TOKEN"; then
+  :
 else
   log "starting L1 local-artifacts sidecar on :${SIDECAR_PORT}"
-  start_bg "$LIVE/sidecar.log" "$STATE/sidecar.pid" \
+  start_bg "$LIVE/sidecar.log" "$STATE/sidecar.pid" local-artifacts \
     "$NODE_BIN" "$ROOT/prototype/local-artifacts/sidecar.mjs"
   wait_for "$SIDECAR/api/health" sidecar 30 -H "Authorization: Bearer $SIDECAR_TOKEN"
 fi
 
-if curl -sf "$WORKER/status" >/dev/null 2>&1; then
-  log "worker already up on :${WORKER_PORT}"
+if assert_port_or_service "$WORKER_PORT" "$WORKER/status" wrangler-dev; then
+  :
 else
   log "starting wrangler dev on :${WORKER_PORT}"
   NPX_BIN="$(command -v npx)"
-  start_bg "$LIVE/wrangler.log" "$STATE/wrangler.pid" \
+  start_bg "$LIVE/wrangler.log" "$STATE/wrangler.pid" wrangler \
     bash -c "cd '$ROOT/prototype' && exec '$NPX_BIN' wrangler dev --local --port '$WORKER_PORT' \
     --var ADMIN_TOKEN:'$ADMIN_TOKEN' \
     --var RUNNER_TOKEN:'$RUNNER_TOKEN' \
@@ -185,19 +259,52 @@ if [ -f "$STATE/runid" ] && [ "$(cat "$STATE/runid")" != "$CANON" ]; then
 fi
 echo -n "$CANON" > "$STATE/runid"
 
-# ---------- 3. create tasks T1..T3 (admin) ----------
+# ---------- 3. create tasks T1..T3 (admin, with intent + base_sha) ----------
+#
+# Run-2 gap: tasks were created with intent "reference solution tN" and no
+# base_sha, so the review UI showed "Not stated yet / not recorded". The
+# intent now comes from the agent-facing task text (demo-target/TASKS.md) and
+# base_sha pins the canonical base commit the fork was cut from.
 
-declare -A AGENT_ID FORK_NAME FORK_URL TOKEN
+task_intent() { # t1|t2|t3 -> one-line intent distilled from demo-target/TASKS.md
+  python3 - "$ROOT/demo-target/TASKS.md" "$1" <<'PY'
+import re, sys
+text = open(sys.argv[1], encoding="utf-8").read()
+tid = sys.argv[2].upper()
+head = re.search(rf"^## {tid} — (.+)$", text, re.M)
+title = head.group(1).strip() if head else ""
+# [^\n]* keeps the tests-to-add capture to ONE line (a DOTALL .* would
+# swallow the rest of TASKS.md into the intent — seen on the run-3 screenshot).
+tests = re.search(rf"^## {tid} —.*?^Tests to add: ([^\n]*)", text, re.S | re.M)
+tests_line = tests.group(1).strip() if tests else ""
+intent = f"{tid}: {title}"
+if tests_line:
+    intent += f" — tests to add: {tests_line}"
+print(intent)
+PY
+}
+
+task_body() { # t1|t2|t3 -> JSON body with agent, intent, base_sha
+  local intent
+  intent="$(task_intent "$1")"
+  python3 -c 'import json, sys; print(json.dumps({"agent": sys.argv[1], "intent": sys.argv[2], "base_sha": sys.argv[3]}))' \
+    "demo-$1" "$intent" "$BASE_SHA"
+}
+
+declare -A AGENT_ID FORK_NAME FORK_URL TOKEN TASK_ID
 for t in t1 t2 t3; do
   if [ ! -f "$STATE/task-$t.json" ]; then
-    log "creating task $t"
+    log "creating task $t (intent from TASKS.md, base_sha $BASE_SHA)"
+    task_body "$t" > "$STATE/task-$t.body.json"
     curl -sf -X POST "$WORKER/tasks" "${ADMIN_AUTH[@]}" \
-      -d "{\"agent\":\"demo-$t\",\"intent\":\"reference solution $t\"}" > "$STATE/task-$t.json"
+      --data-binary "@$STATE/task-$t.body.json" > "$STATE/task-$t.json"
   fi
+  TASK_ID[$t]="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['taskId'])" "$STATE/task-$t.json")"
   AGENT_ID[$t]="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['agentId'])" "$STATE/task-$t.json")"
   FORK_NAME[$t]="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['fork']['name'])" "$STATE/task-$t.json")"
   FORK_URL[$t]="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['fork']['remote'])" "$STATE/task-$t.json")"
   TOKEN[$t]="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['token']['plaintext'])" "$STATE/task-$t.json")"
+  log "task ${TASK_ID[$t]} = agent ${AGENT_ID[$t]} (base_sha recorded)"
 done
 
 # ---------- 4. the 3 agents' pushes: apply reference patches ----------
@@ -211,17 +318,30 @@ for t in t1 t2 t3; do
   rm -rf "$WORK/$t"
   git -c http.extraHeader="Authorization: Bearer ${TOKEN[$t]}" \
     clone -q "${FORK_URL[$t]}" "$WORK/$t"
-  git -C "$WORK/$t" apply -p2 "$ROOT/demo-target/.harness/reference-solutions/$t.patch"
-  git -C "$WORK/$t" add -A
-  git -C "$WORK/$t" \
-    -c user.name="demo-agent-$t" -c user.email="${t}@demo.agents" \
-    commit -q -m "${t}: reference solution applied by agent harness"
-  git -C "$WORK/$t" -c http.extraHeader="Authorization: Bearer ${TOKEN[$t]}" push -q origin main
+  # Idempotent re-runs: if a previous attempt died after the push but before
+  # the marker, the fork already carries the patch — detect that instead of
+  # failing on "patch does not apply".
+  if git -C "$WORK/$t" apply --check -p2 "$ROOT/demo-target/.harness/reference-solutions/$t.patch" 2>/dev/null; then
+    git -C "$WORK/$t" apply -p2 "$ROOT/demo-target/.harness/reference-solutions/$t.patch"
+    git -C "$WORK/$t" add -A
+    git -C "$WORK/$t" \
+      -c user.name="demo-agent-$t" -c user.email="${t}@demo.agents" \
+      commit -q -m "${t}: reference solution applied by agent harness"
+    git -C "$WORK/$t" -c http.extraHeader="Authorization: Bearer ${TOKEN[$t]}" push -q origin main
+  else
+    git -C "$WORK/$t" apply --check --reverse -p2 \
+      "$ROOT/demo-target/.harness/reference-solutions/$t.patch" \
+      || { echo "FATAL: $t patch neither applies nor is already applied" >&2; exit 1; }
+    log "$t patch already on the fork (previous attempt pushed it); reusing head"
+  fi
   SHA="$(git -C "$WORK/$t" rev-parse HEAD)"
   echo "$SHA" > "$STATE/$t.sha"
-  # belt and braces: the sidecar post-receive hook also notifies /events/push;
-  # the coordinator dedupes (agent, sha).
-  curl -sf -X POST "$WORKER/events/push" -H "content-type: application/json" \
+  # Belt and braces: the sidecar post-receive hook also notifies /events/push;
+  # the coordinator dedupes (agent, sha). AUTH (contract 0.1.1+): this route
+  # is token-gated — the pushing agent authenticates with its own task token,
+  # exactly like a real agent would.
+  curl -sf -X POST "$WORKER/events/push" \
+    -H "Authorization: Bearer ${TOKEN[$t]}" -H "content-type: application/json" \
     -d "{\"agent\":\"${AGENT_ID[$t]}\",\"sha\":\"$SHA\"}" > "$EVIDENCE/push-$t.json"
   mark "pushed-$t"
   log "$t pushed $SHA"
@@ -257,18 +377,13 @@ run_radar() { # prefix head_t1 head_t2 head_t3
 }
 
 post_checks() { # radar_json out_file -> http code on stdout
-  # /checks wants policy as a string; the radar payload carries it as an
-  # object, so post a derived copy (kept as evidence as *.posted.json).
-  local body="$2.posted.json"
-  python3 - "$1" "$body" <<'PY'
-import json, sys
-payload = json.load(open(sys.argv[1]))
-payload["policy"] = "radar-l3 --l1 live-run-2"
-json.dump(payload, open(sys.argv[2], "w"))
-PY
+  # Contract 0.1.2: POST /checks accepts the radar's typed payload DIRECTLY
+  # (run-2 gaps G4/G5 closed): the payload declares "contract": "0.1", policy
+  # is the {merge, tests} object, coverage the counts object, evidence the
+  # typed per-result object. No down-conversion, no derived *.posted.json.
   local code
   code="$(curl -s -o "$2" -w "%{http_code}" -X POST "$WORKER/checks" \
-    "${RUNNER_AUTH[@]}" --data-binary "@$body")"
+    "${RUNNER_AUTH[@]}" --data-binary "@$1")"
   echo "$code"
 }
 
@@ -314,7 +429,8 @@ else
   git -C "$WORK/t1" -c http.extraHeader="Authorization: Bearer ${TOKEN[t1]}" push -q origin main
   T1_NEW_SHA="$(git -C "$WORK/t1" rev-parse HEAD)"
   echo "$T1_NEW_SHA" > "$STATE/t1.sha"
-  curl -sf -X POST "$WORKER/events/push" -H "content-type: application/json" \
+  curl -sf -X POST "$WORKER/events/push" \
+    -H "Authorization: Bearer ${TOKEN[t1]}" -H "content-type: application/json" \
     -d "{\"agent\":\"${AGENT_ID[t1]}\",\"sha\":\"$T1_NEW_SHA\"}" > "$EVIDENCE/push-t1-churn.json"
   CODE="$(post_checks "$EVIDENCE/radar1-l1.json" "$EVIDENCE/stale-409.json")"
   echo "$CODE" > "$STATE/stale409.code"
@@ -336,27 +452,38 @@ else
   mark radar-2
 fi
 
-# ---------- 9. UI evidence: /status JSON + headless screenshot ----------
+# ---------- 9. UI evidence: /status JSON + headless screenshots ----------
 
 if step_done ui; then
   log "skip: ui evidence"
 else
-  log "capturing /status + UI screenshot"
+  log "capturing /status + UI screenshots (index + task page)"
   curl -sf "$WORKER/status" > "$EVIDENCE/status.json"
-  if curl -sf "http://127.0.0.1:$UI_PORT/index.html" >/dev/null 2>&1; then
-    log "ui server already up on :$UI_PORT"
+  if assert_port_or_service "$UI_PORT" "http://127.0.0.1:$UI_PORT/index.html" ui-server; then
+    :
   else
-    (cd "$ROOT/prototype/ui" && nohup python3 -m http.server "$UI_PORT" --bind 127.0.0.1 \
-      > "$LIVE/ui-server.log" 2>&1 < /dev/null & echo $! > "$STATE/ui.pid")
-    SIDE_PIDS+=("$(cat "$STATE/ui.pid")")
+    start_bg "$LIVE/ui-server.log" "$STATE/ui.pid" http.server \
+      bash -c "cd '$ROOT/prototype/ui' && exec python3 -m http.server '$UI_PORT' --bind 127.0.0.1"
+    wait_for "http://127.0.0.1:$UI_PORT/index.html" ui-server 30
   fi
-  wait_for "http://127.0.0.1:$UI_PORT/index.html" ui-server 30
   CHROME="$HOME/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell"
   "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,1100 \
     --virtual-time-budget=15000 \
     --screenshot="$EVIDENCE/ui-index.png" \
     "http://127.0.0.1:$UI_PORT/index.html?api=http://127.0.0.1:$WORKER_PORT" \
-    > "$LIVE/screenshot.log" 2>&1 || echo "WARN: screenshot failed (see live/screenshot.log)"
+    > "$LIVE/screenshot.log" 2>&1 || echo "WARN: index screenshot failed (see live/screenshot.log)"
+  # Task page too (run-2 only screenshotted the index): the change story of the
+  # agent whose task carries the T2 test conflict.
+  TASK2_ID="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['taskId'])" "$STATE/task-t2.json")"
+  echo "$TASK2_ID" > "$STATE/task2.taskid"
+  "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,1400 \
+    --virtual-time-budget=15000 \
+    --screenshot="$EVIDENCE/ui-task-$TASK2_ID.png" \
+    "http://127.0.0.1:$UI_PORT/task.html?id=$TASK2_ID&api=http://127.0.0.1:$WORKER_PORT" \
+    > "$LIVE/screenshot.log" 2>&1 || echo "WARN: task screenshot failed (see live/screenshot.log)"
+  # Badge check: run the UI's own pair-status decision on the live /status so
+  # assertions can pin what the badges show (conflict vs clean vs not checked).
+  node "$LIVE/check-ui-pairs.cjs" "$EVIDENCE/status.json" > "$EVIDENCE/ui-pairs.json"
   mark ui
 fi
 

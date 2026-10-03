@@ -1,13 +1,46 @@
-# Live end-to-end demo — Agent Branches prototype (run 2)
+# Live end-to-end demo — Agent Branches prototype (run 3)
 
-Branch `proto/live` (integration of L1 @ 762ff3d, L4 @ 40381f3, L5 @ 47f5dbe).
-One command reproduces the whole demo; all steps are idempotent via markers in
-`live/state/` and leave evidence in `live/evidence/`.
+Branch `proto/live` (integration of L1 @ 3e9983b CONTRACT 0.1.2, L4, L5; see
+`git log --oneline ace104f` for the merge). One command reproduces the whole
+demo; all steps are idempotent via markers in `live/state/` and leave evidence
+in `live/evidence/run-3/` (run 2's evidence stays in `live/evidence/run-2/`).
 
-**Run 2 result (2026-10-03, zc-live-4): 15/15 assertions passed** — see
-`live/evidence/result.json` (machine-readable), `summary.txt`, `ui-index.png`
-(review UI rendering live data), `radar1-l1.json` / `radar2-l1.json`,
-`checks1-receipt.json` / `checks2-receipt.json`, `stale-409.json`.
+**Run 3 result (2026-10-03, zc-live-5): 36/36 assertions passed** — see
+`live/evidence/run-3/result.json` (machine-readable), `summary.txt`,
+`ui-index.png` + `ui-task-task-0002.png` (review UI rendering live data,
+visually inspected — not just size-checked), `ui-pairs.json` (the UI's own
+pair-status decision on live /status), `radar1-l1.json` / `radar2-l1.json`
+(posted to /checks VERBATIM), `checks1-receipt.json` / `checks2-receipt.json`,
+`stale-409.json`.
+
+## Run 3 headline: green on the CURRENT contract with the run-2 gap list closed
+
+- **Typed wire end to end (G4/G5 closed).** The radar's contract-`"0.1"`
+  payload (object `policy`, counts `coverage`, per-result `heads` + typed
+  `evidence`) is POSTed to `/checks` verbatim. The down-conversion
+  `*.posted.json` shim is deleted; no `[object Object]` anywhere in the UI.
+- **Tasks carry intent + base_sha.** Intents are distilled at runtime from
+  `demo-target/TASKS.md` (heading + tests-to-add line); `base_sha` pins the
+  canonical seed commit. `GET /status` agents now expose `intent` + `baseSha`
+  (additive worker change on proto/live for L1 to adopt), so the UI cards show
+  what each agent is doing and which commit it started from — no more
+  "Not stated yet / not recorded".
+- **Designed matrix asserted honestly (G8 closed).** T1-T3 is a REAL textual
+  overlap (both patches insert routes at the same anchor in `src/worker.js`;
+  reproduced with `git merge-tree` and codified as FACT 4 in
+  `demo-target/verify-overlap.sh` — ALL 4 FACTS VERIFIED). The assertion
+  requires `conflict`+`textual` for T1-T3; nothing "expected clean" accepts a
+  conflict. Fixture docs corrected to "three designed conflicts: two textual
+  + one test".
+- **Warnings counted per pair, new + existing.** The receipt assertion checks
+  every conflicting pair has an ACTIVE warning (newly created OR reused via
+  the coordinator's pair+headsAtIssue dedup) — pass 2 legitimately created 2
+  and reused 1, and that now passes by semantics, not by luck.
+- **T2-T3 coverage.** The test conflict surfaces per-pair
+  `coverage.tests_collected = 19 > 0` in /status (radar now parses node:test
+  summary lines and records `tests_collected` on failing combined runs too),
+  and the UI's own `pair-status.js` badges all three pairs "Conflict" —
+  asserted from live data, not eyeballed.
 
 ## Prerequisites
 
@@ -37,139 +70,149 @@ One command reproduces the whole demo; all steps are idempotent via markers in
 
    ```sh
    cd /home/alexey/git/agent-branches-live
-   bash live/run-demo.sh > live/run-2.log 2>&1
+   bash live/run-demo.sh > live/run-3.log 2>&1
    echo "exit=$?"   # 0 on success
    ```
 
    Never pipe the script's stdout into `tail -f` or similar: server processes
-   inherit the pipe and hold it open. Read `live/run-2.log` and
-   `live/evidence/result.json` instead.
+   inherit the pipe and hold it open. Read `live/run-3.log` and
+   `live/evidence/run-3/result.json` instead.
 
 3. Inspect results:
 
    ```sh
-   cat live/evidence/result.json         # assertions, machine-readable
-   cat live/evidence/summary.txt         # same, human-readable
-   python3 -m json.tool live/evidence/status.json | head -40
+   cat live/evidence/run-3/result.json    # assertions, machine-readable
+   cat live/evidence/run-3/summary.txt    # same, human-readable
+   python3 -m json.tool live/evidence/run-3/status.json | head -40
    ```
+
+To re-check a finished run without redoing data steps, just rerun step 2 —
+markers skip everything except services + final assertions. To force a full
+fresh run: `rm -rf live/state live/artifacts prototype/.wrangler` (task
+records bake in intent/base_sha, so changed task payloads need the wipe).
 
 ## What the script does (in order)
 
 1. Starts the L1 local-artifacts sidecar (:8799) and `wrangler dev` (:8787);
-   both health-checked, started only if down, `</dev/null`, logs to files,
-   PIDs recorded under `live/state/`, stopped by an identity-checked trap.
-2. `POST /setup` (ADMIN_TOKEN) — creates the canonical repo
-   (idempotent: returns the existing one), mints a canonical write token on
-   the sidecar admin API, clones, seeds `demo-target/` (minus `.harness/`)
-   and pushes the baseline.
-3. `POST /tasks` x3 (admin) — forks with per-repo write tokens.
+   both health-checked, started only if down, `</dev/null`, logs to files.
+   Each server runs under `setsid` in its OWN PROCESS GROUP; the recorded pid
+   is the group leader; cleanup kills the recorded GROUP (`-PGID`) after
+   cmdline + group-leader + not-my-own-group checks, TERM→KILL escalation,
+   then verifies the demo ports are actually free (holders get logged, never
+   killed by pattern).
+2. `POST /setup` (ADMIN_TOKEN) — creates the canonical repo (idempotent: returns
+   the existing one), mints a canonical write token on the sidecar admin API,
+   clones, seeds `demo-target/` (minus `.harness/`) and pushes the baseline.
+3. `POST /tasks` x3 (admin) — each body carries the task's `intent` (from
+   `demo-target/TASKS.md`) and `base_sha` (the canonical seed commit); forks
+   get per-repo write tokens.
 4. Applies the three reference patches as the three agents' pushes
-   (authenticated clone + push; belt-and-braces `POST /events/push`).
+   (authenticated clone + push; belt-and-braces `POST /events/push` now
+   authenticates with the agent's own task token — the route is token-gated
+   since contract 0.1.1).
 5. Radar pass 1 (`python3 -m radar --l1`) at the 3-agent vector;
-   `POST /checks` with RUNNER_TOKEN.
+   `POST /checks` posts the typed payload VERBATIM with RUNNER_TOKEN.
 6. Phase-1 assertions.
 7. Stale probe: churn push on t1, replay of the old radar payload → 409.
-8. Radar pass 2 at the new vector; `POST /checks` again.
-9. Evidence: `/status` JSON + headless-Chrome screenshot of the review UI
-   (`prototype/ui`) served on :8788, pointed at the worker via `?api=`.
-10. Final assertions → `live/evidence/result.json`.
+8. Radar pass 2 at the new vector; `POST /checks` again (verbatim payload).
+9. Evidence: `/status` JSON, headless-Chrome screenshots of the review UI
+   (index + one task page) served on :8788 via `?api=`, and `ui-pairs.json`
+   from running the UI's own `pair-status.js` against the live /status.
+10. Final assertions → `live/evidence/run-3/result.json`.
 
-To re-check a finished run without redoing data steps, just rerun step 2 —
-markers skip everything except services + final assertions. To force a full
-fresh run: `rm -rf live/state` (the runid/canonical guards keep partial state
-consistent anyway).
+## GAP LIST — run-2 items and where they stand now
 
-## GAP LIST — every friction item hit while getting this green
+**G1 · Process hygiene — CLOSED in the script (verified this run).** Exact
+prior-executor termination records (causes are not invented post-hoc):
+zc-live-integration exited EXIT 143 — cause UNKNOWN, self-kill is the standing
+hypothesis; zc-live-2 ended RUN_EXIT 137 — cause UNKNOWN, OOM not excluded;
+zc-live-3 was stopped INTENTIONALLY by claude-principal for the warm-path
+switch. The earlier "120m orchestrator timeout is equally plausible" text was
+WRONG and is gone: that run died after ~2 minutes, so a 120-minute timeout is
+impossible. Run 3 mechanics: every demo server starts via `setsid` as its own
+process group; cleanup kills the recorded GROUP (`-PGID`) — taking wrangler's
+workerd child down with it — after identity checks (cmdline substring,
+group-leader, refusal when the target group is the script's own), with
+TERM→KILL escalation; a final pass asserts the demo ports are free and logs
+holders instead of killing them. Both runs ended with :8787/:8788/:8799 free
+and no orphaned workerd.
 
-**G1 · Process hygiene (dogfood, mandated).** "Executor killed itself twice via
-broad process matching" (zc-live-integration; cause of its EXIT=143 remains
-UNKNOWN — self-kill is the standing hypothesis, the 120m orchestrator timeout is
-equally plausible). This run demonstrated both the failure mode and the fix:
-- `safe_stop` REFUSED to kill a recorded PID that Linux had recycled for the
-  script's own shell within the same run (cmdline check caught it).
-- Killing the wrangler CLI PID orphans its `workerd` child, which keeps the
-  port — happened twice. PID files must capture a process GROUP
-  (`setsid` + kill `-PGID`), and "already up" checks cannot distinguish a
-  healthy owned server from an orphaned child.
-- `$!` of a compound `a && b &` is the subshell, not the workload — one of my
-  own probe sidecars survived a "kill". Same lesson at executor scale: record
-  workload identity, kill exactly that after verification.
+**G2 · Sidecar requires a per-repo token on EVERY git endpoint — CLOSED
+(already in run 2, kept).** All clone/fetch/push calls authenticate with
+minted per-repo tokens, `GIT_TERMINAL_PROMPT=0` is exported, fresh read tokens
+per radar pass. Contract 0.1.1+ additionally token-gates `POST /events/push`:
+run 3's belt-and-braces event posts now carry the pushing agent's own task
+token (run 2's anonymous post would 401 against the current worker — caught
+live during run 3's first attempt).
 
-**G2 · Sidecar requires a per-repo token on EVERY git endpoint** (clone and
-fetch too, not only push). Unauthenticated git gets a 401 and then hangs on a
-username prompt that becomes a confusing `exit 128`. Fix in script: authenticate
-every clone/fetch/push, `GIT_TERMINAL_PROMPT=0`, mint fresh read tokens per
-radar pass (TTL 3600 would otherwise break re-runs). The CONTRACT should say
-this in bold.
+**G3 · Assertions/contract drift — CLOSED.** Assertions are written against
+the contract 0.1.2 response shapes (typed receipt, `currentHeads` in the 409,
+radar-kind reasons). CONTRACT.md publishes the exact shapes (0.1.2).
 
-**G3 · Assertions/contract drift.** `assertions.py` was written against field
-names that don't exist: receipt is `{stale:false, accepted:<count>,
-createdWarnings:[...]}` (not `accepted:true`/`warningsCreated`), the 409 body
-carries `currentHeads` (not `staleHeads`), warning `reason` is the radar kind
-("textual"/"test", not "radar-conflict:*"), and the script passed `--status`
-which the parser didn't declare. All fixed on the assertions side; CONTRACT.md
-should publish the exact response shapes.
+**G4 · radar `policy` object vs string — CLOSED.** No conversion anywhere:
+the typed `{merge, tests}` policy object is posted and recorded verbatim
+(`contract: "0.1"` is mandatory — missing/unknown = 400).
 
-**G4 · radar `--l1` payload `policy` is an object; `POST /checks` wants a
-string.** The script posts a derived `*.posted.json` with
-`policy="radar-l3 --l1 live-run-2"`. Align the two sides.
+**G5 · radar evidence object vs string — CLOSED.** The typed evidence object
+is posted verbatim, stored as `evidenceDetail`, and served on the pair view;
+the UI renders only its string `summary` and never `[object Object]`
+(verified in the screenshots).
 
-**G5 · radar evidence is an object; `/checks` types `evidence` as string.**
-Accepted at runtime (TS type not enforced), but the UI can end up rendering
-`[object Object]`. Pick one shape.
+**G6 · No CORS for the documented UI usage — CLOSED on proto/live** (CORS
+headers + OPTIONS preflight in `prototype/src/index.ts`, kept through the
+merge). L1 should adopt it.
 
-**G6 · No CORS for the documented UI usage (fixed on proto/live).**
-`prototype/ui` is served from its own origin and fetches `?api=` cross-origin;
-the worker sent no `access-control-allow-origin` and had no OPTIONS handling,
-so the review UI could NEVER load live data (first screenshot shows the error
-state — a size-only assertion had passed on it). Added CORS headers +
-preflight to `prototype/src/index.ts` on this branch; L1 should adopt it.
+**G7 · Vacuous screenshot assertion — CLOSED.** Run 3's screenshots (index +
+task page) were visually inspected by the executor: intents, base SHAs, all
+three Conflict badges (textual/textual/test), warnings with reasons, no
+`[object Object]`. Additionally `ui-pairs.json` pins the badge states by
+running the UI's own `pair-status.js` on the live /status, and assertions
+check it — a machine check of exactly what the UI would render.
 
-**G7 · Screenshot assertion was vacuous.** `size > 10KB` passed on an
-error-state PNG. Visual evidence needs to be looked at, not measured. (The
-final `ui-index.png` now verifiably renders: 3 agent cards with head SHAs, all
-three pair verdicts, the active-warnings table.)
+**G8 · Fixture drift in demo-target — CLOSED.** T1-T3 is a real textual
+overlap (same route-insertion anchor in `src/worker.js`), now asserted as
+`expected conflict (textual, real overlap)`; `SOLUTIONS.md` corrected to
+"three designed conflicts: two textual + one test"; `verify-overlap.sh` gained
+FACT 4 (T1+T3 textual conflict) — ALL 4 FACTS VERIFIED on this tree.
 
-**G8 · Fixture drift in demo-target (L5).** `SOLUTIONS.md` claims T1+T3 have no
-textual overlap, but both patches insert routes at the same anchor in
-`src/worker.js` → real git content conflict (reproduced with `git merge-tree`;
-conflict hunk saved in the run log). The radar verdict `T1-T3 conflict/textual`
-is honest; the fixture docs (and possibly `verify-overlap.sh`) are stale.
-Either move one of the route insertions or update the designed matrix to
-"three designed conflicts, two textual + one test".
+**G9 · State/marker vs fresh-service combos — CLOSED** (runid marker +
+canonical-exists check + ordering documented; consistent across run 3's
+restarts). Note: changed task payloads (intent/base_sha) require wiping
+`live/state`, `live/artifacts` AND `prototype/.wrangler` (DO state), since
+task records bake them in.
 
-**G9 · State/marker vs fresh-service combos.** Markers from an older run can
-point at a canonical that no longer exists on a fresh sidecar, and tasks
-created BEFORE the baseline push fork from the wrong head. Guards added:
-canonical-exists check + runid marker that clears stale state; ordering
-(seed before tasks) documented. Partial-state re-runs stayed consistent in
-practice across four restarts.
+**G10 · Small executor bugs — CLOSED** (start_bg shift, wait_for auth headers,
+declare -A; all fixed in run 2 and kept).
 
-**G10 · Small executor bugs the run caught:** `start_bg` had `shift 1` instead
-of `shift 2` (executed the pidfile as the command); `wait_for` couldn't pass
-auth headers (401 loop → false FATAL); a missing `declare -A FORK_NAME`
-became `set -u` arithmetic on `t1`. All fixed.
+**G11 · Tokens on the wrangler command line — OPEN (flagged for L1).**
+`--var ADMIN_TOKEN:…` is still visible in `/proc/<pid>/cmdline`; a
+`prototype/.dev.vars` (untracked) would avoid the exposure. Kept the single
+token source for run 3.
 
-**G11 · Tokens on the wrangler command line.** `--var ADMIN_TOKEN:…` is visible
-in `/proc/<pid>/cmdline` to the whole host. Wrangler reads `.dev.vars` from the
-project dir natively — a `prototype/.dev.vars` (untracked) would avoid the
-exposure. Not fixed here (kept the single token source); flagged for L1.
+**G12 · Empty-clone default branch — CLOSED** (`symbolic-ref HEAD
+refs/heads/main` guard; moot in practice since the sidecar auto-seeds).
 
-**G12 · Empty-clone default branch.** An empty canonical clone follows local
-`init.defaultBranch`; guarded with `symbolic-ref HEAD refs/heads/main`. Moot
-in practice: the sidecar auto-seeds an initial commit on repo creation.
+**G13 · Handoff state drift — CLOSED.** This run's handoff carried the branch
+head SHAs, committed-vs-WIP state and the exact tasking; no redo of peer work
+was needed.
 
-**G13 · Handoff state drift.** The tasking told this executor to redo merges
-the predecessor had already committed, and the previous EXIT=143 cause was
-unknowable post-hoc. Handoffs should carry: last known head SHA per branch,
-what is committed vs WIP, and which processes were left running with their
-PID files.
+**G14 · NEW (run 3, open, for L1): canonical seed push lands in the
+unprocessed-pushes ledger.** The sidecar's post-receive callback for the
+SEED push to the canonical repo gets `worker responded 400` (no agent owns
+the canonical fork yet at seed time), retries 3x, and records it in
+`notify-state.json` → `GET /status` shows one `unprocessedPushes` entry with
+`agentId: null`. Benign today — the C-1357 guard only forces pairs to
+`not_checked` for AGENT forks, so no pair is affected and all assertions
+pass — but the ledger should not carry a permanent entry for the documented
+seed flow. Suggested fix: `/events/push` returns 202 `{accepted: false}` for
+repos owned by no agent (mirroring `/events/artifacts`), or the sidecar skips
+notification for the canonical repo.
 
 ## Ownership / recovery
 
 - Branch `proto/live`, worktree `/home/alexey/git/agent-branches-live`,
   pushed to `origin`. Evidence is committed. Tokens and runtime scratch
-  (`live/.dev.vars`, `live/state/`, `live/work/`, `live/artifacts/`, logs)
-  are gitignored.
+  (`live/.dev.vars`, `live/state/`, `live/work/`, `live/artifacts/`, logs,
+  `prototype/.wrangler/`) are gitignored.
 - Recovery path: ordinary git (`git checkout proto/live`); the demo state is
   fully regenerable via the commands above.

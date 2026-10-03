@@ -510,7 +510,12 @@ export class Coordinator extends DurableObject {
 
   async status(): Promise<{
     canonical: { name: string | null; remote: string | null };
-    agents: AgentRecord[];
+    /** Agent card view: the stored AgentRecord plus the owning task's intent
+     * and baseSha (codex C-1306), so GET /status consumers see what each
+     * agent is doing and which commit it started from without a per-task
+     * round trip. Additive fields on the 0.1.2 wire; values mirror the
+     * TaskRecord (null = not stated / not recorded, the UI's muted case). */
+    agents: (AgentRecord & { intent: string | null; baseSha: string | null })[];
     heads: Record<string, string>;
     pairs: PairStatusView[];
     warnings: WarningRecord[];
@@ -528,7 +533,14 @@ export class Coordinator extends DurableObject {
     );
     return {
       canonical: { name: model.canonicalName, remote: model.canonicalRemote },
-      agents: Object.values(model.agents),
+      agents: Object.values(model.agents).map((agent) => {
+        const task = model.tasks[agent.taskId];
+        return {
+          ...agent,
+          intent: task ? task.intent : null,
+          baseSha: task ? task.baseSha : null,
+        };
+      }),
       heads: model.heads,
       pairs: this.pairViews(model, unprocessedAgents),
       warnings: [...model.warnings]

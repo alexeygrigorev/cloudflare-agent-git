@@ -226,10 +226,14 @@
     var dl =
       "<dt>Agent</dt><dd><code>" + esc(agent.agentId || task.agentId) + "</code></dd>" +
       "<dt>Task</dt><dd><code>" + esc(task.taskId) + "</code></dd>" +
+      /* intent + base live on the task record itself (GET /tasks/:id returns
+         base_sha/intent at the top level; /status agents carry intent/baseSha
+         for the index cards). Prefer the task-level fields, fall back to the
+         agent object for older fixtures. */
       "<dt>Doing</dt><dd>" +
-      (agent.intent ? esc(agent.intent) : "<span class='muted'>Not stated yet</span>") + "</dd>" +
+      ((task.intent || agent.intent) ? esc(task.intent || agent.intent) : "<span class='muted'>Not stated yet</span>") + "</dd>" +
       "<dt>Started from</dt><dd>" +
-      (agent.baseSha ? shaHtml(agent.baseSha) : "<span class='muted'>Not recorded yet</span>") + "</dd>" +
+      ((task.base_sha || agent.baseSha) ? shaHtml(task.base_sha || agent.baseSha) : "<span class='muted'>Not recorded yet</span>") + "</dd>" +
       "<dt>Latest change</dt><dd>" + shaHtml(currentHead) + "</dd>" +
       "<dt>Working copy</dt><dd><span class='small'>own fork <code>" + esc(task.forkName || agent.forkName) +
       "</code>, branch <code>" + esc(plainRef(task.ref || agent.ref)) + "</code></span></dd>" +

@@ -1,0 +1,38 @@
+PASS  radar2: contract-0.1 typed payload has 3 pair results  [n=3]
+PASS  T1-T2 verdict: conflict (textual)  [status=conflict kind=textual]
+PASS  T2-T3 verdict: conflict (test)  [status=conflict kind=test]
+PASS  T1-T3 verdict: expected conflict (textual, real overlap)  [status=conflict kind=textual]
+PASS  /checks receipt: not stale; typed payload accepted verbatim  [stale=False accepted=3 results=3]
+PASS  /checks receipt: every conflicted pair has an ACTIVE warning (new or existing, dedup)  [conflictPairs=3 covered=3 perPair={('demo-t1-0001', 'demo-t3-0003'): 1, ('demo-t1-0001', 'demo-t2-0002'): 1, ('demo-t2-0002', 'demo-t3-0003'): 1}]
+PASS  /checks receipt: created warnings only for conflicted pairs, never more than conflicts  [createdWarnings=2 pairs=['demo-t1-0001|demo-t2-0002', 'demo-t1-0001|demo-t3-0003'] conflicts=3]
+PASS  status: head vector t1 == pushed sha  [126cceecea790e7f554fe1027613bfbddc0778e4 vs 126cceec]
+PASS  status: head vector t2 == pushed sha  [d49548c3fd473a426bb878af43ac2c114656b63b vs d49548c3]
+PASS  status: head vector t3 == pushed sha  [8335941c9c268bb4a869da26e89968a4059491e9 vs 8335941c]
+PASS  status pair view T1-T2: conflict (textual) at current heads  [status=conflict kind=textual stale=False]
+PASS  status pair view T1-T3: conflict (textual) at current heads  [status=conflict kind=textual stale=False]
+PASS  status pair view T2-T3: conflict (test) at current heads  [status=conflict kind=test stale=False]
+PASS  status pair view T2-T3: per-pair tests_collected > 0  [coverage={'tests_collected': 19}]
+PASS  status: active warning for T1-T2
+PASS  status: active warning for T2-T3
+PASS  status: active warning for T1-T3
+PASS  status: active warnings carry radar conflict reasons  [3 radar-kinded warnings (reason is the radar kind per CONTRACT v0.1.2)]
+PASS  task record: t1 intent recorded (from TASKS.md)  [T1: Link listing & visit counters — tests to add: listing returns the created li]
+PASS  task record: t1 base_sha == canonical seed commit  [f3c83514 vs f3c83514]
+PASS  task record: t2 intent recorded (from TASKS.md)  [T2: Object-form create with TTL expiry — tests to add: ttl stored as future `exp]
+PASS  task record: t2 base_sha == canonical seed commit  [f3c83514 vs f3c83514]
+PASS  task record: t3 intent recorded (from TASKS.md)  [T3: Bulk import endpoint — tests to add: a multi-link import returns the slugs i]
+PASS  task record: t3 base_sha == canonical seed commit  [f3c83514 vs f3c83514]
+PASS  stale check after new push rejected 409  [got 409]
+PASS  409 body names the moved agent (t1)  [replayed t1=e87b5142 current=126cceec]
+PASS  UI badge t1-t2: shows Conflict (not Clean/Not checked)  [badge=conflict]
+PASS  UI badge t1-t3: shows Conflict (not Clean/Not checked)  [badge=conflict]
+PASS  UI badge t2-t3: shows Conflict (not Clean/Not checked)  [badge=conflict]
+PASS  status agent t1: intent + baseSha exposed (UI cards)  [intent=T1: Link listing & visit counters — tests to add: listing re baseSha=f3c83514]
+PASS  status agent t2: intent + baseSha exposed (UI cards)  [intent=T2: Object-form create with TTL expiry — tests to add: ttl s baseSha=f3c83514]
+PASS  status agent t3: intent + baseSha exposed (UI cards)  [intent=T3: Bulk import endpoint — tests to add: a multi-link import baseSha=f3c83514]
+PASS  evidence: UI index screenshot exists
+PASS  evidence: UI task-page screenshot exists  [ui-task-task-0002.png]
+PASS  evidence: /status JSON saved
+PASS  evidence: no *.posted.json down-conversion shim  [typed payload posted verbatim (G4/G5 closed)]
+
+36/36 assertions passed (final)

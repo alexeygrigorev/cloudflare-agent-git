@@ -1,0 +1,188 @@
+{
+  "phase": "final",
+  "passed": 36,
+  "total": 36,
+  "allPassed": true,
+  "assertions": [
+    {
+      "name": "radar2: contract-0.1 typed payload has 3 pair results",
+      "ok": true,
+      "detail": "n=3"
+    },
+    {
+      "name": "T1-T2 verdict: conflict (textual)",
+      "ok": true,
+      "detail": "status=conflict kind=textual"
+    },
+    {
+      "name": "T2-T3 verdict: conflict (test)",
+      "ok": true,
+      "detail": "status=conflict kind=test"
+    },
+    {
+      "name": "T1-T3 verdict: expected conflict (textual, real overlap)",
+      "ok": true,
+      "detail": "status=conflict kind=textual"
+    },
+    {
+      "name": "/checks receipt: not stale; typed payload accepted verbatim",
+      "ok": true,
+      "detail": "stale=False accepted=3 results=3"
+    },
+    {
+      "name": "/checks receipt: every conflicted pair has an ACTIVE warning (new or existing, dedup)",
+      "ok": true,
+      "detail": "conflictPairs=3 covered=3 perPair={('demo-t1-0001', 'demo-t3-0003'): 1, ('demo-t1-0001', 'demo-t2-0002'): 1, ('demo-t2-0002', 'demo-t3-0003'): 1}"
+    },
+    {
+      "name": "/checks receipt: created warnings only for conflicted pairs, never more than conflicts",
+      "ok": true,
+      "detail": "createdWarnings=2 pairs=['demo-t1-0001|demo-t2-0002', 'demo-t1-0001|demo-t3-0003'] conflicts=3"
+    },
+    {
+      "name": "status: head vector t1 == pushed sha",
+      "ok": true,
+      "detail": "126cceecea790e7f554fe1027613bfbddc0778e4 vs 126cceec"
+    },
+    {
+      "name": "status: head vector t2 == pushed sha",
+      "ok": true,
+      "detail": "d49548c3fd473a426bb878af43ac2c114656b63b vs d49548c3"
+    },
+    {
+      "name": "status: head vector t3 == pushed sha",
+      "ok": true,
+      "detail": "8335941c9c268bb4a869da26e89968a4059491e9 vs 8335941c"
+    },
+    {
+      "name": "status pair view T1-T2: conflict (textual) at current heads",
+      "ok": true,
+      "detail": "status=conflict kind=textual stale=False"
+    },
+    {
+      "name": "status pair view T1-T3: conflict (textual) at current heads",
+      "ok": true,
+      "detail": "status=conflict kind=textual stale=False"
+    },
+    {
+      "name": "status pair view T2-T3: conflict (test) at current heads",
+      "ok": true,
+      "detail": "status=conflict kind=test stale=False"
+    },
+    {
+      "name": "status pair view T2-T3: per-pair tests_collected > 0",
+      "ok": true,
+      "detail": "coverage={'tests_collected': 19}"
+    },
+    {
+      "name": "status: active warning for T1-T2",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "status: active warning for T2-T3",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "status: active warning for T1-T3",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "status: active warnings carry radar conflict reasons",
+      "ok": true,
+      "detail": "3 radar-kinded warnings (reason is the radar kind per CONTRACT v0.1.2)"
+    },
+    {
+      "name": "task record: t1 intent recorded (from TASKS.md)",
+      "ok": true,
+      "detail": "T1: Link listing & visit counters \u2014 tests to add: listing returns the created li"
+    },
+    {
+      "name": "task record: t1 base_sha == canonical seed commit",
+      "ok": true,
+      "detail": "f3c83514 vs f3c83514"
+    },
+    {
+      "name": "task record: t2 intent recorded (from TASKS.md)",
+      "ok": true,
+      "detail": "T2: Object-form create with TTL expiry \u2014 tests to add: ttl stored as future `exp"
+    },
+    {
+      "name": "task record: t2 base_sha == canonical seed commit",
+      "ok": true,
+      "detail": "f3c83514 vs f3c83514"
+    },
+    {
+      "name": "task record: t3 intent recorded (from TASKS.md)",
+      "ok": true,
+      "detail": "T3: Bulk import endpoint \u2014 tests to add: a multi-link import returns the slugs i"
+    },
+    {
+      "name": "task record: t3 base_sha == canonical seed commit",
+      "ok": true,
+      "detail": "f3c83514 vs f3c83514"
+    },
+    {
+      "name": "stale check after new push rejected 409",
+      "ok": true,
+      "detail": "got 409"
+    },
+    {
+      "name": "409 body names the moved agent (t1)",
+      "ok": true,
+      "detail": "replayed t1=e87b5142 current=126cceec"
+    },
+    {
+      "name": "UI badge t1-t2: shows Conflict (not Clean/Not checked)",
+      "ok": true,
+      "detail": "badge=conflict"
+    },
+    {
+      "name": "UI badge t1-t3: shows Conflict (not Clean/Not checked)",
+      "ok": true,
+      "detail": "badge=conflict"
+    },
+    {
+      "name": "UI badge t2-t3: shows Conflict (not Clean/Not checked)",
+      "ok": true,
+      "detail": "badge=conflict"
+    },
+    {
+      "name": "status agent t1: intent + baseSha exposed (UI cards)",
+      "ok": true,
+      "detail": "intent=T1: Link listing & visit counters \u2014 tests to add: listing re baseSha=f3c83514"
+    },
+    {
+      "name": "status agent t2: intent + baseSha exposed (UI cards)",
+      "ok": true,
+      "detail": "intent=T2: Object-form create with TTL expiry \u2014 tests to add: ttl s baseSha=f3c83514"
+    },
+    {
+      "name": "status agent t3: intent + baseSha exposed (UI cards)",
+      "ok": true,
+      "detail": "intent=T3: Bulk import endpoint \u2014 tests to add: a multi-link import baseSha=f3c83514"
+    },
+    {
+      "name": "evidence: UI index screenshot exists",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "evidence: UI task-page screenshot exists",
+      "ok": true,
+      "detail": "ui-task-task-0002.png"
+    },
+    {
+      "name": "evidence: /status JSON saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "evidence: no *.posted.json down-conversion shim",
+      "ok": true,
+      "detail": "typed payload posted verbatim (G4/G5 closed)"
+    }
+  ]
+}

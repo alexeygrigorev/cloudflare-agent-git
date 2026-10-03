@@ -1,5 +1,6 @@
-live/artifacts/
-live/work/
-live/state/
-live/*.log
-live/.dev.vars
+artifacts/
+work/
+state/
+*.log
+.dev.vars
+__pycache__/

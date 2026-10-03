@@ -315,6 +315,21 @@ def create_warning(
 
 def parse_collected_test_count(output: str) -> Optional[int]:
     """Parse the number of collected / executed tests from runner output."""
+    # node:test spec reporter summary: "ℹ tests 19"
+    m_node_spec = re.search(r"^\s*ℹ\s+tests\s+(\d+)\s*$", output, re.MULTILINE)
+    if m_node_spec:
+        return int(m_node_spec.group(1))
+
+    # node:test TAP summary: "# tests 19"
+    m_node_tap = re.search(r"^#\s+tests\s+(\d+)\s*$", output, re.MULTILINE)
+    if m_node_tap:
+        return int(m_node_tap.group(1))
+
+    # TAP plan line: "1..19"
+    m_tap_plan = re.search(r"^1\.\.(\d+)\s*$", output, re.MULTILINE)
+    if m_tap_plan:
+        return int(m_tap_plan.group(1))
+
     # unittest format: "Ran X test(s) in Ys"
     m_unit = re.search(r"Ran (\d+) tests?", output)
     if m_unit:
@@ -846,7 +861,9 @@ class RadarEngine:
 
             stdout_snippet = stdout[-2000:] if stdout else ""
             stderr_snippet = stderr[-2000:] if stderr else ""
-            collected_count = parse_collected_test_count(f"{stdout_snippet}\n{stderr_snippet}")
+            # Parse the collected count from the FULL output: the summary line
+            # ("ℹ tests 19" / "Ran 19 tests") can sit above the snippet window.
+            collected_count = parse_collected_test_count(f"{stdout}\n{stderr}")
 
             if proc.returncode == 0:
                 if collected_count is None or collected_count == 0:
@@ -896,6 +913,11 @@ class RadarEngine:
                 return False, {
                     "test_command": cmd_str,
                     "exit_code": proc.returncode,
+                    # A failing combined run still recorded HOW many tests it
+                    # collected (0.1 evidence.tests_collected feeds the L1 pair
+                    # coverage; a red suite with 19 collected tests is real
+                    # evidence of overlap, not "no tests seen").
+                    "tests_collected": collected_count if collected_count is not None else 0,
                     "stdout": stdout_snippet,
                     "stderr": stderr_snippet,
                     "details": f"Combined-tree test runner failed with exit code {proc.returncode}\n{stderr_snippet or stdout_snippet}".strip(),

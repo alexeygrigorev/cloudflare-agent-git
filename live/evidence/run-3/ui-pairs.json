@@ -1,0 +1,5 @@
+{
+  "demo-t1-0001|demo-t2-0002": "conflict",
+  "demo-t1-0001|demo-t3-0003": "conflict",
+  "demo-t2-0002|demo-t3-0003": "conflict"
+}

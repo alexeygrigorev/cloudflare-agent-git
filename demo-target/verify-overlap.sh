@@ -5,8 +5,11 @@
 #   FACT 2: merging T1 with T2 produces a textual git merge conflict
 #   FACT 3: merging T2 with T3 merges cleanly but the suite fails (semantic conflict);
 #           the failing test is named
+#   FACT 4 (run-2 gap G8): merging T1 with T3 yields a TEXTUAL git merge conflict
+#           (both add a route at the same anchor in src/worker.js — real overlap,
+#           not a designed-clean pair)
 #
-# Exit 0 iff all three facts hold. Needs git + Node >= 18 on PATH.
+# Exit 0 iff all four facts hold. Needs git + Node >= 18 on PATH.
 # Reference material lives in .harness/reference-solutions/ (NOT for demo agents);
 # the script also hard-fails if .harness/ ever shows up in a task fork, since demo
 # agents receive clones of the base commit only.
@@ -92,6 +95,22 @@ else
   FACT3_OK=false
 fi
 
+# ---- FACT 4: T1 + T3 must conflict textually (real overlap, G8) -------------
+git -C "$REPO" checkout --quiet -B verify/m13 verify/task1
+set +e
+MERGE13="$(git -C "$REPO" "${GIT_ID[@]}" merge --no-edit verify/task3 2>&1)"
+MERGE13_RC=$?
+set -e
+CONFLICTED13="$(git -C "$REPO" diff --name-only --diff-filter=U)"
+if [ "$MERGE13_RC" -ne 0 ] && grep -q 'CONFLICT' <<<"$MERGE13" \
+   && grep -qx 'demo-target/src/worker.js' <<<"$CONFLICTED13"; then
+  FACT4_OK=true
+else
+  FACT4_OK=false
+fi
+git -C "$REPO" merge --abort >/dev/null 2>&1 || true
+assert_no_harness
+
 # ---- report ----------------------------------------------------------------
 echo "demo-target overlap verification (base ${BASE_SHA:0:10})"
 echo
@@ -115,8 +134,16 @@ else
 fi
 echo
 
-if [ "$FACT1_OK" = true ] && [ "$FACT2_OK" = true ] && [ "$FACT3_OK" = true ]; then
-  echo "ALL 3 FACTS VERIFIED"
+echo "FACT 4 — merging T1 with T3 yields a TEXTUAL git merge conflict (real overlap, G8):"
+if [ "$FACT4_OK" = true ]; then
+  echo "         CONFLICT in: $(echo "$CONFLICTED13" | tr '\n' ' ')"
+else
+  echo "         NOT REPRODUCED (merge rc=$MERGE13_RC)"
+fi
+echo
+
+if [ "$FACT1_OK" = true ] && [ "$FACT2_OK" = true ] && [ "$FACT3_OK" = true ] && [ "$FACT4_OK" = true ]; then
+  echo "ALL 4 FACTS VERIFIED"
   exit 0
 fi
 echo "VERIFICATION FAILED"

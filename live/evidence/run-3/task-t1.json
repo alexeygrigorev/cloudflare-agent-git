@@ -1,0 +1,63 @@
+{
+  "taskId": "task-0001",
+  "agentId": "demo-t1-0001",
+  "forkName": "agent-branches-canonical-a4ebe005-demo-t1-0001",
+  "forkRemote": "http://127.0.0.1:8799/git/agent-branches-canonical-a4ebe005-demo-t1-0001.git",
+  "ref": "refs/heads/main",
+  "createdAt": "2026-10-03T16:42:37.535Z",
+  "baseSha": "f3c835141c94b39dc6ca2d05b552206a640ecebc",
+  "intent": "T1: Link listing & visit counters — tests to add: listing returns the created links; redirects increment the counter.",
+  "testProvenance": null,
+  "base_sha": "f3c835141c94b39dc6ca2d05b552206a640ecebc",
+  "agent": {
+    "agentId": "demo-t1-0001",
+    "taskId": "task-0001",
+    "forkName": "agent-branches-canonical-a4ebe005-demo-t1-0001",
+    "forkRemote": "http://127.0.0.1:8799/git/agent-branches-canonical-a4ebe005-demo-t1-0001.git",
+    "ref": "refs/heads/main",
+    "head": "e87b5142e1f805361c0399e0acea2e46d90df1ac",
+    "pushes": 1,
+    "createdAt": "2026-10-03T16:42:37.535Z",
+    "lastPushAt": "2026-10-03T16:42:38.280Z"
+  },
+  "head": "e87b5142e1f805361c0399e0acea2e46d90df1ac",
+  "pushes": 1,
+  "warnings": [
+    {
+      "id": "warn-2",
+      "pair": [
+        "demo-t1-0001",
+        "demo-t3-0003"
+      ],
+      "headsAtIssue": {
+        "a": "e87b5142e1f805361c0399e0acea2e46d90df1ac",
+        "b": "8335941c9c268bb4a869da26e89968a4059491e9"
+      },
+      "reason": "textual",
+      "status": "active",
+      "createdAt": "2026-10-03T16:42:39.405Z",
+      "invalidatedAt": null,
+      "kind": "textual",
+      "evidence": "Auto-merging src/worker.js\nCONFLICT (content): Merge conflict in src/worker.js",
+      "acks": []
+    },
+    {
+      "id": "warn-1",
+      "pair": [
+        "demo-t1-0001",
+        "demo-t2-0002"
+      ],
+      "headsAtIssue": {
+        "a": "e87b5142e1f805361c0399e0acea2e46d90df1ac",
+        "b": "d49548c3fd473a426bb878af43ac2c114656b63b"
+      },
+      "reason": "textual",
+      "status": "active",
+      "createdAt": "2026-10-03T16:42:39.405Z",
+      "invalidatedAt": null,
+      "kind": "textual",
+      "evidence": "Auto-merging src/shortlinks.js\nCONFLICT (content): Merge conflict in src/shortlinks.js\nAuto-merging src/worker.js",
+      "acks": []
+    }
+  ]
+}

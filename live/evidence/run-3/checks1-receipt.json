@@ -1,0 +1,190 @@
+{
+  "stale": false,
+  "accepted": 3,
+  "pairs": [
+    {
+      "pair": [
+        "demo-t1-0001",
+        "demo-t2-0002"
+      ],
+      "heads": {
+        "demo-t1-0001": "e87b5142e1f805361c0399e0acea2e46d90df1ac",
+        "demo-t2-0002": "d49548c3fd473a426bb878af43ac2c114656b63b"
+      },
+      "status": "conflict",
+      "kind": "textual",
+      "evidence": {
+        "conflicting_files": [
+          "src/shortlinks.js"
+        ],
+        "conflict_type": "content_conflict",
+        "details": "Auto-merging src/shortlinks.js\nCONFLICT (content): Merge conflict in src/shortlinks.js\nAuto-merging src/worker.js",
+        "summary": "Auto-merging src/shortlinks.js\nCONFLICT (content): Merge conflict in src/shortlinks.js\nAuto-merging src/worker.js",
+        "files": [
+          "src/shortlinks.js"
+        ]
+      },
+      "checkedAt": "2026-10-03T16:42:39.405Z",
+      "stale": false,
+      "activeWarningIds": [
+        "warn-1"
+      ]
+    },
+    {
+      "pair": [
+        "demo-t1-0001",
+        "demo-t3-0003"
+      ],
+      "heads": {
+        "demo-t1-0001": "e87b5142e1f805361c0399e0acea2e46d90df1ac",
+        "demo-t3-0003": "8335941c9c268bb4a869da26e89968a4059491e9"
+      },
+      "status": "conflict",
+      "kind": "textual",
+      "evidence": {
+        "conflicting_files": [
+          "src/worker.js"
+        ],
+        "conflict_type": "content_conflict",
+        "details": "Auto-merging src/worker.js\nCONFLICT (content): Merge conflict in src/worker.js",
+        "summary": "Auto-merging src/worker.js\nCONFLICT (content): Merge conflict in src/worker.js",
+        "files": [
+          "src/worker.js"
+        ]
+      },
+      "checkedAt": "2026-10-03T16:42:39.405Z",
+      "stale": false,
+      "activeWarningIds": [
+        "warn-2"
+      ]
+    },
+    {
+      "pair": [
+        "demo-t2-0002",
+        "demo-t3-0003"
+      ],
+      "heads": {
+        "demo-t2-0002": "d49548c3fd473a426bb878af43ac2c114656b63b",
+        "demo-t3-0003": "8335941c9c268bb4a869da26e89968a4059491e9"
+      },
+      "status": "conflict",
+      "kind": "test",
+      "evidence": {
+        "test_command": "/home/alexey/.nvm/versions/node/v24.13.1/bin/node --test",
+        "exit_code": 1,
+        "tests_collected": 19,
+        "stdout": "✔ test/_helpers.js (31.41261ms)\n✖ POST /links/bulk imports every link and returns slugs in order (29.566654ms)\n✔ POST /links/bulk with an empty list creates nothing (1.183516ms)\n✔ POST /links/bulk rejects a malformed body with 400 (0.68999ms)\n✔ POST /links creates a link and returns 201 with the record (28.53757ms)\n✔ POST /links rejects a duplicate slug with 409 (0.905963ms)\n✔ POST /links rejects a non-http(s) url with 400 (0.618279ms)\n✔ POST /links rejects an empty or slashy slug with 400 (0.935033ms)\n✔ POST /links rejects a non-JSON body with 400 (0.506047ms)\n✔ service.create returns the stored record directly (0.143142ms)\n✔ service.create with ttlSeconds stores a future expiresAt (0.175983ms)\n✔ service.create rejects a non-numeric ttlSeconds (0.428696ms)\n✔ GET /:slug redirects to the stored url with 302 (26.580913ms)\n✔ GET /:slug returns 404 for an unknown slug (0.594668ms)\n✔ an expired link resolves to 404 (0.691609ms)\n✔ POST /links accepts ttlSeconds and keeps permanent links resolving (1.217047ms)\n✔ worker exports a default fetch handler (0.641119ms)\n✔ unknown routes return 404 JSON (23.733613ms)\n✔ GET / returns 404 no-route (0.476837ms)\nℹ tests 19\nℹ suites 0\nℹ pass 18\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 100.145773\n\n✖ failing tests:\n\ntest at test/bulk.test.js:5:1\n✖ POST /links/bulk imports every link and returns slugs in order (29.566654ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  400 !== 201\n  \n      at TestContext.<anonymous> (file:///tmp/radar_snap_k173qxq8/test/bulk.test.js:15:10)\n      at async Test.run (node:internal/test_runner/test:1110:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 400,\n    expected: 201,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+        "stderr": "",
+        "details": "Combined-tree test runner failed with exit code 1\n✔ test/_helpers.js (31.41261ms)\n✖ POST /links/bulk imports every link and returns slugs in order (29.566654ms)\n✔ POST /links/bulk with an empty list creates nothing (1.183516ms)\n✔ POST /links/bulk rejects a malformed body with 400 (0.68999ms)\n✔ POST /links creates a link and returns 201 with the record (28.53757ms)\n✔ POST /links rejects a duplicate slug with 409 (0.905963ms)\n✔ POST /links rejects a non-http(s) url with 400 (0.618279ms)\n✔ POST /links rejects an empty or slashy slug with 400 (0.935033ms)\n✔ POST /links rejects a non-JSON body with 400 (0.506047ms)\n✔ service.create returns the stored record directly (0.143142ms)\n✔ service.create with ttlSeconds stores a future expiresAt (0.175983ms)\n✔ service.create rejects a non-numeric ttlSeconds (0.428696ms)\n✔ GET /:slug redirects to the stored url with 302 (26.580913ms)\n✔ GET /:slug returns 404 for an unknown slug (0.594668ms)\n✔ an expired link resolves to 404 (0.691609ms)\n✔ POST /links accepts ttlSeconds and keeps permanent links resolving (1.217047ms)\n✔ worker exports a default fetch handler (0.641119ms)\n✔ unknown routes return 404 JSON (23.733613ms)\n✔ GET / returns 404 no-route (0.476837ms)\nℹ tests 19\nℹ suites 0\nℹ pass 18\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 100.145773\n\n✖ failing tests:\n\ntest at test/bulk.test.js:5:1\n✖ POST /links/bulk imports every link and returns slugs in order (29.566654ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  400 !== 201\n  \n      at TestContext.<anonymous> (file:///tmp/radar_snap_k173qxq8/test/bulk.test.js:15:10)\n      at async Test.run (node:internal/test_runner/test:1110:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 400,\n    expected: 201,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }",
+        "wait_time_seconds": 0,
+        "cumulative_children_peak_rss_mb": 60.85,
+        "peak_rss_mb": 60.85,
+        "source": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "scope": "cumulative_process_children",
+        "mem_available_mb": 31095.8,
+        "reserve_mb": 2048,
+        "inflight_mb": 512,
+        "effective_available_mb": 29047.8,
+        "psi_some_avg10": 0,
+        "concurrency_scope": "process_radar_engine",
+        "summary": "Combined-tree test runner failed with exit code 1\n✔ test/_helpers.js (31.41261ms)\n✖ POST /links/bulk imports every link and returns slugs in order (29.566654ms)\n✔ POST /links/bulk with an empty list creates nothing (1.183516ms)\n✔ POST /links/bulk rejects a malformed body with 400 (0.68999ms)\n✔ POST /links creates a link and returns 201 with the record (28.53757ms)\n✔ POST /links rejects a duplicate slug with 409 (0.905963ms)\n✔ POST /links rejects a non-http(s) url with 400 (0.618279ms)\n✔ POST /links rejects an empty or slashy slug with 400 (0.935033ms)\n✔ POST /links rejects a non-JSON body with 400 (0.506047ms)\n✔ service.create returns the stored record directly (0.143142ms)\n✔ service.create with ttlSeconds stores a future expiresAt (0.175983ms)\n✔ service.create rejects a non-numeric ttlSeconds (0.428696ms)\n✔ GET /:slug redirects to the stored url with 302 (26.580913ms)\n✔ GET /:slug returns 404 for an unknown slug (0.594668ms)\n✔ an expired link resolves to 404 (0.691609ms)\n✔ POST /links accepts ttlSeconds and keeps permanent links resolving (1.217047ms)\n✔ worker exports a default fetch handler (0.641119ms)\n✔ unknown routes return 404 JSON (23.733613ms)\n✔ GET / returns 404 no-route (0.476837ms)\nℹ tests 19\nℹ suites 0\nℹ pass 18\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 100.145773\n\n✖ failing tests:\n\ntest at test/bulk.test.js:5:1\n✖ POST /links/bulk imports every link and returns slugs in order (29.566654ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  400 !== 201\n  \n      at TestContext.<anonymous> (file:///tmp/radar_snap_k173qxq8/test/bulk.test.js:15:10)\n      at async Test.run (node:internal/test_runner/test:1110:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 400,\n    expected: 201,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }",
+        "files": [
+          "src/worker.js"
+        ],
+        "test_output_tail": "nown slug (0.594668ms)\n✔ an expired link resolves to 404 (0.691609ms)\n✔ POST /links accepts ttlSeconds and keeps permanent links resolving (1.217047ms)\n✔ worker exports a default fetch handler (0.641119ms)\n✔ unknown routes return 404 JSON (23.733613ms)\n✔ GET / returns 404 no-route (0.476837ms)\nℹ tests 19\nℹ suites 0\nℹ pass 18\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 100.145773\n\n✖ failing tests:\n\ntest at test/bulk.test.js:5:1\n✖ POST /links/bulk imports every link and returns slugs in order (29.566654ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  400 !== 201\n  \n      at TestContext.<anonymous> (file:///tmp/radar_snap_k173qxq8/test/bulk.test.js:15:10)\n      at async Test.run (node:internal/test_runner/test:1110:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 400,\n    expected: 201,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n"
+      },
+      "coverage": {
+        "tests_collected": 19
+      },
+      "checkedAt": "2026-10-03T16:42:39.405Z",
+      "stale": false,
+      "activeWarningIds": [
+        "warn-3"
+      ]
+    }
+  ],
+  "createdWarnings": [
+    {
+      "id": "warn-1",
+      "pair": [
+        "demo-t1-0001",
+        "demo-t2-0002"
+      ],
+      "headsAtIssue": {
+        "a": "e87b5142e1f805361c0399e0acea2e46d90df1ac",
+        "b": "d49548c3fd473a426bb878af43ac2c114656b63b"
+      },
+      "reason": "textual",
+      "status": "active",
+      "createdAt": "2026-10-03T16:42:39.405Z",
+      "invalidatedAt": null,
+      "kind": "textual",
+      "evidence": "Auto-merging src/shortlinks.js\nCONFLICT (content): Merge conflict in src/shortlinks.js\nAuto-merging src/worker.js",
+      "acks": []
+    },
+    {
+      "id": "warn-2",
+      "pair": [
+        "demo-t1-0001",
+        "demo-t3-0003"
+      ],
+      "headsAtIssue": {
+        "a": "e87b5142e1f805361c0399e0acea2e46d90df1ac",
+        "b": "8335941c9c268bb4a869da26e89968a4059491e9"
+      },
+      "reason": "textual",
+      "status": "active",
+      "createdAt": "2026-10-03T16:42:39.405Z",
+      "invalidatedAt": null,
+      "kind": "textual",
+      "evidence": "Auto-merging src/worker.js\nCONFLICT (content): Merge conflict in src/worker.js",
+      "acks": []
+    },
+    {
+      "id": "warn-3",
+      "pair": [
+        "demo-t2-0002",
+        "demo-t3-0003"
+      ],
+      "headsAtIssue": {
+        "a": "d49548c3fd473a426bb878af43ac2c114656b63b",
+        "b": "8335941c9c268bb4a869da26e89968a4059491e9"
+      },
+      "reason": "test",
+      "status": "active",
+      "createdAt": "2026-10-03T16:42:39.405Z",
+      "invalidatedAt": null,
+      "kind": "test",
+      "evidence": "Combined-tree test runner failed with exit code 1\n✔ test/_helpers.js (31.41261ms)\n✖ POST /links/bulk imports every link and returns slugs in order (29.566654ms)\n✔ POST /links/bulk with an empty list creates nothing (1.183516ms)\n✔ POST /links/bulk rejects a malformed body with 400 (0.68999ms)\n✔ POST /links creates a link and returns 201 with the record (28.53757ms)\n✔ POST /links rejects a duplicate slug with 409 (0.905963ms)\n✔ POST /links rejects a non-http(s) url with 400 (0.618279ms)\n✔ POST /links rejects an empty or slashy slug with 400 (0.935033ms)\n✔ POST /links rejects a non-JSON body with 400 (0.506047ms)\n✔ service.create returns the stored record directly (0.143142ms)\n✔ service.create with ttlSeconds stores a future expiresAt (0.175983ms)\n✔ service.create rejects a non-numeric ttlSeconds (0.428696ms)\n✔ GET /:slug redirects to the stored url with 302 (26.580913ms)\n✔ GET /:slug returns 404 for an unknown slug (0.594668ms)\n✔ an expired link resolves to 404 (0.691609ms)\n✔ POST /links accepts ttlSeconds and keeps permanent links resolving (1.217047ms)\n✔ worker exports a default fetch handler (0.641119ms)\n✔ unknown routes return 404 JSON (23.733613ms)\n✔ GET / returns 404 no-route (0.476837ms)\nℹ tests 19\nℹ suites 0\nℹ pass 18\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 100.145773\n\n✖ failing tests:\n\ntest at test/bulk.test.js:5:1\n✖ POST /links/bulk imports every link and returns slugs in order (29.566654ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  400 !== 201\n  \n      at TestContext.<anonymous> (file:///tmp/radar_snap_k173qxq8/test/bulk.test.js:15:10)\n      at async Test.run (node:internal/test_runner/test:1110:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 400,\n    expected: 201,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }",
+      "acks": []
+    }
+  ],
+  "currentHeads": {
+    "demo-t1-0001": "e87b5142e1f805361c0399e0acea2e46d90df1ac",
+    "demo-t2-0002": "d49548c3fd473a426bb878af43ac2c114656b63b",
+    "demo-t3-0003": "8335941c9c268bb4a869da26e89968a4059491e9"
+  },
+  "runnerReport": {
+    "policy": {
+      "merge": "git-merge-tree",
+      "tests": {
+        "command": [
+          "/home/alexey/.nvm/versions/node/v24.13.1/bin/node",
+          "--test"
+        ],
+        "budget_s": 120
+      }
+    },
+    "coverage": {
+      "pairs_checked": 3,
+      "tests_collected": 19
+    },
+    "accepted": 3,
+    "at": "2026-10-03T16:42:39.405Z",
+    "vector": {
+      "demo-t1-0001": "e87b5142e1f805361c0399e0acea2e46d90df1ac",
+      "demo-t2-0002": "d49548c3fd473a426bb878af43ac2c114656b63b",
+      "demo-t3-0003": "8335941c9c268bb4a869da26e89968a4059491e9"
+    }
+  }
+}

@@ -17,10 +17,20 @@ conflicts). Reference branches: `demo-l5-task-1`, `demo-l5-task-2`, `demo-l5-tas
 
 ## Designed overlaps (verified by ../../verify-overlap.sh)
 
+The designed matrix is **three conflicts: two textual + one test/semantic**.
+
 1. **T1 + T2 → textual conflict.** Both rewrite the same record literal line inside
    `create()` (`visits: 0` vs `expiresAt`), so `git merge` stops with
    `CONFLICT (content): Merge conflict in demo-target/src/shortlinks.js`.
-2. **T2 + T3 → semantic conflict.** No textual overlap (T3 only inserts a new route and
+2. **T1 + T3 → textual conflict (real overlap; corrected 2026-10-03, run-2 gap G8).**
+   An earlier version of this note implied T1 and T3 were designed to combine
+   cleanly. They are not: t1 adds the `GET /links` route and t3 adds the
+   `POST /links/bulk` route **at the same anchor** in `src/worker.js`, so the merge
+   stops with `CONFLICT (content): Merge conflict in demo-target/src/worker.js`.
+   Reproduced independently with `git merge-tree --write-tree` (run 2, zc-live-4;
+   re-verified by `verify-overlap.sh` FACT 4). The radar verdict
+   `T1-T3 conflict/textual` is honest — the docs were stale, not the detector.
+3. **T2 + T3 → semantic conflict.** No textual overlap (T3 only inserts a new route and
    a new test file), so the merge is clean — but T3's positional `create(item.slug, item.url)`
   now destructures a string, `slug` is `undefined`, validation throws `slug is required`,
    and the bulk endpoint returns 400 instead of 201. Failing test:
@@ -35,4 +45,4 @@ From anywhere:
 
     ../../verify-overlap.sh   # or bash demo-target/verify-overlap.sh at the repo root
 
-Exit 0 iff all three facts hold. Requires `git` and Node >= 18 on PATH.
+Exit 0 iff all four facts hold. Requires `git` and Node >= 18 on PATH.
