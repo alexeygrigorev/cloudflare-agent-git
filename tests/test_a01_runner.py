@@ -2,19 +2,28 @@
 """Focused offline negative test suite for A01 Feasibility Gate Runner.
 
 Verifies:
-1. KeyError prevention on intervention_data delivery & notice paths.
+1. KeyError prevention on intervention_data delivery & notice paths via create_intervention_data factory.
 2. Actual assistant model route mismatch rejection (rejects opencode/big-pickle).
 3. Unrelated inbox command rejection (aplexer message inbox does not trigger notice).
-4. Wrong envelope ID rejection (foreign message ID does not trigger notice).
+4. Notice oracle precision:
+   - Failed message show with error output -> returns None.
+   - Unrelated echo <ID> -> returns None.
+   - Genuine completed message show with read output exposure -> returns timestamp.
+5. Delivery disposition mapping (malformed, missing status, uncertain -> all map to UNKNOWN).
+6. R22 multiline draft negative for composer classifier (draft text above footer must NOT return 'empty').
 """
 import json
 import os
 import sqlite3
+import subprocess
 import tempfile
 import unittest
 
 from research.antigravity.a01_feasibility_gate_runner import (
     check_session_notice,
+    composer_classifier,
+    create_intervention_data,
+    parse_delivery_disposition,
     verify_session_model_route,
 )
 
@@ -22,25 +31,8 @@ from research.antigravity.a01_feasibility_gate_runner import (
 class TestA01RunnerHardening(unittest.TestCase):
 
     def test_1_intervention_data_keyerror_prevention(self):
-        """Test 1: Verify all use-sites of intervention_data use consistent keys without KeyError."""
-        intervention_type = "intent_note"
-        intervention_data = {
-            "type": intervention_type,
-            "delivered": False,
-            "delivered_at_ms": None,
-            "delivery_timestamp_ms": None,
-            "message_ids": {},
-            "producer_delivered_at_ms": None,
-            "consumer_delivered_at_ms": None,
-            "producer_delivery_disposition": None,
-            "consumer_delivery_disposition": None,
-            "producer_noticed_at_ms": None,
-            "consumer_noticed_at_ms": None,
-            "producer_notice_at_ms": None,  # backwards-compat alias
-            "consumer_notice_at_ms": None,  # backwards-compat alias
-            "producer_uptake_detected": False,
-            "consumer_uptake_detected": False
-        }
+        """Test 1: Verify production create_intervention_data factory and all use-sites prevent KeyError."""
+        intervention_data = create_intervention_data("intent_note")
 
         # Simulate delivery path
         t_deliv = 1791028000000
@@ -58,6 +50,14 @@ class TestA01RunnerHardening(unittest.TestCase):
         self.assertIsNone(intervention_data["consumer_noticed_at_ms"])
         self.assertIsNone(intervention_data["producer_notice_at_ms"])
         self.assertIsNone(intervention_data["consumer_notice_at_ms"])
+        self.assertIsNone(intervention_data.get("producer_delivery_disposition"))
+        self.assertIsNone(intervention_data.get("consumer_delivery_disposition"))
+
+        # Simulate setting delivery disposition
+        intervention_data["producer_delivery_disposition"] = "submitted"
+        intervention_data["consumer_delivery_disposition"] = "UNKNOWN"
+        self.assertEqual(intervention_data.get("producer_delivery_disposition"), "submitted")
+        self.assertEqual(intervention_data.get("consumer_delivery_disposition"), "UNKNOWN")
 
         # Simulate setting notice
         notice_time = 1791028005000
@@ -84,14 +84,12 @@ class TestA01RunnerHardening(unittest.TestCase):
             self.assertIn("MODEL_MISMATCH_ABORT", str(ctx.exception))
             self.assertIn("opencode/big-pickle", str(ctx.exception))
         else:
-            # Synthetic DB check if Attempt 2 DB is absent
             with tempfile.NamedTemporaryFile(suffix=".db") as tf:
                 con = sqlite3.connect(tf.name)
                 cur = con.cursor()
                 cur.execute("CREATE TABLE session (id TEXT PRIMARY KEY, directory TEXT, parent_id TEXT, time_created INTEGER);")
                 cur.execute("CREATE TABLE message (id TEXT PRIMARY KEY, session_id TEXT, time_created INTEGER, data TEXT);")
                 cur.execute("INSERT INTO session VALUES ('s1', '/test/ws', NULL, 1000);")
-                # Insert assistant message with mismatch
                 cur.execute("INSERT INTO message VALUES ('m1', 's1', 1100, ?);", (json.dumps({
                     "role": "assistant",
                     "providerID": "opencode",
@@ -113,7 +111,7 @@ class TestA01RunnerHardening(unittest.TestCase):
             cur.execute("CREATE TABLE session (id TEXT PRIMARY KEY, directory TEXT, parent_id TEXT, time_created INTEGER);")
             cur.execute("CREATE TABLE message (id TEXT PRIMARY KEY, session_id TEXT, time_created INTEGER, data TEXT);")
             cur.execute("CREATE TABLE part (id TEXT PRIMARY KEY, message_id TEXT, session_id TEXT, time_created INTEGER, data TEXT);")
-            
+
             ws = "/ws/test"
             launch_t0 = 1000
             delivered_t0 = 1200
@@ -127,35 +125,18 @@ class TestA01RunnerHardening(unittest.TestCase):
                 "tool": "bash",
                 "state": {
                     "input": {"command": "aplexer message inbox --workspace /ws/test"},
+                    "status": "completed",
                     "output": "1 message waiting"
                 }
             }),))
             con.commit()
             con.close()
 
-            # Must return None because target_msg_id was not in the command
             notice_res = check_session_notice(tf.name, ws, launch_t0, delivered_t0, target_msg_id)
             self.assertIsNone(notice_res, "Unrelated 'message inbox' tool call must NOT satisfy notice")
 
-            # Positive control: tool call inspecting exact target ID must return timestamp
-            con = sqlite3.connect(tf.name)
-            cur = con.cursor()
-            cur.execute("INSERT INTO part VALUES ('p2', 'm1', 's1', 1400, ?);", (json.dumps({
-                "type": "tool",
-                "tool": "bash",
-                "state": {
-                    "input": {"command": f"aplexer message show {target_msg_id}"},
-                    "output": "message body"
-                }
-            }),))
-            con.commit()
-            con.close()
-
-            notice_res_pos = check_session_notice(tf.name, ws, launch_t0, delivered_t0, target_msg_id)
-            self.assertEqual(notice_res_pos, 1400, "Tool call with target_msg_id must satisfy notice")
-
-    def test_4_wrong_envelope_rejection(self):
-        """Test 4: User prompt submission containing a foreign/unrelated envelope ID must NOT trigger notice."""
+    def test_4_notice_oracle_failure_and_unrelated_command_rejection(self):
+        """Test 4: Notice oracle must reject failed tool executions, unrelated commands, and require envelope exposure."""
         with tempfile.NamedTemporaryFile(suffix=".db") as tf:
             con = sqlite3.connect(tf.name)
             cur = con.cursor()
@@ -166,41 +147,116 @@ class TestA01RunnerHardening(unittest.TestCase):
             ws = "/ws/test"
             launch_t0 = 1000
             delivered_t0 = 1200
-            target_msg_id = "01a10000-target-envelope"
-            foreign_msg_id = "01a19999-foreign-envelope"
+            target_msg_id = "01a1r34-target-envelope"
 
             cur.execute("INSERT INTO session VALUES ('s1', ?, NULL, ?);", (ws, launch_t0))
 
-            # Insert user message with foreign envelope ID
-            cur.execute("INSERT INTO message VALUES ('m_user_foreign', 's1', 1300, ?);", (json.dumps({
-                "role": "user"
+            # Case A: FAILED message show with exact target ID in command AND failure in output
+            cur.execute("INSERT INTO part VALUES ('p_fail', 'm1', 's1', 1300, ?);", (json.dumps({
+                "type": "tool",
+                "tool": "bash",
+                "state": {
+                    "input": {"command": f"aplexer message show {target_msg_id}"},
+                    "status": "completed",
+                    "output": f"ERROR FAILED rc=1: message {target_msg_id} not delivered"
+                }
             }),))
-            cur.execute("INSERT INTO part VALUES ('p_user_foreign', 'm_user_foreign', 's1', 1300, ?);", (json.dumps({
-                "type": "text",
-                "text": f"[aplexer message id={foreign_msg_id} from=coordinator] Please review."
+            con.commit()
+
+            # Must return None because output indicates error/failure
+            res_fail = check_session_notice(tf.name, ws, launch_t0, delivered_t0, target_msg_id)
+            self.assertIsNone(res_fail, "Failed tool call with error output must NOT satisfy notice")
+
+            # Case B: Unrelated echo <ID>
+            cur.execute("INSERT INTO part VALUES ('p_echo', 'm1', 's1', 1400, ?);", (json.dumps({
+                "type": "tool",
+                "tool": "bash",
+                "state": {
+                    "input": {"command": f"echo {target_msg_id}"},
+                    "status": "completed",
+                    "output": f"{target_msg_id}\n"
+                }
+            }),))
+            con.commit()
+
+            # Must return None because command is echo, not message show/read
+            res_echo = check_session_notice(tf.name, ws, launch_t0, delivered_t0, target_msg_id)
+            self.assertIsNone(res_echo, "Unrelated 'echo <ID>' command must NOT satisfy notice")
+
+            # Case C: Genuine completed message show with read output exposure
+            cur.execute("INSERT INTO part VALUES ('p_succ', 'm1', 's1', 1500, ?);", (json.dumps({
+                "type": "tool",
+                "tool": "bash",
+                "state": {
+                    "input": {"command": f"aplexer message show {target_msg_id}"},
+                    "status": "completed",
+                    "output": json.dumps({"id": target_msg_id, "status": "delivered", "body": "Coordination Notice"})
+                }
             }),))
             con.commit()
             con.close()
 
-            # Must return None because user message contains foreign ID, not target ID
-            notice_res = check_session_notice(tf.name, ws, launch_t0, delivered_t0, target_msg_id)
-            self.assertIsNone(notice_res, "Prompt submission with foreign envelope ID must NOT satisfy notice")
+            # Must return 1500
+            res_succ = check_session_notice(tf.name, ws, launch_t0, delivered_t0, target_msg_id)
+            self.assertEqual(res_succ, 1500, "Genuine completed show with read output must satisfy notice")
 
-            # Positive control: user message containing target_msg_id must return timestamp
-            con = sqlite3.connect(tf.name)
-            cur = con.cursor()
-            cur.execute("INSERT INTO message VALUES ('m_user_target', 's1', 1500, ?);", (json.dumps({
-                "role": "user"
-            }),))
-            cur.execute("INSERT INTO part VALUES ('p_user_target', 'm_user_target', 's1', 1500, ?);", (json.dumps({
-                "type": "text",
-                "text": f"[aplexer message id={target_msg_id} from=coordinator] Action required."
-            }),))
-            con.commit()
-            con.close()
+    def test_5_delivery_disposition_mapping(self):
+        """Test 5: Delivery outcome parsing must strictly map malformed, missing status, and uncertain to UNKNOWN."""
+        # Helper dummy CompletedProcess
+        class DummyProc:
+            def __init__(self, stdout, returncode=0):
+                self.stdout = stdout
+                self.returncode = returncode
 
-            notice_res_pos = check_session_notice(tf.name, ws, launch_t0, delivered_t0, target_msg_id)
-            self.assertEqual(notice_res_pos, 1500, "Prompt submission with target_msg_id must satisfy notice")
+        # Malformed JSON -> UNKNOWN
+        p_malformed = DummyProc("not a json string", returncode=0)
+        self.assertEqual(parse_delivery_disposition(p_malformed), "UNKNOWN")
+
+        # Missing status field -> UNKNOWN
+        p_no_status = DummyProc(json.dumps({"id": "01a1-uuid"}), returncode=0)
+        self.assertEqual(parse_delivery_disposition(p_no_status), "UNKNOWN")
+
+        # Uncertain status -> UNKNOWN
+        p_uncertain = DummyProc(json.dumps({"id": "01a1-uuid", "status": "uncertain"}), returncode=0)
+        self.assertEqual(parse_delivery_disposition(p_uncertain), "UNKNOWN")
+
+        # Empty status -> UNKNOWN
+        p_empty_status = DummyProc(json.dumps({"id": "01a1-uuid", "status": ""}), returncode=0)
+        self.assertEqual(parse_delivery_disposition(p_empty_status), "UNKNOWN")
+
+        # Valid submitted -> "submitted"
+        p_submitted = DummyProc(json.dumps({"id": "01a1-uuid", "status": "submitted"}), returncode=0)
+        self.assertEqual(parse_delivery_disposition(p_submitted), "submitted")
+
+        # Non-zero returncode -> "failed_rc_<code\>"
+        p_failed = DummyProc("", returncode=2)
+        self.assertEqual(parse_delivery_disposition(p_failed), "failed_rc_2")
+
+    def test_6_r22_multiline_draft_not_empty(self):
+        """Test 6: Multiline draft above unchanged footer must NOT classify as empty."""
+        multiline_draft_screen = """
+   ▣  Build · Space Bunny Free
+┃  first line of user draft
+┃  second line of user draft
+┃
+┃  Build auto · Space Bunny Free OpenCode Go
+╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+ /home/alexey/git/cloudflare-agent-git           83.5K (8%)  ctrl+p commands
+"""
+        res_draft = composer_classifier(multiline_draft_screen)
+        self.assertNotEqual(res_draft, "empty", "Multiline draft with text above footer must NOT return empty")
+        self.assertEqual(res_draft, "draft", "Multiline draft must return 'draft'")
+
+        # Positive control: clean empty composer
+        empty_screen = """
+   ▣  Build · Space Bunny Free
+┃
+┃  Build auto · Space Bunny Free OpenCode Go
+╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+ /home/alexey/git/cloudflare-agent-git           83.5K (8%)  ctrl+p commands
+"""
+        res_empty = composer_classifier(empty_screen)
+        self.assertEqual(res_empty, "empty", "Clean composer must return 'empty'")
 
 
 if __name__ == "__main__":

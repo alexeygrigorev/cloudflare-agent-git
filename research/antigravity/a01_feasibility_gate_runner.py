@@ -260,9 +260,13 @@ def extract_session_telemetry(db_path, session_workspace, launch_t0_ms):
 
 
 def check_session_notice(db_path, session_workspace, launch_t0_ms, delivered_at_ms, target_msg_id):
-    """Confirm model notice ONLY when verified by tool call inspecting exact target_msg_id
-    or verified prompt submission containing target_msg_id in user message text.
-    Unrelated inbox checks or foreign message IDs must NOT satisfy notice!
+    """Confirm model notice ONLY when verified by completed, successful tool call
+    inspecting the exact target_msg_id with output confirming envelope exposure.
+    Rejects:
+    - Failed tool executions (status != completed/success, or output containing error/failed/failure/rc=[1-9])
+    - Unrelated commands (e.g. echo <ID>, grep <ID>)
+    - Bare command substring matches without read output exposure
+    - Bare user prompt presence (transport presence is NOT model notice).
     """
     if not delivered_at_ms or not target_msg_id:
         return None
@@ -281,52 +285,85 @@ def check_session_notice(db_path, session_workspace, launch_t0_ms, delivered_at_
             return None
         sid = row[0]
 
-        # a. Check tool calls inspecting the exact message ID (e.g. a message show <target_msg_id>)
+        # Inspect tool calls with command, status, and output
         cur.execute("""
-            SELECT time_created, json_extract(data, '$.state.input.command')
+            SELECT time_created,
+                   json_extract(data, '$.state.input.command'),
+                   json_extract(data, '$.state.status'),
+                   json_extract(data, '$.state.output')
             FROM part
             WHERE session_id = ? AND json_extract(data, '$.type') = 'tool' AND time_created >= ?
             ORDER BY time_created ASC
         """, (sid, delivered_at_ms))
-        for t_created, cmd in cur.fetchall():
+
+        for t_created, cmd, status, output in cur.fetchall():
             cmd_str = str(cmd or "")
-            if target_msg_id in cmd_str:
-                con.close()
-                return t_created
+            status_str = str(status or "").lower()
+            output_str = str(output or "")
 
-        # b. Check prompt submission: user message containing target_msg_id in text parts
-        cur.execute("""
-            SELECT p.time_created, json_extract(p.data, '$.text')
-            FROM part p
-            JOIN message m ON p.message_id = m.id
-            WHERE p.session_id = ? AND p.time_created >= ?
-              AND json_extract(m.data, '$.role') = 'user'
-              AND json_extract(p.data, '$.type') = 'text'
-            ORDER BY p.time_created ASC
-        """, (sid, delivered_at_ms))
-        for t_created, text in cur.fetchall():
-            text_str = str(text or "")
-            if target_msg_id in text_str:
-                con.close()
-                return t_created
+            # 1. Command must be a genuine message inspection command containing target_msg_id
+            if target_msg_id not in cmd_str:
+                continue
+            if not re.search(r'\b(?:a|aplexer)?\s*message\s+(?:show|read)\b', cmd_str):
+                continue
 
-        # Fallback check on raw message table data for user role containing target_msg_id
-        cur.execute("""
-            SELECT time_created, data
-            FROM message
-            WHERE session_id = ? AND time_created >= ? AND json_extract(data, '$.role') = 'user'
-            ORDER BY time_created ASC
-        """, (sid, delivered_at_ms))
-        for t_created, m_data in cur.fetchall():
-            m_str = str(m_data or "")
-            if target_msg_id in m_str:
-                con.close()
-                return t_created
+            # 2. Tool execution must be completed / successful
+            if status_str and status_str not in ("completed", "success"):
+                continue
+
+            # 3. Output must NOT indicate failure
+            out_lower = output_str.lower()
+            if re.search(r'\b(?:error|failed|failure|rc=[1-9])\b', out_lower):
+                continue
+
+            # 4. Read output must expose the envelope (target_msg_id in output)
+            if target_msg_id not in output_str:
+                continue
+
+            con.close()
+            return t_created
 
         con.close()
     except Exception as e:
         print(f"Error checking session notice: {e}")
     return None
+
+
+def parse_delivery_disposition(res):
+    """Parse delivery outcome with strict uncertain/malformed handling."""
+    if res.returncode != 0:
+        return f"failed_rc_{res.returncode}"
+    try:
+        d_json = json.loads(res.stdout)
+    except Exception:
+        return "UNKNOWN"
+    if not isinstance(d_json, dict) or "status" not in d_json:
+        return "UNKNOWN"
+    status = str(d_json["status"]).lower()
+    if status == "uncertain" or not status:
+        return "UNKNOWN"
+    return d_json["status"]
+
+
+def create_intervention_data(intervention_type):
+    """Factory creating the standardized intervention_data dictionary."""
+    return {
+        "type": intervention_type,
+        "delivered": False,
+        "delivered_at_ms": None,
+        "delivery_timestamp_ms": None,
+        "message_ids": {},
+        "producer_delivered_at_ms": None,
+        "consumer_delivered_at_ms": None,
+        "producer_delivery_disposition": None,
+        "consumer_delivery_disposition": None,
+        "producer_noticed_at_ms": None,
+        "consumer_noticed_at_ms": None,
+        "producer_notice_at_ms": None,  # backwards-compat alias
+        "consumer_notice_at_ms": None,  # backwards-compat alias
+        "producer_uptake_detected": False,
+        "consumer_uptake_detected": False
+    }
 
 
 def composer_classifier(screen, tag=""):
@@ -680,23 +717,7 @@ def run_pair(arm_name, pair_num, intervention_type):
         print(f"Model verification failed: {e}. Active sessions killed.")
         raise
 
-    intervention_data = {
-        "type": intervention_type,
-        "delivered": False,
-        "delivered_at_ms": None,
-        "delivery_timestamp_ms": None,
-        "message_ids": {},
-        "producer_delivered_at_ms": None,
-        "consumer_delivered_at_ms": None,
-        "producer_delivery_disposition": None,
-        "consumer_delivery_disposition": None,
-        "producer_noticed_at_ms": None,
-        "consumer_noticed_at_ms": None,
-        "producer_notice_at_ms": None,  # backwards-compat alias
-        "consumer_notice_at_ms": None,  # backwards-compat alias
-        "producer_uptake_detected": False,
-        "consumer_uptake_detected": False
-    }
+    intervention_data = create_intervention_data(intervention_type)
 
     t0 = time.time()
     max_wait = 360
@@ -767,12 +788,12 @@ def run_pair(arm_name, pair_num, intervention_type):
                         intervention_data["message_ids"] = {"producer": mid_p, "consumer": mid_c}
                         print(f"[{arm_name}] Radar Warning queued in mailbox at {t_deliv} (mid_p={mid_p}, mid_c={mid_c})")
 
-        # Check notice or attempt prompt delivery if resting
+        # Check notice or attempt prompt delivery if resting (with retry-freeze)
         if intervention_data["delivered"]:
             mid_p = intervention_data["message_ids"].get("producer")
             mid_c = intervention_data["message_ids"].get("consumer")
 
-            # Check if producer noticed via exact envelope inspection or prior prompt submission
+            # Check if producer noticed via exact envelope inspection
             if intervention_data["producer_noticed_at_ms"] is None:
                 p_notice_time = check_session_notice(
                     prod_env["db"], prod_ws, t0_prod, intervention_data["producer_delivered_at_ms"], mid_p
@@ -781,22 +802,16 @@ def run_pair(arm_name, pair_num, intervention_type):
                     intervention_data["producer_noticed_at_ms"] = p_notice_time
                     intervention_data["producer_notice_at_ms"] = p_notice_time
                     print(f"[{arm_name}] Producer notice confirmed at {p_notice_time}")
-                elif mid_p:
+                elif mid_p and intervention_data.get("producer_delivery_disposition") is None:
+                    # Retry-freeze: only attempt message deliver once!
                     p_rest_twice, _ = verify_twice_resting_empty_composer(
                         prod_session_id, prod_ws, tag=prod_tag, min_delay_sec=1.5
                     )
                     if p_rest_twice:
                         del_p = run_cmd([PILOT_BIN, "message", "deliver", mid_p, "--workspace", prod_ws, "--json"])
-                        disposition = "unknown"
-                        if del_p.returncode == 0:
-                            try:
-                                d_json = json.loads(del_p.stdout)
-                                disposition = d_json.get("status", "submitted")
-                            except Exception:
-                                disposition = "submitted"
-                        else:
-                            disposition = f"failed_rc_{del_p.returncode}"
+                        disposition = parse_delivery_disposition(del_p)
                         intervention_data["producer_delivery_disposition"] = disposition
+                        print(f"[{arm_name}] Producer delivery attempted, disposition: {disposition}")
 
                         # Do NOT equate returncode 0 with model notice; verify via check_session_notice
                         if del_p.returncode == 0:
@@ -808,7 +823,7 @@ def run_pair(arm_name, pair_num, intervention_type):
                                 intervention_data["producer_notice_at_ms"] = p_notice_post
                                 print(f"[{arm_name}] Notice confirmed in Producer session at {p_notice_post}")
 
-            # Check if consumer noticed via exact envelope inspection or prior prompt submission
+            # Check if consumer noticed via exact envelope inspection
             if intervention_data["consumer_noticed_at_ms"] is None:
                 c_notice_time = check_session_notice(
                     cons_env["db"], cons_ws, t0_cons, intervention_data["consumer_delivered_at_ms"], mid_c
@@ -817,22 +832,16 @@ def run_pair(arm_name, pair_num, intervention_type):
                     intervention_data["consumer_noticed_at_ms"] = c_notice_time
                     intervention_data["consumer_notice_at_ms"] = c_notice_time
                     print(f"[{arm_name}] Consumer notice confirmed at {c_notice_time}")
-                elif mid_c:
+                elif mid_c and intervention_data.get("consumer_delivery_disposition") is None:
+                    # Retry-freeze: only attempt message deliver once!
                     c_rest_twice, _ = verify_twice_resting_empty_composer(
                         cons_session_id, cons_ws, tag=cons_tag, min_delay_sec=1.5
                     )
                     if c_rest_twice:
                         del_c = run_cmd([PILOT_BIN, "message", "deliver", mid_c, "--workspace", cons_ws, "--json"])
-                        disposition = "unknown"
-                        if del_c.returncode == 0:
-                            try:
-                                d_json = json.loads(del_c.stdout)
-                                disposition = d_json.get("status", "submitted")
-                            except Exception:
-                                disposition = "submitted"
-                        else:
-                            disposition = f"failed_rc_{del_c.returncode}"
+                        disposition = parse_delivery_disposition(del_c)
                         intervention_data["consumer_delivery_disposition"] = disposition
+                        print(f"[{arm_name}] Consumer delivery attempted, disposition: {disposition}")
 
                         # Do NOT equate returncode 0 with model notice; verify via check_session_notice
                         if del_c.returncode == 0:
