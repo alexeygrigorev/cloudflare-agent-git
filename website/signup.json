@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "relay_list": "https://relay.datatalks.club/api/public/lists/agent-git-lab",
+  "list_key": "agent-git-lab",
+  "purpose": "Agent Git Lab experiment updates",
+  "configuration_status": "Separate production audience and website-origin CORS verified; confirmation required",
+  "provider_revision": "7dbd9ad8bbf2bfbd7850be7e814c6a00e5f5ce2f",
+  "verified_at": "2026-10-03T04:30:17Z"
+}
