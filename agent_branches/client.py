@@ -191,12 +191,19 @@ class AgentBranchesClient:
                         or task_rec.get("agent_id")
                         or task_rec.get("agent")
                     )
-                except Exception:
-                    # Fallback if get_task fails
-                    effective_agent_id = task_id
+                except Exception as exc:
+                    raise ValueError(
+                        f"Cannot resolve agentId for task '{task_id}'. "
+                        f"Task lookup failed: {exc}. "
+                        "Specify agent_id explicitly."
+                    ) from exc
 
         if not effective_agent_id:
-            effective_agent_id = task_id or ""
+            raise ValueError(
+                f"Cannot resolve agentId for task '{task_id}'. "
+                "Task lookup failed or task record is missing agentId. "
+                "Specify agent_id explicitly."
+            )
 
         # Normalize files_changed to list of non-empty strings
         normalized_files: Optional[List[str]] = None

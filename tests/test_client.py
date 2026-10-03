@@ -210,6 +210,32 @@ class TestAgentBranchesClient(unittest.TestCase):
         self.assertTrue(push_agent_direct["accepted"])
         self.assertEqual(push_agent_direct["agentId"], agent_id)
 
+        # 5. push with unresolvable task_id fails closed with ValueError (never aliases to task_id)
+        unregistered_client = AgentBranchesClient(server_url=self.server_url)
+        with self.assertRaises(ValueError) as ctx:
+            unregistered_client.push(
+                task_id="task-non-existent-9999",
+                head_sha="4444444444444444444444444444444444444444",
+            )
+        self.assertIn("Cannot resolve agentId", str(ctx.exception))
+
+        # 6. CLI push with unresolvable task_id exits with code 1 and prints clear error
+        res_unresolvable = self.run_cli(
+            [
+                "push",
+                "--task-id",
+                "task-fake-unknown",
+                "--head-sha",
+                "4444444444444444444444444444444444444444",
+                "--server",
+                self.server_url,
+            ],
+            check=False,
+        )
+        self.assertEqual(res_unresolvable.returncode, 1)
+        self.assertIn("Cannot resolve agentId", res_unresolvable.stderr)
+
+
     def test_03_admin_bearer_token_support(self):
         """Test admin bearer token authentication on task creation."""
         # Spawn an authenticated mock server requiring admin token

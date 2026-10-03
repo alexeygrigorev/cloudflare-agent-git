@@ -337,20 +337,26 @@ def handle_push(args: argparse.Namespace, client: AgentBranchesClient, as_json: 
     elif args.base_sha:
         files_changed = get_changed_files(base_sha=args.base_sha, head_sha=head_sha)
 
-    res = client.push(
-        task_id=task_id,
-        agent_id=agent_id,
-        head_sha=head_sha,
-        base_sha=args.base_sha,
-        files_changed=files_changed,
-        intent=args.intent_update,
-        test_provenance=args.test_provenance,
-    )
+    try:
+        res = client.push(
+            task_id=task_id,
+            agent_id=agent_id,
+            head_sha=head_sha,
+            base_sha=args.base_sha,
+            files_changed=files_changed,
+            intent=args.intent_update,
+            test_provenance=args.test_provenance,
+        )
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
     if as_json:
         print(json.dumps(res, indent=2))
     else:
         print(format_push_result(res))
     return 0
+
 
 
 def handle_status(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
