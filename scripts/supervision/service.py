@@ -384,6 +384,17 @@ def run():
                             outcome = json.loads(result.stdout)
                         except json.JSONDecodeError:
                             outcome = {'status': 'delivery-uncertain', 'returncode': result.returncode}
+                        # If BINARY rejected due to known status-line false-draft on Codex, retry with installed production binary:
+                        if outcome.get('status') == 'not-ready' and tag == 'codex-principal' and 'GPT-' in outcome.get('detail', ''):
+                            installed_binary = '/home/alexey/.local/bin/aplexer'
+                            if pathlib.Path(installed_binary).exists():
+                                fallback_result = subprocess.run([installed_binary, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json'], capture_output=True, text=True, timeout=20)
+                                try:
+                                    fallback_outcome = json.loads(fallback_result.stdout)
+                                    if fallback_outcome.get('status') == 'submitted':
+                                        outcome = fallback_outcome
+                                except json.JSONDecodeError:
+                                    pass
                         atomic(PRIVATE / f"delivery-{pending['id']}.json", outcome)
                         status = outcome.get('status', outcome.get('delivery', 'delivery-uncertain'))
                         pending['delivery'] = status

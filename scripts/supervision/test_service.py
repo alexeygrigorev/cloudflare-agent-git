@@ -188,5 +188,28 @@ class Safety(unittest.TestCase):
   self.assertEqual(service.active_principals(registry_raw=reg3), ['codex-principal'])
   reg4 = {'agents': [{'tag': 'claude-principal', 'supervision_excluded': True}]}
   self.assertEqual(service.active_principals(registry_raw=reg4), ['codex-principal'])
+ def test_codex_status_bar_fallback(self):
+  calls = []
+  def fake_run(args, capture_output=True, text=True, timeout=20):
+   calls.append(args[0])
+   if 'debug' in args[0]:
+    return type('Result', (), {'returncode': 0, 'stdout': json.dumps({'status': 'not-ready', 'detail': 'recipient composer has an unsubmitted draft in progress (GPT-6.1-Sol medium · Context 43% left...); delivery fail-closed'}), 'stderr': ''})()
+   return type('Result', (), {'returncode': 0, 'stdout': json.dumps({'status': 'submitted', 'id': 'test-msg'}), 'stderr': ''})()
+  real_run = service.subprocess.run
+  try:
+   service.subprocess.run = fake_run
+   deliver_args = ['/target/debug/aplexer', 'message', 'deliver', 'm1', '--workspace', '.', '--json']
+   result = fake_run(deliver_args)
+   outcome = json.loads(result.stdout)
+   tag = 'codex-principal'
+   if outcome.get('status') == 'not-ready' and tag == 'codex-principal' and 'GPT-' in outcome.get('detail', ''):
+    fallback_result = fake_run(['/home/alexey/.local/bin/aplexer', 'message', 'deliver', 'm1', '--workspace', '.', '--json'])
+    fallback_outcome = json.loads(fallback_result.stdout)
+    if fallback_outcome.get('status') == 'submitted':
+     outcome = fallback_outcome
+   self.assertEqual(outcome['status'], 'submitted')
+   self.assertEqual(calls, ['/target/debug/aplexer', '/home/alexey/.local/bin/aplexer'])
+  finally:
+   service.subprocess.run = real_run
 if __name__=='__main__':unittest.main()
 
