@@ -465,21 +465,21 @@
       "executor_tag": "journal-visual-reviewer-2",
       "executor_session": "1bcb3cdb-e0fd-44cb-bbc2-34e38fda5147",
       "status": "blocked",
-      "updated_at": "2026-10-03T10:08:00.000000+00:00",
+      "updated_at": "2026-10-03T10:19:00.000000+00:00",
       "blocked_on": [
-        "desktop-root-browser-recheck (separate-session visual acceptance HELD pending desktop/root re-check)"
+        "design-fidelity-repair (defects cited in research/codex/publication-image-challenge.md)"
       ],
-      "next_action": "Same-session coordinator image review ec7b4c3a (32 view_file calls, genuine work, not independent). Separate-session visual acceptance HELD pending desktop/root re-check.",
+      "next_action": "DESIGN-FIDELITY FAIL acknowledged per independent review research/codex/publication-image-challenge.md (sha 790c85c1). Bounded repair dispatched to executor journal-fidelity-repair-3 (fa3ee6c1-ee74-49a4-ae8f-cba3671bdc90, opencode-go/muse-spark-1.3-contributor) in worktree on branch journal-design-repair-3 covering project detail, checklist, field notes, and nav. Current public site remains live. Fresh independent comparison by non-author session to follow.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
+        "research/codex/publication-image-challenge.md",
         ".local/journal/visual-review/INDEPENDENT-REVIEW-FINAL.md",
         ".local/journal/visual-review/IMAGE-INDEPENDENT-REVIEW.md",
-        ".local/journal/screenshots/SCREENSHOT-MANIFEST.json",
-        ".local/journal/visual-review/model-reviewer-2-run.log"
+        ".local/journal/screenshots/SCREENSHOT-MANIFEST.json"
       ],
       "assignment_ack": "Launched under aplexer (memory 2G, pids 256). Reviewing commit 5c67f72 on branch journal-design-repair across all 5 families.",
       "model": "opencode-go/glm-5.3",
-      "acceptance_status": "HELD (coordinator-launched same-session image review ec7b4c3a passed 10/10 with 32 view_file calls; separate-session independent visual acceptance remains HELD pending desktop/root re-check)"
+      "acceptance_status": "FAIL (independent Codex review research/codex/publication-image-challenge.md supersedes same-session 10/10; repair underway by journal-fidelity-repair-3 fa3ee6c1)"
     },
     {
       "id": "publication-release-verification",
