@@ -15,6 +15,7 @@ import {
   bearerFrom,
   decideBearer,
   decideMutatingAuth,
+  timingSafeEqual,
   type AuthDecision,
   type AuthTokens,
 } from "./auth.js";
@@ -29,6 +30,17 @@ export interface HttpRequest {
   header(name: string): string | null;
   /** Parsed JSON body. Throws on malformed JSON (mapped to 400). */
   json(): Promise<unknown>;
+  /**
+   * Raw body text, while the adapter can still supply it (C1462 Task 3).
+   * Required ONLY to verify HMAC-signed webhooks — the signature binds to
+   * these exact bytes, so `json()` cannot be used for it (it has already
+   * lost whitespace/key-order). Optional: adapters that do not implement
+   * it simply cannot present signed webhooks (fail closed, 401), and
+   * unsigned routes never call it. An adapter MUST NOT be asked for both
+   * `rawText()` and `json()` on one request — the body stream is
+   * single-shot, which is why the signed path parses the raw text itself.
+   */
+  rawText?(): Promise<string>;
 }
 
 /** Runtime-agnostic response (adapters serialize body as pretty JSON).
@@ -55,6 +67,211 @@ export interface RouterServices {
   pushes: PushEvents;
   /** POST /events/artifacts normalizer (event subscription envelopes). */
   artifactsEvents: PushEvents;
+  /**
+   * Inbound webhook sender authentication (C1462 Task 3). Optional: when
+   * unset, only the pre-existing bearer ladder authenticates webhook
+   * routes, exactly as before.
+   */
+  webhookAuth?: WebhookAuthConfig;
+}
+
+/**
+ * C1462 Task 3 — webhook sender authentication, replay protection.
+ *
+ * Sender contract (the sidecar / event subscription adopts this when
+ * WEBHOOK_SECRET is configured on both ends):
+ *
+ *   timestamp = current unix time in whole seconds
+ *   nonce     = fresh opaque string per DELIVERY ATTEMPT (a retry that
+ *               reuses a nonce is indistinguishable from a replay and is
+ *               rejected — regenerate per attempt)
+ *   signature = "sha256=" + hex(HMAC-SHA256(secret, timestamp + "." + rawBody))
+ *
+ *   POST /events/push
+ *   x-webhook-timestamp: <timestamp>
+ *   x-webhook-nonce: <nonce>
+ *   x-webhook-signature: <signature>
+ *   <rawBody is the exact request body bytes>
+ *
+ * Verification happens BEFORE the body is parsed (auth precedes parsing,
+ * like every other route here). Any `x-webhook-signature` header on a
+ * webhook route opts the request into this scheme — a failed signature is
+ * never silently downgraded to the bearer ladder (fail closed). Senders
+ * without the header keep using the bearer ladder unchanged (note: that
+ * path predates this task and has no replay binding).
+ */
+
+/** Allowed |now − timestamp| skew, both directions, in seconds. */
+export const WEBHOOK_TOLERANCE_SECONDS = 300;
+
+/** Bounded seen-nonce store behind the replay gate. */
+export interface WebhookReplayGuard {
+  /** True when the nonce was not seen within the TTL; records it. */
+  admit(nonce: string): boolean;
+}
+
+/**
+ * In-memory TTL+capacity nonce store. Entries expire after ttlMs (default
+ * 2× the tolerance window, so it covers everything the timestamp check
+ * lets through); when capacity is reached the OLDEST entries are evicted,
+ * bounding memory at the cost of allowing a nonce reuse older than the
+ * surviving window — the timestamp check still bounds those to ±tolerance
+ * seconds. Single-threaded runtimes (node, workerd) make admit() atomic.
+ */
+export class MemoryReplayGuard implements WebhookReplayGuard {
+  private readonly seen = new Map<string, number>();
+  private readonly ttlMs: number;
+  private readonly maxEntries: number;
+  private readonly nowMs: () => number;
+
+  constructor(
+    opts: { ttlMs?: number; maxEntries?: number; nowMs?: () => number } = {},
+  ) {
+    this.ttlMs = opts.ttlMs ?? 2 * WEBHOOK_TOLERANCE_SECONDS * 1000;
+    this.maxEntries = opts.maxEntries ?? 10_000;
+    this.nowMs = opts.nowMs ?? Date.now;
+  }
+
+  /** Resident nonces (monitoring/tests). */
+  get size(): number {
+    return this.seen.size;
+  }
+
+  admit(nonce: string): boolean {
+    const now = this.nowMs();
+    for (const [key, expiresAt] of this.seen) {
+      if (expiresAt <= now) {
+        this.seen.delete(key);
+      }
+    }
+    if (this.seen.has(nonce)) {
+      return false;
+    }
+    this.seen.set(nonce, now + this.ttlMs);
+    while (this.seen.size > this.maxEntries) {
+      const oldest = this.seen.keys().next().value;
+      if (oldest === undefined) {
+        break;
+      }
+      this.seen.delete(oldest);
+    }
+    return true;
+  }
+}
+
+/** Configuration for signed webhook verification (all optional). */
+export interface WebhookAuthConfig {
+  /** Shared HMAC secret (WEBHOOK_SECRET). Signed webhooks fail closed
+   * (503) when it is not configured, mirroring decideBearer. */
+  secret?: string;
+  /** Wall clock in ms; defaults to Date.now (inject for tests). */
+  nowMs?: () => number;
+  /** Seen-nonce store; signed webhooks fail closed (503) without one. */
+  replayGuard?: WebhookReplayGuard;
+  /** Overrides WEBHOOK_TOLERANCE_SECONDS when set. */
+  toleranceSeconds?: number;
+}
+
+export type WebhookSignatureDecision =
+  | { ok: true; rawBody: string }
+  | { ok: false; status: 401 | 503; error: string };
+
+/**
+ * Minimal HMAC surface of WebCrypto. The workspace crypto shim
+ * (types/node-web.d.ts) declares only `digest`, so the HMAC calls go
+ * through this local structural type; both workerd and Node provide the
+ * real methods at runtime.
+ */
+interface HmacSubtle {
+  importKey(
+    format: "raw",
+    keyData: Uint8Array,
+    algorithm: { name: "HMAC"; hash: "SHA-256" },
+    extractable: false,
+    usages: ["sign"],
+  ): Promise<unknown>;
+  sign(algorithm: { name: "HMAC" }, key: unknown, data: Uint8Array): Promise<ArrayBuffer>;
+}
+
+/** Lowercase hex of HMAC-SHA256(secret, payload) over UTF-8 bytes. */
+async function hmacSha256Hex(secret: string, payload: string): Promise<string> {
+  const encoded = new TextEncoder();
+  const subtle = crypto.subtle as unknown as HmacSubtle;
+  const key = await subtle.importKey(
+    "raw",
+    encoded.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const mac = await subtle.sign({ name: "HMAC" }, key, encoded.encode(payload));
+  return [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Verify one signed webhook against the sender contract above. Every
+ * failure is fail closed and caller-safe: error bodies never contain the
+ * secret, the presented signature or the nonce. Order: cheap shape checks,
+ * freshness, replay guard availability, THEN the HMAC (the last store
+ * mutation is the nonce admit, so unauthenticated garbage cannot fill the
+ * guard), and only a fully verified delivery consumes its nonce.
+ */
+export async function verifyWebhookSignature(
+  request: HttpRequest,
+  config: WebhookAuthConfig | undefined,
+): Promise<WebhookSignatureDecision> {
+  const deny = (status: 401 | 503, error: string): WebhookSignatureDecision => ({ ok: false, status, error });
+  if (!config?.secret) {
+    return deny(503, "WEBHOOK_SECRET is not configured; refusing signed webhook (fail closed)");
+  }
+  if (!request.rawText) {
+    return deny(401, "signed webhook cannot be verified: adapter exposes no raw body");
+  }
+  const rawBody = await request.rawText();
+
+  const timestamp = request.header("x-webhook-timestamp");
+  if (timestamp === null || !/^\d+$/.test(timestamp)) {
+    return deny(401, "webhook timestamp header (x-webhook-timestamp, unix seconds) is required");
+  }
+  const toleranceSeconds = config.toleranceSeconds ?? WEBHOOK_TOLERANCE_SECONDS;
+  const nowSeconds = Math.floor((config.nowMs?.() ?? Date.now()) / 1000);
+  if (Math.abs(nowSeconds - Number(timestamp)) > toleranceSeconds) {
+    return deny(401, "webhook timestamp outside tolerance window");
+  }
+
+  const nonce = request.header("x-webhook-nonce");
+  if (nonce === null || nonce.length === 0 || nonce.length > 256) {
+    return deny(401, "webhook nonce header (x-webhook-nonce) is required");
+  }
+  if (!config.replayGuard) {
+    return deny(503, "webhook replay guard is not configured; refusing signed webhook (fail closed)");
+  }
+
+  const match = /^sha256=([0-9a-f]{64})$/.exec(request.header("x-webhook-signature") ?? "");
+  if (!match) {
+    return deny(401, "webhook signature must be sha256=<64 hex chars>");
+  }
+  const expected = await hmacSha256Hex(config.secret, `${timestamp}.${rawBody}`);
+  if (!timingSafeEqual(expected, match[1])) {
+    return deny(401, "webhook signature mismatch");
+  }
+
+  if (!config.replayGuard.admit(nonce)) {
+    return deny(401, "webhook replay detected: nonce already used");
+  }
+  return { ok: true, rawBody };
+}
+
+type ParsedBody = { ok: true; body: Record<string, unknown> } | { ok: false; response: HttpResponse };
+
+/** Signed-webhook bodies are parsed from the verified raw text (a request
+ * body stream cannot be consumed twice), with the same 400 as readJson. */
+function parseJsonBody(raw: string): ParsedBody {
+  try {
+    return { ok: true, body: JSON.parse(raw) as Record<string, unknown> };
+  } catch {
+    return { ok: false, response: json({ error: "request body must be valid JSON" }, 400) };
+  }
 }
 
 function json(body: unknown, status = 200): HttpResponse {
@@ -99,6 +316,11 @@ async function requireMutatingAuth(
 /**
  * Error mapping, verbatim from the pre-facade Worker handler: known
  * caller mistakes are 400, unknown task/warning 404, everything else 500.
+ * C1462 Task 3 redaction: 500 means an UNEXPECTED internal failure, whose
+ * message may carry paths, hostnames, connection strings or stack-derived
+ * text — callers get a fixed body, never the internal message or a stack.
+ * Runtime adapters should log `error` server-side where a log exists.
+ * The 400/404 messages are an explicit allowlist of caller-safe strings.
  */
 function errorResponse(error: unknown): HttpResponse {
   const message = (error as Error).message ?? "internal error";
@@ -110,6 +332,9 @@ function errorResponse(error: unknown): HttpResponse {
   )
     ? 400
     : 500;
+  if (status === 500) {
+    return json({ error: "internal server error" }, 500);
+  }
   return json({ error: message }, status);
 }
 
@@ -151,7 +376,25 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
     }
 
     if (method === "POST" && path === "/events/push") {
-      const body = await readJson(request);
+      // C1462 Task 3: a request presenting x-webhook-signature opts into
+      // HMAC sender verification (before the body is parsed or trusted);
+      // a failed signature is never downgraded to the bearer ladder.
+      let body: Record<string, unknown>;
+      let signed = false;
+      if (request.header("x-webhook-signature") !== null) {
+        const verdict = await verifyWebhookSignature(request, services.webhookAuth);
+        if (!verdict.ok) {
+          return json({ error: verdict.error }, verdict.status);
+        }
+        const parsed = parseJsonBody(verdict.rawBody);
+        if (!parsed.ok) {
+          return parsed.response;
+        }
+        body = parsed.body;
+        signed = true;
+      } else {
+        body = await readJson(request);
+      }
       // Either agent or fork identifies the pusher: the sidecar's
       // post-receive webhook posts {fork, ref, sha} (C-1309 #7a).
       let push;
@@ -163,10 +406,15 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
       // muse-r46 AUTH: head advances are privileged (an anonymous caller
       // could invalidate/suppress conflict warnings). The pushing agent's
       // own task token, ADMIN_TOKEN, or the sidecar webhook bearer.
-      const requiredAgent = push.agent ?? (push.fork !== undefined ? await coordinator.forkOwner(push.fork) : undefined);
-      const denied = await requireMutatingAuth(request, services, { agent: requiredAgent, allowSidecar: true });
-      if (denied) {
-        return denied;
+      // A verified HMAC signature is the sidecar's sender credential
+      // itself (stronger than the shared bearer: body-bound + replay-
+      // protected) and grants the same trust, so the ladder is skipped.
+      if (!signed) {
+        const requiredAgent = push.agent ?? (push.fork !== undefined ? await coordinator.forkOwner(push.fork) : undefined);
+        const denied = await requireMutatingAuth(request, services, { agent: requiredAgent, allowSidecar: true });
+        if (denied) {
+          return denied;
+        }
       }
       const result = await coordinator.recordPush({
         agent: push.agent,
@@ -178,13 +426,29 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
     }
 
     if (method === "POST" && path === "/events/artifacts") {
-      // muse-r46 AUTH: event-subscription ingest is webhook-only — admin
-      // or the sidecar/shared subscription bearer (no agent credential).
-      const denied = await requireMutatingAuth(request, services, { allowSidecar: true });
-      if (denied) {
-        return denied;
+      // C1462 Task 3: same signed-webhook opt-in as /events/push.
+      let body: Record<string, unknown>;
+      let signed = false;
+      if (request.header("x-webhook-signature") !== null) {
+        const verdict = await verifyWebhookSignature(request, services.webhookAuth);
+        if (!verdict.ok) {
+          return json({ error: verdict.error }, verdict.status);
+        }
+        const parsed = parseJsonBody(verdict.rawBody);
+        if (!parsed.ok) {
+          return parsed.response;
+        }
+        body = parsed.body;
+        signed = true;
+      } else {
+        // muse-r46 AUTH: event-subscription ingest is webhook-only — admin
+        // or the sidecar/shared subscription bearer (no agent credential).
+        const denied = await requireMutatingAuth(request, services, { allowSidecar: true });
+        if (denied) {
+          return denied;
+        }
+        body = await readJson(request);
       }
-      const body = await readJson(request);
       let event;
       try {
         event = services.artifactsEvents.normalize(body);
