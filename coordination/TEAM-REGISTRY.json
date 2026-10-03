@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T05:17:57.029807+00:00",
+  "updated_at": "2026-10-03T05:46:32.144359+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -66,7 +66,14 @@
           "resumed_with_task": "A05 same-task-baseline continuation in initial CLI request (Codex 01a10018)",
           "resumed_by": "readiness-recovery-executor",
           "resumed_at": "2026-10-03T05:20:00+00:00",
-          "resumed_store": "XDG_DATA_HOME=.local/opencode-isolated"
+          "resumed_store": "XDG_DATA_HOME=.local/opencode-isolated",
+          "telemetry": {
+            "type": "opencode-db",
+            "conversation_id": "ses_f01ef9c54ffe86f5DrG7n8GCsY",
+            "path": ".local/opencode-isolated/opencode/opencode.db",
+            "identity_evidence": "Exact active workload /proc cmdline --session argument, independently observed 2026-10-03T05:46:32.144359+00:00",
+            "scope": "Native conversation, deduplicated across resumed aplexer generations; reported cost is not subscription spend"
+          }
         }
       ]
     },
@@ -202,7 +209,14 @@
           "tag": "muse-reviewer",
           "role": "head",
           "mode": "interactive",
-          "workspace": "/home/alexey/git/cloudflare-agent-git"
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "telemetry": {
+            "type": "opencode-db",
+            "conversation_id": "ses_f01efa751ffeCumog1qyjzvQt2",
+            "path": ".local/opencode-isolated/opencode/opencode.db",
+            "identity_evidence": "Exact active workload /proc cmdline --session argument, independently observed 2026-10-03T05:46:32.144359+00:00",
+            "scope": "Native conversation, deduplicated across resumed aplexer generations; reported cost is not subscription spend"
+          }
         }
       ]
     },
@@ -381,6 +395,19 @@
       "workspace": "/home/alexey/git/pocketshell-site",
       "task_id": "relay-owner-provisioning",
       "measurement_scope": "shared existing Relay owner, actual scoped task tools observed; shared usage not attributed as experiment-only"
+    },
+    {
+      "tag": "metrics-opencode-usage",
+      "team_id": "oversight",
+      "role": "executor",
+      "mode": "native-harness",
+      "native_identity": "/root/metrics_opencode_usage",
+      "parent_tag": "desktop-orchestrator",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "session_id": null,
+      "usage_source": null,
+      "task_id": "metrics-opencode-message-usage",
+      "status": "running"
     }
   ]
 }

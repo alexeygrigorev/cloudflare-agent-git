@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Private experiment observation. Never dispatches agents or changes hook state."""
-import argparse, datetime as dt, fcntl, json, os, pathlib, subprocess, threading, time, hashlib, http.server
+import argparse, datetime as dt, fcntl, json, os, pathlib, subprocess, threading, time, hashlib, http.server, signal
 ROOT=pathlib.Path(__file__).resolve().parents[2]
 STORE=ROOT/'.local/metrics'
 STORE.mkdir(parents=True,exist_ok=True); os.chmod(STORE,0o700)
 from adapters import quotas, temporal, archive_history
+from opencode_usage import read_usage as read_opencode_usage, SOURCE as OPENCODE_SOURCE
 COUNT_ROLES={'principal','head','executor','subagent'}
 
 def read_json(p,default=None):
@@ -83,9 +84,26 @@ def _collect():
     for s in catalog:
         if s.get('workspace')==str(ROOT) and s['id'] not in seen and proc(s.get('workload_pid')).get('alive'):
             selected.append((s,'unregistered',{'tag':s.get('tag'),'role':'unknown'},'unregistered; launch parent does not imply team'))
+    # Explicit saved native IDs; DB human-readable titles never establish identity.
+    opencode_assignments=[]
+    for tag,(team_id,item) in config.items():
+        tele=item.get('telemetry',{})
+        sid=tele.get('conversation_id') if tele.get('type')=='opencode-db' else item.get('resumed_conversation') or item.get('conversation')
+        if isinstance(sid,str) and sid.startswith('ses_') and item.get('workspace',str(ROOT))==str(ROOT):
+            opencode_assignments.append({'conversation_id':sid,'tag':tag,'team_id':team_id})
+    observer=read_json(STORE/'observation-state.json',{}) or {}
+    try: interval_ms=int(dt.datetime.fromisoformat(observer['first_observed_at'].replace('Z','+00:00')).timestamp()*1000)
+    except (KeyError,ValueError,TypeError): interval_ms=int(now*1000)
+    opencode=read_opencode_usage(ROOT,opencode_assignments,interval_ms)
+    opencode_by_id={r['conversation_id']:r for r in opencode['sessions']}
+    def opencode_counter(row):
+        counters=row['cumulative']
+        return {**counters,'source':OPENCODE_SOURCE,'conversation_id':row['conversation_id'],'scope':'Stored conversation cumulative; includes pre-observer history, NOT experiment spending.','cost_usd':counters.get('reported_cost'),'cost_basis':'OpenCode/provider reported estimate, not subscription billing','models':row['models'],'interval':row['interval']}
     observations=[]
     for s,team_id,item,resolution in selected:
         s=s or {}; usage=native_usage(s) if s.get('id') else None
+        tele=item.get('telemetry',{}); sid=tele.get('conversation_id') if tele.get('type')=='opencode-db' else item.get('resumed_conversation') or item.get('conversation')
+        if sid in opencode_by_id: usage=opencode_counter(opencode_by_id[sid])
         if usage is None:
             events=STORE/'usage-events.jsonl'; found=None
             if events.exists() and events.stat().st_size<=16*1024*1024:
@@ -127,7 +145,11 @@ def _collect():
         if u and u.get('conversation_id'):
             key=u['source']+':'+u['conversation_id']; previous=unique_usage.get(key)
             if previous is None or (u.get('total_tokens') or 0)>(previous.get('total_tokens') or 0): unique_usage[key]=u
-    known_total=sum(u.get('total_tokens') or 0 for u in unique_usage.values())
+    # DB parent-linked native subagents are separate conversations, never hidden in head totals.
+    for row in opencode['sessions']:
+        usage=opencode_counter(row); unique_usage[OPENCODE_SOURCE+':'+row['conversation_id']]=usage
+    observed_totals=[u['total_tokens'] for u in unique_usage.values() if u.get('total_tokens') is not None]
+    known_total=sum(observed_totals) if observed_totals else None
     aggregate={'registered_agents':len(counted),'services_and_writers':sum(r['role'] in ('service','observer','writer','scribe') for r in observations),'agents_pid_live':sum(r['pid_live'] for r in counted),'agents_hook_working':sum(r['hook_working'] for r in counted),'unregistered_live':sum(r['unregistered'] and r['pid_live'] for r in observations),'known_conversation_tokens':known_total if unique_usage else None,'usage_observed_conversations':len(unique_usage),'agents_without_token_observation':sum(r['usage'] is None for r in counted),'tasks_by_status':{status:sum(t.get('status')==status for t in tasks) for status in sorted(set(('queued','ready','running','review','blocked','done','cancelled'))|{t.get('status','unknown') for t in tasks})}}
     aggregate['roles']={role:{'registered':sum(r['role']==role for r in observations),'pid_live':sum(r['role']==role and r['pid_live'] for r in observations),'reported_working':sum(r['role']==role and r['hook_working'] for r in observations)} for role in ['principal','head','executor','subagent']}
     aggregate['reported_idle']=sum(r['pid_live'] and r['reported_state'] in ('idle','waiting') for r in counted)
@@ -140,14 +162,14 @@ def _collect():
     disks={}
     for name,path in [('root','/'),('tmp','/tmp')]:
         v=os.statvfs(path); disks[name]={'free_bytes':v.f_bavail*v.f_frsize,'total_bytes':v.f_blocks*v.f_frsize}
-    snap={'schema_version':1,'at':dt.datetime.now(dt.timezone.utc).isoformat(),'aggregate':aggregate,'teams':{tid:count_status([r for r in counted if r['team_id']==tid]) for tid in sorted(set(r['team_id'] for r in observations))},'sessions':observations,'tasks':tasks,'observation':observation,'quota':quotas(STORE),'supervision':read_json(ROOT/'.local/supervision/status.json',{}),'host':{'load_average':os.getloadavg(),'disks':disks},'errors':errors,'limits':['PID live and hook working are observations, never proof of useful work.','Missing token/cost telemetry remains null; known token total is a partial lower bound.','Cumulative native conversation usage deduplicated across resumed session IDs; nested subagents require separate native identity.','CPU/RSS currently workload root process only, excludes descendants.','Services/writers excluded from agent execution totals.','No market/productivity conclusion from agent count, tokens or commits.']}
+    snap={'schema_version':1,'at':dt.datetime.now(dt.timezone.utc).isoformat(),'aggregate':aggregate,'teams':{tid:count_status([r for r in counted if r['team_id']==tid]) for tid in sorted(set(r['team_id'] for r in observations))},'sessions':observations,'tasks':tasks,'observation':observation,'opencode_usage':opencode,'quota':quotas(STORE),'supervision':read_json(ROOT/'.local/supervision/status.json',{}),'host':{'load_average':os.getloadavg(),'disks':disks},'errors':errors,'limits':['PID live and hook working are observations, never proof of useful work.','Missing token/cost telemetry remains null; known token total is a partial lower bound.','Cumulative native conversation usage deduplicated across resumed session IDs; nested subagents require separate native identity.','CPU/RSS currently workload root process only, excludes descendants.','Services/writers excluded from agent execution totals.','No market/productivity conclusion from agent count, tokens or commits.']}
     with (STORE/'collector.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX)
         daily=STORE/('snapshots-'+dt.date.today().isoformat()+'.jsonl')
         retention=archive_history(STORE,daily)
         if retention['total_bytes']>256*1024*1024: errors.append('daily snapshot cap reached; latest continues, history paused')
         else:
-            history={'at':snap['at'],'aggregate':snap['aggregate'],'teams':snap['teams'],'errors':snap['errors'],'sessions':[{k:r.get(k) for k in ['id','tag','team_id','role','pid_live','reported_state','hook_age_seconds','stale_hook','cpu_seconds','rss_bytes','proc_start_ticks','usage','observed_idle_seconds','evidence','evidence_coverage','tasks']} for r in observations],'tasks':[{key:t.get(key) for key in ['id','status','owner_tag','team_id','next_action','acceptance','acceptance_status','reviewer_tag','evidence_paths','blocked_on','assignment_ack','updated_at']} for t in tasks]};
+            history={'at':snap['at'],'aggregate':snap['aggregate'],'teams':snap['teams'],'opencode_usage':opencode,'errors':snap['errors'],'sessions':[{k:r.get(k) for k in ['id','tag','team_id','role','pid_live','reported_state','hook_age_seconds','stale_hook','cpu_seconds','rss_bytes','proc_start_ticks','usage','observed_idle_seconds','evidence','evidence_coverage','tasks']} for r in observations],'tasks':[{key:t.get(key) for key in ['id','status','owner_tag','team_id','next_action','acceptance','acceptance_status','reviewer_tag','evidence_paths','blocked_on','assignment_ack','updated_at']} for t in tasks]};
             with daily.open('a') as f: f.write(json.dumps(history)+'\n')
             os.chmod(daily,0o600)
         atomic(STORE/'latest.json',snap)
@@ -178,8 +200,11 @@ def main():
         except BlockingIOError: raise SystemExit('metrics service already running')
         if args.serve:
             server=http.server.ThreadingHTTPServer(('127.0.0.1',args.port),Handler); threading.Thread(target=server.serve_forever,daemon=True).start()
-        while True:
+        stopping=threading.Event()
+        signal.signal(signal.SIGTERM,lambda *_:stopping.set())
+        signal.signal(signal.SIGINT,lambda *_:stopping.set())
+        while not stopping.is_set():
             try: collect()
             except Exception as exc: atomic(STORE/'service-error.json',{'at':time.time(),'error_type':type(exc).__name__})
-            time.sleep(max(30,args.interval))
+            stopping.wait(max(30,args.interval))
 if __name__=='__main__': main()
