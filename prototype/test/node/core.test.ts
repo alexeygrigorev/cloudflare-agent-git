@@ -9,7 +9,9 @@ import { test } from "node:test";
 import { deepStrictEqual, match, ok, strictEqual } from "node:assert";
 import { parseChecksPayload } from "../../src/checks-wire.js";
 import { StubRadar } from "../../src/radar.js";
+import { sha256Hex } from "../../src/core/auth.js";
 import { CoordinatorCore } from "../../src/core/coordinator.js";
+import type { CoordinatorModel } from "../../src/core/model.js";
 import { FileCoordinationStore, MemoryCoordinationStore } from "../../src/local/store.js";
 import { fakeClock, fixedIds, makeRig, rejectionMessage } from "./fakes.js";
 
@@ -317,4 +319,83 @@ test("concurrent mutations are serialized (no lost updates)", async () => {
   deepStrictEqual(seqs, [1, 2, 3], "seq allocated without races");
   const status = await rig.core.status();
   strictEqual(status.agents.length, 3);
+});
+
+test("agent token gate: expiry boundary, fail-closed garbage expiry, revocation (C-1422/C-1425)", async () => {
+  const rig = makeRig();
+  const created = await rig.core.createTask({ agent: "gated" });
+  const token = created.token.plaintext;
+  const expiresMs = Date.parse(created.token.expiresAt);
+  ok(Number.isFinite(expiresMs), "fake host mints a parseable expiresAt");
+
+  // Exact boundary: valid AT the expiry instant, denied one ms later.
+  strictEqual(await rig.core.credentialAgent(token, expiresMs), created.agentId);
+  strictEqual(await rig.core.credentialAgent(token, expiresMs + 1), null);
+  strictEqual(await rig.core.credentialAgent(token, expiresMs - 60_000), created.agentId);
+
+  // A stored expiry the parser cannot read fails CLOSED (deny, not override).
+  const stored = await rig.store.get<CoordinatorModel>("model");
+  ok(stored, "model expected after createTask");
+  stored.agentTokens[created.agentId].expiresAt = "not-a-timestamp";
+  await rig.store.put("model", stored);
+  const reopened = new CoordinatorCore({
+    store: rig.store,
+    git: rig.git,
+    radar: new StubRadar(),
+    clock: fakeClock(),
+    ids: fixedIds,
+  });
+  strictEqual(await reopened.credentialAgent(token), null);
+  delete (stored.agentTokens[created.agentId] as { expiresAt?: string }).expiresAt;
+  await rig.store.put("model", stored);
+  const reopened2 = new CoordinatorCore({
+    store: rig.store,
+    git: rig.git,
+    radar: new StubRadar(),
+    clock: fakeClock(),
+    ids: fixedIds,
+  });
+  strictEqual(await reopened2.credentialAgent(token), null, "missing expiresAt denies");
+
+  // Revocation denies the SAME plaintext and is idempotent; unknown agents are false.
+  const rev = makeRig();
+  const agent = await rev.core.createTask({ agent: "revoker" });
+  strictEqual(await rev.core.revokeAgentToken(agent.agentId), true);
+  strictEqual(await rev.core.credentialAgent(agent.token.plaintext), null);
+  strictEqual(await rev.core.revokeAgentToken(agent.agentId), true, "re-revoke is idempotent");
+  strictEqual(await rev.core.revokeAgentToken("ghost-9999"), false);
+});
+
+test("legacy hash-only state migrates to a bounded agentTokens record (C-1422)", async () => {
+  const rig = makeRig();
+  await rig.core.setup();
+  // Pre-0.1.2 stored shape: digest map only, no structured records.
+  const legacy = await rig.store.get<CoordinatorModel>("model");
+  ok(legacy, "model expected after setup");
+  delete (legacy as Partial<CoordinatorModel>).agentTokens;
+  legacy.agentTokenHashes["legacy-0001"] = await sha256Hex("legacy-token-plaintext");
+  await rig.store.put("model", legacy);
+
+  // A fresh core migrates at load: the legacy token still works, but now
+  // through a BOUNDED record (+24h), not a perpetual fallback loop.
+  const migrated = new CoordinatorCore({
+    store: rig.store,
+    git: rig.git,
+    radar: new StubRadar(),
+    clock: fakeClock(),
+    ids: fixedIds,
+  });
+  strictEqual(await migrated.credentialAgent("legacy-token-plaintext"), "legacy-0001");
+
+  const migratedModel = await rig.store.get<CoordinatorModel>("model");
+  ok(migratedModel, "model expected");
+  const record = migratedModel.agentTokens["legacy-0001"];
+  ok(record, "migration must materialize the structured record");
+  strictEqual(record.hash, legacy.agentTokenHashes["legacy-0001"]);
+  ok(Date.parse(record.expiresAt) > Date.now(), "migration window is in the future");
+  strictEqual(record.revokedAt, null);
+
+  // Revoking a migrated agent denies the legacy plaintext too.
+  strictEqual(await migrated.revokeAgentToken("legacy-0001"), true);
+  strictEqual(await migrated.credentialAgent("legacy-token-plaintext"), null);
 });

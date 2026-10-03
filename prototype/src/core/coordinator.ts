@@ -273,7 +273,6 @@ export class CoordinatorCore implements CoordinatorAccess {
     // agent-authenticated routes (/events/push, /tasks/:id/tests, acks).
     const tokenHash = await sha256Hex(token.plaintext);
     model.agentTokenHashes[agentId] = tokenHash;
-    model.agentTokens ??= {};
     model.agentTokens[agentId] = {
       hash: tokenHash,
       expiresAt: token.expiresAt,
@@ -542,28 +541,25 @@ export class CoordinatorCore implements CoordinatorAccess {
 
   /**
    * muse-r46 AUTH: which agent (if any) owns this presented per-task token.
-   * Returns null for unknown/garbage tokens, expired tokens, or revoked tokens;
+   * Returns null for unknown/garbage tokens, revoked tokens, expired tokens
+   * and tokens whose expiry cannot be parsed (fail closed, C-1422);
    * digests are compared constant-time and the plaintext is never stored.
+   * Legacy hash-only state is NOT consulted here: migrateStoredModel gives
+   * every legacy digest an explicit, bounded (+24h) agentTokens record at
+   * load, so there is no silent perpetual fallback path.
    */
   async credentialAgent(presented: string, nowMs: number = Date.now()): Promise<string | null> {
     const model = await this.load();
     const digest = await sha256Hex(presented);
-    if (model.agentTokens) {
-      for (const [agentId, record] of Object.entries(model.agentTokens)) {
-        if (timingSafeEqual(digest, record.hash)) {
-          if (record.revokedAt) {
-            return null; // Explicitly revoked
-          }
-          const expiryTime = new Date(record.expiresAt).getTime();
-          if (Number.isFinite(expiryTime) && nowMs > expiryTime) {
-            return null; // Expired
-          }
-          return agentId;
+    for (const [agentId, record] of Object.entries(model.agentTokens)) {
+      if (timingSafeEqual(digest, record.hash)) {
+        if (record.revokedAt) {
+          return null; // Explicitly revoked
         }
-      }
-    }
-    for (const [agentId, hash] of Object.entries(model.agentTokenHashes)) {
-      if (timingSafeEqual(digest, hash)) {
+        const expiryTime = Date.parse(record.expiresAt);
+        if (Number.isNaN(expiryTime) || nowMs > expiryTime) {
+          return null; // Expired, or expiry unreadable -> deny
+        }
         return agentId;
       }
     }
