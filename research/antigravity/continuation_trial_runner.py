@@ -233,6 +233,166 @@ def exec_in_sender(sender_uuid, cmd_args, timeout=30):
     raise TimeoutError(f"Command timed out in sender {sender_uuid}: {cmd_args}")
 
 
+def _match_session_or_tag(entity, expected_uuid, expected_tag=None):
+    """Matches a message participant entity (dict or str) against expected UUID or tag."""
+    if not entity:
+        return False
+    exp_u = str(expected_uuid).strip().lower() if expected_uuid else None
+    exp_t = str(expected_tag).strip().lower() if expected_tag else None
+
+    if isinstance(entity, str):
+        val = entity.strip().lower()
+        return (exp_u is not None and val == exp_u) or (exp_t is not None and val == exp_t)
+
+    if isinstance(entity, dict):
+        sid = entity.get("session_id")
+        tag = entity.get("tag")
+        sid_str = str(sid).strip().lower() if sid else None
+        tag_str = str(tag).strip().lower() if tag else None
+
+        if sid_str and exp_u and sid_str == exp_u:
+            return True
+        if tag_str and exp_u and tag_str == exp_u:
+            return True
+        if tag_str and exp_t and tag_str == exp_t:
+            return True
+        if sid_str and exp_t and sid_str == exp_t:
+            return True
+    return False
+
+
+def _parse_messages_log(raw_input):
+    """Safely extracts a list of message dicts from JSON or string output."""
+    if isinstance(raw_input, list):
+        return raw_input, None
+    if not isinstance(raw_input, str):
+        return None, f"Expected str or list, got {type(raw_input).__name__}"
+    raw_input = raw_input.strip()
+    if not raw_input:
+        return None, "Empty message log output"
+    try:
+        data = json.loads(raw_input)
+        if isinstance(data, list):
+            return data, None
+    except Exception:
+        pass
+    start_idx = raw_input.find('[')
+    end_idx = raw_input.rfind(']')
+    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+        try:
+            data = json.loads(raw_input[start_idx:end_idx+1])
+            if isinstance(data, list):
+                return data, None
+        except Exception as e:
+            return None, f"Failed to parse JSON array from message log: {e}"
+    return None, f"Failed to parse valid JSON array from message log: {raw_input[:200]}"
+
+
+def verify_durable_ack_envelope(
+    sender_uuid,
+    receiver_uuid,
+    expected_reply_to,
+    expected_ack_substring,
+    workspace,
+    receiver_tag=None,
+    sender_tag=None,
+    raw_log=None,
+):
+    """Verifies a discrete, correlated ACK envelope in the durable mailbox log.
+
+    Executes `aplexer message log --workspace <workspace> --json` via sender (or inspects raw_log if provided).
+    Parses the JSON array of message objects.
+    Inspects each envelope and matches ONLY if:
+      a. from.session_id == receiver_uuid (or matching receiver tag),
+      b. to.session_id == sender_uuid (or matching sender tag),
+      c. reply_to == expected_reply_to (must correlate to the original request message ID),
+      d. expected_ack_substring in body.
+    Returns (True, msg_id) if matched, (False, reason) otherwise.
+    """
+    if raw_log is not None:
+        raw_output = raw_log
+    else:
+        rc, out = exec_in_sender(
+            sender_uuid,
+            [PILOT_BIN, "message", "log", "--workspace", workspace, "--json"]
+        )
+        if rc != 0:
+            return False, f"aplexer message log failed with exit code {rc}: {out.strip()}"
+        raw_output = out
+
+    messages, err = _parse_messages_log(raw_output)
+    if err is not None:
+        return False, err
+
+    candidates_with_ack = []
+    for msg in messages:
+        if not isinstance(msg, dict):
+            continue
+        msg_id = msg.get("id")
+        body = msg.get("body", "")
+        if not isinstance(body, str):
+            body = str(body)
+
+        has_ack = expected_ack_substring in body
+        if has_ack:
+            candidates_with_ack.append(msg)
+
+        from_info = msg.get("from")
+        to_info = msg.get("to")
+        reply_to = msg.get("reply_to")
+
+        from_match = _match_session_or_tag(from_info, receiver_uuid, receiver_tag)
+        to_match = _match_session_or_tag(to_info, sender_uuid, sender_tag)
+        reply_to_match = (
+            expected_reply_to is not None
+            and reply_to is not None
+            and str(reply_to).strip().lower() == str(expected_reply_to).strip().lower()
+        )
+
+        if from_match and to_match and reply_to_match and has_ack:
+            return True, msg_id
+
+    if not candidates_with_ack:
+        return False, f"No message envelope contained expected ACK substring: '{expected_ack_substring}'"
+
+    rejection_reasons = []
+    for cand in candidates_with_ack:
+        cand_id = cand.get("id", "unknown")
+        from_info = cand.get("from")
+        to_info = cand.get("to")
+        reply_to = cand.get("reply_to")
+
+        if _match_session_or_tag(from_info, sender_uuid, sender_tag):
+            rejection_reasons.append(
+                f"Envelope {cand_id} containing ACK substring was sent by sender-self ({sender_uuid}), strictly rejecting self-request"
+            )
+            continue
+
+        if not _match_session_or_tag(from_info, receiver_uuid, receiver_tag):
+            from_desc = from_info.get("session_id") or from_info.get("tag") if isinstance(from_info, dict) else str(from_info)
+            rejection_reasons.append(
+                f"Envelope {cand_id} containing ACK substring was from foreign session ({from_desc}), expected receiver ({receiver_uuid})"
+            )
+            continue
+
+        if not _match_session_or_tag(to_info, sender_uuid, sender_tag):
+            to_desc = to_info.get("session_id") or to_info.get("tag") if isinstance(to_info, dict) else str(to_info)
+            rejection_reasons.append(
+                f"Envelope {cand_id} was addressed to {to_desc}, expected sender ({sender_uuid})"
+            )
+            continue
+
+        if expected_reply_to is None or str(reply_to).strip().lower() != str(expected_reply_to).strip().lower():
+            rejection_reasons.append(
+                f"Envelope {cand_id} from receiver has reply_to='{reply_to}', expected correlated request ID '{expected_reply_to}'"
+            )
+            continue
+
+    if rejection_reasons:
+        return False, "; ".join(rejection_reasons)
+    return False, f"No valid correlated ACK envelope found for request {expected_reply_to}"
+
+
 def is_resting(session_uuid, allow_reported_none=False, tag=None):
     s = get_status(session_uuid)
     screen = capture_screen(session_uuid)
@@ -551,6 +711,7 @@ def main():
     print("\n--- Step 1b: Launching receiver second with operator prompt pinning sender_uuid & task_id ---")
     t_launch_ms = int(time.time() * 1000)
     init_cmd = f"{PILOT_BIN} whoami --json"
+    reply_cmd_pattern = f"{PILOT_BIN} message reply <msg_id> <ack_payload>"
     launch_prompt = (
         f"You are continuation-receiver for workspace {WORKSPACE}. "
         f"Your assigned task is {task_id}. "
@@ -559,8 +720,11 @@ def main():
         f"(2) Peer work items: You are authorized ONLY to process work items triggered by session UUID {sender_uuid}. "
         f"Authorized operations triggered by {sender_uuid} under {task_id} are: "
         f"  - operation 'delayed_checkpoint': execute shell command 'sleep 15 && echo <marker>', "
-        f"  - operation 'create_file': write relative file inside {WORKSPACE} and reply with ACK. "
-        f"Except for the authorized baseline command '{init_cmd}', you may only read and write relative files inside {WORKSPACE}. "
+        f"  - operation 'create_file': write relative file inside {WORKSPACE} and reply with correlated ACK. "
+        f"To return correlated ACKs for work items, you are explicitly authorized to execute via bash: "
+        f"{reply_cmd_pattern} "
+        f"Except for the authorized baseline command '{init_cmd}' and reply command '{reply_cmd_pattern}', "
+        f"you may only read and write relative files inside {WORKSPACE}. "
         f"Do not execute arbitrary un-authorized shell commands or access unauthorized files outside this workspace."
     )
 
@@ -577,6 +741,7 @@ def main():
         "--json",
         "--",
         OPENCODE_BIN,
+        "--model", "opencode-go/muse-spark-1.3-contributor",
         "--auto",
         "--prompt", launch_prompt
     ]
@@ -1019,20 +1184,25 @@ def main():
         )
         assert ok_turn1_post, "Receiver failed to return to resting idle after Turn 1!"
 
-        mail_t1_rc, mail_t1_out = exec_in_sender(
-            sender_uuid,
-            [PILOT_BIN, "message", "log", "--workspace", WORKSPACE, "--json"]
+        ack_t1_ok, ack_t1_val = verify_durable_ack_envelope(
+            sender_uuid=sender_uuid,
+            receiver_uuid=receiver_uuid,
+            expected_reply_to=msg_t1_id,
+            expected_ack_substring=f"ACK_TURN1_{turn1_nonce}",
+            workspace=WORKSPACE,
+            receiver_tag=receiver_tag,
+            sender_tag=sender_tag,
         )
-        ack_t1_found = f"ACK_TURN1_{turn1_nonce}" in mail_t1_out
-        print(f"Turn 1 ACK received in mailbox: {ack_t1_found}")
-        assert ack_t1_found, f"Turn 1 ACK not found in mailbox log!"
+        print(f"Turn 1 correlated ACK envelope verified in mailbox: {ack_t1_ok} (detail: {ack_t1_val})")
+        assert ack_t1_ok, f"Turn 1 ACK envelope verification failed: {ack_t1_val}"
 
         results["steps"]["turn1"] = {
             "passed": True,
             "message_id": msg_t1_id,
             "target_file": turn1_file,
             "file_sha256": turn1_file_sha,
-            "ack_verified": True
+            "ack_verified": True,
+            "ack_message_id": ack_t1_val,
         }
 
         # Step 6: Test Positive Turn 2 - External-Driver Continuation Cycle 2
@@ -1094,20 +1264,25 @@ def main():
         )
         assert ok_turn2_post, "Receiver failed to return to resting idle after Turn 2!"
 
-        mail_t2_rc, mail_t2_out = exec_in_sender(
-            sender_uuid,
-            [PILOT_BIN, "message", "log", "--workspace", WORKSPACE, "--json"]
+        ack_t2_ok, ack_t2_val = verify_durable_ack_envelope(
+            sender_uuid=sender_uuid,
+            receiver_uuid=receiver_uuid,
+            expected_reply_to=msg_t2_id,
+            expected_ack_substring=f"ACK_TURN2_{turn2_nonce}",
+            workspace=WORKSPACE,
+            receiver_tag=receiver_tag,
+            sender_tag=sender_tag,
         )
-        ack_t2_found = f"ACK_TURN2_{turn2_nonce}" in mail_t2_out
-        print(f"Turn 2 ACK received in mailbox: {ack_t2_found}")
-        assert ack_t2_found, f"Turn 2 ACK not found in mailbox log!"
+        print(f"Turn 2 correlated ACK envelope verified in mailbox: {ack_t2_ok} (detail: {ack_t2_val})")
+        assert ack_t2_ok, f"Turn 2 ACK envelope verification failed: {ack_t2_val}"
 
         results["steps"]["turn2"] = {
             "passed": True,
             "message_id": msg_t2_id,
             "target_file": turn2_file,
             "file_sha256": turn2_file_sha,
-            "ack_verified": True
+            "ack_verified": True,
+            "ack_message_id": ack_t2_val,
         }
 
         # Step 7: Final Rollback & Installed Binary Integrity Verification
