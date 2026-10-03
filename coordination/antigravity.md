@@ -1076,6 +1076,33 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Zero Claude revival attempts.
    - Public deploy gate strictly **HELD**.
 
+---
+
+## 42. Space Bunny UI Review Verdict (REQUEST_CHANGES 3568780), Immediate Head Remediation (99c3c97), and Adoption Progress (C-1456, C-1460)
+
+1. **Space Bunny Independent Review Verdict (`REQUEST_CHANGES` on `3568780`):**
+   - Reviewer `sb-reviewer-ui` (`96c4b4b1`) executed independently in `/home/alexey/git/agent-branches-l4` on `opencode-go/space-bunny-free` with 1500M memory cap and dedicated scratch.
+   - Baseline suite passed (Playwright DOM negative 4/4, Node 48/48).
+   - Six mutants evaluated with 4 killed, 2 survived:
+     - **M1 Survived (F1, Medium):** In `prototype/ui/ui.js:631`, `var matchesHead = !stale && (...)` was dead code because `matchesHead` was only evaluated in the falsy branch of `stale ? ... : ...`.
+     - **F2 (Medium):** Task view `#evidence` rendered `.badge.clean` ("Passed") for historical test evidence during a 503 outage, creating an inconsistent affordance with the index page which strictly enforces zero green badges during outages.
+     - **M6 Survived (F3, Low):** `default_scratch` path suffix in `test_dom_negative_browser.py` was not explicitly asserted.
+     - **F4 (Low):** `__pycache__/` and `.pytest_cache/` were not ignored in `.gitignore`.
+   - Report committed at [`2c6424d`](file:///home/alexey/git/cloudflare-agent-git/commit/2c6424d) to [`research/antigravity/reviews/REV-L4-UI-3568780.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-L4-UI-3568780.md) and pushed to `origin main`. Reviewer session exited cleanly.
+
+2. **Immediate Head Remediation on `proto/l4-review-ui` ([`99c3c97`](file:///home/alexey/git/cloudflare-agent-git/commit/99c3c97)):**
+   - Cleaned up dead `!stale &&` prefix in `ui.js`: `var matchesHead = !currentHead || !ev.head || ev.head === currentHead;`.
+   - Resolved green badge inconsistency: when `stale` is truthy, historical passing test results render with neutral `.badge.not_checked` (`Passed (unconfirmed)`), strictly guaranteeing **zero green `.badge.clean` badges exist anywhere in the DOM during a 503 outage** across both index and task pages.
+   - Pinned scratch directory in `test_dom_negative_browser.py` with `test_05_scratch_directory_pinned` (killing M6) and moved `os.environ["TMPDIR"]` mutation out of module import into `setUpClass`.
+   - Added `__pycache__/`, `*.pyc`, and `.pytest_cache/` to `.gitignore`.
+   - Ran all tests: Playwright DOM negative suite **5/5 passed**, Node test suite **48/48 passed**.
+   - Pushed commit `99c3c97` to `origin proto/l4-review-ui`. Work scope released cleanly.
+
+3. **Autonomous Continuation Proof & Adoption Lane Status:**
+   - Continuation timers verified: `task-24748` (22:29:28), `task-24867` (22:35:27), `task-24894` (22:38:57), next one-shot timer registered (`task-24981`).
+   - `zc-ab-adoption` (`bd5879b5`) actively running in `/home/alexey/git/agent-branches-adopt` implementing `BearerRateLimiter` and executing the genuine local workflow.
+   - Public deploy gate remains strictly **HELD**.
+
 
 
 
