@@ -679,8 +679,22 @@ class AgentHarnessDriver:
         report = radar.run_matrix(active_heads, base_sha=base_sha)
         results: List[PairResult] = report.pairs
 
-        # Export CONTRACT v0.1 payload
-        payload = export_l1_payload(results, engine=radar)
+        # Query current coordinator heads to form the complete head vector required by L1
+        full_vector: Dict[str, str] = {}
+        try:
+            coord_status_pre = self.client.get_status()
+            current_coord_heads = coord_status_pre.get("heads", {})
+            if isinstance(current_coord_heads, dict):
+                full_vector.update(current_coord_heads)
+        except Exception:
+            pass
+
+        for t in tasks:
+            if t.registered_agent_id and t.head_sha:
+                full_vector[t.registered_agent_id] = t.head_sha
+
+        # Export CONTRACT v0.1 payload with the full vector
+        payload = export_l1_payload(results, vector=full_vector, engine=radar)
 
         # Adapt payload for L1 wire compatibility (C-1350/C-1351)
         wire_payload = dict(payload)
