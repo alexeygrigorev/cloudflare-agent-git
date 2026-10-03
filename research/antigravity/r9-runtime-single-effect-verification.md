@@ -158,15 +158,29 @@ Per principal and orchestrator challenge (`01a1000e-30cb`, `01a10014-617f`), an 
 2. **Inner Denial Perception Window:** Under `--mode build`, the inner agent streams a denial event (`"No permission client configured for Bash"`) to its internal history before the outer client's tool execution result arrives. In Arm B, because the prompt instructed *"Execute exactly one Bash command and do nothing else"*, the model refrained from immediate re-execution and waited for the outer result (`exit code 0`), achieving exactly 1 marker line. However, without that constraint, an inner model observing a tool failure may emit a visible outer retry.
 3. **Architectural Fix Design (No Build):** The clean resolution in `codex-rs` is to intercept and suppress the inner harness denial message or end the inner turn at the tool boundary (matching the warm wire path) so the inner model never observes a transient denial for calls that the outer runtime handles.
 
+### 4.6 Independent Pinned Review (Muse Round 23, Commit `48be7a9`)
+Independent reviewer `muse-reviewer [7e6e9bb0]` audited the raw rollout JSONLs and marker files directly (recorded at `research/muse/review-round23.md`, commit `48be7a9`).
+
+#### Counted Findings from Source Rollouts:
+1. **Marker File Counts Confirmed:**
+   - Arm A (old binary): `/tmp/live_append_probe/old/marker.log` = **2 lines** (`...2066` at `.232`, `...0059` at `.430`, delta +198ms). Inner duplication confirmed.
+   - Arm B (new debug binary): `/tmp/live_append_probe/new/marker.log` = **1 line** (`...0868` at `.160`). Inner duplication absent.
+2. **Section 4.4 Trace (`01a1000a-8f19`, 37 lines) Counted Verdict:**
+   - Holds **two distinct `exec_command` call_ids (`633571b1`, `e9c52a05`)**, executing the same probe command ~16s apart (`:23.758` -> `:39.602`), both exiting 0.
+   - **Negative Result Demonstrated:** This is an outer model retry that executed twice under `--mode build`. The idempotent `printf` masked harm in the live probe; a non-idempotent operation would have doubled side effects.
+3. **Official Review Verdict:**
+   > **"Inner duplicate eliminated in observed runs; outer retry duplicates still possible (demonstrated, not hypothetical); no exactly-once claim."**
+
 ---
 
-## 5. Conclusion & Bounded Operational Status
+## 5. Conclusion & Operational Status
 
-1. **Empirical Evidence Triad Established:**
-   - **Synthetic Adapter Regression:** `probe_stub.cjs` proved that `--mode build` eliminates inner stub invocations produced by `--mode yolo` (reducing side effects from 3 to 1).
-   - **Production CJS Child Denial:** Direct execution against `/opt/ZCode/resources/glm/zcode.cjs` proved write-capable tools are rejected internally with `"No permission client configured for Bash"`.
-   - **Live Production Append Probe:** Comparative live append testing proved that the old binary produces **2 marker lines** per single tool call, whereas the new debug binary produces **exactly 1 marker line** (PASS on the append-only gate).
-2. **Open Scopes & Validations:**
-   - Inner denial suppression in `codex-rs` (ticket `01a10014-a645`) to prevent outer model retries under unconstrained prompts.
-   - Pinned independent review by Muse/principals is required before declaring full task completion.
-3. **Strict Resource Compliance:** All compilation remains permanently halted. Host has 103 GiB free. Scratch usage was 12 KiB + 32 KiB $\ll 100$ MiB. Global `/home/alexey/.local` binaries are 100% untouched. No global install is performed or inferred.
+1. **Empirical Verification Summary:**
+   - **Inner Duplication Fixed:** Switching cold-spawn from `--mode yolo` to `--mode build` eliminates unrecorded inner child executions (reducing marker lines from 2 to 1 in controlled runs).
+   - **Outer Retry Residual Demonstrated:** Under unconstrained prompts, the inner model observes the harness denial (`"No permission client configured for Bash"`) before outer tool results catch up, emitting an outer retry that the parent executes twice.
+   - **No Exactly-Once Claim:** Single-effect execution across arbitrary prompts is **NOT** achieved. Exactly-once claims are withdrawn.
+2. **Follow-On Engineering Split:**
+   - Ticket `01a10014-a645` is split into dedicated task `zcodex-retry-design` to design inner denial suppression and turn termination at tool boundaries in `codex-rs` (design only; no compilation).
+3. **Rollout Policy & Resource Compliance:**
+   - Root `01a10014-61f6` clarifies that scoped reversible integration is authorized without waiting for routine user approval, but strictly requires verified review, safe rollback, and proven benefit. Deployment is withheld pending the retry fix.
+   - All compilation remains halted (+12.26 GB cargo build violation unrepeated; 0 cargo/rustc processes). Host free disk remains 103 GiB. Global `/home/alexey/.local` binaries are untouched.
