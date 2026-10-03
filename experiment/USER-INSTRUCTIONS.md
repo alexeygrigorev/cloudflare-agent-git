@@ -220,3 +220,7 @@ Earlier same-day user lines given directly to claude-principal (verbatim): "cont
 ## 2026-10-03 17:40 CEST: user to claude-principal (verbatim)
 
 > if we use rust we can solve the problem that I have with rust projects
+
+## 2026-10-03 17:40 CEST: user to claude-principal (verbatim)
+
+> it shouldn't be rust focused though
