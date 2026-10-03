@@ -26,6 +26,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -44,6 +45,7 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 STATE_DIR = os.path.join(BASE_DIR, "state")
 EVIDENCE_DIR = os.path.join(BASE_DIR, "evidence")
 DB_PATH = os.path.join(DATA_DIR, "opencode", "opencode.db")
+PRISTINE_DB_SOURCE = "/home/alexey/git/cloudflare-agent-git/.local/pilot-ca1/data/opencode/opencode.db"
 OPENCODE_BIN = "/home/alexey/.nvm/versions/node/v24.13.1/bin/opencode"
 OPENCODE_SESSION_ID = "ses_eff35bb8dffetYQ0aauR2uX2qo"
 
@@ -384,6 +386,31 @@ def main():
     print("--- Fresh Provider Quotas ---")
     print(json.dumps(quota_data, indent=2))
 
+    os.makedirs(EVIDENCE_DIR, exist_ok=True)
+    cleanup_trial_sessions()
+    time.sleep(1)
+
+    # Clean previous workspace trial files to avoid counting old artifacts as new
+    print(f"Cleaning previous trial artifacts in workspace: {WORKSPACE}...")
+    if os.path.exists(WORKSPACE):
+        for fname in os.listdir(WORKSPACE):
+            if fname.startswith("turn1_") or fname.startswith("turn2_") or fname.startswith(".sender_cmd"):
+                fpath = os.path.join(WORKSPACE, fname)
+                try:
+                    os.remove(fpath)
+                except OSError:
+                    pass
+
+    # Restore pristine opencode.db snapshot to ensure clean state (no interrupted tool calls from previous runs)
+    print(f"Restoring pristine SQLite database from {PRISTINE_DB_SOURCE}...")
+    assert os.path.exists(PRISTINE_DB_SOURCE), f"Pristine source DB missing at {PRISTINE_DB_SOURCE}!"
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    for ext in ["", "-wal", "-shm"]:
+        target_f = DB_PATH + ext
+        if os.path.exists(target_f):
+            os.remove(target_f)
+    shutil.copy2(PRISTINE_DB_SOURCE, DB_PATH)
+
     # Verify real opencode.db session is present before launch
     assert os.path.exists(DB_PATH), f"opencode.db missing at {DB_PATH}!"
     con_check = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
@@ -392,11 +419,7 @@ def main():
     sess_row = cur_check.fetchone()
     con_check.close()
     assert sess_row is not None, f"Session {OPENCODE_SESSION_ID} not found in DB {DB_PATH}!"
-    print(f"Verified pre-existing session in DB: {sess_row}")
-
-    os.makedirs(EVIDENCE_DIR, exist_ok=True)
-    cleanup_trial_sessions()
-    time.sleep(1)
+    print(f"Verified pre-existing pristine session in DB: {sess_row}")
 
     # 2. Launch fresh disposable sessions under cgroups
     print("\n--- Step 1: Launching disposable receiver and sender sessions ---")
@@ -466,15 +489,26 @@ def main():
     try:
         # Step 2: Establish Baseline via Launch Initial Task Entrypoint
         print("\n--- Step 2: Waiting for Baseline Initial Task Turn to Execute and Settle into Authentic Resting Idle ---")
-        ok_idle, screen_idle, ev1, ev2 = verify_receiver_idle_twice(receiver_uuid, "boot_turn_idle", delta=2.0, max_wait=90, allow_reported_none=False)
+        ok_idle, screen_idle, ev1, ev2 = verify_receiver_idle_twice(receiver_uuid, "boot_turn_idle", delta=2.0, max_wait=120, allow_reported_none=False)
         assert ok_idle, f"Receiver failed to complete initial baseline turn or reach authentic resting idle! Screen:\n{screen_idle}"
         print("Receiver successfully completed initial baseline turn and settled into authentic resting idle.")
+
+        # Verify actual whoami tool execution in DB part table (Codex 01a1012a directive)
+        whoami_part = query_db_part_command("whoami")
+        print(f"DB Part row for baseline whoami tool: {whoami_part}")
+        assert whoami_part is not None, "Baseline whoami tool call not found in DB part table!"
+        whoami_part_id, _, _, whoami_status, whoami_start, whoami_end, whoami_cmd = whoami_part
+        assert whoami_status == "completed", f"Baseline whoami tool status is '{whoami_status}', expected 'completed'!"
+        print(f"Verified baseline whoami execution in DB: id={whoami_part_id}, status={whoami_status}")
+
         results["steps"]["boot_turn_baseline"] = {
             "passed": True,
             "launch_prompt": f"Run this initial baseline tool command: {init_cmd}",
             "evidence_capture_1": ev1,
             "evidence_capture_2": ev2,
-            "note": "Native executor launch with initial task entrypoint. Settled into authentic reported_state=='idle'."
+            "whoami_part_id": whoami_part_id,
+            "whoami_status": whoami_status,
+            "note": "Native executor launch with initial task entrypoint. Verified whoami tool completed and settled into authentic reported_state=='idle'."
         }
 
         # Step 3: Test Negative 1 - Active Child Tool Process Rejection
@@ -555,7 +589,6 @@ def main():
         assert probe_env is not None, f"Probe message {probe_id} not found in workspace message log!"
         assert probe_env.get("delivery") == "inbox", f"Probe message {probe_id} delivery was {probe_env.get('delivery')}, expected 'inbox'!"
         print(f"Probe message {probe_id} safely preserved in inbox (delivery='inbox').")
-        print(f"Probe message {probe_id} safely preserved in inbox.")
 
         print("Waiting for sleep tool to complete and receiver to return to resting idle...")
         time.sleep(10)
