@@ -273,7 +273,6 @@ export class CoordinatorCore implements CoordinatorAccess {
     // agent-authenticated routes (/events/push, /tasks/:id/tests, acks).
     const tokenHash = await sha256Hex(token.plaintext);
     model.agentTokenHashes[agentId] = tokenHash;
-    model.agentTokens ??= {};
     model.agentTokens[agentId] = {
       hash: tokenHash,
       expiresAt: token.expiresAt,
@@ -542,28 +541,27 @@ export class CoordinatorCore implements CoordinatorAccess {
 
   /**
    * muse-r46 AUTH: which agent (if any) owns this presented per-task token.
-   * Returns null for unknown/garbage tokens, expired tokens, or revoked tokens;
-   * digests are compared constant-time and the plaintext is never stored.
+   * Returns null for unknown/garbage tokens, revoked tokens (any non-null
+   * revokedAt marker, including the empty string), expired tokens — denied
+   * AT the expiry instant, not after it (C-1430) — and tokens whose expiry
+   * cannot be parsed (fail closed, C-1422); digests are compared
+   * constant-time and the plaintext is never stored. Legacy hash-only state
+   * is NOT honored: migrateStoredModel materializes legacy digests as
+   * already-expired records with no silent grace (C-1430); a fresh bounded
+   * token is obtained only by re-minting through createTask.
    */
   async credentialAgent(presented: string, nowMs: number = Date.now()): Promise<string | null> {
     const model = await this.load();
     const digest = await sha256Hex(presented);
-    if (model.agentTokens) {
-      for (const [agentId, record] of Object.entries(model.agentTokens)) {
-        if (timingSafeEqual(digest, record.hash)) {
-          if (record.revokedAt) {
-            return null; // Explicitly revoked
-          }
-          const expiryTime = new Date(record.expiresAt).getTime();
-          if (Number.isFinite(expiryTime) && nowMs > expiryTime) {
-            return null; // Expired
-          }
-          return agentId;
+    for (const [agentId, record] of Object.entries(model.agentTokens)) {
+      if (timingSafeEqual(digest, record.hash)) {
+        if (record.revokedAt != null) {
+          return null; // Explicitly revoked (non-null marker, even "")
         }
-      }
-    }
-    for (const [agentId, hash] of Object.entries(model.agentTokenHashes)) {
-      if (timingSafeEqual(digest, hash)) {
+        const expiryTime = Date.parse(record.expiresAt);
+        if (!Number.isFinite(expiryTime) || nowMs >= expiryTime) {
+          return null; // Expired (at or past the instant), or expiry unreadable -> deny
+        }
         return agentId;
       }
     }

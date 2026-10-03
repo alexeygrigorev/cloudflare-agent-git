@@ -97,7 +97,10 @@ export class FakeGitHost implements GitHost {
     this.counter += 1;
     const token: ArtifactsTokenResult = {
       plaintext: `tok-${this.counter.toString(16).padStart(8, "0")}`,
-      expiresAt: new Date(Date.parse("2026-10-03T12:00:00.000Z") + ttlSeconds * 1000).toISOString(),
+      // Relative to REAL now: a fixed base silently expires every fake
+      // token once wall-clock passes it (observed 2026-10-03 evening), and
+      // credentialAgent's expiry gate would then deny rig tokens everywhere.
+      expiresAt: new Date(Date.now() + ttlSeconds * 1000).toISOString(),
       scope,
     };
     this.repo(repo).tokens.push(token);
