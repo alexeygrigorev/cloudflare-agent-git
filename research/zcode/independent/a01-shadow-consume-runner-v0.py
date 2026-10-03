@@ -454,13 +454,16 @@ def canonical_lock_for(events_path: Path) -> Path:
     rev1e: the path is resolved BEFORE deriving the lock, because flock is
     inode-scoped — only DIFFERENT resolved lock inodes guarding the SAME
     journal inode split the domain (validation rev5, head-owned fstat/flock
-    evidence). Resolving unifies the two real split cases: a journal file
-    reached through a symlink (sibling locks would land in different
-    directories) and lexical .. /cwd variants. A symlinked parent directory
-    never split the domain even pre-rev1e (the lock created through the link
-    lands on the same real directory inode). Known bound: hard links are NOT
-    unified by resolve(); two hardlinked journals at different directory
-    paths still derive different sibling locks — documented, not fixed.
+    evidence). The one proven split case is a journal FILE reached through a
+    symlink into another directory: sibling locks land in different
+    directories (different inodes) and appends are not excluded. Resolving
+    also normalizes lexical .. /cwd variants, which were never a runtime
+    race (same resolved lock inode, mutual exclusion held — rev5 correction).
+    A symlinked parent directory never split the domain even pre-rev1e (the
+    lock created through the link lands on the same real directory inode).
+    Known bound: hard links are NOT unified by resolve(); two hardlinked
+    journals at different directory paths still derive different sibling
+    locks — documented, not fixed.
     """
     resolved = events_path.resolve()
     try:
@@ -518,8 +521,9 @@ def append_event_dedup(
     same file share one lock domain (repo journal -> REPO/.local/events.lock,
     else sibling <events>.lock). rev1e: passing a DIFFERENT explicit
     lock_path still opts out (back-compat), but prints a stderr warning —
-    validation rev5 proves with fstat/flock evidence that such callers are
-    NOT mutually excluded with canonical callers. rev1f: event is validated
+    validation rev5 proves with fstat/flock evidence that a differing lock
+    path has NO guaranteed exclusion (aliases resolving to the same lock
+    file still exclude; different inodes do not). rev1f: event is validated
     (dict + JSON-serializable) before any lock or mutation — clean early
     rejection instead of deep crashes (Muse round-24 finding 2)."""
     _validate_event(event)
@@ -528,8 +532,9 @@ def append_event_dedup(
     else:
         canonical = canonical_lock_for(events_path)
         if lock_path != canonical:
-            print(f"warning: explicit lock_path {lock_path} is outside the "
-                  f"canonical domain {canonical}; not mutually excluded",
+            print(f"warning: explicit lock_path {lock_path} differs from the "
+                  f"canonical lock path {canonical}; mutual exclusion is only "
+                  f"guaranteed if both resolve to the same lock file",
                   file=sys.stderr)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)

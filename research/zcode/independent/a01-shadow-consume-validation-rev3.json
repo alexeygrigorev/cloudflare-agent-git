@@ -1,12 +1,12 @@
 {
   "schema": "a01-shadow-consume-validation-rev3",
-  "generated": "2026-10-03T05:22:24+00:00",
+  "generated": "2026-10-03T05:23:52+00:00",
   "runner_rev": "rev1c (H1 schema-field validation, H2 default journal lock per C-REV1B-READONLY-ACCEPT / 01a10008)",
   "checks": [
     {
       "check": "emit_scratch_exit0_and_file",
       "pass": true,
-      "detail": "rc=0 err=emitted /tmp/a01-rev3-val-e_l1dxbh/out-real/a01-shadow-consume-results.json"
+      "detail": "rc=0 err=emitted /tmp/a01-rev3-val-ixdj4y9h/out-real/a01-shadow-consume-results.json"
     },
     {
       "check": "emit_sanitized_no_host_paths",

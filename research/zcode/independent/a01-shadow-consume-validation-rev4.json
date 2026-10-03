@@ -1,6 +1,6 @@
 {
   "schema": "a01-shadow-consume-validation-rev4",
-  "generated": "2026-10-03T05:22:24+00:00",
+  "generated": "2026-10-03T05:23:52+00:00",
   "runner_rev": "rev1d (canonical lock domain per C-REV1C-RESIDUAL / codex 01a10016-b2bf; one lock per journal file)",
   "checks": [
     {
@@ -16,7 +16,7 @@
     {
       "check": "canonical_other_journal_maps_to_sibling",
       "pass": true,
-      "detail": "/tmp/a01-rev4-xsljlq4y/events.jsonl.lock"
+      "detail": "/tmp/a01-rev4-iw_62p2s/events.jsonl.lock"
     },
     {
       "check": "canonical_outside_repo_maps_to_sibling",
