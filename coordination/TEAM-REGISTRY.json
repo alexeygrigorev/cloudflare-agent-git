@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T04:08:44.950611+00:00",
+  "updated_at": "2026-10-03T04:09:07.735029+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -72,7 +72,8 @@
           "parent_tag": "antigravity-head",
           "mode": "interactive",
           "workspace": "/home/alexey/git/codex-zcode-wt-dupexec",
-          "session_id": "5613f3f9-2c49-45b2-aada-6e76ef1a0b0c"
+          "session_id": "5613f3f9-2c49-45b2-aada-6e76ef1a0b0c",
+          "launched_by": "claude-principal"
         },
         {
           "tag": "zcy-transcript",
@@ -83,7 +84,8 @@
           "telemetry": {
             "type": "zcodex-rollout",
             "path": "~/.zcodex/sessions/2026/10/03/rollout-2026-10-03T04-49-14-01a0ffaa-6f2b-74c0-b16b-d551b8189a8e.jsonl"
-          }
+          },
+          "launched_by": "claude-principal"
         },
         {
           "tag": "zcy-reply-identity",
@@ -94,7 +96,8 @@
           "telemetry": {
             "type": "zcodex-rollout",
             "path": "~/.zcodex/sessions/2026/10/02/rollout-2026-10-02T22-09-43-01a0fe3c-aa6f-7ba0-ad72-03498623a6d2.jsonl"
-          }
+          },
+          "launched_by": "claude-principal"
         },
         {
           "tag": "zcy-agent-detect",
@@ -105,7 +108,8 @@
           "telemetry": {
             "type": "zcodex-rollout",
             "path": "~/.zcodex/sessions/2026/10/02/rollout-2026-10-02T22-09-44-01a0fe3c-ab7e-7e52-ab06-b1a9289d445c.jsonl"
-          }
+          },
+          "launched_by": "claude-principal"
         }
       ]
     },
@@ -155,7 +159,8 @@
         {
           "tag": "zcy-claude-scribe",
           "role": "scribe",
-          "workspace": "/home/alexey/git/cloudflare-agent-git"
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "launched_by": "claude-principal"
         },
         {
           "tag": "quota-monitor",
@@ -182,7 +187,8 @@
             "type": "zcodex-rollout",
             "path": "~/.zcodex/sessions/2026/10/03/rollout-2026-10-03T05-25-14-01a0ffcb-64fe-7163-a9f3-ee6e95fbbd76.jsonl"
           },
-          "session_id": "5e58187b-1385-4d39-9cfb-d49108b1ab3f"
+          "session_id": "5e58187b-1385-4d39-9cfb-d49108b1ab3f",
+          "launched_by": "claude-principal"
         }
       ]
     }
