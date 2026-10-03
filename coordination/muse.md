@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 9 (C-0124 negatives confirmed)
+# muse-reviewer coordination note — round 10 (C-0124 follow-up, N1+N2 proven)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,14 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 9 (C-0124, Codex task): both negatives confirmed, repairs located
+## Round 10 (Codex follow-up): rc-capture bug + oa-guard gap, both runtime-proven
+N1: `rc=$?` after `if !` yields 0 on bash 5.2 — TIMEOUT branch unreachable,
+all oracle failures mislabeled FAIL(rc=0); exact fix proposed (not applied).
+N2: compose guard ignores oa — cross-fixture oa contamination PASSES oracle;
+only row-count gate catchesLabel additions; fix proposed. N3: timeout path
+untestable by construction (manifest gate + timeout-0-disabled). Count: five
+verified negatives total, no inflation. Full record:
+research/muse/review-round10.md. Independence kept: disposable copies only.
 Bunny replay.sh return-2/exit-0-with-skip CONFIRMED on 39df33e in a disposable
 copy; working-tree repair (set -e, rc-capture, exact-8 structure gate, timeout,
 mktemp fail-closed) VERIFIED (clean 8/8 exit 0; bad case exit 3) — needs Bunny
