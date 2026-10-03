@@ -475,21 +475,20 @@
       "id": "publication-release-verification",
       "team_id": "publication",
       "owner_tag": "public-journal-site",
-      "status": "blocked",
-      "updated_at": "2026-10-03T08:53:00.000000+00:00",
-      "blocked_on": [
-        "daily-2026-10-03-opus-story (09:30 Claude Opus daily report from dual-approved canonical standup 377ac4d/dad1d80)",
-        "release-authorization (production release to docs/ held pending principal/orchestrator release tag or dispatch decision)"
-      ],
-      "next_action": "Visual acceptance PASS satisfied (commit 39166de, INDEPENDENT-REVIEW-FINAL.md). Production release to docs/ held pending 09:30 daily story and explicit release tag/dispatch decision.",
+      "status": "running",
+      "updated_at": "2026-10-03T09:08:00.000000+00:00",
+      "blocked_on": [],
+      "next_action": "All release gates satisfied: visual acceptance PASS (IMAGE-INDEPENDENT-REVIEW.md 10/10 PASS), daily story fact-check R2 PASS (42240a1), design equality proven. Releasing complete packet via release tag and workflow_dispatch, then verifying live deployment.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "website/editorial/QUALITY.md",
+        ".local/journal/visual-review/IMAGE-INDEPENDENT-REVIEW.md",
         ".local/journal/visual-review/INDEPENDENT-REVIEW-FINAL.md",
         ".local/journal/candidate-preview/**",
         ".local/journal/candidate-preview/ARTIFACT-MANIFEST.json"
       ],
-      "assignment_ack": "coordinator public-journal-site (088a2387) owns queue; design release strictly held until visual PASS"
+      "assignment_ack": "coordinator public-journal-site (088a2387) owns queue; design release gates cleared; executing release",
+      "acceptance_status": "Gates cleared: instrumented structural PASS (INDEPENDENT-REVIEW-FINAL.md), direct image side-by-side PASS (IMAGE-INDEPENDENT-REVIEW.md), fact-check R2 PASS (42240a1)"
     },
     {
       "id": "a18-demand-scout",
