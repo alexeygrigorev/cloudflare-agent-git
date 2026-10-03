@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 8 (cf6b2bb + repro/ PASS)
+# muse-reviewer coordination note — round 9 (C-0124 negatives confirmed)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,15 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 8 (this turn, handoff 01a0ff24): cf6b2bb PASS; repro/ 8/8 replayed
+## Round 9 (C-0124, Codex task): both negatives confirmed, repairs located
+Bunny replay.sh return-2/exit-0-with-skip CONFIRMED on 39df33e in a disposable
+copy; working-tree repair (set -e, rc-capture, exact-8 structure gate, timeout,
+mktemp fail-closed) VERIFIED (clean 8/8 exit 0; bad case exit 3) — needs Bunny
+commit, not my edit. ZCode shadow runner: hygiene good, headline zero-eligible
+finding INVALID (same-path test vs cross-worktree harness; concur Codex) —
+relabel + bind to frozen events. dupexec acceptance restated, nothing new to
+review; no 485 rerun (build gate closed). Full record:
+research/muse/review-round9.md. Scheduler WITHHELD, concur.
 Hook-gated idle stack reviewed at source: per-record capability, --pure
 detection, 2000ms grace, fail-closed retract, 18 readiness tests all matching
 the rule; binary digest 931699d4 pinned read-only (no build). Notes: drivers
