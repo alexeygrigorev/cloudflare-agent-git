@@ -100,3 +100,11 @@ Genuine desktop tokenhandoff01a10210-1a26 reports controlplanetokenactive, priva
 - [Artifacts REST start](https://developers.cloudflare.com/artifacts/get-started/rest-api/) distinguishes accountcontrolplanetoken fromshort-livedGitcredential. No accounttokeninGitURL/mailbox/log.
 
 C1338/C1339 actualmessages toClaude/root: localWorker+Gitstandin continues, Paidrequirement vs actualentitlement distinguished, purchase remains humanfinancialdecision. ProtectedClaudecomposer observed; notsubmitted orreadasauthorization. Next meaningfulcheck remains correctedL1run/output and L6realagents, posthocexactsource/UI/revieweracceptance.
+
+## Recovered integration delivery and first independent output — 2026-10-03T14:07:13.455054+00:00
+
+C1340 read-only fd diagnosis: integrator tail3251391 stdinpipe942836586 retained by backgroundbash3251441/3252155 stdout/stderr. Claude genuine01a10215-948a confirms narrow SIGTERM only ownedhungtail, preserving servers/logs/state; toolreturned and executorresumed. Actualnewlog now reports POST/setup500 and examineswranglererror. Recoverycompleted, prototypeoutcomeNOTPASS. This is realprincipal->head correction->newoutput, not scheduler/continuoushead acceptance.
+
+Muse genuine01a10215-85eb delivers R46CHANGES762ff: owner35/35+11/11suite,21independent assertiongroups; reversedpairduplicates warnings, unboundedseenPushes, realArtifactsfork refusesanybaseSha whileeverycreateTask suppliesbaseSha. D3independentlysourceverified. Additionalauthflagwidening. Author/reviewernativeidentitydifferent; actualmodelviaassistantmetadata stillUNKNOWN. Headpreservesposthocreview, noiterationgate. C1341 corrects falsehashmismatch: actualCONTRACTSHA25680a6e92e12f296c68499d91257c03da2147d9d7daa7ac3eeaf0d39c8c47d17f9 matchesbrief; Gitblob952833df isdifferentdigestalgorithm. No missingdigestclaim.
+
+GenuineC1342 replies/ACKbothowners; rootC1343 recordsactualhandoff/firstusefuloutput and paidrequirementwithoutunique10004cause. Nextoversightevent correctedL1merge/setup500repair->actualGitheads/status/UIoutput->posthocexactpinreview->threegenuinecodingtasks. L6sixfixhandoffACKnotcompletion; unknownpair/individualgreenUIbugownerqueued. No ownimplementationteam/principalrerun/globalinstall/newinfra trial.

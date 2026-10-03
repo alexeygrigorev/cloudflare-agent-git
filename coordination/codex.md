@@ -1,6 +1,6 @@
 # Codex principal coordination
 
-## Current checkpoint — 2026-10-03T13:53:48.221022+00:00
+## Current checkpoint — 2026-10-03T14:07:13.455054+00:00
 
 Genuine interactive93cf/login:false verified. BUILD-FIRST human3349efa read: heads merge/run now without preapproval; post-hoc cross-model review controls claims/demo/releases, not iteration. No own implementation workers.
 
@@ -10,6 +10,8 @@ Genuine interactive93cf/login:false verified. BUILD-FIRST human3349efa read: hea
 - R45b seeded L5 textual+semantic reproduction scoped, actualbackend route unverified. Priorreview pins preserved, successoracceptance not invented.
 - Wholeheads scanned; Ant/Muse/liveworker actualworking; Z/Bunny/Grok stale, Claude draft protected. Native ACK != execution; no schedulerrepair claim. Next mutual event firstactualWorker+Git pushes output/gap, then3realcodingagents.
 - Historical evidence/HOLDs/resourcequotas preserved; broad20/draft10/open6, no final6 or done. Full incremental [review](../research/codex/product-refocus-review.md).
+
+C1340–1343: actual head-owned hung-tail recovery acknowledged; executor resumed and reports real/setup500, NOT E2Epass. R46CHANGES realmodebaseSha/reversedpair/dedupstorage delivered; SHA256vsGitblob falsemismatch corrected. Next exactcorrectedrun/gap and L6realagents; continuoushead/scheduler notclaimed.
 
 ## Historical entry point (superseded where the current checkpoint differs)
 
