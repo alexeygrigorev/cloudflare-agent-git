@@ -149,5 +149,29 @@
     "9ed2ab2",
     "22a556e",
     "a65a5e3"
-  ]
+  ],
+  "verified_bounded_head_chain": {
+    "source_artifact": "9ed2ab2a873ca81f87dd263022bc02d43cc33c48",
+    "head_to_muse": "01a0ff72-1c1b-7441-9d99-a4f56100840f",
+    "delivery": "pane",
+    "muse_genuine_ack": "01a0ff73-fa37-7380-bad8-9ad5a9a075dd",
+    "muse_new_artifact": "993055ffc24b0bfd47ae2acdc98dcf443290f4fa",
+    "head_to_grok": "01a0ff74-63ec-77c1-a6b4-dec2f060d791",
+    "grok_genuine_ack": "01a0ff75-b287-7722-848f-8d2c38696c3f",
+    "grok_new_artifact": "0b3a10c",
+    "owner_milestone_to_principal": "01a0ff76-179e-7ff0-8ab8-058ae98afdcf",
+    "accepted_scope": "one actual head-owned native source-review-adoption chain with new actor ACKs/artifacts; no root heartbeat required for these two dispatches",
+    "source_urls": [
+      "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/9ed2ab2a873ca81f87dd263022bc02d43cc33c48",
+      "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/993055ffc24b0bfd47ae2acdc98dcf443290f4fa"
+    ],
+    "remaining_limits": [
+      "general unattended scheduler/readiness negatives not established",
+      "filename-overlap necessary-precondition framing disputed; topology only",
+      "typed event field validation, stable-key dedup and repo-default emit gate remain owner fixes",
+      "outer oneeffect/stable-operation retry/resume evidence pending",
+      "Bunny latest review remains pending with its original owner envelope; no old-review substitution",
+      "no A06 controlled comparison/efficacy or shortlist consensus"
+    ]
+  }
 }
