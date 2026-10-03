@@ -142,11 +142,11 @@ def setup_opencode_env(env_dir):
 
 
 def verify_session_model_route(db_path, session_workspace, launch_t0_ms, timeout=20, sessions_to_kill=None):
-    """Verify session initialized with the authorized model route in opencode.db.
+    """Verify session initialized with the authorized assistant model route in opencode.db.
 
-    Queries root user message where time_created >= launch_t0_ms - 2000.
-    Asserts json_extract(data, '$.model.providerID') == 'opencode-go' and
-            json_extract(data, '$.model.modelID') == 'muse-spark-1.3-contributor'.
+    Queries root assistant message where time_created >= launch_t0_ms - 2000.
+    Asserts json_extract(data, '$.providerID') == 'opencode-go' and
+            json_extract(data, '$.modelID') == 'muse-spark-1.3-contributor'.
     If mismatch or timeout, immediately kills sessions and raises RuntimeError('MODEL_MISMATCH_ABORT').
     """
     t0 = time.time()
@@ -156,13 +156,13 @@ def verify_session_model_route(db_path, session_workspace, launch_t0_ms, timeout
             con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
             cur = con.cursor()
             cur.execute("""
-                SELECT m.id, json_extract(m.data, '$.model.providerID'), json_extract(m.data, '$.model.modelID')
+                SELECT m.id, json_extract(m.data, '$.providerID'), json_extract(m.data, '$.modelID')
                 FROM message m
                 JOIN session s ON m.session_id = s.id
                 WHERE s.directory = ?
                   AND (s.parent_id IS NULL OR s.parent_id = '')
                   AND m.time_created >= ?
-                  AND json_extract(m.data, '$.role') = 'user'
+                  AND json_extract(m.data, '$.role') = 'assistant'
                 ORDER BY m.time_created ASC LIMIT 1
             """, (session_workspace, min_time))
             row = cur.fetchone()
@@ -170,7 +170,7 @@ def verify_session_model_route(db_path, session_workspace, launch_t0_ms, timeout
             if row:
                 _, provider_id, model_id = row
                 if provider_id == "opencode-go" and model_id == "muse-spark-1.3-contributor":
-                    print(f"Verified model route for {session_workspace}: {provider_id}/{model_id}")
+                    print(f"Verified assistant model route for {session_workspace}: {provider_id}/{model_id}")
                     return True
                 else:
                     if sessions_to_kill:
@@ -184,7 +184,7 @@ def verify_session_model_route(db_path, session_workspace, launch_t0_ms, timeout
     if sessions_to_kill:
         for sid in sessions_to_kill:
             run_cmd([PILOT_BIN, "kill", sid])
-    raise RuntimeError(f"MODEL_MISMATCH_ABORT: timed out after {timeout}s waiting for session root user message")
+    raise RuntimeError(f"MODEL_MISMATCH_ABORT: timed out after {timeout}s waiting for session root assistant message")
 
 
 def extract_session_telemetry(db_path, session_workspace, launch_t0_ms):
@@ -259,10 +259,14 @@ def extract_session_telemetry(db_path, session_workspace, launch_t0_ms):
     return telemetry
 
 
-def check_session_notice(db_path, session_workspace, launch_t0_ms, delivered_at_ms):
-    """Confirm model notice ONLY when verified by tool call inspecting inbox or verified prompt submission."""
-    if not delivered_at_ms:
+def check_session_notice(db_path, session_workspace, launch_t0_ms, delivered_at_ms, target_msg_id):
+    """Confirm model notice ONLY when verified by tool call inspecting exact target_msg_id
+    or verified prompt submission containing target_msg_id in user message text.
+    Unrelated inbox checks or foreign message IDs must NOT satisfy notice!
+    """
+    if not delivered_at_ms or not target_msg_id:
         return None
+    target_msg_id = str(target_msg_id).strip()
     try:
         con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         cur = con.cursor()
@@ -277,7 +281,7 @@ def check_session_notice(db_path, session_workspace, launch_t0_ms, delivered_at_
             return None
         sid = row[0]
 
-        # 1. Check tool calls inspecting inbox
+        # a. Check tool calls inspecting the exact message ID (e.g. a message show <target_msg_id>)
         cur.execute("""
             SELECT time_created, json_extract(data, '$.state.input.command')
             FROM part
@@ -286,24 +290,115 @@ def check_session_notice(db_path, session_workspace, launch_t0_ms, delivered_at_
         """, (sid, delivered_at_ms))
         for t_created, cmd in cur.fetchall():
             cmd_str = str(cmd or "")
-            if any(k in cmd_str for k in ["message inbox", "message log", "message show", "message wait"]):
+            if target_msg_id in cmd_str:
                 con.close()
                 return t_created
 
-        # 2. Check prompt submission: a subsequent user message created at or after delivered_at_ms
+        # b. Check prompt submission: user message containing target_msg_id in text parts
+        cur.execute("""
+            SELECT p.time_created, json_extract(p.data, '$.text')
+            FROM part p
+            JOIN message m ON p.message_id = m.id
+            WHERE p.session_id = ? AND p.time_created >= ?
+              AND json_extract(m.data, '$.role') = 'user'
+              AND json_extract(p.data, '$.type') = 'text'
+            ORDER BY p.time_created ASC
+        """, (sid, delivered_at_ms))
+        for t_created, text in cur.fetchall():
+            text_str = str(text or "")
+            if target_msg_id in text_str:
+                con.close()
+                return t_created
+
+        # Fallback check on raw message table data for user role containing target_msg_id
         cur.execute("""
             SELECT time_created, data
             FROM message
             WHERE session_id = ? AND time_created >= ? AND json_extract(data, '$.role') = 'user'
-            ORDER BY time_created ASC LIMIT 1
+            ORDER BY time_created ASC
         """, (sid, delivered_at_ms))
-        user_msg = cur.fetchone()
+        for t_created, m_data in cur.fetchall():
+            m_str = str(m_data or "")
+            if target_msg_id in m_str:
+                con.close()
+                return t_created
+
         con.close()
-        if user_msg:
-            return user_msg[0]
     except Exception as e:
         print(f"Error checking session notice: {e}")
     return None
+
+
+def composer_classifier(screen, tag=""):
+    """Full empty composer classification for OpenCode bordered UI and shell/codex prompts."""
+    if not screen:
+        return "unknown"
+    s_lower = screen.lower()
+
+    # 1. Busy check: if model is actively generating or executing a tool with interrupt enabled
+    if "working (" in s_lower or "esc to interrupt" in s_lower or "esc interrupt" in s_lower:
+        return "busy"
+
+    # 2. Check for menu / choice overlay
+    if re.search(r"How is Claude doing|Choose|Select|feedback", screen, re.I):
+        return "menu-or-draft"
+
+    # 3. OpenCode Bordered Composer Detection
+    lines = screen.splitlines()
+    bottom_indices = [i for i, l in enumerate(lines) if "╹" in l or re.search(r"^\s*╹", l)]
+    
+    composer_lines = []
+    if bottom_indices:
+        b_idx = bottom_indices[-1]
+        idx = b_idx - 1
+        while idx >= 0:
+            l = lines[idx]
+            if re.match(r"^\s*┃", l):
+                composer_lines.insert(0, l)
+                idx -= 1
+            elif not l.strip():
+                idx -= 1
+            elif "▣" in l:
+                break
+            else:
+                break
+    else:
+        build_indices = [i for i, l in enumerate(lines) if "▣" in l and "build" in l.lower()]
+        if build_indices:
+            start_idx = build_indices[-1]
+            composer_lines = [l for l in lines[start_idx:] if re.match(r"^\s*┃", l)]
+        elif "ctrl+p" in s_lower:
+            all_pipe = [l for l in lines if re.match(r"^\s*┃", l)]
+            if all_pipe:
+                composer_lines = all_pipe[-5:]
+
+    if "ctrl+p" in s_lower and composer_lines:
+        draft_content = []
+        for l in composer_lines:
+            cleaned = re.sub(r"^\s*┃\s*", "", l).strip()
+            if not cleaned:
+                continue
+            if re.match(r"^Build (?:auto|prompt)(?:\s*·.*)?$", cleaned, re.I):
+                continue
+            draft_content.append(cleaned)
+        
+        if draft_content:
+            return "draft"
+        return "empty"
+
+    # 4. Standard shell / codex › or ❯ prompt check
+    starts = [(i, re.sub(r"^\s*[›❯]\s*", "", line).strip())
+              for i, line in enumerate(lines) if re.match(r"^\s*[›❯]", line)]
+    if starts:
+        index, content = starts[-1]
+        if any(line.strip() and not re.match(r"^\s*[─━]|.*(?:Context|for shortcuts|auto mode|manage|monitor|agents|tokens|GPT-|usage|workspace|warning)", line)
+               for line in lines[index + 1:]):
+            return "unknown"
+        if content and not (tag == "codex-principal" and content == "Ask Codex to do anything"):
+            return "draft"
+        return "empty"
+
+    return "unknown"
 
 
 def is_session_resting(session_uuid, workspace):
@@ -322,6 +417,33 @@ def is_session_resting(session_uuid, workspace):
     if rep_at > 0 and last_act > rep_at + 250:
         return False, f"contradiction_delta_{last_act - rep_at}ms"
     return True, "resting"
+
+
+def check_resting_empty_composer(session_uuid, workspace, tag=""):
+    """Check if session is resting idle with an empty composer."""
+    resting, reason = is_session_resting(session_uuid, workspace)
+    if not resting:
+        return False, f"not_resting_{reason}"
+    cap_res = run_cmd([PILOT_BIN, "capture", session_uuid, "--screen", "--plain", "--workspace", workspace])
+    if cap_res.returncode != 0:
+        return False, "capture_failed"
+    screen = cap_res.stdout
+    comp_state = composer_classifier(screen, tag=tag)
+    if comp_state != "empty":
+        return False, f"composer_{comp_state}"
+    return True, "resting_empty"
+
+
+def verify_twice_resting_empty_composer(session_uuid, workspace, tag="", min_delay_sec=1.5):
+    """Require twice-fresh resting check separated by at least min_delay_sec with empty composer."""
+    ok1, reason1 = check_resting_empty_composer(session_uuid, workspace, tag=tag)
+    if not ok1:
+        return False, f"first_check_failed_{reason1}"
+    time.sleep(min_delay_sec)
+    ok2, reason2 = check_resting_empty_composer(session_uuid, workspace, tag=tag)
+    if not ok2:
+        return False, f"second_check_failed_{reason2}"
+    return True, "twice_resting_empty"
 
 
 def wait_for_session_idle(session_uuid, workspace, timeout=180):
@@ -550,9 +672,9 @@ def run_pair(arm_name, pair_num, intervention_type):
 
     # Post-Boot Model Route Verification Gate
     try:
-        print("Verifying Producer session model route in opencode.db...")
+        print("Verifying Producer session assistant model route in opencode.db...")
         verify_session_model_route(prod_env["db"], prod_ws, t0_prod, timeout=20, sessions_to_kill=active_sessions)
-        print("Verifying Consumer session model route in opencode.db...")
+        print("Verifying Consumer session assistant model route in opencode.db...")
         verify_session_model_route(cons_env["db"], cons_ws, t0_cons, timeout=20, sessions_to_kill=active_sessions)
     except Exception as e:
         print(f"Model verification failed: {e}. Active sessions killed.")
@@ -566,8 +688,12 @@ def run_pair(arm_name, pair_num, intervention_type):
         "message_ids": {},
         "producer_delivered_at_ms": None,
         "consumer_delivered_at_ms": None,
+        "producer_delivery_disposition": None,
+        "consumer_delivery_disposition": None,
         "producer_noticed_at_ms": None,
         "consumer_noticed_at_ms": None,
+        "producer_notice_at_ms": None,  # backwards-compat alias
+        "consumer_notice_at_ms": None,  # backwards-compat alias
         "producer_uptake_detected": False,
         "consumer_uptake_detected": False
     }
@@ -646,45 +772,75 @@ def run_pair(arm_name, pair_num, intervention_type):
             mid_p = intervention_data["message_ids"].get("producer")
             mid_c = intervention_data["message_ids"].get("consumer")
 
-            # Check if producer noticed via inbox inspection or prior prompt submission
-            if intervention_data["producer_notice_at_ms"] is None:
+            # Check if producer noticed via exact envelope inspection or prior prompt submission
+            if intervention_data["producer_noticed_at_ms"] is None:
                 p_notice_time = check_session_notice(
-                    prod_env["db"], prod_ws, t0_prod, intervention_data["producer_delivered_at_ms"]
+                    prod_env["db"], prod_ws, t0_prod, intervention_data["producer_delivered_at_ms"], mid_p
                 )
                 if p_notice_time:
+                    intervention_data["producer_noticed_at_ms"] = p_notice_time
                     intervention_data["producer_notice_at_ms"] = p_notice_time
                     print(f"[{arm_name}] Producer notice confirmed at {p_notice_time}")
                 elif mid_p:
-                    p_rest_now, _ = is_session_resting(prod_session_id, prod_ws)
-                    if p_rest_now:
+                    p_rest_twice, _ = verify_twice_resting_empty_composer(
+                        prod_session_id, prod_ws, tag=prod_tag, min_delay_sec=1.5
+                    )
+                    if p_rest_twice:
                         del_p = run_cmd([PILOT_BIN, "message", "deliver", mid_p, "--workspace", prod_ws, "--json"])
+                        disposition = "unknown"
+                        if del_p.returncode == 0:
+                            try:
+                                d_json = json.loads(del_p.stdout)
+                                disposition = d_json.get("status", "submitted")
+                            except Exception:
+                                disposition = "submitted"
+                        else:
+                            disposition = f"failed_rc_{del_p.returncode}"
+                        intervention_data["producer_delivery_disposition"] = disposition
+
                         # Do NOT equate returncode 0 with model notice; verify via check_session_notice
                         if del_p.returncode == 0:
                             p_notice_post = check_session_notice(
-                                prod_env["db"], prod_ws, t0_prod, intervention_data["producer_delivered_at_ms"]
+                                prod_env["db"], prod_ws, t0_prod, intervention_data["producer_delivered_at_ms"], mid_p
                             )
                             if p_notice_post:
+                                intervention_data["producer_noticed_at_ms"] = p_notice_post
                                 intervention_data["producer_notice_at_ms"] = p_notice_post
                                 print(f"[{arm_name}] Notice confirmed in Producer session at {p_notice_post}")
 
-            # Check if consumer noticed via inbox inspection or prior prompt submission
-            if intervention_data["consumer_notice_at_ms"] is None:
+            # Check if consumer noticed via exact envelope inspection or prior prompt submission
+            if intervention_data["consumer_noticed_at_ms"] is None:
                 c_notice_time = check_session_notice(
-                    cons_env["db"], cons_ws, t0_cons, intervention_data["consumer_delivered_at_ms"]
+                    cons_env["db"], cons_ws, t0_cons, intervention_data["consumer_delivered_at_ms"], mid_c
                 )
                 if c_notice_time:
+                    intervention_data["consumer_noticed_at_ms"] = c_notice_time
                     intervention_data["consumer_notice_at_ms"] = c_notice_time
                     print(f"[{arm_name}] Consumer notice confirmed at {c_notice_time}")
                 elif mid_c:
-                    c_rest_now, _ = is_session_resting(cons_session_id, cons_ws)
-                    if c_rest_now:
+                    c_rest_twice, _ = verify_twice_resting_empty_composer(
+                        cons_session_id, cons_ws, tag=cons_tag, min_delay_sec=1.5
+                    )
+                    if c_rest_twice:
                         del_c = run_cmd([PILOT_BIN, "message", "deliver", mid_c, "--workspace", cons_ws, "--json"])
+                        disposition = "unknown"
+                        if del_c.returncode == 0:
+                            try:
+                                d_json = json.loads(del_c.stdout)
+                                disposition = d_json.get("status", "submitted")
+                            except Exception:
+                                disposition = "submitted"
+                        else:
+                            disposition = f"failed_rc_{del_c.returncode}"
+                        intervention_data["consumer_delivery_disposition"] = disposition
+
                         # Do NOT equate returncode 0 with model notice; verify via check_session_notice
                         if del_c.returncode == 0:
                             c_notice_post = check_session_notice(
-                                cons_env["db"], cons_ws, t0_cons, intervention_data["consumer_delivered_at_ms"]
+                                cons_env["db"], cons_ws, t0_cons, intervention_data["consumer_delivered_at_ms"], mid_c
                             )
                             if c_notice_post:
+                                intervention_data["consumer_noticed_at_ms"] = c_notice_post
                                 intervention_data["consumer_notice_at_ms"] = c_notice_post
                                 print(f"[{arm_name}] Notice confirmed in Consumer session at {c_notice_post}")
 
@@ -738,14 +894,20 @@ def run_pair(arm_name, pair_num, intervention_type):
 
     # Final check on notice telemetry
     if intervention_data["delivered"]:
-        if intervention_data["producer_notice_at_ms"] is None:
-            intervention_data["producer_notice_at_ms"] = check_session_notice(
-                prod_env["db"], prod_ws, t0_prod, intervention_data["producer_delivered_at_ms"]
+        mid_p = intervention_data["message_ids"].get("producer")
+        mid_c = intervention_data["message_ids"].get("consumer")
+        if intervention_data["producer_noticed_at_ms"] is None:
+            p_n = check_session_notice(
+                prod_env["db"], prod_ws, t0_prod, intervention_data["producer_delivered_at_ms"], mid_p
             )
-        if intervention_data["consumer_notice_at_ms"] is None:
-            intervention_data["consumer_notice_at_ms"] = check_session_notice(
-                cons_env["db"], cons_ws, t0_cons, intervention_data["consumer_delivered_at_ms"]
+            intervention_data["producer_noticed_at_ms"] = p_n
+            intervention_data["producer_notice_at_ms"] = p_n
+        if intervention_data["consumer_noticed_at_ms"] is None:
+            c_n = check_session_notice(
+                cons_env["db"], cons_ws, t0_cons, intervention_data["consumer_delivered_at_ms"], mid_c
             )
+            intervention_data["consumer_noticed_at_ms"] = c_n
+            intervention_data["consumer_notice_at_ms"] = c_n
 
     # Run external acceptance tests
     print("Running task-specific external acceptance tests...")
