@@ -1,0 +1,396 @@
+"""Command-line interface for agent-branches."""
+
+import argparse
+import json
+import sys
+from typing import List, Optional
+
+from agent_branches.client import (
+    AgentBranchesAPIError,
+    AgentBranchesClient,
+    AgentBranchesConnectionError,
+    AgentBranchesError,
+)
+from agent_branches.git_utils import (
+    get_changed_files,
+    get_current_branch,
+    get_current_head_sha,
+    get_remote_url,
+)
+
+
+def format_task_created(res: dict) -> str:
+    """Format task creation response."""
+    task_id = res.get("taskId") or res.get("task_id") or "unknown"
+    agent_id = res.get("agentId") or res.get("agent_id") or ""
+    fork_url = ""
+    fork = res.get("fork")
+    if isinstance(fork, dict):
+        fork_url = fork.get("remote") or fork.get("name") or ""
+    elif isinstance(fork, str):
+        fork_url = fork
+    if not fork_url:
+        fork_url = res.get("fork_url") or ""
+
+    branch = res.get("branch") or res.get("ref", "").replace("refs/heads/", "")
+    head = res.get("head") or res.get("head_sha") or res.get("base_sha") or "N/A"
+
+    lines = [
+        "========================================",
+        "  TASK REGISTERED SUCCESSFULLY",
+        "========================================",
+        f"  Task ID:   {task_id}",
+    ]
+    if agent_id:
+        lines.append(f"  Agent ID:  {agent_id}")
+    if branch:
+        lines.append(f"  Branch:    {branch}")
+    if fork_url:
+        lines.append(f"  Fork URL:  {fork_url}")
+    lines.append(f"  Head SHA:  {head}")
+    if res.get("intent"):
+        lines.append(f"  Intent:    {res.get('intent')}")
+    lines.append("========================================")
+    return "\n".join(lines)
+
+
+def format_push_result(res: dict) -> str:
+    """Format push event response."""
+    task_id = res.get("task_id") or res.get("agent") or "unknown"
+    head_sha = res.get("head_sha") or res.get("sha") or "unknown"
+    accepted = res.get("accepted", False)
+    deduped = res.get("deduped", False)
+    checks = res.get("radar_checks", res.get("radarChecks", 0))
+    new_warnings = res.get("new_warnings", res.get("newWarnings", []))
+
+    lines = [
+        "========================================",
+        "  WIP COMMIT PUSH REGISTERED",
+        "========================================",
+        f"  Task ID:      {task_id}",
+        f"  Head SHA:     {head_sha}",
+        f"  Accepted:     {accepted}",
+        f"  Deduped:      {deduped}",
+        f"  Radar Checks: {checks}",
+    ]
+
+    if new_warnings:
+        lines.append(f"\n  WARNING: {len(new_warnings)} conflict warning(s) detected!")
+        for w in new_warnings:
+            wid = w.get("warning_id") or w.get("id") or "unknown"
+            kind = w.get("kind", "textual")
+            pair = w.get("pair", [])
+            evidence = w.get("evidence", {})
+            files = evidence.get("conflicting_files", []) if isinstance(evidence, dict) else []
+            lines.append(f"  - [{wid}] ({kind}) Pair: {pair}")
+            if files:
+                lines.append(f"    Conflicting files: {', '.join(files)}")
+            if isinstance(evidence, dict) and evidence.get("details"):
+                lines.append(f"    Details: {evidence.get('details')}")
+    else:
+        lines.append("  Status:       Clean (no new conflict warnings)")
+
+    lines.append("========================================")
+    return "\n".join(lines)
+
+
+def format_status_result(res: dict, task_id: Optional[str] = None) -> str:
+    """Format status response (either task-specific or global)."""
+    lines = ["========================================"]
+
+    if task_id or "task_id" in res or "taskId" in res:
+        # Task-specific status
+        tid = res.get("task_id") or res.get("taskId") or task_id
+        lines.append(f"  TASK STATUS: {tid}")
+        lines.append("========================================")
+        status_val = res.get("status", "active")
+        branch = res.get("branch") or res.get("ref", "").replace("refs/heads/", "")
+        head = res.get("head_sha") or res.get("head") or "N/A"
+        agent = res.get("agent_id") or res.get("agentId") or ""
+        lines.append(f"  Status:    {status_val}")
+        if agent:
+            lines.append(f"  Agent ID:  {agent}")
+        if branch:
+            lines.append(f"  Branch:    {branch}")
+        lines.append(f"  Head SHA:  {head}")
+        if res.get("intent"):
+            lines.append(f"  Intent:    {res.get('intent')}")
+        if res.get("test_provenance"):
+            lines.append(f"  Tests:     {res.get('test_provenance')}")
+
+        warnings = res.get("warnings", [])
+        active_warnings = [w for w in warnings if w.get("status") == "active"]
+        if active_warnings:
+            lines.append(f"\n  Active Radar Warnings ({len(active_warnings)}):")
+            for w in active_warnings:
+                wid = w.get("warning_id") or w.get("id") or "unknown"
+                kind = w.get("kind", "textual")
+                pair = w.get("pair", [])
+                evidence = w.get("evidence", {})
+                files = evidence.get("conflicting_files", []) if isinstance(evidence, dict) else []
+                lines.append(f"  * [{wid}] ({kind}) Overlap with: {pair}")
+                if files:
+                    lines.append(f"    Conflicting files: {', '.join(files)}")
+                lines.append(
+                    f"    Resolution: run `agent-branches ack --task-id {tid} --warning-id {wid} --action rebased_locally`"
+                )
+        else:
+            lines.append("\n  Radar Warnings: None (Clean)")
+
+    else:
+        # Global coordinator status
+        lines.append("  RADAR / COORDINATOR STATUS")
+        lines.append("========================================")
+        canonical = res.get("canonical", {})
+        if isinstance(canonical, dict):
+            c_name = canonical.get("name") or "canonical"
+            lines.append(f"  Canonical: {c_name}")
+
+        tasks = res.get("tasks", [])
+        lines.append(f"  Active Tasks ({len(tasks)}):")
+        for t in tasks:
+            tid = t.get("task_id") or t.get("taskId") or "unknown"
+            tbranch = t.get("branch") or t.get("ref", "").replace("refs/heads/", "")
+            thead = (t.get("head_sha") or t.get("head") or "")[:8]
+            lines.append(f"    - {tid} (branch: {tbranch or 'main'}, head: {thead})")
+
+        warnings = res.get("warnings", [])
+        active_warnings = [w for w in warnings if w.get("status") == "active"]
+        if active_warnings:
+            lines.append(f"\n  Active Warnings ({len(active_warnings)}):")
+            for w in active_warnings:
+                wid = w.get("warning_id") or w.get("id") or "unknown"
+                pair = w.get("pair", [])
+                kind = w.get("kind", "textual")
+                lines.append(f"    * [{wid}] ({kind}) Pair: {pair}")
+        else:
+            lines.append("\n  Active Warnings: None (Clean)")
+
+    lines.append("========================================")
+    return "\n".join(lines)
+
+
+def format_ack_result(res: dict) -> str:
+    """Format warning acknowledgement response."""
+    wid = res.get("warning_id") or res.get("id") or "unknown"
+    tid = res.get("task_id") or "unknown"
+    action = res.get("action") or "acknowledged"
+    time_str = res.get("acknowledged_at") or "now"
+
+    return "\n".join([
+        "========================================",
+        "  WARNING ACKNOWLEDGED",
+        "========================================",
+        f"  Warning ID: {wid}",
+        f"  Task ID:    {tid}",
+        f"  Action:     {action}",
+        f"  Time:       {time_str}",
+        "========================================",
+    ])
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Construct argument parser for agent-branches CLI."""
+    parser = argparse.ArgumentParser(
+        prog="agent-branches",
+        description="L2 Agent Client CLI for Cloudflare Agent Branches",
+    )
+    parser.add_argument(
+        "--server",
+        help="L1 Coordinator server URL (default: $AGENT_BRANCHES_SERVER or http://127.0.0.1:8787)",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output raw JSON response",
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
+
+    # task command
+    task_parser = subparsers.add_parser("task", help="Task operations")
+    task_sub = task_parser.add_subparsers(dest="task_action", help="Task actions")
+
+    task_create = task_sub.add_parser("create", help="Register a new task")
+    task_create.add_argument("--repo", help="Repository URL (defaults to git remote origin)")
+    task_create.add_argument("--base-sha", help="Base commit SHA (defaults to git HEAD)")
+    task_create.add_argument("--intent", default="", help="High-level task intent description")
+    task_create.add_argument("--branch", help="Working branch name (defaults to git branch)")
+    task_create.add_argument("--agent", help="Agent identifier / name")
+    task_create.add_argument("--ttl-seconds", type=int, help="Fork token TTL in seconds")
+    task_create.add_argument("--server", help="Coordinator URL")
+    task_create.add_argument("--json", action="store_true", help="Output raw JSON")
+
+    # push command
+    push_parser = subparsers.add_parser("push", help="Register a WIP commit push")
+    push_parser.add_argument("--task-id", required=True, help="Task identifier")
+    push_parser.add_argument("--head-sha", help="WIP commit SHA (defaults to git HEAD)")
+    push_parser.add_argument("--base-sha", help="Base commit SHA")
+    push_parser.add_argument(
+        "--files-changed",
+        help="Comma-separated list of changed files (auto-detected via git if omitted)",
+    )
+    push_parser.add_argument(
+        "--intent-update",
+        help="Updated task intent description",
+    )
+    push_parser.add_argument(
+        "--intent",
+        dest="intent_update",
+        help="Alias for --intent-update",
+    )
+    push_parser.add_argument(
+        "--test-provenance",
+        help="Test execution provenance evidence (e.g. 'vitest: 14 passed')",
+    )
+    push_parser.add_argument("--server", help="Coordinator URL")
+    push_parser.add_argument("--json", action="store_true", help="Output raw JSON")
+
+    # status command
+    status_parser = subparsers.add_parser("status", help="Query coordinator and radar status")
+    status_parser.add_argument("--task-id", help="Task ID to query specific task status and active warnings")
+    status_parser.add_argument("--server", help="Coordinator URL")
+    status_parser.add_argument("--json", action="store_true", help="Output raw JSON")
+
+    # ack command
+    ack_parser = subparsers.add_parser("ack", help="Acknowledge an active radar conflict warning")
+    ack_parser.add_argument("--task-id", required=True, help="Task identifier acknowledging the warning")
+    ack_parser.add_argument("--warning-id", required=True, help="Warning identifier being acknowledged")
+    ack_parser.add_argument(
+        "--action",
+        default="rebased_locally",
+        help="Action taken to address warning (e.g. 'rebased_locally', 'manual_merge')",
+    )
+    ack_parser.add_argument("--server", help="Coordinator URL")
+    ack_parser.add_argument("--json", action="store_true", help="Output raw JSON")
+
+    return parser
+
+
+def handle_task_create(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
+    repo = args.repo or get_remote_url()
+    if not repo:
+        repo = "https://github.com/agent-branches/repo.git"
+
+    base_sha = args.base_sha or get_current_head_sha()
+    if not base_sha:
+        base_sha = "0000000000000000000000000000000000000000"
+
+    branch = args.branch or get_current_branch() or "feat/task"
+    intent = args.intent or ""
+    agent = getattr(args, "agent", None)
+    ttl = getattr(args, "ttl_seconds", None)
+
+    res = client.create_task(
+        repo=repo,
+        base_sha=base_sha,
+        intent=intent,
+        branch=branch,
+        agent=agent,
+        ttl_seconds=ttl,
+    )
+    if as_json:
+        print(json.dumps(res, indent=2))
+    else:
+        print(format_task_created(res))
+    return 0
+
+
+def handle_push(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
+    head_sha = args.head_sha or get_current_head_sha()
+    if not head_sha:
+        print("Error: --head-sha is required when not in a valid git repository", file=sys.stderr)
+        return 1
+
+    files_changed: Optional[List[str]] = None
+    if args.files_changed:
+        files_changed = [f.strip() for f in args.files_changed.split(",") if f.strip()]
+    elif args.base_sha:
+        files_changed = get_changed_files(base_sha=args.base_sha, head_sha=head_sha)
+
+    res = client.push(
+        task_id=args.task_id,
+        head_sha=head_sha,
+        base_sha=args.base_sha,
+        files_changed=files_changed,
+        intent=args.intent_update,
+        test_provenance=args.test_provenance,
+    )
+    if as_json:
+        print(json.dumps(res, indent=2))
+    else:
+        print(format_push_result(res))
+    return 0
+
+
+def handle_status(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
+    if args.task_id:
+        res = client.get_task(args.task_id)
+        if as_json:
+            print(json.dumps(res, indent=2))
+        else:
+            print(format_status_result(res, task_id=args.task_id))
+    else:
+        res = client.get_status()
+        if as_json:
+            print(json.dumps(res, indent=2))
+        else:
+            print(format_status_result(res, task_id=None))
+    return 0
+
+
+def handle_ack(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
+    res = client.ack_warning(
+        warning_id=args.warning_id,
+        task_id=args.task_id,
+        action=args.action,
+    )
+    if as_json:
+        print(json.dumps(res, indent=2))
+    else:
+        print(format_ack_result(res))
+    return 0
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    """Main CLI entrypoint."""
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    if not args.command:
+        parser.print_help()
+        return 1
+
+    server_url = getattr(args, "server", None)
+    as_json = bool(getattr(args, "json", False))
+    client = AgentBranchesClient(server_url=server_url)
+
+    try:
+        if args.command == "task":
+            if getattr(args, "task_action", None) == "create":
+                return handle_task_create(args, client, as_json)
+            else:
+                parser.parse_args(["task", "--help"])
+                return 1
+        elif args.command == "push":
+            return handle_push(args, client, as_json)
+        elif args.command == "status":
+            return handle_status(args, client, as_json)
+        elif args.command == "ack":
+            return handle_ack(args, client, as_json)
+        else:
+            parser.print_help()
+            return 1
+    except AgentBranchesConnectionError as exc:
+        print(f"Connection Error: {exc}", file=sys.stderr)
+        return 2
+    except AgentBranchesAPIError as exc:
+        print(f"API Error ({exc.status_code}): {exc.message}", file=sys.stderr)
+        return 1
+    except Exception as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
