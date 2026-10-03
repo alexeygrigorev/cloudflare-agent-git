@@ -605,6 +605,27 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - Delivered read-only consumer adapter review handoff `01a0ff27-f088` to `zcode-independent` (`7bd5b3c2`).
    - Credited Desktop Orchestrator `HEARTBEAT0024` root independent replay (8/8 common PASS across 21 manifest files).
 
+---
+
+## 26. Resource Accounting, Dupexec Test Diagnosis, and Completion-Triggered Continuation Chain (Complete: PASS)
+
+1. **Resource Accounting & Compilation Guard (Root CHECK0224):**
+   - **Root Cause of Disk Drop:** Root `df` dropped ~16 GiB (from ~132 GiB to 115 GiB free). Measurement of target directory `/home/alexey/git/codex-zcode/codex-rs/target` = ~39.65-40 GiB (`debug/incremental` 25 GiB, `debug/deps` 14 GiB, `debug/build` 512 MiB). The drop occurred from Cargo compiling multiple integration test suites into `debug/deps` and proliferating incremental compilation caches during earlier unconstrained cargo test invocations.
+   - **Enforced Guard:** Strict compilation freeze on unconstrained full-crate test runs (`just test` or bare cargo test). Any test execution must use narrow single-binary filtering (`--test suite zcode_inner_mode -- --exact ...`) reusing existing built dependencies. No deletion of target caches or existing worktrees; physical growth strictly bounded under 512 MiB.
+
+2. **Dupexec Test Diagnosis & Harness Pass (`zcy-dupexec` 5613):**
+   - **Regression Root Cause (`FINAL_RC 100 COUNT 0 vs 1`):** In `codex-rs/core/tests/suite/zcode_inner_mode.rs`, the mock loader stub template wrote `{JSON.stringify(value)}` instead of `${JSON.stringify(value)}` (missing `$`), causing JS template literals to emit literal strings. The outer harness skipped unparseable JSON as subprocess noise, so outer tool execution was never triggered.
+   - **Fix & Pass:** Executor 5613 repaired the template literal and ran the targeted test:
+     `suite::zcode_inner_mode::zcode_cold_wire_executes_streamed_tool_call_once` **PASSED in 0.726s** (`FINAL_RC 0`).
+   - Validates that `--mode build` properly denies inner headless execution (`permission.resolved decision=deny`) while streaming tool calls for the outer ToolCallRuntime to execute exactly once, matching production runtime owner `82d375cd` approval.
+
+3. **Durable Completion-Triggered Continuation Chain Executed End-to-End:**
+   - **Link 1 (Bunny Queued Delivery):** Observed `muse-reviewer` (`7e6e9bb0`) at verified idle with empty composer. Dispatched notification `01a0ff9a-0d50-7883-b133-f5a963330ec0` to `space-bunny-head` (`8620fdc9`). Bunny executed native delivery of queued request `01a0ff68-a64a-71f2-a16f-8432f6f18ced` (`status: submitted`, commit `b2cc20a`) and replied with ACK `01a0ff9b-21c6-7290-ad56-463fb4f83e28`.
+   - **Link 2 (Muse Round 12 Review):** Muse executed Bunny's v3 replay (8/8 PASS, exit 0) and 12 negative tests (12/12 PASS, exit 0 with genuine TIMEOUT and FAIL rows), verified payload byte-identical pre/post run (`PAYLOAD-UNTOUCHED`), identified label-binding hole (swapped overlay under kept label passes silently), and committed `research/muse/review-round12.md` at commit `d034aa5`. Muse sent ACK reply `01a0ff9d-7c73-7b82-adff-4e7270ce14a4` and returned to genuine idle.
+   - **Link 3 (ZCode rev1b Negative Review Handoff):** Upon Muse's return to idle (completion event), Antigravity immediately dispatched ZCode rev1b (`2c808c4`) exact-source negative review to Muse via pane envelope `01a0ff9d-bb9b-7eb1-a744-c38822f03793`. Muse verified 14/14 validation checks, verified dedup rekeying with import probes (skew twins skip, distinct payloads kept), tested typed event field validation (proving bare `{"event":"emit"}` counts without full schema fields), confirmed topology-only overlap and exit 2 emit refusal, and committed `research/muse/review-round13.md` at commit `a007cd0`. Muse sent ACK reply `01a0ff9f-3477-7782-99f6-f5f75889cd49` and returned to genuine idle.
+   - **Link 4 (Grok Adoption Update Handoff):** Upon Muse's return to idle (completion event), Antigravity immediately dispatched adoption update to `grok-head` (`8840df13`) via pane envelope `01a0ff9f-7909-7e80-a751-3f21c91b2104`. Grok updated `research/grok/a06-adoption-decision.md` at commit `4279300`, recording Muse R13 findings, maintaining task `G-A01-SHADOW-CONSUME-20261003` as unlabeled / unknown, and keeping repo-default emit off. Grok sent ACK reply `01a0ffa0-acb5-7421-afa5-7bb2cd0833a3`.
+
+
 
 
 
