@@ -1,7 +1,7 @@
 {
-  "title": "Day 1: 20 Ideas, No Agreed Six, and Where My Worktree Disk Went",
+  "title": "Day 1: 20 Ideas, No Final Six Yet, and Where My Disk Space Went",
   "date": "2026-10-03",
-  "summary": "Agents produced 20 Git-for-agents approaches and measured 111.7 GiB of worktrees with 62.1% in dependencies and builds. By the October 3 morning standup, two research hypotheses remain, four places are open, there is no primary direction, and the website redesign stays in preview.",
+  "summary": "A team of AI coding agents researches what Git-like tools coding agents need. They collected 20 ideas; by the morning of October 3, two remain under research, four places are open and no idea leads. They also found that 62.1% of the 111.7 GiB my project copies use is installed libraries and build output, not Git.",
   "author": "Alexey Grigorev",
   "model": "Claude Opus 5.5 (claude-opus-5-5)",
   "source_cutoff": "2026-10-03T02:24:00Z",
@@ -26,7 +26,8 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/shortlist-6.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/9412520f58e2b457a0403b74f50ae8478e618571",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/4321187/research/codex/standup-2026-10-03.md",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/claude/standup-2026-10-03.md"
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/claude/standup-2026-10-03.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/approaches-20.md"
   ],
   "image": "../../assets/agent-git-illustration.png",
   "image_alt": "Conceptual illustration for the agent Git experiment; not measurement evidence",
@@ -37,7 +38,7 @@
   "editorial_review": "Evidence, privacy, full stylint and asset checks by desktop orchestrator",
   "article_sha256": "44a2ccae552a05a1ef7cb69db15caa0b403f07dfea76b3af54a4daffdbcbe202",
   "published_at": "2026-10-03T03:12:10.216532+00:00",
-  "corrected_at": "2026-10-03T07:33:39+00:00",
+  "corrected_at": "2026-10-03T10:51:35+00:00",
   "corrections": [
     {
       "at": "2026-10-03T03:58:19.692466+00:00",
@@ -61,6 +62,21 @@
         "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/shortlist-6.md",
         "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/9412520f58e2b457a0403b74f50ae8478e618571",
         "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/4321187/research/codex/standup-2026-10-03.md"
+      ]
+    },
+    {
+      "at": "2026-10-03T10:51:35+00:00",
+      "editor": "plain-language rewrite writer (Claude Opus 5.5, claude-opus-5-5)",
+      "requested_by": "Alexey Grigorev, direct user request on 2026-10-03: rewrite the daily report so people unfamiliar with the project can read it, without jargon or internal codes",
+      "reason": "Plain-language rewrite for readers new to the project; no new evidence and no change to source_cutoff or update_cutoff",
+      "details": "Whole article reworded: internal IDs (A01, A05, A06, A10, A16, A18, R12), role names, process words, hashes and engine-as-code references replaced with plain descriptions; technical terms explained at first use; link text made human-readable; link added to the new /ideas/ page that describes all 20 approaches (descriptions only, no statuses); dated correction and morning-update notes kept and reworded. Facts, numbers and dates unchanged except one label fix: A18 was called 'prompt continuation' but research/approaches-20.md and research/shortlist-6.md describe it as multi-repository change sets / Contract Packs. Title changed from 'Day 1: 20 Ideas, No Agreed Six, and Where My Worktree Disk Went'; summary and share text rewritten. Original writer provenance (actual_writer_models, published_at, article_sha256 of the published 07:33 edition) left unchanged; rewritten_article_sha256 records this version. Full stylint passed without ignores.",
+      "rewritten_article_sha256": "2e12cabbc8a8f66bd055e0b9bfb33a0b5aa116075894765f59312a297a8085e3",
+      "previous_title": "Day 1: 20 Ideas, No Agreed Six, and Where My Worktree Disk Went",
+      "previous_summary": "Agents produced 20 Git-for-agents approaches and measured 111.7 GiB of worktrees with 62.1% in dependencies and builds. By the October 3 morning standup, two research hypotheses remain, four places are open, there is no primary direction, and the website redesign stays in preview.",
+      "sources": [
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/approaches-20.md",
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/shortlist-6.md",
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/experiment/standups/2026-10-03.md"
       ]
     }
   ],
