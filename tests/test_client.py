@@ -12,6 +12,7 @@ from agent_branches.client import (
     AgentBranchesAPIError,
     AgentBranchesClient,
     AgentBranchesConnectionError,
+    StaleVectorError,
 )
 from agent_branches.git_utils import (
     get_changed_files,
@@ -39,7 +40,7 @@ class TestAgentBranchesClient(unittest.TestCase):
         cls.server.shutdown()
         cls.server.server_close()
 
-    def run_cli(self, args, env_vars=None, check=True):
+    def run_cli(self, args, env_vars=None, check=True, input_data=None):
         """Helper to run agent-branches CLI via subprocess."""
         cmd = [sys.executable, self.cli_path] + args
         env = dict(os.environ)
@@ -48,6 +49,7 @@ class TestAgentBranchesClient(unittest.TestCase):
             env.update(env_vars)
         res = subprocess.run(
             cmd,
+            input=input_data,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -59,6 +61,7 @@ class TestAgentBranchesClient(unittest.TestCase):
                 f"STDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
             )
         return res
+
 
     def test_01_mock_l1_server_routes_directly(self):
         """Test mock L1 server routes directly via urllib."""
@@ -573,7 +576,196 @@ class TestAgentBranchesClient(unittest.TestCase):
         self.assertTrue(res_dedup["deduped"])
         self.assertEqual(res_dedup["radar_checks"], 0)
 
+    def test_08_send_checks_success(self):
+        """Test sending CONTRACT v0.1 radar checks returns 200 accepted."""
+        client = AgentBranchesClient(server_url=self.server_url)
+        t_a = client.create_task(
+            repo="https://github.com/cf/repo.git",
+            base_sha="0000000000000000000000000000000000000000",
+            intent="Checks test agent A",
+            branch="feat/chk-a",
+            agent="chk-alpha",
+        )
+        t_b = client.create_task(
+            repo="https://github.com/cf/repo.git",
+            base_sha="0000000000000000000000000000000000000000",
+            intent="Checks test agent B",
+            branch="feat/chk-b",
+            agent="chk-beta",
+        )
+        sha_a = "1234567890123456789012345678901234567890"
+        sha_b = "9876543210987654321098765432109876543210"
+
+        client.push(task_id=t_a["taskId"], head_sha=sha_a)
+        client.push(task_id=t_b["taskId"], head_sha=sha_b)
+
+        v01_payload = {
+            "contract": "0.1",
+            "vector": {
+                t_a["agentId"]: sha_a,
+                t_b["agentId"]: sha_b,
+            },
+            "policy": {
+                "merge": "git-merge-tree",
+                "tests": {"command": ["npm", "test"], "budget_s": 15.0},
+            },
+            "coverage": {
+                "pairs_checked": 1,
+                "tests_collected": 5,
+            },
+            "results": [
+                {
+                    "pair": [t_a["agentId"], t_b["agentId"]],
+                    "heads": {
+                        t_a["agentId"]: sha_a,
+                        t_b["agentId"]: sha_b,
+                    },
+                    "status": "clean",
+                    "kind": "textual",
+                    "evidence": {
+                        "summary": "clean textual merge",
+                        "files": [],
+                    },
+                }
+            ],
+        }
+
+        res = client.send_checks(v01_payload)
+        self.assertEqual(res["accepted"], 1)
+        self.assertEqual(len(res["pairs"]), 1)
+        self.assertEqual(res["pairs"][0]["status"], "clean")
+
+    def test_09_send_checks_stale_vector_409(self):
+        """Test sending checks with a stale head vector raises StaleVectorError (HTTP 409)."""
+        client = AgentBranchesClient(server_url=self.server_url)
+        t_a = client.create_task(
+            repo="https://github.com/cf/repo.git",
+            base_sha="0000000000000000000000000000000000000000",
+            intent="Stale vector agent A",
+            branch="feat/stale-a",
+            agent="stale-alpha",
+        )
+        sha_current = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        sha_stale = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+
+        client.push(task_id=t_a["taskId"], head_sha=sha_current)
+
+        # Vector specifies sha_stale which does not match coordinator's head sha_current
+        stale_payload = {
+            "contract": "0.1",
+            "vector": {
+                t_a["agentId"]: sha_stale,
+            },
+            "results": [
+                {
+                    "pair": [t_a["agentId"], "other-agent"],
+                    "status": "clean",
+                }
+            ],
+        }
+
+        # 1. Asserts StaleVectorError is raised
+        with self.assertRaises(StaleVectorError) as ctx:
+            client.send_checks(stale_payload)
+        self.assertEqual(ctx.exception.status_code, 409)
+        self.assertIn("Head vector is stale", ctx.exception.message)
+
+        # 2. Asserts return_error_dict=True returns structured dict
+        err_dict = client.send_checks(stale_payload, return_error_dict=True)
+        self.assertEqual(err_dict["error"], "stale_vector")
+        self.assertEqual(err_dict["status_code"], 409)
+
+    def test_10_cli_checks_command(self):
+        """Test CLI checks command with file input, piped stdin, and stale vector."""
+        import tempfile
+
+        client = AgentBranchesClient(server_url=self.server_url)
+        t_a = client.create_task(
+            repo="https://github.com/cf/repo.git",
+            base_sha="0000000000000000000000000000000000000000",
+            intent="CLI checks agent A",
+            branch="feat/cli-chk-a",
+            agent="clichk-alpha",
+        )
+        t_b = client.create_task(
+            repo="https://github.com/cf/repo.git",
+            base_sha="0000000000000000000000000000000000000000",
+            intent="CLI checks agent B",
+            branch="feat/cli-chk-b",
+            agent="clichk-beta",
+        )
+        sha_a = "ffffffffffffffffffffffffffffffffffffffff"
+        sha_b = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+
+        client.push(task_id=t_a["taskId"], head_sha=sha_a)
+        client.push(task_id=t_b["taskId"], head_sha=sha_b)
+
+        valid_payload = {
+            "contract": "0.1",
+            "vector": {
+                t_a["agentId"]: sha_a,
+                t_b["agentId"]: sha_b,
+            },
+            "results": [
+                {
+                    "pair": [t_a["agentId"], t_b["agentId"]],
+                    "status": "conflict",
+                    "kind": "textual",
+                    "evidence": {"summary": "conflict in auth.ts"},
+                }
+            ],
+        }
+
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tf:
+            json.dump(valid_payload, tf)
+            tf_path = tf.name
+
+        try:
+            # 1. CLI checks --file <payload.json>
+            res_file = self.run_cli(["checks", "--file", tf_path, "--server", self.server_url])
+            self.assertIn("RADAR CHECKS SUBMITTED (CONTRACT v0.1)", res_file.stdout)
+            self.assertIn("Accepted:  1 check(s)", res_file.stdout)
+
+            # 2. CLI checks --file <payload.json> --json
+            res_json = self.run_cli(
+                ["checks", "--file", tf_path, "--server", self.server_url, "--json"]
+            )
+            data = json.loads(res_json.stdout)
+            self.assertEqual(data["accepted"], 1)
+
+            # 3. CLI checks piped via stdin
+            res_stdin = self.run_cli(
+                ["checks", "--server", self.server_url],
+                input_data=json.dumps(valid_payload),
+            )
+            self.assertIn("RADAR CHECKS SUBMITTED", res_stdin.stdout)
+
+            # 4. CLI checks with stale vector -> exits with code 1
+            stale_cli_payload = dict(valid_payload)
+            stale_cli_payload["vector"] = {
+                t_a["agentId"]: "0000000000000000000000000000000000000000"
+            }
+            with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tf_stale:
+                json.dump(stale_cli_payload, tf_stale)
+                tf_stale_path = tf_stale.name
+
+            try:
+                res_stale = self.run_cli(
+                    ["checks", "--file", tf_stale_path, "--server", self.server_url],
+                    check=False,
+                )
+                self.assertEqual(res_stale.returncode, 1)
+                self.assertIn("409", res_stale.stderr)
+                self.assertIn("Stale vector", res_stale.stderr)
+            finally:
+                if os.path.exists(tf_stale_path):
+                    os.remove(tf_stale_path)
+        finally:
+            if os.path.exists(tf_path):
+                os.remove(tf_path)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

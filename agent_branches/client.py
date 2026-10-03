@@ -28,6 +28,11 @@ class AgentBranchesAPIError(AgentBranchesError):
         self.payload = payload
 
 
+class StaleVectorError(AgentBranchesAPIError):
+    """Raised when the L1 coordinator returns HTTP 409 Conflict due to a stale head vector."""
+    pass
+
+
 class AgentBranchesClient:
     """Robust, lightweight client for Cloudflare Agent Branches L1 Coordinator."""
 
@@ -81,11 +86,14 @@ class AgentBranchesClient:
             if err_body:
                 try:
                     payload = json.loads(err_body.decode("utf-8"))
-                    if isinstance(payload, dict) and "error" in payload:
-                        err_msg = payload["error"]
+                    if isinstance(payload, dict):
+                        err_msg = payload.get("message") or payload.get("error") or err_msg
                 except Exception:
                     err_msg = err_body.decode("utf-8", errors="replace")
+            if exc.code == 409:
+                raise StaleVectorError(exc.code, str(err_msg), payload) from exc
             raise AgentBranchesAPIError(exc.code, str(err_msg), payload) from exc
+
         except (urllib.error.URLError, ConnectionError, OSError) as exc:
             reason = getattr(exc, "reason", str(exc))
             raise AgentBranchesConnectionError(
@@ -253,6 +261,58 @@ class AgentBranchesClient:
             payload["taskId"] = task_id
 
         return self._request("POST", f"/warnings/{encoded_id}/ack", payload)
+
+    def send_checks(
+        self,
+        payload: Dict[str, Any],
+        runner_token: Optional[str] = None,
+        return_error_dict: bool = False,
+    ) -> Dict[str, Any]:
+        """Submit radar evaluation check results to L1 coordinator (POST /checks).
+
+        Validates CONTRACT v0.1 schema:
+            payload must contain 'contract', 'vector', 'results'.
+
+        Args:
+            payload: CONTRACT v0.1 check payload dictionary.
+            runner_token: Optional runner bearer token (defaults to $RUNNER_TOKEN).
+            return_error_dict: If True, returns structured dict on 409 StaleVectorError
+                               instead of raising exception.
+
+        Returns:
+            Coordinator response dict (e.g. {accepted, pairs, createdWarnings}).
+
+        Raises:
+            ValueError: If payload fails validation.
+            StaleVectorError: On HTTP 409 Conflict (stale vector) if return_error_dict is False.
+            AgentBranchesAPIError: On other API errors.
+        """
+        if not isinstance(payload, dict):
+            raise ValueError("checks payload must be a JSON dictionary")
+        if "contract" not in payload:
+            raise ValueError("checks payload missing required 'contract' field")
+        if "vector" not in payload:
+            raise ValueError("checks payload missing required 'vector' field")
+        if "results" not in payload or not isinstance(payload["results"], list):
+            raise ValueError("checks payload missing required 'results' list")
+
+        req_headers: Dict[str, str] = {}
+        token = runner_token or os.environ.get("RUNNER_TOKEN")
+        if token:
+            req_headers["Authorization"] = f"Bearer {token}"
+
+        try:
+            return self._request("POST", "/checks", payload, headers=req_headers)
+        except StaleVectorError as exc:
+            if return_error_dict:
+                return {
+                    "error": "stale_vector",
+                    "status_code": 409,
+                    "message": exc.message,
+                    "details": exc.payload,
+                }
+            raise
+
 
     # MCP-compatible aliases (CONTRACT-L2-L3 Section 2.2)
     def branches_create_task(

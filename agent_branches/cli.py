@@ -11,7 +11,9 @@ from agent_branches.client import (
     AgentBranchesClient,
     AgentBranchesConnectionError,
     AgentBranchesError,
+    StaleVectorError,
 )
+
 from agent_branches.git_utils import (
     get_changed_files,
     get_current_branch,
@@ -198,7 +200,34 @@ def format_ack_result(res: dict) -> str:
     ])
 
 
+def format_checks_result(res: dict) -> str:
+
+    """Format checks submission response."""
+    accepted = res.get("accepted", 0)
+    pairs = res.get("pairs", [])
+    created = res.get("createdWarnings", [])
+
+    lines = [
+        "========================================",
+        "  RADAR CHECKS SUBMITTED (CONTRACT v0.1)",
+        "========================================",
+        f"  Accepted:  {accepted} check(s)",
+        f"  Pairs:     {len(pairs)}",
+        f"  Warnings:  {len(created)} created",
+    ]
+    if created:
+        lines.append("\n  New Warning(s):")
+        for w in created:
+            wid = w.get("id") or w.get("warning_id") or "unknown"
+            status = w.get("status", "active")
+            reason = w.get("reason", "unknown")
+            lines.append(f"  - [{wid}] ({status}) {reason}")
+    lines.append("========================================")
+    return "\n".join(lines)
+
+
 def build_parser() -> argparse.ArgumentParser:
+
     """Construct argument parser for agent-branches CLI."""
     parser = argparse.ArgumentParser(
         prog="agent-branches",
@@ -284,7 +313,23 @@ def build_parser() -> argparse.ArgumentParser:
     ack_parser.add_argument("--server", help="Coordinator URL")
     ack_parser.add_argument("--json", action="store_true", help="Output raw JSON")
 
+    # checks command (CONTRACT v0.1)
+    checks_parser = subparsers.add_parser(
+        "checks", help="Submit radar check results (CONTRACT v0.1)"
+    )
+    checks_parser.add_argument(
+        "--file",
+        help="Path to JSON checks payload file (reads from stdin if omitted)",
+    )
+    checks_parser.add_argument(
+        "--runner-token",
+        help="Runner bearer token for check submission (or $RUNNER_TOKEN)",
+    )
+    checks_parser.add_argument("--server", help="Coordinator URL")
+    checks_parser.add_argument("--json", action="store_true", help="Output raw JSON")
+
     return parser
+
 
 
 def handle_task_create(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
@@ -388,6 +433,61 @@ def handle_ack(args: argparse.Namespace, client: AgentBranchesClient, as_json: b
     return 0
 
 
+def handle_checks(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
+    payload_raw = None
+    if getattr(args, "file", None):
+        try:
+            with open(args.file, "r", encoding="utf-8") as f:
+                payload_raw = f.read()
+        except OSError as exc:
+            print(f"Error reading file '{args.file}': {exc}", file=sys.stderr)
+            return 1
+    else:
+        if sys.stdin.isatty():
+            print("Error: specify --file <payload.json> or pipe JSON to stdin", file=sys.stderr)
+            return 1
+        payload_raw = sys.stdin.read()
+
+    try:
+        payload = json.loads(payload_raw)
+    except json.JSONDecodeError as exc:
+        print(f"Error parsing JSON payload: {exc}", file=sys.stderr)
+        return 1
+
+    runner_token = getattr(args, "runner_token", None) or os.environ.get("RUNNER_TOKEN")
+
+    try:
+        res = client.send_checks(payload, runner_token=runner_token)
+    except StaleVectorError as exc:
+        if as_json:
+            print(
+                json.dumps(
+                    {
+                        "error": "stale_vector",
+                        "status_code": 409,
+                        "message": exc.message,
+                        "details": exc.payload,
+                    },
+                    indent=2,
+                ),
+                file=sys.stderr,
+            )
+        else:
+            print(f"Conflict Error (409): Stale vector - {exc.message}", file=sys.stderr)
+            if exc.payload:
+                print(f"Details: {exc.payload}", file=sys.stderr)
+        return 1
+    except (ValueError, AgentBranchesAPIError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    if as_json:
+        print(json.dumps(res, indent=2))
+    else:
+        print(format_checks_result(res))
+    return 0
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     """Main CLI entrypoint."""
     parser = build_parser()
@@ -414,18 +514,24 @@ def main(argv: Optional[List[str]] = None) -> int:
             return handle_status(args, client, as_json)
         elif args.command == "ack":
             return handle_ack(args, client, as_json)
+        elif args.command == "checks":
+            return handle_checks(args, client, as_json)
         else:
             parser.print_help()
             return 1
     except AgentBranchesConnectionError as exc:
         print(f"Connection Error: {exc}", file=sys.stderr)
         return 2
+    except StaleVectorError as exc:
+        print(f"Conflict Error (409): Stale vector - {exc.message}", file=sys.stderr)
+        return 1
     except AgentBranchesAPIError as exc:
         print(f"API Error ({exc.status_code}): {exc.message}", file=sys.stderr)
         return 1
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
+
 
 
 if __name__ == "__main__":

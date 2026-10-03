@@ -21,10 +21,19 @@ import urllib.parse
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 
+class MockStaleVectorError(Exception):
+    """Raised when head vector is stale."""
+    pass
+
+
 class MockCoordinatorState:
     """Thread-safe in-memory state for mock L1 coordinator."""
 
-    def __init__(self, expected_admin_token: Optional[str] = None):
+    def __init__(
+        self,
+        expected_admin_token: Optional[str] = None,
+        expected_runner_token: Optional[str] = None,
+    ):
         self.lock = threading.Lock()
         self.seq = 0
         self.tasks: Dict[str, Dict[str, Any]] = {}
@@ -35,6 +44,8 @@ class MockCoordinatorState:
         self.canonical_name = "agent-branches-canonical"
         self.canonical_remote = "https://git.cloudflare.local/canonical.git"
         self.expected_admin_token = expected_admin_token
+        self.expected_runner_token = expected_runner_token
+
 
     def create_task(self, data: Dict[str, Any]) -> Dict[str, Any]:
         with self.lock:
@@ -261,6 +272,96 @@ class MockCoordinatorState:
                 "acknowledged_at": now,
             }
 
+    def apply_checks(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        with self.lock:
+            contract = data.get("contract")
+            if contract != "0.1":
+                raise ValueError("contract must be '0.1'")
+
+            vector = data.get("vector")
+            if not isinstance(vector, dict):
+                raise ValueError("vector must be a dictionary")
+
+            results = data.get("results")
+            if not isinstance(results, list):
+                raise ValueError("results must be a list")
+
+            # Check vector freshness against current heads in state
+            current_heads: Dict[str, str] = {}
+            for t in self.tasks.values():
+                if t.get("head_sha"):
+                    current_heads[t["agent_id"]] = t["head_sha"]
+                    current_heads[t["task_id"]] = t["head_sha"]
+
+            for agent_or_task, expected_sha in vector.items():
+                actual_sha = current_heads.get(agent_or_task)
+                if actual_sha is not None and actual_sha != expected_sha:
+                    raise MockStaleVectorError(
+                        f"Head vector is stale: {agent_or_task} is at {actual_sha}, "
+                        f"vector specified {expected_sha}"
+                    )
+
+            now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            created_warnings: List[Dict[str, Any]] = []
+            pair_views: List[Dict[str, Any]] = []
+
+            for r in results:
+                pair = r.get("pair", [])
+                status = r.get("status", "unknown")
+                kind = r.get("kind")
+                evidence = r.get("evidence")
+
+                active_warning_ids = []
+                if status == "conflict":
+                    warn_idx = len(self.warnings) + 1
+                    warn_id = f"warn-chk-{warn_idx:03d}"
+                    reason = (
+                        evidence.get("summary")
+                        if isinstance(evidence, dict) and evidence.get("summary")
+                        else str(evidence or "conflict")
+                    )
+                    warn_record = {
+                        "warning_id": warn_id,
+                        "id": warn_id,
+                        "pair": pair,
+                        "kind": kind or "textual",
+                        "reason": reason,
+                        "evidence": evidence,
+                        "status": "active",
+                        "created_at_ms": int(time.time() * 1000),
+                        "created_at": now,
+                    }
+                    self.warnings[warn_id] = warn_record
+                    created_warnings.append(warn_record)
+                    active_warning_ids.append(warn_id)
+                elif status == "clean":
+                    # Invalidate active warnings for this pair
+                    for w in self.warnings.values():
+                        if w.get("status") == "active" and all(
+                            p in w.get("pair", []) for p in pair
+                        ):
+                            w["status"] = "invalidated"
+                            w["invalidated_at"] = now
+                            w["resolved_by"] = "clean check"
+
+                pair_views.append({
+                    "pair": pair,
+                    "heads": r.get("heads", {}),
+                    "status": status,
+                    "kind": kind,
+                    "evidence": evidence,
+                    "checkedAt": now,
+                    "stale": False,
+                    "activeWarningIds": active_warning_ids,
+                })
+
+            return {
+                "accepted": len(results),
+                "pairs": pair_views,
+                "createdWarnings": created_warnings,
+            }
+
+
 
 class MockL1Handler(http.server.BaseHTTPRequestHandler):
     """HTTP Request Handler implementing L1 Coordinator routes."""
@@ -329,6 +430,33 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
                 self._send_json(400, {"error": str(exc)})
             return
 
+        # POST /checks (CONTRACT v0.1)
+        if path == "/checks":
+            if self.state.expected_runner_token is not None:
+                auth_header = self.headers.get("Authorization", "")
+                expected = f"Bearer {self.state.expected_runner_token}"
+                if auth_header != expected:
+                    self._send_json(401, {"error": "unauthorized: missing or invalid bearer token (RUNNER_TOKEN)"})
+                    return
+
+            try:
+                body = self._read_json()
+            except ValueError as exc:
+                self._send_json(400, {"error": str(exc)})
+                return
+
+            try:
+                res = self.state.apply_checks(body)
+                self._send_json(200, res)
+            except MockStaleVectorError as exc:
+                self._send_json(409, {
+                    "error": "stale_vector",
+                    "message": str(exc),
+                })
+            except ValueError as exc:
+                self._send_json(400, {"error": str(exc)})
+            return
+
         # POST /warnings/<id>/ack
         ack_match = re.match(r"^/warnings/([^/]+)/ack$", path)
         if ack_match:
@@ -386,13 +514,17 @@ def start_mock_l1_server(
     host: str = "127.0.0.1",
     port: int = 0,
     expected_admin_token: Optional[str] = None,
+    expected_runner_token: Optional[str] = None,
 ) -> Tuple[MockL1Server, threading.Thread, str, MockCoordinatorState]:
     """Start mock L1 coordinator on host and ephemeral or specified port.
 
     Returns:
         (server, thread, server_url, state)
     """
-    state = MockCoordinatorState(expected_admin_token=expected_admin_token)
+    state = MockCoordinatorState(
+        expected_admin_token=expected_admin_token,
+        expected_runner_token=expected_runner_token,
+    )
     server = MockL1Server((host, port), state=state)
     actual_port = server.server_address[1]
     server_url = f"http://{host}:{actual_port}"
@@ -400,6 +532,7 @@ def start_mock_l1_server(
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     return server, thread, server_url, state
+
 
 
 def main() -> None:
