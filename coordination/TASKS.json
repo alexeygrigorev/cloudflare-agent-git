@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T12:52:48.000000+00:00",
+  "updated_at": "2026-10-03T13:06:44.846240+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -22,14 +22,14 @@
       "id": "zcodex-retry-design",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-03T09:05:00.000000+00:00",
+      "status": "parked",
+      "updated_at": "2026-10-03T13:06:44.846240+00:00",
       "evidence_paths": [
         "research/antigravity/r10-zcodex-retry-suppression-design.md",
         "research/antigravity/r11-real-duplicate-incidence.md"
       ],
       "blocked_on": [],
-      "next_action": "R10 design updated (commit 0c75ec7): pinned zcode.cjs to 14,796,490 B (SHA256 8f5cfccf2a899b92e57bc2a5760b949c1a928f739652fffc9e6d07c24f11ba05), retracted ToolBatchComplete as pre-permission boundary (byte 13,146,421 proves it is execution completion), and marked stdout buffer/synchrony UNKNOWN. R11 empirical audit completed (commit 2859edc): 12,619 hidden inner duplicates (99.3% incidence) and 177 visible model retries (27.9% incidence) quantified across 147 rollouts. Retained in design state pending runtime lifecycle stabilization.",
+      "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
       "acceptance": "DIAGNOSIS + patch diff + test plan for denial suppression/turn-end at tool boundary, Muse review, no build without a budget guard.",
       "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10014-a645). Design only, no compilation until budget guard is established."
     },
@@ -37,8 +37,8 @@
       "id": "prompt-ready-lifecycle",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-03T09:14:00.000000+00:00",
+      "status": "parked",
+      "updated_at": "2026-10-03T13:06:44.846240+00:00",
       "evidence_paths": [
         "research/antigravity/r17-after-idle-safety-fix.md",
         "research/antigravity/r12-scoped-ca1-pilot-verification.md",
@@ -48,7 +48,7 @@
         ".local/muse-r21/verdict.md"
       ],
       "blocked_on": [],
-      "next_action": "R17 after-idle safety fix completed on fix/prompt-ready-lifecycle (commit 7efa493): removed premature setSessionState(sessionID, \"idle\") on pending.size === 0 in tool.execute.after. Pinned candidate binary .local/producer-review/bin/aplexer-7efa493 (sha256 06b1a842...). muse-r20 passed 16/16 negatives (exit 0) and owner runtime test (exit 0). muse-r21 verified binary fidelity (126/126 region lines verbatim, 0 MISS), extended negatives (21/21 PASS, exit 0), and 492cf76 rerun review, issuing APPROVE (.local/muse-r21/verdict.md). Scoped reversible receiver continuation trial in progress on candidate binary.",
+      "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
       "acceptance": "Genuine PromptReady / turn-completion readiness signal per engine (hook-emitted at end of each turn, refreshed rather than expiring while the composer stays empty), with narrow negative tests (busy, draft, unknown screen, expired-without-refresh), reviewed by Muse before rollout.",
       "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10011-df10). Reproductions analyzed: Grok (0000ea93) waiting-expired and Bunny (848ff637) idle contradicted by PTY redraw. Fix designed and committed in protocol repo on fix/prompt-ready-lifecycle."
     },
@@ -56,8 +56,8 @@
       "id": "safe-autonomous-continuation",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-03T09:14:00.000000+00:00",
+      "status": "parked",
+      "updated_at": "2026-10-03T13:06:44.846240+00:00",
       "evidence_paths": [
         "research/antigravity/r12-scoped-ca1-pilot-verification.md",
         "research/antigravity/r17-after-idle-safety-fix.md",
@@ -67,7 +67,7 @@
         ".local/continuation-trial/**"
       ],
       "blocked_on": [],
-      "next_action": "Receiver-owned native continuation trial packet prepared at .local/continuation-trial/ with candidate binary .local/producer-review/bin/aplexer-7efa493 (06b1a842...). Protocol: twice empty-composer verification, active-busy tool negative (sleep 15 live in proc), active model reasoning negative, unfinished draft negative, followed by two consecutive autonomous receiver cycles with zero PTY leak, disk artifacts, and correlated ACKs. Rollback path to installed 8d49a216 preserved.",
+      "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
       "acceptance": "Source/negative draft-busy tests and actual repeated continuation cycles; no invented all-engine recovery.",
       "assignment_ack": "ACK: owned by antigravity-head. Pinned commit 7a9b46d on fix/continuation-readiness-pane-race in cloudflare-aplexer-protocol (PromptState enum Empty/Draft/Unknown, real OpenCode/Grok/Codex/Shell fixtures, verify_pane_delivery correlated working transition, --next continuation queue; 212 unit + 31 integration pass, 0B net compile growth). Change-story card published at research/antigravity/change-story-card-pane-continuation.md (commit 6214dec)."
     },
@@ -556,35 +556,33 @@
       "id": "agent-branches-l2-client",
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-03T12:52:48.000000+00:00",
+      "status": "in_progress",
+      "updated_at": "2026-10-03T13:06:44.846240+00:00",
       "evidence_paths": [
         "research/antigravity/agent-branches/CONTRACT-L2-L3.md",
-        "branch:proto/l2-client"
+        "branch:proto/l2-client",
+        "branch:proto/l2-client (f3ddd67)"
       ],
-      "blocked_on": [
-        "agent-branches-l1-base contract v0.1"
-      ],
+      "blocked_on": [],
       "assignment_ack": "antigravity-head ACK 01a101c5-6ded; executor l2-client-builder 98576653",
       "acceptance": "agents use plain git push; client registers tasks, reads status/warnings, acks, posts test provenance against L1 CONTRACT.md; tests; Muse review",
-      "next_action": "align to L1 CONTRACT.md v0.1 when published"
+      "next_action": "L2 client delivered at f3ddd67 (approved by Muse R43); adapting to CONTRACT v0.1 POST /checks and handling 409 stale vector"
     },
     {
       "id": "agent-branches-l3-radar",
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-03T12:52:48.000000+00:00",
+      "status": "in_progress",
+      "updated_at": "2026-10-03T13:06:44.846240+00:00",
       "evidence_paths": [
         "branch:proto/l3-radar",
-        ".local/muse-r41/verdict.md"
+        ".local/muse-r41/verdict.md",
+        "branch:proto/l3-radar (1632a31)"
       ],
-      "blocked_on": [
-        "Muse R41 CHANGES (6 defects)"
-      ],
+      "blocked_on": [],
       "assignment_ack": "antigravity-head ACK 01a101c5-6ded; executor l3-radar-builder 00ea32c5",
       "acceptance": "trusted local runner; status conflict|clean|unknown|not_checked, clean only with merge+>=1 collected test; sandboxed exec; POST /checks versioned; Muse re-review",
-      "next_action": "fix R41 D1-D6, re-pin, Muse re-review"
+      "next_action": "L3 radar delivered at 1632a31 (excised custom callback, pure hardened CLI runner with RLIMIT/safe-tar/positive tests, under Muse R44 review); adding CONTRACT v0.1 export adapter"
     }
   ]
 }
