@@ -61,3 +61,49 @@ Resource gates at start:
    targets, parallel) vs AGENT-BRANCHES MODE (one shared warm target for the
    base commit, max 2 concurrent jobs admitted on a 10 GiB MemAvailable
    budget). Raw numbers in `bench/results.json` + `bench/README.md`.
+
+### Outcome (same day)
+
+**Overlap facts** — `verify-overlap.sh` → `ALL_FACTS_PASS` (exit 0),
+report at `.harness/scratch/verify-report.txt`:
+- T1+T2: git merge exits 1, `src/lib.rs` unresolved (both rewrite `Entry` +
+  `resolve`) — textual conflict, as designed.
+- T2+T3: git merge exits 0 clean (disjoint files), then merged tree fails to
+  compile: `error[E0277]: Resolved<'_> doesn't implement std::fmt::Display`
+  (T3's `audit_line` keeps the old `Option<&str>` contract) — the expensive
+  cross-ownership semantic break.
+- T1, T2, T3 each green alone (10+4, 8+4, 8+1+4 tests, GUARD_SUCCESS each).
+
+**A/B bench** (single run, N=3, zero-dep crate; full raw numbers in
+`bench/results.json`, summary in `bench/README.md`, as of 2026-10-03T18:11):
+
+| metric | NAIVE (3 private cold targets) | shared warm target |
+|---|---|---|
+| target bytes after batch (du -sb) | 81,064,717 (3 × 27 MB) | 27,021,867 |
+| batch wall (s) | 0.855 | 0.303 (+prewarm 0.734 = 1.037 total) |
+| per-job max-RSS sum, upper bound (KiB) | 427,712 | 213,380 |
+| incremental after 1-line edit (s) | 0.316 | 0.444 |
+
+Honest reading: at this scale the structural multipliers are exactly the
+user's pain — 3.0× disk duplication and ~2× concurrent compile RSS upper
+bound for naive — while wall time does NOT yet favor sharing (cargo also
+file-locks the shared dir, serializing mode B). No extrapolation claimed;
+dep-graph-heavy real fleets and N≫3 are where the pain dominates.
+
+**Resource accounting**: every cargo invocation wrapped by
+`scripts/guard/build_guard.py` (`--max-growth-mb 1024 --min-free-mb 51200
+--timeout 300`), `cargo --jobs 2`, MemAvailable ≥ 10 GiB gated before every
+launch (min observed 30.4 GiB), disk free ≥ 50 GB gated (min observed
+69 GB). Final target dirs inside rust-demo: ~149 MB total (crate 27 MB +
+bench naive 3×27 MB + shared warm 34 MB), well under the 3 GB cap; verify
+scratch targets (~5 × 30 MB, transient, rebuilt per run) excluded from that
+inventory. Nothing outside `rust-demo/` was written; `~/git/codex-zcode`
+never touched. No cargo profile changes (Cargo.toml `[profile.test]` fixed
+at base commit before any measurement).
+
+**Known limitations**: kernel 6.8 cannot reset `memory.peak`, so cgroup
+readings are cumulative since cgroup creation and not comparable between
+modes — per-mode comparison uses `/usr/bin/time -v` max-RSS and its
+upper-bound sum. Wall times are single-run on a shared desktop host
+(naive batch varied 0.87–1.33 s across runs).
+
