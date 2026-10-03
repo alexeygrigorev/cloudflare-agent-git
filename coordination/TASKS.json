@@ -177,7 +177,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T08:19:53.847160+00:00",
+      "updated_at": "2026-10-03T08:52:34.988649+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/oversight-human31.md",
@@ -185,7 +185,7 @@
         "research/codex/a18-source-review.md"
       ],
       "blocked_on": [],
-      "next_action": "Independently verified actual Go/Muse ca1 receiving cycles and binary hashes; Ant ACKs active-tool chronology correction, refined negative running and Muse independent review pending. Muse A07 relabels source-existence only, four-artifact gate incomplete; actual R13 bound worker first tools reviewing pinned R2 guard. Ant accepts cross-store metrics adapter ownership, delegated implementation/independent tests requested. Z actual BASE known-good positive absent; six A01 trials HOLD. Grok/Bunny safe native continuation repair queued. Claude corrected daily factual PASS a6191df; design held. Next corrected pilot/review/adapter first artifact or mutual within5min; lightweight native wait, no principal implementation.",
+      "next_action": "Reviewed metrics correction f8707e4 independently approved by Muse R16; actual collector664c4677 both stores/645 records/3 registered/6 attributed, worker registration coverage still partial. Corrected pilot492cf76 active-tool chronology and real repeated turns verified; independent exact-rerun acceptance pending. Claude/Codex hold one-head widening for genuine lifecycle fix: after-tool pending0 may overwrite busy; Muse R17 producer mechanism accepted narrowly, consumer fail-open overclaim corrected/requested. Ant owns fix/negatives/integration. Muse owns A06 calibration correction and next immutable pending-decision packet, not efficacy; actual new review teams and first artifacts verified. Publication main-push CI trigger removed remotely48e698d; live jobs/5-family design acceptance pending under Claude/head. Z BASE positive missing/all6trial HOLD; Grok/Bunny/Z native readiness repair blocked and head-owned. Next owner artifact or mutual within5min/native wait, no principal implementation.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
