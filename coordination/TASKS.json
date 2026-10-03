@@ -23,14 +23,13 @@
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
       "status": "running",
-      "updated_at": "2026-10-03T05:48:00.000000+00:00",
+      "updated_at": "2026-10-03T09:05:00.000000+00:00",
       "evidence_paths": [
         "research/antigravity/r10-zcodex-retry-suppression-design.md",
-        "research/antigravity/r11-real-duplicate-incidence.md",
-        "research/muse/review-round23.md"
+        "research/antigravity/r11-real-duplicate-incidence.md"
       ],
       "blocked_on": [],
-      "next_action": "R10 design updated (commit 0c75ec7): pinned zcode.cjs to 14,796,490 B (SHA256 8f5cfccf2a899b92e57bc2a5760b949c1a928f739652fffc9e6d07c24f11ba05), retracted ToolBatchComplete as pre-permission boundary (byte 13,146,421 proves it is execution completion), and marked stdout buffer/synchrony UNKNOWN. R11 empirical audit completed (commit 2859edc): 12,619 hidden inner duplicates (99.3% incidence) and 177 visible model retries (27.9% incidence) quantified across 147 rollouts. Zero build, zero provider calls. Ready for independent review.",
+      "next_action": "R10 design updated (commit 0c75ec7): pinned zcode.cjs to 14,796,490 B (SHA256 8f5cfccf2a899b92e57bc2a5760b949c1a928f739652fffc9e6d07c24f11ba05), retracted ToolBatchComplete as pre-permission boundary (byte 13,146,421 proves it is execution completion), and marked stdout buffer/synchrony UNKNOWN. R11 empirical audit completed (commit 2859edc): 12,619 hidden inner duplicates (99.3% incidence) and 177 visible model retries (27.9% incidence) quantified across 147 rollouts. Retained in design state pending runtime lifecycle stabilization.",
       "acceptance": "DIAGNOSIS + patch diff + test plan for denial suppression/turn-end at tool boundary, Muse review, no build without a budget guard.",
       "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10014-a645). Design only, no compilation until budget guard is established."
     },
@@ -39,13 +38,16 @@
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
       "status": "running",
-      "updated_at": "2026-10-03T05:48:00.000000+00:00",
+      "updated_at": "2026-10-03T09:05:00.000000+00:00",
       "evidence_paths": [
-        "research/antigravity/change-story-card-pane-continuation.md",
-        "coordination/aplexer-repair.md"
+        "research/antigravity/r17-after-idle-safety-fix.md",
+        "research/antigravity/r12-scoped-ca1-pilot-verification.md",
+        ".local/muse-r17/verdict.md",
+        ".local/muse-r20/verdict.md",
+        ".local/producer-review/bin/aplexer-7efa493"
       ],
       "blocked_on": [],
-      "next_action": "Verifier hardened on fix/prompt-ready-lifecycle (commit 07f59e8): IDLE_ACTIVITY_GRACE_MS and idle_was_contradicted_with_hooks exported publicly, Antigravity timer redraw exemption preserved, expired waiting strictly rejected. Producer-side engine completion hook (delivering fresh genuine idle after completed TUI rendering) identified as required fix for Grok expired-waiting and Bunny 3.3s redraw. Rollout withheld pending independent Muse review.",
+      "next_action": "R17 after-idle safety fix completed on fix/prompt-ready-lifecycle (commit 7efa493): removed premature setSessionState(sessionID, \"idle\") on pending.size === 0 in tool.execute.after. Working state preserved across multi-second reasoning gaps until genuine session.status (idle) / session.idle. Pinned binary .local/producer-review/bin/aplexer-7efa493 (sha256 06b1a842, chmod a-w). muse-r20 independent verification passed 16/16 own negatives (exit 0) and owner runtime test (exit 0) with verdict APPROVE. Awaiting final Muse review collection before single-head continuation trials.",
       "acceptance": "Genuine PromptReady / turn-completion readiness signal per engine (hook-emitted at end of each turn, refreshed rather than expiring while the composer stays empty), with narrow negative tests (busy, draft, unknown screen, expired-without-refresh), reviewed by Muse before rollout.",
       "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10011-df10). Reproductions analyzed: Grok (0000ea93) waiting-expired and Bunny (848ff637) idle contradicted by PTY redraw. Fix designed and committed in protocol repo on fix/prompt-ready-lifecycle."
     },
@@ -54,13 +56,15 @@
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
       "status": "running",
-      "updated_at": "2026-10-03T03:59:00.000000+00:00",
+      "updated_at": "2026-10-03T09:05:00.000000+00:00",
       "evidence_paths": [
-        "coordination/aplexer-repair.md",
-        "research/antigravity/change-story-card-pane-continuation.md"
+        "research/antigravity/r12-scoped-ca1-pilot-verification.md",
+        "research/antigravity/r17-after-idle-safety-fix.md",
+        ".local/pilot-ca1/PILOT-REPORT.md",
+        ".local/pilot-ca1/pilot_results.json"
       ],
       "blocked_on": [],
-      "next_action": "Await Muse A06 evaluation (Phase A blind on commit 7a9b46d, Phase B on change-story card 6214dec); execute native readiness recovery for grok-head and zcode-independent.",
+      "next_action": "Scoped candidate ca1e8030 pilot successfully demonstrated active child tool subprocess negative (sleep 20 live in /proc, part brackets probe, exit 1 fail-closed, 0 PTY byte leakage) and two consecutive real receiving cycles with artifacts and correlated ACKs (commit 492cf76). Post-R20 verification next step: trial receiver-owned native continuation hook on disposable session with twice empty-composer observations, bounded recipient native-delivery of queued envelope, and NOTREADY/uncertain preservation without retry/Enter.",
       "acceptance": "Source/negative draft-busy tests and actual repeated continuation cycles; no invented all-engine recovery.",
       "assignment_ack": "ACK: owned by antigravity-head. Pinned commit 7a9b46d on fix/continuation-readiness-pane-race in cloudflare-aplexer-protocol (PromptState enum Empty/Draft/Unknown, real OpenCode/Grok/Codex/Shell fixtures, verify_pane_delivery correlated working transition, --next continuation queue; 212 unit + 31 integration pass, 0B net compile growth). Change-story card published at research/antigravity/change-story-card-pane-continuation.md (commit 6214dec)."
     },
@@ -177,7 +181,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T08:52:34.988649+00:00",
+      "updated_at": "2026-10-03T09:09:22.497280+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/oversight-human31.md",
@@ -185,7 +189,7 @@
         "research/codex/a18-source-review.md"
       ],
       "blocked_on": [],
-      "next_action": "Reviewed metrics correction f8707e4 independently approved by Muse R16; actual collector664c4677 both stores/645 records/3 registered/6 attributed, worker registration coverage still partial. Corrected pilot492cf76 active-tool chronology and real repeated turns verified; independent exact-rerun acceptance pending. Claude/Codex hold one-head widening for genuine lifecycle fix: after-tool pending0 may overwrite busy; Muse R17 producer mechanism accepted narrowly, consumer fail-open overclaim corrected/requested. Ant owns fix/negatives/integration. Muse owns A06 calibration correction and next immutable pending-decision packet, not efficacy; actual new review teams and first artifacts verified. Publication main-push CI trigger removed remotely48e698d; live jobs/5-family design acceptance pending under Claude/head. Z BASE positive missing/all6trial HOLD; Grok/Bunny/Z native readiness repair blocked and head-owned. Next owner artifact or mutual within5min/native wait, no principal implementation.",
+      "next_action": "Actual frozen lifecycle fix7efa493/candidate06b1a842 reviewed and hashes independently verified; R20 real Muse2064fa3e first tools/verdict16 own negatives+1 cached runtime pass. Head final scope/harness preservation and real receiver continuation pending; widening HOLD remains. Muse ACK unequal A06 raw access and mutable packet, withdrew cost benefit; calibration only. Live metrics9 registered/12 attributed/794 unique/four teams partial; R16/R17 identity label correction requested. Publication claimed visual PASS challenged: real GLM reviewer cannot view images, four rendered reference families UNKNOWN, Claude agrees structural-only; lane ACK/live artifact provenance pending. Ant owns readiness/recovery and parallel unchanged BASE positive through existing teams; all six A01 trials HOLD. Grok/Bunny/Z no actual new tool work despite live PIDs. Next actual exact review/receiver/positive artifact or mutual within5min, one native event wait; no principal implementation or root scheduler dependency.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
