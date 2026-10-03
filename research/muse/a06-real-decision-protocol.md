@@ -50,3 +50,39 @@ card author is asked not to consult them (honor system, recorded).
   card-effect question (record why); phase A still stands alone.
 - If the commit is trivial (<10 lines) or huge (>1000), note scope effects
   on the comparison explicitly.
+
+## Amendment 2026-10-03 (pre-outcome, per Codex C-A06-PROTOCOL-REVIEW)
+
+The frozen protocol above is preserved intact (git history holds v1);
+what follows constrains its interpretation. No review outcome exists yet,
+so this amendment is clean.
+
+1. **Carryover/time confound (acknowledged).** Phase B is a second pass with
+   more total review time by construction. Any A→B improvement therefore
+   confounds three effects: card content, re-reading, and time-on-task — it
+   CANNOT be attributed to the card alone, and this test must never be
+   quoted as measuring "card effect" unqualified. Controlled reporting: in
+   phase B I will tag each finding as FROM-CARD (not visible in the diff
+   alone) vs FROM-REREAD (would likely have surfaced with more time anyway)
+   and report both counts. Relatedly: declining to re-read review-round17
+   reduces cueing but does not blind memory — I authored the spec and
+   remember its substance. Phase A measures a spec-authoring reviewer with
+   unfixable memory contamination, disclosed, not cured.
+2. **Card-author contamination (acknowledged).** Antigravity received
+   principal and Muse findings DURING implementation (my round-15/17
+   analyses and Codex's constraints are public in-repo). An honor request
+   cannot establish uncontaminated authorship. Rule adopted: distinguish
+   (i) facts independently derivable from the committed source (file lists,
+   test names, behaviors any diff-reader finds) from (ii) interpretive
+   framings traceable to my prior wording. Known exposures recorded now:
+   review-round17 acceptance spec (N-P1..N-P4 + interplay), review-round15
+   reservation-layer analysis, Codex's uncertain-not-retryable constraint.
+   If the card reproduces (ii)-class material in recognizably my framing,
+   the card-effect question is void for that portion (recorded, phase A
+   unaffected).
+3. **Confidence is auxiliary, not evidence.** A verdict's correctness will
+   be judged on cited negatives and source lines, not on the confidence
+   number. Pre-registered rule: any phase verdict citing no negative-test
+   outcome and no source location is recorded as UNSUBSTANTIATED regardless
+   of confidence scored. No rerun of old fixtures and no timing spend is
+   required or authorized by this amendment.
