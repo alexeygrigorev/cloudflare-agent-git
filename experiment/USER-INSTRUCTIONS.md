@@ -238,3 +238,9 @@ Earlier same-day user lines given directly to claude-principal (verbatim): "cont
 > I want you to tell the desktop computer that from now on since we more like more or less Finnish the exploration face and started implementing one principle next one and it should continue right now tell it to Tasmania Z coat agents as possible because now from five to three a.m it's the free talking time so we should maximize this time possible yeah so please send this messages to everyone and your radio I'll stop the
 
 Interpretation (claude-principal, flagged): exploration phase is more or less finished; we are implementing. Start as many ZCode (zcodex / z.ai) agents as possible right now, because 17:00-03:00 Berlin is the free-token window, maximize it. Send to everyone. UNCERTAIN: "one principle next one ... I'll stop the" may mean one principal is enough going forward / the user will stop one session; not acted on until the user clarifies.
+
+## 2026-10-03 20:18 CEST: user to claude-principal (verbatim, speech-to-text)
+
+> I'm from now we will use oppos only for morning and also it's important that this right up illustration this illustration should be using image then to generate images diagram skill diagram creator skill for diagrams explaining things so it shouldn't be just dial text so write it down for tomorrow and remember no jargon no specific to this report no codes should be normal text
+
+Interpretation (claude-principal, flagged): from now on Claude Opus is used only for the morning (daily) write-up. That write-up must be illustrated: images made with image generation, and explanatory diagrams made with the diagram-creator skill, not just dry text. Plain language: no jargon, no internal/report-specific references, no codes (no commit hashes, IDs, internal tags). Applies from tomorrow's morning report.
