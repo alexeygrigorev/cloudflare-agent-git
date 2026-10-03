@@ -400,6 +400,7 @@ def main():
 
     # 2. Launch fresh disposable sessions under cgroups
     print("\n--- Step 1: Launching disposable receiver and sender sessions ---")
+    init_cmd = f"{PILOT_BIN} whoami --json"
     start_recv_cmd = [
         PILOT_BIN, "start",
         "--workspace", WORKSPACE,
@@ -414,7 +415,8 @@ def main():
         "--",
         OPENCODE_BIN,
         "--session", OPENCODE_SESSION_ID,
-        "--auto"
+        "--auto",
+        "--prompt", f"Run this initial baseline tool command: {init_cmd}"
     ]
     res_recv = run_host_cmd(start_recv_cmd)
     assert res_recv.returncode == 0, f"Failed to start receiver: {res_recv.stderr}"
@@ -462,52 +464,17 @@ def main():
     }
 
     try:
-        # Step 2a: Wait for Receiver UI to initialize and reach initial UI resting idle
-        print("\n--- Step 2a: Waiting for Receiver to reach Initial UI Resting Idle ---")
-        ok_ui, screen_ui, ev1_ui, ev2_ui = verify_receiver_idle_twice(receiver_uuid, "initial_ui_idle", delta=2.0, max_wait=90, allow_reported_none=True)
-        assert ok_ui, f"Receiver failed to reach initial UI resting idle!\n{screen_ui}"
-        print("Receiver UI initialized and resting idle.")
-
-        # Step 2b: Cold Boot Readiness Probe & Bootstrap Delivery via 'whoami'
-        # Codex C-1140 & Claude Principal: Native deliver must test readiness. If reported_state is None on cold boot,
-        # native deliver correctly rejects (not-ready fail-closed). We record this rejection, then use raw send bootstrap
-        # delivery (not a readiness gate) to execute initial tool turn and transition reported_state -> 'idle'.
-        print("\n--- Step 2b: Cold Boot Readiness Probe & Bootstrap Delivery via 'whoami' ---")
-        init_cmd = f"{PILOT_BIN} whoami --json"
-        
-        send_init_rc, send_init_out = exec_in_sender(
-            sender_uuid,
-            [PILOT_BIN, "message", "send", "--to", "continuation-receiver", f"Run this tool command: {init_cmd}", "--workspace", WORKSPACE, "--json"]
-        )
-        assert send_init_rc == 0, f"Failed to send boot trigger message: {send_init_out}"
-        init_msg_id = parse_json_safely(send_init_out)["id"]
-
-        deliv_init_rc, deliv_init_out = exec_in_sender(
-            sender_uuid,
-            [PILOT_BIN, "message", "deliver", init_msg_id, "--workspace", WORKSPACE, "--json"]
-        )
-        if deliv_init_rc == 0:
-            delivery_mode = "native deliver"
-            print(f"Cold boot delivery succeeded via native deliver: {deliv_init_out.strip()}")
-        else:
-            print(f"Cold boot native deliver correctly rejected (not-ready, rc={deliv_init_rc}): {deliv_init_out.strip()}")
-            print("Executing bootstrap delivery via raw send (bootstrap delivery, not a readiness gate)...")
-            run_host_cmd([PILOT_BIN, "send", receiver_uuid, f"Run this tool command: {init_cmd}", "--workspace", WORKSPACE, "--enter"])
-            delivery_mode = "raw send (bootstrap delivery, not a readiness gate)"
-
-        print("Waiting for receiver to execute baseline turn and transition to authentic reported idle...")
+        # Step 2: Establish Baseline via Launch Initial Task Entrypoint
+        print("\n--- Step 2: Waiting for Baseline Initial Task Turn to Execute and Settle into Authentic Resting Idle ---")
         ok_idle, screen_idle, ev1, ev2 = verify_receiver_idle_twice(receiver_uuid, "boot_turn_idle", delta=2.0, max_wait=90, allow_reported_none=False)
-        assert ok_idle, f"Receiver failed to reach authentic resting idle after boot turn! Screen:\n{screen_idle}"
-        print("Receiver successfully completed initial turn and settled into authentic resting idle.")
+        assert ok_idle, f"Receiver failed to complete initial baseline turn or reach authentic resting idle! Screen:\n{screen_idle}"
+        print("Receiver successfully completed initial baseline turn and settled into authentic resting idle.")
         results["steps"]["boot_turn_baseline"] = {
             "passed": True,
-            "boot_msg_id": init_msg_id,
-            "cold_boot_native_deliver_rc": deliv_init_rc,
-            "cold_boot_native_deliver_out": deliv_init_out.strip(),
-            "bootstrap_delivery_mode": delivery_mode,
+            "launch_prompt": f"Run this initial baseline tool command: {init_cmd}",
             "evidence_capture_1": ev1,
             "evidence_capture_2": ev2,
-            "note": "Bootstrap delivery, not a readiness gate. Official verified gates start at authentic reported_state=='idle'."
+            "note": "Native executor launch with initial task entrypoint. Settled into authentic reported_state=='idle'."
         }
 
         # Step 3: Test Negative 1 - Active Child Tool Process Rejection
@@ -581,11 +548,13 @@ def main():
         assert is_child_still_alive, f"Child PID {child_pid} was not alive during probe attempt!"
 
         # Verify probe message remains in inbox (fail-closed preservation)
-        inbox_rc, inbox_out = exec_in_sender(
-            sender_uuid,
-            [PILOT_BIN, "message", "inbox", "--workspace", WORKSPACE, "--json"]
-        )
-        assert probe_id in inbox_out, f"Probe message {probe_id} was removed from inbox despite rejection!"
+        log_res = run_host_cmd([PILOT_BIN, "message", "log", "--workspace", WORKSPACE, "--json"])
+        assert log_res.returncode == 0, f"Failed to get message log: {log_res.stderr}"
+        msg_list = parse_json_safely(log_res.stdout) or []
+        probe_env = next((m for m in msg_list if m.get("id") == probe_id), None)
+        assert probe_env is not None, f"Probe message {probe_id} not found in workspace message log!"
+        assert probe_env.get("delivery") == "inbox", f"Probe message {probe_id} delivery was {probe_env.get('delivery')}, expected 'inbox'!"
+        print(f"Probe message {probe_id} safely preserved in inbox (delivery='inbox').")
         print(f"Probe message {probe_id} safely preserved in inbox.")
 
         print("Waiting for sleep tool to complete and receiver to return to resting idle...")
@@ -663,6 +632,14 @@ def main():
         print(f"Draft probe deliver returncode: {deliv_draft_rc}")
         print(f"Draft probe deliver output:     {deliv_draft_out.strip()}")
         assert deliv_draft_rc == 1, f"Deliver against draft composer did NOT reject with exit 1! Output: {deliv_draft_out}"
+
+        # Verify draft probe message remains in inbox (fail-closed preservation)
+        log_res2 = run_host_cmd([PILOT_BIN, "message", "log", "--workspace", WORKSPACE, "--json"])
+        msg_list2 = parse_json_safely(log_res2.stdout) or []
+        probe_draft_env = next((m for m in msg_list2 if m.get("id") == probe_draft_id), None)
+        assert probe_draft_env is not None, f"Draft probe message {probe_draft_id} not found in message log!"
+        assert probe_draft_env.get("delivery") == "inbox", f"Draft probe delivery was {probe_draft_env.get('delivery')}, expected 'inbox'!"
+        print(f"Draft probe message {probe_draft_id} safely preserved in inbox (delivery='inbox').")
 
         # Clear draft from composer
         run_host_cmd([PILOT_BIN, "send", receiver_uuid, "\x03\x15", "--workspace", WORKSPACE])
@@ -867,10 +844,8 @@ def main():
             f.write("| Test Step | Target Condition | Observed Outcome | Gate Status |\n")
             f.write("|---|---|---|---|\n")
             boot_step = results["steps"].get("boot_turn_baseline", {})
-            b_mode = boot_step.get("bootstrap_delivery_mode", "N/A")
-            b_rc = boot_step.get("cold_boot_native_deliver_rc", "N/A")
-            boot_out = f"Baseline tool turn executed via `{b_mode}` (cold boot native deliver rc={b_rc}); authentic reported idle confirmed with twice empty-composer"
-            f.write(f"| Baseline Turn (Bootstrap Delivery) | Initial tool execution -> debounced idle | {boot_out} | {s_boot} |\n")
+            boot_out = "Initial task executed via launch prompt; authentic reported idle confirmed with twice empty-composer"
+            f.write(f"| Baseline Turn (Launch Initial Task) | Initial task execution -> debounced idle | {boot_out} | {s_boot} |\n")
             neg1 = results["steps"].get("negative_active_tool", {})
             neg1_out = f"Exit {neg1.get('deliver_probe_exit_code')} (not-ready), envelope preserved, no probe echo (appended {neg1.get('appended_history_bytes')} bytes)" if neg1 else "Not reached"
             f.write(f"| Negative 1 (Active Tool) | Deliver during child sleep ({neg1.get('child_pid', 'N/A')}) | {neg1_out} | {s_neg1} |\n")
