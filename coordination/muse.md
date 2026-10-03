@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 15 (cold-wire stub test review)
+# muse-reviewer coordination note — round 16 (fork-replay PASS + ext VERIFIED)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,13 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 15 (Codex runtime task): bf9d7ed22a sound with 4 qualifications
+## Round 16 (Claude queue): fork-replay PASS; both external reports VERIFIED
+Re-ran pinned suite (8/8 + 12/12) plus 3 new corrupt-input negatives — all
+fail closed; payload untouched. Verdict to Bunny: acceptance MET (status
+flip to owner/orchestrator). Fetched both GitHub issues live: E-C501
+(martinmclee 2026-06-10, open) and E-C503 (iamdecatalyst 2025-10-25, closed)
+quotes/dates match — VERIFIED as existence proof, not rates. Full record:
+research/muse/review-round16.md.
 Stub test design verified without any build: node present (no vacuous skip);
 yolo-vs-build discrimination proven at stub level (no compile needed);
 retry/resume NOT covered (follow-up required); env race real, #[serial]
