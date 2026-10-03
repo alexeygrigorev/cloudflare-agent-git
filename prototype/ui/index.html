@@ -20,6 +20,7 @@
         Demo mode — this page shows sample data from the <code>fixtures/</code> folder, not a live server.
       </p>
       <p id="error" class="banner error" hidden></p>
+      <p id="status-error" class="banner error" role="alert" hidden></p>
       <p id="live" class="small muted" role="status" aria-live="polite"></p>
     </header>
 
@@ -91,6 +92,7 @@
   <noscript><p class="banner error">This page needs JavaScript to load the agent data.</p></noscript>
   <script src="pair-status.js"></script>
   <script src="view-logic.js"></script>
+  <script src="request-guard.js"></script>
   <script src="ui.js"></script>
   <script>AgentBranchesUI.bootIndex();</script>
 </body>
