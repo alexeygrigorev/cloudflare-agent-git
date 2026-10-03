@@ -198,3 +198,7 @@ Earlier same-day user lines given directly to claude-principal (verbatim): "cont
 > make sure they check each other because they are worse models than opus or sol
 
 > if double execution still exists solve it via zcodex. zcode is open source btw
+
+## 2026-10-03 15:25 CEST: user to claude-principal (verbatim)
+
+> also let's think how to make the conversation possible across the machines from here to desktop and to other machines. something like aplexor global bus or something like that
