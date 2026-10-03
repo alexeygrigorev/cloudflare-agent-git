@@ -469,7 +469,7 @@
       "blocked_on": [
         "design-fidelity-repair (defects cited in research/codex/publication-image-challenge.md)"
       ],
-      "next_action": "DESIGN-FIDELITY FAIL acknowledged per independent review research/codex/publication-image-challenge.md (sha 790c85c1). Bounded repair dispatched to executor journal-fidelity-repair-3 (fa3ee6c1-ee74-49a4-ae8f-cba3671bdc90, opencode-go/muse-spark-1.3-contributor) in worktree on branch journal-design-repair-3 covering project detail, checklist, field notes, and nav. Current public site remains live. Fresh independent comparison by non-author session to follow.",
+      "next_action": "DESIGN-FIDELITY FAIL acknowledged per independent review research/codex/publication-image-challenge.md (sha 790c85c1). Bounded repair dispatched to executor journal-fidelity-repair-3 (fa3ee6c1-ee74-49a4-ae8f-cba3671bdc90, opencode-go muse-spark (Go quota), verified 5h 99% / 7d 67% / monthly 83% remaining, above 15% reserve) in worktree on branch journal-design-repair-3 covering project detail, checklist, field notes, and nav. Current public site remains live. Fresh independent comparison by non-author session to follow; future repair turns route to zai-coding-plan/glm-5.3 (z.ai).",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "research/codex/publication-image-challenge.md",
