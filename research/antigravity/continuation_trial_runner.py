@@ -8,8 +8,9 @@ under CONDITIONAL-PILOT-OK (Muse R21 / head-scope-correction.md):
 2. Isolated workspace (.local/continuation-trial/workspace) with standalone git repo.
 3. Fresh quota, disk headroom, and memory floor captured at preflight.
 4. Genuine turn-completion boot: receiver boots, settles to UI idle, executes initial
-   'aplexer whoami --json' tool call, and debounces to idle, establishing authentic turn completion baseline.
-5. Strict composer classification via service.py composer() regex (requiring 'empty').
+   'aplexer whoami --json' tool call (without workspace override), and debounces to idle,
+   establishing authentic turn completion baseline.
+5. Strict composer classification supporting OpenCode bordered composer UI and shell/codex prompts.
 6. Twice-captured full composer/state captures before every delivery with durable evidence storage.
 7. Negative 1: Active child tool execution negative (probe deliver occurs strictly while child
    process 'sleep 15' is actively running in /proc and DB).
@@ -109,24 +110,42 @@ def parse_json_safely(output_str):
 
 
 def composer_classifier(screen, tag="continuation-receiver"):
-    """Full empty composer classification ported from scripts/supervision/service.py."""
+    """Full empty composer classification for OpenCode bordered UI and shell/codex prompts."""
+    if not screen:
+        return "unknown"
+    s_lower = screen.lower()
+
+    # 1. Busy check: if model is actively generating or executing a tool with interrupt enabled
+    if "working (" in s_lower or "esc to interrupt" in s_lower or "esc interrupt" in s_lower:
+        return "busy"
+
+    # 2. Check for menu / choice overlay
+    if re.search(r"How is Claude doing|Choose|Select|feedback", screen, re.I):
+        return "menu-or-draft"
+
+    # 3. OpenCode Bordered Composer Detection
     lines = screen.splitlines()
-    starts = [(i, re.sub(r'^\s*[›❯]\s*', '', line).strip())
-              for i, line in enumerate(lines) if re.match(r'^\s*[›❯]', line)]
-    if not starts:
-        return 'unknown'
-    index, content = starts[-1]
-    # A multiline prompt cannot be distinguished safely from arbitrary content.
-    if any(line.strip() and not re.match(r'^\s*[─━]|.*(?:Context|for shortcuts|auto mode|manage|monitor|agents|tokens|GPT-|usage|workspace|warning)', line)
-           for line in lines[index + 1:]):
-        return 'unknown'
-    if re.search(r'How is Claude doing|Choose|Select|feedback', screen, re.I):
-        return 'menu-or-draft'
-    if content and not (tag == 'codex-principal' and content == 'Ask Codex to do anything'):
-        return 'draft'
-    if re.search(r'Working \(|esc to interrupt|esc interrupt', screen, re.I):
-        return 'busy'
-    return 'empty'
+    opencode_input_lines = [l for l in lines if re.match(r"^\s*┃", l)]
+    if "ctrl+p" in s_lower and opencode_input_lines:
+        last_line = opencode_input_lines[-1]
+        cleaned = re.sub(r"^\s*┃\s*", "", last_line).strip()
+        if not cleaned or re.match(r"^Build (?:auto|prompt)(?:\s*·.*)?$", cleaned, re.I):
+            return "empty"
+        return "draft"
+
+    # 4. Standard shell / codex › or ❯ prompt check
+    starts = [(i, re.sub(r"^\s*[›❯]\s*", "", line).strip())
+              for i, line in enumerate(lines) if re.match(r"^\s*[›❯]", line)]
+    if starts:
+        index, content = starts[-1]
+        if any(line.strip() and not re.match(r"^\s*[─━]|.*(?:Context|for shortcuts|auto mode|manage|monitor|agents|tokens|GPT-|usage|workspace|warning)", line)
+               for line in lines[index + 1:]):
+            return "unknown"
+        if content and not (tag == "codex-principal" and content == "Ask Codex to do anything"):
+            return "draft"
+        return "empty"
+
+    return "unknown"
 
 
 def get_status(session_uuid):
@@ -295,9 +314,23 @@ def main():
 
     df_out = run_host_cmd(["df", "-h", "/home/alexey/git/cloudflare-agent-git"]).stdout.strip()
     free_out = run_host_cmd(["free", "-m"]).stdout.strip()
+    quota_res = run_host_cmd(["python3", "scripts/quota-gate.py"])
+    quota_data = parse_json_safely(quota_res.stdout) or {"raw": quota_res.stdout.strip()}
     print("--- Host Resource Headroom ---")
     print(df_out)
     print(free_out)
+    print("--- Fresh Provider Quota Check ---")
+    print(json.dumps(quota_data))
+
+    # Verify real opencode.db session is present before launch
+    assert os.path.exists(DB_PATH), f"opencode.db missing at {DB_PATH}!"
+    con_check = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+    cur_check = con_check.cursor()
+    cur_check.execute("SELECT id, title, time_created FROM session WHERE id=?", (OPENCODE_SESSION_ID,))
+    sess_row = cur_check.fetchone()
+    con_check.close()
+    assert sess_row is not None, f"Session {OPENCODE_SESSION_ID} not found in DB {DB_PATH}!"
+    print(f"Verified pre-existing session in DB: {sess_row}")
 
     os.makedirs(EVIDENCE_DIR, exist_ok=True)
     cleanup_trial_sessions()
@@ -359,7 +392,8 @@ def main():
         "subsequent_real_head_target": REAL_HEAD_TARGET,
         "resource_headroom": {
             "df": df_out,
-            "free": free_out
+            "free": free_out,
+            "quota": quota_data
         },
         "steps": {},
         "overall_status": "IN_PROGRESS"
@@ -373,9 +407,9 @@ def main():
         print("Receiver UI initialized and resting idle.")
 
         # Step 2b: Establish Genuine Turn-Completion Baseline via initial 'whoami' tool call
+        # No workspace override per Codex C-1125: actual tool binding determines workspace
         print("\n--- Step 2b: Establishing Genuine Turn-Completion Baseline via 'whoami' ---")
-        init_nonce = str(int(time.time()))
-        init_cmd = f"{PILOT_BIN} whoami --workspace {WORKSPACE} --json"
+        init_cmd = f"{PILOT_BIN} whoami --json"
         
         send_init_rc, send_init_out = exec_in_sender(
             sender_uuid,
