@@ -649,14 +649,14 @@
           "mode": "headless",
           "engine": "opencode run",
           "provider": "opencode-go/space-bunny-free",
-          "session_id": "29f4178f-d8be-49d8-8dfd-8125e5819d78",
+          "session_id": "b01f1415-5a23-4a62-b379-5bf24a431caa",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "status": "running",
           "task": "Independent negative review and mutation verification of commit c14b474 (supervision fallback on Codex status-bar false draft)",
           "owned_paths": [
             "research/antigravity/reviews/REV-SUPERVISION-C14B474.md"
           ],
-          "first_tool_evidence": "opencode run --file research/antigravity/reviews/PROMPT-REV-SUP-C14B474.txt",
+          "first_tool_evidence": "opencode run -m opencode-go/space-bunny-free (PROMPT-REV-SUP-C14B474.txt)",
           "memory_cap": "1500M"
         }
       ]
