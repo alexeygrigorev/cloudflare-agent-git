@@ -34,3 +34,29 @@ it had already self-killed once before. Its working tree was left UNCOMMITTED.
 pushed to origin/proto/live. Excluded: prototype/node_modules, __pycache__, *.log,
 live/.dev.vars (run-1 tokens, untracked by design), live/work/ (runtime scratch: seed repo
 fixture with embedded .git; regenerable from the L5 demo-target fixture).
+
+## 2026-10-03 — zc-live-4 takeover, run 2
+
+Session: zc-live-4 (608d319e), ZCode/zcodex warm-path continuation of zc-live-3 for
+claude-principal.
+
+**zc-live-3 termination.** EXIT=143. Cause UNKNOWN — the self-kill-by-broad-process-matching
+theory (zc-live-integration's `pkill -f` matching its own zcodex wrapper) is a HYPOTHESIS
+carried over from the earlier run, not an established cause for zc-live-3; the desktop
+orchestrator's 120m session timeout is an equally plausible source of SIGTERM. Recorded as
+unknown on purpose.
+
+**zc-live-3 left behind (now preserved):** the three upstream merges already committed
+(bfdfea8 = L1 762ff3d, 3469b4a = L4 40381f3, 33cb6ba = L5 47f5dbe) plus the run-1 summary
+above; the rewritten live/run-demo.sh was UNCOMMITTED and is committed as-is in this state
+(`wip(live): zc-live-2 state`). No services were left running: no live/state/*.pid existed,
+and nothing listens on 8787/8788/8799 (8797/8798 are Antigravity's — untouched). Run 1 used
+its own bespoke sidecar + L1 @ 4837a78; run 2 uses L1's local-artifacts sidecar per CONTRACT
+v0.1. prototype/.wrangler does not exist, so the coordinator starts fresh; the L1 sidecar
+root (live/artifacts) is likewise fresh — consistent state, no stale canonical.
+
+**Process-safety rule for run 2 (dogfood gap G1).** No kills by pattern, cwd or exe — ever.
+Only PIDs written by run-demo.sh itself to live/state/*.pid may be killed, and only after
+verifying pid != shell pid, not an ancestor of the shell, cmdline matches the expected
+server, and /proc starttime+exe+cwd match what was recorded at start (PID-reuse guard).
+If any check is inconclusive: leave it running, use different ports.
