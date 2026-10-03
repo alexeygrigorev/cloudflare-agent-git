@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T19:56:40.000000+00:00",
+  "updated_at": "2026-10-03T20:16:00.000000+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
     "claude-principal"
@@ -555,8 +555,8 @@
           ],
           "first_tool_evidence": "aplexer whoami --json",
           "memory_cap": "1500M",
-          "completed_at": "2026-10-03T19:54:44+00:00",
-          "result": "28488f7 on proto/cred-expiry-gate (91/91 tests pass across 13 test files); merged to proto/live at 659b81a. Implemented AgentTokenRecord, token expiry check (boundary now >= expires), explicit revocation (revokeAgentToken + POST /tasks/:id/revoke), and wire auth tests."
+          "completed_at": "2026-10-03T20:15:30+00:00",
+          "result": "f9f7e86 on proto/cred-expiry-gate (91/91 vitest + 29/29 node tests pass, unmasked tsc exits 0 on both configs); merged to proto/live at f58227c. Implemented C-1430/C-1437: boundary nowMs>=expiresAt, fail-closed unreadable expiry, empty-string revokedAt non-null deny, deterministic 1970 legacy migration with no silent grace, and non-vacuous negative test with prior acceptance."
         }
       ]
     },
