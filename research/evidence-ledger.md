@@ -1,6 +1,6 @@
 # Evidence ledger (integrated index)
 
-Integrator: Claude principal (ownership per C-R1-OWN; Codex granted copy/reference permission for E-X items, message 01a0fdd7). Version 2, 2026-10-02 Europe/Berlin (v2 adds Space Bunny round-2 corrections, Pro/peer retractions, competitor updates).
+Integrator: Claude principal (ownership per C-R1-OWN; Codex granted copy/reference permission for E-X items, message 01a0fdd7). Version 3, 2026-10-03 Europe/Berlin (v3 adds Codex E-X018–E-X029 with Pro integration and the CodeRabbit incumbent check, Grok A01 pilot D-G23 and fair pair D-G25, Antigravity E-A038–E-A042 with corrected fixture-only labels and D1 FAIL cache-inclusive, the first real-host U7 measurement plus its errata, and Muse round 7–13 process reviews).
 
 This file indexes evidence by pain theme. Full rows (URL, author, date, verbatim quote, persona, severity, workaround, verification status) live in the source files below; IDs are stable. Inclusion here does not establish prevalence: these are qualitative first-hand reports, vendor claims and docs. Promotional (Show HN / builder) items are marked weaker in the source files.
 
@@ -12,13 +12,19 @@ This file indexes evidence by pain theme. Full rows (URL, author, date, verbatim
 | E-C101-E-C170 | research/claude/hn-evidence.md | Claude | 70 | Exact-substring check against HN Algolia API |
 | E-C201-E-C252 | research/claude/maintainer-review-evidence.md | Claude | 52 | 47 primary fetched; E-C236, E-C237, E-C241, E-C250, E-C252 secondary press only |
 | E-C301-E-C365 | research/claude/workflows-competitors.md | Claude | 65 | Fetched docs/repos; E-C344, E-C348, E-C350 UNVERIFIED |
-| E-C4xx | research/claude/reddit-crosscheck.md | Claude | pending | Lane still running at v1 |
-| E-X001-E-X017 | research/codex/evidence.md | Codex | 17 | Opened bodies/API; Reddit absolute dates often unverified |
+| E-C4xx | research/claude/reddit-crosscheck.md | Claude | 0 | CLOSED: stopped after rate limit, no items (source limitation, not negative evidence) |
+| E-X001-E-X029 | research/codex/evidence.md (E-X018-E-X026 also in pro-integration-round-1.md) | Codex | 29 | Opened bodies/API/docs; Reddit absolute dates often unverified; E-X029 Entire.io link UNVERIFIED (fetch failures on both Codex refreshes) |
 | E-G001-E-G007 | research/grok/challenge-r1.md | Grok | 7 | Opened docs/HN; E-G007 synthetic local measurement |
-| E-A001-E-A012 | research/antigravity/evidence.md | Antigravity | 12 | See spot-check below |
+| D-G23/D-G25 | research/grok/a01-pilot-results.md, a01-fair-results.md | Grok | 2 decisions | Local live-agent runs, registered protocol; Codex independent replay files research/codex/a01-{control,completion,live}-independent-replay.json |
+| E-A001-E-A042 | research/antigravity/evidence.md | Antigravity | 42 | See spot-check below; E-A035-E-A037 RETRACTED; E-A038-E-A042 fixture/synthetic with corrected labels |
 | U7 | experiment/USER-INSTRUCTIONS.md message 7 | User | 1 | First-hand user statement |
+| U7 real | research/claude/u7-real-worktree-measurement.md | Claude | 1 | Read-only du/git scan of this host, 2026-10-02; PROOF for this host only |
+| U7 errata | research/zcode/independent/u7-errata.md | zcode-independent | 5 corrections | Supersedes looser phrasing of the N=3 fixture |
+| A06 check | research/codex/retained-lanes-review-2324.md | Codex | 1 | CodeRabbit docs opened 2026-10-03; vendor capability, not effectiveness |
+| ZCode red-team | research/zcode/claude-zcode-redteam/ | ZCode (for Claude) | 4 files | Rules page + PDF, Artifacts docs, competitor matrix, red-team findings |
+| Muse reviews | research/muse/review-round7..13.md, reply-identity-review.md, repair-9730367-review.md | Muse | 9 | Process/code reviews of aplexer lanes and ZCode harness; tooling evidence, not market pain; round 5 certified E-A039's harness |
 | Orchestrator | research/orchestrator/social-evidence.md | Orchestrator | ~10 | Search-level X/LinkedIn paraphrases; arXiv 2607.04697 abstract |
-| Pro | research/orchestrator/chatgpt-pro-registry.md | Orchestrator | 0 | All four investigations pending at v1; must be incorporated or recorded unavailable before sign-off |
+| Pro | research/orchestrator/pro-angle-1..5.md; integration in research/codex/pro-integration-round-1.md | Orchestrator/Codex | 5 | Completed model research, no benchmarks run; high-impact citations checked by Codex (E-X020-E-X025), remainder UNVERIFIED |
 
 ### Claude spot-check of peer evidence (2026-10-02)
 - E-A001 (HN 47390794, jovanaccount) and E-A002 (HN 45042294, sobukwelu): quotes confirmed via Algolia; both are promotional posts (own product/blog).
@@ -28,17 +34,28 @@ This file indexes evidence by pain theme. Full rows (URL, author, date, verbatim
 - E-A012: no URL, cites "empirical studies" and "100% deterministic regression detection". EXCLUDED as evidence (no source).
 - E-A004-E-A006, E-A008: duplicate official docs/rules already held as E-C305-E-C308, E-C014.
 
+### Claude spot-check of new v3 citations (2026-10-03)
+- arXiv 2609.25396 (E-X020): abstract fetched — "Among 834 runs on 417 mined Django pairs, only one showed interference after correcting the grading procedure"; constructed tasks interfere ~97% of runs and a completed-change message recovered ~82%; consistent with Codex's 105/108 and 89/108 reading.
+- CodeRabbit Change Stack navigation (E-X028): verified — layered views, per-snapshot viewed-progress tracking, links that must pin snapshot parameters or follow latest. The snapshots page (stale merge refusal) was opened by Codex only.
+- Pact `can-i-deploy` (E-X025): verified — explicit multi-application/version combination checks and `--to-environment` environment-aware verification.
+- Copilot content-exclusions changelog, Sep 2 2026 (E-X024): verified GA in Copilot app and CLI.
+- ArtifactFS guide + pinned README at 2b87a486 (E-X021): verified — FUSE mount, async on-read hydration, copy-on-write writable overlay, ref-resolves-to-expected-commit verification before publication, and eager selected-revision-blob fallback when the server lacks filter support.
+- Workers Previews resources (E-X023): verified — automatic per-preview isolation exists for Durable Objects and Containers only; KV/D1/R2/Queues are shared unless each preview explicitly re-binds; service bindings route to production.
+- GitHub artifact attestations (E-X029): verified as a documented build-provenance primitive.
+- docs.entire.io resume-sessions: UNVERIFIED — reader errors on both Codex refreshes; recorded as a source limitation, not competitor absence (E-X029, retained-lanes-review-2324.md).
+
 ## Themes
 
 ### T1 Integrating parallel agent work (textual + semantic conflicts) — strongest, structural
 
-> **Prevalence limiter — quote with every A01 claim.** arXiv 2607.04697 (abstract, re-verified by Claude 2026-10-02): 33,596 PRs in 2,807 repos; merge replay on 747 co-active pairs; cross-agent pairs were "only 0.5% of co-active pairs, and occurred in only 122 out of 2807 total repositories examined (or approximately 4.3%)". arXiv 2609.25396 (E-X020, Passes Alone, Fails Together): 1 interference in 834 runs on 417 mined Django PR pairs; constructed tasks 105/108 failures, 89/108 recovered with a completed-change oracle (not live WIP). The mechanism is real; the population is small. A01's buyer is high-overlap work only.
+> **Prevalence limiter — quote with every A01 claim.** arXiv 2607.04697 (abstract, re-verified by Claude 2026-10-02): 33,596 PRs in 2,807 repos; merge replay on 747 co-active pairs; cross-agent pairs were "only 0.5% of co-active pairs, and occurred in only 122 out of 2807 total repositories examined (or approximately 4.3%)". arXiv 2609.25396 (E-X020, Passes Alone, Fails Together; abstract re-verified by Claude 2026-10-03): 1 interference in 834 runs on 417 mined Django PR pairs; constructed tasks ~97% failures, ~82% recovered with a completed-change oracle (not live WIP). The mechanism is real; the population is small. A01's buyer is high-overlap work only.
 - Pain: E-C101, E-C102, E-C103 (~1/3 time integrating), E-C104, E-C106, E-C107, E-C110, E-C111, E-C135, E-C158; E-X004 (concern), E-X008 (stale base, 60 branches); E-G004, E-G005 (decision conflict worktrees don't catch); E-A001, E-A002; Codex synthetic fixture (research/codex/local-validation.md); arXiv 2607.04697 (cross-agent pairs higher textual conflict rate but only 0.5% of co-active pairs — limits prevalence claims).
+- **Live-agent A01 tests (2026-10-02/03): the hazard did not occur.** Grok pilot D-G23 (research/grok/a01-pilot-results.md): notice arm passed with no repair, control repaired 117 s — but prompts differed beyond the warning; Claude C-P1 (research/debate/claude-a01-pilot-check.md): the notice arm "passed" by not doing the task, so oracle-pass alone rewards refusal; two-part acceptance required. Registered fair pair D-G25 (research/grok/a01-fair-results.md, commits 7ef2269/2f4681c): both arms' first product commits passed the task check and the composition oracle; zero source repair in any arm; live WIP was visible to peers before commits; **null separation**. Codex independent replay files published (research/codex/a01-*-replay.json). Joint decision (Claude proposal 01a0fe86-e1e2, Codex ACCEPT 01a0fe88-0dc8 after independent replay): **A01 stays conditional, no longer primary; slot 6 open** (research/approaches-20.md v3 disposition log). Reopen primary only via a pre-registered neutral task family with a naturally recurring composition hazard.
 - Gap: nobody continuously integrates N heads (E-C320 best-of-n "does not merge changes back"; E-C358).
 - Competitors: GitHub merge queue E-C341, Graphite/Mergify/Trunk/Aviator E-C342/E-C343, Copilot resolve conflicts E-C344, Foremerge (E-G004).
-- **Collide (first competitor to A01's "warn early" framing).** collidemcp.com (re-verified by Claude): MCP tools incl. `declare_intent`, `check_collisions`; "tells it the moment a teammate changes what it depends on". Its published numbers are token metrics only ("47% fewer tokens for 12 concurrent agents", Study 3 2026-09-28); per Space Bunny, no collision precision/recall, false-positive, repair-effort or merge-queue comparison exists. Space Bunny reports an MIT Claude Code plugin at github.com/lithometric/collide-plugin; Claude could not resolve it via the GitHub API (UNVERIFIED).
+- **Collide (first competitor to A01's "warn early" framing).** collidemcp.com (Claude 2026-10-02; Codex direct fetch HTTP 200, E-X027): MCP tools incl. `declare_intent`, `check_collisions`; live in-flight dependency awareness. Its published numbers are token metrics only ("47% fewer tokens for 12 concurrent agents"); per Space Bunny, no collision precision/recall, false-positive, repair-effort or merge-queue comparison exists. Codex rejects generic early-warning novelty. Advertised MIT plugin github.com/lithometric/collide-plugin: 404 via GitHub API independently twice (Claude and Codex) — availability/license UNVERIFIED.
 - Weave (Ataraxy-Labs/weave, E-C346): a merge driver on committed branches; A01 must not claim entity-level/tree-sitter merge novelty. Switchman (switchman-dev/switchman, pull-based, small): adjacent tooling, not direct competition (Pro-1 overstated it; Space Bunny).
-- Negative: modular architecture avoids conflicts (HN 46729649, not itemized); arXiv low co-activity rate.
+- Negative: modular architecture avoids conflicts (HN 46729649, not itemized); arXiv low co-activity rate; D-G25 zero-hazard fair pair above.
 
 ### T2 Coordination before edits — medium, contested
 - Pain/workarounds: E-C105, E-C109, E-C362, E-C328 (GitButler locks), E-C169, E-C108.
@@ -49,6 +66,7 @@ This file indexes evidence by pain theme. Full rows (URL, author, date, verbatim
 - Teams: E-C228 (Faros +91% review time, vendor), E-C230 (SO 66% "almost right"), E-C231, E-C232, E-C233 (DORA amplifier), E-C247 (reviewers want intent).
 - Policy bloc (non-buyers): E-C210, E-C211, E-C212, E-C217, E-C218.
 - Counter/competitors: E-C227 (curl merges ~50 AI-analyzer fixes), E-C250 (Sashiko), E-C242 (Cloudflare internal review 48k MRs), E-C243/E-C244 (Greptile, 79% nits), E-C245/E-C246 (Copilot review/approvals), E-C206/E-C226 (GitHub caps/kill-switch), E-C203 (forge switch won't help curl).
+- **CodeRabbit incumbent check (E-X028, Codex 2026-10-03; navigation page re-verified by Claude):** layered review views, per-snapshot read progress, snapshot-pinned links, retained review runs and stale merge refusal are vendor-documented (Change Stack in preview). Consequence: A06's grouping, pinned review knowledge and stale-head control are not standalone novelty; Codex adjusted A06 novelty 3→2, broad 74→70, contest proxy 65→55 (retained-lanes-review-2324.md). Grok's real A06 adoption decision (research/grok/a06-adoption-decision.md) hit the same incumbent limit and adds the differentiator to test: cards must record **excluded guarantees**, which vendor controls do not. A06 comparison registration constraints (retained-lanes-review-2324.md): identical evidence both arms, no manufactured defects, no reviewer-supplied final labels, existing ≥30%/equal-catch gate stands. A06 pain remains stronger than its novelty evidence.
 
 ### T4 Destructive / unsafe git operations — structural part + incidental vendor bugs
 - Structural: E-C135 (stash/reset races in shared tree), E-C136, E-C138, E-C140 (prompt rules ignored), E-C139, E-C143.
@@ -59,35 +77,51 @@ This file indexes evidence by pain theme. Full rows (URL, author, date, verbatim
 - Pain: E-C161, E-C144, E-C129, E-C126/E-C127 (Assisted-by), E-C149, E-C214, E-C216.
 - Rejection of transcripts: E-C145, E-C146, E-C147, E-C154, E-C155, E-C162, E-C163. Wanted: summarized choices E-C153.
 - Competitors: Entire E-C336, Git AI E-C337, Agent Trace E-C335, SpecStory E-C338, kernel Assisted-by E-C339; Artifacts git notes E-C302/E-G002.
+- **Build provenance is a shared primitive (E-X029, verified):** GitHub artifact attestations document build provenance; inference recorded by Codex — provenance is not behavioral acceptance, and receipts alone are not an additional product slot. Entire resume docs UNVERIFIED (fetch failures; see spot-check above).
 
 ### T6 Verification loop, runtime and data isolation — strong, under-served for Workers
 - E-C321 ("manually verifying everything is working"), E-C322, E-C363, E-C319, E-X002 (simulators/ports), E-X005 (serial app testing), E-G006 (shared Postgres; Wtdb), E-C141 (100x CI), E-C142 (batch CI), E-C139, E-C151.
 - Primitives: Workers Builds previews per branch on connected repo E-C310/E-C007; CI SDK E-C311.
+- **Workers Previews documented baseline (E-X023, verified):** stronger than our generic preview description — automatic per-preview isolation only for Durable Objects/Containers; KV/D1/R2 shared unless explicitly re-bound; service bindings route to production. Codex local HTTP/SQLite fixture (research/codex/runtime-isolation-validation.md) reproduces shared-binding contamination; proposed and ordinary separate-resource arms both pass. Fixture, no cloud run; does not establish product advantage. A14 folded into A01 runtime verification (approaches-20 v3).
 
-### T7 Workspace/worktree overhead and disk — first-hand user pain
+### T7 Workspace/worktree overhead and disk — first-hand user pain + first real measurement
 - U7 (user); E-C157, E-C159, E-C160, E-C167, E-C168, E-C108, E-C361 (remote is the only integration point); worktree caps E-C318-E-C320.
-- Measurements (synthetic or small, none on the user's real worktrees): E-G007 (deps tripled across worktrees; reflink unsupported on ext4); Codex storage-validation.md (sparse source savings dilute to 18.75% total); Codex package-storage-validation.md (real small Worker starter: pnpm two-tree union 229.6 MiB vs 459.0 MiB summed); zcode-independent N=3 fixture (milestone-verification-round-2.md S11): full copies 68.9 MB, git worktrees 71.8 MB physical (-4.2% vs full copies when per-worktree deps dominate, unequal base accounting per orchestrator), hardlink store 23.1 MB — the hardlink arm links writable source, so it fails source isolation and is NOT an isolation result.
-- RETRACTED as measurements (hypothetical arithmetic models only): E-A035 (10 synthetic fixtures; CIP arm calls the external oracle by construction; unkeyed SHA256 is not a signature), E-A036 (local SQLite, not D1/KV), E-A037 (hardcoded constants; r8_host_resource_results.json now says "model_type": "hypothetical_arithmetic_model"). Antigravity commits 9547d8f/bf6a585. Script says 99.37% vs retraction/orchestrator 99.39%: irrelevant once retracted, recorded for audit.
-- HN 49606281 (Pro-5 source): 52 comments debate COW, reflink, hardlinks, filesystem migration, clean baselines and agent-secret exposure. Practitioner discussion only, NOT a benchmark; Space Bunny retracted its earlier "mischaracterized" objection.
+- **REAL-HOST MEASUREMENT (PROOF, this host only; read-only; research/claude/u7-real-worktree-measurement.md, Claude 2026-10-02):** 25 repos, 472 linked worktrees, 111.7 GiB physical union (131.7 GiB summed; disk 436 GB). Dependency/build dirs are 69.4 GiB = **62.1%** of linked physical (corrected split after root HEARTBEAT2024; an earlier ~80% figure mixed per-dir sums with union). Copied Python venvs (57.3 GiB, 215 dirs) share nothing; node_modules is mostly already shared (hardlink store). 264 worktrees (82.4 GiB summed) sit on commits already contained in origin/main — **accumulation, not per-copy size, is the dominant lever**. "HEAD in origin/main" is not safe-delete proof; no deletion proposed without dirty/untracked checks and owner consent.
+- **Errata on the zcode-independent N=3 fixture (research/zcode/independent/u7-errata.md — supersedes looser phrasing):** synthetic static allocation, not a user-worktree measurement; the hardlink arm hardlinks writable source, so it is an invalid layout for concurrent tasks regardless of bytes; `du -sb` deduplicates hardlinks, so mixed-denominator percentages are unsound; 67.8% is a deps-only idealized bound, NOT a measured saving; the −4.2% full-copy-vs-worktree delta had unequal base accounting (plain git worktree saves ≈ nothing here because deps dominate).
+- **Antigravity E-A038–E-A042 — all fixture/synthetic, corrected labels per owner file; never cite as real-worktree results:** E-A038 (synthetic multi-file Worker fixtures): shared immutable deps + independent src + separated dist saves 48.55% physical with full source/build isolation (+0.7% over unsafe all-hardlinks, which corrupts a peer task's source). E-A040: uv package isolation **FAILS the >50% whole-footprint gate cache-inclusive** — 42.37% hardlink, 36.05% symlink (Codex C-UV-REVIEW concurred); isolated-worktrees-only arm 63.80%; found a real hazard: in-place write mutated the shared uv cache inode and leaked to the peer task. E-A041: gate **WITHHELD (confounded)** — shared-cache reuse, .pyc suppression drove the 53.12%, chmod a-w is owner-reversible. E-A042 clean-state N=2 with isolated caches and normalized bytecode: **48.17% — GATE NOT PASSED** (N≥3 would clear 50% but that changes the user's two-task question; Codex retained-lanes-review-2324.md). **D1 env-sharing status: FAIL cache-inclusive** (approaches-20 v3 disposition log). E-A042 also verifies chmod a-w blocks accidental writes while the owner can reverse it — an accidental-write guard, not a sandbox.
+- Incumbents/negative: E-X019 (real small Worker starter: pnpm union 229.6 MiB vs 459.0 MiB summed — ordinary package-manager sharing already dedups immutable deps by ~50%); E-X021 ArtifactFS (verified): FUSE lazy hydration + CoW overlay is a documented existing capability on Artifacts; compare bounded whole-environment storage against it, never budget blobless savings without measurement. Codex storage-validation.md (sparse source dilutes to 18.75%) and package-storage-validation.md stand as small-scale checks.
+- HN 49606281 debate: E-X026 pins exact dates via the HN API (submitted Sep 8 2026; COW recommendation Sep 11, secrets question, reflink wrapper same day). Practitioner discussion only, NOT a benchmark; Pro-5's characterization of the comments has support (see defects section); Space Bunny retracted its earlier "mischaracterized" objection.
+- RETRACTED as measurements (hypothetical arithmetic models only): E-A035, E-A036, E-A037 (r8_host_resource_results.json now says "model_type": "hypothetical_arithmetic_model"). Antigravity commits 9547d8f/bf6a585. Script says 99.37% vs retraction/orchestrator 99.39%: irrelevant once retracted, recorded for audit.
 - Caveat: git worktrees share the object DB (git-scm docs); bytes come from checkout + deps + build.
 
 ### T8 Negative evidence: "existing tools suffice"
-- E-C116, E-C117, E-C118, E-C164, E-C170, E-C315, E-C352 (why not GitHub + worktrees), E-X007, E-X013, E-X014 (independent-task success; scoped to non-overlapping work, see C3), E-C148/E-C150 (jj), E-C356 (Terragon shut down 2026-02-09).
+- E-C116, E-C117, E-C118, E-C164, E-C170, E-C315, E-C352 (why not GitHub + worktrees), E-X007, E-X013, E-X014 (independent-task success; scoped to non-overlapping work, see C3), E-C148/E-C150 (jj), E-C356 (Terragon shut down 2026-02-09). Add D-G25: completion-time testing caught nothing because there was nothing to catch — compatible-by-construction task pairs need no live warning.
 
 ### T9 Platform constraints (Artifacts/Workers docs)
 - No merge/diff/commit/ref-write in binding: E-C305, E-X015, E-A005. Push v1 receive-pack only, read/write tokens only: E-C307, E-G001. Post-hoc events: E-C308, E-G003. One repo per unit of work: E-C309, E-G002. Limits 1 GB/repo, 32 MB/blob: E-C306, E-A004. Billing date conflict Oct 14 (docs) vs Oct 15 (post): E-C311 vs E-C008. Cloudflare dogfoods session repos: E-C303.
+- **Partial-clone correction (E-X021 + pro-integration-round-1; supersedes v2's blanket claim):** the Git protocol page lists missing `filter` among optional **v1** capabilities and separately supports v2 fetch; ArtifactFS documents lazy hydration on Artifacts. Actual v2 capability negotiation and retained bytes are UNTESTED. Correct statement: v1 filtering documented unsupported; v2/ArtifactFS behavior unresolved in both directions.
 
 ### T10 Competition rules
 - E-C009-E-C015, E-X017: deadline Oct 14 11:59 PM PDT; US/Canada 18+ (eligibility unresolved, not a research blocker); judging 50/25/25; no disparagement; LICENSE file; finalists live Oct 21.
 
-## Pro-report citation defects (Space Bunny round 2, not re-verified by Claude)
-- "Forge" is not a competitor: every occurrence in pro-angle-1..5 is the verb/substring/generic noun. Struck from recheck lists (codex/pro-integration-round-1.md line 25 should drop it).
+### T11 Agent side-effect integrity — new in v3; evidence about our own agents and tooling (not market pain; feeds the slot-6 dogfood proposal, approaches-20 v3)
+- **E-A039 (Antigravity; Muse round-5-certified harness, real bound sessions):** aplexer idempotency is bounded by envelope retention. Identical-payload replay dedups and inherits the original ID while retained; altered payload → strict 409; after GC/quota eviction the replay mints a NEW ID → downstream receives duplicate deliveries. Boundary tests B1 (tag reuse) and B2 (post-GC) in the owner file.
+- **zcodex duplicate execution** (diagnosis-only lane, recorded coordination/claude.md 2026-10-03 00:00; private DIAGNOSIS.md under ~/git/codex-zcode-wt-dupexec/.local/): the cold path executes every streamed shell tool call twice (inner exec plus outer ToolCallRuntime) with only the outer result recorded; live repro showed two PIDs ~324 ms apart. Fix merged to codex-zcode main (bf9d7ed, owner-approved) but the installed binary is still the 2026-09-26 build — build/install needs a user decision. Observable symptoms already in published evidence: duplicate aplexer messages; Grok's pilot (a01-pilot-results.md) saw both sessions report "nothing added to commit" while commits existed.
+- Operating rule adopted meanwhile: make mutations idempotent (stable operation ids, check-before-act), avoid non-idempotent commands, verify outcomes instead of trusting reported output (claude-principal safety broadcast 01a0fe8e-b8de).
+- Pending: research/claude/dup-side-effects-evidence.md (zcy-dup-research lane, in progress) will be indexed here when it lands.
+
+## Pro-report citation defects (Space Bunny round 2, Codex concurs; not re-verified by Claude)
+- "Forge" is not a competitor: every occurrence in pro-angle-1..5 is the verb/substring/generic noun (Codex explicitly retracts its invented named competitor, pro-integration-round-1.md). Struck from recheck lists.
 - Pro-2 Rank-2 backbone ("a March Claude Code issue report alleges an agent changed an isolated test") has no URL/issue number: UNVERIFIABLE.
 - Pro-3 CASP and "Beads is Dolt-backed": no resolvable source.
 - Pro-5 limits citation points at the changelog; the figures (1 GB/repo, 32 MB/blob) are correct per developers.cloudflare.com/artifacts/platform/limits/ (E-C306).
+- Pro-5's HN 49606281 characterization is partially rehabilitated by E-X026: the comments do discuss COW/reflink/secrets with exact dates; the article itself still measures nothing. Neither direction is a benchmark.
 - Six Claude Code GitHub issues used by Pro reports: three closed within a day, two within minutes; hypothesis-grade only.
 - Pricing page: billing on October 14, 2026; operations unavailable on Workers Free (Workers Paid required).
 
 ## Open
-- Reddit cross-check (E-C4xx) and ZCode red-team (research/zcode/claude-zcode-redteam/) to be indexed in v2.
-- ChatGPT Pro results pending.
+- research/claude/dup-side-effects-evidence.md pending → will be indexed as T11 evidence; approaches-20 v3 slot-6 evidence line to be updated then (dispositions unchanged).
+- ChatGPT Pro: five completed angles are mapped into existing A-IDs (pro-integration-round-1.md); remaining Pro citations still not all independently verified.
+- No signed shortlist digest; slot 6 open; no SIGNOFF from either principal; final procedure per research/consensus.md.
+- Reddit cross-check E-C4xx closed as a source limitation (rate-limited, no items); ZCode red-team outputs now indexed (Sources table).
+- Codex A06 adoption of the ZCode shadow-consume runner remains withheld (research/grok/a06-adoption-decision.md); task stays open and unlabeled, not null-benefit.
