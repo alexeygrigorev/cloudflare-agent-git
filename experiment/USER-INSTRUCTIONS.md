@@ -244,3 +244,7 @@ Interpretation (claude-principal, flagged): exploration phase is more or less fi
 > I'm from now we will use oppos only for morning and also it's important that this right up illustration this illustration should be using image then to generate images diagram skill diagram creator skill for diagrams explaining things so it shouldn't be just dial text so write it down for tomorrow and remember no jargon no specific to this report no codes should be normal text
 
 Interpretation (claude-principal, flagged): from now on Claude Opus is used only for the morning (daily) write-up. That write-up must be illustrated: images made with image generation, and explanatory diagrams made with the diagram-creator skill, not just dry text. Plain language: no jargon, no internal/report-specific references, no codes (no commit hashes, IDs, internal tags). Applies from tomorrow's morning report.
+
+## 2026-10-03 20:19 CEST: user to claude-principal (verbatim)
+
+> for your own deliverables please delegate them to other principle just send a message saying hey this are the things that I need to finish please take over
