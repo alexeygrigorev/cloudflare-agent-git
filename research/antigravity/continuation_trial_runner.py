@@ -492,7 +492,7 @@ def main():
         else:
             print(f"Cold boot native deliver correctly rejected (not-ready, rc={deliv_init_rc}): {deliv_init_out.strip()}")
             print("Executing bootstrap delivery via raw send (bootstrap delivery, not a readiness gate)...")
-            run_host_cmd([PILOT_BIN, "send", receiver_uuid, f"Run this tool command: {init_cmd}\n", "--workspace", WORKSPACE])
+            run_host_cmd([PILOT_BIN, "send", receiver_uuid, f"Run this tool command: {init_cmd}", "--workspace", WORKSPACE, "--enter"])
             delivery_mode = "raw send (bootstrap delivery, not a readiness gate)"
 
         print("Waiting for receiver to execute baseline turn and transition to authentic reported idle...")
