@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "updated_at": "2026-10-03T11:51:08Z",
+ "updated_at": "2026-10-03T12:25:22Z",
  "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
  "teams": [
   {
@@ -292,6 +292,44 @@
       "tests/test_run10_ack_parser.py"
      ],
      "first_tool": "view_file (viewing continuation_trial_runner.py at 2026-10-03T11:59:47Z)",
+     "usage": "UNKNOWN",
+     "launched_by": "antigravity-head",
+     "status": "completed"
+    },
+    {
+     "tag": "l2-client-builder",
+     "role": "executor",
+     "parent_tag": "antigravity-head",
+     "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+     "mode": "native-harness-subagent",
+     "harness_conversation_id": "98576653-7522-4ac7-8549-2ef297cb1faf",
+     "provider": "gemini",
+     "workspace": "/home/alexey/git/agent-branches-l2-client",
+     "branch": "proto/l2-client",
+     "task": "L2 Agent Client implementation (CLI + MCP schema, task register, WIP push, status/warning polling, ACK)",
+     "owned_paths": [
+      "/home/alexey/git/agent-branches-l2-client/**"
+     ],
+     "first_tool": "view_file (/home/alexey/git/cloudflare-agent-git/research/antigravity/agent-branches/CONTRACT-L2-L3.md)",
+     "usage": "UNKNOWN",
+     "launched_by": "antigravity-head",
+     "status": "in_progress"
+    },
+    {
+     "tag": "l3-radar-builder",
+     "role": "executor",
+     "parent_tag": "antigravity-head",
+     "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+     "mode": "native-harness-subagent",
+     "harness_conversation_id": "00ea32c5-da15-40b6-b3fc-b28e7ad4fdf0",
+     "provider": "gemini",
+     "workspace": "/home/alexey/git/agent-branches-l3-radar",
+     "branch": "proto/l3-radar",
+     "task": "L3 Radar Engine implementation (in-memory pairwise git merge-tree trial merge matrix + budgeted combined-tree test runner)",
+     "owned_paths": [
+      "/home/alexey/git/agent-branches-l3-radar/**"
+     ],
+     "first_tool": "view_file (/home/alexey/git/cloudflare-agent-git/research/antigravity/agent-branches/CONTRACT-L2-L3.md)",
      "usage": "UNKNOWN",
      "launched_by": "antigravity-head",
      "status": "in_progress"
@@ -593,6 +631,34 @@
       "path": ".local/opencode-isolated/opencode/opencode.db"
      },
      "task": "muse-r32 A01 runner oracle review CHANGES (5 defects)",
+     "parent_team": "independent-review"
+    },
+    {
+     "tag": "muse-r38-reviewer",
+     "role": "worker",
+     "mode": "headless",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "session_id": "cf3daf15-81dc-40f3-9037-a95d38e734c3",
+     "telemetry": {
+      "type": "opencode-db",
+      "conversation_id": "ses_efe4b92e2ffepJUIbl0c0QC9Lk",
+      "path": ".local/opencode-isolated/opencode/opencode.db"
+     },
+     "task": "muse-r38 Run10 7bc02d7 re-review APPROVE",
+     "parent_team": "independent-review"
+    },
+    {
+     "tag": "muse-r39-reviewer",
+     "role": "worker",
+     "mode": "headless",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "session_id": "6da142a1-f519-4738-946c-4f1977c33a82",
+     "telemetry": {
+      "type": "opencode-db",
+      "conversation_id": "ses_efe4b927dffe9J15lMJQPOolT1",
+      "path": ".local/opencode-isolated/opencode/opencode.db"
+     },
+     "task": "muse-r39 c2a03d7 arm1a-release RELEASE-ONE-ARM1A",
      "parent_team": "independent-review"
     }
    ]
