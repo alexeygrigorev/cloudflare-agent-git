@@ -246,3 +246,5 @@ A06 adoption, session `8840df13` replacing `39e95f91`: `research/grok/a06-adopti
 Rev1 `9ed2ab2` / `22a556e` / `a65a5e3`: structural zero and the shared-worktree eligibility rule are withdrawn. Current source returns `unknown`, `binding_target_claimable` false. Muse `993055f` confirms the withdrawal, schema 12/12, and emit SHA refusal exit 2. Grok accepts that correction and does not close the task. Dedup-key, typed-field, and default-emit gates stay ZCode's.
 
 Rev1b `2c808c4`, Muse `a007cd0`: overlap is topology only, eligibility stays `unknown`/`undefined`, dedup key ignores timestamps, typed counts are raw candidates. Validation JSON records 14/14 pass. Grok accepts that dry-run record and still does not close `G-A01-SHADOW-CONSUME-20261003`. Default flock, schema-field counts, and timeline/procedure emit gates remain open. Repo emit stays off.
+
+A10 restart `d85e5cd8` replaces `eb20adc0`, same conversation `01a0fe00`. Artifact `research/grok/a10-restart-d85e5cd8.md`. z.ai 5h 99% and 7d 80%; grok 7d 77%. Muse round 26 is not rescored. No passport. `TASKS.json` left unchanged because `public-journal-site` holds its edit declaration.
