@@ -755,3 +755,25 @@ Following the joint refocus directives (Claude `01a101c3-775b`, Codex `C-1303`, 
      - **Resolution:** Directly inserted the session record (`id='ses_eff7ab003ffe6cu8s9rHPqH7uZ'`, `project_id='f4777d56c6f02ad1d365997e26f78c75483e948d'`, `title='R12 v2.2 corrected grader review'`, `version='1.18.31'`) into `~/.local/share/opencode/opencode.db` via sqlite3.
      - Successfully resumed under aplexer: session ID `f32fad7d-1697-4135-9db4-cd0f8cc1340d` (`tag=muse-reviewer`, memory cap 4G, running model `opencode-go/muse-spark-1.3-contributor`).
      - Verified interactive OpenCode TUI running cleanly and native delivery channels active; preserved `.local/muse-r48/` logs and scratch.
+
+7. **L6 Real Multi-Model 3-Agent Run & CONTRACT 0.1.2 Alignment (`proto/l6-agents`):**
+   - **CONTRACT 0.1.2 Alignment (Commits `e59f669`, `bca812b`, `6ecdb3e`):**
+     - Updated `CONTRACT_VERSION = "0.1.2"` across `agent_branches/client.py` and `agents/driver.py`.
+     - Removed legacy down-conversion; canonical typed `export_l1_payload` is passed directly with `contract: "0.1"` (`checks-wire.ts` native format).
+     - Filtered `not_checked` results prior to L1 submission (adhering to `coordinator.ts:801` requirement `runner results must be conflict|clean|unknown, not not_checked`).
+     - Added `--always-approve` to Grok agent invocation and hardened session UUID extraction (`splitlines()[0]`).
+     - Full test suite: **63/63 unit and integration tests PASS**. Pushed to `origin/proto/l6-agents`.
+   - **Local Stack Fresh Startup (`agent-branches-l6-stack`):**
+     - Started fresh local L1 stack on port 8797 (Worker) and port 8798 (Git Sidecar) via `./start-stack.sh --fresh`.
+     - Seeded baseline canonical repo from `demo-target/` at SHA `584fd00021e5283d62666401e2fb8ea994cf23df`.
+   - **Reference Patch Dry-Run Verification:**
+     - Executed `./agents/launch.sh --dry-run` against fresh stack.
+     - Tasks registered: `agent-0001` (T1), `agent-0002` (T2), `agent-0003` (T3).
+     - Generated 3 warnings (`warn-1` textual conflict in `shortlinks.js`, `warn-2` textual conflict in `worker.js`, `warn-3` test conflict in combined-tree test runner 400 !== 201).
+     - Combined merge summary: `status="conflict"`, `kind="textual"`, conflicting task T2 in `src/shortlinks.js`. Task test runs: 15/15, 16/16, 15/15 pass.
+   - **Real Multi-Model 3-Agent Execution (Active):**
+     - Launched `./agents/launch.sh --engine-mode multi-model` under `MemAvailable >= 10 GiB` gate (26.3 GiB available), `--memory 1500M` per agent.
+     - Task T1 (Link listing & visit counters): session `20ba9438-3c02-454d-a35a-c066da6d4b06` (`zcodex` with `ZCODE_WARM=1`).
+     - Task T2 (Object-form create with TTL expiry): session `c5964bca-e68a-4f4f-b35a-b26a424a60da` (`space-bunny` via `opencode-go/space-bunny-free`). Implemented breaking object-form `create` and TTL expiry, passing 25/25 unit tests (`test/create.test.js`, `test/ttl.test.js`) and updating documentation.
+     - Task T3 (Bulk import endpoint): session `60fc9185-3ab6-44ca-9b9b-8920c2bd68c9` (`grok` via `grok --always-approve`). Implemented bulk import in `src/worker.js`, passed unit tests, committed and pushed commit `21e664f` (`feat: add POST /links/bulk import endpoint`) to `origin/feat/t3`.
+     - Timeline log: `agent-branches-l6-agents/.local/agents-runs/run-1791051153-56011d/timeline.json`.
