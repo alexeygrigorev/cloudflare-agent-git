@@ -380,7 +380,7 @@
         },
         {
           "tag": "l6-ca16-review",
-          "role": "reviewer",
+          "role": "executor",
           "parent_tag": "antigravity-head",
           "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
           "mode": "headless",
@@ -388,13 +388,14 @@
           "provider": "opencode-go/space-bunny-free",
           "model": "space-bunny-free",
           "session_id": "1fcfd98b-fd8b-430e-bb18-862ab7a7c496",
+          "opencode_session_id": "ses_efced403dffeIf6a5f3Oh8K5Pe",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "status": "ended",
-          "task": "REV-L6-CA16 independent cross-family review of ca16e16",
+          "task": "REV-L6-CA16 independent cross-family review of ca16e16 (review executor)",
           "owned_paths": [
             "research/antigravity/reviews/REV-L6-CA16-REVIEW.md"
           ],
-          "first_tool_evidence": "aplexer whoami --json / view_file",
+          "first_tool_evidence": "bash 18:42:13.449Z (session efced403)",
           "completed_at": "2026-10-03T18:48:00+00:00",
           "result": "REQUEST_CHANGES (committed c8dfb4f; F3.1 deep quarantine sweep, F2.1/F2.2 baseline radar trigger, F1.1 discrete ack keying)"
         },
@@ -460,6 +461,65 @@
           "first_tool_evidence": "aplexer whoami --json",
           "completed_at": "2026-10-03T19:04:20+00:00",
           "result": "Complete: 781339f and 68ebf15 pushed to proto/live (162/162 tests pass)"
+        },
+        {
+          "tag": "zc-metrics-fallback",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "zcodex exec",
+          "provider": "zcode/warm",
+          "session_id": "2becf3fd-791e-49c1-be43-eac9583ca049",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "status": "running",
+          "task": "C-1408/C-1410 metrics completed-session attribution fallback + telemetry + tests",
+          "owned_paths": [
+            "scripts/metrics/collect.py",
+            "scripts/metrics/test_metrics.py",
+            "scripts/metrics/opencode_usage.py"
+          ],
+          "first_tool_evidence": "aplexer work join / bash / ls session records",
+          "memory_cap": "1500M"
+        },
+        {
+          "tag": "rev-l4-ui",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "opencode run",
+          "provider": "opencode-go/space-bunny-free",
+          "model": "space-bunny-free",
+          "session_id": "df0de19e-2ec3-4993-86e1-3550e4f87722",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "status": "running",
+          "task": "C-1399/C-1409/C-1410 independent review of UI DOM negative fix and Playwright live browser test suite",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-L4-DOM-NEGATIVE.md"
+          ],
+          "first_tool_evidence": "python3 tests/test_dom_negative_browser.py (3/3 passed in 1.775s)",
+          "memory_cap": "1500M"
+        },
+        {
+          "tag": "pristine-product-agent",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "zcodex exec",
+          "provider": "zcode/warm",
+          "session_id": "d56f52a5-42ea-48ba-a636-d216df2e3810",
+          "workspace": "/home/alexey/git/demo-target-pristine",
+          "status": "running",
+          "task": "C-1402/C-1410 unfamiliar product adoption on pristine single-commit baseline (GET /healthz, GET /links/:slug/stats)",
+          "owned_paths": [
+            "src/shortlinks.js",
+            "src/worker.js",
+            "test/stats.test.js"
+          ],
+          "first_tool_evidence": "read test conventions and shortlinks.js",
+          "memory_cap": "1500M"
         }
       ]
     },

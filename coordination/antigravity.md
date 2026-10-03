@@ -822,3 +822,31 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
 4. **Resource Mount Admission & Pre-Deploy Gates (Codex C-1396, C-1397):**
    - **Per-Mount Disk Floor:** Confirmed root mount `/` has 67 GiB available (exceeding 50 GB floor), while `/tmp` has 41 GiB available (below 50 GB floor). Enforced strict admission gate: zero new allocations on `/tmp`; all future harness scratch directories routed to root mount (`TMPDIR=/home/alexey/git/cloudflare-agent-git/.local/scratch`), preserving all existing jobs, worktrees, and caches without destructive cleanup.
    - **Pre-Deploy Security Gate (C-1397):** Acknowledged that while commit `6c5377a` removed unsupported `expirationTtl`, residual one-shot rate-limit keys and public unauthenticated `GET /status` & `GET /tasks/:id` hold the public deploy gate strictly CLOSED. Zero public deployment to Cloudflare will occur until pre-deploy security code, CORS, and auth are fully reviewed and accepted by principals.
+
+---
+
+## 33. UI C-1399 DOM-Negative Fix, Real Browser Playwright Test Suite, and Parallel Team Delegation (C-1402, C-1409, C-1410, C-1411)
+
+1. **UI C-1399 DOM-Negative Bug & Single-Flight Guard (`proto/l4-review-ui` @ `a08cfce`, `f6516ba`; `proto/live` @ `61e00f4`):**
+   - **Root Cause:** When `refresh()` encountered a `/status` fetch failure (`!r.statusResult.ok`), `setStatusErrorView()` displayed `#status-error`, but only the task view re-rendered (`if (currentTaskId && r.task)`). On the index overview (`!currentTaskId`), `renderIndex` was never called, leaving previously rendered green `.badge.clean` elements lingering in the DOM table. Furthermore, `renderIndex` lacked stale-state awareness for pair safety badges, meaning any previous clean evaluation could still output green badges even if re-rendered.
+   - **Fix Implementation:**
+     - In `prototype/ui/ui.js` `refresh()`: Added `else if (!currentTaskId && lastStatus) { renderIndex(lastStatus); everRendered = true; }` so status failures immediately force an index re-render marked stale.
+     - In `renderIndex()`: When `stale` is non-null (`statusFresh.describe()`), any pair whose status would have been clean is downgraded to `"unknown"` (`badgeType = "unknown"`), and `why` notes: `"live status could not be refreshed (<error>); treated as unknown, not clean"`.
+     - Zero `.badge.clean` elements remain in dynamic pair cards during an outage.
+   - **Real Browser Playwright End-to-End Test Suite (`prototype/ui/tests/test_dom_negative_browser.py`):**
+     - Loads actual `index.html` in real headless Chromium browser via Playwright with ephemeral localhost HTTP server.
+     - `test_01_clean_to_503_downgrade_and_recovery`: Verifies clean matching heads render green `.badge.clean`; switches to 503 outage -> verifies `#status-error` alert surfaces, pair badge is downgraded to `.badge.unknown`, and exactly ZERO `.badge.clean` elements exist in dynamic `#pairs` or `#agents`; switches back to 200 -> verifies green `.badge.clean` recovers cleanly.
+     - `test_02_out_of_order_stale_response_does_not_restore_green`: Verifies single-flight generation counter in live DOM: out-of-order delayed clean response settling after a newer 503 failure is rejected by `genTracker.settle(gen)` and does NOT restore green badges.
+     - `test_03_initial_503_no_last_status_does_not_throw`: Verifies fresh boot on initial 503 outage loads without unhandled JavaScript exceptions, loading spinner hides, error banner displays, and zero clean badges are rendered.
+     - **Verification:** All 3 Playwright browser tests PASS in 1.775s; all 48 `node --test` unit tests PASS. Pushed to `proto/l4-review-ui` and merged cleanly into `proto/live`.
+
+2. **Resource Boundary Correction & Strict Cap Enforcement (Codex C-1411):**
+   - **Memory Cgroup Enforced to 1500M:** Directly adjusted `memory.max` to `1572864000` (1500M) in `/sys/fs/cgroup/...` for both active session workloads (`zc-metrics-fallback` PID 75045 and `rev-l4-ui` PID 75640) without process interruption or work loss.
+   - **Mount Floor Admission:** Enforced `/` mount floor (67 GiB available) and zero new `/tmp` allocations (41 GiB available). Removed temporary scratch `/tmp/opencode/mutant` and routed all scratch allocations to `.local/scratch/`. Portable default in `test_dom_negative_browser.py` respects caller admission.
+
+3. **Active Parallel Team Delegation (HUMAN31/32, C-1410):**
+   - As head, decomposed work across parallel headless workers rather than solo implementing:
+     1. **`zc-metrics-fallback` (`2becf3fd`):** Headless ZCode executor on `scripts/metrics/` implementing completed-session attribution fallback in `collect.py` (resolving pruned aplexer sessions via disk records, rollout files, and SQLite `opencode-db`), null coverage for child omissions, deduping native conversations, and adding unit tests.
+     2. **`rev-l4-ui` (`df0de19e`):** Independent cross-family reviewer (Space Bunny on `space-bunny-free`) reviewing UI C-1399 DOM-negative fix and Playwright live browser test suite, authoring `research/antigravity/reviews/REV-L4-DOM-NEGATIVE.md`.
+     3. **`pristine-product-agent` (`d56f52a5`):** Headless ZCode executor on `/home/alexey/git/demo-target-pristine` (clean single-commit baseline `5f44452` with zero past solution history or leaked worklogs) implementing unfamiliar product tasks (`GET /healthz` link count and `GET /links/:slug/stats` with full unit test coverage).
+   - All three executors registered in `coordination/TEAM-REGISTRY.json` with active sessions, tasks, owned scopes, and verified 1500M memory caps.
