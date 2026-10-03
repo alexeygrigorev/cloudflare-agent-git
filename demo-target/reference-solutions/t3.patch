@@ -1,0 +1,88 @@
+From e9d109aaa80ba4436d93e8a43557c8f0b283c3f7 Mon Sep 17 00:00:00 2001
+From: Alexey Grigorev <alexey.s.grigoriev@gmail.com>
+Date: Sat, 3 Oct 2026 15:15:16 +0200
+Subject: [PATCH] T3: POST /links/bulk import endpoint
+
+---
+ demo-target/src/worker.js     | 20 +++++++++++++++++++
+ demo-target/test/bulk.test.js | 37 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 57 insertions(+)
+ create mode 100644 demo-target/test/bulk.test.js
+
+diff --git a/demo-target/src/worker.js b/demo-target/src/worker.js
+index 4d72d04..595de6b 100644
+--- a/demo-target/src/worker.js
++++ b/demo-target/src/worker.js
+@@ -30,6 +30,26 @@ export async function route(request, service) {
+     }
+   }
+ 
++  if (method === 'POST' && pathname === '/links/bulk') {
++    const body = await request.json().catch(() => null);
++    if (!body || typeof body !== 'object' || !Array.isArray(body.links)) {
++      return json(400, { error: 'body must be { "links": [...] }' });
++    }
++    const slugs = [];
++    for (const [index, item] of body.links.entries()) {
++      try {
++        const record = service.create(item.slug, item.url);
++        slugs.push(record.slug);
++      } catch (err) {
++        if (err instanceof ValidationError || err instanceof ConflictError) {
++          return json(400, { error: err.message, index });
++        }
++        throw err;
++      }
++    }
++    return json(201, { created: slugs.length, slugs });
++  }
++
+   if (method === 'GET' && pathname.startsWith('/') && pathname.length > 1 && pathname !== '/links') {
+     const slug = pathname.slice(1);
+     try {
+diff --git a/demo-target/test/bulk.test.js b/demo-target/test/bulk.test.js
+new file mode 100644
+index 0000000..8145d55
+--- /dev/null
++++ b/demo-target/test/bulk.test.js
+@@ -0,0 +1,37 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { fresh, postJSON, get } from './_helpers.js';
++
++test('POST /links/bulk imports every link and returns slugs in order', async () => {
++  const { call } = fresh();
++  const res = await call(
++    postJSON('/links/bulk', {
++      links: [
++        { slug: 'docs', url: 'https://example.com/docs' },
++        { slug: 'api', url: 'https://example.com/api' },
++      ],
++    }),
++  );
++  assert.equal(res.status, 201);
++  const body = await res.json();
++  assert.equal(body.created, 2);
++  assert.deepEqual(body.slugs, ['docs', 'api']);
++  assert.equal((await call(get('/docs'))).status, 302);
++  assert.equal((await call(get('/api'))).status, 302);
++});
++
++test('POST /links/bulk with an empty list creates nothing', async () => {
++  const { call } = fresh();
++  const res = await call(postJSON('/links/bulk', { links: [] }));
++  assert.equal(res.status, 201);
++  const body = await res.json();
++  assert.deepEqual(body, { created: 0, slugs: [] });
++});
++
++test('POST /links/bulk rejects a malformed body with 400', async () => {
++  const { call } = fresh();
++  const res = await call(postJSON('/links/bulk', { links: 'nope' }));
++  assert.equal(res.status, 400);
++  const body = await res.json();
++  assert.match(body.error, /links/);
++});
+-- 
+2.43.0
+

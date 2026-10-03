@@ -1,0 +1,100 @@
+From 9f992dca992e80f9e81c3c38acc3b2a50eb659b4 Mon Sep 17 00:00:00 2001
+From: Alexey Grigorev <alexey.s.grigoriev@gmail.com>
+Date: Sat, 3 Oct 2026 15:14:25 +0200
+Subject: [PATCH] T1: link listing (GET /links) + visit counters on redirect
+
+---
+ demo-target/src/shortlinks.js    | 11 ++++++++++-
+ demo-target/src/worker.js        |  5 +++++
+ demo-target/test/listing.test.js | 33 ++++++++++++++++++++++++++++++++
+ 3 files changed, 48 insertions(+), 1 deletion(-)
+ create mode 100644 demo-target/test/listing.test.js
+
+diff --git a/demo-target/src/shortlinks.js b/demo-target/src/shortlinks.js
+index 289b72d..b4bd8d8 100644
+--- a/demo-target/src/shortlinks.js
++++ b/demo-target/src/shortlinks.js
+@@ -29,11 +29,20 @@ export class ShortlinkService {
+     const slug = normalizeSlug(rawSlug);
+     if (!isValidHttpUrl(url)) throw new ValidationError(`url must be an http(s) URL: ${url}`);
+     if (this.store.has(slug)) throw new ConflictError(`slug already exists: ${slug}`);
+-    const record = { slug, url, createdAt: new Date().toISOString() };
++    const record = { slug, url, createdAt: new Date().toISOString(), visits: 0 };
+     this.store.put(slug, record);
+     return record;
+   }
+ 
++  list() {
++    return this.store.keys().map((key) => this.store.get(key));
++  }
++
++  recordVisit(rawSlug) {
++    const record = this.store.get(normalizeSlug(rawSlug));
++    if (record) this.store.put(record.slug, { ...record, visits: record.visits + 1 });
++  }
++
+   resolve(rawSlug) {
+     const slug = normalizeSlug(rawSlug);
+     const record = this.store.get(slug);
+diff --git a/demo-target/src/worker.js b/demo-target/src/worker.js
+index 4d72d04..d4bfa34 100644
+--- a/demo-target/src/worker.js
++++ b/demo-target/src/worker.js
+@@ -30,10 +30,15 @@ export async function route(request, service) {
+     }
+   }
+ 
++  if (method === 'GET' && pathname === '/links') {
++    return json(200, { links: service.list() });
++  }
++
+   if (method === 'GET' && pathname.startsWith('/') && pathname.length > 1 && pathname !== '/links') {
+     const slug = pathname.slice(1);
+     try {
+       const record = service.resolve(slug);
++      service.recordVisit(record.slug);
+       return new Response(null, { status: 302, headers: { location: record.url } });
+     } catch (err) {
+       return errorResponse(err);
+diff --git a/demo-target/test/listing.test.js b/demo-target/test/listing.test.js
+new file mode 100644
+index 0000000..620d745
+--- /dev/null
++++ b/demo-target/test/listing.test.js
+@@ -0,0 +1,33 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { fresh, postJSON, get } from './_helpers.js';
++
++test('GET /links returns every stored link', async () => {
++  const { call } = fresh();
++  await call(postJSON('/links', { slug: 'docs', url: 'https://example.com/docs' }));
++  await call(postJSON('/links', { slug: 'api', url: 'https://example.com/api' }));
++  const res = await call(get('/links'));
++  assert.equal(res.status, 200);
++  const body = await res.json();
++  assert.equal(body.links.length, 2);
++  assert.deepEqual(
++    body.links.map((l) => l.slug),
++    ['docs', 'api'],
++  );
++  assert.equal(body.links.every((l) => l.visits === 0), true);
++});
++
++test('redirects increment the visit counter', async () => {
++  const { call } = fresh();
++  await call(postJSON('/links', { slug: 'docs', url: 'https://example.com/docs' }));
++  await call(get('/docs'));
++  await call(get('/docs'));
++  const res = await call(get('/links'));
++  const body = await res.json();
++  assert.equal(body.links[0].visits, 2);
++});
++
++test('service.list() is empty before any create', () => {
++  const { service } = fresh();
++  assert.deepEqual(service.list(), []);
++});
+-- 
+2.43.0
+
