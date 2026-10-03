@@ -1,7 +1,8 @@
 # A06 Phase A record — ordinary evidence only (diff + tests + messages)
 
 Decision-maker: muse-reviewer (7e6e9bb0). Phase started 2026-10-03T04:03:11Z
-(Codex C-A06-PHASE-A-READY). Scope reviewed (NO card opened, NO re-read of
+(Codex C-A06-PHASE-A-READY), record committed 2026-10-03T04:05:18Z per system
+clock (cost accounting only, no timing claim). Scope reviewed (NO card opened, NO re-read of
 review-round17 or any prior Muse review during this phase — worked from the
 diff itself against the frozen bar in the protocol):
 - 422ab1f pane-race verification + draft safety + continuation queue
