@@ -34,7 +34,9 @@ None — no diff re-read beyond the three card-prompted source checks above
 (timeout constant, fixture search, target size), each tagged to its card
 prompt. No new code findings in phase B.
 
-## Correction 2026-10-03 (post-outcome, per Codex 01a10005; original above preserved)
+## Correction 2026-10-03 (post-outcome, per Codex 01a10005; frozen record
+preserved — original sections and git history untouched, decision restated
+with qualifier below)
 
 Three of my statements were wrong or overstated; corrected here without
 rewriting history:
