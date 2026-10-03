@@ -107,3 +107,73 @@ committed); "snapshot previous executor output" commit is a no-op.
 Applying codex-principal review C-1305 (fixes 1-5), C-1306 (contract
 additions), C-1309 (deployment boundary), each as a separate commit with
 tests. Results appended below.
+
+### Fix commits (codex C-1305 #1-5, C-1306, C-1309 #7-9), all with tests
+
+1. `3e30d3f` radar result status contract (C-1305 #1):
+   `{status: conflict|clean|unknown|not_checked, kind?, evidence?}`;
+   StubRadar always `not_checked`; warnings only for runner-submitted
+   conflict; /status per-pair views with stale/checkedAt; clean at same
+   heads resolves a warning; POST /checks route added (auth came next).
+2. `0201bb1` ArtifactsPort: `listRefs` -> `headCommit` (derived from
+   documented `log({ref,limit:1})`); no invented merge/ref-enumeration APIs
+   (C-1305 #2 + C-1309 #8); docs-notes ASSUMED-A rewritten.
+3. `af054a6` auth (C-1305 #3): ADMIN_TOKEN on POST /setup + /tasks (incl.
+   token minting), RUNNER_TOKEN on /checks; fail closed (503) when
+   unconfigured; constant-time compare; tokens never logged/echoed;
+   README documents wrangler-dev localhost-only + deploy auth review.
+4. `bc797b7` L2/L4 contract additions (C-1306): base_sha (+ validation
+   against canonical history) and intent on tasks; POST
+   /warnings/:id/ack {agent, note?} records ack-at-head; POST
+   /tasks/:id/tests {command, exit, head_sha} (verified against fork
+   commits) -> testProvenance; GET /tasks/:id enriched.
+5. `9925cc0` deployment boundary (C-1309 #7,#8,#9): local-artifacts Node
+   sidecar (built-ins + system git ONLY, no new npm deps — node_modules
+   still 325 MiB): real bare repos (init --bare + plumbing seed), fork =
+   clone --bare (+ update-ref to baseSha), per-repo tokens, smart HTTP via
+   `git http-backend` (read tokens cannot push), post-receive hook ->
+   worker POST /events/push {fork, ref, sha}; SidecarArtifacts port client
+   (Worker fetches sidecar in local mode; in-memory fake deleted; fail
+   closed without backend); /checks now vector-gated (vector != current
+   heads -> 409 + currentHeads) with lastRunnerReport in /status; radar
+   runs only in the trusted L3 runner, never in the Worker.
+6. `2bd0b95` persistence + concurrency (C-1305 #4): all mutating DO methods
+   serialized through a per-instance mutex (workerd interleaves events
+   during sidecar I/O awaits -> duplicate fork / lost update risk);
+   restart-reconstruction test via `evictDurableObject` (memory torn down,
+   DO storage + sidecar repos preserved) covering canonical/heads/tasks/
+   warnings/acks/pairChecks/runnerReport + post-restart push; concurrency
+   tests: 2 simultaneous + 4-burst createTask all distinct, no losses.
+7. CONTRACT.md `version: 0.1` published (C-1305 #5): exact routes +
+   request/response JSON, radar hook signature + status enum semantics,
+   ArtifactsPort documented-vs-ASSUMED table, auth, sidecar API, webhook
+   shape; README rewritten to match (worker-performs-no-git statement).
+
+### Final test results (this executor's head)
+
+- `npm run typecheck` (tsc --noEmit): clean.
+- `npm test` (vitest, inside workerd, against the real-git sidecar booted
+  by test/global-setup.ts): **8 files, 35 tests, 35 passed** —
+  radar contract (4), envelope (2), auth (5), coordinator flow w/ real
+  commits (9), vector-gated checks incl. 409 stale (6), C-1306 task
+  contract (5), DO restart + concurrency (3), outbound-fetch canary (1).
+- `npm run test:sidecar` (node --test): **11 tests, 11 passed** — admin
+  API auth, seeded real repos, fork/pin-base, plumbing commits helper,
+  REAL git clone/commit/push via git http-backend, post-receive ->
+  worker webhook capture, invalid-token + read-token-cannot-push.
+- `npm run test:all` = typecheck + both suites: all green.
+- Fix #9 verified: `du -sh node_modules` = 325 MiB (unchanged; sidecar uses
+  Node built-ins + system git 2.43 only; package.json deps untouched).
+
+### Notes / deviations
+
+- Fake DurableObjectState construction is rejected by the workerd
+  DurableObject base class, so the restart test uses the real DO via
+  `evictDurableObject` (cloudflare:test) instead of a hand-rolled fake.
+- StaleVectorError was replaced by a `{stale: true, currentHeads}` return:
+  custom error properties do not survive DO RPC marshalling.
+- Canonical repo names get a per-model random 8-hex suffix so isolated
+  per-test-file DO storage never collides in the shared sidecar repo root.
+- POST /events/push, /events/artifacts, /tasks/:id/tests and /warnings/
+   :id/ack stay unauthenticated in local mode (attestational/ingest
+  routes); CONTRACT.md flags authenticating /events/* before any deploy.
