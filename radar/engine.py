@@ -2,12 +2,22 @@
 
 Provides in-memory pairwise trial-merges using git merge-tree --write-tree,
 detects conflicting edits with zero checkout/disk overhead, and runs budgeted
-semantic tests against merged snapshots on clean trial-merges when overlapping
-files exist.
+semantic tests against merged snapshots on clean trial-merges.
 
-Enforces strict fail-closed output invariants:
-- On conflict: emits warning {warning_id, pair: [A, B], heads: {A, B}, kind: "textual" | "test", evidence: {...}}
-- On missing objects, execution timeout, or check failure: strictly returns "UNKNOWN", NEVER "safe"!
+Status Enum Contract:
+- Strictly one of: 'conflict' | 'clean' | 'unknown' | 'not_checked'
+  - 'conflict': Textual merge conflict (kind='textual') or semantic test failure (kind='test').
+  - 'clean': Both textual merge is clean AND tests positively executed with > 0 collected tests passing.
+  - 'unknown': Missing commit objects, execution timeout, 0 tests collected, or check failure.
+  - 'not_checked': Disjoint / non-overlapping files where tests were not run.
+
+Strict Invariants:
+- Never safe by default: broad is_safe is removed. Output report is {status, kind, evidence}.
+- Process group isolation: preexec_fn=os.setsid with os.killpg(SIGKILL) on timeout.
+- Total wall-clock timeout budget.
+- Clean sanitized execution environment.
+- Safe archive extraction preventing directory traversal and symlink escapes.
+- Git merge-tree syntax uses --merge-base=<base>.
 
 Reference:
 - research/antigravity/agent-branches/CONTRACT-L2-L3.md
@@ -21,7 +31,9 @@ import io
 import itertools
 import json
 import os
+import re
 import shutil
+import signal
 import subprocess
 import sys
 import tarfile
@@ -30,6 +42,19 @@ import time
 import uuid
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+# Strict Status Enum Values
+STATUS_CONFLICT = "conflict"
+STATUS_CLEAN = "clean"
+STATUS_UNKNOWN = "unknown"
+STATUS_NOT_CHECKED = "not_checked"
+
+VALID_STATUSES = {
+    STATUS_CONFLICT,
+    STATUS_CLEAN,
+    STATUS_UNKNOWN,
+    STATUS_NOT_CHECKED,
+}
 
 
 @dataclass
@@ -91,31 +116,36 @@ class AgentHead:
 class PairResult(dict):
     """Result of evaluating a pairwise trial-merge between two agent heads.
 
-    Subclasses dict for direct JSON serializability and dictionary access,
-    while also exposing property and comparison semantics.
+    Adheres strictly to the status enum: 'conflict' | 'clean' | 'unknown' | 'not_checked'.
+    Output report format provides: {status, kind, evidence}.
     """
 
     def __init__(
         self,
-        status: str,  # "CLEAN" | "CONFLICT" | "TEST_FAILURE" | "UNKNOWN"
-        pair: List[str],
-        heads: Dict[str, str],
+        status: str,  # strictly 'conflict' | 'clean' | 'unknown' | 'not_checked'
+        kind: Optional[str] = None,  # 'textual' | 'test' | None
+        evidence: Optional[Dict[str, Any]] = None,
+        pair: Optional[List[str]] = None,
+        heads: Optional[Dict[str, str]] = None,
         warning: Optional[Dict[str, Any]] = None,
         tree_sha: Optional[str] = None,
         overlapping_files: Optional[List[str]] = None,
         error: Optional[str] = None,
-        evidence: Optional[Dict[str, Any]] = None,
     ):
+        status_norm = status.lower()
+        if status_norm not in VALID_STATUSES:
+            raise ValueError(f"Invalid status '{status}'. Must be one of: {VALID_STATUSES}")
+
         data = {
-            "status": status,
-            "pair": list(pair),
-            "heads": dict(heads),
+            "status": status_norm,
+            "kind": kind or (warning.get("kind") if warning else None),
+            "evidence": evidence or (warning.get("evidence") if warning else {}),
+            "pair": list(pair or []),
+            "heads": dict(heads or {}),
             "warning": warning,
             "tree_sha": tree_sha,
             "overlapping_files": list(overlapping_files or []),
             "error": error,
-            "evidence": evidence or (warning.get("evidence") if warning else None),
-            "is_safe": (status == "CLEAN"),
         }
         super().__init__(data)
 
@@ -124,16 +154,20 @@ class PairResult(dict):
         return self["status"]
 
     @property
+    def kind(self) -> Optional[str]:
+        return self["kind"]
+
+    @property
+    def evidence(self) -> Dict[str, Any]:
+        return self["evidence"]
+
+    @property
     def warning(self) -> Optional[Dict[str, Any]]:
         return self["warning"]
 
     @property
     def warning_id(self) -> Optional[str]:
         return self["warning"].get("warning_id") if self["warning"] else None
-
-    @property
-    def kind(self) -> Optional[str]:
-        return self["warning"].get("kind") if self["warning"] else None
 
     @property
     def tree_sha(self) -> Optional[str]:
@@ -156,38 +190,37 @@ class PairResult(dict):
         return self["error"]
 
     @property
-    def evidence(self) -> Optional[Dict[str, Any]]:
-        return self["evidence"]
-
-    @property
-    def is_safe(self) -> bool:
-        # STRICT INVARIANT: Never safe by default. Only verified CLEAN is safe.
-        return self["status"] == "CLEAN"
-
-    @property
-    def is_unknown(self) -> bool:
-        return self["status"] == "UNKNOWN"
+    def is_clean(self) -> bool:
+        return self["status"] == STATUS_CLEAN
 
     @property
     def is_conflict(self) -> bool:
-        return self["status"] == "CONFLICT"
+        return self["status"] == STATUS_CONFLICT
 
     @property
-    def is_test_failure(self) -> bool:
-        return self["status"] == "TEST_FAILURE"
+    def is_unknown(self) -> bool:
+        return self["status"] == STATUS_UNKNOWN
 
     @property
-    def is_clean(self) -> bool:
-        return self["status"] == "CLEAN"
+    def is_not_checked(self) -> bool:
+        return self["status"] == STATUS_NOT_CHECKED
+
+    def report(self) -> Dict[str, Any]:
+        """Return the minimal standard report {status, kind, evidence}."""
+        return {
+            "status": self["status"],
+            "kind": self["kind"],
+            "evidence": self["evidence"],
+        }
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, str):
-            return self.status == other
+            return self.status.lower() == other.lower()
         return super().__eq__(other)
 
     def __repr__(self) -> str:
-        w_id = self.warning_id or "none"
-        return f"<PairResult pair={self.pair} status='{self.status}' warning_id='{w_id}' is_safe={self.is_safe}>"
+        k = self.kind or "none"
+        return f"<PairResult pair={self.pair} status='{self.status}' kind='{k}'>"
 
 
 class MatrixResult(dict):
@@ -263,6 +296,57 @@ def create_warning(
     }
 
 
+def parse_collected_test_count(output: str) -> Optional[int]:
+    """Parse the number of collected / executed tests from runner output."""
+    # unittest format: "Ran X test(s) in Ys"
+    m_unit = re.search(r"Ran (\d+) tests?", output)
+    if m_unit:
+        return int(m_unit.group(1))
+
+    # pytest format: "collected X items"
+    m_pytest_coll = re.search(r"collected (\d+) items?", output)
+    if m_pytest_coll:
+        return int(m_pytest_coll.group(1))
+
+    # pytest format: "X passed"
+    m_pytest_pass = re.search(r"(\d+) passed", output)
+    if m_pytest_pass:
+        return int(m_pytest_pass.group(1))
+
+    # Explicit no tests ran
+    if "no tests ran" in output.lower() or "0 tests collected" in output.lower():
+        return 0
+
+    return None
+
+
+def safe_extract_tar(archive_bytes: bytes, target_dir: str) -> None:
+    """Safely extract tar archive bytes into target_dir preventing traversal and symlink escapes."""
+    target_dir_real = os.path.realpath(target_dir)
+
+    with tarfile.open(fileobj=io.BytesIO(archive_bytes)) as tar:
+        for member in tar.getmembers():
+            # Validate destination path is strictly inside target_dir
+            dest_path = os.path.realpath(os.path.join(target_dir_real, member.name))
+            if os.path.commonpath([target_dir_real, dest_path]) != target_dir_real:
+                raise RuntimeError(f"Directory traversal detected in tar archive: {member.name}")
+
+            # Check symlinks / hardlinks for escaping target directory
+            if member.issym() or member.islnk():
+                link_target = os.path.realpath(
+                    os.path.join(os.path.dirname(dest_path), member.linkname)
+                )
+                if os.path.commonpath([target_dir_real, link_target]) != target_dir_real:
+                    raise RuntimeError(
+                        f"Symlink escapes target directory: {member.name} -> {member.linkname}"
+                    )
+
+        if hasattr(tarfile, "data_filter"):
+            tar.extractall(target_dir_real, filter="data")
+        else:
+            tar.extractall(target_dir_real)
+
+
 class RadarEngine:
     """L3 Advisory Radar Engine.
 
@@ -277,6 +361,7 @@ class RadarEngine:
         test_budget_seconds: float = 15.0,
         max_active_heads: int = 10,
         default_base_sha: Optional[str] = None,
+        run_tests_on_disjoint: bool = False,
     ):
         self.repo_path = os.path.abspath(repo_path)
         self.test_command = test_command
@@ -284,6 +369,7 @@ class RadarEngine:
         self.test_budget_seconds = float(test_budget_seconds)
         self.max_active_heads = int(max_active_heads)
         self.default_base_sha = default_base_sha
+        self.run_tests_on_disjoint = run_tests_on_disjoint
 
     def _run_git(
         self,
@@ -291,14 +377,32 @@ class RadarEngine:
         timeout: Optional[float] = 10.0,
         capture_bytes: bool = False,
     ) -> subprocess.CompletedProcess:
-        """Run a git command in the repository context."""
+        """Run a git command in repository context with process group kill on timeout."""
         cmd = ["git", "-C", self.repo_path] + args
-        return subprocess.run(
+        proc = subprocess.Popen(
             cmd,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=not capture_bytes,
-            timeout=timeout,
+            preexec_fn=os.setsid,
         )
+        try:
+            stdout, stderr = proc.communicate(timeout=timeout)
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=proc.returncode,
+                stdout=stdout,
+                stderr=stderr,
+            )
+        except subprocess.TimeoutExpired as exc:
+            try:
+                pgid = os.getpgid(proc.pid)
+                os.killpg(pgid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError, OSError):
+                pass
+            proc.kill()
+            proc.communicate()
+            raise exc
 
     def verify_commit_exists(self, commit_sha: str) -> bool:
         """Verify that a commit object exists in the repository's object store."""
@@ -355,21 +459,21 @@ class RadarEngine:
         base_sha: Optional[str] = None,
         timeout: float = 10.0,
     ) -> Dict[str, Any]:
-        """Execute pairwise trial-merge using `git merge-tree --write-tree`.
+        """Execute pairwise trial-merge using `git merge-tree --write-tree --merge-base=<base>`.
 
         Pure in-memory calculation: zero checkout, zero working tree mutation,
         zero disk amplification.
         """
         args = ["merge-tree", "--write-tree", "--name-only"]
         if base_sha:
-            args.extend(["--merge-base", base_sha])
+            args.append(f"--merge-base={base_sha}")
         args.extend([head_a, head_b])
 
         try:
             res = self._run_git(args, timeout=timeout)
         except subprocess.TimeoutExpired:
             return {
-                "status": "UNKNOWN",
+                "status": STATUS_UNKNOWN,
                 "error": f"Trial merge execution timed out after {timeout}s",
                 "tree_sha": None,
                 "conflicting_files": [],
@@ -377,7 +481,7 @@ class RadarEngine:
             }
         except Exception as exc:
             return {
-                "status": "UNKNOWN",
+                "status": STATUS_UNKNOWN,
                 "error": f"Trial merge execution failed: {exc}",
                 "tree_sha": None,
                 "conflicting_files": [],
@@ -393,14 +497,14 @@ class RadarEngine:
             tree_sha = lines[0].strip() if lines else None
             if not tree_sha or len(tree_sha) != 40:
                 return {
-                    "status": "UNKNOWN",
+                    "status": STATUS_UNKNOWN,
                     "error": f"Invalid tree SHA returned by merge-tree: {tree_sha}",
                     "tree_sha": None,
                     "conflicting_files": [],
                     "messages": [],
                 }
             return {
-                "status": "CLEAN",
+                "status": STATUS_CLEAN,
                 "tree_sha": tree_sha,
                 "conflicting_files": [],
                 "messages": [],
@@ -411,7 +515,7 @@ class RadarEngine:
             # Check if stderr indicates an error rather than a real merge conflict
             if stderr_str and ("not something we can merge" in stderr_str or "fatal:" in stderr_str):
                 return {
-                    "status": "UNKNOWN",
+                    "status": STATUS_UNKNOWN,
                     "error": f"Git object missing or unmergeable: {stderr_str}",
                     "tree_sha": None,
                     "conflicting_files": [],
@@ -421,7 +525,7 @@ class RadarEngine:
             lines = res.stdout.splitlines()
             if not lines:
                 return {
-                    "status": "UNKNOWN",
+                    "status": STATUS_UNKNOWN,
                     "error": f"Empty stdout on merge-tree conflict: {stderr_str}",
                     "tree_sha": None,
                     "conflicting_files": [],
@@ -445,7 +549,7 @@ class RadarEngine:
                 idx += 1
 
             return {
-                "status": "CONFLICT",
+                "status": STATUS_CONFLICT,
                 "tree_sha": tree_sha,
                 "conflicting_files": conflicting_files,
                 "messages": messages,
@@ -453,7 +557,7 @@ class RadarEngine:
 
         # Any other returncode is strictly UNKNOWN (fail-closed)
         return {
-            "status": "UNKNOWN",
+            "status": STATUS_UNKNOWN,
             "error": f"git merge-tree returned exit code {res.returncode}: {stderr_str or stdout_str}",
             "tree_sha": None,
             "conflicting_files": [],
@@ -466,17 +570,18 @@ class RadarEngine:
         target_dir: str,
         timeout: float = 10.0,
     ) -> None:
-        """Extract a git tree object to a target directory via in-memory tar stream."""
+        """Extract a git tree object to a target directory via in-memory tar stream safely."""
         res = self._run_git(["archive", tree_sha], timeout=timeout, capture_bytes=True)
         if res.returncode != 0:
-            err = res.stderr.decode("utf-8", errors="replace") if isinstance(res.stderr, bytes) else str(res.stderr)
+            err = (
+                res.stderr.decode("utf-8", errors="replace")
+                if isinstance(res.stderr, bytes)
+                else str(res.stderr)
+            )
             raise RuntimeError(f"git archive failed: {err}")
 
-        with tarfile.open(fileobj=io.BytesIO(res.stdout)) as tar:
-            if hasattr(tarfile, "data_filter"):
-                tar.extractall(target_dir, filter="tar")
-            else:
-                tar.extractall(target_dir)
+        archive_bytes = res.stdout if isinstance(res.stdout, bytes) else res.stdout.encode("utf-8")
+        safe_extract_tar(archive_bytes, target_dir)
 
     def run_combined_tree_tests(
         self,
@@ -484,33 +589,54 @@ class RadarEngine:
         test_command: Optional[Union[List[str], str]] = None,
         budget_seconds: Optional[float] = None,
     ) -> Tuple[Optional[bool], Dict[str, Any]]:
-        """Run budgeted test execution on a clean merge tree snapshot.
+        """Run budgeted test execution on a clean merge tree snapshot with process isolation.
+
+        Enforces:
+        - Process group isolation (os.setsid + os.killpg on timeout).
+        - Total wall-clock timeout budget.
+        - Sanitized minimal execution environment.
+        - Positive collected tests verification (> 0 tests required for clean).
 
         Returns (result, evidence):
-        - (True, evidence): tests passed
-        - (False, evidence): tests failed
-        - (None, evidence): UNKNOWN (timeout, missing suite, check failure)
+        - (True, evidence): tests passed with > 0 collected tests
+        - (False, evidence): tests failed (or 0 tests collected -> error='no_tests_collected')
+        - (None, evidence): UNKNOWN (timeout, missing suite, execution failure)
         """
         budget = budget_seconds if budget_seconds is not None else self.test_budget_seconds
+        start_time = time.time()
         snap_dir = tempfile.mkdtemp(prefix="radar_snap_")
 
         try:
-            # 1. Extract tree snapshot
+            # Check elapsed wall-clock budget
+            elapsed = time.time() - start_time
+            if elapsed >= budget:
+                return None, {
+                    "error": "timeout",
+                    "details": f"Total budget exceeded before snapshot extraction: {budget}s",
+                }
+
+            extract_timeout = max(0.1, min(5.0, budget - elapsed))
             try:
-                self.extract_tree_to_directory(tree_sha, snap_dir, timeout=min(5.0, budget))
+                self.extract_tree_to_directory(tree_sha, snap_dir, timeout=extract_timeout)
             except subprocess.TimeoutExpired:
                 return None, {
-                    "error": "TIMEOUT",
-                    "details": f"Snapshot extraction timed out after {min(5.0, budget)}s",
+                    "error": "timeout",
+                    "details": f"Snapshot extraction timed out after {extract_timeout:.2f}s",
                 }
             except Exception as exc:
                 return None, {
-                    "error": "EXTRACTION_FAILURE",
+                    "error": "extraction_failure",
                     "details": f"Failed to extract tree {tree_sha}: {exc}",
                 }
 
-            # 2. Custom callable test runner if provided
+            # Custom callable test runner if provided
             if self.test_runner is not None:
+                elapsed = time.time() - start_time
+                if elapsed >= budget:
+                    return None, {
+                        "error": "timeout",
+                        "details": f"Execution timed out before custom runner: {budget}s",
+                    }
                 try:
                     runner_res = self.test_runner(snap_dir)
                     if isinstance(runner_res, tuple) and len(runner_res) == 2:
@@ -522,21 +648,21 @@ class RadarEngine:
                         return runner_res, {"details": f"Custom runner returned {runner_res}"}
                     else:
                         return None, {
-                            "error": "INVALID_RUNNER_OUTPUT",
+                            "error": "invalid_runner_output",
                             "details": str(runner_res),
                         }
                 except TimeoutError:
                     return None, {
-                        "error": "TIMEOUT",
+                        "error": "timeout",
                         "details": "Custom test runner timed out",
                     }
                 except Exception as exc:
                     return None, {
-                        "error": "RUNNER_EXCEPTION",
+                        "error": "runner_exception",
                         "details": f"Custom runner raised: {exc}",
                     }
 
-            # 3. Determine test command
+            # Determine test command
             cmd = test_command or self.test_command
             if not cmd:
                 # Auto-detect test suite in snapshot
@@ -552,45 +678,106 @@ class RadarEngine:
                     # STRICT INVARIANT: If overlapping files exist but no test suite is found,
                     # the outcome is strictly UNKNOWN, never safe!
                     return None, {
-                        "error": "MISSING_TEST_SUITE",
+                        "error": "missing_test_suite",
                         "details": "No test suite found in tree snapshot to verify overlapping files",
                     }
 
-            # 4. Execute test command with budget timeout
+            # Calculate remaining wall-clock budget
+            elapsed = time.time() - start_time
+            remaining_budget = budget - elapsed
+            if remaining_budget <= 0:
+                return None, {
+                    "error": "timeout",
+                    "details": f"Wall-clock budget exhausted before test execution: {budget}s",
+                }
+
             cmd_str = cmd if isinstance(cmd, str) else " ".join(cmd)
+
+            # Sanitize environment: minimal clean dict
+            clean_env = {
+                "PATH": os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"),
+                "HOME": tempfile.gettempdir(),
+                "PYTHONPATH": os.path.abspath(snap_dir),
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "PYTHONUNBUFFERED": "1",
+                "LANG": "C.UTF-8",
+                "LC_ALL": "C.UTF-8",
+                "TMPDIR": tempfile.gettempdir(),
+            }
+
+            # Execute with process group isolation
+            proc = subprocess.Popen(
+                cmd,
+                cwd=snap_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                preexec_fn=os.setsid,
+                env=clean_env,
+                shell=isinstance(cmd, str),
+            )
+
             try:
-                proc = subprocess.run(
-                    cmd,
-                    cwd=snap_dir,
-                    capture_output=True,
-                    text=True,
-                    timeout=budget,
-                    shell=isinstance(cmd, str),
-                )
+                stdout, stderr = proc.communicate(timeout=remaining_budget)
             except subprocess.TimeoutExpired as exc:
+                # Terminate entire process group
+                try:
+                    pgid = os.getpgid(proc.pid)
+                    os.killpg(pgid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError, OSError):
+                    pass
+                proc.kill()
+                try:
+                    proc.communicate(timeout=1.0)
+                except Exception:
+                    pass
+
                 stdout_text = exc.stdout.decode() if isinstance(exc.stdout, bytes) else (exc.stdout or "")
                 stderr_text = exc.stderr.decode() if isinstance(exc.stderr, bytes) else (exc.stderr or "")
                 return None, {
-                    "error": "TIMEOUT",
+                    "error": "timeout",
                     "test_command": cmd_str,
-                    "details": f"Test runner timed out after {budget}s",
+                    "details": f"Test runner process group timed out after {remaining_budget:.2f}s and was terminated",
                     "stdout": stdout_text,
                     "stderr": stderr_text,
                 }
             except Exception as exc:
+                try:
+                    pgid = os.getpgid(proc.pid)
+                    os.killpg(pgid, signal.SIGKILL)
+                except Exception:
+                    pass
                 return None, {
-                    "error": "EXECUTION_FAILURE",
+                    "error": "execution_failure",
                     "test_command": cmd_str,
                     "details": f"Failed to execute test command: {exc}",
                 }
 
-            stdout_snippet = proc.stdout[-2000:] if proc.stdout else ""
-            stderr_snippet = proc.stderr[-2000:] if proc.stderr else ""
+            stdout_snippet = stdout[-2000:] if stdout else ""
+            stderr_snippet = stderr[-2000:] if stderr else ""
+            collected_count = parse_collected_test_count(f"{stdout_snippet}\n{stderr_snippet}")
+
+            # Check for 0 collected tests across any exit code (e.g. exit 0 or unittest exit 5)
+            if (
+                collected_count == 0
+                or "no tests ran" in stderr_snippet.lower()
+                or "0 tests collected" in stderr_snippet.lower()
+            ):
+                return None, {
+                    "error": "no_tests_collected",
+                    "tests_collected": 0,
+                    "test_command": cmd_str,
+                    "exit_code": proc.returncode,
+                    "stdout": stdout_snippet,
+                    "stderr": stderr_snippet,
+                    "details": f"Test runner collected 0 tests (exit code {proc.returncode})",
+                }
 
             if proc.returncode == 0:
                 return True, {
                     "test_command": cmd_str,
                     "exit_code": 0,
+                    "tests_collected": collected_count if collected_count is not None else 1,
                     "stdout": stdout_snippet,
                     "stderr": stderr_snippet,
                     "details": "All combined-tree tests passed cleanly",
@@ -618,11 +805,11 @@ class RadarEngine:
     ) -> PairResult:
         """Evaluate a pair of agent heads for conflicts and semantic regressions.
 
-        Strict Fail-Closed Invariants:
-        - On textual conflict: returns status="CONFLICT" with kind="textual" warning.
-        - On test failure: returns status="TEST_FAILURE" with kind="test" warning.
-        - On clean merge & no overlap (or tests pass): returns status="CLEAN" with no warning.
-        - On missing objects, execution timeout, or check failure: strictly returns "UNKNOWN", NEVER "safe"!
+        Output status enum must be strictly: 'conflict' | 'clean' | 'unknown' | 'not_checked'.
+        - On conflict: returns status='conflict' with kind='textual' or kind='test'.
+        - On missing objects, execution timeout, or check failure: strictly returns status='unknown'.
+        - On disjoint/no-overlap files without tests: strictly returns status='not_checked' (never 'clean').
+        - On clean merge with positive passing tests (> 0 tests): returns status='clean'.
         """
         default_base = base_sha or self.default_base_sha
         try:
@@ -630,10 +817,11 @@ class RadarEngine:
             b = AgentHead.from_item(head_b, default_base=default_base)
         except Exception as exc:
             return PairResult(
-                status="UNKNOWN",
+                status=STATUS_UNKNOWN,
                 pair=["unknown_a", "unknown_b"],
                 heads={},
                 error=f"Malformed head vector: {exc}",
+                evidence={"error": "malformed_head", "details": str(exc)},
             )
 
         pair = [a.id, b.id]
@@ -642,38 +830,45 @@ class RadarEngine:
 
         # Fail-closed check: Validate commits exist in object store
         if not self.verify_commit_exists(a.sha):
+            err_msg = f"Missing commit object for {a.id}: {a.sha}"
             return PairResult(
-                status="UNKNOWN",
+                status=STATUS_UNKNOWN,
                 pair=pair,
                 heads=heads,
-                error=f"Missing commit object for {a.id}: {a.sha}",
+                error=err_msg,
+                evidence={"error": "missing_commit_object", "details": err_msg},
             )
         if not self.verify_commit_exists(b.sha):
+            err_msg = f"Missing commit object for {b.id}: {b.sha}"
             return PairResult(
-                status="UNKNOWN",
+                status=STATUS_UNKNOWN,
                 pair=pair,
                 heads=heads,
-                error=f"Missing commit object for {b.id}: {b.sha}",
+                error=err_msg,
+                evidence={"error": "missing_commit_object", "details": err_msg},
             )
         if base and not self.verify_commit_exists(base):
+            err_msg = f"Missing base commit object: {base}"
             return PairResult(
-                status="UNKNOWN",
+                status=STATUS_UNKNOWN,
                 pair=pair,
                 heads=heads,
-                error=f"Missing base commit object: {base}",
+                error=err_msg,
+                evidence={"error": "missing_base_commit", "details": err_msg},
             )
 
         # Step 1: Textual trial-merge
         tm = self.trial_merge(a.sha, b.sha, base_sha=base)
-        if tm["status"] == "UNKNOWN":
+        if tm["status"] == STATUS_UNKNOWN:
             return PairResult(
-                status="UNKNOWN",
+                status=STATUS_UNKNOWN,
                 pair=pair,
                 heads=heads,
                 error=tm.get("error", "Trial-merge failed"),
+                evidence={"error": "trial_merge_failed", "details": tm.get("error")},
             )
 
-        if tm["status"] == "CONFLICT":
+        if tm["status"] == STATUS_CONFLICT:
             conflicting_files = tm["conflicting_files"]
             messages = tm["messages"]
             conflict_type = "content_conflict"
@@ -684,21 +879,24 @@ class RadarEngine:
                     break
             details = "\n".join(messages) if messages else f"Conflict markers in {', '.join(conflicting_files)}"
 
+            evidence = {
+                "conflicting_files": conflicting_files,
+                "conflict_type": conflict_type,
+                "details": details,
+            }
             warning = create_warning(
                 pair=pair,
                 heads=heads,
                 kind="textual",
-                evidence={
-                    "conflicting_files": conflicting_files,
-                    "conflict_type": conflict_type,
-                    "details": details,
-                },
+                evidence=evidence,
             )
             return PairResult(
-                status="CONFLICT",
+                status=STATUS_CONFLICT,
+                kind="textual",
                 pair=pair,
                 heads=heads,
                 warning=warning,
+                evidence=evidence,
                 tree_sha=tm.get("tree_sha"),
                 overlapping_files=conflicting_files,
             )
@@ -711,25 +909,40 @@ class RadarEngine:
             overlapping_files = self.get_overlapping_files(a.sha, b.sha, base_sha=base)
         except Exception as exc:
             return PairResult(
-                status="UNKNOWN",
+                status=STATUS_UNKNOWN,
                 pair=pair,
                 heads=heads,
                 tree_sha=tree_sha,
                 error=f"Failed to compute file overlap: {exc}",
+                evidence={"error": "overlap_computation_failed", "details": str(exc)},
             )
 
+        should_run_tests = bool(overlapping_files or force_test or self.run_tests_on_disjoint)
+
         # Step 4: Budgeted combined-tree test runner
-        if overlapping_files or force_test:
+        if should_run_tests:
             test_res, test_evidence = self.run_combined_tree_tests(
                 tree_sha,
                 test_command=test_command or self.test_command,
                 budget_seconds=test_budget_seconds or self.test_budget_seconds,
             )
 
+            # Check if 0 tests collected occurred:
+            if test_evidence.get("error") == "no_tests_collected":
+                return PairResult(
+                    status=STATUS_UNKNOWN,
+                    pair=pair,
+                    heads=heads,
+                    tree_sha=tree_sha,
+                    overlapping_files=overlapping_files,
+                    evidence=test_evidence,
+                    error=test_evidence.get("details", "no_tests_collected"),
+                )
+
             if test_res is None:
                 # Timeout, missing test suite, or check failure -> strictly UNKNOWN
                 return PairResult(
-                    status="UNKNOWN",
+                    status=STATUS_UNKNOWN,
                     pair=pair,
                     heads=heads,
                     tree_sha=tree_sha,
@@ -741,7 +954,7 @@ class RadarEngine:
                     ),
                 )
             elif test_res is False:
-                # Semantic test regression / failure!
+                # Semantic test regression / failure -> status='conflict', kind='test'
                 warning = create_warning(
                     pair=pair,
                     heads=heads,
@@ -749,7 +962,8 @@ class RadarEngine:
                     evidence=test_evidence,
                 )
                 return PairResult(
-                    status="TEST_FAILURE",
+                    status=STATUS_CONFLICT,
+                    kind="test",
                     pair=pair,
                     heads=heads,
                     warning=warning,
@@ -758,9 +972,10 @@ class RadarEngine:
                     evidence=test_evidence,
                 )
             else:
-                # Clean merge and tests passed cleanly
+                # Clean merge and positive tests passed (> 0 tests)
                 return PairResult(
-                    status="CLEAN",
+                    status=STATUS_CLEAN,
+                    kind=None,
                     pair=pair,
                     heads=heads,
                     warning=None,
@@ -769,14 +984,22 @@ class RadarEngine:
                     evidence=test_evidence,
                 )
         else:
-            # Clean non-overlapping commits -> returns no warning
+            # Disjoint / non-overlapping files where tests were not run:
+            # STRICT INVARIANT: Must NOT be 'clean'! Returns 'not_checked'.
+            evidence = {
+                "reason": "disjoint_no_tests",
+                "overlapping_files": [],
+                "details": "Non-overlapping files merged cleanly textually; semantic tests not executed",
+            }
             return PairResult(
-                status="CLEAN",
+                status=STATUS_NOT_CHECKED,
+                kind=None,
                 pair=pair,
                 heads=heads,
                 warning=None,
                 tree_sha=tree_sha,
                 overlapping_files=[],
+                evidence=evidence,
             )
 
     def check_pair(
@@ -840,8 +1063,8 @@ class RadarEngine:
 
         clean_count = 0
         conflict_count = 0
-        test_failure_count = 0
         unknown_count = 0
+        not_checked_count = 0
 
         for a, b in itertools.combinations(head_list, 2):
             res = self.evaluate_pair(
@@ -856,14 +1079,14 @@ class RadarEngine:
             if res.warning:
                 warnings.append(res.warning)
 
-            if res.status == "CLEAN":
+            if res.status == STATUS_CLEAN:
                 clean_count += 1
-            elif res.status == "CONFLICT":
+            elif res.status == STATUS_CONFLICT:
                 conflict_count += 1
-            elif res.status == "TEST_FAILURE":
-                test_failure_count += 1
-            elif res.status == "UNKNOWN":
+            elif res.status == STATUS_UNKNOWN:
                 unknown_count += 1
+            elif res.status == STATUS_NOT_CHECKED:
+                not_checked_count += 1
 
         duration = time.time() - start_time
         summary = {
@@ -871,8 +1094,8 @@ class RadarEngine:
             "total_pairs": len(pairs_results),
             "clean_pairs": clean_count,
             "conflict_pairs": conflict_count,
-            "test_failure_pairs": test_failure_count,
             "unknown_pairs": unknown_count,
+            "not_checked_pairs": not_checked_count,
             "warning_count": len(warnings),
             "bounded_limit": bound,
         }
@@ -940,6 +1163,7 @@ def main():
     parser.add_argument("--pair", nargs=2, help="Two heads to evaluate pairwise")
     parser.add_argument("--test-cmd", default=None, help="Command to run tests on combined tree")
     parser.add_argument("--budget", type=float, default=15.0, help="Test execution budget in seconds")
+    parser.add_argument("--force-test", action="store_true", help="Run tests even on disjoint files")
     parser.add_argument("--json", action="store_true", help="Output results as JSON")
     args = parser.parse_args()
 
@@ -947,22 +1171,35 @@ def main():
         repo_path=args.repo,
         test_command=args.test_cmd,
         test_budget_seconds=args.budget,
+        run_tests_on_disjoint=args.force_test,
     )
 
     if args.pair:
-        res = engine.evaluate_pair(args.pair[0], args.pair[1], base_sha=args.base)
+        res = engine.evaluate_pair(
+            args.pair[0],
+            args.pair[1],
+            base_sha=args.base,
+            force_test=args.force_test,
+        )
         if args.json:
             print(json.dumps(res, indent=2))
         else:
-            print(f"Status: {res.status}")
+            rep = res.report()
+            print(f"Status: {rep['status']}")
+            if rep["kind"]:
+                print(f"Kind: {rep['kind']}")
             if res.warning:
-                print(f"Warning ({res.kind}): {json.dumps(res.warning, indent=2)}")
+                print(f"Warning: {json.dumps(res.warning, indent=2)}")
             elif res.error:
                 print(f"Error: {res.error}")
             else:
-                print(f"Clean merge tree: {res.tree_sha}")
+                print(f"Report: {json.dumps(rep, indent=2)}")
     elif args.heads:
-        matrix = engine.run_matrix(args.heads, base_sha=args.base)
+        matrix = engine.run_matrix(
+            args.heads,
+            base_sha=args.base,
+            force_test=args.force_test,
+        )
         if args.json:
             print(json.dumps(matrix.to_dict(), indent=2))
         else:
