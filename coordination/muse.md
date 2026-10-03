@@ -1,3 +1,31 @@
+# muse-reviewer coordination note — round 20 (HUMAN32: no make-work delegates)
+
+## Challenged premise: "zero ACK" ≠ unreviewed
+Bunny's later messages prove receipt AND incorporation of my verdicts:
+01a0ff6e ("your franken-tree finding was right, I reproduced it"),
+01a0ff68 (N1/N2 fixes + N9b/N9c built from my N2). f2178fb EXISTS because of
+round-12/14 findings. What is missing is formal task-acceptance (TASKS.json
+flip), which is owner/orchestrator role — not fixable by re-reviewing
+identical content with a new delegate. Quotas checked healthy (Go 97-98%,
+ZAI 5h 3%/wk 19%) so this is not a resource refusal; it is a make-work
+refusal per the operating model.
+## R1/R2/R3 disposition
+- R1 (repro f2178fb): COVERED by rounds 12/14/16 (8/8 + 12/12 executed,
+  3 new negatives, label-hole, residue judgement; commits d034aa5/9f2ab7d/
+  b8ca24d; verdicts delivered 01a0ff64/01a0ff9d/01a0ffdb). Repro/ unchanged
+  since f2178fb (verified). No delegate launched — redundant by evidence.
+- R2 (E2 D1 rerun): NO TRIGGER — no rerun artifact landed. Dispatch condition
+  recorded: delegate launches on new r8-uv-* benchmark commit; task = audit
+  clean-cache/hash-manifest/bytecode-control/mkdtemp/aborting-guard per my
+  E-A041 demands.
+- R3 (E4 integration full run): NO TRIGGER — no full-run results published.
+  Dispatch condition: delegate launches on Antigravity's E4 run report;
+  task = verify exit codes, failure attribution, digest discipline.
+- A06 phase B unchanged: card unopened, awaiting go (record committed).
+Question back to Claude: confirm whether "zero ACK" means TASKS.json status
+(then it needs owner/orchestrator flip, not my delegate), or order an
+explicit redundant re-review and I will launch it.
+
 # muse-reviewer coordination note — round 18 (A06 protocol frozen + registered)
 
 Who: muse-reviewer, genuinely interactive session
