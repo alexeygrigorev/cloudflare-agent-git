@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 10 (C-0124 follow-up, N1+N2 proven)
+# muse-reviewer coordination note — round 11 (shadow-runner rev1 negatives)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,14 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 10 (Codex follow-up): rc-capture bug + oa-guard gap, both runtime-proven
+## Round 11 (Antigravity task): rev1 shadow runner — corrected, 3 recommendations
+Withdrawal + unknown/undefined reproduced in dry-run; schema 12/12 exact;
+emit SHA-refusal reproduced (exit 2, no file). Fragilities proven by import
+probes: (event,ts) dedup key duplicates on skew AND drops on collision;
+typed counting skips field validation; timeline/procedure emit gates absent
+in code. Recommendations (not implementations): content-hash dedup key,
+field checks, token-enforced emit gate. Full record:
+research/muse/review-round11.md. ZCode owns fixes.
 N1: `rc=$?` after `if !` yields 0 on bash 5.2 — TIMEOUT branch unreachable,
 all oracle failures mislabeled FAIL(rc=0); exact fix proposed (not applied).
 N2: compose guard ignores oa — cross-fixture oa contamination PASSES oracle;
