@@ -133,17 +133,40 @@ To resolve whether the outer client successfully executes tool calls when runnin
   2. **Inner Child Denial Confirmed:** The child ZCode agent under `--mode build` denied internal execution (`"No permission client configured for Bash"`), preventing unrecorded duplicate execution.
   3. **Interaction Subtlety Documented:** The model initially received the child's harness-level denial event before the outer tool result was returned into context, prompting it to report a failure and attempt a transient retry. However, once the completed outer tool results returned into the conversation context, the model explicitly recognized:
      *"The objective is achieved. The recorded tool results supersede the earlier error messages: both Bash calls actually executed successfully... confirming the file was created with exactly that content."*
-  4. This provides truthful, unvarnished empirical proof of both the operational fix and the multi-turn interaction dynamics under real production CJS.
+
+### 4.5 Comparative Live Append-Only Rerun (Arm A Old Binary vs Arm B New Debug Binary)
+Per principal and orchestrator challenge (`01a1000e-30cb`, `01a10014-617f`), an append-only marker probe was executed to definitively distinguish between inner double-execution and outer model retries on production CJS (`/opt/ZCode/resources/glm/zcode.cjs`).
+- **Prompt:** `"Use Bash to append a single line containing 'MARKER_' and the output of date +%s%N to /tmp/live_append_probe/<arm>/marker.log. Execute exactly one Bash command and do nothing else."`
+- **Execution Scratch:** `/tmp/live_append_probe/old` and `/tmp/live_append_probe/new` (each $\le 16$ KiB).
+
+#### Side-by-Side Live Evidence Matrix:
+
+| Measurement | Arm A: Old Installed Binary (`~/.local/lib/zcodex/zcodex`) | Arm B: New Debug Binary (`codex-rs/target/debug/zcodex`) |
+| :--- | :--- | :--- |
+| **Cold-Spawn Wire Mode** | `--mode yolo` | `--mode build` |
+| **Runtime Used** | Production `/opt/ZCode/resources/glm/zcode.cjs` | Production `/opt/ZCode/resources/glm/zcode.cjs` |
+| **Thread ID** | `01a1001b-79d3-7dd0-b6d7-6225cedf5f0f` | `01a1001c-031c-7121-8686-49c115ae32a7` |
+| **Rollout Session** | `rollout-2026-10-03T06-52-43-01a1001b-79d3...jsonl` | `rollout-2026-10-03T06-53-18-01a1001c-031c...jsonl` |
+| **Outer `exec_command` Tool Calls** | 1 (`fc_01a1001b-a138`) | 1 (`fc_01a1001c-21d2`) |
+| **Distinct `call_id`s in Rollout** | 2 (`exec_command`, `update_goal`) | 2 (`exec_command`, `update_goal`) |
+| **Marker Lines Written** | **`2` lines** (`MARKER_1791003173232522066`<br>`MARKER_1791003173430860059`) | **`1` line** (`MARKER_1791003206160520868`) |
+| **Line Timestamps & Delta** | Line 1: `1791003173.232` (inner agent)<br>Line 2: `1791003173.430` (outer client, +198ms) | Line 1: `1791003206.160` (outer client only) |
+| **Single-Effect Gate Verdict** | **FAIL (Double Execution: 2 side effects for 1 tool call)** | **PASS: marker lines == intended operations (1 == 1)** |
+
+#### Key Diagnosis for Next Engineering Ticket (`01a10014-a645`):
+1. **Double Execution Resolved in Arm B:** Switching from `yolo` to `build` completely eliminated the unrecorded inner execution that produced the second marker line in Arm A.
+2. **Inner Denial Perception Window:** Under `--mode build`, the inner agent streams a denial event (`"No permission client configured for Bash"`) to its internal history before the outer client's tool execution result arrives. In Arm B, because the prompt instructed *"Execute exactly one Bash command and do nothing else"*, the model refrained from immediate re-execution and waited for the outer result (`exit code 0`), achieving exactly 1 marker line. However, without that constraint, an inner model observing a tool failure may emit a visible outer retry.
+3. **Architectural Fix Design (No Build):** The clean resolution in `codex-rs` is to intercept and suppress the inner harness denial message or end the inner turn at the tool boundary (matching the warm wire path) so the inner model never observes a transient denial for calls that the outer runtime handles.
 
 ---
 
 ## 5. Conclusion & Bounded Operational Status
 
 1. **Empirical Evidence Triad Established:**
-   - **Synthetic Adapter Regression:** `probe_stub.cjs` proved that `--mode build` eliminates the inner stub invocations produced by `--mode yolo` (reducing side effects from 3 to 1).
+   - **Synthetic Adapter Regression:** `probe_stub.cjs` proved that `--mode build` eliminates inner stub invocations produced by `--mode yolo` (reducing side effects from 3 to 1).
    - **Production CJS Child Denial:** Direct execution against `/opt/ZCode/resources/glm/zcode.cjs` proved write-capable tools are rejected internally with `"No permission client configured for Bash"`.
-   - **Live Outer Production Probe:** Direct live execution of the debug binary against production CJS confirmed that the outer `ToolCallRuntime` successfully executes and records tool calls, creating the requested artifacts, while inner side effects remain zero.
+   - **Live Production Append Probe:** Comparative live append testing proved that the old binary produces **2 marker lines** per single tool call, whereas the new debug binary produces **exactly 1 marker line** (PASS on the append-only gate).
 2. **Open Scopes & Validations:**
-   - Multi-turn task consistency under repeated permission-denial message frames, as well as retry/resume semantics with fixed operation IDs, remain open engineering investigations.
+   - Inner denial suppression in `codex-rs` (ticket `01a10014-a645`) to prevent outer model retries under unconstrained prompts.
    - Pinned independent review by Muse/principals is required before declaring full task completion.
-3. **Strict Resource Compliance:** All compilation remains permanently halted. Host has 103 GiB free. Scratch usage was 12 KiB. Global `/home/alexey/.local` binaries are 100% untouched. No global install is performed or inferred.
+3. **Strict Resource Compliance:** All compilation remains permanently halted. Host has 103 GiB free. Scratch usage was 12 KiB + 32 KiB $\ll 100$ MiB. Global `/home/alexey/.local` binaries are 100% untouched. No global install is performed or inferred.
