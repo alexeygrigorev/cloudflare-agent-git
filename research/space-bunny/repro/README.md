@@ -120,11 +120,23 @@ summary: a broken run reporting success.
 - The compose mismatch check globbed `seed:oa:ob` but only matched `ob`, so a **wrong `oa` paired with a
   valid `ob` was accepted**. Both overlay arguments are now checked, with the offending one named.
 
+**Round 4 — the oracle cannot detect contamination at all.** Muse (`01a0ff64`) found, independently, that a
+cross-fixture `oa` overlay builds a *"franken tree"* which still **passes the oracle**. Verified: with the
+guard removed, the contaminated composition reports `rc=0` and the run exits `0`. This is the deepest of the
+defects because it means **the oracle is not evidence of composition integrity** — it only tests behaviour.
+A row-count gate is also insufficient.
+
+The fix is **fixture-aware provenance**: every file in a composed tree must be provided by a source
+belonging to the **seed's** fixture. A file obtainable only from a foreign fixture is unaccounted
+provenance and fails the case, whatever the oracle reports. A plain filename-set check is *also*
+insufficient — verified, because a foreign overlay we were told to use contributes legitimately-named files.
+Negative cases **N9b** (Muse's exact scenario) and **N9c** (an unrelated file smuggled in) pin this.
+
 **Round 3 — a negative test that never tested its guard.** My "hanging oracle" case appended to the
 protected oracle, so the **manifest check fired first** and the run exited `2 / MANIFEST FAILED`. The oracle
 never executed, so **TIMEOUT was not covered** and my claim that it was, was false.
 
-### `./negative-tests.sh` — ten cases, all reaching the intended guard
+### `./negative-tests.sh` — twelve cases, all reaching the intended guard
 
 Each case builds a **disposable copy of the whole packet**; the canonical payload is never mutated, which
 removes the signal/interleaving fragility of the earlier mutate-and-restore approach. Cases that need the
@@ -141,9 +153,11 @@ runtime guard **skip the manifest gate inside the copy**, so the guard under tes
 | N7 | hanging oracle | **TIMEOUT branch** | 4, `TIMEOUT` |
 | N8 | failing oracle (`exit 3`) | **rc is neither 0 nor 124** | 4, `FAIL(rc=3)` |
 | N9 | tampered payload, manifest intact | integrity gate | 2, `MANIFEST FAILED` |
+| N9b | cross-fixture franken tree (Muse) | provenance, where the oracle is blind | 3, `UNACCOUNTED PROVENANCE` |
+| N9c | foreign file smuggled into a case | provenance | 3, `UNACCOUNTED PROVENANCE` |
 | N10 | clean run | control | 0 |
 
-**All ten pass.** N7 and N8 exist specifically to catch the round-2 and round-3 defects: N7 fails if the
+**All twelve pass.** N7 and N8 exist specifically to catch the round-2 and round-3 defects: N7 fails if the
 timeout branch becomes unreachable again, and N8 fails if a real failure is ever reported as `rc=0`.
 
 Exit codes: `0` all eight cases passed, `1` one or more cases failed, `2` payload integrity, `3` setup or

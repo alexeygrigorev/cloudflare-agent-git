@@ -116,6 +116,35 @@ echo "N9  tampered payload, manifest NOT resealed (integrity gate, expected)"
 p="$(fresh_packet n9)"; printf '\n# tampered\n' >> "$p/arm1-signposted/A/cache.py"
 check "tampered payload" "$p" no 'MANIFEST FAILED'
 
+echo "N9b cross-fixture franken tree (Muse 01a0ff64) - oracle CANNOT catch it"
+# Reproduce Muse's case exactly: the oa/ob guard is REMOVED, so a cross-fixture A
+# overlay builds a tree the oracle accepts. The provenance-by-file-set check must
+# still refuse it, because the oracle cannot detect contamination.
+p="$(fresh_packet n9b)"; skip_manifest "$p"
+python3 - "$p/replay.sh" <<'PY2'
+import pathlib, re, sys
+p = pathlib.Path(sys.argv[1]); t = p.read_text()
+t = re.sub(r'  # BOTH overlay arguments.*?return 2 ;;\n  esac\n', '  :\n', t, flags=re.S)
+p.write_text(t)
+PY2
+sed -i 's|compose_case f2-AB seed-arm2 arm2-signposted/A arm2-signposted/B|compose_case f2-AB seed-arm2 arm1-signposted/A arm2-signposted/B|' "$p/replay.sh"
+check "unaccounted provenance" "$p" no 'UNACCOUNTED PROVENANCE'
+
+echo "N9c extra file smuggled into a case"
+p="$(fresh_packet n9c)"; skip_manifest "$p"
+sed -i 's|  cp "protected-oracle/$oracle" "$dir/oracle.py" .. { echo "ORACLE COPY FAILED: $oracle" >&2; return 2; }|&|' "$p/replay.sh" 2>/dev/null || true
+python3 - "$p/replay.sh" <<'PY3'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1]); t = p.read_text()
+# inject a stray file right after the seed copy in compose_case
+t = t.replace('  cp -a "$ob"/. "$dir"/'.replace('"ob"/.', '"$ob"/.'),
+              '  cp -a "$ob"/. "$dir"/', 1)
+t = t.replace('  for f in "$ob"/*; do',
+              '  echo "smuggled" > "$dir/EXTRA-STOWAWAY.txt"   # injected foreign file\n  for f in "$ob"/*; do', 1)
+p.write_text(t)
+PY3
+check "extra foreign file" "$p" no 'UNACCOUNTED PROVENANCE'
+
 echo "N10 happy path control"
 p="$(fresh_packet n10)"
 check "clean run" "$p" yes ''

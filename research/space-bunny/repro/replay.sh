@@ -65,6 +65,7 @@ run_case() {
     local f rel
     for f in "$overlay"/*; do
       rel="$(basename "$f")"
+      [ "$rel" = ".head" ] && continue
       cmp -s "$f" "$dir/$rel" || { echo "OVERLAY MISMATCH: $rel" >&2; return 2; }
     done
   fi
@@ -95,6 +96,9 @@ run_case() {
 compose_case() {
   local label="$1" seed="$2" oa="$3" ob="$4" oracle="$5"
   local dir="$SCRATCH_ROOT/$label"
+  local WORK_PROV="$dir/.prov"
+  local composed="$WORK_PROV"
+  mkdir -p "$WORK_PROV" 2>/dev/null || true
   [ -d "$seed" ] && [ -d "$oa" ] && [ -d "$ob" ] \
     && [ -f "protected-oracle/$oracle" ] \
     || { echo "MISSING INPUT for $label" >&2; return 2; }
@@ -111,7 +115,12 @@ compose_case() {
   mkdir -p "$dir"                                          || { echo "MKDIR FAILED: $label" >&2; return 2; }
   cp -a "$seed"/. "$dir"/                                   || { echo "SEED COPY FAILED: $label" >&2; return 2; }
   cp -a "$oa"/. "$dir"/                                     || { echo "A COPY FAILED: $oa" >&2; return 2; }
-  for f in "$ob"/*; do rel="$(basename "$f")"; cp -a "$f" "$dir/$rel" || { echo "B COPY FAILED: $rel" >&2; return 2; }; done
+  for f in "$ob"/*; do
+    rel="$(basename "$f")"
+    # .head is a provenance label, not part of the executable packet.
+    [ "$rel" = ".head" ] && continue
+    cp -a "$f" "$dir/$rel" || { echo "B COPY FAILED: $rel" >&2; return 2; }
+  done
   cp "protected-oracle/$oracle" "$dir/oracle.py"            || { echo "ORACLE COPY FAILED: $label" >&2; return 2; }
 
   local ok=1
@@ -122,6 +131,45 @@ compose_case() {
     done
   done
   [ "$ok" -eq 1 ] || return 2
+
+  # PROVENANCE MUST BE FIXTURE-AWARE, not just a filename set.
+  #
+  # Muse (01a0ff64) showed a cross-fixture A overlay builds a "franken tree" that still
+  # PASSES the oracle, so the oracle cannot detect contamination and a row-count gate is
+  # too weak. A filename-set check alone is ALSO insufficient, and I verified that: when
+  # the foreign overlay is the one we were told to use, its filenames are legitimately
+  # "allowed", so the set check passes while the tree is still wrong.
+  #
+  # The rule that does hold: every file in the composed tree must be provided by some
+  # source belonging to the SEED's fixture. A file only obtainable from a foreign fixture
+  # is unaccounted provenance, whatever the oracle says.
+  local seed_fixture src_fixture
+  case "$seed" in
+    seed-arm1) seed_fixture=arm1 ;;
+    seed-arm2) seed_fixture=arm2 ;;
+    *) echo "UNKNOWN SEED FIXTURE: $seed" >&2; return 2 ;;
+  esac
+  # Enumerate what actually landed in the composed tree, excluding our own scratch.
+  ( cd "$dir" && find . -type f ! -name '.head' ! -path './.prov/*' -printf '%P\n' | sort ) \
+    > "$composed/actual" || { echo "PROVENANCE SCAN FAILED (actual) in $label" >&2; return 2; }
+  : > "$composed/allowed"
+  local src
+  for src in "$seed" "$oa" "$ob"; do
+    case "$src" in
+      *"$seed_fixture"*) ;;
+      *) continue ;;   # foreign fixture: its names are not allowed into this tree
+    esac
+    ( cd "$src" && find . -type f ! -name '.head' -printf '%P\n' ) >> "$composed/allowed" \
+      || { echo "PROVENANCE SCAN FAILED for $src in $label" >&2; return 2; }
+  done
+  echo "oracle.py" >> "$composed/allowed"
+  sort -u -o "$composed/allowed" "$composed/allowed"
+  present="$( comm -23 "$composed/actual" "$composed/allowed" )"
+  if [ -n "$present" ]; then
+    echo "UNACCOUNTED PROVENANCE in $label:" >&2
+    printf '  %s\n' "$present" >&2
+    return 2
+  fi
 
   local out rc last
   out="$( cd "$dir" && timeout "$ORACLE_TIMEOUT" python3 -B oracle.py 2>&1 )"; rc=$?

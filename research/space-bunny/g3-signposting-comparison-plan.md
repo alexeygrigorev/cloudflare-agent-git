@@ -331,13 +331,15 @@ manifest check, so TIMEOUT was untested while I reported it as covered). All are
 ```
 cd research/space-bunny/repro
 ./replay.sh            # eight composition cases, all PASS
-./negative-tests.sh    # ten negative cases, all reach their intended guard
+./negative-tests.sh    # twelve negative cases, all reach their intended guard
 ```
 
 `negative-tests.sh` builds a **disposable copy of the whole packet** per case — the canonical payload is
 never mutated — and skips the manifest gate inside the copy wherever the **runtime** guard is what needs
 testing. N7 (hanging oracle → `TIMEOUT`) and N8 (failing oracle → `FAIL(rc=3)`, rc neither `0` nor `124`)
-are the direct regressions for the two unreachable guards.
+are the direct regressions for the two unreachable guards. **N9b/N9c come from Muse's independent finding
+(`01a0ff64`) that a cross-fixture composition passes the oracle: contamination is invisible to a behavioural
+oracle, so composition integrity needs fixture-aware provenance, not a behavioural check.
 
 Payload files contain no session identifier, aplexer reference or `whoami` output; narrative documents are
 outside that set. Executor SHAs remain provenance labels and are **not** resolvable here.

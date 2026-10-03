@@ -1039,3 +1039,65 @@ the `cp` overlay defect. Earlier scientific retractions remain in their own sect
 **Next actual event: Muse's independent review response**, delivered as a native request with no busy
 injection. I am not claiming these scripts are accepted; that is Codex's and Muse's to decide. Review remains
 `WITHHELD` from my side and I do not treat my own passing suite as a substitute for it.
+
+---
+
+# ROUND 10 — Muse's independent verdict received; it found something I missed
+
+Identity checked first, no overrides: session `8620fdc9-0518-4d21-a7e2-fc8bd8e58726`, workspace
+`/home/alexey/git/cloudflare-agent-git`, tag `space-bunny-head`, conversation `ses_f01ef9c54ffe86f5DrG7n8GCsY`.
+**No agents, no trials, no dupexec, no production mutation.**
+
+## Handoff ledger — submitted vs ACK vs artifact
+
+| Stage | ID | State |
+|---|---|---|
+| My review request to Muse | `01a0ff68-a64a-71f2-a16f-8432f6f18ced` | delivered |
+| Muse's verdict (**sent to Codex, not me**) | `01a0ff64-7164-71f1-ad63-71ed6d8d0275` | delivered |
+| Muse's artifact | commit `0864604`, `research/muse/review-round10.md` | committed by Muse |
+| My reply to Codex | `01a0ff68-7ff6-7fb1-ab9d-ce8791ae119c` | delivered |
+
+Muse reverified independently (`aplexer whoami --json`, session `8620fdc9`, no override), confirmed idle with
+an empty composer before delivering. Muse sent its verdict **to Codex principal, not to me** — so I obtained
+it from the workspace log rather than a direct message. It reviewed a **stale** version (it counts five
+negative cases; the current file has twelve), so its N1/N2/N3 findings describe code I had already fixed.
+
+## Muse's N2 finding is the one I had NOT made — and it is the deepest defect in this harness
+
+Muse: cross-fixture `oa` contamination **builds a franken tree that still PASSES the oracle**; only a
+row-count gate catches it.
+
+**I reproduced it.** With the guard removed, the contaminated composition reports `rc=0` and the run exits
+`0`. That is the most serious thing found in nine rounds of this harness, because it means **the oracle is
+not evidence of composition integrity at all** — it only tests behaviour. A behavioural check cannot detect
+that a tree was assembled from the wrong fixture.
+
+I then found that my first fix was **also insufficient**: a plain filename-set check passes, because a
+foreign overlay we were *told* to use contributes legitimately-named files. Verified rather than assumed.
+
+**Actual fix: fixture-aware provenance.** Every file in a composed tree must be provided by a source
+belonging to the **seed's** fixture. A file obtainable only from a foreign fixture is unaccounted
+provenance and fails the case regardless of what the oracle says. New cases **N9b** (Muse's exact
+scenario) and **N9c** (an unrelated file smuggled in) pin it. Both fail correctly; the happy path is
+unaffected.
+
+**Twelve negative cases, 12 passed, 0 bad.** `replay.sh` eight cases PASS. Canonical payload 21/21 untouched,
+no leftover scratch.
+
+## Three more bugs of my own, found only by running
+
+An unbound `composed` under `set -u`; then, after fixing that, an `actual` enumeration that my earlier
+block-replacement had silently deleted — which made the provenance check read a **nonexistent file** and
+quietly pass. Both were invisible to inspection and only appeared when the suite ran. Fifth occurrence of the
+same pattern; I am no longer treating "the edit applied" as evidence.
+
+## Substance unchanged
+
+Muse's N1 (`if !` makes `rc` always 0) and N2 (`oa` unchecked) are both already fixed in `b504bd3`; my
+provenance work is a **third, deeper** fix for the class N2 belongs to. My scientific position is untouched:
+both real-agent arms came back **PASS**, the omission-class residue is **untested rather than empty**, and
+n=1 with signposted briefs supports no rate, prevalence, or causal claim. N3 — Muse is right that the timeout
+path was untestable by construction, and that is why N7/N8 now skip the manifest inside the disposable copy.
+
+**Next condition:** Muse's re-review of the twelve-case suite is the event I am waiting on. Not a root
+heartbeat. No new claim, no slot 6, no consensus, no SIGNOFF.
