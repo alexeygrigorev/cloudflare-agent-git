@@ -1,6 +1,17 @@
 # Harness skeleton v0 — watcher + protocol machinery (2026-10-02, ~22:00)
 
-> **v0.3 supersedes the mechanics below** (same file, same results JSON): CrashTest41 run-failure semantics per C-A01-UPTAKE-NEXT, plus the registered consumer-adapter next-test plan (a01-consumer-adapter-plan-v03.md). See the v0.3 section first.
+> **v0.4 supersedes the mechanics below** (same file, same results JSON): C-V03-REVIEW2124 amendments — subprocess-timeout classification fix, watcher-thread default-path exercise, discovery/interface schema pre-declarations — plus the amended consumer-adapter plan. See the v0.4 section first.
+
+## v0.4 — C-V03-REVIEW2124 amendments (2026-10-03, ~00:30 UTC)
+
+All 19 checks pass (18 v0.3 + 1 new), wall 5.8 s. Harness rev `skeleton-v0.4`.
+
+- **Real bug caught by codex-principal's source review, confirmed and fixed:** `run_oracle` runs the pinned suite with a subprocess `timeout=ORACLE_TIMEOUT_S`; on expiry that raises `subprocess.TimeoutExpired`, which is NOT a subclass of builtin `TimeoutError` — v0.3's `isinstance(err, TimeoutError)` check would have mislabeled a real subprocess timeout as `oracle_crash`. v0.4 labels both classes `oracle_timeout`. Fail-closed semantics unchanged.
+- **Watcher-thread default path now exercised, not just declared:** new `scenario_watcher_thread_timeout` runs `scan_once` inside an actual worker thread where SIGALRM is unavailable, with the DEFAULT oracle path (`combined_oracle` → `run_oracle` subprocess) hitting its subprocess timeout against a suite that would PASS after 3 s (slow pass — the outcome comes from the timeout, never from the suite failing). Asserts journaled `oracle_timeout`, scan `run_failed`, funnel failed, never-silent-pass triple. New top-level check `watcher_thread_default_oracle_timeout_failclosed`.
+- **Precise timeout-coverage claim (supersedes the v0.3 limitation wording):** the default path is timeout-safe in ANY thread via the subprocess timeout; the SIGALRM whole-scan deadline is main-thread-only and matters ONLY for custom `oracle_fn` callables that bypass the subprocess. A custom fn in a watcher thread remains crash-covered but NOT timeout-covered — unsupported unless routed through a bounded-timeout worker. The CrashTest timeout gate is claimed met only for the default path.
+- **Schema pre-declarations (read-only/schema work authorized by Codex 01a0ff25-eb60 via antigravity-head):** `interface_observed` (file/tool discovery of the warning interface via the neutral tool inventory — recorded separately from `consume`, so empty consumption with no observed interface = invisible endpoint, not agent rejection) and `discovery_action` (discovery/repair bound to immutable warning evidence, with explicit `source`). No emitters until the consumer adapter lands post-gate; declared so journal validation is ready.
+- **Stale session id fixed:** results `runner` referenced aplexer d54c1e11; corrected to session 7bd5b3c2 (C-V03-REVIEW2124).
+- Plan amended in step (a01-consumer-adapter-plan-v03.md, header + interface-discoverability rule + separate-counts scoring + precise thread coverage + human26 resource wording + accepted shadow-consume token G-A01-SHADOW-CONSUME-20261003, gated on codex-principal accepting the revision).
 
 ## v0.3 — CrashTest41 run-failure semantics + registered next-test plan (2026-10-02, ~21:12 UTC)
 

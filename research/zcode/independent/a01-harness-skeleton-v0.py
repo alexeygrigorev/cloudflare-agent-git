@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A01 uptake protocol rev 2: harness skeleton v0.3. ZCode independent, 2026-10-02.
+"""A01 uptake protocol rev 2: harness skeleton v0.4. ZCode independent, 2026-10-03.
 
 v0.1 incorporates the accepted Grok R7-1/2/3 corrections (research/grok/
 r7-a01-harness-challenge.md, commit 247d9cb) at the harness-machinery level:
@@ -77,6 +77,17 @@ SCHEMA = {
     "run_end": {"run_id", "ts"},
     # v0.3 CrashTest41: oracle crash/timeout mid-scan (run must fail loudly)
     "run_failure": {"run_id", "kind", "pair", "detail", "ts"},
+    # v0.4 pre-declaration (C-V03-REVIEW2124: record file/tool discovery
+    # separately from warning consume; no emitter until the consumer
+    # adapter lands post-gate - declared so journal validation is ready)
+    #   interface_observed - agent discovery of the warning interface via
+    #     the neutral tool inventory (file/tool discovery, NOT a consume)
+    #   discovery_action - agent discovery/repair bound to immutable
+    #     warning evidence (a01-consumer-adapter-plan-v03.md)
+    "interface_observed": {"run_id", "agent_id", "interface_kind", "ref",
+                           "ts"},
+    "discovery_action": {"run_id", "agent_id", "warning_id", "wip_digest",
+                         "action_kind", "ts"},
 }
 SCHEMA_EXTENSIONS = {
     "emit": {"duplicate", "oracle_status", "wip_digest"},  # dedup incl. WIP content
@@ -84,6 +95,9 @@ SCHEMA_EXTENSIONS = {
     "push_observed": {"watcher_lag_ms"},
     "consume": {"ts_agent_reported"},
     "run_end": {"retention", "status"},  # v0.3: completed|failed
+    "interface_observed": {"tool_inventory_ref"},    # v0.4 planned
+    "discovery_action": {"head_vector", "evidence_ref", "before_flag",
+                         "source"},                  # v0.4 planned
 }
 SUITE_NAME = "test_suite.py"
 
@@ -320,7 +334,7 @@ class UptakeHarness:
     harness-observed vector/generation countersigns.
     """
 
-    HARNESS_REV = "skeleton-v0.3"
+    HARNESS_REV = "skeleton-v0.4"
     ADVISORY_ORACLE = "symbol-overlap-wip-v0"
     REACTION_WINDOW_MS = 600_000  # sec 4 default; not binding in the skeleton
 
@@ -371,10 +385,15 @@ class UptakeHarness:
         """v0.3 CrashTest41: run the oracle under a wall-clock deadline.
         Crash or timeout returns (None, exc) - the caller must journal a
         run_failure and mark the run failed, never report a silent pass.
-        SIGALRM deadlines work on the main thread only; watcher-thread
-        scans keep crash coverage and lose timeout coverage (declared
-        limitation, harmless for the negative-control scenario which runs
-        on the main thread)."""
+        v0.4 (C-V03-REVIEW2124 addendum): the DEFAULT oracle path is
+        timeout-safe in ANY thread - run_oracle's subprocess timeout
+        raises subprocess.TimeoutExpired, which scan_once labels
+        oracle_timeout; exercised by scenario_watcher_thread_timeout.
+        The SIGALRM whole-scan deadline below covers the main thread only
+        and matters only for CUSTOM oracle_fn callables that never reach
+        the subprocess: a custom fn in a watcher thread is crash-covered
+        but NOT timeout-covered (unsupported unless routed through a
+        bounded worker)."""
         import signal
         use_alarm = threading.current_thread() is threading.main_thread()
         if use_alarm:
@@ -434,7 +453,11 @@ class UptakeHarness:
                     oracle_fn, self._main_repo(), self.base_sha,
                     wip_trees[aid], wip_trees[peer])
                 if err is not None:
-                    kind = ("oracle_timeout" if isinstance(err, TimeoutError)
+                    # subprocess.TimeoutExpired is NOT a builtin
+                    # TimeoutError (C-V03-REVIEW2124 addendum): label both
+                    kind = ("oracle_timeout"
+                            if isinstance(err, (TimeoutError,
+                                                subprocess.TimeoutExpired))
                             else "oracle_crash")
                     self._record_run_failure(kind, aid, peer, err)
                     return {"push_observed": new_pushes, "emitted": 0,
@@ -953,6 +976,54 @@ def scenario_oracle_fault(base):
     return out
 
 
+def scenario_watcher_thread_timeout(base):
+    """v0.4 (C-V03-REVIEW2124 addendum): exercise the ACTUAL watcher-thread
+    default path - combined_oracle -> run_oracle's subprocess timeout
+    raised inside a worker thread, where SIGALRM is unavailable.
+    subprocess.TimeoutExpired is not a builtin TimeoutError, so the
+    classification must name both; the run must fail closed with kind
+    oracle_timeout and never a silent pass."""
+    repo = base / "repo_wthread"
+    base_sha = seed_fixture(repo)
+    agents = {aid: add_agent(repo, aid, f"w-{aid[-1]}")
+              for aid in ("agentA", "agentB")}
+    # disjoint single-side WIP: the merge stays clean so the flow reaches
+    # run_oracle; the suite is replaced with one that would PASS after 3 s
+    # (slow pass - any outcome below comes from the timeout, not the suite)
+    (agents["agentA"]["wt"] / SUITE_NAME).write_text(
+        "import time\nprint('sleeping')\ntime.sleep(3)\nprint('suite-ok')\n")
+    (agents["agentA"]["wt"] / "notes_a.txt").write_text("a\n")
+    (agents["agentB"]["wt"] / "notes_b.txt").write_text("b\n")
+
+    global ORACLE_TIMEOUT_S
+    old_to = ORACLE_TIMEOUT_S
+    ORACLE_TIMEOUT_S = 0.2
+    journal = Journal(base / "watch_thread.jsonl")
+    h = UptakeHarness("skel-watchthread-001", base_sha, agents, journal,
+                      base / "ws_watchthread")
+    h.run_start(fixture_id="watcher-thread-subprocess-timeout", seed_pairs=[])
+    out = {"scenario": "watcher_thread_default_oracle_timeout"}
+    try:
+        box = {}
+        t = threading.Thread(target=lambda: box.update(
+            res=h.scan_once(), funnel=h.funnel()))
+        t.start()
+        t.join(timeout=30)
+        failures = journal.all("run_failure")
+        f = box["funnel"]
+        out["journaled"] = (len(failures) == 1
+                            and failures[0]["kind"] == "oracle_timeout")
+        out["scan_failed"] = bool(box["res"].get("run_failed"))
+        out["funnel_failed"] = f["run_status"] == "failed"
+        out["no_silent_pass"] = (box["res"]["emitted"] == 0
+                                 and f["effective_action_rate"] == "undefined"
+                                 and f["run_status"] == "failed")
+    finally:
+        ORACLE_TIMEOUT_S = old_to
+        h.run_end()
+    return out
+
+
 def scenario_real_repo(base):
     src = Path(__file__).resolve().parents[3]
     clone = base / "realrepo"
@@ -993,6 +1064,7 @@ def main():
         fence = scenario_fence(base)
         control = scenario_control(base)
         fault = scenario_oracle_fault(base)
+        wthread = scenario_watcher_thread_timeout(base)
         real = scenario_real_repo(base)
 
     wall_s = round(time.perf_counter() - t_start, 1)
@@ -1025,21 +1097,25 @@ def main():
             and fault["timeout_funnel_failed"],
         "oracle_fault_never_silent_pass":
             fault["crash_no_silent_pass"] and fault["timeout_no_silent_pass"],
+        "watcher_thread_default_oracle_timeout_failclosed":
+            wthread["journaled"] and wthread["scan_failed"]
+            and wthread["funnel_failed"] and wthread["no_silent_pass"],
         "real_repo_wip_symbols_found": real.get("expected_symbol_present", False),
         "journal_schema_valid": not ALL_SCHEMA_ERRORS,
     }
     results = {
         "timestamp": wall_iso(),
-        "runner": "zcode-independent (aplexer d54c1e11)",
-        "purpose": ("harness skeleton v0.3: grok R7-1/2/3 corrections at harness level - "
+        "runner": "zcode-independent (aplexer session 7bd5b3c2)",
+        "purpose": ("harness skeleton v0.4: grok R7-1/2/3 corrections at harness level - "
                     "external pinned oracle at base/A/B/combined, both-writers-uncommitted "
-                    "warning, agent-side outbox emission, funnel counts; v0.2 adds "
-                    "WIP-digest dedup key (unchanged WIP dedupes, changed WIP re-emits), "
-                    "zero-warning action rate = undefined, run-end retention; v0.3 adds "
-                    "CrashTest41 negative control (oracle crash/timeout mid-scan journals "
-                    "run_failure, run marked failed, never a silent pass) per C-A01-"
-                    "UPTAKE-NEXT; NOT the R2-1/Y1 kill test (scripted stand-ins; live "
-                    "arms are grok-head's pilot)"),
+                    "warning, agent-side outbox emission, funnel counts; v0.2 WIP-digest "
+                    "dedup key + zero-warning undefined rate; v0.3 CrashTest41 negative "
+                    "control (run_failure journaled, never a silent pass); v0.4 per "
+                    "C-V03-REVIEW2124: subprocess.TimeoutExpired labeled oracle_timeout "
+                    "(not crash), watcher-thread default-path timeout exercised, "
+                    "discovery_action + interface_observed schema pre-declared; claims "
+                    "= fixture engineering only; NOT the R2-1/Y1 kill test (live arms "
+                    "were grok-head's fair pair, result null, no uptake)"),
         "dedup_granularity": ("digest over the exact failing WIP tree pair "
                               "(content-addressed); one notice per distinct "
                               "failing WIP state; WIP churn re-emits by design "
@@ -1053,7 +1129,7 @@ def main():
         "wall_seconds": wall_s,
         "scenarios": {"behavioral": behavioral, "stale": stale, "fence": fence,
                       "control": control, "oracle_fault": fault,
-                      "real_repo": real},
+                      "watcher_thread": wthread, "real_repo": real},
         "checks": checks,
         "all_checks_pass": all(checks.values()),
     }

@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-10-02T21:12:47.257+00:00",
-  "runner": "zcode-independent (aplexer d54c1e11)",
-  "purpose": "harness skeleton v0.3: grok R7-1/2/3 corrections at harness level - external pinned oracle at base/A/B/combined, both-writers-uncommitted warning, agent-side outbox emission, funnel counts; v0.2 adds WIP-digest dedup key (unchanged WIP dedupes, changed WIP re-emits), zero-warning action rate = undefined, run-end retention; v0.3 adds CrashTest41 negative control (oracle crash/timeout mid-scan journals run_failure, run marked failed, never a silent pass) per C-A01-UPTAKE-NEXT; NOT the R2-1/Y1 kill test (scripted stand-ins; live arms are grok-head's pilot)",
+  "timestamp": "2026-10-03T00:33:43.120+00:00",
+  "runner": "zcode-independent (aplexer session 7bd5b3c2)",
+  "purpose": "harness skeleton v0.4: grok R7-1/2/3 corrections at harness level - external pinned oracle at base/A/B/combined, both-writers-uncommitted warning, agent-side outbox emission, funnel counts; v0.2 WIP-digest dedup key + zero-warning undefined rate; v0.3 CrashTest41 negative control (run_failure journaled, never a silent pass); v0.4 per C-V03-REVIEW2124: subprocess.TimeoutExpired labeled oracle_timeout (not crash), watcher-thread default-path timeout exercised, discovery_action + interface_observed schema pre-declared; claims = fixture engineering only; NOT the R2-1/Y1 kill test (live arms were grok-head's fair pair, result null, no uptake)",
   "dedup_granularity": "digest over the exact failing WIP tree pair (content-addressed); one notice per distinct failing WIP state; WIP churn re-emits by design and shows up in funnel.delivered",
   "oracle_id": "external-suite-e27d8738",
   "poll_interval_s": 0.4,
@@ -25,10 +25,19 @@
     "run_end": [
       "retention",
       "status"
+    ],
+    "interface_observed": [
+      "tool_inventory_ref"
+    ],
+    "discovery_action": [
+      "before_flag",
+      "evidence_ref",
+      "head_vector",
+      "source"
     ]
   },
   "schema_errors": [],
-  "wall_seconds": 6.4,
+  "wall_seconds": 5.8,
   "scenarios": {
     "behavioral": {
       "scenario": "behavioral_both_wip",
@@ -40,7 +49,7 @@
         "agentA": "uptake",
         "agentB": "uptake"
       },
-      "wip_digest_dedup_v1": "warn-fca1f734084c",
+      "wip_digest_dedup_v1": "warn-2528b9184d5d",
       "unchanged_wip_dedup_no_spam": true,
       "changed_wip_reemitted_new_key": true,
       "resolution_combined_clean": true,
@@ -91,14 +100,21 @@
       "timeout_funnel_failed": true,
       "timeout_no_silent_pass": true
     },
+    "watcher_thread": {
+      "scenario": "watcher_thread_default_oracle_timeout",
+      "journaled": true,
+      "scan_failed": true,
+      "funnel_failed": true,
+      "no_silent_pass": true
+    },
     "real_repo": {
       "scenario": "real_repo_scan",
-      "repo_files": 205,
+      "repo_files": 274,
       "wip_symbols_extracted": [
         "_def_spans"
       ],
       "expected_symbol_present": true,
-      "scan_ms": 74
+      "scan_ms": 68
     }
   },
   "checks": {
@@ -118,6 +134,7 @@
     "oracle_crash_journeled_run_failed": true,
     "oracle_timeout_journeled_run_failed": true,
     "oracle_fault_never_silent_pass": true,
+    "watcher_thread_default_oracle_timeout_failclosed": true,
     "real_repo_wip_symbols_found": true,
     "journal_schema_valid": true
   },
