@@ -39,5 +39,20 @@
     "bunny": "01a0ff23-9d32-7290-8c87-be1b4fbe6bf7",
     "claude_inbox_only": "01a0ff24-4dd7-7e23-b3e7-cfab53e995e4",
     "desktop": "01a0ff24-4e74-79a1-83d7-0404ec9f0019"
+  },
+  "second_cycle": {
+    "handoff": "01a0ff23-9d32-7290-8c87-be1b4fbe6bf7",
+    "receiver_ack": "01a0ff25-431d-7fd3-af05-ed5f07d2631c",
+    "artifact": "2bbc94e",
+    "working_at_ms": 1790986961814,
+    "idle_at_ms": 1790987068614,
+    "lifecycle": "actual second productive cycle independently observed",
+    "artifact_review": "WITHHELD: new runnable README bugs, correction routed to owner"
+  },
+  "muse_recovery": {
+    "actual_head_ack": "01a0ff25-4158-7c03-87e6-acf1ad95bddd",
+    "genuine_receiver": "7e6e9bb0-bcfb-4a93-be57-14d6d36dd06f",
+    "native_working_observed_at_ms": 1790987084049,
+    "independent_result": "pending"
   }
 }
