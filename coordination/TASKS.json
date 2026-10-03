@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T06:39:44.777767+00:00",
+  "updated_at": "2026-10-03T06:44:18.224632+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -176,13 +176,14 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T06:06:36.722681+00:00",
+      "updated_at": "2026-10-03T06:44:18.224632+00:00",
       "evidence_paths": [
         "coordination/codex.md",
-        "research/codex/oversight-human31.md"
+        "research/codex/oversight-human31.md",
+        "research/codex/a18-source-review.md"
       ],
       "blocked_on": [],
-      "next_action": "Verify head-owned Muse OOM recovery and independent worker containment/first tools; review producer cross-session idle timer negative and real receiver cycles; Z original-versus-hardened A05 adjudicator on pinned copies, corrected private lock evidence. R7 source corrections and R8 failed launch retained. R11 corrected direction accepted only with UNKNOWN provenance/classification. Mutual Claude artifact event or<=5min; no principal implementation.",
+      "next_action": "Verify Z-head genuinely bound producer checker ACK/first tool/results, corrected A01 R12 numeric/interface grader same-digest approval, publication genuine model reviewer and repeated receiver cycles; review A18 allocation with Claude. Preserve actual model research and binding gaps, no own implementation. Mutual artifact event or<=5min; bounded native waits.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
