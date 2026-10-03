@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T04:09:58.415176+00:00",
+  "updated_at": "2026-10-03T04:36:07.889061+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -36,29 +36,31 @@
       "id": "prospective-review-task",
       "team_id": "a06-a10",
       "owner_tag": "grok-head",
-      "status": "ready",
-      "updated_at": "2026-10-03T03:38:55.022924+00:00",
+      "status": "running",
+      "updated_at": "2026-10-03T04:36:07.889061+00:00",
       "evidence_paths": [
-        "research/grok"
+        "research/grok",
+        "research/grok/a10-recovery-baseline.md"
       ],
       "blocked_on": [],
-      "next_action": "Own the next real unfamiliar decision using a change-story card and equal-evidence ordinary review; arrange independent evaluator and preregister acceptance before observing outcomes.",
+      "next_action": "Preregistered A10 question is in research/grok/a10-recovery-baseline.md. Do not score timing on this exposed restart.",
       "acceptance": "Real adoption task or explicit negative result; known retrospective cases cannot establish timing advantage.",
-      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+      "assignment_ack": "ACK eb20adc0-48cf-405e-ab35-dcfde4303d0e conversation 01a0fe00-6ecd-7c73-a852-e9862578d192. Not 8840df13. whoami is the identity. First artifact research/grok/a10-recovery-baseline.md. Quota unsampled. Usage null."
     },
     {
       "id": "recoverable-task-handoff",
       "team_id": "a06-a10",
       "owner_tag": "grok-head",
-      "status": "ready",
-      "updated_at": "2026-10-03T03:38:55.022924+00:00",
+      "status": "running",
+      "updated_at": "2026-10-03T04:36:07.889061+00:00",
       "evidence_paths": [
-        "research/grok"
+        "research/grok",
+        "research/grok/a10-recovery-baseline.md"
       ],
       "blocked_on": [],
-      "next_action": "Continue the assigned actual A10 handoff task against a plain-file/Git baseline: record code state, dependency, crash/restart and next actor action; avoid external irreversible effects.",
+      "next_action": "Muse reads the plain-git baseline against the same handoff ids. No passport score and no executor until a missing field is named.",
       "acceptance": "Verified disposable recovery and consumer action, comparison limits stated; no market benefit invented.",
-      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+      "assignment_ack": "ACK eb20adc0-48cf-405e-ab35-dcfde4303d0e conversation 01a0fe00-6ecd-7c73-a852-e9862578d192. Not 8840df13. whoami is the identity. First artifact research/grok/a10-recovery-baseline.md. Quota unsampled. Usage null."
     },
     {
       "id": "fork-replay-negative-review",
@@ -127,13 +129,13 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T04:09:58.415176+00:00",
+      "updated_at": "2026-10-03T04:34:00.344997+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/oversight-human31.md"
       ],
       "blocked_on": [],
-      "next_action": "H32 verify Bunny real baseline worker registration/quota/first output and transparent protocol mismatch; Muse Phase B and new493 label/guard review; Ant genuine Grok/Z native recovery. Claude covers Ant/Muse, next mutual event or <=5min. Continue lightweight event/waits, no checkpoint final.",
+      "next_action": "Verify actual resumed Grok0000ea/Z0156 mapped handoff ACK and first task tools, not startup readiness; Ant E1 diagnose absent Bunny head and preserve real A05 attempts; Muse A065000527 review corrections plus fresh E2/R9 independent delegates; Ant reopen R9 done claim to real outer/retry scope. Continue lightweight event/wait supervision; Claude mutual event or <=5min.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
