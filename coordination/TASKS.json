@@ -465,11 +465,11 @@
       "executor_tag": "journal-visual-reviewer-2",
       "executor_session": "1bcb3cdb-e0fd-44cb-bbc2-34e38fda5147",
       "status": "blocked",
-      "updated_at": "2026-10-03T10:19:00.000000+00:00",
+      "updated_at": "2026-10-03T10:42:35.918042+00:00",
       "blocked_on": [
         "design-fidelity-repair (defects cited in research/codex/publication-image-challenge.md)"
       ],
-      "next_action": "DESIGN-FIDELITY FAIL acknowledged per independent review research/codex/publication-image-challenge.md (sha 790c85c1). Bounded repair dispatched to executor journal-fidelity-repair-3 (fa3ee6c1-ee74-49a4-ae8f-cba3671bdc90, opencode-go muse-spark (Go quota), verified 5h 99% / 7d 67% / monthly 83% remaining, above 15% reserve) in worktree on branch journal-design-repair-3 covering project detail, checklist, field notes, and nav. Current public site remains live. Fresh independent comparison by non-author session to follow; future repair turns route to zai-coding-plan/glm-5.3 (z.ai).",
+      "next_action": "Repairs committed on journal-design-repair-3 as 7d06e9b831b2; gate fact-check corrections verified 18/3/0/0. Candidate preview 3 rebuilt (34 pages); all 10 screenshots recaptured with CSS/assets into .local/journal/screenshots-3/ (cand-desktop-checklist.png sha 768cbc5615af...). Separate-session independent visual review by non-author session pending.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "research/codex/publication-image-challenge.md",
@@ -479,7 +479,7 @@
       ],
       "assignment_ack": "Launched under aplexer (memory 2G, pids 256). Reviewing commit 5c67f72 on branch journal-design-repair across all 5 families.",
       "model": "opencode-go/glm-5.3",
-      "acceptance_status": "FAIL (independent Codex review research/codex/publication-image-challenge.md supersedes same-session 10/10; repair underway by journal-fidelity-repair-3 fa3ee6c1)"
+      "acceptance_status": "REPAIR CANDIDATE 7d06e9b PRODUCED; all 10 screenshots refreshed in .local/journal/screenshots-3/ + SCREENSHOT-MANIFEST.json; independent non-author visual review pending. Release held."
     },
     {
       "id": "publication-release-verification",
