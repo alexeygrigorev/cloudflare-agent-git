@@ -1,0 +1,91 @@
+{
+  "suite": "a01-shadow-consume-validation-rev5",
+  "expect": "split",
+  "runner_sha256": "9a260cc6739c400bada115e587802b84f7c3e963acab0f80b2020ff3b9dca26d",
+  "generated_at": "2026-10-03T05:18:53.889527+00:00",
+  "passed": 16,
+  "total": 16,
+  "all_pass": true,
+  "checks": [
+    {
+      "check": "lexical_diff_strings_same_inode",
+      "pass": true,
+      "detail": "direct=/tmp/a01-rev5-0jkaob52/lex/guard.lock dotted=/tmp/a01-rev5-0jkaob52/lex/sub/../guard.lock"
+    },
+    {
+      "check": "same_inode_locks_mutually_exclude",
+      "pass": true,
+      "detail": "holder on direct path blocks dotted-path caller"
+    },
+    {
+      "check": "canonical_lock_relative_strings_may_differ",
+      "pass": true,
+      "detail": "a=events.jsonl.lock b=events.jsonl.lock (lexical form is not the claim)"
+    },
+    {
+      "check": "relative_cwd_is_not_a_race",
+      "pass": true,
+      "detail": "lexically different lock strings resolve to ONE lock inode"
+    },
+    {
+      "check": "lexical_split_only_when_inodes_differ",
+      "pass": true,
+      "detail": "different resolved inodes remain the only hazard class"
+    },
+    {
+      "check": "dir_symlink_lock_strings_differ",
+      "pass": true,
+      "detail": "/tmp/a01-rev5-0jkaob52/dreal/events.jsonl.lock vs /tmp/a01-rev5-0jkaob52/dlink/events.jsonl.lock"
+    },
+    {
+      "check": "dir_symlink_locks_same_inode_no_split",
+      "pass": true,
+      "detail": "lock created through symlinked parent lands in same real dir"
+    },
+    {
+      "check": "dir_symlink_append_excluded_even_PRE_FIX",
+      "pass": true,
+      "detail": "one lock domain in practice: no dir-symlink race"
+    },
+    {
+      "check": "file_symlink_two_lock_names_PRE_FIX",
+      "pass": true,
+      "detail": "real->/tmp/a01-rev5-0jkaob52/away/events.jsonl.lock link->/tmp/a01-rev5-0jkaob52/flink/events.jsonl.lock"
+    },
+    {
+      "check": "file_symlink_lock_inodes_differ_PRE_FIX",
+      "pass": true,
+      "detail": "sibling locks in different directories: two inodes"
+    },
+    {
+      "check": "file_symlink_append_NOT_excluded_PRE_FIX",
+      "pass": true,
+      "detail": "append via file-symlink path proceeded while real lock held (defect)"
+    },
+    {
+      "check": "explicit_lock_different_inode",
+      "pass": true,
+      "detail": "canonical=events.jsonl.lock explicit=elsewhere.lock"
+    },
+    {
+      "check": "explicit_opt_out_proceeds_while_canonical_held",
+      "pass": true,
+      "detail": "explicit-lock append completed while canonical lock held (documented opt-out, no exclusion)"
+    },
+    {
+      "check": "explicit_opt_out_twin_deduped",
+      "pass": true,
+      "detail": "second identical append -> dedup-skipped"
+    },
+    {
+      "check": "explicit_opt_out_journal_intact",
+      "pass": true,
+      "detail": "exactly one line per evidence case: ['file-symlink-split', 'explicit-optout']"
+    },
+    {
+      "check": "repo_journal_untouched",
+      "pass": true,
+      "detail": "byte-identical before/after"
+    }
+  ]
+}

@@ -449,14 +449,27 @@ CANONICAL_REPO_JOURNALS = {"experiment/events.jsonl": Path(".local/events.lock")
 
 
 def canonical_lock_for(events_path: Path) -> Path:
-    """Return the one canonical flock file guarding events_path."""
+    """Return the one canonical flock file guarding events_path.
+
+    rev1e: the path is resolved BEFORE deriving the lock, because flock is
+    inode-scoped — only DIFFERENT resolved lock inodes guarding the SAME
+    journal inode split the domain (validation rev5, head-owned fstat/flock
+    evidence). Resolving unifies the two real split cases: a journal file
+    reached through a symlink (sibling locks would land in different
+    directories) and lexical .. /cwd variants. A symlinked parent directory
+    never split the domain even pre-rev1e (the lock created through the link
+    lands on the same real directory inode). Known bound: hard links are NOT
+    unified by resolve(); two hardlinked journals at different directory
+    paths still derive different sibling locks — documented, not fixed.
+    """
+    resolved = events_path.resolve()
     try:
-        rel = events_path.resolve().relative_to(REPO.resolve()).as_posix()
+        rel = resolved.relative_to(REPO.resolve()).as_posix()
     except ValueError:
         rel = None
     if rel is not None and rel in CANONICAL_REPO_JOURNALS:
         return REPO / CANONICAL_REPO_JOURNALS[rel]
-    return events_path.parent / (events_path.name + ".lock")
+    return resolved.parent / (resolved.name + ".lock")
 
 
 def _append_locked(events_path: Path, event: dict) -> str:
@@ -487,11 +500,18 @@ def append_event_dedup(
     rev1d: the DEFAULT path and the --append-event CLI both take
     canonical_lock_for(events_path), so mixed default/explicit callers on the
     same file share one lock domain (repo journal -> REPO/.local/events.lock,
-    else sibling <events>.lock). Passing a DIFFERENT explicit lock_path opts
-    out of the canonical domain and races with canonical callers — validation
-    rev4 keeps the negative case as documentation."""
+    else sibling <events>.lock). rev1e: passing a DIFFERENT explicit
+    lock_path still opts out (back-compat), but prints a stderr warning —
+    validation rev5 proves with fstat/flock evidence that such callers are
+    NOT mutually excluded with canonical callers."""
     if lock_path is None:
         lock_path = canonical_lock_for(events_path)
+    else:
+        canonical = canonical_lock_for(events_path)
+        if lock_path != canonical:
+            print(f"warning: explicit lock_path {lock_path} is outside the "
+                  f"canonical domain {canonical}; not mutually excluded",
+                  file=sys.stderr)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
     try:

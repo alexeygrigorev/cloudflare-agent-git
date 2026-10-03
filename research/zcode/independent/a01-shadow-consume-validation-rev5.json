@@ -1,0 +1,91 @@
+{
+  "suite": "a01-shadow-consume-validation-rev5",
+  "expect": "unified",
+  "runner_sha256": "f426dc76b8083235715dae13eade131e42969c109d8e2bacbf99f94e5bcbbbd3",
+  "generated_at": "2026-10-03T05:18:27.206458+00:00",
+  "passed": 16,
+  "total": 16,
+  "all_pass": true,
+  "checks": [
+    {
+      "check": "lexical_diff_strings_same_inode",
+      "pass": true,
+      "detail": "direct=/tmp/a01-rev5-63ab0_pb/lex/guard.lock dotted=/tmp/a01-rev5-63ab0_pb/lex/sub/../guard.lock"
+    },
+    {
+      "check": "same_inode_locks_mutually_exclude",
+      "pass": true,
+      "detail": "holder on direct path blocks dotted-path caller"
+    },
+    {
+      "check": "canonical_lock_relative_strings_may_differ",
+      "pass": true,
+      "detail": "a=events.jsonl.lock b=events.jsonl.lock (lexical form is not the claim)"
+    },
+    {
+      "check": "relative_cwd_is_not_a_race",
+      "pass": true,
+      "detail": "lexically different lock strings resolve to ONE lock inode"
+    },
+    {
+      "check": "lexical_split_only_when_inodes_differ",
+      "pass": true,
+      "detail": "different resolved inodes remain the only hazard class"
+    },
+    {
+      "check": "dir_symlink_lock_strings_converge_POST_FIX",
+      "pass": true,
+      "detail": "/tmp/a01-rev5-63ab0_pb/dreal/events.jsonl.lock == /tmp/a01-rev5-63ab0_pb/dreal/events.jsonl.lock"
+    },
+    {
+      "check": "dir_symlink_locks_same_inode_no_split",
+      "pass": true,
+      "detail": "lock created through symlinked parent lands in same real dir"
+    },
+    {
+      "check": "dir_symlink_append_excluded_even_PRE_FIX",
+      "pass": true,
+      "detail": "one lock domain in practice: no dir-symlink race"
+    },
+    {
+      "check": "file_symlink_single_lock_name_POST_FIX",
+      "pass": true,
+      "detail": "/tmp/a01-rev5-63ab0_pb/away/events.jsonl.lock == /tmp/a01-rev5-63ab0_pb/away/events.jsonl.lock"
+    },
+    {
+      "check": "file_symlink_lock_single_inode_POST_FIX",
+      "pass": true,
+      "detail": "one lock domain after resolve()"
+    },
+    {
+      "check": "file_symlink_append_excluded_POST_FIX",
+      "pass": true,
+      "detail": "append via file-symlink path blocked while real lock held"
+    },
+    {
+      "check": "explicit_lock_different_inode",
+      "pass": true,
+      "detail": "canonical=events.jsonl.lock explicit=elsewhere.lock"
+    },
+    {
+      "check": "explicit_opt_out_proceeds_while_canonical_held",
+      "pass": true,
+      "detail": "explicit-lock append completed while canonical lock held (documented opt-out, no exclusion)"
+    },
+    {
+      "check": "explicit_opt_out_twin_deduped",
+      "pass": true,
+      "detail": "second identical append -> dedup-skipped"
+    },
+    {
+      "check": "explicit_opt_out_journal_intact",
+      "pass": true,
+      "detail": "exactly one line per evidence case: ['file-symlink-unified', 'explicit-optout']"
+    },
+    {
+      "check": "repo_journal_untouched",
+      "pass": true,
+      "detail": "byte-identical before/after"
+    }
+  ]
+}
