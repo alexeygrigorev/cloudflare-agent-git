@@ -83,10 +83,12 @@ class AgentHarnessDriver:
         agent_timeout_seconds: float = 2700.0,
         engine_mode: str = "dry-run",
         skip_worker_alive: bool = False,
+        base_sha: Optional[str] = None,
     ) -> None:
         self.server_url = server_url.rstrip("/")
         self.admin_token = admin_token or os.environ.get("ADMIN_TOKEN", "demo-admin-token")
         self.runner_token = runner_token or os.environ.get("RUNNER_TOKEN", "demo-runner-token")
+        self.base_sha = base_sha
         self.demo_target_path = os.path.abspath(demo_target_path)
         if not os.path.exists(self.demo_target_path):
             candidates = [
@@ -300,6 +302,8 @@ class AgentHarnessDriver:
 
     def get_base_commit_sha(self) -> str:
         """Get the base commit SHA of demo-target repository."""
+        if self.base_sha:
+            return self.base_sha
         for candidate in [
             os.path.join(self.demo_target_path, "reference-solutions", "BASE"),
             os.path.join(self.demo_target_path, ".harness", "BASE"),
@@ -310,6 +314,13 @@ class AgentHarnessDriver:
                     sha = f.read().strip()
                     if sha:
                         return sha
+        try:
+            status = self.client.get_status()
+            seed_commit = status.get("canonical", {}).get("seedCommit")
+            if seed_commit:
+                return seed_commit
+        except Exception:
+            pass
         proc = subprocess.run(
             ["git", "-C", self.repo_root, "rev-parse", "HEAD"],
             capture_output=True,
@@ -1067,6 +1078,7 @@ def main() -> None:
         default=3600.0,
         help="Maximum execution wait time in seconds (default: 3600.0 / 60 min)",
     )
+    parser.add_argument("--base-sha", default=None, help="Explicit base commit SHA for canonical baseline")
     parser.add_argument("--json", action="store_true", help="Print output summary as JSON")
 
     args = parser.parse_args()
@@ -1085,6 +1097,7 @@ def main() -> None:
         agent_timeout_seconds=args.agent_timeout,
         engine_mode=args.engine_mode,
         skip_worker_alive=args.skip_worker_alive,
+        base_sha=args.base_sha,
     )
 
     try:
