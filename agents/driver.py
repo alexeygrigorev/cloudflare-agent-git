@@ -79,7 +79,8 @@ class AgentHarnessDriver:
         run_dir: Optional[str] = None,
         min_mem_gate_gb: float = 10.0,
         poll_interval: float = 2.0,
-        max_wait_seconds: float = 300.0,
+        max_wait_seconds: float = 3600.0,
+        agent_timeout_seconds: float = 2700.0,
         engine_mode: str = "dry-run",
         skip_worker_alive: bool = False,
     ) -> None:
@@ -108,6 +109,7 @@ class AgentHarnessDriver:
         self.min_mem_gate_gb = float(min_mem_gate_gb)
         self.poll_interval = float(poll_interval)
         self.max_wait_seconds = float(max_wait_seconds)
+        self.agent_timeout_seconds = float(agent_timeout_seconds)
         self.engine_mode = engine_mode
         self.skip_worker_alive = skip_worker_alive
 
@@ -573,15 +575,16 @@ class AgentHarnessDriver:
                         raise RuntimeError(f"Quota gate rejected {t.engine} ({reason}) and fallback {fallback_engine} ({fb_reason})")
                 self.record_event("quota_gate_verified", {"provider": t.engine, "details": qinfo})
 
-                # Real agent launch via aplexer with generous 600s executor timeout
+                # Real agent launch via aplexer with generous executor timeout (budgeted 45 min / 2700s)
                 session_tag = f"l6-agent-{t.task_id.lower()}-{self.run_id[:8]}"
+                timeout_str = str(int(self.agent_timeout_seconds))
                 cmd: List[str] = []
                 if t.engine == "zcodex":
-                    cmd = ["timeout", "600", "zcodex", "exec", "--dangerously-bypass-approvals-and-sandbox", prompt_text]
+                    cmd = ["env", "ZCODE_WARM=1", "timeout", timeout_str, "zcodex", "exec", "--dangerously-bypass-approvals-and-sandbox", prompt_text]
                 elif t.engine == "space-bunny":
-                    cmd = ["timeout", "600", "opencode", "run", "--model", "opencode-go/space-bunny-free", prompt_text]
+                    cmd = ["timeout", timeout_str, "opencode", "run", "--model", "opencode-go/space-bunny-free", prompt_text]
                 elif t.engine == "grok":
-                    cmd = ["timeout", "600", "grok", prompt_text]
+                    cmd = ["timeout", timeout_str, "grok", prompt_text]
                 else:
                     cmd = ["bash", "-c", f"echo 'Running {t.task_id}'; sleep 2"]
 
@@ -600,6 +603,8 @@ class AgentHarnessDriver:
                     "1500M",
                     "--env",
                     f"PATH={bin_dir}:{os.environ.get('PATH', '')}",
+                    "--env",
+                    "ZCODE_WARM=1",
                     "--",
                 ] + cmd
 
@@ -654,8 +659,27 @@ class AgentHarnessDriver:
         # Export CONTRACT v0.1 payload
         payload = export_l1_payload(results, engine=radar)
 
+        # Adapt payload for L1 wire compatibility (C-1350/C-1351)
+        wire_payload = dict(payload)
+        if isinstance(wire_payload.get("policy"), dict):
+            wire_payload["policy"] = "git-merge-tree+budgeted-tests"
+        if isinstance(wire_payload.get("coverage"), dict):
+            cov_dict = wire_payload["coverage"]
+            wire_payload["coverage"] = [
+                f"pairs_checked={cov_dict.get('pairs_checked', 0)}",
+                f"tests_collected={cov_dict.get('tests_collected', 0)}",
+            ]
+        if isinstance(wire_payload.get("results"), list):
+            adapted_results = []
+            for r in wire_payload["results"]:
+                r_copy = dict(r)
+                if isinstance(r_copy.get("evidence"), dict):
+                    r_copy["evidence"] = r_copy["evidence"].get("summary") or json.dumps(r_copy["evidence"])
+                adapted_results.append(r_copy)
+            wire_payload["results"] = adapted_results
+
         # Post checks to L1 Coordinator via L2 Client
-        post_res = self.client.send_checks(payload, runner_token=self.runner_token)
+        post_res = self.client.send_checks(wire_payload, runner_token=self.runner_token)
 
         # Retrieve coordinator status to observe generated warnings
         coord_status = self.client.get_status()
@@ -904,6 +928,23 @@ class AgentHarnessDriver:
                 break
 
             time.sleep(self.poll_interval)
+        else:
+            self.record_event(
+                "agent_time_budget_incomplete",
+                {
+                    "message": "agent incomplete (time budget)",
+                    "elapsed_seconds": round(time.time() - poll_start, 2),
+                    "max_wait_seconds": self.max_wait_seconds,
+                    "tasks": [
+                        {
+                            "task_id": t.task_id,
+                            "session_id": t.session_id,
+                            "status": "agent incomplete (time budget)",
+                        }
+                        for t in tasks
+                    ],
+                },
+            )
 
     def verify_agent_workspaces(self, tasks: List[TaskSpec]) -> Dict[str, Any]:
         """Run node --test in each workspace to verify task-level correctness."""
@@ -1014,7 +1055,18 @@ def main() -> None:
     parser.add_argument("--skip-worker-alive", action="store_true", help="Skip pre-flight Worker /status health check")
     parser.add_argument("--min-mem-gb", type=float, default=10.0, help="Minimum MemAvailable gate in GiB")
     parser.add_argument("--poll-interval", type=float, default=2.0, help="Radar polling interval in seconds")
-    parser.add_argument("--max-wait", type=float, default=300.0, help="Maximum execution wait time in seconds")
+    parser.add_argument(
+        "--agent-timeout",
+        type=float,
+        default=2700.0,
+        help="Per-agent execution budget in seconds (default: 2700.0 / 45 min)",
+    )
+    parser.add_argument(
+        "--max-wait",
+        type=float,
+        default=3600.0,
+        help="Maximum execution wait time in seconds (default: 3600.0 / 60 min)",
+    )
     parser.add_argument("--json", action="store_true", help="Print output summary as JSON")
 
     args = parser.parse_args()
@@ -1030,6 +1082,7 @@ def main() -> None:
         min_mem_gate_gb=args.min_mem_gb,
         poll_interval=args.poll_interval,
         max_wait_seconds=args.max_wait,
+        agent_timeout_seconds=args.agent_timeout,
         engine_mode=args.engine_mode,
         skip_worker_alive=args.skip_worker_alive,
     )
