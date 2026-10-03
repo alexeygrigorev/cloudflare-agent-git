@@ -1,26 +1,41 @@
 #!/usr/bin/env python3
-"""A01 shadow-consume runner v0 (read-only) — zcode-independent.
+"""A01 shadow-consume runner rev1 (read-only) — zcode-independent.
 
-Implements the shadow-consume section of
-research/zcode/independent/a01-consumer-adapter-plan-v03.md against the frozen
-fair-pair heads in research/grok/a01-live-provenance.md @ e81a0cb.
+Rev1 applies the corrections required by codex-principal C-0124-Z-REVISION
+(01a0ff5f), desktop HEARTBEAT0054 (01a0ff48) and antigravity task 01a0ff66
+(ref 01a0ff63). All are read-only corrections; emit stays WITHHELD until
+codex-principal accepts this rev1.
 
-READ-ONLY by construction: touches no peer file, no live trial, no new
-writers, no seeded bug. The only writes this tool can ever make are its own
-result files inside research/zcode/independent/ under --emit.
+R1 (eligibility): the shared-worktree requirement and structural zero are
+    WITHDRAWN. The harness scan_once compares active WIP trees pairwise
+    ACROSS different worktrees (a01-harness-skeleton-v0.py lines 449-465),
+    so distinct per-writer paths prove nothing about eligibility. Eligibility
+    is derived only from frozen observed compositions/events in the retained
+    receipts, or marked UNKNOWN when the retained timeline is insufficient.
+R2 (cause claim): the structural causal claim ("conflict condition never
+    existed") is WITHDRAWN. The grok fair-pair result of record (no notices,
+    NOT uptake, N=1) is preserved as-is; this runner adds no causal story.
+R3 (typed events): token grep is replaced by typed journal events using the
+    harness SCHEMA discriminants (etype). discovery_action is never hardcoded
+    to "none": absence of typed events in receipts that predate the v0.3/v0.4
+    schema is reported as absence-of-evidence with its scope stated.
+R4 (bundle hash): bundle sha256 is computed only after the exists guard, so a
+    missing bundle is reported ("bundle missing") instead of crashing.
+R5 (paths/hosts): OUT_DIR is resolved against the repo root; emit writes the
+    owned repo path (or --emit-dir for validation scratch) and host-absolute
+    paths are sanitized before any file is emitted; durable appends
+    (events.jsonl) go through an flock-guarded dedup-before-mutation helper.
+R6 (validation): a01-shadow-consume-validation-rev1.py exercises emit-into-
+    scratch, sanitization, missing-bundle robustness, emit refusal on
+    unverified SHAs, cwd robustness and append dedup; results are committed.
 
-Gate: --emit runs only after codex-principal accepts the v0.4 adapter revision
-(token G-A01-SHADOW-CONSUME-20261003 accepted by zcode-independent 01a0ff3b).
---dry-run (default) computes and prints the binding without writing anything.
-
-Success criterion (registered plan): a discovery_action bound to the heads, or
-an explicit zero-warning/undefined-rate result bound to the heads. Zero
-eligible warnings is a null-benefit clean result, not a failure (v0.2 rule).
+Gate: repo emit (default dir) only after codex-principal accepts this rev1.
 """
 
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
@@ -35,8 +50,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 PROVENANCE_REF = "e81a0cb"
 PROVENANCE_PATH = "research/grok/a01-live-provenance.md"
-BUNDLE_DIR = Path(".local/grok/a01-fair-20261002")
-OUT_DIR = Path("research/zcode/independent")
+BUNDLE_DIR = REPO / ".local/grok/a01-fair-20261002"
+OUT_DIR = REPO / "research/zcode/independent"  # R5: absolute, repo-owned
 
 # arm-role -> bundle file name inside BUNDLE_DIR
 BUNDLES = {
@@ -49,9 +64,14 @@ BUNDLES = {
 HEAD_LINE = re.compile(
     r"(\w+) ([AB]) `([0-9a-f]{40})` / report `([0-9a-f]{40})`"
 )
-EVIDENCE_TOKENS = re.compile(
-    r"advisory|notice|warning|consume|discovery|interface_observed", re.I
-)
+
+# R3: typed journal discriminants = the actual harness SCHEMA event types.
+TYPED_EVENTS = {
+    "agent_action", "consume", "deliver", "discovery_action", "emit",
+    "fence_event", "interface_observed", "push_observed", "run_end",
+    "run_failure", "run_outcome", "run_start",
+}
+ETYPE_KEYS = ("etype", "event", "kind", "type")
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
@@ -93,16 +113,18 @@ def probe_bundle(
     The main repo is never written; the scratch dir belongs to this run.
     """
     rec: dict = {
-        "bundle": str(bundle),
-        "bundle_sha256": sha256_file(bundle),
+        "bundle": bundle.as_posix(),
         "exists": bundle.exists(),
+        "bundle_sha256": None,
         "listed_refs": {},
         "sha_contained": {},
         "bundle_verify": "not-run",
     }
-    if not bundle.exists():
+    if not rec["exists"]:
+        # R4: missing bundle is reported, never crashed on.
         rec["error"] = "bundle missing"
         return rec
+    rec["bundle_sha256"] = sha256_file(bundle)
     rc, out, _ = git("bundle", "list-heads", str(bundle))
     if rc == 0:
         for line in out.splitlines():
@@ -132,43 +154,232 @@ def probe_bundle(
     return rec
 
 
-def scan_receipt_evidence() -> dict[str, int]:
-    """Count evidence-token matches per receipt file (raw counts only)."""
-    counts: dict[str, int] = {}
-    base = REPO / BUNDLE_DIR
-    for fname in sorted(list(base.glob("*.jsonl")) + list(base.glob("*.json"))):
-        text = fname.read_text(errors="replace")
-        counts[fname.name] = len(EVIDENCE_TOKENS.findall(text))
-    return counts
-
-
-def eligibility_structure() -> dict:
-    """Derive the harness warning-eligibility condition from run structure.
-
-    The v0.4 harness emits a warning for genuinely conflicting WIP between two
-    writers sharing a worktree. Eligibility is a structural property of the
-    run: writers-per-worktree > 1 somewhere with conflicting file sets.
-    """
-    rc, out, err = git("show", f"{PROVENANCE_REF}:research/grok/a01_fair_run.py")
-    launch = {"rc": rc, "distinct_cwd_fields": 0 if rc else len(set(re.findall(r"--cwd (\S+)", out)))}
-    manifest = json.loads((REPO / BUNDLE_DIR / "manifest.json").read_text())
-    repos = manifest.get("repos", {})
+def scan_typed_events(bundle_dir: Path) -> dict:
+    """R3: count typed journal events by schema discriminant, not tokens."""
+    counts = {k: 0 for k in sorted(TYPED_EVENTS)}
+    files_with: dict[str, dict[str, int]] = {}
+    jsonl_seen = 0
+    for fname in sorted(bundle_dir.glob("*.jsonl")):
+        jsonl_seen += 1
+        for line in fname.read_text(errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(obj, dict):
+                continue
+            kind = next((obj[k] for k in ETYPE_KEYS if k in obj), None)
+            if isinstance(kind, str) and kind in TYPED_EVENTS:
+                counts[kind] += 1
+                per = files_with.setdefault(fname.name, {})
+                per[kind] = per.get(kind, 0) + 1
     return {
-        "manifest_repo_paths": repos,
-        "distinct_writer_worktrees": len(set(repos.values())),
-        "writer_count": len(repos),
-        "run_script_distinct_cwd_fields": launch["distinct_cwd_fields"],
-        "shared_worktree_pairs": [],
+        "jsonl_files_scanned": jsonl_seen,
+        "typed_event_schema_present_in_receipts": any(counts.values()),
+        "typed_event_counts": counts,
+        "files_with_typed_events": files_with,
+        "scope_note": (
+            "the grok fair-pair receipts predate the v0.3/v0.4 typed journal "
+            "schema; zero typed events here is absence-of-evidence within "
+            "these receipts, NOT evidence that no discovery or action occurred"
+        ),
     }
+
+
+def writer_receipt_self_reports(bundle_dir: Path) -> dict:
+    """Extract writers' own receipt.action self-reports by structure (score.json).
+
+    Kept separate from typed events: these are agent self-reports, not harness
+    journal entries. Used only as corroboration of the NOT-uptake result of
+    record; never as a claim that no action occurred.
+    """
+    path = bundle_dir / "score.json"
+    if not path.exists():
+        return {"present": False, "receipts": {}}
+    score = json.loads(path.read_text())
+    receipts: dict[str, str] = {}
+    for arm, roles in score.items():
+        if not isinstance(roles, dict):
+            continue
+        for role, data in roles.items():
+            receipt = data.get("receipt") if isinstance(data, dict) else None
+            if isinstance(receipt, dict) and "action" in receipt:
+                receipts[f"{arm}-{role}"] = str(receipt["action"])[:300]
+    return {"present": True, "receipts": receipts}
+
+
+def derive_eligibility(bundle_dir: Path) -> dict:
+    """R1/R2: eligibility from frozen observed compositions/events, else UNKNOWN.
+
+    scan_once pairs WIP across DIFFERENT worktrees, so per-writer path layout
+    is not an eligibility input. Observed evidence used: (a) overlap between
+    the two writers' published file sets per arm; (b) timeline polls showing
+    concurrent non-null peer WIP. If the retained timeline cannot show a
+    conflicting composition, eligibility is UNKNOWN — never structural zero.
+    """
+    published: dict[str, set[str]] = {}
+    for fname, arm in (
+        ("publish-completion.jsonl", "completion"),
+        ("publish-live.jsonl", "live"),
+    ):
+        p = bundle_dir / fname
+        if not p.exists():
+            continue
+        for line in p.read_text(errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            role, files = obj.get("role"), obj.get("files")
+            if isinstance(role, str) and isinstance(files, dict):
+                published.setdefault(f"{arm}-{role}", set()).update(files.keys())
+
+    overlap = {}
+    for arm in ("completion", "live"):
+        fa = published.get(f"{arm}-A", set())
+        fb = published.get(f"{arm}-B", set())
+        overlap[arm] = sorted(fa & fb)
+
+    polls_total = 0
+    polls_with_peer_wip = 0
+    tl = bundle_dir / "timeline.jsonl"
+    if tl.exists():
+        for line in tl.read_text(errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if obj.get("event") == "poll":
+                polls_total += 1
+                peer = obj.get("peer")
+                if isinstance(peer, dict) and any(v is not None for v in peer.values()):
+                    polls_with_peer_wip += 1
+
+    observed_overlap_any = any(overlap.values())
+    if observed_overlap_any:
+        eligible: object = True
+        basis = (
+            "observed: published file sets overlap across the two writers "
+            f"({overlap}); cross-worktree pairing applies per scan_once"
+        )
+    elif polls_with_peer_wip > 0:
+        eligible = "unknown"
+        basis = (
+            f"unknown: cross-worktree concurrency observed ({polls_with_peer_wip}/"
+            f"{polls_total} polls with non-null peer WIP) but the retained "
+            "timeline does not retain concurrent WIP tree snapshots, so a "
+            "conflicting composition cannot be confirmed or excluded"
+        )
+    else:
+        eligible = "unknown"
+        basis = (
+            f"unknown: retained timeline insufficient ({polls_total} polls, no "
+            "non-null peer WIP retained); eligibility cannot be derived"
+        )
+    return {
+        "eligible_warnings": eligible,
+        "warning_rate": "undefined",
+        "basis": basis,
+        "observed_published_file_overlap": overlap,
+        "timeline_polls_total": polls_total,
+        "timeline_polls_with_nonnull_peer_wip": polls_with_peer_wip,
+        "withdrawn_claims": [
+            "structural zero eligible warnings from distinct per-writer paths",
+            "shared-worktree-pairs requirement as an eligibility condition",
+            "causal claim that the conflict condition never existed",
+        ],
+    }
+
+
+HOST_SUBS = [
+    (re.compile(r"/home/[^/\s]+/"), "~/"),
+    (re.compile(r"/tmp/[A-Za-z0-9_./-]*"), "<scratch>"),
+]
+
+
+def sanitize(obj, extra: list[str] | None = None) -> object:
+    """R5: strip host-identifying absolute paths before any emit."""
+    subs = list(HOST_SUBS)
+    for literal in extra or []:
+        if literal:
+            subs.insert(0, (re.compile(re.escape(literal)), "<workspace>"))
+    if isinstance(obj, dict):
+        return {k: sanitize(v, extra) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize(v, extra) for v in obj]
+    if isinstance(obj, str):
+        s = obj
+        for rx, repl in subs:
+            s = rx.sub(repl, s)
+        return s
+    return obj
+
+
+def _append_locked(events_path: Path, event: dict, key: tuple[str, str]) -> str:
+    existing = events_path.read_text() if events_path.exists() else ""
+    for line in existing.splitlines():
+        if not line.strip():
+            continue
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if (str(obj.get("event")), str(obj.get("ts"))) == key:
+            return "dedup-skipped"
+    events_path.parent.mkdir(parents=True, exist_ok=True)
+    with events_path.open("a") as f:
+        f.write(json.dumps(event) + "\n")
+    return "appended"
+
+
+def append_event_dedup(
+    events_path: Path, event: dict, lock_path: Path | None = None
+) -> str:
+    """R5: durable append that dedups on (event, ts) before mutating."""
+    key = (str(event.get("event")), str(event.get("ts")))
+    if lock_path is None:
+        return _append_locked(events_path, event, key)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        return _append_locked(events_path, event, key)
+    finally:
+        os.close(fd)
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--emit", action="store_true",
-                    help="write result files into research/zcode/independent/ (GATED: requires codex acceptance of the v0.4 revision)")
-    ap.add_argument("--scratch", default=None, help="scratch dir for bundle fetch (default: system temp)")
+                    help="write results (GATED for the repo default dir: codex "
+                         "acceptance of rev1 required; use --emit-dir for scratch)")
+    ap.add_argument("--emit-dir", default=None,
+                    help="override output directory (validation scratch)")
+    ap.add_argument("--bundle-dir", default=None,
+                    help="override bundle directory (negative tests)")
+    ap.add_argument("--scratch", default=None, help="scratch dir for bundle fetch")
+    ap.add_argument("--append-event", default=None, metavar="JSON_FILE",
+                    help="append a dedup-guarded event to --events and exit")
+    ap.add_argument("--events", default=None, metavar="FILE",
+                    help="events.jsonl target for --append-event")
     args = ap.parse_args()
 
+    if args.append_event:
+        target = Path(args.events) if args.events else REPO / "experiment/events.jsonl"
+        event = json.loads(Path(args.append_event).read_text())
+        print(append_event_dedup(target, event, REPO / ".local/events.lock"))
+        return 0
+
+    bundle_dir = Path(args.bundle_dir).resolve() if args.bundle_dir else BUNDLE_DIR
     heads = load_provenance_heads()
     scratch_root = Path(args.scratch) if args.scratch else Path(tempfile.mkdtemp(prefix="a01-shadow-"))
     scratch_owned = args.scratch is None
@@ -177,26 +388,12 @@ def main() -> int:
         for name, fname in sorted(BUNDLES.items()):
             want = set(heads[name].values())
             bundles[name] = probe_bundle(
-                (REPO / BUNDLE_DIR / fname).resolve(), want, scratch_root, name.replace("/", "_")
+                (bundle_dir / fname).resolve(), want, scratch_root, name.replace("/", "_")
             )
 
-        evidence_counts = scan_receipt_evidence()
-        structure = eligibility_structure()
-
-        # Eligibility: shared worktree pairs = distinct repos mapping to the
-        # same path. Empty here means the harness warning condition never
-        # existed in this run -> zero eligible warnings -> rate undefined.
-        by_path: dict[str, list[str]] = {}
-        for w, p in structure["manifest_repo_paths"].items():
-            by_path.setdefault(p, []).append(w)
-        structure["shared_worktree_pairs"] = sorted(
-            f"{a}+{b}" for members in by_path.values() if len(members) > 1
-            for i, a in enumerate(members) for b in members[i + 1:]
-        )
-        zero_warning_undefined = not structure["shared_worktree_pairs"]
-        discovery_events = sum(
-            c for f, c in evidence_counts.items() if f.startswith(("timeline", "publish"))
-        )
+        typed = scan_typed_events(bundle_dir)
+        self_reports = writer_receipt_self_reports(bundle_dir)
+        eligibility = derive_eligibility(bundle_dir)
 
         all_sha_verified = all(
             bool(rec.get("sha_contained"))
@@ -204,11 +401,18 @@ def main() -> int:
             for name, rec in bundles.items()
         )
 
+        discovery_n = typed["typed_event_counts"]["discovery_action"]
+        interface_n = typed["typed_event_counts"]["interface_observed"]
+
+        # R2/R3: neither binding target is claimable from these receipts.
+        # The prior "explicit zero-warning undefined bound" success path was
+        # premised on the withdrawn structural zero and is retracted.
         result = {
-            "schema": "a01-shadow-consume-results/v0",
+            "schema": "a01-shadow-consume-results/v1",
+            "runner_rev": "rev1 (corrections per C-0124-Z-REVISION / HEARTBEAT0054 / 01a0ff66)",
             "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "owner": "zcode-independent",
-            "session": "7bd5b3c2-4399-4b2e-9797-e8e0014740ee",
+            "session": "7bd5b3c2-4399-4b2e-9797-e8e0014740ee (resumed as a4a578d1)",
             "provenance_ref": PROVENANCE_REF,
             "provenance_path_sha256": hashlib.sha256(
                 git("show", f"{PROVENANCE_REF}:{PROVENANCE_PATH}")[1].encode()
@@ -218,16 +422,32 @@ def main() -> int:
             "heads": heads,
             "bundle_verification": bundles,
             "all_target_shas_verified_in_bundles": all_sha_verified,
-            "receipt_evidence_token_counts": evidence_counts,
-            "run_structure": structure,
+            "typed_events": typed,
+            "writer_receipt_self_reports": self_reports,
+            "eligibility": eligibility,
             "finding": {
-                "eligible_warnings": 0 if zero_warning_undefined else None,
-                "zero_warning_undefined": zero_warning_undefined,
-                "discovery_action": "none",
-                "discovery_or_interface_events_in_receipts": discovery_events,
-                "null_benefit_not_failure": zero_warning_undefined,
-                "consistent_with": "G-A01-FAIR-RESULT-20261002 (both arms pass, no advisory notice -> NOT uptake)",
-                "caveat": "N=1 feasibility pair; single writer per worktree means the two-writer conflict condition never existed; no benefit claim",
+                "eligible_warnings": eligibility["eligible_warnings"],
+                "warning_rate": "undefined",
+                "discovery_action": (
+                    f"{discovery_n} typed discovery_action events in receipts"
+                    if discovery_n
+                    else "not observable: receipts predate the typed schema; "
+                         "no discovery_action claimable in either direction"
+                ),
+                "interface_observed_events": interface_n,
+                "binding_target_claimable": False,
+                "binding_note": (
+                    "neither success criterion of the registered plan is "
+                    "claimable from these receipts: no typed discovery_action "
+                    "exists AND the zero-warning/undefined bound is retracted "
+                    "as premised on a withdrawn structural argument"
+                ),
+                "result_of_record_stands": (
+                    "grok G-A01-FAIR-RESULT-20261002: both arms pass, zero "
+                    "source repair, writer receipts record no advisory notice "
+                    "observed -> NOT uptake (N=1); preserved without causal "
+                    "upgrade"
+                ),
             },
         }
 
@@ -237,10 +457,16 @@ def main() -> int:
             if not all_sha_verified:
                 print("REFUSING emit: not all target SHAs verified in bundles", file=sys.stderr)
                 return 2
-            OUT_DIR.mkdir(parents=True, exist_ok=True)
-            out_json = OUT_DIR / "a01-shadow-consume-results.json"
+            out_dir = Path(args.emit_dir).resolve() if args.emit_dir else OUT_DIR
+            out_dir.mkdir(parents=True, exist_ok=True)
+            payload = sanitize(result, extra=[str(REPO)])
+            text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+            if "/home/" in text or "alexey" in text:
+                print("REFUSING emit: sanitization left host-identifying paths", file=sys.stderr)
+                return 3
+            out_json = out_dir / "a01-shadow-consume-results.json"
             tmp = out_json.with_suffix(".json.tmp")
-            tmp.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+            tmp.write_text(text)
             os.replace(tmp, out_json)
             print(f"emitted {out_json}", file=sys.stderr)
         return 0

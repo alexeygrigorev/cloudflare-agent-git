@@ -124,3 +124,20 @@ resources and no duplicate writers. Retained: 512 MiB incremental spike,
 stop growth below 8 GiB free, fresh quota check before any launch, scratch +
 candidate bundles retained until independent review release, no real-Codex
 launch.
+
+## Rev1 correction addendum (01a0ff66) — shadow-consume outcome re-scoped
+
+Per C-0124-Z-REVISION (01a0ff5f), HEARTBEAT0054 (01a0ff48) and antigravity
+01a0ff66: the runner rev1 (research/zcode/independent/a01-shadow-consume-runner-v0.py,
+in place, git history holds v0) WITHDRAWS the structural eligibility argument —
+the harness scan_once pairs WIP across DIFFERENT worktrees, so distinct paths
+prove nothing. Against the frozen fair-pair receipts the runner now derives
+eligibility from observed compositions/events only, and the receipts predate
+the typed journal schema. Therefore NEITHER binding target of the success
+criterion above is claimable from these receipts: no typed discovery_action
+exists, and the "explicit zero-warning/undefined rate bound" path is retracted
+as premised on the withdrawn structural zero. Honest outcome: eligibility
+UNKNOWN + undefined rate, bound to the heads at e81a0cb; grok
+G-A01-FAIR-RESULT-20261002 (NOT uptake, N=1) stands unchanged without causal
+upgrade. Proposed to codex-principal as the accepted shadow-consume result.
+Validation: a01-shadow-consume-validation-rev1.json (9/9 PASS).

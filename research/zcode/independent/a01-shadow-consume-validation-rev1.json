@@ -1,0 +1,53 @@
+{
+  "schema": "a01-shadow-consume-validation-rev1",
+  "generated": "2026-10-03T01:42:54+00:00",
+  "runner_rev": "rev1 (corrections per C-0124-Z-REVISION / HEARTBEAT0054 / 01a0ff66)",
+  "checks": [
+    {
+      "check": "emit_scratch_exit0_and_file",
+      "pass": true,
+      "detail": "rc=0 err=emitted /tmp/a01-rev1-val-0fhcqga_/out-real/a01-shadow-consume-results.json"
+    },
+    {
+      "check": "emit_sanitized_no_host_paths",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "structural_zero_withdrawn",
+      "pass": true,
+      "detail": "unknown"
+    },
+    {
+      "check": "typed_events_not_token_grep",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "all_8_head_shas_verified",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "dryrun_from_temp_cwd_exit0",
+      "pass": true,
+      "detail": "rc=0"
+    },
+    {
+      "check": "missing_bundle_reported_not_crash",
+      "pass": true,
+      "detail": "rc=0"
+    },
+    {
+      "check": "emit_refused_unverified_shas_exit2",
+      "pass": true,
+      "detail": "rc=2"
+    },
+    {
+      "check": "append_event_dedup_idempotent",
+      "pass": true,
+      "detail": "r1=appended r2=dedup-skipped lines=1"
+    }
+  ],
+  "all_pass": true
+}
