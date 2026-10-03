@@ -13,10 +13,15 @@ const SHA_A1 = "1".repeat(40);
 const SHA_B1 = "2".repeat(40);
 const SHA_B2 = "3".repeat(40);
 
-async function post(path: string, body: unknown): Promise<Response> {
+async function post(path: string, body: unknown, token?: string): Promise<Response> {
+  const effective = token ?? (path === "/checks" ? "test-runner-token" : path === "/tasks" ? "test-admin-token" : undefined);
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (effective) {
+    headers.authorization = `Bearer ${effective}`;
+  }
   return SELF.fetch(`http://localhost${path}`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
 }
@@ -56,8 +61,12 @@ let tagCounter = 0;
 
 async function primedPair(): Promise<{ alpha: string; beta: string }> {
   const tag = `t${String(++tagCounter).padStart(2, "0")}`;
-  const alpha = (await json<{ agentId: string }>(await post("/tasks", { agent: `alpha-${tag}` }))).agentId;
-  const beta = (await json<{ agentId: string }>(await post("/tasks", { agent: `beta-${tag}` }))).agentId;
+  const alpha = (
+    await json<{ agentId: string }>(await post("/tasks", { agent: `alpha-${tag}` }, "test-admin-token"))
+  ).agentId;
+  const beta = (
+    await json<{ agentId: string }>(await post("/tasks", { agent: `beta-${tag}` }, "test-admin-token"))
+  ).agentId;
   await post("/events/push", { agent: alpha, sha: SHA_A1 });
   await post("/events/push", { agent: beta, sha: SHA_B1 });
   return { alpha, beta };

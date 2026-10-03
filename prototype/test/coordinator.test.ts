@@ -5,10 +5,10 @@ const SHA_ALPHA_1 = "1".repeat(40);
 const SHA_BETA_1 = "2".repeat(40);
 const SHA_ALPHA_2 = "3".repeat(40);
 
-async function post(path: string, body: unknown): Promise<Response> {
+async function post(path: string, body: unknown, token = "test-admin-token"): Promise<Response> {
   return SELF.fetch(`http://localhost${path}`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: token ? { "content-type": "application/json", authorization: `Bearer ${token}` } : { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
 }

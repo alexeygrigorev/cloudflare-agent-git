@@ -15,9 +15,23 @@ Artifacts binding for an in-memory fake. TypeScript, Wrangler 4, Vitest 4
 cd prototype
 npm install          # ~325 MiB node_modules, single workerd stack
 npm run typecheck    # tsc --noEmit
-npm test             # 18 tests (unit + integration through the Worker)
+npm test             # tests (unit + integration through the Worker)
 npx wrangler dev --local
 ```
+
+## Auth
+
+- `POST /setup` and `POST /tasks` (including the fork write-token minted
+  there) require `Authorization: Bearer $ADMIN_TOKEN`.
+- `POST /checks` (trusted radar runner results) requires
+  `Authorization: Bearer $RUNNER_TOKEN`.
+- Missing or wrong token → `401`; if the env secret is not configured the
+  route fails closed with `503`. Tokens are never logged or echoed back.
+- For `wrangler dev`, set both in `.dev.vars` (see `.dev.vars.example`);
+  vitest injects test-only values via `vitest.config.ts`.
+- `wrangler dev` binds **localhost only**. Deploying the Worker to the public
+  internet requires an auth review first (token rotation, TLS, authenticating
+  the Artifacts event subscription on `/events/*`).
 
 Then, against http://localhost:8787:
 

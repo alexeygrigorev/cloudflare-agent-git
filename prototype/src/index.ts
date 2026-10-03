@@ -8,6 +8,8 @@ declare global {
   interface Env {
     ARTIFACTS?: ArtifactsNamespaceBinding;
     RADAR_IMPL?: string;
+    ADMIN_TOKEN?: string;
+    RUNNER_TOKEN?: string;
   }
 }
 
@@ -16,6 +18,8 @@ declare module "cloudflare:workers" {
     interface Env {
       ARTIFACTS?: ArtifactsNamespaceBinding;
       RADAR_IMPL?: string;
+      ADMIN_TOKEN?: string;
+      RUNNER_TOKEN?: string;
     }
   }
 }
@@ -43,6 +47,46 @@ function coordinator(env: Env): DurableObjectStub<Coordinator> {
   return env.COORDINATOR.get(env.COORDINATOR.idFromName("global"));
 }
 
+/** Constant-time string compare (avoids timing oracles; never logs either side). */
+function tokensMatch(presented: string, expected: string): boolean {
+  if (presented.length !== expected.length) {
+    return false;
+  }
+  let diff = 0;
+  for (let i = 0; i < presented.length; i++) {
+    diff |= presented.charCodeAt(i) ^ expected.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
+function bearerToken(request: Request): string | null {
+  const header = request.headers.get("authorization");
+  if (!header || !header.toLowerCase().startsWith("bearer ")) {
+    return null;
+  }
+  return header.slice(7).trim();
+}
+
+/**
+ * Codex C-1305 #3: mutating/authenticated routes require a bearer token from
+ * env. Fail closed when the env secret is not configured. Error bodies never
+ * include the presented token and tokens are never logged.
+ */
+function requireBearer(
+  request: Request,
+  expected: string | undefined,
+  envName: "ADMIN_TOKEN" | "RUNNER_TOKEN",
+): Response | null {
+  if (!expected) {
+    return json({ error: `${envName} is not configured; refusing authenticated request (fail closed)` }, 503);
+  }
+  const presented = bearerToken(request);
+  if (presented === null || !tokensMatch(presented, expected)) {
+    return json({ error: `unauthorized: valid bearer token required (${envName})` }, 401);
+  }
+  return null;
+}
+
 const handler: FetchHandler = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -51,10 +95,18 @@ const handler: FetchHandler = {
 
     try {
       if (method === "POST" && path === "/setup") {
+        const denied = requireBearer(request, env.ADMIN_TOKEN, "ADMIN_TOKEN");
+        if (denied) {
+          return denied;
+        }
         return json(await coordinator(env).setup(), 201);
       }
 
       if (method === "POST" && path === "/tasks") {
+        const denied = requireBearer(request, env.ADMIN_TOKEN, "ADMIN_TOKEN");
+        if (denied) {
+          return denied;
+        }
         const body = await readJson(request);
         const created = await coordinator(env).createTask({
           agent: typeof body.agent === "string" ? body.agent : undefined,
@@ -103,6 +155,10 @@ const handler: FetchHandler = {
       }
 
       if (method === "POST" && path === "/checks") {
+        const denied = requireBearer(request, env.RUNNER_TOKEN, "RUNNER_TOKEN");
+        if (denied) {
+          return denied;
+        }
         const body = await readJson(request);
         if (!Array.isArray(body.results)) {
           return json({ error: "results must be an array" }, 400);

@@ -1,0 +1,4 @@
+# Copy to .dev.vars (gitignored) and set real local values.
+# wrangler dev is localhost-only; deploy requires an auth review (README).
+ADMIN_TOKEN=change-me-admin
+RUNNER_TOKEN=change-me-runner
