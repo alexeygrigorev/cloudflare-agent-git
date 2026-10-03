@@ -69,8 +69,8 @@
       "editor": "plain-language rewrite writer (Claude Opus 5.5, claude-opus-5-5)",
       "requested_by": "Alexey Grigorev, direct user request on 2026-10-03: rewrite the daily report so people unfamiliar with the project can read it, without jargon or internal codes",
       "reason": "Plain-language rewrite for readers new to the project; no new evidence and no change to source_cutoff or update_cutoff",
-      "details": "Whole article reworded: internal IDs (A01, A05, A06, A10, A16, A18, R12), role names, process words, hashes and engine-as-code references replaced with plain descriptions; technical terms explained at first use; link text made human-readable; link added to the new /ideas/ page that describes all 20 approaches (descriptions only, no statuses); dated correction and morning-update notes kept and reworded. Facts, numbers and dates unchanged except one label fix: A18 was called 'prompt continuation' but research/approaches-20.md and research/shortlist-6.md describe it as multi-repository change sets / Contract Packs. Title changed from 'Day 1: 20 Ideas, No Agreed Six, and Where My Worktree Disk Went'; summary and share text rewritten. Original writer provenance (actual_writer_models, published_at, article_sha256 of the published 07:33 edition) left unchanged; rewritten_article_sha256 records this version. Full stylint passed without ignores.",
-      "rewritten_article_sha256": "2e12cabbc8a8f66bd055e0b9bfb33a0b5aa116075894765f59312a297a8085e3",
+      "details": "Whole article reworded: internal IDs (A01, A05, A06, A10, A16, A18, R12), role names, process words, hashes and engine-as-code references replaced with plain descriptions; technical terms explained at first use; link text made human-readable; link added to the new /ideas/ page that describes all 20 approaches (descriptions only, no statuses); dated correction and morning-update notes kept and reworded. Facts, numbers and dates unchanged except one label fix: A18 was called 'prompt continuation' but research/approaches-20.md and research/shortlist-6.md describe it as multi-repository change sets / Contract Packs. Title changed from 'Day 1: 20 Ideas, No Agreed Six, and Where My Worktree Disk Went'; summary and share text rewritten. Original writer provenance (actual_writer_models, published_at, article_sha256 of the published 07:33 edition) left unchanged; rewritten_article_sha256 records this version. Full stylint passed without ignores. Revised after independent review (REVISE verdict, 2026-10-03): the cause of the failed repair test is now stated as unknown (test setup or tool), five phrases that needed project knowledge were reworded, and readable source titles were added in source_titles.",
+      "rewritten_article_sha256": "e6dc51042ae8333a404cd2247482de66dae5bb2da051600f5ee04d82920e4a16",
       "previous_title": "Day 1: 20 Ideas, No Agreed Six, and Where My Worktree Disk Went",
       "previous_summary": "Agents produced 20 Git-for-agents approaches and measured 111.7 GiB of worktrees with 62.1% in dependencies and builds. By the October 3 morning standup, two research hypotheses remain, four places are open, there is no primary direction, and the website redesign stays in preview.",
       "sources": [
@@ -80,5 +80,29 @@
       ]
     }
   ],
-  "update_cutoff": "2026-10-03T06:56:00Z"
+  "update_cutoff": "2026-10-03T06:56:00Z",
+  "source_titles": {
+    "https://github.com/alexeygrigorev/cloudflare-agent-git": "The experiment's public repository",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/experiment/USER-INSTRUCTIONS.md": "My instructions to the agents, word for word",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/approaches-20.md": "The 20 approaches the agents collected (first report)",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/shortlist-6.md": "Draft shortlist at the time of the first report",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/claude/u7-real-worktree-measurement.md": "Claude's scan of the disk used by my worktrees",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/e745294791e9087b00d9aafd0b7d76b63c47d6d3": "Claude's correction of the disk numbers",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/antigravity/r8-uv-clean-state.md": "Workspace doctor test with a clean cache",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/orchestrator/heartbeat-20261003T0024.md": "Coordinating agent's check, 00:24 UTC",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/orchestrator/heartbeat-20261003T0224.md": "Coordinating agent's check, 02:24 UTC",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/orchestrator/heartbeat-20261003T0154.md": "Coordinating agent's check, 01:54 UTC",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/experiment/EXPERIMENT.md": "How the experiment works",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/f76be3807204a35a373b9865a486bd829a46b8a4": "Claude's first disk scan results",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/claude/journal-factcheck-2026-10-03.md": "Claude's fact-check of the first report",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/evidence-ledger.md": "The team's record of evidence",
+    "https://github.com/alexeygrigorev/codex-zcode/commit/bf9d7ed22a70fd205045c75688f1f1a79877ee8f": "Code fix for the command that ran twice",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/codex/oversight-resume-20261003.md": "Codex's review of what was and wasn't installed",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/experiment/standups/2026-10-03.md": "The team's morning summary",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/shortlist-6.md": "Draft shortlist at the time of the morning update",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/9412520f58e2b457a0403b74f50ae8478e618571": "Written test plan for the conflict-warning idea",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/4321187/research/codex/standup-2026-10-03.md": "Codex's notes for the morning summary",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/claude/standup-2026-10-03.md": "Claude's notes for the morning summary",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/approaches-20.md": "The 20 approaches the agents collected (morning update)"
+  }
 }
