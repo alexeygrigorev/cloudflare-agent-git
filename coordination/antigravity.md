@@ -950,3 +950,31 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Received and acknowledged completion notices `01a10356-8ce5-73f0-9629-919c1019dfea` and `01a10356-8d94-7512-9e02-4070deda0a0c`.
    - Public deploy gate remains strictly **HELD**.
 
+---
+
+## 37. Token Expiry Boundary, Fail-Closed Unreadable Expiry, Non-Vacuous Revocation Negative, and proto/live Integration (C-1430, C-1432, C-1434, C-1437, C-1439)
+
+1. **Codex Principal C-1430 Review & Executor Follow-Up (`zc-cred-expiry` / `5b88ead6`):**
+   - **Critique 1 (Exact Expiry Boundary):** Evaluated `nowMs >= expiryTime` (denied AT the expiry instant, not just after it).
+   - **Critique 2 (Unreadable/Missing Expiry):** When `Date.parse(record.expiresAt)` returns `NaN` or non-finite, strictly deny (`!Number.isFinite(expiryTime) -> return null`).
+   - **Critique 3 (Truthy Revoked Marker):** Replaced `if (record.revokedAt)` with `if (record.revokedAt != null)` so empty-string markers `""` strictly deny.
+   - **Critique 4 (Deterministic Legacy Migration):** Removed silent 24-hour grace window from `migrateStoredModel`. Pre-0.1.2 hash-only tokens backfill as already-expired records (`expiresAt: new Date(0).toISOString()`, 1970-01-01T00:00:00.000Z). Reloading the coordinator is deterministic and cannot extend the record. Reissue requires explicit re-minting through `createTask`.
+   - **Execution & Direct Provenance (C-1436 / C-1439):** Verified executor directly committed `f5f0229` at 20:13:19.766Z (`fix(auth): deny at exact expiry instant, empty-string revokedAt, deterministic already-expired legacy migration (C-1430)`), retracting false double-writer inference.
+
+2. **Resolution of Vacuous Revocation Negative (C-1437):**
+   - Codex Principal identified that in `prototype/test/node/core.test.ts`, the empty-string revocation test reused a record whose `expiresAt` had been deleted by the preceding test step, causing a false pass due to missing expiry rather than revocation check.
+   - **Correction (commit `f9f7e86` on `proto/cred-expiry-gate`):**
+     - Explicitly restored known valid future timestamp (`Date.now() + 3600_000`) and asserted positive acceptance (`strictEqual(await validCheck.credentialAgent(token), created.agentId)`).
+     - Then set `revokedAt = ""` and asserted denial (`strictEqual(await reopened3.credentialAgent(token), null)`).
+     - Proved mutation sensitivity: breaking `record.revokedAt != null` causes the test to fail.
+   - **Unmasked Standalone Typecheck Gate (C-1434):**
+     - Standalone unmasked `npx tsc --noEmit` and `npx tsc --noEmit -p tsconfig.node.json` verified with exit code 0.
+     - All 29 Node unit tests and 91 Vitest integration tests pass.
+
+3. **Integration into `proto/live`:**
+   - Merged `proto/cred-expiry-gate` (`f9f7e86`) into `proto/live` at commit `f58227c`.
+   - Pushed to `origin/proto/live`.
+   - Updated `coordination/TEAM-REGISTRY.json` with final commit `f9f7e86` / `f58227c` (commit `49a3d94`).
+   - Public deploy gate remains strictly **HELD**. Dispatched request for Space Bunny independent review on `f58227c`.
+
+
