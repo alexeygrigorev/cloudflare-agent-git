@@ -30,6 +30,26 @@ export async function route(request, service) {
     }
   }
 
+  if (method === 'POST' && pathname === '/links/bulk') {
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object' || !Array.isArray(body.links)) {
+      return json(400, { error: 'body must be { "links": [...] }' });
+    }
+    const slugs = [];
+    for (const [index, item] of body.links.entries()) {
+      try {
+        const record = service.create(item.slug, item.url);
+        slugs.push(record.slug);
+      } catch (err) {
+        if (err instanceof ValidationError || err instanceof ConflictError) {
+          return json(400, { error: err.message, index });
+        }
+        throw err;
+      }
+    }
+    return json(201, { created: slugs.length, slugs });
+  }
+
   if (method === 'GET' && pathname.startsWith('/') && pathname.length > 1 && pathname !== '/links') {
     const slug = pathname.slice(1);
     try {
