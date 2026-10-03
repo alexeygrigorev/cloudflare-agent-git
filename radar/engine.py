@@ -31,10 +31,8 @@ import io
 import itertools
 import json
 import os
-import pickle
 import re
 import resource
-import select
 import shlex
 import shutil
 import signal
@@ -45,7 +43,7 @@ import tempfile
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Strict Status Enum Values
 STATUS_CONFLICT = "conflict"
@@ -384,7 +382,6 @@ class RadarEngine:
         self,
         repo_path: str = ".",
         test_command: Optional[Union[List[str], str]] = None,
-        test_runner: Optional[Callable[[str], Tuple[bool, Any]]] = None,
         test_budget_seconds: float = 15.0,
         max_active_heads: int = 10,
         default_base_sha: Optional[str] = None,
@@ -392,7 +389,6 @@ class RadarEngine:
     ):
         self.repo_path = os.path.abspath(repo_path)
         self.test_command = test_command
-        self.test_runner = test_runner
         self.test_budget_seconds = float(test_budget_seconds)
         self.max_active_heads = int(max_active_heads)
         self.default_base_sha = default_base_sha
@@ -610,128 +606,6 @@ class RadarEngine:
         archive_bytes = res.stdout if isinstance(res.stdout, bytes) else res.stdout.encode("utf-8")
         safe_extract_tar(archive_bytes, target_dir)
 
-    def _run_custom_runner_isolated(
-        self,
-        runner_fn: Callable[[str], Any],
-        snap_dir: str,
-        timeout: float,
-    ) -> Tuple[Optional[bool], Dict[str, Any]]:
-        """Run custom runner in an isolated worker process with strict timeout and process group kill (D4 & C-1316)."""
-        pipe_r, pipe_w = os.pipe()
-        pid = os.fork()
-
-        if pid == 0:
-            os.close(pipe_r)
-            os.setsid()
-            try:
-                res = runner_fn(snap_dir)
-                payload = pickle.dumps({"ok": True, "res": res})
-            except BaseException as exc:
-                payload = pickle.dumps({"ok": False, "error": str(exc)})
-            try:
-                os.write(pipe_w, payload)
-            except Exception:
-                pass
-            finally:
-                os.close(pipe_w)
-                os._exit(0)
-        else:
-            os.close(pipe_w)
-            ready, _, _ = select.select([pipe_r], [], [], max(0.01, timeout))
-            if not ready:
-                try:
-                    os.killpg(pid, signal.SIGKILL)
-                except (ProcessLookupError, PermissionError, OSError):
-                    pass
-                try:
-                    os.kill(pid, signal.SIGKILL)
-                except (ProcessLookupError, PermissionError, OSError):
-                    pass
-                try:
-                    os.waitpid(pid, 0)
-                except Exception:
-                    pass
-                os.close(pipe_r)
-                return None, {
-                    "error": "timeout",
-                    "details": f"Custom test runner timed out after {timeout:.2f}s",
-                }
-
-            data = b""
-            while True:
-                try:
-                    chunk = os.read(pipe_r, 65536)
-                    if not chunk:
-                        break
-                    data += chunk
-                except Exception:
-                    break
-            os.close(pipe_r)
-            try:
-                os.waitpid(pid, 0)
-            except Exception:
-                pass
-
-            if not data:
-                return None, {
-                    "error": "runner_crash",
-                    "details": "Custom runner process exited without returning data",
-                }
-
-            try:
-                out = pickle.loads(data)
-            except Exception as exc:
-                return None, {
-                    "error": "deserialization_failure",
-                    "details": f"Failed to deserialize custom runner result: {exc}",
-                }
-
-            if not out.get("ok"):
-                return None, {
-                    "error": "runner_exception",
-                    "details": f"Custom runner raised: {out.get('error')}",
-                }
-
-            runner_res = out.get("res")
-
-            # Strict return validation:
-            # 1. Bare bool True: strictly treated as missing test count evidence -> STATUS_UNKNOWN
-            if runner_res is True:
-                return False, {
-                    "error": "no_collected_test_evidence",
-                    "tests_collected": 0,
-                    "details": "Custom runner returned bare True without collected test count evidence",
-                }
-            # 2. Bare bool False: test failure -> STATUS_CONFLICT kind='test'
-            if runner_res is False:
-                return False, {
-                    "error": "test_failure",
-                    "details": "Custom runner returned False",
-                }
-            # 3. Tuple (passed, evidence_dict):
-            if isinstance(runner_res, (tuple, list)) and len(runner_res) == 2:
-                passed, ev = runner_res
-                ev_dict = ev if isinstance(ev, dict) else {"details": str(ev)}
-                if passed is True:
-                    tc = ev_dict.get("tests_collected")
-                    if isinstance(tc, int) and tc > 0:
-                        return True, ev_dict
-                    else:
-                        return False, {
-                            "error": "no_collected_test_evidence",
-                            "tests_collected": 0,
-                            "details": "Custom runner passed but produced no positive collected test count evidence",
-                            "evidence": ev_dict,
-                        }
-                else:
-                    ev_dict.setdefault("error", "test_failure")
-                    return False, ev_dict
-
-            return False, {
-                "error": "invalid_runner_output",
-                "details": f"Custom runner returned unexpected output: {repr(runner_res)}",
-            }
-
     def run_combined_tree_tests(
         self,
         tree_sha: str,
@@ -778,17 +652,6 @@ class RadarEngine:
                     "error": "extraction_failure",
                     "details": f"Failed to extract tree {tree_sha}: {exc}",
                 }
-
-            # Custom callable test runner if provided (D4 & C-1316: isolated worker process with strict budget)
-            if self.test_runner is not None:
-                elapsed = time.time() - start_time
-                remaining_budget = budget - elapsed
-                if remaining_budget <= 0:
-                    return None, {
-                        "error": "timeout",
-                        "details": f"Execution timed out before custom runner: {budget}s",
-                    }
-                return self._run_custom_runner_isolated(self.test_runner, snap_dir, remaining_budget)
 
             # Determine test command
             cmd = test_command or self.test_command
