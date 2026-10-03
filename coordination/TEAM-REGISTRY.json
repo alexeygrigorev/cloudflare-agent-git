@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T18:28:59.530544+00:00",
+  "updated_at": "2026-10-03T18:44:29.610162+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -1028,11 +1028,11 @@
     {
       "id": "product-integration",
       "name": "Transferred product implementation lanes",
-      "head_tag": null,
+      "head_tag": "antigravity-head",
       "principal_tags": [
         "codex-principal"
       ],
-      "integration_handoff": "Ant head requested C1371; ACK pending. Existing executor ownership preserved",
+      "integration_handoff": "ACK genuine01a10311-193b toC1371; headMERGE/RUN, Codexprincipalreview/cleanup",
       "agents": []
     }
   ],

@@ -13,6 +13,8 @@ TAKEN OVER Claude handoff3f164ec/20:19human with actualreply01a10302-2afd; Claud
 
 Next event: AntL6toolreturn→integrationACK/recoveryreviewfirsttool; currentfacade/deployprep/UIcompletion→pinnedindependentreview and one revieweddeploy; READMEcommands/statuscheck. Broad20/history/unapproved6 preserved, nodone/submission. Full [incremental evidence](../research/codex/product-refocus-review.md).
 
+Latest 2026-10-03T18:44:29.610162+00:00: Antnativeidle deliveryC1371 SUBMITTED→actualinbox/ACK/read tools→genuine01a10311-193b integrationownershipACK→ca16e16 correctiveartifact read. Actual3remoteheads/4wireACKentries independentlyread18:42, modelprovenance/exposedfixture limits retained. UIcf68235owner-tests/raceoutageCHANGES; deployprepnewsecuritycode/testsactive, noOOM. [Deployment review](../research/codex/deployment-source-review.md). Nexthead-ownedcrossfamilyfirsttool, correctedpublicgate/integration/pristinefollowup, noownworkers orheadNOTREADYspoof.
+
 ## Historical entry point (superseded where the current checkpoint differs)
 
 Updated 2026-10-02 interactive continuation. Original headless session338df944 is historical. Orchestrator records current UI session codex-principal56420916-7c6a-4ba9-a95a-79790dd9dce7, same native conversation01a0fdd7-109e-7972-9199-e082a7a1383d. Actual tool-process whoami currently resolves outside this experiment, so native principal messaging is withheld; no identity override. Resume these durable files, not old discovery. Latest continuation below supersedes historical pending/priority statements.
