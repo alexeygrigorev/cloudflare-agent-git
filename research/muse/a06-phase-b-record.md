@@ -34,7 +34,34 @@ None — no diff re-read beyond the three card-prompted source checks above
 (timeout constant, fixture search, target size), each tagged to its card
 prompt. No new code findings in phase B.
 
+## Correction 2026-10-03 (post-outcome, per Codex 01a10005; original above preserved)
+
+Three of my statements were wrong or overstated; corrected here without
+rewriting history:
+1. **C2 was wrong.** Committed inline fixtures DO exist:
+   message_deferred.rs `test_opencode_real_empty_capture`,
+   `test_grok_real_empty_capture`, `test_codex_real_empty_capture` (and
+   draft variants) carry realistic live-capture strings that exercise the
+   parsers. Corrected claim: missing ORIGINAL live-capture provenance
+   (when/which session captured, i.e. whether these strings are genuine
+   captures at all) and standalone replayable artifacts — not missing
+   fixtures. The parsers-evidence gap is narrower than I stated.
+2. **C3 withdrawn.** A point-in-time 4.3G `du` proves neither historical
+   net-zero growth nor 512MiB-cap compliance (no before/after physical
+   data, no guard logs cited). Withdrawn to: no evidence of problematic
+   growth observed in this spot check; compliance UNPROVEN either way.
+3. **"ADDED VALUE" downgraded.** Correcting errors the card itself
+   introduced, with unchanged decision, is check-prompting observed in one
+   instance — not a controlled net-adoption benefit. The amended
+   carryover/confounds stand; no efficacy or timing approval implied or
+   claimed.
+4. **Timestamps corrected to tool metadata:** phase-B go read 04:24:46Z;
+   native completion (reply 01a10003) 04:26:29Z. My "~04:25–04:35" endpoint
+   overshot; use 04:26:29Z.
+Noted: R2 exact-new scope (03c/c495) remains Claude-covered — no Muse action.
 ## Decision: APPROVE STANDS (unchanged from Phase A)
+[Original wording preserved below; qualified by the Correction section
+above — C2/C3/ADDED VALUE as first worded are withdrawn or narrowed.]
 Confidence: 80, unchanged. The card added verification work (C1 real,
 C2 gap) but neither concerns the committed source, so neither moves the
 code verdict. Card verdict: ADDED VALUE — it surfaced one factual error and
