@@ -1,5 +1,5 @@
 import type { ArtifactsNamespaceBinding } from "./artifacts/real.js";
-import { Coordinator } from "./coordinator.js";
+import { Coordinator, sha256Hex, timingSafeEqual } from "./coordinator.js";
 import { parseArtifactsPushedEvent } from "./types.js";
 
 export { Coordinator } from "./coordinator.js";
@@ -52,16 +52,12 @@ function coordinator(env: Env): DurableObjectStub<Coordinator> {
   return env.COORDINATOR.get(env.COORDINATOR.idFromName("global"));
 }
 
-/** Constant-time string compare (avoids timing oracles; never logs either side). */
-function tokensMatch(presented: string, expected: string): boolean {
-  if (presented.length !== expected.length) {
-    return false;
-  }
-  let diff = 0;
-  for (let i = 0; i < presented.length; i++) {
-    diff |= presented.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
-  return diff === 0;
+/**
+ * muse-r46 nit + AUTH: compare SHA-256 digests, not raw strings, so token
+ * LENGTH is not observable through timing either. Never logs either side.
+ */
+async function tokensMatch(presented: string, expected: string): Promise<boolean> {
+  return timingSafeEqual(await sha256Hex(presented), await sha256Hex(expected));
 }
 
 function bearerToken(request: Request): string | null {
@@ -81,15 +77,54 @@ function requireBearer(
   request: Request,
   expected: string | undefined,
   envName: "ADMIN_TOKEN" | "RUNNER_TOKEN",
-): Response | null {
+): Promise<Response | null> {
   if (!expected) {
-    return json({ error: `${envName} is not configured; refusing authenticated request (fail closed)` }, 503);
+    return Promise.resolve(
+      json({ error: `${envName} is not configured; refusing authenticated request (fail closed)` }, 503),
+    );
   }
+  return (async () => {
+    const presented = bearerToken(request);
+    if (presented === null || !(await tokensMatch(presented, expected))) {
+      return json({ error: `unauthorized: valid bearer token required (${envName})` }, 401);
+    }
+    return null;
+  })();
+}
+
+/**
+ * muse-r46 AUTH (CONTRACT 0.1.1): every mutating route is authenticated.
+ * Accepted credentials: ADMIN_TOKEN; the relevant agent's per-task token
+ * (the write token minted at task creation, verified by digest in the DO);
+ * and for the webhook ingest routes (`/events/*`) the sidecar shared bearer
+ * (`LOCAL_ARTIFACTS_TOKEN`), which is what the post-receive webhook and a
+ * real Artifacts event subscription authenticate with. A VALID token for a
+ * DIFFERENT agent is 403 (cross-agent writes rejected); everything else is
+ * 401. Error bodies never echo the presented token.
+ */
+async function requireMutatingAuth(
+  request: Request,
+  env: Env,
+  opts: { agent?: string | null; allowSidecar?: boolean } = {},
+): Promise<Response | null> {
   const presented = bearerToken(request);
-  if (presented === null || !tokensMatch(presented, expected)) {
-    return json({ error: `unauthorized: valid bearer token required (${envName})` }, 401);
+  if (presented === null) {
+    return json({ error: "unauthorized: bearer token required" }, 401);
   }
-  return null;
+  if (env.ADMIN_TOKEN && (await tokensMatch(presented, env.ADMIN_TOKEN))) {
+    return null;
+  }
+  if (opts.allowSidecar && env.LOCAL_ARTIFACTS_TOKEN && (await tokensMatch(presented, env.LOCAL_ARTIFACTS_TOKEN))) {
+    return null;
+  }
+  const owner = await coordinator(env).credentialAgent(presented);
+  if (owner !== null) {
+    if (opts.agent === undefined || owner === opts.agent) {
+      return null;
+    }
+    return json({ error: `forbidden: this token belongs to ${owner}, not ${opts.agent}` }, 403);
+  }
+  return json({ error: "unauthorized: ADMIN_TOKEN, the agent's task token or the sidecar bearer required" }, 401);
 }
 
 const handler: FetchHandler = {
@@ -100,7 +135,7 @@ const handler: FetchHandler = {
 
     try {
       if (method === "POST" && path === "/setup") {
-        const denied = requireBearer(request, env.ADMIN_TOKEN, "ADMIN_TOKEN");
+        const denied = await requireBearer(request, env.ADMIN_TOKEN, "ADMIN_TOKEN");
         if (denied) {
           return denied;
         }
@@ -108,7 +143,7 @@ const handler: FetchHandler = {
       }
 
       if (method === "POST" && path === "/tasks") {
-        const denied = requireBearer(request, env.ADMIN_TOKEN, "ADMIN_TOKEN");
+        const denied = await requireBearer(request, env.ADMIN_TOKEN, "ADMIN_TOKEN");
         if (denied) {
           return denied;
         }
@@ -131,6 +166,14 @@ const handler: FetchHandler = {
         if ((agent === undefined && fork === undefined) || typeof body.sha !== "string") {
           return json({ error: "agent or fork, and sha are required strings" }, 400);
         }
+        // muse-r46 AUTH: head advances are privileged (an anonymous caller
+        // could invalidate/suppress conflict warnings). The pushing agent's
+        // own task token, ADMIN_TOKEN, or the sidecar webhook bearer.
+        const requiredAgent = agent ?? (fork !== undefined ? await coordinator(env).forkOwner(fork) : undefined);
+        const denied = await requireMutatingAuth(request, env, { agent: requiredAgent, allowSidecar: true });
+        if (denied) {
+          return denied;
+        }
         const result = await coordinator(env).recordPush({
           agent,
           fork,
@@ -141,6 +184,12 @@ const handler: FetchHandler = {
       }
 
       if (method === "POST" && path === "/events/artifacts") {
+        // muse-r46 AUTH: event-subscription ingest is webhook-only — admin
+        // or the sidecar/shared subscription bearer (no agent credential).
+        const denied = await requireMutatingAuth(request, env, { allowSidecar: true });
+        if (denied) {
+          return denied;
+        }
         const body = await readJson(request);
         let event;
         try {
@@ -166,7 +215,7 @@ const handler: FetchHandler = {
       }
 
       if (method === "POST" && path === "/checks") {
-        const denied = requireBearer(request, env.RUNNER_TOKEN, "RUNNER_TOKEN");
+        const denied = await requireBearer(request, env.RUNNER_TOKEN, "RUNNER_TOKEN");
         if (denied) {
           return denied;
         }
@@ -213,11 +262,22 @@ const handler: FetchHandler = {
 
       const taskTestsMatch = /^\/tasks\/([^/]+)\/tests$/.exec(path);
       if (method === "POST" && taskTestsMatch) {
+        const taskId = decodeURIComponent(taskTestsMatch[1]);
+        // muse-r46 AUTH (evidence forgery, review §a.2): only the owning
+        // agent's task token or ADMIN_TOKEN may attach test provenance.
+        const owner = await coordinator(env).taskOwner(taskId);
+        if (owner === null) {
+          return json({ error: `unknown task: ${taskId}` }, 404);
+        }
+        const denied = await requireMutatingAuth(request, env, { agent: owner });
+        if (denied) {
+          return denied;
+        }
         const body = await readJson(request);
         if (typeof body.command !== "string" || typeof body.exit !== "number" || typeof body.head_sha !== "string") {
           return json({ error: "command (string), exit (number) and head_sha (string) are required" }, 400);
         }
-        const result = await coordinator(env).recordTestProvenance(decodeURIComponent(taskTestsMatch[1]), {
+        const result = await coordinator(env).recordTestProvenance(taskId, {
           command: body.command,
           exit: body.exit,
           head_sha: body.head_sha,
@@ -230,6 +290,13 @@ const handler: FetchHandler = {
         const body = await readJson(request);
         if (typeof body.agent !== "string" || body.agent.length === 0) {
           return json({ error: "agent is a required string" }, 400);
+        }
+        // muse-r46 AUTH: the acking agent authenticates with its own task
+        // token (or ADMIN_TOKEN) — agent A cannot ack as agent B. The ack is
+        // attestational, so the sidecar bearer is NOT accepted here.
+        const denied = await requireMutatingAuth(request, env, { agent: body.agent });
+        if (denied) {
+          return denied;
         }
         const result = await coordinator(env).ackWarning(decodeURIComponent(ackMatch[1]), {
           agent: body.agent,

@@ -64,8 +64,8 @@ async function primedPair(): Promise<{ alpha: string; beta: string; alphaSha: st
   );
   const alphaSha = await sidecarCommit(alphaBody.fork.name, "wip: alpha diverges");
   const betaSha = await sidecarCommit(betaBody.fork.name, "wip: beta diverges");
-  await post("/events/push", { agent: alphaBody.agentId, sha: alphaSha });
-  await post("/events/push", { agent: betaBody.agentId, sha: betaSha });
+  await post("/events/push", { agent: alphaBody.agentId, sha: alphaSha }, ADMIN_TOKEN);
+  await post("/events/push", { agent: betaBody.agentId, sha: betaSha }, ADMIN_TOKEN);
   return { alpha: alphaBody.agentId, beta: betaBody.agentId, alphaSha, betaSha };
 }
 
@@ -211,7 +211,7 @@ describe("trusted runner checks (vector-gated, conflict-only warnings)", () => {
       .agents.find((a) => a.agentId === beta)!;
     const betaNext = await sidecarCommit(betaFork.forkName, "wip: beta moves on");
     const push = await json<{ invalidatedWarnings: string[]; newWarnings: unknown[] }>(
-      await post("/events/push", { agent: beta, sha: betaNext }),
+      await post("/events/push", { agent: beta, sha: betaNext }, ADMIN_TOKEN),
     );
     expect(push.invalidatedWarnings).toHaveLength(1);
     expect(push.newWarnings).toHaveLength(0);

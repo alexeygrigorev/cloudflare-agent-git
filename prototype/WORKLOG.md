@@ -177,3 +177,35 @@ tests. Results appended below.
 - POST /events/push, /events/artifacts, /tasks/:id/tests and /warnings/
    :id/ack stay unauthenticated in local mode (attestational/ingest
   routes); CONTRACT.md flags authenticating /events/* before any deploy.
+
+## 2026-10-03 (later) — muse-r46 review fixes (executor zc-l1-fix)
+
+Cross-family review `.local/muse-r46/verdict.md` (Space Bunny) on pin
+`762ff3d`. Four defect classes, each its own commit with a regression test
+that fails before the fix (red observed and logged for every one):
+
+- **D1** `b65643f` — canonical pair ordering. Reversed pair [b,a] at
+  unchanged heads duplicated an active warning (review reproduced
+  first=1/second_created=1); now canonicalPairHeads() sorts pair+heads
+  before vector/headsAtIssue in applyCheckResultsNow, runRadar and
+  warningForPairAtHeads. Red: duplicate warn created pre-fix.
+- **D2** `8b6c54d` — seenPushes bounded per agent (ring of 16, exported
+  SEEN_PUSHES_CAP_PER_AGENT; flat-array migration on load). Red:
+  evicted-window redelivery was deduped=true pre-fix.
+- **D3** commit 3 — real-mode createTask. RealArtifacts.fork no longer
+  throws on baseSha: forks the default branch, reports realized base on
+  ForkResult (types.ts); coordinator records the realized base as
+  base_sha. ASSUMED-F documented. Red: UNSUPPORTED throw pre-fix.
+- **AUTH** commit 4 — ALL mutating routes authenticated: agent per-task
+  token (SHA-256 digest stored in DO at creation) / ADMIN_TOKEN /
+  sidecar shared bearer on the two /events/* webhooks; cross-agent
+  writes 403; tokensMatch now compares digests (length not observable).
+  Sidecar forwardPush sends the shared bearer. CONTRACT.md bumped to
+  0.1.1 with the change list; README auth + route table updated.
+  Red: 4 new auth tests failed (200/201/202 from unauthenticated calls).
+
+Supersedes the earlier WORKLOG note that /events/*, /tasks/:id/tests and
+/warnings/:id/ack "stay unauthenticated in local mode".
+
+Final suite (this executor): typecheck clean; vitest 9 files 44/44;
+node --test sidecar 11/11. No new npm deps.

@@ -347,9 +347,16 @@ export class Sidecar {
       return { forwarded: false, reason: "notify url not configured" };
     }
     const body = JSON.stringify({ fork: push.repo, ref: push.ref, sha: push.after, before: push.before });
+    // muse-r46 AUTH (CONTRACT 0.1.1): the Worker token-gates /events/push;
+    // the webhook authenticates with the same shared bearer (SIDECAR_TOKEN
+    // must equal the Worker's LOCAL_ARTIFACTS_TOKEN).
+    const headers = { "content-type": "application/json" };
+    if (this.sharedToken) {
+      headers.authorization = `Bearer ${this.sharedToken}`;
+    }
     const res = await fetch(this.notifyUrl, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers,
       body,
     });
     if (!res.ok) {

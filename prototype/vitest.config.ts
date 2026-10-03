@@ -20,5 +20,8 @@ export default defineConfig({
   test: {
     include: ["test/**/*.test.ts"],
     globalSetup: ["test/global-setup.ts"],
+    // Real-git sidecar round trips (commit/push per request) are slow under
+    // full-suite concurrency; 30s per test avoids flaky timeouts.
+    testTimeout: 30_000,
   },
 });

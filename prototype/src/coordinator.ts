@@ -126,6 +126,12 @@ interface CoordinatorModel {
    * order webhook redelivery within a bounded window.
    */
   seenPushes: Record<string, string[]>;
+  /**
+   * muse-r46 AUTH: SHA-256 digest of each agent's per-task write token
+   * (minted at task creation). The plaintext is returned once to the caller
+   * and never persisted or logged.
+   */
+  agentTokenHashes: Record<string, string>;
   warnings: WarningRecord[];
   radarLog: RadarLogEntry[];
   pairChecks: Record<string, PairCheckRecord>;
@@ -142,6 +148,7 @@ function emptyModel(): CoordinatorModel {
     tasks: {},
     heads: {},
     seenPushes: {},
+    agentTokenHashes: {},
     warnings: [],
     radarLog: [],
     pairChecks: {},
@@ -153,6 +160,24 @@ function randomSuffix(): string {
   const bytes = new Uint8Array(4);
   crypto.getRandomValues(bytes);
   return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** SHA-256 of a string as lowercase hex (token digests; never the token itself). */
+export async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Constant-time compare; callers pass equal-length hex digests. */
+export function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
 }
 
 /**
@@ -221,6 +246,8 @@ export class Coordinator extends DurableObject {
       }
       this.model.seenPushes = perAgent;
     }
+    // muse-r46 AUTH: agents created before 0.1.1 have no stored digest.
+    this.model.agentTokenHashes ??= {};
     return this.model;
   }
 
@@ -328,6 +355,9 @@ export class Coordinator extends DurableObject {
     // forks the default branch, ASSUMED-F); record the REALIZED base.
     const effectiveBaseSha = fork.baseSha ?? baseSha;
     const token = await port.mintToken(forkName, "write", input.ttlSeconds ?? 3600);
+    // muse-r46 AUTH: store only the digest for later verification of
+    // agent-authenticated routes (/events/push, /tasks/:id/tests, acks).
+    model.agentTokenHashes[agentId] = await sha256Hex(token.plaintext);
     const forkLog = await port.log(forkName, { limit: 1 });
     const head = forkLog[0]?.id ?? null;
     const ref = "refs/heads/main";
@@ -584,6 +614,37 @@ export class Coordinator extends DurableObject {
     input: Parameters<Coordinator["recordTestProvenanceNow"]>[1],
   ): Promise<ReturnType<Coordinator["recordTestProvenanceNow"]>> {
     return this.serialized(() => this.recordTestProvenanceNow(taskId, input));
+  }
+
+  /**
+   * muse-r46 AUTH: which agent (if any) owns this presented per-task token.
+   * Returns null for unknown/garbage tokens; digests are compared
+   * constant-time and the plaintext is never stored.
+   */
+  async credentialAgent(presented: string): Promise<string | null> {
+    const model = await this.load();
+    const digest = await sha256Hex(presented);
+    for (const [agentId, hash] of Object.entries(model.agentTokenHashes)) {
+      if (timingSafeEqual(digest, hash)) {
+        return agentId;
+      }
+    }
+    return null;
+  }
+
+  /** Owning agent of a task, or null for unknown tasks (route: /tasks/:id/tests). */
+  async taskOwner(taskId: string): Promise<string | null> {
+    const task = (await this.load()).tasks[taskId];
+    return task ? task.agentId : null;
+  }
+
+  /** Owning agent of a fork (by name or remote), or null (route: /events/push). */
+  async forkOwner(fork: string): Promise<string | null> {
+    const model = await this.load();
+    const record = Object.values(model.agents).find(
+      (candidate) => candidate.forkName === fork || candidate.forkRemote === fork,
+    );
+    return record ? record.agentId : null;
   }
 
   async submitChecks(

@@ -1,8 +1,30 @@
 # Agent Branches prototype — HTTP + integration contract
 
-version: 0.1
+version: 0.1.1
 (Pin this version when building against it: L2 review UI, L3 radar runner,
 L4/L5 demo lanes. Any breaking change bumps the version.)
+
+Changes since 0.1 (muse-r46 cross-family review, 2026-10-03):
+
+1. **AUTH — all mutating routes now require a bearer token** (breaking).
+   `/events/push`, `/events/artifacts`, `/tasks/:id/tests` and
+   `/warnings/:id/ack` accept ADMIN_TOKEN, the relevant agent's per-task
+   token (the write token minted at `POST /tasks`, verified by SHA-256
+   digest in the DO) or — for the two `/events/*` webhooks only — the
+   sidecar shared bearer (`LOCAL_ARTIFACTS_TOKEN`). Cross-agent writes are
+   rejected with **403** (agent A's token cannot post tests/acks/pushes for
+   agent B). Read routes (`GET /status`, `GET /tasks/:id`) stay open.
+2. **D1 — pair order is canonical.** A conflict submitted as `[a,b]` and
+   then `[b,a]` at unchanged heads maps to ONE pairChecks record and at
+   most ONE active warning; stored `pair`/`headsAtIssue`/check vectors are
+   always sorted by agent id.
+3. **D2 — push dedup memory is bounded** (16 latest pushes per agent,
+   ring; older redeliveries are treated as new pushes and re-verified).
+4. **D3 — real-mode `POST /tasks` works.** The documented binding cannot
+   fork at a commit (docs-notes ASSUMED-F): real mode forks the default
+   branch and records the fork's head at creation as `base_sha` (an
+   explicit `base_sha` equal to the canonical tip is honored exactly).
+   Local mode is unchanged.
 
 ## Deployment boundary (codex C-1309)
 
@@ -31,22 +53,28 @@ Worker env (`.dev.vars` for wrangler dev, miniflare bindings in tests):
 
 | Variable | Used by | Meaning |
 | --- | --- | --- |
-| `ADMIN_TOKEN` | POST /setup, POST /tasks | admin bearer; unset => 503 fail closed |
+| `ADMIN_TOKEN` | POST /setup, POST /tasks, (all mutating routes) | admin bearer; unset => 503 fail closed |
 | `RUNNER_TOKEN` | POST /checks | trusted radar runner bearer |
 | `LOCAL_ARTIFACTS_URL` | Coordinator | sidecar base URL (local mode) |
-| `LOCAL_ARTIFACTS_TOKEN` | Coordinator | sidecar shared bearer (optional) |
+| `LOCAL_ARTIFACTS_TOKEN` | Coordinator + `/events/*` auth | sidecar shared bearer; also accepted by the two webhook routes (`/events/push`, `/events/artifacts`); must equal the sidecar's `SIDECAR_TOKEN` |
 | `ARTIFACTS` | Coordinator | real Cloudflare Artifacts binding (real mode) |
 | `RADAR_IMPL` | Coordinator | `stub` (default) or `silent` |
 
-Tokens are never logged or echoed in error bodies. `wrangler dev` binds
-localhost only; deploying publicly requires an auth review first (token
-rotation, TLS, authenticating `/events/*`).
+Agent per-task tokens (write tokens returned by `POST /tasks`) authenticate
+their agent on `/events/push`, `/tasks/:id/tests` and `/warnings/:id/ack`;
+the DO stores only a SHA-256 digest. Tokens are never logged or echoed in
+error bodies. `wrangler dev` binds localhost only; deploying publicly
+requires an auth review first — checklist: token rotation, TLS, a DEDICATED
+rotated secret for the Artifacts event subscription on `/events/artifacts`
+(today the sidecar shared bearer stands in), and re-reviewing the
+`LOCAL_ARTIFACTS_TOKEN`-on-`/events/*` equivalence.
 
 ## Routes
 
 All bodies are JSON. Errors: `{ "error": string }` (+ extra fields where
-noted). Statuses: 400 bad input, 401 bad/missing bearer, 404 unknown
-task/warning, 409 stale vector, 503 auth secret unconfigured.
+noted). Statuses: 400 bad input, 401 bad/missing bearer, 403 valid token
+but wrong agent (cross-agent write), 404 unknown task/warning, 409 stale
+vector, 503 auth secret unconfigured.
 
 ### POST /setup — admin
 
@@ -85,9 +113,12 @@ default branch (docs-notes ASSUMED-F, muse-r46 D3): an explicit `base_sha`
 that equals the canonical tip is honored exactly; an older one records the
 fork's head at creation as `base_sha` instead. Agents then `git push`
 to `fork.remote` with `git -c http.extraHeader="Authorization: Bearer
-$plaintext"`; the sidecar hook reports the push automatically.
+$plaintext"`; the sidecar hook reports the push automatically. The same
+`token.plaintext` is the agent's credential on `/events/push`,
+`/tasks/:id/tests` and `/warnings/:id/ack` (CONTRACT 0.1.1); the DO keeps
+only its SHA-256 digest.
 
-### POST /events/push — open (agent harness or sidecar webhook)
+### POST /events/push — agent's task token | ADMIN_TOKEN | sidecar bearer
 
 ```json
 // request: agent or fork identifies the pusher
@@ -102,14 +133,21 @@ $plaintext"`; the sidecar hook reports the push automatically.
   "radarChecks": 3 }                   // pairs recorded as not_checked
 ```
 
+Head advances are privileged (muse-r46 AUTH): the pushing agent's own
+per-task token, ADMIN_TOKEN, or — for the `{fork,...}` webhook shape — the
+sidecar shared bearer. A valid token for a DIFFERENT agent is 403.
 `sha` must be a real commit in the agent's fork (400 otherwise). Repeated
-(agent, sha) pushes are deduped (`"deduped": true`).
+(agent, sha) pushes are deduped (`"deduped": true`); dedup memory is
+bounded to the latest 16 pushes per agent (muse-r46 D2).
 
-### POST /events/artifacts — open (Artifacts event subscription)
+### POST /events/artifacts — sidecar bearer | ADMIN_TOKEN (webhook ingest)
 
 Accepts the documented `cf.artifacts.repo.pushed` envelope (see
 docs-notes.md source 3); resolves the fork to an agent and behaves like
-/events/push. Unknown forks => 202 `{accepted:false}`.
+/events/push. Unknown forks => 202 `{accepted:false}`. Authenticated with
+the shared subscription bearer (the sidecar's `SIDECAR_TOKEN` == the
+Worker's `LOCAL_ARTIFACTS_TOKEN` in local mode; a real deployment must
+configure a dedicated secret — pre-deploy checklist).
 
 ### POST /checks — RUNNER_TOKEN (trusted radar runner, L3)
 
@@ -176,7 +214,7 @@ visibly distinct from `clean`.
                       "head_sha": "<40-hex>", "at": "ISO" } | null }
 ```
 
-### POST /tasks/:id/tests — open (agent harness posts proof)
+### POST /tasks/:id/tests — the task's agent token | ADMIN_TOKEN
 
 ```json
 { "command": "npm test", "exit": 0, "head_sha": "<40-hex in the fork>" }
@@ -184,8 +222,10 @@ visibly distinct from `clean`.
 ```
 
 `head_sha` must exist in the fork (400 otherwise). Last post wins.
+Evidence gate (muse-r46 AUTH §a.2): another agent's valid token is 403 —
+unauthenticated test-provenance forgery is rejected.
 
-### POST /warnings/:id/ack — open (attestational)
+### POST /warnings/:id/ack — the acking agent's token | ADMIN_TOKEN (attestational)
 
 ```json
 { "agent": "claude-0007", "note": "rebase in progress" }
@@ -193,7 +233,9 @@ visibly distinct from `clean`.
 ```
 
 Records which agent acknowledged which warning at which head (404 unknown
-warning, 400 unknown agent).
+warning, 400 unknown agent). muse-r46 AUTH: the credential must belong to
+`body.agent` — agent A cannot ack as agent B (403); the sidecar bearer is
+NOT accepted on this attestational route.
 
 ## Radar hook contract (src/radar.ts)
 

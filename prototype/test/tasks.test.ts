@@ -31,6 +31,7 @@ interface CreatedTask {
   head: string | null;
   base_sha: string;
   intent: string | null;
+  token: { plaintext: string };
 }
 
 describe("task contract additions (codex C-1306)", () => {
@@ -83,16 +84,25 @@ describe("task contract additions (codex C-1306)", () => {
     const created = await json<CreatedTask>(await post("/tasks", { agent: "provenance" }, ADMIN_TOKEN));
     const head = created.head!;
 
-    const bad = await post(`/tasks/${created.taskId}/tests`, { command: "npm test", exit: 0, head_sha: "zz" });
+    const bad = await post(
+      `/tasks/${created.taskId}/tests`,
+      { command: "npm test", exit: 0, head_sha: "zz" },
+      created.token.plaintext,
+    );
     expect(bad.status).toBe(400);
-    const missing = await post("/tasks/task-9999/tests", { command: "npm test", exit: 0, head_sha: head });
+    const missing = await post(
+      "/tasks/task-9999/tests",
+      { command: "npm test", exit: 0, head_sha: head },
+      created.token.plaintext,
+    );
     expect(missing.status).toBe(404);
 
-    const ok = await post(`/tasks/${created.taskId}/tests`, {
-      command: "npm test",
-      exit: 0,
-      head_sha: head,
-    });
+    // The owning agent authenticates with its per-task token (CONTRACT 0.1.1).
+    const ok = await post(
+      `/tasks/${created.taskId}/tests`,
+      { command: "npm test", exit: 0, head_sha: head },
+      created.token.plaintext,
+    );
     expect(ok.status).toBe(201);
     const stored = await json<{ testProvenance: { command: string; exit: number; head_sha: string; at: string } }>(ok);
     expect(stored.testProvenance.command).toBe("npm test");
@@ -111,8 +121,8 @@ describe("task contract additions (codex C-1306)", () => {
     const beta = await json<CreatedTask>(await post("/tasks", { agent: "ack-b" }, ADMIN_TOKEN));
     const alphaSha = await sidecarCommit(alpha.fork.name, "wip: alpha conflicting change");
     const betaSha = await sidecarCommit(beta.fork.name, "wip: beta conflicting change");
-    await post("/events/push", { agent: alpha.agentId, sha: alphaSha });
-    await post("/events/push", { agent: beta.agentId, sha: betaSha });
+    await post("/events/push", { agent: alpha.agentId, sha: alphaSha }, alpha.token.plaintext);
+    await post("/events/push", { agent: beta.agentId, sha: betaSha }, beta.token.plaintext);
 
     const checked = await json<{ createdWarnings: { id: string }[] }>(
       await post(
@@ -127,13 +137,32 @@ describe("task contract additions (codex C-1306)", () => {
     );
     const warningId = checked.createdWarnings[0].id;
 
-    const badAgent = await post(`/warnings/${warningId}/ack`, { agent: "nobody" });
-    expect(badAgent.status).toBe(400);
-    const badWarning = await post("/warnings/warn-999999/ack", { agent: alpha.agentId });
+    // Cross-agent rejection (muse-r46 AUTH): alpha's token cannot ack as
+    // "nobody" (or as beta) — rejected with 403 before the agent even is
+    // validated; the unknown-agent 400 path still exists for ADMIN.
+    const badAgent = await post(
+      `/warnings/${warningId}/ack`,
+      { agent: "nobody" },
+      alpha.token.plaintext,
+    );
+    expect(badAgent.status).toBe(403);
+    const adminUnknownAgent = await post(`/warnings/${warningId}/ack`, { agent: "nobody" }, ADMIN_TOKEN);
+    expect(adminUnknownAgent.status).toBe(400);
+    const crossAgent = await post(
+      `/warnings/${warningId}/ack`,
+      { agent: beta.agentId },
+      alpha.token.plaintext,
+    );
+    expect(crossAgent.status).toBe(403);
+    const badWarning = await post(
+      "/warnings/warn-999999/ack",
+      { agent: alpha.agentId },
+      alpha.token.plaintext,
+    );
     expect(badWarning.status).toBe(404);
 
     const acked = await json<{ warning: { acks: { agent: string; head: string | null; note?: string }[] } }>(
-      await post(`/warnings/${warningId}/ack`, { agent: alpha.agentId, note: "rebase in progress" }),
+      await post(`/warnings/${warningId}/ack`, { agent: alpha.agentId, note: "rebase in progress" }, alpha.token.plaintext),
     );
     expect(acked.warning.acks).toHaveLength(1);
     expect(acked.warning.acks[0].agent).toBe(alpha.agentId);

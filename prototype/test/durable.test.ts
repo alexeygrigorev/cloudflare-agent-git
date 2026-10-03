@@ -33,16 +33,16 @@ function coordinatorStub(): DurableObjectStub {
 
 describe("persistence across DO restart", () => {
   it("reconstructs heads, tasks, warnings, acks and pair checks from storage", async () => {
-    const created = await json<{ taskId: string; agentId: string; fork: { name: string }; head: string }>(
+    const created = await json<{ taskId: string; agentId: string; fork: { name: string }; head: string; token: { plaintext: string } }>(
       await post("/tasks", { agent: "survivor", intent: "persist me" }, ADMIN_TOKEN),
     );
-    const other = await json<{ agentId: string; fork: { name: string } }>(
+    const other = await json<{ agentId: string; fork: { name: string }; token: { plaintext: string } }>(
       await post("/tasks", { agent: "witness" }, ADMIN_TOKEN),
     );
     const sha = await sidecarCommit(created.fork.name, "wip: pre-restart work");
-    await post("/events/push", { agent: created.agentId, sha });
+    await post("/events/push", { agent: created.agentId, sha }, ADMIN_TOKEN);
     const witnessSha = await sidecarCommit(other.fork.name, "wip: witness work");
-    await post("/events/push", { agent: other.agentId, sha: witnessSha });
+    await post("/events/push", { agent: other.agentId, sha: witnessSha }, ADMIN_TOKEN);
 
     const vector = (await json<{ heads: Record<string, string> }>(await get("/status"))).heads;
     const checked = await json<{ createdWarnings: { id: string }[] }>(
@@ -57,7 +57,11 @@ describe("persistence across DO restart", () => {
       ),
     );
     const warningId = checked.createdWarnings[0].id;
-    await post(`/warnings/${warningId}/ack`, { agent: created.agentId, note: "seen before restart" });
+    await post(
+      `/warnings/${warningId}/ack`,
+      { agent: created.agentId, note: "seen before restart" },
+      created.token.plaintext,
+    );
 
     const before = await json<{
       canonical: { name: string | null };
@@ -98,7 +102,7 @@ describe("persistence across DO restart", () => {
     // ...and the DO still cooperates with the (unrestarted) sidecar repos:
     // a new real commit on the same fork is accepted after the restart.
     const postRestartSha = await sidecarCommit(created.fork.name, "wip: post-restart work");
-    const push = await post("/events/push", { agent: created.agentId, sha: postRestartSha });
+    const push = await post("/events/push", { agent: created.agentId, sha: postRestartSha }, ADMIN_TOKEN);
     expect(push.status).toBe(200);
     const finalStatus = await json<{ heads: Record<string, string> }>(await get("/status"));
     expect(finalStatus.heads[created.agentId]).toBe(postRestartSha);

@@ -5,4 +5,6 @@ RUNNER_TOKEN=change-me-runner
 # Local sidecar (npm run sidecar) — defaults shown; see README.
 LOCAL_ARTIFACTS_URL=http://127.0.0.1:8790
 # Must match the sidecar's SIDECAR_TOKEN env when started with one.
+# CONTRACT 0.1.1: this bearer also authenticates the sidecar's push
+# webhook and /events/artifacts on the Worker (/events/* routes).
 LOCAL_ARTIFACTS_TOKEN=

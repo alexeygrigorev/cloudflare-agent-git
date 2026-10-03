@@ -3,6 +3,8 @@ import { inject } from "vitest";
 export const SIDECAR_URL = inject("sidecarUrl");
 const SIDECAR_TOKEN = inject("sidecarToken");
 
+export { SIDECAR_TOKEN };
+
 export const ADMIN_TOKEN = "test-admin-token";
 export const RUNNER_TOKEN = "test-runner-token";
 
