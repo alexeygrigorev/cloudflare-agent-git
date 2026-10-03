@@ -188,7 +188,7 @@ class Safety(unittest.TestCase):
   self.assertEqual(service.active_principals(registry_raw=reg3), ['codex-principal'])
   reg4 = {'agents': [{'tag': 'claude-principal', 'supervision_excluded': True}]}
   self.assertEqual(service.active_principals(registry_raw=reg4), ['codex-principal'])
- def test_service_run_codex_status_bar_fallback_and_negatives(self):
+ def test_service_run_fail_closed_delivery_and_negatives(self):
   with tempfile.TemporaryDirectory() as td:
    tmp = pathlib.Path(td)
    root = tmp / 'root'
@@ -201,17 +201,13 @@ class Safety(unittest.TestCase):
    bin_dir.mkdir()
    pinned = bin_dir / 'aplexer'
    pinned.write_bytes(b'PINNED')
-   installed = bin_dir / 'installed-aplexer'
-   installed.write_bytes(b'INSTALLED')
 
    cycles = [0]
    calls = []
    captures_in_cycle = [0]
-   principal_tag = ['codex-principal']
-   screen_holder = ['› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left\n  ? for shortcuts']
+   screen_holder = ["› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left\n  ? for shortcuts"]
    fresh_screen_holder = [None]
    deliver_ret = [{'status': 'not-ready', 'detail': 'recipient composer has an unsubmitted draft in progress (GPT-6.1-Sol medium · Context 43% left...); delivery fail-closed'}]
-   fallback_ret = [{'status': 'submitted', 'id': 'm1'}]
 
    def fake_cmd(args, timeout=20):
     words = [a for a in args[1:] if not a.startswith('-')]
@@ -224,7 +220,7 @@ class Safety(unittest.TestCase):
      cycles[0] += 1
      if cycles[0] >= 3:
       (private / 'stop').write_text('stop')
-     return json.dumps([{'workspace': str(root), 'tag': principal_tag[0], 'id': 'sess-' + principal_tag[0], 'reported_state': 'idle', 'workload_pid': str(os.getpid())}])
+     return json.dumps([{'workspace': str(root), 'tag': 'codex-principal', 'id': 'sess-codex', 'reported_state': 'idle', 'workload_pid': str(os.getpid())}])
     if 'inbox' in args:
      return json.dumps({'messages': []})
     if 'capture' in args:
@@ -247,14 +243,11 @@ class Safety(unittest.TestCase):
     if 'send' in args:
      return R(0, json.dumps({'id': 'm1', 'delivery': 'inbox'}))
     if 'deliver' in args:
-     if str(pinned) in args[0]:
-      return R(0, json.dumps(deliver_ret[0]))
-     if str(installed) in args[0]:
-      return R(0, json.dumps(fallback_ret[0]))
+     return R(0, json.dumps(deliver_ret[0]))
     return R(0, '{}')
 
    real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
-   real_root, real_priv, real_bin, real_inst = service.ROOT, service.PRIVATE, service.BINARY, service.INSTALLED_BINARY
+   real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
    real_defaults = service.recorded_send.__defaults__
 
    try:
@@ -264,95 +257,65 @@ class Safety(unittest.TestCase):
     service.time = type('T', (), {'time': staticmethod(lambda: 1000.0), 'sleep': staticmethod(lambda s: None)})()
     service.ROOT, service.PRIVATE = root, private
     service.BINARY = str(pinned)
-    service.INSTALLED_BINARY = str(installed)
 
-    # 1. Happy path: false-draft status line triggers fallback via service.run()
-    service.run()
-    delivers = [c for c in calls if 'deliver' in c]
-    self.assertEqual(len(delivers), 2)
-    self.assertEqual(delivers[0][0], str(pinned))
-    self.assertEqual(delivers[1][0], str(installed))
-    self.assertEqual(delivers[0][3], 'm1')
-    self.assertEqual(delivers[1][3], 'm1')
-    ev = json.loads((private / 'delivery-m1.json').read_text())
-    self.assertEqual(ev.get('status'), 'submitted')
-    self.assertIn('primary_detail', ev.get('fallback', {}))
-
-    # 2. Negative: fresh_screen draft prevents delivery even when initial snapshot was empty (kills M1)
-    calls.clear()
-    cycles[0] = 0
-    captures_in_cycle[0] = 0
-    (private / 'stop').unlink(missing_ok=True)
-    (private / 'state.json').unlink(missing_ok=True)
-    screen_holder[0] = '› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left'
-    fresh_screen_holder[0] = '› Fix rate limiter\n  GPT-6.1-Sol medium · Context 43% left'
-    service.run()
-    delivers = [c for c in calls if 'deliver' in c]
-    self.assertEqual(delivers, [])
-
-    # 3. Negative: fresh_screen busy prevents delivery (kills M1)
-    calls.clear()
-    cycles[0] = 0
-    captures_in_cycle[0] = 0
-    (private / 'stop').unlink(missing_ok=True)
-    (private / 'state.json').unlink(missing_ok=True)
-    screen_holder[0] = '› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left'
-    fresh_screen_holder[0] = '• Working (2m • esc to interrupt)\n› Ask Codex to do anything'
-    service.run()
-    delivers = [c for c in calls if 'deliver' in c]
-    self.assertEqual(delivers, [])
-
-    # 4. Negative: detail with 'unsubmitted draft' but NO 'GPT-' skips fallback (kills M2)
-    calls.clear()
-    cycles[0] = 0
-    captures_in_cycle[0] = 0
-    fresh_screen_holder[0] = None
-    (private / 'stop').unlink(missing_ok=True)
-    (private / 'state.json').unlink(missing_ok=True)
-    screen_holder[0] = '› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left'
-    deliver_ret[0] = {'status': 'not-ready', 'detail': 'recipient composer has an unsubmitted draft in progress (git commit -m "fix"); delivery fail-closed'}
+    # 1. Fail-closed: not-ready outcome is preserved verbatim in delivery record and pending
     service.run()
     delivers = [c for c in calls if 'deliver' in c]
     self.assertTrue(delivers)
-    self.assertTrue(all(str(pinned) in c[0] for c in delivers))
-    self.assertFalse(any(str(installed) in c[0] for c in delivers))
-
-    # 5. Negative: fallback outcome not submitted does not mark submitted (kills M4)
-    calls.clear()
-    cycles[0] = 0
-    captures_in_cycle[0] = 0
-    fresh_screen_holder[0] = None
-    (private / 'stop').unlink(missing_ok=True)
-    (private / 'state.json').unlink(missing_ok=True)
-    screen_holder[0] = '› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left'
-    deliver_ret[0] = {'status': 'not-ready', 'detail': 'recipient composer has an unsubmitted draft in progress (GPT-6.1-Sol medium · Context 43% left...); delivery fail-closed'}
-    fallback_ret[0] = {'status': 'not-ready', 'detail': 'installed binary also not-ready'}
-    service.run()
+    self.assertTrue(all(c[0] == str(pinned) for c in delivers))
+    self.assertEqual(delivers[0][0], str(pinned))
+    self.assertEqual(delivers[0][3], 'm1')
     ev = json.loads((private / 'delivery-m1.json').read_text())
     self.assertEqual(ev.get('status'), 'not-ready')
-    self.assertNotIn('fallback', ev)
+    self.assertIn('recipient composer has an unsubmitted draft', ev.get('detail', ''))
+    st = json.loads((private / 'state.json').read_text())
+    self.assertEqual(st['codex-principal']['pending']['delivery'], 'not-ready')
 
-    # 6. Negative: tag == 'claude-principal' skips fallback even with 'unsubmitted draft' and 'GPT-' (kills M3)
+    # 2. Negative: fresh_screen draft prevents delivery even when initial snapshot was empty
+    calls.clear()
+    cycles[0] = 0
+    captures_in_cycle[0] = 0
+    (private / 'stop').unlink(missing_ok=True)
+    (private / 'state.json').unlink(missing_ok=True)
+    screen_holder[0] = "› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left"
+    fresh_screen_holder[0] = "› Fix rate limiter\n  GPT-6.1-Sol medium · Context 43% left"
+    service.run()
+    delivers = [c for c in calls if 'deliver' in c]
+    self.assertEqual(delivers, [])
+
+    # 3. Negative: fresh_screen busy prevents delivery
+    calls.clear()
+    cycles[0] = 0
+    captures_in_cycle[0] = 0
+    (private / 'stop').unlink(missing_ok=True)
+    (private / 'state.json').unlink(missing_ok=True)
+    screen_holder[0] = "› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left"
+    fresh_screen_holder[0] = "• Working (2m • esc to interrupt)\n› Ask Codex to do anything"
+    service.run()
+    delivers = [c for c in calls if 'deliver' in c]
+    self.assertEqual(delivers, [])
+
+    # 4. Happy path: clean empty prompt and BINARY returning submitted records submitted
     calls.clear()
     cycles[0] = 0
     captures_in_cycle[0] = 0
     fresh_screen_holder[0] = None
     (private / 'stop').unlink(missing_ok=True)
     (private / 'state.json').unlink(missing_ok=True)
-    principal_tag[0] = 'claude-principal'
-    (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps({'teams': [{'id': 'T1', 'principal_tags': ['claude-principal']}]}))
-    (root / 'coordination/TASKS.json').write_text(json.dumps({'tasks': [{'id': 'task-1', 'team_id': 'T1', 'status': 'ready', 'owner_tag': 'claude-principal'}]}))
-    screen_holder[0] = '❯\n────'
-    deliver_ret[0] = {'status': 'not-ready', 'detail': 'recipient composer has an unsubmitted draft in progress (GPT-6.1-Sol medium · Context 43% left...); delivery fail-closed'}
-    fallback_ret[0] = {'status': 'submitted', 'id': 'm1'}
+    screen_holder[0] = '› Ask Codex to do anything'
+    deliver_ret[0] = {'status': 'submitted', 'id': 'm1'}
     service.run()
     delivers = [c for c in calls if 'deliver' in c]
     self.assertTrue(delivers)
-    self.assertTrue(all(str(pinned) in c[0] for c in delivers))
-    self.assertFalse(any(str(installed) in c[0] for c in delivers))
+    self.assertTrue(all(c[0] == str(pinned) for c in delivers))
+    ev = json.loads((private / 'delivery-m1.json').read_text())
+    self.assertEqual(ev.get('status'), 'submitted')
+    st = json.loads((private / 'state.json').read_text())
+    self.assertEqual(st['codex-principal']['pending']['delivery'], 'submitted')
    finally:
     service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
     service.recorded_send.__defaults__ = real_defaults
-    service.ROOT, service.PRIVATE, service.BINARY, service.INSTALLED_BINARY = real_root, real_priv, real_bin, real_inst
+    service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
+
 if __name__=='__main__':unittest.main()
 

@@ -1254,26 +1254,20 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
 
 ---
 
-## 48. Independent Negative Review & Hardening of Supervision Fallback (Commit c14b474)
+## 48. Independent Negative Review of Supervision Fallback (c14b474) & Remediation
 
-- **Date:** 2026-10-04T00:18:00+02:00
+- **Date:** 2026-10-04T00:25:00+02:00
 - **Executor & Model:** Space Bunny `sb-reviewer-sup` (`b01f1415-5a23-4a62-b379-5bf24a431caa`), model `opencode-go/space-bunny-free`.
 - **Review Artifact:** [`research/antigravity/reviews/REV-SUPERVISION-C14B474.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SUPERVISION-C14B474.md).
-- **Core Findings & Remediation:**
-  1. **Empirical Negative Suite (27 checks):** Evaluated against isolated scratch harness executing production `service.run()`. Initially identified 4 defects:
-     - Hardcoded inline literal `/home/alexey/.local/bin/aplexer` $\implies$ Remediated by exposing module constant `INSTALLED_BINARY = os.environ.get('SUPERVISION_FALLBACK_APLEXER_BINARY', '/home/alexey/.local/bin/aplexer')`.
-     - Overwritten diagnostic detail $\implies$ Remediated by retaining primary binary's rejection detail in `fallback_outcome['fallback']['primary_detail']`.
-     - Unhandled mailbox lock on fallback $\implies$ Remediated by inspecting stderr for `MAILBOX_BUSY` regex and raising `DeliveryUncertain` to prevent unmanaged retries.
-     - False triggering on rate limits mentioning GPT $\implies$ Remediated by requiring `'unsubmitted draft' in detail and 'GPT-' in detail`.
-     - Tautological test $\implies$ Remediated by replacing inline reimplementation with `test_service_run_codex_status_bar_fallback_and_negatives` driving `service.run()`.
-  2. **Mutation Testing (5 load-bearing mutants):**
-     - M1 (bypass composer empty check): **KILLED** (by `fresh_screen` draft/busy assertions).
-     - M2 (drop GPT filter conjunct): **KILLED** (by non-GPT draft assertion).
-     - M3 (drop codex principal tag conjunct): **KILLED** (by `claude-principal` negative assertion).
-     - M4 (accept non-submitted outcome): **KILLED** (by outcome verification assertion).
-     - M5 (forge brand-new message ID): **KILLED** (by ID preservation assertion).
-     - **Result:** 5/5 mutants killed (0 survivors).
-  3. **Verification Verdict:**
-     - 26/26 unit tests passing in 0.10s (`pytest -v scripts/supervision/test_service.py`).
-     - 27/27 negative checks passing (`negative_suite.py`).
-     - Final Review Verdict: **ACCEPT**.
+- **Independent Verdict:** **REQUEST_CHANGES** (2 blockers on `c14b474`).
+- **Reviewer Findings:**
+  1. **Blocker B1 (Inverted Premise / Fail-Open):** Fallback binary `/home/alexey/.local/bin/aplexer` was compiled on 2026-10-02 22:53, predating all composer draft detection logic (which landed 2026-10-03 05:46+ in `cloudflare-aplexer-protocol`). The installed binary contains 0 hits for `draft` or `fail-closed`. Its `submitted` response is the absence of a guard, not a corrected false positive. Falling back to it constitutes an unsafe downgrade that converts a fail-closed refusal into an unverified delivery into a potentially draft-bearing composer, violating `service.py:2` ("never fabricates session readiness").
+  2. **Blocker B2 (Tautological Test in c14b474):** The test in `c14b474` re-implemented the fallback inline and never invoked `service.run()`. All 6 mutants survived.
+- **Head Remediation & Safety Restoration:**
+  1. **Removal of Unsafe Fallback:** Per Desktop Orchestrator directive (`01a103dc-1328`), the fallback to older installed binary was completely removed from `scripts/supervision/service.py` and `scripts/supervision/test_service.py`. Pure fail-closed delivery semantics under reviewed `BINARY` are restored.
+  2. **Test Suite Verification:** `scripts/supervision/test_service.py` updated with `test_service_run_fail_closed_delivery_and_negatives` driving `service.run()` directly. Asserts fail-closed refusal is preserved verbatim in delivery record and pending state, and fresh screen draft/busy denies delivery. 26/26 tests PASS cleanly in 0.07s.
+  3. **Supervision Stall State & Safety Invariant:**
+     - Pending request `01a10381-a948-7453-ad81-cce5ec509914` remains preserved in `pending` as `not-ready`.
+     - The underlying protocol binary requires a structural parser update to recognize Codex's GPT-6 status bar footer, but Cargo rebuild is strictly prohibited under `noRustbuild/floorrelaxation`.
+     - Message is durably queued in workspace mailbox (`created_at: 1791060191`). When recipient reads or acknowledges the message, `service.py`'s `exact_ack()` will reconcile it cleanly without unsafe PTY keystroke injection.
+     - Exact pending ID and original sender identity `3038209d` strictly preserved; zero forged ACKs, zero fake idle injections.

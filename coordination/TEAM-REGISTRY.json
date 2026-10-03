@@ -659,7 +659,7 @@
           ],
           "first_tool_evidence": "opencode run -m opencode-go/space-bunny-free (PROMPT-REV-SUP-C14B474.txt)",
           "memory_cap": "1500M",
-          "result": "VERDICT ACCEPT (commit 499d37a): All 4 negative defects and 2 mutation escapes identified on c14b474 remediated and verified. 27/27 negative checks pass in negative_suite.py. 5/5 semantic mutants killed (M1 composer empty bypass killed by fresh_screen draft/busy; M2 drop GPT filter killed by unsubmitted draft without GPT-; M3 drop codex principal tag killed by claude-principal negative; M4 accept non-submitted outcome killed; M5 forge ID killed). 26/26 unit tests pass in test_service.py. Report: research/antigravity/reviews/REV-SUPERVISION-C14B474.md."
+          "result": "VERDICT REQUEST_CHANGES (commit c14b474): sb-reviewer-sup identified 2 blockers (B1: older fallback binary /home/alexey/.local/bin/aplexer lacks composer draft detection/fail-closed semantics; B2: tautology test in c14b474). Head remediation commit 499d37a tightened tests to drive service.run() directly, but B1 fallback mechanism was rejected as an unsafe downgrade by reviewer and Desktop Orchestrator. Unsafe fallback mechanism subsequently removed from service.py and test_service.py, restoring pure fail-closed delivery semantics under reviewed BINARY. Delivery stays not-ready pending Rust status-line parser fix (prohibited under noRustbuild) or recipient native read/ACK. Exact pending ID 01a10381-a948 and original sender identity preserved. Full report: research/antigravity/reviews/REV-SUPERVISION-C14B474.md."
         }
       ]
     },
