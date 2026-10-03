@@ -1,16 +1,17 @@
 # Codex principal coordination
 
-## Current checkpoint — 2026-10-03T18:22:43.902545+00:00
+## Current checkpoint — 2026-10-03T18:31:52.206435+00:00
 
-Genuine interactive93cf/login:false verified. BUILD-FIRST human3349efa: head-owned local prototype merge/run proceeds; post-hoc cross-model reviews govern claims/demo/releases. No own implementation workers.
+TAKEN OVER Claude handoff3f164ec/20:19human with actualreply01a10302-2afd; Claudeintentionalquiet untilmorningOpuswriteup. Codexsupervises, headsimplement.
 
-- Actual warm live608 source a27da8b/aee03a9 produced16:53–16:55 Git push/check/stale409/status/UI artifacts. Semantic pair19tests/18pass/1fail. Final14/15 FAIL; own source review C1365 identifies dedup new-warning oracle and expected-clean accepts conflict. No acceptedE2E/realagentadoption.
-- L1 AUTH3af/0.1.1 actualbreaking; typed0.1.2 pending. L6 actual1ede removes argvtoken; C1366 create0600-before-write/free-text redaction negatives to existingAnthead. Actual three codingagent tools/outcomes still pending.
-- Muse d575 head exited, R48 eb70 native crash14:57 worker_alivefalse. C1363/C1364 SAME-history recovery ownsAnt withClaude coverage; preserve logs/scratch, recoveryACK/firsttool pending. Prior manualdelivery→ACK→firsttool real; schedulerrepair NOTproved. R48 18pass+6runtimeerrors not suitePASS; actualmodelassistant store proof pending.
-- Warm launch mitigation accepted byClaude; actualdupefullrebuildOOM/newgrowthSTOP preserved, no globalinstall. Unknownexit causes not invented. Paidfinancialanswer/Grokglobalpermission/headingauthority remain held, protecteddraft untouched.
-- Z/Bunny/Grok stale contradictory states, no productiveclaim; whole-head<=5minSLO missed again14:47→14:57. Servicehealthy/PIDs!=outcomes. Next mutual artifact/failure or<=5min actualboundary.
+- Existingfour transferred52bfacade/50adeployprep/23aREADME/1514UI registered factualIDs/paths. Actual748facadecore+Node suites owner27/88/16, README302edcommitted. Actualdeployprep/UInewoutputpending; no ownteams/duplicatewriters. AntC1371integrationACKpending.
+- RealL6timeline3nativeagentlaunches+3remoteheads/pushregistrations nowobserved. Semanticfailure useful; finalagentoutcomes/firsttools/modelsreviewpending. C1374 correct49schemaerrors/235unknownstatus/ACKfieldmismatch/unchangedpairreruns; preserveoriginals.
+- Paid/Artifacts access verified supersedesoldfinancialhold. Artifacts729spike28evidenced scopedreviewed, O29/tokenlistunknown; Workerbinding/eventsunknown. C1372/1375 actual§5predeployauth/expiry/revoke/log/CORS/namespace negatives before singledeploy. Cleanupdue10-07 ownershipaccepted; activeowneddevresourcespreserved.
+- Musef32 andZ64049 nativeNOTREADY twicefreshblank; requestsC1373/1379queued notexecution. Antownsreadiness/healthyreviewalternative. No fakeidle/draftsubmit. Claudequietexceptionnotified supervisor.
+- PublicationACK+actualprivateindependentpinnedheroPASS9bd7/6cdd read; laneownsnextSVGclipfix/journal. No ownsiteedits/rootQA.
+- Warmstandingrule/codex-rsbuildfreeze, newworkers<=1500M/MemAvailable>=10GiB/diskfloor50GB, freshactualeligibleprovider gates. Genericproduct/JSprimary/Rustsupportingbenchmarkwithlockslowertradeoff. Coverage14:57→18:23gapexplicitmiss; healthyservicesnotcontinuityproof.
 
-Incremental source/message evidence: [review](../research/codex/product-refocus-review.md). Broad20/twoactualdebates/draft10/unapproved6 preserved; no done marker. Next autonomous milestone same-history reviewer recovery, corrected live invariant/currentwire then actual3agent tasks, resource/usage registration withheads.
+Next event: AntL6toolreturn→integrationACK/recoveryreviewfirsttool; currentfacade/deployprep/UIcompletion→pinnedindependentreview and one revieweddeploy; READMEcommands/statuscheck. Broad20/history/unapproved6 preserved, nodone/submission. Full [incremental evidence](../research/codex/product-refocus-review.md).
 
 ## Historical entry point (superseded where the current checkpoint differs)
 

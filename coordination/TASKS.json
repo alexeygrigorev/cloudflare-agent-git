@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T18:22:43.902545+00:00",
+  "updated_at": "2026-10-03T18:28:59.530544+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -190,7 +190,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T18:22:43.902545+00:00",
+      "updated_at": "2026-10-03T18:28:59.530544+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/oversight-human31.md",
@@ -204,7 +204,7 @@
         "research/codex/product-refocus-review.md"
       ],
       "blocked_on": [],
-      "next_action": "C1364 Ant/Claude SAME-history Muse/R48 crash recovery ACK/firsttool; C1365 live real14/15 oracle correction/currentwire review; C1366 L6private-token negative + actual3codingmodel firsttools/outcomes/usage. Warm608 artifacts real but no acceptedE2E/adoption. Currentpin independent negatives/resources, no own executors; <=5min scan misses explicit.",
+      "next_action": "TAKENOVER Claude handoff3f164ec; verify existing4workers/review deployment\u00a75/tokenexpiry/revoke; Ant C1371integrationACK/C1374L6real3remoteheads-finalization, MuseC1373NOTREADY headrepair+reviewfallback. Claude intentionalquiet.14:57\u219218:23gap explicit. Newresourceguards/no ownworkers.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
@@ -654,6 +654,98 @@
         ".local/journal/audits/dogfood-analysis.json"
       ],
       "acceptance": "Host telemetry (RAM 35G avail >=10G, NVMe 100G) and dogfood synthesis on Rust build bloat (59.5G target/), test RAM spikes, and git lock serialization."
+    },
+    {
+      "id": "facade-implementation",
+      "team_id": "product-integration",
+      "owner_tag": "zc-facade",
+      "principal_owner": "codex-principal",
+      "status": "running",
+      "updated_at": "2026-10-03T18:28:59.530544+00:00",
+      "executor_ids": [
+        "52b589ff-0705-46df-b6f0-0c43add37106"
+      ],
+      "owned_paths": [
+        "prototype/src/core/",
+        "prototype/src/ports/",
+        "prototype/src/cloudflare/",
+        "prototype/src/local/"
+      ],
+      "evidence_paths": [
+        "research/claude/HANDOFF-2026-10-03.md",
+        "research/codex/product-refocus-review.md"
+      ],
+      "blocked_on": [],
+      "assignment_ack": "Existing userauthorized Claude launch; Codextakeover ACK; executor redirect ACK pending",
+      "next_action": "1f692748 actualcommitted facade/core/Node tests, owner27/88/16; independent currentpin review pending; C1370 redirect toCodex inbox pendingACK",
+      "acceptance": "Pinned deliverable and meaningful negative checks/crossfamily review; no plan/PID-asresult"
+    },
+    {
+      "id": "reviewed-worker-deployment",
+      "team_id": "product-integration",
+      "owner_tag": "zc-deploy-prep",
+      "principal_owner": "codex-principal",
+      "status": "running",
+      "updated_at": "2026-10-03T18:28:59.530544+00:00",
+      "executor_ids": [
+        "50a0e8c7-9bdd-4362-b3af-71f44db46702"
+      ],
+      "owned_paths": [
+        "prototype/"
+      ],
+      "evidence_paths": [
+        "research/claude/HANDOFF-2026-10-03.md",
+        "research/codex/product-refocus-review.md"
+      ],
+      "blocked_on": [],
+      "assignment_ack": "Existing userauthorized Claude launch; Codextakeover ACK; executor redirect ACK pending",
+      "next_action": "Actual nativeworking; source no committeddeploy changes at18:24; execution evidence pending, no deploy authorized untilreview; C1370 redirect toCodex inbox pendingACK",
+      "acceptance": "Pinned deliverable and meaningful negative checks/crossfamily review; no plan/PID-asresult"
+    },
+    {
+      "id": "submission-documentation",
+      "team_id": "product-integration",
+      "owner_tag": "zc-readme",
+      "principal_owner": "codex-principal",
+      "status": "running",
+      "updated_at": "2026-10-03T18:28:59.530544+00:00",
+      "executor_ids": [
+        "23a0b424-83f5-4b4a-bf37-6e1c73b19342"
+      ],
+      "owned_paths": [
+        "SUBMISSION.md",
+        "docs-submission/"
+      ],
+      "evidence_paths": [
+        "research/claude/HANDOFF-2026-10-03.md",
+        "research/codex/product-refocus-review.md"
+      ],
+      "blocked_on": [],
+      "assignment_ack": "Existing userauthorized Claude launch; Codextakeover ACK; executor redirect ACK pending",
+      "next_action": "Actual untrackedSUBMISSION at18:24; outercompleted event/usage; ownercheckpoint/ACK pending; C1370 redirect toCodex inbox pendingACK",
+      "acceptance": "Pinned deliverable and meaningful negative checks/crossfamily review; no plan/PID-asresult"
+    },
+    {
+      "id": "live-review-ui",
+      "team_id": "product-integration",
+      "owner_tag": "zc-ui-live",
+      "principal_owner": "codex-principal",
+      "status": "running",
+      "updated_at": "2026-10-03T18:28:59.530544+00:00",
+      "executor_ids": [
+        "1514b4b3-2966-47d6-9c3f-52e22be1fbc0"
+      ],
+      "owned_paths": [
+        "prototype/ui/"
+      ],
+      "evidence_paths": [
+        "research/claude/HANDOFF-2026-10-03.md",
+        "research/codex/product-refocus-review.md"
+      ],
+      "blocked_on": [],
+      "assignment_ack": "Existing userauthorized Claude launch; Codextakeover ACK; executor redirect ACK pending",
+      "next_action": "Actualnativeworking; source latest71fe beforestart, new artifact pending; C1370 redirect toCodex inbox pendingACK",
+      "acceptance": "Pinned deliverable and meaningful negative checks/crossfamily review; no plan/PID-asresult"
     }
   ]
 }
