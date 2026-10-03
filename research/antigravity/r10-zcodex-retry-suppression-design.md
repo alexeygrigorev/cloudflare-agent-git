@@ -45,7 +45,7 @@ In rollout `01a1000a-8f19`:
 1. The inner model generated tool call 1 (`exec_command`, call ID `633571b1`).
 2. `zcode.cjs` streamed `tool_input_start`, deltas, and `tool_call`.
 3. `client.rs` consumed these events and emitted `ResponseItem::FunctionCall` to Codex's `tx`.
-4. Inside Node, `zcode.cjs` invoked `DenyPermissionBroker.requestPermission()` (located at offset ~4,898,489 of `zcode.cjs`), which immediately resolved `{ decision: "deny", reason: "No permission client configured for Bash" }`.
+4. Inside Node, `zcode.cjs` invoked `DenyPermissionBroker.requestPermission()` (located at exact byte offsets `4,898,470` and `4,898,649` of `zcode.cjs`), which immediately resolved `{ decision: "deny", reason: "No permission client configured for Bash" }`.
 5. `zcode.cjs` fed this denial to the inner model as a tool error.
 6. The inner model observed the denial, believed execution failed, and generated an apology text: `"The Bash call failed with a permission-client error. Let me retry once in case it's transient."`
 7. ~16 seconds later, the inner model emitted tool call 2 (`exec_command`, call ID `e9c52a05`).
@@ -117,13 +117,18 @@ sequenceDiagram
 ### 3.2 Authoritative Generation-End Boundary in ZCode
 To prevent dropping serial siblings, turn termination must NOT rely on `pending_tools.is_empty()` alone or an arbitrary sleep. It must anchor on **ZCode's native event protocol**.
 
-In `/opt/ZCode/resources/glm/zcode.cjs`, line analysis reveals the exact lifecycle events emitted when the model finishes its generation step and enters the execution phase:
+In `/opt/ZCode/resources/glm/zcode.cjs` (total size 14,642,393 bytes), binary and string analysis reveals the exact lifecycle events emitted when the model finishes its generation step and enters the execution phase:
 1. During model token generation:
-   - `type: "model.streaming"`, payloads: `text_delta`, `tool_input_start`, `tool_input_delta`, `tool_input_end`, `tool_call`.
+   - `type: "model.streaming"`, payloads: `text_delta`, `tool_input_start` (exact byte offset `14,394,267`), `tool_input_delta`, `tool_input_end`, `tool_call`.
 2. When the model completion finishes and tools are handed off for scheduling:
    - `type: "tool.updated"` with `payload.kind = "scheduled"` or `phase = "ToolBatchComplete"`.
-   - `type: "permission.requested"` (emitted when `permissionBroker.requestPermission()` is called for the scheduled batch).
-   - `type: "permission.resolved"` (emitted when `DenyPermissionBroker` resolves the denial).
+   - `type: "permission.requested"` (emitted when `permissionBroker.requestPermission()` is called for the scheduled batch; exact byte offsets `748,326`, `755,008`, and `14,407,971`).
+   - `type: "permission.resolved"` (emitted when `DenyPermissionBroker` resolves the denial; exact byte offsets `748,349`, `755,039`, `4,991,622`, and `14,408,052`).
+
+**Explicit Unknowns & Unverified Edge Cases (Fail-Closed Boundaries):**
+- *UNKNOWN:* Exact socket buffer flush vs immediate teardown behavior in Node CJS when SIGTERM is delivered during an active token stream write.
+- *UNKNOWN:* Whether any alternative prompt format or non-build route in ZCode bypasses `DenyPermissionBroker` without emitting `permission.requested`.
+- *UNKNOWN:* CJS behavior under simultaneous serial tool failures when permissions are conditionally granted for tool A but denied for tool B.
 
 **Key Architectural Invariant:**
 - While the model is generating tokens, `type` is exclusively `"model.streaming"`. All serial siblings ($A, B, C\dots$) arrive under `"model.streaming"`.
