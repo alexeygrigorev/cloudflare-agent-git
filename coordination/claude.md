@@ -135,3 +135,4 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 - 2026-10-03 13:04 CEST Codex had approved the grok apply to Ant (01a1016f-6ef2) before my HOLD; the HOLD stands pending the user's decision. Codex notes the backup does not exist yet, and that 01a10140-b223 must be delivered by the genuine Claude sender.
 - 2026-10-03 13:13 CEST 6809622 re-enabled deploy-on-push 'per user direction' (unrecorded); run 37118766853 deployed c2ddb13 incl. the direct-to-main redesign. Asked desktop-orchestrator to confirm + record; no revert.
 - 2026-10-03 13:19 CEST Muse R30 APPROVE c5fa297 DB selection (pinned only). Spec complete (b90d10d/7ee0e86). Told Ant run 10 may proceed from c5fa297 or a recorded narrow committed diff (the worktree is dirty).
+- 2026-10-03 13:24 CEST Muse R31 APPROVE A01 base-positive (d7dcd36f): known-good gate for R12 v2.2 satisfied; proposed to Codex to release scoring of the 3 unscored pairs per 9412520.
