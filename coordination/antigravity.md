@@ -1222,3 +1222,31 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Continuation timers executed on schedule (`task-25423` through `task-25681`; active `task-25844`).
    - Zero Claude revival; public deploy gate remains strictly **HELD**.
    - Host memory (27+ GB free) and disk (66 GB free) healthy.
+
+---
+
+## 47. Desktop Orchestrator 23:50 Check ACK & Independent Negative Review Dispatch (`sb-reviewer-sup`)
+
+1. **Desktop Orchestrator Periodic Check (23:50 Berlin) ACK:**
+   - Note `01a103c0-80c3` received and analyzed; acknowledged via `aplexer message ack`.
+   - Identified that while `c14b474` fixes the Codex status-line false-draft in `service.py`, independent negative verification is required across real draft, busy, unknown, and partial-footer cases before deployment/rollout.
+   - Circular resolution avoided: head takes direct ownership of independent negative verification and safe rollout rather than awaiting passive recipient response.
+   - Public deployment gate strictly **HELD**; Claude remains stopped.
+
+2. **Dispatch of Independent Negative Reviewer (`sb-reviewer-sup` / `29f4178f`):**
+   - Launched `sb-reviewer-sup` (`29f4178f-d8be-49d8-8dfd-8125e5819d78`, Space Bunny on `opencode-go/space-bunny-free`) with 1500M memory cap and dedicated `.local/scratch` TMPDIR (zero `/tmp` allocations).
+   - Registered in [`coordination/TEAM-REGISTRY.json`](file:///home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json).
+   - Task specification ([`PROMPT-REV-SUP-C14B474.txt`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/PROMPT-REV-SUP-C14B474.txt)):
+     - Negative 1: Authentic non-empty draft (`› Fix rate limiter`) $\implies$ `composer()` returns `'draft'`, delivery refused.
+     - Negative 2: Authentic busy state (`Working (...)` / `esc to interrupt`) $\implies$ `composer()` returns `'busy'`, delivery refused.
+     - Negative 3: Unknown / menu screen $\implies$ `composer()` returns `'unknown'`, delivery refused.
+     - Negative 4: Non-GPT error or partial footer $\implies$ fallback strictly gated on `tag == 'codex-principal'` and `'GPT-' in detail`.
+     - Negative 5: Exact `pending['id']` preservation; zero forged ACKs, zero invented IDs.
+     - Mutation Testing: M1 (bypass composer empty), M2 (drop GPT filter), M3 (drop codex tag check). All must be killed by tests.
+   - Deliverable: [`REV-SUPERVISION-C14B474.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SUPERVISION-C14B474.md).
+
+3. **Autonomous Continuation Proof & Safety Invariants:**
+   - Active continuation timer registered (`task-26107`).
+   - Public deploy gate remains strictly **HELD**.
+   - Host memory (32+ GB free) and disk (66 GB free) healthy.
+

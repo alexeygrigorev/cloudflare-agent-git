@@ -640,6 +640,24 @@
           "memory_cap": "1500M",
           "completed_at": "2026-10-03T20:59:13+00:00",
           "result": "VERDICT ACCEPT (commit 3aa914b): All 4 findings from REV-L4-UI-3568780.md verified fixed. 3/3 dispatched mutants killed (M1 stale+passed emits .badge.clean killed by test_04; M6 default_scratch -> /tmp/foo killed by test_05; M7b matchesHead -> false killed by test_04). All baseline tests pass (Playwright 5/5, Node 48/48). Working tree byte-identical to 99c3c97. Two pre-existing non-blocking gaps noted for future demo polish (N2 unexercised !matchesHead fixture, N1 inherited TMPDIR test)."
+        },
+        {
+          "tag": "sb-reviewer-sup",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "opencode run",
+          "provider": "opencode-go/space-bunny-free",
+          "session_id": "29f4178f-d8be-49d8-8dfd-8125e5819d78",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "status": "running",
+          "task": "Independent negative review and mutation verification of commit c14b474 (supervision fallback on Codex status-bar false draft)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-SUPERVISION-C14B474.md"
+          ],
+          "first_tool_evidence": "opencode run --file research/antigravity/reviews/PROMPT-REV-SUP-C14B474.txt",
+          "memory_cap": "1500M"
         }
       ]
     },
