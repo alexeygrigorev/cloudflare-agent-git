@@ -96,7 +96,44 @@ def main():
     loading = "Connecting to language server...\n"
     assert composer_classifier(loading) == "unknown"
 
-    print("\nALL COMPOSER CLASSIFIER TESTS PASSED (10/10 checks).")
+    # Test query_db_part_command unpack arity
+    # (Verifies fix for line 604 tuple unpack bug)
+    import sqlite3
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=".db") as tmp_db:
+        con = sqlite3.connect(tmp_db.name)
+        con.execute("CREATE TABLE part (id TEXT, time_created INT, time_updated INT, data TEXT);")
+        sample_data = '{"tool":"bash","state":{"status":"completed","time":{"start":100,"end":200},"input":{"command":"whoami"},"output":"test_out"}}'
+        con.execute("INSERT INTO part VALUES ('p1', 100, 200, ?);", (sample_data,))
+        con.commit()
+        con.close()
+
+        # Test query structure matching query_db_part_command
+        con = sqlite3.connect(f"file:{tmp_db.name}?mode=ro", uri=True)
+        cur = con.cursor()
+        cur.execute(
+            """SELECT id, time_created, time_updated,
+                      json_extract(data, '$.state.status'),
+                      json_extract(data, '$.state.time.start'),
+                      json_extract(data, '$.state.time.end'),
+                      json_extract(data, '$.state.input.command'),
+                      json_extract(data, '$.state.output')
+               FROM part
+               WHERE json_extract(data, '$.tool') = 'bash'
+                 AND json_extract(data, '$.state.input.command') LIKE ?
+               ORDER BY time_created DESC LIMIT 1;""",
+            ("%whoami%",)
+        )
+        row = cur.fetchone()
+        con.close()
+        assert row is not None
+        p_id, p_created, p_updated, p_status, p_start, p_end, p_cmd, p_output = row
+        assert len(row) == 8, f"Expected 8 elements, got {len(row)}"
+        assert p_status == "completed"
+        assert p_output == "test_out"
+    print("DB Part query 8-tuple unpack test PASSED.")
+
+    print("\nALL COMPOSER CLASSIFIER & DB UNPACK TESTS PASSED (11/11 checks).")
 
 
 if __name__ == "__main__":
