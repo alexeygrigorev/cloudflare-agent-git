@@ -7,6 +7,7 @@ STORE.mkdir(parents=True,exist_ok=True); os.chmod(STORE,0o700)
 from adapters import quotas, temporal, archive_history
 from opencode_usage import read_usage as read_opencode_usage, SOURCE as OPENCODE_SOURCE
 COUNT_ROLES={'principal','head','executor','subagent'}
+APLEXER_STATE=pathlib.Path.home()/'.local/state/aplexer/sessions'
 
 def read_json(p,default=None):
     try: return json.loads(pathlib.Path(p).read_text())
@@ -15,9 +16,25 @@ def read_json(p,default=None):
 def atomic(p,obj):
     tmp=pathlib.Path(str(p)+'.tmp'); tmp.write_text(json.dumps(obj,ensure_ascii=False)); os.chmod(tmp,0o600); tmp.replace(p)
 
+def disk_session(session_id,workspace=None):
+    """Completed sessions pruned from the live aplexer catalog persist on disk.
+    Only an exact id+workspace identity match is accepted, and liveness fields
+    are dropped so a reused PID can never make a completed session look alive."""
+    base=APLEXER_STATE/str(session_id)
+    for name in ('session.json','session_record.json'):
+        row=read_json(base/name)
+        if not isinstance(row,dict) or not row.get('id'): continue
+        if str(row.get('id'))!=str(session_id): continue
+        record_workspace=row.get('workspace') or row.get('cwd')
+        if workspace and record_workspace!=workspace: continue
+        row.pop('workload_pid',None)
+        row.setdefault('workspace',record_workspace or str(ROOT))
+        return row
+    return None
+
 def native_usage(session):
     """Codex cumulative native usage: cache categories already INCLUDED in input."""
-    binding=read_json(pathlib.Path.home()/'.local/state/aplexer/sessions'/session['id']/'transcript.json',{})
+    binding=read_json(APLEXER_STATE/session['id']/'transcript.json',{})
     path=pathlib.Path(binding.get('path','/nonexistent'))
     if not path.is_file(): return None
     if binding.get('engine') not in ('codex','zcodex'): return None
@@ -37,6 +54,66 @@ def native_usage(session):
                     result={'conversation_id':binding.get('engine_session_id'),'source':'codex-native-cumulative','scope':'Conversation cumulative; may include pre-observer history. NOT experiment expenditure.','input_tokens':total.get('input_tokens'),'output_tokens':total.get('output_tokens'),'total_tokens':total.get('total_tokens'),'cached_input_tokens':total.get('cached_input_tokens'),'reasoning_output_tokens':total.get('reasoning_output_tokens'),'cost_usd':None,'cost_basis':None,'observed_at':row.get('timestamp')}
         return result
     except OSError: return None
+
+def rollout_tele_path(tele):
+    """Saved rollout file path from telemetry; DB paths are never rollouts."""
+    kind=tele.get('type') or ''; path=tele.get('path')
+    if not isinstance(path,str) or not path: return None
+    if kind.endswith('rollout'): return path
+    name=pathlib.PurePath(path).name
+    return path if name.endswith('.jsonl') and 'rollout' in name else None
+
+def rollout_usage(path,conversation_id=None):
+    """Codex/zcodex saved rollout JSONL: cumulative counters, cost stays unknown.
+    A bounded head read recovers session_meta even when the 2MiB tail window no
+    longer holds it; a missing or mismatched native conversation id stays unknown
+    and is never substituted with the aplexer session UUID."""
+    p=pathlib.Path(path).expanduser()
+    if not p.is_file(): return None
+    try:
+        meta_id=None
+        try:
+            with p.open('rb') as hf: head=hf.read(256*1024).decode('utf-8',errors='replace')
+        except OSError:
+            head=''
+        for line in head.splitlines():
+            try: row=json.loads(line)
+            except ValueError: continue
+            if row.get('type')=='session_meta':
+                payload=row.get('payload') or {}
+                meta_id=payload.get('id') or payload.get('session_id') or meta_id
+                break
+        with p.open('rb') as f:
+            size=p.stat().st_size; offset=max(0,size-2*1024*1024); f.seek(offset)
+            if offset: f.readline()
+            data=f.read(2*1024*1024).decode('utf-8',errors='replace')
+        result=None
+        for line in data.splitlines():
+            try: row=json.loads(line)
+            except ValueError: continue
+            payload=row.get('payload') or {}
+            if row.get('type')=='event_msg' and payload.get('type')=='token_count':
+                total=(payload.get('info') or {}).get('total_token_usage')
+                if total:
+                    result={'conversation_id':meta_id,'source':'codex-rollout','scope':'Saved rollout cumulative; may include pre-observer history. NOT experiment expenditure.','input_tokens':total.get('input_tokens'),'output_tokens':total.get('output_tokens'),'total_tokens':total.get('total_tokens'),'cached_input_tokens':total.get('cached_input_tokens'),'reasoning_output_tokens':total.get('reasoning_output_tokens'),'cost_usd':None,'cost_basis':None,'observed_at':row.get('timestamp'),'rollout_path':str(p)}
+        if result:
+            if conversation_id and meta_id and conversation_id!=meta_id:
+                result['conversation_id']=None
+                result['scope']+=' Saved telemetry and rollout head disagree on the native conversation id; treated as unknown.'
+            elif result['conversation_id'] is None and conversation_id:
+                result['conversation_id']=conversation_id
+            elif result['conversation_id'] is None:
+                result['scope']+=' Native conversation id outside the bounded head/tail window; unknown and excluded from conversation totals.'
+        return result
+    except OSError: return None
+
+def opencode_sid(item,tele):
+    """Exact saved native conversation id; DB titles never establish identity."""
+    if tele.get('type')=='opencode-db':
+        candidates=[tele.get('conversation_id'),item.get('opencode_session_id'),item.get('resumed_conversation'),item.get('conversation')]
+    else:
+        candidates=[item.get('opencode_session_id'),item.get('resumed_conversation'),item.get('conversation')]
+    return next((c for c in candidates if isinstance(c,str) and c.startswith('ses_')),None)
 
 def proc(pid):
     try:
@@ -79,6 +156,11 @@ def _collect():
         elif len(live)>1: choice=None; resolution='ambiguous live tag'
         elif exact: choice=exact[0]; resolution='registered dead session'
         else: choice=matches[0] if matches else None; resolution='latest dead tag' if matches else 'missing'
+        # Disk fallback only for tags with no catalog presence at all: an ambiguous
+        # live tag keeps its own resolution instead of gaining a duplicate identity.
+        if resolution=='missing' and item.get('session_id'):
+            disk=disk_session(item['session_id'],item.get('workspace',str(ROOT)))
+            if disk: choice=disk; resolution='registered completed session on disk'
         if choice: seen.add(choice['id'])
         selected.append((choice,team_id,item,resolution))
     for s in catalog:
@@ -87,9 +169,8 @@ def _collect():
     # Explicit saved native IDs; DB human-readable titles never establish identity.
     opencode_assignments=[]
     for tag,(team_id,item) in config.items():
-        tele=item.get('telemetry',{})
-        sid=tele.get('conversation_id') if tele.get('type')=='opencode-db' else item.get('resumed_conversation') or item.get('conversation')
-        if isinstance(sid,str) and sid.startswith('ses_') and item.get('workspace',str(ROOT))==str(ROOT):
+        sid=opencode_sid(item,item.get('telemetry',{}))
+        if sid and item.get('workspace',str(ROOT))==str(ROOT):
             opencode_assignments.append({'conversation_id':sid,'tag':tag,'team_id':team_id})
     observer=read_json(STORE/'observation-state.json',{}) or {}
     try: interval_ms=int(dt.datetime.fromisoformat(observer['first_observed_at'].replace('Z','+00:00')).timestamp()*1000)
@@ -102,8 +183,13 @@ def _collect():
     observations=[]
     for s,team_id,item,resolution in selected:
         s=s or {}; usage=native_usage(s) if s.get('id') else None
-        tele=item.get('telemetry',{}); sid=tele.get('conversation_id') if tele.get('type')=='opencode-db' else item.get('resumed_conversation') or item.get('conversation')
+        tele=item.get('telemetry',{}); sid=opencode_sid(item,tele)
         if sid in opencode_by_id: usage=opencode_counter(opencode_by_id[sid])
+        if usage is None:
+            rp=rollout_tele_path(tele)
+            # Only an exact saved native id may seed attribution; the aplexer
+            # session UUID is never substituted when rollout metadata is absent.
+            if rp: usage=rollout_usage(rp,tele.get('conversation_id'))
         if usage is None:
             events=STORE/'usage-events.jsonl'; found=None
             if events.exists() and events.stat().st_size<=16*1024*1024:
@@ -143,7 +229,11 @@ def _collect():
     for row in observations:
         u=row.get('usage')
         if u and u.get('conversation_id'):
-            key=u['source']+':'+u['conversation_id']; previous=unique_usage.get(key)
+            # Codex native and rollout records describe the same conversation lineage:
+            # dedup by conversation id so a resumed rollout never double counts.
+            codex_native=u.get('source') in ('codex-native-cumulative','codex-rollout')
+            key=u['conversation_id'] if codex_native else u['source']+':'+u['conversation_id']
+            previous=unique_usage.get(key)
             if previous is None or (u.get('total_tokens') or 0)>(previous.get('total_tokens') or 0): unique_usage[key]=u
     # DB parent-linked native subagents are separate conversations, never hidden in head totals.
     for row in opencode['sessions']:
@@ -162,7 +252,7 @@ def _collect():
     disks={}
     for name,path in [('root','/'),('tmp','/tmp')]:
         v=os.statvfs(path); disks[name]={'free_bytes':v.f_bavail*v.f_frsize,'total_bytes':v.f_blocks*v.f_frsize}
-    snap={'schema_version':1,'at':dt.datetime.now(dt.timezone.utc).isoformat(),'aggregate':aggregate,'teams':{tid:count_status([r for r in counted if r['team_id']==tid]) for tid in sorted(set(r['team_id'] for r in observations))},'sessions':observations,'tasks':tasks,'observation':observation,'opencode_usage':opencode,'quota':quotas(STORE),'supervision':read_json(ROOT/'.local/supervision/status.json',{}),'host':{'load_average':os.getloadavg(),'disks':disks},'errors':errors,'limits':['PID live and hook working are observations, never proof of useful work.','Missing token/cost telemetry remains null; known token total is a partial lower bound.','Cumulative native conversation usage deduplicated across resumed session IDs; nested subagents require separate native identity.','CPU/RSS currently workload root process only, excludes descendants.','Services/writers excluded from agent execution totals.','No market/productivity conclusion from agent count, tokens or commits.']}
+    snap={'schema_version':1,'at':dt.datetime.now(dt.timezone.utc).isoformat(),'aggregate':aggregate,'teams':{tid:count_status([r for r in counted if r['team_id']==tid]) for tid in sorted(set(r['team_id'] for r in observations))},'sessions':observations,'tasks':tasks,'observation':observation,'opencode_usage':opencode,'quota':quotas(STORE),'supervision':read_json(ROOT/'.local/supervision/status.json',{}),'host':{'load_average':os.getloadavg(),'disks':disks},'errors':errors,'limits':['PID live and hook working are observations, never proof of useful work.','Missing token/cost telemetry remains null; known token total is a partial lower bound.','Completed sessions pruned from the live catalog are attributed from on-disk aplexer records or saved rollout telemetry when available; otherwise they stay null.','Cumulative native conversation usage deduplicated across resumed session IDs, rollout files and nested subagents with separate native identity.','CPU/RSS currently workload root process only, excludes descendants.','Services/writers excluded from agent execution totals.','No market/productivity conclusion from agent count, tokens or commits.']}
     with (STORE/'collector.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX)
         daily=STORE/('snapshots-'+dt.date.today().isoformat()+'.jsonl')
