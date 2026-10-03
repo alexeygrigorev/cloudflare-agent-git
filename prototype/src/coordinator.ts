@@ -100,6 +100,9 @@ const CANONICAL_BASE = "agent-branches-canonical";
 const RADAR_LOG_CAP = 50;
 const WARNINGS_CAP = 200;
 
+/** muse-r46 D2: per-agent bound on the push-dedup ring (latest N accepted pushes). */
+export const SEEN_PUSHES_CAP_PER_AGENT = 16;
+
 export interface RunnerReport {
   policy: string;
   coverage: string[];
@@ -116,7 +119,13 @@ interface CoordinatorModel {
   agents: Record<string, AgentRecord>;
   tasks: Record<string, TaskRecord>;
   heads: Record<string, string>;
-  seenPushes: string[];
+  /**
+   * muse-r46 D2: bounded push-dedup memory — per agent, the latest
+   * SEEN_PUSHES_CAP_PER_AGENT accepted "sha" values. The current head is
+   * always deduped via the heads check; older ring entries catch out-of-
+   * order webhook redelivery within a bounded window.
+   */
+  seenPushes: Record<string, string[]>;
   warnings: WarningRecord[];
   radarLog: RadarLogEntry[];
   pairChecks: Record<string, PairCheckRecord>;
@@ -132,7 +141,7 @@ function emptyModel(): CoordinatorModel {
     agents: {},
     tasks: {},
     heads: {},
-    seenPushes: [],
+    seenPushes: {},
     warnings: [],
     radarLog: [],
     pairChecks: {},
@@ -197,6 +206,21 @@ export class Coordinator extends DurableObject {
     this.model.pairChecks ??= {};
     this.model.warnSeq ??= this.model.warnings.length;
     this.model.lastRunnerReport ??= null;
+    // muse-r46 D2: pre-0.1.1 models kept one flat "agentId:sha" array;
+    // regroup it into the bounded per-agent ring.
+    if (Array.isArray(this.model.seenPushes)) {
+      const legacy = this.model.seenPushes as unknown as string[];
+      const perAgent: Record<string, string[]> = {};
+      for (const key of legacy) {
+        const sep = key.indexOf(":");
+        const agent = sep === -1 ? key : key.slice(0, sep);
+        (perAgent[agent] ??= []).push(key);
+      }
+      for (const agent of Object.keys(perAgent)) {
+        perAgent[agent] = perAgent[agent].slice(-SEEN_PUSHES_CAP_PER_AGENT);
+      }
+      this.model.seenPushes = perAgent;
+    }
     return this.model;
   }
 
@@ -376,7 +400,13 @@ export class Coordinator extends DurableObject {
       throw new Error(`fork ${input.fork} does not belong to agent ${agentId}`);
     }
     const dedupKey = `${agentId}:${input.sha}`;
-    const deduped = model.seenPushes.includes(dedupKey) || model.heads[agentId] === input.sha;
+    // muse-r46 D2: bounded per-agent ring instead of an ever-growing array
+    // (the old `seenPushes.includes` was O(total pushes) per request).
+    let seen = model.seenPushes[agentId];
+    if (!seen) {
+      seen = model.seenPushes[agentId] = [];
+    }
+    const deduped = seen.includes(dedupKey) || model.heads[agentId] === input.sha;
     if (deduped) {
       return {
         accepted: true,
@@ -396,7 +426,10 @@ export class Coordinator extends DurableObject {
     const before = model.heads[agentId] ?? null;
     const ref = input.ref ?? agentRecord.ref;
     const now = new Date().toISOString();
-    model.seenPushes.push(dedupKey);
+    seen.push(dedupKey);
+    if (seen.length > SEEN_PUSHES_CAP_PER_AGENT) {
+      seen.splice(0, seen.length - SEEN_PUSHES_CAP_PER_AGENT);
+    }
     model.heads[agentId] = input.sha;
     agentRecord.head = input.sha;
     agentRecord.pushes += 1;

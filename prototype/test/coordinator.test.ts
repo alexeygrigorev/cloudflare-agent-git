@@ -1,6 +1,7 @@
 import { SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { ADMIN_TOKEN, sidecarCommit } from "./helpers.js";
+import { SEEN_PUSHES_CAP_PER_AGENT } from "../src/coordinator.js";
 
 /** Integration through the Worker, backed by REAL bare git repos on the
  *  local sidecar (C-1309): every sha below comes from actual git commits. */
@@ -119,11 +120,36 @@ describe("Agent Branches coordinator flow (sidecar-backed)", () => {
   it("dedups repeated pushes per (agent, sha)", async () => {
     const created = await json<CreatedTask>(await post("/tasks", { agent: "dedup" }, ADMIN_TOKEN));
     const wip = await sidecarCommit(created.fork.name, "wip: only once");
-    await post("/events/push", { agent: created.agentId, sha: wip });
-    const again = await json<PushResult>(await post("/events/push", { agent: created.agentId, sha: wip }));
+    await post("/events/push", { agent: created.agentId, sha: wip }, ADMIN_TOKEN);
+    const again = await json<PushResult>(
+      await post("/events/push", { agent: created.agentId, sha: wip }, ADMIN_TOKEN),
+    );
     expect(again.accepted).toBe(true);
     expect(again.deduped).toBe(true);
     expect(again.radarChecks).toBe(0);
+  });
+
+  it("bounds the per-agent push-dedup memory (muse-r46 D2)", async () => {
+    const created = await json<CreatedTask>(await post("/tasks", { agent: "ring" }, ADMIN_TOKEN));
+    const shas: string[] = [];
+    for (let i = 0; i < SEEN_PUSHES_CAP_PER_AGENT + 2; i++) {
+      shas.push(await sidecarCommit(created.fork.name, `wip: ring ${i}`));
+    }
+    for (const sha of shas) {
+      const res = await json<PushResult>(await post("/events/push", { agent: created.agentId, sha }, ADMIN_TOKEN));
+      expect(res.deduped).toBe(false);
+    }
+    // Still inside the ring (and not the current head): redelivery is deduped.
+    const inRing = await json<PushResult>(
+      await post("/events/push", { agent: created.agentId, sha: shas[shas.length - 2] }, ADMIN_TOKEN),
+    );
+    expect(inRing.deduped).toBe(true);
+    // Evicted from the ring window: the oldest redelivery is treated as new
+    // (bounded memory) instead of accumulating forever.
+    const evicted = await json<PushResult>(
+      await post("/events/push", { agent: created.agentId, sha: shas[0] }, ADMIN_TOKEN),
+    );
+    expect(evicted.deduped).toBe(false);
   });
 
   it("rejects shas that are not real commits in the fork", async () => {
