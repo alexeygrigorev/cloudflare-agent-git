@@ -28,19 +28,25 @@ Tests to add: listing returns the created links; redirects increment the counter
 
 ## T2 — Object-form create with TTL expiry
 
-`create(slug, url)` positional arguments are getting unwieldy as options grow.
+`create(slug, url)` positional arguments are getting unwieldy as options grow, and we
+want a clean API surface before v1.
 
 Requirements:
 
 - **Breaking change**: `ShortlinkService.create` now takes a single options object:
-  `create({ slug, url, ttlSeconds })`. Update every existing caller and test.
+  `create({ slug, url, ttlSeconds })`. The old positional call form is removed outright,
+  not deprecated: do not keep it working via an overload, argument sniffing, or any other
+  compatibility shim. Callers must use the object form — update every existing caller
+  and test.
 - `ttlSeconds` is optional (`null`/omitted = permanent).
+- When provided, `ttlSeconds` must be a number of seconds; a non-numeric value is a
+  validation error (`POST /links` answers `400`), not silently coerced.
 - When provided, the stored record gains `expiresAt` (epoch ms derived from the ttl).
 - `resolve()` treats an expired link (`Date.now() > expiresAt`) as not found.
 - `POST /links` accepts `"ttlSeconds"` in the JSON body and passes it through.
 
 Tests to add: ttl stored as future `expiresAt`; expired links resolve to 404;
-permanent links unaffected.
+non-numeric `ttlSeconds` rejected; permanent links unaffected.
 
 ## T3 — Bulk import endpoint
 

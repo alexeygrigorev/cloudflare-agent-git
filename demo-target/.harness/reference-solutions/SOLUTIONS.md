@@ -15,7 +15,7 @@ conflicts). Reference branches: `demo-l5-task-1`, `demo-l5-task-2`, `demo-l5-tas
 - **t3** — bulk import: `POST /links/bulk` calling `service.create(item.slug, item.url)`
   positionally — i.e. the contract as it exists at the shared base commit.
 
-## Designed overlaps (verified by ../verify-overlap.sh)
+## Designed overlaps (verified by ../../verify-overlap.sh)
 
 1. **T1 + T2 → textual conflict.** Both rewrite the same record literal line inside
    `create()` (`visits: 0` vs `expiresAt`), so `git merge` stops with
@@ -33,6 +33,6 @@ conflicts). Reference branches: `demo-l5-task-1`, `demo-l5-task-2`, `demo-l5-tas
 
 From anywhere:
 
-    ../verify-overlap.sh   # or bash demo-target/verify-overlap.sh at the repo root
+    ../../verify-overlap.sh   # or bash demo-target/verify-overlap.sh at the repo root
 
 Exit 0 iff all three facts hold. Requires `git` and Node >= 18 on PATH.

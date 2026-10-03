@@ -7,13 +7,15 @@
 #           the failing test is named
 #
 # Exit 0 iff all three facts hold. Needs git + Node >= 18 on PATH.
-# Reference material lives in reference-solutions/ (NOT for demo agents).
+# Reference material lives in .harness/reference-solutions/ (NOT for demo agents);
+# the script also hard-fails if .harness/ ever shows up in a task fork, since demo
+# agents receive clones of the base commit only.
 
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(git -C "$HERE" rev-parse --show-toplevel)"
-REF_DIR="$HERE/reference-solutions"
+REF_DIR="$HERE/.harness/reference-solutions"
 BASE_SHA="$(cat "$REF_DIR/BASE")"
 EXPECTED_FAIL='POST /links/bulk imports every link and returns slugs in order'
 GIT_ID=(-c user.name=verify -c user.email=verify@invalid)
@@ -26,9 +28,18 @@ REPO="$SCRATCH/repo"
 git clone --quiet "$ROOT" "$REPO"
 git -C "$REPO" -c advice.detachedHead=false checkout --quiet "$BASE_SHA"
 
+assert_no_harness() { # solutions must never be visible in a task fork (base-commit clones only)
+  if [ -e "$REPO/demo-target/.harness" ] || [ -e "$REPO/.harness" ]; then
+    echo "HARNESS LEAK: .harness/ present in a task fork — solutions must not ship to agents" >&2
+    exit 1
+  fi
+}
+assert_no_harness
+
 apply_task() { # apply_task <branch> <patch>
   git -C "$REPO" checkout --quiet -B "verify/$1" "$BASE_SHA"
   git -C "$REPO" "${GIT_ID[@]}" am --quiet "$REF_DIR/$2"
+  assert_no_harness
 }
 
 run_suite() { # runs node --test in the clone; TAP captured to $SCRATCH/tap.txt
@@ -58,6 +69,7 @@ else
   FACT2_OK=false
 fi
 git -C "$REPO" merge --abort >/dev/null 2>&1 || true
+assert_no_harness
 
 # ---- FACT 3: T2 + T3 merge clean but suite is red --------------------------
 git -C "$REPO" checkout --quiet -B verify/m23 verify/task2
@@ -65,6 +77,7 @@ set +e
 MERGE23="$(git -C "$REPO" "${GIT_ID[@]}" merge --no-edit verify/task3 2>&1)"
 MERGE23_RC=$?
 set -e
+assert_no_harness
 if [ "$MERGE23_RC" -eq 0 ]; then
   if run_suite; then SUITE23_RC=0; else SUITE23_RC=$?; fi
   FAILING="$(grep '^not ok' "$SCRATCH/tap.txt" | sed -E 's/^not ok [0-9]+ - //' || true)"
@@ -81,6 +94,8 @@ fi
 
 # ---- report ----------------------------------------------------------------
 echo "demo-target overlap verification (base ${BASE_SHA:0:10})"
+echo
+echo "GUARD — .harness/ absent from every task fork (solutions cannot ship): OK"
 echo
 echo "FACT 1 — each task alone passes the full suite:"
 echo "         T1=${ALONE[0]}  T2=${ALONE[1]}  T3=${ALONE[2]}"

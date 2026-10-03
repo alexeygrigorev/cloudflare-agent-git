@@ -12,6 +12,9 @@ JavaScript tested with the Node built-in test runner.
 - `test/` — `node:test` suite (`_helpers.js` builds `Request`s and calls `route` directly)
 - `wrangler.toml` — Worker packaging metadata (deploying is NOT required for the demo)
 - `TASKS.md` — the tasks handed to demo agents
+- `.harness/` — demo-harness-only material (`reference-solutions/`: patches, `BASE`,
+  notes). Never ship this directory in a tree handed to demo agents — agents get clones
+  of the base commit only, and `verify-overlap.sh` fails if a task fork contains it.
 
 ## Run tests
 
