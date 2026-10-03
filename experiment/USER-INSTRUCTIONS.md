@@ -228,3 +228,7 @@ Earlier same-day user lines given directly to claude-principal (verbatim): "cont
 ## 2026-10-03 19:24 CEST: user to claude-principal (verbatim)
 
 > I want you to start zcodex session to update the landing page currently the hero image talked too much space and barely anything else is visible
+
+## 2026-10-03 19:25 CEST: user to claude-principal (verbatim)
+
+> another thing - make Cloudflare integration via facade or something like that so later we can switch to something else if we need
