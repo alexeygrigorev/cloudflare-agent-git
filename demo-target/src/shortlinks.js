@@ -25,11 +25,15 @@ export class ShortlinkService {
     this.store = store;
   }
 
-  create(rawSlug, url) {
+  create({ slug: rawSlug, url, ttlSeconds = null } = {}) {
+    if (ttlSeconds !== null && !Number.isFinite(ttlSeconds)) {
+      throw new ValidationError('ttlSeconds must be a number of seconds when provided');
+    }
     const slug = normalizeSlug(rawSlug);
     if (!isValidHttpUrl(url)) throw new ValidationError(`url must be an http(s) URL: ${url}`);
     if (this.store.has(slug)) throw new ConflictError(`slug already exists: ${slug}`);
-    const record = { slug, url, createdAt: new Date().toISOString() };
+    const expiresAt = ttlSeconds === null ? null : Date.now() + ttlSeconds * 1000;
+    const record = { slug, url, createdAt: new Date().toISOString(), expiresAt };
     this.store.put(slug, record);
     return record;
   }
@@ -38,6 +42,9 @@ export class ShortlinkService {
     const slug = normalizeSlug(rawSlug);
     const record = this.store.get(slug);
     if (!record) throw new NotFoundError(`no such slug: ${slug}`);
+    if (record.expiresAt !== null && Date.now() > record.expiresAt) {
+      throw new NotFoundError(`link expired: ${slug}`);
+    }
     return record;
   }
 }

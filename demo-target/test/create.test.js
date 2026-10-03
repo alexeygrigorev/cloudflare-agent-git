@@ -42,8 +42,20 @@ test('POST /links rejects a non-JSON body with 400', async () => {
 
 test('service.create returns the stored record directly', () => {
   const { service } = fresh();
-  const record = service.create('Blog', 'https://example.com/blog');
+  const record = service.create({ slug: 'Blog', url: 'https://example.com/blog' });
   assert.equal(record.slug, 'blog');
   assert.equal(record.url, 'https://example.com/blog');
   assert.equal(typeof record.createdAt, 'string');
+  assert.equal(record.expiresAt, null);
+});
+
+test('service.create with ttlSeconds stores a future expiresAt', () => {
+  const { service } = fresh();
+  const record = service.create({ slug: 'temp', url: 'https://example.com/t', ttlSeconds: 3600 });
+  assert.equal(record.expiresAt > Date.now(), true);
+});
+
+test('service.create rejects a non-numeric ttlSeconds', () => {
+  const { service } = fresh();
+  assert.throws(() => service.create({ slug: 'x', url: 'https://example.com', ttlSeconds: 'soon' }), /ttlSeconds/);
 });

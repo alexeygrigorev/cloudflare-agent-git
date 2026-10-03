@@ -23,7 +23,7 @@ export async function route(request, service) {
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== 'object') return json(400, { error: 'invalid JSON body' });
     try {
-      const record = service.create(body.slug, body.url);
+      const record = service.create({ slug: body.slug, url: body.url, ttlSeconds: body.ttlSeconds });
       return json(201, record);
     } catch (err) {
       return errorResponse(err);
