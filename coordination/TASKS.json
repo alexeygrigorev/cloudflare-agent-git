@@ -38,16 +38,17 @@
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
       "status": "running",
-      "updated_at": "2026-10-03T09:05:00.000000+00:00",
+      "updated_at": "2026-10-03T09:14:00.000000+00:00",
       "evidence_paths": [
         "research/antigravity/r17-after-idle-safety-fix.md",
         "research/antigravity/r12-scoped-ca1-pilot-verification.md",
         ".local/muse-r17/verdict.md",
         ".local/muse-r20/verdict.md",
-        ".local/producer-review/bin/aplexer-7efa493"
+        ".local/producer-review/bin/aplexer-7efa493",
+        ".local/muse-r21/verdict.md"
       ],
       "blocked_on": [],
-      "next_action": "R17 after-idle safety fix completed on fix/prompt-ready-lifecycle (commit 7efa493): removed premature setSessionState(sessionID, \"idle\") on pending.size === 0 in tool.execute.after. Working state preserved across multi-second reasoning gaps until genuine session.status (idle) / session.idle. Pinned binary .local/producer-review/bin/aplexer-7efa493 (sha256 06b1a842, chmod a-w). muse-r20 independent verification passed 16/16 own negatives (exit 0) and owner runtime test (exit 0) with verdict APPROVE. Awaiting final Muse review collection before single-head continuation trials.",
+      "next_action": "R17 after-idle safety fix completed on fix/prompt-ready-lifecycle (commit 7efa493): removed premature setSessionState(sessionID, \"idle\") on pending.size === 0 in tool.execute.after. Pinned candidate binary .local/producer-review/bin/aplexer-7efa493 (sha256 06b1a842...). muse-r20 passed 16/16 negatives (exit 0) and owner runtime test (exit 0). muse-r21 verified binary fidelity (126/126 region lines verbatim, 0 MISS), extended negatives (21/21 PASS, exit 0), and 492cf76 rerun review, issuing APPROVE (.local/muse-r21/verdict.md). Scoped reversible receiver continuation trial in progress on candidate binary.",
       "acceptance": "Genuine PromptReady / turn-completion readiness signal per engine (hook-emitted at end of each turn, refreshed rather than expiring while the composer stays empty), with narrow negative tests (busy, draft, unknown screen, expired-without-refresh), reviewed by Muse before rollout.",
       "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10011-df10). Reproductions analyzed: Grok (0000ea93) waiting-expired and Bunny (848ff637) idle contradicted by PTY redraw. Fix designed and committed in protocol repo on fix/prompt-ready-lifecycle."
     },
@@ -56,15 +57,17 @@
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
       "status": "running",
-      "updated_at": "2026-10-03T09:05:00.000000+00:00",
+      "updated_at": "2026-10-03T09:14:00.000000+00:00",
       "evidence_paths": [
         "research/antigravity/r12-scoped-ca1-pilot-verification.md",
         "research/antigravity/r17-after-idle-safety-fix.md",
         ".local/pilot-ca1/PILOT-REPORT.md",
-        ".local/pilot-ca1/pilot_results.json"
+        ".local/pilot-ca1/pilot_results.json",
+        ".local/muse-r21/verdict.md",
+        ".local/continuation-trial/**"
       ],
       "blocked_on": [],
-      "next_action": "Scoped candidate ca1e8030 pilot successfully demonstrated active child tool subprocess negative (sleep 20 live in /proc, part brackets probe, exit 1 fail-closed, 0 PTY byte leakage) and two consecutive real receiving cycles with artifacts and correlated ACKs (commit 492cf76). Post-R20 verification next step: trial receiver-owned native continuation hook on disposable session with twice empty-composer observations, bounded recipient native-delivery of queued envelope, and NOTREADY/uncertain preservation without retry/Enter.",
+      "next_action": "Receiver-owned native continuation trial packet prepared at .local/continuation-trial/ with candidate binary .local/producer-review/bin/aplexer-7efa493 (06b1a842...). Protocol: twice empty-composer verification, active-busy tool negative (sleep 15 live in proc), active model reasoning negative, unfinished draft negative, followed by two consecutive autonomous receiver cycles with zero PTY leak, disk artifacts, and correlated ACKs. Rollback path to installed 8d49a216 preserved.",
       "acceptance": "Source/negative draft-busy tests and actual repeated continuation cycles; no invented all-engine recovery.",
       "assignment_ack": "ACK: owned by antigravity-head. Pinned commit 7a9b46d on fix/continuation-readiness-pane-race in cloudflare-aplexer-protocol (PromptState enum Empty/Draft/Unknown, real OpenCode/Grok/Codex/Shell fixtures, verify_pane_delivery correlated working transition, --next continuation queue; 212 unit + 31 integration pass, 0B net compile growth). Change-story card published at research/antigravity/change-story-card-pane-continuation.md (commit 6214dec)."
     },
@@ -480,9 +483,9 @@
       "team_id": "publication",
       "owner_tag": "public-journal-site",
       "status": "done",
-      "updated_at": "2026-10-03T09:12:00.000000+00:00",
+      "updated_at": "2026-10-03T09:27:00.000000+00:00",
       "blocked_on": [],
-      "next_action": "Release published to GitHub Pages via workflow run 37112100341 and tag release-journal-20261003-1109. Live deployment verified at https://alexeygrigorev.com/cloudflare-agent-git/ with zero text collisions and full reference fidelity.",
+      "next_action": "Deployed to live GitHub Pages (https://alexeygrigorev.com/cloudflare-agent-git/) via workflow run 37112100341 on head 09f16adde893. Live overprint verified (desktop 16px, mobile 12px gap). Separate-session independent visual review held for desktop root re-check.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "website/editorial/QUALITY.md",
@@ -492,7 +495,7 @@
         ".local/journal/candidate-preview/ARTIFACT-MANIFEST.json"
       ],
       "assignment_ack": "coordinator public-journal-site (088a2387) released and verified live production build",
-      "acceptance_status": "PASS (Deployed commit b78d2de via GitHub Actions run 37112100341; live overprint resolved with measured 16px desktop / 12px mobile gap; live site verified via Playwright captures at .local/journal/live-verification/)"
+      "acceptance_status": "DEPLOYED (commit 09f16adde893e823557b212af6ea241b2a623e6e via GitHub Actions run 37112100341). Instrumented review PASS 10/10 (INDEPENDENT-REVIEW-FINAL.md); coordinator same-session image review PASS 10/10 (IMAGE-INDEPENDENT-REVIEW.md). Separate-session independent visual acceptance remains HELD pending external check."
     },
     {
       "id": "a18-demand-scout",
