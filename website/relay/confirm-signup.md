@@ -1,5 +1,5 @@
 ---
-subject: Confirm your Agent Git Lab email
+subject: Confirm your Agent Branches email
 name: Agent Git Lab signup confirmation
 category: transactional
 required_context:
@@ -9,7 +9,7 @@ example_context:
   confirm_url: https://alexeygrigorev.com/cloudflare-agent-git/subscribe/?token=example
 ---
 
-Confirm your email to get Agent Git Lab experiment updates.
+Confirm your email to get Agent Branches experiment updates.
 
 [Verify your email]({{ confirm_url }})
 

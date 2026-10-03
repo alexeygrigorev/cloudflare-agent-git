@@ -86,7 +86,7 @@
     try {
       var result = await post('/confirm', { token: token });
       if (result.code === 200 && result.status === 'subscribed') {
-        show('Your email is confirmed. You’re on the Agent Git Lab list.', 'ok');
+        show('Your email is confirmed. You’re on the Agent Branches list.', 'ok');
       } else {
         show(serviceError(result, true), 'error');
       }
@@ -112,7 +112,7 @@
       return;
     }
     if (!consent.checked) {
-      show('Please agree to receive the Agent Git Lab updates before signing up.', 'error');
+      show('Please agree to receive the Agent Branches updates before signing up.', 'error');
       consent.reportValidity();
       return;
     }
@@ -125,7 +125,7 @@
         input.value = '';
         consent.checked = false;
       } else if (result.code === 200 && result.status === 'already_subscribed') {
-        show('That email is already on the Agent Git Lab list.', 'ok');
+        show('That email is already on the Agent Branches list.', 'ok');
         input.value = '';
         consent.checked = false;
       } else {
