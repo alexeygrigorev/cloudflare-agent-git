@@ -1,9 +1,9 @@
 # Bounded Readiness Timeline Diagnostic Report
 **Author:** Gemini Readiness Timeline Diagnostician (`gemini-readiness-diagnostician`)  
 **Parent / Launcher:** Antigravity Head (`46fdb644` / `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)  
-**Principals:** Claude Principal (`01a1015a-678f`), Codex Principal (`C-1245`)  
+**Principals:** Claude Principal (`01a1015a-678f`), Codex Principal (`C-1245`, `C-1257`)  
 **Date:** 2026-10-03  
-**Status:** Complete / Definitive Evidence  
+**Status:** Forensic Analysis / Observed Evidence vs Root-Cause Hypotheses (Reviewed per Codex C-1257)  
 **Scope:** Read-only forensic analysis of blocked heads in workspace `/home/alexey/git/cloudflare-agent-git`
 
 ---
@@ -15,11 +15,15 @@ A bounded read-only timeline diagnostic was performed across the three blocked h
 2. `space-bunny-head` (`2d829c93-8363-477d-b2fd-10f0a3af006e`, engine: `opencode`) — Rejected with `'idle report contradicted by later PTY output'`
 3. `grok-head` (`d85e5cd8-c283-40c8-9e3c-ca745aec4710`, engine: `grok`) — Rejected with `'waiting report expired'`
 
-### High-Level Verdict
-All three heads have actually finished their turns, are not executing commands, and are resting at their interactive input prompts. None of them are running, stuck in a loop, or crashed. The blockage stems from three distinct timing and hook-plumbing defects in the interaction between the engine TUIs and aplexer's readiness verification:
-- **`zcodex`**: The TUI emits an idempotent 43-byte cursor show/color reset sequence (`\x1b[?2026h\x1b[39m\x1b[49m\x1b[0m\x1b[22;3H\x1b[?25h\x1b[?2026l`) approximately every 120 seconds while resting at the interactive prompt `› `. Aplexer has a hardcoded carveout for `antigravity`'s idle redraws in `src/watch/state.rs`, but lacks one for `zcodex`. The very first 43-byte cursor pulse exceeded `IDLE_ACTIVITY_GRACE_MS` (2,000 ms), causing aplexer to deem the idle state contradicted.
-- **`opencode`**: The OpenCode engine emits `session.status idle` from its core task loop *before* the async Node.js TUI finishes rendering the final screen. The final TUI paint (3,634 bytes containing the token statistics `83.5K (8%)`) flushed to the PTY 3,212 ms after the idle report. Because 3,212 ms exceeded the fixed 2,000 ms grace by 1.2 seconds, aplexer permanently retracted idle. OpenCode has emitted zero bytes since.
-- **`grok`**: Grok cleanly completed its turn, ran its `Stop` hook at `1791013766779`, and reported `idle`. Exactly 60 seconds later, Grok's internal timer fired its documented `idle_prompt` heartbeat event on the `Notification` hook. Because aplexer's `~/.grok/hooks/aplexer.json` registered `Notification` mapped to `a state-report waiting` **without** a matcher filter for `permission_prompt`, this idle chime clobbered the legitimate `idle` state and replaced it with `waiting`. Because `waiting` has an 8,000 ms TTL (`REPORTED_STATE_STALE_MS`), the state expired 8 seconds later, locking the session in `'waiting report expired'`.
+### Evidence Classification: Observed Facts vs Hypotheses (Codex C-1257)
+- **Observed Physical Evidence:**
+  - `zcodex`: Binary history progression directly confirms trailing 43-byte bursts with identical decoded ANSI escapes (`\x1b[?2026h\x1b[39m\x1b[49m\x1b[0m\x1b[22;3H\x1b[?25h\x1b[?2026l` — synchronized output start, color reset, cursor reposition to prompt row 22 col 3, cursor show, sync end). Total post-turn PTY activity: 4,314 bytes.
+  - `opencode`: History and session records directly confirm a single 3,634-byte repaint burst landing at 3,212 ms after `session.status idle` report, followed by zero PTY bytes for 3+ hours (quiescent).
+  - `grok`: History directly confirms zero PTY bytes since turn end (`1791013766959`). Exactly 60.066s later, `Notification` hook fired with `idle_prompt`, executing `a state-report waiting` via installed `~/.grok/hooks/aplexer.json`. This clobbered `idle` into `waiting`, which expired 8 seconds later.
+- **Hypotheses vs Source Differences:**
+  - `zcodex`: The exact ~120s periodicity is hypothesized from observed commit delta intervals. Candidate source uses `idle_was_contradicted_with_hooks`; blanket engine exemptions are explicitly rejected.
+  - `opencode`: A fixed 3,500ms debounce timer is NOT proven readiness and must not emit while a tool, draft, or new turn is active. Genuine post-render hook or output drain is required.
+  - `grok`: Candidate protocol source (`hooks/mod.rs:150`) already excludes `GrokNotification`, but the currently installed hook configuration (`~/.grok/hooks/aplexer.json`) is the legacy setup that still routes `Notification` to `a state-report waiting`. Selective matcher filtering (`matcher: "permission_prompt"`) requires negative test validation before rollout. No manual head idle setting.
 
 ---
 
