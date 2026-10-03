@@ -17,11 +17,26 @@ def atomic(path, value):
     tmp.write_text(json.dumps(value, indent=2))
     tmp.replace(path)
 
+class MailboxBusy(Exception):
+    """Aplexer workspace mailbox lock stayed busy through all bounded retries."""
+
+MAILBOX_BUSY = re.compile(r'is busy, retry|Resource temporarily unavailable')
+BUSY_BACKOFF = (0.2, 0.4, 0.8, 1.6, 3.2)
+
 def command(args, timeout=20):
-    result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
-    if result.returncode:
-        raise RuntimeError(f'command failed: {args[1:3]} rc={result.returncode}')
-    return result.stdout
+    backoff = BUSY_BACKOFF
+    while True:
+        result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
+        if not result.returncode:
+            return result.stdout
+        stderr = (result.stderr or '').strip()
+        busy = MAILBOX_BUSY.search(stderr)
+        if not busy:
+            raise RuntimeError(f'command failed: {args[1:3]} rc={result.returncode}; stderr[:200]: {stderr[:200]}')
+        if not backoff:
+            raise MailboxBusy(f'command failed: {args[1:3]} rc={result.returncode} mailbox busy after {len(BUSY_BACKOFF)} retries; stderr[:200]: {stderr[:200]}')
+        time.sleep(backoff[0])
+        backoff = backoff[1:]
 
 def composer(screen, tag):
     """Last prompt, never transcript prompts; unknown and menus deny input."""
@@ -143,7 +158,7 @@ def run():
     if storage_guard(PRIVATE)['state'] != 'paused-hard-limit':
         event('service-started', session_id=identity['id'], binary_sha256=expected_hash)
     while not (PRIVATE / 'stop').exists():
-        report = {'timestamp': now(), 'identity': identity['id'], 'principals': {}, 'errors': [], 'actions': []}
+        report = {'timestamp': now(), 'identity': identity['id'], 'principals': {}, 'errors': [], 'actions': [], 'degraded': False}
         try:
             report['storage'] = storage_guard(PRIVATE)
             if report['storage']['state'] == 'paused-hard-limit':
@@ -273,11 +288,17 @@ def run():
             report['errors'].append(str(exc))
             report['storage'] = {**storage_guard(PRIVATE),'state':'paused-hard-limit','reason':str(exc)}
             # Preserve evidence; only overwrite bounded current status, never trim old archives.
+        except MailboxBusy as exc:
+            # Empty principals here is a missed observation, never a valid all-clear snapshot.
+            report['errors'].append(str(exc))
+            report['degraded'] = True
+            report['observation'] = 'incomplete-cycle: mailbox busy after retries; principal list not observed'
+            event('error', error=str(exc), degraded=True)
         except Exception as exc:
             report['errors'].append(str(exc))
             event('error', error=str(exc))
         atomic(PRIVATE / 'status.json', report)
-        print(json.dumps({'timestamp': now(), 'principals': {tag: x.get('reason') for tag,x in report['principals'].items()}, 'errors': report['errors']}), flush=True)
+        print(json.dumps({'timestamp': now(), 'degraded': report['degraded'], 'principals': {tag: x.get('reason') for tag,x in report['principals'].items()}, 'errors': report['errors']}), flush=True)
         for _ in range(60):
             if (PRIVATE / 'stop').exists():
                 return

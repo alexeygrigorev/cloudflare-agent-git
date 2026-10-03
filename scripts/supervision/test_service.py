@@ -58,4 +58,41 @@ class Safety(unittest.TestCase):
   self.assertFalse(service.may_deliver({'id':'x','sender_id':'old','delivery':'inbox'},'new'))
   self.assertFalse(service.may_deliver({'id':'x','delivery':'inbox'},'new'))
   self.assertTrue(service.may_deliver({'id':'x','sender_id':'new','delivery':'inbox'},'new'))
+ def test_busy_then_success(self):
+  real_run,real_time=service.subprocess.run,service.time
+  seq=[{'rc':1,'err':'workspace mailbox lock is busy, retry'},
+       {'rc':1,'err':'Resource temporarily unavailable'},
+       {'rc':0,'out':'{"messages":[]}'}]
+  slept=[]
+  class R:
+   def __init__(self,e):self.returncode=e['rc'];self.stdout=e.get('out','');self.stderr=e.get('err','')
+  service.subprocess.run=lambda a,**k:R(seq.pop(0))
+  service.time=type('T',(),{'sleep':staticmethod(lambda s:slept.append(s))})()
+  try:self.assertEqual(service.command(['aplexer','message','inbox','--json']),'{"messages":[]}')
+  finally:service.subprocess.run,service.time=real_run,real_time
+  self.assertEqual(slept,[0.2,0.4])
+ def test_busy_exhausted_raises_mailboxbusy(self):
+  real_run,real_time=service.subprocess.run,service.time
+  calls=[];slept=[]
+  class R:
+   returncode=1;stdout='';stderr='mailbox lock is busy, retry later'
+  def always_busy(a,**k):calls.append(a);return R()
+  service.subprocess.run=always_busy
+  service.time=type('T',(),{'sleep':staticmethod(lambda s:slept.append(s))})()
+  try:
+   with self.assertRaises(service.MailboxBusy) as ctx:service.command([service.BINARY,'message','inbox','--json'])
+  finally:service.subprocess.run,service.time=real_run,real_time
+  self.assertEqual(len(calls),6);self.assertEqual(slept,[0.2,0.4,0.8,1.6,3.2])
+  self.assertIn('mailbox busy after 5 retries',str(ctx.exception))
+ def test_nonbusy_failure_raises_immediately(self):
+  real_run=service.subprocess.run;calls=[]
+  class R:
+   returncode=1;stdout='';stderr='unknown flag --nope'
+  def bad(a,**k):calls.append(a);return R()
+  service.subprocess.run=bad
+  try:
+   with self.assertRaises(RuntimeError) as ctx:service.command([service.BINARY,'whoami','--json'])
+  finally:service.subprocess.run=real_run
+  self.assertEqual(len(calls),1)
+  self.assertIn('rc=1',str(ctx.exception));self.assertIn('unknown flag --nope',str(ctx.exception))
 if __name__=='__main__':unittest.main()
