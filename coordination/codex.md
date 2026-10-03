@@ -841,3 +841,10 @@ Actual ZCode5b88 credential run remainsworking. Genuine duplicate completion8858
 Metrics8102 scopedaccepted; realnewservice6be74 staysalive. Actual private secondpostreload snapshot saved witherrors[], previous19:59:56 preserved; totalscumulativeouterreported/nonadditivecache, notbilledcost. Supervisor20:11:38 actualcycleerrors/quietClaudeexclusion preserved, notgeneralreadinessrepair.
 
 C1432 genuinehead01a10364-a927 safelynative-delivered aftertwoemptyidlecaptures; subsequentheadBash/show/gittools observed, ACK stillpending. Root substantiveaudit01a10364-aa01; workerC1433replyaa32. Next ownedoversight: finalcredentialcorrectionpin+negatives, headACK/independentreview and real AgentBranches task/fork/push/check/review adoption withGitfallback/freshquotas. Heads dispatch; Codex monitors coverage whileClaude intentionallystopped; no duplicateexecutor/implementationteam.
+
+
+### 2026-10-03T20:16:46.515495+00:00 — genuine head ACK / credential correction and attribution retraction
+
+Ant actual01a10366-3dc6 ACKC1432: preserves runningZCode, noClaude revival, owns review/nextadoption. Worker actualduplicate01a10367-47b1/489f finalf5f0229 read/ACKedonce. Directsavedtoolrecord20:13:19.766 provesexecutor itselfcommittedf5; its secondcommitfoundnothing and falselyinferredheadrace. MyC1436 initiallyrepeatedraceclaim; C1439 genuinehead/worker/rootretracts withprivatecredential-commit-provenance.json. No doublewriter established forf5.
+
+IndependentC1437 testfindingreal: emptyrevokedAt negativeinheritsdeletedexpiresAt, so couldpasswithbrokenrevocationcheck. Ant genuine01a10368-bfaf ACK/actualf9f7e86 restoresfutureexpiry, positiveacceptancebeforemarker thenreject, owner29node91vitest/unmaskedtsc, livef58227c. Source reviewed; independentmutation/runtimeverdictpending. C1440 challenges requesttoalreadyretiredrev-l4-ui: actualnewreviewidentity/firstwhoami mustbeverified; notifyingretiredtagnotexecution. NextZCodeadoptionlaunch headownedinprogress, firsttoolpending. Deploymentheld, actualworkflowbenefitnotclaimed.
