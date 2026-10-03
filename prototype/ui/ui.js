@@ -3,7 +3,9 @@
    story from GET /tasks/:id). ?fixture=1 loads sample JSON from fixtures/.
    Live mode re-fetches GET /status every 3 s (paused while the tab is
    hidden); newly appeared warnings and pushes are highlighted for 5 s.
-   Unknown safety is never rendered as safe. */
+   Unknown safety is never rendered as safe. Requests are generation-guarded
+   (C-1385): a slow older response never overwrites newer state, and a failed
+   /status fetch shows a stale-error banner — never clean data. */
 
 "use strict";
 
@@ -12,10 +14,13 @@
   var FIXTURE_NAME = params.get("fixture") || "";
   var FIXTURE = !!FIXTURE_NAME;
   var API = (params.get("api") || "").replace(/\/+$/, "");
-  /* Shared with node --test: pair safety (pair-status.js) and view logic
-     (view-logic.js — polling/highlights/acks/timeline/unprocessed pushes). */
+  /* Shared with node --test: pair safety (pair-status.js), view logic
+     (view-logic.js — polling/highlights/acks/timeline/unprocessed pushes)
+     and request bookkeeping (request-guard.js — single-flight generations
+     and /status freshness, C-1385). */
   var PairLogic = window.AgentBranchesPairStatus;
   var View = window.AgentBranchesViewLogic;
+  var Guard = window.AgentBranchesRequestGuard;
 
   /* ---------- live-update state (per page) ---------- */
 
@@ -28,6 +33,12 @@
   var lastStatus = null;
   var lastTask = null;
   var currentTaskId = null;
+  /* Single-flight bookkeeping (C-1385): every refresh() takes a generation;
+     a response older than the latest settled one is dropped, so an
+     out-of-order result can never overwrite newer state. statusFresh tracks
+     whether the /status view currently holds fresh data or a stale error. */
+  var genTracker = Guard.createGenTracker();
+  var statusFresh = Guard.createStatusFreshness();
   /* Highlight bookkeeping: which warnings/pushes appeared recently.
      key -> expiry ms. The first successful load only sets the baseline. */
   var prevWarningIds = null;
@@ -141,12 +152,35 @@
     return fetchJson(url);
   }
 
-  function showError(el, error, isFixture) {
-    var hint = isFixture
+  function loadHint(isFixture) {
+    return isFixture
       ? " Fixture files are loaded with fetch(), which browsers block when the page is opened directly from disk. Serve the folder over HTTP — see README-UI.md."
       : " Is the Worker running? Try: npx wrangler dev --local (from prototype/), then open this page with ?api=http://localhost:8787 if it is not served by the Worker yet.";
+  }
+
+  function showError(el, error, isFixture) {
     el.hidden = false;
-    el.innerHTML = "<strong>Could not load the data.</strong> " + esc(error.message) + esc(hint);
+    el.innerHTML = "<strong>Could not load the data.</strong> " + esc(error.message) + esc(loadHint(isFixture));
+  }
+
+  /* Explicit stale-error banner for the /status view (C-1385): while the
+     latest status fetch has failed, this stays visible and the page is never
+     presented as clean — safety badges and warnings may be out of date. */
+  function setStatusErrorView() {
+    var el = document.getElementById("status-error");
+    if (!el) return;
+    var stale = statusFresh.describe();
+    if (!stale) {
+      el.hidden = true;
+      el.innerHTML = "";
+      return;
+    }
+    el.hidden = false;
+    el.innerHTML =
+      "<strong>Live status is out of date.</strong> The latest update failed (" +
+      esc(stale.error.message) + "). What you see may be missing newer changes, " +
+      "warnings or pair results — treat safety badges as unknown, not clean, " +
+      "until the next successful update." + esc(loadHint(FIXTURE));
   }
 
   /* ---------- live indicator ---------- */
@@ -355,9 +389,26 @@
     document.getElementById("lost-list").innerHTML = "<ul class='lost-list'>" + items.join("") + "</ul>";
   }
 
+  /* ---------- stale status view (C-1385) ----------
+     While the /status fetch is failing, the page keeps the last good data
+     only as explicitly STALE: the banner stays up and every section that
+     could otherwise look clean carries this notice. */
+
+  function staleNoteHtml(stale) {
+    return (
+      "<div class='notice-unknown'>" +
+      "<span class='badge unknown'>Status out of date</span> " +
+      "<p style='margin:0.4rem 0 0'>The live status could not be refreshed (" +
+      esc(stale.error.message) +
+      "), so this section comes from the last successful load and may be missing " +
+      "newer events — treat it as unknown, not clean.</p></div>"
+    );
+  }
+
   /* ---------- index page ---------- */
 
   function renderIndex(status) {
+    var stale = statusFresh.describe();
     var agents = (status.agents || []).slice().sort(function (x, y) {
       return String(x.agentId).localeCompare(String(y.agentId));
     });
@@ -366,9 +417,11 @@
     renderLost(status);
 
     var canon = document.getElementById("canonical");
-    canon.innerHTML = status.canonical && status.canonical.name
-      ? "Shared starting repo: <code>" + esc(status.canonical.name) + "</code>"
-      : "<span class='muted'>Shared starting repo not created yet.</span>";
+    canon.innerHTML =
+      (stale ? staleNoteHtml(stale) : "") +
+      (status.canonical && status.canonical.name
+        ? "Shared starting repo: <code>" + esc(status.canonical.name) + "</code>"
+        : "<span class='muted'>Shared starting repo not created yet.</span>");
 
     var cards = agents.map(function (ag) {
       var intent = ag.intent ? esc(ag.intent) : "<span class='muted'>Not stated yet</span>";
@@ -439,6 +492,7 @@
     var agent = task.agent || {};
     var heads = (status && status.heads) || {};
     var allWarnings = (status && status.warnings) || [];
+    var stale = statusFresh.describe();
     var lost = agent.agentId ? View.unknownHeadReason(agent.agentId, status) : null;
     var currentHead = lost ? null : heads[agent.agentId] || agent.head || null;
 
@@ -456,7 +510,8 @@
       "<dt>Working copy</dt><dd><span class='small'>own fork <code>" + esc(task.forkName || agent.forkName) +
       "</code>, branch <code>" + esc(plainRef(task.ref || agent.ref)) + "</code></span></dd>" +
       "<dt>Task created</dt><dd>" + fmtWhen(task.createdAt) + "</dd>";
-    document.getElementById("task-head").innerHTML = "<dl>" + dl + "</dl>";
+    document.getElementById("task-head").innerHTML =
+      (stale ? staleNoteHtml(stale) : "") + "<dl>" + dl + "</dl>";
 
     document.getElementById("timeline").innerHTML = timelineHtml(agent, allWarnings);
 
@@ -481,7 +536,14 @@
     });
     var warnHtml;
     if (!mine.length) {
-      warnHtml = "<p class='muted'>No warnings received.</p>";
+      /* A stale status must never read as "no warnings" (C-1385): without a
+         fresh fetch, an empty list is unknown, not clean. */
+      warnHtml = stale
+        ? "<div class='notice-unknown'><span class='badge unknown'>Unknown</span> " +
+          "<p style='margin:0.4rem 0 0'>No warnings are recorded as of the last successful load, " +
+          "but the live status could not be refreshed (" + esc(stale.error.message) +
+          ") — a newer warning may be missing.</p></div>"
+        : "<p class='muted'>No warnings received.</p>";
     } else {
       warnHtml = mine
         .map(function (w) {
@@ -691,24 +753,65 @@
 
   /* ---------- polling (GET /status every 3 s, paused when hidden) ---------- */
 
+  /* A status result is never swallowed into null (C-1385): failures arrive
+     as {ok:false, error} and are surfaced, not hidden. */
+  function statusOk(status) {
+    if (!status) return { ok: false, error: new Error("server returned an empty status document") };
+    return { ok: true, status: status };
+  }
+
+  function statusFailed(error) {
+    return { ok: false, error: error };
+  }
+
   function refresh() {
+    var gen = genTracker.begin();
     var p = currentTaskId
-      ? Promise.all([loadTask(currentTaskId), loadStatus().catch(function () { return null; })])
-          .then(function (r) {
-            lastTask = r[0];
-            return r[1];
-          })
-      : loadStatus();
-    return p.then(function (status) {
-      if (status) lastStatus = status;
-      lastError = null;
-      lastLoadAt = Date.now();
-      absorbFreshness(lastStatus);
-      if (currentTaskId) renderTask(lastTask, lastStatus);
-      else renderIndex(lastStatus);
-      everRendered = true;
-      scheduleFreshExpiry();
-    });
+      ? Promise.all([loadTask(currentTaskId), loadStatus().then(statusOk, statusFailed)]).then(function (r) {
+          return { task: r[0], statusResult: r[1] };
+        })
+      : loadStatus().then(statusOk, statusFailed).then(function (statusResult) {
+          return { task: null, statusResult: statusResult };
+        });
+    return p.then(
+      function (r) {
+        /* Single-flight guard (C-1385): when this response settles after a
+           newer request already has, it is out of order — drop it instead of
+           overwriting newer state. */
+        if (!genTracker.settle(gen)) return;
+
+        if (!r.statusResult.ok) {
+          /* /status failed: record the error, mark the status view stale with
+             the explicit banner, and never render the page as clean. */
+          statusFresh.markStale(r.statusResult.error);
+          lastError = r.statusResult.error;
+          setStatusErrorView();
+          if (currentTaskId && r.task) {
+            lastTask = r.task; /* the task story loaded; render it marked stale */
+            renderTask(lastTask, lastStatus);
+            everRendered = true;
+          }
+          return;
+        }
+
+        statusFresh.markFresh();
+        lastError = null;
+        lastStatus = r.statusResult.status;
+        if (currentTaskId) lastTask = r.task;
+        lastLoadAt = Date.now();
+        absorbFreshness(lastStatus);
+        setStatusErrorView();
+        if (currentTaskId) renderTask(lastTask, lastStatus);
+        else renderIndex(lastStatus);
+        everRendered = true;
+        scheduleFreshExpiry();
+      },
+      function (e) {
+        /* A late failure from an already-outdated request is dropped too. */
+        if (!genTracker.settle(gen)) return;
+        throw e; /* doRefresh records lastError and shows the load banner */
+      }
+    );
   }
 
   function doRefresh(first) {
