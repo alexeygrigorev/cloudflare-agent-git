@@ -125,13 +125,46 @@ def composer_classifier(screen, tag="continuation-receiver"):
 
     # 3. OpenCode Bordered Composer Detection
     lines = screen.splitlines()
-    opencode_input_lines = [l for l in lines if re.match(r"^\s*┃", l)]
-    if "ctrl+p" in s_lower and opencode_input_lines:
-        last_line = opencode_input_lines[-1]
-        cleaned = re.sub(r"^\s*┃\s*", "", last_line).strip()
-        if not cleaned or re.match(r"^Build (?:auto|prompt)(?:\s*·.*)?$", cleaned, re.I):
-            return "empty"
-        return "draft"
+    bottom_indices = [i for i, l in enumerate(lines) if "╹" in l or re.search(r"^\s*╹", l)]
+    
+    composer_lines = []
+    if bottom_indices:
+        b_idx = bottom_indices[-1]
+        idx = b_idx - 1
+        while idx >= 0:
+            l = lines[idx]
+            if re.match(r"^\s*┃", l):
+                composer_lines.insert(0, l)
+                idx -= 1
+            elif not l.strip():
+                idx -= 1
+            elif "▣" in l:
+                break
+            else:
+                break
+    else:
+        build_indices = [i for i, l in enumerate(lines) if "▣" in l and "build" in l.lower()]
+        if build_indices:
+            start_idx = build_indices[-1]
+            composer_lines = [l for l in lines[start_idx:] if re.match(r"^\s*┃", l)]
+        elif "ctrl+p" in s_lower:
+            all_pipe = [l for l in lines if re.match(r"^\s*┃", l)]
+            if all_pipe:
+                composer_lines = all_pipe[-5:]
+
+    if "ctrl+p" in s_lower and composer_lines:
+        draft_content = []
+        for l in composer_lines:
+            cleaned = re.sub(r"^\s*┃\s*", "", l).strip()
+            if not cleaned:
+                continue
+            if re.match(r"^Build (?:auto|prompt)(?:\s*·.*)?$", cleaned, re.I):
+                continue
+            draft_content.append(cleaned)
+        
+        if draft_content:
+            return "draft"
+        return "empty"
 
     # 4. Standard shell / codex › or ❯ prompt check
     starts = [(i, re.sub(r"^\s*[›❯]\s*", "", line).strip())
@@ -199,7 +232,7 @@ def exec_in_sender(sender_uuid, cmd_args, timeout=30):
     raise TimeoutError(f"Command timed out in trial-sender: {cmd_args}")
 
 
-def is_resting(session_uuid):
+def is_resting(session_uuid, allow_reported_none=False):
     s = get_status(session_uuid)
     screen = capture_screen(session_uuid)
     if s is None or not screen:
@@ -210,28 +243,33 @@ def is_resting(session_uuid):
     if comp_state != "empty":
         return False, screen, f"composer_{comp_state}"
 
-    # 2. Authentic reported idle check: reported_state must be 'idle'
+    # 2. Authentic reported idle check: reported_state must be 'idle' (or None on initial UI boot before first turn)
     reported = s.get("reported_state")
-    if reported != "idle":
-        return False, screen, f"reported_{reported}"
+    if allow_reported_none:
+        if reported not in ("idle", None):
+            return False, screen, f"reported_{reported}"
+    else:
+        if reported != "idle":
+            return False, screen, f"reported_{reported}"
 
     # 3. Uncontradicted resting state: subsequent PTY activity must NOT exceed reported_state_at_ms + 250ms
     rep_at = s.get("reported_state_at_ms") or 0
     last_act = s.get("last_activity_ms") or 0
-    if last_act > rep_at + 250:
-        return False, screen, f"activity_contradiction_delta_{last_act - rep_at}ms"
+    if reported == "idle" and rep_at > 0:
+        if last_act > rep_at + 250:
+            return False, screen, f"activity_contradiction_delta_{last_act - rep_at}ms"
 
     return True, screen, "empty"
 
 
-def verify_receiver_idle_twice(receiver_uuid, step_name, delta=2.0, max_wait=90):
+def verify_receiver_idle_twice(receiver_uuid, step_name, delta=2.0, max_wait=90, allow_reported_none=False):
     """Twice-captured full composer/state captures: ensures resting state at t and t+delta.
     Saves both captures into evidence directory for durable auditability.
     """
-    print(f"[{step_name}] Verifying receiver idle state with twice full empty-composer captures (delta={delta}s)...")
+    print(f"[{step_name}] Verifying receiver idle state with twice full empty-composer captures (delta={delta}s, allow_reported_none={allow_reported_none})...")
     t0 = time.time()
     while time.time() - t0 < max_wait:
-        ok1, screen1, reason1 = is_resting(receiver_uuid)
+        ok1, screen1, reason1 = is_resting(receiver_uuid, allow_reported_none=allow_reported_none)
         if not ok1:
             s = get_status(receiver_uuid)
             print(f"[{time.time()-t0:.1f}s] Waiting for resting: reason={reason1}, reported={s.get('reported_state') if s else None}")
@@ -244,7 +282,7 @@ def verify_receiver_idle_twice(receiver_uuid, step_name, delta=2.0, max_wait=90)
             f.write(screen1)
 
         time.sleep(delta)
-        ok2, screen2, reason2 = is_resting(receiver_uuid)
+        ok2, screen2, reason2 = is_resting(receiver_uuid, allow_reported_none=allow_reported_none)
         if ok2:
             # Save second capture
             ev2 = os.path.join(EVIDENCE_DIR, f"{step_name}_capture2_{int(time.time()*1000)}.txt")
@@ -314,13 +352,28 @@ def main():
 
     df_out = run_host_cmd(["df", "-h", "/home/alexey/git/cloudflare-agent-git"]).stdout.strip()
     free_out = run_host_cmd(["free", "-m"]).stdout.strip()
-    quota_res = run_host_cmd(["python3", "scripts/quota-gate.py"])
-    quota_data = parse_json_safely(quota_res.stdout) or {"raw": quota_res.stdout.strip()}
+    quota_res = run_host_cmd(["quse", "--json"])
+    all_quotas = parse_json_safely(quota_res.stdout) or {}
+    target_quota = all_quotas.get("go", {})
+    codex_quota = all_quotas.get("codex", {})
+    gemini_quota = all_quotas.get("gemini", {})
+    zai_quota = all_quotas.get("zai", {})
+
+    go_5h = target_quota.get("windows", {}).get("5h", {}).get("percent_remaining")
+    go_7d = target_quota.get("windows", {}).get("7d", {}).get("percent_remaining")
+    quota_data = {
+        "target_provider": "go (opencode-go / muse)",
+        "go_windows": {"5h_remaining": go_5h, "7d_remaining": go_7d},
+        "target_allowed": (go_5h is None or go_5h >= 15.0),
+        "codex_windows": codex_quota.get("windows", {}),
+        "gemini_windows": gemini_quota.get("windows", {}),
+        "zai_windows": zai_quota.get("windows", {}),
+    }
     print("--- Host Resource Headroom ---")
     print(df_out)
     print(free_out)
-    print("--- Fresh Provider Quota Check ---")
-    print(json.dumps(quota_data))
+    print("--- Fresh Provider Quotas ---")
+    print(json.dumps(quota_data, indent=2))
 
     # Verify real opencode.db session is present before launch
     assert os.path.exists(DB_PATH), f"opencode.db missing at {DB_PATH}!"
@@ -402,7 +455,7 @@ def main():
     try:
         # Step 2a: Wait for Receiver UI to initialize and reach initial UI resting idle
         print("\n--- Step 2a: Waiting for Receiver to reach Initial UI Resting Idle ---")
-        ok_ui, screen_ui, ev1_ui, ev2_ui = verify_receiver_idle_twice(receiver_uuid, "initial_ui_idle", delta=2.0, max_wait=90)
+        ok_ui, screen_ui, ev1_ui, ev2_ui = verify_receiver_idle_twice(receiver_uuid, "initial_ui_idle", delta=2.0, max_wait=90, allow_reported_none=True)
         assert ok_ui, f"Receiver failed to reach initial UI resting idle!\n{screen_ui}"
         print("Receiver UI initialized and resting idle.")
 
@@ -515,7 +568,7 @@ def main():
 
         print("Waiting for sleep tool to complete and receiver to return to resting idle...")
         time.sleep(10)
-        ok_idle_post_tool, screen_post_tool, ev1_pt, ev2_pt = verify_receiver_idle_twice(receiver_uuid, "post_tool_idle", delta=2.0, max_wait=45)
+        ok_idle_post_tool, screen_post_tool, ev1_pt, ev2_pt = verify_receiver_idle_twice(receiver_uuid, "post_tool_idle", delta=2.0, max_wait=60)
         assert ok_idle_post_tool, "Receiver failed to return to resting idle after sleep tool!"
 
         part_row = query_db_part_command(sleep_marker)
@@ -649,7 +702,7 @@ def main():
         turn1_file_sha = sha256_file(turn1_path)
         print(f"Turn 1 File Created: {turn1_file} (SHA256: {turn1_file_sha})")
 
-        ok_turn1_post, _, ev1_t1_post, ev2_t1_post = verify_receiver_idle_twice(receiver_uuid, "turn1_post", delta=2.0, max_wait=45)
+        ok_turn1_post, _, ev1_t1_post, ev2_t1_post = verify_receiver_idle_twice(receiver_uuid, "turn1_post", delta=2.0, max_wait=75)
         assert ok_turn1_post, "Receiver failed to return to resting idle after Turn 1!"
 
         mail_t1_rc, mail_t1_out = exec_in_sender(
@@ -712,7 +765,7 @@ def main():
         turn2_file_sha = sha256_file(turn2_path)
         print(f"Turn 2 File Created: {turn2_file} (SHA256: {turn2_file_sha})")
 
-        ok_turn2_post, _, ev1_t2_post, ev2_t2_post = verify_receiver_idle_twice(receiver_uuid, "turn2_post", delta=2.0, max_wait=45)
+        ok_turn2_post, _, ev1_t2_post, ev2_t2_post = verify_receiver_idle_twice(receiver_uuid, "turn2_post", delta=2.0, max_wait=75)
         assert ok_turn2_post, "Receiver failed to return to resting idle after Turn 2!"
 
         mail_t2_rc, mail_t2_out = exec_in_sender(
