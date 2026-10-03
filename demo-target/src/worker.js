@@ -30,10 +30,15 @@ export async function route(request, service) {
     }
   }
 
+  if (method === 'GET' && pathname === '/links') {
+    return json(200, { links: service.list() });
+  }
+
   if (method === 'GET' && pathname.startsWith('/') && pathname.length > 1 && pathname !== '/links') {
     const slug = pathname.slice(1);
     try {
       const record = service.resolve(slug);
+      service.recordVisit(record.slug);
       return new Response(null, { status: 302, headers: { location: record.url } });
     } catch (err) {
       return errorResponse(err);

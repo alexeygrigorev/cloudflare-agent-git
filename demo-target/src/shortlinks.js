@@ -29,9 +29,18 @@ export class ShortlinkService {
     const slug = normalizeSlug(rawSlug);
     if (!isValidHttpUrl(url)) throw new ValidationError(`url must be an http(s) URL: ${url}`);
     if (this.store.has(slug)) throw new ConflictError(`slug already exists: ${slug}`);
-    const record = { slug, url, createdAt: new Date().toISOString() };
+    const record = { slug, url, createdAt: new Date().toISOString(), visits: 0 };
     this.store.put(slug, record);
     return record;
+  }
+
+  list() {
+    return this.store.keys().map((key) => this.store.get(key));
+  }
+
+  recordVisit(rawSlug) {
+    const record = this.store.get(normalizeSlug(rawSlug));
+    if (record) this.store.put(record.slug, { ...record, visits: record.visits + 1 });
   }
 
   resolve(rawSlug) {
