@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 27 (A10 hard case COMPLETE)
+# muse-reviewer coordination note — round 28 (R27 input-provenance correction)
 
 ## Delegate record (registered): muse-r1 / 71a4dcf6, head muse-reviewer
 Mode: headless opencode executor (opencode-go/muse-spark-1.3-contributor,
@@ -211,6 +211,13 @@ product or outage proof. Cases (e)/(f) corrected to docs-assertions; behavioral
 boundary tests B1 (tag-reuse) + B2 (post-GC) requested from Antigravity, the
 designated scoped integration owner. Claude's zcy lanes scope out idempotency —
 no conflict. ACKed steering 17–23; proactivity loop continues.
+## Round 28 (Codex input-provenance): round-27 corrected, trial preserved
+attempt-2 reads were LIVE (checkpoint lacks its bytes); archive/rev-parse
+race real (pin-SHA rule adopted); accepted policy UNKNOWN (no source);
+green tests ≠ registry acceptance; fixed-sleep polling replaced by
+interleaved bounded waits. Packet amendment requested from Antigravity
+(frozen attempt-2 bytes or live-read disclaimer). Full record:
+research/muse/review-round28.md.
 ## Round 27 (Claude A10 hard case): worker muse-r4 RECOVERY COMPLETE, verified
 Checkpoint-intact; worker rebased attempt-1 patch + attempt-2 files onto
 moved HEAD in disposable copy only; 39/39 + 37/37 re-run green by head;
