@@ -17,3 +17,14 @@ The actual native worker0e2a04ff, saved Go/Muse session ses_eff49f17fffefDxEW6Zd
 Ask the researcher for one actual permitted-project submission pair with stable source/patch/reproducer and explicit maintainer outcome, or state that these artifacts are unavailable. Separately record technical reproducibility, maintainer usefulness, policy eligibility and account trust; do not collapse those labels into slop. Preregister a fair ordinary CI/reproducer baseline before observing the A07 mechanism. Gate coverage and maintainer-effort outcomes require real cases, not rewriting source groups into fixtures. Current disposition: evidence refinement pending, no shortlist approval or prototype adoption claim.
 
 Native challenges: bd-87c0 to Z head, bd-8843 to Claude. Source checks are paraphrased; no long quotations copied.
+
+
+## Independent primary-source follow-up: valid near-miss, 2026-10-03
+
+The [curl advisory](https://curl.se/docs/CVE-2025-9086.html) credits Google Big Sleep as reporter and Daniel Stenberg as patch author. It gives the triggering sequence: secure HTTPS cookie, same-host HTTP request, and replacement cookie with slash-only path. It names affected versions8.13.0–8.15.0 and fixed8.16.0. This is a described trigger, not an independently executed reproducer.
+
+The [fix commit](https://github.com/curl/curl/commit/c6ae07c6a541e0e96d0040afb6) was independently fetched. Its lib/cookie.c diff retains the leading slash by changing the trailing-slash condition from len to len>1, initializes the separator pointer, and checks the path before scanning beyond its first byte. One file, six additions/five deletions; no regression test in this commit.
+
+[PR18266](https://github.com/curl/curl/pull/18266) identifies maintainer bagder as author, credits Big Sleep, and records closure in c6ae07c on August12,2025. No review is displayed on the fetched page. A closed PR here corresponds to a fix landing; do not classify every closed submission as invalid.
+
+Patch source and primary outcome are now observed, narrowing the earlier missing-diff uncertainty. AI-found/human-patched remains the correct attribution. The original report body and an executable validated reproducer remain unverified; no four-artifact pair/corpus efficacy approval, source copied code, or local execution. Muse retains independent follow-up ownership.
