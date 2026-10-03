@@ -1,8 +1,48 @@
 # Agent Branches prototype — HTTP + integration contract
 
-version: 0.1.3
+version: 0.1.4
 (Pin this version when building against it: L2 review UI, L3 radar runner,
 L4/L5 demo lanes. Any breaking change bumps the version.)
+
+Changes since 0.1.3 (deploy-prep security hardening, PLAN-L1-REAL §5,
+branch proto/deploy-prep; no route shape changed — new cross-cutting gates):
+
+1. **CORS (§5.7).** `OPTIONS` on any path is answered by the policy layer:
+   204 with `Access-Control-Allow-Origin` (the matched allowlisted origin
+   ONLY — no wildcard, no reflection), `Access-Control-Allow-Methods: GET,
+   POST`, `Access-Control-Allow-Headers: Authorization, Content-Type`,
+   `Access-Control-Max-Age: 600`, and `Access-Control-Allow-Credentials:
+   false` (stays off). Real responses carry the same grant only for
+   allowlisted `Origin`s; everything else gets `Vary: Origin` and no grant.
+   The allowlist is the plain var `ALLOWED_ORIGINS` (comma-separated exact
+   origins); unset/empty = no browser origin (fail closed). Non-browser
+   agents and server-to-server `/events/*` are unaffected.
+2. **Rate limiting (§5.4).** Every non-OPTIONS request passes a
+   per-principal fixed-minute DO counter: key = SHA-256 of the presented
+   bearer (or an `ip:` bucket for anonymous callers). Beyond
+   `RATE_LIMIT_PER_MINUTE` (plain var; default 120; `"0"` disables) the
+   Worker answers **429** with `Retry-After` (≤60 s) and a token-free body.
+   The counter fails open on internal error (upstream Artifacts limits still
+   bound abuse; availability incidents must not masquerade as enforcement).
+3. **Webhook authenticity (§5.1).** When the secret `EVENTS_WEBHOOK_SECRET`
+   is configured, `/events/push` and `/events/artifacts` REQUIRE — beyond
+   the existing bearer auth — `x-webhook-timestamp` (unix seconds, ±300 s
+   replay window) and `x-webhook-signature` = hex HMAC-SHA256 over
+   `"<timestamp>.<rawBody>"`; failures are 401 and never echo presented
+   material. Without the secret the CONTRACT 0.1.1 bearer posture stands;
+   DEPLOY.md gates any public deploy on the secret being set.
+4. **Event source allowlist (§5.8).** With the plain var
+   `ARTIFACTS_NAMESPACE` set, `/events/artifacts` rejects (403) events whose
+   `source.namespace` differs — production sets it to the dedicated
+   `agent-branches-prod` namespace (never shared with the dev spike
+   namespace; wrangler.jsonc `env.production` binds it explicitly).
+5. **Enumeration guard.** `POST /tasks/:id/tests` and
+   `POST /warnings/:id/ack` now 401 for tokenless callers BEFORE any
+   existence check (task/warning ids were already public via GET; this
+   closes the unauthenticated-probing shortcut).
+6. **429 as a new status on every route** (see 2) — clients must treat
+   non-`2xx`/`409`/`4xx`-shape responses per the `error` field, not by
+   enum of statuses.
 
 Changes since 0.1.2 (real-Artifacts spike fold-in, 2026-10-03):
 

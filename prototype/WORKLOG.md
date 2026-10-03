@@ -452,3 +452,76 @@ REST client; fakes for the binding).
   rest-client.test.ts new 10 tests).
 - `npm run test:sidecar` (node --test): **16/16**.
 - `npm run test:all` EXIT=0. node_modules untouched (325 MiB; no new deps).
+
+## 2026-10-03 — zc-deploy-prep: PRE-DEPLOY security checklist (PLAN-L1-REAL §5)
+
+Executor for claude-principal, worktree `/home/alexey/git/ab-deploy`, branch
+`proto/deploy-prep` (from origin/proto/l1-scaffold @ 2a0625e). Scope: prototype/
+only; node_modules symlinked from agent-branches-l1 (no installs, no deploy,
+no real API calls, no tokens printed).
+
+1. **§5.5/§5.8 wrangler.jsonc `production` env.** `artifacts` binding →
+   namespace `agent-branches-prod` (NOT the dev spike namespace), explicit DO
+   binding (schema: `vars` and `artifacts` are NOT inherited by named envs —
+   verified in wrangler's config schema), `vars` = ALLOWED_ORIGINS ("",
+   fail-closed until the reviewer sets real origins), ARTIFACTS_NAMESPACE
+   (source allowlist), RATE_LIMIT_PER_MINUTE ("120"). Secrets (ADMIN_TOKEN,
+   RUNNER_TOKEN, EVENTS_WEBHOOK_SECRET) documented as `wrangler secret put
+   --env production` commands in DEPLOY.md — never values in config/Git.
+   Migrations stay top-level (v1 unchanged).
+2. **§5.7 CORS** (`src/cors.ts`): explicit env-var origin allowlist, exact
+   match (no wildcard/suffix), OPTIONS preflight (204 + matched origin only,
+   methods limited to GET/POST, headers Authorization+Content-Type, Max-Age
+   600, credentials explicitly false), real responses carry grants only for
+   allowlisted origins, `Vary: Origin` everywhere relevant. Default outer
+   handler wraps EVERY route incl. errors; preflight exempt from rate limit.
+   Tests: test/cors.test.ts (9).
+3. **§5.1 auth sweep + hardening.** All 7 mutating routes already authed
+   (muse-r46); NEW: sweep test proves 401-with-no-token on every one;
+   `/tasks/:id/tests` + `/warnings/:id/ack` now 401 BEFORE existence checks
+   (no unauthenticated id enumeration). Webhook authenticity: when
+   EVENTS_WEBHOOK_SECRET is set, `/events/*` require hex HMAC-SHA256 over
+   `"<timestamp>.<rawBody>"` (x-webhook-timestamp/signature, ±300 s replay
+   window, constant-time compare) on top of the bearer — src/webhook.ts.
+   `/events/artifacts` additionally rejects foreign namespaces (403) when
+   ARTIFACTS_NAMESPACE is set (§5.8 source allowlist). Tests:
+   test/webhook-auth.test.ts (3, incl. replay window + namespace gate via
+   live env override).
+4. **§5.4 rate limiting.** `Coordinator.rateLimit` = per-principal
+   fixed-minute DO counter (key = sha256(presented token) or ip:* bucket;
+   outside the mutex; input-gate-atomic; previous two minute buckets GC'd on
+   each write — DO storage has no TTL). Worker gate returns 429 + Retry-After
+   (≤60 s), token-free body, fails OPEN on counter error (deliberate: an
+   availability incident must not masquerade as enforcement; upstream 2,000
+   req/10 s limits still bound). parseRateLimit: default 120, "0" explicit
+   opt-out, junk → default. Tests: test/rate-limit.test.ts (4).
+5. **§5.2 token-at-rest verified + locked by tests.** Agent task tokens were
+   already digest-only (`agentTokenHashes`, 64-hex). New tests prove DO
+   storage NEVER contains ADMIN/RUNNER/SIDECAR/minted plaintexts, the
+   plaintext appears exactly once (createTask response handoff), and later
+   reads are clean. test/deploy-hardening.test.ts.
+6. **§5.2/§5.6 redaction** (`src/redact.ts`): `redact()` strips artifacts
+   tokens (version-agnostic pattern per the spike's art_v1-vs-v2 finding),
+   Authorization headers (plain + JSON-ish), standalone bearers, exact
+   shared-secret values, and 32-hex account-id hosts → `<account>`.
+   `logSafe()` is the only sanctioned console sink (worker currently logs
+   nothing on the happy path; rate-limiter fail-open path uses it). Tests in
+   test/deploy-hardening.test.ts (4).
+7. **DEPLOY.md**: gates (§5.9 spike cleanup due 2026-10-07 as hard
+   prerequisite, independent review, ALLOWED_ORIGINS, secrets incl. mandatory
+   EVENTS_WEBHOOK_SECRET, namespace bootstrap REST), exact `wrangler deploy
+   --env production` + smoke, rollback (`wrangler rollback`), full teardown
+   commands. Deviations recorded there for the reviewer: public read routes
+   (task scope said mutating-only) + signature enforcement gated on the
+   secret being set.
+
+CONTRACT → **0.1.4** (cross-cutting gates: CORS, 429, webhook signature,
+source allowlist, enumeration guard; no route shape changed).
+
+### Test results (this executor's head)
+
+- `npm run typecheck`: clean.
+- `npm test`: **17 files, 111 tests, 111 passed** (was 13 files/88 tests;
+  new: cors 9, rate-limit 4, webhook-auth 3, deploy-hardening 8 — minus net
+  re-count; no existing test changed behavior).
+- node_modules untouched (symlink to agent-branches-l1; zero new deps).

@@ -16,5 +16,48 @@
       "tag": "v1",
       "new_sqlite_classes": ["Coordinator"]
     }
-  ]
+  ],
+  // Deploy-prep (PLAN-L1-REAL §5): every public deploy goes through the named
+  // "production" environment below (deploy: `wrangler deploy --env production`,
+  // see DEPLOY.md). The unnamed default environment stays the local sidecar
+  // dev setup. NOTE: wrangler does NOT inherit `vars` or `artifacts` bindings
+  // into named environments — both are declared explicitly here.
+  "env": {
+    "production": {
+      // §5.8 namespace isolation: production binds its OWN namespace, never
+      // shared with the dev spike namespace (agent-branches-dev). The
+      // namespace must exist BEFORE the first deploy (one-time REST
+      // bootstrap, DEPLOY.md §Bootstrap).
+      "artifacts": [{ "binding": "ARTIFACTS", "namespace": "agent-branches-prod" }],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "COORDINATOR",
+            "class_name": "Coordinator"
+          }
+        ]
+      },
+      "vars": {
+        // §5.7 CORS: comma-separated EXACT browser origins allowed to call
+        // the Worker (dashboard/preview). Empty string = no browser origin
+        // (fail closed). EDIT BEFORE THE REVIEWED DEPLOY to the real
+        // dashboard origin(s). Never put secrets here — secrets are
+        // `wrangler secret put` (below), never config values.
+        "ALLOWED_ORIGINS": "",
+        // §5.8 source allowlist: /events/artifacts rejects events whose
+        // source.namespace differs from this.
+        "ARTIFACTS_NAMESPACE": "agent-branches-prod",
+        // §5.4 per-principal requests/minute (429 + Retry-After beyond it).
+        // "0" disables — do not ship disabled without a recorded reason.
+        "RATE_LIMIT_PER_MINUTE": "120"
+      }
+      // Secrets are NOT declared here (no values ever live in this file).
+      // Set once per environment with `wrangler secret put <NAME> --env production`:
+      //   ADMIN_TOKEN            — admin routes (/setup, /tasks)
+      //   RUNNER_TOKEN           — trusted runner route (/checks)
+      //   EVENTS_WEBHOOK_SECRET  — REQUIRED before /events/* receivers ship
+      //                            publicly (§5.1 HMAC + replay window)
+      // Full commands + rotation: prototype/DEPLOY.md.
+    }
+  }
 }

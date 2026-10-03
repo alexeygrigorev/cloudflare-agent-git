@@ -81,10 +81,19 @@ ALL mutating routes are authenticated (muse-r46 review, CONTRACT 0.1.1):
 - For `wrangler dev`, set both in `.dev.vars` (see `.dev.vars.example`);
   vitest injects test-only values via `vitest.config.ts`.
 - `wrangler dev` binds **localhost only**. Deploying the Worker to the
-  public internet requires an auth review first — checklist: token
-  rotation, TLS, and a dedicated rotated secret for the Artifacts event
-  subscription on `/events/artifacts` (today the sidecar shared bearer
-  stands in for it).
+  public internet requires an auth review first — the PRE-DEPLOY security
+  checklist is implemented and its gates, exact deploy/rollback/cleanup
+  commands and reviewer deviations live in **[DEPLOY.md](DEPLOY.md)**
+  (PLAN-L1-REAL §5, CONTRACT 0.1.4):
+  - **CORS**: explicit `ALLOWED_ORIGINS` allowlist, no wildcard, credentials
+    off; unset = no browser origin.
+  - **Rate limit**: 429 + `Retry-After` per principal beyond
+    `RATE_LIMIT_PER_MINUTE` (default 120/min).
+  - **Webhook authenticity**: set `EVENTS_WEBHOOK_SECRET` and `/events/*`
+    require an HMAC signature + fresh timestamp on top of the bearer;
+    `/events/artifacts` rejects foreign namespaces (`ARTIFACTS_NAMESPACE`).
+  - **Token-at-rest**: digests only in the DO (asserted by tests); secrets
+    only ever via `wrangler secret put`, never in wrangler.jsonc/Git.
 
 ## Routes
 

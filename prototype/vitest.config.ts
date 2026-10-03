@@ -8,11 +8,14 @@ export default defineConfig({
       miniflare: {
         bindings: {
           // Test-only values injected into the worker under test. Real
-          // deployments set these via secrets; see README (auth).
+          // deployments set these via secrets; see README (auth) and DEPLOY.md.
           ADMIN_TOKEN: "test-admin-token",
           RUNNER_TOKEN: "test-runner-token",
           LOCAL_ARTIFACTS_URL: ctx.inject<string>("sidecarUrl"),
           LOCAL_ARTIFACTS_TOKEN: "test-sidecar-token",
+          // §5.7 CORS tests exercise the allowlist path; "closed by default"
+          // (unset var) is covered by unit tests on corsPolicyFromEnv.
+          ALLOWED_ORIGINS: "https://dashboard.example,https://preview.example",
         },
       },
     })),

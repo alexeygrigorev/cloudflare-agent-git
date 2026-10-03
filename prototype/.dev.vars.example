@@ -8,3 +8,10 @@ LOCAL_ARTIFACTS_URL=http://127.0.0.1:8790
 # CONTRACT 0.1.1: this bearer also authenticates the sidecar's push
 # webhook and /events/artifacts on the Worker (/events/* routes).
 LOCAL_ARTIFACTS_TOKEN=
+# CONTRACT 0.1.4: when set, /events/* ALSO require an HMAC signature over
+# the raw body (x-webhook-timestamp + x-webhook-signature, ±300s window).
+# Optional locally; REQUIRED on any deployed environment (DEPLOY.md).
+EVENTS_WEBHOOK_SECRET=
+# Plain vars (NOT secrets) with dev-friendly defaults; see wrangler.jsonc
+# env.production + DEPLOY.md: ALLOWED_ORIGINS (comma-separated origins),
+# ARTIFACTS_NAMESPACE, RATE_LIMIT_PER_MINUTE.

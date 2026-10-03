@@ -701,6 +701,28 @@ export class Coordinator extends DurableObject {
     return record ? record.agentId : null;
   }
 
+  /**
+   * PLAN-L1-REAL §5.4: per-principal fixed-minute request counter backing the
+   * Worker's 429 gate. `key` is ALREADY a digest or ip:* bucket — callers
+   * never pass raw tokens. Deliberately OUTSIDE the serialized() mutex: it
+   * runs on every request (reads included) and must not queue behind
+   * mutations. Consecutive storage get/put is race-free here because DO input
+   * gates hold back other events while a storage await is in flight. DO
+   * storage has no TTL, so each write garbage-collects the two previous
+   * minute buckets of the same key.
+   */
+  async rateLimit(key: string, limitPerMinute: number): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+    const bucket = Math.floor(Date.now() / 60_000);
+    const count = ((await this.state.storage.get<number>(`rl:${key}:${bucket}`)) ?? 0) + 1;
+    await this.state.storage.put(`rl:${key}:${bucket}`, count);
+    await this.state.storage.delete([`rl:${key}:${bucket - 1}`, `rl:${key}:${bucket - 2}`]);
+    if (count > limitPerMinute) {
+      const retryAfterSeconds = Math.max(1, Math.ceil(((bucket + 1) * 60_000 - Date.now()) / 1000));
+      return { allowed: false, retryAfterSeconds };
+    }
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
   async submitChecks(
     input: Parameters<Coordinator["submitChecksNow"]>[0],
   ): Promise<ReturnType<Coordinator["submitChecksNow"]>> {
