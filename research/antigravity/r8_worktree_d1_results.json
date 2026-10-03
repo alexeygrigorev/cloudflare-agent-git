@@ -1,0 +1,281 @@
+{
+  "benchmark": "workspace-doctor-d1-redo",
+  "timestamp": "2026-10-03T04:16:59Z",
+  "scratch_directory": "/home/alexey/git/cloudflare-agent-git/scratch/d1-worktree-benchmark",
+  "budget_bytes": 104857600,
+  "python_version": "3.12.3",
+  "uv_version": "uv 0.10.11",
+  "pinned_packages": [
+    "fastapi==0.115.0",
+    "pydantic==2.9.2",
+    "httpx==0.27.2"
+  ],
+  "filesystem": "ext4 (/dev/nvme0n1p3)",
+  "controls": {
+    "clean_identical_cache_states": true,
+    "equal_bytecode_policy_enforced": true,
+    "active_peak_monitor": true,
+    "real_concurrent_edits_tested": true,
+    "cache_inclusive_measurement": true
+  },
+  "ext4_reflink_probe": {
+    "reflink_always_returncode": 1,
+    "reflink_always_stderr": "cp: failed to clone '/home/alexey/git/cloudflare-agent-git/scratch/d1-worktree-benchmark/cow_probe_b.tmp' from '/home/alexey/git/cloudflare-agent-git/scratch/d1-worktree-benchmark/cow_probe_a.tmp': Operation not supported",
+    "reflink_auto_returncode": 0,
+    "reflink_supported_on_ext4": false,
+    "note": "On ext4, cp --reflink=always fails with Operation not supported; --reflink=auto falls back to copy. In uv, clone mode falls back to hardlink on ext4."
+  },
+  "template_cache": {
+    "bytes": 22360064,
+    "files_count": 455,
+    "manifest_sha256": "7220a80befec91fbee1d0ced91027c6c36ae803564d71090d95bbcfed736d890",
+    "population_time_seconds": 1.2851
+  },
+  "arms": {
+    "independent_checkout": {
+      "arm_id": "independent_checkout",
+      "name": "Independent Checkout (Naive Clones)",
+      "type": "clone_independent",
+      "uv_link_mode": "copy",
+      "apply_chmod_mitigation": false,
+      "deps_share_inodes": false,
+      "source_isolated": true,
+      "source_inodes_distinct": true,
+      "output_isolated": true,
+      "git_isolated": true,
+      "bytecode_absence": true,
+      "cache_intact": false,
+      "package_cache_unmutated": true,
+      "mutated_cache_files_count": 0,
+      "added_cache_files_count": 2,
+      "cache_digest_before": "7220a80befec91fbee1d0ced91027c6c36ae803564d71090d95bbcfed736d890",
+      "cache_digest_after": "badd28a9876f5f35a068ecc3bbf6d54a7d2fdde6b57a7a0dc04a35956a9e2233",
+      "t1_allocated_bytes": 11718656,
+      "t2_allocated_bytes": 11710464,
+      "trees_summed_bytes": 23429120,
+      "trees_union_bytes": 23363584,
+      "cache_bytes": 22364160,
+      "shared_git_bytes": 0,
+      "whole_footprint_bytes": 45727744,
+      "timings": {
+        "cache_copy_seconds": 0.1662,
+        "setup_seconds": 1.1701,
+        "install_seconds": 0.5222,
+        "concurrent_execution_seconds": 0.3975,
+        "total_arm_seconds": 2.095
+      },
+      "outputs": {
+        "t1_output": {
+          "token": "secret_task1_token_2026_xyz",
+          "user_id": 101,
+          "role": "lead_agent_t1",
+          "verified": true
+        },
+        "t2_output": {
+          "receipt_id": "rec_task2_invoice_771",
+          "total_amount": 79.49000000000001,
+          "items": [
+            {
+              "item_id": "item_cpu_hours",
+              "amount": 49.99
+            },
+            {
+              "item_id": "item_storage_gb",
+              "amount": 29.5
+            }
+          ]
+        },
+        "t1_last_commit": "Task 1: Add bearer auth token validator",
+        "t2_last_commit": "Task 2: Add invoice transaction ledger"
+      },
+      "trees_savings_pct": 0.0,
+      "whole_savings_pct": 0.0,
+      "passed_d1_50pct_gate": false
+    },
+    "git_worktree": {
+      "arm_id": "git_worktree",
+      "name": "Git Worktree (Standard Worktrees)",
+      "type": "git_worktree",
+      "uv_link_mode": "copy",
+      "apply_chmod_mitigation": false,
+      "deps_share_inodes": false,
+      "source_isolated": true,
+      "source_inodes_distinct": true,
+      "output_isolated": true,
+      "git_isolated": true,
+      "bytecode_absence": true,
+      "cache_intact": false,
+      "package_cache_unmutated": true,
+      "mutated_cache_files_count": 0,
+      "added_cache_files_count": 2,
+      "cache_digest_before": "7220a80befec91fbee1d0ced91027c6c36ae803564d71090d95bbcfed736d890",
+      "cache_digest_after": "e99646e8801f25c22f43e0cb7dd1525950c93d16f09b915c4f477ed19a704172",
+      "t1_allocated_bytes": 11354112,
+      "t2_allocated_bytes": 11354112,
+      "trees_summed_bytes": 22708224,
+      "trees_union_bytes": 22708224,
+      "cache_bytes": 22364160,
+      "shared_git_bytes": 491520,
+      "whole_footprint_bytes": 45563904,
+      "timings": {
+        "cache_copy_seconds": 0.0667,
+        "setup_seconds": 0.4617,
+        "install_seconds": 0.4024,
+        "concurrent_execution_seconds": 0.4159,
+        "total_arm_seconds": 1.1842
+      },
+      "outputs": {
+        "t1_output": {
+          "token": "secret_task1_token_2026_xyz",
+          "user_id": 101,
+          "role": "lead_agent_t1",
+          "verified": true
+        },
+        "t2_output": {
+          "receipt_id": "rec_task2_invoice_771",
+          "total_amount": 79.49000000000001,
+          "items": [
+            {
+              "item_id": "item_cpu_hours",
+              "amount": 49.99
+            },
+            {
+              "item_id": "item_storage_gb",
+              "amount": 29.5
+            }
+          ]
+        },
+        "t1_last_commit": "Task 1: Add bearer auth token validator",
+        "t2_last_commit": "Task 2: Add invoice transaction ledger"
+      },
+      "trees_savings_pct": 2.81,
+      "whole_savings_pct": 0.36,
+      "passed_d1_50pct_gate": false
+    },
+    "clone_cow": {
+      "arm_id": "clone_cow",
+      "name": "Clone / COW (Reflink Baseline)",
+      "type": "clone_cow",
+      "uv_link_mode": "clone",
+      "apply_chmod_mitigation": false,
+      "deps_share_inodes": true,
+      "source_isolated": true,
+      "source_inodes_distinct": true,
+      "output_isolated": true,
+      "git_isolated": true,
+      "bytecode_absence": true,
+      "cache_intact": false,
+      "package_cache_unmutated": true,
+      "mutated_cache_files_count": 0,
+      "added_cache_files_count": 2,
+      "cache_digest_before": "7220a80befec91fbee1d0ced91027c6c36ae803564d71090d95bbcfed736d890",
+      "cache_digest_after": "0cc0aff7b8dcab8a8b49b4cd3c69e275f3d39197fd45b702fbcdb1e969931618",
+      "t1_allocated_bytes": 11689984,
+      "t2_allocated_bytes": 11681792,
+      "trees_summed_bytes": 23371776,
+      "trees_union_bytes": 12533760,
+      "cache_bytes": 22364160,
+      "shared_git_bytes": 0,
+      "whole_footprint_bytes": 24059904,
+      "timings": {
+        "cache_copy_seconds": 0.0696,
+        "setup_seconds": 0.4464,
+        "install_seconds": 0.4095,
+        "concurrent_execution_seconds": 0.3979,
+        "total_arm_seconds": 1.1375
+      },
+      "outputs": {
+        "t1_output": {
+          "token": "secret_task1_token_2026_xyz",
+          "user_id": 101,
+          "role": "lead_agent_t1",
+          "verified": true
+        },
+        "t2_output": {
+          "receipt_id": "rec_task2_invoice_771",
+          "total_amount": 79.49000000000001,
+          "items": [
+            {
+              "item_id": "item_cpu_hours",
+              "amount": 49.99
+            },
+            {
+              "item_id": "item_storage_gb",
+              "amount": 29.5
+            }
+          ]
+        },
+        "t1_last_commit": "Task 1: Add bearer auth token validator",
+        "t2_last_commit": "Task 2: Add invoice transaction ledger"
+      },
+      "trees_savings_pct": 46.35,
+      "whole_savings_pct": 47.38,
+      "passed_d1_50pct_gate": false
+    },
+    "workspace_doctor_worktree": {
+      "arm_id": "workspace_doctor_worktree",
+      "name": "Workspace-Doctor Worktree (Hardlinked & Mitigated)",
+      "type": "git_worktree",
+      "uv_link_mode": "hardlink",
+      "apply_chmod_mitigation": true,
+      "deps_share_inodes": true,
+      "source_isolated": true,
+      "source_inodes_distinct": true,
+      "output_isolated": true,
+      "git_isolated": true,
+      "bytecode_absence": true,
+      "cache_intact": false,
+      "package_cache_unmutated": true,
+      "mutated_cache_files_count": 0,
+      "added_cache_files_count": 2,
+      "cache_digest_before": "7220a80befec91fbee1d0ced91027c6c36ae803564d71090d95bbcfed736d890",
+      "cache_digest_after": "2e6297f5dc400e69c0a6de2f10ca3fa5524620fb7cf1fd65511a777edbc58612",
+      "t1_allocated_bytes": 11354112,
+      "t2_allocated_bytes": 11354112,
+      "trees_summed_bytes": 22708224,
+      "trees_union_bytes": 11870208,
+      "cache_bytes": 22364160,
+      "shared_git_bytes": 491520,
+      "whole_footprint_bytes": 23887872,
+      "timings": {
+        "cache_copy_seconds": 0.0686,
+        "setup_seconds": 0.419,
+        "install_seconds": 0.3664,
+        "concurrent_execution_seconds": 0.3585,
+        "total_arm_seconds": 1.052
+      },
+      "outputs": {
+        "t1_output": {
+          "token": "secret_task1_token_2026_xyz",
+          "user_id": 101,
+          "role": "lead_agent_t1",
+          "verified": true
+        },
+        "t2_output": {
+          "receipt_id": "rec_task2_invoice_771",
+          "total_amount": 79.49000000000001,
+          "items": [
+            {
+              "item_id": "item_cpu_hours",
+              "amount": 49.99
+            },
+            {
+              "item_id": "item_storage_gb",
+              "amount": 29.5
+            }
+          ]
+        },
+        "t1_last_commit": "Task 1: Add bearer auth token validator",
+        "t2_last_commit": "Task 2: Add invoice transaction ledger"
+      },
+      "trees_savings_pct": 49.19,
+      "whole_savings_pct": 47.76,
+      "passed_d1_50pct_gate": false
+    }
+  },
+  "peak_scratch_bytes": 68440064,
+  "peak_scratch_mib": 65.27,
+  "final_scratch_bytes": 22822912,
+  "final_scratch_mib": 21.77,
+  "scratch_budget_maintained": true
+}
