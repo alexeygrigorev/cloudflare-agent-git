@@ -1,0 +1,11 @@
+[package]
+name = "shortlinks"
+version = "0.1.0"
+edition = "2021"
+description = "Tiny in-memory short-link store used by the rust-demo agent-collision benchmark"
+license = "MIT"
+
+[dependencies]
+
+[profile.test]
+opt-level = 0
