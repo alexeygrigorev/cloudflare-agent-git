@@ -83,7 +83,7 @@
       "team_id": "a01-harness",
       "owner_tag": "zcode-independent",
       "status": "ready",
-      "updated_at": "2026-10-03T03:38:55.022924+00:00",
+      "updated_at": "2026-10-03T04:43:02.307395+00:00",
       "evidence_paths": [
         "research/zcode",
         "coordination/zcode.md"
@@ -91,7 +91,8 @@
       "blocked_on": [],
       "next_action": "Resolve actual current pinned reviewer residuals, then give the consumer adapter a real bounded internal user/task on immutable inputs; withhold unsafe emit and maintain task-level uncertainty.",
       "acceptance": "Schema-valid event and stable task dedup negatives; consumer action is distinct from scripted checks.",
-      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+      "assignment_ack": "confirmed by zcode-independent 64049aa2 reply 01a1000d to handoff 01a10008 (H32-ZCODE)",
+      "note_rev1c": "engineering withhold residuals resolved: H1 schema-field validation + H2 default journal lock @ fd5a1bd, validation rev3 14/14 PASS + rev2 regression ALL-PASS; production emit still withheld pending codex rev1c acceptance; next H3 real bounded consumer decision"
     },
     {
       "id": "pinned-independent-review",
@@ -112,7 +113,7 @@
       "id": "worktree-user-task",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "completed",
+      "status": "done",
       "updated_at": "2026-10-03T04:19:00.000000+00:00",
       "evidence_paths": [
         "research/antigravity/r8-worktree-d1-benchmark.md",
@@ -171,18 +172,18 @@
     {
       "id": "claude-evidence-integration",
       "team_id": "oversight",
-      "owner_tag": "zcy-claude-scribe",
-      "status": "running",
-      "updated_at": "2026-10-03T03:41:18+00:00",
+      "owner_tag": "claude-scribe-oc",
+      "status": "done",
+      "updated_at": "2026-10-03T04:44:44.876374+00:00",
       "evidence_paths": [
         "research/evidence-ledger.md",
         "research/approaches-20.md",
         "research/claude/journal-factcheck-2026-10-03.md"
       ],
       "blocked_on": [],
-      "next_action": "Commit/index dup-side-effects evidence (T11), apply A09 re-scope to approaches-20 v3, fact-check public journal.",
+      "next_action": "None queued; relaunch a one-shot executor when new integration input arrives.",
       "acceptance": "Commits with explicit paths; ledger v3 done 8099242.",
-      "assignment_ack": "executor of claude-principal, briefed .local/claude/SCRIBE-BRIEF.md; first artifact 8099242"
+      "assignment_ack": "executor switched: zcy-claude-scribe (zcodex, ended; native deliver NOT-READY while idle) -> claude-scribe-oc 6742704b (headless opencode run under aplexer shell session, launched by claude-principal); prior artifacts 8099242..0d35081, 3893e57 | Tasks 7-8 done c27dabd (pushed); executor exited 0"
     },
     {
       "id": "label-binding-residual-repair",
