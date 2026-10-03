@@ -330,9 +330,8 @@ def verify_whoami_identity(whoami_output, expected_uuid, expected_workspace):
     Parses the first JSON object from whoami tool output and enforces:
     1. obj["id"] == expected_uuid (exact match, no substring pass)
     2. obj["workspace"] == expected_workspace (exact match)
-    3. If binding_check/binding_ok is present, checks ok is True:
-       - If dict: obj["binding_check"]["ok"] is True
-       - If bool: obj["binding_check"] is True
+    3. obj["binding_check"] must be present as a dict with obj["binding_check"]["ok"] is True.
+       Missing, null, non-dict, or ok!=True fails closed.
     """
     if not (whoami_output is not None and len(whoami_output.strip()) > 0):
         return False, "whoami output is empty", {}
