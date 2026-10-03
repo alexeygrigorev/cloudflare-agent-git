@@ -298,30 +298,46 @@ def verify_receiver_idle_twice(receiver_uuid, step_name, delta=2.0, max_wait=90,
     return False, last_screen, None, None
 
 
-def get_receiver_opencode_session_id(workspace, since_ms=None):
-    """Get the OpenCode session ID created in workspace after since_ms."""
+def get_receiver_opencode_session_id(workspace, since_ms=None, db_path=None):
+    """
+    Get the OpenCode session ID created in workspace at or after since_ms.
+    Enforces exact 1:1 root session mapping and fails closed on ambiguity:
+    1. Filters for root sessions (parent_id IS NULL OR parent_id = '') in the target workspace directory.
+    2. Filters time_created >= since_ms if since_ms is specified.
+    3. If exactly one matching root session exists, returns its ID.
+    4. If zero matching root sessions exist, returns None.
+    5. If multiple matching root sessions exist (ambiguity/collision), fails closed and returns None.
+    Child sessions (parent_id NOT NULL) never collide with or override the receiver root session.
+    """
+    path = db_path if db_path is not None else DB_PATH
     try:
-        con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=2.0)
+        con = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=2.0)
         cur = con.cursor()
-        query = "SELECT id FROM session WHERE directory = ?"
+        query = """SELECT id FROM session
+                   WHERE directory = ?
+                     AND (parent_id IS NULL OR parent_id = '')"""
         params = [workspace]
         if since_ms is not None:
             query += " AND time_created >= ?"
             params.append(since_ms)
-        query += " ORDER BY time_created DESC LIMIT 1;"
+        query += " ORDER BY time_created ASC;"
         cur.execute(query, tuple(params))
-        row = cur.fetchone()
+        rows = cur.fetchall()
         con.close()
-        return row[0] if row else None
+        if len(rows) == 1:
+            return rows[0][0]
+        # Ambiguous (len > 1) or not found (len == 0): fail closed
+        return None
     except Exception as e:
         print("DB session query error:", e)
         return None
 
 
-def query_db_part_command(cmd_substr, opencode_sid=None, since_ms=None):
+def query_db_part_command(cmd_substr, opencode_sid=None, since_ms=None, db_path=None):
     """Query opencode.db part table for a bash tool call containing cmd_substr, optionally filtered by session_id and since_ms."""
+    path = db_path if db_path is not None else DB_PATH
     try:
-        con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=2.0)
+        con = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=2.0)
         cur = con.cursor()
         query = """SELECT id, time_created, time_updated,
                           json_extract(data, '$.state.status'),

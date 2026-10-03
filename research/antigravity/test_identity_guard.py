@@ -16,14 +16,19 @@ Verifies:
 """
 
 import json
-import re
-import unittest
-import sys
 import os
+import re
+import sqlite3
+import sys
+import tempfile
+import unittest
 
 # Import the implementation from continuation_trial_runner
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from continuation_trial_runner import verify_whoami_identity
+from continuation_trial_runner import (
+    verify_whoami_identity,
+    get_receiver_opencode_session_id,
+)
 
 RECEIVER_UUID = "11111111-2222-4333-8444-555555555555"
 FOREIGN_UUID  = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
@@ -186,5 +191,91 @@ class TestIdentityGuard(unittest.TestCase):
         self.assertTrue(obj["binding_check"]["ok"])
 
 
+class TestReceiverOpenCodeSessionIdQuery(unittest.TestCase):
+    """
+    SQL tests for OpenCode receiver session ID resolution and fail-closed binding.
+    Addresses Codex C-1259, C-1260, and C-1268 directives:
+    1. Positive: Single clean root session in workspace created >= since_ms is returned.
+    2. Negative: Receiver first + child session later in shared workspace:
+       Child session (parent_id='ses_recv') must NOT override or collide with receiver root session.
+    3. Negative: Receiver first + second root session later in shared workspace (exact mapping failclosed):
+       Ambiguity between multiple root sessions created >= since_ms must FAIL CLOSED (return None).
+    4. Negative: Stale session created before since_ms must be ignored.
+    5. Negative: Session created in foreign workspace directory must be ignored.
+    """
+
+    def setUp(self):
+        self.db_fd, self.db_path = tempfile.mkstemp(suffix=".db")
+        os.close(self.db_fd)
+        con = sqlite3.connect(self.db_path)
+        cur = con.cursor()
+        cur.execute("""
+            CREATE TABLE session (
+                id TEXT PRIMARY KEY,
+                parent_id TEXT,
+                directory TEXT NOT NULL,
+                time_created INTEGER NOT NULL
+            );
+        """)
+        con.commit()
+        con.close()
+
+    def tearDown(self):
+        if os.path.exists(self.db_path):
+            os.remove(self.db_path)
+
+    def _insert_session(self, sid, parent_id, directory, time_created):
+        con = sqlite3.connect(self.db_path)
+        cur = con.cursor()
+        cur.execute(
+            "INSERT INTO session (id, parent_id, directory, time_created) VALUES (?, ?, ?, ?)",
+            (sid, parent_id, directory, time_created)
+        )
+        con.commit()
+        con.close()
+
+    def test_sql_positive_single_clean_session(self):
+        """Positive: Exactly one matching root session in workspace returns that session ID."""
+        self._insert_session("ses_recv_clean", None, WORKSPACE, 1000)
+        resolved = get_receiver_opencode_session_id(WORKSPACE, since_ms=1000, db_path=self.db_path)
+        self.assertEqual(resolved, "ses_recv_clean")
+
+    def test_sql_negative_receiver_first_child_later(self):
+        """
+        Negative (Codex C-1268): Receiver first + child session later in shared workspace.
+        Child session has parent_id='ses_recv' and time_created=2000.
+        get_receiver_opencode_session_id must NOT return the later child session,
+        it must correctly resolve the receiver root session 'ses_recv'.
+        """
+        self._insert_session("ses_recv", None, WORKSPACE, 1000)
+        self._insert_session("ses_child", "ses_recv", WORKSPACE, 2000)
+        resolved = get_receiver_opencode_session_id(WORKSPACE, since_ms=1000, db_path=self.db_path)
+        self.assertEqual(resolved, "ses_recv")
+
+    def test_sql_negative_exact_mapping_failclosed_multiple_root_sessions(self):
+        """
+        Negative (Codex C-1268): Multiple root sessions in shared workspace created >= since_ms.
+        Receiver root session created at 1000, sender or foreign root session created at 2000.
+        Because mapping is ambiguous (len > 1), query MUST fail closed and return None.
+        """
+        self._insert_session("ses_recv_1", None, WORKSPACE, 1000)
+        self._insert_session("ses_sender_root_2", None, WORKSPACE, 2000)
+        resolved = get_receiver_opencode_session_id(WORKSPACE, since_ms=1000, db_path=self.db_path)
+        self.assertIsNone(resolved, "Ambiguous multiple root sessions did NOT fail closed!")
+
+    def test_sql_negative_stale_session_ignored(self):
+        """Negative: Prior session created before since_ms must be ignored."""
+        self._insert_session("ses_stale", None, WORKSPACE, 500)
+        resolved = get_receiver_opencode_session_id(WORKSPACE, since_ms=1000, db_path=self.db_path)
+        self.assertIsNone(resolved, "Stale session before since_ms was wrongly matched!")
+
+    def test_sql_negative_foreign_directory_ignored(self):
+        """Negative: Session in foreign directory must be ignored even if newer."""
+        self._insert_session("ses_foreign", None, WRONG_WS, 1500)
+        resolved = get_receiver_opencode_session_id(WORKSPACE, since_ms=1000, db_path=self.db_path)
+        self.assertIsNone(resolved, "Foreign directory session was wrongly matched!")
+
+
 if __name__ == "__main__":
     unittest.main()
+
