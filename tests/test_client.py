@@ -1,9 +1,12 @@
 """Offline end-to-end test suite for Agent Branches L2 Client."""
 
+import datetime
 import json
 import os
 import subprocess
 import sys
+import tempfile
+import time
 import unittest
 import urllib.error
 import urllib.request
@@ -13,6 +16,8 @@ from agent_branches.client import (
     AgentBranchesClient,
     AgentBranchesConnectionError,
     StaleVectorError,
+    TokenExpiredError,
+    TokenRevokedError,
 )
 from agent_branches.git_utils import (
     get_changed_files,
@@ -22,6 +27,24 @@ from agent_branches.git_utils import (
     run_git_cmd,
 )
 from tests.mock_l1_server import start_mock_l1_server
+
+
+class _AlwaysStaleClient(AgentBranchesClient):
+    """Stub client whose send_checks always returns 409; records resync-loop behavior."""
+
+    def __init__(self, fresh_heads=None):
+        super().__init__(server_url="http://127.0.0.1:1", timeout=0.5)
+        self.fresh_heads = dict(fresh_heads or {})
+        self.send_calls = 0
+        self.refresh_calls = 0
+
+    def send_checks(self, payload, runner_token=None, return_error_dict=False):
+        self.send_calls += 1
+        raise StaleVectorError(409, "Head vector is stale: unit-stub", None)
+
+    def refresh_head_vector(self):
+        self.refresh_calls += 1
+        return dict(self.fresh_heads)
 
 
 class TestAgentBranchesClient(unittest.TestCase):
@@ -763,6 +786,331 @@ class TestAgentBranchesClient(unittest.TestCase):
         finally:
             if os.path.exists(tf_path):
                 os.remove(tf_path)
+
+
+    def test_11_stale_vector_resync_and_retry(self):
+        """409 StaleVectorError triggers head-vector resync, bounded retry, then success."""
+        client = AgentBranchesClient(server_url=self.server_url)
+        t_a = client.create_task(
+            repo="https://github.com/cf/repo.git",
+            base_sha="0000000000000000000000000000000000000000",
+            intent="Resync agent A",
+            branch="feat/resync-a",
+            agent="resync-alpha",
+        )
+        t_b = client.create_task(
+            repo="https://github.com/cf/repo.git",
+            base_sha="0000000000000000000000000000000000000000",
+            intent="Resync agent B",
+            branch="feat/resync-b",
+            agent="resync-beta",
+        )
+        sha_a = "1111111111111111111111111111111111111111"
+        sha_b = "2222222222222222222222222222222222222222"
+        client.push(task_id=t_a["taskId"], head_sha=sha_a)
+        client.push(task_id=t_b["taskId"], head_sha=sha_b)
+
+        stale_vector = {
+            t_a["agentId"]: "9999999999999999999999999999999999999999",
+            t_b["agentId"]: "8888888888888888888888888888888888888888",
+        }
+        stale_payload = {
+            "contract": "0.1",
+            "vector": dict(stale_vector),
+            "results": [
+                {
+                    "pair": [t_a["agentId"], t_b["agentId"]],
+                    "status": "clean",
+                }
+            ],
+        }
+
+        # 1. Plain send_checks raises StaleVectorError on the stale vector
+        with self.assertRaises(StaleVectorError) as ctx:
+            client.send_checks(stale_payload)
+        self.assertEqual(ctx.exception.status_code, 409)
+        self.assertIn("Head vector is stale", ctx.exception.message)
+
+        # 2. refresh_head_vector returns the coordinator's current heads,
+        #    keyed by BOTH agentId and taskId (resync source of truth)
+        heads = client.refresh_head_vector()
+        self.assertEqual(heads[t_a["agentId"]], sha_a)
+        self.assertEqual(heads[t_a["taskId"]], sha_a)
+        self.assertEqual(heads[t_b["agentId"]], sha_b)
+        self.assertEqual(heads[t_b["taskId"]], sha_b)
+
+        # 3. send_checks_with_resync resyncs the vector and the retry succeeds;
+        #    the caller's payload is never mutated
+        res = client.send_checks_with_resync(stale_payload)
+        self.assertEqual(res["accepted"], 1)
+        self.assertEqual(len(res["pairs"]), 1)
+        self.assertEqual(res["pairs"][0]["status"], "clean")
+        self.assertEqual(
+            stale_payload["vector"], stale_vector, "input payload must not be mutated"
+        )
+
+        # 4. Resync is bounded: max_attempts=1 raises without any resync attempt
+
+        class _CountingClient(AgentBranchesClient):
+            def __init__(self, **kw):
+                super().__init__(**kw)
+                self.refresh_calls = 0
+
+            def refresh_head_vector(self):
+                self.refresh_calls += 1
+                return super().refresh_head_vector()
+
+        counter = _CountingClient(server_url=self.server_url)
+        with self.assertRaises(StaleVectorError):
+            counter.send_checks_with_resync(stale_payload, max_attempts=1)
+        self.assertEqual(counter.refresh_calls, 0)
+
+        # 5. Loop bound: with max_attempts=N there are exactly N attempts and
+        #    N-1 resyncs before the original StaleVectorError is re-raised
+        always_stale = _AlwaysStaleClient(fresh_heads={"agent-x": "fresh-sha"})
+        with self.assertRaises(StaleVectorError) as ctx:
+            always_stale.send_checks_with_resync(
+                {"contract": "0.1", "vector": {"agent-x": "stale-sha"}, "results": []},
+                max_attempts=3,
+            )
+        self.assertIn("unit-stub", ctx.exception.message)
+        self.assertEqual(always_stale.send_calls, 3)
+        self.assertEqual(always_stale.refresh_calls, 2)
+
+        # 6. Fail closed when nothing is resyncable: vector keys unknown to the
+        #    coordinator trigger one resync, then raise without a pointless retry
+        blind = _AlwaysStaleClient(fresh_heads={})
+        with self.assertRaises(StaleVectorError):
+            blind.send_checks_with_resync(
+                {"contract": "0.1", "vector": {"ghost-agent": "sha"}, "results": []}
+            )
+        self.assertEqual(blind.send_calls, 1)
+        self.assertEqual(blind.refresh_calls, 1)
+
+        # 7. Missing/invalid vector skips resync entirely
+        no_vector = _AlwaysStaleClient(fresh_heads={"agent-x": "fresh-sha"})
+        with self.assertRaises(StaleVectorError):
+            no_vector.send_checks_with_resync({"contract": "0.1", "results": []})
+        self.assertEqual(no_vector.send_calls, 1)
+        self.assertEqual(no_vector.refresh_calls, 0)
+
+        # 8. Resynced check reflects real state: vector now carries current heads
+        fresh_payload = {
+            "contract": "0.1",
+            "vector": dict(stale_vector),
+            "results": [
+                {
+                    "pair": [t_a["agentId"], t_b["agentId"]],
+                    "status": "clean",
+                }
+            ],
+        }
+        client.push(task_id=t_b["taskId"], head_sha="3333333333333333333333333333333333333333")
+        res2 = client.send_checks_with_resync(fresh_payload)
+        self.assertEqual(res2["accepted"], 1)
+
+    def test_12_token_expiry_401_reported_and_halt(self):
+        """Correct-but-expired tokens yield 401 TokenExpiredError; client halts (no retry)."""
+        expired_ts = time.time() - 3600.0
+        exp_srv, exp_thread, exp_url, _exp_state = start_mock_l1_server(
+            host="127.0.0.1",
+            port=0,
+            expected_admin_token="adm-expired-token",
+            expected_runner_token="run-expired-token",
+            admin_token_expires_at=expired_ts,
+            runner_token_expires_at=expired_ts,
+        )
+        try:
+            client = AgentBranchesClient(server_url=exp_url)
+
+            # 1. Correct admin token past its expiry -> TokenExpiredError with evidence
+            with self.assertRaises(TokenExpiredError) as ctx:
+                client.create_task(
+                    repo="https://github.com/cf/repo.git",
+                    base_sha="0000000000000000000000000000000000000000",
+                    intent="Expired admin token attempt",
+                    branch="feat/expired-admin",
+                    admin_token="adm-expired-token",
+                )
+            self.assertEqual(ctx.exception.status_code, 401)
+            self.assertIn("expired", ctx.exception.message.lower())
+            self.assertIsInstance(ctx.exception.payload, dict)
+            self.assertEqual(ctx.exception.payload.get("error"), "token_expired")
+            self.assertIn("expires_at", ctx.exception.payload)
+            reported = datetime.datetime.fromisoformat(ctx.exception.payload["expires_at"])
+            self.assertLess(
+                reported.timestamp(),
+                time.time(),
+                "expires_at must reflect the simulated past expiry",
+            )
+
+            # 2. Client halts: immediate retries fail identically, no silent refresh
+            for _ in range(2):
+                with self.assertRaises(TokenExpiredError):
+                    client.create_task(
+                        repo="https://github.com/cf/repo.git",
+                        base_sha="0000000000000000000000000000000000000000",
+                        intent="Expired admin token retry",
+                        branch="feat/expired-admin",
+                        admin_token="adm-expired-token",
+                    )
+
+            # 3. Expired runner token on POST /checks -> TokenExpiredError, halts
+            checks_payload = {
+                "contract": "0.1",
+                "vector": {"unknown-agent": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+                "results": [],
+            }
+            for _ in range(2):
+                with self.assertRaises(TokenExpiredError) as ctx:
+                    client.send_checks(checks_payload, runner_token="run-expired-token")
+                self.assertEqual(ctx.exception.status_code, 401)
+                self.assertIn("expired", ctx.exception.message.lower())
+
+            # 4. CLI reports expired credentials clearly and halts non-zero
+            res = self.run_cli(
+                [
+                    "task", "create",
+                    "--repo", "https://github.com/cf/repo.git",
+                    "--branch", "feat/expired-cli",
+                    "--server", exp_url,
+                    "--admin-token", "adm-expired-token",
+                ],
+                check=False,
+            )
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("expired", res.stderr.lower())
+            self.assertIn("Halting", res.stderr)
+        finally:
+            exp_srv.shutdown()
+            exp_srv.server_close()
+
+        # 5. Timestamps are honored: a token with a FUTURE expiry is accepted
+        future_ts = time.time() + 3600.0
+        fut_srv, fut_thread, fut_url, _fut_state = start_mock_l1_server(
+            host="127.0.0.1",
+            port=0,
+            expected_admin_token="adm-future-token",
+            admin_token_expires_at=future_ts,
+        )
+        try:
+            ok_client = AgentBranchesClient(server_url=fut_url)
+            task = ok_client.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="Future expiry accepted",
+                branch="feat/future-expiry",
+                admin_token="adm-future-token",
+            )
+            self.assertIn("taskId", task)
+
+            # Wrong token stays a generic 401, not classified as expired/revoked
+            with self.assertRaises(AgentBranchesAPIError) as ctx:
+                ok_client.create_task(
+                    repo="https://github.com/cf/repo.git",
+                    base_sha="0000000000000000000000000000000000000000",
+                    intent="Wrong token attempt",
+                    branch="feat/wrong-token",
+                    admin_token="never-issued-token",
+                )
+            self.assertEqual(ctx.exception.status_code, 401)
+            self.assertNotIsInstance(ctx.exception, (TokenExpiredError, TokenRevokedError))
+        finally:
+            fut_srv.shutdown()
+            fut_srv.server_close()
+
+    def test_13_token_revocation_403_fail_closed(self):
+        """Revoked tokens yield 403 TokenRevokedError; fail closed, never retried."""
+        revoked_srv, revoked_thread, revoked_url, revoked_state = start_mock_l1_server(
+            host="127.0.0.1",
+            port=0,
+            expected_admin_token="adm-live-token",
+            expected_runner_token="run-live-token",
+            runner_token_expires_at=time.time() - 60.0,  # expired AND revoked below
+        )
+        try:
+            client = AgentBranchesClient(server_url=revoked_url)
+
+            # Sanity: token valid before revocation (runner token expires, admin does not)
+            task = client.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="Pre-revocation task",
+                branch="feat/pre-revoke",
+                admin_token="adm-live-token",
+            )
+            self.assertIn("taskId", task)
+
+            # 1. Revoke admin token mid-flight -> next request 403 TokenRevokedError
+            revoked_at = revoked_state.revoke_token("adm-live-token")
+            with self.assertRaises(TokenRevokedError) as ctx:
+                client.create_task(
+                    repo="https://github.com/cf/repo.git",
+                    base_sha="0000000000000000000000000000000000000000",
+                    intent="Post-revocation attempt",
+                    branch="feat/post-revoke",
+                    admin_token="adm-live-token",
+                )
+            self.assertEqual(ctx.exception.status_code, 403)
+            self.assertIn("revoked", ctx.exception.message.lower())
+            self.assertIsInstance(ctx.exception.payload, dict)
+            self.assertEqual(ctx.exception.payload.get("error"), "token_revoked")
+            self.assertEqual(ctx.exception.payload.get("revoked_at"), revoked_at)
+
+            # 2. Fail closed: repeated attempts keep raising; no retry succeeds
+            for _ in range(3):
+                with self.assertRaises(TokenRevokedError):
+                    client.create_task(
+                        repo="https://github.com/cf/repo.git",
+                        base_sha="0000000000000000000000000000000000000000",
+                        intent="Post-revocation retry",
+                        branch="feat/post-revoke",
+                        admin_token="adm-live-token",
+                    )
+
+            # 3. Revocation takes precedence over expiry on the runner token
+            revoked_state.revoke_token("run-live-token")
+            checks_payload = {
+                "contract": "0.1",
+                "vector": {task["agentId"]: "9999999999999999999999999999999999999999"},
+                "results": [
+                    {"pair": [task["agentId"], "other-agent"], "status": "clean"}
+                ],
+            }
+            with self.assertRaises(TokenRevokedError) as ctx:
+                client.send_checks(checks_payload, runner_token="run-live-token")
+            self.assertEqual(ctx.exception.status_code, 403)
+            self.assertIn("revoked", ctx.exception.message.lower())
+
+            # 4. The resync loop never swallows or retries auth failures
+            with self.assertRaises(TokenRevokedError):
+                client.send_checks_with_resync(
+                    checks_payload, runner_token="run-live-token", max_attempts=5
+                )
+
+            # 5. CLI checks with revoked runner token exits non-zero, names revocation
+            with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tf:
+                json.dump(checks_payload, tf)
+                tf_path = tf.name
+            try:
+                res = self.run_cli(
+                    [
+                        "checks",
+                        "--file", tf_path,
+                        "--server", revoked_url,
+                        "--runner-token", "run-live-token",
+                    ],
+                    check=False,
+                )
+                self.assertEqual(res.returncode, 1)
+                self.assertIn("revoked", res.stderr.lower())
+                self.assertIn("failing closed", res.stderr.lower())
+            finally:
+                if os.path.exists(tf_path):
+                    os.remove(tf_path)
+        finally:
+            revoked_srv.shutdown()
+            revoked_srv.server_close()
 
 
 if __name__ == "__main__":

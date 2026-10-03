@@ -6,6 +6,16 @@ Implements the exact HTTP routes:
 - GET /status
 - GET /tasks/<id>
 - POST /warnings/<id>/ack
+- POST /checks (CONTRACT v0.1)
+
+Bearer-token simulation:
+- expected_admin_token guards POST /tasks; expected_runner_token guards POST /checks.
+- admin_token_expires_at / runner_token_expires_at (epoch seconds) simulate token
+  expiry: a correct token past its expiry is rejected with HTTP 401 and an
+  {"error": "token_expired", "expires_at": ...} payload.
+- revoke_token(token) simulates revocation: subsequent requests presenting that
+  token are rejected with HTTP 403 and an {"error": "token_revoked",
+  "revoked_at": ...} payload (revocation is checked before expiry).
 """
 
 import argparse
@@ -33,6 +43,8 @@ class MockCoordinatorState:
         self,
         expected_admin_token: Optional[str] = None,
         expected_runner_token: Optional[str] = None,
+        admin_token_expires_at: Optional[float] = None,
+        runner_token_expires_at: Optional[float] = None,
     ):
         self.lock = threading.Lock()
         self.seq = 0
@@ -45,6 +57,60 @@ class MockCoordinatorState:
         self.canonical_remote = "https://git.cloudflare.local/canonical.git"
         self.expected_admin_token = expected_admin_token
         self.expected_runner_token = expected_runner_token
+        # Token expiry as epoch seconds (None = never expires). A correct token
+        # presented at or after its expiry is rejected with 401 token_expired.
+        self.admin_token_expires_at = admin_token_expires_at
+        self.runner_token_expires_at = runner_token_expires_at
+        # token -> revoked_at ISO timestamp; revoked tokens are rejected with 403.
+        self.revoked_tokens: Dict[str, str] = {}
+
+    def revoke_token(self, token: str, revoked_at: Optional[str] = None) -> str:
+        """Mark a bearer token as revoked; returns the revocation timestamp."""
+        ts = revoked_at or datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with self.lock:
+            self.revoked_tokens[token] = ts
+        return ts
+
+    def check_bearer_token(
+        self,
+        auth_header: str,
+        expected_token: str,
+        expires_at: Optional[float],
+        kind: str,
+    ) -> Optional[Tuple[int, Dict[str, Any]]]:
+        """Validate a presented bearer token.
+
+        Returns (http_status, error_payload) when the request must be rejected
+        (revocation, missing/invalid token, expiry — in that order), else None.
+        """
+        with self.lock:
+            match = re.match(r"^Bearer\s+(\S+)$", (auth_header or "").strip())
+            presented = match.group(1) if match else None
+
+            if presented is not None and presented in self.revoked_tokens:
+                revoked_at = self.revoked_tokens[presented]
+                return 403, {
+                    "error": "token_revoked",
+                    "message": f"{kind} bearer token revoked at {revoked_at}",
+                    "revoked_at": revoked_at,
+                }
+
+            if presented is None or presented != expected_token:
+                return 401, {
+                    "error": "unauthorized: missing or invalid bearer token",
+                }
+
+            if expires_at is not None and time.time() >= expires_at:
+                expires_iso = datetime.datetime.fromtimestamp(
+                    expires_at, datetime.timezone.utc
+                ).isoformat()
+                return 401, {
+                    "error": "token_expired",
+                    "message": f"{kind} bearer token expired at {expires_iso}",
+                    "expires_at": expires_iso,
+                }
+
+        return None
 
 
     def create_task(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -397,12 +463,16 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
 
         # POST /tasks
         if path == "/tasks":
-            # Admin token auth check if configured
+            # Admin token auth check if configured (revocation, validity, expiry)
             if self.state.expected_admin_token is not None:
-                auth_header = self.headers.get("Authorization", "")
-                expected = f"Bearer {self.state.expected_admin_token}"
-                if auth_header != expected:
-                    self._send_json(401, {"error": "unauthorized: missing or invalid bearer token"})
+                err = self.state.check_bearer_token(
+                    self.headers.get("Authorization", ""),
+                    self.state.expected_admin_token,
+                    self.state.admin_token_expires_at,
+                    "admin",
+                )
+                if err:
+                    self._send_json(err[0], err[1])
                     return
 
             try:
@@ -433,10 +503,14 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
         # POST /checks (CONTRACT v0.1)
         if path == "/checks":
             if self.state.expected_runner_token is not None:
-                auth_header = self.headers.get("Authorization", "")
-                expected = f"Bearer {self.state.expected_runner_token}"
-                if auth_header != expected:
-                    self._send_json(401, {"error": "unauthorized: missing or invalid bearer token (RUNNER_TOKEN)"})
+                err = self.state.check_bearer_token(
+                    self.headers.get("Authorization", ""),
+                    self.state.expected_runner_token,
+                    self.state.runner_token_expires_at,
+                    "runner",
+                )
+                if err:
+                    self._send_json(err[0], err[1])
                     return
 
             try:
@@ -515,8 +589,15 @@ def start_mock_l1_server(
     port: int = 0,
     expected_admin_token: Optional[str] = None,
     expected_runner_token: Optional[str] = None,
+    admin_token_expires_at: Optional[float] = None,
+    runner_token_expires_at: Optional[float] = None,
 ) -> Tuple[MockL1Server, threading.Thread, str, MockCoordinatorState]:
     """Start mock L1 coordinator on host and ephemeral or specified port.
+
+    Token expiry timestamps are epoch seconds: a correct token presented at or
+    after its expiry is rejected with 401 {"error": "token_expired"}. Tokens can
+    be revoked at runtime via ``state.revoke_token(token)`` which makes later
+    requests fail with 403 {"error": "token_revoked"}.
 
     Returns:
         (server, thread, server_url, state)
@@ -524,6 +605,8 @@ def start_mock_l1_server(
     state = MockCoordinatorState(
         expected_admin_token=expected_admin_token,
         expected_runner_token=expected_runner_token,
+        admin_token_expires_at=admin_token_expires_at,
+        runner_token_expires_at=runner_token_expires_at,
     )
     server = MockL1Server((host, port), state=state)
     actual_port = server.server_address[1]

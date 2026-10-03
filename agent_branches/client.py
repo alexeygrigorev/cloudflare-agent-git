@@ -1,5 +1,6 @@
 """Agent Branches L2 Client implementation using standard library urllib."""
 
+import copy
 import json
 import os
 import urllib.error
@@ -30,6 +31,24 @@ class AgentBranchesAPIError(AgentBranchesError):
 
 class StaleVectorError(AgentBranchesAPIError):
     """Raised when the L1 coordinator returns HTTP 409 Conflict due to a stale head vector."""
+    pass
+
+
+class TokenExpiredError(AgentBranchesAPIError):
+    """Raised when the coordinator rejects a request because the bearer token has expired.
+
+    Fail-closed: the caller must obtain fresh credentials; the client never
+    auto-retries an expired-token request.
+    """
+    pass
+
+
+class TokenRevokedError(AgentBranchesAPIError):
+    """Raised when the coordinator rejects a request because the bearer token was revoked.
+
+    Fail-closed: retrying can never succeed; the client must halt and
+    surface the revoked credentials to the operator.
+    """
     pass
 
 
@@ -92,6 +111,15 @@ class AgentBranchesClient:
                     err_msg = err_body.decode("utf-8", errors="replace")
             if exc.code == 409:
                 raise StaleVectorError(exc.code, str(err_msg), payload) from exc
+            if exc.code in (401, 403):
+                err_code = ""
+                if isinstance(payload, dict):
+                    err_code = str(payload.get("error") or "")
+                auth_blob = f"{err_code} {err_msg}".lower()
+                if "expired" in auth_blob:
+                    raise TokenExpiredError(exc.code, str(err_msg), payload) from exc
+                if "revoked" in auth_blob:
+                    raise TokenRevokedError(exc.code, str(err_msg), payload) from exc
             raise AgentBranchesAPIError(exc.code, str(err_msg), payload) from exc
 
         except (urllib.error.URLError, ConnectionError, OSError) as exc:
@@ -312,6 +340,89 @@ class AgentBranchesClient:
                     "details": exc.payload,
                 }
             raise
+
+    def refresh_head_vector(self) -> Dict[str, str]:
+        """Fetch the coordinator's current head vector (CONTRACT v0.1 resync source).
+
+        Returns a mapping containing both ``agentId -> head_sha`` and
+        ``taskId -> head_sha`` entries for every task known to the coordinator,
+        suitable for replacing a stale ``vector`` after HTTP 409.
+        """
+        status = self.get_status()
+        heads: Dict[str, str] = {}
+        for rec in status.get("tasks") or []:
+            if not isinstance(rec, dict):
+                continue
+            sha = rec.get("head_sha") or rec.get("head")
+            if not sha:
+                continue
+            for key in (
+                rec.get("agentId") or rec.get("agent_id"),
+                rec.get("taskId") or rec.get("task_id") or rec.get("id"),
+            ):
+                if key:
+                    heads[str(key)] = str(sha)
+        return heads
+
+    def send_checks_with_resync(
+        self,
+        payload: Dict[str, Any],
+        runner_token: Optional[str] = None,
+        max_attempts: int = 2,
+    ) -> Dict[str, Any]:
+        """Submit checks; on HTTP 409 stale vector, resync the head vector and retry.
+
+        Reuses ``send_checks`` validation and bearer-token handling. On
+        ``StaleVectorError`` the client fetches the coordinator's current heads
+        via ``refresh_head_vector()``, replaces the payload ``vector`` entries it
+        can resolve (entries the coordinator no longer knows are dropped), and
+        retries. The retry budget is bounded: at most ``max_attempts`` HTTP
+        attempts and ``max_attempts - 1`` resyncs, then the original
+        ``StaleVectorError`` is re-raised. Authentication failures
+        (``TokenExpiredError`` / ``TokenRevokedError``) are never retried.
+
+        Args:
+            payload: CONTRACT v0.1 check payload dictionary (not mutated).
+            runner_token: Optional runner bearer token (defaults to $RUNNER_TOKEN).
+            max_attempts: Total attempts including the first (must be >= 1).
+
+        Returns:
+            Coordinator response dict on success.
+
+        Raises:
+            ValueError: If payload fails validation or max_attempts < 1.
+            StaleVectorError: If the vector remains stale after the final attempt,
+                or the head vector cannot be resynced (fail closed).
+            TokenExpiredError / TokenRevokedError: On credential rejection (never retried).
+            AgentBranchesAPIError: On other API errors.
+        """
+        if max_attempts < 1:
+            raise ValueError("max_attempts must be >= 1")
+
+        attempt_payload = copy.deepcopy(payload)
+        stale_exc: Optional[StaleVectorError] = None
+
+        for attempt in range(max_attempts):
+            try:
+                return self.send_checks(attempt_payload, runner_token=runner_token)
+            except StaleVectorError as exc:
+                stale_exc = exc
+                if attempt >= max_attempts - 1:
+                    break
+                vector = attempt_payload.get("vector")
+                if not isinstance(vector, dict) or not vector:
+                    break
+                try:
+                    fresh_heads = self.refresh_head_vector()
+                except AgentBranchesError:
+                    break  # coordinator unreachable during resync: fail closed
+                resynced = {k: fresh_heads[k] for k in vector if k in fresh_heads}
+                if not resynced:
+                    break  # nothing resyncable: fail closed, no pointless retry
+                attempt_payload["vector"] = resynced
+
+        assert stale_exc is not None
+        raise stale_exc
 
 
     # MCP-compatible aliases (CONTRACT-L2-L3 Section 2.2)
