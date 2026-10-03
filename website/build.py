@@ -535,7 +535,7 @@ def home_page():
               +'</div><a class="honest-link" href="'+BASE+'/checklist/">See every gate on the checklist'+ARROW+'</a></aside>')
     hero = ('<section class="hero"><figure class="hero-figure"><img src="'+BASE+'/assets/agent-git-illustration.png" width="1536" height="1024" alt="Geometric blue agents carry folders along branching commit lines into an orange merge"><figcaption>FIG. 0 \u2014 MANY AGENTS, ONE CANONICAL HISTORY</figcaption></figure>'
             '<div class="hero-grid">'+feature+honest+'</div></section>')
-    hyp = ('<section class="hyp-section" aria-labelledby="hyp-title"><div class="section-head"><h2 id="hyp-title">The hypotheses</h2><p>'+str(ACTIVE_COUNT)+' retained for falsification. '+str(PARKED_COUNT)+' parked. '+str(OPEN_PLACES)+' places open. None selected.</p></div>'+cards()+'</section>')
+    hyp = ('<section class="hyp-section" aria-labelledby="hyp-title"><div class="section-head"><h2 id="hyp-title">The hypotheses</h2><p>'+str(ACTIVE_COUNT)+' retained for falsification. '+str(PARKED_COUNT)+' parked. '+str(OPEN_PLACES)+' places open. None selected. <a href="'+BASE+'/ideas/">Read what all 20 ideas would do'+ARROW+'</a></p></div>'+cards()+'</section>')
     stats = ''.join('<div class="pain-stat"><span class="pain-n">'+E(n)+'</span><span class="pain-l">'+E(l)+'</span></div>' for n, l in PAIN_STATS)
     pain = ('<section class="pain" aria-labelledby="pain-title"><div class="pain-copy">'+eyebrow('Measured pain \u00b7 one host \u00b7 read-only scan')+'<h2 id="pain-title">Most of the worktree pile isn\u2019t Git. It\u2019s dependencies.</h2><p>The pain is real and measured. Whether anyone would adopt a product for it is unknown. Ordinary shared stores may already be enough.</p><a class="read-more-sm" href="'+BASE+'/projects/storage-aware-workspaces/">A16 \u00b7 Storage-aware workspaces'+ARROW+'</a></div>'
             '<div class="pain-data"><div class="pain-stats">'+stats+'</div><div class="pain-chart"><div class="pain-bar" role="img" aria-label="62.1% of the physical union is dependencies and build output"><span class="pain-fill"></span></div><div class="pain-caps"><span>62.1% DEPENDENCY + BUILD (69.4 GIB)</span><span class="muted">SOURCE + OTHER ~42 GIB</span></div><div class="status-line pain-unknown">'+smark('unknown')+'<span>Product viability: unknown</span></div></div></div></section>')
@@ -545,6 +545,23 @@ def home_page():
     bottom = ('<section class="home-bottom"><div class="home-col"><div class="col-head"><h2>Field notes</h2><a class="read-more-sm" href="'+BASE+'/reports/">Archive'+ARROW+'</a></div><p class="col-sub">Orchestrator checks, dated. Times in UTC.</p>'+fields+'</div>'
               '<div class="home-col"><div class="col-head"><h2>Research library</h2><a class="read-more-sm" href="'+BASE+'/research/">All sources'+ARROW+'</a></div><p class="col-sub">Everything links to a file in the public repo.</p>'+lib_rows+'</div></section>')
     return hero+hyp+pain+bottom
+
+IDEAS = ROOT/'website/content/ideas.md'
+
+def ideas_page():
+    text = IDEAS.read_text()
+    title = re.match(r'^#\s+(.+)', text)[1].strip()
+    prose = markdown(re.sub(r'^#\s+[^\n]+\n?', '', text, count=1), IDEAS)
+    # The ideas are numbered 1-20 across several grouped lists; keep the numbering continuous.
+    count = [1]
+    def numbered(m):
+        start = count[0]
+        count[0] += m[1].count('<li>')
+        return '<ol start="'+str(start)+'">'+m[1]+'</ol>'
+    prose = re.sub(r'<ol>(.*?)</ol>', numbered, prose, flags=re.S)
+    return (title, '<article class="article">'+article_head('Research \u00b7 the approaches the agents collected', title, 'What each of the 20 approaches would do for a person who runs many coding agents on the same code.', '')
+            +'<div class="prose">'+prose+'</div>'
+            '<div class="article-sources"><p class="source-line">Original Markdown: <a href="'+public_source(IDEAS.relative_to(ROOT))+'">read in the repository'+EXT+'</a>.</p></div></article>')
 
 # ---------------------------------------------------------------- build
 def main():
@@ -572,6 +589,8 @@ def main():
     for rp in REPORTS:
         write('reports/'+rp.stem+'/', report_title(rp), note_page(rp), None, 'article')
     write('research/', 'Research library', library_page())
+    ideas_title, ideas_body = ideas_page()
+    write('ideas/', ideas_title, ideas_body, 'What each of the 20 approaches collected by the agent team would do.', 'article')
     write('checklist/', 'Experiment checklist', checklist_page())
     team_fig = '<figure class="portrait-fig"><img loading="lazy" src="'+BASE+'/assets/team-workflow-mobile.svg" alt="Team workflow: Alexey and remote oversight connect to Claude and Codex principals, project heads, task executors, evidence, and review."><figcaption>The operating model. Arrows show responsibilities, not proof of continuous activity.</figcaption></figure>'
     about = ('<article class="article">'+article_head('About \u00b7 why this exists', 'Build it. Test it. Tell the whole story.', 'A new Git platform competition prompted a wider question: where does Git make a team of coding agents harder to run?', '')
