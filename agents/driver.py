@@ -52,6 +52,7 @@ class TaskSpec:
     registered_task_id: Optional[str] = None
     registered_agent_id: Optional[str] = None
     fork_remote: Optional[str] = None
+    token: Optional[str] = None
     workspace_dir: Optional[str] = None
     session_id: Optional[str] = None
     head_sha: Optional[str] = None
@@ -80,11 +81,21 @@ class AgentHarnessDriver:
         poll_interval: float = 2.0,
         max_wait_seconds: float = 300.0,
         engine_mode: str = "dry-run",
+        skip_worker_alive: bool = False,
     ) -> None:
         self.server_url = server_url.rstrip("/")
         self.admin_token = admin_token or os.environ.get("ADMIN_TOKEN", "demo-admin-token")
         self.runner_token = runner_token or os.environ.get("RUNNER_TOKEN", "demo-runner-token")
         self.demo_target_path = os.path.abspath(demo_target_path)
+        if not os.path.exists(self.demo_target_path):
+            candidates = [
+                "/home/alexey/git/cloudflare-agent-git/demo-target",
+                "/home/alexey/git/agent-branches-live/demo-target",
+            ]
+            for cand in candidates:
+                if os.path.exists(cand):
+                    self.demo_target_path = cand
+                    break
         try:
             self.repo_root = subprocess.run(
                 ["git", "-C", self.demo_target_path, "rev-parse", "--show-toplevel"],
@@ -98,6 +109,7 @@ class AgentHarnessDriver:
         self.poll_interval = float(poll_interval)
         self.max_wait_seconds = float(max_wait_seconds)
         self.engine_mode = engine_mode
+        self.skip_worker_alive = skip_worker_alive
 
         run_id = f"run-{int(time.time())}-{uuid.uuid4().hex[:6]}"
         self.run_id = run_id
@@ -153,6 +165,91 @@ class AgentHarnessDriver:
             )
         self.record_event("memory_gate_passed", {"mem_available_mb": mem_mb, "gate_mb": gate_mb})
         return mem_mb
+
+    def verify_worker_alive(self, timeout_seconds: float = 15.0) -> bool:
+        """Verify that the L1 Worker is up and responsive before launching agents (worker_alive check)."""
+        t0 = time.time()
+        while time.time() - t0 < timeout_seconds:
+            try:
+                status = self.client.get_status()
+                if status is not None and isinstance(status, dict):
+                    return True
+            except Exception:
+                pass
+            time.sleep(0.5)
+        return False
+
+    def check_provider_quota_gate(self, provider: str, min_percent: float = 10.0) -> Tuple[bool, str, Dict[str, Any]]:
+        """Verify provider quota using quse --json before launching real model sessions."""
+        try:
+            proc = subprocess.run(
+                ["quse", "--json"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+            if proc.returncode != 0:
+                return False, f"quse --json failed with exit code {proc.returncode}: {proc.stderr.strip()}", {}
+            data = json.loads(proc.stdout)
+        except Exception as exc:
+            return False, f"quse check execution error: {exc}", {}
+
+        provider_map = {
+            "zcodex": "zai",
+            "zai": "zai",
+            "space-bunny": "go",
+            "go": "go",
+            "opencode": "go",
+            "grok": "grok",
+            "codex": "codex",
+            "gemini": "gemini",
+        }
+        key = provider_map.get(provider.lower(), provider.lower())
+        if key not in data:
+            return False, f"Provider '{provider}' (key '{key}') not found in quse output", data
+
+        info = data[key]
+        details = info.get("details", {})
+        if details.get("limit_reached") is True:
+            return False, f"Provider '{provider}' limit_reached is True", info
+        if info.get("status") not in ("ok", "warning", None):
+            return False, f"Provider '{provider}' status is {info.get('status')}", info
+
+        windows = info.get("windows", {})
+        for win_name in ("5h", "7d", "monthly"):
+            win = windows.get(win_name)
+            if isinstance(win, dict):
+                pct = win.get("percent_remaining")
+                if pct is not None and float(pct) < min_percent:
+                    return False, f"Provider '{provider}' {win_name} quota {pct}% < {min_percent}% threshold", info
+
+        return True, "Quota check passed", info
+
+    def query_remote_head(self, remote_target: str, branch: str, cwd: Optional[str] = None) -> Optional[str]:
+        """Query remote repository HEAD SHA using git ls-remote (verifies real remote push, avoiding commits-as-push)."""
+        cmd = ["git"]
+        if cwd:
+            cmd.extend(["-C", cwd])
+        cmd.extend(["ls-remote", remote_target, f"refs/heads/{branch}"])
+        try:
+            proc = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                lines = proc.stdout.strip().splitlines()
+                for line in lines:
+                    parts = line.split()
+                    if len(parts) >= 2 and parts[1] == f"refs/heads/{branch}":
+                        return parts[0]
+                if lines:
+                    return lines[0].split()[0]
+        except Exception:
+            pass
+        return None
 
     def parse_tasks(self, tasks_md_path: Optional[str] = None) -> List[TaskSpec]:
         """Parse tasks from TASKS.md into structured TaskSpecs."""
@@ -227,6 +324,11 @@ class AgentHarnessDriver:
                 or res.get("fork_url")
                 or (res.get("fork") or {}).get("remote")
             )
+            tok_obj = res.get("token")
+            if isinstance(tok_obj, dict):
+                t.token = tok_obj.get("plaintext") or tok_obj.get("token")
+            elif isinstance(tok_obj, str):
+                t.token = tok_obj
             t.head_sha = base_sha
 
             self.record_event(
@@ -243,9 +345,11 @@ class AgentHarnessDriver:
             )
 
     def setup_workspaces(self, tasks: List[TaskSpec], base_sha: str) -> None:
-        """Create isolated clone/workspace for each agent."""
+        """Create isolated clone/workspace for each agent with genuine remote tracking."""
         workspaces_root = os.path.join(self.run_dir, "workspaces")
+        remotes_root = os.path.join(self.run_dir, "remotes")
         os.makedirs(workspaces_root, exist_ok=True)
+        os.makedirs(remotes_root, exist_ok=True)
 
         for t in tasks:
             ws_dir = os.path.join(workspaces_root, t.task_id.lower())
@@ -266,16 +370,29 @@ class AgentHarnessDriver:
             )
             subprocess.run(["git", "-C", ws_dir, "checkout", "-q", "-b", t.branch, base_sha], check=True, capture_output=True)
 
-            # Point origin to fork_remote (HTTP/git URL or path)
-            if t.fork_remote:
-                try:
+            # Ensure genuine remote repository for fork (bare repo if mock/local, or remote HTTP URL)
+            is_mock_remote = not t.fork_remote or "cloudflare.local" in t.fork_remote or "example.com" in t.fork_remote
+            if is_mock_remote:
+                bare_repo = os.path.join(remotes_root, f"fork-{t.task_id.lower()}.git")
+                if not os.path.exists(bare_repo):
+                    subprocess.run(["git", "init", "--bare", "--quiet", bare_repo], check=True, capture_output=True)
                     subprocess.run(
-                        ["git", "-C", ws_dir, "remote", "set-url", "origin", t.fork_remote],
+                        ["git", "-C", self.repo_root, "push", "--quiet", bare_repo, f"{base_sha}:refs/heads/main", f"{base_sha}:refs/heads/{t.branch}"],
                         check=True,
                         capture_output=True,
                     )
-                except Exception:
-                    pass
+                t.fork_remote = bare_repo
+
+            # Point origin to fork_remote
+            subprocess.run(["git", "-C", ws_dir, "remote", "set-url", "origin", t.fork_remote], check=True, capture_output=True)
+
+            # Configure bearer auth header for HTTP remotes if token exists
+            if t.token:
+                subprocess.run(
+                    ["git", "-C", ws_dir, "config", "http.extraHeader", f"Authorization: Bearer {t.token}"],
+                    check=True,
+                    capture_output=True,
+                )
 
             # Create helper wrapper for agent-branches CLI inside agent workspace
             bin_dir = os.path.join(ws_dir, ".bin")
@@ -345,6 +462,7 @@ class AgentHarnessDriver:
                 body=t.body,
                 branch=t.branch,
                 server_url=self.server_url,
+                agent_id=t.registered_agent_id,
             )
 
             # Write prompt to workspace file for reference
@@ -354,19 +472,18 @@ class AgentHarnessDriver:
 
             if t.engine == "dry-run":
                 # Apply reference solution patch
-                patch_file = os.path.join(
-                    self.demo_target_path,
-                    "reference-solutions",
-                    f"{t.task_id.lower()}.patch",
-                )
-                if not os.path.exists(patch_file):
-                    patch_file = os.path.join(
-                        self.demo_target_path,
-                        ".harness",
-                        f"{t.task_id.lower()}.patch",
-                    )
-                if not os.path.exists(patch_file):
-                    raise FileNotFoundError(f"Reference patch missing: {patch_file}")
+                patch_candidates = [
+                    os.path.join(self.demo_target_path, ".harness", "reference-solutions", f"{t.task_id.lower()}.patch"),
+                    os.path.join(self.demo_target_path, "reference-solutions", f"{t.task_id.lower()}.patch"),
+                    os.path.join(self.demo_target_path, ".harness", f"{t.task_id.lower()}.patch"),
+                ]
+                patch_file = None
+                for cand in patch_candidates:
+                    if os.path.exists(cand):
+                        patch_file = cand
+                        break
+                if not patch_file:
+                    raise FileNotFoundError(f"Reference patch missing for {t.task_id.lower()} across candidates: {patch_candidates}")
 
                 # Apply patch and commit
                 apply_proc = subprocess.run(
@@ -394,6 +511,20 @@ class AgentHarnessDriver:
                 head_sha = rev_proc.stdout.strip()
                 t.head_sha = head_sha
 
+                # Execute genuine git push to origin remote repository
+                push_proc = subprocess.run(
+                    ["git", "-C", ws_dir, "push", "origin", f"HEAD:{t.branch}"],
+                    capture_output=True,
+                    text=True,
+                )
+                if push_proc.returncode != 0:
+                    raise RuntimeError(f"git push origin {t.branch} failed: {push_proc.stderr.strip() or push_proc.stdout.strip()}")
+
+                # Verify remote ref matches head_sha via git ls-remote (verifies remote push, avoiding commits-as-push)
+                remote_sha = self.query_remote_head("origin", t.branch, cwd=ws_dir)
+                if not remote_sha or remote_sha != head_sha:
+                    raise RuntimeError(f"git ls-remote verification failed: remote SHA {remote_sha} != local {head_sha}")
+
                 # Notify coordinator of push via L2 Client
                 assert t.registered_task_id is not None
                 assert t.registered_agent_id is not None
@@ -408,11 +539,19 @@ class AgentHarnessDriver:
                     {
                         "task_id": t.task_id,
                         "head_sha": head_sha,
+                        "remote_sha": remote_sha,
+                        "remote_verified_via_ls_remote": True,
                         "patch": os.path.basename(patch_file),
-                        "status": "pushed_to_coordinator",
+                        "status": "pushed_and_verified",
                     },
                 )
             else:
+                # Quota gate check before launching real model sessions
+                passed, reason, qinfo = self.check_provider_quota_gate(t.engine)
+                if not passed:
+                    raise RuntimeError(f"Quota gate rejected launch for {t.engine}: {reason}")
+                self.record_event("quota_gate_verified", {"provider": t.engine, "details": qinfo})
+
                 # Real agent launch via aplexer
                 session_tag = f"l6-agent-{t.task_id.lower()}-{self.run_id[:8]}"
                 cmd: List[str] = []
@@ -618,51 +757,66 @@ class AgentHarnessDriver:
             for t in tasks:
                 if not t.workspace_dir:
                     continue
-                try:
-                    rev_proc = subprocess.run(
-                        ["git", "-C", t.workspace_dir, "rev-parse", "HEAD"],
-                        capture_output=True,
-                        text=True,
-                        timeout=5,
+                # Detect genuine remote push via git ls-remote (avoiding commits-as-push)
+                remote_sha = self.query_remote_head("origin", t.branch, cwd=t.workspace_dir)
+                if remote_sha and remote_sha != t.head_sha:
+                    old_sha = t.head_sha
+                    t.head_sha = remote_sha
+                    any_head_changed = True
+                    self.record_event(
+                        "agent_push_detected_via_ls_remote",
+                        {
+                            "task_id": t.task_id,
+                            "old_sha": old_sha,
+                            "new_sha": remote_sha,
+                            "verified_via": "git ls-remote",
+                        },
                     )
-                    if rev_proc.returncode == 0:
-                        current_sha = rev_proc.stdout.strip()
-                        if current_sha and current_sha != t.head_sha:
-                            old_sha = t.head_sha
-                            t.head_sha = current_sha
-                            any_head_changed = True
+                    if t.registered_task_id and t.registered_agent_id:
+                        try:
+                            self.client.push(
+                                task_id=t.registered_task_id,
+                                head_sha=remote_sha,
+                                agent_id=t.registered_agent_id,
+                            )
                             self.record_event(
-                                "agent_commit_detected",
+                                "push_registered",
                                 {
                                     "task_id": t.task_id,
-                                    "old_sha": old_sha,
-                                    "new_sha": current_sha,
+                                    "head_sha": remote_sha,
                                 },
                             )
-                            if t.registered_task_id and t.registered_agent_id:
-                                try:
-                                    self.client.push(
-                                        task_id=t.registered_task_id,
-                                        head_sha=current_sha,
-                                        agent_id=t.registered_agent_id,
-                                    )
-                                    self.record_event(
-                                        "push_registered",
-                                        {
-                                            "task_id": t.task_id,
-                                            "head_sha": current_sha,
-                                        },
-                                    )
-                                except Exception as exc:
-                                    self.record_event(
-                                        "push_registration_error",
-                                        {
-                                            "task_id": t.task_id,
-                                            "error": str(exc),
-                                        },
-                                    )
-                except Exception:
-                    pass
+                        except Exception as exc:
+                            self.record_event(
+                                "push_registration_error",
+                                {
+                                    "task_id": t.task_id,
+                                    "error": str(exc),
+                                },
+                            )
+                else:
+                    # Informational check: check if agent committed locally without running git push yet
+                    try:
+                        local_rev = subprocess.run(
+                            ["git", "-C", t.workspace_dir, "rev-parse", "HEAD"],
+                            capture_output=True,
+                            text=True,
+                            timeout=5,
+                        )
+                        if local_rev.returncode == 0:
+                            local_sha = local_rev.stdout.strip()
+                            if local_sha and local_sha != (remote_sha or base_sha):
+                                self.record_event(
+                                    "unpushed_local_commits_detected",
+                                    {
+                                        "task_id": t.task_id,
+                                        "local_sha": local_sha,
+                                        "remote_sha": remote_sha or base_sha,
+                                        "note": "Commit is local only; waiting for agent git push before registering push",
+                                    },
+                                )
+                    except Exception:
+                        pass
 
             # Check aplexer session liveness
             all_done = True
@@ -757,6 +911,14 @@ class AgentHarnessDriver:
         """Execute full harness flow."""
         self.record_event("harness_started", {"run_id": self.run_id, "engine_mode": self.engine_mode})
 
+        # 0. Check worker_alive before starting
+        if not self.skip_worker_alive:
+            if not self.verify_worker_alive():
+                raise RuntimeError(
+                    f"worker_alive check failed: Worker at {self.server_url} is not responding (endpoint /status unavailable)"
+                )
+            self.record_event("worker_alive_verified", {"server_url": self.server_url})
+
         # 1. Check memory gate
         self.check_memory_gate()
 
@@ -821,6 +983,7 @@ def main() -> None:
         help="Execution engine for tasks (default: dry-run)",
     )
     parser.add_argument("--dry-run", action="store_true", help="Run with reference solution patches instead of live models")
+    parser.add_argument("--skip-worker-alive", action="store_true", help="Skip pre-flight Worker /status health check")
     parser.add_argument("--min-mem-gb", type=float, default=10.0, help="Minimum MemAvailable gate in GiB")
     parser.add_argument("--poll-interval", type=float, default=2.0, help="Radar polling interval in seconds")
     parser.add_argument("--max-wait", type=float, default=300.0, help="Maximum execution wait time in seconds")
@@ -840,6 +1003,7 @@ def main() -> None:
         poll_interval=args.poll_interval,
         max_wait_seconds=args.max_wait,
         engine_mode=args.engine_mode,
+        skip_worker_alive=args.skip_worker_alive,
     )
 
     try:

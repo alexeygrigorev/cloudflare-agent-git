@@ -38,6 +38,15 @@ class TestL6AgentHarness(unittest.TestCase):
     def setUpClass(cls):
         cls.repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         cls.demo_target_path = os.path.join(cls.repo_root, "demo-target")
+        if not os.path.exists(cls.demo_target_path):
+            candidates = [
+                "/home/alexey/git/cloudflare-agent-git/demo-target",
+                "/home/alexey/git/agent-branches-live/demo-target",
+            ]
+            for cand in candidates:
+                if os.path.exists(cand):
+                    cls.demo_target_path = cand
+                    break
         assert os.path.exists(cls.demo_target_path), f"demo-target not found at {cls.demo_target_path}"
 
         # Spin up mock L1 coordinator on ephemeral port
@@ -235,6 +244,8 @@ class TestL6AgentHarness(unittest.TestCase):
             "--dry-run",
             "--server",
             self.server_url,
+            "--demo-target",
+            self.demo_target_path,
             "--run-dir",
             self.test_dir,
             "--min-mem-gb",
@@ -251,6 +262,98 @@ class TestL6AgentHarness(unittest.TestCase):
         self.assertIn("timeline_path", parsed)
         self.assertEqual(len(parsed["tasks"]), 3)
         self.assertTrue(os.path.exists(parsed["timeline_path"]))
+
+    def test_06_worker_alive_enforcement(self):
+        """Test worker_alive health check fails closed when Worker endpoint is unresponsive."""
+        dead_driver = AgentHarnessDriver(
+            server_url="http://127.0.0.1:59998",
+            demo_target_path=self.demo_target_path,
+            run_dir=os.path.join(self.test_dir, "dead_test"),
+            min_mem_gate_gb=1.0,
+            engine_mode="dry-run",
+        )
+        self.assertFalse(dead_driver.verify_worker_alive(timeout_seconds=0.2))
+
+        # Full run() must raise RuntimeError with worker_alive failure
+        with self.assertRaises(RuntimeError) as ctx:
+            dead_driver.run()
+        self.assertIn("worker_alive check failed", str(ctx.exception))
+
+        # Live mock server should pass verify_worker_alive
+        live_driver = AgentHarnessDriver(
+            server_url=self.server_url,
+            demo_target_path=self.demo_target_path,
+            run_dir=os.path.join(self.test_dir, "live_test"),
+            min_mem_gate_gb=1.0,
+            engine_mode="dry-run",
+        )
+        self.assertTrue(live_driver.verify_worker_alive(timeout_seconds=2.0))
+
+    def test_07_quse_quota_gate(self):
+        """Test quse provider quota gate verification and fail-closed behavior."""
+        driver = AgentHarnessDriver(
+            server_url=self.server_url,
+            demo_target_path=self.demo_target_path,
+            run_dir=self.test_dir,
+            min_mem_gate_gb=1.0,
+            engine_mode="dry-run",
+        )
+
+        # Test against real quse CLI on host
+        passed, reason, info = driver.check_provider_quota_gate("zcodex")
+        self.assertTrue(passed, f"Host zcodex quota check should pass: {reason}")
+        self.assertIn("details", info)
+
+        passed_go, reason_go, info_go = driver.check_provider_quota_gate("space-bunny")
+        self.assertTrue(passed_go, f"Host space-bunny quota check should pass: {reason_go}")
+
+        # Test fail-closed on unknown provider
+        bad_pass, bad_reason, _ = driver.check_provider_quota_gate("nonexistent-model-xyz")
+        self.assertFalse(bad_pass)
+        self.assertIn("not found in quse output", bad_reason)
+
+    def test_08_ls_remote_verification_detects_real_push(self):
+        """Test git ls-remote remote-ref querying detects genuine pushes and rejects unpushed commits."""
+        driver = AgentHarnessDriver(
+            server_url=self.server_url,
+            demo_target_path=self.demo_target_path,
+            run_dir=self.test_dir,
+            min_mem_gate_gb=1.0,
+            engine_mode="dry-run",
+        )
+        base_sha = driver.get_base_commit_sha()
+        tasks = driver.parse_tasks()[:1]
+        driver.register_tasks(tasks, base_sha)
+        driver.setup_workspaces(tasks, base_sha)
+
+        t = tasks[0]
+        ws_dir = t.workspace_dir
+        self.assertIsNotNone(ws_dir)
+
+        # Initial remote head should be base_sha
+        init_remote_sha = driver.query_remote_head("origin", t.branch, cwd=ws_dir)
+        self.assertEqual(init_remote_sha, base_sha)
+
+        # Create a local commit without pushing
+        test_file = os.path.join(ws_dir, "test_file.txt")
+        with open(test_file, "w") as f:
+            f.write("local unpushed change\n")
+        subprocess.run(["git", "-C", ws_dir, "add", "test_file.txt"], check=True)
+        subprocess.run(["git", "-C", ws_dir, "commit", "-m", "local unpushed commit"], check=True)
+        local_head = subprocess.run(["git", "-C", ws_dir, "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+
+        # Remote ref via ls-remote MUST STILL BE base_sha (rejects commits-as-push!)
+        unpushed_remote_sha = driver.query_remote_head("origin", t.branch, cwd=ws_dir)
+        self.assertEqual(unpushed_remote_sha, base_sha)
+        self.assertNotEqual(unpushed_remote_sha, local_head)
+
+        # Now execute genuine git push
+        push_proc = subprocess.run(["git", "-C", ws_dir, "push", "origin", f"HEAD:{t.branch}"], capture_output=True, text=True)
+        self.assertEqual(push_proc.returncode, 0)
+
+        # Remote ref via ls-remote MUST NOW BE local_head
+        pushed_remote_sha = driver.query_remote_head("origin", t.branch, cwd=ws_dir)
+        self.assertEqual(pushed_remote_sha, local_head)
 
 
 if __name__ == "__main__":
