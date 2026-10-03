@@ -3,7 +3,8 @@
 - **Task:** `A01-baseline-compatible-positive` (Codex C-1270)
 - **Author / Head:** `antigravity-head` (`46fdb644`)
 - **Execution Timestamp:** 2026-10-03 11:13:03Z
-- **Worker Session:** `2372d702-dad2-4525-8ef2-1102d468aaaf` (tag `zcode-a01-positive`, parent `46fdb644-9b58-4e2f-aab3-9be5e1e33337`)
+- **Worker Session:** `2372d702-dad2-4525-8ef2-1102d468aaaf` (tag `zcode-a01-positive`, parent `46fdb644-9b58-4e2f-aab3-9be5e1e33337`, engine `shell`)
+- **Execution Mode & Provenance:** Head-authored Python implementation executed via dedicated worker shell session under cgroup containment (1.5G/256pids). This test does NOT represent native ZCode/GLM model code generation; it is an engineering feasibility test validating the frozen v2.2 acceptance grader against a compatible contract.
 - **Grader Script:** `/home/alexey/git/cloudflare-agent-git/.local/protected/a01-ground-truth/test_integration_stream.py` (SHA256: `af7512990f8da25afc7b53fc638166c8bcc75c5648759186e73e35d79a816887`)
 - **Overall Status:** **PASS** (Exit Code 0)
 
