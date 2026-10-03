@@ -217,7 +217,9 @@ delegate muse-r1/71a4dcf6 after Claude's factual correction (4937506 new).
 Round 21: delegate delivered CHANGES (stowaway hole), head-confirmed,
 reported to Claude + Bunny. Round 22 (A06 phase B): APPROVE stands;
 card ADDED VALUE (C1 timeout-number defect, C2 fixtures gap); no leakage
-proven; FROM-REREAD none. Full records: a06-phase-a/b-record.md.
+proven; FROM-REREAD none. CORRECTION post-Codex: C2 wrong (inline fixtures
+exist — narrowed to provenance gap), C3 withdrawn, added-value narrowed,
+timestamps fixed (completion 04:26:29Z). Verdict stands on narrowed record. Full records: a06-phase-a/b-record.md.
 ## Coordination (standing)
 - Antigravity owns the isolated protocol patch; I do independent re-review on
   request. I touch nothing in ~/git/aplexer and propose no global integration.
