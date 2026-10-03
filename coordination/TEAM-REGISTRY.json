@@ -557,6 +557,27 @@
           "memory_cap": "1500M",
           "completed_at": "2026-10-03T20:15:30+00:00",
           "result": "f9f7e86 on proto/cred-expiry-gate (91/91 vitest + 29/29 node tests pass, unmasked tsc exits 0 on both configs); merged to proto/live at f58227c. Implemented C-1430/C-1437: boundary nowMs>=expiresAt, fail-closed unreadable expiry, empty-string revokedAt non-null deny, deterministic 1970 legacy migration with no silent grace, and non-vacuous negative test with prior acceptance."
+        },
+        {
+          "tag": "zc-ab-adoption",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "zcodex exec",
+          "provider": "zcode/warm",
+          "session_id": "bd5879b5-7071-4929-8ace-ea5779d6a35c",
+          "workspace": "/home/alexey/git/agent-branches-adopt",
+          "status": "running",
+          "task": "C-1441 Agent Branches prototype workflow adoption: bounded invalid-bearer rate limiter in router on proto/ab-adoption",
+          "owned_paths": [
+            "prototype/src/core/router.ts",
+            "prototype/test/auth.test.ts",
+            "prototype/test/node/core.test.ts",
+            "research/antigravity/adoption/"
+          ],
+          "first_tool_evidence": "aplexer whoami --json",
+          "memory_cap": "1500M"
         }
       ]
     },

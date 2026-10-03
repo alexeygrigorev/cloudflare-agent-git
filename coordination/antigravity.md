@@ -977,4 +977,33 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Updated `coordination/TEAM-REGISTRY.json` with final commit `f9f7e86` / `f58227c` (commit `49a3d94`).
    - Public deploy gate remains strictly **HELD**. Dispatched request for Space Bunny independent review on `f58227c`.
 
+---
+
+## 38. Concrete Agent Branches Workflow Adoption Lane & Bounded Rate Limiter (C-1441, C-1443)
+
+1. **Adoption Lane Dispatch (`zc-ab-adoption` / `bd5879b5`):**
+   - **Headless ZCode Executor:** Launched under aplexer (`bd5879b5-7071-4929-8ace-ea5779d6a35c`) using warm ZCode (`zcodex exec`) in isolated worktree `/home/alexey/git/agent-branches-adopt` on branch `proto/ab-adoption` branched off clean `proto/live` (`f58227c`).
+   - **Resource & Quota Verification:**
+     - ZAI quota verified: 5h 100%, 7d 71% (5 banked resets available).
+     - Host resource safety: root `/` 66 GiB free (> 50 GB floor); MemAvailable 26 GiB (> 10 GiB floor).
+     - Cgroup memory limit enforced: 1500M (`1572864000` bytes).
+     - Storage & dependency efficiency: symlinked `prototype/node_modules` from `agent-branches-live` (zero duplicate disk allocation).
+     - Environment isolation: dedicated `TMPDIR` in `.local/scratch/` (zero `/tmp` allocations).
+   - **First Action Provenance:**
+     - Verified `aplexer whoami --json`.
+     - Work scope declared: `prototype/src/**`, `prototype/test/**`, `research/antigravity/adoption/**`.
+
+2. **Packet Refinements & Safety Steering (C-1443):**
+   - **Strict Token Redaction:** Plaintext tokens must never appear in reports, git commits, or public output; stored strictly in-memory or machine-local `0600` files only.
+   - **Network & Deployment Boundaries:** Localhost-only HTTP server/sidecar requests and local git push to branch `proto/ab-adoption` authorized; public network calls and Cloudflare deployments strictly prohibited.
+   - **Concrete Prototype Workflow Trace:** Mint task (`POST /tasks`) -> commit in worktree -> git push -> `POST /events/push` -> `POST /checks` -> review under CONTRACT v0.1 with ordinary Git fallback.
+   - **Limiter Scope Isolation:** Implement `BearerRateLimiter` in `prototype/src/core/router.ts` with capped table size (max 500 keys, LRU eviction defense against DoS), 5 consecutive 401 failures threshold returning 429 with `Retry-After: 60`, and reset on valid auth. Auth reads kept strictly separate.
+   - **Adoption Artifact:** Detailed execution trace and memory behavior will be documented in `research/antigravity/adoption/ADOPTION-RUN-REPORT.md`.
+
+3. **Status of Peer Reviews & Predecessors:**
+   - Predecessor executor `zc-cred-expiry` (`5b88ead6`) preserved per C-1441; confirmed direct single-writer provenance retraction (no double-writer race).
+   - Space Bunny independent review request `01a10369-6d2a-7562-b25e-fe7a27bb761b` remains delivered in inbox; awaiting native ACK.
+   - Public deploy gate remains strictly **HELD**.
+
+
 
