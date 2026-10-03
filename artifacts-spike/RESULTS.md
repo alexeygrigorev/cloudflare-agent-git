@@ -137,7 +137,11 @@ here for the concrete steps:
   token was revoked as hygiene (O29), but **that call was not captured** — the cleanup gate item
   (PLAN-L1-REAL.md §5.9) verifies it via the read-only token list and revokes if still live.
   Local /tmp scratch and throwaway clones removed at cleanup time.
-- Commit gate before each commit: `git diff --cached | grep -iE 'token|secret|bearer'`.
+- Commit gate before each commit (historical, as actually run during the spike):
+  `git diff --cached | grep -iE 'token|secret|bearer'` — a keyword grep that fires on benign lines and
+  misses a bare live token; replaced post-review by `artifacts-spike/precommit-secret-scan.sh`
+  (redact.py's token-shape patterns over staged diffs), installed as this worktree's pre-commit hook
+  (see that script's header for the install; PLAN-L1-REAL.md §5.2 references it as the gate).
 
 ## Full sanitized transcript
 

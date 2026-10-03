@@ -1,0 +1,3 @@
+#!/bin/sh
+# Per-worktree pre-commit for agent-branches-artifacts only (see artifacts-spike/precommit-secret-scan.sh header).
+exec "$(git rev-parse --show-toplevel)/artifacts-spike/precommit-secret-scan.sh"
