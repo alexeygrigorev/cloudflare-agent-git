@@ -210,19 +210,29 @@ class AgentHarnessDriver:
             return False, f"Provider '{provider}' (key '{key}') not found in quse output", data
 
         info = data[key]
+        if info.get("status") != "ok":
+            return False, f"Provider '{provider}' status is {info.get('status')} (error: {info.get('error')})", info
+
         details = info.get("details", {})
         if details.get("limit_reached") is True:
             return False, f"Provider '{provider}' limit_reached is True", info
-        if info.get("status") not in ("ok", "warning", None):
-            return False, f"Provider '{provider}' status is {info.get('status')}", info
+
+        # Codex 15% reserve policy check if codex is ever evaluated
+        effective_min = 15.0 if key == "codex" else min_percent
 
         windows = info.get("windows", {})
+        valid_windows_checked = 0
         for win_name in ("5h", "7d", "monthly"):
             win = windows.get(win_name)
             if isinstance(win, dict):
                 pct = win.get("percent_remaining")
-                if pct is not None and float(pct) < min_percent:
-                    return False, f"Provider '{provider}' {win_name} quota {pct}% < {min_percent}% threshold", info
+                if pct is not None:
+                    valid_windows_checked += 1
+                    if float(pct) < effective_min:
+                        return False, f"Provider '{provider}' {win_name} quota {pct}% < {effective_min}% threshold", info
+
+        if valid_windows_checked == 0:
+            return False, f"Provider '{provider}' has no known valid quota windows reported (fail-closed)", info
 
         return True, "Quota check passed", info
 
@@ -832,9 +842,10 @@ class AgentHarnessDriver:
                     )
                     if stat_proc.returncode == 0:
                         session_info = json.loads(stat_proc.stdout)
-                        phase = session_info.get("phase", "")
-                        is_alive = session_info.get("alive", False)
-                        if is_alive and phase in ("running", "working", "waiting"):
+                        worker_alive = bool(session_info.get("worker_alive", False) or session_info.get("alive", False))
+                        phase = session_info.get("phase") or session_info.get("state") or ""
+                        reported_state = session_info.get("reported_state") or ""
+                        if worker_alive and (phase in ("running", "working", "waiting") or reported_state in ("running", "working", "waiting")):
                             all_done = False
                 except Exception:
                     pass
