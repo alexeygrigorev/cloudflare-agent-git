@@ -5,7 +5,7 @@
 - **Checkout**: `/home/alexey/git/agent-branches-adopt`, branch `proto/ab-adoption`, HEAD `a2055e3` at run start
 - **Wire**: prototype CONTRACT.md **0.1.4** (no wire drift; all statuses/shapes matched the contract)
 - **Stack under test (this checkout, not the L6 stack)**: `local-artifacts/sidecar.mjs` on 127.0.0.1:8793 (repos in `/tmp/ab-adoption-c1474/repos`) + local node:http coordinator `.build/node/src/local/main.js` (src/local core) on 127.0.0.1:8792, fresh state file, `RADAR_IMPL` default.
-- **Scratch/evidence dir**: `/tmp/ab-adoption-c1474/` (ephemeral; this file is the durable record; tokens redacted throughout)
+- **Scratch/evidence dir**: migrated to `/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-fork-adoption/` per C1487 (run-time location was `/tmp/ab-adoption-c1474/`; tokens redacted throughout)
 
 ## Verdict
 
@@ -94,20 +94,31 @@ Response: `{"stale": false, "accepted": 1, …}` — the (a-0003, b-0004) pair f
 
 ## Automated regression coverage
 
-`prototype/test/adoption.test.ts` (this commit) automates the loop for CI within the workerd lane: setup → two tasks with payload-integrity assertions (fork remote shape, ref, base==head, `art_v1_` write token) → real sidecar git commits on both forks → cross-agent 403 → agent-token push reports → heads/pushes verification → full-vector 0.1 check → pair `clean` → runner-token 401. Run result: **1 passed (868 ms)**, `npx tsc --noEmit` clean. The ordinary-git-client leg itself (clone/push over smart HTTP with bearer headers) is covered by `local-artifacts/*.test.mjs` and by this live run.
+`prototype/test/adoption.test.ts` (this commit) automates the loop for CI within the workerd lane: setup → two tasks with payload-integrity assertions (fork remote shape, ref, base==head, `art_v1_` write token) → real sidecar git commits on both forks → cross-agent 403 → agent-token push reports → heads/pushes verification → full-vector 0.1 check → pair `clean` → runner-token 401. Run result: **1 passed (868 ms)**, `npm run typecheck` (real `tsc --noEmit` from `node_modules/typescript`) clean — re-verified 2026-10-04 after C1487 flagged that the original bare `npx tsc` invocation had resolved a stub. The ordinary-git-client leg itself (clone/push over smart HTTP with bearer headers) is covered by `local-artifacts/*.test.mjs` and by this live run.
 
 ## Reproduction
 
 ```bash
 cd /home/alexey/git/agent-branches-adopt/prototype
 npm run build:node
-SIDECAR_PORT=8793 SIDECAR_TOKEN=$ADMIN SIDECAR_ROOT=/tmp/ab-c1474/repos \
+SIDECAR_PORT=8793 SIDECAR_TOKEN=$ADMIN SIDECAR_ROOT=$SCRATCH/repos \
   SIDECAR_NOTIFY_URL=http://127.0.0.1:8792/events/push node local-artifacts/sidecar.mjs &
 LOCAL_ARTIFACTS_URL=http://127.0.0.1:8793 LOCAL_ARTIFACTS_TOKEN=$ADMIN \
   ADMIN_TOKEN=$ADMIN RUNNER_TOKEN=$RUNNER PORT=8792 \
-  COORDINATOR_STATE_FILE=/tmp/ab-c1474/state.json node .build/node/src/local/main.js &
+  COORDINATOR_STATE_FILE=$SCRATCH/state.json node .build/node/src/local/main.js &
+# SCRATCH: use the assigned session scratch, e.g.
+#   /home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-fork-adoption  (not /tmp)
 # then: POST /setup, POST /tasks, git -c http.extraHeader=… clone/edit/push, POST /checks
 npx vitest run test/adoption.test.ts   # automated equivalent
 ```
 
-Next owner/action: results handed back to antigravity-head (aplexer). Services from the live run were torn down after evidence capture; scratch under `/tmp/ab-adoption-c1474` (logs, raw payloads, tokens) is private and not published.
+## C1487 correction — 2026-10-04
+
+Applied after codex-principal/antigravity-head review (aplexer `01a1042c…`, `01a1042e…`):
+
+1. **Scratch migrated out of `/tmp`.** `/tmp/ab-adoption-c1474` was copied to `/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-fork-adoption/` and verified identical with `diff -rq` (exit 0; only harness session files are dest-only) before the `/tmp` copy was removed. No new `/tmp` allocations. The migration did not touch any evidence content — all hashes, payloads and timings in this report are unchanged.
+2. **Typecheck claim corrected.** The original `npx tsc --noEmit` invocation resolved a stub and its banner was mistaken for a pass. Re-ran the project script: `npm run typecheck` (`tsc --noEmit`, real TypeScript from `node_modules/typescript`) exits 0 with no errors. The claim stands; the invocation is now recorded accurately.
+3. **No result relabeling.** The reported run outputs (including the one exercised 409 stale-gate recovery) are the same actually-tested pair/source tree as committed in `fcd7985`; nothing was rerun against a different head and relabeled.
+4. **Ownership ACK (disjoint).** Commit `fcd7985` touched exactly `prototype/test/adoption.test.ts` and `research/antigravity/adoption/REAL-FORK-ADOPTION-REPORT.md` (verified via `git show --stat`), disjoint from zcode-limiter-fix's declared scope `prototype/test/node/router.test.ts` + `prototype/test/node/core.test.ts`; no contamination path between the two scopes.
+
+Next owner/action: results handed back to antigravity-head (aplexer). Services from the live run were torn down after evidence capture; the durable private scratch (logs, raw payloads, tokens) lives under `/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-fork-adoption/` and is not published.
