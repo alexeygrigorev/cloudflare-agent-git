@@ -18,6 +18,7 @@ declare global {
 declare module "cloudflare:workers" {
   namespace Cloudflare {
     interface Env {
+      COORDINATOR: DurableObjectNamespace<Coordinator>;
       ARTIFACTS?: ArtifactsNamespaceBinding;
       RADAR_IMPL?: string;
       ADMIN_TOKEN?: string;

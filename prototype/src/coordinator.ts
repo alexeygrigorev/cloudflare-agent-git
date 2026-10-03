@@ -150,11 +150,26 @@ export class Coordinator extends DurableObject {
   private readonly state: DurableObjectState;
   private readonly radar: Radar;
   private model: CoordinatorModel | null = null;
+  /**
+   * Serializes mutating RPC methods (codex C-1305 #4): workerd can deliver
+   * concurrent events while a method awaits sidecar/binding I/O, which would
+   * otherwise race seq allocation and cause duplicate forks or lost updates.
+   */
+  private mutex: Promise<unknown> = Promise.resolve();
 
   constructor(state: DurableObjectState, env: Env) {
     super(state, env);
     this.state = state;
     this.radar = radarFromEnv(env.RADAR_IMPL);
+  }
+
+  private serialized<T>(fn: () => Promise<T>): Promise<T> {
+    const run = this.mutex.then(fn, fn);
+    this.mutex = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
   }
 
   private async load(): Promise<CoordinatorModel> {
@@ -190,7 +205,7 @@ export class Coordinator extends DurableObject {
     );
   }
 
-  async setup(): Promise<{
+  private async setupNow(): Promise<{
     canonical: { name: string; remote: string };
     created: boolean;
     seedCommit: string | null;
@@ -222,7 +237,7 @@ export class Coordinator extends DurableObject {
     };
   }
 
-  async createTask(input: {
+  private async createTaskNow(input: {
     agent?: string;
     intent?: string;
     baseSha?: string;
@@ -239,7 +254,7 @@ export class Coordinator extends DurableObject {
   }> {
     const model = await this.load();
     if (!model.canonicalName) {
-      await this.setup();
+      await this.setupNow();
     }
     const canonical = model.canonicalName!;
     const port = this.port();
@@ -315,7 +330,7 @@ export class Coordinator extends DurableObject {
     };
   }
 
-  async recordPush(input: {
+  private async recordPushNow(input: {
     agent?: string;
     fork?: string;
     ref?: string;
@@ -443,7 +458,7 @@ export class Coordinator extends DurableObject {
   }
 
   /** Record which agent acknowledged which warning at which head (C-1306). */
-  async ackWarning(
+  private async ackWarningNow(
     warningId: string,
     input: { agent: string; note?: string },
   ): Promise<{ warning: WarningRecord }> {
@@ -467,7 +482,7 @@ export class Coordinator extends DurableObject {
   }
 
   /** Attach test provenance to a task (C-1306): {command, exit, head_sha, at}. */
-  async recordTestProvenance(
+  private async recordTestProvenanceNow(
     taskId: string,
     input: { command: string; exit: number; head_sha: string },
   ): Promise<{ testProvenance: TestProvenance }> {
@@ -494,6 +509,44 @@ export class Coordinator extends DurableObject {
     return { testProvenance: task.testProvenance };
   }
 
+  async setup(): Promise<ReturnType<Coordinator["setupNow"]>> {
+    return this.serialized(() => this.setupNow());
+  }
+
+  async createTask(input: Parameters<Coordinator["createTaskNow"]>[0]): Promise<ReturnType<Coordinator["createTaskNow"]>> {
+    return this.serialized(() => this.createTaskNow(input));
+  }
+
+  async recordPush(input: Parameters<Coordinator["recordPushNow"]>[0]): Promise<ReturnType<Coordinator["recordPushNow"]>> {
+    return this.serialized(() => this.recordPushNow(input));
+  }
+
+  async ackWarning(
+    warningId: string,
+    input: Parameters<Coordinator["ackWarningNow"]>[1],
+  ): Promise<ReturnType<Coordinator["ackWarningNow"]>> {
+    return this.serialized(() => this.ackWarningNow(warningId, input));
+  }
+
+  async recordTestProvenance(
+    taskId: string,
+    input: Parameters<Coordinator["recordTestProvenanceNow"]>[1],
+  ): Promise<ReturnType<Coordinator["recordTestProvenanceNow"]>> {
+    return this.serialized(() => this.recordTestProvenanceNow(taskId, input));
+  }
+
+  async submitChecks(
+    input: Parameters<Coordinator["submitChecksNow"]>[0],
+  ): Promise<ReturnType<Coordinator["submitChecksNow"]>> {
+    return this.serialized(() => this.submitChecksNow(input));
+  }
+
+  async applyCheckResults(
+    input: Parameters<Coordinator["applyCheckResultsNow"]>[0],
+  ): Promise<ReturnType<Coordinator["applyCheckResultsNow"]>> {
+    return this.serialized(() => this.applyCheckResultsNow(input));
+  }
+
   private invalidateWarningsFor(model: CoordinatorModel, agent: string, now: string): string[] {
     const invalidated: string[] = [];
     for (const warning of model.warnings) {
@@ -513,7 +566,7 @@ export class Coordinator extends DurableObject {
    * `{stale: true}` (the route maps that to 409) instead of throwing, since
    * custom error properties do not survive RPC marshalling.
    */
-  async submitChecks(input: {
+  private async submitChecksNow(input: {
     vector: Record<string, string>;
     policy: string;
     coverage?: string[];
@@ -538,7 +591,7 @@ export class Coordinator extends DurableObject {
     if (stale) {
       return { stale: true, currentHeads: model.heads };
     }
-    const applied = await this.applyCheckResults({ policy: input.policy, results: input.results });
+    const applied = await this.applyCheckResultsNow({ policy: input.policy, results: input.results });
     const model2 = await this.load();
     const runnerReport: RunnerReport = {
       policy: input.policy,
@@ -565,7 +618,7 @@ export class Coordinator extends DurableObject {
    * `status: "conflict"` creates warnings; a later `clean` result at the same
    * vector resolves an active warning for that pair.
    */
-  async applyCheckResults(input: {
+  private async applyCheckResultsNow(input: {
     policy: string;
     results: { pair: [string, string]; status: string; kind?: string; evidence?: string }[];
   }): Promise<{ accepted: number; pairs: PairStatusView[]; createdWarnings: WarningRecord[] }> {
