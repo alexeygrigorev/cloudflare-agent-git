@@ -1,7 +1,9 @@
 import { DurableObject } from "cloudflare:workers";
 import { LocalArtifacts } from "./artifacts/local.js";
 import { RealArtifacts } from "./artifacts/real.js";
+import { SidecarArtifacts } from "./artifacts/sidecar.js";
 import { radarFromEnv, type Radar } from "./radar.js";
+import type { ArtifactsPort } from "./types.js";
 
 export interface AgentRecord {
   agentId: string;
@@ -41,6 +43,14 @@ export interface RadarLogEntry {
   reason: string | null;
 }
 
+interface CheckResultPayload {
+  pair: string[];
+  heads: Record<string, string>;
+  status: string;
+  kind: string | null;
+  evidence?: unknown;
+}
+
 interface CoordinatorModel {
   canonicalName: string | null;
   canonicalRemote: string | null;
@@ -51,6 +61,7 @@ interface CoordinatorModel {
   seenPushes: string[];
   warnings: WarningRecord[];
   radarLog: RadarLogEntry[];
+  lastChecks: { receivedAt: string; vector: Record<string, string>; results: number } | null;
 }
 
 function emptyModel(): CoordinatorModel {
@@ -64,6 +75,7 @@ function emptyModel(): CoordinatorModel {
     seenPushes: [],
     warnings: [],
     radarLog: [],
+    lastChecks: null,
   };
 }
 
@@ -96,8 +108,14 @@ export class Coordinator extends DurableObject {
     await this.state.storage.put("model", this.model);
   }
 
-  private port(): RealArtifacts | LocalArtifacts {
-    return this.env.ARTIFACTS ? new RealArtifacts(this.env.ARTIFACTS) : this.localArtifacts;
+  private port(): ArtifactsPort {
+    if (this.env.ARTIFACTS_IMPL === "sidecar" && this.env.SIDECAR_URL) {
+      return new SidecarArtifacts(this.env.SIDECAR_URL, this.env.SIDECAR_TOKEN ?? "");
+    }
+    if (this.env.ARTIFACTS) {
+      return new RealArtifacts(this.env.ARTIFACTS);
+    }
+    return this.localArtifacts;
   }
 
   async setup(): Promise<{
@@ -130,7 +148,7 @@ export class Coordinator extends DurableObject {
   }
 
   private async localSeedIfAvailable(
-    port: RealArtifacts | LocalArtifacts,
+    port: ArtifactsPort,
     repo: string,
   ): Promise<string | null> {
     if (port instanceof LocalArtifacts) {
@@ -296,6 +314,81 @@ export class Coordinator extends DurableObject {
       throw new Error(`unknown task: ${taskId}`);
     }
     return { ...task, agent: model.agents[task.agentId] ?? null };
+  }
+
+  /**
+   * Intake for external radar results (CONTRACT v0.1, as emitted by
+   * `python3 -m radar ... --l1`). Rejects with stale:true (HTTP 409 at the
+   * route) when any head in the payload vector no longer matches the current
+   * head vector — a check against moved heads must not create warnings.
+   */
+  async submitChecks(payload: {
+    contract?: string;
+    vector?: Record<string, string>;
+    results?: CheckResultPayload[];
+  }): Promise<{
+    accepted: boolean;
+    stale: boolean;
+    staleHeads: Record<string, { expected: string | null; got: string }>;
+    warningsCreated: WarningRecord[];
+    results: number;
+  }> {
+    const model = await this.load();
+    if (payload.contract !== "0.1") {
+      throw new Error("unsupported contract: expected 0.1");
+    }
+    const staleHeads: Record<string, { expected: string | null; got: string }> = {};
+    for (const [agent, sha] of Object.entries(payload.vector ?? {})) {
+      if (!model.agents[agent]) {
+        throw new Error(`unknown agent: ${agent}`);
+      }
+      if (model.heads[agent] !== sha) {
+        staleHeads[agent] = { expected: model.heads[agent] ?? null, got: sha };
+      }
+    }
+    if (Object.keys(staleHeads).length > 0) {
+      return { accepted: false, stale: true, staleHeads, warningsCreated: [], results: 0 };
+    }
+    const now = new Date().toISOString();
+    const created: WarningRecord[] = [];
+    let count = 0;
+    for (const result of payload.results ?? []) {
+      count += 1;
+      const pair = [...result.pair].sort() as [string, string];
+      const heads = {
+        a: result.heads[pair[0]] ?? "",
+        b: result.heads[pair[1]] ?? "",
+      };
+      const reason = result.status === "conflict" ? `radar-conflict:${result.kind ?? "unknown"}` : null;
+      model.radarLog.push({ at: now, pair, heads, reason });
+      if (reason) {
+        const warning: WarningRecord = {
+          id: `warn-${model.warnings.length + 1}`,
+          pair,
+          headsAtIssue: heads,
+          reason,
+          createdAt: now,
+          invalidatedAt: null,
+          status: "active",
+        };
+        model.warnings.push(warning);
+        created.push(warning);
+      }
+    }
+    if (model.radarLog.length > RADAR_LOG_CAP) {
+      model.radarLog.splice(0, model.radarLog.length - RADAR_LOG_CAP);
+    }
+    if (model.warnings.length > WARNINGS_CAP) {
+      model.warnings.splice(0, model.warnings.length - WARNINGS_CAP);
+    }
+    model.lastChecks = { receivedAt: now, vector: { ...(payload.vector ?? {}) }, results: count };
+    await this.persist();
+    return { accepted: true, stale: false, staleHeads: {}, warningsCreated: created, results: count };
+  }
+
+  async checksReceipt(): Promise<CoordinatorModel["lastChecks"]> {
+    const model = await this.load();
+    return model.lastChecks;
   }
 
   private invalidateWarningsFor(model: CoordinatorModel, agent: string, now: string): string[] {

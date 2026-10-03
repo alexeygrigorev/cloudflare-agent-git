@@ -8,6 +8,9 @@ declare global {
   interface Env {
     ARTIFACTS?: ArtifactsNamespaceBinding;
     RADAR_IMPL?: string;
+    ARTIFACTS_IMPL?: string;
+    SIDECAR_URL?: string;
+    SIDECAR_TOKEN?: string;
   }
 }
 
@@ -16,6 +19,9 @@ declare module "cloudflare:workers" {
     interface Env {
       ARTIFACTS?: ArtifactsNamespaceBinding;
       RADAR_IMPL?: string;
+      ARTIFACTS_IMPL?: string;
+      SIDECAR_URL?: string;
+      SIDECAR_TOKEN?: string;
     }
   }
 }
@@ -100,6 +106,21 @@ const handler: FetchHandler = {
           sha: event.payload.after,
         });
         return json(result);
+      }
+
+      if (method === "POST" && path === "/checks") {
+        const body = await readJson(request);
+        const result = await coordinator(env).submitChecks(
+          body as unknown as Parameters<Coordinator["submitChecks"]>[0],
+        );
+        if (result.stale) {
+          return json({ error: "stale head vector", ...result }, 409);
+        }
+        return json(result, 201);
+      }
+
+      if (method === "GET" && path === "/checks") {
+        return json(await coordinator(env).checksReceipt());
       }
 
       if (method === "GET" && path === "/status") {

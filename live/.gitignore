@@ -1,0 +1,5 @@
+live/artifacts/
+live/work/
+live/state/
+live/*.log
+live/.dev.vars

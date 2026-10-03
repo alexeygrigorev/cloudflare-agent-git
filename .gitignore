@@ -5,3 +5,8 @@
 node_modules/
 .wrangler/
 *.log
+
+# live run state (zc-live-2)
+live/.dev.vars
+live/work/
+__pycache__/

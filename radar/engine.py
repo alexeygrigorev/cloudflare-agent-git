@@ -415,6 +415,7 @@ class RadarEngine:
         max_concurrency: int = 2,
         queue_timeout_seconds: float = 10.0,
         max_psi_some_avg10: float = 10.0,
+        max_vmem_mb: float = 1024.0,
     ):
         self.repo_path = os.path.abspath(repo_path)
         self.test_command = test_command
@@ -422,6 +423,7 @@ class RadarEngine:
         self.max_active_heads = int(max_active_heads)
         self.default_base_sha = default_base_sha
         self.run_tests_on_disjoint = run_tests_on_disjoint
+        self.max_vmem_mb = float(max_vmem_mb)
         self.min_mem_available_mb = float(min_mem_available_mb)
         self.job_estimate_mb = float(job_estimate_mb)
         self.max_concurrency = int(max_concurrency)
@@ -769,8 +771,9 @@ class RadarEngine:
                     resource.setrlimit(resource.RLIMIT_CPU, (cpu_sec, cpu_sec + 2))
                 except (ValueError, OSError):
                     pass
-                # Virtual memory limit: 1024 MB
-                vmem = 1024 * 1024 * 1024
+                # Virtual memory limit: configurable (default 1024 MB; node/V8
+                # reservations need more — pass max_vmem_mb to raise)
+                vmem = int(float(self.max_vmem_mb) * 1024 * 1024)
                 try:
                     resource.setrlimit(resource.RLIMIT_AS, (vmem, vmem))
                 except (ValueError, OSError):
@@ -1483,6 +1486,7 @@ def main():
     parser.add_argument("--concurrency", type=int, default=2, help="Maximum concurrent test jobs")
     parser.add_argument("--queue-timeout", type=float, default=10.0, help="Queue timeout in seconds for RAM admission")
     parser.add_argument("--max-psi", type=float, default=10.0, help="Maximum PSI some avg10 memory pressure")
+    parser.add_argument("--max-vmem", type=float, default=1024.0, help="Per-test virtual memory limit in MB (node/V8 needs >= 4096)")
     args = parser.parse_args()
 
     engine = RadarEngine(
@@ -1494,6 +1498,7 @@ def main():
         max_concurrency=args.concurrency,
         queue_timeout_seconds=args.queue_timeout,
         max_psi_some_avg10=args.max_psi,
+        max_vmem_mb=args.max_vmem,
     )
 
     if args.pair:
