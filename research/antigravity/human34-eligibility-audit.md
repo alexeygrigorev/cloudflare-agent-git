@@ -55,11 +55,12 @@ This audit verifies host and account eligibility for the official Z.AI zero-quot
 - **Criteria:** Campaign requires an active paid Coding Plan. The cache confirms `builtin:zai-coding-plan` is authenticated and entitled.
 
 ### 2.4 Quota Status & Measurement
-- **Reading as of 2026-10-03 06:32 UTC:**
-  - 5-hour window: **96.0% remaining** (used 4.0%, resets 07:16 UTC)
-  - Weekly window: **81.0% remaining** (used 19.0%, resets Oct 6 15:47 UTC)
+- **Reading as of 2026-10-03 04:32 UTC (06:32 CEST / Berlin):**
+  - 5-hour window: **96.0% remaining** (used 4.0%, resets 05:16 UTC / 07:16 CEST)
+  - Weekly window: **81.0% remaining** (used 19.0%, resets Oct 6 13:47 UTC / 15:47 CEST)
   - Banked resets available: **5** (must remain untouched per policy)
   - Limit reached: **false**
+- **Prerequisite vs Live Admission Scope:** Installed package version (`3.14.0`), configuration (`glm-5.3-flash`), and cache status (`builtin:zai-coding-plan` available) confirm that all static prerequisites for the promotion are satisfied on the host. However, actual runtime adapter admission and empirical zero-quota consumption during live traffic remain to be verified by comparing quota delta before and after executions strictly inside the 17:00–03:00 Berlin window. Zero consumption is not inferred outside the window.
 
 ---
 
