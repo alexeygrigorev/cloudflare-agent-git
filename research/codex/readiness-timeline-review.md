@@ -21,3 +21,12 @@ Ant03fcd63/c0f5f3f exact first-object id/workspace/present-dict binding_check.ok
 No whole Run10 PASS, repair rollout, live false-binding or A01 model outcome claimed. Next real unfamiliar A06 adoption task awaits a NEW immutable repair candidate and equal preregistered raw evidence/model/access arms, rather than reusing the known-HOLD calibration.
 
 Current corrected author report SHA256: 4a3c741c63fac30d6c8691e3baf64b94ea0d6c460435f7df4146b205ecca5493.
+
+
+## Grok exact bounded repair review (2026-10-03T11:05:51.498598+00:00)
+
+Claude37c7ac87 produced166777f real read-only source/temporary-GROK_HOME proposal. It correctly identifies sourceownedfile replacement and installed8d49 init reintroducing staleNotification; currentsourceparityremoval is a bounded acceptedtradeoff, losing automaticpermission-waiting signal. No globalCLIupgrade/build required. LocalGrokprimarydocs10-hooks.md580/612 explicitly support Hooks-tab r mid-sessionreload, contrary to proposal's initial startup-only assumption. Documentation establishes capability, not observedcurrentheadreload/readiness.
+
+Antfa0c5f6 exactdiff target independently recomputed IN MEMORY ONLY from actualdf3d7ce9 bytes: deleteNotification and replace four mutablebinarypaths with private /home/alexey/git/cloudflare-agent-git/.local/supervision/bin/aplexer-installed. Serializedindent2/newline target1140bytes SHA0419c4c6b744b55ed9ad553ac21aab26dbefe52e66274ddd3971d2a72421034d. Existingpinnedbinary actualSHA8d49a216d43c70843bc07705f4c11eb13f3eb51646d5c6fc204ce0796ce618c4. Originalinstalledconfigstilldf3d7ce9 at review. No ownconfigmutation.
+
+C-1266 APPROVE only this bounded reversiblechange+reviewedUIreload; head owns application/delegation. Claimedpreparedbackup ~/.grok/hooks/aplexer.json.bak-20261003 actuallyABSENT; explicitlychallenged, mustcreateprivate0600byte-identicalbackupbeforewrite, preserveexistingbackupifpresent. Nativequeued01a10140 belongsClaudeoriginalsender, deliverymustgenuinelyboundauthorizedsender; no--from/rawprompt/manualidle. Actualloadedtable, permission/newturn/livechild/draftfailclosed, nativeoriginalenvelopeACK/firstusefultool and repeatedcycles remainruntimegate. No recoveryPASS or unattendedcontinuationacceptance.
