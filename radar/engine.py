@@ -274,6 +274,20 @@ class MatrixResult(dict):
             "pairs": [dict(p) for p in self.pairs],
         }
 
+    def export_l1_payload(
+        self,
+        vector: Optional[Dict[str, str]] = None,
+        policy: Optional[Dict[str, Any]] = None,
+        engine: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """Export matrix results to CONTRACT v0.1 schema for L1 integration."""
+        return export_l1_payload(
+            pair_results=self.pairs,
+            vector=vector,
+            policy=policy,
+            engine=engine,
+        )
+
 
 def create_warning(
     pair: List[str],
@@ -1141,6 +1155,20 @@ class RadarEngine:
             duration_seconds=round(duration, 4),
         )
 
+    def export_l1_payload(
+        self,
+        pair_results: Union[List[Any], MatrixResult, Dict[str, Any]],
+        vector: Optional[Dict[str, str]] = None,
+        policy: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Export evaluation results to CONTRACT v0.1 schema for L1 integration (C-1321)."""
+        return export_l1_payload(
+            pair_results=pair_results,
+            vector=vector,
+            policy=policy,
+            engine=self,
+        )
+
 
 def evaluate_pair(
     head_a: Any,
@@ -1188,6 +1216,177 @@ def run_matrix(
     )
 
 
+def export_l1_payload(
+    pair_results: Union[List[Any], MatrixResult, Dict[str, Any]],
+    vector: Optional[Dict[str, str]] = None,
+    policy: Optional[Dict[str, Any]] = None,
+    engine: Optional[RadarEngine] = None,
+) -> Dict[str, Any]:
+    """Export evaluation results to CONTRACT v0.1 schema for L1 integration (C-1321).
+
+    Contract v0.1 Schema:
+    {
+      "contract": "0.1",
+      "vector": { "<agentId>": "<sha>", ... },
+      "policy": {
+        "merge": "git-merge-tree",
+        "tests": { "command": ["..."], "budget_s": 15.0 }
+      },
+      "coverage": {
+        "pairs_checked": <int>,
+        "tests_collected": <int>
+      },
+      "results": [
+        {
+          "pair": ["agentA", "agentB"],
+          "heads": { "agentA": "<shaA>", "agentB": "<shaB>" },
+          "status": "conflict" | "clean" | "unknown" | "not_checked",
+          "kind": "textual" | "test" | null,
+          "evidence": {
+            "summary": "<string>",
+            "files": ["..."],
+            "test_output_tail": "<string>",
+            ... (preserves all diagnostic fields from PairResult.evidence)
+          }
+        }
+      ]
+    }
+    """
+    if isinstance(pair_results, MatrixResult):
+        raw_pairs = pair_results.pairs
+    elif isinstance(pair_results, (list, tuple)):
+        raw_pairs = list(pair_results)
+    else:
+        raw_pairs = [pair_results]
+
+    # Derive vector if not explicitly provided
+    if vector is None:
+        derived_vector: Dict[str, str] = {}
+        for item in raw_pairs:
+            h = item.get("heads") if isinstance(item, dict) else getattr(item, "heads", {})
+            if isinstance(h, dict):
+                for k, v in h.items():
+                    if k not in derived_vector and v:
+                        derived_vector[str(k)] = str(v)
+        final_vector = {k: derived_vector[k] for k in sorted(derived_vector.keys())}
+    else:
+        final_vector = {k: str(vector[k]) for k in sorted(vector.keys())}
+
+    # Policy
+    if policy is None:
+        test_cmd = None
+        budget_s = 15.0
+        if engine is not None:
+            test_cmd = getattr(engine, "test_command", None)
+            budget_s = getattr(engine, "test_budget_seconds", 15.0)
+        if isinstance(test_cmd, str):
+            test_cmd = shlex.split(test_cmd)
+        elif isinstance(test_cmd, (list, tuple)):
+            test_cmd = list(test_cmd)
+        final_policy = {
+            "merge": "git-merge-tree",
+            "tests": {
+                "command": test_cmd,
+                "budget_s": float(budget_s),
+            },
+        }
+    else:
+        final_policy = dict(policy)
+
+    formatted_results: List[Dict[str, Any]] = []
+    for r in raw_pairs:
+        # Determine pair list and sort deterministically: pair[0] <= pair[1]
+        raw_pair = r.get("pair") if isinstance(r, dict) else getattr(r, "pair", [])
+        pair_list = sorted([str(x) for x in raw_pair])
+
+        # Extract heads
+        raw_heads = r.get("heads") if isinstance(r, dict) else getattr(r, "heads", {})
+        heads_dict: Dict[str, str] = {}
+        for agent in pair_list:
+            if isinstance(raw_heads, dict) and agent in raw_heads:
+                heads_dict[agent] = str(raw_heads[agent])
+            elif agent in final_vector:
+                heads_dict[agent] = str(final_vector[agent])
+        if isinstance(raw_heads, dict):
+            for k, v in raw_heads.items():
+                if k not in heads_dict:
+                    heads_dict[str(k)] = str(v)
+
+        # Status and kind
+        raw_status = r.get("status") if isinstance(r, dict) else getattr(r, "status", STATUS_UNKNOWN)
+        status = str(raw_status).lower() if raw_status else STATUS_UNKNOWN
+
+        raw_kind = r.get("kind") if isinstance(r, dict) else getattr(r, "kind", None)
+        kind = str(raw_kind).lower() if raw_kind else None
+
+        # Evidence
+        raw_ev = r.get("evidence") if isinstance(r, dict) else getattr(r, "evidence", {})
+        ev_dict = dict(raw_ev) if isinstance(raw_ev, dict) else {}
+
+        summary = (
+            ev_dict.get("summary")
+            or ev_dict.get("details")
+            or ev_dict.get("error")
+            or ev_dict.get("reason")
+            or (f"Merge status: {status}" + (f" ({kind})" if kind else ""))
+        )
+
+        files = (
+            ev_dict.get("files")
+            or ev_dict.get("conflicting_files")
+            or ev_dict.get("overlapping_files")
+            or (r.get("overlapping_files") if isinstance(r, dict) else getattr(r, "overlapping_files", []))
+            or []
+        )
+        files_list = sorted([str(f) for f in files])
+
+        evidence_out = dict(ev_dict)
+        evidence_out["summary"] = str(summary)
+        evidence_out["files"] = files_list
+
+        if "test_output_tail" not in evidence_out:
+            tail_content = ev_dict.get("stderr") or ev_dict.get("stdout") or ""
+            if tail_content:
+                evidence_out["test_output_tail"] = str(tail_content)[-1000:]
+
+        formatted_results.append({
+            "pair": pair_list,
+            "heads": heads_dict,
+            "status": status,
+            "kind": kind,
+            "evidence": evidence_out,
+        })
+
+    # Sort results list deterministically
+    formatted_results.sort(
+        key=lambda item: (
+            item["pair"][0] if len(item["pair"]) > 0 else "",
+            item["pair"][1] if len(item["pair"]) > 1 else "",
+        )
+    )
+
+    # Coverage: count only checked pairs ('conflict', 'clean', 'unknown')
+    pairs_checked = sum(
+        1 for res in formatted_results if res["status"] in (STATUS_CONFLICT, STATUS_CLEAN, STATUS_UNKNOWN)
+    )
+    tests_collected = sum(
+        int(res["evidence"].get("tests_collected", 0))
+        for res in formatted_results
+        if isinstance(res["evidence"].get("tests_collected"), (int, float))
+    )
+
+    return {
+        "contract": "0.1",
+        "vector": final_vector,
+        "policy": final_policy,
+        "coverage": {
+            "pairs_checked": pairs_checked,
+            "tests_collected": tests_collected,
+        },
+        "results": formatted_results,
+    }
+
+
 def main():
     """Command-line interface for L3 Advisory Radar Engine."""
     parser = argparse.ArgumentParser(description="L3 Advisory Radar Engine")
@@ -1199,6 +1398,7 @@ def main():
     parser.add_argument("--budget", type=float, default=15.0, help="Test execution budget in seconds")
     parser.add_argument("--force-test", action="store_true", help="Run tests even on disjoint files")
     parser.add_argument("--json", action="store_true", help="Output results as JSON")
+    parser.add_argument("--l1", action="store_true", help="Output CONTRACT v0.1 payload for L1")
     args = parser.parse_args()
 
     engine = RadarEngine(
@@ -1215,7 +1415,9 @@ def main():
             base_sha=args.base,
             force_test=args.force_test,
         )
-        if args.json:
+        if args.l1:
+            print(json.dumps(engine.export_l1_payload([res]), indent=2))
+        elif args.json:
             print(json.dumps(res, indent=2))
         else:
             rep = res.report()
@@ -1234,7 +1436,9 @@ def main():
             base_sha=args.base,
             force_test=args.force_test,
         )
-        if args.json:
+        if args.l1:
+            print(json.dumps(engine.export_l1_payload(matrix), indent=2))
+        elif args.json:
             print(json.dumps(matrix.to_dict(), indent=2))
         else:
             print(f"Evaluated {matrix.summary['total_pairs']} pairs in {matrix.duration_seconds}s")

@@ -37,6 +37,7 @@ from radar.engine import (
     STATUS_UNKNOWN,
     create_warning,
     evaluate_pair,
+    export_l1_payload,
     run_matrix,
     safe_extract_tar,
 )
@@ -659,6 +660,151 @@ class TestRadarEngine(unittest.TestCase):
             d = matrix_res.to_dict()
             json_str = json.dumps(d)
             self.assertTrue(len(json_str) > 0)
+
+    def test_export_l1_payload_v01_contract(self):
+        """Test CONTRACT v0.1 export adapter for L1 integration (C-1321)."""
+        engine = RadarEngine(
+            test_command=["python3", "-m", "unittest", "discover"],
+            test_budget_seconds=15.0,
+        )
+
+        # 1. Conflict (textual) - intentionally reversed pair ["agent-Z", "agent-A"]
+        pair_conflict = PairResult(
+            status=STATUS_CONFLICT,
+            kind="textual",
+            pair=["agent-Z", "agent-A"],
+            heads={"agent-Z": "sha_z", "agent-A": "sha_a"},
+            overlapping_files=["app.py"],
+            evidence={
+                "conflicting_files": ["app.py"],
+                "details": "Merge conflict in app.py",
+            },
+        )
+
+        # 2. Clean (with positive tests_collected=5)
+        pair_clean = PairResult(
+            status=STATUS_CLEAN,
+            kind=None,
+            pair=["agent-B", "agent-C"],
+            heads={"agent-B": "sha_b", "agent-C": "sha_c"},
+            overlapping_files=["calc.py"],
+            evidence={
+                "exit_code": 0,
+                "tests_collected": 5,
+                "details": "Ran 5 tests in 0.05s OK",
+                "stdout": "Ran 5 tests in 0.05s\nOK",
+            },
+        )
+
+        # 3. Unknown (timeout/error)
+        pair_unknown = PairResult(
+            status=STATUS_UNKNOWN,
+            kind=None,
+            pair=["agent-D", "agent-E"],
+            heads={"agent-D": "sha_d", "agent-E": "sha_e"},
+            evidence={
+                "error": "timeout",
+                "details": "Process timed out after 15s",
+                "stderr": "TimeoutExpired",
+            },
+        )
+
+        # 4. Not checked (disjoint commits without tests)
+        pair_not_checked = PairResult(
+            status=STATUS_NOT_CHECKED,
+            kind=None,
+            pair=["agent-F", "agent-G"],
+            heads={"agent-F": "sha_f", "agent-G": "sha_g"},
+            overlapping_files=[],
+            evidence={
+                "reason": "disjoint_no_tests",
+                "details": "Disjoint files without tests",
+            },
+        )
+
+        pairs = [pair_conflict, pair_clean, pair_unknown, pair_not_checked]
+
+        # Case A: Export via engine method (deriving vector automatically)
+        payload = engine.export_l1_payload(pairs)
+
+        # Check top-level contract
+        self.assertEqual(payload["contract"], "0.1")
+
+        # Check vector: derived from all heads, sorted by key
+        expected_vector = {
+            "agent-A": "sha_a",
+            "agent-B": "sha_b",
+            "agent-C": "sha_c",
+            "agent-D": "sha_d",
+            "agent-E": "sha_e",
+            "agent-F": "sha_f",
+            "agent-G": "sha_g",
+            "agent-Z": "sha_z",
+        }
+        self.assertEqual(payload["vector"], expected_vector)
+
+        # Check policy
+        self.assertEqual(payload["policy"]["merge"], "git-merge-tree")
+        self.assertEqual(payload["policy"]["tests"]["command"], ["python3", "-m", "unittest", "discover"])
+        self.assertEqual(payload["policy"]["tests"]["budget_s"], 15.0)
+
+        # Check coverage: 3 checked ('conflict', 'clean', 'unknown'), not_checked excluded
+        self.assertEqual(payload["coverage"]["pairs_checked"], 3)
+        self.assertEqual(payload["coverage"]["tests_collected"], 5)
+
+        # Check results
+        results = payload["results"]
+        self.assertEqual(len(results), 4)
+
+        # Verify deterministic pair sorting: pair[0] <= pair[1]
+        for r in results:
+            self.assertEqual(len(r["pair"]), 2)
+            self.assertLessEqual(r["pair"][0], r["pair"][1])
+            # heads matches pair keys
+            self.assertEqual(list(r["heads"].keys()), r["pair"])
+            # summary is non-empty string
+            self.assertTrue(isinstance(r["evidence"]["summary"], str) and len(r["evidence"]["summary"]) > 0)
+            # files is a list
+            self.assertTrue(isinstance(r["evidence"]["files"], list))
+
+        # Check specific items
+        # Result 1: pair ["agent-A", "agent-Z"] (sorted from ["agent-Z", "agent-A"])
+        r_az = results[0]
+        self.assertEqual(r_az["pair"], ["agent-A", "agent-Z"])
+        self.assertEqual(r_az["status"], "conflict")
+        self.assertEqual(r_az["kind"], "textual")
+        self.assertEqual(r_az["heads"], {"agent-A": "sha_a", "agent-Z": "sha_z"})
+        self.assertEqual(r_az["evidence"]["files"], ["app.py"])
+        self.assertIn("conflict", r_az["evidence"]["summary"].lower())
+
+        # Result 2: clean with tests_collected=5
+        r_bc = results[1]
+        self.assertEqual(r_bc["pair"], ["agent-B", "agent-C"])
+        self.assertEqual(r_bc["status"], "clean")
+        self.assertEqual(r_bc["kind"], None)
+        self.assertEqual(r_bc["evidence"]["tests_collected"], 5)
+        self.assertEqual(r_bc["evidence"]["exit_code"], 0)
+        self.assertIn("Ran 5 tests", r_bc["evidence"]["test_output_tail"])
+
+        # Result 3: unknown with timeout
+        r_de = results[2]
+        self.assertEqual(r_de["pair"], ["agent-D", "agent-E"])
+        self.assertEqual(r_de["status"], "unknown")
+        self.assertEqual(r_de["evidence"]["error"], "timeout")
+        self.assertEqual(r_de["evidence"]["test_output_tail"], "TimeoutExpired")
+
+        # Result 4: not_checked
+        r_fg = results[3]
+        self.assertEqual(r_fg["pair"], ["agent-F", "agent-G"])
+        self.assertEqual(r_fg["status"], "not_checked")
+        self.assertEqual(r_fg["evidence"]["files"], [])
+
+        # Case B: Explicit vector provided
+        explicit_vec = {"agent-B": "custom_b", "agent-C": "custom_c"}
+        payload_b = export_l1_payload([pair_clean], vector=explicit_vec, engine=engine)
+        self.assertEqual(payload_b["vector"], explicit_vec)
+        self.assertEqual(payload_b["coverage"]["pairs_checked"], 1)
+        self.assertEqual(payload_b["coverage"]["tests_collected"], 5)
 
 
 if __name__ == "__main__":
