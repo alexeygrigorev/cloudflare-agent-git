@@ -806,6 +806,132 @@ class TestRadarEngine(unittest.TestCase):
         self.assertEqual(payload_b["coverage"]["pairs_checked"], 1)
         self.assertEqual(payload_b["coverage"]["tests_collected"], 5)
 
+    def test_ram_admission_gate_insufficient_memory_returns_unknown(self):
+        """Test RAM admission gate blocks job and returns unknown when memory is insufficient."""
+        with tempfile.TemporaryDirectory() as td:
+            self._init_repo(td)
+
+            # Base commit
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("x = 1\n" + "\n" * 25)
+            with open(os.path.join(td, "test_app.py"), "w") as f:
+                f.write("import unittest\nclass T(unittest.TestCase):\n    def test_ok(self): self.assertTrue(True)\n")
+            base_sha = self._commit(td, "base")
+
+            # Head A
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("x = 2\n" + "\n" * 25)
+            hA = self._commit(td, "headA")
+
+            # Head B
+            subprocess.run(["git", "-C", td, "checkout", "-b", "bB", base_sha], check=True, capture_output=True)
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("x = 1\n" + "\n" * 25 + "y = 3\n")
+            hB = self._commit(td, "headB")
+
+            # Set impossible memory threshold 999999 MB and tight queue timeout 0.1s
+            engine = RadarEngine(
+                repo_path=td,
+                test_command=[sys.executable, "-m", "unittest", "discover", "-s", "."],
+                min_mem_available_mb=999999.0,
+                queue_timeout_seconds=0.1,
+            )
+
+            res = engine.evaluate_pair(
+                AgentHead("agent-A", hA, base_sha=base_sha),
+                AgentHead("agent-B", hB, base_sha=base_sha),
+            )
+
+            self.assertEqual(res.status, "unknown")
+            self.assertEqual(res.kind, "test")
+            self.assertEqual(res.evidence.get("summary"), "resource-skipped: insufficient memory")
+            self.assertIn("mem_available_mb", res.evidence)
+            self.assertEqual(res.evidence.get("required_mb"), 999999.0)
+            self.assertIn("wait_time_seconds", res.evidence)
+
+    def test_ram_admission_gate_healthy_memory_runs_and_records_telemetry(self):
+        """Test RAM admission gate runs tests and records RSS & wait telemetry when memory is healthy."""
+        with tempfile.TemporaryDirectory() as td:
+            self._init_repo(td)
+
+            # Base commit
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("x = 1\n" + "\n" * 25)
+            with open(os.path.join(td, "test_app.py"), "w") as f:
+                f.write("import unittest\nclass T(unittest.TestCase):\n    def test_1(self): self.assertTrue(True)\n")
+            base_sha = self._commit(td, "base")
+
+            # Head A
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("x = 2\n" + "\n" * 25)
+            hA = self._commit(td, "headA")
+
+            # Head B
+            subprocess.run(["git", "-C", td, "checkout", "-b", "bB", base_sha], check=True, capture_output=True)
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("x = 1\n" + "\n" * 25 + "y = 3\n")
+            hB = self._commit(td, "headB")
+
+            # Set normal threshold (50 MB)
+            engine = RadarEngine(
+                repo_path=td,
+                test_command=[sys.executable, "-m", "unittest", "discover", "-s", "."],
+                min_mem_available_mb=50.0,
+                queue_timeout_seconds=5.0,
+            )
+
+            res = engine.evaluate_pair(
+                AgentHead("agent-A", hA, base_sha=base_sha),
+                AgentHead("agent-B", hB, base_sha=base_sha),
+            )
+
+            self.assertEqual(res.status, "clean")
+            self.assertEqual(res.evidence.get("tests_collected"), 1)
+            self.assertIn("peak_rss_mb", res.evidence)
+            self.assertIn("wait_time_seconds", res.evidence)
+            self.assertGreaterEqual(res.evidence["peak_rss_mb"], 0.0)
+            self.assertGreaterEqual(res.evidence["wait_time_seconds"], 0.0)
+
+    def test_ram_admission_gate_psi_pressure_returns_unknown(self):
+        """Test PSI memory pressure gate skips execution when pressure is high (01a101e4)."""
+        with tempfile.TemporaryDirectory() as td:
+            self._init_repo(td)
+
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("x = 1\n" + "\n" * 25)
+            with open(os.path.join(td, "test_app.py"), "w") as f:
+                f.write("import unittest\nclass T(unittest.TestCase):\n    def test_ok(self): self.assertTrue(True)\n")
+            base_sha = self._commit(td, "base")
+
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("x = 2\n" + "\n" * 25)
+            hA = self._commit(td, "headA")
+
+            subprocess.run(["git", "-C", td, "checkout", "-b", "bB", base_sha], check=True, capture_output=True)
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("x = 1\n" + "\n" * 25 + "y = 3\n")
+            hB = self._commit(td, "headB")
+
+            # Set max_psi_some_avg10 to -1.0 so any non-negative PSI reading triggers pressure skip
+            engine = RadarEngine(
+                repo_path=td,
+                test_command=[sys.executable, "-m", "unittest", "discover", "-s", "."],
+                min_mem_available_mb=10.0,
+                max_psi_some_avg10=-1.0,
+                queue_timeout_seconds=0.1,
+            )
+
+            res = engine.evaluate_pair(
+                AgentHead("agent-A", hA, base_sha=base_sha),
+                AgentHead("agent-B", hB, base_sha=base_sha),
+            )
+
+            from radar.engine import get_psi_memory_some_avg10
+            if get_psi_memory_some_avg10() is not None:
+                self.assertEqual(res.status, "unknown")
+                self.assertEqual(res.kind, "test")
+                self.assertEqual(res.evidence.get("summary"), "resource-skipped: high memory pressure")
+
 
 if __name__ == "__main__":
     unittest.main()
