@@ -402,11 +402,11 @@ def project_page(i, p):
             '<div class="proj-status">'+smark(status_kind(p), 18)+'<span>'+E(p['status'])+'</span></div><div class="mono-meta">'+prov+'</div></div>'
             '<figure class="proj-figure"><img src="'+BASE+'/assets/scenes/'+p['slug']+'.svg" width="640" height="320" alt="'+E(p['name'], quote=True)+': conceptual diagram of the hypothesis, not a measured result"><figcaption>'+E(FIGS.get(p['id'], 'FIG. '+p['id']))+'</figcaption></figure></div>'
             '<article class="proj-body">'
-            '<section class="proj-sec">'+'<h2 class="proj-h">The problem</h2>'+'<p class="proj-problem">'+E(p['problem'])+'</p>'+('<p class="proj-who">Who: '+E(who)+'</p>' if who else '')+'</section>'
-            '<section class="proj-sec">'+'<h2 class="proj-h">The idea</h2>'+'<p class="proj-lead">'+E(p['idea'])+'</p></section>'
-            '<section class="proj-sec">'+'<h2 class="proj-h">Evidence so far</h2>'+ev(*ev_rows[0])+('<p class="ev-earlier">Earlier research, from before 3 October 2026, 02:24 UTC. Kept for context; it is not the current status.</p>'+''.join(ev(*e) for e in ev_rows[1:]) if len(ev_rows) > 1 else '')+'</section>'
-            '<section class="proj-sec test-box">'+'<h2 class="proj-h">The test that would rule it out</h2>'+'<p>'+E(p['test'])+'</p><div class="test-grid"><div><span class="field-label">Status</span><span class="test-strong">'+E(p['status'])+'</span></div><div><span class="field-label">We would drop or park it if</span><span>'+E(p['falsifier'])+'</span></div></div></section>'
-            '<section class="proj-sec">'+'<h2 class="proj-h">Public sources</h2>'+''.join(src_link(s, 'src-row') for s in sources)+'</section>'
+            '<section class="proj-sec"><h2 class="proj-num">01 \u00b7 PROBLEM</h2><p class="proj-problem">'+E(p['problem'])+'</p>'+('<p class="proj-who">Who: '+E(who)+'</p>' if who else '')+'</section>'
+            '<section class="proj-sec"><h2 class="proj-num">02 \u00b7 HYPOTHESIS</h2><p class="proj-lead">'+E(p['idea'])+'</p></section>'
+            '<section class="proj-sec"><h2 class="proj-num">03 \u00b7 EVIDENCE SO FAR</h2>'+ev(*ev_rows[0])+('<p class="ev-earlier">Earlier research, from before 3 October 2026, 02:24 UTC. Kept for context; it is not the current status.</p>'+''.join(ev(*e) for e in ev_rows[1:]) if len(ev_rows) > 1 else '')+'</section>'
+            '<section class="proj-sec test-box"><h2 class="proj-num">04 \u00b7 NEXT FALSIFICATION TEST</h2><p>'+E(p['test'])+'</p><div class="test-grid"><div><span class="field-label">Status</span><span class="test-strong">'+E(p['status'])+'</span></div><div><span class="field-label">We would drop or park it if</span><span>'+E(p['falsifier'])+'</span></div></div></section>'
+            '<section class="proj-sec"><h2 class="proj-num">05 \u00b7 PUBLIC SOURCES</h2>'+''.join(src_link(s, 'src-row') for s in sources)+'</section>'
             '<div class="prev-next"><a href="'+BASE+'/projects/'+prev['slug']+'/">'+BACK+E(prev['id']+' \u00b7 '+prev['name'])+'</a><a href="'+BASE+'/projects/'+nxt['slug']+'/">'+E(nxt['id']+' \u00b7 '+nxt['name'])+ARROW+'</a></div>'
             '</article>')
 

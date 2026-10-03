@@ -361,3 +361,4 @@ a.src{display:inline-flex;align-items:center;min-height:24px;align-self:flex-sta
 .field-label{font-size:13px;color:var(--muted)}
 .journal-date{font-size:13px;line-height:1.5;color:var(--muted)}
 .proj-title .mono-meta{font-family:var(--sans);font-size:13px}
+.proj-num{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--blue);font-weight:600;margin:0;line-height:1.5}
