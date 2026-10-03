@@ -1,8 +1,42 @@
 # Agent Branches prototype — HTTP + integration contract
 
-version: 0.1.3
+version: 0.1.4
 (Pin this version when building against it: L2 review UI, L3 radar runner,
 L4/L5 demo lanes. Any breaking change bumps the version.)
+
+Changes since 0.1.3 (facade extraction, 2026-10-03 — DOCS ONLY):
+
+**No wire change of any kind.** Every route, status code, body shape and
+auth rule is byte-identical to 0.1.2/0.1.3; the existing suites (88 workerd
+tests + 16 sidecar tests) pass unchanged. What changed is the INTERNAL
+STRUCTURE, so future provider swaps stop being rewrites:
+
+1. **Ports.** `src/ports/` now defines the provider-neutral interfaces:
+   `GitHost` (the former `ArtifactsPort`, renamed, alias kept),
+   `CoordinationStore` (transactional get/put, linearizable), `PushEvents`
+   (one normalized `PushEvent` from any notification source), `Clock` /
+   `IdGenerator`. Details: ARCHITECTURE.md.
+2. **Core.** `src/core/` holds ALL coordination logic (`CoordinatorCore`),
+   the pure auth decisions, and THE one route implementation
+   (`handleRoute`) over a neutral HttpRequest/HttpResponse. No
+   `cloudflare:*`, no env, no Request/Response — enforced by
+   `test/node/architecture.test.ts` and a workerd-free tsc build.
+3. **Adapters.** Cloudflare (`src/cloudflare/`: Coordinator DO, DO storage
+   store, Artifacts binding GitHost, event-subscription PushEvents,
+   Request/Response mapping) and local (`src/local/`: memory/file store,
+   git-sidecar GitHost, post-receive webhook PushEvents, and a ZERO-DEPENDENCY
+   `node:http` runtime entry serving the same routes from the same core).
+4. **New test lane.** `npm run test:node` — 27 plain-`node --test` tests
+   (no workerd) covering the core rules, wire parity of every route over
+   the neutral router, a real node:http round trip, and the architecture
+   gate. `test:all` runs all three suites.
+5. **Boundary fix found by the new suite.** `status()` and the push result
+   no longer hand out the LIVE heads object (both HTTP wires always
+   serialized it, so nothing observable changed — direct core consumers
+   could have aliased internal state).
+
+Version 0.1.3 was the real-Artifacts spike fold-in (below); it is retained
+as the last wire-affecting revision.
 
 Changes since 0.1.2 (real-Artifacts spike fold-in, 2026-10-03):
 

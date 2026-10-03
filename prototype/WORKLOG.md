@@ -483,3 +483,55 @@ to 0.1.4 per task).
 
 Start state: proto/l1-scaffold pulled at 2a0625e, working tree clean,
 zc-artifacts-2 exit verified via `a list` poll (7 × 60 s).
+
+### Result (same session)
+
+Commits on proto/l1-scaffold (all pushed at the end of the session):
+
+- `48bbabf` ports — GitHost (ex-ArtifactsPort, alias kept),
+  CoordinationStore, PushEvents (+ verbatim envelope parser move),
+  Clock/Ids; SidecarArtifacts → src/local/githost.ts with injectable
+  FetchLike; src/types.ts shim.
+- `ba1861c` core — CoordinatorCore (all business rules verbatim, ports
+  injected), pure auth decisions (core/auth.ts), THE one route
+  implementation (core/router.ts) over neutral HttpRequest/HttpResponse;
+  Cloudflare adapters (Coordinator DO wrapper with unchanged signatures,
+  DO-storage store, gitHostFromEnv, push-event normalizers, Request
+  mapping); src/index.ts + src/coordinator.ts compat shims. Typed-RPC
+  tuple widening asserted through ONE documented boundary in worker.ts.
+- `64a233c` local — Memory/File CoordinationStores (atomic tmp+rename),
+  node:http runtime (serveCoordinator) + zero-dep entry (main.ts),
+  minimal ambient Node typings; tsconfig.node.json (workerd-free build,
+  no worker types — transitive CF deps cannot compile);
+  test:node/typecheck:node scripts; vitest excludes test/node.
+- `1f69274` node --test suite — 27 tests: core rules (registry, dedup
+  ring, warnings lifecycle, checks validation, stale-vector rule, pair
+  views + unprocessed suppression, restart, serialized concurrency),
+  router wire parity (auth ladder 401/403/503, envelope 202/400, checks
+  409), REAL node:http round trip, architecture gate (src/core +
+  src/ports must import no cloudflare:* / @cloudflare/* /
+  workers-types / wrangler; positive control included).
+
+**Bug found by the new suite and fixed:** status()/recordPush() returned
+the LIVE heads object — invisible over both HTTP wires (they serialize
+immediately) but aliasing for direct core consumers. Snapshotted at the
+core boundary (heads: { ...model.heads }); wire unchanged.
+
+**Smoke test beyond the suite** (all localhost, offline): sidecar on
+:18795 + node runtime main.js on :18796 → /setup 201, POST /tasks
+(real fork via SidecarArtifacts), authenticated git clone/push with the
+minted token, post-receive webhook (SIDECAR_NOTIFY_URL) → pushes: 1,
+404 parity, dedup parity, state file on disk. Smoke processes killed by
+exact PID; ports clean. (Also re-learned: never `pkill -f` a pattern
+that matches your own shell's command line.)
+
+**Final suite:** `npm run test:all` EXIT=0 — typecheck clean, vitest
+13 files / 88 tests, sidecar 16/16, node 27/27.
+
+Docs: ARCHITECTURE.md (ports/adapters/how-to-add-a-provider map),
+README architecture + run sections updated, CONTRACT 0.1.4 DOCS-ONLY
+bump (wire unchanged since 0.1.2; 0.1.3 was the spike fold-in).
+
+Deliberately NOT done: no deploy, no new npm deps, no CONTRACT wire
+change, src/artifacts/real.ts + errors/map/rest untouched (zc-artifacts-2
+owns that seam; GitHost factory simply consumes the binding).

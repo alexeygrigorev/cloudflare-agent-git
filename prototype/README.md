@@ -23,12 +23,19 @@ npm install          # ~325 MiB node_modules, single workerd stack
 npm run typecheck    # tsc --noEmit
 npm test             # worker tests inside workerd, against a real-git sidecar
 npm run test:sidecar # sidecar tests with a real git client (clone/push/webhook)
-npm run test:all     # typecheck + both suites
+npm run test:node    # core + router + local adapters under plain node --test (NO workerd)
+npm run test:all     # typecheck + all three suites
 
 # local dev: sidecar + worker (two terminals)
 npm run sidecar                    # binds 127.0.0.1:8790 (env-overridable)
 cp .dev.vars.example .dev.vars     # set ADMIN_TOKEN, RUNNER_TOKEN, ...
 npx wrangler dev --local
+
+# OR: same routes from the SAME core on plain node:http (no Cloudflare):
+npm run sidecar
+LOCAL_ARTIFACTS_URL=http://127.0.0.1:8790 \
+ADMIN_TOKEN=... RUNNER_TOKEN=... LOCAL_ARTIFACTS_TOKEN=... \
+PORT=8787 node .build/node/src/local/main.js   # after npm run build:node
 ```
 
 Then, against http://localhost:8787 (see CONTRACT.md for full shapes):
@@ -102,6 +109,14 @@ ALL mutating routes are authenticated (muse-r46 review, CONTRACT 0.1.1):
 
 ## Architecture
 
+Provider-neutral facade since CONTRACT 0.1.4 (details in
+[ARCHITECTURE.md](./ARCHITECTURE.md)): the coordination logic lives in
+`src/core/` (pure TypeScript over `src/ports/` interfaces — GitHost,
+CoordinationStore, PushEvents, Clock/Ids), and Cloudflare is one set of
+adapters. A zero-dependency `node:http` runtime (`src/local/main.ts`)
+serves the SAME routes from the SAME core; `npm run test:node` runs the
+core suite with NO workerd.
+
 ```
               ┌──────────────────── Worker (src/index.ts) ───────────────────┐
   agent/      │  POST /tasks (admin)   POST /events/*   POST /checks (runner)│
@@ -110,17 +125,17 @@ ALL mutating routes are authenticated (muse-r46 review, CONTRACT 0.1.1):
               │              Durable Object RPC                            │
               └────────────────────────┼────────────────────────────────────┘
                                        ▼
-                 ┌── Coordinator DO (src/coordinator.ts) ──┐
-                 │  model (persisted in DO storage)        │
-                 │  agents · heads · tasks · warnings/acks │
-                 │  pair checks · runner reports           │
-                 │  Radar hook (src/radar.ts, StubRadar    │
-                 │  reports not_checked — never a warning) │
-                 └───────────────┬─────────────────────────┘
-                                 ▼  fetch (local mode) / binding (real mode)
-                      ArtifactsPort (src/types.ts)
-                      ├─ SidecarArtifacts ← local Node sidecar (real git)
-                      └─ RealArtifacts   ← Cloudflare Artifacts binding
+        ┌── Coordinator DO (src/cloudflare/coordinator-do.ts, thin) ──┐
+        │            CoordinatorCore (src/core/coordinator.ts)        │
+        │  model (persisted via the CoordinationStore port)           │
+        │  agents · heads · tasks · warnings/acks                     │
+        │  pair checks · runner reports                               │
+        │  Radar hook (src/radar.ts, StubRadar                        │
+        │  reports not_checked — never a warning)                     │
+        └───────────────┬─────────────────────────────────────────────┘
+                        ▼  GitHost port (src/ports/githost.ts)
+             ├─ RealArtifacts   ← Cloudflare Artifacts binding (src/artifacts/)
+             └─ SidecarArtifacts ← local Node sidecar (src/local/githost.ts)
 
   trusted radar runner (L3, separate process, NOT the Worker)
       reads /status → does trial merges/tests locally → POST /checks
@@ -132,12 +147,15 @@ ALL mutating routes are authenticated (muse-r46 review, CONTRACT 0.1.1):
       post-receive hook → POST /events/push {fork, ref, sha}
 ```
 
-- **Coordinator DO** (single `"global"` instance, all mutating methods
-  serialized through a per-instance mutex): creates task forks, records
-  pushes (verifying the sha against the real repo), maintains the head
-  vector, invalidates warnings when a pair member advances, and records
-  trusted runner results. State persists in DO storage; a restart test
-  (via `evictDurableObject`) proves reconstruction.
+- **CoordinatorCore** (single `"global"` DO instance in Cloudflare mode,
+  all mutating methods serialized through a mutex): creates task forks,
+  records pushes (verifying the sha against the real repo), maintains the
+  head vector, invalidates warnings when a pair member advances, and
+  records trusted runner results. State persists through the
+  `CoordinationStore` port (DO storage in Cloudflare mode; memory/file in
+  local mode); restart tests exist in BOTH runtimes
+  (`evictDurableObject` in workerd, shared-store reconstruction in
+  `test/node`).
 - **Radar**: the in-Worker hook only logs pairs as `not_checked`. Warnings
   exist only for runner-submitted `conflict` results; `clean` at the same
   heads resolves a warning; `unknown` and `not_checked` (incl. stale
