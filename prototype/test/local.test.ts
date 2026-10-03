@@ -27,7 +27,15 @@ describe("LocalArtifacts (in-memory fake)", () => {
     const log = await port.log("hist", { ref: "refs/heads/main" });
     expect(log.map((c) => c.id)).toEqual([c2.id, c1.id]);
     expect(log[0].parents).toEqual([c1.id]);
-    expect(await port.listRefs("hist")).toEqual({ "refs/heads/main": c2.id });
+    expect(await port.headCommit("hist")).toBe(c2.id);
+    expect(await port.headCommit("hist", "refs/heads/main")).toBe(c2.id);
+  });
+
+  it("headCommit returns null for unknown refs (no ref enumeration on the port)", async () => {
+    const port = new LocalArtifacts("ns1");
+    await port.createRepo("fresh");
+    expect(await port.headCommit("fresh")).toBeNull();
+    expect(await port.headCommit("fresh", "refs/heads/nope")).toBeNull();
   });
 
   it("returns empty log for unknown refs", async () => {

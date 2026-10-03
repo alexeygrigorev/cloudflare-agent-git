@@ -151,9 +151,9 @@ export class LocalArtifacts implements ArtifactsPort {
     return chain.slice(offset, offset + limit);
   }
 
-  async listRefs(repo: RepoName): Promise<Record<string, string>> {
+  async headCommit(repo: RepoName, ref = "HEAD"): Promise<string | null> {
     const target = this.mustGet(repo);
-    return Object.fromEntries(target.refs);
+    return this.resolveRef(target, ref) ?? null;
   }
 
   async hasCommit(repo: RepoName, sha: string): Promise<boolean> {

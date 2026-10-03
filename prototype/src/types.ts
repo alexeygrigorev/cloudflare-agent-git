@@ -115,7 +115,13 @@ export interface ArtifactsPort {
 
   log(repo: RepoName, opts?: LogOptions): Promise<CommitMetadata[]>;
 
-  listRefs(repo: RepoName): Promise<Record<string, string>>;
+  /**
+   * Tip commit id of a ref (default HEAD). Derived ONLY from the documented
+   * `log({ ref, limit: 1 })` operation — there is no documented binding API
+   * that enumerates refs (codex C-1305 #2), so the port deliberately does
+   * not offer ref enumeration; ref state must be tracked from push events.
+   */
+  headCommit(repo: RepoName, ref?: string): Promise<string | null>;
 
   hasCommit(repo: RepoName, sha: string): Promise<boolean>;
 

@@ -114,7 +114,8 @@ ASSUMED there (`ASSUMED-A`…`ASSUMED-E`).
    ```
 3. `npx wrangler types` — regenerate `worker-configuration.d.ts`; confirm the
    generated `Artifacts` type matches `ArtifactsNamespaceBinding` in
-   `src/artifacts/real.ts` (resolves ASSUMED-B/D and the `listRefs` gap).
+   `src/artifacts/real.ts` (resolves ASSUMED-B/D; ref enumeration remains
+   deliberately absent per ASSUMED-A — use push events).
 4. Seed the canonical repo: `POST /setup` creates it via the binding, then
    `git clone` its remote and push a real baseline commit
    (`git -c http.extraHeader="Authorization: Bearer $TOKEN" push`).

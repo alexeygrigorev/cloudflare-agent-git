@@ -116,10 +116,13 @@ Other events (account-level `artifacts` source): `repo.created`, `repo.deleted`,
 
 ## ASSUMED (not in the five fetched pages — flagged, avoided, or synthesized locally)
 
-- **ASSUMED-A (listRefs)**: no documented binding method lists refs. Our port
-  exposes `log()` (documented) plus a `listRefs()` convenience that
-  `RealArtifacts` refuses (`UNSUPPORTED`) and only `LocalArtifacts` serves;
-  ref state in real mode must be tracked from push events instead.
+- **ASSUMED-A (no ref enumeration)**: no documented binding method lists refs.
+  The port therefore exposes only `headCommit(repo, ref?)`, derived from the
+  documented `log({ ref, limit: 1 })` operation (codex C-1305 #2 renamed the
+  earlier misleading `listRefs`). RealArtifacts implements it exactly that
+  way; ref state in real mode must be tracked from push events instead. The
+  port deliberately offers NO merge or ref-enumeration APIs (C-1309 #8:
+  only `create` / `fork` / `createToken` and the documented read operations).
 - **ASSUMED-B (ArtifactsCommitMetadata fields)**: the binding page names the
   type but not its fields. We assume the push-event commit shape
   (`id`, `message`, `timestamp`, `parents`, optional `author`/`committer`) —
