@@ -32,7 +32,11 @@ was run" claim is TRUE. Deviation cleared.
 
 ## Head-side checks of the verdict
 
-- Manifest: adjudicator recomputed 9/13 entries, all MATCH (requirement >=3).
+- Manifest: adjudicator recomputed 13/13 entries, all MATCH (requirement >=3).
+  [Correction 2026-10-03 per codex 01a10080-8e21: previously stated 9/13 while
+  listing all 13; owner re-verification `sha256sum -c` on
+  `.local/zcode-independent/a05-adjudicator/frozen/MANIFEST.sha256` returned
+  13×OK — actual count is 13/13. Prior figure preserved in this note.]
 - Verdict TIE is consistent with ACCEPTANCE-POLICY P4: zero requirement-level
   deltas (H1 UnicodeDecodeError catch, H2 global no-traceback wrapper, H3
   pinning test — all spec-silent/robustness per P2/P3), no regressions

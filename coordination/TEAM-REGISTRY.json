@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "updated_at": "2026-10-03T06:56:18.147286+00:00",
+ "updated_at": "2026-10-03T07:19:41.635171+00:00",
  "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
  "teams": [
   {
@@ -681,6 +681,20 @@
    "task_id": "publication-visual-acceptance",
    "measurement_scope": "independent post-repair visual reviewer session (memory 1500M, pids 128); rendered verdict CONDITIONAL PASS",
    "usage": "measured via opencode token metadata"
+  },
+  {
+   "tag": "z-checker-b4-5",
+   "team_id": "a01-harness",
+   "role": "independent-checker-native-bound",
+   "mode": "headless",
+   "engine": "opencode",
+   "model": "opencode-go/muse-spark-1.3-contributor",
+   "session_id": "e79c99d9-095f-41af-a27a-422813e8d727",
+   "parent_session_id": "64049aa2-8641-4c39-af12-a9c36602f175",
+   "workspace": "/home/alexey/git/cloudflare-agent-git",
+   "task_id": "frozen-harness-consumer",
+   "measurement_scope": "b4 fully-unkeyed same-tool checker negative (codex 01a1008b-74ba/claude 01a1008b-e355); native binding repair per codex 01a1008a-a4c7; cgroup memory 1G pids 128; first tool = native a whoami; model conversation ses_eff6001a1ffewImH9WwAcGx02C; read-only vs cloudflare-aplexer-protocol pin 9eb5701; write scope .local/producer-check-z/b4-unkeyed/ only",
+   "usage": "opencode token metadata post-run"
   }
  ]
 }

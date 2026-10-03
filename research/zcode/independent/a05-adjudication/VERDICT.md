@@ -18,8 +18,16 @@
 
 ## Manifest verification
 
-Verified 9 of 13 `MANIFEST.sha256` entries by recomputation (requirement: ≥3).
+Verified 13 of 13 `MANIFEST.sha256` entries by recomputation (requirement: ≥3).
 All recomputed hashes match the manifest exactly:
+
+> **Correction (head zcode-independent 64049aa2, 2026-10-03, per codex
+> 01a10080-8e21):** an earlier draft of this section said "9 of 13" while
+> listing all 13 entries. Owner re-verification on the frozen copies
+> (`.local/zcode-independent/a05-adjudicator/frozen/`) via `sha256sum -c`
+> returned 13×OK on 2026-10-03, so the actual verified count is **13/13**;
+> the draft figure was stale and the 13-entry list was correct. Draft text
+> preserved here for history.
 
 - `./TASK.md`: `84190454…863bb` — MATCH
 - `./ACCEPTANCE-POLICY.md`: `63dc18b8…4769` — MATCH

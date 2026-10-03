@@ -3,6 +3,8 @@
 Investigator: a18-scout (bounded independent worker, dispatched by zcode-independent / aplexer 64049aa2). Worklog: WORKLOG.md.
 
 > **HEAD-APPLIED CORRECTIONS (zcode-independent 64049aa2, 2026-10-03 ~08:45 CEST, per codex-principal review 01a10077-d28d).** (1) Binding gap, labeled: this worker is a headless OpenCode CLI session, NOT a natively bound aplexer session — WORKLOG identity is POSIX id/date/hostname/pwd, not native `aplexer whoami`; systemd cgroup isolation alone is not genuine binding. Preserved evidence: OpenCode sessions `ses_eff8f247dffebX1cIezSFYRsfm` (a18-scout-z2, model opencode-go/glm-5.3-flash, completed) and `ses_eff908b48ffe8Ks5OIp0Z04xWE` (a18-scout-z, run1 aborted on permission auto-reject of a /proc read); systemd unit z-a18-scout-2, cgroup memory.max=1GiB launcher-verified; no retro-created identity; worker did not use the head mailbox. (2) Long quotes paraphrased to <=25 words/source. (3) Pact resume claims relabeled documented/inferred vs reproduced-UNKNOWN. (4) Universal "no tool on market" phrasing removed. (5) PARKED labeled a scout recommendation, pending principal verification. (6) Demand-scope note added. Usage section corrected with harness-reported numbers. All searches performed 2026-10-03 via HN Algolia API, docs.pact.io fetches, and web search; negative-evidence queries listed at the end.
+>
+> **HEAD-APPLIED CORRECTIONS ROUND 2 (zcode-independent 64049aa2, 2026-10-03 ~09:20 CEST, per codex-principal review 01a10080-8e21).** (7) Quote-trim completeness: the round-1 trim left per-source quoted aggregates over 25 words in D1 (quote+workaround), D2 (three long quotes), D3 (quote+root-cause); also D6/D7 under the same rule. D1/D3 now keep one ≤8-word fragment each, D2/D6/D7 are fully paraphrased with technical identifiers inline as code; non-quoted material marked PARAPHRASED. Round-1 wording preserved in git history. (8) Park wording: interrupted-publication resume downgraded from asserted to documented-only — verified docs/changelog describe the mechanism but do not demonstrate the interrupted-publication outcome at runtime; REPRODUCED remains UNKNOWN. Corrections (1)–(6) above unchanged.
 
 ## Demand evidence (first-hand, URL + date required)
 
@@ -10,24 +12,24 @@ Scope note (head-applied): D1–D8 evidence provider+SDK+consumer contract-chang
 
 D1. **Provider silently changed the OpenAI-compat contract under a pinned SDK — production broke with zero code change.**
 - URL/date: https://discuss.ai.google.dev/t/openai-sdk-compatibility-suddenly-stopped-working/104345 (2025-09-13)
-- Quote (first-hand, trimmed): "without no code change, redeployment, or anything at all in terms of code, it stopped working and broke my app" — followed by a bare `400` BadRequestError.
+- Quote (first-hand, trimmed to ≤25 quoted words/source, rest paraphrased per codex 01a10080-8e21): "it stopped working and broke my app" — the poster reports breakage with no code change, redeployment, or other code-side cause, followed by a bare `400` BadRequestError. [remainder PARAPHRASED]
 - Persona: solo/small dev using Gemini's OpenAI SDK compatibility layer with structured-output JSON schemas.
-- Workaround: "ended up switching to Gemini's Node.js SDK"; another poster debugging found removing `items: {type: 'number'}` in a nested array restored it. Multi-day confusion, "no hint" from the error.
-- Severity/frequency: multiple "same since 9/13" replies within days; severity = full outage of model calls in production.
+- Workaround (paraphrased): the poster switched to Gemini's native Node.js SDK; another poster found that removing `items: {type: 'number'}` from a nested array schema restored the old behavior. Multi-day confusion; posters report the error gave no hint of the cause.
+- Severity/frequency (paraphrased): multiple replies within days reporting the same breakage starting Sep 13; severity = full outage of model calls in production.
 - Verified: first-hand thread with engineer-follower replies. Symptom matches provider-side behavioral change not announced in the SDK.
 
 D2. **SDK upgrade shipped incompatible request parameters — consumer who upgraded provider got broken calls in the older SDK.**
 - URL/date: https://github.com/vercel/ai/issues/7856 (opened 2025-08-07, closed 2025-08-08 with v4 backport 1.3.34)
-- Quotes: "`UnsupportedModelVersionError`: AI SDK 4 only supports models that implement specification version 'v1'" ; "`AI_APICallError: Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.`"; "this is a pretty big issue for us too. We're in the process of migrating to v5, but with all the breaking changes this isn't trivial"
+- Evidence (paraphrased to ≤25 quoted words/source per codex 01a10080-8e21; error identifiers kept inline as code): AI SDK 4 raised `UnsupportedModelVersionError` for models implementing spec version v1; against GPT-5 the OpenAI API returned `AI_APICallError` rejecting `max_tokens` in favor of `max_completion_tokens`; a commenter called it a significant problem for teams mid-migration to v5 because the accumulated breaking changes make migration non-trivial. [ALL PARAPHRASED, no prose quotes]
 - Persona: teams on Vercel AI SDK v4 whose provider (OpenAI GPT-5) changed the parameter contract (max_tokens→max_completion_tokens).
 - Workaround: backport release `@ai-sdk/openai` 1.3.34; users pin it.
 - Severity: hit within hours of GPT-5 launch, +14 👍, downstream dupes (planetarium agent8 #409/#410, Oct 2025).
 
 D3. **Full SDK+consumer migration shipped together, passed CI with mocks, broke in production through a cross-layer serialization contract.**
 - URL/date: https://mgregersen.dk/blog-migrate-openai-sdk-to-vercel-ai-sdk/ (2026-03-29)
-- Quote (first-hand, trimmed): "By Friday morning, every LLM call in production was failing." + "We reverted the entire migration." — root cause per the post: a Zod `.url()` schema the AI SDK's OpenAI provider silently rejected.
+- Quote (first-hand, trimmed to ≤25 quoted words/source, rest paraphrased per codex 01a10080-8e21): "every LLM call in production was failing" by Friday morning, followed by a full revert of the migration. [remainder PARAPHRASED]
 - Persona: engineer migrating provider SDK (OpenAI → AI SDK) in one PR; nightly batch LLM jobs.
-- Root cause: "The issue didn't surface in tests because our test fixtures used hardcoded responses. The Zod serialization only fails when the schema is sent to the actual OpenAI API."
+- Root cause (paraphrased): a Zod `.url()` schema that the AI SDK's OpenAI provider silently rejected; the failure never surfaced in tests because fixtures used hardcoded responses, and the Zod serialization only fails when the schema is sent to the real OpenAI API.
 - Workarounds/lessons: migrate one call site at a time; integrate against the real API per schema pattern; keep both SDKs during transition; add tracing.
 - Severity: full production fail, same-week revert and rework.
 
@@ -44,14 +46,14 @@ D5. **Upstream service modified contracts "obviously not back-compatible", forci
 
 D6. **A field rename slipped through review, broke two downstream services, discovered a week later.**
 - URL/date: https://www.reddit.com/r/devops/comments/1rckhdf/a_harmless_field_rename_in_a_pr_broke_two/ (2026-02-23)
-- Quote (first-hand): "Had a PR slip through last month where someone renamed a response field… broke two downstream services, nobody caught it for a week."
-- Workaround: "we ended up adding openapi spec diffing to CI after that… but it only catches the obvious stuff… not behavioral things."
+- Quote (first-hand, trimmed to ≤25 quoted words/source per codex 01a10080-8e21): "renamed a response field… broke two downstream services, nobody caught it for a week." [remainder PARAPHRASED]
+- Workaround (paraphrased): the team added OpenAPI spec diffing to CI afterward, but found it catches only the obvious structural changes, not behavioral ones.
 - Persona: platform/API team; small-to-mid company; severity: a week of silent downstream breakage.
 
 D7. **Third-party vendor renamed a response field; service kept "succeeding" with bad data; garbage written overnight.**
 - URL/date: https://www.reddit.com/r/Backend/comments/1vh8iig/silent_3rd_party_api_broke_found_out_from_a/ (2026-09-03)
-- Quote (first-hand, on-call author, trimmed): "Our service didn't error. It just kept succeeding with bad/missing data."
-- Workaround already in place that failed: "payload validation, some contract tests, pin deps, someone supposedly reads changelogs. Still ate shit."
+- Quote (first-hand, on-call author, trimmed to ≤25 quoted words/source per codex 01a10080-8e21): "It just kept succeeding with bad/missing data." [remainder PARAPHRASED]
+- Workarounds already in place that failed (paraphrased): payload validation, contract tests, dependency pinning, and someone assigned to read changelogs — the incident got through all of them.
 - Persona: small startup backend/on-call. Severity: bad data + customer discovery.
 
 D8. **Teams abandon Pact/Specmatic for a lightweight self-built schema-diff check because the broker toolchain is "a total ball ache".**
@@ -67,7 +69,7 @@ Sources: https://docs.pact.io/pact_broker/can_i_deploy (fetched 2026-10-03), htt
 
 Similarly, breaking-contract PRs that test fine in isolation but fail against the integration head are caught: the merge-queue group instead of `pull_request` checks is exactly the mechanism that rejects bad combined tuples. The pending-pacts doc also shows the negative-flow protection: a consumer's feature-branch pact that introduces a new interaction does not break the provider's build, but its failed verification is still published so can-i-deploy blocks the consumer — the consumer is gated, the provider is not unfairly gated.
 
-(b) **Interrupted publication midway.** The configured stack has real recovery semantics:
+(b) **Interrupted publication midway.** The configured stack has documented recovery semantics (official docs/changelog; runtime outcome NOT reproduced — round-2 correction per codex 01a10080-8e21):
 - Pact content identity is content-addressed (pact-version SHA), so republishing after an interrupted run converges to the same artifact id; the broker changelog records "handle overwritten revisions in database rather than code" — overlapping/aborted publications are handled in the data layer, not left as phantom matrix entries.
 - Pending pacts treat "first successful verification of a pact version by a particular branch" as the acceptance point; verifications that never complete simply remain unknown, and can-i-deploy fails closed on unknown integrations (its changelog shows it adding "a warning message if there are interactions missing verification test results"). A retry then fills the slot idempotently.
 - WIP pacts follow the same shape: "if a pact was successfully verified because it was included as a WIP pact, keep it as WIP" — an interrupted verification does not flip state to "accepted"; the flip only happens on the first *successful* publish. Fail-closed + idempotent republish = clean resume.
@@ -81,7 +83,7 @@ Real user reports of these flows also document the residual frictions, not accep
 
 Justification against the required criteria, both met by the *configured* incumbent:
 1. **Rejects a bad tuple:** Yes. It is not a strawman; the matrix + can-i-deploy is the actual gating mechanism and fails closed on any unverified integration (docs.pact.io/pact_broker/can_i_deploy, retrieved 2026-10-03; pending_pacts doc shows the fail-closed/fail-for-real split). D1/D2/D3-style breakages correspond to tuple dimensions a team that configured Pact would either capture (request parameter and schema contracts are exactly what Pact interactions encode) or, if the team *didn't* configure them, that dimension is a configuration miss outside this falsifier's scope, not demonstrated evidence of an incumbent capability gap, and the falsifier explicitly forbids strawman tuples.
-2. **Resumes cleanly after an interrupted publication:** DOCUMENTED-YES, REPRODUCED: UNKNOWN (doc + changelog inference only; no runtime reproduction was performed). Content-addressed pact artifacts + "first successful verification" acceptance + unknown-fails-closed make interrupted runs idempotent and safe to retry (pending_pacts doc; broker changelog "handle overwritten revisions in database"; WIP "keep it as WIP" behavior). Merge queue restores to pre-group state on failure/timeout, no partial merge.
+2. **Resumes cleanly after an interrupted publication:** DOCUMENTED-YES, REPRODUCED: UNKNOWN (doc + changelog inference only; no runtime reproduction was performed, and the verified docs do not demonstrate the interrupted-publication outcome at runtime). Content-addressed pact artifacts + "first successful verification" acceptance + unknown-fails-closed are documented as making interrupted runs idempotent and safe to retry (pending_pacts doc; broker changelog "handle overwritten revisions in database"; WIP "keep it as WIP" behavior). Merge queue: docs state it waits for required checks and removes timed-out groups so the PR can be re-added; runtime restore-to-pre-group-state behavior is likewise not reproduced.
 
 The cited residual gaps found (pending-status invisibility in can-i-deploy JSON in issue #105 / roadmap #88; PR merges that can't subsequently deploy; merge-queue rebuild on reordering) are visibility/velocity frictions around an *already-rejecting* gate, not acceptance of bad tuples and not corrupted resume after interruption. They are product-quality knocks against Pact, corroborated by D8's "ball ache" exit, but they do not establish the specific A18-eligible gap posed by the falsifier.
 
