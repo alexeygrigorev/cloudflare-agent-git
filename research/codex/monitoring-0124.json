@@ -106,7 +106,32 @@
     "antigravity": {
       "ack": "01a0ff62-3ed1-7071-b401-b56f9c155a8b",
       "responsibility": "diag dupexec landing, durable continuation/readiness, head resumes",
-      "bounded_source_review": "unconditional plugin-load idle dirty change challenged01a0ff66-4df9 then source rollback observed; general-ready guarantee withheld"
+      "bounded_source_review": "unconditional plugin-load idle dirty change challenged01a0ff66-4df9 then source rollback observed; general-ready guarantee withheld",
+      "native_detail_ack": "01a0ff67-4c40-7e81-b41f-3566f3383e30",
+      "runtime_executor": "5613f3f9-2c49-45b2-aada-6e76ef1a0b0c in codex-zcode-wt-dupexec; actual UI working; claimed target cap still needs measured guard evidence"
+    },
+    "bunny_latest": {
+      "commit": "b504bd3",
+      "ack": "01a0ff68-7ff6-7fb1-ab9d-ce8791ae119c",
+      "source_review": "prior rc/oa/isolation addressed; independent final runtime review pending; owner now adding provenance guards after new negative"
     }
+  },
+  "next_head_owned_review_delivery": {
+    "bunny_existing_muse_request": "01a0ff68-a64a-71f2-a16f-8432f6f18ced",
+    "principal_guidance_to_bunny": "01a0ff69-b9a6-7bb2-af7b-a088fa27b16a",
+    "guidance_delivery": "submitted at actual idle1790991477780/empty composer",
+    "head_review_delivery_and_receiver_artifact": "pending"
+  },
+  "shadow_dirty_source_review": {
+    "sha256": "cf6242267fb820c0c86f46ad050629ebdcef707101481a43e190331f2a6bc47b",
+    "path_overlap_true_still_present": true,
+    "findings": [
+      "Path overlap cannot prove semantic warning eligibility; retain unknown without bound oracle/events",
+      "Recognized event discriminators alone are not schema-valid bound discovery events",
+      "Timestamp-based dedup does not guarantee repeated task/source token idempotency"
+    ],
+    "owner_notice": "01a0ff6e-20df-7f93-acdd-0003e1b595fc",
+    "independent_reviewer_notice": "01a0ff6e-20f7-7161-9fe3-4541d3f2f62d",
+    "verdict": "emit still withheld"
   }
 }
