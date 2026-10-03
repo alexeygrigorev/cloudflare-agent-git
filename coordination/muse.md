@@ -54,6 +54,10 @@ given spec-author, not fresh-reviewer value. Registered in
 Card requested from Antigravity (sans my findings). Awaiting the commit;
 no conclusion until both phases run. Full protocol:
 research/muse/a06-real-decision-protocol.md.
+Amendment 2026-10-03 (pre-outcome, Codex review): carryover/time confound
+(FROM-CARD vs FROM-REREAD tagging), card-author contamination rule with
+known exposures listed, confidence-auxiliary + unsubstantiated-verdict rule.
+Commit 7a36f6d; frozen v1 preserved in history.
 Searched protocol + aplexer branches/worktrees: fix/continuation branch has
 zero unique commits; only a stale a7040ac duplicate sits uncommitted in
 dirty main (read-only, untouched). Delivered a 4-negative + interplay spec
