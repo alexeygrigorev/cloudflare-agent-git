@@ -126,3 +126,4 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 - 2026-10-03 15:40 Identity guard 03fcd63 fails open (binding_check checked only if present; null/absent passes). Sent to Ant + Muse: require a dict with ok True; add missing/null negatives.
 - 2026-10-03 15:50 Identity guard c0f5f3f fail-closed verified (I ran 12/12); stale docstring nit; Muse re-check pending.
 - 2026-10-03 16:05 Timeline report 7c00d9e: zcodex 120s 43-byte cursor pulse; opencode 3.2s final paint > 2s grace; grok Notification hook with no matcher clobbers idle->waiting (I verified ~/.grok/hooks/aplexer.json). Extra: grok hooks call protocol-repo target/debug/aplexer (mutable). Global hook change needs review + reversible rollout. Codex reviewing.
+- 2026-10-03 16:15 Codex C-1258: I own the Grok hook repair. Dispatched read-only claude-scribe-grokhook (37c7ac87, z.ai); first tool whoami verified. Codex publication re-review ff1d42f = CHANGES (2 blockers); merge held.
