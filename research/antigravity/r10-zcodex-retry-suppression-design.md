@@ -114,26 +114,39 @@ sequenceDiagram
     Client-->>Codex: tx.send(FunctionCall A only) [DATA LOSS!]
 ```
 
-### 3.2 Authoritative Generation-End Boundary in ZCode
-To prevent dropping serial siblings, turn termination must NOT rely on `pending_tools.is_empty()` alone or an arbitrary sleep. It must anchor on **ZCode's native event protocol**.
+### 3.2 Source Analysis of `/opt/ZCode/resources/glm/zcode.cjs`
 
-In `/opt/ZCode/resources/glm/zcode.cjs` (total size 14,642,393 bytes), binary and string analysis reveals the exact lifecycle events emitted when the model finishes its generation step and enters the execution phase:
-1. During model token generation:
-   - `type: "model.streaming"`, payloads: `text_delta`, `tool_input_start` (exact byte offset `14,394,267`), `tool_input_delta`, `tool_input_end`, `tool_call`.
-2. When the model completion finishes and tools are handed off for scheduling:
-   - `type: "tool.updated"` with `payload.kind = "scheduled"` or `phase = "ToolBatchComplete"`.
-   - `type: "permission.requested"` (emitted when `permissionBroker.requestPermission()` is called for the scheduled batch; exact byte offsets `748,326`, `755,008`, and `14,407,971`).
-   - `type: "permission.resolved"` (emitted when `DenyPermissionBroker` resolves the denial; exact byte offsets `748,349`, `755,039`, `4,991,622`, and `14,408,052`).
+#### 3.2.1 Pinned Binary Provenance
+- **Path:** `/opt/ZCode/resources/glm/zcode.cjs`
+- **Size:** `14,796,490` bytes (Note: preliminary notes referenced an older unpatched size of 14,642,393 B; the actual installed binary is pinned here).
+- **SHA256:** `8f5cfccf2a899b92e57bc2a5760b949c1a928f739652fffc9e6d07c24f11ba05`
 
-**Explicit Unknowns & Unverified Edge Cases (Fail-Closed Boundaries):**
-- *UNKNOWN:* Exact socket buffer flush vs immediate teardown behavior in Node CJS when SIGTERM is delivered during an active token stream write.
+#### 3.2.2 Decompiled Event Flow & Critical Source Discoveries
+Binary and AST string analysis of `zcode.cjs` reveals the exact lifecycle events:
+
+1. **Model Token Generation:**
+   - `type: "model.streaming"`, payloads: `text_delta`, `tool_input_start` (byte offset `14,394,267`), `tool_input_delta`, `tool_input_end`, `tool_call`.
+   - All serial siblings ($A, B, C\dots$) are emitted while the model is streaming under `model.streaming`.
+
+2. **Permission Lifecycle Events:**
+   - `type: "permission.requested"`: emitted when `permissionBroker.requestPermission()` is called for the scheduled tool (byte offsets `748,326`, `755,008`, and `14,407,971`; mapped at byte `14,408,001`).
+   - `type: "permission.resolved"`: emitted when `DenyPermissionBroker` resolves the denial (byte offsets `748,349`, `755,039`, `4,963,286`, `4,991,622`, `13,149,225`, and `14,408,052`; mapped at byte `14,408,028`).
+   - `DenyPermissionBroker.requestPermission()` is defined at byte offsets `4,898,470` and `4,898,649`.
+
+3. **Correction Regarding `ToolBatchComplete` and `tool.updated`:**
+   - `ToolBatchComplete` (byte offset `13,146,421`) is emitted inside `executeTools` when `f.value.type === "batch_complete"` with `results: successCount, errorCount`. **Crucially, `ToolBatchComplete` is an EXECUTION COMPLETION event, fired AFTER tools have already run**, not a pre-permission scheduling boundary!
+   - Byte offset `14,394,955` maps `ToolBatchComplete` to `payload.kind = "batch"`.
+   - Byte offset `14,407,897` maps `scheduled`, `started`, `progress`, `result`, `error`, and `batch` ALL to `type: "tool.updated"`.
+   - **Conclusion:** A patch matching generic `tool.updated` or `ToolBatchComplete` does **NOT** prove generation complete or halt execution before denial!
+
+#### 3.2.3 Explicit Unknowns & Fail-Closed Boundaries
+- *UNKNOWN:* Exact event ordering between Node stdout writes of `tool_call` deltas and `permission.requested` vs `permission.resolved` (whether buffered in Node or synchronous across event-loop ticks).
+- *UNKNOWN:* Socket buffer flush vs immediate process termination in Node CJS when SIGTERM is delivered during an active token stream write.
 - *UNKNOWN:* Whether any alternative prompt format or non-build route in ZCode bypasses `DenyPermissionBroker` without emitting `permission.requested`.
 - *UNKNOWN:* CJS behavior under simultaneous serial tool failures when permissions are conditionally granted for tool A but denied for tool B.
 
-**Key Architectural Invariant:**
-- While the model is generating tokens, `type` is exclusively `"model.streaming"`. All serial siblings ($A, B, C\dots$) arrive under `"model.streaming"`.
-- The transition from `"model.streaming"` to `"tool.updated"` or `"permission.requested"` proves that **the model generation batch is 100% complete**.
-- Therefore, receiving `permission.requested` or `tool.updated` (or `permission.resolved`) provides an **authoritative, event-driven generation-end boundary**.
+**Narrowed Guarantees:**
+This design specifies the architectural requirements and state machine for turning at the tool boundary. Because CJS event ordering and buffer synchrony remain unverified, **ZERO implementation, ZERO compilation/build, and ZERO provider calls** are authorized until an independent source review formally agrees on the synchrony model.
 
 ```mermaid
 sequenceDiagram
