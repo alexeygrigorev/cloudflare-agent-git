@@ -120,15 +120,16 @@ echo "N9b cross-fixture franken tree (Muse 01a0ff64) - oracle CANNOT catch it"
 # Reproduce Muse's case exactly: the oa/ob guard is REMOVED, so a cross-fixture A
 # overlay builds a tree the oracle accepts. The provenance-by-file-set check must
 # still refuse it, because the oracle cannot detect contamination.
+# Disable BOTH guards, not just the fixture one: the label/head binding would otherwise
+# fire first and the provenance check under test would never be reached.
 p="$(fresh_packet n9b)"; skip_manifest "$p"
-python3 - "$p/replay.sh" <<'PY2'
-import pathlib, re, sys
-p = pathlib.Path(sys.argv[1]); t = p.read_text()
-t = re.sub(r'  # BOTH overlay arguments.*?return 2 ;;\n  esac\n', '  :\n', t, flags=re.S)
-p.write_text(t)
-PY2
+# No script surgery: REPLAY_GUARDS_OFF=1 disables the shallower guards so the DEEPER check
+# under test is actually reached, and replay.sh prints a loud banner when it is set.
 sed -i 's|compose_case f2-AB seed-arm2 arm2-signposted/A arm2-signposted/B|compose_case f2-AB seed-arm2 arm1-signposted/A arm2-signposted/B|' "$p/replay.sh"
+export REPLAY_GUARDS_OFF=1
 check "unaccounted provenance" "$p" no 'UNACCOUNTED PROVENANCE'
+
+unset REPLAY_GUARDS_OFF
 
 echo "N9c extra file smuggled into a case"
 p="$(fresh_packet n9c)"; skip_manifest "$p"
@@ -144,6 +145,18 @@ t = t.replace('  for f in "$ob"/*; do',
 p.write_text(t)
 PY3
 check "extra foreign file" "$p" no 'UNACCOUNTED PROVENANCE'
+
+echo "N9d label/overlay swap (Muse 01a0ff9d) - same fixture, wrong overlay"
+# A case LABEL is just a string. Pointing f1-A at f1-B's overlay satisfies the fixture
+# guard (both are arm1) and used to report PASS for all eight with exit 0.
+p="$(fresh_packet n9d)"; skip_manifest "$p"
+sed -i 's|run_case f1-A     seed-arm1 arm1-signposted/A|run_case f1-A     seed-arm1 arm1-signposted/B|' "$p/replay.sh"
+check "label/overlay swap" "$p" no 'LABEL/OVERLAY MISMATCH'
+
+echo "N9e compose label/overlay swap (A side)"
+p="$(fresh_packet n9e)"; skip_manifest "$p"
+sed -i 's|compose_case f1-AB seed-arm1 arm1-signposted/A arm1-signposted/B|compose_case f1-AB seed-arm1 arm1-signposted/B arm1-signposted/B|' "$p/replay.sh"
+check "compose label swap (A)" "$p" no 'LABEL/OVERLAY MISMATCH \(A\)'
 
 echo "N10 happy path control"
 p="$(fresh_packet n10)"

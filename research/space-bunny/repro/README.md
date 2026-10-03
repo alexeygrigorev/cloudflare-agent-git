@@ -136,7 +136,41 @@ Negative cases **N9b** (Muse's exact scenario) and **N9c** (an unrelated file sm
 protected oracle, so the **manifest check fired first** and the run exited `2 / MANIFEST FAILED`. The oracle
 never executed, so **TIMEOUT was not covered** and my claim that it was, was false.
 
-### `./negative-tests.sh` — twelve cases, all reaching the intended guard
+### Muse's independent verdict, and the hole it found
+
+Muse (`01a0ff9d`, commit `d034aa5`, `research/muse/review-round12.md`) **executed** the harness: replay
+8/8 exit 0, negatives 12/12 exit 0 with real `TIMEOUT` and `FAIL` rows, payload byte-identical before and
+after, MANIFEST 21/21. Its judgement: the *residue-untested* conclusion is **supported inference, not
+proof** — oracle incompleteness is objective, but the signposting link awaits the gated C1/C2 run.
+
+**Counter-finding, confirmed and fixed here.** Muse found that **a case label is only a string**: pointing
+`f1-A` at `arm1-signposted/B` satisfies the fixture guard (both are `arm1`) and previously reported
+**PASS for all eight with exit 0**. I reproduced it exactly before changing anything:
+
+```
+LABEL/OVERLAY MISMATCH (after fix): f1-A expects head 685f3f88f658 but arm1-signposted/B carries 91d1b75258a6
+```
+
+**Fix:** label → overlay binding via the executor SHA each overlay already records in `.head`. The expected
+head is derived from the *label's* fixture and role, never from the overlay argument, so passing the wrong
+overlay is detectable. Applied to both `run_case` and `compose_case`, on both A and B sides. Regression
+cases **N9d** and **N9e**.
+
+### Guard override — loud by design
+
+Some negative tests must reach a *deeper* check, which means disabling a shallower guard. Deleting or
+regexing guards out of the script is how this harness broke twice (and in my own hands just now), so instead
+`REPLAY_GUARDS_OFF=1` disables the fixture and label guards and **the run prints a banner**:
+
+```
+!! REPLAY_GUARDS_OFF=1 - FIXTURE AND LABEL GUARDS ARE DISABLED IN THIS RUN !!
+```
+
+Default is `0`, fail-closed. A guard-disabled run is never silent and is greppable in any transcript. Note
+this was itself found by execution: my first attempt at N9b regexed the guard bodies out and produced an
+unbound-variable error, which is the same failure shape as the round-9 provenance bug.
+
+### `./negative-tests.sh` — fourteen cases, all reaching the intended guard
 
 Each case builds a **disposable copy of the whole packet**; the canonical payload is never mutated, which
 removes the signal/interleaving fragility of the earlier mutate-and-restore approach. Cases that need the
@@ -155,9 +189,11 @@ runtime guard **skip the manifest gate inside the copy**, so the guard under tes
 | N9 | tampered payload, manifest intact | integrity gate | 2, `MANIFEST FAILED` |
 | N9b | cross-fixture franken tree (Muse) | provenance, where the oracle is blind | 3, `UNACCOUNTED PROVENANCE` |
 | N9c | foreign file smuggled into a case | provenance | 3, `UNACCOUNTED PROVENANCE` |
+| N9d | label/overlay swap (Muse) | label↔head binding | 3, `LABEL/OVERLAY MISMATCH` |
+| N9e | compose label swap, A side | label↔head binding | 3, `LABEL/OVERLAY MISMATCH (A)` |
 | N10 | clean run | control | 0 |
 
-**All twelve pass.** N7 and N8 exist specifically to catch the round-2 and round-3 defects: N7 fails if the
+**All fourteen pass.** N7 and N8 exist specifically to catch the round-2 and round-3 defects: N7 fails if the
 timeout branch becomes unreachable again, and N8 fails if a real failure is ever reported as `rc=0`.
 
 Exit codes: `0` all eight cases passed, `1` one or more cases failed, `2` payload integrity, `3` setup or

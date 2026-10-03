@@ -1300,3 +1300,73 @@ publication. That gate is unmet, and this incumbent check does not move it.
 
 Unchanged from earlier rounds: my Muse review of `f2178fb` is still **PENDING** with zero ACK
 (`ff68-a64a` delivered to pane). This A09 task is separate work and is **not** progress on it.
+
+---
+
+# ROUND 14 — Muse's genuine verdict received (01a0ff9d), counter-finding confirmed and fixed
+
+Identity checked first, no overrides: session `8620fdc9-0518-4d21-a7e2-fc8bd8e58726`, workspace
+`/home/alexey/git/cloudflare-agent-git`, tag `space-bunny-head`, conversation `ses_f01ef9c54ffe86f5DrG7n8GCsY`.
+
+## The review is no longer PENDING
+
+Muse replied to `ff68-a64a` with commit `d034aa5` / `research/muse/review-round12.md`. It **executed** the
+harness rather than reading it: replay 8/8 exit 0, negatives 12/12 exit 0 with real `TIMEOUT` and `FAIL`
+rows, payload byte-identical before and after, MANIFEST 21/21, guards reachable, statuses faithful, oracle
+confirmed genuinely behavioural.
+
+**Muse's judgement on my science, which I accept:** *residue-untested* is **supported inference, not
+proof**. Oracle incompleteness is objective; the signposting link still awaits the gated C1/C2 run. I am not
+upgrading my earlier language on the strength of my own suite.
+
+## The counter-finding — Muse found a hole I had missed, and it was real
+
+Muse: **a case label is only a string.** Pointing `f1-A` at `arm1-signposted/B` satisfies the fixture guard
+(both belong to `arm1`) and **previously reported PASS for all eight with exit 0**.
+
+I reproduced it exactly before touching anything. My first probe *failed* to reproduce it — I swapped overlay
+*content*, which the oracle caught — so the precise variant had to be found by reasoning about what actually
+carries identity: the dispatch line. Confirmed, then fixed.
+
+**Fix:** label → overlay binding via the executor SHA each overlay already records in `.head`. The expected
+head is derived from the **label's** fixture and role, never from the overlay argument, so a swapped overlay
+is detectable. Applied in `run_case` and `compose_case`, A and B sides. Regression cases **N9d**, **N9e**.
+
+**Now 14 negative cases, 14 passed, 0 bad**; `replay.sh` 8 PASS; payload 21/21; no leftover scratch.
+
+## Guard override — loud by design, and found by execution
+
+N9b must reach the deeper provenance check, which means disabling the shallower guards. My first attempt
+regexed the guard bodies out of a copy and **produced an unbound-variable error** — the same failure shape
+as the round-9 provenance bug that read a nonexistent file. Replaced with `REPLAY_GUARDS_OFF=1`, which
+prints a banner when set and defaults to fail-closed:
+
+```
+!! REPLAY_GUARDS_OFF=1 - FIXTURE AND LABEL GUARDS ARE DISABLED IN THIS RUN !!
+```
+
+A guard-disabled run is never silent and is greppable in any transcript.
+
+## Ledger correction
+
+| Claim | State |
+|---|---|
+| Muse review of the harness | **DONE** — executed, 8/8 and 12/12 as reported |
+| Muse's counter-finding | **CONFIRMED by me, fixed** |
+| My harness accepted | **NOT ACCEPTED** — Muse reports a finding and a judgement, not approval |
+| *residue-untested* claim | **Supported inference, not proof**; signposting link awaits gated C1/C2 |
+
+## Also delivered this round: A09 incumbent check
+
+`research/space-bunny/a09-incumbents.md`, commit `5817275`, verdict sent to claude-principal as
+`01a0ffdf-d59b`: **GAP (narrow)**. None of the seven exactly-once guard tools touches Git refs or
+publication; their dedup unit is a tool call. Two findings worth carrying: **Kybernis states A09's
+validation-≠-commit-atomicity thesis eight months early and independently**, and **agent-ledger
+independently hit the runtime-minted-ID hole** Claude's `01a0ffd5` challenge identified. I also recommended
+*against* filling slot six on A09.
+
+## Next owned step
+
+Re-review request to Muse for the label-binding fix (`N9d`/`N9e` and the guard-override banner), on the same
+queued-request pattern Codex required. I will not claim the harness accepted on the strength of my own
+suite passing. No agents, no trials, no dupexec, no production mutation, no consensus, no SIGNOFF.

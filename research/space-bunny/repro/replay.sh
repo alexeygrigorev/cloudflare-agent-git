@@ -21,6 +21,13 @@ set -euo pipefail
 # Bounded oracle runtime. A hung oracle must fail the case, not the reviewer's session.
 ORACLE_TIMEOUT="${ORACLE_TIMEOUT:-30}"
 
+# GUARD OVERRIDE, LOUD BY DESIGN. Some negative tests must reach a DEEPER check, which means
+# disabling a shallower guard. Deleting or regexing a guard out of the script is how this
+# harness already broke twice, so instead a test sets REPLAY_GUARDS_OFF=1 and the run
+# prints a banner. A guard-disabled run is therefore never silent, and it is greppable in
+# any transcript. Default is 0: fail-closed.
+REPLAY_GUARDS_OFF="${REPLAY_GUARDS_OFF:-0}"
+
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE"
 
@@ -33,9 +40,28 @@ trap cleanup EXIT
 # Expected case labels, verified after the run. Duplicates or gaps are a failure.
 EXPECTED_CASES=(f1-base f1-A f1-B f1-AB f2-base f2-A f2-B f2-AB)
 
+# LABEL -> OVERLAY BINDING. Muse (01a0ff9d) found that a case label is just a string: pointing
+# `f1-A` at the wrong same-fixture overlay still reported PASS for all eight and exited 0.
+# The overlay directory name therefore cannot be the only identity. Each overlay carries a
+# `.head` file recording the executor commit that produced it, so we bind label -> recorded
+# head and require the overlay actually used to match the head the label is supposed to mean.
+
 fails=0
 rows=()
 seen=()
+
+# EXPECTED_HEAD <label> -> the executor SHA that label must mean, read from the CANONICAL
+# packet for that overlay dir. Derived from the label's own fixture/role, not from the overlay
+# argument, so passing the wrong overlay is detectable.
+EXPECTED_HEAD() {
+  case "$1" in
+    f1-A) cat "$HERE/arm1-signposted/A/.head" 2>/dev/null ;;
+    f1-B) cat "$HERE/arm1-signposted/B/.head" 2>/dev/null ;;
+    f2-A) cat "$HERE/arm2-signposted/A/.head" 2>/dev/null ;;
+    f2-B) cat "$HERE/arm2-signposted/B/.head" 2>/dev/null ;;
+    *) echo "" ;;
+  esac
+}
 
 # run_case <label> <seed-dir> <overlay-dir|-> <oracle-file>
 run_case() {
@@ -59,6 +85,19 @@ run_case() {
     cp -a "$overlay"/. "$dir"/ || { echo "OVERLAY COPY FAILED: $overlay" >&2; return 2; }
   fi
   cp "protected-oracle/$oracle" "$dir/oracle.py" || { echo "ORACLE COPY FAILED: $oracle" >&2; return 2; }
+
+  # LABEL/HEAD BINDING (Muse 01a0ff9d): the overlay actually used must carry the executor head
+  # the label is supposed to mean. Catches a swapped overlay that the fixture guard allows
+  # because both overlays belong to the same fixture.
+  local want_head got_head
+  want_head="$( EXPECTED_HEAD "$label" )"
+  if [ -n "$want_head" ] && [ "$REPLAY_GUARDS_OFF" = "0" ]; then
+    got_head="$(cat "$overlay/.head" 2>/dev/null)"
+    if [ "$got_head" != "$want_head" ]; then
+      echo "LABEL/OVERLAY MISMATCH: $label expects head ${want_head:0:12} but $overlay carries ${got_head:0:12}" >&2
+      return 2
+    fi
+  fi
 
   # Byte-identity assertion: every overlaid file must equal the published source byte for byte.
   if [ "$overlay" != "-" ]; then
@@ -104,6 +143,7 @@ compose_case() {
     || { echo "MISSING INPUT for $label" >&2; return 2; }
   # BOTH overlay arguments must match the seed's fixture. Checking only one of them
   # misses a wrong A paired with a valid B.
+  if [ "$REPLAY_GUARDS_OFF" = "0" ]; then
   case "$seed" in
     seed-arm1) case "$oa" in arm1*) ;; *) echo "FIXTURE MISMATCH (A): $seed with $oa" >&2; return 2 ;; esac
               case "$ob" in arm1*) ;; *) echo "FIXTURE MISMATCH (B): $seed with $ob" >&2; return 2 ;; esac ;;
@@ -111,6 +151,7 @@ compose_case() {
               case "$ob" in arm2*) ;; *) echo "FIXTURE MISMATCH (B): $seed with $ob" >&2; return 2 ;; esac ;;
     *) echo "UNKNOWN SEED FIXTURE: $seed" >&2; return 2 ;;
   esac
+  fi
   local f rel
   mkdir -p "$dir"                                          || { echo "MKDIR FAILED: $label" >&2; return 2; }
   cp -a "$seed"/. "$dir"/                                   || { echo "SEED COPY FAILED: $label" >&2; return 2; }
@@ -122,6 +163,20 @@ compose_case() {
     cp -a "$f" "$dir/$rel" || { echo "B COPY FAILED: $rel" >&2; return 2; }
   done
   cp "protected-oracle/$oracle" "$dir/oracle.py"            || { echo "ORACLE COPY FAILED: $label" >&2; return 2; }
+
+  local want_a got_a want_b got_b
+  want_a="$( EXPECTED_HEAD "$label" | head -1 )"
+  case "$label" in
+    f1-AB) want_a="$(cat "$HERE/arm1-signposted/A/.head" 2>/dev/null)"; want_b="$(cat "$HERE/arm1-signposted/B/.head" 2>/dev/null)" ;;
+    f2-AB) want_a="$(cat "$HERE/arm2-signposted/A/.head" 2>/dev/null)"; want_b="$(cat "$HERE/arm2-signposted/B/.head" 2>/dev/null)" ;;
+  esac
+  got_a="$(cat "$oa/.head" 2>/dev/null)"; got_b="$(cat "$ob/.head" 2>/dev/null)"
+  if [ "$REPLAY_GUARDS_OFF" = "0" ] && [ -n "$want_a" ] && [ "$got_a" != "$want_a" ]; then
+    echo "LABEL/OVERLAY MISMATCH (A): $label expects ${want_a:0:12} but $oa carries ${got_a:0:12}" >&2; return 2
+  fi
+  if [ "$REPLAY_GUARDS_OFF" = "0" ] && [ -n "$want_b" ] && [ "$got_b" != "$want_b" ]; then
+    echo "LABEL/OVERLAY MISMATCH (B): $label expects ${want_b:0:12} but $ob carries ${got_b:0:12}" >&2; return 2
+  fi
 
   local ok=1
   for src in "$oa" "$ob"; do
@@ -191,6 +246,11 @@ compose_case() {
 echo "== payload integrity =="
 sha256sum -c MANIFEST.sha256 || { echo "MANIFEST FAILED"; exit 2; }
 echo
+
+if [ "$REPLAY_GUARDS_OFF" != "0" ]; then
+  echo "!! REPLAY_GUARDS_OFF=$REPLAY_GUARDS_OFF - FIXTURE AND LABEL GUARDS ARE DISABLED IN THIS RUN !!" >&2
+  echo "!! valid only for negative tests that must reach a deeper check; never a real result !!" >&2
+fi
 
 echo "== eight cases (stderr shows per-case oracle output) =="
 
