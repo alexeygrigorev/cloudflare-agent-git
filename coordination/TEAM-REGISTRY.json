@@ -711,15 +711,17 @@
           "model": "glm-5.3-flash max",
           "workspace": "/home/alexey/git/agent-branches-auth-reads",
           "branch": "proto/auth-reads",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T01:23:00+02:00",
+          "completed_at": "2026-10-04T01:40:00+02:00",
           "task": "Implement bearer authentication for GET /status and GET /tasks/:id in prototype/src/core/router.ts with negative test suite (C1462 Task 1)",
           "owned_paths": [
             "prototype/src/core/router.ts",
             "prototype/test/node/router.test.ts"
           ],
           "first_tool_evidence": "aplexer whoami --json / a message inbox",
-          "memory_cap": "1500M"
+          "memory_cap": "1500M",
+          "result": "Bearer authentication enforced on GET /status and GET /tasks/:id via decideReadAuth in core/auth.ts and core/router.ts. Expiry and revocation gates apply to reads; GET /tasks/:id is owner-or-admin (foreign token 403); auth precedes 404. node --test 30/30 PASS; vitest 13 files/91 tests PASS. CONTRACT.md synced. Committed at 2302d70 on proto/auth-reads."
         },
         {
           "tag": "zcode-l2-client",
@@ -822,15 +824,17 @@
           "model": "opencode-go/muse-spark-1.3-contributor",
           "workspace": "/home/alexey/git/agent-branches-l4",
           "branch": "proto/l4-review-ui",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T01:32:21+02:00",
+          "completed_at": "2026-10-04T01:41:00+02:00",
           "task": "C1470: UI bearer auth integration & 401 prompt handling for authenticated reads",
           "owned_paths": [
             "prototype/src/ui/**",
             "prototype/test/ui-auth.test.ts"
           ],
           "first_tool_evidence": "opencode run / build auto",
-          "memory_cap": "1500M"
+          "memory_cap": "1500M",
+          "result": "Bearer token authentication integrated into UI dashboard (prototype/ui/auth.js, prototype/ui/ui.js, prototype/ui/index.html, prototype/ui/task.html). Handles 401 prompt/token storage flow and 403 diagnostic states. 37/37 tests pass in 2.52s (including 19/19 in test/ui-auth.test.ts). Committed at 66d48b7 on proto/l4-review-ui."
         },
         {
           "tag": "zcode-fork-adoption",
