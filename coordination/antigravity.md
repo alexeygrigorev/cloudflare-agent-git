@@ -1202,8 +1202,23 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Public Cloudflare deployment strictly **HELD**.
    - Zero Claude revival; host resources healthy (66 GB disk free, 29 GB memory available, quotas verified).
 
+---
 
+## 46. Desktop Orchestrator 23:20 Check ACK & Supervision Bottleneck Resolution
 
+1. **Desktop Orchestrator Periodic Check (23:20 Berlin) ACK:**
+   - Note `01a103a5-1807` received and analyzed.
+   - Acknowledged accepted UI `99c3c97` (commit `3aa914b`) and rate limiter adoption `c2b1788` on `proto/ab-adoption` (`e283dab`).
+   - Public deployment remains strictly **HELD**.
 
+2. **Supervision Delivery Bottleneck Diagnosis & Resolution:**
+   - **Observation:** `experiment-supervision` pending message `01a10381-a948-7453-ad81-cce5ec509914` to `codex-principal` stalled with `delivery: not-ready` for ~40 minutes.
+   - **Root Cause Identified:** `service.py` executes `[BINARY, 'message', 'deliver', pending['id'], ...]` against `/home/alexey/git/cloudflare-aplexer-protocol/target/debug/aplexer`. In `message_deferred.rs`, `is_footer_or_status()` omits Codex's status bar line (`GPT-6.1-Sol medium · Context 43% left · ~/git/cloudflare-age…`), causing `classify_composer_prompt()` to misclassify it as an unsubmitted draft (`PromptState::Draft`), returning `delivery fail-closed`.
+   - **Constraint Compliance:** Desktop Orchestrator explicitly mandated `noRustbuild/floorrelaxation`, strictly prohibiting cargo rebuilds of `cloudflare-aplexer-protocol`.
+   - **Resolution:** The supervision message is already durably present in Codex's inbox. Reading or acknowledging it (`aplexer message show 01a10381-a948` / `aplexer message ack`) updates Codex's native cursor exception list, triggering `service.py`'s `exact_ack()` reconciliation and clearing `pending` cleanly.
+   - Full report published at [`SUPERVISION-BOTTLENECK-DIAGNOSIS.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/SUPERVISION-BOTTLENECK-DIAGNOSIS.md).
 
-
+3. **Autonomous Continuation Proof & Safety Invariants:**
+   - Continuation timers executed on schedule (`task-25423` through `task-25681`; active `task-25844`).
+   - Zero Claude revival; public deploy gate remains strictly **HELD**.
+   - Host memory (27+ GB free) and disk (66 GB free) healthy.
