@@ -28,7 +28,7 @@ Per directives from Claude and Codex C-1285/C-1286, we provide a transparent inv
 
 | Artifact | Location | Content & Integrity |
 | :--- | :--- | :--- |
-| **Attempt 1 JSON Telemetry** | `.local/a01-feasibility/failed-runs/arm1a-attempt1-91f9442-1791027205/feasibility_summary.json` | **Intact**. Contains complete session IDs (`2bb438b2` producer, `052d6dc0` consumer), part IDs, token counts (input 13,592, output 97, reasoning 181), timestamps, whoami output, tool calls, and grader exit code 2. |
+| **Attempt 1 JSON Telemetry** | `.local/a01-feasibility/failed-runs/arm1a-attempt1-91f9442-1791027205/feasibility_summary.json` | **Intact**. Contains complete session IDs (`2bb438b2-1f15-4141-8b53-a924041e7302` producer, `052daca1-a723-4373-b1d0-7cf6f46de692` consumer), part IDs, token counts (input 13,592, output 97, reasoning 181), timestamps, whoami output, tool calls, and grader exit code 2. |
 | **Attempt 2 Complete Tree** | `.local/a01-feasibility/failed-runs/arm1a-attempt2-32f9ed2-1791027745/arm1a/` | **Intact**. Contains full producer and consumer workspaces, git repositories, uncommitted diffs, and SQLite databases (`env_producer/.../opencode.db` and `env_consumer/.../opencode.db`). |
 | **Aplexer Retired Sessions** | `/home/alexey/.local/state/aplexer/retired-sessions/` | Contains tombstones and retired session records for `2bb438b2`, `0c42428b`, and `bc1e08e6`. |
 | **Git History** | `cloudflare-agent-git` repository | All runner commits (`91f9442`, `32f9ed2`) and coordination notes are fully preserved in Git history. |
@@ -37,37 +37,24 @@ Per directives from Claude and Codex C-1285/C-1286, we provide a transparent inv
 
 | Lost Item | Cause | Consequence |
 | :--- | :--- | :--- |
-| **Attempt 1 Producer & Consumer SQLite DB Rows** | At 11:42:25 UTC, the second attempt executed `setup_opencode_env`, which copied a fresh `PRISTINE_DB_SOURCE` (`opencode.db`) over `arm1a/env_producer` and `arm1a/env_consumer`. | The raw SQLite rows (`part`, `message`, `session` tables) for Attempt 1 session `ses_efe77212bffeM7ITy9l997hHG2` are overwritten. Telemetry survives solely via the previously exported `feasibility_summary.json`. |
+| **Attempt 1 Producer & Consumer SQLite DB Rows** | At 11:42:25 UTC, the second attempt executed `setup_opencode_env`, which copied a fresh `PRISTINE_DB_SOURCE` (`opencode.db`) over `arm1a/env_producer` and `arm1a/env_consumer`. | The raw SQLite rows (`part`, `message`, `session` tables) for Attempt 1 sessions (`ses_efe77212bffeM7ITy9l997hHG2` producer, `ses_efe7721dbffeaLhVjh0oXNfT5P` consumer) are overwritten. Telemetry survives solely via the previously exported `feasibility_summary.json`. |
 | **Attempt 1 Workspace Checkouts** | Attempt 2 executed `setup_workspace` which cleared `arm1a/producer` and `arm1a/consumer` to initialize a fresh repo from `base_event_store`. | The intermediate git repo checkouts for Attempt 1 were overwritten. (Attempt 1 producer had empty diff; consumer diff was captured in `feasibility_summary.json`). |
 
 ---
 
-## 3. Producer Model-Stop Diagnosis (Attempt 1 Root Cause Analysis)
+## 3. Producer Model-Stop Analysis: Hypotheses & Observable Facts
 
-### Question: Why did the producer session `2bb438b2` stop after `cat producer.py` without modifying code?
+### Observable Retained Facts:
+1. Producer session `2bb438b2` executed only two tool calls: `whoami --json` and `cat src/event_store/producer.py`.
+2. Total output tokens generated: 97; reasoning tokens: 181. `diff_snippet` was empty (zero code modified).
+3. The raw SQLite rows containing model reasoning text and intermediate state-report transitions were overwritten when Attempt 2 initialized. Therefore, the exact internal deliberation of the model cannot be forensically proven.
+4. Runner 91f9442 contained an immediate break condition: `if p_rest and c_rest: break` followed by an immediate 5-second sleep and process kill.
+5. In Attempt 2 (commit `32f9ed2`), where prompt ownership was clarified and target-file modification was required before resting settle, the producer executed 40 tool calls. However, Attempt 2 ran default `big-pickle` rather than `opencode-go/muse-spark-1.3-contributor` due to the omitted `--model` CLI argument.
 
-A forensic review of the Attempt 1 telemetry (`feasibility_summary.json`) and runner execution reveals four compound factors:
-
-1. **Prompt Ambiguity on Test Ownership:**
-   - The initial prompt for Ticket ENG-401 instructed:
-     > *"Refactor `src/event_store/producer.py` to optimize batch serialization: 1. Update event timestamp recording to integer Unix microseconds (`timestamp_us`)... 3. Ensure all producer unit tests in `tests/test_producer.py` pass."*
-   - In `base_event_store`, line 20 of `tests/test_producer.py` asserts:
-     > `self.assertEqual(batch[0]["timestamp"], 100.5)`
-   - The prompt did not explicitly clarify that Task A owned both `producer.py` and `tests/test_producer.py`. Upon inspecting `src/event_store/producer.py` via `cat`, the model observed the legacy schema and paused to deliberate the conflicting constraints.
-2. **Premature Runner Idle Termination (Flawed Settle Oracle):**
-   - In runner commit `91f9442`, the idle detection loop checked:
-     > `if p_rest and c_rest: break`
-   - Between LLM turns in `opencode`, thinking and planning can take 10–25 seconds. During that gap, `opencode` reports `idle` via its state-report hook.
-   - The runner caught this brief intermediate idle state right after the `cat` command completed, concluded that execution was complete, waited a 5-second grace window, and killed the sessions. The model was terminated before it could emit its next tool call or code edit.
-3. **Vacuous Unit Test Oracle:**
-   - The runner reported `producer.unit_tests.passed = True` because the legacy tests passed on the unmodified repository. This created a false impression of success on an unchanged base.
-4. **Harness Error on Integration Grader:**
-   - The runner called `python3 test_integration_stream.py` without the required `--producer` and `--consumer` CLI arguments, resulting in an exit code `2` (argparse error).
-
-### Attempt 2 Evidence & Verification:
-In Attempt 2 (commit `32f9ed2`), the prompt was updated to clarify that Task A owns `tests/test_producer.py` and can update unit tests, and the runner required file modifications before resting settlement.
-- **Result:** The producer model did **not** stop after `cat`; it generated **40 tool calls**, actively analyzing float64 ULP, microsecond conversion boundaries, and sub-microsecond jitter.
-- **However:** Attempt 2 was invalidated due to a material model mismatch (running default `big-pickle` rather than `opencode-go/muse-spark-1.3-contributor` due to a missing `--model` CLI argument).
+### Plausible Inferred Hypotheses (Unproven Forensic Cause):
+- **Hypothesis 1 (Early-Kill Mechanism Plausibility):** Between LLM turns in `opencode`, models often pause for 10–25s while generating or thinking. During such pauses, `opencode` reports `idle`. It is plausible that the runner detected this intermediate idle state after the `cat` command and killed the session before the model began emitting code.
+- **Hypothesis 2 (Prompt Constraint Deliberation):** Ticket ENG-401 instructed: *"Ensure all producer unit tests in tests/test_producer.py pass"*, while `base_event_store` line 20 asserted `batch[0]["timestamp"] == 100.5`. It is plausible that the model paused or hesitated when observing this constraint tension without explicit permission to modify `tests/test_producer.py`.
+- **Conclusion:** While these structural factors explain the failure mode, the exact causal breakdown for Attempt 1 remains **UNKNOWN / HYPOTHETICAL** due to the lost database rows.
 
 ---
 
