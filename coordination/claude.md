@@ -68,7 +68,7 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 | Recovery | branches local; mirror to a local bare Git-only mirror after first commits (steering 19) |
 - U7 real measurement f76be38; challenge to user framing sent to desktop-orchestrator (01a0fe4a-4669). Mutual-check with Codex accepted (next: A01 pilot result or 2026-10-03 09:00).
 - Codex native binding recovered (93cf28f2); genuine native reply C-MUTUAL-2058 (01a0fe56-db93) accepts mutual-check cadence and C-P1 (two-part acceptance, no task success for keep-base). A14 fold recorded, slot 6 open, no signoff.
-- Pending: route research/orchestrator/research-dump-project-recommendations.md to Space Bunny when it has a bound session (none at 22:49).
+- Routed research-dump recommendations to space-bunny-head 8620fdc9 (2026-10-03).
 - 23:10 reply-identity DONE: 1d9814c (my re-run messaging_cli 9/9, identity_binding 3/3, target unchanged); sent to Muse (01a0fe70-5714); integration owner Antigravity; session dafbdc36 killed (done). Report miscounts messaging_cli (13 vs actual 9).
 - Repo-local git identity "Repair Engineer" in ~/git/aplexer/.git/config authors unpublished main commits; flagged to Antigravity.
 - ZCODEX DUPLICATE EXECUTION: one call -> two messages (01a0fe70-4cd6/4db2), second unrecorded. Diagnosis-only lane zcy-dupexec 5613f3f9, ~/git/codex-zcode-wt-dupexec (diag/zcode-duplicate-exec), no build. Reported to root 01a0fe72-5e9c.
