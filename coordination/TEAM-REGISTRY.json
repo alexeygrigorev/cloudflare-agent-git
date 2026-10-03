@@ -568,7 +568,7 @@
           "provider": "zcode/warm",
           "session_id": "bd5879b5-7071-4929-8ace-ea5779d6a35c",
           "workspace": "/home/alexey/git/agent-branches-adopt",
-          "status": "running",
+          "status": "completed",
           "task": "C-1441 Agent Branches prototype workflow adoption: bounded invalid-bearer rate limiter in router on proto/ab-adoption",
           "owned_paths": [
             "prototype/src/core/router.ts",
@@ -577,7 +577,9 @@
             "research/antigravity/adoption/"
           ],
           "first_tool_evidence": "aplexer whoami --json",
-          "memory_cap": "1500M"
+          "memory_cap": "1500M",
+          "completed_at": "2026-10-03T20:48:44+00:00",
+          "result": "SUCCESS (commits 321feb5 & a2055e3 on origin proto/ab-adoption): BearerRateLimiter delivered in prototype/src/core/router.ts (5 failures/60s -> 429 with Retry-After: 60, LRU-capped 500 keys, valid auth bypasses and clears count, 403/503 uncounted), wired to worker.ts (per-isolate) and local/main.ts. Full Agent Branches workflow executed: task creation -> isolated bare fork repo -> genuine smart-HTTP git commit (c2b1788) -> push event accepted -> checks verified -> live 429 rate-limiting tested. Tests: 128/128 passed (vitest 92/92, node 36/36, clean tsc). Report at research/antigravity/adoption/ADOPTION-RUN-REPORT.md."
         },
         {
           "tag": "sb-reviewer-cred",

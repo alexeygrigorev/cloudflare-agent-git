@@ -1103,6 +1103,47 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - `zc-ab-adoption` (`bd5879b5`) actively running in `/home/alexey/git/agent-branches-adopt` implementing `BearerRateLimiter` and executing the genuine local workflow.
    - Public deploy gate remains strictly **HELD**.
 
+---
+
+## 43. Agent Branches Prototype Workflow Adoption Completed (`zc-ab-adoption` / `bd5879b5`), Security Limiter Delivered, and Remediation Accepted (C-1441, C-1456, C-1460)
+
+1. **Adoption Workflow Execution & Security Limiter Delivery:**
+   - Executor `zc-ab-adoption` (`bd5879b5`, ZCode warm, 1500M memory cap) completed the concrete workflow adoption task on branch `proto/ab-adoption` in `/home/alexey/git/agent-branches-adopt`.
+   - **Implemented `BearerRateLimiter` (`prototype/src/core/router.ts`):**
+     - Provider-neutral in-memory rate limiter tracking consecutive 401 unauthenticated bearer failures per client key.
+     - Threshold: 5 failures within 60s arms HTTP 429 `{error: "rate_limited", message: "Too many failed authentication attempts. Please retry later."}` with `Retry-After: 60`.
+     - Hard-capped table size: strictly max 500 client entries with LRU eviction (Map insertion order + delete/set refresh). Floods of random client keys evict older attacker entries and can never cause unbounded heap growth. Unknown IPs share a single conservative `unknown` bucket.
+     - Valid authentication is never blocked and immediately clears the client's failure count. 403 and 503 outcomes do not count toward rate limiting.
+     - Wired with clean defaults to `src/cloudflare/worker.ts` (`cf-connecting-ip`) and `src/local/main.ts` (`socket.remoteAddress`).
+   - **Real Prototype Workflow Verification:**
+     - `POST /setup` created canonical repo `agent-branches-canonical-1ecc04f0` on local sidecar smart-HTTP git server.
+     - `POST /tasks` minted `task-0002` (`agentId: zc-ab-adoption-0002`), returning isolated bare fork repo and write token.
+     - Real git commit on fork: authenticated clone via smart HTTP, committed `ADOPTION-NOTE.md` (`c2b178887bf940deb8d5c598cf7b58d7064be9ea`), and pushed to sidecar git server (`b995852..c2b1788 main -> main`).
+     - `POST /events/push` accepted and updated coordinator heads (`heads["zc-ab-adoption-0002"] = c2b1788...`).
+     - `POST /checks` verified with live head vector under CONTRACT v0.1 (`accepted: 0, stale: false`).
+     - Live limiter demo: 5 unauthenticated calls armed 429 with `Retry-After: 60`; valid credentials immediately succeeded (201) and cleared the counter.
+     - Ordinary Git fallback verified for both prototype storage (plain `git ls-remote` / clone) and project code delivery.
+   - **Measured Performance & Memory:**
+     - 5,000 unique client keys pushed: table size strictly capped at 500 entries (asserted per insert).
+     - Table heap: ~88.8 KB (~178 B per tracked client).
+     - Latency: cold insert with eviction ~1.0 µs/op; hot-key op ~156 ns/op.
+   - **Full Test Suite Clean:**
+     - 92/92 vitest + workerd tests passed (13 files).
+     - 36/36 Node tests passed.
+     - Unmasked TypeScript typechecks exit 0 (`tsc --noEmit` and `tsc -p tsconfig.node.json`).
+   - **Artifact & Commits:**
+     - Delivered commits [`321feb5`](file:///home/alexey/git/cloudflare-agent-git/commit/321feb5) and [`a2055e3`](file:///home/alexey/git/cloudflare-agent-git/commit/a2055e3) pushed to `origin proto/ab-adoption`.
+     - Full report committed at [`research/antigravity/adoption/ADOPTION-RUN-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/ADOPTION-RUN-REPORT.md). Session completed and workspace declaration released.
+
+2. **UI Remediation Verified on `proto/l4-review-ui` ([`99c3c97`](file:///home/alexey/git/cloudflare-agent-git/commit/99c3c97)):**
+   - Verified that commit `99c3c97` resolved all 4 Space Bunny review findings: removed dead `!stale &&` prefix, eliminated green badges during 503 outage across all views, pinned repo-relative scratch suffix in browser tests (killing M6), and gitignored pycache.
+   - All browser (Playwright 5/5) and Node (48/48) test suites pass cleanly.
+
+3. **Coordination & Safety Invariants:**
+   - Both `sb-reviewer-ui` and `zc-ab-adoption` successfully completed and recorded in [`coordination/TEAM-REGISTRY.json`](file:///home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json).
+   - Zero Claude revival; public deploy gate remains strictly **HELD**.
+   - Host resources healthy: 66 GB disk free, 29 GB memory available, quotas verified (`go` 100% 5h / 65% 7d; `zai` 100% 5h / 71% 7d).
+
 
 
 
