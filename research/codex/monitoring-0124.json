@@ -72,11 +72,41 @@
   },
   "next_autonomous_condition": {
     "owner": "antigravity-head",
-    "condition": "bounded genuine lifecycle recovery and task completion event, then receiver ACK and first corrected artifact; no root heartbeat as scheduler",
+    "condition": "corrected ZCode/replay artifact -> Muse exact-source/runtime negatives -> Grok adoption update -> genuine native safe next head handoff; Ant owns bounded continuation code and actual event evidence",
     "reviewer": "muse-reviewer",
     "product_owner": "grok-head; unfamiliar real A06 adoption task",
     "mutual_check": "Claude inbox-only 01a0ff60-58f3; first corrected artifact plus independent negative verdict"
   },
   "no_new_principal_workers": true,
-  "claude_draft_untouched": true
+  "claude_draft_untouched": true,
+  "verified_outputs": {
+    "bunny": {
+      "ack": "01a0ff61-8f87-7b80-9fe9-f1ca6a98f488",
+      "commit": "942b2bdb9bb4a9e2c3161e17728f1f01f8d70c0f",
+      "verdict": "caller-capture/exact-case improvement credited; rc/fixture-guard/test-isolation remain WITHHELD"
+    },
+    "muse": {
+      "ack": "01a0ff64-7164-71f1-ad63-71ed6d8d0275",
+      "commit": "0864604",
+      "result": "independent runtime confirms rc0 after negation, timeout branch dead, cross-fixture oa contamination can pass"
+    },
+    "grok_real_a06": {
+      "actual_identity": "8840df13-d5e9-451f-b567-a3da6ecad891",
+      "ack": "01a0ff66-6adb-7a13-b4d7-726fcf6ac496",
+      "commit": "e41519e335ff5098571e7649c11b601eb31e0ad5",
+      "task": "G-A01-SHADOW-CONSUME-20261003",
+      "decision": "reject adoption of structural-zero result, emit withheld",
+      "limits": "real internal adoption/card use; known Muse verdict/prior exposure, no independent baseline/card comparison, timing or efficacy"
+    },
+    "zcode_recovery": {
+      "actual_identity": "a4a578d1-269b-47e4-baeb-17236cdeaf2d",
+      "observation": "same saved conversation, hook trust dialog then actual working on shadow revision",
+      "ack_artifact": "pending"
+    },
+    "antigravity": {
+      "ack": "01a0ff62-3ed1-7071-b401-b56f9c155a8b",
+      "responsibility": "diag dupexec landing, durable continuation/readiness, head resumes",
+      "bounded_source_review": "unconditional plugin-load idle dirty change challenged01a0ff66-4df9 then source rollback observed; general-ready guarantee withheld"
+    }
+  }
 }
