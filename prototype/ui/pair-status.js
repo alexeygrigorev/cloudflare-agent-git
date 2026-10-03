@@ -76,12 +76,51 @@
   var NOT_CHECKED_YET =
     "These two changes have not been compared at their latest versions yet.";
 
+  /* A lost push (CONTRACT 0.1.3 silent-callback guard) means the agent's
+     true head is UNKNOWN: the recorded head may be behind reality and every
+     stored result for that agent is suspect. This pair can never be clean,
+     and the server-side forcing (not_checked + unprocessedReason on the pair
+     view) is matched here from status.unprocessedPushes as a client-side
+     gate, so older/cached pair views cannot present as current either. */
+  function lostRecordFor(a, b, status) {
+    var list = Array.isArray(status.unprocessedPushes) ? status.unprocessedPushes : [];
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      if (r && (r.agentId === a || r.agentId === b)) {
+        return { agentId: r.agentId, record: r };
+      }
+    }
+    return null;
+  }
+
+  function lostPushWhy(lost) {
+    var r = lost.record;
+    var bits = [];
+    if (r.lastError) bits.push(String(r.lastError));
+    if (typeof r.attempts === "number") {
+      bits.push(r.attempts + " delivery attempt" + (r.attempts === 1 ? "" : "s"));
+    }
+    var detail = bits.length ? " (" + bits.join("; ") + ")" : "";
+    return (
+      lost.agentId +
+      "'s latest change is UNKNOWN: a push notification was lost" + detail +
+      ". The pair cannot be compared or called safe until the push is delivered" +
+      " and a fresh comparison at the true latest changes succeeds."
+    );
+  }
+
   /* Decide the badge for one pair of agents from /status alone. */
   function pairStatus(agentA, agentB, status) {
     status = status || {};
     var a = agentA.agentId;
     var b = agentB.agentId;
     var heads = status.heads || {};
+
+    var lost = lostRecordFor(a, b, status);
+    if (lost) {
+      return { type: "not_checked", why: lostPushWhy(lost) };
+    }
+
     if (!heads[a] || !heads[b]) {
       return {
         type: "not_checked",
@@ -98,6 +137,17 @@
       }
     }
     if (!view) return { type: "not_checked", why: NOT_CHECKED_YET };
+
+    /* The server records WHY the pair was forced to not_checked (codex
+       C-1357); surface it instead of the generic staleness line. */
+    if (view.unprocessedReason) {
+      return {
+        type: "not_checked",
+        why:
+          "This pair is not checked, and never shown safe: " + String(view.unprocessedReason) +
+          " A fresh comparison at the true latest changes is needed first.",
+      };
+    }
 
     if (!fresh(view, status)) {
       return {

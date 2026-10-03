@@ -14,10 +14,15 @@ The UI can demo itself from `fixtures/`:
 cd prototype/ui
 python3 -m http.server 8765
 # then open:
-#   http://localhost:8765/index.html?fixture=1          # base demo set
-#   http://localhost:8765/index.html?fixture=semantic   # semantic-conflict demo
+#   http://localhost:8765/index.html?fixture=1            # base demo set
+#   http://localhost:8765/index.html?fixture=semantic     # semantic-conflict demo
+#   http://localhost:8765/index.html?fixture=lost-push    # lost-push (unprocessed) demo
 #   http://localhost:8765/task.html?id=task-0001&fixture=1
+#   http://localhost:8765/task.html?id=task-0009&fixture=lost-push
 ```
+
+Rendered evidence (captured with the headless Chromium shell, 2026-10-03):
+`ui-evidence/` — index + task pages for the base and lost-push sets.
 
 `?fixture=1` loads `status.json`; any other value `<name>` loads
 `status-<name>.json` (and task pages load `<name>-<taskId>.json`).
@@ -25,6 +30,48 @@ python3 -m http.server 8765
 Any static file server works. Opening `index.html` directly from disk
 (`file://`) does **not** work, because browsers block `fetch()` of local JSON
 from `file://` pages — the folder must be served over HTTP.
+
+## Live updates (CONTRACT 0.1.3)
+
+Both pages re-fetch `GET /status` every 3 s and pause while the tab is hidden
+(resuming — with an immediate catch-up fetch — when it becomes visible).
+A status line above the content shows the current state: live/demo,
+last-loaded time, and whether the tab is paused or a fetch failed.
+
+Newly appeared warnings and pushes are highlighted (amber outline + a “New”
+badge) for 5 s. The first page load only establishes a baseline — nothing is
+highlighted just for being there. In fixture mode the same machinery re-reads
+the fixture files, so editing a fixture is a honest way to demo the
+highlighting and the state transitions.
+
+Warnings are displayed with their acknowledgements from
+`POST /warnings/:id/ack` (the `acks[]` records of the 0.1.3
+`WarningRecord`): who acknowledged, at which head, when, and with which
+note. The legacy `acknowledgedBy[]/acknowledgedAt` shape still renders
+(without head/note). Each agent card and the task page carry a compact
+**timeline strip** (`+ push · ! warning · ✓ acknowledged`, oldest → newest,
+tooltips with details).
+
+## Lost pushes — the head is UNKNOWN (codex C-1357)
+
+When the sidecar could not deliver a push notification, `GET /status` lists
+it under `unprocessedPushes` and forces every pair involving that agent to
+`not_checked` with an `unprocessedReason`. The UI treats this exactly as the
+safety rule demands:
+
+- a dedicated “Pushes that never arrived” section lists each lost push with
+  repo, change, attempts, last error and first/last attempt times;
+- the affected agent card and task page show **Latest change: Unknown**
+  (never the possibly-stale sha) with the reason;
+- `pair-status.js` additionally derives the gate from
+  `status.unprocessedPushes` itself, so even an older cached pair view that
+  still says `clean` can never render as safe.
+
+The `lost-push` fixture set demonstrates this end to end:
+`grok-0009`'s newest push (`7b8c9d0…`) was reported 3× with
+`worker responded 401`, so both pairs involving `grok-0009` are not checked,
+its head shows UNKNOWN, and its task page explains that no test run can
+cover a change the server never saw.
 
 The base set shows three of the four pair states with three agents:
 
@@ -63,8 +110,10 @@ tests ran.
 
 ## Tests
 
-The pair-safety decision lives in `pair-status.js`, a dependency-free pure
-module loaded by both the browser and the tests:
+The pair-safety decision (`pair-status.js`) and the view logic — polling
+cadence, highlight windows, acknowledgements, timeline, lost pushes —
+(`view-logic.js`) live in dependency-free pure modules loaded by both the
+browser and the tests:
 
 ```bash
 cd prototype/ui
@@ -118,8 +167,8 @@ Pair states come **only** from that pair's own radar result in `/status`
 - **unknown — not safe** — the pair result says `unknown` at the current
   heads.
 - **not checked** — anything else: no pair result, stale result (a head has
-  moved since the check), `not_checked`, or a `clean` result with no recorded
-  combined test run.
+  moved since the check), `not_checked`, a `clean` result with no recorded
+  combined test run, or an unprocessed (lost) push for either agent.
 
 Each agent's own test evidence is shown on its task page, but it is **never**
 an input to the pair badge: two individually green agents can still clash

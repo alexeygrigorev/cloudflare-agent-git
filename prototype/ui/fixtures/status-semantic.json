@@ -150,8 +150,7 @@
       "status": "active",
       "createdAt": "2026-10-03T14:25:10.000Z",
       "invalidatedAt": null,
-      "acknowledgedBy": [],
-      "acknowledgedAt": null
+      "acks": []
     }
   ],
   "radarLog": [
@@ -182,5 +181,7 @@
       },
       "reason": "radar-conflict:test"
     }
-  ]
+  ],
+  "lastRunnerReport": null,
+  "unprocessedPushes": []
 }

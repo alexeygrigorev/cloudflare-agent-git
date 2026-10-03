@@ -20,12 +20,17 @@
         Demo mode — this page shows sample data from <code>fixtures/</code>, not a live server.
       </p>
       <p id="error" class="banner error" hidden></p>
+      <p id="live" class="small muted" role="status" aria-live="polite"></p>
     </header>
 
     <main id="main">
       <p id="loading" aria-live="polite" class="muted">Loading…</p>
 
       <div class="task-head" id="task-head"></div>
+
+      <h2>Timeline</h2>
+      <p class="muted small">One compact strip for this agent: pushes, warnings received, and warnings it acknowledged.</p>
+      <div id="timeline" class="timeline-wrap"></div>
 
       <h2>The changes, in order</h2>
       <p class="muted small">Each entry is one push the agent made to its own copy, oldest first.</p>
@@ -58,6 +63,8 @@
       back.setAttribute("href", "index.html" + (fx ? "?fixture=" + encodeURIComponent(fx) : ""));
     })();
   </script>
+  <script src="pair-status.js"></script>
+  <script src="view-logic.js"></script>
   <script src="ui.js"></script>
   <script>AgentBranchesUI.bootTask();</script>
 </body>

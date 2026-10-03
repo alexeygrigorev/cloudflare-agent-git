@@ -328,3 +328,210 @@ node --test sidecar 16/16 (11 pre-existing + 5 new). No new npm deps.
 Commits: 67792d8 (sidecar guard), <wire commit> (C-1350 integration,
 implementer zc-l1-fix + zc-l1c-wire), <docs commit> (CONTRACT 0.1.2 +
 this entry).
+
+## 2026-10-03 (later) — RealArtifacts matches REALITY from the artifacts-spike (executor zc-artifacts-2)
+
+Task from claude-principal: fold the real-Artifacts spike results
+(origin/proto/artifacts-spike @ c75faa1: RESULTS.md, appendix-transcript.md,
+PLAN-L1-REAL.md) into L1's RealArtifacts adapter. OFFLINE only (no real API
+calls, no deploy, no credentials, no new npm deps).
+
+`a whoami --json` (full result):
+
+```json
+{
+  "schema_version": 1,
+  "id": "46880d0c-8d18-4bd1-974a-aead6277b9bd",
+  "workspace": "/home/alexey/git/cloudflare-agent-git",
+  "tag": "zc-artifacts-2",
+  "engine": "shell",
+  "parent_session": "b3a92dd0-a17e-4a62-940f-eb3b829393f6",
+  "command": [
+    "bash",
+    "-lc",
+    "cd /home/alexey/git/cloudflare-agent-git && ZCODE_WARM=1 timeout 60m zcodex exec --skip-git-repo-check \"$(cat .local/claude/ZC-ART2.md)\" > .local/claude/zc-art2.log 2>&1; echo \"RUN_EXIT=$?\" >> .local/claude/zc-art2.log"
+  ],
+  "cwd": "/home/alexey/git/cloudflare-agent-git",
+  "env": {},
+  "env_unset": [],
+  "limits": {
+    "memory_bytes": 1572864000
+  },
+  "history_bytes": 4194304,
+  "created_at_ms": 1791047560282,
+  "updated_at_ms": 1791047563313,
+  "last_activity_ms": 1791047560464,
+  "reported_state": "working",
+  "reported_state_at_ms": 1791047563313,
+  "phase": "running",
+  "worker_pid": 619351,
+  "workload_pid": 619408,
+  "worker_cgroup": "/user.slice/user-1000.slice/session-8287.scope",
+  "workload_cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/aplexer-workload-46880d0c-8d18-4bd1-974a-aead6277b9bd.scope",
+  "containment_cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/aplexer-workload-46880d0c-8d18-4bd1-974a-aead6277b9bd.scope",
+  "containment_cgroup_identity": {
+    "boot_id": "edbec548-453f-4111-b38e-e7c16d12aa93",
+    "cgroup_namespace_device": 4,
+    "cgroup_namespace_inode": 4026531835,
+    "cgroup_mount_id": 33,
+    "cgroup_root_device": 28,
+    "cgroup_root_inode": 1
+  },
+  "containment_empty": false,
+  "socket_path": "/run/user/1000/aplexer/sessions/46880d0c-8d18-4bd1-974a-aead6277b9bd/control.sock",
+  "history_path": "/home/alexey/.local/state/aplexer/sessions/46880d0c-8d18-4bd1-974a-aead6277b9bd/history.bin"
+}
+```
+
+Start state: proto/l1-scaffold pulled, head 3e9983b, working tree clean;
+spike branch fetched at c75faa1.
+
+### Outcome — adapter matches spike REALITY; suite green (13 files 88/88 + sidecar 16/16)
+
+Evidence read via `git show origin/proto/artifacts-spike:…` (RESULTS.md,
+PLAN-L1-REAL.md, appendix-transcript.md). All work OFFLINE: no real API
+call, no deploy, no credentials, no new npm deps (`fetch` injectable in the
+REST client; fakes for the binding).
+
+1. **Finding B — commit fields (CONFIRMED over REST).** New seam: the
+   binding capability now exposes the REAL raw shape (`hash`, `treeHash`,
+   epoch-SECONDS `authoredAt`/`committedAt` — never `id`/ISO `timestamp`),
+   and `src/artifacts/map.ts` maps raw→port `CommitMetadata` at exactly one
+   boundary (`id` from `hash`, `timestamp` from epoch `committedAt`;
+   missing fields throw). Red-first by construction: the old adapter read
+   `commits[0]?.id`, which is `undefined` against the real shape — the new
+   `headCommit`/`log` tests assert the mapped `hash`/ISO values the old
+   code could neither produce nor typecheck.
+2. **Finding 1 — tokens OPAQUE.** No prefix validation anywhere; mint and
+   create/fork results pass `art_v2_x_<40hex>?expires=<unix>` through
+   verbatim (docs' `art_v1_` is wrong). Tests assert verbatim passthrough
+   and that the shape starts `art_v2_x_` — a prefix check would fail them.
+3. **Findings 2+F — fork default-branch only + readiness via LIST.**
+   `RealArtifacts.fork` (muse-r46 D3 behavior kept: baseSha stripped,
+   realized base reported) now polls the LIST response's `status` — the
+   only surface carrying it (single GET omits it; missing/unknown status
+   maps to the conservative `importing`) — bounded via
+   `RealArtifactsOptions.readiness` (default 20×500 ms, injectable sleep),
+   then reads the realized head. Exhaustion → `ArtifactsForkNotReadyError
+   (attempts)`. `last_push_at` (always null, finding 3) is never consulted;
+   `info()` never used for status (asserted: 0 info calls in the readiness
+   test).
+4. **Findings 4/5 — typed errors.** New `src/artifacts/errors.ts`:
+   `ArtifactsNotFoundError` (404 + code **10200**), `ArtifactsAuthScopeError`
+   (read-scope push → HTTP **400**, NOT 401/403 — spike O27 — via
+   `classifyGitHttpError`, where ANY 4xx on push is auth/scope),
+   `ArtifactsRateLimitError` (429), `ArtifactsForkNotReadyError`, plus
+   `mapRestError`/`normalizeArtifactsError` shared by the binding path
+   (best-effort; unrecognized binding throws pass through untouched — the
+   binding's thrown shape is UNVERIFIED) and the REST path (exact envelope).
+5. **Finding 6 — REST seam for bootstrap.** New `src/artifacts/rest.ts`:
+   thin REST client (namespace get/create/ensure, repo create/get/list/
+   delete, fork, token mint/list/revoke, log) exactly as validated by the
+   spike; Bearer header only (token never in URL); raw snake_case shapes
+   kept internal. Per PLAN-L1-REAL §1 the Worker stays on the binding — the
+   port is NOT ported to REST; scripts/bootstrap use this client. Both
+   paths share errors+map. `wrangler.jsonc` untouched (binding add +
+   `wrangler types` = PLAN §6 step 1, next spike step).
+6. **Docs.** CONTRACT.md → **0.1.3**: spike fold-in changes 1–5 + the
+   real-mode CONFIRMED vs ASSUMED/UNVERIFIED table (D binding-in-DO and E
+   event subscriptions explicitly UNVERIFIED; binding-side commit TYPE
+   unverified). README: real-mode table + spike-validated switch-to-real
+   steps. docs-notes.md: ASSUMED-A/C/F CONFIRMED, B DIFFERENT, D/E/G status
+   + new-findings addendum.
+7. **Fixtures.** `test/fixtures/artifacts-spike.ts` built from the
+   sanitized transcript (O1–O17 shapes verbatim, incl. the real base
+   b4346112… and pushed c809475… commits with their epoch instants); the
+   two redacted tokens replaced by an obviously-fake `art_v2_x_…` string.
+   No secrets committed.
+
+### Final test results (this executor's head)
+
+- `npm run typecheck`: clean.
+- `npm test` (vitest in workerd, real-git sidecar): **13 files, 88 tests,
+  88 passed** (was 12/67; real-artifacts.test.ts rewritten 3→14 tests,
+  rest-client.test.ts new 10 tests).
+- `npm run test:sidecar` (node --test): **16/16**.
+- `npm run test:all` EXIT=0. node_modules untouched (325 MiB; no new deps).
+
+## 2026-10-03 (later) — Provider-neutral facade: ports + core + cloudflare/local adapters (executor zc-facade)
+
+Task from claude-principal: make the Cloudflare integration swappable —
+core logic (task registry, head vectors, dedup, warnings, checks validation,
+stale-vector rule, auth decisions) depends ONLY on provider-neutral
+interfaces; Cloudflare becomes one set of adapters. OFFLINE only (no deploy,
+no new npm deps). Start gated on zc-artifacts-2 (waited, polled `a list`;
+its commits aabcb92 + 2a0625e are on origin; CONTRACT now 0.1.3 → docs bump
+to 0.1.4 per task).
+
+`a whoami --json` (full result):
+
+```json
+{
+  "schema_version": 1,
+  "id": "52b589ff-0705-46df-b6f0-0c43add37106",
+  "workspace": "/home/alexey/git/cloudflare-agent-git",
+  "tag": "zc-facade",
+  "engine": "shell",
+  "parent_session": "b3a92dd0-a17e-4a62-940f-eb3b829393f6",
+  "cwd": "/home/alexey/git/cloudflare-agent-git",
+  "reported_state": "working",
+  "phase": "running"
+}
+```
+
+(truncated to the identity-relevant fields; full record in the session log)
+
+Start state: proto/l1-scaffold pulled at 2a0625e, working tree clean,
+zc-artifacts-2 exit verified via `a list` poll (7 × 60 s).
+
+### Result (same session)
+
+Commits on proto/l1-scaffold (all pushed at the end of the session):
+
+- `48bbabf` ports — GitHost (ex-ArtifactsPort, alias kept),
+  CoordinationStore, PushEvents (+ verbatim envelope parser move),
+  Clock/Ids; SidecarArtifacts → src/local/githost.ts with injectable
+  FetchLike; src/types.ts shim.
+- `ba1861c` core — CoordinatorCore (all business rules verbatim, ports
+  injected), pure auth decisions (core/auth.ts), THE one route
+  implementation (core/router.ts) over neutral HttpRequest/HttpResponse;
+  Cloudflare adapters (Coordinator DO wrapper with unchanged signatures,
+  DO-storage store, gitHostFromEnv, push-event normalizers, Request
+  mapping); src/index.ts + src/coordinator.ts compat shims. Typed-RPC
+  tuple widening asserted through ONE documented boundary in worker.ts.
+- `64a233c` local — Memory/File CoordinationStores (atomic tmp+rename),
+  node:http runtime (serveCoordinator) + zero-dep entry (main.ts),
+  minimal ambient Node typings; tsconfig.node.json (workerd-free build,
+  no worker types — transitive CF deps cannot compile);
+  test:node/typecheck:node scripts; vitest excludes test/node.
+- `1f69274` node --test suite — 27 tests: core rules (registry, dedup
+  ring, warnings lifecycle, checks validation, stale-vector rule, pair
+  views + unprocessed suppression, restart, serialized concurrency),
+  router wire parity (auth ladder 401/403/503, envelope 202/400, checks
+  409), REAL node:http round trip, architecture gate (src/core +
+  src/ports must import no cloudflare:* / @cloudflare/* /
+  workers-types / wrangler; positive control included).
+
+**Bug found by the new suite and fixed:** status()/recordPush() returned
+the LIVE heads object — invisible over both HTTP wires (they serialize
+immediately) but aliasing for direct core consumers. Snapshotted at the
+core boundary (heads: { ...model.heads }); wire unchanged.
+
+**Smoke test beyond the suite** (all localhost, offline): sidecar on
+:18795 + node runtime main.js on :18796 → /setup 201, POST /tasks
+(real fork via SidecarArtifacts), authenticated git clone/push with the
+minted token, post-receive webhook (SIDECAR_NOTIFY_URL) → pushes: 1,
+404 parity, dedup parity, state file on disk. Smoke processes killed by
+exact PID; ports clean. (Also re-learned: never `pkill -f` a pattern
+that matches your own shell's command line.)
+
+**Final suite:** `npm run test:all` EXIT=0 — typecheck clean, vitest
+13 files / 88 tests, sidecar 16/16, node 27/27.
+
+Docs: ARCHITECTURE.md (ports/adapters/how-to-add-a-provider map),
+README architecture + run sections updated, CONTRACT 0.1.4 DOCS-ONLY
+bump (wire unchanged since 0.1.2; 0.1.3 was the spike fold-in).
+
+Deliberately NOT done: no deploy, no new npm deps, no CONTRACT wire
+change, src/artifacts/real.ts + errors/map/rest untouched (zc-artifacts-2
+owns that seam; GitHost factory simply consumes the binding).

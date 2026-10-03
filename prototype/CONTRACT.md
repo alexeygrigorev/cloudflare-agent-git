@@ -1,8 +1,107 @@
 # Agent Branches prototype — HTTP + integration contract
 
-version: 0.1.2
+version: 0.1.4
 (Pin this version when building against it: L2 review UI, L3 radar runner,
 L4/L5 demo lanes. Any breaking change bumps the version.)
+
+Changes since 0.1.3 (facade extraction, 2026-10-03 — DOCS ONLY):
+
+**No wire change of any kind.** Every route, status code, body shape and
+auth rule is byte-identical to 0.1.2/0.1.3; the existing suites (88 workerd
+tests + 16 sidecar tests) pass unchanged. What changed is the INTERNAL
+STRUCTURE, so future provider swaps stop being rewrites:
+
+1. **Ports.** `src/ports/` now defines the provider-neutral interfaces:
+   `GitHost` (the former `ArtifactsPort`, renamed, alias kept),
+   `CoordinationStore` (transactional get/put, linearizable), `PushEvents`
+   (one normalized `PushEvent` from any notification source), `Clock` /
+   `IdGenerator`. Details: ARCHITECTURE.md.
+2. **Core.** `src/core/` holds ALL coordination logic (`CoordinatorCore`),
+   the pure auth decisions, and THE one route implementation
+   (`handleRoute`) over a neutral HttpRequest/HttpResponse. No
+   `cloudflare:*`, no env, no Request/Response — enforced by
+   `test/node/architecture.test.ts` and a workerd-free tsc build.
+3. **Adapters.** Cloudflare (`src/cloudflare/`: Coordinator DO, DO storage
+   store, Artifacts binding GitHost, event-subscription PushEvents,
+   Request/Response mapping) and local (`src/local/`: memory/file store,
+   git-sidecar GitHost, post-receive webhook PushEvents, and a ZERO-DEPENDENCY
+   `node:http` runtime entry serving the same routes from the same core).
+4. **New test lane.** `npm run test:node` — 27 plain-`node --test` tests
+   (no workerd) covering the core rules, wire parity of every route over
+   the neutral router, a real node:http round trip, and the architecture
+   gate. `test:all` runs all three suites.
+5. **Boundary fix found by the new suite.** `status()` and the push result
+   no longer hand out the LIVE heads object (both HTTP wires always
+   serialized it, so nothing observable changed — direct core consumers
+   could have aliased internal state).
+
+Version 0.1.3 was the real-Artifacts spike fold-in (below); it is retained
+as the last wire-affecting revision.
+
+Changes since 0.1.2 (real-Artifacts spike fold-in, 2026-10-03):
+
+The adapter now matches the REAL Cloudflare Artifacts service as measured by
+the artifacts-spike (origin/proto/artifacts-spike @ c75faa1: RESULTS.md,
+appendix-transcript.md, PLAN-L1-REAL.md). No HTTP route of this Worker
+changed; the ArtifactsPort real-mode semantics and the docs table did.
+
+1. **COMMIT FIELDS ARE REAL-SHAPED (finding B, CONFIRMED over REST).** The
+   real service's `log`/commit shape is `{hash, treeHash, message, author,
+   committer, parents[], authoredAt, committedAt}` with **epoch-SECONDS**
+   instants — not `id` + ISO `timestamp`. `RealArtifacts` exposes the raw
+   shape at the capability seam (`src/artifacts/real.ts`) and maps to the
+   port's `CommitMetadata` (`id` from `hash`, `timestamp` from epoch
+   `committedAt`) at exactly one boundary (`src/artifacts/map.ts`). The
+   push-event envelope (`id` + ISO `timestamp`, ASSUMED-E still UNVERIFIED
+   end-to-end) is normalized at the same boundary.
+2. **TOKENS ARE OPAQUE (finding 1, CONFIRMED).** The real service issues
+   `art_v2_x_<40hex>?expires=<unix>`, NOT the documented `art_v1_…`. No
+   adapter code validates, normalizes or trims a token string; the
+   `?expires=` suffix convention and ttl honoring (3600→+1h, 600→+10min)
+   are confirmed. Fork/create responses embed a live ~24h write token —
+   store deliberately or revoke (validated DELETE), never log it.
+3. **FORK READINESS VIA LIST (findings 2+F, CONFIRMED).** Forks are
+   default-branch ONLY (no fork-at-commit; head == source default-branch
+   head). `RealArtifacts.fork` now polls the LIST response's `status`
+   field — the only surface that has one (single GET omits it; a missing
+   status maps to the conservative NOT-ready state) — with bounded retries
+   (`RealArtifactsOptions.readiness`, default 20×500 ms) and throws
+   `ArtifactsForkNotReadyError` on exhaustion. `last_push_at` stays `null`
+   forever (finding 3) and is never consulted.
+4. **TYPED ERRORS (findings 4/5, CONFIRMED).** `src/artifacts/errors.ts`:
+   namespace/repo not found = HTTP 404 + Cloudflare code **10200** →
+   `ArtifactsNotFoundError`; a read-scope push is rejected with **HTTP 400**
+   (NOT 401/403, ~52 ms, nothing written) → `ArtifactsAuthScopeError` via
+   `classifyGitHttpError`; 429 → `ArtifactsRateLimitError`. The same
+   mapping serves the binding path (best-effort: the binding's thrown shape
+   is UNVERIFIED, unrecognized errors pass through untouched) and the REST
+   path (exact envelope parsing).
+5. **REST SEAM FOR BOOTSTRAP (finding 6, CONFIRMED).** Wrangler 4.147.0 has
+   `artifacts namespaces|repos list/get` but NO namespace-create and NO
+   fork subcommand: from scripts those go through REST
+   (`src/artifacts/rest.ts`, thin client, fetch injectable, Bearer header
+   only — tokens never in URLs). Inside the Worker the binding covers the
+   same operations (PLAN-L1-REAL §1 decision: do not port the whole port to
+   REST).
+
+Real-mode CONFIRMED vs ASSUMED (evidence: artifacts-spike @ c75faa1):
+
+| Concern | Status | Evidence |
+| --- | --- | --- |
+| Commit fields `hash`/`treeHash` + epoch `authoredAt`/`committedAt` (REST) | **CONFIRMED** | O13/O16 |
+| Binding-side commit type shape | **UNVERIFIED** — assumed to match REST; close with `npx wrangler types` after adding the binding | — |
+| Tokens `art_v2_x_…?expires=…`, opaque; ttl honored; scope in mint+list | **CONFIRMED** | O5/O22/O26; finding 1 |
+| Fork: default-branch only, `objects` copied, token+remote returned | **CONFIRMED** | O9/O10/O13; F |
+| `status` only on repo LIST; missing → treat as NOT ready | **CONFIRMED** | O17 vs O11/O12 |
+| `last_push_at` always `null` | **CONFIRMED** | O17/O21 after pushes |
+| Read-scope push → HTTP 400, fast, nothing written | **CONFIRMED** | O27 |
+| Not-found = 404 + code 10200 | **CONFIRMED** | O1 |
+| No refs enumeration; head via `log({limit:1})`; refs via git only | **CONFIRMED** (ASSUMED-A) | O13/O16/O18/O19 |
+| No merge APIs (Worker never merges) | **CONFIRMED** (ASSUMED-A family) | full REST page review |
+| Binding visible in the DO (`env.ARTIFACTS`) | **UNVERIFIED** (D) — needs binding config + a Worker run | — |
+| Event subscriptions (`cf.artifacts.repo.pushed` delivery) | **UNVERIFIED** (E) — envelope implemented, subscription creation + delivery guarantees untested | — |
+| Namespace/repo create + fork from CLI | REST-only (no wrangler subcommand) | finding 6 |
+| Control-plane rate 2,000 req/10 s | documented; untested at scale | docs |
 
 Changes since 0.1.1 (codex C-1350 + C-1357, 2026-10-03):
 
@@ -368,21 +467,30 @@ Semantics (codex C-1305 #1):
 - Pushing invalidates active warnings whose pair includes the pushing
   agent; only a fresh runner `conflict` at the new heads opens a new one.
 
-## ArtifactsPort (src/types.ts) — documented vs ASSUMED
+## ArtifactsPort (src/types.ts) — documented vs REALITY (spike c75faa1)
 
 | Port method | Real mode (binding) | Status |
 | --- | --- | --- |
 | `createRepo` | `create(name, opts)` | documented |
-| `fork(source, target, opts)` | `repo.fork(name, opts)` | documented — **except** `opts.baseSha`: no documented API forks at a commit (ASSUMED-A/F). Since muse-r46 D3 real mode forks the default branch and records the **realized** base (fork head at creation) as the task's `base_sha`; local mode realizes it exactly with a real `git update-ref` after `git clone --bare` |
-| `mintToken` | `repo.createToken(scope, ttl)` | documented (scope field: ASSUMED-C) |
-| `log` | `repo.log(opts)` | documented |
-| `headCommit` | `repo.log({ref, limit:1})` | derived from a documented op; the port deliberately offers NO ref enumeration (ASSUMED-A) |
+| `fork(source, target, opts)` | `repo.fork(name, opts)` + LIST-status readiness poll | documented; fork is default-branch ONLY (F CONFIRMED) — `opts.baseSha` is stripped and the **realized** base (fork head after ready) is reported (muse-r46 D3); readiness via LIST only (finding 2), bounded, `ArtifactsForkNotReadyError` on exhaustion |
+| `mintToken` | `repo.createToken(scope, ttl)` | documented; scope CONFIRMED (C); token OPAQUE `art_v2_x_…` (finding 1) |
+| `log` | `repo.log(opts)` → raw `{hash,…,epoch}` mapped to `CommitMetadata` | documented; REAL field names CONFIRMED over REST (B, O13/O16); binding-side type UNVERIFIED |
+| `headCommit` | `repo.log({ref, limit:1})` | derived from a documented op; no ref enumeration exists (A CONFIRMED) |
 | `hasCommit` | `repo.readCommit(sha)` | documented |
-| `listRepos` / `deleteRepo` | `list` / `delete` | documented |
+| `listRepos` / `deleteRepo` | `list` / `delete` | documented; `status` on LIST only (finding 2), missing → NOT ready |
+| `unprocessedPushes?` | `[]` (real delivery state lives in the event subscription, E UNVERIFIED) | C-1357, local-mode only |
+
+Bootstrap-side REST operations (no wrangler subcommand exists for these —
+finding 6): namespace create/get/ensure, repo create/get/list/delete, fork,
+token mint/list/revoke, log — `src/artifacts/rest.ts`, sharing the error
+mapping (`src/artifacts/errors.ts`) and mappers (`src/artifacts/map.ts`).
+The Worker never needs the REST client; scripts (bootstrap) never need the
+binding.
 
 No merge or ref-enumeration APIs exist on the port (codex C-1309 #8): the
-Worker cannot and does not perform trial merges. Full assumptions:
-`docs-notes.md` ASSUMED-A…E.
+Worker cannot and does not perform trial merges. Full spike evidence:
+`artifacts-spike/RESULTS.md` on origin/proto/artifacts-spike (@ c75faa1);
+local doc notes: `docs-notes.md`.
 
 ## Sidecar API (local mode, 127.0.0.1)
 

@@ -17,6 +17,7 @@
     "vitest.config.ts"
   ],
   "exclude": [
-    "test/global-setup.ts"
+    "test/global-setup.ts",
+    "test/node"
   ]
 }

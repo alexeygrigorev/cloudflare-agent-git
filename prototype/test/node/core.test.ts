@@ -1,0 +1,320 @@
+/**
+ * CoordinatorCore business rules under plain node --test (facade extraction,
+ * 2026-10-03): task registry, head vectors, dedup + ring, warnings,
+ * checks validation, the stale-vector rule — all against in-memory fakes,
+ * NO workerd and NO Cloudflare.
+ */
+
+import { test } from "node:test";
+import { deepStrictEqual, match, ok, strictEqual } from "node:assert";
+import { parseChecksPayload } from "../../src/checks-wire.js";
+import { StubRadar } from "../../src/radar.js";
+import { CoordinatorCore } from "../../src/core/coordinator.js";
+import { FileCoordinationStore, MemoryCoordinationStore } from "../../src/local/store.js";
+import { fakeClock, fixedIds, makeRig, rejectionMessage } from "./fakes.js";
+
+test("setup creates the canonical repo once (idempotent)", async () => {
+  const rig = makeRig();
+  const first = await rig.core.setup();
+  strictEqual(first.created, true);
+  match(first.canonical.name, /^agent-branches-canonical-cafe1234$/);
+  ok(first.seedCommit, "seed commit expected from the fake host");
+  const again = await rig.core.setup();
+  strictEqual(again.created, false);
+  strictEqual(again.canonical.name, first.canonical.name);
+  strictEqual(again.seedCommit, null);
+});
+
+test("createTask forks canonical, mints a token and records the head", async () => {
+  const rig = makeRig();
+  const alpha = await rig.core.createTask({ agent: "Alpha", intent: "work" });
+  strictEqual(alpha.agentId, "alpha-0001");
+  strictEqual(alpha.taskId, "task-0001");
+  match(alpha.fork.name, /-alpha-0001$/);
+  strictEqual(alpha.token.scope, "write");
+  ok(/^[0-9a-f]{40}$/.test(alpha.head ?? ""), "head must be the fork tip");
+  strictEqual(alpha.base_sha, alpha.head, "fake fork realizes the canonical tip exactly");
+  strictEqual(alpha.intent, "work");
+
+  const beta = await rig.core.createTask({ agent: "beta" });
+  strictEqual(beta.agentId, "beta-0002");
+  strictEqual(beta.head, alpha.head, "siblings start at the same base");
+
+  // The token digest is stored, the plaintext is not.
+  const owner = await rig.core.credentialAgent(alpha.token.plaintext);
+  strictEqual(owner, "alpha-0001");
+  strictEqual(await rig.core.credentialAgent("garbage"), null);
+});
+
+test("createTask validates base_sha (40-hex, must exist in canonical history)", async () => {
+  const rig = makeRig();
+  await rig.core.setup();
+  await rejectionMessage(rig.core.createTask({ agent: "x", baseSha: "nothex" }), /base_sha must be a 40-hex/);
+  await rejectionMessage(rig.core.createTask({ agent: "x", baseSha: "f".repeat(40) }), /not found in canonical history/);
+});
+
+test("recordPush accepts real commits, resolves fork owners, rejects lies", async () => {
+  const rig = makeRig();
+  const created = await rig.core.createTask({ agent: "pusher" });
+  await rig.core.createTask({ agent: "peer" });
+  const sha = rig.git.commit(created.fork.name, "wip: real work");
+
+  const accepted = await rig.core.recordPush({ agent: created.agentId, sha });
+  strictEqual(accepted.accepted, true);
+  strictEqual(accepted.deduped, false);
+  strictEqual(accepted.heads[created.agentId], sha);
+  ok(accepted.radarChecks >= 1, "stub radar logs sibling pairs");
+
+  // Webhook shape: fork only, no agent id.
+  const viaFork = await rig.core.recordPush({ fork: created.fork.name, sha: rig.git.commit(created.fork.name, "wip: 2") });
+  strictEqual(viaFork.agent, created.agentId);
+
+  // Unknown agent / wrong fork / unknown commit.
+  await rejectionMessage(rig.core.recordPush({ agent: "ghost-9999", sha }), /^unknown agent:/);
+  await rejectionMessage(
+    rig.core.recordPush({ agent: created.agentId, fork: "somebody-elses", sha }),
+    /does not belong to agent/,
+  );
+  await rejectionMessage(rig.core.recordPush({ agent: created.agentId, sha: "a".repeat(40) }), /not found in/);
+});
+
+test("push dedup: exact redelivery and the bounded per-agent ring", async () => {
+  const rig = makeRig();
+  const created = await rig.core.createTask({ agent: "dedup" });
+  const sha = rig.git.commit(created.fork.name, "wip: once");
+  await rig.core.recordPush({ agent: created.agentId, sha });
+  const again = await rig.core.recordPush({ agent: created.agentId, sha });
+  strictEqual(again.deduped, true);
+  strictEqual(again.radarChecks, 0);
+
+  const shas: string[] = [];
+  for (let i = 0; i < 18; i++) {
+    shas.push(rig.git.commit(created.fork.name, `wip: ring ${i}`));
+  }
+  for (const ring of shas) {
+    const result = await rig.core.recordPush({ agent: created.agentId, sha: ring });
+    strictEqual(result.deduped, false);
+  }
+  const inRing = await rig.core.recordPush({ agent: created.agentId, sha: shas[shas.length - 2] });
+  strictEqual(inRing.deduped, true, "still inside the 16-entry window");
+  const evicted = await rig.core.recordPush({ agent: created.agentId, sha: shas[0] });
+  strictEqual(evicted.deduped, false, "oldest entries leave the bounded window");
+});
+
+test("stale-vector rule: submitChecks rejects results at old heads", async () => {
+  const rig = makeRig();
+  const a = await rig.core.createTask({ agent: "a" });
+  const b = await rig.core.createTask({ agent: "b" });
+  const fresh = (await rig.core.status()).heads;
+
+  const sha = rig.git.commit(a.fork.name, "wip: heads moved");
+  await rig.core.recordPush({ agent: a.agentId, sha });
+
+  const outcome = await rig.core.submitChecks(
+    parseChecksPayload({
+      contract: "0.0",
+      vector: fresh,
+      policy: "p",
+      results: [{ pair: [a.agentId, b.agentId], status: "conflict" }],
+    }),
+  );
+  deepStrictEqual(outcome, { stale: true, currentHeads: (await rig.core.status()).heads });
+});
+
+test("checks validation: statuses, pairs, duplicate conflicts and clean resolution", async () => {
+  const rig = makeRig();
+  const a = await rig.core.createTask({ agent: "a" });
+  const b = await rig.core.createTask({ agent: "b" });
+  const vector = (await rig.core.status()).heads;
+  const base = { contract: "0.0", vector, policy: "test-policy" } as const;
+
+  // not_checked is never a runner result; invalid statuses rejected.
+  await rejectionMessage(
+    rig.core.submitChecks(parseChecksPayload({ ...base, results: [{ pair: [a.agentId, b.agentId], status: "not_checked" }] })),
+    /runner results must be/,
+  );
+  await rejectionMessage(
+    rig.core.submitChecks(parseChecksPayload({ ...base, results: [{ pair: [a.agentId, "ghost-9999"], status: "conflict" }] })),
+    /unknown agent in pair/,
+  );
+
+  // A conflict at the current vector creates exactly ONE warning.
+  const first = (await rig.core.submitChecks(
+    parseChecksPayload({ ...base, results: [{ pair: [a.agentId, b.agentId], status: "conflict", kind: "merge-conflict" }] }),
+  )) as { stale: false; createdWarnings: { id: string; pair: [string, string] }[] };
+  strictEqual(first.createdWarnings.length, 1);
+  const warningId = first.createdWarnings[0].id;
+
+  // Reversed pair at the same heads: deduplicated, no second warning.
+  const reversed = (await rig.core.submitChecks(
+    parseChecksPayload({ ...base, results: [{ pair: [b.agentId, a.agentId], status: "conflict", kind: "merge-conflict" }] }),
+  )) as { stale: false; createdWarnings: unknown[] };
+  strictEqual(reversed.createdWarnings.length, 0);
+
+  // A later clean result at the SAME vector resolves the warning.
+  const clean = (await rig.core.submitChecks(
+    parseChecksPayload({ ...base, results: [{ pair: [a.agentId, b.agentId], status: "clean" }] }),
+  )) as { stale: false; createdWarnings: unknown[] };
+  strictEqual(clean.createdWarnings.length, 0);
+  const status = await rig.core.status();
+  strictEqual(status.warnings.find((warning) => warning.id === warningId)?.status, "invalidated");
+  ok(status.warnings.find((warning) => warning.id === warningId)?.resolvedBy?.includes("test-policy"));
+});
+
+test("warnings: invalidation on head moves, acks record agent + head", async () => {
+  const rig = makeRig();
+  const a = await rig.core.createTask({ agent: "a" });
+  const b = await rig.core.createTask({ agent: "b" });
+  const vector = (await rig.core.status()).heads;
+  const created = (await rig.core.submitChecks(
+    parseChecksPayload({
+      contract: "0.0",
+      vector,
+      policy: "p",
+      results: [{ pair: [a.agentId, b.agentId], status: "conflict", kind: "merge-conflict" }],
+    }),
+  )) as { stale: false; createdWarnings: { id: string }[] };
+  const warningId = created.createdWarnings[0].id;
+
+  const acked = await rig.core.ackWarning(warningId, { agent: a.agentId, note: "coordinating" });
+  strictEqual(acked.warning.acks[0]?.agent, a.agentId);
+  strictEqual(acked.warning.acks[0]?.head, vector[a.agentId]);
+  strictEqual(acked.warning.acks[0]?.note, "coordinating");
+
+  // A new push by either pair member invalidates the active warning.
+  await rig.core.recordPush({ agent: b.agentId, sha: rig.git.commit(b.fork.name, "wip: b moves") });
+  const status = await rig.core.status();
+  strictEqual(status.warnings.find((warning) => warning.id === warningId)?.status, "invalidated");
+
+  await rejectionMessage(rig.core.ackWarning(warningId, { agent: "ghost-9999" }), /^unknown agent:/);
+  await rejectionMessage(rig.core.ackWarning("warn-9999", { agent: a.agentId }), /^unknown warning:/);
+});
+
+test("test provenance: validated, commit-verified, attached to the task", async () => {
+  const rig = makeRig();
+  const created = await rig.core.createTask({ agent: "tester" });
+  const sha = rig.git.commit(created.fork.name, "wip: tested");
+
+  const result = await rig.core.recordTestProvenance(created.taskId, {
+    command: "npm test",
+    exit: 0,
+    head_sha: sha,
+  });
+  strictEqual(result.testProvenance.command, "npm test");
+  strictEqual(result.testProvenance.head_sha, sha);
+
+  const detail = await rig.core.getTask(created.taskId);
+  strictEqual(detail.pushes, 0, "provenance does not count as a push");
+  strictEqual(detail.testProvenance?.head_sha, sha);
+  strictEqual(detail.base_sha, detail.baseSha);
+
+  for (const bad of [
+    { command: "", exit: 0, head_sha: sha },
+    { command: "npm test", exit: 1.5, head_sha: sha },
+    { command: "npm test", exit: 0, head_sha: "nope" },
+    { command: "npm test", exit: 0, head_sha: "b".repeat(40) },
+  ]) {
+    await rejectionMessage(rig.core.recordTestProvenance(created.taskId, bad), /^(test provenance|commit )/);
+  }
+});
+
+test("/status pair views: fresh, stale, and unprocessed-push suppression", async () => {
+  const rig = makeRig();
+  const a = await rig.core.createTask({ agent: "a" });
+  const b = await rig.core.createTask({ agent: "b" });
+  const vector = (await rig.core.status()).heads;
+  await rig.core.submitChecks(parseChecksPayload({
+    contract: "0.0",
+    vector,
+    policy: "p",
+    results: [{ pair: [a.agentId, b.agentId], status: "clean" }],
+  }));
+  let pairs = (await rig.core.status()).pairs;
+  strictEqual(pairs.length, 1);
+  strictEqual(pairs[0].status, "clean");
+  strictEqual(pairs[0].stale, false);
+
+  // Heads move: the stored check is now stale => not_checked.
+  await rig.core.recordPush({ agent: a.agentId, sha: rig.git.commit(a.fork.name, "wip: move") });
+  pairs = (await rig.core.status()).pairs;
+  strictEqual(pairs[0].status, "not_checked");
+  strictEqual(pairs[0].stale, true);
+
+  // An unprocessed push on a member suppresses even fresh results.
+  rig.git.unprocessed = [
+    {
+      repo: b.fork.name,
+      ref: "refs/heads/main",
+      sha: rig.git.commit(b.fork.name, "wip: lost callback"),
+      before: vector[b.agentId],
+      attempts: 4,
+      firstAt: "2026-10-03T12:30:00.000Z",
+      lastAt: "2026-10-03T12:31:00.000Z",
+      lastError: "worker returned 401",
+    },
+  ];
+  const suppressed = await rig.core.status();
+  const pair = suppressed.pairs[0];
+  strictEqual(pair.status, "not_checked");
+  ok(pair.unprocessedReason?.includes("unprocessed push"));
+  strictEqual(suppressed.unprocessedPushes[0]?.agentId, b.agentId);
+});
+
+test("state survives a restart through the shared CoordinationStore", async () => {
+  const rig = makeRig();
+  const created = await rig.core.createTask({ agent: "persist", intent: "survive" });
+  await rig.core.recordPush({ agent: created.agentId, sha: rig.git.commit(created.fork.name, "wip: keep me") });
+  const before = await rig.core.status();
+
+  // A SECOND core over the SAME store and git reconstructs the state.
+  const second = new CoordinatorCore({
+    store: rig.store,
+    git: rig.git,
+    radar: new StubRadar(),
+    clock: fakeClock(),
+    ids: fixedIds,
+  });
+  const after = await second.status();
+  deepStrictEqual(after.heads, before.heads);
+  const detail = await second.getTask(created.taskId);
+  strictEqual(detail.intent, "survive");
+  strictEqual(detail.pushes, 1);
+  const push = await second.recordPush({ agent: created.agentId, sha: rig.git.commit(created.fork.name, "wip: after restart") });
+  strictEqual(push.accepted, true);
+});
+
+test("FileCoordinationStore round-trips the model atomically", async () => {
+  const { mkdtemp, rm } = await import("node:fs/promises");
+  const dir = await mkdtemp("zc-facade-test-");
+  try {
+    const path = `${dir}/nested/state.json`;
+    const store = new FileCoordinationStore(path);
+    interface Probe { value: number }
+    strictEqual(await store.get<Probe>("nothing"), undefined);
+    await store.put("model", { value: 41 } satisfies Probe);
+    await store.put("model", { value: 42 } satisfies Probe);
+
+    // A fresh store instance reads the persisted state (restart parity).
+    const reopened = new FileCoordinationStore(path);
+    deepStrictEqual(await reopened.get<Probe>("model"), { value: 42 });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("concurrent mutations are serialized (no lost updates)", async () => {
+  const rig = makeRig();
+  const results = await Promise.all([
+    rig.core.createTask({ agent: "racer", intent: "a" }),
+    rig.core.createTask({ agent: "racer", intent: "b" }),
+    rig.core.createTask({ agent: "racer", intent: "c" }),
+  ]);
+  const ids = new Set(results.map((result) => result.agentId));
+  const tasks = new Set(results.map((result) => result.taskId));
+  strictEqual(ids.size, 3, "distinct agents");
+  strictEqual(tasks.size, 3, "distinct tasks");
+  const seqs = results.map((result) => Number(result.agentId.split("-")[1])).sort((x, y) => x - y);
+  deepStrictEqual(seqs, [1, 2, 3], "seq allocated without races");
+  const status = await rig.core.status();
+  strictEqual(status.agents.length, 3);
+});

@@ -113,6 +113,60 @@ a:focus-visible, button:focus-visible, textarea:focus-visible, [tabindex]:focus-
   color: var(--grey-text);
 }
 
+/* Live update indicator (polling state) */
+#live { margin: 0.25rem 0 0; }
+
+/* Compact per-agent timeline strip */
+.timeline-wrap { margin-top: 0.5rem; }
+.timeline {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0.15rem;
+  padding: 0;
+  align-items: center;
+}
+.tl {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  padding: 0.1rem 0.55rem 0.1rem 0.45rem;
+  font-size: 0.8rem;
+  cursor: help;
+  overflow-wrap: anywhere;
+}
+.tl-icon { font-weight: 700; }
+.tl-push .tl-icon { color: var(--link); }
+.tl-warning { border-color: var(--red-line); background: var(--red-bg); color: var(--red-ink); }
+.tl-ack { border-color: var(--green-line); background: var(--green-bg); color: var(--green-text); }
+.timeline-legend { margin: 0.15rem 0 0; font-size: 0.78rem; }
+
+/* Newly appeared warnings/pushes — highlighted for 5 s */
+.fresh { outline: 2px solid var(--amber-line); outline-offset: 1px; }
+tr.fresh td, tr.fresh th, li.fresh, p.fresh, div.fresh, article.fresh {
+  background: var(--amber-bg);
+}
+.badge.new {
+  background: var(--amber-bg);
+  border-color: var(--amber-line);
+  color: var(--amber-text);
+}
+
+/* Pushes that never arrived (unprocessed / lost pushes) */
+.lost-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.lost-item {
+  background: var(--paper);
+  border: 1px solid var(--amber-line);
+  border-left: 4px solid var(--amber-line);
+  border-radius: 8px;
+  padding: 0.65rem 0.9rem;
+}
+.lost-item .why { margin: 0.35rem 0 0; }
+
 /* Agent cards */
 .cards {
   display: grid;

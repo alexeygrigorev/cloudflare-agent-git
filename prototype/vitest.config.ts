@@ -19,6 +19,10 @@ export default defineConfig({
   ],
   test: {
     include: ["test/**/*.test.ts"],
+    // test/node runs under plain `node --test` (npm run test:node) against
+    // the local adapters with NO workerd; vitest/workerd must not pick it
+    // up (node:http / node:fs imports do not exist in workerd).
+    exclude: ["test/node/**", "**/node_modules/**", "**/.build/**"],
     globalSetup: ["test/global-setup.ts"],
     // Real-git sidecar round trips (commit/push per request) are slow under
     // full-suite concurrency; 30s per test avoids flaky timeouts.
