@@ -324,6 +324,9 @@ export class Coordinator extends DurableObject {
       defaultBranchOnly: true,
       baseSha,
     });
+    // muse-r46 D3: real mode may not honor the requested base (the binding
+    // forks the default branch, ASSUMED-F); record the REALIZED base.
+    const effectiveBaseSha = fork.baseSha ?? baseSha;
     const token = await port.mintToken(forkName, "write", input.ttlSeconds ?? 3600);
     const forkLog = await port.log(forkName, { limit: 1 });
     const head = forkLog[0]?.id ?? null;
@@ -347,7 +350,7 @@ export class Coordinator extends DurableObject {
       forkRemote: fork.remote,
       ref,
       createdAt: now,
-      baseSha,
+      baseSha: effectiveBaseSha,
       intent: input.intent ?? null,
       testProvenance: null,
     };
@@ -362,7 +365,7 @@ export class Coordinator extends DurableObject {
       agentId,
       fork: { name: forkName, remote: fork.remote },
       ref,
-      base_sha: baseSha,
+      base_sha: effectiveBaseSha,
       intent: input.intent ?? null,
       token: { scope: token.scope, expiresAt: token.expiresAt, plaintext: token.plaintext },
       head,

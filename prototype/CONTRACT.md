@@ -79,7 +79,11 @@ Creates the canonical repo (one per Coordinator). Idempotent once created.
 ```
 
 `base_sha` defaults to the canonical head; an explicit base must exist in
-the canonical first-parent history (400 otherwise). Agents then `git push`
+the canonical first-parent history (400 otherwise). In local mode the fork
+starts exactly at `base_sha`. In real mode the binding can only fork the
+default branch (docs-notes ASSUMED-F, muse-r46 D3): an explicit `base_sha`
+that equals the canonical tip is honored exactly; an older one records the
+fork's head at creation as `base_sha` instead. Agents then `git push`
 to `fork.remote` with `git -c http.extraHeader="Authorization: Bearer
 $plaintext"`; the sidecar hook reports the push automatically.
 
@@ -227,7 +231,7 @@ Semantics (codex C-1305 #1):
 | Port method | Real mode (binding) | Status |
 | --- | --- | --- |
 | `createRepo` | `create(name, opts)` | documented |
-| `fork(source, target, opts)` | `repo.fork(name, opts)` | documented — **except** `opts.baseSha`, which no documented API provides: RealArtifacts refuses it (ASSUMED-A); local mode realizes it with a real `git update-ref` after `git clone --bare` |
+| `fork(source, target, opts)` | `repo.fork(name, opts)` | documented — **except** `opts.baseSha`: no documented API forks at a commit (ASSUMED-A/F). Since muse-r46 D3 real mode forks the default branch and records the **realized** base (fork head at creation) as the task's `base_sha`; local mode realizes it exactly with a real `git update-ref` after `git clone --bare` |
 | `mintToken` | `repo.createToken(scope, ttl)` | documented (scope field: ASSUMED-C) |
 | `log` | `repo.log(opts)` | documented |
 | `headCommit` | `repo.log({ref, limit:1})` | derived from a documented op; the port deliberately offers NO ref enumeration (ASSUMED-A) |

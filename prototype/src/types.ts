@@ -14,9 +14,10 @@ export interface ForkOptions {
   defaultBranchOnly?: boolean;
   /**
    * Fork starting at this commit of the source's default branch instead of
-   * its tip (codex C-1306 base_sha). Local implementations realize it with
-   * ordinary git ref updates; the documented Cloudflare binding has no such
-   * parameter, so RealArtifacts refuses it (see docs-notes ASSUMED-A).
+   * its tip (codex C-1306 base_sha). Local mode realizes it exactly with
+   * ordinary git ref updates. The documented Cloudflare binding has no such
+   * parameter (docs-notes ASSUMED-F): RealArtifacts forks the default
+   * branch and reports the realized base on the ForkResult (muse-r46 D3).
    */
   baseSha?: string;
 }
@@ -26,6 +27,17 @@ export interface ArtifactsCreateRepoResult {
   remote: string;
   defaultBranch: string;
   token: string;
+}
+
+/**
+ * Port-level fork result: the documented binding result plus, when
+ * ForkOptions.baseSha was requested, the commit the fork ACTUALLY starts at
+ * (muse-r46 D3). Implementations that honor baseSha exactly (local sidecar)
+ * may omit it; RealArtifacts reports the fork's head at creation
+ * (docs-notes ASSUMED-F) so the coordinator records the real base.
+ */
+export interface ForkResult extends ArtifactsCreateRepoResult {
+  baseSha?: string;
 }
 
 export interface ArtifactsTokenResult {
@@ -112,7 +124,7 @@ export function parseArtifactsPushedEvent(body: unknown): ArtifactsPushedEvent {
 export interface ArtifactsPort {
   createRepo(name: RepoName, opts?: CreateRepoOptions): Promise<ArtifactsCreateRepoResult>;
 
-  fork(source: RepoName, target: RepoName, opts?: ForkOptions): Promise<ArtifactsCreateRepoResult>;
+  fork(source: RepoName, target: RepoName, opts?: ForkOptions): Promise<ForkResult>;
 
   mintToken(
     repo: RepoName,

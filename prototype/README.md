@@ -139,7 +139,7 @@ curl -s localhost:8787/tasks/task-0001   # base_sha, intent, head, warnings+acks
 | Tokens | sidecar-minted, same documented format `art_v1_<40hex>?expires=<unix>` | binding `createToken(scope, ttl)` |
 | Push events | sidecar post-receive hook → POST /events/push, plus manual/envelope routes | real agents `git push` + `cf.artifacts.repo.pushed` subscription → same handler |
 | Commit verification | real (`git cat-file`) | `port.hasCommit` → binding `readCommit(sha)` |
-| Fork at explicit base | real (`git update-ref` after bare clone) | UNSUPPORTED by documented binding (refused; ASSUMED-A) |
+| Fork at explicit base | real (`git update-ref` after bare clone) | binding cannot fork at a commit (ASSUMED-F): forks default branch, records realized base = fork head at creation (muse-r46 D3) |
 | Trial merges/tests | trusted local runner (L3 lane), never the Worker | same (deployment boundary) |
 
 API shapes come only from the five official pages cited in

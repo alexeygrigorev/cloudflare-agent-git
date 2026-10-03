@@ -138,3 +138,12 @@ Other events (account-level `artifacts` source): `repo.created`, `repo.deleted`,
   verify how a subscription is created (dashboard/API). Our `/events/artifacts`
   route accepts the documented envelope; wiring the subscription is a
   switch-to-real step.
+- **ASSUMED-F (fork at an explicit commit)**: no documented binding parameter
+  forks at an arbitrary commit. Since muse-r46 D3, `RealArtifacts.fork` no
+  longer refuses `ForkOptions.baseSha`: it forks the source's default branch
+  (the only documented fork), reads the new fork's head via the documented
+  `log({limit:1})`, and reports that commit as the realized `baseSha` on the
+  port's `ForkResult`. The coordinator records the realized base on the task
+  and returns it as `base_sha`. When the requested base IS the canonical tip
+  (the default and common case), the realized base equals it exactly; an
+  explicit older `base_sha` in real mode therefore records the tip instead.

@@ -5,6 +5,7 @@ import type {
   CommitMetadata,
   CreateRepoOptions,
   ForkOptions,
+  ForkResult,
   LogOptions,
   RepoName,
   RepoSummary,
@@ -47,11 +48,13 @@ export class SidecarArtifacts implements ArtifactsPort {
     return { name: body.name, remote: body.remote, defaultBranch: body.defaultBranch, token: body.token };
   }
 
-  async fork(source: RepoName, target: RepoName, opts?: ForkOptions): Promise<ArtifactsCreateRepoResult> {
+  async fork(source: RepoName, target: RepoName, opts?: ForkOptions): Promise<ForkResult> {
     const body = (await this.call(`/api/repos/${encodeURIComponent(source)}/fork`, {
       method: "POST",
       body: JSON.stringify({ target, baseSha: opts?.baseSha }),
     })) as ArtifactsCreateRepoResult;
+    // Local mode honors baseSha exactly (git update-ref after bare clone),
+    // so the realized base is the requested one; no marker needed.
     return { name: body.name, remote: body.remote, defaultBranch: body.defaultBranch, token: body.token };
   }
 
