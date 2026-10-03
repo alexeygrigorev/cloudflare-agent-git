@@ -63,7 +63,7 @@ flowchart TD
 
 ### Key Protocol Invariants:
 1. **Launch Order: Sender First $\rightarrow$ Capture UUID $\rightarrow$ Launch Receiver:**
-   - The sender session is created first to establish its genuine, unforgeable session UUID (`sender_uuid`).
+   - The sender session is created first to establish its genuine, runner-captured session UUID (`sender_uuid`) (representing routing provenance on the host bus, not cryptographic same-user authentication).
    - The receiver session is then launched with `sender_uuid` explicitly pinned in its initial operator prompt.
 2. **Per-Run Unique Tags & Correlation Nonces:**
    - Receiver tag: `continuation-receiver-<run_nonce>`
