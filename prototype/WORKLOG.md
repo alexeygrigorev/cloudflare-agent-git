@@ -452,3 +452,34 @@ REST client; fakes for the binding).
   rest-client.test.ts new 10 tests).
 - `npm run test:sidecar` (node --test): **16/16**.
 - `npm run test:all` EXIT=0. node_modules untouched (325 MiB; no new deps).
+
+## 2026-10-03 (later) — Provider-neutral facade: ports + core + cloudflare/local adapters (executor zc-facade)
+
+Task from claude-principal: make the Cloudflare integration swappable —
+core logic (task registry, head vectors, dedup, warnings, checks validation,
+stale-vector rule, auth decisions) depends ONLY on provider-neutral
+interfaces; Cloudflare becomes one set of adapters. OFFLINE only (no deploy,
+no new npm deps). Start gated on zc-artifacts-2 (waited, polled `a list`;
+its commits aabcb92 + 2a0625e are on origin; CONTRACT now 0.1.3 → docs bump
+to 0.1.4 per task).
+
+`a whoami --json` (full result):
+
+```json
+{
+  "schema_version": 1,
+  "id": "52b589ff-0705-46df-b6f0-0c43add37106",
+  "workspace": "/home/alexey/git/cloudflare-agent-git",
+  "tag": "zc-facade",
+  "engine": "shell",
+  "parent_session": "b3a92dd0-a17e-4a62-940f-eb3b829393f6",
+  "cwd": "/home/alexey/git/cloudflare-agent-git",
+  "reported_state": "working",
+  "phase": "running"
+}
+```
+
+(truncated to the identity-relevant fields; full record in the session log)
+
+Start state: proto/l1-scaffold pulled at 2a0625e, working tree clean,
+zc-artifacts-2 exit verified via `a list` poll (7 × 60 s).
