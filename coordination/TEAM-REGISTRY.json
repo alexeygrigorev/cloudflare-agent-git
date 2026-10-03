@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T06:17:25.635843+00:00",
+  "updated_at": "2026-10-03T06:30:53.802369+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -44,6 +44,40 @@
           "resumed_by": "readiness-recovery-executor",
           "resumed_at": "2026-10-03T04:47:00+00:00",
           "resumed_with_task": "Codex 01a10008-504a-7000-97ff-229b7ec8be5f in initial CLI request"
+        },
+        {
+          "tag": "a18-scout-z2",
+          "role": "worker",
+          "mode": "headless",
+          "provider": "opencode-go/glm-5.3-flash",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "containment": "systemd user unit z-a18-scout-2; cgroup 0::/user.slice/.../z-a18-scout-2.service memory.max=1073741824 verified 2026-10-03T06:26Z; TasksMax=128; timeout 3600s; isolated XDG store .local/zcode-independent/a18-scout/xdg-*",
+          "task": "a18-demand-scout",
+          "owned_paths": [
+            "research/zcode/independent/a18-scout/"
+          ],
+          "launched_by": "zcode-independent 64049aa2",
+          "launched_at": "2026-10-03T06:26:00Z",
+          "quota_evidence": "quse go 2026-10-03T08:16CEST: 5h 98%/7d 97%/monthly 98% remaining, limit_reached false",
+          "first_tool_evidence": "research/zcode/independent/a18-scout/WORKLOG.md",
+          "parent_team": "a01-harness"
+        },
+        {
+          "tag": "a05-adjudicator-z2",
+          "role": "worker",
+          "mode": "headless",
+          "provider": "opencode-go/muse-spark-1.3-contributor",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "containment": "systemd user unit z-a05-adjudicator-2; cgroup 0::/user.slice/.../z-a05-adjudicator-2.service memory.max=1073741824 verified 2026-10-03T06:28Z; TasksMax=128; timeout 2700s; isolated XDG store .local/zcode-independent/a05-adjudicator/xdg-*",
+          "task": "a05-requirement-audit adjudication (7ad05d7 vs current, frozen bytes)",
+          "owned_paths": [
+            "research/zcode/independent/a05-adjudication/"
+          ],
+          "launched_by": "zcode-independent 64049aa2",
+          "launched_at": "2026-10-03T06:28:00Z",
+          "quota_evidence": "opencode-go route covered by quse go 2026-10-03T08:16CEST 97-98% remaining; gemini CLI admission failed (deprecated) \u2014 fallback recorded",
+          "first_tool_evidence": "research/zcode/independent/a05-adjudication/WORKLOG.md",
+          "parent_team": "a01-harness"
         }
       ]
     },
@@ -193,6 +227,23 @@
           ],
           "usage": "UNKNOWN",
           "launched_by": "antigravity-head"
+        },
+        {
+          "tag": "producer-negative-reviewer",
+          "role": "worker",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "2c129817-2f15-43aa-9a1d-60cc895e4132",
+          "mode": "headless",
+          "engine": "opencode",
+          "model": "opencode-go/muse-spark-1.3-contributor",
+          "cgroup_memory": "2G",
+          "cgroup_pids": 256,
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "task": "producer-negative-review",
+          "owned_paths": [
+            ".local/producer-review/**"
+          ],
+          "started_at": "2026-10-03T06:31:01Z"
         }
       ]
     },
@@ -216,7 +267,16 @@
             "path": ".local/opencode-isolated/opencode/opencode.db",
             "identity_evidence": "Exact active workload /proc cmdline --session argument, independently observed 2026-10-03T05:46:32.144359+00:00",
             "scope": "Native conversation, deduplicated across resumed aplexer generations; reported cost is not subscription spend"
-          }
+          },
+          "session_id": "1792d6a9-edc4-49ae-a436-eb4b9a51feb8",
+          "resumed_from_session_id": "430a6dfd-bc60-4248-909d-4c83905259de",
+          "resumed_conversation": "ses_f01efa751ffeCumog1qyjzvQt2",
+          "resumed_store": "XDG_DATA_HOME=.local/opencode-isolated, XDG_CONFIG_HOME=.local/opencode-config",
+          "recovery_cause": "OOM-killed workload (2GiB cgroup), stuck call_01a100550c17717e89cc33d1560c21d4",
+          "resumed_by": "readiness-recovery-executor",
+          "resumed_at": "2026-10-03T06:30:00+00:00",
+          "resumed_with_prompt": true,
+          "cgroup_memory": "4G"
         }
       ]
     },

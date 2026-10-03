@@ -1,42 +1,40 @@
-# R12: A01 Pre-Registration Protocol — Conditional Efficacy of Live Conflict Warnings Under Disjoint Contract Changes
+# R12: A01 Pre-Registration Protocol — Engineering Feasibility Gate & Conditional Efficacy Specification
 
-**Status:** REVISED PRE-REGISTRATION — WITHHELD PENDING DUAL PRINCIPAL APPROVAL  
-**Revision:** v2.0 (Post-Review Revision responding to Claude-Principal `01a10061-041f` and Codex-Principal `01a10063-3f8b` & `01a10060-ebfc`)  
+**Status:** REVISED PRE-REGISTRATION v2.1 — UNSCORED ENGINEERING FEASIBILITY GATE ONLY  
+**Revision:** v2.1 (Incorporating Claude-Principal `01a10069-1343` and Codex-Principal `01a10069-a82b` / `01a10063-3f8b` Directives)  
 **Author:** Antigravity Head (`antigravity-head`, session `46fdb644-9b58-4e2f-aab3-9be5e1e33337`)  
 **Target Proposal:** A01 (Concurrent-Agent Collision Radar / Semantic Conflict Detection)  
-**Execution Gate:** Strict protocol lock. **Zero experimental runs authorized** until both Claude-Principal and Codex-Principal independently review and approve this revised protocol digest.
+**Execution Authority:**
+- **Full Scored 30-Pair Trial:** **STRICTLY NOT APPROVED / WITHHELD.**
+- **Approved Scope:** **Unscored Engineering Feasibility Gate ONLY** (exactly 3 pairs, 6 individual agent sessions). Zero efficacy or product advantage claims may be drawn from the feasibility gate.
 
 ---
 
-## 1. Executive Framing & Clarification of Scope
+## 1. Executive Framing & Scope Clarification
 
 ### 1.1 Retraction of Natural Prevalence Claims
-We formally retract the earlier draft's framing of measuring a "natural hazard rate" or "spontaneous omission rate in the wild".
-- **The Planted Condition:** The task brief in ENG-401 explicitly instructs the producer to migrate its timestamp format to microseconds (`timestamp_us`), while ENG-402 concurrently instructs the consumer to compute duration from timestamps. Because the contract divergence is planted by task brief design, the proportion of runs exhibiting divergence measures our task construction, not natural prevalence.
-- **External Prevalence Bound:** The prevalence of semantic interference between concurrent software tasks is bounded by external empirical literature:
-  - **E-X020 (arXiv 2609.25396):** In 834 real-world mined pull-request pairs after grading corrections, exactly 1 semantic conflict was observed (~0.12%).
-  - Real-world incidence of pure semantic collisions on disjoint files is rare in competent developer/agent workflows.
-- **Conditional Research Question:** This protocol evaluates **conditional efficacy**:
-  > *Given that a breaking contract change occurs concurrently across disjoint files, does delivering an asynchronous mid-flight semantic conflict warning (Arm 2) yield an outcome-time, token, or rework advantage over (a) pure silent completion-time testing (Arm 1a), or (b) an ordinary cheap shared-intent note / PR summary channel (Arm 1b)?*
+We explicitly retract any claim of measuring a "natural hazard rate", "spontaneous collision rate", or "agent omission rate in the wild":
+- **Planted Contract Drift:** The task pair (ENG-401 vs ENG-402) intentionally plants contract drift: Task A is explicitly instructed to migrate event serialization to integer microseconds (`timestamp_us`), while Task B is concurrently instructed to calculate duration from timestamps. Because contract divergence is engineered by prompt design, the failure rate reflects task construction, not natural prevalence.
+- **External Prevalence Bound (E-X020, arXiv 2609.25396):** In 834 real-world mined pull-request pairs after grading corrections, exactly 1 semantic conflict was observed (~0.12%). Disjoint-file semantic collisions are rare in competent human and agent software engineering.
+- **Research Question:** This protocol evaluates **conditional efficacy**:
+  > *Given that breaking contract drift occurs across concurrently edited disjoint files, does mid-flight delivery of an automated AST-derived warning (Arm 2) provide an outcome-time, rework, or token advantage over (a) pure silent completion-time testing (Arm 1a), or (b) an ordinary cheap shared-intent note delivered through the exact same channel (Arm 1b)?*
 
 ### 1.2 Historical Attribution & Baseline Record
 - The previously cited signposted prompt (*"do not assume first-match or last-match without checking whether the file justifies it"*) occurred specifically in historical Space Bunny composition experiments.
 - In those historical trials, both original unprompted arms passed their local tasks without repair or warning notices.
-- We explicitly disclaim using that specific incident to generalize across all A01 trials or to claim that agents cannot write robust code without assistance.
+- This protocol does not generalize that single incident or claim agents cannot write robust code without assistance.
 
 ---
 
 ## 2. Experimental Task Pair (Planted Contract Drift)
 
-The task pair models a common enterprise scenario: concurrent micro-optimization of an event producer alongside an analytics extension of an event consumer.
-
-### 2.1 Repository Structure & File Ownership
+### 2.1 Repository Structure & Ownership
 - **Base Repository:** `event_store` (Python 3.11+, typed dataclasses).
 - **Strict File Disjointness:**
   - **Task A (Producer Lane):** Owns `src/event_store/producer.py` and `tests/test_producer.py`.
   - **Task B (Consumer Lane):** Owns `src/event_store/consumer.py` and `tests/test_consumer.py`.
-  - **Base Contract (Read-Only to both):** `src/event_store/schema.py` defining `EventEnvelope`.
-  - **Syntactic Conflict Potential:** 0%. `git merge` will cleanly merge the two branches with zero textual conflicts.
+  - **Base Contract (Read-Only to both):** `src/event_store/schema.py` defining base `EventEnvelope`.
+  - **Syntactic Conflict Potential:** 0%. `git merge` merges cleanly with zero textual conflicts.
 
 ### 2.2 Verbatim Neutral Task Briefs
 
@@ -63,147 +61,121 @@ Implement session duration calculation in `src/event_store/consumer.py`:
 ```
 
 ### 2.3 Observable Outcome Possibilities (No Predetermined Assumptions)
-Rather than assuming a single failure mode (e.g. $10^6\times$ numerical scaling error), the protocol objectively classifies whatever behavior the models produce:
-1. **Defensive Backward Compatibility (No Hazard):** Task A may implement a backward-compatible `@property timestamp` alias returning float seconds, or Task B may defensively inspect `getattr(event, 'timestamp_us', event.timestamp)`. Both compose cleanly on first merge.
+Rather than predicting a single error mode, the protocol classifies actual model outcomes:
+1. **Defensive Backward Compatibility (No Hazard):** Task A implements a backward-compatible `@property timestamp` returning float seconds, or Task B defensively checks `getattr(event, 'timestamp_us', event.timestamp)`. Both compose cleanly on initial merge.
 2. **Missing-Key / Attribute Failure:** Task B attempts to access `event['timestamp']` or `event.timestamp`, raising `KeyError` or `AttributeError` during composite execution.
 3. **Semantic Unit Distortion:** Task A emits microseconds into a generic timestamp field; Task B calculates duration in microseconds while labeling it `duration_seconds` ($10^6\times$ distortion).
 4. **Scope Breach / Contract Edit:** Either task modifies `src/event_store/schema.py` outside its declared file ownership.
 
 ---
 
-## 3. Three-Arm Experimental Architecture
+## 3. Experimental Arms & Channel Parity Protocol
 
-To prove genuine product value, A01 must outperform both complete silence (Arm 1a) and the simplest, cheapest standard engineering incumbent: **shared intent notes** (Arm 1b).
+To establish whether live radar warnings have unique value, Arm 2 is tested against both silence (Arm 1a) and the standard low-cost engineering incumbent: **shared intent notes** (Arm 1b).
 
-```mermaid
-flowchart TD
-    Base[Base Snapshot Commit] --> Arm1a[Arm 1a: Silent Baseline<br/>Completion-Time Tests]
-    Base --> Arm1b[Arm 1b: Incumbent Baseline<br/>Shared Intent Notes]
-    Base --> Arm2[Arm 2: Experimental Arm<br/>A01 Live Radar Warning]
+### 3.1 Strict Channel & Availability Parity
+Per Codex critique (`01a10069-a82b`), Arm 1b and Arm 2 **must share the exact same delivery channel and timing opportunity**. Having Arm 1b as a passive file on disk while Arm 2 uses active inbox messages creates an unfair delivery asymmetry.
 
-    subgraph Flow1a [Arm 1a: Silent Isolation]
-        A1a[Agent A & B in Silence] --> M1a[Completion Merge]
-        M1a --> T1a{Composite Test}
-        T1a -->|Fail| R1a[Post-Merge Sequential Rework]
-        T1a -->|Pass| P1a[Verified Pass]
-    end
+| Parameter | Arm 1a: Silent Isolation | Arm 1b: Cheap Incumbent (Intent Note) | Arm 2: Experimental (Live Collision Radar) |
+| :--- | :--- | :--- | :--- |
+| **Delivery Channel** | None (Silence) | Aplexer Inbox Envelope / Context Hook | Aplexer Inbox Envelope / Context Hook |
+| **Delivery Timing** | N/A | Injected immediately upon first tool execution | Injected immediately upon AST detector trigger |
+| **Payload Type** | N/A | Human / PR Intent Note (verbatim ticket summaries) | Dynamic AST Collision Warning |
+| **Visibility Scope** | Isolated Worktree | Isolated Worktree + Inbox Message | Isolated Worktree + Inbox Message |
+| **Recipient** | Neither | Both Agent A and Agent B | Both Agent A and Agent B |
 
-    subgraph Flow1b [Arm 1b: Cheap Incumbent]
-        A1b[Agent A & B with Shared INTENT.md] --> M1b[Completion Merge]
-        M1b --> T1b{Composite Test}
-        T1b -->|Fail| R1b[Post-Merge Sequential Rework]
-        T1b -->|Pass| P1b[Verified Pass]
-    end
+### 3.2 Fixed Content Payloads
 
-    subgraph Flow2 [Arm 2: Live Collision Radar]
-        A2[Agent A & B Monitored by Pinned Detector] --> W2[Live Typed Radar Warning Delivered]
-        W2 --> U2{Evidence of Notice & Uptake?}
-        U2 -->|Uptake: Mid-turn Fix| M2a[First-Pass Clean Merge]
-        U2 -->|No Uptake: Ignored| M2b[Post-Merge Sequential Rework]
-    end
+#### Arm 1b Fixed Intent Note Payload
+```text
+[COORDINATION NOTICE: ACTIVE CONCURRENT TASKS]
+The following tickets are currently active in this milestone:
+1. ENG-401 (Producer): Optimizing batch serialization and migrating timestamp recording to integer Unix microseconds ('timestamp_us').
+2. ENG-402 (Consumer): Implementing session duration calculation from event timestamps.
+Please review shared schema expectations before completing your task.
 ```
 
-### 3.1 Arm 1a: Control Baseline (Pure Silent Isolation)
-- **Condition:** Agents A and B execute concurrently in isolated worktrees with no cross-branch visibility.
-- **Integration:** Branches are merged strictly upon completion of both tasks.
-- **Evaluation:** Protected integration test `test_integration_stream.py` runs post-merge. If failing, tasks enter sequential rework until integration passes.
+#### Arm 2 Fixed Radar Warning Payload
+```text
+[A01 RADAR NOTICE: SEMANTIC CONTRACT DRIFT]
+Contract drift detected between branch 'producer' and 'consumer':
+- Producer (src/event_store/producer.py) serializes timestamp as microsecond integer ('timestamp_us').
+- Consumer (src/event_store/consumer.py) references 'timestamp' expecting float seconds.
+Action: Reconcile envelope schema or provide compatibility alias before declaring task completion.
+```
 
-### 3.2 Arm 1b: Incumbent Baseline (Shared Coordination Notes)
-- **Condition:** Agents execute in isolated worktrees, but have access to a shared read-only coordination document: `.coordination/INTENT.md`.
-- **Content:** Contains the verbatim ticket descriptions of all active concurrent tickets in the milestone (standard GitHub PR description / Collide-style intent broadcast).
-- **Rationale:** If competent agents already read available repository intent notes and proactively coordinate contracts without active tooling, a complex live radar daemon is redundant.
-
-### 3.3 Arm 2: Experimental Arm (A01 Live Radar Warning)
-- **Condition:** An automated detector script (`scripts/detectors/contract_drift_detector.py`, pinned by SHA256) periodically inspects the working-tree ASTs of active branches.
-- **Delivery Mechanism:** The warning is delivered through the exact same aplexer inbox / context hook channel used for coordination notices in Arm 1b.
-- **Fixed Pre-Registered Warning Text:**
-  ```text
-  [A01 RADAR NOTICE] Contract drift detected between branch 'producer' and 'consumer':
-  - Producer (src/event_store/producer.py) serializes timestamp as microsecond integer ('timestamp_us').
-  - Consumer (src/event_store/consumer.py) references 'timestamp' expecting float seconds.
-  Action: Reconcile envelope schema before declaring task completion.
-  ```
-- **Distinction Between Delivery, Notice, and Uptake:**
-  - *Delivery:* Message appended to the recipient's aplexer inbox file on disk.
-  - *Notice:* Session logs confirm that the agent called a tool that inspected the inbox or received the context hook during an active turn.
-  - *Uptake:* The agent explicitly modifies code in response to the warning (e.g. adding compatibility alias or updating consumer) prior to branch completion.
+### 3.3 Strict Operational Logging: Delivery vs Notice vs Code Uptake
+Per Claude directive (`01a10069-1343`), evaluation logs must independently record three distinct stages:
+1. **Delivery:** The message file is written to the agent session's aplexer inbox directory.
+   - Metric: `delivered_at_ms`, `message_id`, `recipient_session_id`.
+2. **Notice:** The agent actually inspects or receives the message during an active turn (verified by tool execution log inspecting `a message inbox` or awareness context injection).
+   - Metric: `noticed_at_ms`, `tool_call_id`, `turn_index`.
+3. **Code Uptake:** The agent alters source code specifically addressing the schema change (e.g. adding `@property timestamp` or updating consumer to handle `timestamp_us`).
+   - Metric: `uptake_detected: bool`, `first_uptake_commit_sha`, `uptake_diff_bytes`.
 
 ---
 
-## 4. Pinned Detector Specification
+## 4. Pinned Tooling & Verification Artifacts
 
-The radar detector is an actual, deterministic static-analysis Python tool, not a human oracle or simulated stub.
+All detectors, tests, and graders are frozen before execution.
 
-- **Location:** `scripts/detectors/contract_drift_detector.py` (to be committed and SHA256-pinned before launch).
-- **Operation:**
-  1. Reads git worktree snapshots of candidate branches.
-  2. Parses Python ASTs using `ast.parse`.
-  3. Inspects calls to `EventEnvelope` construction (producer) and field accesses (consumer).
-  4. If producer writes `timestamp_us` and consumer reads `timestamp` without fallback, triggers the pre-registered warning.
-  5. Records input commit SHAs and AST digest in the radar execution log.
+### 4.1 Pinned Static AST Detector
+- **Source Script:** [`scripts/detectors/contract_drift_detector.py`](file:///home/alexey/git/cloudflare-agent-git/scripts/detectors/contract_drift_detector.py)
+  - **SHA256:** `572a6198a0dc0de250a9f0f078d64bd98b3f3086b3850985456051f0c99e0eac` (8,205 bytes)
+  - Deterministic AST visitor parsing class definitions, dictionary assignments, attribute accesses, and `@property` compatibility aliases.
+- **Unit Test Suite:** [`scripts/detectors/test_contract_drift_detector.py`](file:///home/alexey/git/cloudflare-agent-git/scripts/detectors/test_contract_drift_detector.py)
+  - **SHA256:** `6b424420f27d19f7c4865f53954b2a24a6da3c12587ceea0d889be0a1c6a4f2e` (4,818 bytes)
+  - 4 test cases verifying: positive drift detection (exit 1), aligned schemas (exit 0), backward-compatible property aliases (exit 0), and false-positive resistance (exit 0).
 
----
-
-## 5. Sample Size, Stopping Rules & Statistical Plan
-
-### 5.1 Sample Size
-- **Sample Allocation:** $N = 10$ paired trials per arm (30 total paired executions; 60 individual agent sessions).
-- **Execution Matrix:**
-  - Arm 1a (Silent Baseline): 10 pairs.
-  - Arm 1b (Shared Intent Notes): 10 pairs.
-  - Arm 2 (Live Radar Warning): 10 pairs.
-- **Stopping Rule:** Fixed sample size ($N = 10$ per arm). No early termination based on intermediate $p$-values.
-
-### 5.2 Pre-Registered Metrics & Analysis
-1. **Outcome Wall Time ($T_{\text{outcome}}$):** Wall-clock seconds from task launch until composite integration tests pass.
-   - Report: Median, IQR, and non-parametric 95% Bootstrap Confidence Intervals for difference in medians ($\Delta M = M_{\text{Arm 1b}} - M_{\text{Arm 2}}$).
-2. **Total Token Consumption ($C_{\text{tokens}}$):** Cumulative input + output + reasoning tokens across both agents.
-   - Report: Mean $\pm$ SD and Bootstrap 95% CIs.
-3. **Rework Cycles ($N_{\text{rework}}$):** Count of post-merge repair attempts required to achieve green integration.
-   - Report: Poisson regression / median count comparison.
-4. **First-Pass Pass Rate ($P_{\text{first}}$):** Proportion of runs passing integration on the initial merge.
-   - Report: Proportion with 95% Wilson Score Confidence Intervals.
-5. **Warning Uptake Rate ($U_{\text{radar}}$):** Proportion of Arm 2 runs demonstrating documented code alteration following warning notice.
-   - Report: Proportion with 95% Wilson Score Confidence Intervals.
-
-### 5.3 Falsification & Decision Criteria
-Rather than asserting that $p > 0.10$ proves absence of difference, we specify explicit equivalence and superiority gates:
-- **Radar vs. Incumbent Superiority Gate:** For A01 to remain viable, Arm 2 must demonstrate:
-  1. A statistically significant reduction in outcome time vs. Arm 1b: $\Delta M_{(1b - 2)} > 0$ with 95% Bootstrap CI lower bound $> 0$.
-  2. First-pass pass rate superiority: $P_{\text{first, Arm 2}} - P_{\text{first, Arm 1b}} \ge 25\%$ (difference in proportions).
-- **Falsification (Kill / Demote A01 from Shortlist):**
-  1. If $P_{\text{first, Arm 2}} \le P_{\text{first, Arm 1b}}$ (live radar achieves no better first-pass success than simple shared intent notes).
-  2. If $\Delta M_{(1b - 2)} \le 0$ (live radar warnings induce context thrashing or prompt confusion that increases total outcome duration).
-  3. If warning uptake $U_{\text{radar}} < 30\%$ (agents overwhelmingly ignore mid-flight radar notices).
+### 4.2 Protected Acceptance Checks (Outside Agent Worktrees)
+- **Grader Script:** [`.local/protected/a01-ground-truth/test_integration_stream.py`](file:///home/alexey/git/cloudflare-agent-git/.local/protected/a01-ground-truth/test_integration_stream.py)
+  - **SHA256:** `d9e6c852b9a4f7a95c5a06ba1e7a817d5c7fee68ce92a1ac34dcc29d7d4a8150` (4,455 bytes)
+  - Evaluates actual end-to-end data flow compatibility between candidate producer and consumer modules.
+- **Checksums Manifest:** [`.local/protected/a01-ground-truth/CHECKSUMS.json`](file:///home/alexey/git/cloudflare-agent-git/.local/protected/a01-ground-truth/CHECKSUMS.json)
 
 ---
 
-## 6. Execution Environment & Integrity Safeguards
+## 5. Token Accounting & Quota Integrity
 
-### 6.1 Model Roster & Quota Verification
-- **Model Pairing:**
-  - Pool A (OpenCode Go): `opencode-go/space-bunny-free` paired with `opencode-go/muse-spark-1.3-contributor`.
-  - Pool B (Gemini): `gemini-2.5-flash` paired with `gemini-2.5-pro` via Antigravity harness.
-- **Quota Gate:** Quota must be freshly queried via `quse` immediately prior to launch. If remaining quota $< 15\%$, launch is blocked.
-- **No Guessed Rosters:** Only currently verified, active model identifiers will be dispatched.
+### 5.1 Authoritative Token Measurement Protocol
+Per Codex directive (`01a10069-a82b`), naive addition of input + output + reasoning tokens can cause double-counting depending on provider metadata formatting.
+- **Authoritative Source:** Provider session logs / SQLite records (`message`, `part`, `account_state` tables in OpenCode; API response usage structs in Gemini).
+- **Metric Breakdown:**
+  1. `total_tokens`: Authoritative total reported by provider.
+  2. `input_tokens`: Authoritative prompt tokens.
+  3. `output_tokens`: Authoritative completion tokens.
+  4. `reasoning_tokens`: Reported separately (deduplicated from output if provider nests reasoning inside completion).
+  5. `cache_read_tokens` / `cache_write_tokens`: Recorded if supported by provider.
+  6. `monetary_cost`: **Marked strictly as `UNKNOWN`** (no guessed API cost or subscription prorations).
 
-### 6.2 Resource Placement & Cgroup Containment (Claude Rule)
-- Every worker agent will run in its **own distinct aplexer session** with an explicit cgroup memory cap:
-  ```bash
-  aplexer start --tag a01-worker-<id> --memory 1500M --engine opencode ...
-  ```
-- **Zero Nested Processes:** No worker processes may run as children inside a head's session.
-
-### 6.3 Protected Acceptance Checks
-- The integration verification suite (`test_integration_stream.py`) will be stored exclusively in:
-  `.local/protected/a01-ground-truth/` with an immutable SHA256 manifest.
-- Agents will NOT have read access to the grading tests or criteria during execution.
-
-### 6.4 Independent Reviewer Audit
-- All experimental runs, git logs, transcripts, and patch diffs must be independently audited by `muse-reviewer` (session `430a6dfd`) prior to claiming any validated outcomes.
-- No self-grading by Antigravity or execution delegates.
+### 5.2 Model Roster & Quota Safeguards
+- **Active Available Models:**
+  - `opencode-go/space-bunny-free`
+  - `opencode-go/muse-spark-1.3-contributor`
+  - `antigravity/gemini-2.5-flash`
+- **Resource Policy Clarification:** The 15% quota remaining gate applies specifically to OpenAI Codex per project Resource Policy. For OpenCode Go and Gemini routes, fresh `quse` must verify positive remaining capacity (>10%) prior to dispatch.
+- **Cgroup Containment (Claude Rule):** Every agent must run in an isolated aplexer session with an explicit cgroup cap (`--memory 1500M`, `--pids 256`). Zero nested model processes.
 
 ---
 
-## 7. Pre-Registration Commitment
-We commit to executing this protocol exactly as written upon dual principal approval, without post-hoc threshold adjustment or selective reporting. Negative results will be documented transparently in `research/antigravity/` and incorporated into shortlist recommendations.
+## 6. Phase 1: Engineering Feasibility Gate (The Only Authorized Run)
+
+### 6.1 Gate Scope & Composition
+The Engineering Feasibility Gate executes exactly **3 paired trials (6 agent sessions)**:
+- **Trial 1 (Arm 1a):** 1 pair (Producer + Consumer) in silent isolation.
+- **Trial 2 (Arm 1b):** 1 pair (Producer + Consumer) with intent note delivered to inbox upon first tool action.
+- **Trial 3 (Arm 2):** 1 pair (Producer + Consumer) with live radar warning delivered to inbox upon detector trigger.
+
+### 6.2 Feasibility Gate Objectives (No Efficacy Claims)
+The sole purpose of this gate is to prove operational feasibility:
+1. **Harness & Cgroup Integrity:** Verify all 6 sessions start, execute, and exit cleanly within their 1500M cgroup memory limits.
+2. **Channel Parity Delivery:** Confirm identical inbox delivery mechanics function for both Arm 1b and Arm 2.
+3. **Telemetry & Logging:** Confirm delivery, notice, and uptake events are accurately captured with timestamps.
+4. **Token Metric Provenance:** Confirm provider-native token breakdown (input, output, reasoning) is extracted without errors or double-counting.
+5. **Grader Independence:** Confirm `.local/protected/a01-ground-truth/test_integration_stream.py` runs outside agent worktrees and produces clean pass/fail verdicts.
+
+### 6.3 Post-Gate Decision
+Upon completion of the 3 feasibility pairs:
+- Results will be documented in `research/antigravity/r12-a01-feasibility-gate-report.md`.
+- No product efficacy or superiority claim will be asserted.
+- Claude-Principal and Codex-Principal will inspect the feasibility report and jointly decide whether to authorize a scored sample trial ($N$) or falsify/retire the approach.
