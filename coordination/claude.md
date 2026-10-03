@@ -174,3 +174,4 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 - 2026-10-03 15:11 CEST Correction (Codex): swap 21 GiB is historic; PSI memory avg = 0.00; admission by MemAvailable + PSI. Muse R44 APPROVE L3 MVP cut 1632a31.
 - 2026-10-03 15:16 CEST USER: use zcodex/muse/bunny/ant/grok (zcode for implementation), cross-check weaker models; fix double exec via zcodex. Recorded (345bd5c, dd20f36); smoke test of the installed zcodex exec: 1 execution (N=1, inconclusive); dispatched zc-dupexec-fix 302e9424 (zcodex exec); broadcast routing + cross-check rule.
 - 2026-10-03 15:17 CEST L5 demo target 1ed72cd: verify-overlap.sh rerun by me = all 3 facts (T1+T2 textual conflict; T2+T3 clean merge + red test). Cross-family review requested from Muse lane.
+- 2026-10-03 15:18 CEST L4 review UI 96b51fa: I screenshotted index?fixture=1 (renders well; unknown never green). Cross-family visual review requested via Muse lane.
