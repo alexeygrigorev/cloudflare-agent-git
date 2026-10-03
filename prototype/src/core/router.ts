@@ -15,8 +15,10 @@ import {
   bearerFrom,
   decideBearer,
   decideMutatingAuth,
+  decideReadAuth,
   type AuthDecision,
   type AuthTokens,
+  type ReadAuthOptions,
 } from "./auth.js";
 import type { CoordinatorAccess } from "./coordinator.js";
 
@@ -70,7 +72,13 @@ async function readJson(request: HttpRequest): Promise<Record<string, unknown>> 
 }
 
 function deniedOrOk(decision: AuthDecision): HttpResponse | null {
-  return decision.ok ? null : json({ error: decision.error }, decision.status);
+  if (decision.ok) {
+    return null;
+  }
+  return json(
+    decision.message === undefined ? { error: decision.error } : { error: decision.error, message: decision.message },
+    decision.status,
+  );
 }
 
 async function requireBearer(
@@ -88,6 +96,23 @@ async function requireMutatingAuth(
 ): Promise<HttpResponse | null> {
   return deniedOrOk(
     await decideMutatingAuth(
+      bearerFrom(request.header("authorization")),
+      services.tokens,
+      opts,
+      (presented) => services.coordinator.credentialAgent(presented),
+    ),
+  );
+}
+
+/** C1462 Task 1: read endpoints authenticate like everything else; pass
+ * `agent` to narrow a task read to its owner (or admin). */
+async function requireReadAuth(
+  request: HttpRequest,
+  services: RouterServices,
+  opts: ReadAuthOptions = {},
+): Promise<HttpResponse | null> {
+  return deniedOrOk(
+    await decideReadAuth(
       bearerFrom(request.header("authorization")),
       services.tokens,
       opts,
@@ -236,13 +261,30 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
     }
 
     if (method === "GET" && path === "/status") {
+      // C1462 Task 1: /status is no longer open — admin, runner (it fetches
+      // the heads vector before POST /checks) or any valid agent task token;
+      // expiry and revocation gates apply.
+      const denied = await requireReadAuth(request, services);
+      if (denied) {
+        return denied;
+      }
       return json(await coordinator.status());
     }
 
     const taskMatch = /^\/tasks\/([^/]+)$/.exec(path);
     if (method === "GET" && taskMatch) {
+      const taskId = decodeURIComponent(taskMatch[1]);
+      // C1462 Task 1: a task read is owner-or-admin (valid foreign token is
+      // 403). Auth resolves before existence: anonymous callers cannot probe
+      // task ids (same shape as POST /tasks/:id/revoke, C-1425). Unknown
+      // tasks narrow nothing, so any valid read credential reaches the 404.
+      const owner = await coordinator.taskOwner(taskId);
+      const denied = await requireReadAuth(request, services, owner === null ? {} : { agent: owner });
+      if (denied) {
+        return denied;
+      }
       try {
-        return json(await coordinator.getTask(decodeURIComponent(taskMatch[1])));
+        return json(await coordinator.getTask(taskId));
       } catch (error) {
         if ((error as Error).message.startsWith("unknown task")) {
           return json({ error: (error as Error).message }, 404);

@@ -82,9 +82,60 @@ describe("auth (codex C-1305 #3)", () => {
     expect(text).not.toContain(secretAttempt);
   });
 
-  it("read routes stay open", async () => {
-    const status = await SELF.fetch("http://localhost/status");
-    expect(status.status).toBe(200);
+  it("read routes require a bearer token (C1462 Task 1)", async () => {
+    // Missing or malformed headers share one 401 body that never echoes input.
+    const noToken = await SELF.fetch("http://localhost/status");
+    expect(noToken.status).toBe(401);
+    expect(await noToken.json()).toEqual({ error: "unauthorized", message: "Missing or invalid bearer token" });
+
+    const malformed = await SELF.fetch("http://localhost/status", {
+      headers: { authorization: "Basic dXNlcjpwYXNz" },
+    });
+    expect(malformed.status).toBe(401);
+    expect(await malformed.json()).toEqual({ error: "unauthorized", message: "Missing or invalid bearer token" });
+
+    // Expiry and revocation gates apply to reads (C-1422/C-1425 machinery).
+    const expired = await createTaskWithTtl("read-auth-expired", -10);
+    const expiredStatus = await SELF.fetch("http://localhost/status", {
+      headers: { authorization: `Bearer ${expired.token.plaintext}` },
+    });
+    expect(expiredStatus.status).toBe(401);
+
+    const revokedAgent = await createTask("read-auth-revoked");
+    expect((await post(`/tasks/${revokedAgent.taskId}/revoke`, {}, ADMIN)).status).toBe(200);
+    const revokedStatus = await SELF.fetch("http://localhost/status", {
+      headers: { authorization: `Bearer ${revokedAgent.token.plaintext}` },
+    });
+    expect(revokedStatus.status).toBe(401);
+
+    // Positives: admin and a valid active agent token read /status; a task
+    // read is owner-or-admin (foreign valid token 403, anonymous 401).
+    const reader = await createTask("read-auth-reader");
+    const okStatus = await SELF.fetch("http://localhost/status", {
+      headers: { authorization: `Bearer ${reader.token.plaintext}` },
+    });
+    expect(okStatus.status).toBe(200);
+    const adminStatus = await SELF.fetch("http://localhost/status", {
+      headers: { authorization: `Bearer ${ADMIN}` },
+    });
+    expect(adminStatus.status).toBe(200);
+
+    const anonTask = await SELF.fetch(`http://localhost/tasks/${reader.taskId}`);
+    expect(anonTask.status).toBe(401);
+    const ownTask = await SELF.fetch(`http://localhost/tasks/${reader.taskId}`, {
+      headers: { authorization: `Bearer ${reader.token.plaintext}` },
+    });
+    expect(ownTask.status).toBe(200);
+    const adminTask = await SELF.fetch(`http://localhost/tasks/${reader.taskId}`, {
+      headers: { authorization: `Bearer ${ADMIN}` },
+    });
+    expect(adminTask.status).toBe(200);
+
+    const stranger = await createTask("read-auth-stranger");
+    const crossTask = await SELF.fetch(`http://localhost/tasks/${reader.taskId}`, {
+      headers: { authorization: `Bearer ${stranger.token.plaintext}` },
+    });
+    expect(crossTask.status).toBe(403);
   });
 });
 
@@ -136,7 +187,9 @@ describe("auth on mutating routes (muse-r46 AUTH, CONTRACT 0.1.1)", () => {
     );
     expect(forged.status).toBe(403);
     // Nothing was recorded by the rejected attempts.
-    const detail = await (await SELF.fetch(`http://localhost/tasks/${owner.taskId}`)).json() as {
+    const detail = await (
+      await SELF.fetch(`http://localhost/tasks/${owner.taskId}`, { headers: { authorization: `Bearer ${ADMIN}` } })
+    ).json() as {
       testProvenance: unknown;
     };
     expect(detail.testProvenance).toBeNull();
@@ -162,7 +215,9 @@ describe("auth on mutating routes (muse-r46 AUTH, CONTRACT 0.1.1)", () => {
     const bobSha = await sidecarCommit(bob.fork.name, "wip: bob conflict");
     await post("/events/push", { agent: alice.agentId, sha: aliceSha }, alice.token.plaintext);
     await post("/events/push", { agent: bob.agentId, sha: bobSha }, bob.token.plaintext);
-    const status = (await (await SELF.fetch("http://localhost/status")).json()) as { heads: Record<string, string> };
+    const status = (await (
+      await SELF.fetch("http://localhost/status", { headers: { authorization: `Bearer ${ADMIN}` } })
+    ).json()) as { heads: Record<string, string> };
     const checked = await post(
       "/checks",
       {
@@ -263,7 +318,9 @@ describe("token expiry & revocation gate (C-1422/C-1425)", () => {
     const bobSha = await sidecarCommit(bob.fork.name, "wip: cred gate conflict b");
     await post("/events/push", { agent: alice.agentId, sha: aliceSha }, alice.token.plaintext);
     await post("/events/push", { agent: bob.agentId, sha: bobSha }, bob.token.plaintext);
-    const status = (await (await SELF.fetch("http://localhost/status")).json()) as { heads: Record<string, string> };
+    const status = (await (
+      await SELF.fetch("http://localhost/status", { headers: { authorization: `Bearer ${ADMIN}` } })
+    ).json()) as { heads: Record<string, string> };
     const checked = await post(
       "/checks",
       {

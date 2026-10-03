@@ -49,7 +49,7 @@ test("/tasks and /status over the neutral router", async () => {
   strictEqual(task.agentId, "via-router-0001");
   strictEqual(task.intent, "router");
 
-  const status = await call(rig, "GET", "/status");
+  const status = await call(rig, "GET", "/status", undefined, "admin-t");
   strictEqual(status.status, 200);
   ok((status.body as { agents: unknown[] }).agents.length === 1);
 });
@@ -149,7 +149,7 @@ test("/checks: runner auth, parse errors, stale 409, success shape", async () =>
   const rig = makeRig();
   const a = (await call(rig, "POST", "/tasks", { agent: "a" }, "admin-t")).body as { agentId: string; fork: { name: string } };
   const b = (await call(rig, "POST", "/tasks", { agent: "b" }, "admin-t")).body as { agentId: string };
-  const vector = ((await call(rig, "GET", "/status")).body as { heads: Record<string, string> }).heads;
+  const vector = ((await call(rig, "GET", "/status", undefined, "runner-t")).body as { heads: Record<string, string> }).heads;
 
   strictEqual((await call(rig, "POST", "/checks", { contract: "0.0", vector, policy: "p", results: [] })).status, 401);
   strictEqual((await call(rig, "POST", "/checks", { contract: "0.0", vector, policy: "p", results: [] }, "admin-t")).status, 401,
@@ -208,10 +208,10 @@ test("/tasks/:id and /tasks/:id/tests: 404s and owner-only provenance", async ()
     token: { plaintext: string };
   };
 
-  const found = await call(rig, "GET", `/tasks/${created.taskId}`);
+  const found = await call(rig, "GET", `/tasks/${created.taskId}`, undefined, created.token.plaintext);
   strictEqual(found.status, 200);
   strictEqual((found.body as { agentId: string }).agentId, created.agentId);
-  const missing = await call(rig, "GET", "/tasks/task-9999");
+  const missing = await call(rig, "GET", "/tasks/task-9999", undefined, "admin-t");
   strictEqual(missing.status, 404);
   ok((missing.body as { error: string }).error.startsWith("unknown task"));
 
@@ -248,7 +248,7 @@ test("/warnings/:id/ack: body validated before auth, owner-only acks", async () 
   const b = (await call(rig, "POST", "/tasks", { agent: "b" }, "admin-t")).body as {
     agentId: string; token: { plaintext: string };
   };
-  const vector = ((await call(rig, "GET", "/status")).body as { heads: Record<string, string> }).heads;
+  const vector = ((await call(rig, "GET", "/status", undefined, "admin-t")).body as { heads: Record<string, string> }).heads;
   const warningId = ((await call(
     rig, "POST", "/checks",
     { contract: "0.0", vector, policy: "p", results: [{ pair: [a.agentId, b.agentId], status: "conflict" }] },
@@ -282,6 +282,95 @@ test("malformed JSON bodies map to the contract 400", async () => {
   });
   strictEqual(response.status, 400);
   deepStrictEqual(response.body, { error: "request body must be valid JSON" });
+});
+
+/**
+ * C1462 Task 1: read endpoints require a bearer. Negatives 1-5 and
+ * positives 1-2 below are the mandated matrix; the extras pin the rest of
+ * the ladder (admin/runner reads, cross-agent 403, expired/revoked task
+ * reads, auth-before-404) so the gate cannot quietly narrow later.
+ */
+test("read auth: GET /status and GET /tasks/:id require a valid bearer (C1462 Task 1)", async () => {
+  const rig = makeRig();
+  const created = (await call(rig, "POST", "/tasks", { agent: "reader" }, "admin-t")).body as {
+    taskId: string;
+    agentId: string;
+    token: { plaintext: string };
+  };
+
+  // Negative 1: no Authorization header at all.
+  const noHeader = await call(rig, "GET", "/status");
+  strictEqual(noHeader.status, 401);
+  deepStrictEqual(noHeader.body, { error: "unauthorized", message: "Missing or invalid bearer token" });
+
+  // Negative 2: malformed bearer headers (wrong scheme, bare "Bearer",
+  // whitespace token) are indistinguishable from anonymous.
+  for (const header of ["Basic dXNlcjpwYXNz", "Bearer", "Bearer   "]) {
+    const malformed = await handleRoute(rig.services, {
+      method: "GET",
+      path: "/status",
+      header: (name) => (name.toLowerCase() === "authorization" ? header : null),
+      json: async () => {
+        throw new Error("no body");
+      },
+    });
+    strictEqual(malformed.status, 401, `malformed header ${JSON.stringify(header)} must deny`);
+    deepStrictEqual(malformed.body, { error: "unauthorized", message: "Missing or invalid bearer token" });
+  }
+
+  // Negative 3: already-expired task token (negative TTL at mint).
+  const expired = (await call(rig, "POST", "/tasks", { agent: "gone", ttlSeconds: -1 }, "admin-t")).body as {
+    taskId: string;
+    token: { plaintext: string; expiresAt: string };
+  };
+  ok(Date.parse(expired.token.expiresAt) <= Date.now(), "fixture token must already be expired");
+  const expiredStatus = await call(rig, "GET", "/status", undefined, expired.token.plaintext);
+  strictEqual(expiredStatus.status, 401);
+  deepStrictEqual(expiredStatus.body, { error: "unauthorized", message: "Missing or invalid bearer token" });
+
+  // Negative 4: revoked task token — revoked through the admin route.
+  const revocable = (await call(rig, "POST", "/tasks", { agent: "revoked" }, "admin-t")).body as {
+    taskId: string;
+    token: { plaintext: string };
+  };
+  const revokeAck = await call(rig, "POST", `/tasks/${revocable.taskId}/revoke`, undefined, "admin-t");
+  strictEqual(revokeAck.status, 200);
+  const revokedStatus = await call(rig, "GET", "/status", undefined, revocable.token.plaintext);
+  strictEqual(revokedStatus.status, 401);
+  deepStrictEqual(revokedStatus.body, { error: "unauthorized", message: "Missing or invalid bearer token" });
+
+  // Positive 1: valid active agent token (also admin, also runner) reads /status.
+  const agentStatus = await call(rig, "GET", "/status", undefined, created.token.plaintext);
+  strictEqual(agentStatus.status, 200);
+  ok((agentStatus.body as { agents: unknown[] }).agents.length >= 1);
+  strictEqual((await call(rig, "GET", "/status", undefined, "admin-t")).status, 200);
+  strictEqual((await call(rig, "GET", "/status", undefined, "runner-t")).status, 200, "runner fetches the heads vector");
+
+  // Negative 5: task reads reject anonymous callers too.
+  const anonTask = await call(rig, "GET", `/tasks/${created.taskId}`);
+  strictEqual(anonTask.status, 401);
+  deepStrictEqual(anonTask.body, { error: "unauthorized", message: "Missing or invalid bearer token" });
+
+  // Positive 2: the owning agent's token (and admin) read the task.
+  const ownTask = await call(rig, "GET", `/tasks/${created.taskId}`, undefined, created.token.plaintext);
+  strictEqual(ownTask.status, 200);
+  strictEqual((ownTask.body as { agentId: string }).agentId, created.agentId);
+  strictEqual((await call(rig, "GET", `/tasks/${created.taskId}`, undefined, "admin-t")).status, 200);
+
+  // Ladder extras.
+  const stranger = (await call(rig, "POST", "/tasks", { agent: "stranger" }, "admin-t")).body as {
+    token: { plaintext: string };
+  };
+  strictEqual(
+    (await call(rig, "GET", `/tasks/${created.taskId}`, undefined, stranger.token.plaintext)).status,
+    403,
+    "valid foreign token is 403, not 401",
+  );
+  strictEqual((await call(rig, "GET", `/tasks/${created.taskId}`, undefined, "runner-t")).status, 401);
+  strictEqual((await call(rig, "GET", `/tasks/${expired.taskId}`, undefined, expired.token.plaintext)).status, 401);
+  strictEqual((await call(rig, "GET", `/tasks/${revocable.taskId}`, undefined, revocable.token.plaintext)).status, 401);
+  strictEqual((await call(rig, "GET", "/tasks/task-9999", undefined, created.token.plaintext)).status, 404);
+  strictEqual((await call(rig, "GET", "/tasks/task-9999")).status, 401, "anonymous callers cannot probe task ids");
 });
 
 test("rejectionMessage helper stays honest (guards the suite itself)", async () => {

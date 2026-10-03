@@ -207,6 +207,19 @@ Changes since 0.1 (muse-r46 cross-family review, 2026-10-03):
    branch and records the fork's head at creation as `base_sha` (an
    explicit `base_sha` equal to the canonical tip is honored exactly).
    Local mode is unchanged.
+5. **READ AUTH — `GET /status` and `GET /tasks/:id` require a bearer
+   token** (codex C1462 Task 1, breaking; supersedes "read routes stay
+   open" above). `GET /status` accepts ADMIN_TOKEN, RUNNER_TOKEN (the
+   runner fetches the heads vector before `POST /checks`) or any valid
+   per-task agent token. `GET /tasks/:id` is owner-or-admin: a valid token
+   for a DIFFERENT agent is **403**. The token expiry (denied AT the expiry
+   instant) and revocation gates apply to reads exactly as to writes; the
+   sidecar webhook bearer is ingest-only and is NOT a read credential.
+   Anything else — missing, malformed, unknown, expired or revoked
+   credentials — is **401** with
+   `{ "error": "unauthorized", "message": "Missing or invalid bearer token" }`.
+   Auth resolves before task existence, so anonymous callers cannot probe
+   task ids.
 
 ## Deployment boundary (codex C-1309)
 
@@ -235,15 +248,16 @@ Worker env (`.dev.vars` for wrangler dev, miniflare bindings in tests):
 
 | Variable | Used by | Meaning |
 | --- | --- | --- |
-| `ADMIN_TOKEN` | POST /setup, POST /tasks, (all mutating routes) | admin bearer; unset => 503 fail closed |
-| `RUNNER_TOKEN` | POST /checks | trusted radar runner bearer |
+| `ADMIN_TOKEN` | POST /setup, POST /tasks, (all authenticated routes, reads included) | admin bearer; unset => 503 fail closed |
+| `RUNNER_TOKEN` | POST /checks, GET /status | trusted radar runner bearer |
 | `LOCAL_ARTIFACTS_URL` | Coordinator | sidecar base URL (local mode) |
 | `LOCAL_ARTIFACTS_TOKEN` | Coordinator + `/events/*` auth | sidecar shared bearer; also accepted by the two webhook routes (`/events/push`, `/events/artifacts`); must equal the sidecar's `SIDECAR_TOKEN` |
 | `ARTIFACTS` | Coordinator | real Cloudflare Artifacts binding (real mode) |
 | `RADAR_IMPL` | Coordinator | `stub` (default) or `silent` |
 
 Agent per-task tokens (write tokens returned by `POST /tasks`) authenticate
-their agent on `/events/push`, `/tasks/:id/tests` and `/warnings/:id/ack`;
+their agent on `/events/push`, `/tasks/:id/tests`, `/warnings/:id/ack`,
+`GET /status` (any valid agent token) and `GET /tasks/:id` (owner only);
 the DO stores only a SHA-256 digest. Tokens are never logged or echoed in
 error bodies. `wrangler dev` binds localhost only; deploying publicly
 requires an auth review first — checklist: token rotation, TLS, a DEDICATED
@@ -255,8 +269,8 @@ rotated secret for the Artifacts event subscription on `/events/artifacts`
 
 All bodies are JSON. Errors: `{ "error": string }` (+ extra fields where
 noted). Statuses: 400 bad input, 401 bad/missing bearer, 403 valid token
-but wrong agent (cross-agent write), 404 unknown task/warning, 409 stale
-vector, 503 auth secret unconfigured.
+but wrong agent (cross-agent write, or foreign task read), 404 unknown
+task/warning, 409 stale vector, 503 auth secret unconfigured.
 
 ### POST /setup — admin
 
@@ -360,7 +374,7 @@ change list above for the exact canonical request shape.
   "currentHeads": { ... } }
 ```
 
-### GET /status — open
+### GET /status — bearer required (admin, runner or valid agent token)
 
 ```json
 { "canonical": { "name": "...", "remote": "..." },
@@ -392,7 +406,7 @@ visibly distinct from `clean`. While an agent has an unprocessed push
 `unprocessedReason` set and `stale: true`: the agent's true head is
 unknown, so a stored clean never presents as current.
 
-### GET /tasks/:id — open
+### GET /tasks/:id — bearer required (owning agent or admin)
 
 ```json
 { "taskId": "task-0007", "agentId": "claude-0007",

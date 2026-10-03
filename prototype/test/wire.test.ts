@@ -73,7 +73,8 @@ async function post(path: string, body: unknown, token?: string): Promise<Respon
 }
 
 async function get(path: string): Promise<Response> {
-  return SELF.fetch(`http://localhost${path}`);
+  // C1462 Task 1: reads are bearer-gated; the suite reads as admin.
+  return SELF.fetch(`http://localhost${path}`, { headers: { authorization: `Bearer ${ADMIN_TOKEN}` } });
 }
 
 async function json<T>(response: Response): Promise<T> {
