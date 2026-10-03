@@ -628,16 +628,19 @@
       );
     }
     if (ev) {
-      var matchesHead = !stale && (!currentHead || !ev.head || ev.head === currentHead);
+      var matchesHead = !currentHead || !ev.head || ev.head === currentHead;
       var passed = ev.exitCode === 0;
+      var resultBadge = stale
+        ? (passed
+          ? "<span class='badge not_checked'>Passed (unconfirmed)</span>"
+          : "<span class='badge unknown'>Failed — exit " + esc(ev.exitCode) + "</span>")
+        : (passed
+          ? "<span class='badge clean'>Passed</span>"
+          : "<span class='badge unknown'>Failed — exit " + esc(ev.exitCode) + "</span>");
       return (
         "<div class='evidence'><dl>" +
         "<dt>Command</dt><dd><code>" + esc(ev.command) + "</code></dd>" +
-        "<dt>Result</dt><dd>" +
-        (passed
-          ? "<span class='badge clean'>Passed</span>"
-          : "<span class='badge unknown'>Failed — exit " + esc(ev.exitCode) + "</span>") +
-        "</dd>" +
+        "<dt>Result</dt><dd>" + resultBadge + "</dd>" +
         "<dt>Tested change</dt><dd>" + shaHtml(ev.head) +
         (stale
           ? " <span class='muted small'>(live status unconfirmed · " + esc(stale.error.message) + ")</span>"
