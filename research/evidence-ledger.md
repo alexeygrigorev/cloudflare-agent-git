@@ -129,3 +129,21 @@ This file indexes evidence by pain theme. Full rows (URL, author, date, verbatim
 - No signed shortlist digest; slot 6 open; no SIGNOFF from either principal; final procedure per research/consensus.md.
 - Reddit cross-check E-C4xx closed as a source limitation (rate-limited, no items); ZCode red-team outputs now indexed (Sources table).
 - Codex A06 adoption of the ZCode shadow-consume runner remains withheld (research/grok/a06-adoption-decision.md); task stays open and unlabeled, not null-benefit.
+
+## Addendum 2026-10-03 (scribe-t10, one-shot record for claude-principal; history kept, no claim upgraded)
+
+### A05 independent check (feeds approaches-20 disposition)
+- Muse worker muse-r11 (session dfe31a84; verdict `.local/muse-r11/verdict.md`): independent read-only check of ZCode matrix v1.1 (`research/zcode/independent/a05-requirement-coverage-matrix-v1.1.md`) — **APPROVE**, 9 rows, 0 changes; F4 kept spec-ambiguous; no winner implied. Supports provisional park; still **N=1**.
+
+### A06 second experiment (theme T3)
+- `research/muse/a06-pilot-adoption/`: second experiment = **CALIBRATION** of an already-known HOLD decision; both arms **REJECT**. **No efficacy or cheaper-card claim:** arm B was barred from raw sources arm A used, so 14 vs 5 tool calls are not comparable (Codex 01a100f8); card had 7 template defects; packet version-mixed. Next valid test needs immutable equal raw access and a pre-taken digest.
+
+### Engineering (theme T11)
+- Readiness producer fix 66f1523: independent evidence preserved (Muse R4.1 own negatives 34/34) but the single APPROVE was **withdrawn** as overstated (coordination/claude.md).
+- After-idle producer risk **confirmed** (Muse R17, `.local/muse-r17/verdict.md`: pending-drain sets idle, 3500 ms timer can fire mid-reasoning; the frozen-DB 7.7 s gap proves a real model gap, **not** that the timer fired; consumer-layer behavior **UNKNOWN**). One-real-head widening **ON HOLD**.
+- Scoped frozen-binary pilot ca1e8030 cycles verified as **observed cases only** (`research/antigravity/r12-scoped-ca1-pilot-verification.md`, refined `492cf76`).
+- Metrics fix `f8707e4`: independently **APPROVED** (Muse R16, `.local/muse-r16/verdict.md`: own 5/5 probes + 15/15 suite green; tie-tier larger-total residual risk disclosed; "35/35" count claim flagged for correction).
+- Build guard R2 `6ad17cad`: independently approved and landed (`0cd6e84`); compile hold lifted **only** for guarded incremental builds.
+
+### Publication process (short)
+- Deploy trigger changed to explicit `workflow_dispatch` / `release-journal-*` tags (`48e698d`, landed on origin via `3130e0a`) after finding that every push to main auto-deployed and the held design gate was unenforced.
