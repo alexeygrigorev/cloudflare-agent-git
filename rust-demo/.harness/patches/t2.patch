@@ -1,0 +1,135 @@
+From c7d8dbc0d6d306d0b8cf0e28c343e4b4ae6eb260 Mon Sep 17 00:00:00 2001
+From: zc-rust-lane <zc-rust-lane@agents.local>
+Date: Sat, 3 Oct 2026 17:55:52 +0200
+Subject: [PATCH] t2 reference solution
+
+---
+ src/lib.rs     | 41 ++++++++++++++++++++++++++++++-----------
+ tests/basic.rs | 18 +++++++++++++-----
+ 2 files changed, 43 insertions(+), 16 deletions(-)
+
+diff --git a/src/lib.rs b/src/lib.rs
+index 388136f..0285b1a 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -16,6 +16,15 @@ pub use code::Code;
+ /// well-defined one-line "small edit" knob.
+ pub const MAX_LINKS: usize = 10_000;
+ 
++/// A successful resolution: the stored URL plus the canonical base62 code
++/// that matched (post-normalization), so callers can echo back a canonical
++/// short link even when the user typed `  1O `.
++#[derive(Debug, Clone, PartialEq, Eq)]
++pub struct Resolved<'a> {
++    pub url: &'a str,
++    pub code: String,
++}
++
+ /// An in-memory short-link store: code -> (url, hits).
+ #[derive(Debug, Default)]
+ pub struct ShortLinks {
+@@ -62,11 +71,16 @@ impl ShortLinks {
+         Some(code)
+     }
+ 
+-    /// Resolves a code string (any case, surrounding whitespace tolerated)
+-    /// to the stored URL, or `None` if unknown.
+-    pub fn resolve(&self, code: &str) -> Option<&str> {
++    /// Resolves a code string (any case, surrounding whitespace tolerated).
++    /// Returns the stored URL together with the canonical code that matched,
++    /// or `None` if unknown.
++    pub fn resolve(&self, code: &str) -> Option<Resolved<'_>> {
+         let key = normalize_code(code);
+-        self.by_code.get(&key).map(|e| e.url.as_str())
++        let (canonical, entry) = self.by_code.get_key_value(&key)?;
++        Some(Resolved {
++            url: entry.url.as_str(),
++            code: canonical.clone(),
++        })
+     }
+ 
+     /// Hit counter for a code string, or `None` if unknown.
+@@ -117,8 +131,11 @@ mod tests {
+         let c1 = links.insert("https://example.com/a");
+         let c2 = links.insert("https://example.com/b");
+         assert_ne!(c1, c2);
+-        assert_eq!(links.resolve(&c1.to_base62()), Some("https://example.com/a"));
+-        assert_eq!(links.resolve(&c2.to_base62()), Some("https://example.com/b"));
++        let r1 = links.resolve(&c1.to_base62()).unwrap();
++        assert_eq!(r1.url, "https://example.com/a");
++        assert_eq!(r1.code, c1.to_base62());
++        let r2 = links.resolve(&c2.to_base62()).unwrap();
++        assert_eq!(r2.url, "https://example.com/b");
+         assert_eq!(links.len(), 2);
+     }
+ 
+@@ -127,14 +144,18 @@ mod tests {
+         let mut links = ShortLinks::new();
+         let code = links.insert("https://example.com/x");
+         let raw = code.to_base62();
+-        assert_eq!(links.resolve(&raw.to_uppercase()), Some("https://example.com/x"));
+-        assert_eq!(links.resolve(&format!("  {raw} ")), Some("https://example.com/x"));
++        let up = links.resolve(&raw.to_uppercase()).unwrap();
++        assert_eq!(up.url, "https://example.com/x");
++        assert_eq!(up.code, raw);
++        let padded = links.resolve(&format!("  {raw} ")).unwrap();
++        assert_eq!(padded.url, "https://example.com/x");
++        assert_eq!(padded.code, raw);
+     }
+ 
+     #[test]
+     fn unknown_code_is_none() {
+         let links = ShortLinks::new();
+-        assert_eq!(links.resolve("zzzzzz"), None);
++        assert!(links.resolve("zzzzzz").is_none());
+         assert_eq!(links.hits("zzzzzz"), None);
+         assert!(links.is_empty());
+         assert_eq!(links.total_hits(), 0);
+@@ -143,8 +164,6 @@ mod tests {
+     #[test]
+     fn insert_opt_respects_max_links() {
+         let mut links = ShortLinks::new();
+-        // Shrink the ceiling by filling just below it using a temporary store
+-        // with the real const: use a wrapper that stops after MAX_LINKS.
+         for _ in 0..MAX_LINKS {
+             assert!(links.insert_opt("https://example.com/fill").is_some());
+         }
+diff --git a/tests/basic.rs b/tests/basic.rs
+index 397230d..1bb7010 100644
+--- a/tests/basic.rs
++++ b/tests/basic.rs
+@@ -13,10 +13,16 @@ fn sample() -> ShortLinks {
+ #[test]
+ fn resolves_all_inserted_urls() {
+     let links = sample();
+-    assert_eq!(links.resolve("1"), Some("https://example.com/docs"));
+-    assert_eq!(links.resolve("2"), Some("https://example.com/blog"));
+-    assert_eq!(links.resolve("3"), Some("https://example.com/repo"));
+-    assert_eq!(links.resolve("4"), None);
++    let r1 = links.resolve("1").unwrap();
++    assert_eq!(r1.url, "https://example.com/docs");
++    assert_eq!(r1.code, "1");
++    let r2 = links.resolve("2").unwrap();
++    assert_eq!(r2.url, "https://example.com/blog");
++    assert_eq!(r2.code, "2");
++    let r3 = links.resolve("3").unwrap();
++    assert_eq!(r3.url, "https://example.com/repo");
++    assert_eq!(r3.code, "3");
++    assert!(links.resolve("4").is_none());
+ }
+ 
+ #[test]
+@@ -25,7 +31,9 @@ fn codes_round_trip_through_base62() {
+     let code = links.insert("https://example.com/round");
+     let parsed = parse_base62(&code.to_base62()).expect("valid base62");
+     assert_eq!(parsed, code);
+-    assert_eq!(links.resolve(&parsed.to_base62()), Some("https://example.com/round"));
++    let r = links.resolve(&parsed.to_base62()).unwrap();
++    assert_eq!(r.url, "https://example.com/round");
++    assert_eq!(r.code, code.to_base62());
+ }
+ 
+ #[test]
+-- 
+2.43.0
+
