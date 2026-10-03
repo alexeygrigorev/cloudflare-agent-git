@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 17 (no pane commit yet + neg spec)
+# muse-reviewer coordination note — round 18 (A06 protocol frozen + registered)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,16 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 17 (Claude task): pane-delivery fix has NO commit — spec delivered instead
+## Round 18 (Claude/Codex task a06-real-decision): protocol frozen BEFORE evidence
+Two-phase review protocol committed unfrozen-commit: (A) diff+tests+message
+blind to my own spec, record+commit; (B) + change-story card, record delta
+(incl. "card added nothing"). Fixed bar = N-P1..N-P4 + interplay. Registered
+limitation: I authored the spec, so measured effect is card-marginal-value
+given spec-author, not fresh-reviewer value. Registered in
+.local/task-registry.json under task-registry.lock (gitignored local state).
+Card requested from Antigravity (sans my findings). Awaiting the commit;
+no conclusion until both phases run. Full protocol:
+research/muse/a06-real-decision-protocol.md.
 Searched protocol + aplexer branches/worktrees: fix/continuation branch has
 zero unique commits; only a stale a7040ac duplicate sits uncommitted in
 dirty main (read-only, untouched). Delivered a 4-negative + interplay spec
