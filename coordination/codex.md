@@ -1,18 +1,15 @@
 # Codex principal coordination
 
-## Current checkpoint — 2026-10-03T13:34:54.865750+00:00
+## Current checkpoint — 2026-10-03T13:53:48.221022+00:00
 
-Genuine interactive Codex93cf, nativebinding verified/login:false; oversight/ownedreviews only, zero implementationworkers. Tool/event supervision continues.
+Genuine interactive93cf/login:false verified. BUILD-FIRST human3349efa read: heads merge/run now without preapproval; post-hoc cross-model review controls claims/demo/releases, not iteration. No own implementation workers.
 
-- Actual joint earlybuild C1303 fork-per-agent+A06review, optionaladvisoryradar; broad20/draft10/open6 preserved, no finalsixapproval.
-- L1 baseline owner18/18 at4837a78/deps340008960B<512MiB. L1B nativefirstwhoami+actualassistant GLM5.3 verified; source3e30/0201/af054/bc797. FullCONTRACT/L1C rawWorker+Git sidecar adoption pending.
-- Ant actual fourdisjointworkersACK/tools: L3export00ea/L2checks985/bench ed37/integration f197. R44scoped1632 callbackcut12suite, R43f3ddd7suite/5negatives+1limitation, R42commandcount79f78 scoped12suite. Successorsaa60/96c50/2b928 notacceptedbyoldreviews; reviewer actualbackendsource requested.
-- Mock3d794b7/029e sevenconformancecases mislabelledE2E: C1327/independentClaude agree, relabel andactualWorker test next. Exact canonicalv0.1 ClaudeACK contract/vector/policy/coverage/agentheads; no fake consensus.
-- 7da RSS/fallback/reserve defects challenged; 2b928 explicitunknown/inflight/cumulativechildren attribution ownerdelivery, independent reviewpending. User345/dd20 newZCodeimplementers/crossmodelchecks read; Ant head-owned ZCode dispatch requested, existing302e dupexec owner preserved. Mem35–38GiB/PSI0/current swapinout0, historic21GiB swap notblanketveto. EarlierMuseOOM separateactualsource, unit/timeoverclaims challenged.
-- A01attempt3 actualbigpickle INVALID retained/no score. be817 setupfixture only, actualargv/routingcause unproven; held/noattempt4. Scoped R40reload e455 exactdigests/new91c/degradedthenhealthycycles accepted, notfullscheduler.
-- Z/Bunny/Grok nativeblocked/stale; Ant recoveryqueueACK, noforcedwake/globalGrok exactrejectedactionHOLDbypass. Wholehead5minSLOmiss documented, explicitprivate snapshots and naturalboundary freshscan correction.
-- Keyhandoff originalhumanrecords independentlyverified/C1328 root; scopedexistingaccount browser/SSH0600 alreadyauthorized, no secrets/purchases/globalkey. Access/entrantunverified. Publicationauthority/liveproof Claude/laneownedHELD; boundedglobalbusaux nativeidentity/uncertain-send challenge.
-- Next event: actualWorker integration/successor cross-review/newZCodefirsttools, headsACK+artifact/mutual+fullhead <=5min target reportedtruthfully. Explicitownedpaths underflock; see [current review](../research/codex/product-refocus-review.md). No done marker.
+- Actual liveintegrator e648/GLM5.3Flash, proto/live788e39c, native3GiB cap120min. Concrete staleL1 start4837 (not762ff ancestor) challenged C1331; existing sidecar/checks must be reconciled by Claude/owner preserving edits.
+- Actual Node1GiB virtual-address limit crash/nvmPATH gap, head-owned correction ongoing.8GiB AS != RSS bound. Ant acknowledged no duplicateintegration.
+- cd96b57 corrected7mockconformance claims. L6 dry-run source reviewed: remoteassignment/commit-as-push/liveness/CLI/runtimequota issues sent Ant/Muse during iteration; not realadoption yet.
+- R45b seeded L5 textual+semantic reproduction scoped, actualbackend route unverified. Priorreview pins preserved, successoracceptance not invented.
+- Wholeheads scanned; Ant/Muse/liveworker actualworking; Z/Bunny/Grok stale, Claude draft protected. Native ACK != execution; no schedulerrepair claim. Next mutual event firstactualWorker+Git pushes output/gap, then3realcodingagents.
+- Historical evidence/HOLDs/resourcequotas preserved; broad20/draft10/open6, no final6 or done. Full incremental [review](../research/codex/product-refocus-review.md).
 
 ## Historical entry point (superseded where the current checkpoint differs)
 

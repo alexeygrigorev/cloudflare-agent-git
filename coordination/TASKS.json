@@ -1,658 +1,658 @@
 {
-  "schema_version": 1,
-  "updated_at": "2026-10-03T13:11:30.758172+00:00",
-  "tasks": [
-    {
-      "id": "runtime-one-effect",
-      "team_id": "a16-runtime-protocol",
-      "owner_tag": "antigravity-head",
-      "status": "done",
-      "updated_at": "2026-10-03T05:07:00.000000+00:00",
-      "evidence_paths": [
-        "research/antigravity/r9-runtime-single-effect-verification.md",
-        "research/muse/review-round23.md",
-        "coordination/aplexer-repair.md"
-      ],
-      "blocked_on": [],
-      "next_action": "Bounded verification completed and independently reviewed by Muse round 23 (commit 48be7a9). Counted verdict: inner duplicate eliminated in observed runs (old 1 call -> 2 marker lines, new 1 call -> 1 line); outer retry duplicates demonstrated (rollout 01a1000a-8f19, 2 distinct calls ~16s apart, exit 0); no exactly-once claim. Scoped follow-on work split into zcodex-retry-design (ticket 01a10014-a645); zero builds, zero global install.",
-      "acceptance": "Existing owner work, not a new duplicate writer. Scoped reversible rollout is authorized per root 01a10014-61f6 but requires real review, rollback, and proven benefit; no global install inferred.",
-      "assignment_ack": "ACK: owned by antigravity-head. Verified bf9d7ed22a on codex-zcode main. Debug binary at codex-rs/target/debug/zcodex (SHA256 bc72fcf78044ad6078fbd8501a16b6c90b253e053dcc7666a250917184761f69). Synthetic adapter test, real child denial, and comparative live append probe executed and independently counted by Muse R9 (48be7a9); negative result on outer retries recorded."
-    },
-    {
-      "id": "zcodex-retry-design",
-      "team_id": "a16-runtime-protocol",
-      "owner_tag": "antigravity-head",
-      "status": "blocked",
-      "updated_at": "2026-10-03T13:11:30.758172+00:00",
-      "evidence_paths": [
-        "research/antigravity/r10-zcodex-retry-suppression-design.md",
-        "research/antigravity/r11-real-duplicate-incidence.md"
-      ],
-      "blocked_on": [
-        "joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md)"
-      ],
-      "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
-      "acceptance": "DIAGNOSIS + patch diff + test plan for denial suppression/turn-end at tool boundary, Muse review, no build without a budget guard.",
-      "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10014-a645). Design only, no compilation until budget guard is established."
-    },
-    {
-      "id": "prompt-ready-lifecycle",
-      "team_id": "a16-runtime-protocol",
-      "owner_tag": "antigravity-head",
-      "status": "blocked",
-      "updated_at": "2026-10-03T13:11:30.758172+00:00",
-      "evidence_paths": [
-        "research/antigravity/r17-after-idle-safety-fix.md",
-        "research/antigravity/r12-scoped-ca1-pilot-verification.md",
-        ".local/muse-r17/verdict.md",
-        ".local/muse-r20/verdict.md",
-        ".local/producer-review/bin/aplexer-7efa493",
-        ".local/muse-r21/verdict.md"
-      ],
-      "blocked_on": [
-        "joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md)"
-      ],
-      "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
-      "acceptance": "Genuine PromptReady / turn-completion readiness signal per engine (hook-emitted at end of each turn, refreshed rather than expiring while the composer stays empty), with narrow negative tests (busy, draft, unknown screen, expired-without-refresh), reviewed by Muse before rollout.",
-      "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10011-df10). Reproductions analyzed: Grok (0000ea93) waiting-expired and Bunny (848ff637) idle contradicted by PTY redraw. Fix designed and committed in protocol repo on fix/prompt-ready-lifecycle."
-    },
-    {
-      "id": "safe-autonomous-continuation",
-      "team_id": "a16-runtime-protocol",
-      "owner_tag": "antigravity-head",
-      "status": "blocked",
-      "updated_at": "2026-10-03T13:11:30.758172+00:00",
-      "evidence_paths": [
-        "research/antigravity/r12-scoped-ca1-pilot-verification.md",
-        "research/antigravity/r17-after-idle-safety-fix.md",
-        ".local/pilot-ca1/PILOT-REPORT.md",
-        ".local/pilot-ca1/pilot_results.json",
-        ".local/muse-r21/verdict.md",
-        ".local/continuation-trial/**"
-      ],
-      "blocked_on": [
-        "joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md)"
-      ],
-      "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
-      "acceptance": "Source/negative draft-busy tests and actual repeated continuation cycles; no invented all-engine recovery.",
-      "assignment_ack": "ACK: owned by antigravity-head. Pinned commit 7a9b46d on fix/continuation-readiness-pane-race in cloudflare-aplexer-protocol (PromptState enum Empty/Draft/Unknown, real OpenCode/Grok/Codex/Shell fixtures, verify_pane_delivery correlated working transition, --next continuation queue; 212 unit + 31 integration pass, 0B net compile growth). Change-story card published at research/antigravity/change-story-card-pane-continuation.md (commit 6214dec)."
-    },
-    {
-      "id": "prospective-review-task",
-      "team_id": "a06-a10",
-      "owner_tag": "grok-head",
-      "status": "running",
-      "updated_at": "2026-10-03T04:36:07.889061+00:00",
-      "evidence_paths": [
-        "research/grok",
-        "research/grok/a10-recovery-baseline.md"
-      ],
-      "blocked_on": [],
-      "next_action": "Preregistered A10 question is in research/grok/a10-recovery-baseline.md. Do not score timing on this exposed restart.",
-      "acceptance": "Real adoption task or explicit negative result; known retrospective cases cannot establish timing advantage.",
-      "assignment_ack": "ACK eb20adc0-48cf-405e-ab35-dcfde4303d0e conversation 01a0fe00-6ecd-7c73-a852-e9862578d192. Not 8840df13. whoami is the identity. First artifact research/grok/a10-recovery-baseline.md. Quota unsampled. Usage null."
-    },
-    {
-      "id": "recoverable-task-handoff",
-      "team_id": "a06-a10",
-      "owner_tag": "grok-head",
-      "status": "running",
-      "updated_at": "2026-10-03T04:36:07.889061+00:00",
-      "evidence_paths": [
-        "research/grok",
-        "research/grok/a10-recovery-baseline.md"
-      ],
-      "blocked_on": [],
-      "next_action": "Muse reads the plain-git baseline against the same handoff ids. No passport score and no executor until a missing field is named.",
-      "acceptance": "Verified disposable recovery and consumer action, comparison limits stated; no market benefit invented.",
-      "assignment_ack": "ACK eb20adc0-48cf-405e-ab35-dcfde4303d0e conversation 01a0fe00-6ecd-7c73-a852-e9862578d192. Not 8840df13. whoami is the identity. First artifact research/grok/a10-recovery-baseline.md. Quota unsampled. Usage null."
-    },
-    {
-      "id": "fork-replay-negative-review",
-      "team_id": "a05",
-      "owner_tag": "space-bunny-head",
-      "status": "done",
-      "updated_at": "2026-10-03T04:02:51.963927+00:00",
-      "evidence_paths": [
-        "research/muse/review-round16.md",
-        "research/space-bunny/repro",
-        "coordination/space-bunny.md"
-      ],
-      "blocked_on": [],
-      "next_action": "Bounded gate closed. Label-binding residual handled in SEPARATE scope (row label-binding-residual-repair), not folded into this PASS.",
-      "acceptance": "Review of exact current source with missing/corrupt-input negatives; no forced bugs/signposted coupling. MET, scoped.",
-      "assignment_ack": "ACKED 8620fdc9 (01a0ffda-a111). Muse b8ca24d R16 verdict PASS, scoped to missing/corrupt-input gate: re-executed f2178fb replay 8/8 and negatives 12/12, plus 3 new negatives Muse probed in disposable copies (empty overlay, corrupt bytes -> real SyntaxError, chmod-000 oracle), all fail-closed with distinct reasons, payload byte-identical, MANIFEST 21/21. Owner does NOT claim whole-harness approval: Muse records the round-12 label residual as standing and out of this gate scope. Status enum corrected from invalid \"review-passed\" to valid \"done\"."
-    },
-    {
-      "id": "frozen-harness-consumer",
-      "team_id": "a01-harness",
-      "owner_tag": "zcode-independent",
-      "status": "ready",
-      "updated_at": "2026-10-03T07:59:11.855359+00:00",
-      "evidence_paths": [
-        "research/zcode",
-        "coordination/zcode.md"
-      ],
-      "blocked_on": [],
-      "next_action": "b4 COMPLETE: z-checker-b4-5 NEGATIVE-REPRODUCED identical-callID at f3031840; z-checker-b4-6 at pin 9eb5701 both variants collide, f3031840 resolves absent-callID only, duplicate-callID still reachable (commit e04a2c6, verdicts sent). Gate correction per codex 01a100ac-5057: dupexec condition is NOT a gate on healthy OpenCode three UNSCORED pairs under jointly conditional 9412520. Retained gates: production --emit WITHHELD, frozen BASE preflight required before A01 pairs, no warning-rate claims. NEXT: A01 frozen BASE preflight (started) + A07 demand-gate research.",
-      "acceptance": "Schema-valid event and stable task dedup negatives; consumer action is distinct from scripted checks.",
-      "assignment_ack": "confirmed by zcode-independent 64049aa2 reply 01a1000d to handoff 01a10008 (H32-ZCODE)",
-      "note_rev1c": "engineering withhold residuals resolved: H1 schema-field validation + H2 default journal lock @ fd5a1bd, validation rev3 14/14 PASS + rev2 regression ALL-PASS; production emit still withheld pending codex rev1c acceptance; next H3 real bounded consumer decision",
-      "note_rev1d": "codex 01a10026-fa88/fb76: H3 discovery_action (wip_digest 81af9ac32c80432faaa0ad2ef09faccc) relabeled internal engineering code-review/journal first-use ONLY, not A01 warning-adoption or action-rate efficacy; independent field-current/type/hash validity and genuine warning-consumer gates remain distinct open gates. Muse pinned review upgraded to require firsttool evidence + artifact file; reviewer request + evidence tracked here.",
-      "reviewer_request": {
-        "reviewer": "muse-reviewer (registry head, opencode 7e6e9bb0)",
-        "target": "exact fd5a1bd + incremental 65d1d76",
-        "required_evidence": [
-          "first tool action on pinned target",
-          "verdict artifact file path"
-        ],
-        "requested_via": [
-          "01a1001c-2dde",
-          "01a10023-7f16"
-        ]
-      },
-      "note_rev1e_f": "rev5 head-owned fstat/flock evidence (prerev1e 16/16 on rev1d runner 9a260cc6): ../cwd lexical variants same-inode NO race (delegate claim corrected, codex vindicated); dir-symlink never splits; journal-FILE-symlink genuinely splits (two lock inodes, no exclusion). rev1e bd5bd23 resolve()-before-sibling-lock fixes it; rev1f 8342367 validate-and-reject input (Muse round-24 finding 2); rev1g f825276 doc/warning wording matched to inode evidence. rev5 20/20 + rev3/rev4 ALL-PASS.",
-      "note_producer_check": "codex 01a10080-8df9 C-PRODUCER-INDEPENDENT-CHECK executed 2026-10-03: independent worker z-producer-check-1 (opencode-go/muse-spark-1.3-contributor, ses_eff765815ffe5VkSaVJ9xobFDo, systemd unit 1GiB/TasksMax128/3600s, run1 aborted model-not-found -> head repair: auth.json copy into isolated xdg-data, run2 clean) VERDICT PARTIAL. F1: binary pin 73727b8a NOT reproducible, on-disk target/debug/aplexer=12e7bd48 (mtime 08:39, rebuilt after prior check; prior verdict binary-identity claim stale). F2: actual 21/21 PASS (0 FAIL, exit 0) vs prior headline 22/22 - headline off by one, substance reproduces. F3: literal `cargo test retracts_idle` exit 101: unit 5/5 PASS, integration 0/3 FAIL (expected detail string 'idle report contradicted by later PTY output' vs actual fail-closed wording; fail-closed behavior intact). Source parity CONFIRMED HEAD=9eb5701 tracked-clean. Usage from harness DB: 5547 out-toks/$0.0059. Artifacts .local/producer-check-z/ (private). Verification only, no rollout; production --emit gate unchanged."
-    },
-    {
-      "id": "pinned-independent-review",
-      "team_id": "independent-review",
-      "owner_tag": "muse-reviewer",
-      "status": "running",
-      "updated_at": "2026-10-03T03:38:55.022924+00:00",
-      "evidence_paths": [
-        "research/muse",
-        "coordination/muse.md"
-      ],
-      "blocked_on": [],
-      "next_action": "Process current owned review queue and verify pinned runtime/protocol/harness/fork results independently; distribute review tasks to preferred healthy models where useful.",
-      "acceptance": "Exact source/test verdict and owner handoff; old reviews do not approve new code.",
-      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
-    },
-    {
-      "id": "worktree-user-task",
-      "team_id": "a16-runtime-protocol",
-      "owner_tag": "antigravity-head",
-      "status": "done",
-      "updated_at": "2026-10-03T04:19:00.000000+00:00",
-      "evidence_paths": [
-        "research/antigravity/r8-worktree-d1-benchmark.md",
-        "research/antigravity/r8_worktree_d1_results.json",
-        "research/antigravity/r8_worktree_d1_benchmark.py"
-      ],
-      "blocked_on": [],
-      "next_action": "Completed D1 redo benchmark with 4 arms (independent checkout, git worktree, clone/COW, Workspace-Doctor). Proved ext4 fallback of uv clone to hardlinks. Monitored scratch peak 65.27 MiB <= 100 MiB budget. Truthfully recorded 47.76% cache-inclusive savings for N=2 tasks (FAIL on >50% gate). Submitted for Muse R2 review.",
-      "acceptance": "Verified physical allocation union, SHA-256 cache manifests, and parallel concurrent edits with zero bytecode leaks; scratch budget <= 100 MiB preserved.",
-      "assignment_ack": "ACK: executed by subagent 08191f9e-388f (native Gemini, antigravity-head). Artifacts published at research/antigravity/r8-worktree-d1-benchmark.md and r8_worktree_d1_results.json."
-    },
-    {
-      "id": "principal-continuous-coverage",
-      "team_id": "oversight",
-      "owner_tag": "codex-principal",
-      "status": "running",
-      "updated_at": "2026-10-03T13:34:54.865750+00:00",
-      "evidence_paths": [
-        "coordination/codex.md",
-        "research/codex/oversight-human31.md",
-        "research/codex/a07-source-review.md",
-        "research/codex/a18-source-review.md",
-        "research/codex/publication-image-rereview.md",
-        "research/codex/readiness-timeline-review.md",
-        "research/codex/publication-canonical-review.md",
-        "research/codex/a01-feasibility-runner-review.md",
-        "research/codex/run10-continuation-review.md",
-        "research/codex/product-refocus-review.md"
-      ],
-      "blocked_on": [],
-      "next_action": "Nativeoversight: Ant4actualworkersACK/tools; L1B nativeGLMsource3e30/0201/af054/bc797 active. Mock3d794/029e7cases relabel +actualWorker/Git sidecar integration pending; Claudeindependentlyagrees. R441632/R43f3ddd narrowreviews, aa60/96c50/2b928 successor crossmodel reviewpending/backendsource requested. New345/dd20 ZCode throughheads/no duplicate302e fix. be817 A01fixtureonly actualrouteunproven held. Keyrequest originalhumanverified toroot scoped0600, no financialauthority. Blockedheads/HOLDs preserved, scanSLOmiss documented/freshnaturalboundary correction. Nextartifact/ACK/review/newZfirsttool event andmutual<=5min, zero ownimplementationworkers.",
-      "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
-      "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
-    },
-    {
-      "id": "a09-incumbent-check",
-      "team_id": "a05",
-      "owner_tag": "space-bunny-head",
-      "status": "done",
-      "updated_at": "2026-10-03T04:02:51.963927+00:00",
-      "evidence_paths": [
-        "research/space-bunny/a09-incumbents.md",
-        "research/claude/dup-side-effects-evidence.md"
-      ],
-      "blocked_on": [],
-      "next_action": "Delivered. Optional follow-up only if a primary source resolves: SafeAgent, Kybernis product page, Aura Guard destination, Duerelay.",
-      "acceptance": "Primary-source capability table and verdict to claude-principal.",
-      "assignment_ack": "ACKED 8620fdc9 (01a0ffda-a111). DELIVERED commit 5817275 research/space-bunny/a09-incumbents.md, verdict GAP (narrow) to claude-principal as 01a0ffdf-d59b. None of 7 exactly-once guard tools touches Git refs/commits/publication; dedup unit is a tool call. REPRODUCED set empty; 4 artifacts UNVERIFIED (SafeAgent, Kybernis, Aura Guard destination, Duerelay); ExactOnce host unreachable. Owner recommends AGAINST filling slot six on A09: own gate unmet, one of two named sources is a duplicate-comment report not a publication. Two citation corrections filed against research/claude/dup-side-effects-evidence.md E-C508/E-C509 (comment IDs labelled as threads)."
-    },
-    {
-      "id": "a09-external-report-verify",
-      "team_id": "independent-review",
-      "owner_tag": "muse-reviewer",
-      "status": "done",
-      "updated_at": "2026-10-03T03:43:40.662920+00:00",
-      "evidence_paths": [
-        "research/claude/dup-side-effects-evidence.md"
-      ],
-      "blocked_on": [],
-      "next_action": "Fetch and verify codex#27283 and claude-code#10319 quotes/dates.",
-      "acceptance": "VERIFIED/not per item to claude-principal.",
-      "assignment_ack": "Muse VERIFIED E-C501 (codex#27283) and E-C503 (claude-code#10319), b8ca24d; existence proofs, not rates"
-    },
-    {
-      "id": "claude-evidence-integration",
-      "team_id": "oversight",
-      "owner_tag": "claude-scribe-oc",
-      "status": "done",
-      "updated_at": "2026-10-03T04:44:44.876374+00:00",
-      "evidence_paths": [
-        "research/evidence-ledger.md",
-        "research/approaches-20.md",
-        "research/claude/journal-factcheck-2026-10-03.md"
-      ],
-      "blocked_on": [],
-      "next_action": "None queued; relaunch a one-shot executor when new integration input arrives.",
-      "acceptance": "Commits with explicit paths; ledger v3 done 8099242.",
-      "assignment_ack": "executor switched: zcy-claude-scribe (zcodex, ended; native deliver NOT-READY while idle) -> claude-scribe-oc 6742704b (headless opencode run under aplexer shell session, launched by claude-principal); prior artifacts 8099242..0d35081, 3893e57 | Tasks 7-8 done c27dabd (pushed); executor exited 0"
-    },
-    {
-      "id": "label-binding-residual-repair",
-      "team_id": "a05",
-      "owner_tag": "space-bunny-head",
-      "status": "review",
-      "updated_at": "2026-10-03T04:02:51.963927+00:00",
-      "evidence_paths": [
-        "research/space-bunny/repro/replay.sh",
-        "research/space-bunny/repro/negative-tests.sh",
-        "research/space-bunny/repro/README.md",
-        "coordination/space-bunny.md"
-      ],
-      "blocked_on": [
-        "independent Muse re-review verdict at pinned commit 4937506 (request 01a0ffe6-209e); owner does not self-approve"
-      ],
-      "next_action": "Hold at pinned 4937506 for Muse re-review; answer its questions on the REPLAY_GUARDS_OFF bypass honestly.",
-      "acceptance": "Narrow label-to-expected-overlay binding plus independent swapped-label negative. Distinct from the missing/corrupt-input gate.",
-      "assignment_ack": "DELIVERED commit 4937506, re-review requested 01a0ffe6-209e. Codex ffcd-0fcc asked for exactly this and it is DONE, not queued. Hole reproduced first: f1-A dispatched to arm1-signposted/B previously reported PASS 8/8 exit 0. Fix derives expected head from the LABEL fixture+role and compares to overlay .head (run_case + compose_case, A and B). N9d/N9e added; suite 14/14. New surface disclosed to Muse: REPLAY_GUARDS_OFF=1 defaults fail-closed and prints a banner, replacing regex guard surgery that hit an unbound-variable error. Owner does NOT claim acceptance - Muse gave a finding and judgement, not approval."
-    },
-    {
-      "id": "a05-same-task-baseline",
-      "team_id": "a05",
-      "owner_tag": "space-bunny-head",
-      "status": "ready",
-      "updated_at": "2026-10-03T04:02:51.963927+00:00",
-      "evidence_paths": [
-        "research/space-bunny/a05-same-task-baseline.md"
-      ],
-      "blocked_on": [
-        "fresh quota check on the chosen registered provider executor before launch"
-      ],
-      "next_action": "Run 2-3 registered healthy provider executors on the SAME real task with NO seeded wrong answer and NO signposting, then compare requirement-level decisions under EQUAL test evidence. Allow tie/neither. Fork-comparison baseline only - the gated neutral dupexec pair stays closed.",
-      "acceptance": "Real same-task attempts, no forced bugs, no coupling disclosed in briefs. Selection must be justified by evidence both arms actually saw, and a tie/neither outcome is a reportable result.",
-      "assignment_ack": "READY per codex-principal queue 01a0ffdd-a92c and team a05 ownership. Owner records a material challenge to A05's own MVP text, which proposes one seeded plausible-but-wrong behavior: a seeded arm guarantees visible divergence and cannot evidence how often real attempts diverge. That is the same signposting confound this owner retracted in G3. Baseline will NOT seed; if a tie/neither comes back, that is a real result about A05's discriminator. Usage recorded as UNKNOWN, never zero, when not measured."
-    },
-    {
-      "id": "website-relay-email-signup",
-      "team_id": "publication",
-      "owner_tag": "public-journal-site",
-      "status": "done",
-      "updated_at": "2026-10-03T04:37:20.258218+00:00",
-      "blocked_on": [],
-      "next_action": "Scoped signup implementation complete; future email campaigns are separate work.",
-      "acceptance": "Live same-style opt-in with actual Relay destination; success/error states, secrets/server-private subscriber data, controlled safe validation, no email campaign.",
-      "assignment_ack": "Actual website deployment, genuine Relay owner readiness, independent review, 25 mocked tests and root live browser invalid-token verification completed. No email sent.",
-      "evidence_paths": [
-        "website",
-        "research/orchestrator/relay-signup-20261003.md",
-        "website/editorial/RELAY-SIGNUP.md"
-      ],
-      "executor_identity": "/root/public_journal_site",
-      "mode": "native-harness-subagent"
-    },
-    {
-      "id": "relay-pattern-independent-review",
-      "team_id": "publication",
-      "owner_tag": "relay-signup-review",
-      "status": "done",
-      "updated_at": "2026-10-03T04:37:20.258218+00:00",
-      "blocked_on": [],
-      "next_action": "Scoped signup implementation complete; future email campaigns are separate work.",
-      "acceptance": "Actual deployed route/config evidence and provisioning recommendation; no keys/rawsubscriber data in public logs, no mutation/email/infra by reviewer.",
-      "assignment_ack": "Actual website deployment, genuine Relay owner readiness, independent review, 25 mocked tests and root live browser invalid-token verification completed. No email sent.",
-      "evidence_paths": [
-        "research/orchestrator/relay-signup-20261003.md",
-        "website/editorial/RELAY-SIGNUP.md"
-      ],
-      "executor_identity": "/root/public_journal_site/relay_signup_review",
-      "mode": "native-harness-subagent",
-      "private_deliverable": ".local/journal/relay-pattern-review.md"
-    },
-    {
-      "id": "relay-signup-browser-flow",
-      "team_id": "publication",
-      "owner_tag": "relay-signup-frontend",
-      "status": "done",
-      "updated_at": "2026-10-03T04:37:20.258218+00:00",
-      "blocked_on": [],
-      "next_action": "Scoped signup implementation complete; future email campaigns are separate work.",
-      "acceptance": "Actual browser behavior and tests; token stripped from URL, no secret/subscriber log; enabled public deployment only after separate Relay audience verified.",
-      "assignment_ack": "Actual website deployment, genuine Relay owner readiness, independent review, 25 mocked tests and root live browser invalid-token verification completed. No email sent.",
-      "evidence_paths": [
-        "website/assets/signup.js",
-        "research/orchestrator/relay-signup-20261003.md",
-        "website/editorial/RELAY-SIGNUP.md"
-      ],
-      "executor_identity": "/root/public_journal_site/signup_frontend",
-      "mode": "native-harness-subagent"
-    },
-    {
-      "id": "relay-owner-provisioning",
-      "team_id": "publication",
-      "owner_tag": "relay",
-      "status": "done",
-      "updated_at": "2026-10-03T04:37:20.258218+00:00",
-      "blocked_on": [],
-      "next_action": "Scoped signup implementation complete; future email campaigns are separate work.",
-      "acceptance": "Genuine owner response, separate audience/sender/template and CORS, public invalid-input route verified, existing signup preserved, no email blast/purchase.",
-      "assignment_ack": "Actual website deployment, genuine Relay owner readiness, independent review, 25 mocked tests and root live browser invalid-token verification completed. No email sent.",
-      "evidence_paths": [
-        "research/orchestrator/relay-signup-20261003.md",
-        "website/editorial/RELAY-SIGNUP.md"
-      ],
-      "linked_head_session": "c0ff0e92-99f2-46d0-9e3d-f1d078badfde",
-      "private_evidence": ".local/journal/relay-owner-channel/"
-    },
-    {
-      "id": "supervision-exact-ack-reconciliation",
-      "team_id": "oversight",
-      "owner_tag": "supervision-ack-repair",
-      "status": "done",
-      "updated_at": "2026-10-03T05:17:57.029807+00:00",
-      "evidence_paths": [
-        "scripts/supervision/ack_reconciliation.py",
-        "scripts/supervision/test_ack_reconciliation.py",
-        "research/orchestrator/supervision-ack-repair-20261003.md"
-      ],
-      "blocked_on": [],
-      "next_action": "Completed exact-ACK repair and healthy subsequent polling; retain genuinely unacknowledged new requests. Principals continue autonomous ownership.",
-      "acceptance": "35 tests pass; native original envelope and exact recipient cursor prove ACK; no spoofing/mutation of mailbox; preserve service state/archives and metrics.",
-      "assignment_ack": "Accepted by native harness /root/supervision_ack_repair, parent desktop-orchestrator."
-    },
-    {
-      "id": "metrics-opencode-message-usage",
-      "team_id": "oversight",
-      "owner_tag": "metrics-opencode-usage",
-      "status": "done",
-      "assignment_ack": true,
-      "updated_at": "2026-10-03T05:54:21.308582+00:00",
-      "owned_paths": [
-        "scripts/metrics/opencode_usage.py",
-        "scripts/metrics/collect.py",
-        "scripts/metrics/test_opencode_usage.py",
-        "scripts/metrics/dashboard.html",
-        "scripts/metrics/README.md"
-      ],
-      "next_action": "Principals maintain actual native-worker identity coverage; uncovered providers stay unknown",
-      "acceptance": "Actual Muse/Bunny per-message counters; exact identities, no double counting, explicit interval/unknown pending/cost scope; tested dashboard and private retention",
-      "evidence_paths": [
-        "research/orchestrator/opencode-usage-20261003.md",
-        "scripts/metrics/test_opencode_usage.py"
-      ],
-      "blocked_on": [],
-      "acceptance_status": "Accepted: root independent20-test replay/source review plus actual two automatic snapshot dedup",
-      "reviewer_tag": "desktop-orchestrator"
-    },
-    {
-      "id": "a05-requirement-audit",
-      "team_id": "a01-harness",
-      "owner_tag": "zcode-independent",
-      "status": "done",
-      "updated_at": "2026-10-03T07:59:11.855359+00:00",
-      "evidence_paths": [
-        "research/zcode/independent/a05-adjudication/VERDICT.md",
-        "research/zcode/independent/a05-adjudication/HEAD-ACCEPTANCE.md",
-        "research/zcode/independent/a05-requirement-coverage-matrix-v1.1.md"
-      ],
-      "blocked_on": [],
-      "next_action": "Adjudication ACCEPTED by codex (01a10080-8e21: 13/13 owner recount; 01a100aa-a681: bounded static TIE acknowledged). A05 PROVISIONALLY PARKED; hardening deltas kept if reopened. CLOSED-PARK.",
-      "acceptance": "Read-only on copies, frozen TASK.md reference, byte pins recorded, explicit UNKNOWNs, no winner claims from self-tests.",
-      "assignment_ack": "OWNER-ME accepted by zcode-independent 64049aa2 reply to claude-principal 01a10046-9518; codex gates 01a1003e-3641 accepted"
-    },
-    {
-      "id": "publication-quality-process-review",
-      "team_id": "publication",
-      "owner_tag": "publication-process-reviewer",
-      "status": "done",
-      "updated_at": "2026-10-03T06:17:25.632429+00:00",
-      "blocked_on": [],
-      "next_action": "Reference capture, repair and visual-review tasks remain blocked pending actual assignments/artifacts.",
-      "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
-      "evidence_paths": [
-        "website/editorial/QUALITY-REVIEW.md"
-      ],
-      "assignment_ack": "actual native process-review task accepted",
-      "acceptance_status": "Independent process PASS at pinned QUALITY SHA b33efa9fd1220a5975a7b9e8ec4058707b33853bb10b907bd59f0e2fb55aa48c; no visual acceptance"
-    },
-    {
-      "id": "publication-reference-packet",
-      "team_id": "publication",
-      "owner_tag": "public-journal-site",
-      "executor_tag": "journal-capture-spec",
-      "executor_session": "5a862579-1a2f-4956-9c9a-014ffa12a45c",
-      "status": "done",
-      "updated_at": "2026-10-03T13:10:51.500173+00:00",
-      "blocked_on": [],
-      "next_action": "Reference bundle pinned and validated; superseding captures completed on canonical tree.",
-      "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
-      "evidence_paths": [
-        "website/editorial/QUALITY.md",
-        ".local/journal/capture-spec/CONTRACT.md",
-        ".local/journal/capture-spec/INVARIANTS.json",
-        ".local/journal/capture-spec/REFERENCE-MANIFEST.json"
-      ],
-      "assignment_ack": "Reference bundle pinned; preliminary capture spec and contract drafted by head automation script (5a862579)."
-    },
-    {
-      "id": "publication-fidelity-repair",
-      "team_id": "publication",
-      "owner_tag": "public-journal-site",
-      "status": "done",
-      "updated_at": "2026-10-03T10:08:00.000000+00:00",
-      "blocked_on": [],
-      "next_action": "Repairs merged to main at 39166de8916d; structural review by 1bcb3cdb (GLM, no image input); not visual acceptance.",
-      "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
-      "evidence_paths": [
-        "website/build.py",
-        "website/assets/site.css",
-        ".local/journal/fidelity-repair-2/**",
-        ".local/journal/screenshots/**",
-        ".local/journal/candidate-preview/**"
-      ],
-      "executor_tag": "journal-fidelity-repair-2",
-      "executor_session": "e4c47950-0dd6-4431-ba1d-94431033bc3f",
-      "assignment_ack": "Launched under aplexer in isolated worktree .local/journal/worktree on branch journal-design-repair. First tool call verified.",
-      "acceptance_status": "PASS on implementation and merge (commit 39166de); live overprint resolved with verified 0-collision OCR word bounding boxes; structural review completed by 1bcb3cdb (GLM, no image input); visual acceptance not established by this task."
-    },
-    {
-      "id": "publication-visual-acceptance",
-      "team_id": "publication",
-      "owner_tag": "public-journal-site",
-      "executor_tag": "project-landing-visual-reviewer",
-      "executor_session": "430beef8-55cc-42ed-8459-a49ccb08c7a7",
-      "status": "review",
-      "updated_at": "2026-10-03T13:10:51.500173+00:00",
-      "blocked_on": [
-        "principal-visual-acceptance-review (website tree c2eb7aa833434fa3ca204ec0b9aa79e383960278)"
-      ],
-      "next_action": "Project landing narrow repair completed (commit 749c615, website tree c2eb7aa833434fa3ca204ec0b9aa79e383960278): restored numbered section headers ('01 \u00b7 PROBLEM', '02 \u00b7 HYPOTHESIS', etc.) and enlarged diagram SVG labels to 28px (rendered at 14.96 CSS px on mobile 390px viewport >= 14px in VISUALS.md). Recaptured canonical-desktop-project.png and canonical-mobile-project.png. Independent non-author re-check completed by session 430beef8 (Gemini 3.1 Pro via agy CLI, first tool view_file SCREENSHOT-MANIFEST.json / canonical-desktop-project.png); verdict PASS (.local/journal/visual-review/PROJECT-FAMILY-RECHECK.md). Visual acceptance HELD pending principal final review.",
-      "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
-      "evidence_paths": [
-        ".local/journal/visual-review/PROJECT-FAMILY-RECHECK.md",
-        ".local/journal/visual-review/CANONICAL-TREE-REVIEW.md",
-        ".local/journal/canonical-screenshots/SCREENSHOT-MANIFEST.json",
-        ".local/journal/canonical-preview/ARTIFACT-MANIFEST.json",
-        "research/codex/publication-image-rereview.md"
-      ],
-      "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
-      "model": "gemini-3.1-pro-high",
-      "acceptance_status": "RECHECK PASS on project landing family (report .local/journal/visual-review/PROJECT-FAMILY-RECHECK.md by independent session 430beef8). New website tree hash: c2eb7aa833434fa3ca204ec0b9aa79e383960278. Visual acceptance HELD pending user decision on numbered mono headings vs plain headings."
-    },
-    {
-      "id": "publication-release-verification",
-      "team_id": "publication",
-      "owner_tag": "public-journal-site",
-      "status": "done",
-      "updated_at": "2026-10-03T12:06:49.108407+00:00",
-      "blocked_on": [],
-      "next_action": "Canonical main redesign updated with project landing repair at commit 749c615 (website tree hash c2eb7aa833434fa3ca204ec0b9aa79e383960278). Deployed via GitHub Actions workflow on main pushes. Live URLs: https://alexeygrigorev.com/cloudflare-agent-git/ and https://alexeygrigorev.com/cloudflare-agent-git/daily/2026-10-03/. Preview branch journal-design-repair-3 is SUPERSEDED. User provenance confirmation pending; visual acceptance HELD pending principal confirmation of repaired tree c2eb7aa8.",
-      "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
-      "evidence_paths": [
-        "website/editorial/QUALITY.md",
-        ".local/journal/canonical-screenshots/SCREENSHOT-MANIFEST.json",
-        ".local/journal/canonical-preview/ARTIFACT-MANIFEST.json",
-        ".local/journal/visual-review/PROJECT-FAMILY-RECHECK.md",
-        ".local/journal/visual-review/CANONICAL-TREE-REVIEW.md"
-      ],
-      "assignment_ack": "coordinator public-journal-site (088a2387) executed project landing repair and re-check, updated registry",
-      "acceptance_status": "DEPLOYED LIVE on canonical main (website tree c2eb7aa833434fa3ca204ec0b9aa79e383960278). Exact live URLs: https://alexeygrigorev.com/cloudflare-agent-git/ and https://alexeygrigorev.com/cloudflare-agent-git/daily/2026-10-03/. Preview branch journal-design-repair-3 is SUPERSEDED. Visual acceptance HELD pending principal confirmation."
-    },
-    {
-      "id": "a18-demand-scout",
-      "team_id": "a01-harness",
-      "owner_tag": "zcode-independent",
-      "status": "review",
-      "updated_at": "2026-10-03T07:59:11.855359+00:00",
-      "evidence_paths": [
-        "research/zcode/independent/a18-scout/"
-      ],
-      "blocked_on": [],
-      "next_action": "Joint resource PARK agreed (codex 01a10083-4069; claude per codex cite 84-182f); PARKED accepted as A18 disposition - recommendation, not validated kill. CLOSED-PARK.",
-      "acceptance": "Demand evidence first with URL+date+first-hand quotes incl. negative evidence; incumbent judged on concurrent-agent + interrupted-publication workflow not tuples; falsifier decides PARKED vs alive; no prototype, no slot fill; usage UNKNOWN where unmeasurable.",
-      "assignment_ack": "Joint allocation codex 01a10065-9567 + claude 01a10064-776a; owner ACK this round (see aplexer log)."
-    },
-    {
-      "id": "a07-demand-gate",
-      "team_id": "a01-harness",
-      "owner_tag": "zcode-independent",
-      "status": "running",
-      "updated_at": "2026-10-03T07:59:11.855359+00:00",
-      "evidence_paths": [
-        "research/zcode/independent/a07-demand-gate/"
-      ],
-      "blocked_on": [],
-      "next_action": "Scoped demand-gate research per codex 01a10083-ad66: read 20-approaches A07 section + Claude ledger first, no duplicate research; findings to owned dir.",
-      "acceptance": "Read-only on approaches-20, no duplicate research, findings to owned dir.",
-      "assignment_ack": "worker DISPATCHED and verified - native aplexer session z-a07-demand-1 [0e2a04ff], engine shell wrapper over real opencode run (muse-spark-1.3-contributor), cgroup memory 1G/pids 128, first tool a whoami + WORKLOG",
-      "executor_tag": "z-a07-demand-1",
-      "executor_session": "0e2a04ff"
-    },
-    {
-      "id": "agent-branches-l1-base",
-      "team_id": "agent-branches",
-      "owner_tag": "claude-principal",
-      "status": "running",
-      "updated_at": "2026-10-03T12:52:48.000000+00:00",
-      "evidence_paths": [
-        "research/claude/refocus-2026-10-03.md",
-        "branch:proto/l1-scaffold (worktree /home/alexey/git/agent-branches-l1/prototype)"
-      ],
-      "blocked_on": [],
-      "assignment_ack": "executors claude-exec-l1 d87c9657 (done, 4837a78, 18/18) and claude-exec-l1b c3cd0e48 (running)",
-      "acceptance": "CONTRACT.md v0.1 published; real bare-git sidecar (no fake SHAs); ADMIN/RUNNER tokens; stale-vector 409; DO restart persistence; tests pass; Muse pinned review",
-      "next_action": "L1B lands fixes per codex C-1305/1306/1309 -> pin -> Muse review -> L2/L3 integration"
-    },
-    {
-      "id": "agent-branches-l2-client",
-      "team_id": "agent-branches",
-      "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-03T13:11:30.758172+00:00",
-      "evidence_paths": [
-        "research/antigravity/agent-branches/CONTRACT-L2-L3.md",
-        "branch:proto/l2-client",
-        "branch:proto/l2-client (f3ddd67)"
-      ],
-      "blocked_on": [],
-      "assignment_ack": "antigravity-head ACK 01a101c5-6ded; executor l2-client-builder 98576653",
-      "acceptance": "agents use plain git push; client registers tasks, reads status/warnings, acks, posts test provenance against L1 CONTRACT.md; tests; Muse review",
-      "next_action": "L2 client delivered at f3ddd67 (approved by Muse R43); adapting to CONTRACT v0.1 POST /checks and handling 409 stale vector"
-    },
-    {
-      "id": "agent-branches-l3-radar",
-      "team_id": "agent-branches",
-      "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-03T13:11:30.758172+00:00",
-      "evidence_paths": [
-        "branch:proto/l3-radar",
-        ".local/muse-r41/verdict.md",
-        "branch:proto/l3-radar (1632a31)"
-      ],
-      "blocked_on": [],
-      "assignment_ack": "antigravity-head ACK 01a101c5-6ded; executor l3-radar-builder 00ea32c5",
-      "acceptance": "trusted local runner; status conflict|clean|unknown|not_checked, clean only with merge+>=1 collected test; sandboxed exec; POST /checks versioned; Muse re-review",
-      "next_action": "L3 radar delivered at 1632a31 (excised custom callback, pure hardened CLI runner with RLIMIT/safe-tar/positive tests, under Muse R44 review); adding CONTRACT v0.1 export adapter"
-    },
-    {
-      "id": "publication-link-audit",
-      "team_id": "publication",
-      "owner_tag": "public-journal-site",
-      "executor_tag": "journal-link-audit",
-      "executor_session": "1ba6473a-441f-47cf-8ca1-456cb3c68021",
-      "status": "done",
-      "updated_at": "2026-10-03T13:10:51.500173+00:00",
-      "blocked_on": [],
-      "next_action": "Static link and asset audit complete. 35 HTML pages, 1005 links, 79 static assets verified; 0 broken links, 0 missing assets.",
-      "evidence_paths": [
-        ".local/journal/audits/LINK-AUDIT.md",
-        ".local/journal/audits/link-audit.json"
-      ],
-      "acceptance": "35 HTML pages, 1005 links, 79 static assets verified with 0 broken links and 0 missing assets."
-    },
-    {
-      "id": "publication-meta-feed-audit",
-      "team_id": "publication",
-      "owner_tag": "public-journal-site",
-      "executor_tag": "journal-meta-feed-audit",
-      "executor_session": "115c8e4a-9b4e-4f16-86c2-1279dfc8b91a",
-      "status": "done",
-      "updated_at": "2026-10-03T13:10:51.500173+00:00",
-      "blocked_on": [],
-      "next_action": "Metadata and RSS feed audit complete. 35 HTML pages + feed.xml verified; 28 RSS items valid with RFC 822 pubDate; 100% metadata pass.",
-      "evidence_paths": [
-        ".local/journal/audits/META-FEED-AUDIT.md",
-        ".local/journal/audits/meta-feed-audit.json"
-      ],
-      "acceptance": "35 HTML pages + feed.xml verified; 28 RSS items valid with RFC 822 pubDate; 100% metadata pass."
-    },
-    {
-      "id": "publication-viewport-audit",
-      "team_id": "publication",
-      "owner_tag": "public-journal-site",
-      "executor_tag": "journal-viewport-audit",
-      "executor_session": "dcd7b624-7389-493e-ba15-df787e97d193",
-      "status": "done",
-      "updated_at": "2026-10-03T13:10:51.500173+00:00",
-      "blocked_on": [],
-      "next_action": "Responsive viewport testing complete. Playwright headless Chromium across 4 viewports x 5 routes (20 tests); 0 horizontal overflow defects; mobile diagram label >=14px verified.",
-      "evidence_paths": [
-        ".local/journal/audits/VIEWPORT-AUDIT.md",
-        ".local/journal/audits/viewport-audit.json"
-      ],
-      "acceptance": "Playwright headless Chromium across 4 viewports x 5 routes (20 tests); 0 horizontal overflow defects; mobile diagram label >=14px verified."
-    },
-    {
-      "id": "publication-dogfood-scribe",
-      "team_id": "publication",
-      "owner_tag": "public-journal-site",
-      "executor_tag": "journal-dogfood-scribe",
-      "executor_session": "3af667e1-4560-4966-ba09-2475e7a9307c",
-      "status": "done",
-      "updated_at": "2026-10-03T13:10:51.500173+00:00",
-      "blocked_on": [],
-      "next_action": "Host telemetry and dogfood friction synthesis complete. Quantified Rust target/ bloat (59.5G total), test queue RAM spikes, and git lock contention.",
-      "evidence_paths": [
-        ".local/journal/audits/DOGFOOD-ANALYSIS.md",
-        ".local/journal/audits/dogfood-analysis.json"
-      ],
-      "acceptance": "Host telemetry (RAM 35G avail >=10G, NVMe 100G) and dogfood synthesis on Rust build bloat (59.5G target/), test RAM spikes, and git lock serialization."
-    }
-  ]
+ "schema_version": 1,
+ "updated_at": "2026-10-03T13:11:30.758172+00:00",
+ "tasks": [
+  {
+   "id": "runtime-one-effect",
+   "team_id": "a16-runtime-protocol",
+   "owner_tag": "antigravity-head",
+   "status": "done",
+   "updated_at": "2026-10-03T05:07:00.000000+00:00",
+   "evidence_paths": [
+    "research/antigravity/r9-runtime-single-effect-verification.md",
+    "research/muse/review-round23.md",
+    "coordination/aplexer-repair.md"
+   ],
+   "blocked_on": [],
+   "next_action": "Bounded verification completed and independently reviewed by Muse round 23 (commit 48be7a9). Counted verdict: inner duplicate eliminated in observed runs (old 1 call -> 2 marker lines, new 1 call -> 1 line); outer retry duplicates demonstrated (rollout 01a1000a-8f19, 2 distinct calls ~16s apart, exit 0); no exactly-once claim. Scoped follow-on work split into zcodex-retry-design (ticket 01a10014-a645); zero builds, zero global install.",
+   "acceptance": "Existing owner work, not a new duplicate writer. Scoped reversible rollout is authorized per root 01a10014-61f6 but requires real review, rollback, and proven benefit; no global install inferred.",
+   "assignment_ack": "ACK: owned by antigravity-head. Verified bf9d7ed22a on codex-zcode main. Debug binary at codex-rs/target/debug/zcodex (SHA256 bc72fcf78044ad6078fbd8501a16b6c90b253e053dcc7666a250917184761f69). Synthetic adapter test, real child denial, and comparative live append probe executed and independently counted by Muse R9 (48be7a9); negative result on outer retries recorded."
+  },
+  {
+   "id": "zcodex-retry-design",
+   "team_id": "a16-runtime-protocol",
+   "owner_tag": "antigravity-head",
+   "status": "blocked",
+   "updated_at": "2026-10-03T13:11:30.758172+00:00",
+   "evidence_paths": [
+    "research/antigravity/r10-zcodex-retry-suppression-design.md",
+    "research/antigravity/r11-real-duplicate-incidence.md"
+   ],
+   "blocked_on": [
+    "joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md)"
+   ],
+   "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
+   "acceptance": "DIAGNOSIS + patch diff + test plan for denial suppression/turn-end at tool boundary, Muse review, no build without a budget guard.",
+   "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10014-a645). Design only, no compilation until budget guard is established."
+  },
+  {
+   "id": "prompt-ready-lifecycle",
+   "team_id": "a16-runtime-protocol",
+   "owner_tag": "antigravity-head",
+   "status": "blocked",
+   "updated_at": "2026-10-03T13:11:30.758172+00:00",
+   "evidence_paths": [
+    "research/antigravity/r17-after-idle-safety-fix.md",
+    "research/antigravity/r12-scoped-ca1-pilot-verification.md",
+    ".local/muse-r17/verdict.md",
+    ".local/muse-r20/verdict.md",
+    ".local/producer-review/bin/aplexer-7efa493",
+    ".local/muse-r21/verdict.md"
+   ],
+   "blocked_on": [
+    "joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md)"
+   ],
+   "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
+   "acceptance": "Genuine PromptReady / turn-completion readiness signal per engine (hook-emitted at end of each turn, refreshed rather than expiring while the composer stays empty), with narrow negative tests (busy, draft, unknown screen, expired-without-refresh), reviewed by Muse before rollout.",
+   "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10011-df10). Reproductions analyzed: Grok (0000ea93) waiting-expired and Bunny (848ff637) idle contradicted by PTY redraw. Fix designed and committed in protocol repo on fix/prompt-ready-lifecycle."
+  },
+  {
+   "id": "safe-autonomous-continuation",
+   "team_id": "a16-runtime-protocol",
+   "owner_tag": "antigravity-head",
+   "status": "blocked",
+   "updated_at": "2026-10-03T13:11:30.758172+00:00",
+   "evidence_paths": [
+    "research/antigravity/r12-scoped-ca1-pilot-verification.md",
+    "research/antigravity/r17-after-idle-safety-fix.md",
+    ".local/pilot-ca1/PILOT-REPORT.md",
+    ".local/pilot-ca1/pilot_results.json",
+    ".local/muse-r21/verdict.md",
+    ".local/continuation-trial/**"
+   ],
+   "blocked_on": [
+    "joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md)"
+   ],
+   "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
+   "acceptance": "Source/negative draft-busy tests and actual repeated continuation cycles; no invented all-engine recovery.",
+   "assignment_ack": "ACK: owned by antigravity-head. Pinned commit 7a9b46d on fix/continuation-readiness-pane-race in cloudflare-aplexer-protocol (PromptState enum Empty/Draft/Unknown, real OpenCode/Grok/Codex/Shell fixtures, verify_pane_delivery correlated working transition, --next continuation queue; 212 unit + 31 integration pass, 0B net compile growth). Change-story card published at research/antigravity/change-story-card-pane-continuation.md (commit 6214dec)."
+  },
+  {
+   "id": "prospective-review-task",
+   "team_id": "a06-a10",
+   "owner_tag": "grok-head",
+   "status": "running",
+   "updated_at": "2026-10-03T04:36:07.889061+00:00",
+   "evidence_paths": [
+    "research/grok",
+    "research/grok/a10-recovery-baseline.md"
+   ],
+   "blocked_on": [],
+   "next_action": "Preregistered A10 question is in research/grok/a10-recovery-baseline.md. Do not score timing on this exposed restart.",
+   "acceptance": "Real adoption task or explicit negative result; known retrospective cases cannot establish timing advantage.",
+   "assignment_ack": "ACK eb20adc0-48cf-405e-ab35-dcfde4303d0e conversation 01a0fe00-6ecd-7c73-a852-e9862578d192. Not 8840df13. whoami is the identity. First artifact research/grok/a10-recovery-baseline.md. Quota unsampled. Usage null."
+  },
+  {
+   "id": "recoverable-task-handoff",
+   "team_id": "a06-a10",
+   "owner_tag": "grok-head",
+   "status": "running",
+   "updated_at": "2026-10-03T04:36:07.889061+00:00",
+   "evidence_paths": [
+    "research/grok",
+    "research/grok/a10-recovery-baseline.md"
+   ],
+   "blocked_on": [],
+   "next_action": "Muse reads the plain-git baseline against the same handoff ids. No passport score and no executor until a missing field is named.",
+   "acceptance": "Verified disposable recovery and consumer action, comparison limits stated; no market benefit invented.",
+   "assignment_ack": "ACK eb20adc0-48cf-405e-ab35-dcfde4303d0e conversation 01a0fe00-6ecd-7c73-a852-e9862578d192. Not 8840df13. whoami is the identity. First artifact research/grok/a10-recovery-baseline.md. Quota unsampled. Usage null."
+  },
+  {
+   "id": "fork-replay-negative-review",
+   "team_id": "a05",
+   "owner_tag": "space-bunny-head",
+   "status": "done",
+   "updated_at": "2026-10-03T04:02:51.963927+00:00",
+   "evidence_paths": [
+    "research/muse/review-round16.md",
+    "research/space-bunny/repro",
+    "coordination/space-bunny.md"
+   ],
+   "blocked_on": [],
+   "next_action": "Bounded gate closed. Label-binding residual handled in SEPARATE scope (row label-binding-residual-repair), not folded into this PASS.",
+   "acceptance": "Review of exact current source with missing/corrupt-input negatives; no forced bugs/signposted coupling. MET, scoped.",
+   "assignment_ack": "ACKED 8620fdc9 (01a0ffda-a111). Muse b8ca24d R16 verdict PASS, scoped to missing/corrupt-input gate: re-executed f2178fb replay 8/8 and negatives 12/12, plus 3 new negatives Muse probed in disposable copies (empty overlay, corrupt bytes -> real SyntaxError, chmod-000 oracle), all fail-closed with distinct reasons, payload byte-identical, MANIFEST 21/21. Owner does NOT claim whole-harness approval: Muse records the round-12 label residual as standing and out of this gate scope. Status enum corrected from invalid \"review-passed\" to valid \"done\"."
+  },
+  {
+   "id": "frozen-harness-consumer",
+   "team_id": "a01-harness",
+   "owner_tag": "zcode-independent",
+   "status": "ready",
+   "updated_at": "2026-10-03T07:59:11.855359+00:00",
+   "evidence_paths": [
+    "research/zcode",
+    "coordination/zcode.md"
+   ],
+   "blocked_on": [],
+   "next_action": "b4 COMPLETE: z-checker-b4-5 NEGATIVE-REPRODUCED identical-callID at f3031840; z-checker-b4-6 at pin 9eb5701 both variants collide, f3031840 resolves absent-callID only, duplicate-callID still reachable (commit e04a2c6, verdicts sent). Gate correction per codex 01a100ac-5057: dupexec condition is NOT a gate on healthy OpenCode three UNSCORED pairs under jointly conditional 9412520. Retained gates: production --emit WITHHELD, frozen BASE preflight required before A01 pairs, no warning-rate claims. NEXT: A01 frozen BASE preflight (started) + A07 demand-gate research.",
+   "acceptance": "Schema-valid event and stable task dedup negatives; consumer action is distinct from scripted checks.",
+   "assignment_ack": "confirmed by zcode-independent 64049aa2 reply 01a1000d to handoff 01a10008 (H32-ZCODE)",
+   "note_rev1c": "engineering withhold residuals resolved: H1 schema-field validation + H2 default journal lock @ fd5a1bd, validation rev3 14/14 PASS + rev2 regression ALL-PASS; production emit still withheld pending codex rev1c acceptance; next H3 real bounded consumer decision",
+   "note_rev1d": "codex 01a10026-fa88/fb76: H3 discovery_action (wip_digest 81af9ac32c80432faaa0ad2ef09faccc) relabeled internal engineering code-review/journal first-use ONLY, not A01 warning-adoption or action-rate efficacy; independent field-current/type/hash validity and genuine warning-consumer gates remain distinct open gates. Muse pinned review upgraded to require firsttool evidence + artifact file; reviewer request + evidence tracked here.",
+   "reviewer_request": {
+    "reviewer": "muse-reviewer (registry head, opencode 7e6e9bb0)",
+    "target": "exact fd5a1bd + incremental 65d1d76",
+    "required_evidence": [
+     "first tool action on pinned target",
+     "verdict artifact file path"
+    ],
+    "requested_via": [
+     "01a1001c-2dde",
+     "01a10023-7f16"
+    ]
+   },
+   "note_rev1e_f": "rev5 head-owned fstat/flock evidence (prerev1e 16/16 on rev1d runner 9a260cc6): ../cwd lexical variants same-inode NO race (delegate claim corrected, codex vindicated); dir-symlink never splits; journal-FILE-symlink genuinely splits (two lock inodes, no exclusion). rev1e bd5bd23 resolve()-before-sibling-lock fixes it; rev1f 8342367 validate-and-reject input (Muse round-24 finding 2); rev1g f825276 doc/warning wording matched to inode evidence. rev5 20/20 + rev3/rev4 ALL-PASS.",
+   "note_producer_check": "codex 01a10080-8df9 C-PRODUCER-INDEPENDENT-CHECK executed 2026-10-03: independent worker z-producer-check-1 (opencode-go/muse-spark-1.3-contributor, ses_eff765815ffe5VkSaVJ9xobFDo, systemd unit 1GiB/TasksMax128/3600s, run1 aborted model-not-found -> head repair: auth.json copy into isolated xdg-data, run2 clean) VERDICT PARTIAL. F1: binary pin 73727b8a NOT reproducible, on-disk target/debug/aplexer=12e7bd48 (mtime 08:39, rebuilt after prior check; prior verdict binary-identity claim stale). F2: actual 21/21 PASS (0 FAIL, exit 0) vs prior headline 22/22 - headline off by one, substance reproduces. F3: literal `cargo test retracts_idle` exit 101: unit 5/5 PASS, integration 0/3 FAIL (expected detail string 'idle report contradicted by later PTY output' vs actual fail-closed wording; fail-closed behavior intact). Source parity CONFIRMED HEAD=9eb5701 tracked-clean. Usage from harness DB: 5547 out-toks/$0.0059. Artifacts .local/producer-check-z/ (private). Verification only, no rollout; production --emit gate unchanged."
+  },
+  {
+   "id": "pinned-independent-review",
+   "team_id": "independent-review",
+   "owner_tag": "muse-reviewer",
+   "status": "running",
+   "updated_at": "2026-10-03T03:38:55.022924+00:00",
+   "evidence_paths": [
+    "research/muse",
+    "coordination/muse.md"
+   ],
+   "blocked_on": [],
+   "next_action": "Process current owned review queue and verify pinned runtime/protocol/harness/fork results independently; distribute review tasks to preferred healthy models where useful.",
+   "acceptance": "Exact source/test verdict and owner handoff; old reviews do not approve new code.",
+   "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+  },
+  {
+   "id": "worktree-user-task",
+   "team_id": "a16-runtime-protocol",
+   "owner_tag": "antigravity-head",
+   "status": "done",
+   "updated_at": "2026-10-03T04:19:00.000000+00:00",
+   "evidence_paths": [
+    "research/antigravity/r8-worktree-d1-benchmark.md",
+    "research/antigravity/r8_worktree_d1_results.json",
+    "research/antigravity/r8_worktree_d1_benchmark.py"
+   ],
+   "blocked_on": [],
+   "next_action": "Completed D1 redo benchmark with 4 arms (independent checkout, git worktree, clone/COW, Workspace-Doctor). Proved ext4 fallback of uv clone to hardlinks. Monitored scratch peak 65.27 MiB <= 100 MiB budget. Truthfully recorded 47.76% cache-inclusive savings for N=2 tasks (FAIL on >50% gate). Submitted for Muse R2 review.",
+   "acceptance": "Verified physical allocation union, SHA-256 cache manifests, and parallel concurrent edits with zero bytecode leaks; scratch budget <= 100 MiB preserved.",
+   "assignment_ack": "ACK: executed by subagent 08191f9e-388f (native Gemini, antigravity-head). Artifacts published at research/antigravity/r8-worktree-d1-benchmark.md and r8_worktree_d1_results.json."
+  },
+  {
+   "id": "principal-continuous-coverage",
+   "team_id": "oversight",
+   "owner_tag": "codex-principal",
+   "status": "running",
+   "updated_at": "2026-10-03T13:53:48.221022+00:00",
+   "evidence_paths": [
+    "coordination/codex.md",
+    "research/codex/oversight-human31.md",
+    "research/codex/a07-source-review.md",
+    "research/codex/a18-source-review.md",
+    "research/codex/publication-image-rereview.md",
+    "research/codex/readiness-timeline-review.md",
+    "research/codex/publication-canonical-review.md",
+    "research/codex/a01-feasibility-runner-review.md",
+    "research/codex/run10-continuation-review.md",
+    "research/codex/product-refocus-review.md"
+   ],
+   "blocked_on": [],
+   "next_action": "BUILD-FIRST oversight C1329-1331: existing e648 liveintegrator realWorker/sidecar run/gap next; stale4837 vs762ff source challenged. Ant owns L6 remote/push/liveness/CLI/quota correction while iteration proceeds; Muse posthoc exact-pin review. Wholeheads scan and mutualfirstrun event; no ownimplementation team, no newinfra trial/preapproval.",
+   "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
+   "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
+  },
+  {
+   "id": "a09-incumbent-check",
+   "team_id": "a05",
+   "owner_tag": "space-bunny-head",
+   "status": "done",
+   "updated_at": "2026-10-03T04:02:51.963927+00:00",
+   "evidence_paths": [
+    "research/space-bunny/a09-incumbents.md",
+    "research/claude/dup-side-effects-evidence.md"
+   ],
+   "blocked_on": [],
+   "next_action": "Delivered. Optional follow-up only if a primary source resolves: SafeAgent, Kybernis product page, Aura Guard destination, Duerelay.",
+   "acceptance": "Primary-source capability table and verdict to claude-principal.",
+   "assignment_ack": "ACKED 8620fdc9 (01a0ffda-a111). DELIVERED commit 5817275 research/space-bunny/a09-incumbents.md, verdict GAP (narrow) to claude-principal as 01a0ffdf-d59b. None of 7 exactly-once guard tools touches Git refs/commits/publication; dedup unit is a tool call. REPRODUCED set empty; 4 artifacts UNVERIFIED (SafeAgent, Kybernis, Aura Guard destination, Duerelay); ExactOnce host unreachable. Owner recommends AGAINST filling slot six on A09: own gate unmet, one of two named sources is a duplicate-comment report not a publication. Two citation corrections filed against research/claude/dup-side-effects-evidence.md E-C508/E-C509 (comment IDs labelled as threads)."
+  },
+  {
+   "id": "a09-external-report-verify",
+   "team_id": "independent-review",
+   "owner_tag": "muse-reviewer",
+   "status": "done",
+   "updated_at": "2026-10-03T03:43:40.662920+00:00",
+   "evidence_paths": [
+    "research/claude/dup-side-effects-evidence.md"
+   ],
+   "blocked_on": [],
+   "next_action": "Fetch and verify codex#27283 and claude-code#10319 quotes/dates.",
+   "acceptance": "VERIFIED/not per item to claude-principal.",
+   "assignment_ack": "Muse VERIFIED E-C501 (codex#27283) and E-C503 (claude-code#10319), b8ca24d; existence proofs, not rates"
+  },
+  {
+   "id": "claude-evidence-integration",
+   "team_id": "oversight",
+   "owner_tag": "claude-scribe-oc",
+   "status": "done",
+   "updated_at": "2026-10-03T04:44:44.876374+00:00",
+   "evidence_paths": [
+    "research/evidence-ledger.md",
+    "research/approaches-20.md",
+    "research/claude/journal-factcheck-2026-10-03.md"
+   ],
+   "blocked_on": [],
+   "next_action": "None queued; relaunch a one-shot executor when new integration input arrives.",
+   "acceptance": "Commits with explicit paths; ledger v3 done 8099242.",
+   "assignment_ack": "executor switched: zcy-claude-scribe (zcodex, ended; native deliver NOT-READY while idle) -> claude-scribe-oc 6742704b (headless opencode run under aplexer shell session, launched by claude-principal); prior artifacts 8099242..0d35081, 3893e57 | Tasks 7-8 done c27dabd (pushed); executor exited 0"
+  },
+  {
+   "id": "label-binding-residual-repair",
+   "team_id": "a05",
+   "owner_tag": "space-bunny-head",
+   "status": "review",
+   "updated_at": "2026-10-03T04:02:51.963927+00:00",
+   "evidence_paths": [
+    "research/space-bunny/repro/replay.sh",
+    "research/space-bunny/repro/negative-tests.sh",
+    "research/space-bunny/repro/README.md",
+    "coordination/space-bunny.md"
+   ],
+   "blocked_on": [
+    "independent Muse re-review verdict at pinned commit 4937506 (request 01a0ffe6-209e); owner does not self-approve"
+   ],
+   "next_action": "Hold at pinned 4937506 for Muse re-review; answer its questions on the REPLAY_GUARDS_OFF bypass honestly.",
+   "acceptance": "Narrow label-to-expected-overlay binding plus independent swapped-label negative. Distinct from the missing/corrupt-input gate.",
+   "assignment_ack": "DELIVERED commit 4937506, re-review requested 01a0ffe6-209e. Codex ffcd-0fcc asked for exactly this and it is DONE, not queued. Hole reproduced first: f1-A dispatched to arm1-signposted/B previously reported PASS 8/8 exit 0. Fix derives expected head from the LABEL fixture+role and compares to overlay .head (run_case + compose_case, A and B). N9d/N9e added; suite 14/14. New surface disclosed to Muse: REPLAY_GUARDS_OFF=1 defaults fail-closed and prints a banner, replacing regex guard surgery that hit an unbound-variable error. Owner does NOT claim acceptance - Muse gave a finding and judgement, not approval."
+  },
+  {
+   "id": "a05-same-task-baseline",
+   "team_id": "a05",
+   "owner_tag": "space-bunny-head",
+   "status": "ready",
+   "updated_at": "2026-10-03T04:02:51.963927+00:00",
+   "evidence_paths": [
+    "research/space-bunny/a05-same-task-baseline.md"
+   ],
+   "blocked_on": [
+    "fresh quota check on the chosen registered provider executor before launch"
+   ],
+   "next_action": "Run 2-3 registered healthy provider executors on the SAME real task with NO seeded wrong answer and NO signposting, then compare requirement-level decisions under EQUAL test evidence. Allow tie/neither. Fork-comparison baseline only - the gated neutral dupexec pair stays closed.",
+   "acceptance": "Real same-task attempts, no forced bugs, no coupling disclosed in briefs. Selection must be justified by evidence both arms actually saw, and a tie/neither outcome is a reportable result.",
+   "assignment_ack": "READY per codex-principal queue 01a0ffdd-a92c and team a05 ownership. Owner records a material challenge to A05's own MVP text, which proposes one seeded plausible-but-wrong behavior: a seeded arm guarantees visible divergence and cannot evidence how often real attempts diverge. That is the same signposting confound this owner retracted in G3. Baseline will NOT seed; if a tie/neither comes back, that is a real result about A05's discriminator. Usage recorded as UNKNOWN, never zero, when not measured."
+  },
+  {
+   "id": "website-relay-email-signup",
+   "team_id": "publication",
+   "owner_tag": "public-journal-site",
+   "status": "done",
+   "updated_at": "2026-10-03T04:37:20.258218+00:00",
+   "blocked_on": [],
+   "next_action": "Scoped signup implementation complete; future email campaigns are separate work.",
+   "acceptance": "Live same-style opt-in with actual Relay destination; success/error states, secrets/server-private subscriber data, controlled safe validation, no email campaign.",
+   "assignment_ack": "Actual website deployment, genuine Relay owner readiness, independent review, 25 mocked tests and root live browser invalid-token verification completed. No email sent.",
+   "evidence_paths": [
+    "website",
+    "research/orchestrator/relay-signup-20261003.md",
+    "website/editorial/RELAY-SIGNUP.md"
+   ],
+   "executor_identity": "/root/public_journal_site",
+   "mode": "native-harness-subagent"
+  },
+  {
+   "id": "relay-pattern-independent-review",
+   "team_id": "publication",
+   "owner_tag": "relay-signup-review",
+   "status": "done",
+   "updated_at": "2026-10-03T04:37:20.258218+00:00",
+   "blocked_on": [],
+   "next_action": "Scoped signup implementation complete; future email campaigns are separate work.",
+   "acceptance": "Actual deployed route/config evidence and provisioning recommendation; no keys/rawsubscriber data in public logs, no mutation/email/infra by reviewer.",
+   "assignment_ack": "Actual website deployment, genuine Relay owner readiness, independent review, 25 mocked tests and root live browser invalid-token verification completed. No email sent.",
+   "evidence_paths": [
+    "research/orchestrator/relay-signup-20261003.md",
+    "website/editorial/RELAY-SIGNUP.md"
+   ],
+   "executor_identity": "/root/public_journal_site/relay_signup_review",
+   "mode": "native-harness-subagent",
+   "private_deliverable": ".local/journal/relay-pattern-review.md"
+  },
+  {
+   "id": "relay-signup-browser-flow",
+   "team_id": "publication",
+   "owner_tag": "relay-signup-frontend",
+   "status": "done",
+   "updated_at": "2026-10-03T04:37:20.258218+00:00",
+   "blocked_on": [],
+   "next_action": "Scoped signup implementation complete; future email campaigns are separate work.",
+   "acceptance": "Actual browser behavior and tests; token stripped from URL, no secret/subscriber log; enabled public deployment only after separate Relay audience verified.",
+   "assignment_ack": "Actual website deployment, genuine Relay owner readiness, independent review, 25 mocked tests and root live browser invalid-token verification completed. No email sent.",
+   "evidence_paths": [
+    "website/assets/signup.js",
+    "research/orchestrator/relay-signup-20261003.md",
+    "website/editorial/RELAY-SIGNUP.md"
+   ],
+   "executor_identity": "/root/public_journal_site/signup_frontend",
+   "mode": "native-harness-subagent"
+  },
+  {
+   "id": "relay-owner-provisioning",
+   "team_id": "publication",
+   "owner_tag": "relay",
+   "status": "done",
+   "updated_at": "2026-10-03T04:37:20.258218+00:00",
+   "blocked_on": [],
+   "next_action": "Scoped signup implementation complete; future email campaigns are separate work.",
+   "acceptance": "Genuine owner response, separate audience/sender/template and CORS, public invalid-input route verified, existing signup preserved, no email blast/purchase.",
+   "assignment_ack": "Actual website deployment, genuine Relay owner readiness, independent review, 25 mocked tests and root live browser invalid-token verification completed. No email sent.",
+   "evidence_paths": [
+    "research/orchestrator/relay-signup-20261003.md",
+    "website/editorial/RELAY-SIGNUP.md"
+   ],
+   "linked_head_session": "c0ff0e92-99f2-46d0-9e3d-f1d078badfde",
+   "private_evidence": ".local/journal/relay-owner-channel/"
+  },
+  {
+   "id": "supervision-exact-ack-reconciliation",
+   "team_id": "oversight",
+   "owner_tag": "supervision-ack-repair",
+   "status": "done",
+   "updated_at": "2026-10-03T05:17:57.029807+00:00",
+   "evidence_paths": [
+    "scripts/supervision/ack_reconciliation.py",
+    "scripts/supervision/test_ack_reconciliation.py",
+    "research/orchestrator/supervision-ack-repair-20261003.md"
+   ],
+   "blocked_on": [],
+   "next_action": "Completed exact-ACK repair and healthy subsequent polling; retain genuinely unacknowledged new requests. Principals continue autonomous ownership.",
+   "acceptance": "35 tests pass; native original envelope and exact recipient cursor prove ACK; no spoofing/mutation of mailbox; preserve service state/archives and metrics.",
+   "assignment_ack": "Accepted by native harness /root/supervision_ack_repair, parent desktop-orchestrator."
+  },
+  {
+   "id": "metrics-opencode-message-usage",
+   "team_id": "oversight",
+   "owner_tag": "metrics-opencode-usage",
+   "status": "done",
+   "assignment_ack": true,
+   "updated_at": "2026-10-03T05:54:21.308582+00:00",
+   "owned_paths": [
+    "scripts/metrics/opencode_usage.py",
+    "scripts/metrics/collect.py",
+    "scripts/metrics/test_opencode_usage.py",
+    "scripts/metrics/dashboard.html",
+    "scripts/metrics/README.md"
+   ],
+   "next_action": "Principals maintain actual native-worker identity coverage; uncovered providers stay unknown",
+   "acceptance": "Actual Muse/Bunny per-message counters; exact identities, no double counting, explicit interval/unknown pending/cost scope; tested dashboard and private retention",
+   "evidence_paths": [
+    "research/orchestrator/opencode-usage-20261003.md",
+    "scripts/metrics/test_opencode_usage.py"
+   ],
+   "blocked_on": [],
+   "acceptance_status": "Accepted: root independent20-test replay/source review plus actual two automatic snapshot dedup",
+   "reviewer_tag": "desktop-orchestrator"
+  },
+  {
+   "id": "a05-requirement-audit",
+   "team_id": "a01-harness",
+   "owner_tag": "zcode-independent",
+   "status": "done",
+   "updated_at": "2026-10-03T07:59:11.855359+00:00",
+   "evidence_paths": [
+    "research/zcode/independent/a05-adjudication/VERDICT.md",
+    "research/zcode/independent/a05-adjudication/HEAD-ACCEPTANCE.md",
+    "research/zcode/independent/a05-requirement-coverage-matrix-v1.1.md"
+   ],
+   "blocked_on": [],
+   "next_action": "Adjudication ACCEPTED by codex (01a10080-8e21: 13/13 owner recount; 01a100aa-a681: bounded static TIE acknowledged). A05 PROVISIONALLY PARKED; hardening deltas kept if reopened. CLOSED-PARK.",
+   "acceptance": "Read-only on copies, frozen TASK.md reference, byte pins recorded, explicit UNKNOWNs, no winner claims from self-tests.",
+   "assignment_ack": "OWNER-ME accepted by zcode-independent 64049aa2 reply to claude-principal 01a10046-9518; codex gates 01a1003e-3641 accepted"
+  },
+  {
+   "id": "publication-quality-process-review",
+   "team_id": "publication",
+   "owner_tag": "publication-process-reviewer",
+   "status": "done",
+   "updated_at": "2026-10-03T06:17:25.632429+00:00",
+   "blocked_on": [],
+   "next_action": "Reference capture, repair and visual-review tasks remain blocked pending actual assignments/artifacts.",
+   "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
+   "evidence_paths": [
+    "website/editorial/QUALITY-REVIEW.md"
+   ],
+   "assignment_ack": "actual native process-review task accepted",
+   "acceptance_status": "Independent process PASS at pinned QUALITY SHA b33efa9fd1220a5975a7b9e8ec4058707b33853bb10b907bd59f0e2fb55aa48c; no visual acceptance"
+  },
+  {
+   "id": "publication-reference-packet",
+   "team_id": "publication",
+   "owner_tag": "public-journal-site",
+   "executor_tag": "journal-capture-spec",
+   "executor_session": "5a862579-1a2f-4956-9c9a-014ffa12a45c",
+   "status": "done",
+   "updated_at": "2026-10-03T13:10:51.500173+00:00",
+   "blocked_on": [],
+   "next_action": "Reference bundle pinned and validated; superseding captures completed on canonical tree.",
+   "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
+   "evidence_paths": [
+    "website/editorial/QUALITY.md",
+    ".local/journal/capture-spec/CONTRACT.md",
+    ".local/journal/capture-spec/INVARIANTS.json",
+    ".local/journal/capture-spec/REFERENCE-MANIFEST.json"
+   ],
+   "assignment_ack": "Reference bundle pinned; preliminary capture spec and contract drafted by head automation script (5a862579)."
+  },
+  {
+   "id": "publication-fidelity-repair",
+   "team_id": "publication",
+   "owner_tag": "public-journal-site",
+   "status": "done",
+   "updated_at": "2026-10-03T10:08:00.000000+00:00",
+   "blocked_on": [],
+   "next_action": "Repairs merged to main at 39166de8916d; structural review by 1bcb3cdb (GLM, no image input); not visual acceptance.",
+   "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
+   "evidence_paths": [
+    "website/build.py",
+    "website/assets/site.css",
+    ".local/journal/fidelity-repair-2/**",
+    ".local/journal/screenshots/**",
+    ".local/journal/candidate-preview/**"
+   ],
+   "executor_tag": "journal-fidelity-repair-2",
+   "executor_session": "e4c47950-0dd6-4431-ba1d-94431033bc3f",
+   "assignment_ack": "Launched under aplexer in isolated worktree .local/journal/worktree on branch journal-design-repair. First tool call verified.",
+   "acceptance_status": "PASS on implementation and merge (commit 39166de); live overprint resolved with verified 0-collision OCR word bounding boxes; structural review completed by 1bcb3cdb (GLM, no image input); visual acceptance not established by this task."
+  },
+  {
+   "id": "publication-visual-acceptance",
+   "team_id": "publication",
+   "owner_tag": "public-journal-site",
+   "executor_tag": "project-landing-visual-reviewer",
+   "executor_session": "430beef8-55cc-42ed-8459-a49ccb08c7a7",
+   "status": "review",
+   "updated_at": "2026-10-03T13:10:51.500173+00:00",
+   "blocked_on": [
+    "principal-visual-acceptance-review (website tree c2eb7aa833434fa3ca204ec0b9aa79e383960278)"
+   ],
+   "next_action": "Project landing narrow repair completed (commit 749c615, website tree c2eb7aa833434fa3ca204ec0b9aa79e383960278): restored numbered section headers ('01 \u00b7 PROBLEM', '02 \u00b7 HYPOTHESIS', etc.) and enlarged diagram SVG labels to 28px (rendered at 14.96 CSS px on mobile 390px viewport >= 14px in VISUALS.md). Recaptured canonical-desktop-project.png and canonical-mobile-project.png. Independent non-author re-check completed by session 430beef8 (Gemini 3.1 Pro via agy CLI, first tool view_file SCREENSHOT-MANIFEST.json / canonical-desktop-project.png); verdict PASS (.local/journal/visual-review/PROJECT-FAMILY-RECHECK.md). Visual acceptance HELD pending principal final review.",
+   "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
+   "evidence_paths": [
+    ".local/journal/visual-review/PROJECT-FAMILY-RECHECK.md",
+    ".local/journal/visual-review/CANONICAL-TREE-REVIEW.md",
+    ".local/journal/canonical-screenshots/SCREENSHOT-MANIFEST.json",
+    ".local/journal/canonical-preview/ARTIFACT-MANIFEST.json",
+    "research/codex/publication-image-rereview.md"
+   ],
+   "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
+   "model": "gemini-3.1-pro-high",
+   "acceptance_status": "RECHECK PASS on project landing family (report .local/journal/visual-review/PROJECT-FAMILY-RECHECK.md by independent session 430beef8). New website tree hash: c2eb7aa833434fa3ca204ec0b9aa79e383960278. Visual acceptance HELD pending user decision on numbered mono headings vs plain headings."
+  },
+  {
+   "id": "publication-release-verification",
+   "team_id": "publication",
+   "owner_tag": "public-journal-site",
+   "status": "done",
+   "updated_at": "2026-10-03T12:06:49.108407+00:00",
+   "blocked_on": [],
+   "next_action": "Canonical main redesign updated with project landing repair at commit 749c615 (website tree hash c2eb7aa833434fa3ca204ec0b9aa79e383960278). Deployed via GitHub Actions workflow on main pushes. Live URLs: https://alexeygrigorev.com/cloudflare-agent-git/ and https://alexeygrigorev.com/cloudflare-agent-git/daily/2026-10-03/. Preview branch journal-design-repair-3 is SUPERSEDED. User provenance confirmation pending; visual acceptance HELD pending principal confirmation of repaired tree c2eb7aa8.",
+   "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
+   "evidence_paths": [
+    "website/editorial/QUALITY.md",
+    ".local/journal/canonical-screenshots/SCREENSHOT-MANIFEST.json",
+    ".local/journal/canonical-preview/ARTIFACT-MANIFEST.json",
+    ".local/journal/visual-review/PROJECT-FAMILY-RECHECK.md",
+    ".local/journal/visual-review/CANONICAL-TREE-REVIEW.md"
+   ],
+   "assignment_ack": "coordinator public-journal-site (088a2387) executed project landing repair and re-check, updated registry",
+   "acceptance_status": "DEPLOYED LIVE on canonical main (website tree c2eb7aa833434fa3ca204ec0b9aa79e383960278). Exact live URLs: https://alexeygrigorev.com/cloudflare-agent-git/ and https://alexeygrigorev.com/cloudflare-agent-git/daily/2026-10-03/. Preview branch journal-design-repair-3 is SUPERSEDED. Visual acceptance HELD pending principal confirmation."
+  },
+  {
+   "id": "a18-demand-scout",
+   "team_id": "a01-harness",
+   "owner_tag": "zcode-independent",
+   "status": "review",
+   "updated_at": "2026-10-03T07:59:11.855359+00:00",
+   "evidence_paths": [
+    "research/zcode/independent/a18-scout/"
+   ],
+   "blocked_on": [],
+   "next_action": "Joint resource PARK agreed (codex 01a10083-4069; claude per codex cite 84-182f); PARKED accepted as A18 disposition - recommendation, not validated kill. CLOSED-PARK.",
+   "acceptance": "Demand evidence first with URL+date+first-hand quotes incl. negative evidence; incumbent judged on concurrent-agent + interrupted-publication workflow not tuples; falsifier decides PARKED vs alive; no prototype, no slot fill; usage UNKNOWN where unmeasurable.",
+   "assignment_ack": "Joint allocation codex 01a10065-9567 + claude 01a10064-776a; owner ACK this round (see aplexer log)."
+  },
+  {
+   "id": "a07-demand-gate",
+   "team_id": "a01-harness",
+   "owner_tag": "zcode-independent",
+   "status": "running",
+   "updated_at": "2026-10-03T07:59:11.855359+00:00",
+   "evidence_paths": [
+    "research/zcode/independent/a07-demand-gate/"
+   ],
+   "blocked_on": [],
+   "next_action": "Scoped demand-gate research per codex 01a10083-ad66: read 20-approaches A07 section + Claude ledger first, no duplicate research; findings to owned dir.",
+   "acceptance": "Read-only on approaches-20, no duplicate research, findings to owned dir.",
+   "assignment_ack": "worker DISPATCHED and verified - native aplexer session z-a07-demand-1 [0e2a04ff], engine shell wrapper over real opencode run (muse-spark-1.3-contributor), cgroup memory 1G/pids 128, first tool a whoami + WORKLOG",
+   "executor_tag": "z-a07-demand-1",
+   "executor_session": "0e2a04ff"
+  },
+  {
+   "id": "agent-branches-l1-base",
+   "team_id": "agent-branches",
+   "owner_tag": "claude-principal",
+   "status": "running",
+   "updated_at": "2026-10-03T12:52:48.000000+00:00",
+   "evidence_paths": [
+    "research/claude/refocus-2026-10-03.md",
+    "branch:proto/l1-scaffold (worktree /home/alexey/git/agent-branches-l1/prototype)"
+   ],
+   "blocked_on": [],
+   "assignment_ack": "executors claude-exec-l1 d87c9657 (done, 4837a78, 18/18) and claude-exec-l1b c3cd0e48 (running)",
+   "acceptance": "CONTRACT.md v0.1 published; real bare-git sidecar (no fake SHAs); ADMIN/RUNNER tokens; stale-vector 409; DO restart persistence; tests pass; Muse pinned review",
+   "next_action": "L1B lands fixes per codex C-1305/1306/1309 -> pin -> Muse review -> L2/L3 integration"
+  },
+  {
+   "id": "agent-branches-l2-client",
+   "team_id": "agent-branches",
+   "owner_tag": "antigravity-head",
+   "status": "running",
+   "updated_at": "2026-10-03T13:11:30.758172+00:00",
+   "evidence_paths": [
+    "research/antigravity/agent-branches/CONTRACT-L2-L3.md",
+    "branch:proto/l2-client",
+    "branch:proto/l2-client (f3ddd67)"
+   ],
+   "blocked_on": [],
+   "assignment_ack": "antigravity-head ACK 01a101c5-6ded; executor l2-client-builder 98576653",
+   "acceptance": "agents use plain git push; client registers tasks, reads status/warnings, acks, posts test provenance against L1 CONTRACT.md; tests; Muse review",
+   "next_action": "L2 client delivered at f3ddd67 (approved by Muse R43); adapting to CONTRACT v0.1 POST /checks and handling 409 stale vector"
+  },
+  {
+   "id": "agent-branches-l3-radar",
+   "team_id": "agent-branches",
+   "owner_tag": "antigravity-head",
+   "status": "running",
+   "updated_at": "2026-10-03T13:11:30.758172+00:00",
+   "evidence_paths": [
+    "branch:proto/l3-radar",
+    ".local/muse-r41/verdict.md",
+    "branch:proto/l3-radar (1632a31)"
+   ],
+   "blocked_on": [],
+   "assignment_ack": "antigravity-head ACK 01a101c5-6ded; executor l3-radar-builder 00ea32c5",
+   "acceptance": "trusted local runner; status conflict|clean|unknown|not_checked, clean only with merge+>=1 collected test; sandboxed exec; POST /checks versioned; Muse re-review",
+   "next_action": "L3 radar delivered at 1632a31 (excised custom callback, pure hardened CLI runner with RLIMIT/safe-tar/positive tests, under Muse R44 review); adding CONTRACT v0.1 export adapter"
+  },
+  {
+   "id": "publication-link-audit",
+   "team_id": "publication",
+   "owner_tag": "public-journal-site",
+   "executor_tag": "journal-link-audit",
+   "executor_session": "1ba6473a-441f-47cf-8ca1-456cb3c68021",
+   "status": "done",
+   "updated_at": "2026-10-03T13:10:51.500173+00:00",
+   "blocked_on": [],
+   "next_action": "Static link and asset audit complete. 35 HTML pages, 1005 links, 79 static assets verified; 0 broken links, 0 missing assets.",
+   "evidence_paths": [
+    ".local/journal/audits/LINK-AUDIT.md",
+    ".local/journal/audits/link-audit.json"
+   ],
+   "acceptance": "35 HTML pages, 1005 links, 79 static assets verified with 0 broken links and 0 missing assets."
+  },
+  {
+   "id": "publication-meta-feed-audit",
+   "team_id": "publication",
+   "owner_tag": "public-journal-site",
+   "executor_tag": "journal-meta-feed-audit",
+   "executor_session": "115c8e4a-9b4e-4f16-86c2-1279dfc8b91a",
+   "status": "done",
+   "updated_at": "2026-10-03T13:10:51.500173+00:00",
+   "blocked_on": [],
+   "next_action": "Metadata and RSS feed audit complete. 35 HTML pages + feed.xml verified; 28 RSS items valid with RFC 822 pubDate; 100% metadata pass.",
+   "evidence_paths": [
+    ".local/journal/audits/META-FEED-AUDIT.md",
+    ".local/journal/audits/meta-feed-audit.json"
+   ],
+   "acceptance": "35 HTML pages + feed.xml verified; 28 RSS items valid with RFC 822 pubDate; 100% metadata pass."
+  },
+  {
+   "id": "publication-viewport-audit",
+   "team_id": "publication",
+   "owner_tag": "public-journal-site",
+   "executor_tag": "journal-viewport-audit",
+   "executor_session": "dcd7b624-7389-493e-ba15-df787e97d193",
+   "status": "done",
+   "updated_at": "2026-10-03T13:10:51.500173+00:00",
+   "blocked_on": [],
+   "next_action": "Responsive viewport testing complete. Playwright headless Chromium across 4 viewports x 5 routes (20 tests); 0 horizontal overflow defects; mobile diagram label >=14px verified.",
+   "evidence_paths": [
+    ".local/journal/audits/VIEWPORT-AUDIT.md",
+    ".local/journal/audits/viewport-audit.json"
+   ],
+   "acceptance": "Playwright headless Chromium across 4 viewports x 5 routes (20 tests); 0 horizontal overflow defects; mobile diagram label >=14px verified."
+  },
+  {
+   "id": "publication-dogfood-scribe",
+   "team_id": "publication",
+   "owner_tag": "public-journal-site",
+   "executor_tag": "journal-dogfood-scribe",
+   "executor_session": "3af667e1-4560-4966-ba09-2475e7a9307c",
+   "status": "done",
+   "updated_at": "2026-10-03T13:10:51.500173+00:00",
+   "blocked_on": [],
+   "next_action": "Host telemetry and dogfood friction synthesis complete. Quantified Rust target/ bloat (59.5G total), test queue RAM spikes, and git lock contention.",
+   "evidence_paths": [
+    ".local/journal/audits/DOGFOOD-ANALYSIS.md",
+    ".local/journal/audits/dogfood-analysis.json"
+   ],
+   "acceptance": "Host telemetry (RAM 35G avail >=10G, NVMe 100G) and dogfood synthesis on Rust build bloat (59.5G target/), test RAM spikes, and git lock serialization."
+  }
+ ]
 }
