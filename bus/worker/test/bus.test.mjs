@@ -104,6 +104,50 @@ describe("dedup and validation", () => {
   });
 });
 
+describe("stored-then-lost reply (codex C-1327)", () => {
+  it("dedups a blind resend after a lost 200 to the same seq", async () => {
+    const id = "b-test-lost-200-1";
+    // The bus stores the message, but the client never observes the 200
+    // (connection cut after commit): it resends blind with the SAME id.
+    const first = await post(ALPHA, { machine: "beta", tag: "b" }, "lost-200 ping", { id });
+    expect(first.status).toBe(201);
+    const resend = await (await post(ALPHA, { machine: "beta", tag: "b" }, "lost-200 ping", { id })).json();
+    expect(resend.duplicate).toBe(true);
+    expect(resend.message.id).toBe(id);
+    expect(resend.message.seq).toBe((await first.json()).message.seq);
+
+    // Exactly one copy reaches the target machine, under the original seq.
+    const betaView = await read(BETA, 0);
+    const copies = betaView.messages.filter((m) => m.id === id);
+    expect(copies).toHaveLength(1);
+    expect(copies[0].seq).toBe(resend.message.seq);
+  });
+});
+
+describe("acl: machine identity (codex C-1327)", () => {
+  it("re-stamps a forged from.machine with the token's machine", async () => {
+    const res = await post(ALPHA, { machine: "beta", tag: "zc-bus-design" }, "spoof attempt", {
+      from: { machine: "beta", tag: "claude-principal" },
+    });
+    expect(res.status).toBe(201); // accepted, but stamped — never rejected silently
+    const { message } = await res.json();
+    expect(message.from.machine).toBe("alpha");
+    expect(message.from.tag).toBe("claude-principal"); // display tag may pass; machine may not
+
+    const betaView = await read(BETA, 0);
+    const seen = betaView.messages.find((m) => m.id === message.id);
+    expect(seen.from.machine).toBe("alpha");
+  });
+
+  it("binds ack to the token's machine, ignoring a client machine claim", async () => {
+    const res = await SELF.fetch(
+      req("POST", "/v1/ack", { token: ALPHA, body: { cursor: 3, machine: "beta" } }),
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, machine: "alpha", cursor: 3 });
+  });
+});
+
 describe("ack", () => {
   it("records a per-machine cursor", async () => {
     const res = await SELF.fetch(req("POST", "/v1/ack", { token: BETA, body: { cursor: 7 } }));

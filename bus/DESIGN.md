@@ -61,7 +61,15 @@ absent = broadcast to all machines. `kind` ∈ note/question/status/event. `repl
   possible. The bridge dedups by `id` → effectively-once into the local aplexer inbox.
 - Cursor/ack per machine: the bridge persists its cursor in local state on every delivered message
   (deliver-then-save; a crash between the two can redeliver once — accepted, dedup-visible).
-  `POST /v1/ack` records the machine's cursor server-side for observability and future log trimming.
+  `POST /v1/ack` records the machine's cursor server-side for observability and future log trimming;
+  the bridge calls it after every poll that advanced the cursor.
+- Bridge log outcomes are typed: `outcome=queued` (accepted for the bus, id assigned),
+  `outcome=transported` (stored on the bus; `duplicate=true` marks a deduped resend),
+  `outcome=received-into-inbox` (provably landed locally), `outcome=acked` (cursor persisted
+  server-side), `outcome=UNKNOWN` (a local native send timed out — it may or may not have landed).
+  An uncertain send is NEVER retried under a new id: the message stays undelivered, the cursor does
+  not move past it, and the next poll redelivers under the SAME bus id; after
+  `--unknown-dead-letter` attempts it is dead-lettered so one wedged target cannot block the stream.
 - Ordering: bus seq order per channel; the bridge delivers in seq order, so remote readers see the
   same order senders produced.
 
@@ -120,7 +128,9 @@ absent = broadcast to all machines. `kind` ∈ note/question/status/event. `repl
   Run tests: `cd worker && node_modules/.bin/vitest run`. Run locally: `node_modules/.bin/wrangler dev`.
 - `bridge/bridge.py` — stdlib daemon (see `--help`); `--max-cycles` for one-shot runs.
 - `demo/demo.sh` — one `wrangler dev`, bridges `alpha` and `beta` with different tokens; proves
-  A→B delivery, dedup on resend, offline queueing, and a rejected bad token.
+  A→B delivery, dedup on resend (including a blind resend after a lost 200), offline queueing, a
+  rejected bad token, forged-from ACL re-stamping, `outcome=UNKNOWN` with same-id retry, and
+  reconnect after killing `wrangler dev` mid-poll (no loss, no duplicates).
 
 ## Open questions
 

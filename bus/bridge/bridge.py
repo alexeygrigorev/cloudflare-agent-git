@@ -17,6 +17,18 @@ pluggable: --delivery file:<path> appends one JSON line per message (used by tes
 Delivery-then-persist: cursor and the delivered-id set are saved atomically AFTER each
 delivery, so a crash can redeliver one message, which the id dedup then absorbs.
 
+Every message progress step is logged with a typed outcome:
+  outcome=queued               accepted for the bus (outbox file or log entry), id assigned
+  outcome=transported          bus stored it (2xx; duplicate=true means a resend deduped)
+  outcome=received-into-inbox  a polled message provably landed in the local workspace
+  outcome=acked                the cursor was persisted server-side via POST /v1/ack
+  outcome=UNKNOWN              a local native send timed out — it may or may not have landed.
+                               The message is NOT marked delivered, the cursor does NOT move
+                               past it, and any retry reuses the SAME bus id (never a new id,
+                               which would duplicate the message if the first send landed).
+                               After --unknown-dead-letter uncertain attempts it is
+                               dead-lettered so one wedged target cannot block the stream.
+
 Stdlib only. Single writer per state file.
 """
 from __future__ import annotations
@@ -83,7 +95,7 @@ class Bridge:
         self.outbox = pathlib.Path(args.outbox_dir)
         self.sent_dir = self.outbox / "sent"
         self.state_file = pathlib.Path(args.state_file)
-        self.state = {"cursor": 0, "delivered": {}}
+        self.state = {"cursor": 0, "delivered": {}, "unknown": {}, "acked_cursor": 0}
         self.delivery_file = None
         if args.delivery.startswith("file:"):
             self.delivery_file = pathlib.Path(args.delivery[5:])
@@ -99,6 +111,10 @@ class Bridge:
             if isinstance(delivered, dict):
                 items = list(delivered.items())[-MAX_DELIVERED_MEMORY:]
                 self.state["delivered"] = dict(items)
+            unknown = data.get("unknown", {})
+            if isinstance(unknown, dict):
+                self.state["unknown"] = unknown
+            self.state["acked_cursor"] = int(data.get("acked_cursor", 0))
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
 
     def save_state(self):
@@ -147,6 +163,7 @@ class Bridge:
                 "from": {"tag": request.get("tag") or self.args.tag,
                          "session_id": request.get("session_id")},
             }
+            log(f"outcome=queued file={path.name} id={payload['id']}")
             status, data = http_json(
                 "POST", f"{self.args.bus_url}/v1/messages", self.args.token, payload
             )
@@ -154,9 +171,11 @@ class Bridge:
                 receipt = {"bus_id": payload["id"], "seq": data.get("message", {}).get("seq")}
                 (self.sent_dir / f"{path.name}.sent.json").write_text(json.dumps(receipt))
                 path.replace(self.sent_dir / path.name)
-                log(f"sent {path.name} -> seq {receipt['seq']}")
+                log(f"outcome=transported file={path.name} id={payload['id']} "
+                    f"seq={receipt['seq']} duplicate={bool(data.get('duplicate'))}")
             elif status in (429, None) or status >= 500:
-                log(f"outbox: {path.name} retryable (HTTP {status}); will retry")
+                log(f"outcome=queued file={path.name} retryable (HTTP {status}); "
+                    f"stays queued with the SAME id {payload['id']}")
                 time.sleep(1)
                 return  # retry next cycle, in order
             else:
@@ -186,17 +205,29 @@ class Bridge:
                 "from": {"tag": entry.get("from", {}).get("tag"),
                          "session_id": entry.get("from", {}).get("session_id")},
             }
+            log(f"outcome=queued log-entry={entry['id']} id={payload['id']}")
             status, data = http_json(
                 "POST", f"{self.args.bus_url}/v1/messages", self.args.token, payload
             )
             if status in (200, 201):
                 self.state["delivered"][payload["id"]] = data.get("message", {}).get("seq")
                 self.save_state()
-                log(f"forwarded log entry {entry['id']}")
+                log(f"outcome=transported log-entry={entry['id']} id={payload['id']} "
+                    f"seq={data.get('message', {}).get('seq')}")
 
     # ---- inbound ----
-    def deliver(self, message: dict) -> str:
-        origin = f"{message['from'].get('tag')}@{message['from'].get('machine')}"
+    def deliver(self, message: dict) -> tuple[str, str]:
+        """Deliver one polled message into the local workspace.
+
+        Returns (status, detail) with status:
+          "ok"      — provably landed (or the hermetic file sink accepted it)
+          "unknown" — a native send timed out (or a file append failed mid-write):
+                      it may or may not be in the inbox, so the caller must not
+                      mark it delivered, must not move the cursor past it, and
+                      must never retry it under a new id — only the SAME bus id.
+          "error"   — known failure; the caller may dead-letter it.
+        """
+        origin = f"{message['from'].get('tag') or 'unknown-tag'}@{message['from'].get('machine')}"
         body = f"[from {origin}] {message['body']}"
         tag = message.get("to", {}).get("tag")
         if self.delivery_file is not None:
@@ -204,18 +235,42 @@ class Bridge:
                 {"bus_id": message["id"], "seq": message["seq"], "tag": tag,
                  "origin": origin, "body": body}
             )
-            with self.delivery_file.open("a") as handle:
-                handle.write(line + "\n")
-            return "ok"
+            try:
+                with self.delivery_file.open("a") as handle:
+                    handle.write(line + "\n")
+            except OSError as err:
+                return "unknown", f"file append uncertain: {err}"
+            return "ok", ""
         if not tag:
-            return "error: broadcast message has no local tag to deliver to"
+            return "error", "broadcast message has no local tag to deliver to"
         # The one and only delivery path: an ordinary local send. Never --from.
         argv = ["aplexer", "message", "send", "--to", tag, body]
         assert "--from" not in argv
-        proc = subprocess.run(argv, cwd=self.workspace, capture_output=True, text=True, timeout=60)
+        try:
+            proc = subprocess.run(
+                argv, cwd=self.workspace, capture_output=True, text=True,
+                timeout=self.args.send_timeout,
+            )
+        except subprocess.TimeoutExpired:
+            return "unknown", f"native send timed out after {self.args.send_timeout}s"
         if proc.returncode != 0:
-            return f"error: aplexer send failed: {(proc.stderr or proc.stdout).strip()[:200]}"
-        return "ok"
+            return "error", f"aplexer send failed: {(proc.stderr or proc.stdout).strip()[:200]}"
+        return "ok", ""
+
+    def ack_cursor(self) -> None:
+        """Persist the cursor server-side (observability / future log trimming)."""
+        cursor = self.state["cursor"]
+        if cursor <= self.state.get("acked_cursor", 0):
+            return
+        status, _ = http_json(
+            "POST", f"{self.args.bus_url}/v1/ack", self.args.token, {"cursor": cursor}, timeout=10
+        )
+        if status == 200:
+            self.state["acked_cursor"] = cursor
+            self.save_state()
+            log(f"outcome=acked cursor={cursor}")
+        else:
+            log(f"ack deferred (HTTP {status}); local cursor {cursor} stays authoritative")
 
     def poll_once(self) -> bool:
         wait = self.args.long_poll
@@ -231,17 +286,40 @@ class Bridge:
             mid = message["id"]
             if mid in self.state["delivered"]:
                 continue
-            outcome = self.deliver(message)
-            if outcome != "ok":
-                log(f"dead-letter {mid}: {outcome}")
-                self.state["delivered"][mid] = f"dead:{outcome[:180]}"
-            else:
+            outcome, detail = self.deliver(message)
+            if outcome == "ok":
                 self.state["delivered"][mid] = message["seq"]
-                log(f"delivered seq {message['seq']} {mid} -> {message.get('to', {}).get('tag')}")
-            self.state["cursor"] = max(self.state["cursor"], int(message["seq"]))
-            self.save_state()
+                self.state["cursor"] = max(self.state["cursor"], int(message["seq"]))
+                self.save_state()
+                log(f"outcome=received-into-inbox id={mid} seq={message['seq']} "
+                    f"tag={message.get('to', {}).get('tag')}")
+            elif outcome == "unknown":
+                # Uncertain send: leave the message undelivered so the next poll
+                # redelivers it under the SAME bus id. Never mint a new id here —
+                # if the first send actually landed, a new id would double-deliver.
+                attempts = self.state["unknown"].get(mid, 0) + 1
+                self.state["unknown"][mid] = attempts
+                self.save_state()
+                log(f"outcome=UNKNOWN id={mid} attempt={attempts} ({detail}); "
+                    f"not marked delivered, retry keeps the SAME id")
+                if attempts >= self.args.unknown_dead_letter:
+                    reason = f"uncertain delivery {attempts}x: {detail}"
+                    self.state["delivered"][mid] = f"dead:{reason[:180]}"
+                    self.state["unknown"].pop(mid, None)
+                    self.state["cursor"] = max(self.state["cursor"], int(message["seq"]))
+                    self.save_state()
+                    log(f"dead-letter {mid}: {reason}")
+                    continue
+                return True  # stop the cycle; nothing later may leapfrog an uncertain message
+            else:
+                self.state["delivered"][mid] = f"dead:{detail[:180]}"
+                self.state["cursor"] = max(self.state["cursor"], int(message["seq"]))
+                self.save_state()
+                log(f"dead-letter {mid}: {detail}")
+        # The bus-side cursor is only adopted when every message this cycle resolved.
         self.state["cursor"] = max(self.state["cursor"], int(data.get("cursor", 0)))
         self.save_state()
+        self.ack_cursor()
         return True
 
     def run(self) -> None:
@@ -279,6 +357,10 @@ def parse_args(argv=None):
     parser.add_argument("--mode", choices=["outbox", "log"], default="outbox")
     parser.add_argument("--poll-interval", type=float, default=3.0)
     parser.add_argument("--long-poll", type=float, default=25.0)
+    parser.add_argument("--send-timeout", type=float, default=60.0,
+                        help="seconds before a local native send is declared outcome=UNKNOWN")
+    parser.add_argument("--unknown-dead-letter", type=int, default=5,
+                        help="uncertain attempts for one message before it is dead-lettered")
     parser.add_argument("--max-cycles", type=int, default=0, help="0 = run until stopped")
     args = parser.parse_args(argv)
     if not args.token:
