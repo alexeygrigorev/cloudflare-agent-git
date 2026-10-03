@@ -324,6 +324,50 @@ def query_db_part_command(cmd_substr):
         return None
 
 
+def verify_whoami_identity(whoami_output, expected_uuid, expected_workspace):
+    """
+    Strict first-JSON-object identity and binding guard.
+    Parses the first JSON object from whoami tool output and enforces:
+    1. obj["id"] == expected_uuid (exact match, no substring pass)
+    2. obj["workspace"] == expected_workspace (exact match)
+    3. If binding_check/binding_ok is present, checks ok is True:
+       - If dict: obj["binding_check"]["ok"] is True
+       - If bool: obj["binding_check"] is True
+    """
+    if not (whoami_output is not None and len(whoami_output.strip()) > 0):
+        return False, "whoami output is empty", {}
+    
+    stripped = whoami_output.strip()
+    start_idx = stripped.find("{")
+    if start_idx == -1:
+        return False, "no JSON object start '{' found in output", {}
+    
+    try:
+        obj, _ = json.JSONDecoder().raw_decode(stripped[start_idx:])
+    except Exception as e:
+        return False, f"first JSON object unparseable: {e}", {}
+    
+    if not isinstance(obj, dict):
+        return False, f"first JSON object is not a dict: {type(obj)}", {}
+    
+    if obj.get("id") != expected_uuid:
+        return False, f"first JSON id mismatch: expected {expected_uuid!r}, got {obj.get('id')!r}", obj
+    
+    if obj.get("workspace") != expected_workspace:
+        return False, f"first JSON workspace mismatch: expected {expected_workspace!r}, got {obj.get('workspace')!r}", obj
+    
+    for key in ("binding_check", "binding_ok", "bound"):
+        if key in obj:
+            val = obj[key]
+            if isinstance(val, dict):
+                if val.get("ok") is not True:
+                    return False, f"{key}.ok is not True: {val}", obj
+            elif val is not True:
+                return False, f"{key} is not True: {val}", obj
+                
+    return True, "verified", obj
+
+
 def cleanup_trial_sessions():
     res = run_host_cmd([PILOT_BIN, "list", "--json"])
     if res.returncode == 0:
@@ -500,8 +544,9 @@ def main():
         print(f"Verified baseline whoami execution in DB: id={whoami_part_id}, status={whoami_status}")
         print(f"Baseline whoami tool output: {whoami_output}")
         assert whoami_output is not None and len(whoami_output) > 0, "Baseline whoami tool output is empty!"
-        assert receiver_uuid in whoami_output, f"First-model whoami output does not contain receiver UUID {receiver_uuid}! Output: {whoami_output}"
-        assert WORKSPACE in whoami_output, f"First-model whoami output does not contain workspace {WORKSPACE}! Output: {whoami_output}"
+        ok_id, id_err, whoami_json = verify_whoami_identity(whoami_output, receiver_uuid, WORKSPACE)
+        assert ok_id, f"First-model whoami identity validation failed: {id_err}! Output: {whoami_output}"
+        print(f"Verified first-model whoami identity: id={whoami_json.get('id')}, workspace={whoami_json.get('workspace')}, binding_check={whoami_json.get('binding_check')}")
 
         results["steps"]["boot_turn_baseline"] = {
             "passed": True,
