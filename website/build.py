@@ -315,14 +315,11 @@ def footer_html():
 GRAIN = '<div class="grain" aria-hidden="true"></div>'
 
 def page(title, body, route='', description='A public experiment in Git, coding agents, and the work between them.', kind='wide'):
-    meta = ''
-    if LATEST:
-        meta = '<span>LATEST DAILY '+E(str(LATEST['date']))+'</span>'+('<span class="header-cutoff">EVIDENCE CUTOFF '+LATEST_CUTOFF.strftime('%H:%M')+' UTC</span>' if LATEST_CUTOFF else '')
-    header = ('<header class="site-header"><div class="header-top"><a class="header-brand" href="'+BASE+'/"><span class="header-logo" aria-hidden="true">'+LOGO_SVG+'</span><span class="header-name"><span class="header-title">Agent Git Lab</span><span class="header-subtitle">Alexey Grigorev\u2019s build-in-public experiment on Git and coding agents</span></span></a>'
-              '<div class="header-meta">'+meta+'</div></div><nav class="site-nav" aria-label="Main navigation">'+nav_html(route)+'</nav></header>')
+    header = ('<header class="site-header"><div class="header-top"><a class="header-brand" href="'+BASE+'/"><span class="header-logo" aria-hidden="true">'+LOGO_SVG+'</span><span class="header-title">Agent Git Lab</span></a>'
+              '</div><nav class="site-nav" aria-label="Main navigation">'+nav_html(route)+'</nav></header>')
     signup = '' if route == 'subscribe/' else '<div class="column signup-wrap">'+signup_section()+'</div>'
     return ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+E(title)+' \u00b7 Agent Git Lab</title><meta name="description" content="'+E(description, quote=True)+'"><meta name="theme-color" content="#2455ed"><link rel="stylesheet" href="'+BASE+'/assets/site.css"><link rel="alternate" type="application/rss+xml" title="Agent Git Lab journal" href="'+BASE+'/feed.xml"><link rel="canonical" href="'+ORIGIN+BASE+'/'+route+'"><script src="'+BASE+'/assets/signup.js" defer></script></head>'
-            '<body>'+GRAIN+'<div class="frame"><a class="skip" href="#main">Skip to content</a><div class="research-banner"><span class="banner-title">RESEARCH IN PROGRESS</span><span>All project labels are provisional \u00b7 no final six \u00b7 nothing here is a validated product</span></div>'
+            '<body>'+GRAIN+'<div class="frame"><a class="skip" href="#main">Skip to content</a>'
             +header+'<main id="main" class="page page-'+kind+'">'+body+'</main>'+signup+footer_html()+'</div></body></html>')
 
 # ---------------------------------------------------------------- components

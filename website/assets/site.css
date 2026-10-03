@@ -1,5 +1,5 @@
 /* Agent Git Lab — ported from the Claude Design reference (Agent-Git-Lab.dc.html).
-   One content column (1180px inside 24px gutters) for banner text, header, main, signup and footer.
+   One content column (1180px inside 24px gutters) for header, main, signup and footer.
    Tokens: paper, ink, cobalt, annotation orange, graphite, hairline. No gradients, no shadows, radius 0. */
 :root{
   --paper:#FCFCF8;--ink:#1C2027;--blue:#2455ED;--orange:#EF7134;--muted:#656A73;--line:#DADCD9;--body:#33343A;--deck:#4D525B;--fail-tint:#FDF1E6;--hover:#F1F3FC;
@@ -31,21 +31,14 @@ p{margin:0}
 /* Column: header, main, signup wrapper and footer share x-edges */
 .site-header,.page,.column,.site-footer{width:100%;max-width:calc(var(--col) + 2*var(--gutter));margin-left:auto;margin-right:auto;padding-left:var(--gutter);padding-right:var(--gutter)}
 
-/* Banner */
-.research-banner{background:var(--orange);color:var(--ink);font-family:var(--mono);font-size:12px;letter-spacing:.04em;line-height:1.5;padding:9px 24px;display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;text-align:center}
-.banner-title{font-weight:500}
 
 /* Header */
 .site-header{padding-top:28px}
-.header-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;border-bottom:2px solid var(--ink);padding-bottom:18px}
+.header-top{display:flex;align-items:center;gap:16px;border-bottom:2px solid var(--ink);padding-bottom:18px}
 .header-brand{display:flex;align-items:center;gap:14px;color:var(--ink);text-decoration:none;min-width:0}
 .header-brand:hover{color:var(--ink)}
 .header-logo{display:flex;width:44px;height:44px;flex:none}
-.header-name{display:flex;flex-direction:column;gap:2px;min-width:0}
-.header-title{font-family:var(--serif);font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1}
-.header-subtitle{font-size:13px;color:var(--muted);line-height:1.4}
-.header-meta{font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 14px;line-height:1.5}
-.header-cutoff{color:var(--ink)}
+.header-title{font-family:var(--serif);font-size:30px;font-weight:500;letter-spacing:-.015em;line-height:1;white-space:nowrap}
 .site-nav{display:flex;flex-wrap:wrap;gap:8px 22px;padding:12px 0;border-bottom:1px solid var(--line)}
 .site-nav a{font-size:14px;font-weight:500;line-height:16px;padding:4px 0;border-bottom:2px solid transparent;color:var(--muted);text-decoration:none;min-height:26px}
 .site-nav a:hover{color:var(--ink)}
