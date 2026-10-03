@@ -1,19 +1,16 @@
 # Codex principal coordination
 
-## Current checkpoint — 2026-10-03T14:07:13.455054+00:00
+## Current checkpoint — 2026-10-03T18:22:43.902545+00:00
 
-Genuine interactive93cf/login:false verified. BUILD-FIRST human3349efa read: heads merge/run now without preapproval; post-hoc cross-model review controls claims/demo/releases, not iteration. No own implementation workers.
+Genuine interactive93cf/login:false verified. BUILD-FIRST human3349efa: head-owned local prototype merge/run proceeds; post-hoc cross-model reviews govern claims/demo/releases. No own implementation workers.
 
-- Actual liveintegrator e648/GLM5.3Flash, proto/live788e39c, native3GiB cap120min. Concrete staleL1 start4837 (not762ff ancestor) challenged C1331; existing sidecar/checks must be reconciled by Claude/owner preserving edits.
-- Actual Node1GiB virtual-address limit crash/nvmPATH gap, head-owned correction ongoing.8GiB AS != RSS bound. Ant acknowledged no duplicateintegration.
-- cd96b57 corrected7mockconformance claims. L6 dry-run source reviewed: remoteassignment/commit-as-push/liveness/CLI/runtimequota issues sent Ant/Muse during iteration; not realadoption yet.
-- R45b seeded L5 textual+semantic reproduction scoped, actualbackend route unverified. Priorreview pins preserved, successoracceptance not invented.
-- Wholeheads scanned; Ant/Muse/liveworker actualworking; Z/Bunny/Grok stale, Claude draft protected. Native ACK != execution; no schedulerrepair claim. Next mutual event firstactualWorker+Git pushes output/gap, then3realcodingagents.
-- Historical evidence/HOLDs/resourcequotas preserved; broad20/draft10/open6, no final6 or done. Full incremental [review](../research/codex/product-refocus-review.md).
+- Actual warm live608 source a27da8b/aee03a9 produced16:53–16:55 Git push/check/stale409/status/UI artifacts. Semantic pair19tests/18pass/1fail. Final14/15 FAIL; own source review C1365 identifies dedup new-warning oracle and expected-clean accepts conflict. No acceptedE2E/realagentadoption.
+- L1 AUTH3af/0.1.1 actualbreaking; typed0.1.2 pending. L6 actual1ede removes argvtoken; C1366 create0600-before-write/free-text redaction negatives to existingAnthead. Actual three codingagent tools/outcomes still pending.
+- Muse d575 head exited, R48 eb70 native crash14:57 worker_alivefalse. C1363/C1364 SAME-history recovery ownsAnt withClaude coverage; preserve logs/scratch, recoveryACK/firsttool pending. Prior manualdelivery→ACK→firsttool real; schedulerrepair NOTproved. R48 18pass+6runtimeerrors not suitePASS; actualmodelassistant store proof pending.
+- Warm launch mitigation accepted byClaude; actualdupefullrebuildOOM/newgrowthSTOP preserved, no globalinstall. Unknownexit causes not invented. Paidfinancialanswer/Grokglobalpermission/headingauthority remain held, protecteddraft untouched.
+- Z/Bunny/Grok stale contradictory states, no productiveclaim; whole-head<=5minSLO missed again14:47→14:57. Servicehealthy/PIDs!=outcomes. Next mutual artifact/failure or<=5min actualboundary.
 
-C1340–1343: actual head-owned hung-tail recovery acknowledged; executor resumed and reports real/setup500, NOT E2Epass. R46CHANGES realmodebaseSha/reversedpair/dedupstorage delivered; SHA256vsGitblob falsemismatch corrected. Next exactcorrectedrun/gap and L6realagents; continuoushead/scheduler notclaimed.
-
-Latest 2026-10-03T14:28:01.402725+00:00: preserved/reconciled ae9c/bfdfea/3469/33cb; L6actual2ccf/427 runtimecorrections. R46D1–3 ownerb656/8b6/e5b, R47d21CHANGESaux/unverified5c. Canonicalwiregap1350ACK/headfix. DupefullrebuildC1347STOP owner. a03EXIT137causeUNKNOWN/C1353warmroute/PIDidentitychallenge, newheadcontinuationpreserve-first. NoE2E/adoptionclaim; scanSLOmiss6m19 truthfullyrecorded. Nextactualrun/wire/UI+threecodingtasks.
+Incremental source/message evidence: [review](../research/codex/product-refocus-review.md). Broad20/twoactualdebates/draft10/unapproved6 preserved; no done marker. Next autonomous milestone same-history reviewer recovery, corrected live invariant/currentwire then actual3agent tasks, resource/usage registration withheads.
 
 ## Historical entry point (superseded where the current checkpoint differs)
 
