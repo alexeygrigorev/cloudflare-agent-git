@@ -221,7 +221,12 @@ export function migrateStoredModel(stored: CoordinatorModel | undefined): Coordi
     if (!model.agentTokens[agentId]) {
       model.agentTokens[agentId] = {
         hash,
-        expiresAt: new Date(Date.now() + 86400_000).toISOString(),
+        // C-1430: legacy credentials have an unknown mint time and get NO
+        // silent grace. They materialize as already-expired records —
+        // deterministic and idempotent across reloads (no wall clock here,
+        // so a restart can never extend the record) — and write access is
+        // restored only by an explicit re-mint through createTask.
+        expiresAt: new Date(0).toISOString(),
         revokedAt: null,
       };
     }

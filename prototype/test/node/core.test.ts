@@ -328,8 +328,8 @@ test("agent token gate: expiry boundary, fail-closed garbage expiry, revocation 
   const expiresMs = Date.parse(created.token.expiresAt);
   ok(Number.isFinite(expiresMs), "fake host mints a parseable expiresAt");
 
-  // Exact boundary: valid AT the expiry instant, denied one ms later.
-  strictEqual(await rig.core.credentialAgent(token, expiresMs), created.agentId);
+  // Exact boundary: denied AT the expiry instant (C-1430), valid one ms before.
+  strictEqual(await rig.core.credentialAgent(token, expiresMs), null);
   strictEqual(await rig.core.credentialAgent(token, expiresMs + 1), null);
   strictEqual(await rig.core.credentialAgent(token, expiresMs - 60_000), created.agentId);
 
@@ -357,6 +357,20 @@ test("agent token gate: expiry boundary, fail-closed garbage expiry, revocation 
   });
   strictEqual(await reopened2.credentialAgent(token), null, "missing expiresAt denies");
 
+  // ANY non-null revokedAt marker denies, including the empty string (C-1430).
+  const revokedEmpty = await rig.store.get<CoordinatorModel>("model");
+  ok(revokedEmpty, "model expected for empty-string revocation");
+  revokedEmpty.agentTokens[created.agentId].revokedAt = "";
+  await rig.store.put("model", revokedEmpty);
+  const reopened3 = new CoordinatorCore({
+    store: rig.store,
+    git: rig.git,
+    radar: new StubRadar(),
+    clock: fakeClock(),
+    ids: fixedIds,
+  });
+  strictEqual(await reopened3.credentialAgent(token), null, "empty-string revokedAt denies");
+
   // Revocation denies the SAME plaintext and is idempotent; unknown agents are false.
   const rev = makeRig();
   const agent = await rev.core.createTask({ agent: "revoker" });
@@ -366,7 +380,7 @@ test("agent token gate: expiry boundary, fail-closed garbage expiry, revocation 
   strictEqual(await rev.core.revokeAgentToken("ghost-9999"), false);
 });
 
-test("legacy hash-only state migrates to a bounded agentTokens record (C-1422)", async () => {
+test("legacy hash-only state migrates to an already-expired record — no silent grace (C-1422/C-1430)", async () => {
   const rig = makeRig();
   await rig.core.setup();
   // Pre-0.1.2 stored shape: digest map only, no structured records.
@@ -376,8 +390,9 @@ test("legacy hash-only state migrates to a bounded agentTokens record (C-1422)",
   legacy.agentTokenHashes["legacy-0001"] = await sha256Hex("legacy-token-plaintext");
   await rig.store.put("model", legacy);
 
-  // A fresh core migrates at load: the legacy token still works, but now
-  // through a BOUNDED record (+24h), not a perpetual fallback loop.
+  // A fresh core migrates at load: the legacy credential is materialized as
+  // an ALREADY-EXPIRED record and DENIED — its mint time is unknown, so it
+  // earns no silent grace (C-1430). Reissue is an explicit createTask.
   const migrated = new CoordinatorCore({
     store: rig.store,
     git: rig.git,
@@ -385,17 +400,32 @@ test("legacy hash-only state migrates to a bounded agentTokens record (C-1422)",
     clock: fakeClock(),
     ids: fixedIds,
   });
-  strictEqual(await migrated.credentialAgent("legacy-token-plaintext"), "legacy-0001");
+  strictEqual(await migrated.credentialAgent("legacy-token-plaintext"), null, "legacy credential denied");
 
   const migratedModel = await rig.store.get<CoordinatorModel>("model");
   ok(migratedModel, "model expected");
   const record = migratedModel.agentTokens["legacy-0001"];
   ok(record, "migration must materialize the structured record");
   strictEqual(record.hash, legacy.agentTokenHashes["legacy-0001"]);
-  ok(Date.parse(record.expiresAt) > Date.now(), "migration window is in the future");
+  strictEqual(record.expiresAt, "1970-01-01T00:00:00.000Z", "legacy record is already expired");
   strictEqual(record.revokedAt, null);
 
-  // Revoking a migrated agent denies the legacy plaintext too.
+  // Migration is deterministic: a reload cannot extend the record (no wall
+  // clock in the backfill), so actor restarts never re-arm the credential.
+  const firstExpiry = record.expiresAt;
+  const reloaded = new CoordinatorCore({
+    store: rig.store,
+    git: rig.git,
+    radar: new StubRadar(),
+    clock: fakeClock(),
+    ids: fixedIds,
+  });
+  strictEqual(await reloaded.credentialAgent("legacy-token-plaintext"), null, "still denied after reload");
+  const reloadedModel = await rig.store.get<CoordinatorModel>("model");
+  ok(reloadedModel?.agentTokens["legacy-0001"], "record expected after reload");
+  strictEqual(reloadedModel.agentTokens["legacy-0001"].expiresAt, firstExpiry, "no extension on reload");
+
+  // Revoking a migrated agent still works and keeps the credential denied.
   strictEqual(await migrated.revokeAgentToken("legacy-0001"), true);
   strictEqual(await migrated.credentialAgent("legacy-token-plaintext"), null);
 });
