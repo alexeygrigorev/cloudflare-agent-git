@@ -621,6 +621,7 @@
 
   function evidenceHtml(agent, currentHead, lost) {
     var ev = agent.testEvidence;
+    var stale = statusFresh.describe();
     if (lost) {
       return (
         "<div class='notice-unknown'>" +
@@ -631,7 +632,7 @@
       );
     }
     if (ev) {
-      var matchesHead = !currentHead || !ev.head || ev.head === currentHead;
+      var matchesHead = !stale && (!currentHead || !ev.head || ev.head === currentHead);
       var passed = ev.exitCode === 0;
       return (
         "<div class='evidence'><dl>" +
@@ -642,16 +643,21 @@
           : "<span class='badge unknown'>Failed — exit " + esc(ev.exitCode) + "</span>") +
         "</dd>" +
         "<dt>Tested change</dt><dd>" + shaHtml(ev.head) +
-        (matchesHead
-          ? " <span class='muted small'>(the latest change)</span>"
-          : " <span class='muted small'>(an older change, not the latest)</span>") +
+        (stale
+          ? " <span class='muted small'>(live status unconfirmed · " + esc(stale.error.message) + ")</span>"
+          : (matchesHead
+            ? " <span class='muted small'>(the latest change)</span>"
+            : " <span class='muted small'>(an older change, not the latest)</span>")) +
         "</dd>" +
         "<dt>When</dt><dd>" + fmtWhen(ev.at) + "</dd>" +
         "</dl>" +
-        (!matchesHead || !passed
+        (stale
           ? "<p class='small' style='margin-bottom:0'><span class='badge unknown'>Unknown — not safe</span> " +
-            "There is no passing test run for the latest change, so this change is not proven safe.</p>"
-          : "") +
+            "Live status could not be refreshed (" + esc(stale.error.message) + "); whether tests ran at the true current head is unknown, not safe.</p>"
+          : (!matchesHead || !passed
+            ? "<p class='small' style='margin-bottom:0'><span class='badge unknown'>Unknown — not safe</span> " +
+              "There is no passing test run for the latest change, so this change is not proven safe.</p>"
+            : "")) +
         "</div>"
       );
     }

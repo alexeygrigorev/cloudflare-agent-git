@@ -30,7 +30,8 @@ import unittest
 from playwright.sync_api import sync_playwright
 
 UI_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-scratch_dir = os.environ.get("TMPDIR", "/home/alexey/git/cloudflare-agent-git/.local/scratch")
+default_scratch = os.path.abspath(os.path.join(UI_DIR, "../../.local/scratch"))
+scratch_dir = os.environ.get("TMPDIR", default_scratch)
 os.makedirs(scratch_dir, exist_ok=True)
 os.environ["TMPDIR"] = scratch_dir
 
@@ -105,18 +106,33 @@ class MockUIHandler(http.server.SimpleHTTPRequestHandler):
             task_data = {
                 "taskId": "task-alpha",
                 "agentId": "agent-alpha",
-                "branch": "feature/auth",
-                "intent": "feature auth",
-                "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                "pushes": [
-                    {
-                        "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                        "base_sha": "0000000000000000000000000000000000000000",
-                        "files_changed": ["auth.py"],
-                        "intent": "feature auth",
-                        "pushed_at": 1791000000
+                "forkName": "agent-branches-canonical-agent-alpha",
+                "ref": "refs/heads/main",
+                "createdAt": "2026-10-03T12:00:00.000Z",
+                "agent": {
+                    "agentId": "agent-alpha",
+                    "taskId": "task-alpha",
+                    "forkName": "agent-branches-canonical-agent-alpha",
+                    "ref": "refs/heads/main",
+                    "intent": "feature auth",
+                    "baseSha": "0000000000000000000000000000000000000000",
+                    "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "pushes": 1,
+                    "createdAt": "2026-10-03T12:00:00.000Z",
+                    "pushLog": [
+                        {
+                            "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                            "at": "2026-10-03T12:00:00.000Z",
+                            "message": "feature auth"
+                        }
+                    ],
+                    "testEvidence": {
+                        "command": "npm test",
+                        "exitCode": 0,
+                        "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        "at": "2026-10-03T12:00:00.000Z"
                     }
-                ],
+                },
                 "warnings": []
             }
             self.wfile.write(json.dumps(task_data).encode("utf-8"))
@@ -331,9 +347,17 @@ class TestDOMNegativeBrowser(unittest.TestCase):
 
     def test_04_task_view_stale_behavior(self):
         """
-        Task view (task.html) stale status behavior:
-        When /status fails after task data is rendered, the page must surface
-        the #status-error alert and retain rendered task details without crashing.
+        Task view (task.html) stale status behavior (C-1385 & C-1426):
+        1. Clean 200: Historical Passed run matches latest change, zero unknown badges in #evidence.
+        2. 503 Outage:
+           - #status-error alert displayed.
+           - Historical fact PRESERVED: Result remains 'Passed' (exit 0 did occur at tested commit).
+           - Live head match UNCONFIRMED: Tested change shows '(live status unconfirmed · HTTP 503)'.
+           - Current-head safety DOWNGRADED: #evidence surfaces '.badge.unknown' ('Unknown — not safe').
+        3. Recovery 200:
+           - #status-error hidden.
+           - Tested change restores '(the latest change)'.
+           - #evidence '.badge.unknown' removed (count 0).
         """
         self.server.ui_state = {"mode": "clean", "delay_s": 0}
         page = self.browser.new_page()
@@ -347,12 +371,17 @@ class TestDOMNegativeBrowser(unittest.TestCase):
         page.wait_for_selector("#task-head", timeout=5000)
         page.wait_for_function("document.getElementById('loading').hidden === true", timeout=5000)
 
-        # Verify task head rendered
+        # 1. Clean 200 checks
         self.assertIn("agent-alpha", page.locator("#task-head").text_content())
         status_error = page.locator("#status-error")
         self.assertTrue(status_error.get_attribute("hidden") is not None or not status_error.is_visible())
 
-        # Switch server to 503 outage and re-boot task view
+        # Evidence: historical Passed, matches current head, 0 unknown badges
+        self.assertIn("Passed", page.locator("#evidence .badge.clean").text_content())
+        self.assertIn("(the latest change)", page.locator("#evidence").text_content())
+        self.assertEqual(page.locator("#evidence .badge.unknown").count(), 0)
+
+        # 2. Switch server to 503 outage and re-boot task view
         self.server.ui_state = {"mode": "503", "delay_s": 0}
         page.evaluate("window.AgentBranchesUI.bootTask('task-alpha')")
 
@@ -362,8 +391,24 @@ class TestDOMNegativeBrowser(unittest.TestCase):
         self.assertIn("Live status is out of date", err_text)
         self.assertIn("HTTP 503", err_text)
 
-        # Verify task details remain intact and rendered
-        self.assertIn("agent-alpha", page.locator("#task-head").text_content())
+        # CRITICAL DOM NEGATIVE ASSERTION ON TASK VIEW (C-1426):
+        # Historical fact is preserved: Result still displays 'Passed'
+        self.assertIn("Passed", page.locator("#evidence .badge.clean").text_content())
+        # Current head match is unconfirmed during outage
+        self.assertIn("live status unconfirmed", page.locator("#evidence").text_content())
+        # Current head safety verdict is strictly downgraded to unknown (not safe)
+        self.assertEqual(page.locator("#evidence .badge.unknown").count(), 1, "Evidence must surface Unknown — not safe during outage")
+        self.assertIn("Unknown — not safe", page.locator("#evidence .badge.unknown").first.text_content())
+        self.assertIn("whether tests ran at the true current head is unknown, not safe", page.locator("#evidence").text_content())
+
+        # 3. Recovery: Switch server back to 200 Clean
+        self.server.ui_state = {"mode": "clean", "delay_s": 0}
+        page.evaluate("window.AgentBranchesUI.bootTask('task-alpha')")
+
+        page.wait_for_function("document.getElementById('status-error').hidden === true", timeout=5000)
+        self.assertIn("Passed", page.locator("#evidence .badge.clean").text_content())
+        self.assertIn("(the latest change)", page.locator("#evidence").text_content())
+        self.assertEqual(page.locator("#evidence .badge.unknown").count(), 0, "Unknown badge removed upon 200 recovery")
 
         page.close()
         self.assertEqual(page_errors, [], f"Page threw unhandled exceptions: {page_errors}")
