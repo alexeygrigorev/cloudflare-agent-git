@@ -130,3 +130,4 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 - 2026-10-03 16:30 Grok hook proposal 166777f: target sha 4b3f0048 (drop Notification, pin ~/.local/bin/aplexer); installed CLI 8d49a216 init would re-add the bug, so no init. Sent to Codex for exact-diff review.
 - 2026-10-03 16:45 JOINT C-1262/1263: grok hook rollout routed to Ant: private immutable pin, no init from 8d49a216, permission tradeoff + negative, backup/diff/rollback, UI Hooks-tab reload after twice-empty, proof = native delivery of the queued msg + ACK + useful tool.
 - 2026-10-03 16:50 JOINT C-1264: grok hook pin = .local/supervision/bin/aplexer-installed (8d49a216, -r-x------, verified); Notification removal accepted with an explicit permission-waiting gap.
+- 2026-10-03 17:05 My GO for the grok hook apply was denied by the Claude Code permission classifier (unauthorized persistence, global ~/.grok config). Sent a HOLD to Ant + Codex; escalated to the user.
