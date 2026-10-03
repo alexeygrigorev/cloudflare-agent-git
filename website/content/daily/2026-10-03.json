@@ -1,7 +1,7 @@
 {
   "title": "Day 1: 20 Ideas, No Agreed Six, and Where My Worktree Disk Went",
   "date": "2026-10-03",
-  "summary": "Agents produced 20 Git-for-agents approaches but no agreed six, measured 111.7 GiB of worktrees with 62.1% in dependencies and builds, and corrected their claims. The runtime source patch is merged, while deployment and the 16 GiB disk drop remain unresolved.",
+  "summary": "Agents produced 20 Git-for-agents approaches and measured 111.7 GiB of worktrees with 62.1% in dependencies and builds. By the October 3 morning standup, two research hypotheses remain, four places are open, there is no primary direction, and the website redesign stays in preview.",
   "author": "Alexey Grigorev",
   "model": "Claude Opus 5.5 (claude-opus-5-5)",
   "source_cutoff": "2026-10-03T02:24:00Z",
@@ -21,7 +21,12 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/claude/journal-factcheck-2026-10-03.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/evidence-ledger.md",
     "https://github.com/alexeygrigorev/codex-zcode/commit/bf9d7ed22a70fd205045c75688f1f1a79877ee8f",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/codex/oversight-resume-20261003.md"
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/codex/oversight-resume-20261003.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/experiment/standups/2026-10-03.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/shortlist-6.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/9412520f58e2b457a0403b74f50ae8478e618571",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/4321187/research/codex/standup-2026-10-03.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/claude/standup-2026-10-03.md"
   ],
   "image": "../../assets/agent-git-illustration.png",
   "image_alt": "Conceptual illustration for the agent Git experiment; not measurement evidence",
@@ -30,9 +35,9 @@
     "claude-opus-5-5"
   ],
   "editorial_review": "Evidence, privacy, full stylint and asset checks by desktop orchestrator",
-  "article_sha256": "09cbe68713df5390d7c2a498962dce0c0ff42b450b5c1b5f6673aa9b286160da",
+  "article_sha256": "44a2ccae552a05a1ef7cb69db15caa0b403f07dfea76b3af54a4daffdbcbe202",
   "published_at": "2026-10-03T03:12:10.216532+00:00",
-  "corrected_at": "2026-10-03T03:58:19.692466+00:00",
+  "corrected_at": "2026-10-03T07:33:39+00:00",
   "corrections": [
     {
       "at": "2026-10-03T03:58:19.692466+00:00",
@@ -45,6 +50,19 @@
         "https://github.com/alexeygrigorev/codex-zcode/commit/bf9d7ed22a70fd205045c75688f1f1a79877ee8f",
         "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/codex/oversight-resume-20261003.md"
       ]
+    },
+    {
+      "at": "2026-10-03T07:33:39+00:00",
+      "editor": "journal-opus-writer-0930 (Claude Opus 5.5)",
+      "reason": "09:30 Berlin (07:33 UTC) edition: morning standup update appended as a dated section after the original 02:24 UTC cutoff; revised per independent fact-check research/claude/daily-factcheck-2026-10-03-0930.md (df9815b)",
+      "details": "Original pre-cutoff body restored byte-identical to 6b8c98a (sha256 09cbe687...). Appended morning update: selection snapshot (2 retained, 4 open, no approved list, no primary); A16/A10/A05/A18 provisionally parked as joint resource decisions; R12 v2.2 conditionally approved for three unscored engineering pairs only; automation scripts relabeled truthfully; partial producer checker verdict with production --emit rollout withheld, verification only; Muse OOM suspected cause from cgroup evidence, separate capped sessions rule, fresh session recovered; publication re-review conditional, design not accepted, redesign in preview. Untraced ordinary-clone 47.38% figure and Relay double opt-in sentence removed.",
+      "sources": [
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/experiment/standups/2026-10-03.md",
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/shortlist-6.md",
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/9412520f58e2b457a0403b74f50ae8478e618571",
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/4321187/research/codex/standup-2026-10-03.md"
+      ]
     }
-  ]
+  ],
+  "update_cutoff": "2026-10-03T06:56:00Z"
 }
