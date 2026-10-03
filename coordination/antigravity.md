@@ -572,6 +572,39 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - Bunny emitted reply `01a0ff1d-9cc8-7c52-8211-f9820943084f` and handed off review to Codex principal and Muse reviewer.
    - Target is verified resting at empty composer prompt (294.3K context).
 
+---
+
+## 25. Muse Sequential Resume & Independent Review (Complete: PASS/PASS)
+
+1. **Preconditions & Preservation:**
+   - Preserved private history (4.5 MB `history.bin`, `screen.txt`, `session_record.json`) in `scratch/muse_preservation/`.
+   - Safely terminated unhooked session `07d34106`.
+   - Verified physical invariants: disk space at 132 GiB free (>8 GiB floor); quota monitor at 96% remaining (>15% reserve gate).
+
+2. **Sequential Session Resume with Active Lifecycle Plugin:**
+   - Launched clean session `7e6e9bb0-bcfb-4a93-be57-14d6d36dd06f` (`muse-reviewer`) with `--engine opencode`, model `opencode-go/muse-spark-1.3-contributor`, conversation `ses_f01efa751ffeCumog1qyjzvQt2` reconnected, **without `--pure`**.
+   - Verified external plugin loading from `XDG_CONFIG_HOME`: stamped initial semantic `reported_state: idle` at timestamp `1790986986251` upon composer readiness.
+   - Verified clean, empty composer prompt (251.9K context).
+
+3. **Independent Review Handoff & High-Fidelity Lifecycle Transitions:**
+   - Dispatched handoff `01a0ff24-f9a1-7793-9963-63683a11fa97` with `--pane` routing review of `cf6b2bb` (fail-closed idle derivation) and Bunny `74eae44`/`repro/`.
+   - **Observed Live Transitions (356 samples):**
+     - `[0.15s] STATE CHANGE: idle -> working (reported_at=1790987008853)` via `step-start` hook BEFORE tool execution.
+     - 10 distinct tool execution `working <-> waiting` cycles observed cleanly via `permission.asked` and auto-approval.
+     - `[220.77s] STATE CHANGE: working -> idle (reported_at=1790987228950)` via `session.idle` hook on turn conclusion.
+     - Total turn duration: 3m 40s.
+
+4. **Independent Review Verdicts (Commit `3de7e76`, `research/muse/review-round8.md`):**
+   - **Milestone 1 (`cf6b2bb` protocol stack): PASS.** All round-7 demands (a)(b)(c) implemented as code and tests. Binary SHA-256 `931699d4...` pinned read-only. Noted recommendations for PATH fallback logging in `drivers.rs` and idle TTL backstop.
+   - **Milestone 2 (Bunny `repro/` independent replay): PASS.** 21/21 manifest files verified; all 8 fixture cases replayed rc=0 from published files only in unique `/tmp` scratch directories. Preregistration (§8) and within-role paired-diff symmetry confirmed sound. Execution correctly gated on dupexec fix.
+   - Muse replied via `01a0ff28-41a6-7391-a69f-b16913a09a62` and returned cleanly to idle.
+
+5. **Cross-Lane Course Correction & Read-Only Task Unblocking:**
+   - Delivered dupexec handoff `01a0ff27-aed3` to production runtime owner `82d375cd` in `~/git/codex-zcode`; owner transitioned to `working`.
+   - Delivered read-only A06 comparison plan handoff `01a0ff27-dd22` carrying `G-IDLE-HANDOFF-20261003` to `grok-head` (`39e95f91`).
+   - Delivered read-only consumer adapter review handoff `01a0ff27-f088` to `zcode-independent` (`7bd5b3c2`).
+   - Credited Desktop Orchestrator `HEARTBEAT0024` root independent replay (8/8 common PASS across 21 manifest files).
+
 
 
 
