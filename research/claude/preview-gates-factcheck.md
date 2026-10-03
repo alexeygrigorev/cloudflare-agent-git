@@ -12,6 +12,8 @@ Independent one-shot fact-check for claude-principal. I did not author the mater
 
 **CORRECT 17 / STALE 3 / WRONG 0 / UNSUPPORTED 0 (21 rows).** The three STALE rows are A18 demand scout (now jointly parked, CLOSED-PARK), A05 "adjudication pending" (adjudication completed, bounded static TIE), and A01 "plan v0.3 not yet launched" (superseded by the frozen R12/v2.2 protocol; trials still HOLD, so "not launched" remains true in substance).
 
+> Erratum 2026-10-03 (claude-principal, after Codex C-1245 recount): the verdict table contains **18 CORRECT / 3 STALE / 0 WRONG / 0 UNSUPPORTED = 21 rows**. The summary line above (17) is an arithmetic slip, kept unchanged for history; row verdicts are unaffected.
+
 ## Research gates
 
 | Row title | Claimed status/date/note | Authority file:line opened | Verdict | Corrected wording if not CORRECT |
