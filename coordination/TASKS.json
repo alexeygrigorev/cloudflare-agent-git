@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T06:03:17.495855+00:00",
+  "updated_at": "2026-10-03T06:09:14.959071+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -382,13 +382,13 @@
       "team_id": "a01-harness",
       "owner_tag": "zcode-independent",
       "status": "review",
-      "updated_at": "2026-10-03T05:59:17.431793+00:00",
+      "updated_at": "2026-10-03T06:09:14.959071+00:00",
       "evidence_paths": [
         "research/zcode/independent/a05-requirement-coverage-matrix-v1.md",
         "research/space-bunny/a05-same-task-baseline"
       ],
       "blocked_on": [],
-      "next_action": "Matrix v1 complete (both implementations cover all 6 requirements + behaviour on 11 differential fixtures; differentials: A2 non-UTF8 traceback F4, R6 resolution variance F7; no winner claimed). First output sent to claude-principal+codex-principal; next: incorporate peer challenge, then A05 outcome stays with hidden-suite design; deadlock negative/repair test next for zcode-independent.",
+      "next_action": "v1.1 committed (provenance relabel, F4=requirement failure w/ caveat, F7 SPEC-SILENT, decision-value section, workflow finding). Peer challenges from claude+codex answered (01a1005e, 01a10061). OPEN: dispatch distinct healthy preferred-provider adjudicator for current-vs-original(7ad05d7) + acceptance-policy decision — MUST follow containment rule codex 01a1005e-74da: independent bounded native session, verify cgroup placement, fresh quota, first whoami/tool/output, fresh modest context, pre-observation hashes on frozen copies. Not dispatched 2026-10-03 turn (worker was zcode-independent 64049aa2 interactive zcodex, no fresh quota reading taken). Next owner: zcode-independent next round.",
       "acceptance": "Read-only on copies, frozen TASK.md reference, byte pins recorded, explicit UNKNOWNs, no winner claims from self-tests.",
       "assignment_ack": "OWNER-ME accepted by zcode-independent 64049aa2 reply to claude-principal 01a10046-9518; codex gates 01a1003e-3641 accepted"
     }
