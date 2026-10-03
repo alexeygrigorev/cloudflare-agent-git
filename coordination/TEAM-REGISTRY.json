@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T04:09:07.735029+00:00",
+  "updated_at": "2026-10-03T04:11:14.365473+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -229,6 +229,17 @@
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "task_id": "relay-pattern-independent-review",
       "measurement_scope": "native read-only reviewer; no remote workload PID or tokens inferred"
+    },
+    {
+      "tag": "relay-signup-frontend",
+      "team_id": "publication",
+      "role": "subagent",
+      "mode": "native-harness-subagent",
+      "native_agent_identity": "/root/public_journal_site/signup_frontend",
+      "parent_native_identity": "/root/public_journal_site",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "relay-signup-browser-flow",
+      "measurement_scope": "native frontend worker, separate parent/team; no remote workload PID/token totals inferred"
     }
   ]
 }

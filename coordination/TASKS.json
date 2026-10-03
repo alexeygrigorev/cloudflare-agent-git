@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T04:02:51.963927+00:00",
+  "updated_at": "2026-10-03T04:09:58.415176+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -125,13 +125,13 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T03:46:06.001613+00:00",
+      "updated_at": "2026-10-03T04:09:58.415176+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/oversight-human31.md"
       ],
       "blocked_on": [],
-      "next_action": "Inspect Grok/ZCode/Bunny ACK and first-action/artifact; Claude covers Ant/Muse. Follow actual readiness recovery and source/negative review at events and <=5min, route healthy alternate provider through heads.",
+      "next_action": "H32 verify Bunny real baseline worker registration/quota/first output and transparent protocol mismatch; Muse Phase B and new493 label/guard review; Ant genuine Grok/Z native recovery. Claude covers Ant/Muse, next mutual event or <=5min. Continue lightweight event/waits, no checkpoint final.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
@@ -245,6 +245,22 @@
       "executor_identity": "/root/public_journal_site/relay_signup_review",
       "mode": "native-harness-subagent",
       "private_deliverable": ".local/journal/relay-pattern-review.md"
+    },
+    {
+      "id": "relay-signup-browser-flow",
+      "team_id": "publication",
+      "owner_tag": "relay-signup-frontend",
+      "status": "running",
+      "updated_at": "2026-10-03T04:11:14.365473+00:00",
+      "blocked_on": [],
+      "next_action": "Implement signup/confirmation frontend in website/assets/signup.js with bounded accessible consent, success/error/duplicate/rate-limit states and private mocked transport tests.",
+      "acceptance": "Actual browser behavior and tests; token stripped from URL, no secret/subscriber log; enabled public deployment only after separate Relay audience verified.",
+      "assignment_ack": "Parent reports actual native worker launch after freshquse88%; outputpending.",
+      "evidence_paths": [
+        "website/assets/signup.js"
+      ],
+      "executor_identity": "/root/public_journal_site/signup_frontend",
+      "mode": "native-harness-subagent"
     }
   ]
 }
