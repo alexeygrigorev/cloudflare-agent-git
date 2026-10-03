@@ -34,9 +34,16 @@ export interface FetchHandler {
 }
 
 function json(body: unknown, status = 200): Response {
+  // The review UI (prototype/ui) is served from its own origin and fetches
+  // /status cross-origin (documented ?api= usage), so responses need CORS.
   return new Response(JSON.stringify(body, null, 2), {
     status,
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      "access-control-allow-origin": "*",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-headers": "authorization, content-type",
+    },
   });
 }
 
@@ -97,6 +104,18 @@ const handler: FetchHandler = {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
+
+    if (method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "access-control-allow-origin": "*",
+          "access-control-allow-methods": "GET, POST, OPTIONS",
+          "access-control-allow-headers": "authorization, content-type",
+          "access-control-max-age": "86400",
+        },
+      });
+    }
 
     try {
       if (method === "POST" && path === "/setup") {

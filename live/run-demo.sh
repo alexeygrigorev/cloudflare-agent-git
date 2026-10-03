@@ -17,6 +17,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LIVE="$ROOT/live"
 STATE="$LIVE/state"; EVIDENCE="$LIVE/evidence"; WORK="$LIVE/work"; ART="$LIVE/artifacts"
 mkdir -p "$STATE" "$EVIDENCE" "$WORK" "$ART"
+cd "$ROOT"  # radar resolves python3 -m radar relative to the repo root
 
 # Tokens + ports come from the untracked live/.dev.vars (exported there).
 # shellcheck disable=SC1091
@@ -25,16 +26,30 @@ SIDECAR="http://127.0.0.1:${SIDECAR_PORT:-8799}"
 WORKER="http://127.0.0.1:${WORKER_PORT:-8787}"
 UI_PORT="${UI_PORT:-8788}"
 NODE_BIN="$(command -v node)"
+# The sidecar requires a per-repo token on EVERY git endpoint (clone and fetch
+# included, G2). Never let git fall back to an interactive username prompt:
+# fail fast with the real HTTP error instead (process-env only, no git config).
+export GIT_TERMINAL_PROMPT=0
 export SIDECAR_PORT SIDECAR_HOST="127.0.0.1"
 export SIDECAR_ROOT="$ART"
 export SIDECAR_TOKEN
 export SIDECAR_NOTIFY_URL="$WORKER/events/push"
 
 SIDE_PIDS=()
+# Dogfooding the process-hygiene rule (gap G1): only PIDs this script itself
+# recorded in live/state/ are ever killed, and only after the /proc cmdline
+# matches a known demo server. Never kill by pattern, cwd or exe.
+safe_stop() { # pid
+  local pid="$1" cmd
+  case "$pid" in ''|"$$") return 0 ;; esac
+  cmd="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)"
+  case "$cmd" in
+    *wrangler*|*local-artifacts*|*http.server*) kill "$pid" 2>/dev/null || true ;;
+    *) log "safe_stop: pid $pid is not a demo server (cmdline: ${cmd:0:80}); leaving it alone" ;;
+  esac
+}
 cleanup() {
-  for pid in "${SIDE_PIDS[@]:-}"; do
-    [ -n "$pid" ] && kill "$pid" 2>/dev/null || true
-  done
+  for pid in "${SIDE_PIDS[@]:-}"; do safe_stop "$pid"; done
 }
 trap cleanup EXIT
 
@@ -42,10 +57,10 @@ log() { echo "[run-demo $(date +%H:%M:%S)] $*"; }
 step_done() { [ -f "$STATE/$1.done" ]; }
 mark() { touch "$STATE/$1.done"; }
 
-wait_for() { # url name tries
-  local url="$1" name="$2" tries="${3:-60}"
+wait_for() { # url name tries [extra curl args...]
+  local url="$1" name="$2" tries="${3:-60}"; shift 3
   for _ in $(seq 1 "$tries"); do
-    if curl -sf -o /dev/null "$url"; then return 0; fi
+    if curl -sf -o /dev/null "$url" "$@"; then return 0; fi
     sleep 1
   done
   echo "FATAL: $name did not come up at $url" >&2
@@ -53,7 +68,7 @@ wait_for() { # url name tries
 }
 
 start_bg() { # logfile pidfile cmd...
-  local logfile="$1" pidfile="$2"; shift
+  local logfile="$1" pidfile="$2"; shift 2
   nohup "$@" > "$logfile" 2>&1 < /dev/null &
   echo $! > "$pidfile"
   SIDE_PIDS+=("$(cat "$pidfile")")
@@ -72,6 +87,13 @@ ADMIN_AUTH=(-H "Authorization: Bearer $ADMIN_TOKEN" -H "content-type: applicatio
 SIDECAR_AUTH=(-H "Authorization: Bearer $SIDECAR_TOKEN")
 RUNNER_AUTH=(-H "Authorization: Bearer $RUNNER_TOKEN" -H "content-type: application/json")
 
+mint_token() { # repo scope -> plaintext on stdout
+  curl -sf -X POST "$SIDECAR/api/repos/$1/tokens" "${SIDECAR_AUTH[@]}" \
+    -H 'content-type: application/json' \
+    -d "{\"scope\":\"$2\",\"ttlSeconds\":3600}" \
+    | python3 -c 'import json,sys; print(json.load(sys.stdin)["plaintext"])'
+}
+
 # ---------- 1. services (idempotent: skip if the port already serves) ----------
 
 mem_guard
@@ -82,7 +104,7 @@ else
   log "starting L1 local-artifacts sidecar on :${SIDECAR_PORT}"
   start_bg "$LIVE/sidecar.log" "$STATE/sidecar.pid" \
     "$NODE_BIN" "$ROOT/prototype/local-artifacts/sidecar.mjs"
-  wait_for "$SIDECAR/api/health" sidecar 30
+  wait_for "$SIDECAR/api/health" sidecar 30 -H "Authorization: Bearer $SIDECAR_TOKEN"
 fi
 
 if curl -sf "$WORKER/status" >/dev/null 2>&1; then
@@ -105,8 +127,17 @@ fi
 # is pushed with a per-repo WRITE token minted on the sidecar admin API.
 
 if step_done canonical-seeded; then
-  log "skip: canonical seeded"
-else
+  CANON="$(python3 -c 'import json; print(json.load(open("'"$EVIDENCE"'/setup.json"))["canonical"]["name"])')"
+  if curl -sf "$SIDECAR/api/repos/$CANON/head" "${SIDECAR_AUTH[@]}" >/dev/null 2>&1; then
+    log "skip: canonical seeded ($CANON still on the sidecar)"
+  else
+    log "marker canonical-seeded is stale ($CANON gone from sidecar); reseeding"
+    rm -f "$STATE/canonical-seeded.done" "$STATE"/*.sha "$STATE"/task-*.json \
+          "$STATE"/checks*.code "$STATE"/stale409.code
+  fi
+fi
+
+if ! step_done canonical-seeded; then
   log "POST /setup (admin)"
   SETUP_CODE="$(curl -s -o "$EVIDENCE/setup.json" -w "%{http_code}" \
     -X POST "$WORKER/setup" "${ADMIN_AUTH[@]}")"
@@ -117,16 +148,14 @@ else
   log "canonical repo: $CANON at $CANON_REMOTE"
 
   log "minting canonical write token (sidecar admin API)"
-  CANON_TOKEN="$(curl -sf -X POST "$SIDECAR/api/repos/$CANON/tokens" \
-    "${SIDECAR_AUTH[@]}" -H "content-type: application/json" \
-    -d '{"scope":"write","ttlSeconds":3600}' \
-    | python3 -c 'import json,sys; print(json.load(sys.stdin)["plaintext"])')"
+  CANON_TOKEN="$(mint_token "$CANON" write)"
   [ -n "$CANON_TOKEN" ] || { echo "FATAL: no canonical write token" >&2; exit 1; }
+  umask 077; printf '%s' "$CANON_TOKEN" > "$STATE/canon.token"; umask 022
 
-  log "cloning empty canonical + seeding from demo-target (excluding .harness)"
+  log "cloning canonical + seeding from demo-target (excluding .harness)"
   rm -rf "$WORK/seed"
-  git clone -q "$CANON_REMOTE" "$WORK/seed" 2>/dev/null
-  mkdir -p "$WORK/seed"
+  git -c http.extraHeader="Authorization: Bearer $CANON_TOKEN" \
+    clone -q "$CANON_REMOTE" "$WORK/seed"
   if command -v rsync >/dev/null 2>&1; then
     rsync -a --exclude .git --exclude .harness "$ROOT/demo-target/" "$WORK/seed/"
   else
@@ -134,6 +163,7 @@ else
         ! -name .git ! -name .harness -exec cp -a {} "$WORK/seed/" \; )
   fi
   git -C "$WORK/seed" add -A
+  git -C "$WORK/seed" symbolic-ref HEAD refs/heads/main  # empty clones follow init.defaultBranch otherwise
   git -C "$WORK/seed" \
     -c user.name="demo-seed" -c user.email="seed@demo.agents" \
     commit -q -m "chore: canonical baseline from demo-target (no .harness)"
@@ -146,9 +176,18 @@ fi
 BASE_SHA="$(cat "$STATE/base.sha")"
 CANON="$(python3 -c 'import json; print(json.load(open("'"$EVIDENCE"'/setup.json"))["canonical"]["name"])')"
 
+# Markers are only valid for the canonical they were created against; a worker
+# state reset produces a new canonical, so drop stale downstream markers.
+if [ -f "$STATE/runid" ] && [ "$(cat "$STATE/runid")" != "$CANON" ]; then
+  log "state belongs to canonical $(cat "$STATE/runid"), now $CANON — clearing stale markers"
+  rm -f "$STATE"/*.done "$STATE"/*.sha "$STATE"/task-*.json \
+        "$STATE"/checks*.code "$STATE"/stale409.code
+fi
+echo -n "$CANON" > "$STATE/runid"
+
 # ---------- 3. create tasks T1..T3 (admin) ----------
 
-declare -A AGENT_ID FORK_URL TOKEN
+declare -A AGENT_ID FORK_NAME FORK_URL TOKEN
 for t in t1 t2 t3; do
   if [ ! -f "$STATE/task-$t.json" ]; then
     log "creating task $t"
@@ -156,6 +195,7 @@ for t in t1 t2 t3; do
       -d "{\"agent\":\"demo-$t\",\"intent\":\"reference solution $t\"}" > "$STATE/task-$t.json"
   fi
   AGENT_ID[$t]="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['agentId'])" "$STATE/task-$t.json")"
+  FORK_NAME[$t]="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['fork']['name'])" "$STATE/task-$t.json")"
   FORK_URL[$t]="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['fork']['remote'])" "$STATE/task-$t.json")"
   TOKEN[$t]="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['token']['plaintext'])" "$STATE/task-$t.json")"
 done
@@ -169,7 +209,8 @@ for t in t1 t2 t3; do
   fi
   log "agent ${AGENT_ID[$t]}: clone fork, apply $t patch, push"
   rm -rf "$WORK/$t"
-  git clone -q "${FORK_URL[$t]}" "$WORK/$t"
+  git -c http.extraHeader="Authorization: Bearer ${TOKEN[$t]}" \
+    clone -q "${FORK_URL[$t]}" "$WORK/$t"
   git -C "$WORK/$t" apply -p2 "$ROOT/demo-target/.harness/reference-solutions/$t.patch"
   git -C "$WORK/$t" add -A
   git -C "$WORK/$t" \
@@ -192,10 +233,19 @@ run_radar() { # prefix head_t1 head_t2 head_t3
   local prefix="$1" h1="$2" h2="$3" h3="$4"
   rm -rf "$WORK/radar-repo"
   git init -q "$WORK/radar-repo"
-  git -C "$WORK/radar-repo" fetch -q "$SIDECAR/git/$CANON.git" "main:refs/heads/base"
-  git -C "$WORK/radar-repo" fetch -q "${FORK_URL[t1]}" "main:refs/heads/${AGENT_ID[t1]}"
-  git -C "$WORK/radar-repo" fetch -q "${FORK_URL[t2]}" "main:refs/heads/${AGENT_ID[t2]}"
-  git -C "$WORK/radar-repo" fetch -q "${FORK_URL[t3]}" "main:refs/heads/${AGENT_ID[t3]}"
+  # fresh read tokens per pass: fork/canonical tokens minted at task time
+  # expire after ttlSeconds=3600, and the sidecar 401s every unauthenticated
+  # git read (G2)
+  local CT FT
+  CT="$(mint_token "$CANON" read)"
+  git -C "$WORK/radar-repo" -c http.extraHeader="Authorization: Bearer $CT" \
+    fetch -q "$SIDECAR/git/$CANON.git" "main:refs/heads/base"
+  local t
+  for t in t1 t2 t3; do
+    FT="$(mint_token "${FORK_NAME[$t]}" read)"
+    git -C "$WORK/radar-repo" -c http.extraHeader="Authorization: Bearer $FT" \
+      fetch -q "${FORK_URL[$t]}" "main:refs/heads/${AGENT_ID[$t]}"
+  done
   python3 -m radar \
     --repo "$WORK/radar-repo" \
     --base "$BASE_SHA" \
@@ -206,10 +256,19 @@ run_radar() { # prefix head_t1 head_t2 head_t3
   log "radar pass $prefix: $(python3 -c 'import json; d=json.load(open("'"$EVIDENCE"'/'"$prefix"'-l1.json")); print(" ".join(r["pair"][0]+"|"+r["pair"][1]+"="+r["status"]+(("/"+r["kind"]) if r.get("kind") else "") for r in d["results"]))')"
 }
 
-post_checks() { # payload_file out_file -> http code on stdout
+post_checks() { # radar_json out_file -> http code on stdout
+  # /checks wants policy as a string; the radar payload carries it as an
+  # object, so post a derived copy (kept as evidence as *.posted.json).
+  local body="$2.posted.json"
+  python3 - "$1" "$body" <<'PY'
+import json, sys
+payload = json.load(open(sys.argv[1]))
+payload["policy"] = "radar-l3 --l1 live-run-2"
+json.dump(payload, open(sys.argv[2], "w"))
+PY
   local code
   code="$(curl -s -o "$2" -w "%{http_code}" -X POST "$WORKER/checks" \
-    "${RUNNER_AUTH[@]}" --data-binary "@$1")"
+    "${RUNNER_AUTH[@]}" --data-binary "@$body")"
   echo "$code"
 }
 
@@ -284,10 +343,14 @@ if step_done ui; then
 else
   log "capturing /status + UI screenshot"
   curl -sf "$WORKER/status" > "$EVIDENCE/status.json"
-  (cd "$ROOT/prototype/ui" && nohup python3 -m http.server "$UI_PORT" --bind 127.0.0.1 \
-    > "$LIVE/ui-server.log" 2>&1 < /dev/null & echo $! > "$STATE/ui.pid")
+  if curl -sf "http://127.0.0.1:$UI_PORT/index.html" >/dev/null 2>&1; then
+    log "ui server already up on :$UI_PORT"
+  else
+    (cd "$ROOT/prototype/ui" && nohup python3 -m http.server "$UI_PORT" --bind 127.0.0.1 \
+      > "$LIVE/ui-server.log" 2>&1 < /dev/null & echo $! > "$STATE/ui.pid")
+    SIDE_PIDS+=("$(cat "$STATE/ui.pid")")
+  fi
   wait_for "http://127.0.0.1:$UI_PORT/index.html" ui-server 30
-  SIDE_PIDS+=("$(cat "$STATE/ui.pid")")
   CHROME="$HOME/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell"
   "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,1100 \
     --virtual-time-budget=15000 \
@@ -302,5 +365,6 @@ fi
 mem_guard
 curl -sf "$WORKER/status" > "$EVIDENCE/status.json"
 python3 "$LIVE/assertions.py" final \
-  --live "$LIVE" --evidence "$EVIDENCE" --state "$STATE" --status status.json | tee "$EVIDENCE/summary.txt"
-log "done. evidence in live/evidence/"
+  --live "$LIVE" --evidence "$EVIDENCE" --state "$STATE" --status status.json \
+  --result-out "$EVIDENCE/result.json" | tee "$EVIDENCE/summary.txt"
+log "done. evidence in live/evidence/ (result.json, summary.txt, ui-index.png)"
