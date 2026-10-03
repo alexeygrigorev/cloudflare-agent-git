@@ -52,6 +52,12 @@ H1 (schema-field validation): REQUIRED_FIELDS mirrored from the harness
 H2 (default journal lock): append_event_dedup with lock_path=None now takes
     a sibling <events>.lock instead of racing unlocked; concurrent default-
     path writers are serialized (validated by rev3 concurrency negatives).
+Rev1d (C-REV1C-RESIDUAL, codex 01a10016-b2bf): canonical_lock_for() gives
+    every journal file ONE lock domain — the repo-shared
+    experiment/events.jsonl uses REPO/.local/events.lock (repo convention);
+    everything else uses its sibling <file>.lock. The --append-event CLI no
+    longer hardcodes a divergent lock; mixed-domain callers are a rev4
+    negative case only. Gate unchanged, still pending review.
 
 Gate: repo emit (default dir) only after codex-principal accepts rev1c.
 """
@@ -432,6 +438,27 @@ def _stable_event_key(obj: dict) -> tuple[str, str]:
     return (str(obj.get("event")), f"{token}:{digest}")
 
 
+# rev1d (C-REV1C-RESIDUAL, codex 01a10016-b2bf): one canonical lock domain per
+# journal file. The repo-shared experiment/events.jsonl journal is guarded
+# repo-wide by .local/events.lock (AGENTS.md convention), so every caller —
+# default or explicit — must use THAT lock for THAT file. Every other journal
+# file uses its sibling <file>.lock. Two different locks on the same file do
+# not exclude each other; the legacy mixed-domain behavior is preserved only
+# as a validation-rev4 negative case and must not be reintroduced.
+CANONICAL_REPO_JOURNALS = {"experiment/events.jsonl": Path(".local/events.lock")}
+
+
+def canonical_lock_for(events_path: Path) -> Path:
+    """Return the one canonical flock file guarding events_path."""
+    try:
+        rel = events_path.resolve().relative_to(REPO.resolve()).as_posix()
+    except ValueError:
+        rel = None
+    if rel is not None and rel in CANONICAL_REPO_JOURNALS:
+        return REPO / CANONICAL_REPO_JOURNALS[rel]
+    return events_path.parent / (events_path.name + ".lock")
+
+
 def _append_locked(events_path: Path, event: dict) -> str:
     key = _stable_event_key(event)
     existing = events_path.read_text() if events_path.exists() else ""
@@ -456,12 +483,15 @@ def append_event_dedup(
     events_path: Path, event: dict, lock_path: Path | None = None
 ) -> str:
     """R5+H2: durable append that dedups on a stable task/source token before
-    mutating; regenerated twins with fresh timestamps are skipped. The
-    DEFAULT path is now locked too: lock_path=None takes a sibling
-    <events>.lock file, so concurrent writers through the default path are
-    serialized instead of racing unlocked."""
+    mutating; regenerated twins with fresh timestamps are skipped.
+    rev1d: the DEFAULT path and the --append-event CLI both take
+    canonical_lock_for(events_path), so mixed default/explicit callers on the
+    same file share one lock domain (repo journal -> REPO/.local/events.lock,
+    else sibling <events>.lock). Passing a DIFFERENT explicit lock_path opts
+    out of the canonical domain and races with canonical callers — validation
+    rev4 keeps the negative case as documentation."""
     if lock_path is None:
-        lock_path = events_path.parent / (events_path.name + ".lock")
+        lock_path = canonical_lock_for(events_path)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
     try:
@@ -490,7 +520,7 @@ def main() -> int:
     if args.append_event:
         target = Path(args.events) if args.events else REPO / "experiment/events.jsonl"
         event = json.loads(Path(args.append_event).read_text())
-        print(append_event_dedup(target, event, REPO / ".local/events.lock"))
+        print(append_event_dedup(target, event))
         return 0
 
     bundle_dir = Path(args.bundle_dir).resolve() if args.bundle_dir else BUNDLE_DIR

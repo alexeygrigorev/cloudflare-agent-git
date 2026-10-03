@@ -1,0 +1,63 @@
+{
+  "schema": "a01-shadow-consume-validation-rev4",
+  "generated": "2026-10-03T04:56:49+00:00",
+  "runner_rev": "rev1d (canonical lock domain per C-REV1C-RESIDUAL / codex 01a10016-b2bf; one lock per journal file)",
+  "checks": [
+    {
+      "check": "canonical_repo_journal_maps_to_events_lock",
+      "pass": true,
+      "detail": "/home/alexey/git/cloudflare-agent-git/.local/events.lock"
+    },
+    {
+      "check": "canonical_repo_journal_path_insensitive",
+      "pass": true,
+      "detail": "resolved via .. segment"
+    },
+    {
+      "check": "canonical_other_journal_maps_to_sibling",
+      "pass": true,
+      "detail": "/tmp/a01-rev4-a0ogyn2e/events.jsonl.lock"
+    },
+    {
+      "check": "canonical_outside_repo_maps_to_sibling",
+      "pass": true,
+      "detail": "no crash for non-repo path"
+    },
+    {
+      "check": "default_append_blocks_while_canonical_held",
+      "pass": true,
+      "detail": "blocked=True done=['appended']"
+    },
+    {
+      "check": "cli_append_blocks_while_canonical_held",
+      "pass": true,
+      "detail": "blocked=True rc=0"
+    },
+    {
+      "check": "legacy_mixed_domain_negative_proceeds_unexcluded",
+      "pass": true,
+      "detail": "proceeded_while_canonical_held=True (must be True) done=['appended']"
+    },
+    {
+      "check": "default_path_concurrency_80_no_loss",
+      "pass": true,
+      "detail": "lines=80 appended=80"
+    },
+    {
+      "check": "same_event_collapse_to_one_under_canonical_domain",
+      "pass": true,
+      "detail": "lines=1 appended=1"
+    },
+    {
+      "check": "repo_shared_files_untouched_by_suite",
+      "pass": true,
+      "detail": "byte/mtime compare before vs after suite body"
+    },
+    {
+      "check": "rev3_suite_regression_all_pass",
+      "pass": true,
+      "detail": "rc=0 all_pass=True"
+    }
+  ],
+  "all_pass": true
+}
