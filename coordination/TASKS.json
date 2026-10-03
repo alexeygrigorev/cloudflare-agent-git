@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "updated_at": "2026-10-03T06:53:06.945837+00:00",
+ "updated_at": "2026-10-03T07:07:52.211165+00:00",
  "tasks": [
   {
    "id": "runtime-one-effect",
@@ -433,50 +433,53 @@
    "id": "publication-fidelity-repair",
    "team_id": "publication",
    "owner_tag": "public-journal-site",
-   "status": "blocked",
-   "updated_at": "2026-10-03T08:46:40.000000+00:00",
-   "blocked_on": [
-    "publication-visual-acceptance FAIL verdict (homepage hero fidelity defect) requires template repair in website/build.py:208"
-   ],
-   "next_action": "Dispatch fidelity repair worker under explicit handoff to update website/build.py:208 and site.css, replacing marketing hero with reference FIG.0 + Daily H1 + honest status panel.",
+   "status": "done",
+   "updated_at": "2026-10-03T07:07:52.211165+00:00",
+   "blocked_on": [],
+   "next_action": "Template fidelity repaired in build.py and site.css (committed 7babb95); preview rebuilt and styled screenshots re-captured. Handed off to independent visual re-review.",
    "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
    "evidence_paths": [
-    "website/editorial/QUALITY.md",
-    ".local/journal/visual-review/INDEPENDENT-REVIEW.md"
+    "website/build.py",
+    "website/assets/site.css",
+    ".local/journal/screenshots/SCREENSHOT-MANIFEST.json",
+    ".local/journal/fidelity-repair/repair-run.log"
    ],
-   "assignment_ack": "coordinator public-journal-site (088a2387) owns queue; implementation worker to be launched for template repair"
+   "assignment_ack": "Completed by journal-fidelity-repair (c70a786d, opencode-go/muse-spark-1.3-contributor); commit 7babb95.",
+   "executor_tag": "journal-fidelity-repair",
+   "executor_session": "c70a786d-eae6-4d28-a5a9-b03635a509d5"
   },
   {
    "id": "publication-visual-acceptance",
    "team_id": "publication",
    "owner_tag": "public-journal-site",
-   "executor_tag": "journal-visual-reviewer-model",
-   "executor_session": "8c8e8aaf-3b8b-4038-8c07-5be6219de96c",
-   "status": "review",
-   "updated_at": "2026-10-03T08:46:40.000000+00:00",
-   "blocked_on": [
-    "Fidelity repair candidate and screenshot harness serve-root fix"
-   ],
-   "next_action": "Independent model review completed in .local/journal/visual-review/INDEPENDENT-REVIEW.md. Verdict: FAIL (material homepage hero fidelity defect) & UNKNOWN (screenshot harness base-path styling failure). Candidate repair required before re-review.",
+   "executor_tag": "journal-visual-rereviewer",
+   "executor_session": "bb8e376b-35ed-40a5-aa6b-4df73b62420c",
+   "status": "done",
+   "updated_at": "2026-10-03T07:07:52.211165+00:00",
+   "blocked_on": [],
+   "next_action": "Independent visual re-review completed with CONDITIONAL PASS (report INDEPENDENT-REVIEW-POST-REPAIR.md). Conditions (2-retained / 4-open counts and typos) reconciled and committed at 6ce0dbd. Visual fidelity accepted for preview.",
    "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
    "evidence_paths": [
     "website/editorial/QUALITY.md",
     ".local/journal/visual-review/INDEPENDENT-REVIEW.md",
+    ".local/journal/visual-review/INDEPENDENT-REVIEW-POST-REPAIR.md",
     ".local/journal/screenshots/SCREENSHOT-MANIFEST.json"
    ],
-   "assignment_ack": "ACKED and executed by independent model reviewer journal-visual-reviewer-model (session 8c8e8aaf-3b8b-4038-8c07-5be6219de96c, opencode-go/muse-spark-1.3-contributor) via aplexer message 01a10083-b62c.",
-   "model": "opencode-go/muse-spark-1.3-contributor"
+   "assignment_ack": "Executed by independent model reviewer journal-visual-rereviewer (session bb8e376b-35ed-40a5-aa6b-4df73b62420c, opencode-go/muse-spark-1.3-contributor) via aplexer message 01a10095-f962.",
+   "model": "opencode-go/muse-spark-1.3-contributor",
+   "acceptance_status": "CONDITIONAL PASS (defect #1 resolved, 10 styled captures PASS; conditions reconciled at 6ce0dbd)"
   },
   {
    "id": "publication-release-verification",
    "team_id": "publication",
    "owner_tag": "public-journal-site",
    "status": "blocked",
-   "updated_at": "2026-10-03T08:46:40.000000+00:00",
+   "updated_at": "2026-10-03T07:07:52.211165+00:00",
    "blocked_on": [
-    "publication-visual-acceptance (visual FAIL blocks design release)"
+    "canonical-standup-acceptance (waiting on canonical experiment/standups/2026-10-03.md)",
+    "daily-2026-10-03-opus-story (scheduled for 09:30 Europe/Berlin once standup accepted)"
    ],
-   "next_action": "Coordinator holds design release in preview. Factual existing template updates continue.",
+   "next_action": "Visual fidelity gate cleared in preview. Design release to production docs/ held until canonical standup accepted and 09:30 Claude Opus daily story produced and verified.",
    "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
    "evidence_paths": [
     "website/editorial/QUALITY.md",

@@ -460,6 +460,40 @@
      "owned_paths": [
       ".local/journal/visual-review/**"
      ]
+    },
+    {
+     "tag": "journal-fidelity-repair",
+     "role": "fidelity-repair-executor",
+     "mode": "headless",
+     "engine": "opencode",
+     "model": "opencode-go/muse-spark-1.3-contributor",
+     "session_id": "c70a786d-eae6-4d28-a5a9-b03635a509d5",
+     "parent_tag": "public-journal-site",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "assignment_ack": "implemented reference image-led hero and honest status panel in website/build.py:208 and site.css; rebuilt preview; fixed screenshot harness base path and regenerated 10 candidate screenshots; committed at 7babb95",
+     "task_id": "publication-fidelity-repair",
+     "owned_paths": [
+      "website/build.py",
+      "website/assets/site.css",
+      ".local/journal/fidelity-repair/**",
+      ".local/journal/screenshots/**",
+      ".local/journal/candidate-preview/**"
+     ]
+    },
+    {
+     "tag": "journal-visual-rereviewer",
+     "role": "independent-visual-reviewer",
+     "mode": "headless",
+     "engine": "opencode",
+     "model": "opencode-go/muse-spark-1.3-contributor",
+     "session_id": "bb8e376b-35ed-40a5-aa6b-4df73b62420c",
+     "parent_tag": "public-journal-site",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "assignment_ack": "independent model visual re-review completed; verdict CONDITIONAL PASS across 5 families and 2 viewports (INDEPENDENT-REVIEW-POST-REPAIR.md) reported in 01a10095-f962",
+     "task_id": "publication-visual-acceptance",
+     "owned_paths": [
+      ".local/journal/visual-review/**"
+     ]
     }
    ],
    "unassigned_roles": [
@@ -619,6 +653,34 @@
    "measurement_scope": "independent verification worker; systemd user unit z-producer-check-1, MemoryMax=1GiB, TasksMax=128, RuntimeMaxSec=3600; isolated XDG store",
    "usage": "harness DB: 5547 output tokens, $0.0059 (16 assistant messages); first-tool WORKLOG verified 06:53:08Z",
    "note": "run1 aborted (model not found in fresh store: missing auth.json); head-owned repair = auth copy mode 600, run2 clean; dispatch codex 01a10080-8df9"
+  },
+  {
+   "tag": "journal-fidelity-repair",
+   "team_id": "publication",
+   "role": "fidelity-repair-executor",
+   "mode": "headless",
+   "engine": "opencode",
+   "model": "opencode-go/muse-spark-1.3-contributor",
+   "session_id": "c70a786d-eae6-4d28-a5a9-b03635a509d5",
+   "parent_session_id": "088a2387-89e4-468b-9ca5-20be7ffec202",
+   "workspace": "/home/alexey/git/cloudflare-agent-git",
+   "task_id": "publication-fidelity-repair",
+   "measurement_scope": "completed fidelity repair in build.py and site.css, rebuilt preview, fixed screenshot harness base path and re-captured styled screenshots; committed at 7babb95",
+   "usage": "measured via opencode token metadata"
+  },
+  {
+   "tag": "journal-visual-rereviewer",
+   "team_id": "publication",
+   "role": "independent-visual-reviewer",
+   "mode": "headless",
+   "engine": "opencode",
+   "model": "opencode-go/muse-spark-1.3-contributor",
+   "session_id": "bb8e376b-35ed-40a5-aa6b-4df73b62420c",
+   "parent_session_id": "088a2387-89e4-468b-9ca5-20be7ffec202",
+   "workspace": "/home/alexey/git/cloudflare-agent-git",
+   "task_id": "publication-visual-acceptance",
+   "measurement_scope": "independent post-repair visual reviewer session (memory 1500M, pids 128); rendered verdict CONDITIONAL PASS",
+   "usage": "measured via opencode token metadata"
   }
  ]
 }
