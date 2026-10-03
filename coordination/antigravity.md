@@ -541,6 +541,37 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - Bunny finished its turn cleanly (2m 22s total run time) and is at rest at its empty composer prompt. Zero outside state injections performed.
    - Automatic readiness remains withheld per protocol until verified loaded lifecycle events are established.
 
+---
+
+## 24. Space Bunny Sequential Resume & Loaded Lifecycle Verification (Complete)
+
+1. **Preconditions & Preservation:**
+   - Terminated unhooked session `dc6e99cc` and pruned via `aplexer forget --force dc6e99cc`.
+   - Preserved private history (7.0 MB `history.bin`, `screen.txt`, `session_record.json`) in `scratch/bunny_preservation/`.
+   - Verified physical invariants: disk space at 132 GiB free (>8 GiB floor); quota monitor at 96% remaining (>15% reserve gate).
+
+2. **Sequential Session Resume with Active Plugin:**
+   - Launched clean session `8620fdc9-0518-4d21-a7e2-fc8bd8e58726` (`space-bunny-head`) with `--engine opencode`, model `opencode-go/space-bunny-free`, conversation `ses_f01ef9c54ffe86f5DrG7n8GCsY` reconnected, **without `--pure`**.
+   - Verified external plugin loading from `XDG_CONFIG_HOME=/home/alexey/git/cloudflare-agent-git/.local/opencode-config`: immediately stamped `reported_state: idle` at timestamp `1790986257171` upon composer readiness.
+   - Screen capture verified clean, empty composer prompt (277.6K context).
+
+3. **Head Handoff & Real Runtime Lifecycle Transitions:**
+   - Dispatched head handoff `01a0ff1b-17be-7810-8d2e-4c135d176642` with `--pane` referencing original assignment `01a0fe86-03b1` and forwarding Codex's 4 plan revision requests from `01a0ff08-5b09`.
+   - **Observed Immediate Runtime Transition:**
+     - `[0.16s] STATE CHANGE: idle -> working (reported_at=1790986361191)` via `step-start` hook **before tool execution**.
+   - **Observed Return to Idle:**
+     - `[179.74s] STATE CHANGE: working -> idle (reported_at=1790986540502)` via `session.idle` hook upon turn completion.
+   - Total turn duration: 2m 59s.
+
+4. **Productive Artifacts & Plan Revisions (Commit `74eae44`):**
+   - Bunny incorporated all four requested revisions into `research/space-bunny/g3-signposting-comparison-plan.md` and `coordination/space-bunny.md`:
+     1. Rev 1: Acknowledged historical signposted run used pre-dupexec runtime; pre-registered matched control + neutral under same verified current wire/model/context/budgets.
+     2. Rev 2: Corrected symmetry definition to paired diff of same-role briefs with signposting removed.
+     3. Rev 3: Discovered prior reproduction claim was false due to unpushed `/tmp` commits; created self-contained `research/space-bunny/repro/` with sanitized arm snapshots, seeds with `oracle.py` excluded, protected oracles copied separately, and verified `MANIFEST.sha256` passing rc=0 across all 8 arms.
+     4. Rev 4: Withdrew universal form of `invalidate` claim, characterizing it strictly as a property of the registered contract.
+   - Bunny emitted reply `01a0ff1d-9cc8-7c52-8211-f9820943084f` and handed off review to Codex principal and Muse reviewer.
+   - Target is verified resting at empty composer prompt (294.3K context).
+
 
 
 
