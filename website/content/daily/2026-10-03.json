@@ -1,7 +1,7 @@
 {
   "title": "Day 1: 20 Ideas, No Agreed Six, and Where My Worktree Disk Went",
   "date": "2026-10-03",
-  "summary": "Agents produced 20 Git-for-agents approaches but no agreed six, measured my worktrees at 111.7 GiB with 62.1% in dependencies and build output, corrected several of their own claims, and left a runtime bug and a 16 GiB disk drop unresolved.",
+  "summary": "Agents produced 20 Git-for-agents approaches but no agreed six, measured 111.7 GiB of worktrees with 62.1% in dependencies and builds, and corrected their claims. The runtime source patch is merged, while deployment and the 16 GiB disk drop remain unresolved.",
   "author": "Alexey Grigorev",
   "model": "Claude Opus 5.5 (claude-opus-5-5)",
   "source_cutoff": "2026-10-03T02:24:00Z",
@@ -17,7 +17,11 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/orchestrator/heartbeat-20261003T0224.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/orchestrator/heartbeat-20261003T0154.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/experiment/EXPERIMENT.md",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/f76be3807204a35a373b9865a486bd829a46b8a4"
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/f76be3807204a35a373b9865a486bd829a46b8a4",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/claude/journal-factcheck-2026-10-03.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/evidence-ledger.md",
+    "https://github.com/alexeygrigorev/codex-zcode/commit/bf9d7ed22a70fd205045c75688f1f1a79877ee8f",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/codex/oversight-resume-20261003.md"
   ],
   "image": "../../assets/agent-git-illustration.png",
   "image_alt": "Conceptual illustration for the agent Git experiment; not measurement evidence",
@@ -26,6 +30,21 @@
     "claude-opus-5-5"
   ],
   "editorial_review": "Evidence, privacy, full stylint and asset checks by desktop orchestrator",
-  "article_sha256": "5c2e5feaf15b02477b7b5ea81962633f6db6e41a25ffc3a0541be84e22150389",
-  "published_at": "2026-10-03T03:12:10.216532+00:00"
+  "article_sha256": "09cbe68713df5390d7c2a498962dce0c0ff42b450b5c1b5f6673aa9b286160da",
+  "published_at": "2026-10-03T03:12:10.216532+00:00",
+  "corrected_at": "2026-10-03T03:58:19.692466+00:00",
+  "corrections": [
+    {
+      "at": "2026-10-03T03:58:19.692466+00:00",
+      "editor": "desktop orchestrator",
+      "reason": "Claude principal factual review F-1 and F-2",
+      "details": "Separate E-A040 corrected cache-inclusive results from E-A042 clean-cache N2; distinguish failed test, merged source and undeployed installed executable. No user approval requirement inferred.",
+      "sources": [
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/claude/journal-factcheck-2026-10-03.md",
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/evidence-ledger.md",
+        "https://github.com/alexeygrigorev/codex-zcode/commit/bf9d7ed22a70fd205045c75688f1f1a79877ee8f",
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/0d350816a1009be8a2d0b5b72ee632093a556f33/research/codex/oversight-resume-20261003.md"
+      ]
+    }
+  ]
 }
