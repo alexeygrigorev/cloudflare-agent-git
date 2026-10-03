@@ -298,24 +298,49 @@ def verify_receiver_idle_twice(receiver_uuid, step_name, delta=2.0, max_wait=90,
     return False, last_screen, None, None
 
 
-def query_db_part_command(cmd_substr):
-    """Query opencode.db part table for a bash tool call containing cmd_substr."""
+def get_receiver_opencode_session_id(workspace, since_ms=None):
+    """Get the OpenCode session ID created in workspace after since_ms."""
     try:
         con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=2.0)
         cur = con.cursor()
-        cur.execute(
-            """SELECT id, time_created, time_updated,
-                      json_extract(data, '$.state.status'),
-                      json_extract(data, '$.state.time.start'),
-                      json_extract(data, '$.state.time.end'),
-                      json_extract(data, '$.state.input.command'),
-                      json_extract(data, '$.state.output')
-               FROM part
-               WHERE json_extract(data, '$.tool') = 'bash'
-                 AND json_extract(data, '$.state.input.command') LIKE ?
-               ORDER BY time_created DESC LIMIT 1;""",
-            (f"%{cmd_substr}%",)
-        )
+        query = "SELECT id FROM session WHERE directory = ?"
+        params = [workspace]
+        if since_ms is not None:
+            query += " AND time_created >= ?"
+            params.append(since_ms)
+        query += " ORDER BY time_created DESC LIMIT 1;"
+        cur.execute(query, tuple(params))
+        row = cur.fetchone()
+        con.close()
+        return row[0] if row else None
+    except Exception as e:
+        print("DB session query error:", e)
+        return None
+
+
+def query_db_part_command(cmd_substr, opencode_sid=None, since_ms=None):
+    """Query opencode.db part table for a bash tool call containing cmd_substr, optionally filtered by session_id and since_ms."""
+    try:
+        con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=2.0)
+        cur = con.cursor()
+        query = """SELECT id, time_created, time_updated,
+                          json_extract(data, '$.state.status'),
+                          json_extract(data, '$.state.time.start'),
+                          json_extract(data, '$.state.time.end'),
+                          json_extract(data, '$.state.input.command'),
+                          json_extract(data, '$.state.output')
+                   FROM part
+                   WHERE json_extract(data, '$.tool') = 'bash'
+                     AND json_extract(data, '$.state.input.command') LIKE ?"""
+        params = [f"%{cmd_substr}%"]
+        if opencode_sid is not None:
+            query += " AND session_id = ?"
+            params.append(opencode_sid)
+        if since_ms is not None:
+            query += " AND time_created >= ?"
+            params.append(since_ms)
+        query += " ORDER BY time_created DESC LIMIT 1;"
+        cur.execute(query, tuple(params))
         row = cur.fetchone()
         con.close()
         return row
@@ -464,6 +489,7 @@ def main():
 
     # 2. Launch fresh disposable sessions under cgroups
     print("\n--- Step 1: Launching disposable receiver and sender sessions ---")
+    t_launch_ms = int(time.time() * 1000)
     init_cmd = f"{PILOT_BIN} whoami --json"
     start_recv_cmd = [
         PILOT_BIN, "start",
@@ -533,10 +559,15 @@ def main():
         assert ok_idle, f"Receiver failed to complete initial baseline turn or reach authentic resting idle! Screen:\n{screen_idle}"
         print("Receiver successfully completed initial baseline turn and settled into authentic resting idle.")
 
-        # Verify actual whoami tool execution in DB part table (Codex 01a1012a directive)
-        whoami_part = query_db_part_command("whoami")
+        # Verify actual whoami tool execution in DB part table (Codex 01a1012a / C-1258 / C-1259 directive)
+        receiver_opencode_sid = get_receiver_opencode_session_id(WORKSPACE, since_ms=t_launch_ms)
+        print(f"Receiver OpenCode Session ID: {receiver_opencode_sid}")
+        assert receiver_opencode_sid is not None, f"Failed to identify OpenCode session ID in {WORKSPACE} after {t_launch_ms}!"
+        results["opencode_session_id"] = receiver_opencode_sid
+        
+        whoami_part = query_db_part_command("whoami", opencode_sid=receiver_opencode_sid, since_ms=t_launch_ms)
         print(f"DB Part row for baseline whoami tool: {whoami_part}")
-        assert whoami_part is not None, "Baseline whoami tool call not found in DB part table!"
+        assert whoami_part is not None, f"Baseline whoami tool call not found in DB part table for session {receiver_opencode_sid} after {t_launch_ms}!"
         whoami_part_id, _, _, whoami_status, whoami_start, whoami_end, whoami_cmd, whoami_output = whoami_part
         assert whoami_status == "completed", f"Baseline whoami tool status is '{whoami_status}', expected 'completed'!"
         print(f"Verified baseline whoami execution in DB: id={whoami_part_id}, status={whoami_status}")
@@ -641,7 +672,7 @@ def main():
         ok_idle_post_tool, screen_post_tool, ev1_pt, ev2_pt = verify_receiver_idle_twice(receiver_uuid, "post_tool_idle", delta=2.0, max_wait=60)
         assert ok_idle_post_tool, "Receiver failed to return to resting idle after sleep tool!"
 
-        part_row = query_db_part_command(sleep_marker)
+        part_row = query_db_part_command(sleep_marker, opencode_sid=receiver_opencode_sid, since_ms=t_probe_attempt - 15000)
         print("DB Part row for sleep tool:", part_row)
         assert part_row is not None, "Failed to find sleep tool in DB part table!"
         part_id, part_created, part_updated, part_status, part_start, part_end, part_cmd, part_output = part_row
