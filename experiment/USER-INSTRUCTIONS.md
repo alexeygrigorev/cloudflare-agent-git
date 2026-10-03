@@ -161,3 +161,8 @@ remember that we can run A LOT MORE AGENTS via headless mode, or via subagents. 
 ## Message33 — Relay email capture following Pocketshell
 
 in case the website generates some traffic let's also capture their emails via relay - like we did with pocketshell web (ask some agent to implement that)
+
+
+## Message34 — verified ZCode promotion window and alternative capacity
+
+also some more information: zcode is free from 5pm till 3am - you can look it up where the deal ends. we can use it as much as we want during this time. outside of it we can use space bunny and muse as much as we want plus antigravity

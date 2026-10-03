@@ -71,3 +71,7 @@ Register every actual executor and harness subagent with head/team/parent/native
 
 
 Human33 authorizes website email signup via Relay following the actual Pocketshell web implementation. Dedicated public-journal-site agent owns website/server integration; inspect existing pattern first, preserve same style, consent and truthful success/error handling. No email blast or purchase authorized; keys/addresses stay private. Root records task/ownership; principals continue project monitoring.
+
+## Human34 — time-aware provider routing
+
+Prioritize eligible ZCode Flash tasks17:00–03:00 Berlin through the verified October7 campaign; outside use Space Bunny/Muse/Antigravity. Read RESOURCE-POLICY for exact model/version/route, expiry ambiguity, quotas and eligibility verification. Heads own scheduling; principals monitor.
