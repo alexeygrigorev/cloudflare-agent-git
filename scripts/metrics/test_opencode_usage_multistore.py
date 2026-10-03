@@ -6,13 +6,13 @@ import tempfile
 import unittest
 from opencode_usage import read_usage, DB_REL
 
-SCHEMA = 'CREATE TABLE session(id TEXT PRIMARY KEY,parent_id TEXT,directory TEXT);CREATE TABLE message(id TEXT PRIMARY KEY,session_id TEXT,time_created INTEGER,data TEXT);'
+SCHEMA = 'CREATE TABLE IF NOT EXISTS session(id TEXT PRIMARY KEY,parent_id TEXT,directory TEXT);CREATE TABLE IF NOT EXISTS message(id TEXT PRIMARY KEY,session_id TEXT,time_created INTEGER,data TEXT);'
 
-def make_db(path, root, sid='ses_a', messages=()):
+def make_db(path, root, sid='ses_a', parent=None, messages=()):
     path.parent.mkdir(parents=True, exist_ok=True)
     c = sqlite3.connect(path)
     c.executescript(SCHEMA)
-    c.execute('INSERT INTO session VALUES(?,?,?)', (sid, None, str(root)))
+    c.execute('INSERT OR REPLACE INTO session VALUES(?,?,?)', (sid, parent, str(root)))
     for m in messages:
         c.execute('INSERT OR REPLACE INTO message VALUES(?,?,?,?)', m)
     c.commit()
@@ -133,6 +133,52 @@ class MultiStoreTests(unittest.TestCase):
         c.close()
         r = self.read()
         self.assertEqual(r['unique_assistant_records'], 1)
+
+    def test_foreign_sid_in_second_store_not_attributed(self):
+        make_db(self.owned, self.root, messages=[msg_row()])
+        make_db(self.homedb, '/elsewhere', messages=[msg_row('mX')])
+        r = self.read()
+        self.assertEqual(r['unique_assistant_records'], 1)
+        self.assertEqual(r['by_team']['a05']['total_tokens'], 115)
+
+    def test_parent_child_collision_across_stores(self):
+        make_db(self.owned, self.root, messages=[msg_row()])
+        make_db(self.homedb, self.root, sid='ses_c', parent='ses_a',
+                messages=[msg_row('mc', 'ses_c')])
+        r = self.read()
+        self.assertEqual(r['unique_assistant_records'], 1)
+        self.assertEqual(len(r['sessions']), 1)
+
+    def test_pending_owned_vs_completed_home(self):
+        make_db(self.owned, self.root, messages=[msg_row(total=None, completed=None)])
+        make_db(self.homedb, self.root, messages=[msg_row()])
+        r = self.read()['sessions'][0]['interval']
+        self.assertEqual(r['total_tokens'], 115)
+        self.assertEqual(r['pending_or_missing_records'], 0)
+
+    def test_completed_owned_vs_pending_home(self):
+        make_db(self.owned, self.root, messages=[msg_row()])
+        make_db(self.homedb, self.root, messages=[msg_row(total=None, completed=None)])
+        r = self.read()['sessions'][0]['interval']
+        self.assertEqual(r['total_tokens'], 115)
+        self.assertEqual(r['pending_or_missing_records'], 0)
+
+    def test_conflicting_totals_reconcile_deterministically(self):
+        make_db(self.owned, self.root, messages=[msg_row(created=20, total=100, completed=21)])
+        make_db(self.homedb, self.root, messages=[msg_row(created=30, total=200, completed=31)])
+        self.assertEqual(self.read()['by_team']['a05']['total_tokens'], 200)
+        make_db(self.homedb, self.root, messages=[msg_row(created=20, total=200, completed=21)])
+        self.assertEqual(self.read()['by_team']['a05']['total_tokens'], 200)
+        make_db(self.homedb, self.root, messages=[msg_row(created=20, total=100, completed=21)])
+        r = self.read()
+        self.assertEqual(r['by_team']['a05']['total_tokens'], 100)
+        self.assertEqual(r['unique_assistant_records'], 1)
+
+    def test_global_bounds_preserved(self):
+        make_db(self.owned, self.root, messages=[msg_row()])
+        make_db(self.homedb, self.root, messages=[msg_row('m2')])
+        self.assertEqual(self.read(max_messages=0)['status'], 'unavailable-or-bound-exceeded')
+        self.assertEqual(self.read(max_sessions=0)['status'], 'unavailable-or-bound-exceeded')
 
 if __name__ == '__main__':
     unittest.main()
