@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T04:06:58.567902+00:00",
+  "updated_at": "2026-10-03T04:08:44.950611+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -212,6 +212,17 @@
       "task_id": "website-relay-email-signup",
       "measurement_scope": "desktop native harness subagent; no remote aplexer workload PID inferred",
       "usage": "unknown unless actual harness usage is available"
+    },
+    {
+      "tag": "relay-signup-review",
+      "team_id": "publication",
+      "role": "subagent",
+      "mode": "native-harness-subagent",
+      "native_agent_identity": "/root/public_journal_site/relay_signup_review",
+      "parent_native_identity": "/root/public_journal_site",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "relay-pattern-independent-review",
+      "measurement_scope": "native read-only reviewer; no remote workload PID or tokens inferred"
     }
   ]
 }

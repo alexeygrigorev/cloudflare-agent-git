@@ -230,6 +230,21 @@
       ],
       "executor_identity": "/root/public_journal_site",
       "mode": "native-harness-subagent"
+    },
+    {
+      "id": "relay-pattern-independent-review",
+      "team_id": "publication",
+      "owner_tag": "relay-signup-review",
+      "status": "running",
+      "updated_at": "2026-10-03T04:08:44.950611+00:00",
+      "blocked_on": [],
+      "next_action": "Read-only independent audit of actual Pocketshell public Relay routes and safe scoped provisioning for dedicated experiment audience.",
+      "acceptance": "Actual deployed route/config evidence and provisioning recommendation; no keys/rawsubscriber data in public logs, no mutation/email/infra by reviewer.",
+      "assignment_ack": "Parent public-journal-site reports real delegate launch after fresh quota88%remaining; first deliverable still pending.",
+      "evidence_paths": [],
+      "executor_identity": "/root/public_journal_site/relay_signup_review",
+      "mode": "native-harness-subagent",
+      "private_deliverable": ".local/journal/relay-pattern-review.md"
     }
   ]
 }
