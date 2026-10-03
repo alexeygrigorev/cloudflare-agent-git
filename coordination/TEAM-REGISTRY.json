@@ -533,6 +533,28 @@
           "memory_cap": "1500M",
           "completed_at": "2026-10-03T19:15:00+00:00",
           "result": "50953bb on demo-target-pristine (11/11 tests pass); recorded as source-only prototype task per C-1415/C-1421"
+        },
+        {
+          "tag": "zc-cred-expiry",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "zcodex exec",
+          "provider": "zcode/warm",
+          "session_id": "5b88ead6-3edf-4ea9-9cf6-939281e7c8db",
+          "workspace": "/home/alexey/git/agent-branches-cred",
+          "status": "running",
+          "task": "C-1422/C-1425 coordinator token expiry & revocation gate on proto/cred-expiry-gate",
+          "owned_paths": [
+            "prototype/src/core/coordinator.ts",
+            "prototype/src/core/model.ts",
+            "prototype/src/cloudflare/coordinator-do.ts",
+            "prototype/src/core/router.ts",
+            "prototype/test/auth.test.ts"
+          ],
+          "first_tool_evidence": "aplexer whoami --json",
+          "memory_cap": "1500M"
         }
       ]
     },
