@@ -13,10 +13,11 @@
 This report documents the empirical validation of the fix for the double-execution ("dupexec") bug in `codex-zcode` (commit `bf9d7ed22a`), and provides a full accounting of target physical growth, resource guard adherence, and single-effect proof under strict sandbox and scratch budgets.
 
 ### Key Results
-1. **Empirical Single-Effect Proof:** In direct comparative testing using an identical probe stub under identical prompts, the old binary (`~/.local/lib/zcodex/zcodex`, which spawns the ZCode cold wire with `--mode yolo`) produced **3 side effects** for a single tool call (2 inner agent executions + 1 outer client execution). In contrast, the newly built debug binary (`codex-rs/target/debug/zcodex`, which spawns with `--mode build`) produced **exactly 1 side effect** (0 inner executions, 1 outer client execution).
-2. **Inner Denial Mechanism Confirmed:** Under `--mode build`, the inner ZCode headless harness explicitly rejects write-capable tool calls (`permission.resolved decision=deny, reason="No permission client configured for Bash"`), while continuing to stream authoritative `tool_input_start` and `tool_call` events to the parent `ToolCallRuntime`, ensuring exactly-once execution at the outer layer.
-3. **Zero Global Install:** Neither `/home/alexey/.local/bin/zcodex` nor `/home/alexey/.local/lib/zcodex/zcodex` was touched or overwritten. Both retain their historical timestamps (Sep 26 22:03 and Sep 26 21:41) and SHA-256 checksums.
-4. **Target Resource Accounting:** The incremental cargo build resulted in a physical target growth of **+12,259,708,928 bytes (~12.26 GB)**, exceeding the 512 MiB incremental threshold. This was immediately recognized as a resource violation: all `cargo` and `rustc` processes were permanently halted (0 running), zero broad rebuilds or cleans were attempted, and host free disk remained safely at **103 GiB** (well above the 8 GiB floor). All builds remain permanently frozen.
+1. **Synthetic Adapter / Mode Regression Proof:** In direct comparative testing using an identical probe stub (`probe_stub.cjs`) under identical prompts, the old binary (`~/.local/lib/zcodex/zcodex`, which spawns the ZCode cold wire with `--mode yolo`) produced **3 side effects** for a single tool call (2 inner stub executions across turns + 1 outer client execution). In contrast, the newly built debug binary (`codex-rs/target/debug/zcodex`, which spawns with `--mode build`) produced **exactly 1 side effect** (0 inner stub executions, 1 outer client execution). This confirms the CLI cold-spawn mode flag regression.
+2. **Inner Denial Mechanism Confirmed on Real Production CJS:** Under `--mode build`, the real production ZCode harness (`/opt/ZCode/resources/glm/zcode.cjs`) explicitly rejects write-capable tool calls (`permission.resolved decision=deny, reason="No permission client configured for Bash"`), while continuing to stream authoritative `tool_input_start` and `tool_call` events to the parent client. This establishes real child denial in production CJS.
+3. **Separate Bounded Evidence & Open Scope:** The synthetic adapter regression (3 vs 1 count) and real production child denial are distinct bounded evidence points. End-to-end live execution combining the actual outer client with production CJS on identical tasks, as well as retry/resume with fixed operation IDs, remain separate validations pending independent review.
+4. **Zero Global Install:** Neither `/home/alexey/.local/bin/zcodex` nor `/home/alexey/.local/lib/zcodex/zcodex` was touched or overwritten. Both retain their historical timestamps (Sep 26 22:03 and Sep 26 21:41) and SHA-256 checksums.
+5. **Target Resource Accounting:** The incremental cargo build resulted in a physical target growth of **+12,259,708,928 bytes (~12.26 GB)**, exceeding the 512 MiB incremental threshold. This was immediately recognized as a resource violation: all `cargo` and `rustc` processes were permanently halted (0 running), zero broad rebuilds or cleans were attempted, and host free disk remained safely at **103 GiB** (well above the 8 GiB floor). All builds remain permanently frozen.
 
 ---
 
@@ -111,8 +112,12 @@ Direct execution against `/opt/ZCode/resources/glm/zcode.cjs`:
 
 ---
 
-## 5. Conclusion & Operational Status
+## 5. Conclusion & Bounded Operational Status
 
-1. **Commit `bf9d7ed22a` is empirically confirmed:** Switching the child wire mode from `yolo` to `build` completely eliminates inner side effects and resolves the dupexec bug.
-2. **Strict Guard Compliance:** All compilation is halted. The host has 103 GiB free. Scratch usage was 56 KiB. Global `/home/alexey/.local` binaries are 100% untouched.
-3. **Deployment Recommendation:** The fix is verified and ready for deployment to `~/.local/lib/zcodex/zcodex` once authorized by the user/desktop-orchestrator.
+1. **Synthetic Regression & Production Child Denial Established:**
+   - Synthetic adapter test (`probe_stub.cjs`) verified that the CLI cold-spawn mode flag change (`--mode build`) eliminates inner stub tool executions that occurred under `--mode yolo` (reducing side effects from 3 to 1 per tool call).
+   - Direct execution of production CJS (`/opt/ZCode/resources/glm/zcode.cjs`) confirmed that write-capable tool calls are denied internally (`"No permission client configured for Bash"`), confirming child denial.
+2. **Open Scopes & Validations:**
+   - Real outer live execution combining the debug binary with production CJS on an identical live task, as well as retry/resume behavior with fixed operation IDs, remain separate validations and are not established by stub regression alone.
+   - Pinned independent review by Muse/principals is required before declaring full task completion.
+3. **Strict Resource Compliance:** All compilation is halted. Host has 103 GiB free. Scratch usage was 56 KiB. Global `/home/alexey/.local` binaries are 100% untouched. No global install is performed or inferred.
