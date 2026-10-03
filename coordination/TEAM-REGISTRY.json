@@ -732,8 +732,9 @@
           "model": "glm-5.3-flash max",
           "workspace": "/home/alexey/git/agent-branches-l2-client",
           "branch": "proto/l2-client",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T01:26:41+02:00",
+          "completed_at": "2026-10-04T01:36:00+02:00",
           "task": "C1462 Task 5: SDK client 409 stale vector resync, token expiry & revocation test suite",
           "owned_paths": [
             "tests/test_client.py",
@@ -741,7 +742,8 @@
             "tests/mock_l1_server.py"
           ],
           "first_tool_evidence": "a work join / a message inbox",
-          "memory_cap": "1500M"
+          "memory_cap": "1500M",
+          "result": "13/13 unit and integration tests PASS in 4.7s. TokenExpiredError (401), TokenRevokedError (403 fail-closed), and StaleVectorError (409) resync/retry helper implemented in Python SDK client. Mock L1 server upgraded with token expiry/revocation timestamps. Committed at e882b17 on proto/l2-client."
         },
         {
           "tag": "zcode-webhook-auth",
@@ -775,14 +777,16 @@
           "model": "glm-5.3-flash max",
           "workspace": "/home/alexey/git/agent-branches-recovery",
           "branch": "proto/recovery-test",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T01:26:45+02:00",
+          "completed_at": "2026-10-04T01:36:30+02:00",
           "task": "C1462 Task 7: Independent disposable clone recovery & clean build/test verification",
           "owned_paths": [
             "research/antigravity/recovery/**"
           ],
           "first_tool_evidence": "a context / fresh disposable clone",
-          "memory_cap": "1500M"
+          "memory_cap": "1500M",
+          "result": "VERDICT PASS. End-to-end ordinary Git recovery verified from fresh disposable clone in scratch directory. Clean build produced 35 pages in 0.211s. All 19 unit tests PASS in network-isolated namespace (unshare -rn, lo DOWN). 100% independent of canonical dirty state. Committed at 8ca77b3 (research/antigravity/recovery/DISPOSABLE-RECOVERY-REPORT.md)."
         },
         {
           "tag": "muse-radar-bench",
