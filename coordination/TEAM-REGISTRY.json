@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T04:11:14.365473+00:00",
+  "updated_at": "2026-10-03T04:18:55.582130+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -240,6 +240,36 @@
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "task_id": "relay-signup-browser-flow",
       "measurement_scope": "native frontend worker, separate parent/team; no remote workload PID/token totals inferred"
+    },
+    {
+      "tag": "website-relay-coordinator",
+      "team_id": "publication",
+      "role": "service",
+      "mode": "headless",
+      "session_id": "11758354-5b4f-4e9a-bfdd-ded2ea71d559",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "relay-owner-provisioning",
+      "measurement_scope": "genuinely bound cross-workspace request/reply service, not model executor"
+    },
+    {
+      "tag": "signup-preview",
+      "team_id": "publication",
+      "role": "service",
+      "mode": "headless",
+      "workload_pid": 3520405,
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "website-relay-email-signup",
+      "measurement_scope": "temporary private loopback8767 preview, non-aplexer service, excluded model counts"
+    },
+    {
+      "tag": "relay",
+      "team_id": "publication",
+      "role": "head",
+      "mode": "interactive",
+      "session_id": "c0ff0e92-99f2-46d0-9e3d-f1d078badfde",
+      "workspace": "/home/alexey/git/pocketshell-site",
+      "task_id": "relay-owner-provisioning",
+      "measurement_scope": "shared existing Relay owner, actual scoped task tools observed; shared usage not attributed as experiment-only"
     }
   ]
 }

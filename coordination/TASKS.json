@@ -235,12 +235,12 @@
       "id": "relay-pattern-independent-review",
       "team_id": "publication",
       "owner_tag": "relay-signup-review",
-      "status": "running",
-      "updated_at": "2026-10-03T04:08:44.950611+00:00",
+      "status": "done",
+      "updated_at": "2026-10-03T04:18:55.582130+00:00",
       "blocked_on": [],
       "next_action": "Read-only independent audit of actual Pocketshell public Relay routes and safe scoped provisioning for dedicated experiment audience.",
       "acceptance": "Actual deployed route/config evidence and provisioning recommendation; no keys/rawsubscriber data in public logs, no mutation/email/infra by reviewer.",
-      "assignment_ack": "Parent public-journal-site reports real delegate launch after fresh quota88%remaining; first deliverable still pending.",
+      "assignment_ack": "Actual private review artifact read by website head: agent-git-lab404/list_not_found, current CORS rejects site; Pocketshell route verified, separate audience/durable config required; no email sent.",
       "evidence_paths": [],
       "executor_identity": "/root/public_journal_site/relay_signup_review",
       "mode": "native-harness-subagent",
@@ -250,17 +250,31 @@
       "id": "relay-signup-browser-flow",
       "team_id": "publication",
       "owner_tag": "relay-signup-frontend",
-      "status": "running",
-      "updated_at": "2026-10-03T04:11:14.365473+00:00",
+      "status": "review",
+      "updated_at": "2026-10-03T04:18:55.582130+00:00",
       "blocked_on": [],
       "next_action": "Implement signup/confirmation frontend in website/assets/signup.js with bounded accessible consent, success/error/duplicate/rate-limit states and private mocked transport tests.",
       "acceptance": "Actual browser behavior and tests; token stripped from URL, no secret/subscriber log; enabled public deployment only after separate Relay audience verified.",
-      "assignment_ack": "Parent reports actual native worker launch after freshquse88%; outputpending.",
+      "assignment_ack": "Actual signup.js delivered; root independently ran25/25 mocked DOM/transport tests, private browser preview inspected; backend readiness gate remains.",
       "evidence_paths": [
         "website/assets/signup.js"
       ],
       "executor_identity": "/root/public_journal_site/signup_frontend",
       "mode": "native-harness-subagent"
+    },
+    {
+      "id": "relay-owner-provisioning",
+      "team_id": "publication",
+      "owner_tag": "relay",
+      "status": "running",
+      "updated_at": "2026-10-03T04:18:55.582130+00:00",
+      "blocked_on": [],
+      "next_action": "Existing Relay owner reviews live public-list/client/template/origin config; provision agent-git-lab audience preserving Pocketshell and durable deploy config, reply with actual route readiness.",
+      "acceptance": "Genuine owner response, separate audience/sender/template and CORS, public invalid-input route verified, existing signup preserved, no email blast/purchase.",
+      "assignment_ack": "Native cross-workspace request01a0fff6-e4e6 persisted; one explicit fresh-idle userauthorized task activation; actual first Relay owner config/confirm/provision tools observed, semantic reply pending.",
+      "evidence_paths": [],
+      "linked_head_session": "c0ff0e92-99f2-46d0-9e3d-f1d078badfde",
+      "private_evidence": ".local/journal/relay-owner-channel/"
     }
   ]
 }
