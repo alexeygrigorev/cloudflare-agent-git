@@ -282,21 +282,22 @@ def verify_durable_ack_envelope(
     expected_reply_to,
     expected_ack_substring,
     workspace,
+    min_timestamp_sec,
     receiver_tag=None,
     sender_tag=None,
-    min_timestamp_sec=None,
     raw_log=None,
 ):
     """Verifies a discrete, correlated ACK envelope in the durable mailbox log.
 
-    Per Codex Principal C-1297:
+    Per Codex Principal C-1297 & C-1299:
     - Enforces strictly native UUID matching:
         msg.get("from", {}).get("session_id") == receiver_uuid
         and
         msg.get("to", {}).get("session_id") == sender_uuid
       Tags are strictly diagnostic and never serve as identity fallbacks.
     - Enforces actual reply envelope ID is non-empty.
-    - Enforces post-request timestamp: created_at >= min_timestamp_sec (if provided).
+    - Enforces post-request timestamp at native integer second precision: int(c_sec) >= int(m_sec).
+      min_timestamp_sec is a required float/int parameter.
     - Enforces reply_to == expected_reply_to (correlated request message ID).
     - Enforces expected_ack_substring in body.
 
@@ -356,22 +357,21 @@ def verify_durable_ack_envelope(
         if str(reply_to).strip().lower() != exp_reply_to:
             continue
 
-        # 4. Post-request timestamp
-        if min_timestamp_sec is not None:
-            created_at = msg.get("created_at")
-            if created_at is None:
+        # 4. Post-request timestamp at native integer second precision
+        created_at = msg.get("created_at")
+        if created_at is None:
+            continue
+        try:
+            c_sec = float(created_at)
+            m_sec = float(min_timestamp_sec)
+            if m_sec > 1e11 and c_sec < 1e11:
+                m_sec /= 1000.0
+            if c_sec > 1e11 and m_sec < 1e11:
+                c_sec /= 1000.0
+            if int(c_sec) < int(m_sec):
                 continue
-            try:
-                c_sec = float(created_at)
-                m_sec = float(min_timestamp_sec)
-                if m_sec > 1e11 and c_sec < 1e11:
-                    m_sec /= 1000.0
-                if c_sec > 1e11 and m_sec < 1e11:
-                    c_sec /= 1000.0
-                if c_sec < m_sec:
-                    continue
-            except (ValueError, TypeError):
-                continue
+        except (ValueError, TypeError):
+            continue
 
         # 5. Body ACK substring
         if has_ack:
@@ -436,31 +436,30 @@ def verify_durable_ack_envelope(
             )
             continue
 
-        # Check timestamp
-        if min_timestamp_sec is not None:
-            created_at = cand.get("created_at")
-            if created_at is None:
+        # Check timestamp at native integer second precision
+        created_at = cand.get("created_at")
+        if created_at is None:
+            rejection_reasons.append(
+                f"Envelope {cand_id} strictly rejected: missing created_at timestamp"
+            )
+            continue
+        try:
+            c_sec = float(created_at)
+            m_sec = float(min_timestamp_sec)
+            if m_sec > 1e11 and c_sec < 1e11:
+                m_sec /= 1000.0
+            if c_sec > 1e11 and m_sec < 1e11:
+                c_sec /= 1000.0
+            if int(c_sec) < int(m_sec):
                 rejection_reasons.append(
-                    f"Envelope {cand_id} strictly rejected: missing created_at timestamp"
+                    f"Envelope {cand_id} strictly rejected: timestamp {int(c_sec)}s is before minimum request timestamp {int(m_sec)}s"
                 )
                 continue
-            try:
-                c_sec = float(created_at)
-                m_sec = float(min_timestamp_sec)
-                if m_sec > 1e11 and c_sec < 1e11:
-                    m_sec /= 1000.0
-                if c_sec > 1e11 and m_sec < 1e11:
-                    c_sec /= 1000.0
-                if c_sec < m_sec:
-                    rejection_reasons.append(
-                        f"Envelope {cand_id} strictly rejected: timestamp {c_sec} is before minimum request timestamp {m_sec}"
-                    )
-                    continue
-            except (ValueError, TypeError):
-                rejection_reasons.append(
-                    f"Envelope {cand_id} strictly rejected: invalid timestamp format '{created_at}'"
-                )
-                continue
+        except (ValueError, TypeError):
+            rejection_reasons.append(
+                f"Envelope {cand_id} strictly rejected: invalid timestamp format '{created_at}'"
+            )
+            continue
 
     if rejection_reasons:
         return False, "; ".join(rejection_reasons)

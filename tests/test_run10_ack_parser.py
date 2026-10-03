@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Offline negative and positive unit test suite for Run 10 discrete ACK envelope parser.
 
-Per Codex Principal C-1297:
+Per Codex Principal C-1297 & C-1299:
 1. Exact Native UUID Matching:
    - msg.from.session_id == receiver_uuid strictly enforced
    - msg.to.session_id == sender_uuid strictly enforced
    - Tags are diagnostic only; tag fallback strictly forbidden
 2. Non-empty envelope ID required
-3. Post-request timestamp enforced (created_at >= min_timestamp_sec)
+3. Post-request timestamp enforced at native integer second precision (int(c_sec) >= int(m_sec))
+   - min_timestamp_sec is a REQUIRED parameter (no None default)
+   - Same-second float caller (e.g. min_timestamp_sec=1791028000.75 vs created_at=1791028000) is accepted
+   - Previous-second envelope (e.g. created_at=1791027999 vs min_timestamp_sec=1791028000.0) is strictly rejected
 4. Correlated reply_to == expected_reply_to and expected_ack_substring in body
 
 Test cases:
@@ -17,10 +20,12 @@ Test cases:
 - Test 4: Tag-only / missing session_id on receiver or sender -> strictly rejected
 - Test 5: Body echo in sender's own request message -> strictly rejected
 - Test 6: Replay / wrong reply_to -> strictly rejected
-- Test 7: Timestamp before request -> strictly rejected
+- Test 7: Timestamp before request (previous second) -> strictly rejected
 - Test 8: Empty or missing envelope ID -> strictly rejected
 - Test 9: Helper _match_session_or_tag strictly rejects tag fallback
 - Test 10: Multipart mailbox log with earlier self-request followed by valid correlated reply -> accepted
+- Test 11: Same-second float caller accepted (created_at=1791028000, min_timestamp_sec=1791028000.75) -> accepted
+- Test 12: Previous-second envelope rejected (created_at=1791027999, min_timestamp_sec=1791028000.0) -> strictly rejected
 """
 import json
 import unittest
@@ -80,9 +85,9 @@ class TestRun10AckParser(unittest.TestCase):
             expected_reply_to=self.req_msg_id,
             expected_ack_substring=self.ack_str,
             workspace=self.workspace,
+            min_timestamp_sec=self.req_timestamp_sec,
             receiver_tag=self.receiver_tag,
             sender_tag=self.sender_tag,
-            min_timestamp_sec=self.req_timestamp_sec,
         )
         self.assertTrue(ok)
         self.assertEqual(val, self.reply_msg_id)
@@ -112,9 +117,9 @@ class TestRun10AckParser(unittest.TestCase):
             expected_reply_to=self.req_msg_id,
             expected_ack_substring=self.ack_str,
             workspace=self.workspace,
+            min_timestamp_sec=self.req_timestamp_sec,
             receiver_tag=self.receiver_tag,
             sender_tag=self.sender_tag,
-            min_timestamp_sec=self.req_timestamp_sec,
         )
         self.assertFalse(ok)
         self.assertIn("strictly rejected", reason)
@@ -146,9 +151,9 @@ class TestRun10AckParser(unittest.TestCase):
             expected_reply_to=self.req_msg_id,
             expected_ack_substring=self.ack_str,
             workspace=self.workspace,
+            min_timestamp_sec=self.req_timestamp_sec,
             receiver_tag=self.receiver_tag,
             sender_tag=self.sender_tag,
-            min_timestamp_sec=self.req_timestamp_sec,
         )
         self.assertFalse(ok)
         self.assertIn("strictly rejected", reason)
@@ -179,6 +184,7 @@ class TestRun10AckParser(unittest.TestCase):
             expected_reply_to=self.req_msg_id,
             expected_ack_substring=self.ack_str,
             workspace=self.workspace,
+            min_timestamp_sec=self.req_timestamp_sec,
             receiver_tag=self.receiver_tag,
             sender_tag=self.sender_tag,
         )
@@ -207,6 +213,7 @@ class TestRun10AckParser(unittest.TestCase):
             expected_reply_to=self.req_msg_id,
             expected_ack_substring=self.ack_str,
             workspace=self.workspace,
+            min_timestamp_sec=self.req_timestamp_sec,
         )
         self.assertFalse(ok2)
         self.assertIn("missing to.session_id", reason2)
@@ -234,6 +241,7 @@ class TestRun10AckParser(unittest.TestCase):
             expected_reply_to=self.req_msg_id,
             expected_ack_substring=self.ack_str,
             workspace=self.workspace,
+            min_timestamp_sec=self.req_timestamp_sec,
             receiver_tag=self.receiver_tag,
             sender_tag=self.sender_tag,
         )
@@ -265,6 +273,7 @@ class TestRun10AckParser(unittest.TestCase):
             expected_reply_to=self.req_msg_id,
             expected_ack_substring=self.ack_str,
             workspace=self.workspace,
+            min_timestamp_sec=self.req_timestamp_sec,
             receiver_tag=self.receiver_tag,
             sender_tag=self.sender_tag,
         )
@@ -274,7 +283,7 @@ class TestRun10AckParser(unittest.TestCase):
 
     @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
     def test_7_timestamp_before_request_rejected(self, mock_exec):
-        """Test 7: Timestamp before request -> strictly rejected."""
+        """Test 7: Timestamp before request (previous second) -> strictly rejected."""
         predated_timestamp_sec = self.req_timestamp_sec - 100.0  # Before request
         mock_exec.return_value = (0, json.dumps([
             {
@@ -296,9 +305,9 @@ class TestRun10AckParser(unittest.TestCase):
             expected_reply_to=self.req_msg_id,
             expected_ack_substring=self.ack_str,
             workspace=self.workspace,
+            min_timestamp_sec=self.req_timestamp_sec,
             receiver_tag=self.receiver_tag,
             sender_tag=self.sender_tag,
-            min_timestamp_sec=self.req_timestamp_sec,
         )
         self.assertFalse(ok)
         self.assertIn("is before minimum request timestamp", reason)
@@ -326,6 +335,7 @@ class TestRun10AckParser(unittest.TestCase):
             expected_reply_to=self.req_msg_id,
             expected_ack_substring=self.ack_str,
             workspace=self.workspace,
+            min_timestamp_sec=self.req_timestamp_sec,
         )
         self.assertFalse(ok)
         self.assertIn("missing or empty", reason)
@@ -404,6 +414,66 @@ class TestRun10AckParser(unittest.TestCase):
         )
         self.assertTrue(ok)
         self.assertEqual(val, self.reply_msg_id)
+
+    @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
+    def test_11_same_second_float_caller_accepted(self, mock_exec):
+        """Test 11: Same-second float caller accepted (created_at=1791028000, min_timestamp_sec=1791028000.75)."""
+        mock_exec.return_value = (0, json.dumps([
+            {
+                "schema_version": 1,
+                "id": self.reply_msg_id,
+                "workspace": self.workspace,
+                "created_at": 1791028000,  # Native integer second in envelope
+                "from": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
+                "to": {"session_id": self.sender_uuid, "tag": self.sender_tag},
+                "kind": "reply",
+                "reply_to": self.req_msg_id,
+                "body": f"Same second ACK: {self.ack_str}",
+            }
+        ]))
+
+        ok, val = verify_durable_ack_envelope(
+            sender_uuid=self.sender_uuid,
+            receiver_uuid=self.receiver_uuid,
+            expected_reply_to=self.req_msg_id,
+            expected_ack_substring=self.ack_str,
+            workspace=self.workspace,
+            min_timestamp_sec=1791028000.75,  # Subsecond float captured at request time
+            receiver_tag=self.receiver_tag,
+            sender_tag=self.sender_tag,
+        )
+        self.assertTrue(ok)
+        self.assertEqual(val, self.reply_msg_id)
+
+    @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
+    def test_12_previous_second_envelope_rejected(self, mock_exec):
+        """Test 12: Previous-second envelope rejected (created_at=1791027999, min_timestamp_sec=1791028000.0)."""
+        mock_exec.return_value = (0, json.dumps([
+            {
+                "schema_version": 1,
+                "id": self.reply_msg_id,
+                "workspace": self.workspace,
+                "created_at": 1791027999,  # 1 second before minimum request time
+                "from": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
+                "to": {"session_id": self.sender_uuid, "tag": self.sender_tag},
+                "kind": "reply",
+                "reply_to": self.req_msg_id,
+                "body": f"Old second ACK: {self.ack_str}",
+            }
+        ]))
+
+        ok, reason = verify_durable_ack_envelope(
+            sender_uuid=self.sender_uuid,
+            receiver_uuid=self.receiver_uuid,
+            expected_reply_to=self.req_msg_id,
+            expected_ack_substring=self.ack_str,
+            workspace=self.workspace,
+            min_timestamp_sec=1791028000.0,
+            receiver_tag=self.receiver_tag,
+            sender_tag=self.sender_tag,
+        )
+        self.assertFalse(ok)
+        self.assertIn("1791027999s is before minimum request timestamp 1791028000s", reason)
 
 
 if __name__ == "__main__":
