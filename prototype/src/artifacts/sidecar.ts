@@ -10,6 +10,7 @@ import type {
   RepoName,
   RepoSummary,
   TokenScope,
+  UnprocessedPush,
 } from "../types.js";
 
 /**
@@ -97,5 +98,11 @@ export class SidecarArtifacts implements ArtifactsPort {
       deleted: boolean;
     };
     return body.deleted;
+  }
+
+  /** Pushes whose Worker callback failed after bounded retries (C-1357). */
+  async unprocessedPushes(): Promise<UnprocessedPush[]> {
+    const body = (await this.call("/api/notify-state")) as { unprocessed: UnprocessedPush[] };
+    return body.unprocessed;
   }
 }

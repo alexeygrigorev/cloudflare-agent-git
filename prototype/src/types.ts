@@ -66,6 +66,23 @@ export interface LogOptions {
   offset?: number;
 }
 
+/**
+ * Local-mode callback guard (codex C-1357): a push whose post-receive
+ * callback to the Worker failed auth/delivery after the sidecar's bounded
+ * retries. The Worker never accepted it, so the agent's true head is
+ * unknown until a later successful delivery supersedes the record.
+ */
+export interface UnprocessedPush {
+  repo: RepoName;
+  ref: string;
+  sha: string;
+  before: string | null;
+  attempts: number;
+  firstAt: string;
+  lastAt: string;
+  lastError: string;
+}
+
 export interface RepoSummary {
   name: RepoName;
   status: "ready" | "importing" | "forking";
@@ -147,4 +164,13 @@ export interface ArtifactsPort {
   listRepos(limit?: number): Promise<RepoSummary[]>;
 
   deleteRepo(name: RepoName): Promise<boolean>;
+
+  /**
+   * Pushes whose Worker callback was lost (codex C-1357). OPTIONAL and
+   * local-mode only: the sidecar keeps the durable ledger
+   * (GET /api/notify-state); the documented real binding has its own event
+   * subscription, so RealArtifacts returns [] (ASSUMED-G: a real deployment
+   * surfaces delivery failures through the subscription, not this port).
+   */
+  unprocessedPushes?(): Promise<UnprocessedPush[]>;
 }

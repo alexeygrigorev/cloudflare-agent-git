@@ -10,6 +10,7 @@ import type {
   RepoName,
   RepoSummary,
   TokenScope,
+  UnprocessedPush,
 } from "../types.js";
 
 export interface ArtifactsRepoCapability {
@@ -106,5 +107,15 @@ export class RealArtifacts implements ArtifactsPort {
 
   async deleteRepo(name: RepoName): Promise<boolean> {
     return this.binding.delete(name);
+  }
+
+  /**
+   * codex C-1357: the callback-loss ledger is a LOCAL sidecar mechanism. A
+   * real deployment gets push events (and their delivery state) from the
+   * Artifacts event subscription itself, so there is nothing to report here
+   * (docs-notes ASSUMED-G).
+   */
+  async unprocessedPushes(): Promise<UnprocessedPush[]> {
+    return [];
   }
 }
