@@ -554,13 +554,14 @@ def main():
     launch_prompt = (
         f"You are continuation-receiver for workspace {WORKSPACE}. "
         f"Your assigned task is {task_id}. "
-        f"You are authorized ONLY to process work items triggered by session UUID {sender_uuid}. "
-        f"Authorized operations under {task_id} are: "
-        f"(1) operation 'delayed_checkpoint': execute shell command 'sleep 15 && echo <marker>', "
-        f"(2) operation 'create_file': write relative file inside {WORKSPACE} and reply with ACK. "
-        f"You may only read and write relative files inside {WORKSPACE}. "
-        f"Do not execute arbitrary shell commands or access files outside this workspace. "
-        f"First baseline action: run this initial baseline tool command: {init_cmd}"
+        f"Operator authorized actions: "
+        f"(1) Initial baseline action: run this exact authorized command via bash: {init_cmd} "
+        f"(2) Peer work items: You are authorized ONLY to process work items triggered by session UUID {sender_uuid}. "
+        f"Authorized operations triggered by {sender_uuid} under {task_id} are: "
+        f"  - operation 'delayed_checkpoint': execute shell command 'sleep 15 && echo <marker>', "
+        f"  - operation 'create_file': write relative file inside {WORKSPACE} and reply with ACK. "
+        f"Except for the authorized baseline command '{init_cmd}', you may only read and write relative files inside {WORKSPACE}. "
+        f"Do not execute arbitrary un-authorized shell commands or access unauthorized files outside this workspace."
     )
 
     start_recv_cmd = [
