@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 16 (fork-replay PASS + ext VERIFIED)
+# muse-reviewer coordination note — round 17 (no pane commit yet + neg spec)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,13 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 16 (Claude queue): fork-replay PASS; both external reports VERIFIED
+## Round 17 (Claude task): pane-delivery fix has NO commit — spec delivered instead
+Searched protocol + aplexer branches/worktrees: fix/continuation branch has
+zero unique commits; only a stale a7040ac duplicate sits uncommitted in
+dirty main (read-only, untouched). Delivered a 4-negative + interplay spec
+(late-input, idle control, busy draft, uncertain-not-retryable) the fix must
+satisfy; mechanism note points at the existing reservation layer. Staying
+available for the real commit. Full record: research/muse/review-round17.md.
 Re-ran pinned suite (8/8 + 12/12) plus 3 new corrupt-input negatives — all
 fail closed; payload untouched. Verdict to Bunny: acceptance MET (status
 flip to owner/orchestrator). Fetched both GitHub issues live: E-C501
