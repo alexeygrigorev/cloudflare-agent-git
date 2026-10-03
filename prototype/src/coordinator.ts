@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
-import { LocalArtifacts } from "./artifacts/local.js";
 import { RealArtifacts } from "./artifacts/real.js";
+import { SidecarArtifacts } from "./artifacts/sidecar.js";
 import { RADAR_STATUSES, pairKey, radarFromEnv, type Radar, type RadarPairResult, type RadarStatus } from "./radar.js";
 
 export interface AgentRecord {
@@ -96,6 +96,18 @@ export interface PairStatusView {
   activeWarningIds: string[];
 }
 
+const CANONICAL_BASE = "agent-branches-canonical";
+const RADAR_LOG_CAP = 50;
+const WARNINGS_CAP = 200;
+
+export interface RunnerReport {
+  policy: string;
+  coverage: string[];
+  accepted: number;
+  at: string;
+  vector: Record<string, string>;
+}
+
 interface CoordinatorModel {
   canonicalName: string | null;
   canonicalRemote: string | null;
@@ -108,6 +120,7 @@ interface CoordinatorModel {
   warnings: WarningRecord[];
   radarLog: RadarLogEntry[];
   pairChecks: Record<string, PairCheckRecord>;
+  lastRunnerReport: RunnerReport | null;
 }
 
 function emptyModel(): CoordinatorModel {
@@ -123,17 +136,19 @@ function emptyModel(): CoordinatorModel {
     warnings: [],
     radarLog: [],
     pairChecks: {},
+    lastRunnerReport: null,
   };
 }
 
-const CANONICAL_BASE = "agent-branches-canonical";
-const RADAR_LOG_CAP = 50;
-const WARNINGS_CAP = 200;
+function randomSuffix(): string {
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 export class Coordinator extends DurableObject {
   private readonly state: DurableObjectState;
   private readonly radar: Radar;
-  private readonly localArtifacts = new LocalArtifacts("agent-branches-local");
   private model: CoordinatorModel | null = null;
 
   constructor(state: DurableObjectState, env: Env) {
@@ -151,6 +166,7 @@ export class Coordinator extends DurableObject {
     // Migrate models persisted before a field existed.
     this.model.pairChecks ??= {};
     this.model.warnSeq ??= this.model.warnings.length;
+    this.model.lastRunnerReport ??= null;
     return this.model;
   }
 
@@ -158,8 +174,20 @@ export class Coordinator extends DurableObject {
     await this.state.storage.put("model", this.model);
   }
 
-  private port(): RealArtifacts | LocalArtifacts {
-    return this.env.ARTIFACTS ? new RealArtifacts(this.env.ARTIFACTS) : this.localArtifacts;
+  /**
+   * Deployment boundary (codex C-1309): the Worker/DO never runs git. It
+   * talks to either the real Artifacts binding or the local Node sidecar.
+   */
+  private port(): RealArtifacts | SidecarArtifacts {
+    if (this.env.ARTIFACTS) {
+      return new RealArtifacts(this.env.ARTIFACTS);
+    }
+    if (this.env.LOCAL_ARTIFACTS_URL) {
+      return new SidecarArtifacts(this.env.LOCAL_ARTIFACTS_URL, this.env.LOCAL_ARTIFACTS_TOKEN);
+    }
+    throw new Error(
+      "no Artifacts backend configured: set the ARTIFACTS binding (real) or LOCAL_ARTIFACTS_URL (local sidecar)",
+    );
   }
 
   async setup(): Promise<{
@@ -176,11 +204,14 @@ export class Coordinator extends DurableObject {
       };
     }
     const port = this.port();
-    const created = await port.createRepo(CANONICAL_BASE, {
+    // Per-instance suffix so isolated storage (tests) never collides on the
+    // sidecar's on-disk repo namespace.
+    const name = `${CANONICAL_BASE}-${randomSuffix()}`;
+    const created = await port.createRepo(name, {
       description: "Agent Branches canonical baseline",
       setDefaultBranch: "main",
     });
-    const seed = await this.localSeedIfAvailable(port, CANONICAL_BASE);
+    const seed = await port.headCommit(created.name);
     model.canonicalName = created.name;
     model.canonicalRemote = created.remote;
     await this.persist();
@@ -189,19 +220,6 @@ export class Coordinator extends DurableObject {
       created: true,
       seedCommit: seed,
     };
-  }
-
-  private async localSeedIfAvailable(
-    port: RealArtifacts | LocalArtifacts,
-    repo: string,
-  ): Promise<string | null> {
-    if (port instanceof LocalArtifacts) {
-      const commit = await port.applyPush(repo, "refs/heads/main", {
-        message: "chore: seed canonical baseline",
-      });
-      return commit.id;
-    }
-    return null;
   }
 
   async createTask(input: {
@@ -298,32 +316,42 @@ export class Coordinator extends DurableObject {
   }
 
   async recordPush(input: {
-    agent: string;
+    agent?: string;
     fork?: string;
     ref?: string;
     sha: string;
   }): Promise<{
     accepted: boolean;
     deduped: boolean;
+    agent: string;
     heads: Record<string, string>;
     invalidatedWarnings: string[];
     newWarnings: WarningRecord[];
     radarChecks: number;
   }> {
     const model = await this.load();
-    const agent = model.agents[input.agent];
-    if (!agent) {
-      throw new Error(`unknown agent: ${input.agent}`);
+    // The sidecar webhook posts {fork, ref, sha} without an agent id; resolve
+    // the owning agent from the fork (codex C-1309 #7a).
+    let agentRecord = input.agent ? model.agents[input.agent] : undefined;
+    if (!agentRecord && input.fork) {
+      agentRecord = Object.values(model.agents).find(
+        (candidate) => candidate.forkName === input.fork || candidate.forkRemote === input.fork,
+      );
     }
-    if (input.fork && input.fork !== agent.forkName && input.fork !== agent.forkRemote) {
-      throw new Error(`fork ${input.fork} does not belong to agent ${input.agent}`);
+    if (!agentRecord) {
+      throw new Error(`unknown agent: ${input.agent ?? input.fork}`);
     }
-    const dedupKey = `${input.agent}:${input.sha}`;
-    const deduped = model.seenPushes.includes(dedupKey) || model.heads[input.agent] === input.sha;
+    const agentId = agentRecord.agentId;
+    if (input.fork && input.fork !== agentRecord.forkName && input.fork !== agentRecord.forkRemote) {
+      throw new Error(`fork ${input.fork} does not belong to agent ${agentId}`);
+    }
+    const dedupKey = `${agentId}:${input.sha}`;
+    const deduped = model.seenPushes.includes(dedupKey) || model.heads[agentId] === input.sha;
     if (deduped) {
       return {
         accepted: true,
         deduped: true,
+        agent: agentId,
         heads: model.heads,
         invalidatedWarnings: [],
         newWarnings: [],
@@ -331,26 +359,27 @@ export class Coordinator extends DurableObject {
       };
     }
     const port = this.port();
-    const known = await port.hasCommit(agent.forkName, input.sha);
+    const known = await port.hasCommit(agentRecord.forkName, input.sha);
     if (!known) {
-      throw new Error(`commit ${input.sha} not found in ${agent.forkName}`);
+      throw new Error(`commit ${input.sha} not found in ${agentRecord.forkName}`);
     }
-    const before = model.heads[input.agent] ?? null;
-    const ref = input.ref ?? agent.ref;
+    const before = model.heads[agentId] ?? null;
+    const ref = input.ref ?? agentRecord.ref;
     const now = new Date().toISOString();
     model.seenPushes.push(dedupKey);
-    model.heads[input.agent] = input.sha;
-    agent.head = input.sha;
-    agent.pushes += 1;
-    agent.lastPushAt = now;
-    agent.ref = ref;
-    const invalidatedWarnings = this.invalidateWarningsFor(model, input.agent, now);
-    const radarOutcome = this.runRadar(model, { agent: input.agent, ref, sha: input.sha, before });
+    model.heads[agentId] = input.sha;
+    agentRecord.head = input.sha;
+    agentRecord.pushes += 1;
+    agentRecord.lastPushAt = now;
+    agentRecord.ref = ref;
+    const invalidatedWarnings = this.invalidateWarningsFor(model, agentId, now);
+    const radarOutcome = this.runRadar(model, { agent: agentId, ref, sha: input.sha, before });
     const newWarnings = radarOutcome.created;
     await this.persist();
     return {
       accepted: true,
       deduped: false,
+      agent: agentId,
       heads: model.heads,
       invalidatedWarnings,
       newWarnings,
@@ -365,6 +394,7 @@ export class Coordinator extends DurableObject {
     pairs: PairStatusView[];
     warnings: WarningRecord[];
     radarLog: RadarLogEntry[];
+    lastRunnerReport: RunnerReport | null;
   }> {
     const model = await this.load();
     return {
@@ -376,6 +406,7 @@ export class Coordinator extends DurableObject {
         .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
         .slice(0, 20),
       radarLog: [...model.radarLog].slice(-20).reverse(),
+      lastRunnerReport: model.lastRunnerReport,
     };
   }
 
@@ -473,6 +504,59 @@ export class Coordinator extends DurableObject {
       }
     }
     return invalidated;
+  }
+
+  /**
+   * Trusted-runner submission endpoint (codex C-1309 #7b). The full head
+   * vector must match the DO's current heads exactly; a stale vector is
+   * rejected so results always refer to a well-defined state. Returns
+   * `{stale: true}` (the route maps that to 409) instead of throwing, since
+   * custom error properties do not survive RPC marshalling.
+   */
+  async submitChecks(input: {
+    vector: Record<string, string>;
+    policy: string;
+    coverage?: string[];
+    results: { pair: [string, string]; status: string; kind?: string; evidence?: string }[];
+  }): Promise<
+    | { stale: true; currentHeads: Record<string, string> }
+    | {
+        stale: false;
+        accepted: number;
+        pairs: PairStatusView[];
+        createdWarnings: WarningRecord[];
+        currentHeads: Record<string, string>;
+        runnerReport: RunnerReport;
+      }
+  > {
+    const model = await this.load();
+    const currentKeys = Object.keys(model.heads).sort();
+    const vectorKeys = Object.keys(input.vector ?? {}).sort();
+    const stale =
+      currentKeys.length !== vectorKeys.length ||
+      currentKeys.some((key, index) => key !== vectorKeys[index] || model.heads[key] !== input.vector[key]);
+    if (stale) {
+      return { stale: true, currentHeads: model.heads };
+    }
+    const applied = await this.applyCheckResults({ policy: input.policy, results: input.results });
+    const model2 = await this.load();
+    const runnerReport: RunnerReport = {
+      policy: input.policy,
+      coverage: input.coverage ?? [],
+      accepted: applied.accepted,
+      at: new Date().toISOString(),
+      vector: { ...input.vector },
+    };
+    model2.lastRunnerReport = runnerReport;
+    await this.persist();
+    return {
+      stale: false,
+      accepted: applied.accepted,
+      pairs: applied.pairs,
+      createdWarnings: applied.createdWarnings,
+      currentHeads: model2.heads,
+      runnerReport,
+    };
   }
 
   /**

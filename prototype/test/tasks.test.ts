@@ -1,10 +1,8 @@
 import { SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
+import { ADMIN_TOKEN, RUNNER_TOKEN, sidecarCommit } from "./helpers.js";
 
 /** Contract additions needed by L2/L4 (codex C-1306). */
-const ADMIN = "test-admin-token";
-const RUNNER = "test-runner-token";
-
 async function post(path: string, body: unknown, token?: string): Promise<Response> {
   const headers: Record<string, string> = { "content-type": "application/json" };
   if (token) {
@@ -21,9 +19,15 @@ async function json<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
+async function currentVector(): Promise<Record<string, string>> {
+  const status = await json<{ heads: Record<string, string> }>(await get("/status"));
+  return status.heads;
+}
+
 interface CreatedTask {
   taskId: string;
   agentId: string;
+  fork: { name: string; remote: string };
   head: string | null;
   base_sha: string;
   intent: string | null;
@@ -31,7 +35,7 @@ interface CreatedTask {
 
 describe("task contract additions (codex C-1306)", () => {
   it("records base_sha (canonical head) and intent on task creation", async () => {
-    const response = await post("/tasks", { agent: "story", intent: "fix login redirect loop" }, ADMIN);
+    const response = await post("/tasks", { agent: "story", intent: "fix login redirect loop" }, ADMIN_TOKEN);
     expect(response.status).toBe(201);
     const created = await json<CreatedTask>(response);
     expect(created.intent).toBe("fix login redirect loop");
@@ -40,22 +44,22 @@ describe("task contract additions (codex C-1306)", () => {
   });
 
   it("accepts an explicit base_sha that exists in canonical history", async () => {
-    const first = await json<CreatedTask>(await post("/tasks", { agent: "based" }, ADMIN));
+    const first = await json<CreatedTask>(await post("/tasks", { agent: "based" }, ADMIN_TOKEN));
     const second = await json<CreatedTask>(
-      await post("/tasks", { agent: "based2", base_sha: first.base_sha }, ADMIN),
+      await post("/tasks", { agent: "based2", base_sha: first.base_sha }, ADMIN_TOKEN),
     );
     expect(second.base_sha).toBe(first.base_sha);
     expect(second.head).toBe(first.base_sha);
 
-    const bogus = await post("/tasks", { agent: "based3", base_sha: "f".repeat(40) }, ADMIN);
+    const bogus = await post("/tasks", { agent: "based3", base_sha: "f".repeat(40) }, ADMIN_TOKEN);
     expect(bogus.status).toBe(400);
-    const malformed = await post("/tasks", { agent: "based4", base_sha: "not-a-sha" }, ADMIN);
+    const malformed = await post("/tasks", { agent: "based4", base_sha: "not-a-sha" }, ADMIN_TOKEN);
     expect(malformed.status).toBe(400);
   });
 
   it("GET /tasks/:id returns base_sha, intent, head, pushes, warnings+acks, testProvenance", async () => {
     const created = await json<CreatedTask>(
-      await post("/tasks", { agent: "detail", intent: "ship the review screen" }, ADMIN),
+      await post("/tasks", { agent: "detail", intent: "ship the review screen" }, ADMIN_TOKEN),
     );
     const detail = await json<{
       taskId: string;
@@ -76,7 +80,7 @@ describe("task contract additions (codex C-1306)", () => {
   });
 
   it("POST /tasks/:id/tests records test provenance against a real fork head", async () => {
-    const created = await json<CreatedTask>(await post("/tasks", { agent: "provenance" }, ADMIN));
+    const created = await json<CreatedTask>(await post("/tasks", { agent: "provenance" }, ADMIN_TOKEN));
     const head = created.head!;
 
     const bad = await post(`/tasks/${created.taskId}/tests`, { command: "npm test", exit: 0, head_sha: "zz" });
@@ -103,16 +107,22 @@ describe("task contract additions (codex C-1306)", () => {
   });
 
   it("POST /warnings/:id/ack records who acknowledged which warning at which head", async () => {
-    const alpha = await json<CreatedTask>(await post("/tasks", { agent: "ack-a" }, ADMIN));
-    const beta = await json<CreatedTask>(await post("/tasks", { agent: "ack-b" }, ADMIN));
-    await post("/events/push", { agent: alpha.agentId, sha: "4".repeat(40) });
-    await post("/events/push", { agent: beta.agentId, sha: "5".repeat(40) });
+    const alpha = await json<CreatedTask>(await post("/tasks", { agent: "ack-a" }, ADMIN_TOKEN));
+    const beta = await json<CreatedTask>(await post("/tasks", { agent: "ack-b" }, ADMIN_TOKEN));
+    const alphaSha = await sidecarCommit(alpha.fork.name, "wip: alpha conflicting change");
+    const betaSha = await sidecarCommit(beta.fork.name, "wip: beta conflicting change");
+    await post("/events/push", { agent: alpha.agentId, sha: alphaSha });
+    await post("/events/push", { agent: beta.agentId, sha: betaSha });
 
     const checked = await json<{ createdWarnings: { id: string }[] }>(
       await post(
         "/checks",
-        { policy: "p", results: [{ pair: [alpha.agentId, beta.agentId], status: "conflict", kind: "merge-conflict" }] },
-        RUNNER,
+        {
+          vector: await currentVector(),
+          policy: "p",
+          results: [{ pair: [alpha.agentId, beta.agentId], status: "conflict", kind: "merge-conflict" }],
+        },
+        RUNNER_TOKEN,
       ),
     );
     const warningId = checked.createdWarnings[0].id;
@@ -127,7 +137,7 @@ describe("task contract additions (codex C-1306)", () => {
     );
     expect(acked.warning.acks).toHaveLength(1);
     expect(acked.warning.acks[0].agent).toBe(alpha.agentId);
-    expect(acked.warning.acks[0].head).toBe("4".repeat(40));
+    expect(acked.warning.acks[0].head).toBe(alphaSha);
     expect(acked.warning.acks[0].note).toBe("rebase in progress");
 
     const betaDetail = await json<{ warnings: { id: string; acks: { agent: string }[] }[] }>(

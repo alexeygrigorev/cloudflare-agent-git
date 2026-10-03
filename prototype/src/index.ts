@@ -10,6 +10,8 @@ declare global {
     RADAR_IMPL?: string;
     ADMIN_TOKEN?: string;
     RUNNER_TOKEN?: string;
+    LOCAL_ARTIFACTS_URL?: string;
+    LOCAL_ARTIFACTS_TOKEN?: string;
   }
 }
 
@@ -20,6 +22,8 @@ declare module "cloudflare:workers" {
       RADAR_IMPL?: string;
       ADMIN_TOKEN?: string;
       RUNNER_TOKEN?: string;
+      LOCAL_ARTIFACTS_URL?: string;
+      LOCAL_ARTIFACTS_TOKEN?: string;
     }
   }
 }
@@ -119,12 +123,16 @@ const handler: FetchHandler = {
 
       if (method === "POST" && path === "/events/push") {
         const body = await readJson(request);
-        if (typeof body.agent !== "string" || typeof body.sha !== "string") {
-          return json({ error: "agent and sha are required strings" }, 400);
+        // Either agent or fork identifies the pusher: the sidecar's
+        // post-receive webhook posts {fork, ref, sha} (C-1309 #7a).
+        const agent = typeof body.agent === "string" ? body.agent : undefined;
+        const fork = typeof body.fork === "string" ? body.fork : undefined;
+        if ((agent === undefined && fork === undefined) || typeof body.sha !== "string") {
+          return json({ error: "agent or fork, and sha are required strings" }, 400);
         }
         const result = await coordinator(env).recordPush({
-          agent: body.agent,
-          fork: typeof body.fork === "string" ? body.fork : undefined,
+          agent,
+          fork,
           ref: typeof body.ref === "string" ? body.ref : undefined,
           sha: body.sha,
         });
@@ -162,14 +170,28 @@ const handler: FetchHandler = {
           return denied;
         }
         const body = await readJson(request);
+        if (!body.vector || typeof body.vector !== "object") {
+          return json({ error: "vector {agent: sha} is required" }, 400);
+        }
         if (!Array.isArray(body.results)) {
           return json({ error: "results must be an array" }, 400);
         }
-        const result = await coordinator(env).applyCheckResults({
+        const outcome = await coordinator(env).submitChecks({
+          vector: body.vector as Record<string, string>,
           policy: typeof body.policy === "string" ? body.policy : "unknown-policy",
+          coverage: Array.isArray(body.coverage) ? (body.coverage as string[]) : undefined,
           results: body.results as { pair: [string, string]; status: string; kind?: string; evidence?: string }[],
         });
-        return json(result);
+        if (outcome.stale) {
+          return json(
+            {
+              error: "stale vector: heads have moved since the runner fetched them; re-fetch /status and retry",
+              currentHeads: outcome.currentHeads,
+            },
+            409,
+          );
+        }
+        return json(outcome);
       }
 
       if (method === "GET" && path === "/status") {
@@ -221,7 +243,7 @@ const handler: FetchHandler = {
       if (/^unknown (task|warning)/.test(message)) {
         return json({ error: message }, 404);
       }
-      const status = /^(unknown agent|fork |commit |repo already|request body|unsupported event|missing artifacts|pushed payload|invalid radar status|check result requires|runner results must|results must|base_sha|test provenance|command \(string\))/.test(
+      const status = /^(unknown agent|fork |commit |repo already|repo not found|request body|unsupported event|missing artifacts|pushed payload|invalid radar status|check result requires|runner results must|results must|base_sha|test provenance|command \(string\)|no Artifacts backend)/.test(
         message,
       )
         ? 400

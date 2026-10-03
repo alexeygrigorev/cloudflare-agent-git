@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "sidecar": "node local-artifacts/sidecar.mjs",
     "test": "vitest run",
+    "test:sidecar": "node --test \"local-artifacts/*.test.mjs\"",
+    "test:all": "npm run typecheck && npm test && npm run test:sidecar",
     "typecheck": "tsc --noEmit",
     "types": "wrangler types"
   },

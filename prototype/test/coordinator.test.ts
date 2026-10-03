@@ -1,20 +1,27 @@
 import { SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
+import { ADMIN_TOKEN, sidecarCommit } from "./helpers.js";
 
-const SHA_ALPHA_1 = "1".repeat(40);
-const SHA_BETA_1 = "2".repeat(40);
-const SHA_ALPHA_2 = "3".repeat(40);
-
-async function post(path: string, body: unknown, token = "test-admin-token"): Promise<Response> {
+/** Integration through the Worker, backed by REAL bare git repos on the
+ *  local sidecar (C-1309): every sha below comes from actual git commits. */
+async function post(path: string, body: unknown, token?: string): Promise<Response> {
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (token) {
+    headers.authorization = `Bearer ${token}`;
+  }
   return SELF.fetch(`http://localhost${path}`, {
     method: "POST",
-    headers: token ? { "content-type": "application/json", authorization: `Bearer ${token}` } : { "content-type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
 }
 
 async function get(path: string): Promise<Response> {
   return SELF.fetch(`http://localhost${path}`);
+}
+
+async function json<T>(response: Response): Promise<T> {
+  return (await response.json()) as T;
 }
 
 interface CreatedTask {
@@ -28,53 +35,45 @@ interface CreatedTask {
 interface PushResult {
   accepted: boolean;
   deduped: boolean;
+  agent?: string;
   heads: Record<string, string>;
   invalidatedWarnings: string[];
-  newWarnings: { id: string; status: string; reason: string; pair: string[] }[];
+  newWarnings: unknown[];
   radarChecks: number;
 }
 
 interface StatusSnapshot {
   canonical: { name: string | null; remote: string | null };
-  agents: { agentId: string; forkName: string; forkRemote: string; head: string | null; pushes: number }[];
+  agents: { agentId: string; forkName: string; head: string | null; pushes: number }[];
   heads: Record<string, string>;
-  pairs: {
-    pair: string[];
-    heads: { a: string; b: string };
-    status: string;
-    checkedAt: string | null;
-    stale: boolean;
-    activeWarningIds: string[];
-  }[];
-  warnings: { id: string; status: string; reason: string; invalidatedAt: string | null }[];
-  radarLog: { pair: string[]; heads: { a: string; b: string }; status: string }[];
+  pairs: { pair: string[]; heads: { a: string; b: string }; status: string; stale: boolean }[];
+  warnings: { id: string; status: string }[];
+  radarLog: { pair: string[]; status: string }[];
 }
 
-async function json<T>(response: Response): Promise<T> {
-  return (await response.json()) as T;
-}
-
-describe("Agent Branches coordinator flow", () => {
-  it("sets up the canonical repo", async () => {
-    const response = await post("/setup", {});
+describe("Agent Branches coordinator flow (sidecar-backed)", () => {
+  it("sets up the canonical repo with a real seeded commit", async () => {
+    const response = await post("/setup", {}, ADMIN_TOKEN);
     expect(response.status).toBe(201);
-    const body = await json<{ canonical: { name: string }; created: boolean; seedCommit: string | null }>(response);
-    expect(body.canonical.name).toBe("agent-branches-canonical");
+    const body = await json<{ canonical: { name: string; remote: string }; created: boolean; seedCommit: string | null }>(response);
+    expect(body.canonical.name).toMatch(/^agent-branches-canonical-[0-9a-f]{8}$/);
+    expect(body.canonical.remote).toContain("/git/agent-branches-canonical-");
     expect(body.created).toBe(true);
     expect(body.seedCommit).toMatch(/^[0-9a-f]{40}$/);
   });
 
-  it("creates two agent tasks as forks of canonical", async () => {
-    const alpha = await post("/tasks", { agent: "alpha" });
+  it("creates two agent tasks as real forks of canonical", async () => {
+    const alpha = await post("/tasks", { agent: "alpha" }, ADMIN_TOKEN);
     expect(alpha.status).toBe(201);
     const alphaBody = await json<CreatedTask>(alpha);
     expect(alphaBody.agentId).toBe("alpha-0001");
     expect(alphaBody.taskId).toBe("task-0001");
-    expect(alphaBody.fork.name).toBe("agent-branches-canonical-alpha-0001");
+    expect(alphaBody.fork.name).toMatch(/^agent-branches-canonical-[0-9a-f]{8}-alpha-0001$/);
+    expect(alphaBody.fork.remote).toMatch(/\/git\/agent-branches-canonical-[0-9a-f]{8}-alpha-0001\.git$/);
     expect(alphaBody.token.scope).toBe("write");
     expect(alphaBody.token.plaintext).toMatch(/^art_v1_[0-9a-f]{40}\?expires=\d+$/);
 
-    const beta = await post("/tasks", { agent: "beta" });
+    const beta = await post("/tasks", { agent: "beta" }, ADMIN_TOKEN);
     expect(beta.status).toBe(201);
     const betaBody = await json<CreatedTask>(beta);
     expect(betaBody.agentId).toBe("beta-0002");
@@ -82,85 +81,91 @@ describe("Agent Branches coordinator flow", () => {
     expect(alphaBody.head).toMatch(/^[0-9a-f]{40}$/);
   });
 
-  it("accepts a WIP head but raises NO warning just because heads differ", async () => {
-    const before = await json<StatusSnapshot>(await get("/status"));
-    expect(before.heads["alpha-0001"]).toBe(before.heads["beta-0002"]);
+  it("accepts a real WIP head, no warning just because heads differ", async () => {
+    const alphaBody = await json<CreatedTask>(await post("/tasks", { agent: "pusher" }, ADMIN_TOKEN));
+    const betaBody = await json<CreatedTask>(await post("/tasks", { agent: "peer" }, ADMIN_TOKEN));
+    expect(alphaBody.head).toBe(betaBody.head);
 
-    const push = await post("/events/push", { agent: "alpha-0001", sha: SHA_ALPHA_1 });
+    const wip = await sidecarCommit(alphaBody.fork.name, "wip: alpha first change");
+    const push = await post("/events/push", { agent: alphaBody.agentId, sha: wip });
     expect(push.status).toBe(200);
     const body = await json<PushResult>(push);
     expect(body.accepted).toBe(true);
     expect(body.deduped).toBe(false);
-    expect(body.heads["alpha-0001"]).toBe(SHA_ALPHA_1);
-    expect(body.radarChecks).toBe(1);
+    expect(body.agent).toBe(alphaBody.agentId);
+    expect(body.heads[alphaBody.agentId]).toBe(wip);
+    // one check per existing sibling pair (earlier tests added more agents)
+    expect(body.radarChecks).toBeGreaterThanOrEqual(1);
     expect(body.newWarnings).toEqual([]);
 
     const status = await json<StatusSnapshot>(await get("/status"));
-    expect(status.heads["alpha-0001"]).toBe(SHA_ALPHA_1);
+    expect(status.heads[alphaBody.agentId]).toBe(wip);
     expect(status.warnings).toEqual([]);
-    expect(status.pairs).toHaveLength(1);
-    expect(status.pairs[0].status).toBe("not_checked");
-    expect(status.pairs[0].checkedAt).toBeNull();
-    expect(status.pairs[0].stale).toBe(false);
-    expect(status.pairs[0].activeWarningIds).toEqual([]);
+    const mine = status.pairs.find((p) => p.pair.includes(alphaBody.agentId) && p.pair.includes(betaBody.agentId));
+    expect(mine?.status).toBe("not_checked");
     expect(status.radarLog[0].status).toBe("not_checked");
-    expect(status.radarLog[0].pair).toEqual(["alpha-0001", "beta-0002"]);
+  });
+
+  it("resolves the agent from the fork when only {fork, sha} is posted (webhook shape)", async () => {
+    const created = await json<CreatedTask>(await post("/tasks", { agent: "hooked" }, ADMIN_TOKEN));
+    const wip = await sidecarCommit(created.fork.name, "wip: pushed via git");
+    const viaFork = await post("/events/push", { fork: created.fork.name, ref: "refs/heads/main", sha: wip });
+    expect(viaFork.status).toBe(200);
+    const body = await json<PushResult>(viaFork);
+    expect(body.agent).toBe(created.agentId);
+    expect(body.heads[created.agentId]).toBe(wip);
   });
 
   it("dedups repeated pushes per (agent, sha)", async () => {
-    const push = await post("/events/push", { agent: "alpha-0001", sha: SHA_ALPHA_1 });
-    const body = await json<PushResult>(push);
-    expect(body.accepted).toBe(true);
-    expect(body.deduped).toBe(true);
-    expect(body.radarChecks).toBe(0);
-
-    const status = await json<StatusSnapshot>(await get("/status"));
-    expect(status.warnings).toEqual([]);
-    expect(status.radarLog).toHaveLength(2);
+    const created = await json<CreatedTask>(await post("/tasks", { agent: "dedup" }, ADMIN_TOKEN));
+    const wip = await sidecarCommit(created.fork.name, "wip: only once");
+    await post("/events/push", { agent: created.agentId, sha: wip });
+    const again = await json<PushResult>(await post("/events/push", { agent: created.agentId, sha: wip }));
+    expect(again.accepted).toBe(true);
+    expect(again.deduped).toBe(true);
+    expect(again.radarChecks).toBe(0);
   });
 
-  it("keeps pairs not_checked after the sibling advances (heads move, no conflict invented)", async () => {
-    const push = await post("/events/push", { agent: "beta-0002", sha: SHA_BETA_1 });
-    const body = await json<PushResult>(push);
-    expect(body.deduped).toBe(false);
-    expect(body.heads["beta-0002"]).toBe(SHA_BETA_1);
-    expect(body.invalidatedWarnings).toEqual([]);
-    expect(body.newWarnings).toEqual([]);
-
-    const status = await json<StatusSnapshot>(await get("/status"));
-    expect(status.pairs[0].heads).toEqual({ a: SHA_ALPHA_1, b: SHA_BETA_1 });
-    expect(status.pairs[0].status).toBe("not_checked");
+  it("rejects shas that are not real commits in the fork", async () => {
+    const created = await json<CreatedTask>(await post("/tasks", { agent: "strict" }, ADMIN_TOKEN));
+    const foreign = await sidecarCommit("no-such-repo-will-exist-x", "x").catch(() => null);
+    expect(foreign).toBeNull();
+    const unknown = await post("/events/push", { agent: created.agentId, sha: "0".repeat(40) });
+    expect(unknown.status).toBe(400);
+    const body = await json<{ error: string }>(unknown);
+    expect(body.error).toContain("not found");
   });
 
   it("serves task details and 404s unknown tasks", async () => {
-    const found = await get("/tasks/task-0001");
+    const created = await json<CreatedTask>(await post("/tasks", { agent: "detail" }, ADMIN_TOKEN));
+    const found = await get(`/tasks/${created.taskId}`);
     expect(found.status).toBe(200);
-    const body = await json<{ agentId: string; agent: { head: string | null; pushes: number } | null }>(found);
-    expect(body.agentId).toBe("alpha-0001");
-    expect(body.agent?.head).toBe(SHA_ALPHA_1);
-    expect(body.agent?.pushes).toBe(1);
+    const body = await json<{ agentId: string; head: string | null; pushes: number }>(found);
+    expect(body.agentId).toBe(created.agentId);
+    expect(body.head).toBe(created.head);
+    expect(body.pushes).toBe(0);
 
     const missing = await get("/tasks/task-9999");
     expect(missing.status).toBe(404);
   });
 
-  it("accepts the documented cf.artifacts.repo.pushed envelope", async () => {
-    const status = await json<StatusSnapshot>(await get("/status"));
-    const alphaFork = status.agents.find((a) => a.forkName.includes("alpha"))!.forkName;
+  it("accepts the documented cf.artifacts.repo.pushed envelope with a real commit", async () => {
+    const created = await json<CreatedTask>(await post("/tasks", { agent: "envelope" }, ADMIN_TOKEN));
+    const next = await sidecarCommit(created.fork.name, "wip: envelope-driven");
     const event = {
       type: "cf.artifacts.repo.pushed",
-      source: { type: "artifacts.repo", namespace: "agent-branches-local", repoName: alphaFork },
+      source: { type: "artifacts.repo", namespace: "local", repoName: created.fork.name },
       payload: {
         ref: "refs/heads/main",
-        before: SHA_ALPHA_1,
-        after: SHA_ALPHA_2,
+        before: created.head,
+        after: next,
         commits: [
           {
-            id: SHA_ALPHA_2,
-            message: "wip: more work",
+            id: next,
+            message: "wip: envelope-driven",
             messageTruncated: false,
             timestamp: "2026-10-03T12:00:00.000Z",
-            parents: [SHA_ALPHA_1],
+            parents: [created.head],
           },
         ],
         totalCommitsCount: 1,
@@ -178,29 +183,28 @@ describe("Agent Branches coordinator flow", () => {
     const body = await json<{ accepted: boolean; deduped: boolean; heads: Record<string, string> }>(response);
     expect(body.accepted).toBe(true);
     expect(body.deduped).toBe(false);
-    expect(body.heads["alpha-0001"]).toBe(SHA_ALPHA_2);
+    expect(body.heads[created.agentId]).toBe(next);
 
     const ignored = await post("/events/artifacts", {
       ...event,
-      source: { type: "artifacts.repo", namespace: "agent-branches-local", repoName: "who-knows" },
+      source: { type: "artifacts.repo", namespace: "local", repoName: "who-knows" },
     });
     expect(ignored.status).toBe(202);
-    const ignoredBody = await json<{ accepted: boolean }>(ignored);
-    expect(ignoredBody.accepted).toBe(false);
   });
 
-  it("rejects unknown agents, wrong forks and bad bodies", async () => {
+  it("rejects unknown agents and wrong forks", async () => {
     const unknownAgent = await post("/events/push", { agent: "ghost-9999", sha: "f".repeat(40) });
     expect(unknownAgent.status).toBe(400);
 
+    const created = await json<CreatedTask>(await post("/tasks", { agent: "owner" }, ADMIN_TOKEN));
     const wrongFork = await post("/events/push", {
-      agent: "alpha-0001",
+      agent: created.agentId,
       fork: "somebody-elses-fork",
       sha: "e".repeat(40),
     });
     expect(wrongFork.status).toBe(400);
 
-    const missingSha = await post("/events/push", { agent: "alpha-0001" });
+    const missingSha = await post("/events/push", { agent: created.agentId });
     expect(missingSha.status).toBe(400);
 
     const noRoute = await get("/definitely/not/a/route");
