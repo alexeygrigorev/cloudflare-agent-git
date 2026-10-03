@@ -29,6 +29,20 @@ R6 (validation): a01-shadow-consume-validation-rev1.py exercises emit-into-
     scratch, sanitization, missing-bundle robustness, emit refusal on
     unverified SHAs, cwd robustness and append dedup; results are committed.
 
+Rev1b applies codex-principal C-0124-Z-REV1-SOURCE (01a0ff6e) source-review
+findings that survived rev1:
+R7 (overlap): eligible_warnings=True derived from published FILE PATH overlap
+    is WITHDRAWN. Overlap is a topology observation only (same-file edits can
+    be compatible; semantic failure can occur across disjoint files).
+    Eligibility stays "unknown" unless a frozen bound concurrent vector/
+    composition plus an accepted oracle/event demonstrates the warning
+    condition; unknown is never converted to false/zero.
+R8 (event labels): discriminator counts are qualified as raw recognized event
+    candidates, not schema-validated bound discovery/consume events.
+R9 (dedup): the stable dedup key binds a task/source token plus a digest of
+    the event minus volatile timestamps, so regenerated twins with fresh ts
+    are still skipped.
+
 Gate: repo emit (default dir) only after codex-principal accepts this rev1.
 """
 
@@ -181,6 +195,12 @@ def scan_typed_events(bundle_dir: Path) -> dict:
         "typed_event_schema_present_in_receipts": any(counts.values()),
         "typed_event_counts": counts,
         "files_with_typed_events": files_with,
+        "count_qualification": (
+            "raw recognized event candidates: a discriminator-key match "
+            "(etype/event/kind/type) only; these are NOT schema-validated "
+            "bound discovery/consume events (required fields, digests and "
+            "vector IDs are not validated here)"
+        ),
         "scope_note": (
             "the grok fair-pair receipts predate the v0.3/v0.4 typed journal "
             "schema; zero typed events here is absence-of-evidence within "
@@ -264,38 +284,53 @@ def derive_eligibility(bundle_dir: Path) -> dict:
                 if isinstance(peer, dict) and any(v is not None for v in peer.values()):
                     polls_with_peer_wip += 1
 
+    # C-0124-Z-REV1-SOURCE: published-path overlap is a TOPOLOGY OBSERVATION
+    # ONLY. Same-file edits can be compatible and semantic failure can occur
+    # across disjoint files, so overlap neither demonstrates an eligible
+    # warning nor excludes one. Eligibility stays "unknown" unless a frozen
+    # bound concurrent vector/composition PLUS an accepted oracle/event
+    # demonstrates the warning condition; no such oracle evidence exists in
+    # the retained receipts, so "unknown" is the only derivable value here.
+    # Unknown is never converted to false/zero.
     observed_overlap_any = any(overlap.values())
+    eligible: object = "unknown"
+    parts = [
+        "unknown: eligible warnings require a frozen bound concurrent "
+        "vector/composition plus an accepted oracle/event demonstrating the "
+        "warning condition; neither exists in the retained receipts"
+    ]
     if observed_overlap_any:
-        eligible: object = True
-        basis = (
-            "observed: published file sets overlap across the two writers "
-            f"({overlap}); cross-worktree pairing applies per scan_once"
+        parts.append(
+            "topology observation only: published file sets overlap across "
+            f"the two writers ({overlap}); overlap is not an eligible "
+            "warning and same-file edits may be compatible"
         )
-    elif polls_with_peer_wip > 0:
-        eligible = "unknown"
-        basis = (
-            f"unknown: cross-worktree concurrency observed ({polls_with_peer_wip}/"
-            f"{polls_total} polls with non-null peer WIP) but the retained "
-            "timeline does not retain concurrent WIP tree snapshots, so a "
-            "conflicting composition cannot be confirmed or excluded"
+    if polls_with_peer_wip > 0:
+        parts.append(
+            f"cross-worktree concurrency observed ({polls_with_peer_wip}/"
+            f"{polls_total} polls with non-null peer WIP) but concurrent WIP "
+            "tree snapshots are not retained, so a conflicting composition "
+            "cannot be confirmed or excluded"
         )
-    else:
-        eligible = "unknown"
-        basis = (
-            f"unknown: retained timeline insufficient ({polls_total} polls, no "
+    if not observed_overlap_any and polls_with_peer_wip == 0:
+        parts.append(
+            f"retained timeline insufficient ({polls_total} polls, no "
             "non-null peer WIP retained); eligibility cannot be derived"
         )
+    basis = "; ".join(parts)
     return {
         "eligible_warnings": eligible,
         "warning_rate": "undefined",
         "basis": basis,
-        "observed_published_file_overlap": overlap,
+        "observed_published_file_overlap_topology_only": overlap,
         "timeline_polls_total": polls_total,
         "timeline_polls_with_nonnull_peer_wip": polls_with_peer_wip,
         "withdrawn_claims": [
             "structural zero eligible warnings from distinct per-writer paths",
             "shared-worktree-pairs requirement as an eligibility condition",
             "causal claim that the conflict condition never existed",
+            "eligible_warnings=True derived from published FILE PATH overlap "
+            "(C-0124-Z-REV1-SOURCE: overlap is topology observation only)",
         ],
     }
 
@@ -324,7 +359,20 @@ def sanitize(obj, extra: list[str] | None = None) -> object:
     return obj
 
 
-def _append_locked(events_path: Path, event: dict, key: tuple[str, str]) -> str:
+def _stable_event_key(obj: dict) -> tuple[str, str]:
+    """C-0124-Z-REV1-SOURCE: dedup binds a stable task/source token, not the
+    fresh ts a regenerated twin would renew. Key = (event, token:digest) where
+    digest covers every field except volatile timestamps."""
+    stable = {k: v for k, v in obj.items() if k not in ("ts", "timestamp", "time")}
+    digest = hashlib.sha256(
+        json.dumps(stable, sort_keys=True, default=str).encode()
+    ).hexdigest()[:16]
+    token = str(obj.get("task_token") or obj.get("source") or "content")
+    return (str(obj.get("event")), f"{token}:{digest}")
+
+
+def _append_locked(events_path: Path, event: dict) -> str:
+    key = _stable_event_key(event)
     existing = events_path.read_text() if events_path.exists() else ""
     for line in existing.splitlines():
         if not line.strip():
@@ -333,7 +381,9 @@ def _append_locked(events_path: Path, event: dict, key: tuple[str, str]) -> str:
             obj = json.loads(line)
         except json.JSONDecodeError:
             continue
-        if (str(obj.get("event")), str(obj.get("ts"))) == key:
+        if not isinstance(obj, dict):
+            continue
+        if _stable_event_key(obj) == key:
             return "dedup-skipped"
     events_path.parent.mkdir(parents=True, exist_ok=True)
     with events_path.open("a") as f:
@@ -344,15 +394,15 @@ def _append_locked(events_path: Path, event: dict, key: tuple[str, str]) -> str:
 def append_event_dedup(
     events_path: Path, event: dict, lock_path: Path | None = None
 ) -> str:
-    """R5: durable append that dedups on (event, ts) before mutating."""
-    key = (str(event.get("event")), str(event.get("ts")))
+    """R5: durable append that dedups on a stable task/source token before
+    mutating; regenerated twins with fresh timestamps are skipped."""
     if lock_path is None:
-        return _append_locked(events_path, event, key)
+        return _append_locked(events_path, event)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
     try:
         fcntl.flock(fd, fcntl.LOCK_EX)
-        return _append_locked(events_path, event, key)
+        return _append_locked(events_path, event)
     finally:
         os.close(fd)
 
@@ -409,7 +459,8 @@ def main() -> int:
         # premised on the withdrawn structural zero and is retracted.
         result = {
             "schema": "a01-shadow-consume-results/v1",
-            "runner_rev": "rev1 (corrections per C-0124-Z-REVISION / HEARTBEAT0054 / 01a0ff66)",
+            "runner_rev": "rev1b (C-0124-Z-REVISION/HEARTBEAT0054/01a0ff66 + "
+                          "C-0124-Z-REV1-SOURCE/01a0ff6e corrections)",
             "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "owner": "zcode-independent",
             "session": "7bd5b3c2-4399-4b2e-9797-e8e0014740ee (resumed as a4a578d1)",
@@ -429,12 +480,14 @@ def main() -> int:
                 "eligible_warnings": eligibility["eligible_warnings"],
                 "warning_rate": "undefined",
                 "discovery_action": (
-                    f"{discovery_n} typed discovery_action events in receipts"
+                    f"{discovery_n} raw recognized discovery_action event "
+                    "candidates in receipts (discriminator match, not "
+                    "schema-validated bound events)"
                     if discovery_n
                     else "not observable: receipts predate the typed schema; "
                          "no discovery_action claimable in either direction"
                 ),
-                "interface_observed_events": interface_n,
+                "interface_observed_event_candidates": interface_n,
                 "binding_target_claimable": False,
                 "binding_note": (
                     "neither success criterion of the registered plan is "

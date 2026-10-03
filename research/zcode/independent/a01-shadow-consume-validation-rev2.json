@@ -1,0 +1,78 @@
+{
+  "schema": "a01-shadow-consume-validation-rev2",
+  "generated": "2026-10-03T01:56:17+00:00",
+  "runner_rev": "rev1b (C-0124-Z-REV1-SOURCE/01a0ff6e corrections: overlap=topology only, raw candidate labels, stable dedup token)",
+  "checks": [
+    {
+      "check": "emit_scratch_exit0_and_file",
+      "pass": true,
+      "detail": "rc=0 err=emitted /tmp/a01-rev2-val-wi15bosx/out-real/a01-shadow-consume-results.json"
+    },
+    {
+      "check": "emit_sanitized_no_host_paths",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "real_receipts_eligibility_unknown",
+      "pass": true,
+      "detail": "unknown"
+    },
+    {
+      "check": "overlap_reported_as_topology_only",
+      "pass": true,
+      "detail": "topology key present"
+    },
+    {
+      "check": "typed_counts_carry_candidate_qualification",
+      "pass": true,
+      "detail": "R8 label present"
+    },
+    {
+      "check": "all_8_head_shas_verified",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "dryrun_from_temp_cwd_exit0",
+      "pass": true,
+      "detail": "rc=0"
+    },
+    {
+      "check": "missing_bundle_reported_not_crash",
+      "pass": true,
+      "detail": "rc=0"
+    },
+    {
+      "check": "emit_refused_unverified_shas_exit2",
+      "pass": true,
+      "detail": "rc=2"
+    },
+    {
+      "check": "compatible_overlap_still_unknown_never_true",
+      "pass": true,
+      "detail": "eligible=unknown"
+    },
+    {
+      "check": "disjoint_semantic_failure_case_stays_unknown_not_zero",
+      "pass": true,
+      "detail": "eligible=unknown"
+    },
+    {
+      "check": "no_signal_timeline_also_unknown",
+      "pass": true,
+      "detail": "eligible=unknown"
+    },
+    {
+      "check": "regenerated_ts_twin_dedup_skipped",
+      "pass": true,
+      "detail": "r1=appended r2=dedup-skipped r3=dedup-skipped r4=appended lines=2"
+    },
+    {
+      "check": "flocked_dedup_idempotent",
+      "pass": true,
+      "detail": "r5=appended r6=dedup-skipped"
+    }
+  ],
+  "all_pass": true
+}
