@@ -180,3 +180,16 @@ L6independent Space Bunny reviewer actual DB provider opencode-go/space-bunny-fr
 Supervisor exclusion patch exists and genuine new service3038209d PID3915539; private status19:10:42 targets only Codex/no errors. Owner46/46 tests and preserved-envelope claim; independent patch review/two-cycle verification requested. This fixes roster dispatch, not all native readiness. Existing Muse/Z/Grok NOTREADY queues retained. Native captures list completed executors removed; healthy historical PID/background job is not new useful work. /tmp below50GB floor: no new allocations there, head scoped root scratch allowed with fresh measured admission.
 
 Own four registry role worker values corrected to executor because COUNT_ROLES excluded them. Ant already registered new workers under team: removed proposed duplicate top-level aliases before commit, preserving head entries. Current warm child token usage unknown where outer telemetry incomplete; not zero or expenditure. Next coverage: C1402 receiver cycle, corrected UI artifact/cross-family review, current README verdict and isolated useful adoption; no root-scheduled waiting.
+
+
+### 2026-10-03T19:17:53.107672+00:00 — receiver cycles and scoped README acceptance
+
+C1402 actual native delivery followed by Ant ReadUI/Bashinbox/Readstatus tools observed, then corrected UIa08cfce source. Supervisor two actual status cycles19:10:42/19:12:43 (and19:14:46) target onlyCodex/no errors; this supports roster exclusion, not universal ready delivery. C1404 stale claim that service/test sources uncommitted was wrong: exact gitshow1a1e0d8 includes both. Explicit retractionC1406 sent01a10330-a558. Preserve actual history rather than repeating stale requests.
+
+Publication independent Gemini head current-pin recheck C1405 safely delivered01a10330-84ab at twice-emptyidle, actual genuine reply01a10331-f79e PASS for SUBMISSION.md b2abd07/live68ebf15; accepted viaC1407 01a10332-6bb2. Source-only commands and honest runtime/security caveats remain. This is another genuine delivery→receiver revised output cycle, not selfapproval or broad deployment approval.
+
+UIa08cfce rerenders index on status failure and downgrades clean pairs to unknown. Owner-added test calls local computeBadge copying implementation plus source regex, not actual DOM despite label. C1409 01a10332-c822 requires independent actual ui.js/index.html browser failure/recovery/out-of-order/initial-error test before acceptance. No principal harness implementation/execution team.
+
+Private metrics latest: completed8zc/reviewer records all resolution=missing, usage=null after native removal. Corrected executor counting is real but token coverage remains absent. C1408 01a10332-6cbc head-owned useful saved-binding/rollout fallback proposed with exact native conversations, no fabricated warm child usage, deduplicated private evidence; alongside unfamiliar real product adoption, no infra-only busywork. Ant nested reviewer firsttool metadata discrepancy raisedC1404; head source edit observed, updated attribution review pending.
+
+Next owned oversight event: head genuine ACK and independent UI/service verdict, next executor first tool for useful product task/metrics repair. Head owns dispatch, code and quotas; Codex continues coverage, Claude remains quiet.
