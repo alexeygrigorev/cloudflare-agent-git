@@ -95,4 +95,78 @@ class Safety(unittest.TestCase):
   finally:service.subprocess.run=real_run
   self.assertEqual(len(calls),1)
   self.assertIn('rc=1',str(ctx.exception));self.assertIn('unknown flag --nope',str(ctx.exception))
+ def test_read_only_allowlist(self):
+  self.assertTrue(service.read_only(['aplexer','whoami','--json']))
+  self.assertTrue(service.read_only(['aplexer','list','--json']))
+  self.assertTrue(service.read_only(['aplexer','capture','session-id','--screen','--plain']))
+  self.assertTrue(service.read_only([service.BINARY,'message','inbox','--json']))
+  self.assertTrue(service.read_only([service.BINARY,'message','log','--json']))
+  self.assertTrue(service.read_only([service.BINARY,'message','show','id-1','--json']))
+  self.assertTrue(service.read_only([service.BINARY,'message','send','--help']))
+  self.assertFalse(service.read_only([service.BINARY,'message','send','--to','inbox','--json','body text']))
+  self.assertFalse(service.read_only([service.BINARY,'message','reply','id-1','--json','body']))
+  self.assertFalse(service.read_only([service.BINARY,'message','deliver','id-1','--json']))
+  self.assertFalse(service.read_only([service.BINARY,'message','ack','id-1','--json']))
+  self.assertFalse(service.read_only([service.BINARY,'state-report','--json']))
+  self.assertFalse(service.read_only(['quse','codex','--json']))
+ def test_busy_send_one_call_uncertain_degraded_no_second_id(self):
+  real_run=service.subprocess.run;persisted=[]
+  BUSY='a: mailbox /home/alexey/git/cloudflare-agent-git is busy, retry: Resource temporarily unavailable (os error 11)'
+  class R:
+   returncode=1;stdout='';stderr=BUSY
+  def fake(a,**k):persisted.append(a);return R()
+  service.subprocess.run=fake
+  try:
+   with self.assertRaises(service.DeliveryUncertain) as ctx:
+    service.command([service.BINARY,'message','send','--to','claude-principal','--json','body'])
+   self.assertEqual(len(persisted),1)
+   self.assertIn(BUSY[:60],ctx.exception.stderr)
+   report={'timestamp':'t','identity':'x','principals':{},'errors':[],'actions':[],'degraded':False}
+   service.record_cycle_failure(report,ctx.exception)
+   self.assertTrue(report['degraded'])
+   self.assertEqual(report['observation'],'incomplete-cycle: DeliveryUncertain')
+   self.assertEqual(report['uncertain_outcome']['outcome'],'UNKNOWN')
+   self.assertIn('message',report['uncertain_outcome']['cmd'])
+   with tempfile.TemporaryDirectory() as folder:
+    spool=pathlib.Path(folder)
+    with self.assertRaises(service.DeliveryUncertain):
+     service.recorded_send(service.BINARY,'claude-principal','ev-key','body',spool,'sender',True)
+    self.assertEqual(len(persisted),2)
+    frozen=service.recorded_send(service.BINARY,'claude-principal','ev-key','body',spool,'sender',True)
+    self.assertEqual(len(persisted),2)
+    self.assertEqual(frozen['delivery'],'send-uncertain');self.assertIsNone(frozen['id'])
+  finally:service.subprocess.run=real_run
+ def test_busy_inbox_byte_exact_stderr_retries_then_success(self):
+  real_run,real_time=service.subprocess.run,service.time
+  BUSY='a: mailbox /home/alexey/git/cloudflare-agent-git is busy, retry: Resource temporarily unavailable (os error 11)'
+  seq=[{'rc':1,'err':BUSY},{'rc':1,'err':BUSY},{'rc':0,'out':'{"messages":[]}'}]
+  slept=[]
+  class R:
+   def __init__(self,e):self.returncode=e['rc'];self.stdout=e.get('out','');self.stderr=e.get('err','')
+  service.subprocess.run=lambda a,**k:R(seq.pop(0))
+  service.time=type('T',(),{'sleep':staticmethod(lambda s:slept.append(s))})()
+  try:self.assertEqual(service.command(['aplexer','message','inbox','--json']),'{"messages":[]}')
+  finally:service.subprocess.run,service.time=real_run,real_time
+  self.assertEqual(slept,[0.2,0.4])
+ def test_busy_ack_and_unknown_verb_single_invocation(self):
+  real_run=service.subprocess.run;calls=[]
+  class R:
+   returncode=1;stdout='';stderr='a: mailbox /home/alexey/git/cloudflare-agent-git is busy, retry: Resource temporarily unavailable (os error 11)'
+  def fake(a,**k):calls.append(a);return R()
+  service.subprocess.run=fake
+  try:
+   with self.assertRaises(service.AckUncertain):service.command([service.BINARY,'message','ack','id-1','--json'])
+   with self.assertRaises(service.MutationUncertain) as ctx:service.command([service.BINARY,'state-report','--json','x'])
+   self.assertNotIsInstance(ctx.exception,(service.DeliveryUncertain,service.AckUncertain))
+  finally:service.subprocess.run=real_run
+  self.assertEqual(len(calls),2)
+ def test_generic_error_degrades_cycle(self):
+  report={'timestamp':'t','identity':'x','principals':{},'errors':[],'actions':[],'degraded':False}
+  service.record_cycle_failure(report,RuntimeError('quota query failed'))
+  self.assertTrue(report['degraded'])
+  self.assertEqual(report['observation'],'incomplete-cycle: RuntimeError')
+  self.assertNotIn('uncertain_outcome',report)
+  service.record_cycle_failure(report,service.MailboxBusy('command failed: mailbox busy after 5 retries'))
+  self.assertTrue(report['degraded'])
+  self.assertEqual(report['observation'],'incomplete-cycle: MailboxBusy')
 if __name__=='__main__':unittest.main()

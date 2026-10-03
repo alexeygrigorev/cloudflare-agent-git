@@ -20,10 +20,57 @@ def atomic(path, value):
 class MailboxBusy(Exception):
     """Aplexer workspace mailbox lock stayed busy through all bounded retries."""
 
+class MutationUncertain(Exception):
+    """A mutating call hit a busy-like failure after exactly one invocation; outcome UNKNOWN."""
+    def __init__(self, cmd, stderr, returncode):
+        self.cmd = list(cmd)
+        self.stderr = stderr
+        self.returncode = returncode
+        super().__init__(f'{type(self).__name__}: single invocation, no retry, outcome UNKNOWN: {cmd[1:3]} rc={returncode}; stderr[:200]: {stderr[:200]}')
+    def uncertain_record(self):
+        return {'outcome': 'UNKNOWN', 'class': type(self).__name__, 'cmd': self.cmd, 'stderr': self.stderr[:200], 'returncode': self.returncode}
+
+class DeliveryUncertain(MutationUncertain):
+    """send/reply/deliver busy-like failure; never retried, never re-sent with a new id."""
+
+class AckUncertain(MutationUncertain):
+    """ack busy-like failure; acknowledgement state unknown, never retried."""
+
 MAILBOX_BUSY = re.compile(r'is busy, retry|Resource temporarily unavailable')
 BUSY_BACKOFF = (0.2, 0.4, 0.8, 1.6, 3.2)
+# Explicit allowlist: only these aplexer subcommands are read-only observations.
+READ_ONLY_VERBS = (
+    ('list',), ('status',), ('whoami',), ('capture',), ('help',),
+    ('message', 'inbox'), ('message', 'log'), ('message', 'show'),
+)
+UNCERTAIN_BY_VERB = {
+    ('message', 'send'): DeliveryUncertain,
+    ('message', 'reply'): DeliveryUncertain,
+    ('message', 'deliver'): DeliveryUncertain,
+    ('message', 'ack'): AckUncertain,
+}
+
+def aplexer_verb(args):
+    """Leading positional subcommand words; binary name and options are skipped."""
+    words = []
+    for token in args[1:]:
+        if token.startswith('-'):
+            break
+        words.append(token)
+        if len(words) == 2:
+            break
+    return tuple(words)
+
+def read_only(args):
+    """Allowlist membership only: positional verb prefix (plus --help), never a substring guess."""
+    if '--help' in args:
+        return True
+    words = aplexer_verb(args)
+    return any(words[:len(entry)] == entry for entry in READ_ONLY_VERBS)
 
 def command(args, timeout=20):
+    """Read-only aplexer observations retry on busy; every mutating call runs exactly once."""
+    retrying = read_only(args)
     backoff = BUSY_BACKOFF
     while True:
         result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
@@ -33,10 +80,20 @@ def command(args, timeout=20):
         busy = MAILBOX_BUSY.search(stderr)
         if not busy:
             raise RuntimeError(f'command failed: {args[1:3]} rc={result.returncode}; stderr[:200]: {stderr[:200]}')
+        if not retrying:
+            raise UNCERTAIN_BY_VERB.get(aplexer_verb(args), MutationUncertain)(args, stderr, result.returncode)
         if not backoff:
             raise MailboxBusy(f'command failed: {args[1:3]} rc={result.returncode} mailbox busy after {len(BUSY_BACKOFF)} retries; stderr[:200]: {stderr[:200]}')
         time.sleep(backoff[0])
         backoff = backoff[1:]
+
+def record_cycle_failure(report, exc):
+    """Any failed cycle is degraded with an error-class observation, never a healthy all-clear."""
+    report['errors'].append(str(exc))
+    report['degraded'] = True
+    report['observation'] = f'incomplete-cycle: {type(exc).__name__}'
+    if isinstance(exc, MutationUncertain):
+        report['uncertain_outcome'] = exc.uncertain_record()
 
 def composer(screen, tag):
     """Last prompt, never transcript prompts; unknown and menus deny input."""
@@ -119,6 +176,9 @@ def recorded_send(binary, tag, key, body, spool, sender_id, supports_key, call=c
         args += ['--idempotency-key', key]
     try:
         receipt = json.loads(call(args + [body]))
+    except MutationUncertain:
+        # Intent file already freezes this key: outcome UNKNOWN, no retry, no new id.
+        raise
     except Exception:
         return {'delivery':'send-uncertain', 'id':None, 'sender_id':sender_id, 'reason':'send failed or response lost; no automatic retry'}
     atomic(receiptpath, receipt)
@@ -245,6 +305,10 @@ def run():
                         # Inbox first, then existing-ID delivery after independent fresh snapshots.
                         receipt = recorded_send(BINARY,tag,f'{event_key}-{tag}',body,PRIVATE,identity['id'],supports_key)
                         atomic(PRIVATE / f'receipt-{event_key}-{tag}.json', receipt)
+                        if receipt.get('delivery') == 'send-uncertain':
+                            # Frozen ambiguity: retain UNKNOWN outcome in the report, degraded cycle.
+                            report['degraded'] = True
+                            report['uncertain_outcome'] = {'outcome': 'UNKNOWN', 'class': 'send-uncertain', 'principal': tag, 'event_key': event_key, 'reason': receipt.get('reason')}
                         envelope = receipt.get('message', receipt)
                         pending = {'id': envelope.get('id', receipt.get('id')), 'sender_id':identity['id'], 'event': event_key,
                                    'delivery':receipt.get('delivery','inbox'), 'created_at': now()}
@@ -260,7 +324,12 @@ def run():
                     # Third immediate check closes most polling races; native command still enforces readiness.
                     fresh_screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
                     if composer(fresh_screen, tag) == 'empty':
-                        result = subprocess.run([BINARY, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json'], capture_output=True, text=True, timeout=20)
+                        deliver_args = [BINARY, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json']
+                        result = subprocess.run(deliver_args, capture_output=True, text=True, timeout=20)
+                        deliver_stderr = (result.stderr or '').strip()
+                        if result.returncode and MAILBOX_BUSY.search(deliver_stderr):
+                            # Exactly one invocation; pending stays unreconciled with outcome UNKNOWN.
+                            raise DeliveryUncertain(deliver_args, deliver_stderr, result.returncode)
                         try:
                             outcome = json.loads(result.stdout)
                         except json.JSONDecodeError:
@@ -285,18 +354,14 @@ def run():
             if archived_count:
                 event('operational-archive', archived_files=archived_count, retained_live_newest=2048, unresolved_preserved=True)
         except StorageFull as exc:
-            report['errors'].append(str(exc))
             report['storage'] = {**storage_guard(PRIVATE),'state':'paused-hard-limit','reason':str(exc)}
+            record_cycle_failure(report, exc)
             # Preserve evidence; only overwrite bounded current status, never trim old archives.
-        except MailboxBusy as exc:
-            # Empty principals here is a missed observation, never a valid all-clear snapshot.
-            report['errors'].append(str(exc))
-            report['degraded'] = True
-            report['observation'] = 'incomplete-cycle: mailbox busy after retries; principal list not observed'
-            event('error', error=str(exc), degraded=True)
         except Exception as exc:
-            report['errors'].append(str(exc))
-            event('error', error=str(exc))
+            # Any failed cycle (busy, uncertain mutation, unexpected error) is degraded;
+            # empty principals here are a missed observation, never a valid all-clear snapshot.
+            record_cycle_failure(report, exc)
+            event('error', error=str(exc), degraded=True, observation=report.get('observation'))
         atomic(PRIVATE / 'status.json', report)
         print(json.dumps({'timestamp': now(), 'degraded': report['degraded'], 'principals': {tag: x.get('reason') for tag,x in report['principals'].items()}, 'errors': report['errors']}), flush=True)
         for _ in range(60):
