@@ -1,8 +1,84 @@
 # Agent Branches prototype — HTTP + integration contract
 
-version: 0.1.1
+version: 0.1.2
 (Pin this version when building against it: L2 review UI, L3 radar runner,
 L4/L5 demo lanes. Any breaking change bumps the version.)
+
+Changes since 0.1.1 (codex C-1350 + C-1357, 2026-10-03):
+
+1. **CANONICAL v0.1 CHECKS WIRE** — `POST /checks` accepts the typed shape
+   the L3 runner emits (`radar/engine.py export_l1_payload`,
+   origin/proto/l3-radar). The payload MUST declare its wire via
+   `contract` (breaking): `"0.1"` for the canonical typed shape, `"0.0"`
+   for the legacy string adapter; anything else — including a missing
+   `contract` field — is **400**. Exact canonical request:
+
+   ```json
+   {
+     "contract": "0.1",
+     "vector": { "<agentId>": "<40-hex sha>" },
+     "policy": { "merge": "git-merge-tree",
+                 "tests": { "command": ["pytest", "-q"] | "pytest -q" | null,
+                            "budget_s": 15.0 } },
+     "coverage": { "pairs_checked": 3, "tests_collected": 12 },
+     "results": [
+       { "pair": ["agent-a", "agent-b"],          // both known agents
+         "heads": { "agent-a": "<sha>", "agent-b": "<sha>" },  // required,
+            // every pair agent, values must match the submitted vector
+            // (checked AFTER the stale gate, so stale stays 409)
+         "status": "conflict" | "clean" | "unknown",
+         "kind": "textual" | "test" | null,
+         "evidence": { "summary": "human-readable one-liner",  // required;
+                       // falls back through details/error/reason exactly
+                       // like the L3 exporter
+                       "files": ["path"],
+                       "test_output_tail": "…",
+                       "tests_collected": 4,    // per-pair combined coverage
+                       "…": "further diagnostics preserved verbatim" } }
+     ]
+   }
+   ```
+
+   The legacy **contract "0.0"** adapter accepts the pre-0.1 shape verbatim
+   (string `policy`, string[] `coverage`, per-result string `evidence`,
+   free-form `kind`); it exists so 0.1.0/0.1.1 callers keep working and MUST
+   be declared. Errors name the offending field (400).
+
+2. **PAIR VIEWS ALIGN TO THE WIRE** (GET /status `pairs[]` and the
+   `POST /checks` response `pairs[]`; breaking for positional readers):
+   - `heads` is keyed by **agentId** (`{ "agent-a": "<sha>" }`), no longer
+     positional `{a, b}` — this is what the L4 UI's clean gate matches
+     (prototype/ui/pair-status.js).
+   - `coverage` is the **per-pair** coverage `{ "tests_collected": N }` from
+     that pair's own combined test run (0.1 `evidence.tests_collected`;
+     the runner's top-level `coverage` counts are recorded on
+     `lastRunnerReport`, not per pair). Present only while the check is
+     fresh; the L4 UI shows Clean only with clean status + current heads +
+     `tests_collected > 0`.
+   - `evidence` is the string evidence (0.0) or the verbatim typed evidence
+     object (0.1). Warnings/radarLog keep human-readable summary strings.
+   - `lastRunnerReport.policy`/`.coverage` are recorded verbatim (string for
+     0.0, policy/counts objects for 0.1).
+
+3. **SILENT-CALLBACK GUARD** (codex C-1357): a git push whose post-receive
+   callback to `POST /events/push` fails auth/delivery must NOT become a
+   silent "no warnings". The sidecar retries the delivery **3 times**
+   (50/100/200 ms backoff), then records the push in a durable
+   `notify-state.json` ledger, exposed at `GET /api/notify-state`. The
+   Worker pulls it for `GET /status`:
+   - top-level `unprocessedPushes: [{repo, ref, sha, before, attempts,
+     firstAt, lastAt, lastError, agentId|null}]`;
+   - any pair involving an agent whose fork has an unprocessed record shows
+     `status: "not_checked"` with `unprocessedReason` and `stale: true` —
+     its true head is unknown, so a previously stored clean/conflict NEVER
+     presents as current until a later successful delivery supersedes the
+     record (same repo+ref) or the ledger is cleared.
+   `POST`/`DELETE /api/notify-state` are bearer-gated dev/test helpers.
+   An unconfigured `SIDECAR_NOTIFY_URL` remains the documented local
+   no-worker mode and is NOT recorded as unprocessed. Port surface: the new
+   optional `ArtifactsPort.unprocessedPushes()` is local-mode only
+   (docs-notes ASSUMED-G: a real deployment learns delivery state from its
+   Artifacts event subscription).
 
 Changes since 0.1 (muse-r46 cross-family review, 2026-10-03):
 
@@ -14,6 +90,13 @@ Changes since 0.1 (muse-r46 cross-family review, 2026-10-03):
    sidecar shared bearer (`LOCAL_ARTIFACTS_TOKEN`). Cross-agent writes are
    rejected with **403** (agent A's token cannot post tests/acks/pushes for
    agent B). Read routes (`GET /status`, `GET /tasks/:id`) stay open.
+   **This includes the sidecar's post-receive callback**: the hook's
+   delivery to `POST /events/push` carries the shared bearer and is
+   token-gated like any other push report — an unauthorized/failed callback
+   is a LOST push, not a quiet success (see change 3 above and the sidecar
+   guard). `POST /checks` keeps its dedicated `RUNNER_TOKEN` gate. Tokens
+   are secrets: per-agent workspaces keep them in a 0600 git-ignored file
+   or env, never in argv, URLs/query strings, logs or published evidence.
 2. **D1 — pair order is canonical.** A conflict submitted as `[a,b]` and
    then `[b,a]` at unchanged heads maps to ONE pairChecks record and at
    most ONE active warning; stored `pair`/`headsAtIssue`/check vectors are
@@ -151,21 +234,28 @@ configure a dedicated secret — pre-deploy checklist).
 
 ### POST /checks — RUNNER_TOKEN (trusted radar runner, L3)
 
+The payload MUST declare its wire: `contract: "0.1"` (canonical typed
+shape, L3 `export_l1_payload`) or `contract: "0.0"` (legacy adapter,
+pre-0.1 string shape). Missing/unknown contract => 400. See the 0.1.2
+change list above for the exact canonical request shape.
+
 ```json
-// request
-{ "vector": { "claude-0007": "<sha>", "codex-0008": "<sha>", ... }, // ALL agents, exact current heads
+// request (0.1 excerpt — vector/policy/coverage/results as documented above)
+// request (0.0 legacy adapter — the pre-0.1 shape, verbatim)
+{ "contract": "0.0",
+  "vector": { "claude-0007": "<sha>", "codex-0008": "<sha>", ... },
   "policy": "merge-tree-v1",
-  "coverage": ["claude-0007|codex-0008"],          // optional, recorded
+  "coverage": ["claude-0007|codex-0008"],
   "results": [
     { "pair": ["claude-0007", "codex-0008"],
       "status": "conflict",                        // conflict|clean|unknown
-      "kind": "merge-conflict",                    // optional classifier
+      "kind": "merge-conflict",                    // free-form classifier
       "evidence": "git merge-tree exit 1" } ] }
 // response 200
 { "stale": false, "accepted": 2, "currentHeads": { ... },
   "pairs": [ /* PairStatusView[] as in /status */ ],
   "createdWarnings": [ /* WarningRecord[] */ ],
-  "runnerReport": { "policy": "merge-tree-v1", "coverage": [...], "accepted": 2, "at": "ISO", "vector": { ... } } }
+  "runnerReport": { "policy": <verbatim>, "coverage": <verbatim>, "accepted": 2, "at": "ISO", "vector": { ... } } }
 // response 409 (vector != current head vector — refetch /status and retry)
 { "error": "stale vector: heads have moved since the runner fetched them; re-fetch /status and retry",
   "currentHeads": { ... } }
@@ -179,19 +269,29 @@ configure a dedicated secret — pre-deploy checklist).
                 "forkRemote": "...", "ref": "refs/heads/main", "head": "<sha>|null",
                 "pushes": 3, "createdAt": "ISO", "lastPushAt": "ISO|null" } ],
   "heads": { "claude-0007": "<sha>" },
-  "pairs": [ { "pair": ["a","b"], "heads": { "a": "<sha>", "b": "<sha>" },
+  "pairs": [ { "pair": ["a","b"],
+               "heads": { "a": "<sha>", "b": "<sha>" },  // KEYED BY agentId (0.1.2)
                "status": "conflict|clean|unknown|not_checked",
-               "kind": "merge-conflict"?, "evidence": "..."?,
+               "kind": "textual"?, "evidence": <string|typed object>?,
+               "coverage": { "tests_collected": 5 }?,    // per-pair, fresh only (0.1.2)
                "checkedAt": "ISO|null",       // last check time, even if stale
                "stale": false,                // stored check exists but heads moved
+               "unprocessedReason": "..."?,   // 0.1.2: a member's push was lost
                "activeWarningIds": ["warn-3"] } ],
   "warnings": [ /* WarningRecord, newest first, capped 20 */ ],
   "radarLog": [ { "at": "ISO", "pair": ["a","b"], "heads": {...}, "status": "not_checked" } ],
-  "lastRunnerReport": { ... } | null }
+  "lastRunnerReport": { ... } | null,
+  "unprocessedPushes": [ { "repo": "<fork>", "ref": "refs/heads/main", "sha": "<40-hex>",
+                           "before": "<40-hex>|null", "attempts": 3, "firstAt": "ISO",
+                           "lastAt": "ISO", "lastError": "worker responded 401",
+                           "agentId": "claude-0007" } ] }
 ```
 
 `not_checked` (never checked at these heads — includes stale) is always
-visibly distinct from `clean`.
+visibly distinct from `clean`. While an agent has an unprocessed push
+(codex C-1357), every pair containing it is forced to `not_checked` with
+`unprocessedReason` set and `stale: true`: the agent's true head is
+unknown, so a stored clean never presents as current.
 
 ### GET /tasks/:id — open
 
@@ -292,7 +392,10 @@ Admin JSON API (bearer `SIDECAR_TOKEN` when configured):
 `POST /api/repos/:name/tokens {scope, ttlSeconds?}`,
 `GET /api/repos/:name/head?ref=`, `GET /api/repos/:name/log?ref&limit&offset`,
 `GET /api/repos/:name/hascommit?sha=`, `POST /api/repos/:name/commits
-{message, ref?}` (test/dev helper), `DELETE /api/repos/:name`.
+{message, ref?}` (test/dev helper), `DELETE /api/repos/:name`,
+`GET /api/notify-state` (C-1357 callback-loss ledger),
+`POST /api/notify-state {repo, ref, sha, ...}` (test/dev inject helper),
+`DELETE /api/notify-state` (test/dev clear helper).
 
 Git smart HTTP (per-repo token auth; `read` scope cannot push):
 `GET /git/:name.git/info/refs?service=...`,
