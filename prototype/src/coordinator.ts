@@ -1,7 +1,15 @@
 import { DurableObject } from "cloudflare:workers";
 import { RealArtifacts } from "./artifacts/real.js";
 import { SidecarArtifacts } from "./artifacts/sidecar.js";
+import {
+  type ChecksCoverageCounts,
+  type ChecksPolicySpec,
+  type EvidenceBag,
+  type NormalizedCheckResult,
+  type NormalizedChecksPayload,
+} from "./checks-wire.js";
 import { RADAR_STATUSES, pairKey, radarFromEnv, type Radar, type RadarPairResult, type RadarStatus } from "./radar.js";
+import type { UnprocessedPush } from "./types.js";
 
 export interface AgentRecord {
   agentId: string;
@@ -78,7 +86,12 @@ export interface PairCheckRecord {
   pair: [string, string];
   status: RadarStatus;
   kind?: string;
+  /** Summary string (0.0 evidence, or 0.1 evidence.summary chain). */
   evidence?: string;
+  /** C-1350: verbatim typed evidence object served on the pair view (0.1). */
+  evidenceDetail?: EvidenceBag;
+  /** C-1350: combined tests the runner collected for this pair, when reported. */
+  testsCollected?: number;
   vector: { a: string; b: string };
   at: string;
 }
@@ -86,13 +99,23 @@ export interface PairCheckRecord {
 /** Derived per-pair view for /status: fresh results only; stale => not_checked. */
 export interface PairStatusView {
   pair: [string, string];
-  heads: { a: string; b: string };
+  /** C-1350: heads keyed by agentId (was positional {a, b}). */
+  heads: Record<string, string>;
   status: RadarStatus;
   kind?: string;
-  evidence?: string;
+  /** C-1350: string (0.0) or verbatim typed evidence object (0.1). Must stay
+   * EvidenceBag, not Record<string, unknown>: an unknown-valued index
+   * signature collapses the typed-RPC stub method to `never`. */
+  evidence?: string | EvidenceBag;
+  /** C-1350: per-pair coverage of the FRESH check (L4 gate: clean counts only
+   * with tests_collected > 0 at current heads); omitted when stale. */
+  coverage?: { tests_collected: number };
   checkedAt: string | null;
   /** True when a stored check exists but no longer matches the current heads. */
   stale: boolean;
+  /** codex C-1357: set while a member agent has an unprocessed push — the
+   * pair's true head state is unknown, so nothing presents as current. */
+  unprocessedReason?: string;
   activeWarningIds: string[];
 }
 
@@ -100,9 +123,14 @@ const CANONICAL_BASE = "agent-branches-canonical";
 const RADAR_LOG_CAP = 50;
 const WARNINGS_CAP = 200;
 
+/** muse-r46 D2: per-agent bound on the push-dedup ring (latest N accepted pushes). */
+export const SEEN_PUSHES_CAP_PER_AGENT = 16;
+
 export interface RunnerReport {
-  policy: string;
-  coverage: string[];
+  /** Verbatim: the 0.0 policy string or the 0.1 policy object (C-1350). */
+  policy: string | ChecksPolicySpec;
+  /** Verbatim: the 0.0 string[] or the 0.1 counts object (C-1350). */
+  coverage: string[] | ChecksCoverageCounts;
   accepted: number;
   at: string;
   vector: Record<string, string>;
@@ -116,7 +144,19 @@ interface CoordinatorModel {
   agents: Record<string, AgentRecord>;
   tasks: Record<string, TaskRecord>;
   heads: Record<string, string>;
-  seenPushes: string[];
+  /**
+   * muse-r46 D2: bounded push-dedup memory — per agent, the latest
+   * SEEN_PUSHES_CAP_PER_AGENT accepted "sha" values. The current head is
+   * always deduped via the heads check; older ring entries catch out-of-
+   * order webhook redelivery within a bounded window.
+   */
+  seenPushes: Record<string, string[]>;
+  /**
+   * muse-r46 AUTH: SHA-256 digest of each agent's per-task write token
+   * (minted at task creation). The plaintext is returned once to the caller
+   * and never persisted or logged.
+   */
+  agentTokenHashes: Record<string, string>;
   warnings: WarningRecord[];
   radarLog: RadarLogEntry[];
   pairChecks: Record<string, PairCheckRecord>;
@@ -132,7 +172,8 @@ function emptyModel(): CoordinatorModel {
     agents: {},
     tasks: {},
     heads: {},
-    seenPushes: [],
+    seenPushes: {},
+    agentTokenHashes: {},
     warnings: [],
     radarLog: [],
     pairChecks: {},
@@ -144,6 +185,39 @@ function randomSuffix(): string {
   const bytes = new Uint8Array(4);
   crypto.getRandomValues(bytes);
   return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** SHA-256 of a string as lowercase hex (token digests; never the token itself). */
+export async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Constant-time compare; callers pass equal-length hex digests. */
+export function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
+/**
+ * muse-r46 D1: a pair may arrive in either agent order ([a,b] or [b,a]);
+ * canonicalize the pair AND its per-slot heads (same a <= b rule as pairKey)
+ * so both orders map to ONE pairChecks record and at most ONE active
+ * warning for a pair at a given head vector.
+ */
+function canonicalPairHeads(
+  pair: readonly [string, string],
+  heads: { a: string; b: string },
+): { pair: [string, string]; heads: { a: string; b: string } } {
+  return pair[0] <= pair[1]
+    ? { pair: [pair[0], pair[1]], heads: { a: heads.a, b: heads.b } }
+    : { pair: [pair[1], pair[0]], heads: { a: heads.b, b: heads.a } };
 }
 
 export class Coordinator extends DurableObject {
@@ -182,6 +256,23 @@ export class Coordinator extends DurableObject {
     this.model.pairChecks ??= {};
     this.model.warnSeq ??= this.model.warnings.length;
     this.model.lastRunnerReport ??= null;
+    // muse-r46 D2: pre-0.1.1 models kept one flat "agentId:sha" array;
+    // regroup it into the bounded per-agent ring.
+    if (Array.isArray(this.model.seenPushes)) {
+      const legacy = this.model.seenPushes as unknown as string[];
+      const perAgent: Record<string, string[]> = {};
+      for (const key of legacy) {
+        const sep = key.indexOf(":");
+        const agent = sep === -1 ? key : key.slice(0, sep);
+        (perAgent[agent] ??= []).push(key);
+      }
+      for (const agent of Object.keys(perAgent)) {
+        perAgent[agent] = perAgent[agent].slice(-SEEN_PUSHES_CAP_PER_AGENT);
+      }
+      this.model.seenPushes = perAgent;
+    }
+    // muse-r46 AUTH: agents created before 0.1.1 have no stored digest.
+    this.model.agentTokenHashes ??= {};
     return this.model;
   }
 
@@ -285,7 +376,13 @@ export class Coordinator extends DurableObject {
       defaultBranchOnly: true,
       baseSha,
     });
+    // muse-r46 D3: real mode may not honor the requested base (the binding
+    // forks the default branch, ASSUMED-F); record the REALIZED base.
+    const effectiveBaseSha = fork.baseSha ?? baseSha;
     const token = await port.mintToken(forkName, "write", input.ttlSeconds ?? 3600);
+    // muse-r46 AUTH: store only the digest for later verification of
+    // agent-authenticated routes (/events/push, /tasks/:id/tests, acks).
+    model.agentTokenHashes[agentId] = await sha256Hex(token.plaintext);
     const forkLog = await port.log(forkName, { limit: 1 });
     const head = forkLog[0]?.id ?? null;
     const ref = "refs/heads/main";
@@ -308,7 +405,7 @@ export class Coordinator extends DurableObject {
       forkRemote: fork.remote,
       ref,
       createdAt: now,
-      baseSha,
+      baseSha: effectiveBaseSha,
       intent: input.intent ?? null,
       testProvenance: null,
     };
@@ -323,7 +420,7 @@ export class Coordinator extends DurableObject {
       agentId,
       fork: { name: forkName, remote: fork.remote },
       ref,
-      base_sha: baseSha,
+      base_sha: effectiveBaseSha,
       intent: input.intent ?? null,
       token: { scope: token.scope, expiresAt: token.expiresAt, plaintext: token.plaintext },
       head,
@@ -361,7 +458,13 @@ export class Coordinator extends DurableObject {
       throw new Error(`fork ${input.fork} does not belong to agent ${agentId}`);
     }
     const dedupKey = `${agentId}:${input.sha}`;
-    const deduped = model.seenPushes.includes(dedupKey) || model.heads[agentId] === input.sha;
+    // muse-r46 D2: bounded per-agent ring instead of an ever-growing array
+    // (the old `seenPushes.includes` was O(total pushes) per request).
+    let seen = model.seenPushes[agentId];
+    if (!seen) {
+      seen = model.seenPushes[agentId] = [];
+    }
+    const deduped = seen.includes(dedupKey) || model.heads[agentId] === input.sha;
     if (deduped) {
       return {
         accepted: true,
@@ -381,7 +484,10 @@ export class Coordinator extends DurableObject {
     const before = model.heads[agentId] ?? null;
     const ref = input.ref ?? agentRecord.ref;
     const now = new Date().toISOString();
-    model.seenPushes.push(dedupKey);
+    seen.push(dedupKey);
+    if (seen.length > SEEN_PUSHES_CAP_PER_AGENT) {
+      seen.splice(0, seen.length - SEEN_PUSHES_CAP_PER_AGENT);
+    }
     model.heads[agentId] = input.sha;
     agentRecord.head = input.sha;
     agentRecord.pushes += 1;
@@ -410,19 +516,48 @@ export class Coordinator extends DurableObject {
     warnings: WarningRecord[];
     radarLog: RadarLogEntry[];
     lastRunnerReport: RunnerReport | null;
+    /** codex C-1357: pushes the Worker never accepted (callback lost). */
+    unprocessedPushes: (UnprocessedPush & { agentId: string | null })[];
   }> {
     const model = await this.load();
+    const unprocessed = await this.unprocessedPushesSafe();
+    const unprocessedAgents = new Set(
+      unprocessed
+        .map((push) => this.agentForFork(model, push.repo)?.agentId ?? null)
+        .filter((agentId): agentId is string => agentId !== null),
+    );
     return {
       canonical: { name: model.canonicalName, remote: model.canonicalRemote },
       agents: Object.values(model.agents),
       heads: model.heads,
-      pairs: this.pairViews(model),
+      pairs: this.pairViews(model, unprocessedAgents),
       warnings: [...model.warnings]
         .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
         .slice(0, 20),
       radarLog: [...model.radarLog].slice(-20).reverse(),
       lastRunnerReport: model.lastRunnerReport,
+      unprocessedPushes: unprocessed.map((push) => ({
+        ...push,
+        agentId: this.agentForFork(model, push.repo)?.agentId ?? null,
+      })),
     };
+  }
+
+  private agentForFork(model: CoordinatorModel, repo: string): AgentRecord | undefined {
+    return Object.values(model.agents).find((agent) => agent.forkName === repo || agent.forkRemote === repo);
+  }
+
+  /**
+   * codex C-1357: pulls the sidecar's callback-loss ledger. A failing or
+   * absent ledger must never break /status — an unreadable guard degrades to
+   * the pre-guard behavior, it does not fabricate certainty.
+   */
+  private async unprocessedPushesSafe(): Promise<UnprocessedPush[]> {
+    try {
+      return (await this.port().unprocessedPushes?.()) ?? [];
+    } catch {
+      return [];
+    }
   }
 
   async getTask(
@@ -535,6 +670,37 @@ export class Coordinator extends DurableObject {
     return this.serialized(() => this.recordTestProvenanceNow(taskId, input));
   }
 
+  /**
+   * muse-r46 AUTH: which agent (if any) owns this presented per-task token.
+   * Returns null for unknown/garbage tokens; digests are compared
+   * constant-time and the plaintext is never stored.
+   */
+  async credentialAgent(presented: string): Promise<string | null> {
+    const model = await this.load();
+    const digest = await sha256Hex(presented);
+    for (const [agentId, hash] of Object.entries(model.agentTokenHashes)) {
+      if (timingSafeEqual(digest, hash)) {
+        return agentId;
+      }
+    }
+    return null;
+  }
+
+  /** Owning agent of a task, or null for unknown tasks (route: /tasks/:id/tests). */
+  async taskOwner(taskId: string): Promise<string | null> {
+    const task = (await this.load()).tasks[taskId];
+    return task ? task.agentId : null;
+  }
+
+  /** Owning agent of a fork (by name or remote), or null (route: /events/push). */
+  async forkOwner(fork: string): Promise<string | null> {
+    const model = await this.load();
+    const record = Object.values(model.agents).find(
+      (candidate) => candidate.forkName === fork || candidate.forkRemote === fork,
+    );
+    return record ? record.agentId : null;
+  }
+
   async submitChecks(
     input: Parameters<Coordinator["submitChecksNow"]>[0],
   ): Promise<ReturnType<Coordinator["submitChecksNow"]>> {
@@ -566,12 +732,7 @@ export class Coordinator extends DurableObject {
    * `{stale: true}` (the route maps that to 409) instead of throwing, since
    * custom error properties do not survive RPC marshalling.
    */
-  private async submitChecksNow(input: {
-    vector: Record<string, string>;
-    policy: string;
-    coverage?: string[];
-    results: { pair: [string, string]; status: string; kind?: string; evidence?: string }[];
-  }): Promise<
+  private async submitChecksNow(input: NormalizedChecksPayload): Promise<
     | { stale: true; currentHeads: Record<string, string> }
     | {
         stale: false;
@@ -594,8 +755,8 @@ export class Coordinator extends DurableObject {
     const applied = await this.applyCheckResultsNow({ policy: input.policy, results: input.results });
     const model2 = await this.load();
     const runnerReport: RunnerReport = {
-      policy: input.policy,
-      coverage: input.coverage ?? [],
+      policy: input.policyVerbatim,
+      coverage: input.coverageVerbatim ?? [],
       accepted: applied.accepted,
       at: new Date().toISOString(),
       vector: { ...input.vector },
@@ -620,7 +781,7 @@ export class Coordinator extends DurableObject {
    */
   private async applyCheckResultsNow(input: {
     policy: string;
-    results: { pair: [string, string]; status: string; kind?: string; evidence?: string }[];
+    results: NormalizedCheckResult[];
   }): Promise<{ accepted: number; pairs: PairStatusView[]; createdWarnings: WarningRecord[] }> {
     const model = await this.load();
     const now = new Date().toISOString();
@@ -639,26 +800,44 @@ export class Coordinator extends DurableObject {
       if (result.status === "not_checked") {
         throw new Error("runner results must be conflict|clean|unknown, not not_checked");
       }
-      const vector = { a: model.heads[a], b: model.heads[b] };
+      // C-1350: per-result heads VALUES (0.1 wire) must agree with the heads
+      // the vector declared. Checked here, after submitChecksNow's stale
+      // gate, so a stale submission still gets its 409 — parser shape checks
+      // stay 400s, value disagreements are 400s only for a CURRENT vector.
+      if (result.heads) {
+        for (const agent of result.pair) {
+          if (result.heads[agent] !== model.heads[agent]) {
+            throw new Error(`result heads for ${agent} disagree with the submitted vector`);
+          }
+        }
+      }
+      // muse-r46 D1: canonical order before deriving the vector, so a
+      // reversed pair overwrites/refreshes the same record instead of
+      // duplicating warnings or storing a slot-flipped vector.
+      const ordered = canonicalPairHeads(result.pair, { a: model.heads[result.pair[0]], b: model.heads[result.pair[1]] });
+      const pair = ordered.pair;
+      const vector = ordered.heads;
       const record: PairCheckRecord = {
-        key: pairKey(result.pair),
-        pair: [a, b],
+        key: pairKey(pair),
+        pair,
         status: result.status as RadarStatus,
         kind: result.kind,
         evidence: result.evidence,
+        evidenceDetail: result.evidenceDetail,
+        testsCollected: result.testsCollected,
         vector,
         at: now,
       };
       model.pairChecks[record.key] = record;
       this.pushRadarLog(model, {
-        pair: [a, b],
+        pair,
         heads: vector,
         status: record.status,
         kind: record.kind,
         evidence: record.evidence,
       }, now);
       if (record.status === "conflict") {
-        const warning = this.warningForPairAtHeads(model, [a, b], vector, record, input.policy, now);
+        const warning = this.warningForPairAtHeads(model, pair, vector, record, input.policy, now);
         if (warning) {
           createdWarnings.push(warning);
         }
@@ -689,13 +868,17 @@ export class Coordinator extends DurableObject {
     policy: string,
     now: string,
   ): WarningRecord | null {
-    const key = pairKey(pair);
+    // muse-r46 D1: canonicalize the incoming pair/heads so the duplicate
+    // lookup and the stored headsAtIssue are slot-order independent, no
+    // matter what order the radar/runner reported.
+    const ordered = canonicalPairHeads(pair, heads);
+    const key = pairKey(ordered.pair);
     const existing = model.warnings.find(
       (warning) =>
         warning.status === "active" &&
         pairKey(warning.pair) === key &&
-        warning.headsAtIssue.a === heads.a &&
-        warning.headsAtIssue.b === heads.b,
+        warning.headsAtIssue.a === ordered.heads.a &&
+        warning.headsAtIssue.b === ordered.heads.b,
     );
     if (existing) {
       return null;
@@ -703,8 +886,8 @@ export class Coordinator extends DurableObject {
     model.warnSeq += 1;
     const warning: WarningRecord = {
       id: `warn-${model.warnSeq}`,
-      pair,
-      headsAtIssue: heads,
+      pair: ordered.pair,
+      headsAtIssue: ordered.heads,
       reason: record.kind ?? "conflict",
       status: "active",
       createdAt: now,
@@ -731,26 +914,38 @@ export class Coordinator extends DurableObject {
     }
   }
 
-  private pairViews(model: CoordinatorModel): PairStatusView[] {
+  private pairViews(model: CoordinatorModel, unprocessedAgents: ReadonlySet<string> = new Set()): PairStatusView[] {
     const ids = Object.keys(model.heads).sort();
     const views: PairStatusView[] = [];
     for (let i = 0; i < ids.length; i++) {
       for (let j = i + 1; j < ids.length; j++) {
         const pair: [string, string] = [ids[i], ids[j]];
-        const heads = { a: model.heads[ids[i]], b: model.heads[ids[j]] };
+        const heads: Record<string, string> = { [ids[i]]: model.heads[ids[i]], [ids[j]]: model.heads[ids[j]] };
         const stored = model.pairChecks[pairKey(pair)];
         const fresh =
           stored !== undefined &&
-          stored.vector.a === heads.a &&
-          stored.vector.b === heads.b;
+          stored.vector.a === heads[ids[i]] &&
+          stored.vector.b === heads[ids[j]];
+        // codex C-1357: while an agent has an unprocessed push, its TRUE head
+        // is unknown — the Worker never accepted the move. Any stored check
+        // (however fresh it looks against the known heads) must NOT present
+        // as current: the pair is not_checked with a reason, never clean.
+        const uncertain = unprocessedAgents.has(ids[i]) || unprocessedAgents.has(ids[j]);
         views.push({
           pair,
           heads,
-          status: fresh ? stored.status : "not_checked",
-          kind: fresh ? stored.kind : undefined,
-          evidence: fresh ? stored.evidence : undefined,
+          status: uncertain ? "not_checked" : fresh ? stored.status : "not_checked",
+          kind: fresh && !uncertain ? stored.kind : undefined,
+          evidence: fresh && !uncertain ? (stored.evidenceDetail ?? stored.evidence) : undefined,
+          coverage:
+            fresh && !uncertain && typeof stored.testsCollected === "number"
+              ? { tests_collected: stored.testsCollected }
+              : undefined,
           checkedAt: stored ? stored.at : null,
-          stale: stored !== undefined && !fresh,
+          stale: (stored !== undefined && !fresh) || (fresh && uncertain),
+          unprocessedReason: uncertain
+            ? "an agent in this pair has an unprocessed push (Worker callback failed after bounded sidecar retries); its true head is unknown"
+            : undefined,
           activeWarningIds: model.warnings
             .filter((warning) => warning.status === "active" && pairKey(warning.pair) === pairKey(pair))
             .map((warning) => warning.id),
@@ -774,17 +969,20 @@ export class Coordinator extends DurableObject {
       // in-Worker StubRadar reports not_checked; conflicts arrive via
       // applyCheckResults from the trusted runner.
       if (check.status === "conflict") {
+        // muse-r46 D1: canonical order here too — the StubRadar emits pairs
+        // in heads-iteration order, not sorted order.
+        const ordered = canonicalPairHeads(check.pair, check.heads);
         const record: PairCheckRecord = {
-          key: pairKey(check.pair),
-          pair: check.pair,
+          key: pairKey(ordered.pair),
+          pair: ordered.pair,
           status: check.status,
           kind: check.kind,
           evidence: check.evidence,
-          vector: check.heads,
+          vector: ordered.heads,
           at: now,
         };
         model.pairChecks[record.key] = record;
-        const warning = this.warningForPairAtHeads(model, check.pair, check.heads, record, "radar-inline", now);
+        const warning = this.warningForPairAtHeads(model, ordered.pair, ordered.heads, record, "radar-inline", now);
         if (warning) {
           created.push(warning);
         }

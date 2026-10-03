@@ -128,6 +128,68 @@ class TokenStore {
   }
 }
 
+/**
+ * Durable ledger of Worker-callback deliveries that failed after bounded
+ * retries (codex C-1357). A push that the Worker never accepted must not
+ * become a silent "no warnings" state: the record stays on disk until a
+ * later successful delivery for the same repo+ref supersedes it (the Worker
+ * then knows that ref moved at least that far), and GET /status surfaces it
+ * via GET /api/notify-state. "notify url not configured" is NOT recorded —
+ * that is the documented local no-worker mode, not a delivery failure.
+ */
+class NotifyLedger {
+  constructor(root) {
+    this.path = join(root, "notify-state.json");
+    this.unprocessed = [];
+    if (existsSync(this.path)) {
+      try {
+        this.unprocessed = JSON.parse(readFileSync(this.path, "utf8")).unprocessed ?? [];
+      } catch {
+        this.unprocessed = [];
+      }
+    }
+  }
+
+  find(repo, ref, sha) {
+    return this.unprocessed.find((r) => r.repo === repo && r.ref === ref && r.sha === sha) ?? null;
+  }
+
+  record(entry) {
+    this.unprocessed.push(entry);
+    this.save();
+    return entry;
+  }
+
+  /** Successful delivery for repo+ref: everything older on that ref is superseded. */
+  clearRef(repo, ref) {
+    const before = this.unprocessed.length;
+    this.unprocessed = this.unprocessed.filter((r) => !(r.repo === repo && r.ref === ref));
+    if (this.unprocessed.length !== before) {
+      this.save();
+    }
+  }
+
+  dropRepo(repo) {
+    const before = this.unprocessed.length;
+    this.unprocessed = this.unprocessed.filter((r) => r.repo !== repo);
+    if (this.unprocessed.length !== before) {
+      this.save();
+    }
+  }
+
+  save() {
+    writeFileSync(this.path, JSON.stringify({ unprocessed: this.unprocessed }, null, 2));
+  }
+}
+
+/** Bounded delivery attempts before a push is recorded unprocessed (C-1357). */
+const NOTIFY_ATTEMPTS = 3;
+const NOTIFY_BACKOFF_MS = [50, 100, 200];
+
+function sleep(ms) {
+  return new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+}
+
 export class Sidecar {
   constructor({ root, token, notifyUrl, baseUrl }) {
     this.root = resolve(root);
@@ -137,6 +199,7 @@ export class Sidecar {
     this.notifyUrl = notifyUrl ?? null;
     this.baseUrlFn = baseUrl ?? null;
     this.tokens = new TokenStore(this.root);
+    this.ledger = new NotifyLedger(this.root);
     this.port = null;
   }
 
@@ -316,6 +379,7 @@ export class Sidecar {
     const dir = this.mustRepo(name);
     rmSync(dir, { recursive: true, force: true });
     this.tokens.dropRepo(name);
+    this.ledger.dropRepo(name);
     return true;
   }
 
@@ -344,18 +408,64 @@ export class Sidecar {
 
   async forwardPush(push) {
     if (!this.notifyUrl) {
+      // The documented local no-worker mode — not a delivery failure.
       return { forwarded: false, reason: "notify url not configured" };
     }
     const body = JSON.stringify({ fork: push.repo, ref: push.ref, sha: push.after, before: push.before });
-    const res = await fetch(this.notifyUrl, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body,
-    });
-    if (!res.ok) {
-      return { forwarded: false, reason: `worker responded ${res.status}` };
+    // muse-r46 AUTH (CONTRACT 0.1.1): the Worker token-gates /events/push;
+    // the webhook authenticates with the same shared bearer (SIDECAR_TOKEN
+    // must equal the Worker's LOCAL_ARTIFACTS_TOKEN).
+    const headers = { "content-type": "application/json" };
+    if (this.sharedToken) {
+      headers.authorization = `Bearer ${this.sharedToken}`;
     }
-    return { forwarded: true };
+    let lastError = null;
+    for (let attempt = 1; attempt <= NOTIFY_ATTEMPTS; attempt++) {
+      try {
+        const res = await fetch(this.notifyUrl, {
+          method: "POST",
+          headers,
+          body,
+        });
+        if (res.ok) {
+          // The Worker accepted a sha on this ref, so any earlier failed
+          // delivery for the same repo+ref is superseded (its head tracking
+          // is at least as new as this delivery).
+          this.ledger.clearRef(push.repo, push.ref);
+          return { forwarded: true, attempts: attempt };
+        }
+        lastError = `worker responded ${res.status}`;
+      } catch (error) {
+        lastError = `worker unreachable: ${error.message}`;
+      }
+      if (attempt < NOTIFY_ATTEMPTS) {
+        await sleep(NOTIFY_BACKOFF_MS[attempt - 1]);
+      }
+    }
+    // codex C-1357: a push the Worker never accepted must NOT degrade into a
+    // silent "no warnings" state. Record it durably; GET /api/notify-state
+    // feeds the Worker's GET /status, which then reports the agent's head as
+    // not_checked with a reason until a successful delivery supersedes it.
+    const now = new Date().toISOString();
+    const existing = this.ledger.find(push.repo, push.ref, push.after);
+    if (existing) {
+      existing.attempts += NOTIFY_ATTEMPTS;
+      existing.lastAt = now;
+      existing.lastError = lastError;
+      this.ledger.save();
+    } else {
+      this.ledger.record({
+        repo: push.repo,
+        ref: push.ref,
+        sha: push.after,
+        before: push.before ?? null,
+        attempts: NOTIFY_ATTEMPTS,
+        firstAt: now,
+        lastAt: now,
+        lastError,
+      });
+    }
+    return { forwarded: false, reason: lastError, unprocessed: true, attempts: NOTIFY_ATTEMPTS };
   }
 }
 
@@ -479,6 +589,44 @@ export function createSidecarServer(sidecar) {
 
         if (path === "/api/health" && req.method === "GET") {
           sendJson(res, 200, { ok: true, repos: sidecar.listRepos().length });
+          return;
+        }
+
+        // codex C-1357: Worker-callback deliveries that failed after bounded
+        // retries. GET is what the Worker's /status polls; POST is a dev/test
+        // helper (like POST /api/repos/:name/commits) to inject a record.
+        if (path === "/api/notify-state" && req.method === "GET") {
+          sendJson(res, 200, { unprocessed: sidecar.ledger.unprocessed });
+          return;
+        }
+        // Dev/test recovery helper: normal recovery is a successful delivery
+        // superseding the record (see forwardPush); this exists for tests and
+        // manual cleanup, like POST /api/repos/:name/commits.
+        if (path === "/api/notify-state" && req.method === "DELETE") {
+          const count = sidecar.ledger.unprocessed.length;
+          sidecar.ledger.unprocessed = [];
+          sidecar.ledger.save();
+          sendJson(res, 200, { cleared: count });
+          return;
+        }
+        if (path === "/api/notify-state" && req.method === "POST") {
+          const body = await readJsonBody(req);
+          if (!isValidRepoName(body.repo) || !isValidRef(body.ref) || !SHA_RE.test(body.sha ?? "")) {
+            sendJson(res, 400, { error: "notify-state inject requires repo, ref and 40-hex sha" });
+            return;
+          }
+          const now = new Date().toISOString();
+          const record = sidecar.ledger.record({
+            repo: body.repo,
+            ref: body.ref,
+            sha: body.sha,
+            before: body.before ?? null,
+            attempts: Number.isInteger(body.attempts) && body.attempts > 0 ? body.attempts : NOTIFY_ATTEMPTS,
+            firstAt: now,
+            lastAt: now,
+            lastError: typeof body.lastError === "string" ? body.lastError : "injected (dev helper)",
+          });
+          sendJson(res, 201, record);
           return;
         }
 

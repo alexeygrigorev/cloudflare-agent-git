@@ -177,3 +177,154 @@ tests. Results appended below.
 - POST /events/push, /events/artifacts, /tasks/:id/tests and /warnings/
    :id/ack stay unauthenticated in local mode (attestational/ingest
   routes); CONTRACT.md flags authenticating /events/* before any deploy.
+
+## 2026-10-03 (later) — muse-r46 review fixes (executor zc-l1-fix)
+
+Cross-family review `.local/muse-r46/verdict.md` (Space Bunny) on pin
+`762ff3d`. Four defect classes, each its own commit with a regression test
+that fails before the fix (red observed and logged for every one):
+
+- **D1** `b65643f` — canonical pair ordering. Reversed pair [b,a] at
+  unchanged heads duplicated an active warning (review reproduced
+  first=1/second_created=1); now canonicalPairHeads() sorts pair+heads
+  before vector/headsAtIssue in applyCheckResultsNow, runRadar and
+  warningForPairAtHeads. Red: duplicate warn created pre-fix.
+- **D2** `8b6c54d` — seenPushes bounded per agent (ring of 16, exported
+  SEEN_PUSHES_CAP_PER_AGENT; flat-array migration on load). Red:
+  evicted-window redelivery was deduped=true pre-fix.
+- **D3** commit 3 — real-mode createTask. RealArtifacts.fork no longer
+  throws on baseSha: forks the default branch, reports realized base on
+  ForkResult (types.ts); coordinator records the realized base as
+  base_sha. ASSUMED-F documented. Red: UNSUPPORTED throw pre-fix.
+- **AUTH** commit 4 — ALL mutating routes authenticated: agent per-task
+  token (SHA-256 digest stored in DO at creation) / ADMIN_TOKEN /
+  sidecar shared bearer on the two /events/* webhooks; cross-agent
+  writes 403; tokensMatch now compares digests (length not observable).
+  Sidecar forwardPush sends the shared bearer. CONTRACT.md bumped to
+  0.1.1 with the change list; README auth + route table updated.
+  Red: 4 new auth tests failed (200/201/202 from unauthenticated calls).
+
+Supersedes the earlier WORKLOG note that /events/*, /tasks/:id/tests and
+/warnings/:id/ack "stay unauthenticated in local mode".
+
+Final suite (this executor): typecheck clean; vitest 9 files 44/44;
+node --test sidecar 11/11. No new npm deps.
+
+## 2026-10-03 (later) — canonical v0.1 wire alignment (executor zc-l1c-wire, codex C-1350)
+
+Task: align POST /checks and the /status pair views to the CANONICAL v0.1
+wire format that L3 emits (radar/engine.py `export_l1_payload`, branch
+origin/proto/l3-radar @ 2b928fc), keep the legacy string shape behind an
+explicit documented adapter, and expose per-pair coverage +
+agentId-keyed heads in PairStatusView for the L4 clean gate.
+
+`a whoami --json` (full result):
+
+```json
+{
+  "schema_version": 1,
+  "id": "a93fd86b-c006-4b3c-88e7-0a8960ea2141",
+  "workspace": "/home/alexey/git/cloudflare-agent-git",
+  "tag": "zc-l1c-wire",
+  "engine": "shell",
+  "parent_session": "b3a92dd0-a17e-4a62-940f-eb3b829393f6",
+  "command": [
+    "bash",
+    "-lc",
+    "cd /home/alexey/git/cloudflare-agent-git && ZCODE_WARM=1 timeout 60m zcodex exec --skip-git-repo-check \"$(cat .local/claude/ZC-L1C.md)\" > .local/claude/zc-l1c.log 2>&1; echo \"RUN_EXIT=$?\" >> .local/claude/zc-l1c.log"
+  ],
+  "cwd": "/home/alexey/git/cloudflare-agent-git",
+  "env": {},
+  "env_unset": [],
+  "limits": {
+    "memory_bytes": 1572864000
+  },
+  "history_bytes": 4194304,
+  "created_at_ms": 1791038151627,
+  "updated_at_ms": 1791038157119,
+  "last_activity_ms": 1791038151783,
+  "reported_state": "working",
+  "reported_state_at_ms": 1791038157119,
+  "phase": "running",
+  "worker_pid": 384609,
+  "workload_pid": 384641,
+  "worker_cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/aplexer-workload-a93fd86b-c006-4b3c-88e7-0a8960ea2141.scope",
+  "workload_cgroup": "/user.slice/user@1000.service/app.slice/aplexer-workload-a93fd86b-c006-4b3c-88e7-0a8960ea2141.scope",
+  "containment_cgroup": "/sys/fs/cgroup/user.slice/user@1000.service/app.slice/aplexer-workload-a93fd86b-c006-4b3c-88e7-0a8960ea2141.scope",
+  "containment_cgroup_identity": {
+    "boot_id": "edbec548-453f-4111-b38e-e7c16d12aa93",
+    "cgroup_namespace_device": 4,
+    "cgroup_namespace_inode": 4026531835,
+    "mount_namespace_device": 4,
+    "cgroup_mount_id": 33,
+    "cgroup_root_device": 28,
+    "cgroup_root_inode": 1
+  },
+  "containment_empty": false,
+  "socket_path": "/run/user/1000/aplexer/sessions/a93fd86b-c006-4b3c-88e7-0a8960ea2141/control.sock",
+  "history_path": "/home/alexey/.local/state/aplexer/sessions/a93fd86b-c006-4b3c-88e7-0a8960ea2141/history.bin"
+}
+```
+
+Start state: proto/l1-scaffold pulled, head 3af4c08 (as assigned). L3
+canonical source read at origin/proto/l3-radar 2b928fc
+(`export_l1_payload` in radar/engine.py:1299): per-pair `tests_collected`
+travels inside `results[i].evidence`, top-level `coverage.tests_collected`
+is the sum; `pair` sorted, `heads` keyed by agentId, `kind` is
+"textual"|"test"|null, `evidence` always carries `summary` (+ optional
+`files`, `test_output_tail`, extra diagnostic fields preserved).
+
+### Outcome — canonical wire integrated (C-1350 + C-1357), suite green
+
+Deconflict: claude-principal dispatched C-1350 TWICE — message 01a10223-00eb
+to zc-l1-fix ("do after the R46 fixes, same branch", explicit
+contract:'0.0' legacy adapter) and my ZC-L1C launch ~30 min later. Both
+executors wrote the same worktree concurrently until zc-l1-fix messaged a
+deconflict split (it: src wire + CONTRACT; me: test/wire.test.ts + WORKLOG;
+verified against both task messages). Recorded in aplexer 01a10240/01a10245
+and reported to claude-principal (01a10246).
+
+Mid-integration zc-l1-fix's COLD zcodex session hit its 60 m timeout
+(EXIT=124, its Edit/Write tools had been erroring all along) and died with
+the wire work UNCOMMITTED. I integrated it with attribution: committed as
+the wire commit below, after review (spec-faithful: mandatory contract
+dispatch per 01a10223, kind textual|test|null, L3 summary fallback chain,
+heads required + value-checked only AFTER the stale gate so stale stays
+409, verbatim typed evidence + per-pair tests_collected served on
+PairStatusView, verbatim policy/coverage on the runner report).
+
+Integration fixes by zc-l1c-wire:
+
+- vitest `fileParallelism: false` — parallel test files OOM-killed the
+  1.5 GiB sandbox (observed twice: zc-l1-fix "Killed", then me).
+- 3 test bugs: my L3 mirror always synthesizes evidence (real exporter
+  never omits it) so the no-evidence fixture is hand-built; warning
+  assertions scoped to the test's pair (DO state is shared per file);
+  checks-wire.test.ts string-evidence mutation lacked heads so the heads
+  error pre-empted the evidence error.
+
+C-1357 silent-callback guard (mine, red-first in
+local-artifacts/notify.test.mjs + test/unprocessed.test.ts):
+
+- Sidecar: forwardPush retries 3x (50/100/200 ms), then records the push in
+  a durable NotifyLedger (notify-state.json) served at GET /api/notify-state;
+  a later successful delivery for the repo+ref supersedes it; an
+  unconfigured notify URL is the documented local mode, NOT a failure;
+  repo delete purges; POST/DELETE /api/notify-state are bearer-gated
+  dev/test helpers.
+- Worker: optional ArtifactsPort.unprocessedPushes() (SidecarArtifacts ->
+  /api/notify-state; RealArtifacts -> [], ASSUMED-G). GET /status adds
+  top-level `unprocessedPushes` (agentId-resolved) and forces every pair
+  with an affected agent to not_checked + unprocessedReason + stale — a
+  stored clean never presents as current while the agent's true head is
+  unknown.
+- CONTRACT.md bumped to 0.1.2: exact v0.1 wire, contract dispatch rule,
+  PairStatusView changes (heads keyed by agentId, per-pair coverage,
+  typed evidence), C-1357(a) auth recap incl. the post-receive callback
+  and 0600 token handling, and the C-1357(b) guard.
+
+Suite (final, this executor): typecheck clean; vitest 12 files 67/67;
+node --test sidecar 16/16 (11 pre-existing + 5 new). No new npm deps.
+Commits: 67792d8 (sidecar guard), <wire commit> (C-1350 integration,
+implementer zc-l1-fix + zc-l1c-wire), <docs commit> (CONTRACT 0.1.2 +
+this entry).

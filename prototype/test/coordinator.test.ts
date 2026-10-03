@@ -1,6 +1,7 @@
 import { SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import { ADMIN_TOKEN, sidecarCommit } from "./helpers.js";
+import { ADMIN_TOKEN, SIDECAR_TOKEN, sidecarCommit } from "./helpers.js";
+import { SEEN_PUSHES_CAP_PER_AGENT } from "../src/coordinator.js";
 
 /** Integration through the Worker, backed by REAL bare git repos on the
  *  local sidecar (C-1309): every sha below comes from actual git commits. */
@@ -87,7 +88,7 @@ describe("Agent Branches coordinator flow (sidecar-backed)", () => {
     expect(alphaBody.head).toBe(betaBody.head);
 
     const wip = await sidecarCommit(alphaBody.fork.name, "wip: alpha first change");
-    const push = await post("/events/push", { agent: alphaBody.agentId, sha: wip });
+    const push = await post("/events/push", { agent: alphaBody.agentId, sha: wip }, alphaBody.token.plaintext);
     expect(push.status).toBe(200);
     const body = await json<PushResult>(push);
     expect(body.accepted).toBe(true);
@@ -109,7 +110,12 @@ describe("Agent Branches coordinator flow (sidecar-backed)", () => {
   it("resolves the agent from the fork when only {fork, sha} is posted (webhook shape)", async () => {
     const created = await json<CreatedTask>(await post("/tasks", { agent: "hooked" }, ADMIN_TOKEN));
     const wip = await sidecarCommit(created.fork.name, "wip: pushed via git");
-    const viaFork = await post("/events/push", { fork: created.fork.name, ref: "refs/heads/main", sha: wip });
+    // Webhook credential: the sidecar's shared bearer (CONTRACT 0.1.1).
+    const viaFork = await post(
+      "/events/push",
+      { fork: created.fork.name, ref: "refs/heads/main", sha: wip },
+      SIDECAR_TOKEN,
+    );
     expect(viaFork.status).toBe(200);
     const body = await json<PushResult>(viaFork);
     expect(body.agent).toBe(created.agentId);
@@ -119,18 +125,43 @@ describe("Agent Branches coordinator flow (sidecar-backed)", () => {
   it("dedups repeated pushes per (agent, sha)", async () => {
     const created = await json<CreatedTask>(await post("/tasks", { agent: "dedup" }, ADMIN_TOKEN));
     const wip = await sidecarCommit(created.fork.name, "wip: only once");
-    await post("/events/push", { agent: created.agentId, sha: wip });
-    const again = await json<PushResult>(await post("/events/push", { agent: created.agentId, sha: wip }));
+    await post("/events/push", { agent: created.agentId, sha: wip }, ADMIN_TOKEN);
+    const again = await json<PushResult>(
+      await post("/events/push", { agent: created.agentId, sha: wip }, ADMIN_TOKEN),
+    );
     expect(again.accepted).toBe(true);
     expect(again.deduped).toBe(true);
     expect(again.radarChecks).toBe(0);
+  });
+
+  it("bounds the per-agent push-dedup memory (muse-r46 D2)", async () => {
+    const created = await json<CreatedTask>(await post("/tasks", { agent: "ring" }, ADMIN_TOKEN));
+    const shas: string[] = [];
+    for (let i = 0; i < SEEN_PUSHES_CAP_PER_AGENT + 2; i++) {
+      shas.push(await sidecarCommit(created.fork.name, `wip: ring ${i}`));
+    }
+    for (const sha of shas) {
+      const res = await json<PushResult>(await post("/events/push", { agent: created.agentId, sha }, ADMIN_TOKEN));
+      expect(res.deduped).toBe(false);
+    }
+    // Still inside the ring (and not the current head): redelivery is deduped.
+    const inRing = await json<PushResult>(
+      await post("/events/push", { agent: created.agentId, sha: shas[shas.length - 2] }, ADMIN_TOKEN),
+    );
+    expect(inRing.deduped).toBe(true);
+    // Evicted from the ring window: the oldest redelivery is treated as new
+    // (bounded memory) instead of accumulating forever.
+    const evicted = await json<PushResult>(
+      await post("/events/push", { agent: created.agentId, sha: shas[0] }, ADMIN_TOKEN),
+    );
+    expect(evicted.deduped).toBe(false);
   });
 
   it("rejects shas that are not real commits in the fork", async () => {
     const created = await json<CreatedTask>(await post("/tasks", { agent: "strict" }, ADMIN_TOKEN));
     const foreign = await sidecarCommit("no-such-repo-will-exist-x", "x").catch(() => null);
     expect(foreign).toBeNull();
-    const unknown = await post("/events/push", { agent: created.agentId, sha: "0".repeat(40) });
+    const unknown = await post("/events/push", { agent: created.agentId, sha: "0".repeat(40) }, ADMIN_TOKEN);
     expect(unknown.status).toBe(400);
     const body = await json<{ error: string }>(unknown);
     expect(body.error).toContain("not found");
@@ -178,33 +209,41 @@ describe("Agent Branches coordinator flow (sidecar-backed)", () => {
         eventTimestamp: "2026-10-03T12:00:00.132Z",
       },
     };
-    const response = await post("/events/artifacts", event);
+    const response = await post("/events/artifacts", event, SIDECAR_TOKEN);
     expect(response.status).toBe(200);
     const body = await json<{ accepted: boolean; deduped: boolean; heads: Record<string, string> }>(response);
     expect(body.accepted).toBe(true);
     expect(body.deduped).toBe(false);
     expect(body.heads[created.agentId]).toBe(next);
 
-    const ignored = await post("/events/artifacts", {
-      ...event,
-      source: { type: "artifacts.repo", namespace: "local", repoName: "who-knows" },
-    });
+    const ignored = await post(
+      "/events/artifacts",
+      {
+        ...event,
+        source: { type: "artifacts.repo", namespace: "local", repoName: "who-knows" },
+      },
+      SIDECAR_TOKEN,
+    );
     expect(ignored.status).toBe(202);
   });
 
   it("rejects unknown agents and wrong forks", async () => {
-    const unknownAgent = await post("/events/push", { agent: "ghost-9999", sha: "f".repeat(40) });
+    const unknownAgent = await post("/events/push", { agent: "ghost-9999", sha: "f".repeat(40) }, ADMIN_TOKEN);
     expect(unknownAgent.status).toBe(400);
 
     const created = await json<CreatedTask>(await post("/tasks", { agent: "owner" }, ADMIN_TOKEN));
-    const wrongFork = await post("/events/push", {
-      agent: created.agentId,
-      fork: "somebody-elses-fork",
-      sha: "e".repeat(40),
-    });
+    const wrongFork = await post(
+      "/events/push",
+      {
+        agent: created.agentId,
+        fork: "somebody-elses-fork",
+        sha: "e".repeat(40),
+      },
+      created.token.plaintext,
+    );
     expect(wrongFork.status).toBe(400);
 
-    const missingSha = await post("/events/push", { agent: created.agentId });
+    const missingSha = await post("/events/push", { agent: created.agentId }, ADMIN_TOKEN);
     expect(missingSha.status).toBe(400);
 
     const noRoute = await get("/definitely/not/a/route");

@@ -5,10 +5,12 @@ import type {
   CommitMetadata,
   CreateRepoOptions,
   ForkOptions,
+  ForkResult,
   LogOptions,
   RepoName,
   RepoSummary,
   TokenScope,
+  UnprocessedPush,
 } from "../types.js";
 
 export interface ArtifactsRepoCapability {
@@ -55,14 +57,21 @@ export class RealArtifacts implements ArtifactsPort {
     return this.binding.create(name, opts);
   }
 
-  async fork(source: RepoName, target: RepoName, opts?: ForkOptions): Promise<ArtifactsCreateRepoResult> {
-    if (opts?.baseSha) {
-      // No documented binding parameter forks at an arbitrary commit
-      // (docs-notes ASSUMED-A): refuse instead of inventing an API.
-      throw new Error("fork at explicit baseSha is UNSUPPORTED by the documented Artifacts binding");
-    }
+  async fork(source: RepoName, target: RepoName, opts?: ForkOptions): Promise<ForkResult> {
+    // muse-r46 D3: the documented binding can only fork the source's default
+    // branch — there is no fork-at-commit parameter (docs-notes ASSUMED-F).
+    // Instead of refusing (which made real-mode createTask impossible), fork
+    // the default branch and REPORT the realized base (the fork's head at
+    // creation) so the coordinator records the truth.
+    const { baseSha, ...bindingOpts } = opts ?? {};
     using repo = await this.binding.get(source);
-    return repo.fork(target, opts);
+    const created = await repo.fork(target, Object.keys(bindingOpts).length > 0 ? bindingOpts : undefined);
+    if (baseSha === undefined) {
+      return created;
+    }
+    using fresh = await this.binding.get(created.name);
+    const head = (await fresh.log({ limit: 1 }))[0]?.id ?? null;
+    return { ...created, baseSha: head ?? baseSha };
   }
 
   async mintToken(
@@ -98,5 +107,15 @@ export class RealArtifacts implements ArtifactsPort {
 
   async deleteRepo(name: RepoName): Promise<boolean> {
     return this.binding.delete(name);
+  }
+
+  /**
+   * codex C-1357: the callback-loss ledger is a LOCAL sidecar mechanism. A
+   * real deployment gets push events (and their delivery state) from the
+   * Artifacts event subscription itself, so there is nothing to report here
+   * (docs-notes ASSUMED-G).
+   */
+  async unprocessedPushes(): Promise<UnprocessedPush[]> {
+    return [];
   }
 }

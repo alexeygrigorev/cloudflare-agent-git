@@ -13,7 +13,7 @@ and submits results over an authenticated, vector-gated route.
 
 Exact routes, request/response shapes, the radar hook contract, auth and
 the sidecar API are specified in **[CONTRACT.md](CONTRACT.md) (version
-0.1)** — L2/L3/L4 build against that file, not against this README.
+0.1.1)** — L2/L3/L4 build against that file, not against this README.
 
 ## Run
 
@@ -45,8 +45,9 @@ curl -s -X POST localhost:8787/tasks -H 'authorization: Bearer $ADMIN_TOKEN' \
 
 # the agent pushes with ordinary git; the sidecar hook reports it:
 git -c http.extraHeader="Authorization: Bearer $TOKEN" push <remote> main
-# (equivalent manual report:)
+# (equivalent manual report — the agent authenticates with its task token:)
 curl -s -X POST localhost:8787/events/push -H 'content-type: application/json' \
+  -H 'authorization: Bearer $TOKEN' \
   -d '{"agent":"claude-0001","sha":"<40-hex>"}'
 
 # trusted radar runner (L3) submits conflict/clean/unknown results:
@@ -60,18 +61,30 @@ curl -s localhost:8787/tasks/task-0001   # base_sha, intent, head, warnings+acks
 
 ## Auth
 
+ALL mutating routes are authenticated (muse-r46 review, CONTRACT 0.1.1):
+
 - `POST /setup` and `POST /tasks` (including the fork write-token minted
   there) require `Authorization: Bearer $ADMIN_TOKEN`.
 - `POST /checks` (trusted radar runner results) requires
   `Authorization: Bearer $RUNNER_TOKEN`.
+- `POST /events/push`, `/events/artifacts`, `/tasks/:id/tests` and
+  `/warnings/:id/ack` accept `ADMIN_TOKEN`, the relevant agent's per-task
+  token (the write token from `POST /tasks`; the DO stores only its
+  SHA-256 digest), or — webhooks only — the sidecar shared bearer
+  (`LOCAL_ARTIFACTS_TOKEN`). A valid token for a DIFFERENT agent is
+  rejected with `403` (no cross-agent writes: an agent cannot post test
+  provenance or acks for another agent).
 - Missing or wrong token → `401`; if the env secret is not configured the
   route fails closed with `503`. Tokens are never logged or echoed back
-  (constant-time compare, token-free error bodies).
+  (SHA-256 digest compare — token length is not timing-observable;
+  token-free error bodies).
 - For `wrangler dev`, set both in `.dev.vars` (see `.dev.vars.example`);
   vitest injects test-only values via `vitest.config.ts`.
-- `wrangler dev` binds **localhost only**. Deploying the Worker to the public
-  internet requires an auth review first (token rotation, TLS, authenticating
-  the Artifacts event subscription on `/events/*`).
+- `wrangler dev` binds **localhost only**. Deploying the Worker to the
+  public internet requires an auth review first — checklist: token
+  rotation, TLS, and a dedicated rotated secret for the Artifacts event
+  subscription on `/events/artifacts` (today the sidecar shared bearer
+  stands in for it).
 
 ## Routes
 
@@ -79,13 +92,13 @@ curl -s localhost:8787/tasks/task-0001   # base_sha, intent, head, warnings+acks
 | --- | --- | --- |
 | `POST /setup` | admin | create canonical repo (idempotent) |
 | `POST /tasks` | admin | `{agent, intent?, base_sha?, ttlSeconds?}` — fork canonical, mint write token; records base_sha + intent |
-| `POST /events/push` | — | `{agent\|fork, ref?, sha}` — WIP head; sha must be a real commit in the fork; dedups per (agent, sha) |
-| `POST /events/artifacts` | — | documented `cf.artifacts.repo.pushed` envelope → same handler |
+| `POST /events/push` | agent token \| admin \| sidecar | `{agent\|fork, ref?, sha}` — WIP head; sha must be a real commit in the fork; dedups per (agent, sha), bounded ring |
+| `POST /events/artifacts` | sidecar \| admin | documented `cf.artifacts.repo.pushed` envelope → same handler |
 | `POST /checks` | runner | `{vector, policy, coverage?, results:[{pair,status,kind?,evidence?}]}` — vector must equal current heads (stale → 409); warnings only for `conflict` |
 | `GET /status` | — | canonical, agents, head vector, per-pair radar status, warnings, radar log, last runner report |
 | `GET /tasks/:id` | — | base_sha, intent, head, pushes, warnings + acks, testProvenance |
-| `POST /tasks/:id/tests` | — | `{command, exit, head_sha}` — attach test provenance |
-| `POST /warnings/:id/ack` | — | `{agent, note?}` — record who acknowledged which warning at which head |
+| `POST /tasks/:id/tests` | task's agent \| admin | `{command, exit, head_sha}` — attach test provenance (evidence gate) |
+| `POST /warnings/:id/ack` | acking agent \| admin | `{agent, note?}` — record who acknowledged which warning at which head; cross-agent acks are 403 |
 
 ## Architecture
 
@@ -139,7 +152,7 @@ curl -s localhost:8787/tasks/task-0001   # base_sha, intent, head, warnings+acks
 | Tokens | sidecar-minted, same documented format `art_v1_<40hex>?expires=<unix>` | binding `createToken(scope, ttl)` |
 | Push events | sidecar post-receive hook → POST /events/push, plus manual/envelope routes | real agents `git push` + `cf.artifacts.repo.pushed` subscription → same handler |
 | Commit verification | real (`git cat-file`) | `port.hasCommit` → binding `readCommit(sha)` |
-| Fork at explicit base | real (`git update-ref` after bare clone) | UNSUPPORTED by documented binding (refused; ASSUMED-A) |
+| Fork at explicit base | real (`git update-ref` after bare clone) | binding cannot fork at a commit (ASSUMED-F): forks default branch, records realized base = fork head at creation (muse-r46 D3) |
 | Trial merges/tests | trusted local runner (L3 lane), never the Worker | same (deployment boundary) |
 
 API shapes come only from the five official pages cited in

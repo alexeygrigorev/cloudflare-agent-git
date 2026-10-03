@@ -5,10 +5,12 @@ import type {
   CommitMetadata,
   CreateRepoOptions,
   ForkOptions,
+  ForkResult,
   LogOptions,
   RepoName,
   RepoSummary,
   TokenScope,
+  UnprocessedPush,
 } from "../types.js";
 
 /**
@@ -47,11 +49,13 @@ export class SidecarArtifacts implements ArtifactsPort {
     return { name: body.name, remote: body.remote, defaultBranch: body.defaultBranch, token: body.token };
   }
 
-  async fork(source: RepoName, target: RepoName, opts?: ForkOptions): Promise<ArtifactsCreateRepoResult> {
+  async fork(source: RepoName, target: RepoName, opts?: ForkOptions): Promise<ForkResult> {
     const body = (await this.call(`/api/repos/${encodeURIComponent(source)}/fork`, {
       method: "POST",
       body: JSON.stringify({ target, baseSha: opts?.baseSha }),
     })) as ArtifactsCreateRepoResult;
+    // Local mode honors baseSha exactly (git update-ref after bare clone),
+    // so the realized base is the requested one; no marker needed.
     return { name: body.name, remote: body.remote, defaultBranch: body.defaultBranch, token: body.token };
   }
 
@@ -94,5 +98,11 @@ export class SidecarArtifacts implements ArtifactsPort {
       deleted: boolean;
     };
     return body.deleted;
+  }
+
+  /** Pushes whose Worker callback failed after bounded retries (C-1357). */
+  async unprocessedPushes(): Promise<UnprocessedPush[]> {
+    const body = (await this.call("/api/notify-state")) as { unprocessed: UnprocessedPush[] };
+    return body.unprocessed;
   }
 }
