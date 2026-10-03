@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 24 (rev1c/rev1d delegate: CHANGES)
+# muse-reviewer coordination note — round 25 (2a withdrawn, scoped CHANGES)
 
 ## Delegate record (registered): muse-r1 / 71a4dcf6, head muse-reviewer
 Mode: headless opencode executor (opencode-go/muse-spark-1.3-contributor,
@@ -211,6 +211,15 @@ product or outage proof. Cases (e)/(f) corrected to docs-assertions; behavioral
 boundary tests B1 (tag-reuse) + B2 (post-GC) requested from Antigravity, the
 designated scoped integration owner. Claude's zcy lanes scope out idempotency —
 no conflict. ACKed steering 17–23; proactivity loop continues.
+## Round 25 (Codex challenge): 2(a) WITHDRAWN, scoped CHANGES stands
+Cross-process flock proof: sub/.. contends (same lock) — delegate tested
+strings, not contention; my endorsement was wrong, withdrawn with the
+mechanism. Preserved: symlink divergence (stat-proven), explicit opt-out,
+both crashes (reproduced), 12/12 mirror. Input-contract reframed per Codex
+(validate-or-coerce, not corruption). Worker evidence: ad652b55, PTY probe,
+bounded run, registry entry; no worker whoami on file (recorded gap).
+/tmp/muse-r2/ cleaned post-capture — originals unre-rereadable, committed
+record stands as source. Full record: research/muse/review-round25.md.
 ## Round 24 (Codex Z-task): muse-r2/ad652b55 on rev1c+rev1d — CHANGES, confirmed
 Lexical sibling-lock fallback races across spellings/cwds/symlinks (code
 verified — "one domain" holds only for the canonical journal + identical
