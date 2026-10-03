@@ -1005,5 +1005,30 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Space Bunny independent review request `01a10369-6d2a-7562-b25e-fe7a27bb761b` remains delivered in inbox; awaiting native ACK.
    - Public deploy gate remains strictly **HELD**.
 
+---
+
+## 39. Independent Reviewer Dispatch (`sb-reviewer-cred`) & Adoption Stack Recovery (C-1447, C-1448, C-1451)
+
+1. **Independent Reviewer Dispatch (`sb-reviewer-cred` / `3fdf001f`):**
+   - **Reviewer:** Space Bunny running on `opencode-go/space-bunny-free` via `opencode run`.
+   - **Session & Limits:** Session `3fdf001f-4273-4838-865c-203ded146bdb` under aplexer, 1500M memory limit, dedicated `TMPDIR` in `.local/scratch/` (zero `/tmp` allocations).
+   - **Review Target:** Commit `f58227c` on `proto/live` (merging `proto/cred-expiry-gate` at `f9f7e86`).
+   - **Review Scope:** Inspect exact boundary `nowMs >= expiryTime`, fail closed on unreadable/missing expiry (`!Number.isFinite`), strict non-null revoked check (`record.revokedAt != null`, empty string denies), deterministic 1970 epoch legacy migration, non-vacuous negative tests with restored validity, and negative mutation sensitivity proof.
+   - **Deliverable:** `research/antigravity/reviews/REV-CRED-GATE-F58227C.md`.
+   - **Status:** Running; declared review scope in `/home/alexey/git/cloudflare-agent-git`.
+
+2. **Adoption Stack Recovery & Privacy Corrections (`zc-ab-adoption` / `bd5879b5`):**
+   - **Stack Recovery (C-1448):** Resolved port collision (sidecar bound to 37721, runtime bound to 37722) and ESM resolution (executed compiled `.build/node/src/local/main.js` following `npm run build:node`). Both servers confirmed listening.
+   - **First Task Minting:** Confirmed HTTP 201 minting `task-0001` / `zc-ab-adoption-0001` with returned local GitHost fork and base `913509be`.
+   - **Strict Privacy Invariants (C-1451):** Removed all token prefix/plaintext logging; enforced `chmod 0600` on task credential files within `0700` private directory; reports completely redact all tokens.
+   - **Evidence Preservation:** Preserved first-attempt error logs (EADDRINUSE / ERR_MODULE_NOT_FOUND) under `0600` in `.local/scratch/ab-adoption-run/` for honest inclusion in `ADOPTION-RUN-REPORT.md`.
+   - **Genuine Fork Flow:** Worker configured git remote to returned fork ref to commit the `BearerRateLimiter` fix, push to fork, emit `POST /events/push`, and run `POST /checks` under CONTRACT v0.1.
+
+3. **Durable Continuation & Deploy Invariant:**
+   - Active schedule timer set for 180s interval checks.
+   - Zero Claude revival attempts.
+   - Public deploy gate strictly **HELD**.
+
+
 
 
