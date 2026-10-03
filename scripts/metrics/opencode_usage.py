@@ -7,22 +7,36 @@ import time
 
 SOURCE = 'opencode-message-reported'
 DB_REL = '.local/opencode-isolated/opencode/opencode.db'
+HOME_DB_REL = '.local/share/opencode/opencode.db'
+
+def default_home_db():
+    return pathlib.Path.home()/HOME_DB_REL
 FIELDS = ('total_tokens','input_tokens','output_tokens','reasoning_output_tokens','cached_input_tokens','cache_write_tokens','reported_cost')
 
 def number(value):
     return value if isinstance(value,(int,float)) and not isinstance(value,bool) and math.isfinite(value) and value>=0 else None
 
-def read_usage(root, assignments, interval_start_ms, *, max_sessions=128, max_messages=50000, deadline_seconds=2):
+def read_usage(root, assignments, interval_start_ms, *, max_sessions=128, max_messages=50000, deadline_seconds=2, home_db=None):
     """Exact registered conversations plus DB parent-linked children, counted once.
 
     Assignments are {conversation_id,team_id,tag}. Conflicting owners are unassigned.
     The fixed owned DB must not be a symlink outside root. Rescanning PK rows means
     late completion updates replace prior values, never append/double-count them.
+    The user home store is observed too (same attribution rule: session directory
+    must resolve inside root); rows dedupe across stores by (provider,sid,mid) so
+    one message kept in both stores counts once. A missing store is skipped.
     """
     root=pathlib.Path(root).resolve(); path=root/DB_REL
-    result={'source':SOURCE,'interval_start':dt.datetime.fromtimestamp(interval_start_ms/1000,dt.timezone.utc).isoformat(),'observed_at':dt.datetime.now(dt.timezone.utc).isoformat(),'status':'unknown','sessions':[],'by_model':[],'by_team':{},'limits':['Stored provider totals include cached processing and are not unique text or money spent.','Raw output/reasoning categories are shown separately; total is authoritative and never recomputed by adding reasoning.','Reported cost is OpenCode/provider estimate, not subscription billing.','Interval uses message creation time; late completion updates may backfill earlier messages.','Only exact registered conversation IDs and same-directory DB parent-linked children are attributed.']}
+    home=pathlib.Path(home_db) if home_db is not None else default_home_db()
+    result={'source':SOURCE,'interval_start':dt.datetime.fromtimestamp(interval_start_ms/1000,dt.timezone.utc).isoformat(),'observed_at':dt.datetime.now(dt.timezone.utc).isoformat(),'status':'unknown','sessions':[],'by_model':[],'by_team':{},'stores':[],'limits':['Stored provider totals include cached processing and are not unique text or money spent.','Raw output/reasoning categories are shown separately; total is authoritative and never recomputed by adding reasoning.','Reported cost is OpenCode/provider estimate, not subscription billing.','Interval uses message creation time; late completion updates may backfill earlier messages.','Only exact registered conversation IDs and same-directory DB parent-linked children are attributed.']}
     try:
-        if not path.is_file() or root not in path.resolve().parents: return result
+        stores=[]
+        if path.is_file() and root in path.resolve().parents:stores.append(('owned',path))
+        elif path.is_file():result['stores'].append({'role':'owned','path':str(path),'status':'outside-root-skipped','assistant_rows':0})
+        else:result['stores'].append({'role':'owned','path':str(path),'status':'missing-skipped','assistant_rows':0})
+        if home.is_file():stores.append(('home',home))
+        else:result['stores'].append({'role':'home','path':str(home),'status':'missing-skipped','assistant_rows':0})
+        if not stores:return result
         owners={}
         for a in assignments:
             sid=a.get('conversation_id')
@@ -31,37 +45,18 @@ def read_usage(root, assignments, interval_start_ms, *, max_sessions=128, max_me
         if not owners:return result
         if len(owners)>max_sessions:raise ValueError('session bound')
         deadline=time.monotonic()+deadline_seconds
-        con=sqlite3.connect(path.as_uri()+'?mode=ro',uri=True,timeout=.2)
-        try:
-            con.execute('PRAGMA query_only=ON');con.set_progress_handler(lambda: int(time.monotonic()>deadline),1000)
-            con.execute('BEGIN') # one consistent WAL snapshot; never immutable=1
-            ids=list(owners); placeholders=','.join('?' for _ in ids)
-            # Do not infer an owner from a human-readable title.
-            catalog=con.execute(f'SELECT id,parent_id,directory FROM session WHERE id IN ({placeholders})',ids).fetchall()
-            admitted={sid for sid,parent,directory in catalog if pathlib.Path(directory).resolve()==root}
-            frontier=list(admitted)
-            while frontier:
-                p=','.join('?' for _ in frontier)
-                rows=con.execute(f'SELECT id,parent_id,directory FROM session WHERE parent_id IN ({p}) LIMIT ?',frontier+[max_sessions+1]).fetchall()
-                frontier=[]
-                for sid,parent,directory in rows:
-                    if pathlib.Path(directory).resolve()!=root or sid in admitted:continue
-                    admitted.add(sid);owners.setdefault(sid,set()).update(owners[parent]);frontier.append(sid)
-                    if len(admitted)>max_sessions:raise ValueError('session bound')
-            if not admitted:return result
-            ids=sorted(admitted); p=','.join('?' for _ in ids)
-            rows=con.execute(f'''SELECT id,session_id,time_created,
-                json_extract(data,'$.providerID'),json_extract(data,'$.modelID'),
-                json_extract(data,'$.time.completed'),json_extract(data,'$.tokens.total'),
-                json_extract(data,'$.tokens.input'),json_extract(data,'$.tokens.output'),
-                json_extract(data,'$.tokens.reasoning'),json_extract(data,'$.tokens.cache.read'),
-                json_extract(data,'$.tokens.cache.write'),json_extract(data,'$.cost')
-                FROM message WHERE session_id IN ({p}) AND json_extract(data,'$.role')='assistant'
-                ORDER BY session_id,id LIMIT ?''',ids+[max_messages+1]).fetchall()
-            if len(rows)>max_messages:raise ValueError('message bound')
-        finally:con.close()
+        admitted=set();all_rows=[]
+        for role,dbpath in stores:
+            try:
+                rows=_query_store(dbpath,root,owners,admitted,max_sessions,max_messages,deadline)
+            except (sqlite3.Error,OSError,ValueError,TypeError,OverflowError):
+                result['stores'].append({'role':role,'path':str(dbpath),'status':'unavailable-skipped','assistant_rows':0});continue
+            result['stores'].append({'role':role,'path':str(dbpath),'status':'queried','assistant_rows':len(rows)})
+            all_rows.extend(rows)
+        if not admitted:return result
+        if len(all_rows)>max_messages:raise ValueError('message bound')
         groups={};seen=set()
-        for mid,sid,created,provider,model,completed,*values in rows:
+        for mid,sid,created,provider,model,completed,*values in all_rows:
             key=(provider,sid,mid)
             if key in seen:continue
             seen.add(key)
@@ -97,10 +92,42 @@ def read_usage(root, assignments, interval_start_ms, *, max_sessions=128, max_me
             finish(group['cumulative']);finish(group['interval']);result['sessions'].append(group)
         for b in global_models.values():finish(b['interval'])
         for b in teams.values():finish(b)
-        result.update(status='observed',by_model=list(global_models.values()),by_team=teams,queried_assistant_records=len(rows),unique_assistant_records=len(seen),registered_conversations=len(assignments),attributed_conversations=len(admitted))
+        result.update(status='observed',by_model=list(global_models.values()),by_team=teams,queried_assistant_records=len(all_rows),unique_assistant_records=len(seen),registered_conversations=len(assignments),attributed_conversations=len(admitted))
     except (sqlite3.Error,OSError,ValueError,TypeError,OverflowError):
         result.update(status='unavailable-or-bound-exceeded',sessions=[],by_model=[],by_team={})
     return result
+
+def _query_store(dbpath, root, owners, admitted, max_sessions, max_messages, deadline):
+    """Read-only WAL snapshot of one store; expands shared admitted set, returns rows."""
+    con=sqlite3.connect(dbpath.as_uri()+'?mode=ro',uri=True,timeout=.2)
+    try:
+        con.execute('PRAGMA query_only=ON');con.set_progress_handler(lambda: int(time.monotonic()>deadline),1000)
+        con.execute('BEGIN') # one consistent WAL snapshot; never immutable=1
+        ids=list(owners); placeholders=','.join('?' for _ in ids)
+        # Do not infer an owner from a human-readable title.
+        catalog=con.execute(f'SELECT id,parent_id,directory FROM session WHERE id IN ({placeholders})',ids).fetchall()
+        new={sid for sid,parent,directory in catalog if pathlib.Path(directory).resolve()==root}
+        admitted.update(new)
+        frontier=list(new)
+        while frontier:
+            p=','.join('?' for _ in frontier)
+            rows=con.execute(f'SELECT id,parent_id,directory FROM session WHERE parent_id IN ({p}) LIMIT ?',frontier+[max_sessions+1]).fetchall()
+            frontier=[]
+            for sid,parent,directory in rows:
+                if pathlib.Path(directory).resolve()!=root or sid in admitted:continue
+                admitted.add(sid);owners.setdefault(sid,set()).update(owners[parent]);frontier.append(sid)
+                if len(admitted)>max_sessions:raise ValueError('session bound')
+        if not admitted:return []
+        ids=sorted(admitted); p=','.join('?' for _ in ids)
+        return con.execute(f'''SELECT id,session_id,time_created,
+            json_extract(data,'$.providerID'),json_extract(data,'$.modelID'),
+            json_extract(data,'$.time.completed'),json_extract(data,'$.tokens.total'),
+            json_extract(data,'$.tokens.input'),json_extract(data,'$.tokens.output'),
+            json_extract(data,'$.tokens.reasoning'),json_extract(data,'$.tokens.cache.read'),
+            json_extract(data,'$.tokens.cache.write'),json_extract(data,'$.cost')
+            FROM message WHERE session_id IN ({p}) AND json_extract(data,'$.role')='assistant'
+            ORDER BY session_id,id LIMIT ?''',ids+[max_messages+1]).fetchall()
+    finally:con.close()
 
 def empty():
     return {**{f:0 for f in FIELDS},'assistant_records':0,'records_with_total':0,'pending_or_missing_records':0,'known_fields':{f:0 for f in FIELDS},'missing_fields':{f:0 for f in FIELDS},'first_message_ms':None,'last_message_ms':None}
