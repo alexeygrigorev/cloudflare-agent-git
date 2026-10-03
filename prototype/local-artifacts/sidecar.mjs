@@ -599,6 +599,16 @@ export function createSidecarServer(sidecar) {
           sendJson(res, 200, { unprocessed: sidecar.ledger.unprocessed });
           return;
         }
+        // Dev/test recovery helper: normal recovery is a successful delivery
+        // superseding the record (see forwardPush); this exists for tests and
+        // manual cleanup, like POST /api/repos/:name/commits.
+        if (path === "/api/notify-state" && req.method === "DELETE") {
+          const count = sidecar.ledger.unprocessed.length;
+          sidecar.ledger.unprocessed = [];
+          sidecar.ledger.save();
+          sendJson(res, 200, { cleared: count });
+          return;
+        }
         if (path === "/api/notify-state" && req.method === "POST") {
           const body = await readJsonBody(req);
           if (!isValidRepoName(body.repo) || !isValidRef(body.ref) || !SHA_RE.test(body.sha ?? "")) {
