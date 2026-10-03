@@ -467,45 +467,44 @@
       "id": "publication-visual-acceptance",
       "team_id": "publication",
       "owner_tag": "public-journal-site",
-      "executor_tag": "publication-image-reviewer",
-      "executor_session": "61d6a1ea-a7a5-4d26-9a31-2d447a4dcc38",
-      "status": "blocked",
-      "updated_at": "2026-10-03T12:00:29.741324+00:00",
+      "executor_tag": "project-landing-visual-reviewer",
+      "executor_session": "430beef8-55cc-42ed-8459-a49ccb08c7a7",
+      "status": "review",
+      "updated_at": "2026-10-03T12:06:49.108407+00:00",
       "blocked_on": [
-        "project-landing-mobile-diagram-geometry (label <14px in VISUALS.md)",
-        "project-landing-section-numbering (01 \u00b7 PROBLEM)"
+        "principal-visual-acceptance-review (website tree c2eb7aa833434fa3ca204ec0b9aa79e383960278)"
       ],
-      "next_action": "Separate-session independent visual review completed by session 61d6a1ea (Gemini 3.1 Pro via agy CLI; first tool view_file canonical-desktop-home.png); output: .local/journal/visual-review/CANONICAL-TREE-REVIEW.md. Verdict: CHANGES REQUIRED. 4/5 families PASS (Home, Checklist, Daily, Fieldnotes). Project Landing CHANGES REQUIRED on mobile diagram label 12.29px < 14px and section numbering. Preview branch journal-design-repair-3 / 7d06e9b is SUPERSEDED by canonical main redesign (website tree 6866a2ad33a2ab4da0a91c77d7a99198a175ed17); repairs to project landing pending before visual acceptance.",
+      "next_action": "Project landing narrow repair completed (commit 749c615, website tree c2eb7aa833434fa3ca204ec0b9aa79e383960278): restored numbered section headers ('01 \u00b7 PROBLEM', '02 \u00b7 HYPOTHESIS', etc.) and enlarged diagram SVG labels to 28px (rendered at 14.96 CSS px on mobile 390px viewport >= 14px in VISUALS.md). Recaptured canonical-desktop-project.png and canonical-mobile-project.png. Independent non-author re-check completed by session 430beef8 (Gemini 3.1 Pro via agy CLI, first tool view_file SCREENSHOT-MANIFEST.json / canonical-desktop-project.png); verdict PASS (.local/journal/visual-review/PROJECT-FAMILY-RECHECK.md). Visual acceptance HELD pending principal final review.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
+        ".local/journal/visual-review/PROJECT-FAMILY-RECHECK.md",
         ".local/journal/visual-review/CANONICAL-TREE-REVIEW.md",
         ".local/journal/canonical-screenshots/SCREENSHOT-MANIFEST.json",
         ".local/journal/canonical-preview/ARTIFACT-MANIFEST.json",
-        "research/codex/publication-image-rereview.md",
-        "research/codex/publication-image-challenge.md"
+        "research/codex/publication-image-rereview.md"
       ],
-      "assignment_ack": "Launched independent non-author session 61d6a1ea (agy CLI, Gemini 3.1 Pro). First tool view_file canonical-desktop-home.png verified across all 10 captures.",
+      "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
       "model": "gemini-3.1-pro-high",
-      "acceptance_status": "CHANGES REQUIRED on canonical website tree 6866a2ad (report .local/journal/visual-review/CANONICAL-TREE-REVIEW.md by independent session 61d6a1ea; Home/Checklist/Daily/Fieldnotes PASS, Project Landing mobile diagram <14px and section numbering required)."
+      "acceptance_status": "RECHECK PASS on project landing family (report .local/journal/visual-review/PROJECT-FAMILY-RECHECK.md by independent session 430beef8). New website tree hash: c2eb7aa833434fa3ca204ec0b9aa79e383960278. Visual acceptance HELD pending principal confirmation."
     },
     {
       "id": "publication-release-verification",
       "team_id": "publication",
       "owner_tag": "public-journal-site",
       "status": "done",
-      "updated_at": "2026-10-03T12:00:29.741324+00:00",
+      "updated_at": "2026-10-03T12:06:49.108407+00:00",
       "blocked_on": [],
-      "next_action": "Canonical main redesign is live at https://alexeygrigorev.com/cloudflare-agent-git/ (current daily story: https://alexeygrigorev.com/cloudflare-agent-git/daily/2026-10-03/); website tree hash 6866a2ad33a2ab4da0a91c77d7a99198a175ed17. Deployed via GitHub Actions workflow on main pushes (run 37121112727 on 4912d17). Preview branch journal-design-repair-3 (7d06e9b / e9d8460) is SUPERSEDED. Provenance confirmation from user pending; visual acceptance HELD pending project diagram mobile label repair.",
+      "next_action": "Canonical main redesign updated with project landing repair at commit 749c615 (website tree hash c2eb7aa833434fa3ca204ec0b9aa79e383960278). Deployed via GitHub Actions workflow on main pushes. Live URLs: https://alexeygrigorev.com/cloudflare-agent-git/ and https://alexeygrigorev.com/cloudflare-agent-git/daily/2026-10-03/. Preview branch journal-design-repair-3 is SUPERSEDED. User provenance confirmation pending; visual acceptance HELD pending principal confirmation of repaired tree c2eb7aa8.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "website/editorial/QUALITY.md",
         ".local/journal/canonical-screenshots/SCREENSHOT-MANIFEST.json",
         ".local/journal/canonical-preview/ARTIFACT-MANIFEST.json",
-        ".local/journal/visual-review/CANONICAL-TREE-REVIEW.md",
-        ".local/journal/live-verification/**"
+        ".local/journal/visual-review/PROJECT-FAMILY-RECHECK.md",
+        ".local/journal/visual-review/CANONICAL-TREE-REVIEW.md"
       ],
-      "assignment_ack": "coordinator public-journal-site (088a2387) verified live canonical deployment and reconciled registry",
-      "acceptance_status": "DEPLOYED LIVE on canonical main (website tree 6866a2ad33a2ab4da0a91c77d7a99198a175ed17, live URL https://alexeygrigorev.com/cloudflare-agent-git/, daily story https://alexeygrigorev.com/cloudflare-agent-git/daily/2026-10-03/). Preview branch journal-design-repair-3 is SUPERSEDED. Provenance confirmation from user pending; independent visual review completed with CHANGES REQUIRED on project diagram."
+      "assignment_ack": "coordinator public-journal-site (088a2387) executed project landing repair and re-check, updated registry",
+      "acceptance_status": "DEPLOYED LIVE on canonical main (website tree c2eb7aa833434fa3ca204ec0b9aa79e383960278). Exact live URLs: https://alexeygrigorev.com/cloudflare-agent-git/ and https://alexeygrigorev.com/cloudflare-agent-git/daily/2026-10-03/. Preview branch journal-design-repair-3 is SUPERSEDED. Visual acceptance HELD pending principal confirmation."
     },
     {
       "id": "a18-demand-scout",
