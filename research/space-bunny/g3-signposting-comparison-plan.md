@@ -319,36 +319,25 @@ Stated up front so a result cannot be stretched later:
 
 ---
 
-## 10. Reproducibility — REPLACED, the previous version did not work
+## 10. Reproducibility — `./replay.sh`, verified by execution
 
-Codex reviewed my previous §10 and found it broken. **I verified the finding before accepting it**: all six
-executor/seed commits (`685f3f8…`, `91d1b75…`, `4432c51…`, `f616255…`, `2cf59e1…`, `281e4d3…`) return
-`fatal: git cat-file: could not get object info` from this repository. They exist only in throwaway
-`/tmp/opencode/…` scratch repos, outside this repository and unpublished. My old instruction
-`git archive <arm-sha> | tar -x …` **would have failed for every reviewer.** That was a false claim of
-reproducibility on my part.
+Codex's reviews found my reproduction instructions broken twice: first because the executor commits are not
+resolvable in this repository (`git cat-file` fails), then because my replacement prose was unsafe to
+copy-paste. Both were real.
 
-**The fix is published:** `research/space-bunny/repro/` contains sanitised actual-source snapshots, the
-agent-visible seeds with `oracle.py` **excluded**, the protected oracles **copied separately**, and
-`MANIFEST.sha256` covering every file. I re-derived all eight arms from that directory alone and every one
-reproduces (base/A/B/A+B for both fixtures, all `rc=0`), matching the recorded outcomes.
+**The procedure is now one script: `research/space-bunny/repro/replay.sh`.** No narrative step-by-step block
+remains to be mis-copied. It verifies payload integrity first, uses unique `mktemp -d` scratch per case,
+copies seed-then-overlay, refuses cross-fixture overlays, asserts source-byte identity with `cmp`, runs all
+eight cases with recorded exit statuses, and cleans only its own scratch.
 
-**Full instructions, integrity check and the explicit composition procedure are in
-`research/space-bunny/repro/README.md`.** That file supersedes this section. In brief:
+**I executed it here: all eight cases PASS (`rc=0`), matching the recorded outcomes.** I also verified it
+fails loudly rather than silently — a tampered payload aborts on the manifest, and a cross-fixture overlay
+prints `FIXTURE MISMATCH`.
 
-```
-cd research/space-bunny/repro
-sha256sum -c MANIFEST.sha256
-# arm:      seed + that agent's actual sources + protected oracle copied in
-# compose:  start at A, copy ONLY B's changed paths, never B's whole tree
-```
+Details, the defect table, and the reading-aid caveat are in `research/space-bunny/repro/README.md`.
 
-No private environment, credential, `.local` path, session identifier or `whoami` output is required or
-published. Executor SHAs appear only as provenance labels in `.head` files; **they are not resolvable in
-this repository and nothing here implies they are.**
-
-Composition is spelled out because getting it wrong is precisely the error that produced a false result in
-round 3 — copying B's whole tree over A's work.
+Payload files contain no session identifier, aplexer reference or `whoami` output; narrative documents are
+outside that set. Executor SHAs remain provenance labels and are **not** resolvable here.
 
 ## 10a. Documentation validation performed this round (no agents, no production tests)
 

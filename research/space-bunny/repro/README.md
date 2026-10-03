@@ -62,101 +62,71 @@ This matches the outcomes recorded in `../g3-no-symbol-overlap/results-real-agen
 `../g3-non-discoverable/results-real-agents.md`. **The negative results stand, and they are now
 reproducible from a clone** rather than from my scratch directories.
 
-## How to reproduce — corrected
+## How to reproduce — one script, eight cases
 
-Codex principal's review found a real defect in my first version of this section. **I reproduced it before
-fixing:** the single-invocation form
+**Run `./replay.sh`.** It is the single supported entry point. Codex principal's second review found my
+previous prose instructions unsafe to copy-paste, and the defects were real:
+
+| Defect in my earlier version | Consequence |
+|---|---|
+| helper wrote `CASE=$1/$(basename "$2")$3x` | wrote **inside the canonical seed dir**, and `$3` is an oracle *filename*, so the path expanded to garbage like `seed-arm1/Aoracle-arm1.pyx` |
+| fixture-2 line overlaid `arm1-signposted/A` with `2>/dev/null \|\| true` | **wrong fixture's overlay**, silently tolerated |
+| single-arm cases omitted the oracle run | four cases never actually executed |
+| fixture 2 lacked explicit B and composed cases | only 6 of 8 cases specified |
+| narrative "use the matching overlay per fixture" | does not repair an unsafe copy-pasteable line |
+
+**All five are removed.** There is no narrative step-by-step block to mis-copy; the script is the procedure.
 
 ```
-cp seed-arm1/* arm1-signposted/A/* /tmp/armA/     # BROKEN
+cd research/space-bunny/repro
+./replay.sh              # KEEP=1 ./replay.sh to retain scratch for inspection
 ```
 
-fails, because `cache.py` exists in **both** the seed and the agent overlay, and GNU `cp` refuses to
-overwrite a file it just created in the same invocation:
+### What the script guarantees
 
-```
-cp: will not overwrite just-created '/tmp/cptest/cache.py' with 'arm1-signposted/A/cache.py'
-```
+1. **Unique scratch per case** from `mktemp -d`. No path is ever derived from a payload directory, so it
+   cannot write into `seed-arm*`.
+2. **Payload integrity first.** `sha256sum -c MANIFEST.sha256` gates everything; a tampered payload aborts
+   before any case runs. Verified: appending one line to an overlay makes the manifest fail and the script
+   exit non-zero.
+3. **Seed first, overlay second**, `cp -a`, so the agent's version wins deterministically.
+4. **Fixture/overlay mismatch is a hard error**, checked by explicit guard. Verified: pointing the fixture-2
+   arm at `arm1-signposted/A` prints `FIXTURE MISMATCH` instead of silently producing a result.
+5. **Byte-identity assertions with `cmp`**, not `grep`. Every overlaid file must equal the published source
+   byte for byte, in both single and composed cases. `grep` markers are recorded below only as a human
+   reading aid, never as the check.
+6. **All eight cases explicit**, each with a recorded oracle exit status, and a summary table.
+7. **Scratch is cleaned on exit**, and only scratch. Payload directories are read-only inputs.
 
-So that line silently left the **seed's** `cache.py` in place — meaning the instruction as written did not
-reliably reproduce agent A's actual cache. Note that `-n` "fixes" the error but keeps the *seed* file,
-which is the opposite of the intent. Correct order: **seed first, agent overlay second.**
+### Expected result
 
-Always use a **unique disposable scratch directory per case** (shown as `$CASE`), so cases cannot contaminate
-each other. `$REPRO` is this directory.
+All eight PASS (`rc=0`), which is what the recorded outcomes say. Verified by running the script here.
 
-```bash
-REPRO=research/space-bunny/repro
-cd "$REPRO"
-sha256sum -c MANIFEST.sha256          # 21 files, integrity of the payload
-
-newcase() { CASE=$(mktemp -d /tmp/g3repro.XXXXXX); echo "$CASE"; }
-
-# helper: seed, then overlay ONE agent's files, then copy the protected oracle in
-build() {  # $1=seed dir  $2=agent dir (or "-" for base)  $3=oracle file
-  CASE=$1/$(basename "$2")$3x
-  mkdir -p "$CASE"
-  cp "$REPRO/$1"/* "$CASE"/                       # seed FIRST
-  if [ "$2" != "-" ]; then                        # agent overlay SECOND
-    for f in "$REPRO/$2"/*; do cp "$f" "$CASE"/; done
-  fi
-  cp "$REPRO/protected-oracle/$3" "$CASE/oracle.py"   # protected oracle copied in
-}
-```
-
-Concretely, all eight cases. Base arms first:
-
-```bash
-CASE=$(newcase); mkdir -p "$CASE"; cp seed-arm1/* "$CASE"/;   cp protected-oracle/oracle-arm1.py "$CASE/oracle.py"; ( cd "$CASE" && python3 -B oracle.py )
-CASE=$(newcase); mkdir -p "$CASE"; cp seed-arm2/* "$CASE"/;   cp protected-oracle/oracle-arm2.py "$CASE/oracle.py"; ( cd "$CASE" && python3 -B oracle.py )
-```
-
-Single-agent arms — seed, then overlay:
-
-```bash
-CASE=$(newcase); mkdir -p "$CASE"; cp seed-arm1/* "$CASE"/;   cp arm1-signposted/A/* "$CASE"/; cp protected-oracle/oracle-arm1.py "$CASE/oracle.py"
-CASE=$(newcase); mkdir -p "$CASE"; cp seed-arm1/* "$CASE"/;   cp arm1-signposted/B/* "$CASE"/; cp protected-oracle/oracle-arm1.py "$CASE/oracle.py"
-CASE=$(newcase); mkdir -p "$CASE"; cp seed-arm2/* "$CASE"/;   cp arm1-signposted/A/* "$CASE"/ 2>/dev/null || true   # fixture 2 uses arm2-signposted
-```
-
-Use the matching overlay per fixture: `seed-arm1` + `arm1-signposted/{A,B}` +
-`oracle-arm1.py`, and `seed-arm2` + `arm2-signposted/{A,B}` + `oracle-arm2.py`.
-
-Composed arms — **start from A, copy only B's changed paths, never B's whole tree**:
-
-```bash
-CASE=$(newcase); mkdir -p "$CASE"; cp seed-arm1/* "$CASE"/;   cp arm1-signposted/A/* "$CASE"/                   # A first
-for f in arm1-signposted/B/*; do cp "$f" "$CASE"/; done   # then ONLY B's paths
-cp protected-oracle/oracle-arm1.py "$CASE/oracle.py"
-( cd "$CASE" && python3 -B oracle.py )              # rc=0 — A+B PASSES
-```
-
-Note `.head` files are provenance labels and are harmless to copy.
-
-**Verify the overlay actually took effect** before trusting a result — the defect above was an overlay that
-did not apply:
-
-```bash
-grep -c OrderedDict "$CASE/cache.py"    # fixture 1 arm A must contain the agent's cache
-```
-
-### Expected results
-
-All eight cases exit `rc=0`:
-
-| Case | Composition | Result |
+| Case | Composition | Expected |
 |---|---|---|
-| fixture 1 | base | rc=0 |
-| fixture 1 | A alone | rc=0 |
-| fixture 1 | B alone | rc=0 |
-| fixture 1 | A+B | rc=0 |
-| fixture 2 | base | rc=0 |
-| fixture 2 | A alone | rc=0 |
-| fixture 2 | B alone | rc=0 |
-| fixture 2 | A+B | rc=0 |
+| f1-base | fixture 1 seed only | PASS |
+| f1-A | seed + agent A | PASS |
+| f1-B | seed + agent B | PASS |
+| f1-AB | A, then **only** B's paths | PASS |
+| f2-base | fixture 2 seed only | PASS |
+| f2-A | seed + agent A | PASS |
+| f2-B | seed + agent B | PASS |
+| f2-AB | A, then **only** B's paths | PASS |
 
-Any non-zero differs from the recorded outcome and should be reported as a reproduction failure before any
-conclusion is drawn from it.
+Any non-zero differs from the recorded outcome and is a reproduction failure to report before interpreting.
+
+The composed cases start at A and copy only B's files, because copying B's whole tree over A's is the exact
+error that produced a false pass in round 3. The script also refuses a cross-fixture overlay rather than
+tolerating it.
+
+### Human reading aids (not assertions)
+
+- Fixture 1 agent A's cache contains `OrderedDict`.
+- Fixture 2 agent A's producer contains `mtime_ns` (stat-keyed cache); agent B's consumer uses an f-string.
+- **Trap:** a `store._data.update` marker check on fixture 1 agent B returns 0 and *looks* like a missing
+  overlay. It is not — agent B's optimisation commits all values then notifies **per key**, which is the
+  round-3 finding. The script's `cmp` assertion is what actually proves the overlay applied; a diff against
+  the seed is the manual equivalent.
 
 ### Record of the composed arms actually run in round 3
 

@@ -843,3 +843,61 @@ the dupexec gate; Muse owns independent review only.
 
 No consensus, no SIGNOFF, no new primary, no sixth-slot position claimed. Quota, storage and Codex 15% limits
 unchanged; no banked reset redeemed.
+
+---
+
+# ROUND 7 — Codex docs-accuracy review `01a0ff25`: five real defects, replaced with one tested script
+
+Identity checked first, no overrides: session `8620fdc9-0518-4d21-a7e2-fc8bd8e58726`, workspace
+`/home/alexey/git/cloudflare-agent-git`, tag `space-bunny-head`, conversation `ses_f01ef9c54ffe86f5DrG7n8GCsY`.
+**No trials, no executors, no production changes.** Docs and one local script only.
+
+Codex: *"NOT accepting runnable README yet."* **He was right on all five points, and I verified each before
+changing anything.**
+
+1. **The helper wrote inside the canonical seed directory.** `CASE=$1/$(basename "$2")$3x` — and `$3` is an
+   oracle *filename*, so it expanded to `seed-arm1/Aoracle-arm1.pyx`. Both parts wrong: a payload-derived
+   path, and `$3x` instead of `$3`.
+2. **The fixture-2 line overlaid the wrong fixture** (`arm1-signposted/A` on `seed-arm2`, with
+   `2>/dev/null || true`) — a silently tolerated misconfiguration that would have produced a meaningless
+   result while looking successful.
+3. **Four single-arm cases never ran the oracle** — I specified the copy steps and omitted execution.
+4. **Fixture 2 had no explicit B or composed case** — 6 of 8 cases specified, not 8.
+5. **Narrative "use the matching overlay" does not repair an unsafe copy-pasteable line.** Codex is right,
+   and this is the general lesson: prose that a reader must reassemble correctly is a defect, not a
+   convenience.
+
+## Replaced with `research/space-bunny/repro/replay.sh` — one entry point, tested
+
+No narrative step-by-step block remains. The script: verifies payload integrity **before** anything else;
+unique `mktemp -d` scratch per case (never a payload-derived path); `cp -a` seed-then-overlay; **hard error on
+cross-fixture overlay**; **byte-identity assertions with `cmp`, not `grep`**; all eight cases with recorded
+exit statuses; cleans only its own scratch. Payload dirs are read-only inputs.
+
+**Verified by execution, not by inspection:**
+- `./replay.sh` → **all eight cases PASS (`rc=0`)**, matching recorded outcomes.
+- Tampered payload (one appended line) → `MANIFEST FAILED`, non-zero exit. Confirmed, then restored.
+- Cross-fixture overlay → prints `FIXTURE MISMATCH` instead of a result. Confirmed.
+- Payload dirs unchanged; no leftover scratch.
+
+Two bugs I introduced **in the script itself** on first write, caught by running it rather than reading it:
+an existence guard used `-d` on an oracle *file* (skipping four cases), and the compose guard lacked the
+fixture-mismatch check. Both fixed and re-verified. Same lesson as round 3: **an unrun script is an unverified
+claim.**
+
+Recorded caveat kept in the README: a `store._data.update` marker on fixture-1 agent B returns 0 and looks
+like a missing overlay, but is not — agent B commits then notifies per key, which is the round-3 finding.
+The `cmp` assertion is the real check; `grep` markers are reading aids only.
+
+## Safe second-cycle completion accepted separately from docs correctness
+
+Acknowledged: Muse's genuine new session `7e6e9bb0` is independently reviewing, and safe second-cycle
+completion is accepted **separately** from docs correctness. Docs are now runnable and tested, but acceptance
+is Codex's and Muse's to give, not mine to claim.
+
+Prior failure and source history retained: the wrong-helper, wrong-fixture, unexecuted-case and
+tampering/fixture-mismatch findings are all preserved in the README defect table rather than edited away, and
+earlier retracted claims remain in the previous sections of this file.
+
+No consensus, no SIGNOFF, no new primary, no sixth-slot position. Quota, storage and real-Codex 15% limits
+unchanged; no banked reset redeemed.
