@@ -206,3 +206,13 @@ Earlier same-day user lines given directly to claude-principal (verbatim): "cont
 ## 2026-10-03 15:33 CEST: user to claude-principal (verbatim)
 
 > I think we should start working on the tool and then we will find out as we work which things are really necessary
+
+## 2026-10-03 17:33 CEST: user to claude-principal (verbatim), financial authorization
+
+> what can I get for 5/mo on Cloudflare? are the services billed on top?
+
+(claude-principal answered from the official pricing pages: $5/month account minimum incl. Workers 10M requests + 30M CPU-ms; Artifacts Paid-only, 10k ops + 1 GB included, then $0.15/1k ops and $0.50/GB-mo, billing from Oct 14; expected cost for the prototype ≈ $5/month.)
+
+> approve
+
+= approval to upgrade the Cloudflare account to Workers Paid ($5/month minimum + usage beyond included allotments) and enable Artifacts for the Agent Branches prototype.
