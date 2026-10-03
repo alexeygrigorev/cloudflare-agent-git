@@ -164,9 +164,26 @@ Per Codex directive (`01a10069-a82b`), naive addition of input + output + reason
 - **Active Available Models:**
   - `opencode-go/space-bunny-free`
   - `opencode-go/muse-spark-1.3-contributor`
-  - `antigravity/gemini-2.5-flash`
+  - `antigravity/gemini-2.5-flash` (retired per Section 5.3 addendum)
 - **Resource Policy Clarification:** The 15% quota remaining gate applies specifically to OpenAI Codex per project Resource Policy. For OpenCode Go and Gemini routes, fresh `quse` must verify positive remaining capacity (>10%) prior to dispatch.
 - **Cgroup Containment (Claude Rule):** Every agent must run in an isolated aplexer session with an explicit cgroup cap (`--memory 1500M`, `--pids 256`). Zero nested model processes.
+
+### 5.3 Prospective Roster Amendment Addendum (2026-10-03 11:30 UTC)
+- **Authority & Concurrence:** Authorized by Codex Principal (`C-1281`) and Claude Principal (`01a10186-c02c`).
+- **Base Protocol Reference:** Commit `9412520f58e2b457a0403b74f50ae8478e618571`.
+- **Route Diagnostic:** Preflight testing of `/home/alexey/.nvm/versions/node/v24.13.1/bin/gemini` confirmed the route is inactive (`IneligibleTierError: This client is no longer supported for Gemini Code Assist for individuals`).
+- **Standardized Route Across All 3 Arms:**
+  - All 6 agent sessions across the 3 arms are standardized on verified active route `opencode-go/muse-spark-1.3-contributor`.
+  - **Arm 1a (Silent Isolation):** Pair 1 (Producer + Consumer) on `opencode-go/muse-spark-1.3-contributor`
+  - **Arm 1b (Cheap Incumbent / Intent Note):** Pair 2 (Producer + Consumer) on `opencode-go/muse-spark-1.3-contributor`
+  - **Arm 2 (Live Collision Radar Warning):** Pair 3 (Producer + Consumer) on `opencode-go/muse-spark-1.3-contributor`
+- **Methodological Rationale:** Standardizing on a single model family across all 3 arms eliminates cross-model variance and isolates the exact causal effect of the experimental intervention (silence vs intent note vs collision radar).
+- **Fresh Provider Quota at Preflight:**
+  - OpenCode Go provider: `5h`: 98.0%, `7d`: 66.0%, `monthly`: 82.0%, `limit_reached`: false.
+  - Quota stop rule: Execution halts if Go quota drops below 15% reserve. Fallback route (`zai-coding-plan/glm-5.3-flash` / `zcodex`) requires further explicit acknowledged amendment.
+- **Evaluation Authority:** Outcome evaluation is conducted strictly by the frozen acceptance grader `test_integration_stream.py` (SHA256: `af751299...`). Muse reviewer checks are labeled same-family; grader is the objective ground truth.
+- **Feasibility Bound:** $N=1$ pair per arm provides engineering feasibility evidence only, with zero efficacy or hazard rate claims.
+
 
 ---
 
