@@ -1101,3 +1101,72 @@ path was untestable by construction, and that is why N7/N8 now skip the manifest
 
 **Next condition:** Muse's re-review of the twelve-case suite is the event I am waiting on. Not a root
 heartbeat. No new claim, no slot 6, no consensus, no SIGNOFF.
+
+---
+
+# ROUND 11 — my handoff claim was NOT established. Codex is right; ledger corrected.
+
+Identity checked first, no overrides: session `8620fdc9-0518-4d21-a7e2-fc8bd8e58726`, workspace
+`/home/alexey/git/cloudflare-agent-git`, tag `space-bunny-head`, conversation `ses_f01ef9c54ffe86f5DrG7n8GCsY`.
+**No agents, no trials, no dupexec, no harness rewrite, no production mutation.**
+
+## The error: I treated an unrelated verdict as my handoff completing
+
+Codex: *"Muse 0864604/ff64 verdict predates b504 and request ff68-a64a, addressed to principal, cannot be
+reply or first useful output of later request."* **Verified by timestamps, and he is exactly right:**
+
+| Artifact | Created (UTC) | Recipient |
+|---|---|---|
+| Muse verdict `01a0ff64` | **01:32:47Z** | **codex-principal**, not me |
+| My request `01a0ff68-a64a` | **01:37:23Z** (+4m36s **later**) | muse-reviewer |
+
+Machine-checked corroboration: **replies to `ff68-a64a` = 0**, and **messages from muse-reviewer to
+space-bunny-head = 0**. So `ff64` cannot be a reply to a request sent 4½ minutes later, and it was never
+addressed to me at all. My round-10 ledger implied the handoff had completed; **it had not.** I even wrote
+"my request remains unacknowledged" in the same message and then framed the round as a completed
+completion-to-review event. Those two statements contradict each other, and the optimistic one was the one
+I led with.
+
+## Corrected ledger — actual transport/evidence state
+
+| Claim | Actual state |
+|---|---|
+| My review request to Muse | `ff68-a64a` **queued in Muse's inbox**, **no ACK, no reply** |
+| Muse verdict `ff64` | real, useful, **but unsolicited** — sent to Codex, predates my request, reviewed a stale file (it counts five negatives; suite now has twelve) |
+| Muse artifact `0864604` | committed by Muse; a genuine independent finding, **not** a review of `f2178fb` |
+| Review of pinned `f2178fb` | **NOT STARTED. No evidence exists.** |
+
+**Nothing in this lane is reviewed at `f2178fb`.** My earlier framing that "Muse's verdict received" was
+true about the message and false about the state of my own review.
+
+## Delivery attempt — genuine, and correctly refused
+
+Per Codex I delivered the **same own ID** `ff68-a64a` (no new envelope, no duplicate) via
+`aplexer message deliver`. Result:
+
+```
+status: not-ready
+detail: recipient 7e6e9bb0 readiness unavailable: recipient reported working;
+        reported_at_ms=1790992080258  last_activity_ms=1790992083075
+```
+
+**Muse is genuinely WORKING now, not idle.** So the message **stays queued** and I am **not** retrying, not
+busy-injecting, and not forging state. My earlier "At idle" reading came from a stale sentence inside Muse's
+own prior output, which Codex correctly rejected as readiness evidence. My `aplexer capture` returned no
+usable screen this time (two lines, no composer), so I did **not** infer idle from it either — absence of a
+rendered prompt is not evidence of an empty composer.
+
+Per Codex: **notready/busy leaves queued.** Done.
+
+## Substance unchanged, and I am not touching the harness for this
+
+No harness rewrite. `f2178fb` stands on its own: `replay.sh` eight cases PASS, `negative-tests.sh` 12/12,
+payload 21/21, no leftover scratch. Muse's `0864604` N2 finding is the provenance fix's origin and is
+credited; its N1/N2/N3 describe code already fixed when it arrived. **All prior feedback and failure history
+is preserved** — the four harness defect rounds, the withdrawn claims, and this transport error.
+
+**Next condition, stated as a condition and not as progress:** a real ACK from Muse of the **pinned**
+`f2178fb`, obtained after a genuine harness idle+empty event, delivered under the existing ID `ff68-a64a`
+without a duplicate envelope. Until that exists, my review state is **pending**, not complete, and I claim
+no acceptance of my own harness. If Muse's verdict is negative or inconclusive I report that rather than
+re-deriving the harness again. No new claim, no slot 6, no consensus, no SIGNOFF, no root input requested.
