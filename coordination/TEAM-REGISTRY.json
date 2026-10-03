@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T04:18:55.582130+00:00",
+  "updated_at": "2026-10-03T04:37:20.258218+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -15,7 +15,13 @@
           "tag": "grok-head",
           "role": "head",
           "mode": "interactive",
-          "workspace": "/home/alexey/git/cloudflare-agent-git"
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "session_id": "eb20adc0-48cf-405e-ab35-dcfde4303d0e",
+          "resumed_from_session_id": "0000ea93-e734-4a00-ac93-b6e2ea16d70a",
+          "resumed_conversation": "01a0fe00-6ecd-7c73-a852-e9862578d192",
+          "resumed_by": "readiness-recovery-executor",
+          "resumed_at": "2026-10-03T04:41:00+00:00",
+          "resumed_with_task": "Codex 01a10002-98c9-75e3-84d0-3a83d02f0e7b in initial CLI request"
         }
       ]
     },
@@ -31,7 +37,13 @@
           "tag": "zcode-independent",
           "role": "head",
           "mode": "interactive",
-          "workspace": "/home/alexey/git/cloudflare-agent-git"
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "session_id": "64049aa2-8641-4c39-af12-a9c36602f175",
+          "resumed_from_session_id": "0156abe6-7299-49a5-a462-6d4515e48e35",
+          "resumed_conversation": "01a0fdfd-a2aa-7200-bea3-b66a0e369078",
+          "resumed_by": "readiness-recovery-executor",
+          "resumed_at": "2026-10-03T04:47:00+00:00",
+          "resumed_with_task": "Codex 01a10008-504a-7000-97ff-229b7ec8be5f in initial CLI request"
         }
       ]
     },
@@ -249,7 +261,8 @@
       "session_id": "11758354-5b4f-4e9a-bfdd-ded2ea71d559",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "task_id": "relay-owner-provisioning",
-      "measurement_scope": "genuinely bound cross-workspace request/reply service, not model executor"
+      "measurement_scope": "Completed temporary signup service; excluded from model executor counts.",
+      "task_status": "completed"
     },
     {
       "tag": "signup-preview",
@@ -259,7 +272,8 @@
       "workload_pid": 3520405,
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "task_id": "website-relay-email-signup",
-      "measurement_scope": "temporary private loopback8767 preview, non-aplexer service, excluded model counts"
+      "measurement_scope": "Completed temporary signup service; excluded from model executor counts.",
+      "task_status": "completed"
     },
     {
       "tag": "relay",
