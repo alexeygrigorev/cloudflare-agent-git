@@ -651,7 +651,53 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - Defect: At startup, pane delivery marks `delivery: pane` if the PTY accept bytes, even if the target TUI isn't ready to receive paste input (dropping prompt text).
    - Fix: After framed paste, verify submitted text/nonce appears in PTY/composer or agent transitions to working before recording `delivery=pane`; otherwise record `delivery-uncertain/inbox`.
    - Integration: `fix/zcodex-transcript-locate` `86ce5d4` integrated provisionally into integration branch pending Muse independent review.
-   - Deliverable: Regression tests with fake TUI late-input and opencode idle cases, dispatched to Muse for independent negative review.
+
+---
+
+## 28. Baseline SQL Guard Landing, Grok Permission Hold, and A01 Baseline Compatible Positive
+
+1. **Baseline OpenCode Session Resolution & Fail-Closed Guard (Commit `c5fa297`, Merge `c2ddb13`):**
+   - Directives: Codex Principal C-1259, C-1260, C-1268, C-1274; Muse Reviewer R28/R29.
+   - Core Defect Addressed: Prior query `ORDER BY time_created DESC LIMIT 1` lacked root-session filtering and uniqueness guarantees, allowing later sessions in the shared workspace (or child sessions) to shadow the receiver session.
+   - Implementation:
+     - `get_receiver_opencode_session_id` filters strictly for root sessions (`parent_id IS NULL OR parent_id = ''`) in the target workspace directory with `time_created >= since_ms`.
+     - Orders by `time_created ASC` and enforces exact 1:1 uniqueness: returns session ID if and only if `len(rows) == 1`.
+     - Fails closed (`None`) if multiple root sessions exist in the shared workspace after `since_ms` (ambiguity rejection), or if no root session exists.
+     - Supports optional `db_path` parameter for clean in-memory/isolated testing without mutating runtime state.
+   - Comprehensive Unit Tests (`research/antigravity/test_identity_guard.py`):
+     - Added `TestReceiverOpenCodeSessionIdQuery` with 5 SQLite fixture tests:
+       1. Single clean root session match (positive).
+       2. Receiver first + child session later in shared workspace: child session correctly excluded by `parent_id` filter (negative).
+       3. Receiver first + second root session later in shared workspace: fails closed to `None` on ambiguous root mapping (negative).
+       4. Stale session before `since_ms` ignored (negative).
+       5. Foreign directory session ignored (negative).
+     - Full test suite: **17/17 PASS in 0.25s** (12 identity guard tests + 5 SQL session query tests).
+   - Independent Review:
+     - Muse R28b (`627c2555`) confirmed 12/12 guard tests and 16/16 own negatives PASS (.local/muse-r28/verdict.md).
+     - Muse R29 (`daa6a646`) reviewed `b443d90` with 6/6 fixture tests PASS and issued APPROVE (.local/muse-r29/verdict.md), noting residual ambiguity addressed by `c5fa297`.
+
+2. **Grok Hook Repair Rollout — Strict Permission HOLD:**
+   - Proposal: `research/antigravity/GROK-HOOK-REPAIR-ROLLOUT.md` (commit `fa0c5f6`) specifies exact JSON diff (1,140 bytes, SHA256 `0419c4c6...`), private immutable binary pin (`.local/supervision/bin/aplexer-installed`, SHA256 `8d49a216...`), bounded tradeoff (dropping Notification loses permission-waiting signal), and mid-session UI reload protocol (`Ctrl+L` -> Hooks -> `r`).
+   - Claude Principal Escalation & HOLD (`01a10170-24e0`, commit `87528bb`): Claude permission classifier denied mutating persistent global configuration (`~/.grok/hooks/aplexer.json`). Escalated to user for explicit authorization.
+   - Codex Principal Concurrence (C-1267, `01a10171-8039`): Runtime GO withdrawn; strict fail-closed HOLD maintained. Zero modifications to `~/.grok/hooks/aplexer.json`, zero backup creation, zero pane reload on `grok-head` until explicit user decision.
+
+3. **A01 Baseline Compatible-Known-Good Positive Acceptance (Codex C-1270, C-1272, C-1274):**
+   - Task: `A01-baseline-compatible-positive`, head-owned by `antigravity-head` (`46fdb644`).
+   - Dedicated Worker Session: `zcode-a01-positive` (`2372d702-dad2-4525-8ef2-1102d468aaaf`), native shell executor under cgroups (`memory.max=1500M`, `pids.max=256`), parent session `46fdb644`. Native whoami captured at `.local/a01-base-positive/whoami.json`.
+   - Frozen Inputs Verified: 9/9 ground-truth files verified against `.local/protected/a01-ground-truth/CHECKSUMS.json` with zero mismatches.
+   - Compatible Implementation:
+     - Task A (`producer.py`): Integer microsecond timestamps (`timestamp_us`), compact payloads, backward-compatible `@property timestamp` (float seconds) for legacy consumers/tests.
+     - Task B (`consumer.py`): `SessionAggregator.process_stream` with defensive dual-unit support (converting microsecond deltas to seconds, or standard seconds), emitting `{'session_id': str, 'duration_seconds': float}`.
+   - Verification Outcomes:
+     - Local unit tests: 2/2 tests PASS in 0.000s (`test_producer.py`, `test_consumer.py`).
+     - Frozen acceptance grader (`test_integration_stream.py` v2.2.0): **STATUS PASS in 1.05ms** (Exit Code 0). Verified exact session durations: `sess_alpha` = 5.5s, `sess_beta` = 12.25s.
+   - Scope Declaration: Strictly an unscored engineering feasibility gate proving the v2.2 integration grader functions deterministically on a compatible contract with zero false positives. Zero product advantage or efficacy score claimed.
+   - Artifacts Published:
+     - Report: `research/antigravity/a01-base-positive/REPORT.md`
+     - Telemetry JSON: `research/antigravity/a01-base-positive/result.json`
+     - Reproducible Harness: `research/antigravity/a01-base-positive/runner.py`
+     - Private Execution Log: `.local/a01-base-positive/execution.log`
+
 
 
 

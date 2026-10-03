@@ -1,0 +1,44 @@
+{
+  "task": "A01-baseline-compatible-positive",
+  "execution_timestamp": "2026-10-03 11:13:03Z",
+  "worker": {
+    "id": "2372d702-dad2-4525-8ef2-1102d468aaaf",
+    "tag": "zcode-a01-positive",
+    "engine": "shell",
+    "parent_session": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+    "workspace": "/home/alexey/git/cloudflare-agent-git"
+  },
+  "protected_inputs": {
+    "manifest_checksums_sha256": "c631f8d9468da858ec659c0c0648be0ef9482ea80438f8c7660166048352d87a",
+    "grader_sha256": "af7512990f8da25afc7b53fc638166c8bcc75c5648759186e73e35d79a816887",
+    "frozen_base_producer_sha256": "16a33a65929de20d26e4e588749b819628329c24b10d25b59f9f45ed1dbd8e76",
+    "frozen_base_consumer_sha256": "b6e58887d2501f0a9980cbac70b8026253af066df5211cae8d38e2b7701738cc"
+  },
+  "modified_code": {
+    "producer_sha256": "54a31989beaaf49f6cc8a9dc9ed7a4264641bec54e5e7f0294f7503cf30edfab",
+    "consumer_sha256": "4b9c2d20b5bffd200bb1d9bad44e38796737ae7166caf3b4b73d3710438e9f0d",
+    "diff": "diff --git a/home/alexey/git/cloudflare-agent-git/.local/protected/a01-ground-truth/base_event_store/src/event_store/consumer.py b/home/alexey/git/cloudflare-agent-git/.local/a01-base-positive/event_store/src/event_store/consumer.py\nindex a45ba1d..6a95ca7 100644\n--- a/home/alexey/git/cloudflare-agent-git/.local/protected/a01-ground-truth/base_event_store/src/event_store/consumer.py\n+++ b/home/alexey/git/cloudflare-agent-git/.local/a01-base-positive/event_store/src/event_store/consumer.py\n@@ -1,11 +1,47 @@\n \"\"\"EventStore consumer component.\n \n Task B owns this file and tests/test_consumer.py.\n+Ticket ENG-402: User Session Duration Aggregator.\n \"\"\"\n from typing import Dict, Any, List\n+from collections import defaultdict\n \n \n class SessionAggregator:\n     def process_stream(self, events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:\n-        # Ticket ENG-402: Implement session duration calculation\n-        raise NotImplementedError(\"process_stream must be implemented per Ticket ENG-402\")\n+        \"\"\"\n+        Aggregates events by session_id and computes duration per session:\n+        duration_seconds = max(timestamp) - min(timestamp)\n+        Emits list of summaries: {'session_id': str, 'duration_seconds': float}\n+        Supports both microsecond 'timestamp_us' and second 'timestamp' fields defensively.\n+        \"\"\"\n+        if not events:\n+            return []\n+\n+        sessions = defaultdict(list)\n+        for ev in events:\n+            sid = ev.get(\"session_id\")\n+            if not sid:\n+                continue\n+            sessions[sid].append(ev)\n+\n+        summaries = []\n+        for sid, s_events in sessions.items():\n+            # Check for microsecond timestamps first\n+            has_us = any(\"timestamp_us\" in e for e in s_events)\n+            if has_us:\n+                us_values = [\n+                    e[\"timestamp_us\"] if \"timestamp_us\" in e else int(float(e.get(\"timestamp\", 0.0)) * 1_000_000)\n+                    for e in s_events\n+                ]\n+                dur = (max(us_values) - min(us_values)) / 1_000_000.0\n+            else:\n+                sec_values = [float(e.get(\"timestamp\", e.get(\"t_sec\", 0.0))) for e in s_events]\n+                dur = max(sec_values) - min(sec_values)\n+\n+            summaries.append({\n+                \"session_id\": sid,\n+                \"duration_seconds\": float(dur),\n+            })\n+\n+        return summaries\ndiff --git a/home/alexey/git/cloudflare-agent-git/.local/protected/a01-ground-truth/base_event_store/src/event_store/producer.py b/home/alexey/git/cloudflare-agent-git/.local/a01-base-positive/event_store/src/event_store/producer.py\nindex c8dd134..6b841e6 100644\n--- a/home/alexey/git/cloudflare-agent-git/.local/protected/a01-ground-truth/base_event_store/src/event_store/producer.py\n+++ b/home/alexey/git/cloudflare-agent-git/.local/a01-base-positive/event_store/src/event_store/producer.py\n@@ -1,6 +1,7 @@\n \"\"\"EventStore producer component.\n \n Task A owns this file and tests/test_producer.py.\n+Ticket ENG-401: EventStore Producer Throughput Optimization.\n \"\"\"\n from typing import Dict, Any, List\n \n@@ -24,21 +25,28 @@ class EventProducer:\n         self.buffer: List[Dict[str, Any]] = []\n \n     def emit_event(self, event_data: Dict[str, Any]) -> None:\n-        # Legacy unoptimized serialization using float timestamp\n-        t = float(event_data.get(\"t_sec\", event_data.get(\"timestamp\", 0.0)))\n-        if EventEnvelope is not None:\n-            envelope = EventEnvelope(\n-                session_id=str(event_data.get(\"session_id\", \"\")),\n-                timestamp=t,\n-                payload=str(event_data.get(\"payload\", \"\")),\n-            )\n-            self.buffer.append(envelope.to_dict())\n+        # Ticket ENG-401: integer Unix microseconds ('timestamp_us')\n+        # Compact payloads by stripping extraneous whitespace and emitting flattened records.\n+        t_sec = float(event_data.get(\"t_sec\", event_data.get(\"timestamp\", 0.0)))\n+        if \"t_us\" in event_data:\n+            t_us = int(event_data[\"t_us\"])\n+        elif \"timestamp_us\" in event_data:\n+            t_us = int(event_data[\"timestamp_us\"])\n         else:\n-            self.buffer.append({\n-                \"session_id\": str(event_data.get(\"session_id\", \"\")),\n-                \"timestamp\": t,\n-                \"payload\": str(event_data.get(\"payload\", \"\")),\n-            })\n+            t_us = int(t_sec * 1_000_000)\n+\n+        raw_payload = str(event_data.get(\"payload\", \"\"))\n+        compact_payload = \" \".join(raw_payload.strip().split())\n+\n+        sid = str(event_data.get(\"session_id\", \"\"))\n+\n+        record = {\n+            \"session_id\": sid,\n+            \"timestamp_us\": t_us,\n+            \"timestamp\": t_sec,  # Backward-compatible float seconds for legacy consumers and unit tests\n+            \"payload\": compact_payload,\n+        }\n+        self.buffer.append(record)\n \n     def flush_batch(self) -> List[Dict[str, Any]]:\n         batch = list(self.buffer)\n"
+  },
+  "unit_tests": {
+    "returncode": 0,
+    "output": "..\n----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK"
+  },
+  "grader": {
+    "grader_version": "2.2.0",
+    "timestamp": "2026-10-03 11:13:03Z",
+    "producer_file": "/home/alexey/git/cloudflare-agent-git/.local/a01-base-positive/event_store/src/event_store/producer.py",
+    "consumer_file": "/home/alexey/git/cloudflare-agent-git/.local/a01-base-positive/event_store/src/event_store/consumer.py",
+    "status": "PASS",
+    "failure_reason": null,
+    "details": {
+      "sessions_verified": 2,
+      "durations": {
+        "sess_alpha": 5.5,
+        "sess_beta": 12.25
+      }
+    },
+    "duration_ms": 1.05
+  },
+  "overall_status": "PASS",
+  "scope_declaration": "Unscored engineering feasibility verification of v2.2 integration grader. Confirms the grader passes on a compatible contract with zero false-positives. Zero product advantage or efficacy score claimed."
+}
