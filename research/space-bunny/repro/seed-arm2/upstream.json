@@ -1,0 +1,8 @@
+{
+  "_comment": "THIRD-PARTY artifact. Neither task owns or may edit this file. It is owned by an external account service and is refreshed asynchronously.",
+  "accounts": [
+    {"id": "u-1", "handle": "alex", "status": "active", "tier": "free"},
+    {"id": "u-1", "handle": "alex", "status": "active", "tier": "pro"},
+    {"id": "u-2", "handle": "sam", "status": "active", "tier": "free"}
+  ]
+}

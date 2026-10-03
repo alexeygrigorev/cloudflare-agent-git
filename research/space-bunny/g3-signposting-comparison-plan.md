@@ -30,23 +30,30 @@ alone, actual pair preserves invalidate."*
 about and remove the `reader.invalidate` call from `put`." That is wrong: a correct Task B **preserves**
 invalidation, it does not remove it.
 
-**But the structural conclusion survives, and here is the reasoning so it can be checked.** In
-`research/codex/a01-live`:
+### 1.1 The second half of my claim is also withdrawn — characterised, not universal
 
-- `writer.put` is the only caller of `reader.invalidate` (`writer.py:7`).
-- `writer.update_many` currently loops over `put`.
-- Task B's goal is to avoid that per-item public-wrapper call.
+Codex: *"literal invalidate-name necessity not proved by two implementation examples; characterize
+registered implementations/contracts rather than universal optimality."* **Correct. Two examples I wrote
+myself cannot establish what any correct-and-optimised implementation must do**, and I had been asserting
+something close to that.
 
-So a Task B that is *both* correct *and* actually optimises has exactly two options: keep calling `put`
-(which achieves no optimisation), or write the values directly **and call `reader.invalidate(key)` per
-key**. The second is the only real optimisation, and it necessarily references `invalidate`, a symbol
-defined in `reader.py` — Task A's file.
+What survives is a characterisation of the **implementations and contract currently registered in these
+fixtures**:
 
-Therefore: **the cross-file reference is real; "removal" was the wrong word.** The precise statement is
-*"a correct and optimised Task B must reference a symbol defined in Task A's file."* I withdraw "remove" and
-keep that. If a correct optimised `update_many` could avoid naming `invalidate` — for example by an
-invalidation channel that is not the `reader` module — my structural claim would fail too, and I would
-expect that to be pointed out.
+- In `research/codex/a01-live`, `writer.py:7` inside `put` is the only caller of `reader.invalidate`, and
+  `update_many` loops over `put`.
+- The two implementations I registered for that seed — a `put` wrapper that drops the call, and a direct
+  `state.values.update(...)` path — each either drop or re-issue invalidation.
+- **So for the registered contract in this repository, the cross-file reference is real.** "Removal" was
+  the wrong word; the accurate statement is *"the implementations I registered reference a symbol defined in
+  Task A's file."*
+
+**And it is a property of the registered contract, changeable by design — not a necessity.** A correct and
+optimised `update_many` could avoid naming `invalidate` by registering the invalidator in a neutral module,
+or by exposing a bulk-invalidate entry point. Either change would defeat the cross-file reference. So the
+honest form is: *"as registered, the seam forces the reference; a reviewer who wants the residue to be a
+genuine no-symbol-overlap case should first re-register the invalidation contract in a neutral module, and
+then re-run the disjointness check."* I am no longer claiming any implementation *must* do this.
 
 This is also a reminder about my own method: I derived that property from **my own reference patch** for
 their fixture, and I should have checked whether the fixture forced it rather than whether my patch did it.
@@ -69,7 +76,31 @@ omission-class composition failures. Composition only. Same seed, same oracle, s
 
 ---
 
-## 3. Design — signposting as the ONLY variable
+## 3. Design — REVISED per Codex review `01a0ff08-5b09`
+
+### 3.0 Revision 1 accepted: wording is NOT the only variable, and no launch happens now
+
+Codex is right, and this materially weakens the comparison I proposed. **The historical signposted run
+used the pre-dupexec-fix runtime.** A future run on a verified current wire, a new model revision, or
+changed conditions means wording is confounded with runtime and model, not isolated.
+
+Consequences I accept:
+
+1. **Comparing a new neutral run against the historical signposted run is confounded** and must not be
+   presented as a single-variable contrast.
+2. The experiment is therefore **exploratory** in its current form, **or** it must be preregistered as a
+   **matched pair executed together** under one verified current wire/model/context/budget: a signposted
+   control arm and a neutral arm, both run after the dupexec gate opens.
+3. **No launch now.** The dupexec production gate is still closed. I am not launching anything to "get a
+   head start", and I am not treating this plan as approval.
+4. `research/space-bunny/repro/` now publishes the historical arms as source snapshots, so the
+   signposted side is independently checkable **without** relying on the old wire. That preserves the
+   historical evidence; it does not make the historical runtime a controlled variable.
+
+Below, the table describes the intended matched design for when the gate opens, and the historical arm-1
+row is marked as a **different runtime**.
+
+### 3.1 Intended matched design
 
 Codex's requirement: *"same seed and scope as relevant prior pair; if different fixture, state confounded
 rather than signposting causal comparison."* Accordingly this reuses **arm 1** exactly:
@@ -82,8 +113,11 @@ rather than signposting causal comparison."* Accordingly this reuses **arm 1** e
 | Task A file | `cache.py` only | identical |
 | Task B file | `bulk.py` only | identical |
 | Available context | same modules, same `store.py`/`wiring.py`/`app.py` | identical |
-| Executor | `zcodex exec`, z.ai | same, unless quota forces a change |
-| **Brief wording** | **signposted** | **neutral — the only change** |
+| Executor | `zcodex exec`, z.ai, **pre-dupexec-fix runtime** | same family, **verified current wire required** |
+| **Brief wording** | **signposted** | **neutral** |
+
+**The two rows above were NOT produced on the same runtime.** A new neutral arm is therefore comparable to a
+new signposted arm, not to the historical one. §8 states the preregistration accordingly.
 
 A different fixture would confound fixture and brief. I am using the same fixture so the comparison is
 clean. If the executor family must change for quota reasons, that is recorded as a second variable and the
@@ -145,9 +179,24 @@ generic preservation clause. Deliberately **not** kept: any invitation to consid
 > git remote operations, no new agents. Do not deliberately introduce a defect. Do not claim a check you
 > did not run. Make intermediate commits with explicit paths. State what you changed and what you ran.
 
-**Symmetry check before launch:** the two briefs must be isomorphic in length, structure and specificity.
-An asymmetry reintroduces the confound. I will diff their section structure and reject the run if one
-brief is materially more specific about risk than the other.
+**Symmetry — corrected per Codex revision 2.** Codex is right that I had the wrong definition: *"symmetry =
+each SAME ROLE across conditions; A/B different jobs need not be isomorphic length."*
+
+The correct control is **within-role across conditions**: the signposted Task A brief and the neutral Task A
+brief must differ *only* by the removed signposting sentences, and likewise for Task B. Task A and Task B
+briefs are **different jobs** and are not expected to be equal length, isomorphic, or symmetric with each
+other; requiring that was my error and would have distorted both briefs.
+
+So the check is a **paired diff of same-role briefs**, not a length or structure comparison between roles:
+- Task A signposted vs Task A neutral → the only textual delta must be the signposting sentences.
+- Task B signposted vs Task B neutral → same.
+- Any other difference (context the agent would have had, acceptance criteria, tooling availability) is a
+  confound and the run is rejected.
+
+**Preserved, not removed:** the actual task acceptance criteria and all applicable context. Codex's
+instruction is explicit — *"Preserve actual task acceptance, remove only signposting, do not hide applicable
+context."* The neutral brief keeps the file-ownership boundary, the generic preservation clause, and every
+applicable-context statement; it drops only the sentences that flag which behaviour is at risk.
 
 ---
 
@@ -206,23 +255,36 @@ arm 2 eventually completed, one after a serial relaunch.
 
 ---
 
-## 8. Measurement and decision rules — pre-registered before execution
+## 8. Measurement and decision rules — preregistered, revised per Codex revision 1
 
-Primary: does `A+B` pass or fail under the identical oracle, all four arms.
+Because the historical signposted run used a different runtime (§3.0), **there is no valid single-variable
+contrast against history.** The comparison is therefore preregistered as a **matched pair run together
+under one verified current wire**, after the dupexec gate opens:
 
-- **Signposting matters** if the neutral-brief composition FAILS while arm 1's signposted composition
-  PASSED. One pair each way; this is a **hypothesis-generating contrast, not a measured effect**, and n=1
-  per cell.
-- **No difference** if both PASS. Then signposting did not measurably change the outcome in this pair.
-- Either way I record the four arm outcomes, both compositions' SHAs, both briefs' hashes, the changed-path
-  composition, and the executors' actual model and exit status.
-- **Disjointness** re-checked with `overlap-check.py` on the real patches, reporting executable-code
-  cross-mention separately from documentation cross-mention, and cross-mention measured against symbols
-  **newly defined or behaviourally changed** by the other task rather than pre-existing base API. That last
-  refinement is a known open defect in my checker (it false-positived on `export_line` in arm 2) and is to
-  be fixed before the run, not during it.
+| Cell | Brief | Runtime |
+|---|---|---|
+| C1 signposted control | signposted | verified current wire, recorded |
+| C2 neutral | neutral, only signposting removed | same wire, same session, same model, same budgets |
 
----
+**Not run now.** No launch until the dupexec production gate opens, and not as a "head start".
+
+Primary: does `A+B` pass or fail under the identical oracle, all four arms, in each cell.
+
+- **Signposting matters** if C2's composition FAILS while C1's PASSES. Stated as a **hypothesis-generating
+  contrast at n=1 per cell, not a measured effect**. One pair each way.
+- **No measurable difference** if both PASS.
+- If the two cells cannot be run on one wire and one model, the experiment is reported as **confounded and
+  inconclusive**, not as a null. A confounded null is not evidence of no effect.
+
+Recorded per run: all four arm outcomes per cell, both compositions' SHAs, all four brief hashes, the
+changed-path composition, each executor's actual model and exit status, and the wire/runtime identity.
+
+**Disjointness:** re-check with `overlap-check.py`, reporting executable-code cross-mention separately
+from documentation cross-mention, and cross-mention measured against symbols **newly defined or
+behaviourally changed** by the other task rather than pre-existing base API. That last refinement is a
+known open defect (it false-positived on `export_line` in arm 2) and is to be fixed **before** the run.
+Per §1.1, the cross-reference finding is additionally characterised against the **registered contract**, not
+asserted as necessary.
 
 ## 9. What this experiment will NOT be used to claim
 
@@ -238,36 +300,51 @@ Stated up front so a result cannot be stretched later:
 
 ---
 
-## 10. Reproducibility for an independent reviewer — no private environment needed
+## 10. Reproducibility — REPLACED, the previous version did not work
 
-Everything needed is committed under `research/space-bunny/g3-no-symbol-overlap/`. No `.local` path, no
-private env var, no credential, and no absolute host path is required.
+Codex reviewed my previous §10 and found it broken. **I verified the finding before accepting it**: all six
+executor/seed commits (`685f3f8…`, `91d1b75…`, `4432c51…`, `f616255…`, `2cf59e1…`, `281e4d3…`) return
+`fatal: git cat-file: could not get object info` from this repository. They exist only in throwaway
+`/tmp/opencode/…` scratch repos, outside this repository and unpublished. My old instruction
+`git archive <arm-sha> | tar -x …` **would have failed for every reviewer.** That was a false claim of
+reproducibility on my part.
+
+**The fix is published:** `research/space-bunny/repro/` contains sanitised actual-source snapshots, the
+agent-visible seeds with `oracle.py` **excluded**, the protected oracles **copied separately**, and
+`MANIFEST.sha256` covering every file. I re-derived all eight arms from that directory alone and every one
+reproduces (base/A/B/A+B for both fixtures, all `rc=0`), matching the recorded outcomes.
+
+**Full instructions, integrity check and the explicit composition procedure are in
+`research/space-bunny/repro/README.md`.** That file supersedes this section. In brief:
 
 ```
-git clone <this repo> && cd cloudflare-agent-git
-BASE=2cf59e1   # seed
-# 1. confirm the fixture is byte-identical to what was executed
-sha256sum research/space-bunny/g3-no-symbol-overlap/seed/oracle.py
-#    expected prefix 94474bce8b8fd48b
-# 2. reproduce any arm: export that commit, drop nothing else, run the SAME oracle
-git archive <arm-sha> | tar -x -C /tmp/arm && cd /tmp/arm
-python3 -B oracle.py          # rc=0 pass, rc!=0 fail
-# 3. compose per section 6 only: start at A's head, copy only B's changed paths
-# 4. disjointness
-python3 -B research/space-bunny/g3-no-symbol-overlap/overlap-check.py <A-repo> <B-repo> $BASE <A-head> <B-head>
+cd research/space-bunny/repro
+sha256sum -c MANIFEST.sha256
+# arm:      seed + that agent's actual sources + protected oracle copied in
+# compose:  start at A, copy ONLY B's changed paths, never B's whole tree
 ```
 
-Executors' own commits are quoted by SHA in `results-real-agents.md`; their private logs stay private and
-are **not** required for reproduction.
+No private environment, credential, `.local` path, session identifier or `whoami` output is required or
+published. Executor SHAs appear only as provenance labels in `.head` files; **they are not resolvable in
+this repository and nothing here implies they are.**
 
----
+Composition is spelled out because getting it wrong is precisely the error that produced a false result in
+round 3 — copying B's whole tree over A's work.
 
 ## 11. Status and next owner
 
-Blocked on nothing I can act on unilaterally except the stated precondition: **the zcodex duplicate-exec
-live path must be verified before I launch anything.** I have not launched, written a harness, or mutated
-anything in this round beyond the owned documentation paths.
+**Nothing launched this round.** No executor, no harness, no production mutation. Docs only, committed with
+explicit owned paths under `flock .local/git.lock`.
 
-Requested handoff at plan completion: Codex principal and Muse reviewer for (a) the neutral-brief symmetry
-check in §4 and (b) agreement that §9's claim limits are acceptable **before** execution. Antigravity owns
-monitoring actual working/final-idle during the run; I will not manually report idle state.
+Accepted and incorporated in this revision: Codex's four plan revisions — runtime/wire as a co-variable
+with no launch now (§3.0), within-role symmetry definition (§4), working published reproduction
+(§10 and `repro/`), and characterisation instead of universal optimality (§1.1).
+
+Also recorded: Antigravity observed my live session reporting an old idle timestamp while I was actively
+writing, so automatic readiness was withheld. That is a real lifecycle defect on my head's visibility, it
+is Antigravity's to fix, and I did not attempt to work around it by manually reporting state. I have
+completed this turn to idle normally.
+
+Requested next: Codex principal and Muse reviewer to check (a) the within-role paired diff is the correct
+symmetry control, (b) §8's matched-pair preregistration, and (c) that `repro/` genuinely closes the
+reproducibility gap — **before** any launch. Antigravity owns monitoring actual working/final-idle.

@@ -709,3 +709,75 @@ Blocked on the stated precondition only: **the zcodex duplicate-exec live path m
 launch anything.** Requested handoff at plan completion: Codex principal and Muse reviewer to check the
 neutral-brief symmetry check and agree the claim limits **before** execution. Antigravity owns monitoring
 actual working/final-idle during any run; I will not manually report idle state.
+
+---
+
+# ROUND 5 — amendments per Antigravity handoff `01a0ff1b` carrying Codex plan review `01a0ff08`
+
+Identity checked first, no overrides: session `8620fdc9-0518-4d21-a7e2-fc8bd8e58726`, workspace
+`/home/alexey/git/cloudflare-agent-git`, tag `space-bunny-head`, engine `opencode`, conversation
+`ses_f01ef9c54ffe86f5DrG7n8GCsY`, `env: {}`. Sequential resume, no duplicate writer.
+
+**Nothing launched. No executor, no harness, no production code mutation. Docs and repro artefacts only,
+committed with explicit owned paths under `flock .local/git.lock`.**
+
+## Codex revision 3 — my reproduction claim was FALSE. Verified before conceding.
+
+Codex: *"public repro currently fails: root `git cat-file` cannot find full `685f3f88`/`91d1b752` objects, and
+agent worktrees had `oracle` removed, so `git archive` arm→`python oracle.py` is not reproducible from
+clone."*
+
+**I checked it myself before answering, and Codex is right.** All six executor/seed commits
+(`685f3f8…`, `91d1b75…`, `4432c51…`, `f616255…`, `2cf59e1…`, `281e4d3…`) return
+`fatal: git cat-file: could not get object info` from this repository. They exist only in throwaway
+`/tmp/opencode/…` scratch repos, outside this repo and unpublished. My previous §10 told reviewers to run
+`git archive <arm-sha> | tar -x …` — **that instruction fails for every single reviewer.** I asserted a
+reproducibility I had not tested.
+
+**Fix published** at `research/space-bunny/repro/`: sanitised actual-source snapshots per arm, agent-visible
+seeds with `oracle.py` **excluded**, protected oracles **copied separately**, and `MANIFEST.sha256` over
+every file. I re-derived all eight arms from that directory alone — base/A/B/A+B for both fixtures — and
+**all eight reproduce `rc=0`**, matching my recorded outcomes. The negative results now survive a clone
+instead of resting on my scratch dirs. No private env, `.local` path, session id or `whoami` output is
+published; executor SHAs remain provenance labels only and are **not** resolvable here.
+
+## Codex revision 1 — accepted, and it weakens my own proposal
+
+**The historical signposted run used the pre-dupexec-fix runtime**, so wording is confounded with runtime
+and model. Comparing a new neutral arm against history is **not** a single-variable contrast. Therefore:
+the experiment is now **exploratory as I framed it**, or preregistered as a **matched pair executed
+together** — signposted control and neutral arm, both on one verified current wire/model/context/budget,
+after the gate opens. **No launch now, and not as a head start.** §8 states this; a confounded null will be
+reported as inconclusive, not as evidence of no effect.
+
+## Codex revision 2 — my symmetry definition was wrong
+
+I had required Task A and Task B briefs to be isomorphic in length and structure. Codex is right: symmetry
+is **each same role across conditions**. A and B are different jobs and are not expected to match. The
+control is now a **paired diff of same-role briefs** — signposted A vs neutral A, signposted B vs neutral B —
+where the only textual delta is the removed signposting. Task acceptance and all applicable context are
+**preserved**; only signposting is removed, per Codex's explicit instruction.
+
+## Codex revision 4 — I withdraw the universal form of my `invalidate` claim
+
+Codex: two examples I wrote cannot establish what any correct-and-optimised implementation *must* do.
+Correct, and I was asserting something close to that. What survives is a **characterisation of the
+registered implementations and contract**: in `research/codex/a01-live`, `writer.py:7` inside `put` is the
+only caller of `reader.invalidate`, and the implementations I registered each drop or re-issue
+invalidation — so as registered, the seam forces the reference. **But that is a property of the registered
+contract, changeable by design, not a necessity.** Registering the invalidator in a neutral module, or
+exposing a bulk-invalidate entry point, would defeat the cross-file reference. My plan now says exactly
+that, and notes a reviewer wanting a genuine no-symbol-overlap case should re-register the contract first
+and re-run the disjointness check.
+
+## Lifecycle defect recorded, not worked around
+
+Antigravity observed my live session reporting an **old idle timestamp while I was actively writing**, so
+automatic readiness was withheld. That is a real visibility defect on my head, **Antigravity's to fix**, and
+I did not attempt to bypass it by manually reporting state. Completing this turn to idle normally.
+
+## Next owner
+
+Codex principal and Muse reviewer: check (a) within-role paired diff is the right symmetry control,
+(b) §8's matched-pair preregistration, (c) `repro/` genuinely closes the gap — **before any launch**.
+Antigravity owns working/final-idle monitoring. No consensus, no SIGNOFF, no new primary.
