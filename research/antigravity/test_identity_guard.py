@@ -5,7 +5,12 @@ Unit tests for the first-model whoami identity and binding guard.
 Verifies:
 1. Exact match on FIRST JSON object's `id` against expected receiver UUID (no substring pass).
 2. Exact match on FIRST JSON object's `workspace` against expected workspace path.
-3. Verification of `binding_check.ok is True` when present (supports both dict {"ok": True, ...} and boolean True).
+3. Fail-closed verification of `binding_check`:
+   - Must be present as a dictionary with `binding_check.get("ok") is True`.
+   - Missing `binding_check` fails closed.
+   - `binding_check: null` fails closed.
+   - Non-dict `binding_check` fails closed.
+   - `binding_check.ok != True` fails closed.
 4. Rejection of foreign session IDs, wrong workspaces, malformed JSON, and binding check failures even if expected strings appear later in trailing text (awareness bootstrap, echoed commands, logs).
 5. Retained positive regression tests on authentic tool outputs from Run 8 and Run 9.
 """
@@ -43,18 +48,56 @@ class TestIdentityGuard(unittest.TestCase):
         self.assertEqual(obj["workspace"], WORKSPACE)
         self.assertTrue(obj["binding_check"]["ok"])
 
-    def test_fixture_a2_correct_bool_binding(self):
-        """Fixture (a2): exact match on id, workspace, and bool binding_check=True."""
+    def test_binding_check_missing_fails_closed(self):
+        """Negative: binding_check missing entirely -> FAIL."""
         raw = json.dumps({
             "schema_version": 1,
             "id": RECEIVER_UUID,
             "workspace": WORKSPACE,
-            "tag": "continuation-receiver-123",
+            "tag": "continuation-receiver"
+        })
+        ok, msg, obj = verify_whoami_identity(raw, RECEIVER_UUID, WORKSPACE)
+        self.assertFalse(ok)
+        self.assertIn("missing or null", msg)
+
+    def test_binding_check_null_fails_closed(self):
+        """Negative: binding_check is null -> FAIL."""
+        raw = json.dumps({
+            "schema_version": 1,
+            "id": RECEIVER_UUID,
+            "workspace": WORKSPACE,
+            "tag": "continuation-receiver",
+            "binding_check": None
+        })
+        ok, msg, obj = verify_whoami_identity(raw, RECEIVER_UUID, WORKSPACE)
+        self.assertFalse(ok)
+        self.assertIn("missing or null", msg)
+
+    def test_binding_check_not_dict_fails_closed(self):
+        """Negative: binding_check is boolean True instead of dict -> FAIL."""
+        raw = json.dumps({
+            "schema_version": 1,
+            "id": RECEIVER_UUID,
+            "workspace": WORKSPACE,
+            "tag": "continuation-receiver",
             "binding_check": True
         })
         ok, msg, obj = verify_whoami_identity(raw, RECEIVER_UUID, WORKSPACE)
-        self.assertTrue(ok, f"Expected PASS, got: {msg}")
-        self.assertEqual(obj["id"], RECEIVER_UUID)
+        self.assertFalse(ok)
+        self.assertIn("not a dict", msg)
+
+    def test_fixture_d2_binding_check_ok_false(self):
+        """Fixture (d2): binding_check dict has ok=False -> REJECT."""
+        raw = json.dumps({
+            "schema_version": 1,
+            "id": RECEIVER_UUID,
+            "workspace": WORKSPACE,
+            "tag": "continuation-receiver",
+            "binding_check": {"ok": False, "issues": ["peer mismatch"]}
+        })
+        ok, msg, obj = verify_whoami_identity(raw, RECEIVER_UUID, WORKSPACE)
+        self.assertFalse(ok)
+        self.assertIn("binding_check.ok is not True", msg)
 
     def test_fixture_b_foreign_id_receiver_later(self):
         """Fixture (b): foreign first JSON id; receiver UUID appears later in text -> REJECT."""
@@ -90,7 +133,7 @@ class TestIdentityGuard(unittest.TestCase):
             "workspace": WRONG_WS,
             "tag": "other-agent",
             "binding_check": {"ok": True, "issues": []}
-        }) + f"\n\nnote: for receiver {RECEIVER_UUID} in {WORKSPACE}"
+        }) + f"\nnote: for receiver {RECEIVER_UUID} in {WORKSPACE}"
         ok, msg, obj = verify_whoami_identity(raw, RECEIVER_UUID, WORKSPACE)
         self.assertFalse(ok)
         self.assertIn("first JSON id mismatch", msg)
@@ -100,32 +143,6 @@ class TestIdentityGuard(unittest.TestCase):
         raw = "whoami: command not found\n{truncated json"
         ok, msg, obj = verify_whoami_identity(raw, RECEIVER_UUID, WORKSPACE)
         self.assertFalse(ok)
-
-    def test_fixture_d2_binding_check_ok_false(self):
-        """Fixture (d2): binding_check dict has ok=False -> REJECT."""
-        raw = json.dumps({
-            "schema_version": 1,
-            "id": RECEIVER_UUID,
-            "workspace": WORKSPACE,
-            "tag": "continuation-receiver",
-            "binding_check": {"ok": False, "issues": ["peer mismatch"]}
-        })
-        ok, msg, obj = verify_whoami_identity(raw, RECEIVER_UUID, WORKSPACE)
-        self.assertFalse(ok)
-        self.assertIn("binding_check.ok is not True", msg)
-
-    def test_fixture_d3_binding_check_bool_false(self):
-        """Fixture (d3): binding_check bool is False -> REJECT."""
-        raw = json.dumps({
-            "schema_version": 1,
-            "id": RECEIVER_UUID,
-            "workspace": WORKSPACE,
-            "tag": "continuation-receiver",
-            "binding_check": False
-        })
-        ok, msg, obj = verify_whoami_identity(raw, RECEIVER_UUID, WORKSPACE)
-        self.assertFalse(ok)
-        self.assertIn("binding_check is not True", msg)
 
     def test_empty_or_whitespace_output(self):
         """Empty or whitespace-only output -> REJECT."""

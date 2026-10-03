@@ -356,15 +356,14 @@ def verify_whoami_identity(whoami_output, expected_uuid, expected_workspace):
     if obj.get("workspace") != expected_workspace:
         return False, f"first JSON workspace mismatch: expected {expected_workspace!r}, got {obj.get('workspace')!r}", obj
     
-    for key in ("binding_check", "binding_ok", "bound"):
-        if key in obj:
-            val = obj[key]
-            if isinstance(val, dict):
-                if val.get("ok") is not True:
-                    return False, f"{key}.ok is not True: {val}", obj
-            elif val is not True:
-                return False, f"{key} is not True: {val}", obj
-                
+    bc = obj.get("binding_check")
+    if bc is None:
+        return False, "binding_check is missing or null", obj
+    if not isinstance(bc, dict):
+        return False, f"binding_check is not a dict: {type(bc)}", obj
+    if bc.get("ok") is not True:
+        return False, f"binding_check.ok is not True: {bc}", obj
+        
     return True, "verified", obj
 
 
