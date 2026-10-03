@@ -7,8 +7,11 @@
 
 (function () {
   var params = new URLSearchParams(window.location.search);
-  var FIXTURE = params.get("fixture") === "1";
+  var FIXTURE_NAME = params.get("fixture") || "";
+  var FIXTURE = !!FIXTURE_NAME;
   var API = (params.get("api") || "").replace(/\/+$/, "");
+  /* Pair safety logic is shared with node --test via pair-status.js. */
+  var PairLogic = window.AgentBranchesPairStatus;
 
   /* ---------- small helpers ---------- */
 
@@ -57,7 +60,7 @@
   }
 
   function taskHref(taskId) {
-    var keep = FIXTURE ? "&fixture=1" : "";
+    var keep = FIXTURE ? "&fixture=" + encodeURIComponent(FIXTURE_NAME) : "";
     return "task.html?id=" + encodeURIComponent(taskId) + keep;
   }
 
@@ -70,15 +73,24 @@
     });
   }
 
+  function fixturePath(name) {
+    return FIXTURE_NAME === "1"
+      ? "fixtures/" + name
+      : "fixtures/" + encodeURIComponent(FIXTURE_NAME) + "-" + name;
+  }
+
   function loadStatus() {
-    return FIXTURE ? fetchJson("fixtures/status.json") : fetchJson(API + "/status");
+    return FIXTURE
+      ? fetchJson(FIXTURE_NAME === "1" ? "fixtures/status.json" : "fixtures/status-" + encodeURIComponent(FIXTURE_NAME) + ".json")
+      : fetchJson(API + "/status");
   }
 
   function loadTask(id) {
     if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(id)) {
       return Promise.reject(new Error("bad task id"));
     }
-    return FIXTURE ? fetchJson("fixtures/" + id + ".json") : fetchJson(API + "/tasks/" + encodeURIComponent(id));
+    var url = FIXTURE ? fixturePath(id + ".json") : API + "/tasks/" + encodeURIComponent(id);
+    return fetchJson(url);
   }
 
   function showError(el, error, isFixture) {
@@ -89,72 +101,18 @@
     el.innerHTML = "<strong>Could not load the data.</strong> " + esc(error.message) + esc(hint);
   }
 
-  /* ---------- pair safety (never guess "safe") ---------- */
-
-  function coversPair(pair, a, b) {
-    return (
-      Array.isArray(pair) &&
-      ((pair[0] === a && pair[1] === b) || (pair[0] === b && pair[1] === a))
-    );
-  }
-
-  function headFromEntry(entry, agentId) {
-    return entry.pair && entry.pair[0] === agentId ? entry.heads.a : entry.heads.b;
-  }
-
-  /* Test evidence counts as "ran and passed" only when it is a passing run
-     recorded for the agent's current head. Anything else is unknown. */
-  function evidenceProblem(agent, head) {
-    var ev = agent.testEvidence;
-    if (!ev) return "has no test run recorded";
-    if (ev.head && head && ev.head !== head) return "last recorded a test run for an older change";
-    if (ev.exitCode !== 0) return "recorded a test run that failed (exit " + esc(ev.exitCode) + ")";
-    return null;
-  }
+  /* ---------- pair safety (never guess "safe") ----------
+     Pair status comes ONLY from that pair's own radar result in /status
+     (status.pairs, L1 CONTRACT.md v0.1). A pair is "clean" only when its own
+     result says clean at the CURRENT heads of both agents and the result
+     records a combined test run with collected tests. Individual per-agent
+     test evidence is shown on the task page, but it never promotes a pair:
+     two individually green agents can still clash when combined (the
+     semantic-conflict case, codex C-1334). The decision lives in
+     pair-status.js so node --test can exercise the exact same code. */
 
   function pairStatus(agentA, agentB, status) {
-    var heads = status.heads || {};
-    var a = agentA.agentId;
-    var b = agentB.agentId;
-    var ha = heads[a];
-    var hb = heads[b];
-    if (!ha || !hb) {
-      return {
-        type: "not_checked",
-        why: "At least one of these agents has not pushed a change yet, so there is nothing to compare.",
-      };
-    }
-    var active = (status.warnings || []).find(function (w) {
-      return w.status === "active" && coversPair(w.pair, a, b);
-    });
-    if (active) {
-      return { type: "conflict", warning: active, why: active.reason || "A conflict was reported for this pair." };
-    }
-    var checked = (status.radarLog || []).some(function (e) {
-      return coversPair(e.pair, a, b) && headFromEntry(e, a) === ha && headFromEntry(e, b) === hb;
-    });
-    if (!checked) {
-      return {
-        type: "not_checked",
-        why: "These two changes have not been compared at their latest versions yet.",
-      };
-    }
-    var problems = [];
-    if (evidenceProblem(agentA, ha)) problems.push("<code>" + esc(a) + "</code> " + evidenceProblem(agentA, ha));
-    if (evidenceProblem(agentB, hb)) problems.push("<code>" + esc(b) + "</code> " + evidenceProblem(agentB, hb));
-    if (problems.length === 0) {
-      return {
-        type: "clean",
-        why: "No conflict was found, and both agents recorded a passing test run at these latest changes.",
-      };
-    }
-    return {
-      type: "unknown",
-      why:
-        "No conflict was found, but " +
-        problems.join("; and ") +
-        ". Safety is unknown — do not treat as safe.",
-    };
+    return PairLogic.pairStatus(agentA, agentB, status);
   }
 
   var BADGES = {
@@ -227,7 +185,7 @@
           "<li class='pair'>" +
           "<span class='who'><code>" + esc(agents[i].agentId) + "</code> ↔ <code>" + esc(agents[j].agentId) + "</code></span> " +
           badgeHtml(st.type) +
-          "<p class='why'>" + st.why + "</p>" +
+          "<p class='why'>" + esc(st.why) + "</p>" +
           "</li>"
         );
       }

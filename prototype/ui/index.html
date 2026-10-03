@@ -17,7 +17,7 @@
         whether their changes are known to be safe together.
       </p>
       <p id="demo-banner" class="banner demo" hidden>
-        Demo mode — this page shows sample data from <code>fixtures/status.json</code>, not a live server.
+        Demo mode — this page shows sample data from the <code>fixtures/</code> folder, not a live server.
       </p>
       <p id="error" class="banner error" hidden></p>
     </header>
@@ -33,8 +33,11 @@
       <h2>Are these changes safe together?</h2>
       <p class="muted small">
         Every pair of agents is compared at their latest changes. “Safe” is only
-        shown when both sides actually ran their tests — otherwise the pair stays
-        “unknown”, which means <strong>not safe</strong>, or “not checked”.
+        shown when the radar checked these two changes <em>together</em> at their
+        latest versions and its combined test run actually collected and ran
+        tests — otherwise the pair stays “unknown”, which means
+        <strong>not safe</strong>, or “not checked”. Each agent’s own passing
+        tests never make a pair safe.
       </p>
       <div id="pairs"></div>
 
@@ -63,10 +66,10 @@
 
       <h2>What the labels mean</h2>
       <ul class="legend">
-        <li><span class="badge conflict">Conflict</span> The agents’ changes clash. Someone needs to look.</li>
-        <li><span class="badge clean">Clean — tests ran</span> No clash found, and both agents ran their tests at these changes.</li>
-        <li><span class="badge unknown">Unknown — not safe</span> Not proven safe. There is no passing test run for the latest changes, so do not rely on this pair.</li>
-        <li><span class="badge not_checked">Not checked</span> These changes have not been compared yet.</li>
+        <li><span class="badge conflict">Conflict</span> The radar tried these changes together and they clash. Someone needs to look.</li>
+        <li><span class="badge clean">Clean — tests ran</span> The radar combined both changes at their latest versions, ran the combined tests, and found no clash.</li>
+        <li><span class="badge unknown">Unknown — not safe</span> The radar checked the pair but could not prove it safe. Do not rely on it.</li>
+        <li><span class="badge not_checked">Not checked</span> These changes have not been compared at their latest versions yet — or the comparison found no clash but never ran combined tests.</li>
       </ul>
     </main>
 
@@ -75,6 +78,7 @@
     </footer>
   </div>
   <noscript><p class="banner error">This page needs JavaScript to load the agent data.</p></noscript>
+  <script src="pair-status.js"></script>
   <script src="ui.js"></script>
   <script>AgentBranchesUI.bootIndex();</script>
 </body>

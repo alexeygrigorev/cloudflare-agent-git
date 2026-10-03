@@ -103,6 +103,47 @@
     "codex-0002": "c8d94e13f6a2507bc39e0d1a4f82b6c05d7e93af",
     "grok-0003": "5b7a3f0d2c8e61a4b9d0f3c7e2a5b8d1c4f60792"
   },
+  "pairs": [
+    {
+      "pair": ["claude-0001", "codex-0002"],
+      "heads": {
+        "claude-0001": "a6c55b2e91d40f83c7a1b0de5537c8f21a9c44d3",
+        "codex-0002": "c8d94e13f6a2507bc39e0d1a4f82b6c05d7e93af"
+      },
+      "status": "conflict",
+      "kind": "textual",
+      "evidence": "both agents changed prototype/src/index.ts",
+      "checkedAt": "2026-10-03T13:24:55.000Z",
+      "stale": false,
+      "activeWarningIds": ["warn-2"]
+    },
+    {
+      "pair": ["claude-0001", "grok-0003"],
+      "heads": {
+        "claude-0001": "a6c55b2e91d40f83c7a1b0de5537c8f21a9c44d3",
+        "grok-0003": "5b7a3f0d2c8e61a4b9d0f3c7e2a5b8d1c4f60792"
+      },
+      "status": "clean",
+      "kind": "test",
+      "evidence": "merge-tree clean; combined test run passed",
+      "coverage": { "tests_collected": 3, "tests_failed": 0 },
+      "checkedAt": "2026-10-03T13:31:41.000Z",
+      "stale": false,
+      "activeWarningIds": []
+    },
+    {
+      "pair": ["codex-0002", "grok-0003"],
+      "heads": {
+        "codex-0002": "c8d94e13f6a2507bc39e0d1a4f82b6c05d7e93af",
+        "grok-0003": "5b7a3f0d2c8e61a4b9d0f3c7e2a5b8d1c4f60792"
+      },
+      "status": "clean",
+      "evidence": "merge-tree clean; no combined tests were run for these disjoint changes",
+      "checkedAt": "2026-10-03T13:31:42.000Z",
+      "stale": false,
+      "activeWarningIds": []
+    }
+  ],
   "warnings": [
     {
       "id": "warn-2",
