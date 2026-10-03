@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 class MockCoordinatorState:
     """Thread-safe in-memory state for mock L1 coordinator."""
 
-    def __init__(self):
+    def __init__(self, expected_admin_token: Optional[str] = None):
         self.lock = threading.Lock()
         self.seq = 0
         self.tasks: Dict[str, Dict[str, Any]] = {}
@@ -34,13 +34,14 @@ class MockCoordinatorState:
         self.radar_log: List[Dict[str, Any]] = []
         self.canonical_name = "agent-branches-canonical"
         self.canonical_remote = "https://git.cloudflare.local/canonical.git"
+        self.expected_admin_token = expected_admin_token
 
     def create_task(self, data: Dict[str, Any]) -> Dict[str, Any]:
         with self.lock:
             self.seq += 1
             seq_str = f"{self.seq:04d}"
-            agent_raw = data.get("agent") or "agent"
-            slug = re.sub(r"[^a-z0-9._-]+", "-", agent_raw.lower()).strip("-") or "agent"
+            agent_raw = data.get("agent") or "alpha"
+            slug = re.sub(r"[^a-z0-9._-]+", "-", agent_raw.lower()).strip("-") or "alpha"
             agent_id = f"{slug}-{seq_str}"
             task_id = f"task-{seq_str}"
             repo = data.get("repo", "https://github.com/agent-branches/repo.git")
@@ -52,6 +53,7 @@ class MockCoordinatorState:
             now = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
             record = {
+                "id": task_id,
                 "taskId": task_id,
                 "task_id": task_id,
                 "agentId": agent_id,
@@ -61,19 +63,13 @@ class MockCoordinatorState:
                 "branch": branch,
                 "ref": ref,
                 "intent": intent,
+                "forkUrl": fork_url,
                 "fork_url": fork_url,
                 "fork": {
                     "name": f"{self.canonical_name}-{agent_id}",
                     "remote": fork_url,
                 },
-                "token": {
-                    "scope": "write",
-                    "expiresAt": (
-                        datetime.datetime.now(datetime.timezone.utc)
-                        + datetime.timedelta(seconds=data.get("ttlSeconds", 3600))
-                    ).isoformat(),
-                    "plaintext": f"mock-token-{seq_str}",
-                },
+                "token": f"mock-token-{seq_str}",
                 "head": base_sha,
                 "head_sha": base_sha,
                 "pushes": 0,
@@ -91,23 +87,31 @@ class MockCoordinatorState:
 
     def record_push(self, data: Dict[str, Any]) -> Dict[str, Any]:
         with self.lock:
-            task_id = data.get("task_id") or data.get("agent")
+            agent_id = data.get("agentId") or data.get("agent")
             head_sha = data.get("head_sha") or data.get("sha")
 
-            if not task_id or not head_sha:
-                raise ValueError("task_id (or agent) and head_sha (or sha) are required")
+            if not agent_id or not head_sha:
+                raise ValueError("agentId (or agent) and head_sha (or sha) are required")
 
-            task = self.tasks.get(task_id) or self.agents.get(task_id)
+            # Enforce distinct agentId vs taskId: reject if client sends taskId directly
+            if agent_id in self.tasks and agent_id not in self.agents:
+                raise KeyError(
+                    f"unknown agent: {agent_id} (received taskId instead of agentId)"
+                )
+
+            task = self.agents.get(agent_id)
             if not task:
-                raise KeyError(f"unknown task: {task_id}")
+                raise KeyError(f"unknown agent: {agent_id}")
 
             canonical_task_id = task["task_id"]
-            dedup_key = (canonical_task_id, head_sha)
+            dedup_key = (agent_id, head_sha)
 
             if dedup_key in self.seen_pushes or task.get("head_sha") == head_sha:
                 return {
                     "accepted": True,
                     "deduped": True,
+                    "agentId": agent_id,
+                    "agent_id": agent_id,
                     "task_id": canonical_task_id,
                     "head_sha": head_sha,
                     "heads": {t["task_id"]: t["head_sha"] for t in self.tasks.values()},
@@ -198,6 +202,8 @@ class MockCoordinatorState:
             return {
                 "accepted": True,
                 "deduped": False,
+                "agentId": agent_id,
+                "agent_id": agent_id,
                 "task_id": canonical_task_id,
                 "head_sha": head_sha,
                 "heads": {t["task_id"]: t["head_sha"] for t in self.tasks.values()},
@@ -290,6 +296,14 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
 
         # POST /tasks
         if path == "/tasks":
+            # Admin token auth check if configured
+            if self.state.expected_admin_token is not None:
+                auth_header = self.headers.get("Authorization", "")
+                expected = f"Bearer {self.state.expected_admin_token}"
+                if auth_header != expected:
+                    self._send_json(401, {"error": "unauthorized: missing or invalid bearer token"})
+                    return
+
             try:
                 body = self._read_json()
             except ValueError as exc:
@@ -369,14 +383,16 @@ class MockL1Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 
 def start_mock_l1_server(
-    host: str = "127.0.0.1", port: int = 0
+    host: str = "127.0.0.1",
+    port: int = 0,
+    expected_admin_token: Optional[str] = None,
 ) -> Tuple[MockL1Server, threading.Thread, str, MockCoordinatorState]:
     """Start mock L1 coordinator on host and ephemeral or specified port.
 
     Returns:
         (server, thread, server_url, state)
     """
-    state = MockCoordinatorState()
+    state = MockCoordinatorState(expected_admin_token=expected_admin_token)
     server = MockL1Server((host, port), state=state)
     actual_port = server.server_address[1]
     server_url = f"http://{host}:{actual_port}"
@@ -390,9 +406,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run Mock L1 Coordinator Server")
     parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8787, help="Bind port (default: 8787)")
+    parser.add_argument("--admin-token", help="Require admin bearer token for task creation")
     args = parser.parse_args()
 
-    server, thread, url, _ = start_mock_l1_server(host=args.host, port=args.port)
+    server, thread, url, _ = start_mock_l1_server(
+        host=args.host, port=args.port, expected_admin_token=args.admin_token
+    )
     print(f"Mock L1 Coordinator Server listening at {url}")
     try:
         while True:

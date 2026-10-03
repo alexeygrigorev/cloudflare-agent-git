@@ -34,29 +34,39 @@ class AgentBranchesClient:
     DEFAULT_SERVER = "http://127.0.0.1:8787"
 
     def __init__(self, server_url: Optional[str] = None, timeout: float = 10.0):
-        url = server_url or os.environ.get("AGENT_BRANCHES_SERVER") or os.environ.get("COORDINATOR_URL") or self.DEFAULT_SERVER
+        url = (
+            server_url
+            or os.environ.get("AGENT_BRANCHES_SERVER")
+            or os.environ.get("COORDINATOR_URL")
+            or self.DEFAULT_SERVER
+        )
         self.server_url = url.rstrip("/")
         self.timeout = timeout
+        self.task_to_agent: Dict[str, str] = {}
+        self.known_tasks: Dict[str, Dict[str, Any]] = {}
 
     def _request(
         self,
         method: str,
         path: str,
         body: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """Perform an HTTP request and parse JSON response."""
         full_url = f"{self.server_url}{path}"
         data = None
-        headers = {
+        req_headers = {
             "Accept": "application/json",
             "User-Agent": "agent-branches-l2-client/1.0",
         }
+        if headers:
+            req_headers.update(headers)
 
         if body is not None:
             data = json.dumps(body).encode("utf-8")
-            headers["Content-Type"] = "application/json; charset=utf-8"
+            req_headers["Content-Type"] = "application/json; charset=utf-8"
 
-        req = urllib.request.Request(full_url, data=data, headers=headers, method=method)
+        req = urllib.request.Request(full_url, data=data, headers=req_headers, method=method)
 
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as response:
@@ -90,11 +100,12 @@ class AgentBranchesClient:
         branch: str,
         agent: Optional[str] = None,
         ttl_seconds: Optional[int] = None,
+        admin_token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Register a new task (POST /tasks).
 
-        Returns:
-            Dictionary containing task ID, fork URL, branch, token, etc.
+        Supports --admin-token (or $ADMIN_TOKEN) via Authorization: Bearer <token>.
+        Returns dictionary containing distinct task ID, agent ID, fork URL, branch, token, etc.
         """
         payload: Dict[str, Any] = {
             "repo": repo,
@@ -107,22 +118,86 @@ class AgentBranchesClient:
         if ttl_seconds is not None:
             payload["ttlSeconds"] = ttl_seconds
 
-        return self._request("POST", "/tasks", payload)
+        req_headers: Dict[str, str] = {}
+        token = admin_token or os.environ.get("ADMIN_TOKEN")
+        if token:
+            req_headers["Authorization"] = f"Bearer {token}"
+
+        res = self._request("POST", "/tasks", payload, headers=req_headers)
+
+        task_id = res.get("taskId") or res.get("id") or res.get("task_id")
+        agent_id = res.get("agentId") or res.get("agent_id") or res.get("agent")
+
+        # Normalize keys in returned dict
+        if task_id:
+            res["taskId"] = task_id
+            res["task_id"] = task_id
+        if agent_id:
+            res["agentId"] = agent_id
+            res["agent_id"] = agent_id
+
+        if task_id and agent_id:
+            self.task_to_agent[task_id] = agent_id
+            self.known_tasks[task_id] = res
+
+        return res
+
+    def get_task(self, task_id: str) -> Dict[str, Any]:
+        """Fetch task status and active warnings for a specific task (GET /tasks/:id).
+
+        Returns the full task record including distinct agentId and taskId.
+        """
+        encoded_id = urllib.parse.quote(task_id, safe="")
+        res = self._request("GET", f"/tasks/{encoded_id}")
+
+        t_id = res.get("taskId") or res.get("id") or res.get("task_id") or task_id
+        a_id = res.get("agentId") or res.get("agent_id") or res.get("agent")
+        if t_id:
+            res["taskId"] = t_id
+            res["task_id"] = t_id
+        if a_id:
+            res["agentId"] = a_id
+            res["agent_id"] = a_id
+            self.task_to_agent[t_id] = a_id
+
+        self.known_tasks[t_id] = res
+        return res
 
     def push(
         self,
-        task_id: str,
-        head_sha: str,
+        task_id: Optional[str] = None,
+        head_sha: str = "",
         base_sha: Optional[str] = None,
         files_changed: Optional[Union[List[str], str]] = None,
         intent: Optional[str] = None,
         test_provenance: Optional[str] = None,
+        agent_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Register a WIP commit push (POST /events/push).
 
-        Sends:
-            task_id, head_sha, base_sha, files_changed, intent, test_provenance.
+        Sends agentId (required by L1 coordinator), head_sha, base_sha, files_changed, intent, test_provenance.
+        If agent_id is not passed, resolves it via task_id mapping or get_task(task_id).
         """
+        # Resolve agent_id if not explicitly provided
+        effective_agent_id = agent_id
+        if not effective_agent_id and task_id:
+            if task_id in self.task_to_agent:
+                effective_agent_id = self.task_to_agent[task_id]
+            else:
+                try:
+                    task_rec = self.get_task(task_id)
+                    effective_agent_id = (
+                        task_rec.get("agentId")
+                        or task_rec.get("agent_id")
+                        or task_rec.get("agent")
+                    )
+                except Exception:
+                    # Fallback if get_task fails
+                    effective_agent_id = task_id
+
+        if not effective_agent_id:
+            effective_agent_id = task_id or ""
+
         # Normalize files_changed to list of non-empty strings
         normalized_files: Optional[List[str]] = None
         if files_changed is not None:
@@ -131,12 +206,16 @@ class AgentBranchesClient:
             else:
                 normalized_files = list(files_changed)
 
+        # L1 coordinator requires agent / agentId
         payload: Dict[str, Any] = {
-            "task_id": task_id,
-            "agent": task_id,
+            "agentId": effective_agent_id,
+            "agent": effective_agent_id,
             "head_sha": head_sha,
             "sha": head_sha,
         }
+        if task_id:
+            payload["task_id"] = task_id
+            payload["taskId"] = task_id
         if base_sha:
             payload["base_sha"] = base_sha
         if normalized_files is not None:
@@ -153,11 +232,6 @@ class AgentBranchesClient:
         """Fetch current global coordinator and radar status (GET /status)."""
         return self._request("GET", "/status")
 
-    def get_task(self, task_id: str) -> Dict[str, Any]:
-        """Fetch task status and active warnings for a specific task (GET /tasks/:id)."""
-        encoded_id = urllib.parse.quote(task_id, safe="")
-        return self._request("GET", f"/tasks/{encoded_id}")
-
     def ack_warning(
         self,
         warning_id: str,
@@ -169,14 +243,26 @@ class AgentBranchesClient:
         payload: Dict[str, Any] = {"action": action}
         if task_id:
             payload["task_id"] = task_id
+            payload["taskId"] = task_id
 
         return self._request("POST", f"/warnings/{encoded_id}/ack", payload)
 
     # MCP-compatible aliases (CONTRACT-L2-L3 Section 2.2)
     def branches_create_task(
-        self, repo: str, base_sha: str, intent: str, branch: str
+        self,
+        repo: str,
+        base_sha: str,
+        intent: str,
+        branch: str,
+        admin_token: Optional[str] = None,
     ) -> Dict[str, Any]:
-        return self.create_task(repo=repo, base_sha=base_sha, intent=intent, branch=branch)
+        return self.create_task(
+            repo=repo,
+            base_sha=base_sha,
+            intent=intent,
+            branch=branch,
+            admin_token=admin_token,
+        )
 
     def branches_push_wip(
         self,
@@ -184,12 +270,14 @@ class AgentBranchesClient:
         head_sha: str,
         intent_update: Optional[str] = None,
         test_provenance: Optional[str] = None,
+        agent_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         return self.push(
             task_id=task_id,
             head_sha=head_sha,
             intent=intent_update,
             test_provenance=test_provenance,
+            agent_id=agent_id,
         )
 
     def branches_get_status(self, task_id: Optional[str] = None) -> Dict[str, Any]:

@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import sys
 from typing import List, Optional
 
@@ -21,8 +22,8 @@ from agent_branches.git_utils import (
 
 def format_task_created(res: dict) -> str:
     """Format task creation response."""
-    task_id = res.get("taskId") or res.get("task_id") or "unknown"
-    agent_id = res.get("agentId") or res.get("agent_id") or ""
+    task_id = res.get("taskId") or res.get("id") or res.get("task_id") or "unknown"
+    agent_id = res.get("agentId") or res.get("agent_id") or res.get("agent") or ""
     fork_url = ""
     fork = res.get("fork")
     if isinstance(fork, dict):
@@ -30,7 +31,7 @@ def format_task_created(res: dict) -> str:
     elif isinstance(fork, str):
         fork_url = fork
     if not fork_url:
-        fork_url = res.get("fork_url") or ""
+        fork_url = res.get("fork_url") or res.get("forkUrl") or ""
 
     branch = res.get("branch") or res.get("ref", "").replace("refs/heads/", "")
     head = res.get("head") or res.get("head_sha") or res.get("base_sha") or "N/A"
@@ -56,7 +57,8 @@ def format_task_created(res: dict) -> str:
 
 def format_push_result(res: dict) -> str:
     """Format push event response."""
-    task_id = res.get("task_id") or res.get("agent") or "unknown"
+    task_id = res.get("task_id") or res.get("taskId") or ""
+    agent_id = res.get("agent_id") or res.get("agentId") or res.get("agent") or ""
     head_sha = res.get("head_sha") or res.get("sha") or "unknown"
     accepted = res.get("accepted", False)
     deduped = res.get("deduped", False)
@@ -67,12 +69,17 @@ def format_push_result(res: dict) -> str:
         "========================================",
         "  WIP COMMIT PUSH REGISTERED",
         "========================================",
-        f"  Task ID:      {task_id}",
+    ]
+    if task_id:
+        lines.append(f"  Task ID:      {task_id}")
+    if agent_id:
+        lines.append(f"  Agent ID:     {agent_id}")
+    lines.extend([
         f"  Head SHA:     {head_sha}",
         f"  Accepted:     {accepted}",
         f"  Deduped:      {deduped}",
         f"  Radar Checks: {checks}",
-    ]
+    ])
 
     if new_warnings:
         lines.append(f"\n  WARNING: {len(new_warnings)} conflict warning(s) detected!")
@@ -106,7 +113,7 @@ def format_status_result(res: dict, task_id: Optional[str] = None) -> str:
         status_val = res.get("status", "active")
         branch = res.get("branch") or res.get("ref", "").replace("refs/heads/", "")
         head = res.get("head_sha") or res.get("head") or "N/A"
-        agent = res.get("agent_id") or res.get("agentId") or ""
+        agent = res.get("agent_id") or res.get("agentId") or res.get("agent") or ""
         lines.append(f"  Status:    {status_val}")
         if agent:
             lines.append(f"  Agent ID:  {agent}")
@@ -149,10 +156,12 @@ def format_status_result(res: dict, task_id: Optional[str] = None) -> str:
         tasks = res.get("tasks", [])
         lines.append(f"  Active Tasks ({len(tasks)}):")
         for t in tasks:
-            tid = t.get("task_id") or t.get("taskId") or "unknown"
+            tid = t.get("task_id") or t.get("taskId") or t.get("id") or "unknown"
+            t_agent = t.get("agent_id") or t.get("agentId") or t.get("agent") or ""
             tbranch = t.get("branch") or t.get("ref", "").replace("refs/heads/", "")
             thead = (t.get("head_sha") or t.get("head") or "")[:8]
-            lines.append(f"    - {tid} (branch: {tbranch or 'main'}, head: {thead})")
+            agent_str = f", agent: {t_agent}" if t_agent else ""
+            lines.append(f"    - {tid} (branch: {tbranch or 'main'}, head: {thead}{agent_str})")
 
         warnings = res.get("warnings", [])
         active_warnings = [w for w in warnings if w.get("status") == "active"]
@@ -173,7 +182,7 @@ def format_status_result(res: dict, task_id: Optional[str] = None) -> str:
 def format_ack_result(res: dict) -> str:
     """Format warning acknowledgement response."""
     wid = res.get("warning_id") or res.get("id") or "unknown"
-    tid = res.get("task_id") or "unknown"
+    tid = res.get("task_id") or res.get("taskId") or "unknown"
     action = res.get("action") or "acknowledged"
     time_str = res.get("acknowledged_at") or "now"
 
@@ -216,14 +225,19 @@ def build_parser() -> argparse.ArgumentParser:
     task_create.add_argument("--base-sha", help="Base commit SHA (defaults to git HEAD)")
     task_create.add_argument("--intent", default="", help="High-level task intent description")
     task_create.add_argument("--branch", help="Working branch name (defaults to git branch)")
-    task_create.add_argument("--agent", help="Agent identifier / name")
+    task_create.add_argument("--agent", help="Agent identifier / name prefix")
     task_create.add_argument("--ttl-seconds", type=int, help="Fork token TTL in seconds")
+    task_create.add_argument(
+        "--admin-token",
+        help="Admin bearer token for authorized task creation (or $ADMIN_TOKEN)",
+    )
     task_create.add_argument("--server", help="Coordinator URL")
     task_create.add_argument("--json", action="store_true", help="Output raw JSON")
 
     # push command
     push_parser = subparsers.add_parser("push", help="Register a WIP commit push")
-    push_parser.add_argument("--task-id", required=True, help="Task identifier")
+    push_parser.add_argument("--task-id", help="Task identifier (used to resolve agent ID if omitted)")
+    push_parser.add_argument("--agent-id", help="Explicit agent identifier required by L1 coordinator")
     push_parser.add_argument("--head-sha", help="WIP commit SHA (defaults to git HEAD)")
     push_parser.add_argument("--base-sha", help="Base commit SHA")
     push_parser.add_argument(
@@ -248,14 +262,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     # status command
     status_parser = subparsers.add_parser("status", help="Query coordinator and radar status")
-    status_parser.add_argument("--task-id", help="Task ID to query specific task status and active warnings")
+    status_parser.add_argument(
+        "--task-id", help="Task ID to query specific task status and active warnings"
+    )
     status_parser.add_argument("--server", help="Coordinator URL")
     status_parser.add_argument("--json", action="store_true", help="Output raw JSON")
 
     # ack command
     ack_parser = subparsers.add_parser("ack", help="Acknowledge an active radar conflict warning")
-    ack_parser.add_argument("--task-id", required=True, help="Task identifier acknowledging the warning")
-    ack_parser.add_argument("--warning-id", required=True, help="Warning identifier being acknowledged")
+    ack_parser.add_argument(
+        "--task-id", required=True, help="Task identifier acknowledging the warning"
+    )
+    ack_parser.add_argument(
+        "--warning-id", required=True, help="Warning identifier being acknowledged"
+    )
     ack_parser.add_argument(
         "--action",
         default="rebased_locally",
@@ -280,6 +300,7 @@ def handle_task_create(args: argparse.Namespace, client: AgentBranchesClient, as
     intent = args.intent or ""
     agent = getattr(args, "agent", None)
     ttl = getattr(args, "ttl_seconds", None)
+    admin_token = getattr(args, "admin_token", None) or os.environ.get("ADMIN_TOKEN")
 
     res = client.create_task(
         repo=repo,
@@ -288,6 +309,7 @@ def handle_task_create(args: argparse.Namespace, client: AgentBranchesClient, as
         branch=branch,
         agent=agent,
         ttl_seconds=ttl,
+        admin_token=admin_token,
     )
     if as_json:
         print(json.dumps(res, indent=2))
@@ -297,6 +319,13 @@ def handle_task_create(args: argparse.Namespace, client: AgentBranchesClient, as
 
 
 def handle_push(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
+    task_id = getattr(args, "task_id", None)
+    agent_id = getattr(args, "agent_id", None)
+
+    if not task_id and not agent_id:
+        print("Error: either --task-id or --agent-id must be specified", file=sys.stderr)
+        return 2
+
     head_sha = args.head_sha or get_current_head_sha()
     if not head_sha:
         print("Error: --head-sha is required when not in a valid git repository", file=sys.stderr)
@@ -309,7 +338,8 @@ def handle_push(args: argparse.Namespace, client: AgentBranchesClient, as_json: 
         files_changed = get_changed_files(base_sha=args.base_sha, head_sha=head_sha)
 
     res = client.push(
-        task_id=args.task_id,
+        task_id=task_id,
+        agent_id=agent_id,
         head_sha=head_sha,
         base_sha=args.base_sha,
         files_changed=files_changed,
