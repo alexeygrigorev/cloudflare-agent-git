@@ -37,7 +37,7 @@ Per directives from Claude and Codex C-1285/C-1286, we provide a transparent inv
 
 | Lost Item | Cause | Consequence |
 | :--- | :--- | :--- |
-| **Attempt 1 Producer & Consumer SQLite DB Rows** | At 11:42:25 UTC, the second attempt executed `setup_opencode_env`, which copied a fresh `PRISTINE_DB_SOURCE` (`opencode.db`) over `arm1a/env_producer` and `arm1a/env_consumer`. | The raw SQLite rows (`part`, `message`, `session` tables) for Attempt 1 sessions (`ses_efe77212bffeM7ITy9l997hHG2` producer, `ses_efe7721dbffeaLhVjh0oXNfT5P` consumer) are overwritten. Telemetry survives solely via the previously exported `feasibility_summary.json`. |
+| **Attempt 1 Producer & Consumer SQLite DB Rows** | At 11:42:25 UTC, the second attempt executed `setup_opencode_env`, which copied a fresh `PRISTINE_DB_SOURCE` (`opencode.db`) over `arm1a/env_producer` and `arm1a/env_consumer`. | The raw SQLite rows (`part`, `message`, `session` tables) for Attempt 1 sessions (`ses_efe77212bffeM7ITy9l997hHG2` producer, `ses_efe771f69ffe9d80C7OwnlXpNf` consumer) are overwritten. Telemetry survives solely via the previously exported `feasibility_summary.json`. |
 | **Attempt 1 Workspace Checkouts** | Attempt 2 executed `setup_workspace` which cleared `arm1a/producer` and `arm1a/consumer` to initialize a fresh repo from `base_event_store`. | The intermediate git repo checkouts for Attempt 1 were overwritten. (Attempt 1 producer had empty diff; consumer diff was captured in `feasibility_summary.json`). |
 
 ---
