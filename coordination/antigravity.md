@@ -697,11 +697,48 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
      - Telemetry JSON: `research/antigravity/a01-base-positive/result.json`
      - Reproducible Harness: `research/antigravity/a01-base-positive/runner.py`
      - Private Execution Log: `.local/a01-base-positive/execution.log`
+---
 
+## 29. Agent Branches Implementation & Multi-Layer Integration (Refocus 2026-10-03)
 
+Following the joint refocus directives (Claude `01a101c3-775b`, Codex `C-1303`, and Human Message 35), Antigravity Head has directed and delivered the implementation across the L2 Client and L3 Radar Engine lanes, verified through rigorous unit testing, benchmark dogfooding, and end-to-end integration:
 
+1. **L2 Agent Client (`proto/l2-client` at `/home/alexey/git/agent-branches-l2-client`):**
+   - **Initial Delivery:** Commit `f3ddd67`. Built lightweight standard library Python client (`AgentBranchesClient`) and CLI (`agent-branches`) supporting `task create`, `push`, `status`, and `ack`.
+   - **Independent Verification:** Reviewed and APPROVED by Muse Spark 1.3 (`muse-reviewer`, verdict `R43` at `.local/muse-r43/verdict.md`).
+   - **CONTRACT v0.1 Integration:** Commit `96c50e6` added `StaleVectorError`, `send_checks(payload, runner_token)` with bearer token auth, CLI `agent-branches checks (--file / stdin)` with exit-code and structured JSON error formatting, and mock server support for CONTRACT v0.1. Verified: 10/10 tests PASS in 3.01s. Pushed to `origin/proto/l2-client`.
 
+2. **L3 Advisory Radar Engine (`proto/l3-radar` at `/home/alexey/git/agent-branches-l3-radar`):**
+   - **Initial MVP Cut:** Commit `1632a31` (Codex C-1320 cut). Excised custom callback API, fork/pickle IPC, and select from MVP. Unified strictly on hardened CLI runner with `RLIMIT_CPU`, `RLIMIT_AS=1024MB`, `RLIMIT_FSIZE=50MB`, `os.setsid`/`os.killpg` on timeout, and `tests_collected > 0` clean invariant.
+   - **Independent Verification:** Reviewed and APPROVED by Muse Spark 1.3 (`muse-reviewer`, verdict `R44` at `.local/muse-r44/verdict.md`).
+   - **CONTRACT v0.1 Wire Export Adapter:** Commit `aa60a79` implemented `export_l1_payload()` emitting `{contract: "0.1", vector, policy, coverage, results}` with deterministic pair sorting, non-lossy structured evidence, and CLI `--l1` export flag. 13/13 unit tests and 31/31 workspace tests PASS.
+   - **Dedicated RAM-Admission Manager & Inflight Ledger:** Commit `2b928fc` (addressing Codex C-1326). Extracted `radar/admission.py` and unit tests in `tests/test_admission.py`:
+     - Reads `/proc/meminfo` `MemAvailable` with fail-closed return to `None` on missing/unreadable (NEVER invents 4096 MB fallback).
+     - Reads Linux PSI memory pressure from `/proc/pressure/memory` with fail-closed return to `None` (NEVER assumes 0.0).
+     - Inflight reservation ledger: `effective_available = available - (reserve + inflight_estimated)`. Requires `effective_available >= job_estimate`.
+     - Single unified deadline across queue wait, snapshot extraction, and test run. Exceeding deadline returns `unknown` with `budget_timeout_exceeded`.
+     - Concurrency semaphore explicitly disclosed as `process_radar_engine` scope.
+     - Telemetry: `cumulative_children_peak_rss_mb` explicitly disclosed as `resource.RUSAGE_CHILDREN.ru_maxrss` cumulative across all process children.
+     - Verification: 10/10 admission tests and 16/16 radar engine tests PASS (44/44 workspace regression tests pass). Pushed to `origin/proto/l3-radar`.
 
+3. **L3 Radar Concurrency Stress Benchmark (`proto/l3-radar-bench` at `/home/alexey/git/agent-branches-l3-bench`):**
+   - **Benchmark Delivery:** Commit `609c923`. Simulated 5 concurrent agent heads ($\binom{5}{2} = 10$ pairs) touching intersecting and disjoint modules.
+   - **Dogfood Findings:**
+     - 10-pair matrix computed in **411.18 ms**; clean textual merge in 15.37 ms; test failure detected in 87.89 ms; disjoint pairs marked `not_checked` in ~20 ms.
+     - Zero child or zombie processes leaked. Baseline VmRSS 17.21 MB -> Post-matrix 17.62 MB (+0.41 MB net growth).
+     - Published comprehensive report: `research/antigravity/dogfood/DOGFOOD-CONCURRENCY-REPORT.md`. Pushed to `origin/proto/l3-radar-bench`.
+
+4. **L1-L2-L3 End-to-End Integration Test Suite (`proto/integration` at `/home/alexey/git/agent-branches-integration`):**
+   - **Integration Delivery:** Commit `3d794b7`. Built end-to-end integration test suite (`tests/test_agent_branches_integration.py` and `tests/mock_l1_server.py`) covering all CONTRACT v0.1 flows:
+     - Flow 1 (Happy Path): Task registration -> push -> L3 radar evaluation -> `export_l1_payload` -> `send_checks` -> `/status` clean -> conflict detection on conflicting push -> warning ack.
+     - Flow 2 (Negative 1 - Stale Vector 409): Coordinator heads advance -> old radar check rejected with HTTP 409 `StaleVectorError`.
+     - Flow 3 (Negative 2 - Unknown Preserved, Never Safe): Radar `unknown` status strictly preserved in coordinator, never reported as clean or safe.
+     - Flow 4: Semantic test regression produces `status="conflict"`, `kind="test"`.
+     - Flow 5: Warning invalidation on subsequent clean check at current heads.
+     - Flow 6: Authentication enforcement via `ADMIN_TOKEN` and `RUNNER_TOKEN`.
+     - Flow 7: Fail-closed schema validation on malformed payloads.
+   - Verification: **7/7 tests PASS in 1.93s**. Pushed to `origin/proto/integration`.
+   - Published report: `research/antigravity/agent-branches/INTEGRATION-TEST-REPORT.md` (committed to `main` at `029e8b8`).
 
 
 
