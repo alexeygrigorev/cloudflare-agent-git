@@ -173,13 +173,13 @@ def signup_section(dedicated=False):
     return '<section class="email-signup '+('dedicated-signup' if dedicated else '')+'" aria-labelledby="signup-title"><div class="signup-copy"><p class="eyebrow">Follow the useful results</p><h2 id="signup-title">Get experiment updates.</h2><p>New findings, honest failures, and what we build next. Confirm your address before joining the list.</p><p class="signup-detail">Sign up for occasional experiment updates. Read the daily reports in the journal.</p></div><form id="journal-signup" class="signup-form" data-relay-list="'+E(endpoint,quote=True)+'" data-enabled="'+('true' if enabled else 'false')+'" aria-busy="false"><label for="signup-email">Your email address</label><div class="signup-controls"><input id="signup-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="you@example.com" required'+disabled+'><button id="signup-submit" class="button" type="submit"'+disabled+'>Keep me posted <span aria-hidden="true">↗</span></button></div><label class="signup-consent" for="signup-consent"><input id="signup-consent" name="consent" type="checkbox" required'+disabled+'><span>I agree to receive occasional Agent Git Lab experiment updates by email.</span></label><p class="signup-detail">Your address is processed by DataTalks.Club Relay for this list. Unsubscribe through the link in an update email. <a href="'+BASE+'/privacy/">Email privacy</a>.</p>'+unavailable+'<p id="signup-status" class="signup-status" role="status" aria-live="polite" aria-atomic="true" tabindex="-1" hidden></p><noscript><p>Email signup needs JavaScript for the confirmation flow. The <a href="'+BASE+'/feed.xml">RSS feed</a> works without it.</p></noscript></form></section>'
 
 def page(title, body, route='', description='A public experiment in Git, coding agents, and the work between them.'):
-    links = [('Daily', 'daily/'), ('Projects', 'projects/'), ('Checklist', 'checklist/'), ('Field notes', 'reports/'), ('Research', 'research/'), ('About', 'experiment/')]
+    links = [('Journal', ''), ('Hypotheses', 'projects/'), ('Checklist', 'checklist/'), ('Daily report', 'daily/'), ('Field notes', 'reports/'), ('Library', 'research/'), ('System', 'experiment/')]
     footer_metadata = '<p class="build-metadata">Site built '+BUILD_TIME+(' · <a href="'+REPO+'/commit/'+BUILD_SHA+'">Source revision '+BUILD_SHA[:12]+' ↗</a>' if BUILD_SHA else ' · Source revision unavailable')+'</p>'
     cutoff_files = sorted((ROOT/'research/orchestrator').glob('heartbeat-*.md'), reverse=True)
     if cutoff_files:
         stamp = datetime.strptime(cutoff_files[0].stem.removeprefix('heartbeat-'), '%Y%m%dT%H%M').replace(tzinfo=timezone.utc)
         footer_metadata += '<p class="build-metadata">Latest field-note cutoff: '+E(readable_cutoff(stamp.isoformat()))+'. Evidence is dated; build time is not a live agent status.</p>'
-    nav = ''.join('<a '+('aria-current="page" ' if route.startswith(path) else '')+'href="'+BASE+'/'+path+'">'+label+'</a>' for label,path in links)
+    nav = ''.join('<a '+('aria-current="page" ' if (route == path or (path and route.startswith(path))) else '')+'href="'+BASE+'/'+path+'">'+label+'</a>' for label,path in links)
     header = '<header class="site-header"><div class="header-top"><a class="header-brand" href="'+BASE+'''/'"><span class="header-logo" aria-hidden="true">'''+LOGO_SVG+'''</span><span><span class="header-title">Agent Git Lab</span><span class="header-subtitle">Alexey Grigorev\'s build-in-public experiment on Git and coding agents</span></span></a><div class="header-meta"><span>LATEST DAILY 2026-10-03</span><span class="header-cutoff">EVIDENCE CUTOFF 02:24 UTC</span></div></div><nav class="site-nav" aria-label="Main navigation">'''+nav+'</nav></header>'
     return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+E(title)+' · Agent Git Lab</title><meta name="description" content="'+E(description, quote=True)+'"><meta name="theme-color" content="#2455ed"><link rel="stylesheet" href="'+BASE+'/assets/site.css"><link rel="alternate" type="application/rss+xml" title="Agent Git Lab journal" href="'+BASE+'/feed.xml"><link rel="canonical" href="'+ORIGIN+BASE+'/'+route+'"><script src="'+BASE+'/assets/signup.js" defer></script></head><body><a class="skip" href="#main">Skip to content</a><div class="research-banner"><span class="banner-title">RESEARCH IN PROGRESS</span><span>All project labels are provisional · no final six · nothing here is a validated product</span></div>'+header+'<main id="main">'+body+'</main>'+('' if route=='subscribe/' else signup_section())+'<footer><div><a class="brand" href="'+BASE+'/">Agent Git Lab</a><p>Alexey Grigorev · Building, testing, and changing our minds in public.</p></div><div class="footer-links"><a href="'+REPO+'">Source & evidence ↗</a><a href="'+BASE+'/research/">Research library</a><a href="'+BASE+'/feed.xml">RSS feed</a><a href="'+BASE+'/privacy/">Email privacy</a></div><p class="footer-note">Published reports are dated snapshots. Research hypotheses are not validated products. Corrections stay with the evidence.</p>'+footer_metadata+'</footer></body></html>'
 
@@ -201,6 +201,53 @@ def report_title(path):
 def report_stamp(path):
     stamp = datetime.strptime(path.stem.removeprefix('heartbeat-'), '%Y%m%dT%H%M').replace(tzinfo=timezone.utc)
     return readable_cutoff(stamp.isoformat())
+
+WHO = {
+    'A01': 'an operator running parallel agent tasks at once',
+    'A16': 'Alexey, and operators constrained by local disk',
+    'A05': 'people who already run best-of-N agent attempts',
+    'A06': 'an accountable reviewer on a team that accepts AI-written changes',
+    'A10': 'an operator restarting or replacing an agent mid-task',
+}
+
+def project_tag(p):
+    return 'PARKED' if str(p.get('status', '')).lower().startswith('parked') else 'PROVISIONAL'
+
+def note_summary(path, limit=240):
+    try:
+        text = path.read_text()
+    except OSError:
+        return 'Not summarised here yet. Read the source file.'
+    text = re.sub(r'^#\s+[^\n]+\n?', '', text, count=1)
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or line.startswith('|') or line.startswith('```') or line.startswith('>'):
+            continue
+        line = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', line)
+        line = re.sub(r'[*_`]+', '', line)
+        if len(line) > limit:
+            line = line[:limit].rsplit(' ', 1)[0] + '…'
+        return line
+    return 'Not summarised here yet. Read the source file.'
+
+def note_time_day(path):
+    try:
+        stamp = datetime.strptime(path.stem.removeprefix('heartbeat-'), '%Y%m%dT%H%M').replace(tzinfo=timezone.utc)
+    except ValueError:
+        return path.stem, ''
+    day = 'SAT 3 OCT' if (stamp.day == 3 and stamp.month == 10) else stamp.strftime('%a %-d %b').upper()
+    return stamp.strftime('%H:%M UTC'), day
+
+def note_dot(path, first=False):
+    try:
+        text = path.read_text().lower()
+    except OSError:
+        text = ''
+    if 'fail' in path.name.lower() or 'fail' in text[:2000]:
+        return '#EF7134'
+    if first:
+        return '#2455ED'
+    return '#FCFCF8'
 
 def main():
     parser = argparse.ArgumentParser()
@@ -257,10 +304,60 @@ def main():
     daily_rows = ''.join('<a class="journal-entry" href="'+BASE+'/'+d['route']+'"><span class="eyebrow">'+E(str(d.get('date', '')))+'</span><h2>'+E(d['title'])+'</h2><p>'+E(d.get('summary', ''))+'</p><span class="text-link">Read the story ↗</span></a>' for d in daily)
     write('daily/', 'Daily journal', '<section class="page-intro"><p class="eyebrow">A story each day</p><h1>The daily journal.</h1><p class="deck">What we tried, what held up, and what changed our minds. Written with Claude Opus, checked against the experiment.</p><a href="'+BASE+'/feed.xml">Subscribe via RSS ↗</a></section><section class="journal-list">'+(daily_rows or '<p>The first evidence-checked story is being prepared.</p>')+'</section>')
     write('projects/', 'Projects', '<section class="page-intro"><p class="eyebrow">Retained research hypotheses</p><h1>Ideas with work to do.</h1><p class="deck">Five directions are under investigation. Selection and development gates are separate; these are provisional research lanes.</p></section><section class="projects-grid">'+cards()+'</section>')
-    for p in projects:
-        body = '<article class="project-landing"><p class="eyebrow">'+p['id']+' / '+E(p['status'])+'</p><h1>'+E(p['name'])+'</h1><p class="deck">'+E(p['summary'])+'</p><div class="status-strip">Provisional hypothesis · No final shortlist approval</div><figure class="hypothesis-diagram"><img src="'+BASE+'/assets/'+p['slug']+'-workflow.svg" alt="'+E(p['name'], quote=True)+' proposed workflow: '+E(p['idea'], quote=True)+'"><figcaption>Proposed workflow — not validated. Arrows describe the hypothesis, not measured uptake or a finished product.</figcaption></figure><div class="project-detail"><section><h2>The problem</h2><p>'+E(p['problem'])+'</p><h2>The working idea</h2><p>'+E(p['idea'])+'</p><h2>What the evidence says</h2><p>'+E(p['evidence'])+'</p><h2>The next useful test</h2><p>'+E(p['test'])+'</p><h2>What would change our mind</h2><p>'+E(p['falsifier'])+'</p></section><aside class="project-sidebar"><span class="eyebrow">Experiment record</span><p>Read the original research before treating an illustration, fixture, or proposal as a working product.</p><a href="'+public_source('research/shortlist-6.md')+'">Current selection draft ↗</a><a href="'+public_source('research/approaches-20.md')+'">All twenty approaches ↗</a><a href="'+BASE+'/checklist/">Shared validation checklist ↗</a></aside></div><a class="text-link" href="'+BASE+'/projects/">← All projects</a></article>'
+    short_sha = BUILD_SHA[:7] if BUILD_SHA else '1c6c7db'
+    for i, p in enumerate(projects):
+        prev = projects[(i - 1) % len(projects)]
+        nxt = projects[(i + 1) % len(projects)]
+        tag = project_tag(p)
+        who = WHO.get(p['id'], 'the operator named in the research')
+        body = (
+            '<article class="hypo-detail"><div class="hypo-crumb"><a href="'+BASE+'/projects/">Hypotheses</a><span>/</span><span class="hypo-crumb-id">'+E(p['id'])+'</span></div>'
+            '<div class="hypo-top"><div class="hypo-left">'
+            '<div class="badge-row"><span class="hypo-id">'+E(p['id'])+'</span><span class="hypo-tag">'+E(tag)+'</span></div>'
+            '<h1 class="hypo-title">'+E(p['name'])+'</h1>'
+            '<div class="hypo-status"><span class="hypo-mark" aria-hidden="true">'+status_mark_for(p)+'</span><span>'+E(p['status'])+'</span></div>'
+            '<div class="hypo-meta"><span>PROVISIONAL · NO FINAL SHORTLIST APPROVAL</span><span>STATUS AS OF 2026-10-03 02:24 UTC</span><span>SOURCE projects.json @ '+E(short_sha)+'</span></div>'
+            '</div>'
+            '<figure class="hypo-fig"><div class="hypo-scene"><img src="'+BASE+'/assets/'+E(p['slug'], quote=True)+'-workflow.svg" alt="'+E(p['name'], quote=True)+' proposed workflow"></div>'
+            '<figcaption>FIG. '+E(p['id'])+' — PROPOSED WORKFLOW, NOT VALIDATED</figcaption></figure></div>'
+            '<div class="hypo-body">'
+            '<section class="hypo-sec"><span class="hypo-secnum">01 · PROBLEM</span><p class="hypo-problem">'+E(p['problem'])+'</p><span class="hypo-who">Who: '+E(who)+'</span></section>'
+            '<section class="hypo-sec"><span class="hypo-secnum">02 · HYPOTHESIS</span><p class="hypo-text">'+E(p['idea'])+'</p></section>'
+            '<section class="hypo-sec"><span class="hypo-secnum">03 · EVIDENCE SO FAR</span>'
+            '<div class="ev-row"><div class="ev-mark"><span aria-hidden="true">'+status_mark_for(p)+'</span><span class="ev-label">EVIDENCE</span></div>'
+            '<div class="ev-detail"><span class="ev-text">'+E(p['evidence'])+'</span><a class="ev-src" href="'+public_source('research/shortlist-6.md')+'">research/shortlist-6.md</a></div></div>'
+            '</section>'
+            '<section class="hypo-sec test-box"><span class="hypo-secnum">04 · NEXT FALSIFICATION TEST</span><p class="hypo-text">'+E(p['test'])+'</p>'
+            '<div class="test-grid"><div class="test-cell"><span class="test-k">DUE</span><span class="test-v">See selection draft; dates on the checklist</span></div>'
+            '<div class="test-cell"><span class="test-k">KILL / PARK IF</span><span class="test-v">'+E(p['falsifier'])+'</span></div></div></section>'
+            '<section class="hypo-sec"><span class="hypo-secnum">05 · PUBLIC SOURCES</span><div class="src-list">'
+            '<a href="'+public_source('research/shortlist-6.md')+'">research/shortlist-6.md</a>'
+            '<a href="'+public_source('research/approaches-20.md')+'">research/approaches-20.md</a>'
+            '<a href="'+BASE+'/checklist/">checklist/ · shared validation gates</a>'
+            '</div></section>'
+            '<div class="hypo-nav"><a href="'+BASE+'/projects/'+E(prev['slug'], quote=True)+'/">← '+E(prev['id']+' · '+prev['name'])+'</a>'
+            '<a href="'+BASE+'/projects/'+E(nxt['slug'], quote=True)+'">'+E(nxt['id']+' · '+nxt['name'])+' →</a></div>'
+            '</div></article>'
+        )
         write('projects/'+p['slug']+'/', p['name'], body, p['summary'])
-    write('reports/', 'Field notes', '<section class="page-intro"><p class="eyebrow">The regular reports</p><h1>Field notes, with receipts.</h1><p class="deck">Dated remote check-ins, including failures and corrections. Older reports describe what was known then; read later updates before reusing a claim.</p></section><section class="report-list">'+report_list(reports)+'</section>')
+    notes_entries = []
+    for idx, rp in enumerate(reports):
+        t, day = note_time_day(rp)
+        dot = note_dot(rp, first=(idx == 0))
+        top = 'transparent' if idx == 0 else '#1C2027'
+        notes_entries.append(
+            '<div class="note-entry"><div class="note-rail" aria-hidden="true">'
+            '<div class="note-line-top" style="background:'+top+'"></div>'
+            '<div class="note-dot" style="background:'+dot+'"></div>'
+            '<div class="note-line"></div></div>'
+            '<a class="note-body" href="'+public_source(rp.relative_to(ROOT))+'">'
+            '<div class="note-when"><span class="note-time">'+E(t)+'</span><span class="note-day">'+E(day)+'</span></div>'
+            '<span class="note-title">'+E(report_title(rp))+'</span>'
+            '<span class="note-summary">'+E(note_summary(rp))+'</span>'
+            '<span class="note-path">'+E(str(rp.relative_to(ROOT)))+'</span>'
+            '</a></div>'
+        )
+    write('reports/', 'Field notes', '<section class="notes-head"><p class="hypo-secnum">FIELD NOTES · EVERY 30 MINUTES · UTC</p><h1 class="notes-title">The heartbeat log</h1><p class="deck">The orchestrator checks evidence, quotas and disk every half hour and writes it down. Notes without a summary here have one in the source file.</p></section><section class="notes-list">'+''.join(notes_entries)+'</section>')
     for report in reports:
         write('reports/'+report.stem+'/', report_title(report)+' — '+report_stamp(report), '<article class="article field-report"><p class="eyebrow">Historical field note / '+E(report_stamp(report))+'</p><h1>'+E(report_title(report))+'</h1><aside class="source-note">This is a dated evidence snapshot, not current product validation. <a href="'+public_source(report.relative_to(ROOT))+'">Original report and version history ↗</a></aside><div class="prose">'+markdown(re.sub(r'^#\s+[^\n]+\n?', '', report.read_text(), count=1), report)+'</div></article>')
     groups = []
@@ -271,10 +368,60 @@ def main():
             groups.append('<details><summary>'+E(group.replace('-', ' ').title())+' <span>'+str(len(paths))+' documents</span></summary><ul>'+''.join('<li><a href="'+public_source(p.relative_to(ROOT))+'">'+E(str(p.relative_to(ROOT/'research'/group)))+'</a></li>' for p in paths)+'</ul></details>')
     top = sorted((ROOT/'research').glob('*.md'))
     write('research/', 'Research library', '<section class="page-intro"><p class="eyebrow">The public source material</p><h1>Open the notebooks.</h1><p class="deck">Research, challenges, and evidence live in the public repository. Private agent logs and credentials are excluded.</p></section><section class="library"><h2>Selection and shared research</h2><ul>'+''.join('<li><a href="'+public_source(p.relative_to(ROOT))+'">'+E(p.stem.replace('-', ' '))+'</a></li>' for p in top)+'</ul>'+''.join(groups)+'</section>')
-    checks = [('recorded','Explore twenty distinct approaches','The research inventory is public. Scores and the original shortlist are historical, not final approval.'),('recorded','Challenge assumptions from both sides','Independent principals challenge outputs, methods, and the human brief. A01 lost its primary recommendation.'),('open','Agree on six viable approaches','The current draft retains '+str(ACTIVE_COUNT)+' hypotheses and parks '+str(PARKED_COUNT)+' candidates. '+str(OPEN_PLACES)+' product places remain open; identical-digest approval from both principals is still required.'),('open','Demonstrate actual agent use','Show a useful task, real agent actions, and accepted outcomes. A scripted fixture alone does not pass.'),('open','Prove an advantage over ordinary tools','Compare equal tasks, information, and acceptance checks. Preserve ties, failures, and negative results.'),('open','Keep development recoverable','Ordinary Git recovery stays independent of the prototype. A source-only restore is limited evidence.'),('open','Hand off five productive project teams','Verify meaningful deliverables, independent ownership, and an actual next task; a live process is insufficient.'),('recorded' if daily else 'open','Publish evidence-checked daily stories','First report published and the daily 09:30 Europe/Berlin workflow configured. Ongoing daily continuity remains to be verified.' if daily else 'Claude Opus writes with stylint; factual claims, diagrams, and illustrations are checked before publishing.')]
-    checks += [('recorded','Current runtime evidence is scoped','At 03 October 2026, 05:11 UTC, independent review confirms one outer call/one effect in the constrained patched probe, but two successful outer writes in the unconstrained task. Exactly-once retry/resume and reliable between-turn handoffs remain open. Historical test failures below retain their original cutoff.'),('recorded','A16 parked in draft8','Repeated whole-footprint gates failed and the incumbent arm was near-equal. Storage advice survives; the parked competition product does not occupy a selected place.')]
-    checks += [('recorded','A01 primary recommendation withdrawn','Decision at the 03 October 2026, 02:24 UTC evidence cutoff: both principals withdrew primary status after the fair live comparison showed no separation. This does not prove warnings can never help.'),('failed','Storage test below its registered gate','At that cutoff, clean-identical-cache N2 whole-footprint savings were 48.17%, below the registered greater-than-50% gate. This is a limited fixture, not safe savings from existing worktrees.'),('failed','Runtime regression still failed','The 02:24 UTC field note records zero passing tests and one failure: COUNT 0 where COUNT 1 was expected. Full patched one-effect runtime integration remained unproven at that cutoff.')]
-    write('checklist/', 'Experiment checklist', '<section class="page-intro"><p class="eyebrow">What earns a claim</p><h1>The checklist.</h1><p class="deck">A public view of the gates, not a score for how many agents we can launch. Project teams test their hypotheses while selection continues.</p></section><p class="source-note">Snapshot built '+BUILD_TIME+'. Latest field-note cutoff: '+E(latest_cutoff)+'. Daily publication: '+('first report recorded; continuing daily reliability unproven' if daily else 'first report pending')+'.</p><section class="checklist">'+''.join('<div class="check-item"><span class="check-symbol '+state+'" aria-hidden="true">'+({'recorded':'●','failed':'×'}.get(state,'○'))+'</span><div><span class="eyebrow">'+({'recorded':'Work recorded','failed':'Gate not passed'}.get(state,'Evidence still needed'))+'</span><h2>'+E(title)+'</h2><p>'+E(desc)+'</p></div></div>' for state,title,desc in checks)+'</section><p class="source-note">Status comes from the published selection draft and orchestrator reports. '+('<a href="'+BASE+'/'+daily[0]['route']+'">First daily story ↗</a> · ' if daily else '')+'<a href="'+public_source('research/shortlist-6.md')+'">Inspect the selection gates ↗</a></p>')
+    STATE_LABEL = {'recorded': 'DONE', 'done': 'DONE', 'failed': 'FAILED', 'open': 'OPEN', 'withdrawn': 'WITHDRAWN', 'pending': 'PENDING'}
+    STATE_MARK = {'recorded': STATUS_SVG['pending'], 'done': STATUS_SVG['pending'], 'failed': '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="#EF7134"/><path d="M5.5 5.5 L10.5 10.5 M10.5 5.5 L5.5 10.5" stroke="#1C2027" stroke-width="2" stroke-linecap="round"/></svg>', 'open': STATUS_SVG['open'], 'withdrawn': STATUS_SVG['withdrawn'], 'pending': STATUS_SVG['pending']}
+    gate_groups = [
+        ('Research gates', [
+            ('recorded', '20 approaches written', 'The research inventory is public. Scores and the original shortlist are historical, not final approval.', '2 Oct', 'research/approaches-20.md'),
+            ('recorded', 'Two bilateral debate rounds', 'Both principals recorded challenges and responses.', '2 Oct', 'research/debate/'),
+            ('recorded', 'Five ChatGPT Pro investigations arrived and mapped', 'First primary-source checks done.', '2 Oct', 'research/codex/pro-integration-round-1.md'),
+            ('recorded', 'A14 folded into A01 verification', 'The only disposition both principals explicitly accept.', '2 Oct', 'research/consensus.md'),
+            ('recorded', 'Worktree pain measured on the real host', 'Read-only scan: 472 trees, 111.7 GiB; corrected 80% to 62.1%.', '2 Oct', 'research/claude/u7-real-worktree-measurement.md'),
+            ('pending', 'Remaining citation and competitor checks', 'Pending per consensus record.', '—', 'research/consensus.md'),
+        ]),
+        ('Hypothesis gates', [
+            ('withdrawn', 'A01 as primary recommendation', 'Null separation in the equal-policy live pair; mutual correction.', '2 Oct', 'research/shortlist-6.md'),
+            ('failed', 'A16 tiny-task N2 footprint reduction >50%', 'Measured 48.17% against the registered gate; limited fixture.', '2 Oct', 'research/codex/retained-lanes-review-2324.md'),
+            ('failed', 'Duplicate-execution runtime regression', 'Expected one side effect, saw zero; 0 passed / 1 failed. Not a fix.', '3 Oct 02:24 UTC', 'research/orchestrator/heartbeat-20261003T0224.md'),
+            ('withdrawn', 'A16 parked as competition product', 'Repeated whole-footprint gate failures; storage advice survives as research.', '3 Oct', 'research/shortlist-6.md'),
+            ('pending', 'A01 local live-agent warning uptake', 'Registered plan v0.3, not yet launched.', 'due 5 Oct', 'research/shortlist-6.md'),
+            ('pending', 'A01 remote full-loop attempt', 'Full Workers/Artifacts loop with live agents.', 'due 7 Oct', 'research/shortlist-6.md'),
+            ('pending', 'A16 equivalent real build/test comparison', 'Two real agents, baseline versus chosen mode.', 'due 7 Oct', 'research/shortlist-6.md'),
+            ('pending', 'A05 five-task comparison', 'Single attempt versus vendor-style selection versus this flow.', 'due 8 Oct', 'research/shortlist-6.md'),
+            ('pending', 'A06 blind seeded-bug review comparison', 'Shorter review at equal catch, against a plain PR list.', 'due 8 Oct', 'research/shortlist-6.md'),
+            ('pending', 'A10 five restart/drift tasks', 'Against an ordinary checkpoint plus git-log baseline.', 'due 8 Oct', 'research/shortlist-6.md'),
+        ]),
+        ('Platform & model gates', [
+            ('pending', 'Real concurrent-agent Workers/Artifacts gate', '0 of 5 hypotheses have passed a real concurrent-agent demo.', '—', 'research/shortlist-6.md'),
+            ('open', 'Sixth shortlist slot', 'Reopened; no replacement approved.', 'reopened 2 Oct', 'research/shortlist-6.md'),
+            ('pending', 'Both principals sign off identical shortlist digest', 'Current draft unsigned by both principals.', '—', 'research/consensus.md'),
+            ('pending', 'Submission: 5–10 minute demo + run instructions', 'Permissive source with run instructions and video.', 'due 14 Oct', 'BRIEF.md'),
+        ]),
+    ]
+    counts = {}
+    for _, items in gate_groups:
+        for state, *_ in items:
+            key = 'done' if state == 'recorded' else state
+            counts[key] = counts.get(key, 0) + 1
+    legend_order = [('done', 'DONE'), ('pending', 'PENDING'), ('failed', 'FAILED'), ('withdrawn', 'WITHDRAWN'), ('open', 'OPEN')]
+    legend = ''.join(
+        '<div class="legend-item"><span aria-hidden="true">'+STATE_MARK['pending' if k == 'done' else k]+'</span><span class="legend-label">'+label+'</span><span class="legend-count">'+str(counts.get(k, 0))+'</span></div>'
+        for k, label in legend_order
+    )
+    group_html = ''
+    for gtitle, items in gate_groups:
+        rows = []
+        for state, title, note, date, src in items:
+            label = STATE_LABEL.get(state, state.upper())
+            tint = ' gate-tinted' if state in ('failed', 'withdrawn') else ''
+            src_url = public_source(src)
+            rows.append(
+                '<div class="gate-row'+tint+'"><div class="gate-main"><span class="gate-mark" aria-hidden="true">'+STATE_MARK.get(state, STATUS_SVG['pending'])+'</span>'
+                '<div class="gate-text"><span class="gate-title">'+E(title)+'</span><span class="gate-note">'+E(note)+'</span></div></div>'
+                '<div class="gate-meta"><span class="gate-state">'+E(label)+' · '+E(date)+'</span><a class="gate-src" href="'+E(src_url, quote=True)+'">'+E(src)+'</a></div></div>'
+            )
+        group_html += '<section class="gate-group"><h2 class="gate-group-title">'+E(gtitle)+'</h2>'+''.join(rows)+'</section>'
+    write('checklist/', 'Experiment checklist', '<section class="check-head"><p class="hypo-secnum">CHECKLIST · READ-ONLY · CHANGES ONLY BY COMMIT</p><h1 class="notes-title">Gates, with dates</h1><p class="deck">A gate is a test we registered before running it. It passes, fails, or waits. Nothing on this page is a progress bar.</p></section><div class="legend-strip">'+legend+'</div>'+group_html+'<p class="source-note">Snapshot built '+BUILD_TIME+'. Latest field-note cutoff: '+E(latest_cutoff)+'. Status comes from the published selection draft and orchestrator reports. <a href="'+public_source('research/shortlist-6.md')+'">Inspect the selection gates ↗</a></p>')
     write('experiment/', 'About the experiment', '<article class="article"><p class="eyebrow">Why this exists</p><h1>Build it. Test it.<br>Tell the whole story.</h1><p class="deck">A new Git platform competition prompted a wider question: where does Git make a team of coding agents harder to run?</p><div class="prose"><h2>Start with actual pain</h2><p>Alexey’s worktrees filled disk quickly. A read-only scan found 472 linked worktrees across 25 repositories, occupying a physical union of 111.7 GiB. Dependencies and builds accounted for 69.4 GiB, or 62.1%. These are measurements from one host, not a claim about every developer.</p><h2>Let the agents challenge each other</h2><p>Claude and Codex principals monitor and challenge evidence. Project heads coordinate useful tasks, and task executors can work headless. The team is free to improve its working method, while preserving quotas, code recovery, and privacy.</p><figure><picture><source media="(max-width: 600px)" srcset="'+BASE+'/assets/team-workflow-mobile.svg"><img src="'+BASE+'/assets/team-workflow.svg" alt="Team workflow: Alexey and remote oversight connect to Claude and Codex principals, project heads, task executors, evidence, and review."></picture><figcaption>The operating model. Arrows show responsibilities, not proof of continuous activity.</figcaption></figure><h2>Keep the failures visible</h2><p>Research is not product validation. No final six-approach shortlist has been approved. The first live integration comparison showed no separation, so that idea’s primary status was withdrawn. A small storage experiment fell below its registered savings gate.</p><h2>Use what survives</h2><p>Teams should build the smallest useful prototype and use it in their own development. Accepted outcomes, peer review, and recoverable Git history matter more than a launch count.</p><p><a href="'+public_source('experiment/USER-INSTRUCTIONS.md')+'">The original user brief ↗</a> · <a href="'+public_source('AGENTS.md')+'">How the agents are expected to work ↗</a> · <a href="https://blog.cloudflare.com/next-git-platform-on-cloudflare/">The competition that started it ↗</a></p></div></article>')
     write('subscribe/', 'Confirm your experiment updates', '<section class="page-intro"><p class="eyebrow">A separate, confirmed opt-in</p><h1>Stay with the experiment.</h1><p class="deck">Sign up for Agent Git Lab updates, or use the confirmation link from your inbox. This list is separate from PocketShell and other newsletters.</p></section>'+signup_section(dedicated=True))
     write('privacy/', 'Email privacy', '<article class="article"><p class="eyebrow">Email opt-in</p><h1>Your address stays private.</h1><div class="prose"><h2>What you are signing up for</h2><p>Agent Git Lab experiment updates: useful findings, project progress, and corrections. A signup does not enroll you in PocketShell or another newsletter. You can read daily reports in the journal; the email list is for occasional experiment updates.</p><h2>Confirmation and storage</h2><p>We use DataTalks.Club Relay, the same public double opt-in flow used by PocketShell. Your email address and pending or confirmed subscription state are stored in a separate Agent Git Lab audience. Relay sends a confirmation link; you join the confirmed list only after using it.</p><p>The website sends your address directly to the fixed Relay signup endpoint. No client API key is placed in the page. We do not put submitted addresses or confirmation tokens into the public repository, research reports, agent prompts, or browser storage.</p><h2>Leaving the list</h2><p>You can ignore a confirmation you did not request. Unsubscribe through the link in an update email. Repeated requests can be rate limited; that is separate from confirmation.</p><h2>Website and service requests</h2><p>The website is hosted on GitHub Pages and the email flow is handled by Relay. Those services process the requests needed to deliver the page and manage the opt-in, including their ordinary operational records. No visitor analytics or public signup telemetry is added by this form.</p><p><a href="'+BASE+'/subscribe/">Back to signup</a> · <a href="https://github.com/DataTalksClub/relay">Relay source</a></p></div></article>')
