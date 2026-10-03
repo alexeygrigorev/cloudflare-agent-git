@@ -559,18 +559,29 @@ class AgentHarnessDriver:
                 # Quota gate check before launching real model sessions
                 passed, reason, qinfo = self.check_provider_quota_gate(t.engine)
                 if not passed:
-                    raise RuntimeError(f"Quota gate rejected launch for {t.engine}: {reason}")
+                    # If grok or alternate model quota is exhausted, fall back to zcodex rather than blocking the lane
+                    fallback_engine = "zcodex"
+                    fb_passed, fb_reason, fb_qinfo = self.check_provider_quota_gate(fallback_engine)
+                    if fb_passed:
+                        self.record_event(
+                            "quota_gate_fallback",
+                            {"original_engine": t.engine, "fallback": fallback_engine, "reason": reason},
+                        )
+                        t.engine = fallback_engine
+                        qinfo = fb_qinfo
+                    else:
+                        raise RuntimeError(f"Quota gate rejected {t.engine} ({reason}) and fallback {fallback_engine} ({fb_reason})")
                 self.record_event("quota_gate_verified", {"provider": t.engine, "details": qinfo})
 
-                # Real agent launch via aplexer
+                # Real agent launch via aplexer with generous 600s executor timeout
                 session_tag = f"l6-agent-{t.task_id.lower()}-{self.run_id[:8]}"
                 cmd: List[str] = []
                 if t.engine == "zcodex":
-                    cmd = ["zcodex", "exec", "--dangerously-bypass-approvals-and-sandbox", prompt_text]
+                    cmd = ["timeout", "600", "zcodex", "exec", "--dangerously-bypass-approvals-and-sandbox", prompt_text]
                 elif t.engine == "space-bunny":
-                    cmd = ["opencode", "run", "--model", "opencode/space-bunny-free", prompt_text]
+                    cmd = ["timeout", "600", "opencode", "run", "--model", "opencode-go/space-bunny-free", prompt_text]
                 elif t.engine == "grok":
-                    cmd = ["grok", prompt_text]
+                    cmd = ["timeout", "600", "grok", prompt_text]
                 else:
                     cmd = ["bash", "-c", f"echo 'Running {t.task_id}'; sleep 2"]
 
@@ -583,6 +594,8 @@ class AgentHarnessDriver:
                     "--tag",
                     session_tag,
                     "--fresh",
+                    "--startup-timeout-ms",
+                    "30000",
                     "--memory",
                     "1500M",
                     "--env",
@@ -847,8 +860,12 @@ class AgentHarnessDriver:
                         reported_state = session_info.get("reported_state") or ""
                         if worker_alive and (phase in ("running", "working", "waiting") or reported_state in ("running", "working", "waiting")):
                             all_done = False
-                except Exception:
-                    pass
+                    else:
+                        all_done = False
+                        self.record_event("session_status_query_unknown", {"session_id": t.session_id, "exit": stat_proc.returncode})
+                except Exception as exc:
+                    all_done = False
+                    self.record_event("session_status_exception", {"session_id": t.session_id, "error": str(exc)})
 
             # Check for warning acknowledgements from coordinator
             try:
