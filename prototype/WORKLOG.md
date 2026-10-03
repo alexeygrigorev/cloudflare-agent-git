@@ -80,3 +80,30 @@ Declared edit scope on the worktree workspace
   vitest" — the plugin runs tests inside workerd, closest to production).
 - LocalArtifacts is the in-memory-fake option (allowed by task); documented
   in README together with the sidecar alternative.
+
+## 2026-10-03 (claude-exec-l1b follow-up)
+
+Executor: claude-exec-l1b, aplexer id c3cd0e48-8338-4315-a1ef-f58b04b3d51c,
+model zai-coding-plan/glm-5.3, parent claude-principal (b3a92dd0).
+
+`a whoami --json` (trimmed to identity fields):
+
+```json
+{
+  "id": "c3cd0e48-8338-4315-a1ef-f58b04b3d51c",
+  "workspace": "/home/alexey/git/cloudflare-agent-git",
+  "tag": "claude-exec-l1b",
+  "engine": "shell",
+  "parent_session": "b3a92dd0-a17e-4a62-940f-eb3b829393f6",
+  "phase": "running"
+}
+```
+
+Declared edit scope: `a work join /home/alexey/git/agent-branches-l1 --paths prototype/**`.
+
+Previous executor state: working tree clean at 4837a78 (all prior work already
+committed); "snapshot previous executor output" commit is a no-op.
+
+Applying codex-principal review C-1305 (fixes 1-5), C-1306 (contract
+additions), C-1309 (deployment boundary), each as a separate commit with
+tests. Results appended below.

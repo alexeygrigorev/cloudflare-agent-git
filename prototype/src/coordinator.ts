@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { LocalArtifacts } from "./artifacts/local.js";
 import { RealArtifacts } from "./artifacts/real.js";
-import { radarFromEnv, type Radar } from "./radar.js";
+import { RADAR_STATUSES, pairKey, radarFromEnv, type Radar, type RadarPairResult, type RadarStatus } from "./radar.js";
 
 export interface AgentRecord {
   agentId: string;
@@ -32,25 +32,59 @@ export interface WarningRecord {
   status: "active" | "invalidated";
   createdAt: string;
   invalidatedAt: string | null;
+  /** Conflict classifier from the radar/runner result, when provided. */
+  kind?: string;
+  /** How the conflict was detected. */
+  evidence?: string;
+  /** Set when a later clean check at the same heads resolved the warning. */
+  resolvedBy?: string;
 }
 
 export interface RadarLogEntry {
   at: string;
   pair: [string, string];
   heads: { a: string; b: string };
-  reason: string | null;
+  status: RadarStatus;
+  kind?: string;
+  evidence?: string;
+}
+
+/** Last accepted radar/runner result for a pair, at an exact pair vector. */
+export interface PairCheckRecord {
+  key: string;
+  pair: [string, string];
+  status: RadarStatus;
+  kind?: string;
+  evidence?: string;
+  vector: { a: string; b: string };
+  at: string;
+}
+
+/** Derived per-pair view for /status: fresh results only; stale => not_checked. */
+export interface PairStatusView {
+  pair: [string, string];
+  heads: { a: string; b: string };
+  status: RadarStatus;
+  kind?: string;
+  evidence?: string;
+  checkedAt: string | null;
+  /** True when a stored check exists but no longer matches the current heads. */
+  stale: boolean;
+  activeWarningIds: string[];
 }
 
 interface CoordinatorModel {
   canonicalName: string | null;
   canonicalRemote: string | null;
   seq: number;
+  warnSeq: number;
   agents: Record<string, AgentRecord>;
   tasks: Record<string, TaskRecord>;
   heads: Record<string, string>;
   seenPushes: string[];
   warnings: WarningRecord[];
   radarLog: RadarLogEntry[];
+  pairChecks: Record<string, PairCheckRecord>;
 }
 
 function emptyModel(): CoordinatorModel {
@@ -58,12 +92,14 @@ function emptyModel(): CoordinatorModel {
     canonicalName: null,
     canonicalRemote: null,
     seq: 0,
+    warnSeq: 0,
     agents: {},
     tasks: {},
     heads: {},
     seenPushes: [],
     warnings: [],
     radarLog: [],
+    pairChecks: {},
   };
 }
 
@@ -89,6 +125,9 @@ export class Coordinator extends DurableObject {
     }
     const stored = (await this.state.storage.get("model")) as CoordinatorModel | undefined;
     this.model = stored ?? emptyModel();
+    // Migrate models persisted before a field existed.
+    this.model.pairChecks ??= {};
+    this.model.warnSeq ??= this.model.warnings.length;
     return this.model;
   }
 
@@ -274,6 +313,7 @@ export class Coordinator extends DurableObject {
     canonical: { name: string | null; remote: string | null };
     agents: AgentRecord[];
     heads: Record<string, string>;
+    pairs: PairStatusView[];
     warnings: WarningRecord[];
     radarLog: RadarLogEntry[];
   }> {
@@ -282,6 +322,7 @@ export class Coordinator extends DurableObject {
       canonical: { name: model.canonicalName, remote: model.canonicalRemote },
       agents: Object.values(model.agents),
       heads: model.heads,
+      pairs: this.pairViews(model),
       warnings: [...model.warnings]
         .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
         .slice(0, 20),
@@ -310,34 +351,180 @@ export class Coordinator extends DurableObject {
     return invalidated;
   }
 
+  /**
+   * Apply trusted radar/runner results (from POST /checks or direct calls).
+   * Each result is stored per pair at its exact pair vector; only
+   * `status: "conflict"` creates warnings; a later `clean` result at the same
+   * vector resolves an active warning for that pair.
+   */
+  async applyCheckResults(input: {
+    policy: string;
+    results: { pair: [string, string]; status: string; kind?: string; evidence?: string }[];
+  }): Promise<{ accepted: number; pairs: PairStatusView[]; createdWarnings: WarningRecord[] }> {
+    const model = await this.load();
+    const now = new Date().toISOString();
+    const createdWarnings: WarningRecord[] = [];
+    for (const result of input.results) {
+      if (!Array.isArray(result.pair) || result.pair.length !== 2) {
+        throw new Error("check result requires pair [a, b]");
+      }
+      const [a, b] = result.pair;
+      if (!(a in model.agents) || !(b in model.agents)) {
+        throw new Error(`unknown agent in pair ${a}|${b}`);
+      }
+      if (!RADAR_STATUSES.includes(result.status as RadarStatus)) {
+        throw new Error(`invalid radar status: ${String(result.status)}`);
+      }
+      if (result.status === "not_checked") {
+        throw new Error("runner results must be conflict|clean|unknown, not not_checked");
+      }
+      const vector = { a: model.heads[a], b: model.heads[b] };
+      const record: PairCheckRecord = {
+        key: pairKey(result.pair),
+        pair: [a, b],
+        status: result.status as RadarStatus,
+        kind: result.kind,
+        evidence: result.evidence,
+        vector,
+        at: now,
+      };
+      model.pairChecks[record.key] = record;
+      this.pushRadarLog(model, {
+        pair: [a, b],
+        heads: vector,
+        status: record.status,
+        kind: record.kind,
+        evidence: record.evidence,
+      }, now);
+      if (record.status === "conflict") {
+        const warning = this.warningForPairAtHeads(model, [a, b], vector, record, input.policy, now);
+        if (warning) {
+          createdWarnings.push(warning);
+        }
+      } else if (record.status === "clean") {
+        for (const warning of model.warnings) {
+          if (
+            warning.status === "active" &&
+            pairKey(warning.pair) === record.key &&
+            warning.headsAtIssue.a === vector.a &&
+            warning.headsAtIssue.b === vector.b
+          ) {
+            warning.status = "invalidated";
+            warning.invalidatedAt = now;
+            warning.resolvedBy = `clean check (${input.policy})`;
+          }
+        }
+      }
+    }
+    await this.persist();
+    return { accepted: input.results.length, pairs: this.pairViews(model), createdWarnings };
+  }
+
+  private warningForPairAtHeads(
+    model: CoordinatorModel,
+    pair: [string, string],
+    heads: { a: string; b: string },
+    record: PairCheckRecord,
+    policy: string,
+    now: string,
+  ): WarningRecord | null {
+    const key = pairKey(pair);
+    const existing = model.warnings.find(
+      (warning) =>
+        warning.status === "active" &&
+        pairKey(warning.pair) === key &&
+        warning.headsAtIssue.a === heads.a &&
+        warning.headsAtIssue.b === heads.b,
+    );
+    if (existing) {
+      return null;
+    }
+    model.warnSeq += 1;
+    const warning: WarningRecord = {
+      id: `warn-${model.warnSeq}`,
+      pair,
+      headsAtIssue: heads,
+      reason: record.kind ?? "conflict",
+      status: "active",
+      createdAt: now,
+      invalidatedAt: null,
+      kind: record.kind,
+      evidence: record.evidence ?? `policy ${policy}`,
+    };
+    model.warnings.push(warning);
+    if (model.warnings.length > WARNINGS_CAP) {
+      model.warnings.splice(0, model.warnings.length - WARNINGS_CAP);
+    }
+    return warning;
+  }
+
+  private pushRadarLog(
+    model: CoordinatorModel,
+    entry: { pair: [string, string]; heads: { a: string; b: string }; status: RadarStatus; kind?: string; evidence?: string },
+    now: string,
+  ): void {
+    model.radarLog.push({ at: now, ...entry });
+    if (model.radarLog.length > RADAR_LOG_CAP) {
+      model.radarLog.splice(0, model.radarLog.length - RADAR_LOG_CAP);
+    }
+  }
+
+  private pairViews(model: CoordinatorModel): PairStatusView[] {
+    const ids = Object.keys(model.heads).sort();
+    const views: PairStatusView[] = [];
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const pair: [string, string] = [ids[i], ids[j]];
+        const heads = { a: model.heads[ids[i]], b: model.heads[ids[j]] };
+        const stored = model.pairChecks[pairKey(pair)];
+        const fresh =
+          stored !== undefined &&
+          stored.vector.a === heads.a &&
+          stored.vector.b === heads.b;
+        views.push({
+          pair,
+          heads,
+          status: fresh ? stored.status : "not_checked",
+          kind: fresh ? stored.kind : undefined,
+          evidence: fresh ? stored.evidence : undefined,
+          checkedAt: stored ? stored.at : null,
+          stale: stored !== undefined && !fresh,
+          activeWarningIds: model.warnings
+            .filter((warning) => warning.status === "active" && pairKey(warning.pair) === pairKey(pair))
+            .map((warning) => warning.id),
+        });
+      }
+    }
+    return views;
+  }
+
   private runRadar(
     model: CoordinatorModel,
     change: { agent: string; ref: string; sha: string; before: string | null },
-  ): { checks: { pair: [string, string]; heads: { a: string; b: string } }[]; created: WarningRecord[] } {
+  ): { checks: RadarPairResult[]; created: WarningRecord[] } {
     const siblings = Object.keys(model.heads);
     const checks = this.radar.onPush(change, model.heads, siblings);
     const now = new Date().toISOString();
     const created: WarningRecord[] = [];
     for (const check of checks) {
-      const entry: RadarLogEntry = { at: now, pair: check.pair, heads: check.heads, reason: check.reason };
-      model.radarLog.push(entry);
-      if (model.radarLog.length > RADAR_LOG_CAP) {
-        model.radarLog.splice(0, model.radarLog.length - RADAR_LOG_CAP);
-      }
-      if (check.reason) {
-        const warning: WarningRecord = {
-          id: `warn-${model.warnings.length + 1}`,
+      this.pushRadarLog(model, check, now);
+      // Warnings exist only for status "conflict" (codex C-1305 #1). The
+      // in-Worker StubRadar reports not_checked; conflicts arrive via
+      // applyCheckResults from the trusted runner.
+      if (check.status === "conflict") {
+        const record: PairCheckRecord = {
+          key: pairKey(check.pair),
           pair: check.pair,
-          headsAtIssue: check.heads,
-          reason: check.reason,
-          createdAt: now,
-          invalidatedAt: null,
-          status: "active",
+          status: check.status,
+          kind: check.kind,
+          evidence: check.evidence,
+          vector: check.heads,
+          at: now,
         };
-        model.warnings.push(warning);
-        created.push(warning);
-        if (model.warnings.length > WARNINGS_CAP) {
-          model.warnings.splice(0, model.warnings.length - WARNINGS_CAP);
+        model.pairChecks[record.key] = record;
+        const warning = this.warningForPairAtHeads(model, check.pair, check.heads, record, "radar-inline", now);
+        if (warning) {
+          created.push(warning);
         }
       }
     }

@@ -102,6 +102,18 @@ const handler: FetchHandler = {
         return json(result);
       }
 
+      if (method === "POST" && path === "/checks") {
+        const body = await readJson(request);
+        if (!Array.isArray(body.results)) {
+          return json({ error: "results must be an array" }, 400);
+        }
+        const result = await coordinator(env).applyCheckResults({
+          policy: typeof body.policy === "string" ? body.policy : "unknown-policy",
+          results: body.results as { pair: [string, string]; status: string; kind?: string; evidence?: string }[],
+        });
+        return json(result);
+      }
+
       if (method === "GET" && path === "/status") {
         return json(await coordinator(env).status());
       }
@@ -121,7 +133,7 @@ const handler: FetchHandler = {
       return json({ error: `no route for ${method} ${path}` }, 404);
     } catch (error) {
       const message = (error as Error).message ?? "internal error";
-      const status = /^(unknown agent|fork |commit |repo already|request body|unsupported event|missing artifacts|pushed payload)/.test(
+      const status = /^(unknown agent|fork |commit |repo already|request body|unsupported event|missing artifacts|pushed payload|invalid radar status|check result requires|runner results must|results must)/.test(
         message,
       )
         ? 400

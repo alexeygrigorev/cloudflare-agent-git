@@ -30,7 +30,7 @@ interface PushResult {
   deduped: boolean;
   heads: Record<string, string>;
   invalidatedWarnings: string[];
-  newWarnings: { id: string; status: string; reason: string; pair: string[]; headsAtIssue: { a: string; b: string } }[];
+  newWarnings: { id: string; status: string; reason: string; pair: string[] }[];
   radarChecks: number;
 }
 
@@ -38,8 +38,16 @@ interface StatusSnapshot {
   canonical: { name: string | null; remote: string | null };
   agents: { agentId: string; forkName: string; forkRemote: string; head: string | null; pushes: number }[];
   heads: Record<string, string>;
+  pairs: {
+    pair: string[];
+    heads: { a: string; b: string };
+    status: string;
+    checkedAt: string | null;
+    stale: boolean;
+    activeWarningIds: string[];
+  }[];
   warnings: { id: string; status: string; reason: string; invalidatedAt: string | null }[];
-  radarLog: { pair: string[]; heads: { a: string; b: string } }[];
+  radarLog: { pair: string[]; heads: { a: string; b: string }; status: string }[];
 }
 
 async function json<T>(response: Response): Promise<T> {
@@ -63,9 +71,6 @@ describe("Agent Branches coordinator flow", () => {
     expect(alphaBody.agentId).toBe("alpha-0001");
     expect(alphaBody.taskId).toBe("task-0001");
     expect(alphaBody.fork.name).toBe("agent-branches-canonical-alpha-0001");
-    expect(alphaBody.fork.remote).toBe(
-      "https://local.artifacts-stub.test/git/agent-branches-local/agent-branches-canonical-alpha-0001.git",
-    );
     expect(alphaBody.token.scope).toBe("write");
     expect(alphaBody.token.plaintext).toMatch(/^art_v1_[0-9a-f]{40}\?expires=\d+$/);
 
@@ -77,7 +82,7 @@ describe("Agent Branches coordinator flow", () => {
     expect(alphaBody.head).toMatch(/^[0-9a-f]{40}$/);
   });
 
-  it("accepts a WIP head, updates the head vector and raises a radar warning", async () => {
+  it("accepts a WIP head but raises NO warning just because heads differ", async () => {
     const before = await json<StatusSnapshot>(await get("/status"));
     expect(before.heads["alpha-0001"]).toBe(before.heads["beta-0002"]);
 
@@ -88,16 +93,18 @@ describe("Agent Branches coordinator flow", () => {
     expect(body.deduped).toBe(false);
     expect(body.heads["alpha-0001"]).toBe(SHA_ALPHA_1);
     expect(body.radarChecks).toBe(1);
-    expect(body.newWarnings).toHaveLength(1);
-    expect(body.newWarnings[0].reason).toBe("heads-diverged");
-    expect(body.newWarnings[0].pair).toContain("alpha-0001");
+    expect(body.newWarnings).toEqual([]);
 
     const status = await json<StatusSnapshot>(await get("/status"));
     expect(status.heads["alpha-0001"]).toBe(SHA_ALPHA_1);
-    expect(status.warnings).toHaveLength(1);
-    expect(status.warnings[0].status).toBe("active");
+    expect(status.warnings).toEqual([]);
+    expect(status.pairs).toHaveLength(1);
+    expect(status.pairs[0].status).toBe("not_checked");
+    expect(status.pairs[0].checkedAt).toBeNull();
+    expect(status.pairs[0].stale).toBe(false);
+    expect(status.pairs[0].activeWarningIds).toEqual([]);
+    expect(status.radarLog[0].status).toBe("not_checked");
     expect(status.radarLog[0].pair).toEqual(["alpha-0001", "beta-0002"]);
-    expect(status.radarLog[0].heads).toEqual({ a: SHA_ALPHA_1, b: expect.any(String) });
   });
 
   it("dedups repeated pushes per (agent, sha)", async () => {
@@ -108,29 +115,21 @@ describe("Agent Branches coordinator flow", () => {
     expect(body.radarChecks).toBe(0);
 
     const status = await json<StatusSnapshot>(await get("/status"));
-    expect(status.warnings).toHaveLength(1);
+    expect(status.warnings).toEqual([]);
     expect(status.radarLog).toHaveLength(2);
-    expect(status.radarLog[0].pair).toEqual(["alpha-0001", "beta-0002"]);
-    expect(status.radarLog[1].pair).toEqual(["beta-0002", "alpha-0001"]);
   });
 
-  it("invalidates the warning when the sibling advances, then re-warns at new heads", async () => {
+  it("keeps pairs not_checked after the sibling advances (heads move, no conflict invented)", async () => {
     const push = await post("/events/push", { agent: "beta-0002", sha: SHA_BETA_1 });
     const body = await json<PushResult>(push);
     expect(body.deduped).toBe(false);
     expect(body.heads["beta-0002"]).toBe(SHA_BETA_1);
-    expect(body.invalidatedWarnings).toEqual(["warn-1"]);
-    expect(body.newWarnings).toHaveLength(1);
-    expect(body.newWarnings[0].id).toBe("warn-2");
-    expect(body.newWarnings[0].status).toBe("active");
-    expect(body.newWarnings[0].headsAtIssue).toEqual({ a: SHA_BETA_1, b: SHA_ALPHA_1 });
+    expect(body.invalidatedWarnings).toEqual([]);
+    expect(body.newWarnings).toEqual([]);
 
     const status = await json<StatusSnapshot>(await get("/status"));
-    const warn1 = status.warnings.find((w) => w.id === "warn-1");
-    const warn2 = status.warnings.find((w) => w.id === "warn-2");
-    expect(warn1?.status).toBe("invalidated");
-    expect(warn1?.invalidatedAt).toBeTruthy();
-    expect(warn2?.status).toBe("active");
+    expect(status.pairs[0].heads).toEqual({ a: SHA_ALPHA_1, b: SHA_BETA_1 });
+    expect(status.pairs[0].status).toBe("not_checked");
   });
 
   it("serves task details and 404s unknown tasks", async () => {
