@@ -281,11 +281,14 @@ def nav_html(route):
         out.append('<a '+('aria-current="page" ' if current else '')+'href="'+href+'">'+label+'</a>')
     return ''.join(out)
 
-def eyebrow(text):
-    return '<p class="kicker">'+E(text.upper())+'</p>'
+def long_date(value):
+    try:
+        return datetime.fromisoformat(str(value)[:10]).strftime('%-d %B %Y')
+    except ValueError:
+        return str(value)
 
-def intro(kicker, title, deck, extra=''):
-    return '<header class="page-intro">'+eyebrow(kicker)+'<h1>'+E(title)+'</h1>'+('<p class="intro-deck">'+deck+'</p>' if deck else '')+extra+'</header>'
+def intro(title, deck, extra=''):
+    return '<header class="page-intro"><h1>'+E(title)+'</h1>'+('<p class="intro-deck">'+deck+'</p>' if deck else '')+extra+'</header>'
 
 def signup_section(dedicated=False):
     enabled = SIGNUP.get('enabled') is True
@@ -294,7 +297,7 @@ def signup_section(dedicated=False):
         raise ValueError('Unexpected Relay public-list endpoint; review configuration before publishing.')
     unavailable = '<p class="signup-setup-note">Email signup is being connected. You can follow the <a href="'+BASE+'/feed.xml">RSS feed</a> meanwhile.</p>' if not enabled else ''
     disabled = '' if enabled else ' disabled'
-    return ('<section class="email-signup'+(' dedicated-signup' if dedicated else '')+'" aria-labelledby="signup-title"><div class="signup-copy">'+eyebrow('Follow the useful results')+'<h2 id="signup-title">Get experiment updates</h2><p>New findings, failures, and what we build next. Confirm your address before joining the list.</p><p class="signup-detail">Sign up for occasional experiment updates. Read the daily reports in the journal.</p></div>'
+    return ('<section class="email-signup'+(' dedicated-signup' if dedicated else '')+'" aria-labelledby="signup-title"><div class="signup-copy"><h2 id="signup-title">Get experiment updates</h2><p>New findings, failures, and what we build next. Confirm your address before joining the list.</p><p class="signup-detail">Sign up for occasional experiment updates. Read the daily reports in the journal.</p></div>'
             '<form id="journal-signup" class="signup-form" data-relay-list="'+E(endpoint, quote=True)+'" data-enabled="'+('true' if enabled else 'false')+'" aria-busy="false"><label for="signup-email">Your email address</label><div class="signup-controls"><input id="signup-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="you@example.com" required'+disabled+'><button id="signup-submit" class="button" type="submit"'+disabled+'>Keep me posted'+ARROW+'</button></div><label class="signup-consent" for="signup-consent"><input id="signup-consent" name="consent" type="checkbox" required'+disabled+'><span>I agree to receive occasional Agent Branches experiment updates by email.</span></label><p class="signup-detail">Your address is processed by DataTalks.Club Relay for this list. Unsubscribe through the link in an update email. <a href="'+BASE+'/privacy/">Email privacy</a>.</p>'+unavailable+'<p id="signup-status" class="signup-status" role="status" aria-live="polite" aria-atomic="true" tabindex="-1" hidden></p><noscript><p>Email signup needs JavaScript for the confirmation flow. The <a href="'+BASE+'/feed.xml">RSS feed</a> works without it.</p></noscript></form></section>')
 
 def footer_html():
@@ -325,12 +328,12 @@ def card(p, with_next=False):
         first = re.split(r'(?<=[.;])\s', p['test'].strip(), maxsplit=1)[0]
         nxt = '<p class="card-next">Next test: '+E(first)+'</p>'
     return ('<a class="hyp-card" href="'+BASE+'/projects/'+p['slug']+'/"><span class="card-top"><span class="card-mark" aria-hidden="true">'+CARD_MARKS.get(p['id'], CARD_MARKS['A01'])+'</span><span class="badge">'+tag+'</span></span>'
-            '<span class="card-head"><span class="card-id">IDEA '+str(int(p['id'][1:]))+'</span><span class="card-name">'+E(p['name'])+'</span></span>'
+            '<span class="card-head"><span class="card-name">'+E(p['name'])+'</span></span>'
             '<span class="status-line">'+smark(status_kind(p))+'<span>'+E(p['status'])+'</span></span><span class="card-short">'+E(p['summary'])+'</span>'+nxt+'</a>')
 
 def open_card(with_next=False):
     return ('<div class="hyp-card is-open"><span class="card-top"><span class="card-mark" aria-hidden="true">'+CARD_MARKS['SLOT6']+'</span><span class="badge">OPEN</span></span>'
-            '<span class="card-head"><span class="card-id">PLACE 6</span><span class="card-name">Open place \u2014 nothing selected</span></span>'
+            '<span class="card-head"><span class="card-name">Open place \u2014 nothing selected</span></span>'
             '<span class="status-line">'+smark('open')+'<span>Reopened \u00b7 no candidate approved</span></span><span class="card-short">The private test site idea was folded into the collision radar. Nothing has earned the sixth place yet.</span>'+('<p class="card-next">Next test: Open</p>' if with_next else '')+'</div>')
 
 def cards(with_next=False):
@@ -393,17 +396,17 @@ def project_page(i, p):
         mark = smark(status_kind(p), 12) if stance == 'latest' else smark(stance, 12)
         when = '' if stance == 'latest' else '<span class="ev-when">BEFORE 3 OCT</span>'
         return '<div class="ev-row"><span class="ev-stance"><span class="ev-label">'+mark+'<span>'+STANCE[stance]+'</span></span>'+when+'</span><span class="ev-body"><span class="ev-text">'+E(text)+'</span>'+src_link(rel)+'</span></div>'
-    prov = '<span>PROVISIONAL \u00b7 NO FINAL SHORTLIST APPROVAL</span>'+('<span>STATUS AS OF '+E(when)+'</span><span>SOURCE projects.json @ '+E(sha)+'</span>' if sha else '')
-    return ('<nav class="crumbs" aria-label="Breadcrumb"><a href="'+BASE+'/projects/">Hypotheses</a><span aria-hidden="true">/</span><span class="mono">'+E(p['id'])+'</span></nav>'
-            '<div class="proj-head"><div class="proj-title"><div class="proj-id"><span class="mono">'+E(p['id'])+'</span><span class="badge">PROVISIONAL</span></div><h1>'+E(p['name'])+'</h1>'
+    prov = '<span>Provisional idea; no final shortlist has been approved.</span>'+('<span>Status as of '+E(when)+'.</span>' if when else '')
+    return ('<nav class="crumbs" aria-label="Breadcrumb"><a href="'+BASE+'/projects/">Hypotheses</a><span aria-hidden="true">/</span><span>'+E(p['name'])+'</span></nav>'
+            '<div class="proj-head"><div class="proj-title"><h1>'+E(p['name'])+'</h1>'
             '<div class="proj-status">'+smark(status_kind(p), 18)+'<span>'+E(p['status'])+'</span></div><div class="mono-meta">'+prov+'</div></div>'
             '<figure class="proj-figure"><img src="'+BASE+'/assets/scenes/'+p['slug']+'.svg" width="640" height="320" alt="'+E(p['name'], quote=True)+': conceptual diagram of the hypothesis, not a measured result"><figcaption>'+E(FIGS.get(p['id'], 'FIG. '+p['id']))+'</figcaption></figure></div>'
             '<article class="proj-body">'
-            '<section class="proj-sec">'+eyebrow('01 \u00b7 Problem')+'<p class="proj-problem">'+E(p['problem'])+'</p>'+('<p class="proj-who">Who: '+E(who)+'</p>' if who else '')+'</section>'
-            '<section class="proj-sec">'+eyebrow('02 \u00b7 Hypothesis')+'<p class="proj-lead">'+E(p['idea'])+'</p></section>'
-            '<section class="proj-sec">'+eyebrow('03 \u00b7 Evidence so far')+ev(*ev_rows[0])+('<p class="ev-earlier">EARLIER RESEARCH \u00b7 BEFORE 3 OCT 02:24 UTC \u00b7 KEPT FOR CONTEXT, NOT CURRENT STATUS</p>'+''.join(ev(*e) for e in ev_rows[1:]) if len(ev_rows) > 1 else '')+'</section>'
-            '<section class="proj-sec test-box">'+eyebrow('04 \u00b7 Next falsification test')+'<p>'+E(p['test'])+'</p><div class="test-grid"><div><span class="mono-label">STATUS</span><span class="test-strong">'+E(p['status'])+'</span></div><div><span class="mono-label">KILL / PARK IF</span><span>'+E(p['falsifier'])+'</span></div></div></section>'
-            '<section class="proj-sec">'+eyebrow('05 \u00b7 Public sources')+''.join(src_link(s, 'src-row') for s in sources)+'</section>'
+            '<section class="proj-sec">'+'<h2 class="proj-h">The problem</h2>'+'<p class="proj-problem">'+E(p['problem'])+'</p>'+('<p class="proj-who">Who: '+E(who)+'</p>' if who else '')+'</section>'
+            '<section class="proj-sec">'+'<h2 class="proj-h">The idea</h2>'+'<p class="proj-lead">'+E(p['idea'])+'</p></section>'
+            '<section class="proj-sec">'+'<h2 class="proj-h">Evidence so far</h2>'+ev(*ev_rows[0])+('<p class="ev-earlier">Earlier research, from before 3 October 2026, 02:24 UTC. Kept for context; it is not the current status.</p>'+''.join(ev(*e) for e in ev_rows[1:]) if len(ev_rows) > 1 else '')+'</section>'
+            '<section class="proj-sec test-box">'+'<h2 class="proj-h">The test that would rule it out</h2>'+'<p>'+E(p['test'])+'</p><div class="test-grid"><div><span class="field-label">Status</span><span class="test-strong">'+E(p['status'])+'</span></div><div><span class="field-label">We would drop or park it if</span><span>'+E(p['falsifier'])+'</span></div></div></section>'
+            '<section class="proj-sec">'+'<h2 class="proj-h">Public sources</h2>'+''.join(src_link(s, 'src-row') for s in sources)+'</section>'
             '<div class="prev-next"><a href="'+BASE+'/projects/'+prev['slug']+'/">'+BACK+E(prev['id']+' \u00b7 '+prev['name'])+'</a><a href="'+BASE+'/projects/'+nxt['slug']+'/">'+E(nxt['id']+' \u00b7 '+nxt['name'])+ARROW+'</a></div>'
             '</article>')
 
@@ -445,7 +448,7 @@ def checklist_page():
     latest_cutoff = LATEST_NOTE.strftime('%d %b %Y, %H:%M UTC') if LATEST_NOTE else 'no field note published'
     closing = ('<p class="closing-note">Status comes from the published selection draft and orchestrator reports. Snapshot built '+BUILD_TIME+'; latest field-note cutoff '+E(latest_cutoff)+'. Daily publication: '+('first report recorded; continuing daily reliability unproven' if daily else 'first report pending')+'. '
                +('<a href="'+BASE+'/'+daily[0]['route']+'">First daily story'+ARROW+'</a> \u00b7 ' if daily else '')+'<a href="'+public_source('research/shortlist-6.md')+'">Inspect the selection gates'+EXT+'</a></p>')
-    return '<div class="narrow">'+intro('Checklist \u00b7 what earns a claim \u00b7 changes only by commit', 'Gates, with dates', 'A public view of the gates, not a score for how many agents we can launch. A gate passes, fails, or waits. Project teams test their hypotheses while selection continues.')+legend+body+closing+'</div>'
+    return '<div class="narrow">'+intro('Gates, with dates', 'A public view of the gates, not a score for how many agents we can launch. A gate passes, fails, or waits. Project teams test their hypotheses while selection continues.')+legend+body+closing+'</div>'
 
 def library_page():
     curated = [
@@ -472,19 +475,19 @@ def library_page():
         if paths:
             name = g.replace('-', ' ').title()
             out.append(group(name, str(len(paths))+' documents from the '+name+' workspace.', [lib_row(str(p.relative_to(ROOT/'research'/g)), str(p.relative_to(ROOT))) for p in paths], 'Show all '+str(len(paths))+' documents'))
-    return '<div class="narrow">'+intro('Research library \u00b7 public source material', 'The evidence, filed', 'Research, challenges, and evidence live in the public repository. Private agent logs and credentials are excluded. Grouped by what a document is for, then by engine.')+''.join(out)+'</div>'
+    return '<div class="narrow">'+intro('The evidence, filed', 'Research, challenges, and evidence live in the public repository. Private agent logs and credentials are excluded. Grouped by what a document is for, then by engine.')+''.join(out)+'</div>'
 
 def notes_page():
     entries = []
     for i, rp in enumerate(REPORTS):
         title, summary, kind = note_info(rp)
         entries.append('<li class="tl-item tl-'+kind+('' if i else ' is-first')+'"><span class="tl-rail" aria-hidden="true"><span class="tl-top"></span><span class="tl-dot"></span><span class="tl-line"></span></span>'
-                       '<a class="tl-body" href="'+BASE+'/reports/'+rp.stem+'/"><span class="tl-when"><span class="tl-time">'+note_time(rp)+'</span><span class="tl-day">'+note_day(rp)+'</span></span><span class="tl-title">'+E(title)+'</span><span class="tl-summary">'+E(summary)+'</span><span class="tl-path">'+E(str(rp.relative_to(ROOT)))+'</span></a></li>')
+                       '<a class="tl-body" href="'+BASE+'/reports/'+rp.stem+'/"><span class="tl-title">'+E(title)+'</span><span class="tl-when">'+E(note_stamp(rp).strftime('%a %-d %b, %H:%M UTC'))+'</span><span class="tl-summary">'+E(summary)+'</span><span class="tl-path">'+E(str(rp.relative_to(ROOT)))+'</span></a></li>')
     legend = '<p class="tl-legend"><span class="tl-key"><span class="tl-dot k-failed"></span>Failure</span><span class="tl-key"><span class="tl-dot k-decision"></span>Decision or correction</span><span class="tl-key"><span class="tl-dot k-routine"></span>Routine check</span></p>'
-    return '<div class="narrow">'+intro('Field notes \u00b7 dated remote checks \u00b7 UTC', 'Field notes, with receipts', 'Dated remote check-ins, including failures and corrections. Older reports describe what was known then; read later updates before reusing a claim.')+legend+'<ol class="timeline">'+''.join(entries)+'</ol></div>'
+    return '<div class="narrow">'+intro('Field notes, with receipts', 'Dated remote check-ins, including failures and corrections. Older reports describe what was known then; read later updates before reusing a claim.')+legend+'<ol class="timeline">'+''.join(entries)+'</ol></div>'
 
-def article_head(kicker, title, deck, byline_rows):
-    return '<header class="article-head">'+eyebrow(kicker)+'<h1>'+E(title)+'</h1>'+('<p class="article-deck">'+E(deck)+'</p>' if deck else '')+byline_rows+'</header>'
+def article_head(title, deck, byline_rows):
+    return '<header class="article-head"><h1>'+E(title)+'</h1>'+('<p class="article-deck">'+E(deck)+'</p>' if deck else '')+byline_rows+'</header>'
 
 def byline_block(person_line, mono_spans):
     return ('<div class="byline-block"><div class="byline-person"><span class="byline-logo" aria-hidden="true">'+LOGO_SVG+'</span>'+person_line+'</div>'
@@ -521,34 +524,34 @@ def daily_page(d):
     if d.get('update_cutoff'):
         spans.append('<span>MORNING UPDATE UP TO '+E(utc_text(d['update_cutoff']))+'</span>')
     spans.append('<span>'+str(len(d.get('sources', [])))+' SOURCES LINKED BELOW</span>')
-    person = '<span class="byline-name">'+E(d.get('author', 'Alexey Grigorev'))+'</span><span class="muted">Written with Claude Opus</span>'
+    person = '<span class="byline-name">'+E(d.get('author', 'Alexey Grigorev'))+'</span><span class="muted">Written with Claude Opus</span><span class="muted">'+E(long_date(d['date']))+'</span>'
     titles = d.get('source_titles', {})
     sources = ''.join('<a class="src" href="'+E(u, quote=True)+'">'+E(source_title(u, titles))+'</a>' for u in d.get('sources', []))
-    return ('<article class="article">'+article_head('Daily journal \u00b7 '+str(d['date']), d['title'], d.get('summary', ''), byline_block(person, spans))
+    return ('<article class="article">'+article_head(d['title'], d.get('summary', ''), byline_block(person, spans))
             +'<div class="prose">'+prose+'</div>'
-            '<div class="article-sources">'+eyebrow('Sources for this report')+sources+'<p class="source-line">Writing assistance: Claude Opus. Original Markdown: <a href="'+public_source(d['path'].relative_to(ROOT))+'">read in the repository'+EXT+'</a>. Illustrations are conceptual artwork.</p></div></article>')
+            '<div class="article-sources">'+'<h2 class="sources-h">Sources for this report</h2>'+sources+'<p class="source-line">Writing assistance: Claude Opus. Original Markdown: <a href="'+public_source(d['path'].relative_to(ROOT))+'">read in the repository'+EXT+'</a>. Illustrations are conceptual artwork.</p></div></article>')
 
 def note_page(rp):
     title, summary, kind = note_info(rp)
     spans = ['<span class="ink">EVIDENCE UP TO '+note_stamp(rp).strftime('%Y-%m-%d %H:%M')+' UTC</span>', '<span>'+E(readable_cutoff(note_stamp(rp).isoformat()).split(' / ')[1].upper())+'</span>', '<span>HISTORICAL SNAPSHOT, NOT CURRENT PRODUCT VALIDATION</span>']
-    person = '<span class="byline-name">Orchestrator field note</span><a href="'+public_source(rp.relative_to(ROOT))+'">Original report and version history'+EXT+'</a>'
-    return ('<article class="article field-note">'+article_head('Field note \u00b7 '+note_time(rp)+' \u00b7 '+note_day(rp), report_title(rp), title+'. '+summary if kind != 'routine' else '', byline_block(person, spans))
+    person = '<span class="byline-name">Field note</span><span class="muted">'+E(note_stamp(rp).strftime('%A %-d %B %Y, %H:%M UTC'))+'</span><a href="'+public_source(rp.relative_to(ROOT))+'">Original report and version history'+EXT+'</a>'
+    return ('<article class="article field-note">'+article_head(report_title(rp), title+'. '+summary if kind != 'routine' else '', byline_block(person, spans))
             +'<div class="prose">'+markdown(re.sub(r'^#\s+[^\n]+\n?', '', rp.read_text(), count=1), rp)+'</div>'
             '<p class="back-link"><a href="'+BASE+'/reports/">'+BACK+'All field notes</a></p></article>')
 
 def home_page():
     if LATEST:
         cutoff = LATEST_CUTOFF.strftime('%Y-%m-%d %H:%M')+' UTC' if LATEST_CUTOFF else str(LATEST['date'])
-        feature = ('<article class="feature">'+eyebrow('Latest daily journal \u00b7 '+str(LATEST['date']))+'<h1><a href="'+BASE+'/'+LATEST['route']+'">'+E(LATEST['title'])+'</a></h1><p class="feature-deck">'+E(LATEST.get('summary', ''))+'</p>'
-                   '<p class="feature-byline"><span class="ink">'+E(LATEST.get('author', 'Alexey Grigorev'))+'</span><span>Written with Claude Opus</span><span class="chip">EVIDENCE UP TO '+E(cutoff)+'</span></p>'
+        feature = ('<article class="feature"><h1><a href="'+BASE+'/'+LATEST['route']+'">'+E(LATEST['title'])+'</a></h1><p class="feature-deck">'+E(LATEST.get('summary', ''))+'</p>'
+                   '<p class="feature-byline"><span class="ink">'+E(LATEST.get('author', 'Alexey Grigorev'))+'</span><span>Written with Claude Opus</span><span>'+E(long_date(LATEST['date']))+'</span><span class="chip">EVIDENCE UP TO '+E(cutoff)+'</span></p>'
                    '<a class="read-more" href="'+BASE+'/'+LATEST['route']+'">Read the daily report'+ARROW+'</a></article>')
     else:
-        feature = '<article class="feature">'+eyebrow('The first daily journal')+'<h1>What we learn belongs here</h1><p class="feature-deck">The opening story is being written and checked against the evidence. Read the dated field notes while it is prepared.</p><a class="read-more" href="'+BASE+'/reports/">Read the field notes'+ARROW+'</a></article>'
+        feature = '<article class="feature"><h1>What we learn belongs here</h1><p class="feature-deck">The opening story is being written and checked against the evidence. Read the dated field notes while it is prepared.</p><a class="read-more" href="'+BASE+'/reports/">Read the field notes'+ARROW+'</a></article>'
     rows = [('20', 'Approaches researched', 'Independent briefs in repo'), (str(ACTIVE_COUNT), 'Ideas still being tested', 'Collision radar (conditional) and change stories'), ('0', 'Agreed final six', 'The two lead agents haven\u2019t agreed'), (str(OPEN_PLACES), 'Product places open', 'No idea selected for them'), ('111.7 GiB', 'Worktree disk measured', 'Across 472 worktrees'), ('62.1%', 'Dependencies & builds', 'Not ordinary Git storage')]
     honest = ('<aside class="honest" aria-labelledby="honest-title"><div class="honest-head"><h2 id="honest-title">Status</h2></div><div class="honest-rows">'
               +''.join('<div class="honest-row"><span class="honest-n">'+num_html(n)+'</span><span class="honest-detail"><span class="honest-label">'+E(l)+'</span><span class="honest-note">'+E(note)+'</span></span></div>' for n, l, note in rows)
               +'</div><a class="honest-link" href="'+BASE+'/checklist/">See every check on the checklist'+ARROW+'</a></aside>')
-    hero = ('<section class="hero"><figure class="hero-figure"><img src="'+BASE+'/assets/agent-git-illustration.png" width="1536" height="1024" alt="Geometric blue agents carry folders along branching commit lines into an orange merge"><figcaption>FIG. 0 \u2014 MANY AGENTS, ONE SHARED HISTORY</figcaption></figure>'
+    hero = ('<section class="hero"><figure class="hero-figure"><img src="'+BASE+'/assets/agent-git-illustration.png" width="1536" height="1024" alt="Geometric blue agents carry folders along branching commit lines into an orange merge"></figure>'
             '<div class="hero-grid">'+feature+honest+'</div></section>')
     hyp = ('<section class="hyp-section" aria-labelledby="hyp-title"><div class="section-head"><h2 id="hyp-title">The hypotheses</h2><p>'+str(ACTIVE_COUNT)+' still being tested. '+str(PARKED_COUNT)+' parked. '+str(OPEN_PLACES)+' places open. None selected.<span class="only-phone"> Every idea is provisional.</span> <a href="'+BASE+'/ideas/">Read what all 20 ideas would do'+ARROW+'</a></p></div>'+cards()+'</section>')
     stats = ''.join('<div class="pain-stat"><span class="pain-n">'+E(n)+'</span><span class="pain-l">'+E(l)+'</span></div>' for n, l in PAIN_STATS)
@@ -577,7 +580,7 @@ def ideas_page():
     # Bold each idea's name (the text before the first colon) so readers can scan the list;
     # the Markdown source stays free of bold markup for stylint.
     prose = re.sub(r'<li>([^<:]+):', r'<li><strong>\1:</strong>', prose)
-    return (title, '<article class="article">'+article_head('Research \u00b7 the approaches the agents collected', title, 'What each of the 20 approaches would do for a person who runs many coding agents on the same code.', '')
+    return (title, '<article class="article">'+article_head(title, 'What each of the 20 approaches would do for a person who runs many coding agents on the same code.', '')
             +'<div class="prose">'+prose+'</div>'
             '<div class="article-sources"><p class="source-line">Original Markdown: <a href="'+public_source(IDEAS.relative_to(ROOT))+'">read in the repository'+EXT+'</a>.</p></div></article>')
 
@@ -598,9 +601,9 @@ def main():
     for d in daily:
         write(d['route'], d['title'], daily_page(d), d.get('summary'), 'article')
     write('', LATEST['title'] if LATEST else 'Agent Branches', home_page(), kind='home')
-    rows = ''.join('<a class="journal-row" href="'+BASE+'/'+d['route']+'"><span class="mono-meta"><span>'+E(str(d['date']))+'</span><span>EVIDENCE UP TO '+E(utc_text(d.get('source_cutoff', d['date'])))+'</span></span><span class="journal-title">'+E(d['title'])+'</span><span class="journal-summary">'+E(d.get('summary', ''))+'</span><span class="read-more-sm">Read the story'+ARROW+'</span></a>' for d in daily)
-    write('daily/', 'Daily journal', '<div class="narrow">'+intro('Daily journal \u00b7 a story each day', 'The daily journal', 'What we tried, what held up, and what changed our minds. Written with Claude Opus, checked against the experiment.', '<a class="read-more-sm" href="'+BASE+'/feed.xml">Subscribe via RSS'+ARROW+'</a>')+'<div class="journal-list">'+(rows or '<p>The first evidence-checked story is being prepared.</p>')+'</div></div>')
-    write('projects/', 'Hypotheses', intro('Hypotheses \u00b7 '+str(ACTIVE_COUNT)+' retained \u00b7 '+str(PARKED_COUNT)+' parked \u00b7 unsigned', 'Ideas with work to do', str(len(PROJECTS))+' directions have pages here: '+str(ACTIVE_COUNT)+' retained for falsification and '+str(PARKED_COUNT)+' parked. Selection and development gates are separate; these are provisional research lanes, not products. Each page states what would change our mind.')+cards(with_next=True))
+    rows = ''.join('<a class="journal-row" href="'+BASE+'/'+d['route']+'"><span class="journal-title">'+E(d['title'])+'</span><span class="journal-date">'+E(long_date(d['date']))+' \u00b7 evidence up to '+E(utc_text(d.get('source_cutoff', d['date'])))+'</span><span class="journal-summary">'+E(d.get('summary', ''))+'</span><span class="read-more-sm">Read the story'+ARROW+'</span></a>' for d in daily)
+    write('daily/', 'Daily journal', '<div class="narrow">'+intro('The daily journal', 'What we tried, what held up, and what changed our minds. Written with Claude Opus, checked against the experiment.', '<a class="read-more-sm" href="'+BASE+'/feed.xml">Subscribe via RSS'+ARROW+'</a>')+'<div class="journal-list">'+(rows or '<p>The first evidence-checked story is being prepared.</p>')+'</div></div>')
+    write('projects/', 'Hypotheses', intro('Ideas with work to do', str(len(PROJECTS))+' directions have pages here: '+str(ACTIVE_COUNT)+' retained for falsification and '+str(PARKED_COUNT)+' parked. Selection and development gates are separate; these are provisional research lanes, not products. Each page states what would change our mind.')+cards(with_next=True))
     for i, p in enumerate(PROJECTS):
         write('projects/'+p['slug']+'/', p['name'], project_page(i, p), p['summary'], 'project')
     write('reports/', 'Field notes', notes_page())
@@ -611,12 +614,12 @@ def main():
     write('ideas/', ideas_title, ideas_body, 'What each of the 20 approaches collected by the agent team would do.', 'article')
     write('checklist/', 'Experiment checklist', checklist_page())
     team_fig = '<figure class="portrait-fig"><img loading="lazy" src="'+BASE+'/assets/team-workflow-mobile.svg" alt="How the team works: Alexey and the coordinating agent connect to the Claude and Codex lead agents, five research teams, worker agents, evidence, and review."><figcaption>The operating model. Arrows show responsibilities, not proof of continuous activity.</figcaption></figure>'
-    about = ('<article class="article">'+article_head('About \u00b7 why this exists', 'Build it. Test it. Tell the whole story.', 'A new Git platform competition prompted a wider question: where does Git make a team of coding agents harder to run?', '')
+    about = ('<article class="article">'+article_head('Build it. Test it. Tell the whole story.', 'A new Git platform competition prompted a wider question: where does Git make a team of coding agents harder to run?', '')
              +'<div class="prose"><h2>Start with actual pain</h2><p>Alexey\u2019s worktrees filled disk quickly. A read-only scan found 472 linked worktrees across 25 repositories, occupying a physical union of 111.7 GiB. Dependencies and builds accounted for 69.4 GiB, or 62.1%. These are measurements from one host, not a claim about every developer.</p><h2>Let the agents challenge each other</h2><p>Claude and Codex, the two lead agents, monitor the work and challenge each other\u2019s evidence. Research teams coordinate useful tasks, and worker agents can run in the background. The team is free to improve its working method, while preserving quotas, code recovery, and privacy.</p>'+team_fig+'<h2>Keep the failures visible</h2><p>Research is not product validation. No final six-approach shortlist has been approved. The first live integration comparison showed no separation, so that idea\u2019s primary status was withdrawn. A small storage experiment fell below the savings target set before the test.</p><h2>Use what survives</h2><p>Teams should build the smallest useful prototype and use it in their own development. Accepted outcomes, peer review, and recoverable Git history matter more than a launch count.</p>'
              '<p><a href="'+public_source('experiment/USER-INSTRUCTIONS.md')+'">The original user brief'+EXT+'</a> \u00b7 <a href="'+public_source('AGENTS.md')+'">How the agents are expected to work'+EXT+'</a> \u00b7 <a href="https://blog.cloudflare.com/next-git-platform-on-cloudflare/">The competition that started it'+EXT+'</a></p></div></article>')
     write('experiment/', 'About the experiment', about, None, 'article')
-    write('subscribe/', 'Confirm your experiment updates', intro('Updates \u00b7 a separate, confirmed opt-in', 'Stay with the experiment', 'Sign up for Agent Branches updates, or use the confirmation link from your inbox. This list is separate from PocketShell and other newsletters.')+signup_section(dedicated=True))
-    privacy = ('<article class="article">'+article_head('Email opt-in \u00b7 privacy', 'Your address stays private', '', '')+'<div class="prose"><h2>What you are signing up for</h2><p>Agent Branches experiment updates: useful findings, project progress, and corrections. A signup does not enroll you in PocketShell or another newsletter. You can read daily reports in the journal; the email list is for occasional experiment updates.</p><h2>Confirmation and storage</h2><p>We use DataTalks.Club Relay, the same public double opt-in flow used by PocketShell. Your email address and pending or confirmed subscription state are stored in a separate Agent Branches audience. Relay sends a confirmation link; you join the confirmed list only after using it.</p><p>The website sends your address directly to the fixed Relay signup endpoint. No client API key is placed in the page. We do not put submitted addresses or confirmation tokens into the public repository, research reports, agent prompts, or browser storage.</p><h2>Leaving the list</h2><p>You can ignore a confirmation you did not request. Unsubscribe through the link in an update email. Repeated requests can be rate limited; that is separate from confirmation.</p><h2>Website and service requests</h2><p>The website is hosted on GitHub Pages and the email flow is handled by Relay. Those services process the requests needed to deliver the page and manage the opt-in, including their ordinary operational records. No visitor analytics or public signup telemetry is added by this form.</p>'
+    write('subscribe/', 'Confirm your experiment updates', intro('Stay with the experiment', 'Sign up for Agent Branches updates, or use the confirmation link from your inbox. This list is separate from PocketShell and other newsletters.')+signup_section(dedicated=True))
+    privacy = ('<article class="article">'+article_head('Your address stays private', '', '')+'<div class="prose"><h2>What you are signing up for</h2><p>Agent Branches experiment updates: useful findings, project progress, and corrections. A signup does not enroll you in PocketShell or another newsletter. You can read daily reports in the journal; the email list is for occasional experiment updates.</p><h2>Confirmation and storage</h2><p>We use DataTalks.Club Relay, the same public double opt-in flow used by PocketShell. Your email address and pending or confirmed subscription state are stored in a separate Agent Branches audience. Relay sends a confirmation link; you join the confirmed list only after using it.</p><p>The website sends your address directly to the fixed Relay signup endpoint. No client API key is placed in the page. We do not put submitted addresses or confirmation tokens into the public repository, research reports, agent prompts, or browser storage.</p><h2>Leaving the list</h2><p>You can ignore a confirmation you did not request. Unsubscribe through the link in an update email. Repeated requests can be rate limited; that is separate from confirmation.</p><h2>Website and service requests</h2><p>The website is hosted on GitHub Pages and the email flow is handled by Relay. Those services process the requests needed to deliver the page and manage the opt-in, including their ordinary operational records. No visitor analytics or public signup telemetry is added by this form.</p>'
                '<p><a href="'+BASE+'/subscribe/">Back to signup</a> \u00b7 <a href="https://github.com/DataTalksClub/relay">Relay source'+EXT+'</a></p></div></article>')
     write('privacy/', 'Email privacy', privacy, None, 'article')
     rss = ET.Element('rss', version='2.0')
