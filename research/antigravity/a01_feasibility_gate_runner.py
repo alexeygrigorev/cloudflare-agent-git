@@ -57,7 +57,7 @@ Your assigned ticket:
 Refactor `src/event_store/producer.py` to optimize batch serialization:
 1. Update event timestamp recording to integer Unix microseconds (`timestamp_us`) to prevent float precision truncation under high throughput.
 2. Compact payloads by stripping extraneous whitespace and emitting flattened records.
-3. Ensure all producer unit tests in `tests/test_producer.py` pass.
+3. Ensure all producer unit tests in `tests/test_producer.py` pass (you own `src/event_store/producer.py` and `tests/test_producer.py` and may update unit tests to verify the optimized format).
 4. Preserve public interface methods (`emit_event`, `flush_batch`).
 
 Operate strictly inside this repository workspace. Do not modify files outside this workspace or access other workspaces."""
@@ -258,21 +258,39 @@ def grade_composite(prod_ws, cons_ws, grading_root):
         else:
             shutil.copy2(s, d)
     # Copy updated producer.py and consumer.py
-    shutil.copy2(os.path.join(prod_ws, "src/event_store/producer.py"), os.path.join(grading_root, "src/event_store/producer.py"))
-    shutil.copy2(os.path.join(cons_ws, "src/event_store/consumer.py"), os.path.join(grading_root, "src/event_store/consumer.py"))
+    prod_file = os.path.join(grading_root, "src/event_store/producer.py")
+    cons_file = os.path.join(grading_root, "src/event_store/consumer.py")
+    shutil.copy2(os.path.join(prod_ws, "src/event_store/producer.py"), prod_file)
+    shutil.copy2(os.path.join(cons_ws, "src/event_store/consumer.py"), cons_file)
     # Copy grader script
-    shutil.copy2(GRADER_SCRIPT, os.path.join(grading_root, "test_integration_stream.py"))
+    grader_dest = os.path.join(grading_root, "test_integration_stream.py")
+    shutil.copy2(GRADER_SCRIPT, grader_dest)
 
-    # Run frozen acceptance grader
+    out_json = os.path.join(grading_root, "grader_result.json")
     t0 = time.time()
-    res = run_cmd(["python3", "test_integration_stream.py"], cwd=grading_root)
+    res = run_cmd([
+        "python3", grader_dest,
+        "--producer", prod_file,
+        "--consumer", cons_file,
+        "--output-json", out_json
+    ], cwd=grading_root)
     duration = time.time() - t0
+
+    details = {}
+    if os.path.exists(out_json):
+        try:
+            with open(out_json) as f:
+                details = json.load(f)
+        except Exception:
+            pass
+
     return {
         "exit_code": res.returncode,
         "stdout": res.stdout.strip(),
         "stderr": res.stderr.strip(),
         "passed": (res.returncode == 0),
-        "duration_sec": duration
+        "duration_sec": duration,
+        "details": details
     }
 
 
@@ -358,67 +376,104 @@ def run_pair(arm_name, pair_num, intervention_type):
     }
 
     t0 = time.time()
-    max_wait = 240
-    print(f"Monitoring pair execution (max_wait={max_wait}s)...")
+    max_wait = 360
+    settle_start_time = None
+    SETTLE_REQUIRED_SEC = 20.0
+    print(f"Monitoring pair execution (max_wait={max_wait}s, settle_required={SETTLE_REQUIRED_SEC}s)...")
 
     while time.time() - t0 < max_wait:
+        # Check if files modified
+        prod_st = run_cmd(["git", "status", "--porcelain"], cwd=prod_ws).stdout
+        cons_st = run_cmd(["git", "status", "--porcelain"], cwd=cons_ws).stdout
+        prod_modified = ("src/event_store/producer.py" in prod_st or "producer.py" in prod_st)
+        cons_modified = ("src/event_store/consumer.py" in cons_st or "consumer.py" in cons_st)
+
         # Check interventions
         if not intervention_data["delivered"]:
             if intervention_type == "intent_note":
                 # Check for first tool execution in either session
                 prod_tel = extract_session_telemetry(prod_env["db"], prod_ws)
                 cons_tel = extract_session_telemetry(cons_env["db"], cons_ws)
-                # First tool action after whoami
                 prod_tools = [t for t in prod_tel["tool_calls"] if "whoami" not in str(t.get("command", ""))]
                 cons_tools = [t for t in cons_tel["tool_calls"] if "whoami" not in str(t.get("command", ""))]
                 if len(prod_tools) > 0 or len(cons_tools) > 0:
                     print(f"[{arm_name}] First tool execution observed! Injecting Arm 1b Intent Note to both inboxes...")
                     t_deliv = int(time.time() * 1000)
-                    # Send to Producer
                     s_p = run_cmd([PILOT_BIN, "message", "send", "--to", prod_tag, INTENT_NOTE_PAYLOAD, "--workspace", prod_ws, "--json"])
                     mid_p = json.loads(s_p.stdout)["id"] if s_p.returncode == 0 else None
-                    if mid_p: run_cmd([PILOT_BIN, "message", "deliver", mid_p, "--workspace", prod_ws])
-                    # Send to Consumer
                     s_c = run_cmd([PILOT_BIN, "message", "send", "--to", cons_tag, INTENT_NOTE_PAYLOAD, "--workspace", cons_ws, "--json"])
                     mid_c = json.loads(s_c.stdout)["id"] if s_c.returncode == 0 else None
-                    if mid_c: run_cmd([PILOT_BIN, "message", "deliver", mid_c, "--workspace", cons_ws])
                     intervention_data["delivered"] = True
                     intervention_data["delivery_timestamp_ms"] = t_deliv
                     intervention_data["message_ids"] = {"producer": mid_p, "consumer": mid_c}
-                    print(f"[{arm_name}] Intent Note delivered at {t_deliv} (mid_p={mid_p}, mid_c={mid_c})")
+                    print(f"[{arm_name}] Intent Note queued in mailbox at {t_deliv} (mid_p={mid_p}, mid_c={mid_c})")
 
             elif intervention_type == "radar_warning":
-                # Run contract drift detector between producer and consumer files
                 prod_file = os.path.join(prod_ws, "src/event_store/producer.py")
                 cons_file = os.path.join(cons_ws, "src/event_store/consumer.py")
-                det_res = run_cmd(["python3", DETECTOR_SCRIPT, prod_file, cons_file])
+                det_res = run_cmd(["python3", DETECTOR_SCRIPT, "--producers", prod_file, "--consumers", cons_file, "--json"])
+                has_drift = False
                 if det_res.returncode == 1:
+                    has_drift = True
+                elif det_res.returncode == 0:
+                    try:
+                        rep = json.loads(det_res.stdout)
+                        has_drift = rep.get("has_drift", False)
+                    except Exception:
+                        pass
+                if has_drift:
                     print(f"[{arm_name}] AST Detector triggered contract drift! Injecting Arm 2 Radar Warning to both inboxes...")
                     t_deliv = int(time.time() * 1000)
-                    # Send to Producer
                     s_p = run_cmd([PILOT_BIN, "message", "send", "--to", prod_tag, RADAR_WARNING_PAYLOAD, "--workspace", prod_ws, "--json"])
                     mid_p = json.loads(s_p.stdout)["id"] if s_p.returncode == 0 else None
-                    if mid_p: run_cmd([PILOT_BIN, "message", "deliver", mid_p, "--workspace", prod_ws])
-                    # Send to Consumer
                     s_c = run_cmd([PILOT_BIN, "message", "send", "--to", cons_tag, RADAR_WARNING_PAYLOAD, "--workspace", cons_ws, "--json"])
                     mid_c = json.loads(s_c.stdout)["id"] if s_c.returncode == 0 else None
-                    if mid_c: run_cmd([PILOT_BIN, "message", "deliver", mid_c, "--workspace", cons_ws])
                     intervention_data["delivered"] = True
                     intervention_data["delivery_timestamp_ms"] = t_deliv
                     intervention_data["message_ids"] = {"producer": mid_p, "consumer": mid_c}
-                    print(f"[{arm_name}] Radar Warning delivered at {t_deliv} (mid_p={mid_p}, mid_c={mid_c})")
+                    print(f"[{arm_name}] Radar Warning queued in mailbox at {t_deliv} (mid_p={mid_p}, mid_c={mid_c})")
+
+        # Deliver notice to prompt if resting
+        if intervention_data["delivered"]:
+            mid_p = intervention_data["message_ids"].get("producer")
+            mid_c = intervention_data["message_ids"].get("consumer")
+            if mid_p and intervention_data["producer_notice_at_ms"] is None:
+                p_rest_now, _ = is_session_resting(prod_session_id, prod_ws)
+                if p_rest_now:
+                    del_p = run_cmd([PILOT_BIN, "message", "deliver", mid_p, "--workspace", prod_ws])
+                    if del_p.returncode == 0:
+                        intervention_data["producer_notice_at_ms"] = int(time.time() * 1000)
+                        print(f"[{arm_name}] Notice submitted to Producer prompt at {intervention_data['producer_notice_at_ms']}")
+            if mid_c and intervention_data["consumer_notice_at_ms"] is None:
+                c_rest_now, _ = is_session_resting(cons_session_id, cons_ws)
+                if c_rest_now:
+                    del_c = run_cmd([PILOT_BIN, "message", "deliver", mid_c, "--workspace", cons_ws])
+                    if del_c.returncode == 0:
+                        intervention_data["consumer_notice_at_ms"] = int(time.time() * 1000)
+                        print(f"[{arm_name}] Notice submitted to Consumer prompt at {intervention_data['consumer_notice_at_ms']}")
 
         # Check resting state
         p_rest, p_reason = is_session_resting(prod_session_id, prod_ws)
         c_rest, c_reason = is_session_resting(cons_session_id, cons_ws)
-        if p_rest and c_rest:
-            print(f"[{arm_name}] Both sessions reached resting idle!")
-            break
+
+        # Both sessions modified their target files AND both are resting
+        if prod_modified and cons_modified and p_rest and c_rest:
+            if settle_start_time is None:
+                settle_start_time = time.time()
+                print(f"[{arm_name}] Both target files modified & both resting. Starting {SETTLE_REQUIRED_SEC}s settle period...")
+            elif time.time() - settle_start_time >= SETTLE_REQUIRED_SEC:
+                print(f"[{arm_name}] Both sessions sustained resting idle for {SETTLE_REQUIRED_SEC}s after modifications! Task complete.")
+                break
+        else:
+            if settle_start_time is not None:
+                print(f"[{arm_name}] Session activity resumed (p_rest={p_rest},{p_reason}; c_rest={c_rest},{c_reason}; p_mod={prod_modified}, c_mod={cons_modified}). Resetting settle timer.")
+                settle_start_time = None
+
         time.sleep(2.0)
 
-    # Allow final settlement
-    print(f"Waiting for final idle settlement (5s)...")
-    time.sleep(5.0)
+    # Final settlement grace
+    print(f"Waiting for final buffer flush (3s)...")
+    time.sleep(3.0)
 
     # Check git diffs and code uptake
     prod_diff = run_cmd(["git", "diff", "HEAD~1"], cwd=prod_ws).stdout
