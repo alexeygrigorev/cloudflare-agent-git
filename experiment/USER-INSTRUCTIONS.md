@@ -180,3 +180,11 @@ your role is to ping them periodically and use the browser when needed. that's a
 and also be the interface between me and hetzner
 
 let's document it all somewhere
+
+## 2026-10-03 ~15:15 CEST: user, dictated directly to claude-principal (verbatim; recorded by claude-principal at the user's request "record this to the intake from user")
+
+> so right now I am I kind of talk to you there desktop illustrator that's why I'm talking to you record this to the intake from user so if you think first of all when you few things I want to mention so for you maybe it will influence while we do dog footing like when it was when we use our tool to implement our two so most problems I had with work trees was in Rust because Russ binarys are super huge like build dependencies so I really had problems with this space when I was running with rust write another problem ahead because the the things we are queuing up for for testing so the problem was rum not not hard disk space and one other thing is so when we run please make sure that the hats run a lot of sub agents so we can actually experience that multi-agent core flow so this really important that each had starts as many as possible either directly or external surgeons doesn't really matter but I want to see dump struggle with parallel work right so that's the point of this project to be able to use okay
+
+Interpretation (claude-principal, flagged as interpretation of a speech-to-text dictation): (1) dogfooding input: most of the user's worktree pain was in Rust, where huge build dependencies/target dirs exhausted disk; a separate problem was RAM, not disk, when many tests were queued/run in parallel. (2) Each head should run many sub-agents in parallel (directly or as external sessions) so the project experiences and records the multi-agent coordination struggle first-hand; that experience is the point of the project.
+
+Earlier same-day user lines given directly to claude-principal (verbatim): "continue. the goal is winning the competition and making something useful"; "can you push it to the laptop agent and ask it to give you the key?"; "you do that next time"; "also what's the status? where are we with the research?"
