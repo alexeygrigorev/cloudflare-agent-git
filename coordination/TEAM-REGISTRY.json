@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T19:11:16.344708+00:00",
+  "updated_at": "2026-10-03T19:56:40.000000+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
     "claude-principal"
@@ -544,7 +544,7 @@
           "provider": "zcode/warm",
           "session_id": "5b88ead6-3edf-4ea9-9cf6-939281e7c8db",
           "workspace": "/home/alexey/git/agent-branches-cred",
-          "status": "running",
+          "status": "completed",
           "task": "C-1422/C-1425 coordinator token expiry & revocation gate on proto/cred-expiry-gate",
           "owned_paths": [
             "prototype/src/core/coordinator.ts",
@@ -554,7 +554,9 @@
             "prototype/test/auth.test.ts"
           ],
           "first_tool_evidence": "aplexer whoami --json",
-          "memory_cap": "1500M"
+          "memory_cap": "1500M",
+          "completed_at": "2026-10-03T19:54:44+00:00",
+          "result": "28488f7 on proto/cred-expiry-gate (91/91 tests pass across 13 test files); merged to proto/live at 659b81a. Implemented AgentTokenRecord, token expiry check (boundary now >= expires), explicit revocation (revokeAgentToken + POST /tasks/:id/revoke), and wire auth tests."
         }
       ]
     },
