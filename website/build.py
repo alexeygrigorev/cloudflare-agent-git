@@ -241,13 +241,13 @@ LATEST_NOTE = note_stamp(REPORTS[0]) if REPORTS else None
 # Field-note headlines and summaries. Four come from the design reference; the newer three
 # are written from the notes themselves. Every other note uses its own section headings.
 NOTE_TEXT = {
-    '20261003T0541': ('A10 parked after ordinary recovery worked; an overread is withdrawn', 'Both principals provisionally parked A10 in draft 9 after ordinary Git and file recovery succeeded in two actual tasks. Root withdrew its 05:11 reading of restored Bunny output as new execution.', 'decision'),
-    '20261003T0511': ('Draft 8 parks A16; the supervisor repair is verified', 'Draft 8 retains A01, A05, A06 and A10, parks A16 and leaves two product places open. A scoped supervisor repair passed 35 tests, rerun by root.', 'decision'),
-    '20261003T0441': ('A16 parked as a competition product; A06 card left the verdict unchanged', 'A16 was parked after three failed D1 gates. A06\u2019s first real review kept the same APPROVE verdict with and without the story card. Exactly-once task execution remains unproved.', 'decision'),
-    '20261003T0224': ('Runtime regression failed; disk dropped 16 GiB', 'Expected one outer side effect, observed zero. Root free disk 132 \u2192 116 GiB; shared Rust target measured at 39.65 GiB. Nothing killed or deleted; compilation held.', 'failed'),
-    '20261002T2124': ('A01 loses primary status', 'Equal-policy actual pair shows null separation. Claude proposes retain-conditional, lose-primary; Codex accepts the correction.', 'decision'),
-    '20261002T2024': ('Root review corrects the worktree number', 'The ~80% dependency share mixed a per-directory sum with a physical union. Corrected to 62.1%.', 'decision'),
-    '20261002T1950': ('A14 folded into A01; slot six reopens', 'Codex draft 4 folds runtime verification into A01 after Bunny\u2019s selection challenge.', 'decision'),
+    '20261003T0541': ('Task handoff idea parked after plain Git recovery worked; a misreading is withdrawn', 'Both principals provisionally parked A10 in draft 9 after ordinary Git and file recovery succeeded in two actual tasks. Root withdrew its 05:11 reading of restored Bunny output as new execution.', 'decision'),
+    '20261003T0511': ('A new shortlist draft parks the disk-saving idea; a monitoring fix is verified', 'Draft 8 retains A01, A05, A06 and A10, parks A16 and leaves two product places open. A scoped supervisor repair passed 35 tests, rerun by root.', 'decision'),
+    '20261003T0441': ('Disk-saving idea parked; a change story left the review verdict unchanged', 'A16 was parked after three failed D1 gates. A06\u2019s first real review kept the same APPROVE verdict with and without the story card. Exactly-once task execution remains unproved.', 'decision'),
+    '20261003T0224': ('A repair test failed; free disk dropped 16 GiB', 'Expected one outer side effect, observed zero. Root free disk 132 \u2192 116 GiB; shared Rust target measured at 39.65 GiB. Nothing killed or deleted; compilation held.', 'failed'),
+    '20261002T2124': ('The conflict-warning idea loses its lead', 'Equal-policy actual pair shows null separation. Claude proposes retain-conditional, lose-primary; Codex accepts the correction.', 'decision'),
+    '20261002T2024': ('The coordinating agent corrects the disk number', 'The ~80% dependency share mixed a per-directory sum with a physical union. Corrected to 62.1%.', 'decision'),
+    '20261002T1950': ('Private test site idea folded into the collision radar; sixth place reopens', 'Codex draft 4 folds runtime verification into A01 after Bunny\u2019s selection challenge.', 'decision'),
 }
 
 def note_info(path):
@@ -301,7 +301,7 @@ def footer_html():
     sha = BUILD_SHA[:7].upper()
     stamp = 'BUILT FROM MAIN @ '+(('<a href="'+REPO+'/commit/'+BUILD_SHA+'">'+sha+'</a>') if BUILD_SHA else 'UNKNOWN')
     if LATEST_CUTOFF:
-        stamp += ' \u00b7 EVIDENCE CUTOFF '+LATEST_CUTOFF.strftime('%Y-%m-%d %H:%M')+' UTC'
+        stamp += ' \u00b7 EVIDENCE UP TO '+LATEST_CUTOFF.strftime('%Y-%m-%d %H:%M')+' UTC'
     lines = ['SITE BUILT '+BUILD_TIME]
     if LATEST_NOTE:
         lines.append('LATEST FIELD NOTE '+LATEST_NOTE.strftime('%Y-%m-%d %H:%M')+' UTC')
@@ -330,13 +330,13 @@ def card(p, with_next=False):
         first = re.split(r'(?<=[.;])\s', p['test'].strip(), maxsplit=1)[0]
         nxt = '<p class="card-next">Next test: '+E(first)+'</p>'
     return ('<a class="hyp-card" href="'+BASE+'/projects/'+p['slug']+'/"><span class="card-top"><span class="card-mark" aria-hidden="true">'+CARD_MARKS.get(p['id'], CARD_MARKS['A01'])+'</span><span class="badge">'+tag+'</span></span>'
-            '<span class="card-head"><span class="card-id">'+E(p['id'])+'</span><span class="card-name">'+E(p['name'])+'</span></span>'
+            '<span class="card-head"><span class="card-id">IDEA '+str(int(p['id'][1:]))+'</span><span class="card-name">'+E(p['name'])+'</span></span>'
             '<span class="status-line">'+smark(status_kind(p))+'<span>'+E(p['status'])+'</span></span><span class="card-short">'+E(p['summary'])+'</span>'+nxt+'</a>')
 
 def open_card(with_next=False):
     return ('<div class="hyp-card is-open"><span class="card-top"><span class="card-mark" aria-hidden="true">'+CARD_MARKS['SLOT6']+'</span><span class="badge">OPEN</span></span>'
-            '<span class="card-head"><span class="card-id">SLOT 6</span><span class="card-name">Open slot \u2014 no replacement selected</span></span>'
-            '<span class="status-line">'+smark('open')+'<span>Reopened \u00b7 no candidate approved</span></span><span class="card-short">A14 was folded into A01. Nothing has earned the sixth place yet.</span>'+('<p class="card-next">Next test: Open</p>' if with_next else '')+'</div>')
+            '<span class="card-head"><span class="card-id">PLACE 6</span><span class="card-name">Open place \u2014 nothing selected</span></span>'
+            '<span class="status-line">'+smark('open')+'<span>Reopened \u00b7 no candidate approved</span></span><span class="card-short">The private test site idea was folded into the collision radar. Nothing has earned the sixth place yet.</span>'+('<p class="card-next">Next test: Open</p>' if with_next else '')+'</div>')
 
 def cards(with_next=False):
     return '<div class="card-grid">'+''.join(card(p, with_next) for p in PROJECTS)+open_card(with_next)+'</div>'
@@ -347,7 +347,7 @@ def num_html(n):
         return E(m[1])+'<small>'+E(m[2])+'</small>'
     return E(n)
 
-PAIN_STATS = [('472', 'linked worktrees'), ('25', 'repositories'), ('111.7', 'GiB physical union'), ('62.1%', 'dependencies + build')]
+PAIN_STATS = [('472', 'linked worktrees'), ('25', 'repositories'), ('111.7', 'GiB on disk'), ('62.1%', 'dependencies + build')]
 
 # Extra per-project reference detail (who it is for, source files). Facts about current
 # status come from projects.json only; these lists are filtered to files that exist.
@@ -495,25 +495,47 @@ def byline_block(person_line, mono_spans):
     return ('<div class="byline-block"><div class="byline-person"><span class="byline-logo" aria-hidden="true">'+LOGO_SVG+'</span>'+person_line+'</div>'
             '<div class="mono-meta">'+''.join(mono_spans)+'</div></div>')
 
+def source_title(url, titles=None):
+    """Readable link text for a source URL; hashes and paths stay in the href only."""
+    if titles and url in titles:
+        return titles[url]
+    m = re.match(r'^https://github\.com/([^/]+)/([^/#?]+)(?:/(blob|tree|commit)/([^/]+)(?:/(.*))?)?', url)
+    if m:
+        repo, kind, path = m[2], m[3], m[5] or ''
+        if not kind:
+            return 'The '+repo+' repository'
+        if kind == 'commit':
+            return 'A change in the '+repo+' repository'
+        beat = re.search(r'heartbeat-(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})', path)
+        if beat:
+            return 'Coordinating agent\'s check, '+beat[1]+'-'+beat[2]+'-'+beat[3]+' '+beat[4]+':'+beat[5]+' UTC'
+        stem = re.sub(r'\.(md|json|txt)$', '', path.rstrip('/').split('/')[-1])
+        return stem.replace('-', ' ').replace('_', ' ').capitalize()+' ('+repo+')'
+    host = urlparse(url).netloc.removeprefix('www.')
+    last = urlparse(url).path.rstrip('/').split('/')[-1]
+    last = re.sub(r'\.(pdf|html?)$', '', last).replace('-', ' ').strip()
+    return host+(': '+last if last else '')
+
 def daily_page(d):
     content = d['path'].read_text()
     content = re.sub(r'^#\s+[^\n]+\n?', '', content, count=1)
     prose = markdown(content, d['path'])
     strip = '<div class="stat-strip">'+''.join('<div><span class="stat-n">'+E(n)+'</span><span class="stat-l">'+E(l)+'</span></div>' for n, l in PAIN_STATS)+'</div>'
     prose = re.sub(r'(<p>[^\n]*111\.7 GiB of physical disk[^\n]*</p>)', lambda m: m[1]+strip, prose, count=1)
-    spans = ['<span class="ink">EVIDENCE CUTOFF '+E(utc_text(d.get('source_cutoff', d['date'])))+'</span>']
+    spans = ['<span class="ink">EVIDENCE UP TO '+E(utc_text(d.get('source_cutoff', d['date'])))+'</span>']
     if d.get('update_cutoff'):
-        spans.append('<span>MORNING UPDATE CUTOFF '+E(utc_text(d['update_cutoff']))+'</span>')
+        spans.append('<span>MORNING UPDATE UP TO '+E(utc_text(d['update_cutoff']))+'</span>')
     spans.append('<span>'+str(len(d.get('sources', [])))+' SOURCES LINKED BELOW</span>')
     person = '<span class="byline-name">'+E(d.get('author', 'Alexey Grigorev'))+'</span><span class="muted">Written with Claude Opus</span>'
-    sources = ''.join('<a class="src" href="'+E(u, quote=True)+'">'+E(re.sub(r'^https://(github\.com/alexeygrigorev/)?', '', u))+'</a>' for u in d.get('sources', []))
+    titles = d.get('source_titles', {})
+    sources = ''.join('<a class="src" href="'+E(u, quote=True)+'">'+E(source_title(u, titles))+'</a>' for u in d.get('sources', []))
     return ('<article class="article">'+article_head('Daily journal \u00b7 '+str(d['date']), d['title'], d.get('summary', ''), byline_block(person, spans))
             +'<div class="prose">'+prose+'</div>'
             '<div class="article-sources">'+eyebrow('Sources for this report')+sources+'<p class="source-line">Writing assistance: Claude Opus. Original Markdown: <a href="'+public_source(d['path'].relative_to(ROOT))+'">read in the repository'+EXT+'</a>. Illustrations are conceptual artwork.</p></div></article>')
 
 def note_page(rp):
     title, summary, kind = note_info(rp)
-    spans = ['<span class="ink">CUTOFF '+note_stamp(rp).strftime('%Y-%m-%d %H:%M')+' UTC</span>', '<span>'+E(readable_cutoff(note_stamp(rp).isoformat()).split(' / ')[1].upper())+'</span>', '<span>HISTORICAL SNAPSHOT, NOT CURRENT PRODUCT VALIDATION</span>']
+    spans = ['<span class="ink">EVIDENCE UP TO '+note_stamp(rp).strftime('%Y-%m-%d %H:%M')+' UTC</span>', '<span>'+E(readable_cutoff(note_stamp(rp).isoformat()).split(' / ')[1].upper())+'</span>', '<span>HISTORICAL SNAPSHOT, NOT CURRENT PRODUCT VALIDATION</span>']
     person = '<span class="byline-name">Orchestrator field note</span><a href="'+public_source(rp.relative_to(ROOT))+'">Original report and version history'+EXT+'</a>'
     return ('<article class="article field-note">'+article_head('Field note \u00b7 '+note_time(rp)+' \u00b7 '+note_day(rp), report_title(rp), title+'. '+summary if kind != 'routine' else '', byline_block(person, spans))
             +'<div class="prose">'+markdown(re.sub(r'^#\s+[^\n]+\n?', '', rp.read_text(), count=1), rp)+'</div>'
@@ -523,26 +545,26 @@ def home_page():
     if LATEST:
         cutoff = LATEST_CUTOFF.strftime('%Y-%m-%d %H:%M')+' UTC' if LATEST_CUTOFF else str(LATEST['date'])
         feature = ('<article class="feature">'+eyebrow('Latest daily journal \u00b7 '+str(LATEST['date']))+'<h1><a href="'+BASE+'/'+LATEST['route']+'">'+E(LATEST['title'])+'</a></h1><p class="feature-deck">'+E(LATEST.get('summary', ''))+'</p>'
-                   '<p class="feature-byline"><span class="ink">'+E(LATEST.get('author', 'Alexey Grigorev'))+'</span><span>Written with Claude Opus</span><span class="chip">CUTOFF '+E(cutoff)+'</span></p>'
+                   '<p class="feature-byline"><span class="ink">'+E(LATEST.get('author', 'Alexey Grigorev'))+'</span><span>Written with Claude Opus</span><span class="chip">EVIDENCE UP TO '+E(cutoff)+'</span></p>'
                    '<a class="read-more" href="'+BASE+'/'+LATEST['route']+'">Read the daily report'+ARROW+'</a></article>')
-        cut_chip = 'CUTOFF '+cutoff
+        cut_chip = 'EVIDENCE UP TO '+cutoff
     else:
         feature = '<article class="feature">'+eyebrow('The first daily journal')+'<h1>What we learn belongs here</h1><p class="feature-deck">The opening story is being written and checked against the evidence. Read the dated field notes while it is prepared.</p><a class="read-more" href="'+BASE+'/reports/">Read the field notes'+ARROW+'</a></article>'
         cut_chip = ''
-    rows = [('20', 'Approaches researched', 'Independent briefs in repo'), (str(ACTIVE_COUNT), 'Retained hypotheses', 'Provisional, for falsification (A01 conditional, A06)'), ('0', 'Agreed final six', 'Principals have not converged'), (str(OPEN_PLACES), 'Product places open', 'Unfilled candidates'), ('111.7 GiB', 'Worktree disk measured', 'Across 472 worktrees'), ('62.1%', 'Dependencies & builds', 'Not ordinary Git storage')]
+    rows = [('20', 'Approaches researched', 'Independent briefs in repo'), (str(ACTIVE_COUNT), 'Ideas still being tested', 'Collision radar (conditional) and change stories'), ('0', 'Agreed final six', 'The two lead agents haven\u2019t agreed'), (str(OPEN_PLACES), 'Product places open', 'No idea selected for them'), ('111.7 GiB', 'Worktree disk measured', 'Across 472 worktrees'), ('62.1%', 'Dependencies & builds', 'Not ordinary Git storage')]
     honest = ('<aside class="honest" aria-labelledby="honest-title"><div class="honest-head"><h2 id="honest-title">Honest status</h2><span class="honest-cutoff">'+E(cut_chip)+'</span></div><div class="honest-rows">'
               +''.join('<div class="honest-row"><span class="honest-n">'+num_html(n)+'</span><span class="honest-detail"><span class="honest-label">'+E(l)+'</span><span class="honest-note">'+E(note)+'</span></span></div>' for n, l, note in rows)
-              +'</div><a class="honest-link" href="'+BASE+'/checklist/">See every gate on the checklist'+ARROW+'</a></aside>')
-    hero = ('<section class="hero"><figure class="hero-figure"><img src="'+BASE+'/assets/agent-git-illustration.png" width="1536" height="1024" alt="Geometric blue agents carry folders along branching commit lines into an orange merge"><figcaption>FIG. 0 \u2014 MANY AGENTS, ONE CANONICAL HISTORY</figcaption></figure>'
+              +'</div><a class="honest-link" href="'+BASE+'/checklist/">See every check on the checklist'+ARROW+'</a></aside>')
+    hero = ('<section class="hero"><figure class="hero-figure"><img src="'+BASE+'/assets/agent-git-illustration.png" width="1536" height="1024" alt="Geometric blue agents carry folders along branching commit lines into an orange merge"><figcaption>FIG. 0 \u2014 MANY AGENTS, ONE SHARED HISTORY</figcaption></figure>'
             '<div class="hero-grid">'+feature+honest+'</div></section>')
-    hyp = ('<section class="hyp-section" aria-labelledby="hyp-title"><div class="section-head"><h2 id="hyp-title">The hypotheses</h2><p>'+str(ACTIVE_COUNT)+' retained for falsification. '+str(PARKED_COUNT)+' parked. '+str(OPEN_PLACES)+' places open. None selected. <a href="'+BASE+'/ideas/">Read what all 20 ideas would do'+ARROW+'</a></p></div>'+cards()+'</section>')
+    hyp = ('<section class="hyp-section" aria-labelledby="hyp-title"><div class="section-head"><h2 id="hyp-title">The hypotheses</h2><p>'+str(ACTIVE_COUNT)+' still being tested. '+str(PARKED_COUNT)+' parked. '+str(OPEN_PLACES)+' places open. None selected. <a href="'+BASE+'/ideas/">Read what all 20 ideas would do'+ARROW+'</a></p></div>'+cards()+'</section>')
     stats = ''.join('<div class="pain-stat"><span class="pain-n">'+E(n)+'</span><span class="pain-l">'+E(l)+'</span></div>' for n, l in PAIN_STATS)
-    pain = ('<section class="pain" aria-labelledby="pain-title"><div class="pain-copy">'+eyebrow('Measured pain \u00b7 one host \u00b7 read-only scan')+'<h2 id="pain-title">Most of the worktree pile isn\u2019t Git. It\u2019s dependencies.</h2><p>The pain is real and measured. Whether anyone would adopt a product for it is unknown. Ordinary shared stores may already be enough.</p><a class="read-more-sm" href="'+BASE+'/projects/storage-aware-workspaces/">A16 \u00b7 Storage-aware workspaces'+ARROW+'</a></div>'
-            '<div class="pain-data"><div class="pain-stats">'+stats+'</div><div class="pain-chart"><div class="pain-bar" role="img" aria-label="62.1% of the physical union is dependencies and build output"><span class="pain-fill"></span></div><div class="pain-caps"><span>62.1% DEPENDENCY + BUILD (69.4 GIB)</span><span class="muted">SOURCE + OTHER ~42 GIB</span></div><div class="status-line pain-unknown">'+smark('unknown')+'<span>Product viability: unknown</span></div></div></div></section>')
+    pain = ('<section class="pain" aria-labelledby="pain-title"><div class="pain-copy">'+eyebrow('Measured pain \u00b7 one host \u00b7 read-only scan')+'<h2 id="pain-title">Most of the worktree pile isn\u2019t Git. It\u2019s dependencies.</h2><p>The pain is real and measured. Whether anyone would adopt a product for it is unknown. Ordinary shared stores may already be enough.</p><a class="read-more-sm" href="'+BASE+'/projects/storage-aware-workspaces/">Idea 16 \u00b7 Storage-aware workspaces'+ARROW+'</a></div>'
+            '<div class="pain-data"><div class="pain-stats">'+stats+'</div><div class="pain-chart"><div class="pain-bar" role="img" aria-label="62.1% of the disk space is dependencies and build output"><span class="pain-fill"></span></div><div class="pain-caps"><span>62.1% DEPENDENCY + BUILD (69.4 GIB)</span><span class="muted">SOURCE + OTHER ~42 GIB</span></div><div class="status-line pain-unknown">'+smark('unknown')+'<span>Product viability: unknown</span></div></div></div></section>')
     fields = ''.join('<a class="row-link field-row" href="'+BASE+'/reports/'+rp.stem+'/"><span class="field-time">'+note_time(rp)+'</span><span class="field-title">'+E(note_info(rp)[0])+'</span></a>' for rp in REPORTS[:4])
     libs = [('Shortlist draft (unsigned)', 'research/shortlist-6.md'), ('Worktree disk on the real host', 'research/claude/u7-real-worktree-measurement.md'), ('Consensus record \u2014 pending', 'research/consensus.md'), ('All 20 approaches', 'research/approaches-20.md')]
     lib_rows = ''.join('<a class="row-link lib-row" href="'+public_source(rel)+'"><span class="lib-title">'+E(t)+'</span><span class="lib-path">'+E(rel)+'</span></a>' for t, rel in libs)
-    bottom = ('<section class="home-bottom"><div class="home-col"><div class="col-head"><h2>Field notes</h2><a class="read-more-sm" href="'+BASE+'/reports/">Archive'+ARROW+'</a></div><p class="col-sub">Orchestrator checks, dated. Times in UTC.</p>'+fields+'</div>'
+    bottom = ('<section class="home-bottom"><div class="home-col"><div class="col-head"><h2>Field notes</h2><a class="read-more-sm" href="'+BASE+'/reports/">Archive'+ARROW+'</a></div><p class="col-sub">Checks by the coordinating agent, dated. Times in UTC.</p>'+fields+'</div>'
               '<div class="home-col"><div class="col-head"><h2>Research library</h2><a class="read-more-sm" href="'+BASE+'/research/">All sources'+ARROW+'</a></div><p class="col-sub">Everything links to a file in the public repo.</p>'+lib_rows+'</div></section>')
     return hero+hyp+pain+bottom
 
@@ -559,6 +581,9 @@ def ideas_page():
         count[0] += m[1].count('<li>')
         return '<ol start="'+str(start)+'">'+m[1]+'</ol>'
     prose = re.sub(r'<ol>(.*?)</ol>', numbered, prose, flags=re.S)
+    # Bold each idea's name (the text before the first colon) so readers can scan the list;
+    # the Markdown source stays free of bold markup for stylint.
+    prose = re.sub(r'<li>([^<:]+):', r'<li><strong>\1:</strong>', prose)
     return (title, '<article class="article">'+article_head('Research \u00b7 the approaches the agents collected', title, 'What each of the 20 approaches would do for a person who runs many coding agents on the same code.', '')
             +'<div class="prose">'+prose+'</div>'
             '<div class="article-sources"><p class="source-line">Original Markdown: <a href="'+public_source(IDEAS.relative_to(ROOT))+'">read in the repository'+EXT+'</a>.</p></div></article>')
@@ -580,7 +605,7 @@ def main():
     for d in daily:
         write(d['route'], d['title'], daily_page(d), d.get('summary'), 'article')
     write('', LATEST['title'] if LATEST else 'Agent Branches', home_page(), kind='home')
-    rows = ''.join('<a class="journal-row" href="'+BASE+'/'+d['route']+'"><span class="mono-meta"><span>'+E(str(d['date']))+'</span><span>CUTOFF '+E(utc_text(d.get('source_cutoff', d['date'])))+'</span></span><span class="journal-title">'+E(d['title'])+'</span><span class="journal-summary">'+E(d.get('summary', ''))+'</span><span class="read-more-sm">Read the story'+ARROW+'</span></a>' for d in daily)
+    rows = ''.join('<a class="journal-row" href="'+BASE+'/'+d['route']+'"><span class="mono-meta"><span>'+E(str(d['date']))+'</span><span>EVIDENCE UP TO '+E(utc_text(d.get('source_cutoff', d['date'])))+'</span></span><span class="journal-title">'+E(d['title'])+'</span><span class="journal-summary">'+E(d.get('summary', ''))+'</span><span class="read-more-sm">Read the story'+ARROW+'</span></a>' for d in daily)
     write('daily/', 'Daily journal', '<div class="narrow">'+intro('Daily journal \u00b7 a story each day', 'The daily journal', 'What we tried, what held up, and what changed our minds. Written with Claude Opus, checked against the experiment.', '<a class="read-more-sm" href="'+BASE+'/feed.xml">Subscribe via RSS'+ARROW+'</a>')+'<div class="journal-list">'+(rows or '<p>The first evidence-checked story is being prepared.</p>')+'</div></div>')
     write('projects/', 'Hypotheses', intro('Hypotheses \u00b7 '+str(ACTIVE_COUNT)+' retained \u00b7 '+str(PARKED_COUNT)+' parked \u00b7 unsigned', 'Ideas with work to do', str(len(PROJECTS))+' directions have pages here: '+str(ACTIVE_COUNT)+' retained for falsification and '+str(PARKED_COUNT)+' parked. Selection and development gates are separate; these are provisional research lanes, not products. Each page states what would change our mind.')+cards(with_next=True))
     for i, p in enumerate(PROJECTS):
@@ -592,9 +617,9 @@ def main():
     ideas_title, ideas_body = ideas_page()
     write('ideas/', ideas_title, ideas_body, 'What each of the 20 approaches collected by the agent team would do.', 'article')
     write('checklist/', 'Experiment checklist', checklist_page())
-    team_fig = '<figure class="portrait-fig"><img loading="lazy" src="'+BASE+'/assets/team-workflow-mobile.svg" alt="Team workflow: Alexey and remote oversight connect to Claude and Codex principals, project heads, task executors, evidence, and review."><figcaption>The operating model. Arrows show responsibilities, not proof of continuous activity.</figcaption></figure>'
+    team_fig = '<figure class="portrait-fig"><img loading="lazy" src="'+BASE+'/assets/team-workflow-mobile.svg" alt="How the team works: Alexey and the coordinating agent connect to the Claude and Codex lead agents, five research teams, worker agents, evidence, and review."><figcaption>The operating model. Arrows show responsibilities, not proof of continuous activity.</figcaption></figure>'
     about = ('<article class="article">'+article_head('About \u00b7 why this exists', 'Build it. Test it. Tell the whole story.', 'A new Git platform competition prompted a wider question: where does Git make a team of coding agents harder to run?', '')
-             +'<div class="prose"><h2>Start with actual pain</h2><p>Alexey\u2019s worktrees filled disk quickly. A read-only scan found 472 linked worktrees across 25 repositories, occupying a physical union of 111.7 GiB. Dependencies and builds accounted for 69.4 GiB, or 62.1%. These are measurements from one host, not a claim about every developer.</p><h2>Let the agents challenge each other</h2><p>Claude and Codex principals monitor and challenge evidence. Project heads coordinate useful tasks, and task executors can work headless. The team is free to improve its working method, while preserving quotas, code recovery, and privacy.</p>'+team_fig+'<h2>Keep the failures visible</h2><p>Research is not product validation. No final six-approach shortlist has been approved. The first live integration comparison showed no separation, so that idea\u2019s primary status was withdrawn. A small storage experiment fell below its registered savings gate.</p><h2>Use what survives</h2><p>Teams should build the smallest useful prototype and use it in their own development. Accepted outcomes, peer review, and recoverable Git history matter more than a launch count.</p>'
+             +'<div class="prose"><h2>Start with actual pain</h2><p>Alexey\u2019s worktrees filled disk quickly. A read-only scan found 472 linked worktrees across 25 repositories, occupying a physical union of 111.7 GiB. Dependencies and builds accounted for 69.4 GiB, or 62.1%. These are measurements from one host, not a claim about every developer.</p><h2>Let the agents challenge each other</h2><p>Claude and Codex, the two lead agents, monitor the work and challenge each other\u2019s evidence. Research teams coordinate useful tasks, and worker agents can run in the background. The team is free to improve its working method, while preserving quotas, code recovery, and privacy.</p>'+team_fig+'<h2>Keep the failures visible</h2><p>Research is not product validation. No final six-approach shortlist has been approved. The first live integration comparison showed no separation, so that idea\u2019s primary status was withdrawn. A small storage experiment fell below its registered savings gate.</p><h2>Use what survives</h2><p>Teams should build the smallest useful prototype and use it in their own development. Accepted outcomes, peer review, and recoverable Git history matter more than a launch count.</p>'
              '<p><a href="'+public_source('experiment/USER-INSTRUCTIONS.md')+'">The original user brief'+EXT+'</a> \u00b7 <a href="'+public_source('AGENTS.md')+'">How the agents are expected to work'+EXT+'</a> \u00b7 <a href="https://blog.cloudflare.com/next-git-platform-on-cloudflare/">The competition that started it'+EXT+'</a></p></div></article>')
     write('experiment/', 'About the experiment', about, None, 'article')
     write('subscribe/', 'Confirm your experiment updates', intro('Updates \u00b7 a separate, confirmed opt-in', 'Stay with the experiment', 'Sign up for Agent Branches updates, or use the confirmation link from your inbox. This list is separate from PocketShell and other newsletters.')+signup_section(dedicated=True))
