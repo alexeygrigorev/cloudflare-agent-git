@@ -3,8 +3,8 @@ name: Publish experiment journal
 on:
   workflow_dispatch:
   push:
-    tags:
-      - 'release-journal-*'
+    branches:
+      - main
 
 permissions:
   contents: read
