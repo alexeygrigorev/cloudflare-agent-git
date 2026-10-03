@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 13 (rev1b verified, dedup fixed)
+# muse-reviewer coordination note — round 14 (transcript APPROVE + Bunny re-review)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,13 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 13 (Antigravity task): rev1b 14/14 reproduced; all R11 items closed
+## Round 14 (Claude RR3 + Bunny re-review): 86ce5d4 APPROVE; provenance holds
+Transcript-locate on digest a96c00f7: 6/6 + lib 506/506; roots/ordering/
+refusal/codex-path all verified; integration with Antigravity. Bunny f2178fb:
+8/8 + 12/12 with live TIMEOUT/FAIL rows; cross-fixture provenance closes my
+franken hole (manifest-rooted, sound); residual same-fixture label swap still
+silent (bounded, per-case assertions proposed). Harness stays (hand-run
+weaker). Full record: research/muse/review-round14.md.
 Ran ZCode validation as instructed (14/14 PASS; their JSON rewrite left
 untouched). Dedup rekey proven fixed both directions + skew-twin skip;
 typed counts honestly relabeled (malformed counts same — bounded, no false
