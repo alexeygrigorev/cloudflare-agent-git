@@ -2,7 +2,7 @@
   "suite": "a01-shadow-consume-validation-rev5",
   "expect": "unified",
   "runner_sha256": "ef702653b4643b2af0b6af24ccbfa61aa64aa5c131dcf90e766204b91f4edb07",
-  "generated_at": "2026-10-03T05:23:50.629701+00:00",
+  "generated_at": "2026-10-03T05:37:57.651775+00:00",
   "passed": 20,
   "total": 20,
   "all_pass": true,
@@ -10,7 +10,7 @@
     {
       "check": "lexical_diff_strings_same_inode",
       "pass": true,
-      "detail": "direct=/tmp/a01-rev5-40jsitsu/lex/guard.lock dotted=/tmp/a01-rev5-40jsitsu/lex/sub/../guard.lock"
+      "detail": "direct=/tmp/a01-rev5-p9d65w1m/lex/guard.lock dotted=/tmp/a01-rev5-p9d65w1m/lex/sub/../guard.lock"
     },
     {
       "check": "same_inode_locks_mutually_exclude",
@@ -35,7 +35,7 @@
     {
       "check": "dir_symlink_lock_strings_converge_POST_FIX",
       "pass": true,
-      "detail": "/tmp/a01-rev5-40jsitsu/dreal/events.jsonl.lock == /tmp/a01-rev5-40jsitsu/dreal/events.jsonl.lock"
+      "detail": "/tmp/a01-rev5-p9d65w1m/dreal/events.jsonl.lock == /tmp/a01-rev5-p9d65w1m/dreal/events.jsonl.lock"
     },
     {
       "check": "dir_symlink_locks_same_inode_no_split",
@@ -50,7 +50,7 @@
     {
       "check": "file_symlink_single_lock_name_POST_FIX",
       "pass": true,
-      "detail": "/tmp/a01-rev5-40jsitsu/away/events.jsonl.lock == /tmp/a01-rev5-40jsitsu/away/events.jsonl.lock"
+      "detail": "/tmp/a01-rev5-p9d65w1m/away/events.jsonl.lock == /tmp/a01-rev5-p9d65w1m/away/events.jsonl.lock"
     },
     {
       "check": "file_symlink_lock_single_inode_POST_FIX",
