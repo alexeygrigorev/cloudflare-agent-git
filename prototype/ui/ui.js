@@ -1,6 +1,8 @@
 /* Agent Branches — change story review UI (shared, vanilla JS, no frameworks).
    Two pages: index.html (overview from GET /status) and task.html?id= (change
    story from GET /tasks/:id). ?fixture=1 loads sample JSON from fixtures/.
+   Live mode re-fetches GET /status every 3 s (paused while the tab is
+   hidden); newly appeared warnings and pushes are highlighted for 5 s.
    Unknown safety is never rendered as safe. */
 
 "use strict";
@@ -10,8 +12,29 @@
   var FIXTURE_NAME = params.get("fixture") || "";
   var FIXTURE = !!FIXTURE_NAME;
   var API = (params.get("api") || "").replace(/\/+$/, "");
-  /* Pair safety logic is shared with node --test via pair-status.js. */
+  /* Shared with node --test: pair safety (pair-status.js) and view logic
+     (view-logic.js — polling/highlights/acks/timeline/unprocessed pushes). */
   var PairLogic = window.AgentBranchesPairStatus;
+  var View = window.AgentBranchesViewLogic;
+
+  /* ---------- live-update state (per page) ---------- */
+
+  var pollTimer = null;
+  var pollPausedByVisibility = false;
+  var pollingStarted = false;
+  var everRendered = false;
+  var lastError = null;
+  var lastLoadAt = null;
+  var lastStatus = null;
+  var lastTask = null;
+  var currentTaskId = null;
+  /* Highlight bookkeeping: which warnings/pushes appeared recently.
+     key -> expiry ms. The first successful load only sets the baseline. */
+  var prevWarningIds = null;
+  var prevPushKeys = null;
+  var freshWarnings = {};
+  var freshPushes = {};
+  var freshTimer = null;
 
   /* ---------- small helpers ---------- */
 
@@ -46,6 +69,19 @@
     );
   }
 
+  /* Plain-text time for titles/aria-labels (no markup). */
+  function whenText(iso) {
+    if (!iso) return "time not recorded";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return "unknown time";
+    return d.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
   function relative(iso, d) {
     var s = Math.max(0, (Date.now() - d.getTime()) / 1000);
     if (s < 60) return "just now";
@@ -62,6 +98,18 @@
   function taskHref(taskId) {
     var keep = FIXTURE ? "&fixture=" + encodeURIComponent(FIXTURE_NAME) : "";
     return "task.html?id=" + encodeURIComponent(taskId) + keep;
+  }
+
+  function isFreshWarning(id) {
+    return View.isFresh(freshWarnings, id, Date.now());
+  }
+
+  function isFreshPush(agentId, sha) {
+    return View.isFresh(freshPushes, View.pushKey(agentId, sha), Date.now());
+  }
+
+  function newBadge() {
+    return " <span class='badge new'>New</span>";
   }
 
   /* ---------- data loading ---------- */
@@ -101,15 +149,81 @@
     el.innerHTML = "<strong>Could not load the data.</strong> " + esc(error.message) + esc(hint);
   }
 
+  /* ---------- live indicator ---------- */
+
+  function setLiveState() {
+    var el = document.getElementById("live");
+    if (!el) return;
+    if (pollPausedByVisibility) {
+      el.textContent = "Updates paused while the tab is hidden — they resume when you come back.";
+      return;
+    }
+    var mode = FIXTURE
+      ? "Demo — re-reading the fixture files"
+      : "Live — fetching GET /status";
+    var every = " every " + Math.round(View.POLL_MS / 1000) + " s";
+    var loaded = lastLoadAt ? " · last loaded " + whenText(new Date(lastLoadAt).toISOString()) : "";
+    var failed = lastError ? " · last update failed (" + lastError.message + "), retrying" : "";
+    el.textContent = mode + every + loaded + failed + ".";
+  }
+
+  /* ---------- highlight bookkeeping ---------- */
+
+  /* Diff the incoming status against the previous one; genuinely new
+     warnings/pushes stay highlighted for FRESH_MS. The very first load only
+     establishes the baseline, so opening the page highlights nothing. */
+  function absorbFreshness(status) {
+    var now = Date.now();
+    var wIds = View.warningIdsOf(status);
+    var pKeys = View.allPushKeys(status);
+    if (prevWarningIds !== null) {
+      freshWarnings = View.extendFresh(freshWarnings, View.addedKeys(prevWarningIds, wIds), now, View.FRESH_MS);
+      freshPushes = View.extendFresh(freshPushes, View.addedKeys(prevPushKeys, pKeys), now, View.FRESH_MS);
+    }
+    prevWarningIds = wIds;
+    prevPushKeys = pKeys;
+  }
+
+  /* Re-render when the next highlight expires, so the "New" mark really goes
+     away after ~5 s instead of lingering until the next poll. */
+  function scheduleFreshExpiry() {
+    if (freshTimer) {
+      clearTimeout(freshTimer);
+      freshTimer = null;
+    }
+    var wWait = View.msUntilExpiry(freshWarnings, Date.now());
+    var pWait = View.msUntilExpiry(freshPushes, Date.now());
+    var wait = 0;
+    if (wWait > 0 && (pWait === 0 || wWait < pWait)) wait = wWait;
+    else wait = pWait;
+    if (wait <= 0) return;
+    freshTimer = setTimeout(function () {
+      freshTimer = null;
+      rerenderCurrent();
+      scheduleFreshExpiry();
+    }, wait + 50);
+  }
+
+  function rerenderCurrent() {
+    if (!lastStatus && !lastTask) return;
+    try {
+      if (currentTaskId) {
+        if (lastTask) renderTask(lastTask, lastStatus);
+      } else if (lastStatus) {
+        renderIndex(lastStatus);
+      }
+    } catch (e) {
+      /* a re-render for highlight expiry must never break the page */
+    }
+  }
+
   /* ---------- pair safety (never guess "safe") ----------
      Pair status comes ONLY from that pair's own radar result in /status
-     (status.pairs, L1 CONTRACT.md v0.1). A pair is "clean" only when its own
+     (status.pairs, L1 CONTRACT). A pair is "clean" only when its own
      result says clean at the CURRENT heads of both agents and the result
-     records a combined test run with collected tests. Individual per-agent
-     test evidence is shown on the task page, but it never promotes a pair:
-     two individually green agents can still clash when combined (the
-     semantic-conflict case, codex C-1334). The decision lives in
-     pair-status.js so node --test can exercise the exact same code. */
+     records a combined test run with collected tests. A lost push for
+     either agent forces not_checked (true heads unknown — never safe).
+     The decision lives in pair-status.js so node --test exercises it. */
 
   function pairStatus(agentA, agentB, status) {
     return PairLogic.pairStatus(agentA, agentB, status);
@@ -127,23 +241,118 @@
     return "<span class='badge " + b.cls + "'>" + esc(b.label) + "</span>";
   }
 
-  function ackHtml(warning, viewerAgentId) {
-    var by = Array.isArray(warning.acknowledgedBy) ? warning.acknowledgedBy : [];
-    var mine = viewerAgentId && by.indexOf(viewerAgentId) !== -1;
-    if (mine) {
-      var others = by.filter(function (n) { return n !== viewerAgentId; });
-      return (
-        "This agent acknowledged the warning " + fmtWhen(warning.acknowledgedAt) +
-        (others.length ? " <span class='muted small'>(also acknowledged by " + others.map(esc).join(", ") + ")</span>" : "")
-      );
+  /* ---------- warning acknowledgements (POST /warnings/:id/ack) ---------- */
+
+  function ackCellHtml(warning, viewerAgentId) {
+    var rows = View.ackRows(warning);
+    if (!rows.length) {
+      return "<span class='muted'>Not acknowledged yet — no agent has confirmed it saw this warning.</span>";
     }
-    if (by.length) {
+    var mine = false;
+    var parts = rows.map(function (a) {
+      if (viewerAgentId && a.agent === viewerAgentId) mine = true;
+      var who = viewerAgentId && a.agent === viewerAgentId
+        ? "<strong>" + esc(a.agent) + "</strong>"
+        : "<code>" + esc(a.agent) + "</code>";
       return (
-        "Acknowledged by " + by.map(esc).join(", ") + " " + fmtWhen(warning.acknowledgedAt) +
-        (viewerAgentId ? ", but <strong>not yet by this agent</strong>." : ".")
+        who + " " + fmtWhen(a.at) +
+        (a.head ? " <span class='muted small'>at " + shaHtml(a.head) + "</span>" : "") +
+        (a.note ? "<br><span class='small'>&ldquo;" + esc(a.note) + "&rdquo;</span>" : "")
       );
+    });
+    var missing = viewerAgentId && !mine
+      ? "<br><span class='muted small'>Not yet acknowledged by this agent.</span>"
+      : "";
+    return parts.join("<br>") + missing;
+  }
+
+  /* ---------- compact per-agent timeline strip ---------- */
+
+  var TL_META = {
+    push: { icon: "+", word: "push", cls: "tl-push" },
+    warning: { icon: "!", word: "warning", cls: "tl-warning" },
+    ack: { icon: "\u2713", word: "acknowledged", cls: "tl-ack" },
+  };
+
+  function timelineHtml(agent, warnings) {
+    var events = View.buildTimeline(agent, warnings);
+    if (!events.length) {
+      return "<p class='muted small' style='margin:0.3rem 0 0'>No pushes, warnings or acknowledgements recorded yet.</p>";
     }
-    return "<span class='muted'>Not acknowledged yet — the agent has not confirmed it saw this warning.</span>";
+    var cap = 12;
+    var shown = events.slice(-cap);
+    var dropped = events.length - shown.length;
+    var chips = shown.map(function (e) {
+      var m = TL_META[e.type];
+      var fresh = "";
+      var title;
+      if (e.type === "push") {
+        title = "Push " + shortSha(e.sha) + (e.message ? " — " + e.message : "") + " — " + whenText(e.at);
+        if (isFreshPush(agent.agentId, e.sha)) fresh = " fresh";
+      } else if (e.type === "warning") {
+        title =
+          "Warning " + e.warningId + (e.other ? " (with " + e.other + ")" : "") +
+          (e.reason ? " — " + e.reason : "") +
+          (e.status && e.status !== "active" ? " — since resolved" : "") +
+          " — " + whenText(e.at);
+        if (isFreshWarning(e.warningId)) fresh = " fresh";
+      } else {
+        title =
+          "Acknowledged warning " + e.warningId +
+          (e.note ? " — \u201C" + e.note + "\u201D" : "") +
+          " — " + whenText(e.at);
+      }
+      return (
+        "<li class='tl " + m.cls + fresh + "' title='" + esc(title) + "'" +
+        " aria-label='" + esc(m.word + ": " + title) + "'>" +
+        "<span class='tl-icon' aria-hidden='true'>" + m.icon + "</span>" +
+        "<span class='tl-word'>" + esc(m.word) + "</span>" +
+        (fresh ? newBadge() : "") +
+        "</li>"
+      );
+    });
+    return (
+      (dropped > 0 ? "<span class='muted small'>+" + dropped + " earlier</span>" : "") +
+      "<ol class='timeline' aria-label='Timeline for " + esc(agent.agentId) + "'>" + chips.join("") + "</ol>" +
+      "<p class='muted small timeline-legend'>+ push &middot; ! warning &middot; \u2713 acknowledged</p>"
+    );
+  }
+
+  /* ---------- unprocessed (lost) pushes — the head is UNKNOWN ---------- */
+
+  function unknownHeadHtml(reason) {
+    return (
+      "<span class='badge unknown'>Unknown</span> <span class='muted small'>true latest change UNKNOWN — " +
+      esc(reason) +
+      ". Nothing can be called clean for this agent until the push is delivered.</span>"
+    );
+  }
+
+  function renderLost(status) {
+    var section = document.getElementById("lost-section");
+    if (!section) return;
+    var recs = Array.isArray(status.unprocessedPushes) ? status.unprocessedPushes : [];
+    section.hidden = recs.length === 0;
+    if (!recs.length) return;
+    var items = recs.map(function (r) {
+      var who = r.agentId
+        ? "<code>" + esc(r.agentId) + "</code>"
+        : "<span class='muted'>an unknown agent</span>";
+      return (
+        "<li class='lost-item'>" +
+        "<span class='badge unknown'>Not processed</span> A push by " + who +
+        " to <code>" + esc(r.repo || "unknown repo") + "</code>, branch <code>" + esc(plainRef(r.ref)) +
+        "</code>, change " + shaHtml(r.sha) + ", could not be recorded" +
+        (typeof r.attempts === "number" ? " after " + esc(r.attempts) + " attempt" + (r.attempts === 1 ? "" : "s") : "") +
+        (r.lastError ? " — last error: <code>" + esc(r.lastError) + "</code>" : "") +
+        ". <span class='muted small'>First seen " + whenText(r.firstAt) + ", last try " + whenText(r.lastAt) + ".</span>" +
+        "<p class='why muted small'>Until this push is delivered, " +
+        (r.agentId ? "<code>" + esc(r.agentId) + "</code>'s" : "the agent's") +
+        " true latest change is UNKNOWN, and every pair involving the agent stays not checked — never clean.</p>" +
+        "</li>"
+      );
+    });
+    document.getElementById("lost-list").innerHTML = "<ul class='lost-list'>" + items.join("") + "</ul>";
   }
 
   /* ---------- index page ---------- */
@@ -152,6 +361,9 @@
     var agents = (status.agents || []).slice().sort(function (x, y) {
       return String(x.agentId).localeCompare(String(y.agentId));
     });
+    var allWarnings = status.warnings || [];
+
+    renderLost(status);
 
     var canon = document.getElementById("canonical");
     canon.innerHTML = status.canonical && status.canonical.name
@@ -160,16 +372,22 @@
 
     var cards = agents.map(function (ag) {
       var intent = ag.intent ? esc(ag.intent) : "<span class='muted'>Not stated yet</span>";
+      var lost = View.unknownHeadReason(ag.agentId, status);
+      var latest = lost
+        ? unknownHeadHtml(lost)
+        : shaHtml(ag.head) +
+          (isFreshPush(ag.agentId, ag.head) ? newBadge() : "");
       return (
-        "<article class='card' aria-label='Agent " + esc(ag.agentId) + "'>" +
+        "<article class='card" + (isFreshPush(ag.agentId, ag.head) ? " fresh" : "") + "' aria-label='Agent " + esc(ag.agentId) + "'>" +
         "<h3><code>" + esc(ag.agentId) + "</code></h3>" +
         "<p class='kv'><span>Doing:</span> " + intent + "</p>" +
         "<p class='kv'><span>Started from:</span> " +
         (ag.baseSha ? shaHtml(ag.baseSha) : "<span class='muted'>not recorded</span>") + "</p>" +
-        "<p class='kv'><span>Latest change:</span> " + shaHtml(ag.head) + "</p>" +
+        "<p class='kv'><span>Latest change:</span> " + latest + "</p>" +
         "<p class='kv'><span>Changes pushed:</span> " + esc(ag.pushes) +
         (ag.lastPushAt ? " <span class='muted small'>(last " + fmtWhen(ag.lastPushAt) + ")</span>" : "") +
         "</p>" +
+        "<div class='timeline-wrap'>" + timelineHtml(ag, allWarnings) + "</div>" +
         "<p class='actions'><a href='" + taskHref(ag.taskId) + "'>Read the change story →</a></p>" +
         "</article>"
       );
@@ -194,19 +412,20 @@
       ? "<ul class='pair-list'>" + pairs.join("") + "</ul>"
       : "<p class='muted'>With fewer than two agents there is nothing to compare yet.</p>";
 
-    var warnings = status.warnings || [];
+    var warnings = allWarnings;
     var rows = warnings.map(function (w) {
       var state = w.status === "active"
         ? "<span class='badge conflict'>Active</span>"
         : "<span class='badge not_checked'>Resolved</span>";
+      var fresh = isFreshWarning(w.id);
       return (
-        "<tr>" +
-        "<td><code>" + esc(w.id) + "</code></td>" +
+        "<tr class='" + (fresh ? "fresh" : "") + "'>" +
+        "<td><code>" + esc(w.id) + "</code>" + (fresh ? newBadge() : "") + "</td>" +
         "<td><code>" + esc(w.pair.join(" ↔ ")) + "</code></td>" +
         "<td>" + esc(w.reason) + "</td>" +
         "<td>" + fmtWhen(w.createdAt) + "</td>" +
         "<td>" + state + (w.invalidatedAt ? " <span class='muted small'>" + fmtWhen(w.invalidatedAt) + "</span>" : "") + "</td>" +
-        "<td>" + ackHtml(w) + "</td>" +
+        "<td>" + ackCellHtml(w) + "</td>" +
         "</tr>"
       );
     });
@@ -219,7 +438,9 @@
   function renderTask(task, status) {
     var agent = task.agent || {};
     var heads = (status && status.heads) || {};
-    var currentHead = heads[agent.agentId] || agent.head || null;
+    var allWarnings = (status && status.warnings) || [];
+    var lost = agent.agentId ? View.unknownHeadReason(agent.agentId, status) : null;
+    var currentHead = lost ? null : heads[agent.agentId] || agent.head || null;
 
     document.title = "Change story — " + (agent.agentId || task.taskId);
 
@@ -230,42 +451,32 @@
       (agent.intent ? esc(agent.intent) : "<span class='muted'>Not stated yet</span>") + "</dd>" +
       "<dt>Started from</dt><dd>" +
       (agent.baseSha ? shaHtml(agent.baseSha) : "<span class='muted'>Not recorded yet</span>") + "</dd>" +
-      "<dt>Latest change</dt><dd>" + shaHtml(currentHead) + "</dd>" +
+      "<dt>Latest change</dt><dd>" +
+      (lost ? unknownHeadHtml(lost) : shaHtml(currentHead)) + "</dd>" +
       "<dt>Working copy</dt><dd><span class='small'>own fork <code>" + esc(task.forkName || agent.forkName) +
       "</code>, branch <code>" + esc(plainRef(task.ref || agent.ref)) + "</code></span></dd>" +
       "<dt>Task created</dt><dd>" + fmtWhen(task.createdAt) + "</dd>";
     document.getElementById("task-head").innerHTML = "<dl>" + dl + "</dl>";
 
+    document.getElementById("timeline").innerHTML = timelineHtml(agent, allWarnings);
+
     /* Story of changes */
     var log = Array.isArray(agent.pushLog) ? agent.pushLog : [];
     var changes;
-    if (log.length) {
+    if (lost) {
       changes =
-        "<ol class='changes' reversed>" +
-        log
-          .slice()
-          .reverse()
-          .map(function (p) {
-            return (
-              "<li><span class='when'>" + fmtWhen(p.at) + "</span> — " + shaHtml(p.sha) +
-              (p.message ? "<br><span class='muted'>" + esc(p.message) + "</span>" : "") +
-              "</li>"
-            );
-          })
-          .join("") +
-        "</ol>";
-    } else if (agent.pushes > 0 && agent.lastPushAt) {
-      changes =
-        "<p>" + fmtWhen(agent.lastPushAt) + " — " + shaHtml(currentHead) + "</p>" +
-        "<p class='muted small'>" + esc(agent.pushes) + " change" + (agent.pushes === 1 ? "" : "s") +
-        " pushed in total. The full list of each change is not recorded yet.</p>";
+        "<div class='notice-unknown' style='margin-bottom:0.6rem'>" +
+        "<span class='badge unknown'>Unknown — not safe</span> " +
+        "<p style='margin:0.4rem 0 0'>This agent's newest push could not be recorded (" + esc(lost) +
+        "), so the list below may be missing its true latest change.</p></div>" +
+        changesListHtml(agent, log, currentHead);
     } else {
-      changes = "<p class='muted'>No changes pushed yet.</p>";
+      changes = changesListHtml(agent, log, currentHead);
     }
     document.getElementById("changes").innerHTML = changes;
 
     /* Warnings received by this agent */
-    var mine = ((status && status.warnings) || []).filter(function (w) {
+    var mine = allWarnings.filter(function (w) {
       return Array.isArray(w.pair) && w.pair.indexOf(agent.agentId) !== -1;
     });
     var warnHtml;
@@ -276,15 +487,17 @@
         .map(function (w) {
           var other = w.pair[0] === agent.agentId ? w.pair[1] : w.pair[0];
           var resolved = w.status !== "active";
+          var fresh = isFreshWarning(w.id);
           return (
-            "<div class='warning" + (resolved ? " resolved" : "") + "'>" +
+            "<div class='warning" + (resolved ? " resolved" : "") + (fresh ? " fresh" : "") + "'>" +
             (resolved
               ? "<span class='badge not_checked'>Resolved</span> "
               : "<span class='badge conflict'>Conflict — needs attention</span> ") +
+            (fresh ? newBadge() : "") +
             "<p><strong>" + esc(w.reason) + "</strong></p>" +
             "<p class='meta'>With <code>" + esc(other) + "</code> · sent " + fmtWhen(w.createdAt) +
             (resolved ? " · went away " + fmtWhen(w.invalidatedAt) : "") + "</p>" +
-            "<p class='meta'>Acknowledgement: " + ackHtml(w, agent.agentId) + "</p>" +
+            "<p class='meta'>Acknowledgement: " + ackCellHtml(w, agent.agentId) + "</p>" +
             "</div>"
           );
         })
@@ -293,12 +506,58 @@
     document.getElementById("warnings").innerHTML = warnHtml;
 
     /* Test provenance */
+    document.getElementById("evidence").innerHTML = evidenceHtml(agent, currentHead, lost);
+
+    initReviewOnce(task.taskId);
+  }
+
+  function changesListHtml(agent, log, currentHead) {
+    if (log.length) {
+      return (
+        "<ol class='changes' reversed>" +
+        log
+          .slice()
+          .reverse()
+          .map(function (p) {
+            var fresh = isFreshPush(agent.agentId, p.sha);
+            return (
+              "<li class='" + (fresh ? "fresh" : "") + "'><span class='when'>" + fmtWhen(p.at) + "</span> — " + shaHtml(p.sha) +
+              (fresh ? newBadge() : "") +
+              (p.message ? "<br><span class='muted'>" + esc(p.message) + "</span>" : "") +
+              "</li>"
+            );
+          })
+          .join("") +
+        "</ol>"
+      );
+    }
+    if (agent.pushes > 0 && agent.lastPushAt) {
+      var freshHead = isFreshPush(agent.agentId, agent.head);
+      return (
+        "<p class='" + (freshHead ? "fresh" : "") + "'>" + fmtWhen(agent.lastPushAt) + " — " + shaHtml(currentHead) +
+        (freshHead ? newBadge() : "") + "</p>" +
+        "<p class='muted small'>" + esc(agent.pushes) + " change" + (agent.pushes === 1 ? "" : "s") +
+        " pushed in total. The full list of each change is not recorded yet.</p>"
+      );
+    }
+    return "<p class='muted'>No changes pushed yet.</p>";
+  }
+
+  function evidenceHtml(agent, currentHead, lost) {
     var ev = agent.testEvidence;
-    var evidence;
+    if (lost) {
+      return (
+        "<div class='notice-unknown'>" +
+        "<span class='badge unknown'>Unknown — not safe</span> " +
+        "<p style='margin:0.4rem 0 0'>The agent's true latest change is UNKNOWN (" + esc(lost) +
+        "). Whatever was tested before, there is no recorded test run for a change the server never saw — " +
+        "this change is not proven safe.</p></div>"
+      );
+    }
     if (ev) {
       var matchesHead = !currentHead || !ev.head || ev.head === currentHead;
       var passed = ev.exitCode === 0;
-      evidence =
+      return (
         "<div class='evidence'><dl>" +
         "<dt>Command</dt><dd><code>" + esc(ev.command) + "</code></dd>" +
         "<dt>Result</dt><dd>" +
@@ -317,17 +576,15 @@
           ? "<p class='small' style='margin-bottom:0'><span class='badge unknown'>Unknown — not safe</span> " +
             "There is no passing test run for the latest change, so this change is not proven safe.</p>"
           : "") +
-        "</div>";
-    } else {
-      evidence =
-        "<div class='notice-unknown'>" +
-        "<span class='badge unknown'>Unknown — not safe</span> " +
-        "<p style='margin:0.4rem 0 0'>No test run is recorded for this change. Without a test run at the " +
-        "latest change, safety is unknown — this is never shown as safe.</p></div>";
+        "</div>"
+      );
     }
-    document.getElementById("evidence").innerHTML = evidence;
-
-    initReview(task.taskId);
+    return (
+      "<div class='notice-unknown'>" +
+      "<span class='badge unknown'>Unknown — not safe</span> " +
+      "<p style='margin:0.4rem 0 0'>No test run is recorded for this change. Without a test run at the " +
+      "latest change, safety is unknown — this is never shown as safe.</p></div>"
+    );
   }
 
   /* ---------- review decision (local only, per browser) ---------- */
@@ -360,6 +617,15 @@
     { id: "request_changes", label: "Request changes" },
     { id: "note", label: "Note" },
   ];
+
+  /* The review box is interactive (buttons, note textarea): it is initialized
+     exactly once per task so live re-renders never wipe what is being typed. */
+  function initReviewOnce(taskId) {
+    var box = document.getElementById("review");
+    if (box.getAttribute("data-for") === taskId) return;
+    initReview(taskId);
+    box.setAttribute("data-for", taskId);
+  }
 
   function initReview(taskId) {
     var box = document.getElementById("review");
@@ -423,33 +689,100 @@
     }
   }
 
+  /* ---------- polling (GET /status every 3 s, paused when hidden) ---------- */
+
+  function refresh() {
+    var p = currentTaskId
+      ? Promise.all([loadTask(currentTaskId), loadStatus().catch(function () { return null; })])
+          .then(function (r) {
+            lastTask = r[0];
+            return r[1];
+          })
+      : loadStatus();
+    return p.then(function (status) {
+      if (status) lastStatus = status;
+      lastError = null;
+      lastLoadAt = Date.now();
+      absorbFreshness(lastStatus);
+      if (currentTaskId) renderTask(lastTask, lastStatus);
+      else renderIndex(lastStatus);
+      everRendered = true;
+      scheduleFreshExpiry();
+    });
+  }
+
+  function doRefresh(first) {
+    return refresh().then(
+      function () {
+        setLiveState();
+      },
+      function (e) {
+        lastError = e;
+        if (first && !everRendered) {
+          showError(document.getElementById("error"), e, FIXTURE);
+        }
+        setLiveState();
+      }
+    );
+  }
+
+  function handleVisibility() {
+    if (document.hidden) {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      pollPausedByVisibility = true;
+    } else {
+      pollPausedByVisibility = false;
+      if (!pollTimer) {
+        pollTimer = setInterval(function () { doRefresh(false); }, View.POLL_MS);
+      }
+      doRefresh(false); /* catch up immediately when coming back */
+    }
+    setLiveState();
+  }
+
+  function startPolling() {
+    if (pollingStarted) return;
+    pollingStarted = true;
+    document.addEventListener("visibilitychange", handleVisibility);
+    if (document.hidden) {
+      pollPausedByVisibility = true;
+      return;
+    }
+    pollTimer = setInterval(function () { doRefresh(false); }, View.POLL_MS);
+  }
+
   /* ---------- boot ---------- */
 
   window.AgentBranchesUI = {
     FIXTURE: FIXTURE,
     bootIndex: function () {
-      var errEl = document.getElementById("error");
       if (FIXTURE) document.getElementById("demo-banner").hidden = false;
       var loading = document.getElementById("loading");
-      loadStatus()
-        .then(function (status) { renderIndex(status); })
-        .catch(function (e) { showError(errEl, e, FIXTURE); })
-        .then(function () { loading.hidden = true; });
+      currentTaskId = null;
+      doRefresh(true).then(function () { loading.hidden = true; });
+      startPolling();
+      setLiveState();
     },
     bootTask: function () {
-      var errEl = document.getElementById("error");
       if (FIXTURE) document.getElementById("demo-banner").hidden = false;
       var loading = document.getElementById("loading");
       var id = params.get("id");
       if (!id) {
         loading.hidden = true;
-        showError(errEl, new Error("No task id given. Open this page from the overview, or add ?id=task-0001."), FIXTURE);
+        showError(
+          document.getElementById("error"),
+          new Error("No task id given. Open this page from the overview, or add ?id=task-0001."),
+          FIXTURE
+        );
         return;
       }
-      Promise.all([loadTask(id), loadStatus().catch(function () { return null; })])
-        .then(function (r) { renderTask(r[0], r[1]); })
-        .catch(function (e) { showError(errEl, e, FIXTURE); })
-        .then(function () { loading.hidden = true; });
+      currentTaskId = id;
+      doRefresh(true).then(function () { loading.hidden = true; });
+      startPolling();
+      setLiveState();
     },
   };
 })();

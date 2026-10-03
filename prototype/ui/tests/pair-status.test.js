@@ -211,3 +211,95 @@ test("pair match works regardless of pair element order", function () {
   var st = logic.pairStatus(greenAgent(A, HA), greenAgent(B, HB), statusWith([view], heads));
   assert.equal(st.type, "conflict");
 });
+
+/* ---------- lost pushes (CONTRACT 0.1.3 silent-callback guard) ----------
+   While an agent has an unprocessed push, its true head is UNKNOWN: no
+   stored result may present as current, so the pair is never clean. */
+
+function lostPush(agentId, extra) {
+  return Object.assign(
+    {
+      repo: "fork-" + agentId,
+      ref: "refs/heads/main",
+      sha: HC,
+      before: OLD_A,
+      attempts: 3,
+      firstAt: "2026-10-03T15:02:11.000Z",
+      lastAt: "2026-10-03T15:02:12.000Z",
+      lastError: "worker responded 401",
+      agentId: agentId,
+    },
+    extra || {}
+  );
+}
+
+test("a lost push forces Not checked even when the stored result is clean at the recorded heads with tests", function () {
+  var heads = {};
+  heads[A] = HA;
+  heads[B] = HB;
+  var status = statusWith(
+    [pairView(A, B, HA, HB, "clean", { coverage: { tests_collected: 5 } })],
+    heads
+  );
+  status.unprocessedPushes = [lostPush(B)];
+  var st = logic.pairStatus(greenAgent(A, HA), greenAgent(B, HB), status);
+  assert.equal(st.type, "not_checked");
+  assert.match(st.why, /UNKNOWN/);
+  assert.match(st.why, /worker responded 401/);
+});
+
+test("the server-side unprocessedReason on the pair view also forces Not checked and is quoted", function () {
+  var heads = {};
+  heads[A] = HA;
+  heads[B] = HB;
+  var status = statusWith(
+    [pairView(A, B, HA, HB, "clean", {
+      coverage: { tests_collected: 5 },
+      stale: true,
+      unprocessedReason: "push notification for agent-b was not delivered after 3 attempts",
+    })],
+    heads
+  );
+  var st = logic.pairStatus(greenAgent(A, HA), greenAgent(B, HB), status);
+  assert.equal(st.type, "not_checked");
+  assert.match(st.why, /push notification for agent-b was not delivered/);
+});
+
+test("another agent's lost push does not touch this pair", function () {
+  var heads = {};
+  heads[A] = HA;
+  heads[B] = HB;
+  var status = statusWith(
+    [pairView(A, B, HA, HB, "clean", { coverage: { tests_collected: 5 } })],
+    heads
+  );
+  status.unprocessedPushes = [lostPush("agent-c")];
+  var st = logic.pairStatus(greenAgent(A, HA), greenAgent(B, HB), status);
+  assert.equal(st.type, "clean");
+});
+
+test("records without a resolvable agentId never force Not checked", function () {
+  var heads = {};
+  heads[A] = HA;
+  heads[B] = HB;
+  var status = statusWith(
+    [pairView(A, B, HA, HB, "clean", { coverage: { tests_collected: 5 } })],
+    heads
+  );
+  status.unprocessedPushes = [lostPush(null)];
+  var st = logic.pairStatus(greenAgent(A, HA), greenAgent(B, HB), status);
+  assert.equal(st.type, "clean");
+});
+
+test("a lost push holds even when the forced view is missing (older cached status)", function () {
+  var heads = {};
+  heads[A] = HA;
+  heads[B] = HB;
+  var status = statusWith(
+    [pairView(A, B, HA, HB, "conflict", { kind: "textual" })],
+    heads
+  );
+  status.unprocessedPushes = [lostPush(A)];
+  var st = logic.pairStatus(greenAgent(A, HA), greenAgent(B, HB), status);
+  assert.equal(st.type, "not_checked");
+});
