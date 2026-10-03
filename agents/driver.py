@@ -497,8 +497,8 @@ class AgentHarnessDriver:
             with open(exclude_file, "a", encoding="utf-8") as f:
                 f.write("\n.bin/\nagent-branches\nAGENT_TASK.md\n.agent-token\n")
 
-            # Ensure agent workspace gets ONLY the base code: scrub reference solutions and solutions docs
-            for scrub_target in ["reference-solutions", ".harness", "SOLUTIONS.md", "verify-overlap.sh", "verify-overlap.work.sh"]:
+            # Ensure agent workspace gets ONLY the base code: scrub reference solutions, solutions docs, and inherited worklogs (C-1383)
+            for scrub_target in ["reference-solutions", ".harness", "SOLUTIONS.md", "WORKLOG.md", "verify-overlap.sh", "verify-overlap.work.sh"]:
                 st_path = os.path.join(ws_dir, scrub_target)
                 if os.path.isdir(st_path):
                     shutil.rmtree(st_path, ignore_errors=True)
@@ -967,12 +967,14 @@ class AgentHarnessDriver:
                     all_done = False
                     self.record_event("session_status_exception", {"session_id": t.session_id, "error": str(exc)})
 
-            # Check for warning acknowledgements from coordinator
+            # Check for warning acknowledgements from coordinator (C-1374)
             try:
                 coord_status = self.client.get_status()
                 for w in coord_status.get("warnings", []):
-                    w_id = w.get("warningId")
-                    if w.get("acknowledged") and w_id not in self._acked_warning_ids:
+                    w_id = w.get("id") or w.get("warningId")
+                    acks = w.get("acks", [])
+                    is_acked = bool(w.get("acknowledged") or (isinstance(acks, list) and acks))
+                    if is_acked and w_id not in self._acked_warning_ids:
                         self._acked_warning_ids.add(w_id)
                         self.record_event(
                             "warning_acknowledged",
@@ -980,15 +982,15 @@ class AgentHarnessDriver:
                                 "warning_id": w_id,
                                 "pair": w.get("pair"),
                                 "kind": w.get("kind"),
+                                "acks": acks,
                             },
                         )
             except Exception:
                 pass
 
-            # Run radar if any head changed or check interval elapsed
-            now = time.time()
-            if any_head_changed or (now - last_check_time >= check_interval):
-                last_check_time = now
+            # Run radar when any head changed (avoiding redundant CPU/test overhead on static vectors - C-1374)
+            if any_head_changed:
+                last_check_time = time.time()
                 try:
                     self.evaluate_radar(tasks, base_sha)
                 except Exception as exc:
