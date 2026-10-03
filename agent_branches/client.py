@@ -7,7 +7,7 @@ import urllib.parse
 import urllib.request
 from typing import Any, Dict, List, Optional, Union
 
-CONTRACT_VERSION = "0.1.1"
+CONTRACT_VERSION = "0.1.2"
 
 
 class AgentBranchesError(Exception):

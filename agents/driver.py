@@ -41,7 +41,11 @@ from radar.engine import (
 )
 from agents.prompts import build_agent_prompt
 
-CONTRACT_VERSION = "0.1.1"
+CONTRACT_VERSION = "0.1.2"
+
+
+BEARER_PATTERN = re.compile(r"Bearer\s+([A-Za-z0-9_\-\.]+)", re.IGNORECASE)
+TOKEN_PATTERN = re.compile(r"(token|secret|password|bearer)[=:\s]+(['\"]?)([A-Za-z0-9_\-\.]+)\2", re.IGNORECASE)
 
 
 def sanitize_for_timeline(obj: Any) -> Any:
@@ -56,6 +60,10 @@ def sanitize_for_timeline(obj: Any) -> Any:
         return res
     elif isinstance(obj, list):
         return [sanitize_for_timeline(item) for item in obj]
+    elif isinstance(obj, str):
+        cleaned = BEARER_PATTERN.sub("Bearer [REDACTED]", obj)
+        cleaned = TOKEN_PATTERN.sub(r"\1=[REDACTED]", cleaned)
+        return cleaned
     return obj
 
 
@@ -435,14 +443,15 @@ class AgentHarnessDriver:
                 check=True,
                 capture_output=True,
             )
-            # Store per-task token privately in 0600 git-ignored file (no token in argv!)
+            # Store per-task token privately in atomic 0600 git-ignored file (no token in argv!)
             token_file = os.path.join(ws_dir, ".agent-token")
             if t.token:
-                with open(token_file, "w", encoding="utf-8") as f:
+                # Open with atomic 0600 permissions before writing to avoid brief default-umask window (Codex C-1366)
+                fd = os.open(token_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
                     f.write(t.token.strip())
-                os.chmod(token_file, 0o600)
 
-                # Configure git transport auth directly in .git/config (no token in argv!)
+                # Configure git transport auth directly in .git/config with 0600 permissions (no token in argv!)
                 git_config_path = os.path.join(ws_dir, ".git", "config")
                 with open(git_config_path, "a", encoding="utf-8") as f:
                     f.write(f"\n[http]\n\textraHeader = Authorization: Bearer {t.token}\n")
@@ -738,27 +747,8 @@ class AgentHarnessDriver:
         # Export CONTRACT v0.1 payload with the full vector
         payload = export_l1_payload(results, vector=full_vector, engine=radar)
 
-        # Adapt payload for L1 wire compatibility (C-1350/C-1351)
-        wire_payload = dict(payload)
-        if isinstance(wire_payload.get("policy"), dict):
-            wire_payload["policy"] = "git-merge-tree+budgeted-tests"
-        if isinstance(wire_payload.get("coverage"), dict):
-            cov_dict = wire_payload["coverage"]
-            wire_payload["coverage"] = [
-                f"pairs_checked={cov_dict.get('pairs_checked', 0)}",
-                f"tests_collected={cov_dict.get('tests_collected', 0)}",
-            ]
-        if isinstance(wire_payload.get("results"), list):
-            adapted_results = []
-            for r in wire_payload["results"]:
-                r_copy = dict(r)
-                if isinstance(r_copy.get("evidence"), dict):
-                    r_copy["evidence"] = r_copy["evidence"].get("summary") or json.dumps(r_copy["evidence"])
-                adapted_results.append(r_copy)
-            wire_payload["results"] = adapted_results
-
-        # Post checks to L1 Coordinator via L2 Client
-        post_res = self.client.send_checks(wire_payload, runner_token=self.runner_token)
+        # Post canonical typed CONTRACT v0.1 checks to L1 Coordinator via L2 Client (CONTRACT 0.1.2 / C-1350)
+        post_res = self.client.send_checks(payload, runner_token=self.runner_token)
 
         # Retrieve coordinator status to observe generated warnings
         coord_status = self.client.get_status()
