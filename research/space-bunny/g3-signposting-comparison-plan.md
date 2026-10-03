@@ -319,22 +319,34 @@ Stated up front so a result cannot be stretched later:
 
 ---
 
-## 10. Reproducibility — `./replay.sh`, verified by execution
+## 10. Reproducibility — `replay.sh` plus `negative-tests.sh`, both executed
 
-Codex's reviews found my reproduction instructions broken twice: first because the executor commits are not
-resolvable in this repository (`git cat-file` fails), then because my replacement prose was unsafe to
-copy-paste. Both were real.
+Codex's reviews found my reproduction path broken three times: the executor commits are not resolvable in
+this repository, my replacement prose was unsafe to copy-paste, and then the script's guard failures were
+not captured by its callers, so a missing input exited `0`. All three were real and are fixed.
 
-**The procedure is now one script: `research/space-bunny/repro/replay.sh`.** No narrative step-by-step block
-remains to be mis-copied. It verifies payload integrity first, uses unique `mktemp -d` scratch per case,
-copies seed-then-overlay, refuses cross-fixture overlays, asserts source-byte identity with `cmp`, runs all
-eight cases with recorded exit statuses, and cleans only its own scratch.
+**Two entry points, both verified by running them here:**
 
-**I executed it here: all eight cases PASS (`rc=0`), matching the recorded outcomes.** I also verified it
-fails loudly rather than silently — a tampered payload aborts on the manifest, and a cross-fixture overlay
-prints `FIXTURE MISMATCH`.
+```
+cd research/space-bunny/repro
+./replay.sh            # eight composition cases; all PASS
+./negative-tests.sh    # seven mutations, each must fail loudly; all pass
+```
 
-Details, the defect table, and the reading-aid caveat are in `research/space-bunny/repro/README.md`.
+`replay.sh` verifies payload integrity first, uses unique `mktemp -d` scratch per case (asserted to be under
+its own prefix), copies seed-then-overlay, guards fixture/overlay mismatch on **both** the single and compose
+paths, fails closed on every `mkdir`/`cp`, asserts source-byte identity with `cmp`, **captures every caller
+failure**, verifies exactly eight rows with no gaps or duplicates, bounds the oracle with a timeout, and
+cleans only its own scratch. Exit codes: `0` all passed, `2` payload integrity, `3` setup/structure, `1` case
+failure.
+
+**The specific defect fixed here:** guard failures returned `2` but no caller captured it, so a missing
+input gave exit `0` with `cases failing: 0` and a seven-of-eight summary — a broken run reporting success.
+Reproduced before fixing. `negative-tests.sh` is the regression suite for that class: missing input,
+cross-fixture overlay on both paths, tampered payload, unreadable overlay, hanging oracle, and a clean-run
+control. **All seven behave correctly**, and payload integrity is re-verified afterwards.
+
+Details, the defect table and the reading-aid caveat are in `research/space-bunny/repro/README.md`.
 
 Payload files contain no session identifier, aplexer reference or `whoami` output; narrative documents are
 outside that set. Executor SHAs remain provenance labels and are **not** resolvable here.

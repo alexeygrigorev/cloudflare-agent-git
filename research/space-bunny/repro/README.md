@@ -84,19 +84,56 @@ cd research/space-bunny/repro
 
 ### What the script guarantees
 
-1. **Unique scratch per case** from `mktemp -d`. No path is ever derived from a payload directory, so it
-   cannot write into `seed-arm*`.
+1. **Unique scratch per case** from `mktemp -d`, and the scratch path is asserted to be under
+   `/tmp/g3repro.` before use. No path is ever derived from a payload directory, so it cannot write into
+   `seed-arm*`. Failure to create scratch exits 3.
 2. **Payload integrity first.** `sha256sum -c MANIFEST.sha256` gates everything; a tampered payload aborts
-   before any case runs. Verified: appending one line to an overlay makes the manifest fail and the script
-   exit non-zero.
+   before any case runs.
 3. **Seed first, overlay second**, `cp -a`, so the agent's version wins deterministically.
-4. **Fixture/overlay mismatch is a hard error**, checked by explicit guard. Verified: pointing the fixture-2
-   arm at `arm1-signposted/A` prints `FIXTURE MISMATCH` instead of silently producing a result.
-5. **Byte-identity assertions with `cmp`**, not `grep`. Every overlaid file must equal the published source
-   byte for byte, in both single and composed cases. `grep` markers are recorded below only as a human
-   reading aid, never as the check.
-6. **All eight cases explicit**, each with a recorded oracle exit status, and a summary table.
-7. **Scratch is cleaned on exit**, and only scratch. Payload directories are read-only inputs.
+4. **Fixture/overlay mismatch is a hard error**, guarded on **both** the single-agent and compose paths.
+5. **Every filesystem step fails closed** — `mkdir`, seed copy, overlay copy, oracle copy each abort the case
+   on failure rather than being skipped.
+6. **Byte-identity assertions with `cmp`**, not `grep`, for both single and composed cases.
+7. **Every caller failure is captured.** Each case call is `… || rc=$?` with an explicit setup-failure
+   record; a case that aborts is a **run failure, not a silent skip**.
+8. **Structure is verified, not assumed.** After the run the script checks that exactly eight rows were
+   recorded, that each expected label is present, and that no label is duplicated. Any gap, extra or
+   duplicate exits 3.
+9. **The oracle is bounded** by `ORACLE_TIMEOUT` (default 30 s). A hang is reported as `TIMEOUT`, distinct
+   from a genuine assertion failure.
+10. **Exit codes:** `0` all eight passed; `2` payload integrity failure; `3` setup or structure failure;
+    `1` one or more cases failed.
+11. **Scratch is cleaned on exit**, and only scratch. Payload directories are read-only inputs.
+
+### The defect this version fixes, and the negative tests that prove it
+
+An earlier version returned `2` from `run_case`/`compose_case` on a guard failure, **but no caller captured
+that return value.** A missing input therefore produced exit `0`, `fails=0`, and a summary table showing
+seven of eight cases — a broken run that reported success. Codex principal found this; I reproduced it
+before fixing:
+
+```
+MISSING OVERLAY DIR: DOES-NOT-EXIST
+cases failing: 0
+EXIT CODE = 0        <-- wrong
+```
+
+`./negative-tests.sh` is the regression suite for exactly this class. Each case mutates a **copy** of
+`replay.sh` (or a payload file, restored afterwards) and requires a **nonzero** exit **and** a surfaced
+reason:
+
+| # | Mutation | Required | Observed |
+|---|---|---|---|
+| N1 | missing overlay directory | nonzero | 3, `MISSING OVERLAY DIR` |
+| N2 | cross-fixture overlay, single arm | nonzero | 3, `FIXTURE MISMATCH` |
+| N3 | cross-fixture overlay, compose | nonzero | 3 |
+| N4 | tampered payload byte | nonzero | 2, `MANIFEST FAILED` |
+| N5 | unreadable overlay file | nonzero | 2 |
+| N6 | hanging oracle | nonzero, bounded | 2, `TIMEOUT` |
+| N7 | clean run | zero | 0 |
+
+All seven pass, and payload integrity is re-verified (21/21 OK) after the suite. It runs without agents,
+network or credentials.
 
 ### Expected result
 

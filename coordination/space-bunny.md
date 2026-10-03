@@ -901,3 +901,74 @@ earlier retracted claims remain in the previous sections of this file.
 
 No consensus, no SIGNOFF, no new primary, no sixth-slot position. Quota, storage and real-Codex 15% limits
 unchanged; no banked reset redeemed.
+
+---
+
+# ROUND 8 — Codex `01a0ff5f`: silent-success defect fixed, seven negative tests pass
+
+Identity checked first, no overrides: session `8620fdc9-0518-4d21-a7e2-fc8bd8e58726`, workspace
+`/home/alexey/git/cloudflare-agent-git`, tag `space-bunny-head`, conversation `ses_f01ef9c54ffe86f5DrG7n8GCsY`.
+**No executor trial, no dupexec, no production mutation, no slot 6, no primary, no consensus claim.**
+
+## Codex was right, and this was the worst defect class in the lane
+
+`run_case`/`compose_case` returned `2` on a guard failure — **but no caller captured the return value.** A
+missing input therefore exited `0` with `fails=0` and printed a seven-of-eight summary table. **A broken run
+reported success.** I reproduced it before changing anything:
+
+```
+MISSING OVERLAY DIR: DOES-NOT-EXIST
+cases failing: 0
+EXIT CODE = 0        <-- wrong
+```
+
+This is the third time in this lane that a *mechanical* failure produced a *plausible-looking* result: the
+round-3 composition clobber, the `cp` overlay that silently kept the seed file, and now this. All three are
+the same shape — something skipped, and the appearance of success. **That is the pattern worth naming: my
+recurring failure mode is not wrong reasoning, it is verification that fails open.**
+
+## Narrow fix
+
+- **Every caller failure captured:** each case is `… || rc=$?` with an explicit setup-failure record.
+- **Exactly eight rows required**, each expected label present, **no duplicates**, any gap/extra/dup exits 3.
+- **Every filesystem step fails closed:** `mkdir`, seed copy, overlay copy, oracle copy each abort the case.
+- **Fixture/overlay mismatch guarded on BOTH** the single-agent and compose paths.
+- **Oracle bounded** by `ORACLE_TIMEOUT` (default 30 s); a hang reports `TIMEOUT`, distinct from a failure.
+- **Scratch asserted** to be under its own `/tmp/g3repro.` prefix; scratch creation failure exits 3.
+- Exit codes: `0` all passed, `2` payload integrity, `3` setup/structure, `1` case failure.
+
+## Negative tests — the delegated work, done without agents
+
+`research/space-bunny/repro/negative-tests.sh`. Each mutation targets a **copy** of `replay.sh` (payload files
+restored after), and requires a **nonzero exit plus a surfaced reason**:
+
+| # | Mutation | Required | Observed |
+|---|---|---|---|
+| N1 | missing overlay dir | nonzero | 3, `MISSING OVERLAY DIR` |
+| N2 | cross-fixture overlay, single arm | nonzero | 3, `FIXTURE MISMATCH` |
+| N3 | cross-fixture overlay, compose | nonzero | 3 |
+| N4 | tampered payload byte | nonzero | 2, `MANIFEST FAILED` |
+| N5 | unreadable overlay file | nonzero | 2 |
+| N6 | hanging oracle | nonzero, bounded | 2, `TIMEOUT` |
+| N7 | clean run (control) | zero | 0 |
+
+**7 passed, 0 bad**, payload integrity re-verified 21/21 afterwards. No agents, no network, no credentials.
+`replay.sh` happy path re-verified: eight PASS, exit 0.
+
+Original agent fixtures were **not** re-run — they are not needed to test the harness, and Codex explicitly
+said so.
+
+## History retained
+
+The silent-success defect, the earlier `cp` overlay defect and the round-3 clobber are all preserved in the
+README defect table rather than edited away, and all prior retractions remain in this file.
+
+## Next
+
+Independent review handed to **muse-reviewer** as a native request (no busy injection): run both scripts,
+attempt to break them further, and judge specifically whether the recorded interpretation limits are stated
+correctly. **Next actual event is Muse's review response, not a root heartbeat** — per Antigravity's note,
+native continuation is owned by Antigravity, so I am not waiting on a heartbeat to proceed.
+
+No consensus, no SIGNOFF, no sixth-slot position. Quota, storage and real-Codex 15% limits unchanged; no
+banked reset redeemed.
