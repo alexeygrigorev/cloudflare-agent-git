@@ -7,6 +7,8 @@ import urllib.parse
 import urllib.request
 from typing import Any, Dict, List, Optional, Union
 
+CONTRACT_VERSION = "0.1.1"
+
 
 class AgentBranchesError(Exception):
     """Base exception for all agent-branches client errors."""
@@ -186,6 +188,7 @@ class AgentBranchesClient:
         intent: Optional[str] = None,
         test_provenance: Optional[str] = None,
         agent_id: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Register a WIP commit push (POST /events/push).
 
@@ -247,7 +250,12 @@ class AgentBranchesClient:
         if test_provenance:
             payload["test_provenance"] = test_provenance
 
-        return self._request("POST", "/events/push", payload)
+        headers: Dict[str, str] = {}
+        effective_token = token or self.admin_token or os.environ.get("ADMIN_TOKEN")
+        if effective_token:
+            headers["Authorization"] = f"Bearer {effective_token}"
+
+        return self._request("POST", "/events/push", payload, headers=headers)
 
     def get_status(self) -> Dict[str, Any]:
         """Fetch current global coordinator and radar status (GET /status)."""
@@ -258,6 +266,8 @@ class AgentBranchesClient:
         warning_id: str,
         task_id: Optional[str] = None,
         action: str = "acknowledged",
+        agent: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Acknowledge a radar warning (POST /warnings/:id/ack)."""
         encoded_id = urllib.parse.quote(warning_id, safe="")
@@ -265,8 +275,45 @@ class AgentBranchesClient:
         if task_id:
             payload["task_id"] = task_id
             payload["taskId"] = task_id
+            if not agent and task_id in self.task_to_agent:
+                agent = self.task_to_agent[task_id]
+        if not agent and task_id:
+            try:
+                task_info = self.get_task(task_id)
+                agent = task_info.get("agent") or task_info.get("agent_id") or task_info.get("agentId")
+            except Exception:
+                pass
+        if agent:
+            payload["agent"] = agent
+            payload["agentId"] = agent
 
-        return self._request("POST", f"/warnings/{encoded_id}/ack", payload)
+        headers: Dict[str, str] = {}
+        effective_token = token or self.admin_token or os.environ.get("ADMIN_TOKEN")
+        if effective_token:
+            headers["Authorization"] = f"Bearer {effective_token}"
+
+        return self._request("POST", f"/warnings/{encoded_id}/ack", payload, headers=headers)
+
+    def record_test_provenance(
+        self,
+        task_id: str,
+        command: str,
+        exit_code: int,
+        head_sha: str,
+        token: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Attach test provenance to a task (POST /tasks/:id/tests)."""
+        encoded_id = urllib.parse.quote(task_id, safe="")
+        payload = {
+            "command": command,
+            "exit": exit_code,
+            "head_sha": head_sha,
+        }
+        headers: Dict[str, str] = {}
+        effective_token = token or self.admin_token or os.environ.get("ADMIN_TOKEN")
+        if effective_token:
+            headers["Authorization"] = f"Bearer {effective_token}"
+        return self._request("POST", f"/tasks/{encoded_id}/tests", payload, headers=headers)
 
     def send_checks(
         self,

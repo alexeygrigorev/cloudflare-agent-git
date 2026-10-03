@@ -41,6 +41,23 @@ from radar.engine import (
 )
 from agents.prompts import build_agent_prompt
 
+CONTRACT_VERSION = "0.1.1"
+
+
+def sanitize_for_timeline(obj: Any) -> Any:
+    """Recursively redact secrets/tokens from published timeline data."""
+    if isinstance(obj, dict):
+        res = {}
+        for k, v in obj.items():
+            if any(term in k.lower() for term in ["token", "secret", "bearer", "password"]):
+                res[k] = "[REDACTED]" if v else v
+            else:
+                res[k] = sanitize_for_timeline(v)
+        return res
+    elif isinstance(obj, list):
+        return [sanitize_for_timeline(item) for item in obj]
+    return obj
+
 
 @dataclass
 class TaskSpec:
@@ -143,15 +160,16 @@ class AgentHarnessDriver:
         self.save_timeline()
 
     def save_timeline(self) -> str:
-        """Write current timeline to JSON file."""
+        """Write current timeline to JSON file with redacted tokens and pinned contract version."""
         timeline_path = os.path.join(self.run_dir, "timeline.json")
         payload = {
+            "contract_version": CONTRACT_VERSION,
             "run_id": self.run_id,
             "started_at": self.start_time,
             "engine_mode": self.engine_mode,
             "server_url": self.server_url,
             "events_count": len(self.timeline),
-            "events": [asdict(e) for e in self.timeline],
+            "events": [sanitize_for_timeline(asdict(e)) for e in self.timeline],
         }
         with open(timeline_path, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2)
@@ -305,6 +323,7 @@ class AgentHarnessDriver:
         if self.base_sha:
             return self.base_sha
         for candidate in [
+            os.path.join(self.demo_target_path, ".harness", "reference-solutions", "BASE"),
             os.path.join(self.demo_target_path, "reference-solutions", "BASE"),
             os.path.join(self.demo_target_path, ".harness", "BASE"),
             os.path.join(self.demo_target_path, "BASE"),
@@ -382,11 +401,14 @@ class AgentHarnessDriver:
             is_mock_remote = not t.fork_remote or "cloudflare.local" in t.fork_remote or "example.com" in t.fork_remote
             if not is_mock_remote:
                 # Real sidecar / remote repository: clone directly from the remote fork
-                clone_cmd = ["git"]
+                # Pass auth token via GIT_CONFIG_* env vars to strictly prevent token exposure in process argv (Codex C-1360)
+                clone_cmd = ["git", "clone", "--quiet", t.fork_remote, ws_dir]
+                clone_env = dict(os.environ)
                 if t.token:
-                    clone_cmd.extend(["-c", f"http.extraHeader=Authorization: Bearer {t.token}"])
-                clone_cmd.extend(["clone", "--quiet", t.fork_remote, ws_dir])
-                subprocess.run(clone_cmd, check=True, capture_output=True)
+                    clone_env["GIT_CONFIG_COUNT"] = "1"
+                    clone_env["GIT_CONFIG_KEY_0"] = "http.extraHeader"
+                    clone_env["GIT_CONFIG_VALUE_0"] = f"Authorization: Bearer {t.token}"
+                subprocess.run(clone_cmd, check=True, capture_output=True, env=clone_env)
                 subprocess.run(["git", "-C", ws_dir, "checkout", "-q", "-B", t.branch], check=True, capture_output=True)
             else:
                 # Mock or local remote: clone from self.repo_root and create bare remote
@@ -413,38 +435,58 @@ class AgentHarnessDriver:
                 check=True,
                 capture_output=True,
             )
+            # Store per-task token privately in 0600 git-ignored file (no token in argv!)
+            token_file = os.path.join(ws_dir, ".agent-token")
             if t.token:
-                subprocess.run(
-                    ["git", "-C", ws_dir, "config", "http.extraHeader", f"Authorization: Bearer {t.token}"],
-                    check=True,
-                    capture_output=True,
-                )
+                with open(token_file, "w", encoding="utf-8") as f:
+                    f.write(t.token.strip())
+                os.chmod(token_file, 0o600)
+
+                # Configure git transport auth directly in .git/config (no token in argv!)
+                git_config_path = os.path.join(ws_dir, ".git", "config")
+                with open(git_config_path, "a", encoding="utf-8") as f:
+                    f.write(f"\n[http]\n\textraHeader = Authorization: Bearer {t.token}\n")
+                os.chmod(git_config_path, 0o600)
 
             # Create helper wrapper for agent-branches CLI inside agent workspace
             bin_dir = os.path.join(ws_dir, ".bin")
             os.makedirs(bin_dir, exist_ok=True)
             cli_wrapper = os.path.join(bin_dir, "agent-branches")
             harness_root = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+            eff_agent_id = t.registered_agent_id or f"agent-{t.task_id.lower()}"
+            eff_task_id = t.registered_task_id or t.task_id
+            wrapper_content = (
+                f"#!/usr/bin/env bash\n"
+                f"SCRIPT_DIR=\"$(cd \"$(dirname \"${{BASH_SOURCE[0]}}\")\" && pwd)\"\n"
+                f"if [ -f \"$SCRIPT_DIR/.agent-token\" ]; then\n"
+                f"  WS_DIR=\"$SCRIPT_DIR\"\n"
+                f"elif [ -f \"$SCRIPT_DIR/../.agent-token\" ]; then\n"
+                f"  WS_DIR=\"$(cd \"$SCRIPT_DIR/..\" && pwd)\"\n"
+                f"else\n"
+                f"  WS_DIR=\"$(pwd)\"\n"
+                f"fi\n"
+                f"export PYTHONPATH=\"{harness_root}:${{PYTHONPATH}}\"\n"
+                f"if [ -f \"$WS_DIR/.agent-token\" ]; then\n"
+                f"  export AGENT_BRANCHES_TOKEN=\"$(cat \"$WS_DIR/.agent-token\")\"\n"
+                f"fi\n"
+                f"export AGENT_BRANCHES_AGENT_ID=\"{eff_agent_id}\"\n"
+                f"export AGENT_BRANCHES_TASK_ID=\"{eff_task_id}\"\n"
+                f"exec python3 -m agent_branches.cli --server {self.server_url} \"$@\"\n"
+            )
             with open(cli_wrapper, "w", encoding="utf-8") as f:
-                f.write(
-                    f"#!/usr/bin/env bash\n"
-                    f"export PYTHONPATH=\"{harness_root}:${{PYTHONPATH}}\"\n"
-                    f"exec python3 -m agent_branches.cli --server {self.server_url} \"$@\"\n"
-                )
+                f.write(wrapper_content)
             os.chmod(cli_wrapper, 0o755)
 
             # Also create helper in workspace root so both PATH and ./agent-branches work
             ws_cli = os.path.join(ws_dir, "agent-branches")
-            if not os.path.exists(ws_cli):
-                try:
-                    os.symlink(cli_wrapper, ws_cli)
-                except OSError:
-                    shutil.copy2(cli_wrapper, ws_cli)
+            with open(ws_cli, "w", encoding="utf-8") as f:
+                f.write(wrapper_content)
+            os.chmod(ws_cli, 0o755)
 
             # Exclude harness helper files from git tracking
             exclude_file = os.path.join(ws_dir, ".git", "info", "exclude")
             with open(exclude_file, "a", encoding="utf-8") as f:
-                f.write("\n.bin/\nagent-branches\nAGENT_TASK.md\n")
+                f.write("\n.bin/\nagent-branches\nAGENT_TASK.md\n.agent-token\n")
 
             # Ensure agent workspace gets ONLY the base code: scrub reference solutions and solutions docs
             for scrub_target in ["reference-solutions", ".harness", "SOLUTIONS.md", "verify-overlap.sh", "verify-overlap.work.sh"]:

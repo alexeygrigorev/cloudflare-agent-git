@@ -286,13 +286,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--test-provenance",
         help="Test execution provenance evidence (e.g. 'vitest: 14 passed')",
     )
+    push_parser.add_argument(
+        "--token",
+        default=os.environ.get("AGENT_BRANCHES_TOKEN"),
+        help="Bearer token for push authorization (or $AGENT_BRANCHES_TOKEN)",
+    )
     push_parser.add_argument("--server", help="Coordinator URL")
     push_parser.add_argument("--json", action="store_true", help="Output raw JSON")
 
     # status command
     status_parser = subparsers.add_parser("status", help="Query coordinator and radar status")
     status_parser.add_argument(
-        "--task-id", help="Task ID to query specific task status and active warnings"
+        "--task-id",
+        default=os.environ.get("AGENT_BRANCHES_TASK_ID"),
+        help="Task ID to query specific task status and active warnings (or $AGENT_BRANCHES_TASK_ID)",
     )
     status_parser.add_argument("--server", help="Coordinator URL")
     status_parser.add_argument("--json", action="store_true", help="Output raw JSON")
@@ -300,7 +307,9 @@ def build_parser() -> argparse.ArgumentParser:
     # ack command
     ack_parser = subparsers.add_parser("ack", help="Acknowledge an active radar conflict warning")
     ack_parser.add_argument(
-        "--task-id", required=True, help="Task identifier acknowledging the warning"
+        "--task-id",
+        default=os.environ.get("AGENT_BRANCHES_TASK_ID"),
+        help="Task identifier acknowledging the warning (or $AGENT_BRANCHES_TASK_ID)",
     )
     ack_parser.add_argument(
         "--warning-id", required=True, help="Warning identifier being acknowledged"
@@ -309,6 +318,18 @@ def build_parser() -> argparse.ArgumentParser:
         "--action",
         default="rebased_locally",
         help="Action taken to address warning (e.g. 'rebased_locally', 'manual_merge')",
+    )
+    ack_parser.add_argument(
+        "--agent",
+        "--agent-id",
+        dest="agent",
+        default=os.environ.get("AGENT_BRANCHES_AGENT_ID"),
+        help="Agent identifier acknowledging the warning (or $AGENT_BRANCHES_AGENT_ID)",
+    )
+    ack_parser.add_argument(
+        "--token",
+        default=os.environ.get("AGENT_BRANCHES_TOKEN"),
+        help="Bearer token for task authorization (or $AGENT_BRANCHES_TOKEN)",
     )
     ack_parser.add_argument("--server", help="Coordinator URL")
     ack_parser.add_argument("--json", action="store_true", help="Output raw JSON")
@@ -364,11 +385,12 @@ def handle_task_create(args: argparse.Namespace, client: AgentBranchesClient, as
 
 
 def handle_push(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
-    task_id = getattr(args, "task_id", None)
-    agent_id = getattr(args, "agent_id", None)
+    task_id = getattr(args, "task_id", None) or os.environ.get("AGENT_BRANCHES_TASK_ID")
+    agent_id = getattr(args, "agent_id", None) or os.environ.get("AGENT_BRANCHES_AGENT_ID")
+    token = getattr(args, "token", None) or os.environ.get("AGENT_BRANCHES_TOKEN")
 
     if not task_id and not agent_id:
-        print("Error: either --task-id or --agent-id must be specified", file=sys.stderr)
+        print("Error: either --task-id or --agent-id must be specified (or set $AGENT_BRANCHES_TASK_ID / $AGENT_BRANCHES_AGENT_ID)", file=sys.stderr)
         return 2
 
     head_sha = args.head_sha or get_current_head_sha()
@@ -391,6 +413,7 @@ def handle_push(args: argparse.Namespace, client: AgentBranchesClient, as_json: 
             files_changed=files_changed,
             intent=args.intent_update,
             test_provenance=args.test_provenance,
+            token=token,
         )
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)
@@ -405,12 +428,13 @@ def handle_push(args: argparse.Namespace, client: AgentBranchesClient, as_json: 
 
 
 def handle_status(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
-    if args.task_id:
-        res = client.get_task(args.task_id)
+    task_id = args.task_id or os.environ.get("AGENT_BRANCHES_TASK_ID")
+    if task_id:
+        res = client.get_task(task_id)
         if as_json:
             print(json.dumps(res, indent=2))
         else:
-            print(format_status_result(res, task_id=args.task_id))
+            print(format_status_result(res, task_id=task_id))
     else:
         res = client.get_status()
         if as_json:
@@ -421,10 +445,18 @@ def handle_status(args: argparse.Namespace, client: AgentBranchesClient, as_json
 
 
 def handle_ack(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
+    task_id = getattr(args, "task_id", None) or os.environ.get("AGENT_BRANCHES_TASK_ID")
+    if not task_id:
+        print("Error: --task-id is required (or set $AGENT_BRANCHES_TASK_ID)", file=sys.stderr)
+        return 1
+    agent = getattr(args, "agent", None) or os.environ.get("AGENT_BRANCHES_AGENT_ID")
+    token = getattr(args, "token", None) or os.environ.get("AGENT_BRANCHES_TOKEN")
     res = client.ack_warning(
         warning_id=args.warning_id,
-        task_id=args.task_id,
+        task_id=task_id,
         action=args.action,
+        agent=agent,
+        token=token,
     )
     if as_json:
         print(json.dumps(res, indent=2))
