@@ -264,7 +264,26 @@ under one verified current wire**, after the dupexec gate opens:
 | Cell | Brief | Runtime |
 |---|---|---|
 | C1 signposted control | signposted | verified current wire, recorded |
-| C2 neutral | neutral, only signposting removed | same wire, same session, same model, same budgets |
+| C2 neutral | neutral, only signposting removed | same wire, **fresh isolated executor context**, same model, same budgets |
+
+### 8.1 Executor isolation — Codex revision accepted, this was a real confound in my design
+
+Codex: *"same session risks conversation carryover between control and neutral; use fresh equivalent isolated
+executor conversations/contexts, record allocation/order without presenting n1 as causal effect."* Correct,
+and my plan had the defect: I wrote "same wire, **same session**", which would have let the control cell's
+conversation carry into the neutral cell and made the contrast partly a test of session memory.
+
+Required now:
+
+1. **Each cell gets fresh, equivalent, isolated executor conversations.** No executor conversation is reused
+   across C1 and C2. Within a cell, A and B likewise get separate contexts from each other.
+2. **Equivalence means the same envelope, not the same session:** same wire, same model, same budgets, same
+   tool inventory, same wall-clock budget, same worktree shape — each with a clean conversation.
+3. **Allocation and order are recorded**, including which cell was dispatched first and whether any resource
+   contention occurred. Order is a candidate confound and is reported, not hidden.
+4. **n=1 per cell is still n=1.** Fresh sessions remove carryover; they do not create statistical power. The
+   result is reported as a hypothesis-generating contrast, never as a causal effect or a rate. If a reviewer
+   wants an effect estimate, this design cannot supply one and says so.
 
 **Not run now.** No launch until the dupexec production gate opens, and not as a "head start".
 
@@ -330,6 +349,31 @@ this repository and nothing here implies they are.**
 
 Composition is spelled out because getting it wrong is precisely the error that produced a false result in
 round 3 — copying B's whole tree over A's work.
+
+## 10a. Documentation validation performed this round (no agents, no production tests)
+
+Codex asked for doc-level validation from published files only. Performed, and what it caught:
+
+- **Reproduced Codex's `cp` defect before fixing it.** The old single-invocation
+  `cp seed-arm1/* arm1-signposted/A/* DIR/` fails with
+  `cp: will not overwrite just-created '…/cache.py' with 'arm1-signposted/A/cache.py'`, because `cache.py`
+  is in both the seed and the overlay. Confirmed `cp -n` "fixes" the error but **keeps the seed file**, which
+  is the opposite of intent. Correct order is seed first, agent overlay second.
+- **Replayed all eight cases from published files only**, in unique disposable scratch directories, using the
+  rewritten instructions. All eight `rc=0`, matching recorded outcomes.
+- **Added an overlay-effectiveness assertion** (`grep -c OrderedDict cache.py`, and the fixture-2 equivalents)
+  so a silently-unapplied overlay cannot masquerade as a reproduction. This defect class — an overlay that did
+  not apply, producing a *pass for the wrong reason* — is the same class as my round-3 composition clobber, so
+  the check is now part of the documented procedure.
+- **Note on fixture 1 arm B:** a naive marker check for `store._data.update` returns 0, which looks like a
+  missing overlay but is not. Agent B's actual optimisation commits all values and then notifies **per key**,
+  which is precisely the round-3 finding. Confirmed by diffing against the seed: the composed `bulk.py`
+  **differs** from the seed, so the overlay did apply.
+- **Scoped the sanitisation claim.** Payload files under `repro/` were re-checked and contain no session
+  identifier, aplexer reference or `whoami` output. The earlier blanket "no session identifiers published" was
+  too broad, because the README's own owner header named one. Corrected in `repro/README.md`.
+
+No new agents, no production tests, no dupexec launch.
 
 ## 11. Status and next owner
 
