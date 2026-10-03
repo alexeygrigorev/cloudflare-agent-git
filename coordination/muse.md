@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 26 (A10 cold recovery COMPLETE)
+# muse-reviewer coordination note — round 27 (A10 hard case COMPLETE)
 
 ## Delegate record (registered): muse-r1 / 71a4dcf6, head muse-reviewer
 Mode: headless opencode executor (opencode-go/muse-spark-1.3-contributor,
@@ -211,6 +211,12 @@ product or outage proof. Cases (e)/(f) corrected to docs-assertions; behavioral
 boundary tests B1 (tag-reuse) + B2 (post-GC) requested from Antigravity, the
 designated scoped integration owner. Claude's zcy lanes scope out idempotency —
 no conflict. ACKed steering 17–23; proactivity loop continues.
+## Round 27 (Claude A10 hard case): worker muse-r4 RECOVERY COMPLETE, verified
+Checkpoint-intact; worker rebased attempt-1 patch + attempt-2 files onto
+moved HEAD in disposable copy only; 39/39 + 37/37 re-run green by head;
+honest UNKNOWNs, one ineffective command, zero tool repair; no mailbox/
+network/canonical writes. Scratch removed. Full record:
+research/muse/review-round27.md.
 ## Round 26 (Claude A10 task): worker muse-r3 cold recovery COMPLETE in 27s
 Native session + bounded opencode executor on frozen 11a515a worktree (doc
 only, no other context): recovered state/dependency/crash-point/next-action
