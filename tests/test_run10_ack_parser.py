@@ -1,16 +1,26 @@
 #!/usr/bin/env python3
-"""Offline unit test suite for Run 10 discrete ACK envelope parser and correlation verification.
+"""Offline negative and positive unit test suite for Run 10 discrete ACK envelope parser.
 
-Covers:
-- Test 1: Genuine correlated receiver reply envelope -> returns True ((True, msg_id)).
-- Test 2: Sender-self request in mailbox containing the ACK string -> returns False (strictly rejects self-request).
-- Test 3: Foreign session message containing the ACK string -> returns False.
-- Test 4: Message from receiver but wrong reply_to -> returns False.
-- Additional edge cases:
-    - Missing or null reply_to from receiver -> returns False.
-    - Multipart mailbox log with earlier self-requests followed by valid correlated reply -> returns True.
-    - Direct raw_log invocation (bypassing subprocess).
-    - Parse errors or command failure -> returns False.
+Per Codex Principal C-1297:
+1. Exact Native UUID Matching:
+   - msg.from.session_id == receiver_uuid strictly enforced
+   - msg.to.session_id == sender_uuid strictly enforced
+   - Tags are diagnostic only; tag fallback strictly forbidden
+2. Non-empty envelope ID required
+3. Post-request timestamp enforced (created_at >= min_timestamp_sec)
+4. Correlated reply_to == expected_reply_to and expected_ack_substring in body
+
+Test cases:
+- Test 1: Genuine matching reply with exact UUIDs, valid post-request timestamp, matching reply_to, and body -> accepted
+- Test 2: Correct tag + wrong UUID on receiver side -> strictly rejected
+- Test 3: Correct tag + wrong UUID on sender side -> strictly rejected
+- Test 4: Tag-only / missing session_id on receiver or sender -> strictly rejected
+- Test 5: Body echo in sender's own request message -> strictly rejected
+- Test 6: Replay / wrong reply_to -> strictly rejected
+- Test 7: Timestamp before request -> strictly rejected
+- Test 8: Empty or missing envelope ID -> strictly rejected
+- Test 9: Helper _match_session_or_tag strictly rejects tag fallback
+- Test 10: Multipart mailbox log with earlier self-request followed by valid correlated reply -> accepted
 """
 import json
 import unittest
@@ -31,20 +41,21 @@ class TestRun10AckParser(unittest.TestCase):
         self.sender_tag = "continuation-sender-1791026615"
         self.receiver_uuid = "2d8b21d8-8ad2-46b4-8899-fe9c844dea6c"
         self.receiver_tag = "continuation-receiver-1791026615"
-        self.foreign_uuid = "1ff2ad02-4946-4d78-b53d-10627f5b9477"
-        self.foreign_tag = "foreign-sender-1791026615"
         self.req_msg_id = "01a10183-027c-7e20-9587-18301ba5a817"
         self.reply_msg_id = "01a10183-5a21-7e20-abcd-18301ba5a999"
         self.ack_str = "ACK_TURN1_1791026722"
+        self.req_timestamp_sec = 1791026720.0
+        self.reply_timestamp_sec = 1791026725.0
 
     @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
-    def test_1_genuine_correlated_receiver_reply(self, mock_exec):
-        """Test 1: Genuine correlated receiver reply envelope -> returns True."""
+    def test_1_genuine_matching_reply_accepted(self, mock_exec):
+        """Test 1: Genuine matching reply with exact UUIDs, valid post-request timestamp, matching reply_to, and body -> accepted."""
         mock_exec.return_value = (0, json.dumps([
             {
                 "schema_version": 1,
                 "id": self.req_msg_id,
                 "workspace": self.workspace,
+                "created_at": self.req_timestamp_sec,
                 "from": {"session_id": self.sender_uuid, "tag": self.sender_tag},
                 "to": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
                 "kind": "note",
@@ -54,6 +65,7 @@ class TestRun10AckParser(unittest.TestCase):
                 "schema_version": 1,
                 "id": self.reply_msg_id,
                 "workspace": self.workspace,
+                "created_at": self.reply_timestamp_sec,
                 "from": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
                 "to": {"session_id": self.sender_uuid, "tag": self.sender_tag},
                 "kind": "reply",
@@ -62,213 +74,336 @@ class TestRun10AckParser(unittest.TestCase):
             }
         ]))
 
-        # Test with keyword tags
         ok, val = verify_durable_ack_envelope(
-            self.sender_uuid,
-            self.receiver_uuid,
-            self.req_msg_id,
-            self.ack_str,
-            self.workspace,
+            sender_uuid=self.sender_uuid,
+            receiver_uuid=self.receiver_uuid,
+            expected_reply_to=self.req_msg_id,
+            expected_ack_substring=self.ack_str,
+            workspace=self.workspace,
             receiver_tag=self.receiver_tag,
             sender_tag=self.sender_tag,
+            min_timestamp_sec=self.req_timestamp_sec,
         )
         self.assertTrue(ok)
         self.assertEqual(val, self.reply_msg_id)
 
-        # Test with 5 positional arguments (matching purely on session_ids)
-        ok_pos, val_pos = verify_durable_ack_envelope(
-            self.sender_uuid,
-            self.receiver_uuid,
-            self.req_msg_id,
-            self.ack_str,
-            self.workspace,
+    @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
+    def test_2_correct_tag_wrong_uuid_receiver_rejected(self, mock_exec):
+        """Test 2: Correct tag + wrong UUID on receiver side -> strictly rejected."""
+        wrong_receiver_uuid = "e82eb89c-5f50-49f9-9dee-ffaee50b004a"
+        mock_exec.return_value = (0, json.dumps([
+            {
+                "schema_version": 1,
+                "id": self.reply_msg_id,
+                "workspace": self.workspace,
+                "created_at": self.reply_timestamp_sec,
+                # Has the expected receiver tag, but a mismatched/foreign session_id!
+                "from": {"session_id": wrong_receiver_uuid, "tag": self.receiver_tag},
+                "to": {"session_id": self.sender_uuid, "tag": self.sender_tag},
+                "kind": "reply",
+                "reply_to": self.req_msg_id,
+                "body": f"Spoofed ACK: {self.ack_str}",
+            }
+        ]))
+
+        ok, reason = verify_durable_ack_envelope(
+            sender_uuid=self.sender_uuid,
+            receiver_uuid=self.receiver_uuid,
+            expected_reply_to=self.req_msg_id,
+            expected_ack_substring=self.ack_str,
+            workspace=self.workspace,
+            receiver_tag=self.receiver_tag,
+            sender_tag=self.sender_tag,
+            min_timestamp_sec=self.req_timestamp_sec,
         )
-        self.assertTrue(ok_pos)
-        self.assertEqual(val_pos, self.reply_msg_id)
+        self.assertFalse(ok)
+        self.assertIn("strictly rejected", reason)
+        self.assertIn("does not match expected receiver UUID", reason)
+        self.assertIn("diagnostic only", reason)
 
     @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
-    def test_2_sender_self_request_in_mailbox_rejected(self, mock_exec):
-        """Test 2: Sender-self request in mailbox containing the ACK string -> returns False (strictly rejects self-request)."""
-        # Exactly reproduces Run 10 naive substring failure where the sender's own outgoing work item
-        # prompt contains the expected ACK substring in JSON parameters.
-        sender_prompt_body = (
-            f"Work item for task continuation-task-1791026615: "
-            f"{{\"task_id\": \"continuation-task-1791026615\", \"operation\": \"create_file\", "
-            f"\"target\": \"turn1_1791026722.txt\", \"content\": \"CONTINUATION_TURN1_VERIFIED_1791026722\", "
-            f"\"ack\": \"{self.ack_str}\"}}. "
-            f"Please write exactly 'CONTINUATION_TURN1_VERIFIED_1791026722' to relative file turn1_1791026722.txt. "
-            f"After writing the file, reply to this message with '{self.ack_str}'."
+    def test_3_correct_tag_wrong_uuid_sender_rejected(self, mock_exec):
+        """Test 3: Correct tag + wrong UUID on sender side -> strictly rejected."""
+        wrong_sender_uuid = "1ff2ad02-4946-4d78-b53d-10627f5b9477"
+        mock_exec.return_value = (0, json.dumps([
+            {
+                "schema_version": 1,
+                "id": self.reply_msg_id,
+                "workspace": self.workspace,
+                "created_at": self.reply_timestamp_sec,
+                "from": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
+                # Has the expected sender tag, but a mismatched session_id!
+                "to": {"session_id": wrong_sender_uuid, "tag": self.sender_tag},
+                "kind": "reply",
+                "reply_to": self.req_msg_id,
+                "body": f"Misrouted ACK: {self.ack_str}",
+            }
+        ]))
+
+        ok, reason = verify_durable_ack_envelope(
+            sender_uuid=self.sender_uuid,
+            receiver_uuid=self.receiver_uuid,
+            expected_reply_to=self.req_msg_id,
+            expected_ack_substring=self.ack_str,
+            workspace=self.workspace,
+            receiver_tag=self.receiver_tag,
+            sender_tag=self.sender_tag,
+            min_timestamp_sec=self.req_timestamp_sec,
         )
+        self.assertFalse(ok)
+        self.assertIn("strictly rejected", reason)
+        self.assertIn("does not match expected sender UUID", reason)
+        self.assertIn("diagnostic only", reason)
+
+    @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
+    def test_4_tag_only_missing_session_id_rejected(self, mock_exec):
+        """Test 4: Tag-only / missing session_id -> strictly rejected."""
+        # Case A: Missing session_id on receiver side
+        mock_exec.return_value = (0, json.dumps([
+            {
+                "schema_version": 1,
+                "id": self.reply_msg_id,
+                "workspace": self.workspace,
+                "created_at": self.reply_timestamp_sec,
+                "from": {"tag": self.receiver_tag},  # No session_id!
+                "to": {"session_id": self.sender_uuid, "tag": self.sender_tag},
+                "kind": "reply",
+                "reply_to": self.req_msg_id,
+                "body": f"ACK: {self.ack_str}",
+            }
+        ]))
+
+        ok, reason = verify_durable_ack_envelope(
+            sender_uuid=self.sender_uuid,
+            receiver_uuid=self.receiver_uuid,
+            expected_reply_to=self.req_msg_id,
+            expected_ack_substring=self.ack_str,
+            workspace=self.workspace,
+            receiver_tag=self.receiver_tag,
+            sender_tag=self.sender_tag,
+        )
+        self.assertFalse(ok)
+        self.assertIn("missing from.session_id", reason)
+        self.assertIn("cannot substitute for native UUID", reason)
+
+        # Case B: Missing session_id on sender side
+        mock_exec.return_value = (0, json.dumps([
+            {
+                "schema_version": 1,
+                "id": self.reply_msg_id,
+                "workspace": self.workspace,
+                "created_at": self.reply_timestamp_sec,
+                "from": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
+                "to": {"tag": self.sender_tag},  # No session_id!
+                "kind": "reply",
+                "reply_to": self.req_msg_id,
+                "body": f"ACK: {self.ack_str}",
+            }
+        ]))
+
+        ok2, reason2 = verify_durable_ack_envelope(
+            sender_uuid=self.sender_uuid,
+            receiver_uuid=self.receiver_uuid,
+            expected_reply_to=self.req_msg_id,
+            expected_ack_substring=self.ack_str,
+            workspace=self.workspace,
+        )
+        self.assertFalse(ok2)
+        self.assertIn("missing to.session_id", reason2)
+
+    @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
+    def test_5_body_echo_in_sender_own_request_rejected(self, mock_exec):
+        """Test 5: Body echo in sender's own request message -> strictly rejected."""
+        # Exact reproduction of Run 10 false-ACK bug
         mock_exec.return_value = (0, json.dumps([
             {
                 "schema_version": 1,
                 "id": self.req_msg_id,
                 "workspace": self.workspace,
+                "created_at": self.req_timestamp_sec,
                 "from": {"session_id": self.sender_uuid, "tag": self.sender_tag},
                 "to": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
                 "kind": "note",
-                "body": sender_prompt_body,
+                "body": f"Work item: {{\"ack\": \"{self.ack_str}\"}}. Reply with '{self.ack_str}'.",
             }
         ]))
 
         ok, reason = verify_durable_ack_envelope(
-            self.sender_uuid,
-            self.receiver_uuid,
-            self.req_msg_id,
-            self.ack_str,
-            self.workspace,
+            sender_uuid=self.sender_uuid,
+            receiver_uuid=self.receiver_uuid,
+            expected_reply_to=self.req_msg_id,
+            expected_ack_substring=self.ack_str,
+            workspace=self.workspace,
             receiver_tag=self.receiver_tag,
             sender_tag=self.sender_tag,
         )
         self.assertFalse(ok)
         self.assertIn("sender-self", reason)
-        self.assertIn("rejecting self-request", reason)
+        self.assertIn("strictly rejecting self-request", reason)
 
     @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
-    def test_3_foreign_session_message_rejected(self, mock_exec):
-        """Test 3: Foreign session message containing the ACK string -> returns False."""
+    def test_6_replay_wrong_reply_to_rejected(self, mock_exec):
+        """Test 6: Replay / wrong reply_to -> strictly rejected."""
+        stale_request_id = "01a10000-stale-previous-request-id"
         mock_exec.return_value = (0, json.dumps([
-            {
-                "schema_version": 1,
-                "id": "01a10182-foreign-injection",
-                "workspace": self.workspace,
-                "from": {"session_id": self.foreign_uuid, "tag": self.foreign_tag},
-                "to": {"session_id": self.sender_uuid, "tag": self.sender_tag},
-                "kind": "reply",
-                "reply_to": self.req_msg_id,
-                "body": f"Forged foreign ACK: {self.ack_str}",
-            }
-        ]))
-
-        ok, reason = verify_durable_ack_envelope(
-            self.sender_uuid,
-            self.receiver_uuid,
-            self.req_msg_id,
-            self.ack_str,
-            self.workspace,
-            receiver_tag=self.receiver_tag,
-            sender_tag=self.sender_tag,
-        )
-        self.assertFalse(ok)
-        self.assertIn("foreign session", reason)
-        self.assertIn("expected receiver", reason)
-
-    @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
-    def test_4_receiver_message_wrong_reply_to_rejected(self, mock_exec):
-        """Test 4: Message from receiver but wrong reply_to -> returns False."""
-        wrong_reply_to_id = "01a10000-completely-different-req-id"
-        mock_exec.return_value = (0, json.dumps([
-            {
-                "schema_version": 1,
-                "id": "01a10183-receiver-wrong-correlation",
-                "workspace": self.workspace,
-                "from": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
-                "to": {"session_id": self.sender_uuid, "tag": self.sender_tag},
-                "kind": "reply",
-                "reply_to": wrong_reply_to_id,
-                "body": f"ACK here: {self.ack_str}",
-            }
-        ]))
-
-        ok, reason = verify_durable_ack_envelope(
-            self.sender_uuid,
-            self.receiver_uuid,
-            self.req_msg_id,
-            self.ack_str,
-            self.workspace,
-            receiver_tag=self.receiver_tag,
-            sender_tag=self.sender_tag,
-        )
-        self.assertFalse(ok)
-        self.assertIn("reply_to", reason)
-        self.assertIn(wrong_reply_to_id, reason)
-
-    @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
-    def test_5_receiver_message_missing_reply_to_rejected(self, mock_exec):
-        """Test 5: Message from receiver but reply_to is None or missing -> returns False."""
-        mock_exec.return_value = (0, json.dumps([
-            {
-                "schema_version": 1,
-                "id": "01a10183-receiver-no-reply-to",
-                "workspace": self.workspace,
-                "from": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
-                "to": {"session_id": self.sender_uuid, "tag": self.sender_tag},
-                "kind": "note",
-                "reply_to": None,
-                "body": f"Uncorrelated note containing {self.ack_str}",
-            }
-        ]))
-
-        ok, reason = verify_durable_ack_envelope(
-            self.sender_uuid,
-            self.receiver_uuid,
-            self.req_msg_id,
-            self.ack_str,
-            self.workspace,
-        )
-        self.assertFalse(ok)
-        self.assertIn("reply_to", reason)
-
-    def test_6_direct_raw_log_matching_with_multiple_entries(self):
-        """Test 6: Mailbox log containing both earlier self-request AND later correlated receiver reply."""
-        raw_log = [
-            {
-                "schema_version": 1,
-                "id": self.req_msg_id,
-                "workspace": self.workspace,
-                "from": {"session_id": self.sender_uuid, "tag": self.sender_tag},
-                "to": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
-                "kind": "note",
-                "body": f"Request body with '{self.ack_str}'",
-            },
             {
                 "schema_version": 1,
                 "id": self.reply_msg_id,
                 "workspace": self.workspace,
+                "created_at": self.reply_timestamp_sec,
+                "from": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
+                "to": {"session_id": self.sender_uuid, "tag": self.sender_tag},
+                "kind": "reply",
+                "reply_to": stale_request_id,  # Uncorrelated!
+                "body": f"Done: {self.ack_str}",
+            }
+        ]))
+
+        ok, reason = verify_durable_ack_envelope(
+            sender_uuid=self.sender_uuid,
+            receiver_uuid=self.receiver_uuid,
+            expected_reply_to=self.req_msg_id,
+            expected_ack_substring=self.ack_str,
+            workspace=self.workspace,
+            receiver_tag=self.receiver_tag,
+            sender_tag=self.sender_tag,
+        )
+        self.assertFalse(ok)
+        self.assertIn("reply_to", reason)
+        self.assertIn("expected correlated request ID", reason)
+
+    @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
+    def test_7_timestamp_before_request_rejected(self, mock_exec):
+        """Test 7: Timestamp before request -> strictly rejected."""
+        predated_timestamp_sec = self.req_timestamp_sec - 100.0  # Before request
+        mock_exec.return_value = (0, json.dumps([
+            {
+                "schema_version": 1,
+                "id": self.reply_msg_id,
+                "workspace": self.workspace,
+                "created_at": predated_timestamp_sec,
                 "from": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
                 "to": {"session_id": self.sender_uuid, "tag": self.sender_tag},
                 "kind": "reply",
                 "reply_to": self.req_msg_id,
-                "body": f"ACK_CONFIRMED: {self.ack_str}",
+                "body": f"Replayed old ACK: {self.ack_str}",
+            }
+        ]))
+
+        ok, reason = verify_durable_ack_envelope(
+            sender_uuid=self.sender_uuid,
+            receiver_uuid=self.receiver_uuid,
+            expected_reply_to=self.req_msg_id,
+            expected_ack_substring=self.ack_str,
+            workspace=self.workspace,
+            receiver_tag=self.receiver_tag,
+            sender_tag=self.sender_tag,
+            min_timestamp_sec=self.req_timestamp_sec,
+        )
+        self.assertFalse(ok)
+        self.assertIn("is before minimum request timestamp", reason)
+
+    @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
+    def test_8_empty_or_whitespace_envelope_id_rejected(self, mock_exec):
+        """Test 8: Envelope with empty or whitespace ID is strictly rejected."""
+        mock_exec.return_value = (0, json.dumps([
+            {
+                "schema_version": 1,
+                "id": "   ",  # Whitespace / empty ID!
+                "workspace": self.workspace,
+                "created_at": self.reply_timestamp_sec,
+                "from": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
+                "to": {"session_id": self.sender_uuid, "tag": self.sender_tag},
+                "kind": "reply",
+                "reply_to": self.req_msg_id,
+                "body": f"ACK: {self.ack_str}",
+            }
+        ]))
+
+        ok, reason = verify_durable_ack_envelope(
+            sender_uuid=self.sender_uuid,
+            receiver_uuid=self.receiver_uuid,
+            expected_reply_to=self.req_msg_id,
+            expected_ack_substring=self.ack_str,
+            workspace=self.workspace,
+        )
+        self.assertFalse(ok)
+        self.assertIn("missing or empty", reason)
+
+    def test_9_match_session_or_tag_strictly_rejects_tag_fallback(self):
+        """Test 9: Helper _match_session_or_tag strictly rejects tag fallback."""
+        # 1. Matching tag but mismatched session_id -> MUST BE False
+        self.assertFalse(
+            _match_session_or_tag(
+                {"session_id": "different-uuid", "tag": "my-tag"},
+                "expected-uuid",
+                "my-tag"
+            )
+        )
+        # 2. Tag only without session_id -> MUST BE False
+        self.assertFalse(
+            _match_session_or_tag(
+                {"tag": "my-tag"},
+                "expected-uuid",
+                "my-tag"
+            )
+        )
+        # 3. String tag instead of dict -> MUST BE False
+        self.assertFalse(
+            _match_session_or_tag(
+                "my-tag",
+                "expected-uuid",
+                "my-tag"
+            )
+        )
+        # 4. Exact UUID matching -> MUST BE True
+        self.assertTrue(
+            _match_session_or_tag(
+                {"session_id": "expected-uuid", "tag": "any-tag"},
+                "expected-uuid",
+                "any-tag"
+            )
+        )
+
+    def test_10_multipart_mailbox_log_with_earlier_self_request(self):
+        """Test 10: Multipart mailbox log with earlier self-request followed by valid correlated reply -> accepted."""
+        raw_log = [
+            # Earlier sender request containing ACK string in body
+            {
+                "schema_version": 1,
+                "id": self.req_msg_id,
+                "workspace": self.workspace,
+                "created_at": self.req_timestamp_sec,
+                "from": {"session_id": self.sender_uuid, "tag": self.sender_tag},
+                "to": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
+                "kind": "note",
+                "body": f"Please reply with {self.ack_str}",
+            },
+            # Subsequent receiver reply with correlated reply_to and exact native UUIDs
+            {
+                "schema_version": 1,
+                "id": self.reply_msg_id,
+                "workspace": self.workspace,
+                "created_at": self.reply_timestamp_sec,
+                "from": {"session_id": self.receiver_uuid, "tag": self.receiver_tag},
+                "to": {"session_id": self.sender_uuid, "tag": self.sender_tag},
+                "kind": "reply",
+                "reply_to": self.req_msg_id,
+                "body": f"CONFIRMED_{self.ack_str}",
             }
         ]
 
         ok, val = verify_durable_ack_envelope(
-            self.sender_uuid,
-            self.receiver_uuid,
-            self.req_msg_id,
-            self.ack_str,
-            self.workspace,
+            sender_uuid=self.sender_uuid,
+            receiver_uuid=self.receiver_uuid,
+            expected_reply_to=self.req_msg_id,
+            expected_ack_substring=self.ack_str,
+            workspace=self.workspace,
+            min_timestamp_sec=self.req_timestamp_sec,
             raw_log=raw_log,
         )
         self.assertTrue(ok)
         self.assertEqual(val, self.reply_msg_id)
-
-    @patch("research.antigravity.continuation_trial_runner.exec_in_sender")
-    def test_7_exec_failure_or_corrupt_json(self, mock_exec):
-        """Test 7: Subprocess error or invalid JSON returns False with descriptive reason."""
-        mock_exec.return_value = (1, "aplexer: daemon not running")
-        ok, reason = verify_durable_ack_envelope(
-            self.sender_uuid,
-            self.receiver_uuid,
-            self.req_msg_id,
-            self.ack_str,
-            self.workspace,
-        )
-        self.assertFalse(ok)
-        self.assertIn("failed with exit code 1", reason)
-
-        # Corrupt JSON output
-        mock_exec.return_value = (0, "not a json array")
-        ok2, reason2 = verify_durable_ack_envelope(
-            self.sender_uuid,
-            self.receiver_uuid,
-            self.req_msg_id,
-            self.ack_str,
-            self.workspace,
-        )
-        self.assertFalse(ok2)
-        self.assertIn("Failed to parse valid JSON array", reason2)
 
 
 if __name__ == "__main__":

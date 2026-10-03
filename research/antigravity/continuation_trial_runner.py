@@ -234,30 +234,18 @@ def exec_in_sender(sender_uuid, cmd_args, timeout=30):
 
 
 def _match_session_or_tag(entity, expected_uuid, expected_tag=None):
-    """Matches a message participant entity (dict or str) against expected UUID or tag."""
-    if not entity:
+    """Strictly matches session_id against expected UUID. Tags are diagnostic only!
+
+    Per Codex Principal C-1297: tags must NOT be accepted as identity fallback.
+    If session_id is missing or doesn't match expected_uuid, returns False.
+    """
+    if not entity or not expected_uuid:
         return False
-    exp_u = str(expected_uuid).strip().lower() if expected_uuid else None
-    exp_t = str(expected_tag).strip().lower() if expected_tag else None
-
-    if isinstance(entity, str):
-        val = entity.strip().lower()
-        return (exp_u is not None and val == exp_u) or (exp_t is not None and val == exp_t)
-
+    exp_u = str(expected_uuid).strip().lower()
     if isinstance(entity, dict):
         sid = entity.get("session_id")
-        tag = entity.get("tag")
-        sid_str = str(sid).strip().lower() if sid else None
-        tag_str = str(tag).strip().lower() if tag else None
-
-        if sid_str and exp_u and sid_str == exp_u:
-            return True
-        if tag_str and exp_u and tag_str == exp_u:
-            return True
-        if tag_str and exp_t and tag_str == exp_t:
-            return True
-        if sid_str and exp_t and sid_str == exp_t:
-            return True
+        if sid:
+            return str(sid).strip().lower() == exp_u
     return False
 
 
@@ -296,17 +284,22 @@ def verify_durable_ack_envelope(
     workspace,
     receiver_tag=None,
     sender_tag=None,
+    min_timestamp_sec=None,
     raw_log=None,
 ):
     """Verifies a discrete, correlated ACK envelope in the durable mailbox log.
 
-    Executes `aplexer message log --workspace <workspace> --json` via sender (or inspects raw_log if provided).
-    Parses the JSON array of message objects.
-    Inspects each envelope and matches ONLY if:
-      a. from.session_id == receiver_uuid (or matching receiver tag),
-      b. to.session_id == sender_uuid (or matching sender tag),
-      c. reply_to == expected_reply_to (must correlate to the original request message ID),
-      d. expected_ack_substring in body.
+    Per Codex Principal C-1297:
+    - Enforces strictly native UUID matching:
+        msg.get("from", {}).get("session_id") == receiver_uuid
+        and
+        msg.get("to", {}).get("session_id") == sender_uuid
+      Tags are strictly diagnostic and never serve as identity fallbacks.
+    - Enforces actual reply envelope ID is non-empty.
+    - Enforces post-request timestamp: created_at >= min_timestamp_sec (if provided).
+    - Enforces reply_to == expected_reply_to (correlated request message ID).
+    - Enforces expected_ack_substring in body.
+
     Returns (True, msg_id) if matched, (False, reason) otherwise.
     """
     if raw_log is not None:
@@ -324,6 +317,10 @@ def verify_durable_ack_envelope(
     if err is not None:
         return False, err
 
+    exp_rec_uuid = str(receiver_uuid).strip().lower() if receiver_uuid else None
+    exp_send_uuid = str(sender_uuid).strip().lower() if sender_uuid else None
+    exp_reply_to = str(expected_reply_to).strip().lower() if expected_reply_to else None
+
     candidates_with_ack = []
     for msg in messages:
         if not isinstance(msg, dict):
@@ -337,56 +334,133 @@ def verify_durable_ack_envelope(
         if has_ack:
             candidates_with_ack.append(msg)
 
-        from_info = msg.get("from")
-        to_info = msg.get("to")
+        # 1. Non-empty envelope ID
+        if not msg_id or not str(msg_id).strip():
+            continue
+
+        # 2. Strict native UUID matching (tags are diagnostic only)
+        from_dict = msg.get("from") if isinstance(msg.get("from"), dict) else {}
+        to_dict = msg.get("to") if isinstance(msg.get("to"), dict) else {}
+        from_sid = str(from_dict.get("session_id", "")).strip().lower()
+        to_sid = str(to_dict.get("session_id", "")).strip().lower()
+
+        if not from_sid or not exp_rec_uuid or from_sid != exp_rec_uuid:
+            continue
+        if not to_sid or not exp_send_uuid or to_sid != exp_send_uuid:
+            continue
+
+        # 3. Correlated reply_to
         reply_to = msg.get("reply_to")
+        if not reply_to or not exp_reply_to:
+            continue
+        if str(reply_to).strip().lower() != exp_reply_to:
+            continue
 
-        from_match = _match_session_or_tag(from_info, receiver_uuid, receiver_tag)
-        to_match = _match_session_or_tag(to_info, sender_uuid, sender_tag)
-        reply_to_match = (
-            expected_reply_to is not None
-            and reply_to is not None
-            and str(reply_to).strip().lower() == str(expected_reply_to).strip().lower()
-        )
+        # 4. Post-request timestamp
+        if min_timestamp_sec is not None:
+            created_at = msg.get("created_at")
+            if created_at is None:
+                continue
+            try:
+                c_sec = float(created_at)
+                m_sec = float(min_timestamp_sec)
+                if m_sec > 1e11 and c_sec < 1e11:
+                    m_sec /= 1000.0
+                if c_sec > 1e11 and m_sec < 1e11:
+                    c_sec /= 1000.0
+                if c_sec < m_sec:
+                    continue
+            except (ValueError, TypeError):
+                continue
 
-        if from_match and to_match and reply_to_match and has_ack:
-            return True, msg_id
+        # 5. Body ACK substring
+        if has_ack:
+            return True, str(msg_id).strip()
 
     if not candidates_with_ack:
         return False, f"No message envelope contained expected ACK substring: '{expected_ack_substring}'"
 
     rejection_reasons = []
     for cand in candidates_with_ack:
-        cand_id = cand.get("id", "unknown")
-        from_info = cand.get("from")
-        to_info = cand.get("to")
+        cand_id = cand.get("id")
+        from_dict = cand.get("from") if isinstance(cand.get("from"), dict) else {}
+        to_dict = cand.get("to") if isinstance(cand.get("to"), dict) else {}
+        from_sid = str(from_dict.get("session_id", "")).strip().lower() if from_dict.get("session_id") else None
+        to_sid = str(to_dict.get("session_id", "")).strip().lower() if to_dict.get("session_id") else None
+        from_tag = from_dict.get("tag")
+        to_tag = to_dict.get("tag")
         reply_to = cand.get("reply_to")
 
-        if _match_session_or_tag(from_info, sender_uuid, sender_tag):
+        # Check non-empty ID
+        if not cand_id or not str(cand_id).strip():
+            rejection_reasons.append("Envelope ID is missing or empty")
+            continue
+
+        # Check if sent by sender itself
+        if from_sid and exp_send_uuid and from_sid == exp_send_uuid:
             rejection_reasons.append(
                 f"Envelope {cand_id} containing ACK substring was sent by sender-self ({sender_uuid}), strictly rejecting self-request"
             )
             continue
 
-        if not _match_session_or_tag(from_info, receiver_uuid, receiver_tag):
-            from_desc = from_info.get("session_id") or from_info.get("tag") if isinstance(from_info, dict) else str(from_info)
+        # Check from session_id
+        if not from_sid:
             rejection_reasons.append(
-                f"Envelope {cand_id} containing ACK substring was from foreign session ({from_desc}), expected receiver ({receiver_uuid})"
+                f"Envelope {cand_id} strictly rejected: missing from.session_id (tag '{from_tag}' cannot substitute for native UUID)"
             )
             continue
 
-        if not _match_session_or_tag(to_info, sender_uuid, sender_tag):
-            to_desc = to_info.get("session_id") or to_info.get("tag") if isinstance(to_info, dict) else str(to_info)
+        if exp_rec_uuid and from_sid != exp_rec_uuid:
             rejection_reasons.append(
-                f"Envelope {cand_id} was addressed to {to_desc}, expected sender ({sender_uuid})"
+                f"Envelope {cand_id} strictly rejected: from.session_id '{from_sid}' does not match expected receiver UUID '{receiver_uuid}' (tag '{from_tag}' is diagnostic only)"
             )
             continue
 
-        if expected_reply_to is None or str(reply_to).strip().lower() != str(expected_reply_to).strip().lower():
+        # Check to session_id
+        if not to_sid:
             rejection_reasons.append(
-                f"Envelope {cand_id} from receiver has reply_to='{reply_to}', expected correlated request ID '{expected_reply_to}'"
+                f"Envelope {cand_id} strictly rejected: missing to.session_id (tag '{to_tag}' cannot substitute for native UUID)"
             )
             continue
+
+        if exp_send_uuid and to_sid != exp_send_uuid:
+            rejection_reasons.append(
+                f"Envelope {cand_id} strictly rejected: to.session_id '{to_sid}' does not match expected sender UUID '{sender_uuid}' (tag '{to_tag}' is diagnostic only)"
+            )
+            continue
+
+        # Check reply_to
+        if not reply_to or not exp_reply_to or str(reply_to).strip().lower() != exp_reply_to:
+            rejection_reasons.append(
+                f"Envelope {cand_id} strictly rejected: reply_to='{reply_to}', expected correlated request ID '{expected_reply_to}'"
+            )
+            continue
+
+        # Check timestamp
+        if min_timestamp_sec is not None:
+            created_at = cand.get("created_at")
+            if created_at is None:
+                rejection_reasons.append(
+                    f"Envelope {cand_id} strictly rejected: missing created_at timestamp"
+                )
+                continue
+            try:
+                c_sec = float(created_at)
+                m_sec = float(min_timestamp_sec)
+                if m_sec > 1e11 and c_sec < 1e11:
+                    m_sec /= 1000.0
+                if c_sec > 1e11 and m_sec < 1e11:
+                    c_sec /= 1000.0
+                if c_sec < m_sec:
+                    rejection_reasons.append(
+                        f"Envelope {cand_id} strictly rejected: timestamp {c_sec} is before minimum request timestamp {m_sec}"
+                    )
+                    continue
+            except (ValueError, TypeError):
+                rejection_reasons.append(
+                    f"Envelope {cand_id} strictly rejected: invalid timestamp format '{created_at}'"
+                )
+                continue
 
     if rejection_reasons:
         return False, "; ".join(rejection_reasons)
@@ -1149,6 +1223,7 @@ def main():
             f"Please write exactly '{turn1_content}' to relative file {turn1_file} in your workspace. "
             f"After writing the file, reply to this message with 'ACK_TURN1_{turn1_nonce}'."
         )
+        t_req_t1_sec = time.time()
         send_t1_rc, send_t1_out = exec_in_sender(
             sender_uuid,
             [PILOT_BIN, "message", "send", "--to", receiver_tag, turn1_prompt, "--workspace", WORKSPACE, "--json"]
@@ -1192,6 +1267,7 @@ def main():
             workspace=WORKSPACE,
             receiver_tag=receiver_tag,
             sender_tag=sender_tag,
+            min_timestamp_sec=t_req_t1_sec,
         )
         print(f"Turn 1 correlated ACK envelope verified in mailbox: {ack_t1_ok} (detail: {ack_t1_val})")
         assert ack_t1_ok, f"Turn 1 ACK envelope verification failed: {ack_t1_val}"
@@ -1229,6 +1305,7 @@ def main():
             f"Please write exactly '{turn2_content}' to relative file {turn2_file} in your workspace. "
             f"After writing the file, reply to this message with 'ACK_TURN2_{turn2_nonce}'."
         )
+        t_req_t2_sec = time.time()
         send_t2_rc, send_t2_out = exec_in_sender(
             sender_uuid,
             [PILOT_BIN, "message", "send", "--to", receiver_tag, turn2_prompt, "--workspace", WORKSPACE, "--json"]
@@ -1272,6 +1349,7 @@ def main():
             workspace=WORKSPACE,
             receiver_tag=receiver_tag,
             sender_tag=sender_tag,
+            min_timestamp_sec=t_req_t2_sec,
         )
         print(f"Turn 2 correlated ACK envelope verified in mailbox: {ack_t2_ok} (detail: {ack_t2_val})")
         assert ack_t2_ok, f"Turn 2 ACK envelope verification failed: {ack_t2_val}"
