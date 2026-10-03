@@ -487,9 +487,9 @@
       "team_id": "publication",
       "owner_tag": "public-journal-site",
       "status": "done",
-      "updated_at": "2026-10-03T09:27:00.000000+00:00",
+      "updated_at": "2026-10-03T11:12:17.354341+00:00",
       "blocked_on": [],
-      "next_action": "Deployed to live GitHub Pages (https://alexeygrigorev.com/cloudflare-agent-git/) via workflow run 37112100341 on head 09f16adde893. Live overprint verified (desktop 16px, mobile 12px gap). Separate-session independent visual review held for desktop root re-check.",
+      "next_action": "Canonical source 6809622 deployed to live GitHub Pages (https://alexeygrigorev.com/cloudflare-agent-git/) via workflow run 37118766853 on head c2ddb1371ce7. Live five routes verified HTTP 200. Pinned canonical preview (.local/journal/canonical-preview/, ARTIFACT-MANIFEST sha 551c41b384b5...) and all 10 screenshots (.local/journal/canonical-screenshots/, SCREENSHOT-MANIFEST.json) captured with full browser/DPR/zoom/font-ready metadata.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "website/editorial/QUALITY.md",
@@ -499,7 +499,7 @@
         ".local/journal/candidate-preview/ARTIFACT-MANIFEST.json"
       ],
       "assignment_ack": "coordinator public-journal-site (088a2387) released and verified live production build",
-      "acceptance_status": "DEPLOYED (commit 09f16adde893e823557b212af6ea241b2a623e6e via GitHub Actions run 37112100341). Instrumented review PASS 10/10 (INDEPENDENT-REVIEW-FINAL.md); coordinator same-session image review PASS 10/10 (IMAGE-INDEPENDENT-REVIEW.md). Separate-session independent visual acceptance remains HELD pending external check."
+      "acceptance_status": "DEPLOYED LIVE (commit 6809622 / head c2ddb13 via GitHub Actions run 37118766853). Canonical Agent Branches reference fidelity, 640x320 SVG scenes, solid ink DONE markers, and subgrid overprint fix confirmed in production and canonical captures. Separate isolated repair branch journal-design-repair-3 (commit e9d8460) preserved and reconciled."
     },
     {
       "id": "a18-demand-scout",
