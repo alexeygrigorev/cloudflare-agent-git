@@ -8,7 +8,7 @@ prospective roster addendum f588508) authorized by Codex Principal (C-1281) and 
 3. Arm 1b: Cheap Incumbent / Intent Note (Pair 2: Producer + Consumer)
 4. Arm 2: Live Collision Radar Warning (Pair 3: Producer + Consumer)
 5. Execution containment: cgroups --memory 1500M --pids 256 per session.
-6. Isolated worktrees under .local/a01-feasibility/<arm>/{producer,consumer}.
+6. Isolated worktrees under .local/a01-feasibility/<arm>/run-<timestamp>/{producer,consumer}.
 7. Procedural separation: Grader (.local/protected/a01-ground-truth/test_integration_stream.py) outside agent worktrees.
 8. Telemetry: delivery_timestamp, notice_timestamp, code_uptake_timestamp, authoritative provider tokens (cost UNKNOWN).
 9. Output: research/antigravity/r12-a01-feasibility-gate-report.md.
@@ -90,22 +90,26 @@ def sha256_file(path):
 
 
 def check_quota():
+    """Quota Gate: Check quse --json for go provider. Require percent_remaining > 10.0 and limit_reached == False."""
     res = run_cmd(["quse", "--json"])
-    data = json.loads(res.stdout) if res.returncode == 0 else {}
+    assert res.returncode == 0, f"quse command failed: {res.stderr}"
+    data = json.loads(res.stdout) if res.stdout else {}
     go_q = data.get("go", {})
-    rem_5h = go_q.get("windows", {}).get("5h", {}).get("percent_remaining")
-    rem_7d = go_q.get("windows", {}).get("7d", {}).get("percent_remaining")
     lim = go_q.get("details", {}).get("limit_reached", False)
-    assert not lim, "OpenCode Go quota limit reached!"
-    assert rem_5h is not None and rem_5h >= 15.0, f"OpenCode Go 5h quota below 15% reserve: {rem_5h}%"
-    assert rem_7d is not None and rem_7d >= 15.0, f"OpenCode Go 7d quota below 15% reserve: {rem_7d}%"
+    assert not lim, "OpenCode Go quota limit reached (limit_reached == True)!"
+    windows = go_q.get("windows", {})
+    rem_5h = windows.get("5h", {}).get("percent_remaining")
+    rem_7d = windows.get("7d", {}).get("percent_remaining")
+    assert rem_5h is not None and rem_5h > 10.0, f"OpenCode Go 5h quota below 10% reserve: {rem_5h}%"
+    assert rem_7d is not None and rem_7d > 10.0, f"OpenCode Go 7d quota below 10% reserve: {rem_7d}%"
     return {"5h_remaining": rem_5h, "7d_remaining": rem_7d, "limit_reached": lim}
 
 
 def setup_workspace(dest_dir):
+    """Set up an isolated workspace for an agent. Overwrite refused per immutability policy."""
     if os.path.exists(dest_dir):
-        shutil.rmtree(dest_dir)
-    os.makedirs(dest_dir, exist_ok=True)
+        raise FileExistsError(f"Workspace directory {dest_dir} already exists; overwrite refused per immutability policy")
+    os.makedirs(dest_dir, exist_ok=False)
     # Copy base_event_store contents
     for item in os.listdir(BASE_REPO):
         s = os.path.join(BASE_REPO, item)
@@ -123,6 +127,9 @@ def setup_workspace(dest_dir):
 
 
 def setup_opencode_env(env_dir):
+    """Set up an isolated OpenCode configuration and data directory. Overwrite refused per immutability policy."""
+    if os.path.exists(env_dir):
+        raise FileExistsError(f"Environment directory {env_dir} already exists; overwrite refused per immutability policy")
     data_dir = os.path.join(env_dir, "data")
     config_dir = os.path.join(env_dir, "config")
     state_dir = os.path.join(env_dir, "state")
@@ -130,16 +137,61 @@ def setup_opencode_env(env_dir):
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     os.makedirs(config_dir, exist_ok=True)
     os.makedirs(state_dir, exist_ok=True)
-    for ext in ["", "-wal", "-shm"]:
-        f = db_path + ext
-        if os.path.exists(f):
-            os.remove(f)
     shutil.copy2(PRISTINE_DB_SOURCE, db_path)
     return {"data": data_dir, "config": config_dir, "state": state_dir, "db": db_path}
 
 
-def extract_session_telemetry(db_path, session_workspace):
-    """Extract authoritative token usage, whoami, tool calls, and model reasoning from opencode.db."""
+def verify_session_model_route(db_path, session_workspace, launch_t0_ms, timeout=20, sessions_to_kill=None):
+    """Verify session initialized with the authorized model route in opencode.db.
+
+    Queries root user message where time_created >= launch_t0_ms - 2000.
+    Asserts json_extract(data, '$.model.providerID') == 'opencode-go' and
+            json_extract(data, '$.model.modelID') == 'muse-spark-1.3-contributor'.
+    If mismatch or timeout, immediately kills sessions and raises RuntimeError('MODEL_MISMATCH_ABORT').
+    """
+    t0 = time.time()
+    min_time = launch_t0_ms - 2000
+    while time.time() - t0 < timeout:
+        try:
+            con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+            cur = con.cursor()
+            cur.execute("""
+                SELECT m.id, json_extract(m.data, '$.model.providerID'), json_extract(m.data, '$.model.modelID')
+                FROM message m
+                JOIN session s ON m.session_id = s.id
+                WHERE s.directory = ?
+                  AND (s.parent_id IS NULL OR s.parent_id = '')
+                  AND m.time_created >= ?
+                  AND json_extract(m.data, '$.role') = 'user'
+                ORDER BY m.time_created ASC LIMIT 1
+            """, (session_workspace, min_time))
+            row = cur.fetchone()
+            con.close()
+            if row:
+                _, provider_id, model_id = row
+                if provider_id == "opencode-go" and model_id == "muse-spark-1.3-contributor":
+                    print(f"Verified model route for {session_workspace}: {provider_id}/{model_id}")
+                    return True
+                else:
+                    if sessions_to_kill:
+                        for sid in sessions_to_kill:
+                            run_cmd([PILOT_BIN, "kill", sid])
+                    raise RuntimeError(f"MODEL_MISMATCH_ABORT: expected opencode-go/muse-spark-1.3-contributor, got {provider_id}/{model_id}")
+        except sqlite3.OperationalError:
+            pass
+        time.sleep(1.0)
+
+    if sessions_to_kill:
+        for sid in sessions_to_kill:
+            run_cmd([PILOT_BIN, "kill", sid])
+    raise RuntimeError(f"MODEL_MISMATCH_ABORT: timed out after {timeout}s waiting for session root user message")
+
+
+def extract_session_telemetry(db_path, session_workspace, launch_t0_ms):
+    """Extract authoritative token usage, whoami, tool calls, and model reasoning from opencode.db.
+
+    Uses a launch-time lower bound (launch_t0_ms - 2000) to find the current run's root session.
+    """
     telemetry = {
         "opencode_session_id": None,
         "input_tokens": 0,
@@ -156,8 +208,12 @@ def extract_session_telemetry(db_path, session_workspace):
     try:
         con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         cur = con.cursor()
-        # Find root session
-        cur.execute("SELECT id FROM session WHERE directory = ? AND (parent_id IS NULL OR parent_id = '') ORDER BY time_created ASC LIMIT 1", (session_workspace,))
+        min_time = launch_t0_ms - 2000
+        # Find root session created at or after launch_t0_ms - 2000
+        cur.execute(
+            "SELECT id FROM session WHERE directory = ? AND (parent_id IS NULL OR parent_id = '') AND time_created >= ? ORDER BY time_created ASC LIMIT 1",
+            (session_workspace, min_time)
+        )
         row = cur.fetchone()
         if not row:
             con.close()
@@ -203,6 +259,53 @@ def extract_session_telemetry(db_path, session_workspace):
     return telemetry
 
 
+def check_session_notice(db_path, session_workspace, launch_t0_ms, delivered_at_ms):
+    """Confirm model notice ONLY when verified by tool call inspecting inbox or verified prompt submission."""
+    if not delivered_at_ms:
+        return None
+    try:
+        con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        cur = con.cursor()
+        min_time = launch_t0_ms - 2000
+        cur.execute(
+            "SELECT id FROM session WHERE directory = ? AND (parent_id IS NULL OR parent_id = '') AND time_created >= ? ORDER BY time_created ASC LIMIT 1",
+            (session_workspace, min_time)
+        )
+        row = cur.fetchone()
+        if not row:
+            con.close()
+            return None
+        sid = row[0]
+
+        # 1. Check tool calls inspecting inbox
+        cur.execute("""
+            SELECT time_created, json_extract(data, '$.state.input.command')
+            FROM part
+            WHERE session_id = ? AND json_extract(data, '$.type') = 'tool' AND time_created >= ?
+            ORDER BY time_created ASC
+        """, (sid, delivered_at_ms))
+        for t_created, cmd in cur.fetchall():
+            cmd_str = str(cmd or "")
+            if any(k in cmd_str for k in ["message inbox", "message log", "message show", "message wait"]):
+                con.close()
+                return t_created
+
+        # 2. Check prompt submission: a subsequent user message created at or after delivered_at_ms
+        cur.execute("""
+            SELECT time_created, data
+            FROM message
+            WHERE session_id = ? AND time_created >= ? AND json_extract(data, '$.role') = 'user'
+            ORDER BY time_created ASC LIMIT 1
+        """, (sid, delivered_at_ms))
+        user_msg = cur.fetchone()
+        con.close()
+        if user_msg:
+            return user_msg[0]
+    except Exception as e:
+        print(f"Error checking session notice: {e}")
+    return None
+
+
 def is_session_resting(session_uuid, workspace):
     res = run_cmd([PILOT_BIN, "status", session_uuid, "--workspace", workspace, "--json"])
     if res.returncode != 0:
@@ -226,13 +329,23 @@ def wait_for_session_idle(session_uuid, workspace, timeout=180):
     while time.time() - t0 < timeout:
         resting, reason = is_session_resting(session_uuid, workspace)
         if resting:
-            # Settle check 2 seconds later
             time.sleep(2.0)
             resting2, _ = is_session_resting(session_uuid, workspace)
             if resting2:
                 return True
         time.sleep(1.0)
     return False
+
+
+def is_file_modified(ws, rel_path):
+    target = os.path.join(ws, rel_path)
+    base = os.path.join(BASE_REPO, rel_path)
+    if not os.path.exists(target):
+        return False
+    if sha256_file(target) != sha256_file(base):
+        return True
+    st = run_cmd(["git", "status", "--porcelain", rel_path], cwd=ws).stdout.strip()
+    return len(st) > 0
 
 
 def run_unit_tests(ws_dir):
@@ -242,6 +355,68 @@ def run_unit_tests(ws_dir):
         "stdout": res.stdout.strip(),
         "stderr": res.stderr.strip(),
         "passed": (res.returncode == 0)
+    }
+
+
+def run_external_producer_acceptance(prod_ws):
+    """Task-specific external producer acceptance test.
+    Asserts batch[0]['timestamp_us'] exists and is int.
+    Strictly fails on unmodified BASE.
+    """
+    code = """
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / "src"))
+from event_store.producer import EventProducer
+
+producer = EventProducer()
+producer.emit_event({"session_id": "test_sess", "t_sec": 1700000000.123456, "payload": "ping"})
+batch = producer.flush_batch()
+assert len(batch) > 0, "Producer flush_batch returned empty batch"
+assert "timestamp_us" in batch[0], "batch[0] missing required 'timestamp_us' key"
+assert isinstance(batch[0]["timestamp_us"], int), f"'timestamp_us' is not int: {type(batch[0]['timestamp_us'])}"
+"""
+    res = run_cmd(["python3", "-c", code], cwd=prod_ws)
+    return {
+        "passed": (res.returncode == 0),
+        "exit_code": res.returncode,
+        "stdout": res.stdout.strip(),
+        "stderr": res.stderr.strip()
+    }
+
+
+def run_external_consumer_acceptance(cons_ws):
+    """Task-specific external consumer acceptance test.
+    Asserts SessionAggregator.process_stream aggregates events.
+    Strictly fails on unmodified BASE.
+    """
+    code = """
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / "src"))
+from event_store.consumer import SessionAggregator
+
+agg = SessionAggregator()
+events = [
+    {"session_id": "s1", "timestamp": 10.0, "payload": "a"},
+    {"session_id": "s1", "timestamp": 15.0, "payload": "b"},
+    {"session_id": "s2", "timestamp": 20.0, "payload": "c"},
+    {"session_id": "s2", "timestamp": 22.5, "payload": "d"},
+]
+out = agg.process_stream(events)
+assert isinstance(out, list), f"process_stream output must be a list, got {type(out)}"
+assert len(out) == 2, f"Expected 2 aggregated sessions, got {len(out)}"
+by_id = {r.get("session_id"): r for r in out}
+assert "s1" in by_id and "s2" in by_id, f"Missing session IDs in aggregated output: {list(by_id.keys())}"
+assert abs(by_id["s1"].get("duration_seconds", 0.0) - 5.0) < 1e-3, f"Wrong s1 duration: {by_id['s1']}"
+assert abs(by_id["s2"].get("duration_seconds", 0.0) - 2.5) < 1e-3, f"Wrong s2 duration: {by_id['s2']}"
+"""
+    res = run_cmd(["python3", "-c", code], cwd=cons_ws)
+    return {
+        "passed": (res.returncode == 0),
+        "exit_code": res.returncode,
+        "stdout": res.stdout.strip(),
+        "stderr": res.stderr.strip()
     }
 
 
@@ -284,11 +459,14 @@ def grade_composite(prod_ws, cons_ws, grading_root):
         except Exception:
             pass
 
+    status = "ERROR" if res.returncode == 2 else ("PASS" if res.returncode == 0 else "FAIL")
+
     return {
         "exit_code": res.returncode,
         "stdout": res.stdout.strip(),
         "stderr": res.stderr.strip(),
         "passed": (res.returncode == 0),
+        "status": status,
         "duration_sec": duration,
         "details": details
     }
@@ -302,7 +480,7 @@ def run_pair(arm_name, pair_num, intervention_type):
     quota_pre = check_quota()
     print(f"Preflight OpenCode Go Quota: {json.dumps(quota_pre)}")
 
-    arm_dir = os.path.join(FEASIBILITY_ROOT, arm_name)
+    arm_dir = os.path.join(FEASIBILITY_ROOT, arm_name, f"run-{int(time.time())}")
     prod_ws = os.path.join(arm_dir, "producer")
     cons_ws = os.path.join(arm_dir, "consumer")
     logs_dir = os.path.join(arm_dir, "logs")
@@ -318,8 +496,8 @@ def run_pair(arm_name, pair_num, intervention_type):
     prod_tag = f"a01-{arm_name}-producer"
     cons_tag = f"a01-{arm_name}-consumer"
 
-    # Start Producer session
-    print(f"Launching Producer session ({prod_tag}) under cgroups (1500M/256pids)...")
+    # Start Producer session with explicit model route
+    print(f"Launching Producer session ({prod_tag}) under cgroups (1500M/256pids) with model {MODEL_ID}...")
     cmd_prod = [
         PILOT_BIN, "start",
         "--workspace", prod_ws,
@@ -333,16 +511,18 @@ def run_pair(arm_name, pair_num, intervention_type):
         "--json",
         "--",
         OPENCODE_BIN,
+        "--model", MODEL_ID,
         "--auto",
         "--prompt", PRODUCER_PROMPT
     ]
+    t0_prod = int(time.time() * 1000)
     res_prod = run_cmd(cmd_prod)
     assert res_prod.returncode == 0, f"Failed to start producer: {res_prod.stderr}"
     prod_session_id = json.loads(res_prod.stdout)["id"]
     print(f"Producer Session ID: {prod_session_id}")
 
-    # Start Consumer session
-    print(f"Launching Consumer session ({cons_tag}) under cgroups (1500M/256pids)...")
+    # Start Consumer session with explicit model route
+    print(f"Launching Consumer session ({cons_tag}) under cgroups (1500M/256pids) with model {MODEL_ID}...")
     cmd_cons = [
         PILOT_BIN, "start",
         "--workspace", cons_ws,
@@ -356,21 +536,38 @@ def run_pair(arm_name, pair_num, intervention_type):
         "--json",
         "--",
         OPENCODE_BIN,
+        "--model", MODEL_ID,
         "--auto",
         "--prompt", CONSUMER_PROMPT
     ]
+    t0_cons = int(time.time() * 1000)
     res_cons = run_cmd(cmd_cons)
     assert res_cons.returncode == 0, f"Failed to start consumer: {res_cons.stderr}"
     cons_session_id = json.loads(res_cons.stdout)["id"]
     print(f"Consumer Session ID: {cons_session_id}")
 
+    active_sessions = [prod_session_id, cons_session_id]
+
+    # Post-Boot Model Route Verification Gate
+    try:
+        print("Verifying Producer session model route in opencode.db...")
+        verify_session_model_route(prod_env["db"], prod_ws, t0_prod, timeout=20, sessions_to_kill=active_sessions)
+        print("Verifying Consumer session model route in opencode.db...")
+        verify_session_model_route(cons_env["db"], cons_ws, t0_cons, timeout=20, sessions_to_kill=active_sessions)
+    except Exception as e:
+        print(f"Model verification failed: {e}. Active sessions killed.")
+        raise
+
     intervention_data = {
         "type": intervention_type,
         "delivered": False,
+        "delivered_at_ms": None,
         "delivery_timestamp_ms": None,
         "message_ids": {},
-        "producer_notice_at_ms": None,
-        "consumer_notice_at_ms": None,
+        "producer_delivered_at_ms": None,
+        "consumer_delivered_at_ms": None,
+        "producer_noticed_at_ms": None,
+        "consumer_noticed_at_ms": None,
         "producer_uptake_detected": False,
         "consumer_uptake_detected": False
     }
@@ -379,21 +576,20 @@ def run_pair(arm_name, pair_num, intervention_type):
     max_wait = 360
     settle_start_time = None
     SETTLE_REQUIRED_SEC = 20.0
+    settle_completed = False
     print(f"Monitoring pair execution (max_wait={max_wait}s, settle_required={SETTLE_REQUIRED_SEC}s)...")
 
     while time.time() - t0 < max_wait:
-        # Check if files modified
-        prod_st = run_cmd(["git", "status", "--porcelain"], cwd=prod_ws).stdout
-        cons_st = run_cmd(["git", "status", "--porcelain"], cwd=cons_ws).stdout
-        prod_modified = ("src/event_store/producer.py" in prod_st or "producer.py" in prod_st)
-        cons_modified = ("src/event_store/consumer.py" in cons_st or "consumer.py" in cons_st)
+        # Check if target files modified
+        prod_modified = is_file_modified(prod_ws, "src/event_store/producer.py")
+        cons_modified = is_file_modified(cons_ws, "src/event_store/consumer.py")
 
         # Check interventions
         if not intervention_data["delivered"]:
             if intervention_type == "intent_note":
                 # Check for first tool execution in either session
-                prod_tel = extract_session_telemetry(prod_env["db"], prod_ws)
-                cons_tel = extract_session_telemetry(cons_env["db"], cons_ws)
+                prod_tel = extract_session_telemetry(prod_env["db"], prod_ws, t0_prod)
+                cons_tel = extract_session_telemetry(cons_env["db"], cons_ws, t0_cons)
                 prod_tools = [t for t in prod_tel["tool_calls"] if "whoami" not in str(t.get("command", ""))]
                 cons_tools = [t for t in cons_tel["tool_calls"] if "whoami" not in str(t.get("command", ""))]
                 if len(prod_tools) > 0 or len(cons_tools) > 0:
@@ -403,10 +599,16 @@ def run_pair(arm_name, pair_num, intervention_type):
                     mid_p = json.loads(s_p.stdout)["id"] if s_p.returncode == 0 else None
                     s_c = run_cmd([PILOT_BIN, "message", "send", "--to", cons_tag, INTENT_NOTE_PAYLOAD, "--workspace", cons_ws, "--json"])
                     mid_c = json.loads(s_c.stdout)["id"] if s_c.returncode == 0 else None
-                    intervention_data["delivered"] = True
-                    intervention_data["delivery_timestamp_ms"] = t_deliv
-                    intervention_data["message_ids"] = {"producer": mid_p, "consumer": mid_c}
-                    print(f"[{arm_name}] Intent Note queued in mailbox at {t_deliv} (mid_p={mid_p}, mid_c={mid_c})")
+                    if s_p.returncode == 0 or s_c.returncode == 0:
+                        intervention_data["delivered"] = True
+                        intervention_data["delivered_at_ms"] = t_deliv
+                        intervention_data["delivery_timestamp_ms"] = t_deliv
+                        if s_p.returncode == 0:
+                            intervention_data["producer_delivered_at_ms"] = t_deliv
+                        if s_c.returncode == 0:
+                            intervention_data["consumer_delivered_at_ms"] = t_deliv
+                        intervention_data["message_ids"] = {"producer": mid_p, "consumer": mid_c}
+                        print(f"[{arm_name}] Intent Note queued in mailbox at {t_deliv} (mid_p={mid_p}, mid_c={mid_c})")
 
             elif intervention_type == "radar_warning":
                 prod_file = os.path.join(prod_ws, "src/event_store/producer.py")
@@ -428,29 +630,63 @@ def run_pair(arm_name, pair_num, intervention_type):
                     mid_p = json.loads(s_p.stdout)["id"] if s_p.returncode == 0 else None
                     s_c = run_cmd([PILOT_BIN, "message", "send", "--to", cons_tag, RADAR_WARNING_PAYLOAD, "--workspace", cons_ws, "--json"])
                     mid_c = json.loads(s_c.stdout)["id"] if s_c.returncode == 0 else None
-                    intervention_data["delivered"] = True
-                    intervention_data["delivery_timestamp_ms"] = t_deliv
-                    intervention_data["message_ids"] = {"producer": mid_p, "consumer": mid_c}
-                    print(f"[{arm_name}] Radar Warning queued in mailbox at {t_deliv} (mid_p={mid_p}, mid_c={mid_c})")
+                    if s_p.returncode == 0 or s_c.returncode == 0:
+                        intervention_data["delivered"] = True
+                        intervention_data["delivered_at_ms"] = t_deliv
+                        intervention_data["delivery_timestamp_ms"] = t_deliv
+                        if s_p.returncode == 0:
+                            intervention_data["producer_delivered_at_ms"] = t_deliv
+                        if s_c.returncode == 0:
+                            intervention_data["consumer_delivered_at_ms"] = t_deliv
+                        intervention_data["message_ids"] = {"producer": mid_p, "consumer": mid_c}
+                        print(f"[{arm_name}] Radar Warning queued in mailbox at {t_deliv} (mid_p={mid_p}, mid_c={mid_c})")
 
-        # Deliver notice to prompt if resting
+        # Check notice or attempt prompt delivery if resting
         if intervention_data["delivered"]:
             mid_p = intervention_data["message_ids"].get("producer")
             mid_c = intervention_data["message_ids"].get("consumer")
-            if mid_p and intervention_data["producer_notice_at_ms"] is None:
-                p_rest_now, _ = is_session_resting(prod_session_id, prod_ws)
-                if p_rest_now:
-                    del_p = run_cmd([PILOT_BIN, "message", "deliver", mid_p, "--workspace", prod_ws])
-                    if del_p.returncode == 0:
-                        intervention_data["producer_notice_at_ms"] = int(time.time() * 1000)
-                        print(f"[{arm_name}] Notice submitted to Producer prompt at {intervention_data['producer_notice_at_ms']}")
-            if mid_c and intervention_data["consumer_notice_at_ms"] is None:
-                c_rest_now, _ = is_session_resting(cons_session_id, cons_ws)
-                if c_rest_now:
-                    del_c = run_cmd([PILOT_BIN, "message", "deliver", mid_c, "--workspace", cons_ws])
-                    if del_c.returncode == 0:
-                        intervention_data["consumer_notice_at_ms"] = int(time.time() * 1000)
-                        print(f"[{arm_name}] Notice submitted to Consumer prompt at {intervention_data['consumer_notice_at_ms']}")
+
+            # Check if producer noticed via inbox inspection or prior prompt submission
+            if intervention_data["producer_notice_at_ms"] is None:
+                p_notice_time = check_session_notice(
+                    prod_env["db"], prod_ws, t0_prod, intervention_data["producer_delivered_at_ms"]
+                )
+                if p_notice_time:
+                    intervention_data["producer_notice_at_ms"] = p_notice_time
+                    print(f"[{arm_name}] Producer notice confirmed at {p_notice_time}")
+                elif mid_p:
+                    p_rest_now, _ = is_session_resting(prod_session_id, prod_ws)
+                    if p_rest_now:
+                        del_p = run_cmd([PILOT_BIN, "message", "deliver", mid_p, "--workspace", prod_ws, "--json"])
+                        # Do NOT equate returncode 0 with model notice; verify via check_session_notice
+                        if del_p.returncode == 0:
+                            p_notice_post = check_session_notice(
+                                prod_env["db"], prod_ws, t0_prod, intervention_data["producer_delivered_at_ms"]
+                            )
+                            if p_notice_post:
+                                intervention_data["producer_notice_at_ms"] = p_notice_post
+                                print(f"[{arm_name}] Notice confirmed in Producer session at {p_notice_post}")
+
+            # Check if consumer noticed via inbox inspection or prior prompt submission
+            if intervention_data["consumer_notice_at_ms"] is None:
+                c_notice_time = check_session_notice(
+                    cons_env["db"], cons_ws, t0_cons, intervention_data["consumer_delivered_at_ms"]
+                )
+                if c_notice_time:
+                    intervention_data["consumer_notice_at_ms"] = c_notice_time
+                    print(f"[{arm_name}] Consumer notice confirmed at {c_notice_time}")
+                elif mid_c:
+                    c_rest_now, _ = is_session_resting(cons_session_id, cons_ws)
+                    if c_rest_now:
+                        del_c = run_cmd([PILOT_BIN, "message", "deliver", mid_c, "--workspace", cons_ws, "--json"])
+                        # Do NOT equate returncode 0 with model notice; verify via check_session_notice
+                        if del_c.returncode == 0:
+                            c_notice_post = check_session_notice(
+                                cons_env["db"], cons_ws, t0_cons, intervention_data["consumer_delivered_at_ms"]
+                            )
+                            if c_notice_post:
+                                intervention_data["consumer_notice_at_ms"] = c_notice_post
+                                print(f"[{arm_name}] Notice confirmed in Consumer session at {c_notice_post}")
 
         # Check resting state
         p_rest, p_reason = is_session_resting(prod_session_id, prod_ws)
@@ -462,7 +698,8 @@ def run_pair(arm_name, pair_num, intervention_type):
                 settle_start_time = time.time()
                 print(f"[{arm_name}] Both target files modified & both resting. Starting {SETTLE_REQUIRED_SEC}s settle period...")
             elif time.time() - settle_start_time >= SETTLE_REQUIRED_SEC:
-                print(f"[{arm_name}] Both sessions sustained resting idle for {SETTLE_REQUIRED_SEC}s after modifications! Task complete.")
+                print(f"[{arm_name}] Both sessions sustained resting idle for {SETTLE_REQUIRED_SEC}s after modifications! Settling complete.")
+                settle_completed = True
                 break
         else:
             if settle_start_time is not None:
@@ -471,17 +708,27 @@ def run_pair(arm_name, pair_num, intervention_type):
 
         time.sleep(2.0)
 
-    # Final settlement grace
-    print(f"Waiting for final buffer flush (3s)...")
-    time.sleep(3.0)
+    timeout_occurred = not settle_completed
+
+    # Final settlement grace if settled
+    if settle_completed:
+        print("Waiting for final buffer flush (3s)...")
+        time.sleep(3.0)
 
     # Check git diffs and code uptake
-    prod_diff = run_cmd(["git", "diff", "HEAD~1"], cwd=prod_ws).stdout
-    cons_diff = run_cmd(["git", "diff", "HEAD~1"], cwd=cons_ws).stdout
-    if not prod_diff:
-        prod_diff = run_cmd(["git", "diff"], cwd=prod_ws).stdout
-    if not cons_diff:
-        cons_diff = run_cmd(["git", "diff"], cwd=cons_ws).stdout
+    has_prod_change = is_file_modified(prod_ws, "src/event_store/producer.py")
+    has_cons_change = is_file_modified(cons_ws, "src/event_store/consumer.py")
+
+    prod_diff = run_cmd(["git", "diff", "HEAD"], cwd=prod_ws).stdout
+    if not prod_diff.strip():
+        init_commit = run_cmd(["git", "rev-list", "--max-parents=0", "HEAD"], cwd=prod_ws).stdout.strip()
+        if init_commit:
+            prod_diff = run_cmd(["git", "diff", init_commit], cwd=prod_ws).stdout
+    cons_diff = run_cmd(["git", "diff", "HEAD"], cwd=cons_ws).stdout
+    if not cons_diff.strip():
+        init_commit = run_cmd(["git", "rev-list", "--max-parents=0", "HEAD"], cwd=cons_ws).stdout.strip()
+        if init_commit:
+            cons_diff = run_cmd(["git", "diff", init_commit], cwd=cons_ws).stdout
 
     # Code uptake check: did producer add property timestamp or did consumer handle timestamp_us?
     if "@property" in prod_diff and "def timestamp" in prod_diff:
@@ -489,24 +736,78 @@ def run_pair(arm_name, pair_num, intervention_type):
     if "timestamp_us" in cons_diff:
         intervention_data["consumer_uptake_detected"] = True
 
-    # Run unit tests
-    print("Running unit tests in each workspace...")
+    # Final check on notice telemetry
+    if intervention_data["delivered"]:
+        if intervention_data["producer_notice_at_ms"] is None:
+            intervention_data["producer_notice_at_ms"] = check_session_notice(
+                prod_env["db"], prod_ws, t0_prod, intervention_data["producer_delivered_at_ms"]
+            )
+        if intervention_data["consumer_notice_at_ms"] is None:
+            intervention_data["consumer_notice_at_ms"] = check_session_notice(
+                cons_env["db"], cons_ws, t0_cons, intervention_data["consumer_delivered_at_ms"]
+            )
+
+    # Run external acceptance tests
+    print("Running task-specific external acceptance tests...")
+    prod_acc = run_external_producer_acceptance(prod_ws)
+    cons_acc = run_external_consumer_acceptance(cons_ws)
+    print(f"External Producer Acceptance: {'PASS' if prod_acc['passed'] else 'FAIL'}")
+    print(f"External Consumer Acceptance: {'PASS' if cons_acc['passed'] else 'FAIL'}")
+
+    # Run internal unit tests in each workspace
+    print("Running internal unit tests in each workspace...")
     prod_units = run_unit_tests(prod_ws)
     cons_units = run_unit_tests(cons_ws)
     print(f"Producer unit tests: {'PASS' if prod_units['passed'] else 'FAIL'}")
     print(f"Consumer unit tests: {'PASS' if cons_units['passed'] else 'FAIL'}")
 
-    # Run frozen composite grader
-    print("Running composite integration acceptance grader...")
-    grading_dir = os.path.join(arm_dir, "composite_eval")
-    grade_res = grade_composite(prod_ws, cons_ws, grading_dir)
-    print(f"Composite Grader Verdict: {'PASS' if grade_res['passed'] else 'FAIL'} (exit {grade_res['exit_code']} in {grade_res['duration_sec']:.2f}s)")
-    if not grade_res["passed"]:
-        print(f"Grader output: {grade_res['stdout']}\nStderr: {grade_res['stderr']}")
+    # Validity Gate: requires non-empty target modifications, external acceptance pass, and no timeout
+    validity_gate_passed = (
+        not timeout_occurred
+        and has_prod_change
+        and has_cons_change
+        and prod_acc["passed"]
+        and cons_acc["passed"]
+    )
 
-    # Extract authoritative telemetry
-    prod_telemetry = extract_session_telemetry(prod_env["db"], prod_ws)
-    cons_telemetry = extract_session_telemetry(cons_env["db"], cons_ws)
+    grade_res = None
+    if validity_gate_passed:
+        # Run frozen composite grader only if validity gate passed
+        print("Validity gate PASSED: running composite integration acceptance grader...")
+        grading_dir = os.path.join(arm_dir, "composite_eval")
+        grade_res = grade_composite(prod_ws, cons_ws, grading_dir)
+        print(f"Composite Grader Verdict: {grade_res['status']} (exit {grade_res['exit_code']} in {grade_res['duration_sec']:.2f}s)")
+        if not grade_res["passed"]:
+            print(f"Grader stdout: {grade_res['stdout']}\nStderr: {grade_res['stderr']}")
+        overall_status = grade_res["status"]
+    else:
+        reasons = []
+        if timeout_occurred:
+            reasons.append("TIMEOUT_FAIL_CLOSED")
+        if not has_prod_change:
+            reasons.append("PRODUCER_TARGET_NOT_MODIFIED")
+        if not has_cons_change:
+            reasons.append("CONSUMER_TARGET_NOT_MODIFIED")
+        if not prod_acc["passed"]:
+            reasons.append("PRODUCER_EXTERNAL_ACCEPTANCE_FAILED")
+        if not cons_acc["passed"]:
+            reasons.append("CONSUMER_EXTERNAL_ACCEPTANCE_FAILED")
+        invalid_reason = " | ".join(reasons)
+        print(f"Validity gate FAILED ({invalid_reason}). Composite grader execution refused.")
+        grade_res = {
+            "exit_code": None,
+            "stdout": "",
+            "stderr": "",
+            "passed": False,
+            "status": "NOT_SCORED_VALIDITY_GATE_FAILED",
+            "duration_sec": 0.0,
+            "details": {"error": f"Composite grader not run: {invalid_reason}"}
+        }
+        overall_status = f"INVALID_OBSERVATION: {invalid_reason}"
+
+    # Extract authoritative telemetry with launch-time bounds
+    prod_telemetry = extract_session_telemetry(prod_env["db"], prod_ws, t0_prod)
+    cons_telemetry = extract_session_telemetry(cons_env["db"], cons_ws, t0_cons)
 
     # Clean up sessions
     print("Cleaning up agent sessions...")
@@ -517,10 +818,20 @@ def run_pair(arm_name, pair_num, intervention_type):
         "arm_name": arm_name,
         "pair_num": pair_num,
         "intervention_type": intervention_type,
+        "run_dir": arm_dir,
+        "validity_gate": {
+            "passed": validity_gate_passed,
+            "timeout_occurred": timeout_occurred,
+            "has_prod_change": has_prod_change,
+            "has_cons_change": has_cons_change,
+            "producer_acceptance": prod_acc,
+            "consumer_acceptance": cons_acc
+        },
         "producer": {
             "session_id": prod_session_id,
             "tag": prod_tag,
             "unit_tests": prod_units,
+            "external_acceptance": prod_acc,
             "diff_snippet": prod_diff[:500],
             "telemetry": prod_telemetry
         },
@@ -528,12 +839,13 @@ def run_pair(arm_name, pair_num, intervention_type):
             "session_id": cons_session_id,
             "tag": cons_tag,
             "unit_tests": cons_units,
+            "external_acceptance": cons_acc,
             "diff_snippet": cons_diff[:500],
             "telemetry": cons_telemetry
         },
         "intervention": intervention_data,
         "composite_grader": grade_res,
-        "overall_status": "PASS" if grade_res["passed"] else "FAIL"
+        "overall_status": overall_status
     }
 
     # Save pair results to JSON
@@ -551,8 +863,6 @@ def main():
     print("=================================================================")
     os.makedirs(FEASIBILITY_ROOT, exist_ok=True)
 
-    # Check which arms to run. Default: Pair 1 (Arm 1a) first, then Pair 2 (Arm 1b), then Pair 3 (Arm 2)
-    # Allows running single arm via CLI arg: e.g. python3 a01_feasibility_gate_runner.py arm1a
     target_arm = sys.argv[1] if len(sys.argv) > 1 else "all"
 
     all_results = {}
@@ -569,10 +879,14 @@ def main():
         res_2 = run_pair("arm2", 3, "radar_warning")
         all_results["arm2"] = res_2
 
+    ts = int(time.time())
     summary_file = os.path.join(FEASIBILITY_ROOT, "feasibility_summary.json")
+    ts_summary = os.path.join(FEASIBILITY_ROOT, f"feasibility_summary_{ts}.json")
+    with open(ts_summary, "w") as f:
+        json.dump(all_results, f, indent=2)
     with open(summary_file, "w") as f:
         json.dump(all_results, f, indent=2)
-    print(f"\nAll feasibility runs complete. Summary written to {summary_file}")
+    print(f"\nAll feasibility runs complete. Summary written to {summary_file} (and {ts_summary})")
 
 
 if __name__ == "__main__":
