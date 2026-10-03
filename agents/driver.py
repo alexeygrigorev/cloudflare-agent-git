@@ -512,16 +512,25 @@ class AgentHarnessDriver:
                     raise FileNotFoundError(f"Reference patch missing for {t.task_id.lower()} across candidates: {patch_candidates}")
 
                 # Apply patch and commit
-                apply_proc = subprocess.run(
-                    ["git", "-C", ws_dir, "apply", "--index", patch_file],
-                    capture_output=True,
-                    text=True,
-                )
-                if apply_proc.returncode != 0:
-                    subprocess.run(["git", "-C", ws_dir, "apply", patch_file], check=True, capture_output=True)
-                    subprocess.run(["git", "-C", ws_dir, "add", "-u"], check=True, capture_output=True)
-                    if os.path.exists(os.path.join(ws_dir, "demo-target")):
-                        subprocess.run(["git", "-C", ws_dir, "add", "demo-target/"], check=True, capture_output=True)
+                apply_success = False
+                last_err = ""
+                for apply_args in [
+                    ["apply", "--index", patch_file],
+                    ["apply", patch_file],
+                    ["apply", "-p2", "--index", patch_file],
+                    ["apply", "-p2", patch_file],
+                    ["apply", "-p1", "--index", patch_file],
+                    ["apply", "-p1", patch_file],
+                ]:
+                    res = subprocess.run(["git", "-C", ws_dir] + apply_args, capture_output=True, text=True)
+                    if res.returncode == 0:
+                        apply_success = True
+                        break
+                    last_err = res.stderr.strip() or res.stdout.strip()
+                if not apply_success:
+                    raise RuntimeError(f"Failed to apply patch {patch_file} to {ws_dir}: {last_err}")
+
+                subprocess.run(["git", "-C", ws_dir, "add", "-A"], check=True, capture_output=True)
 
                 subprocess.run(
                     ["git", "-C", ws_dir, "commit", "-m", f"feat({t.task_id.lower()}): {t.title}"],
