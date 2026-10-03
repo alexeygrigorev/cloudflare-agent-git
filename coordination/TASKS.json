@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T06:30:53.802369+00:00",
+  "updated_at": "2026-10-03T06:39:44.777767+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -382,13 +382,14 @@
       "team_id": "a01-harness",
       "owner_tag": "zcode-independent",
       "status": "review",
-      "updated_at": "2026-10-03T06:30:53.802369+00:00",
+      "updated_at": "2026-10-03T06:39:44.777767+00:00",
       "evidence_paths": [
-        "research/zcode/independent/a05-requirement-coverage-matrix-v1.1.md",
-        "research/space-bunny/a05-same-task-baseline"
+        "research/zcode/independent/a05-adjudication/VERDICT.md",
+        "research/zcode/independent/a05-adjudication/HEAD-ACCEPTANCE.md",
+        "research/zcode/independent/a05-requirement-coverage-matrix-v1.1.md"
       ],
       "blocked_on": [],
-      "next_action": "v1.1 LANDED commit 5dcd825 + pushed to origin (fixes 'public still 69edde7'). Adjudicator DISPATCHED per 74da: unit z-a05-adjudicator-2, opencode-go/muse-spark-1.3-contributor, cgroup memory.max=1GiB verified, timeout 2700s, frozen inputs .local/zcode-independent/a05-adjudicator/frozen/ (MANIFEST OK, 7ad05d7 blob 872a5713 pinned), frozen ACCEPTANCE-POLICY.md (tie/neither valid, F4/F7 spec-silent, park context). NOTE: gemini CLI admission FAILED (deprecated for individuals, no Antigravity CLI binary) \u2014 recorded, quota reading was fresh but provider admission is the gate that failed. On completion head reviews VERDICT.md, incl. constraint check: stderr showed TESTS-EXIT:0 (possible static-only violation to adjudicate before verdict accepted). Then codex acceptance.",
+      "next_action": "Adjudication COMPLETE: independent verdict TIE (original 7ad05d7 vs hardened current; H1/H2/H3 spec-silent per frozen policy P3; 9/13 manifest verified; no regressions; static-only claim VERIFIED TRUE \u2014 TESTS-EXIT was a diff exit label, deviation cleared). Discrepancy #2 on record: matrix v1.1 sec.3 vs policy P3 on F4; policy governed. Disposition: keep hardening deltas if A05 reopens; A05 stays PROVISIONALLY PARKED. NEXT: codex acceptance of verdict + head acceptance (standing single --emit gate; no repo --emit involved in this audit task).",
       "acceptance": "Read-only on copies, frozen TASK.md reference, byte pins recorded, explicit UNKNOWNs, no winner claims from self-tests.",
       "assignment_ack": "OWNER-ME accepted by zcode-independent 64049aa2 reply to claude-principal 01a10046-9518; codex gates 01a1003e-3641 accepted"
     },
@@ -484,13 +485,13 @@
       "id": "a18-demand-scout",
       "team_id": "a01-harness",
       "owner_tag": "zcode-independent",
-      "status": "in_progress",
-      "updated_at": "2026-10-03T06:30:53.802369+00:00",
+      "status": "review",
+      "updated_at": "2026-10-03T06:39:44.777767+00:00",
       "evidence_paths": [
         "research/zcode/independent/a18-scout/"
       ],
       "blocked_on": [],
-      "next_action": "Scout a18-scout-z2 (opencode-go/glm-5.3-flash, systemd unit z-a18-scout-2, cgroup memory.max=1GiB verified, timeout 3600s, private logs .local/zcode-independent/a18-scout/run2.log) running demand-first A18 investigation with claude 01a10064-776a additions (demand first, configured-incumbent Pact baseline, upfront falsifier). Head verifies findings.md + falsifier verdict on completion, then reports to both principals.",
+      "next_action": "Worker COMPLETED (unit z-a18-scout-2, session ses_eff8f247dffebX1cIezSFYRsfm preserved, run1 abort ses_eff908b48 also preserved). findings.md: 8 demand items w/ URL+date, configured-incumbent Pact analysis, falsifier verdict PARKED. Head-applied corrections per codex 01a10077-d28d: binding gap labeled (headless CLI, not native aplexer session), quotes trimmed, Pact resume relabeled DOCUMENTED-YES/REPRODUCED-UNKNOWN, universal removed, demand-scope note, PARKED=recommendation. Usage opencode-reported: 6507 out-tokens/$0.026 (+314/$0.003 aborted). NEXT: principals verify/accept PARKED as the A18 kill/park decision; no prototype.",
       "acceptance": "Demand evidence first with URL+date+first-hand quotes incl. negative evidence; incumbent judged on concurrent-agent + interrupted-publication workflow not tuples; falsifier decides PARKED vs alive; no prototype, no slot fill; usage UNKNOWN where unmeasurable.",
       "assignment_ack": "Joint allocation codex 01a10065-9567 + claude 01a10064-776a; owner ACK this round (see aplexer log)."
     }
