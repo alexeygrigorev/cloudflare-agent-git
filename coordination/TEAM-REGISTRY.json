@@ -831,6 +831,49 @@
           ],
           "first_tool_evidence": "opencode run / build auto",
           "memory_cap": "1500M"
+        },
+        {
+          "tag": "zcode-fork-adoption",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "5df4e39f-f173-4fe1-890e-2e43e903b159",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-adopt",
+          "branch": "proto/ab-adoption",
+          "status": "running",
+          "started_at": "2026-10-04T01:37:26+02:00",
+          "task": "C1474: Real fork adoption & push verification (task creation, source edit, fork push, push event check, checks submission)",
+          "owned_paths": [
+            "research/antigravity/adoption/**",
+            "prototype/test/adoption.test.ts"
+          ],
+          "first_tool_evidence": "a work join / a message inbox",
+          "memory_cap": "1500M"
+        },
+        {
+          "tag": "muse-cli-runbook",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "91a403b1-9666-403d-8e07-6ceededa17df",
+          "mode": "interactive",
+          "engine": "opencode",
+          "model": "opencode-go/muse-spark-1.3-contributor",
+          "workspace": "/home/alexey/git/ab-readme",
+          "branch": "proto/readme",
+          "status": "running",
+          "started_at": "2026-10-04T01:37:27+02:00",
+          "task": "C1474: CLI quickstart runbook & newcomer zero-assumptions verification",
+          "owned_paths": [
+            "README.md",
+            "docs/**",
+            "research/antigravity/runbook/**"
+          ],
+          "first_tool_evidence": "a work join / a message inbox",
+          "memory_cap": "1500M"
         }
       ]
     },
