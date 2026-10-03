@@ -39,3 +39,13 @@ Root ran the collector/adapters test discovery and supervisor tests before deplo
 The existing30min orchestration and09:00 daily standup schedules retain their cadence and now include Human31 ownership, private telemetry and between-turn supervision checks. Root heartbeats are oversight, not a substitute for the continuous service/head loops. Pause30min monitoring only after the genuine selection/productive handoff gates and verified between-turn supervision; those gates are currently not met.
 
 No raw metrics were published. No purchase, token creation, quota reset redemption, global binary installation or existing-worktree deletion was performed. Public journal corrections are separately reviewed and deployed; internal telemetry stays private.
+
+## Final deployment verification — 2026-10-03T04:03:55.204223+00:00
+
+Committed f58cd03. Root independently ran all8 metrics tests and22 supervision/retention tests:30PASS, then regenerated the private summary. The exporter placeholder-zero bug is fixed with distinct registered-file counts and explicit coverage/nulls. Collector history now includes sanitized task contracts, evidence metadata and acceptance links; no raw prompts/transcripts. Both archive implementations verify SHA256 before replacing their own originals and retain manifests. Supervisor storage warns128MiB/pauses256MiB while preserving prior evidence.
+
+Only owned observability processes were sequentially reloaded to load final code. Collector89dafc10-47c9-49b4-bb4c-466b17a96aa9 and supervisor79ac730c-5aac-4423-b492-a0efd6d76285 are actual live bound services. Old owned service processes exited before replacements; no principal/head/executor was restarted. Root inspected current snapshots, loopback dashboard DOM and screenshot, supervisor storage/status and exact private binary manifest. Latest metrics at 2026-10-03T04:03:39.744744+00:00 and supervision at 2026-10-03T04:03:41.555150+00:00 report no collection/service errors.
+
+The pending Codex inbox-only envelope01a0ffea-ec5b-73a2-afb9-8250b2fcd5eb retains ORIGINAL sender482feb09 after reload; the new supervisor refuses to deliver it as another sender and awaits genuine original-recipient ACK/reply. No duplicate envelope or uncertain resend. This maintains identity boundaries, not universal native wake-up recovery. Principals/head-owned continuation repairs remain in progress and are visible in the dashboard.
+
+Public editorial correction6b8c98a separately passed full stylint,29-page/link/RSS/safe-markup validation and deployment. It corrects storage run attribution and distinguishes merged runtime source from installed binary without inventing a new user-approval requirement. Public metrics/privacy policy is unchanged.
