@@ -36,3 +36,12 @@ Claude and Codex principals focus on monitoring all teams, checking and challeng
 
 Keep genuine aplexer coordination and recorded ownership for external sessions; heads remain accountable for native harness subagents and their output/recovery, with durable results visible to principals. Fresh quotas and the real Codex15%-remaining gate still apply to OpenAI Codex execution, including native harness delegation when applicable; unknown readings do not authorize bypass. Provider preferences, privacy, financial authorization, safe ordinary Git recovery, physical disk budgets and no deletion of existing worktrees remain. Reuse caches/build targets safely and choose task-specific bounds; do not equate more workers or nonstop processes with progress. No routine orchestrator/user approval is required to scale useful authorized execution.
 
+
+
+## Heads orchestrate execution teams — human message32
+
+Heads are orchestrators for each direction, not the default sole implementation/research worker. Decompose the useful backlog into independently owned tasks and proactively launch headless agents or native harness subagents across the preferred execution pool. Delegate implementation, research, tests, experiments and independent review in parallel where dependencies permit; the head maintains direction, task acceptance, integration/recovery and viability checks. A working head with no execution team is not evidence that authorized parallel capacity is being used.
+
+There is no fixed worker-count cap. Scale as many useful agents as concrete owned work and actual quota/host capacity support. Principals ensure heads form, monitor and replenish their teams; principals remain monitoring/coordination peers and do not take over implementation. Do not wait for root to dispatch each worker. If the preferred runtime is unhealthy, delegate useful independent work through a verified alternative provider while an owned repair continues, rather than parking the entire direction.
+
+Register every actual executor and harness subagent with head/team/parent/native identity, mode, task, workspace/owned files, expected checkpoint and real usage source. Count heads, principals, workers and services separately. Verify first action, incremental output and accepted result; after completion choose the next useful owned task. Fresh quota gates, ownership isolation, disk/resource evidence, safe code recovery and genuine aplexer identity still apply. Do not create duplicate writers or invented tasks merely to increase counts.

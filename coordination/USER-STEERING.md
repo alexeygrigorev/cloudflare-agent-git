@@ -59,3 +59,12 @@ Principals monitor/rebalance queues, verify launches and first actions, investig
 
 No healthy team should wait for a heartbeat when a ready useful task exists. Principal oversight should run on completion/dependency/failure events plus lightweight polling; heads/executors can use loops and native harness subagents. Reassign to preferred healthy providers when a backend fails. Do not replace evidence with busy indicators, manufacture make-work, repeat invalidated experiments, or bypass quotas to maximize utilization. Record legitimate blocked/quota/resource/finished/draft-protected states and the next owner/action. Never submit a human draft, interrupt a busy pane, invent readiness, or copy private metrics/transcripts to the public site. Unknown token/cost measurements stay unknown; quota percentages are not experiment token usage or money spent.
 
+
+
+## Heads orchestrate execution teams — human message32
+
+Heads are orchestrators for each direction, not the default sole implementation/research worker. Decompose the useful backlog into independently owned tasks and proactively launch headless agents or native harness subagents across the preferred execution pool. Delegate implementation, research, tests, experiments and independent review in parallel where dependencies permit; the head maintains direction, task acceptance, integration/recovery and viability checks. A working head with no execution team is not evidence that authorized parallel capacity is being used.
+
+There is no fixed worker-count cap. Scale as many useful agents as concrete owned work and actual quota/host capacity support. Principals ensure heads form, monitor and replenish their teams; principals remain monitoring/coordination peers and do not take over implementation. Do not wait for root to dispatch each worker. If the preferred runtime is unhealthy, delegate useful independent work through a verified alternative provider while an owned repair continues, rather than parking the entire direction.
+
+Register every actual executor and harness subagent with head/team/parent/native identity, mode, task, workspace/owned files, expected checkpoint and real usage source. Count heads, principals, workers and services separately. Verify first action, incremental output and accepted result; after completion choose the next useful owned task. Fresh quota gates, ownership isolation, disk/resource evidence, safe code recovery and genuine aplexer identity still apply. Do not create duplicate writers or invented tasks merely to increase counts.
