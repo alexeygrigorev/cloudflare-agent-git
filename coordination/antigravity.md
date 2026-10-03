@@ -879,3 +879,36 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
 4. **Internal Agent Branches Adoption Lane (C-1415, C-1421, C-1422, C-1425):**
    - Acknowledged that source-only tasks on `demo-target` do not constitute adoption of Agent Branches.
    - Launching genuine internal adoption: using the Agent Branches prototype workflow (fork, task create, push, checks, review) to implement the Coordinator Token Expiry & Revocation Gate (`prototype/src/core/coordinator.ts`) in our own development lane under ordinary Git fallback.
+
+
+---
+
+## 35. UI Task View DOM Negative & Stale Head Downgrade, Repo-Relative Scratch, and Launch of zc-cred-expiry Lane (C-1425, C-1426)
+
+1. **Codex Principal C-1426 Review Analysis:**
+   - Codex Principal reviewed `738a591` / `e762639` and credited the double-escape elimination.
+   - **Critique 1 (Task View Current Head Verification Safety):** `test_04_task_view_stale_behavior` previously only asserted `#status-error` banner presence and text rendering, without asserting historical Passed vs current-head match separation. In `ui.js:630`, `evidenceHtml` computed `matchesHead` from stale `lastStatus` and rendered green `Passed` independently of `statusFresh`.
+   - **Critique 2 (Host-Specific TMPDIR):** The fallback path `/home/alexey/git/...` was host-specific rather than repo-relative when `TMPDIR` was unset.
+
+2. **UI Implementation & Behavioral DOM Negative Verification (`proto/l4-review-ui` @ `3568780`, `proto/live` @ `75c6b40`):**
+   - **`prototype/ui/ui.js` (`evidenceHtml`):**
+     - Evaluates `var stale = statusFresh.describe();`.
+     - When `stale`, `matchesHead` evaluates to `false` (`!stale && ...`) so current head match is unconfirmed during an outage.
+     - **Preserves historical fact:** `Result: Passed` remains displayed (exit 0 did occur at that tested commit; history is not falsified).
+     - **Downgrades current head match:** Displays `" (live status unconfirmed · <error>)"` instead of `" (the latest change)"`.
+     - **Downgrades current head safety verdict:** Surfaces `<span class='badge unknown'>Unknown — not safe</span>` with message `"Live status could not be refreshed (<error>); whether tests ran at the true current head is unknown, not safe."`.
+   - **`prototype/ui/tests/test_dom_negative_browser.py`:**
+     - Made `scratch_dir` fallback purely repo-relative (`default_scratch = os.path.abspath(os.path.join(UI_DIR, "../../.local/scratch"))`), eliminating all `/home/alexey/` hardcoding.
+     - Properly nested `agent` with `testEvidence` in mock task data.
+     - Enhanced `test_04_task_view_stale_behavior` with 3-phase DOM negative verification:
+       1. *Phase 1 (Clean 200):* Historical Passed, matches current head, 0 unknown badges in `#evidence`.
+       2. *Phase 2 (503 Outage):* `#status-error` visible, historical Passed preserved, live status unconfirmed, current head safety strictly downgraded to `.badge.unknown` (count 1).
+       3. *Phase 3 (Recovery 200):* `#status-error` hidden, `(the latest change)` restored, `.badge.unknown` count returns to 0.
+   - **Verification:** All 48 `node --test` unit tests PASS; all 4 Playwright live browser tests PASS in 2.073s. Pushed to `proto/l4-review-ui` at `3568780` and merged into `proto/live` at `75c6b40`.
+
+3. **Parallel Adoption Executor Launched: `zc-cred-expiry` (`5b88ead6`):**
+   - Created clean worktree `/home/alexey/git/agent-branches-cred` on branch `proto/cred-expiry-gate` off `proto/live`.
+   - Shared `node_modules` via symlink (zero disk amplification, root mount free space maintained at 67 GiB > 50 GB floor).
+   - Dispatched headless ZCode executor under aplexer (`tag=zc-cred-expiry`, session `5b88ead6`, 1500M memory cap) implementing Coordinator Token Expiry & Revocation Gate (`model.ts`, `coordinator.ts`, `coordinator-do.ts`, `router.ts`, `auth.test.ts`).
+   - Registered in `coordination/TEAM-REGISTRY.json` (commit `f05a758`).
+   - Executor confirmed active, declared exclusive edit scopes, and is running vitest test suite implementation.
