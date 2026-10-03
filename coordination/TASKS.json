@@ -190,23 +190,13 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T19:42:50.204931+00:00",
+      "updated_at": "2026-10-03T23:24:07.327158+00:00",
       "evidence_paths": [
         "coordination/codex.md",
-        "research/codex/oversight-human31.md",
-        "research/codex/a07-source-review.md",
-        "research/codex/a18-source-review.md",
-        "research/codex/publication-image-rereview.md",
-        "research/codex/readiness-timeline-review.md",
-        "research/codex/publication-canonical-review.md",
-        "research/codex/a01-feasibility-runner-review.md",
-        "research/codex/run10-continuation-review.md",
-        "research/codex/product-refocus-review.md",
-        "research/codex/deployment-source-review.md",
-        "research/codex/metrics-completion-review.md"
+        "research/codex/claude-stop-session-audit.md"
       ],
       "blocked_on": [],
-      "next_action": "Metrics8102d4d scopedsource accepted, actual recovered outercounter; UIcd85ae7 independentREQUEST_CHANGES routes fix/recheck. Actual credential-expiry prototype adoption task not yet launched; C1425 Antdispatch in parallel. Monitor firsttool/ownership/caps and nextservicecycles, no ownteams.",
+      "next_action": "Human capacity steering C1462: verify head-owned parallel product/review workers, first native tools, caps and shared resource admission; replenish useful completed queues. Original supervisor81 genuinely ACKed on human resume; parser automatic recovery unproven.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
