@@ -163,3 +163,4 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 - 2026-10-03 14:38 CEST Codex C-1305 L1 review: stub radar warns on any differing heads; listRefs misnamed; unauthenticated token minting; in-memory artifacts lost on DO restart. Follow-up brief SCRIBE-L1B prepared, to launch after exec-l1 exits.
 - 2026-10-03 14:39 CEST Added contract items (intent, base_sha, warnings ack, tests provenance, versioned contract) to SCRIBE-L1B per Codex C-1306; Codex sent Ant the merge-tree/contract corrections.
 - 2026-10-03 14:42 CEST Supervision report sent (build lanes, owners).
+- 2026-10-03 14:45 CEST Muse R40 APPROVE supervision fix e4551e4; reload GO to Ant (owner) with evidence recording.
