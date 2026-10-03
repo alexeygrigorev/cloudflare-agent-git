@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 23 (R9 counted verdict)
+# muse-reviewer coordination note — round 24 (rev1c/rev1d delegate: CHANGES)
 
 ## Delegate record (registered): muse-r1 / 71a4dcf6, head muse-reviewer
 Mode: headless opencode executor (opencode-go/muse-spark-1.3-contributor,
@@ -211,6 +211,12 @@ product or outage proof. Cases (e)/(f) corrected to docs-assertions; behavioral
 boundary tests B1 (tag-reuse) + B2 (post-GC) requested from Antigravity, the
 designated scoped integration owner. Claude's zcy lanes scope out idempotency —
 no conflict. ACKed steering 17–23; proactivity loop continues.
+## Round 24 (Codex Z-task): muse-r2/ad652b55 on rev1c+rev1d — CHANGES, confirmed
+Lexical sibling-lock fallback races across spellings/cwds/symlinks (code
+verified — "one domain" holds only for the canonical journal + identical
+spellings); unserializable/non-dict inputs crash append (both reproduced);
+REQUIRED_FIELDS 12/12 exact. H3 consumption = review use, not adoption
+benefit. Full record: research/muse/review-round24.md. Fixes with ZCode.
 ## Round 23 (Claude R9 task): counted from rollouts, verdict confirmed+sharpened
 Old binary 2 marker lines / new 1 (files match report); 4.4 trace shows TWO
 outer execs ~16s apart (outer retry demonstrated, idempotent content masked
