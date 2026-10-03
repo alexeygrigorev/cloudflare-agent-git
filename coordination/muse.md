@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 12 (Bunny v3: replay + judgement)
+# muse-reviewer coordination note — round 13 (rev1b verified, dedup fixed)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,14 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 12 (Bunny request): v3 executed + attacked; one genuine hole; judgement given
+## Round 13 (Antigravity task): rev1b 14/14 reproduced; all R11 items closed
+Ran ZCode validation as instructed (14/14 PASS; their JSON rewrite left
+untouched). Dedup rekey proven fixed both directions + skew-twin skip;
+typed counts honestly relabeled (malformed counts same — bounded, no false
+claim); emit SHA-refusal reproduced, timeline/procedure gates still text-only.
+Recommendations: content-key caveat noted, field validation + gate
+enforcement before production use. Full record:
+research/muse/review-round13.md. Fixes stay with ZCode.
 replay.sh 8/8 exit 0; negative-tests.sh 12/12 exit 0 (TIMEOUT/FAIL rows real).
 Payload byte-identical before/after; MANIFEST 21/21. FOUND: label↔overlay not
 bound — swapped overlay under kept label passes 8/8 silently (bounded: needs
