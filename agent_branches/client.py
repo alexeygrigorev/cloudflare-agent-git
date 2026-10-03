@@ -30,8 +30,16 @@ class AgentBranchesAPIError(AgentBranchesError):
 
 
 class StaleVectorError(AgentBranchesAPIError):
-    """Raised when the L1 coordinator returns HTTP 409 Conflict due to a stale head vector."""
-    pass
+    """Raised when the L1 coordinator returns HTTP 409 Conflict due to a stale head vector.
+
+    ``fresh_vector`` carries the coordinator's current head vector (agentId and
+    taskId keys) when the client was able to resync it, so the caller can
+    explicitly re-evaluate checks against current state.
+    """
+
+    def __init__(self, status_code: int, message: str, payload: Optional[Any] = None):
+        super().__init__(status_code, message, payload)
+        self.fresh_vector: Optional[Dict[str, str]] = None
 
 
 class TokenExpiredError(AgentBranchesAPIError):
@@ -271,9 +279,17 @@ class AgentBranchesClient:
 
         return self._request("POST", "/events/push", payload)
 
-    def get_status(self) -> Dict[str, Any]:
-        """Fetch current global coordinator and radar status (GET /status)."""
-        return self._request("GET", "/status")
+    def get_status(self, runner_token: Optional[str] = None) -> Dict[str, Any]:
+        """Fetch current global coordinator and radar status (GET /status).
+
+        GET /status is bearer-protected on current L1 deployments: pass
+        ``runner_token`` (defaults to $RUNNER_TOKEN) for authenticated reads.
+        """
+        req_headers: Dict[str, str] = {}
+        token = runner_token or os.environ.get("RUNNER_TOKEN")
+        if token:
+            req_headers["Authorization"] = f"Bearer {token}"
+        return self._request("GET", "/status", headers=req_headers or None)
 
     def ack_warning(
         self,
@@ -341,14 +357,14 @@ class AgentBranchesClient:
                 }
             raise
 
-    def refresh_head_vector(self) -> Dict[str, str]:
+    def refresh_head_vector(self, runner_token: Optional[str] = None) -> Dict[str, str]:
         """Fetch the coordinator's current head vector (CONTRACT v0.1 resync source).
 
         Returns a mapping containing both ``agentId -> head_sha`` and
         ``taskId -> head_sha`` entries for every task known to the coordinator,
-        suitable for replacing a stale ``vector`` after HTTP 409.
+        suitable for re-evaluating a stale ``vector`` after HTTP 409.
         """
-        status = self.get_status()
+        status = self.get_status(runner_token=runner_token)
         heads: Dict[str, str] = {}
         for rec in status.get("tasks") or []:
             if not isinstance(rec, dict):
@@ -364,40 +380,102 @@ class AgentBranchesClient:
                     heads[str(key)] = str(sha)
         return heads
 
+    @staticmethod
+    def _validated_recomputed_payload(
+        original_vector: Dict[str, Any],
+        fresh_heads: Dict[str, str],
+        recomputed: Any,
+    ) -> Optional[Dict[str, Any]]:
+        """Validate a recompute_fn result; return it, or None to fail closed.
+
+        Guards against relabeling stale evidence as fresh: every original
+        participant must still be present, pinned to the FRESH head sha (a
+        recomputed payload still carrying stale shas is rejected), results must
+        be a list, and every result pair must reference known participants.
+        """
+        if not isinstance(recomputed, dict):
+            return None
+        if "contract" not in recomputed:
+            return None
+        results = recomputed.get("results")
+        if not isinstance(results, list):
+            return None
+        vector = recomputed.get("vector")
+        if not isinstance(vector, dict) or not vector:
+            return None
+        for key in original_vector:
+            if key not in vector:
+                return None  # missing participant: fail closed, never drop silently
+            if str(vector[key]) != fresh_heads.get(key):
+                return None  # stale head sha in "fresh" payload: reject
+        for res in results:
+            if not isinstance(res, dict):
+                return None
+            pair = res.get("pair")
+            if not isinstance(pair, list):
+                return None
+            if any(participant not in vector for participant in pair):
+                return None
+        return recomputed
+
     def send_checks_with_resync(
         self,
         payload: Dict[str, Any],
         runner_token: Optional[str] = None,
         max_attempts: int = 2,
+        recompute_fn: Optional[Any] = None,
     ) -> Dict[str, Any]:
-        """Submit checks; on HTTP 409 stale vector, resync the head vector and retry.
+        """Submit checks; on HTTP 409 stale vector, fail closed or recompute, never replay.
 
-        Reuses ``send_checks`` validation and bearer-token handling. On
-        ``StaleVectorError`` the client fetches the coordinator's current heads
-        via ``refresh_head_vector()``, replaces the payload ``vector`` entries it
-        can resolve (entries the coordinator no longer knows are dropped), and
-        retries. The retry budget is bounded: at most ``max_attempts`` HTTP
-        attempts and ``max_attempts - 1`` resyncs, then the original
-        ``StaleVectorError`` is re-raised. Authentication failures
-        (``TokenExpiredError`` / ``TokenRevokedError``) are never retried.
+        The 409 stale gate exists to force re-evaluation against current heads.
+        This method therefore NEVER re-sends the original ``results`` with an
+        updated vector — that would relabel old evidence as fresh.
+
+        On ``StaleVectorError`` the client fetches the coordinator's current
+        head vector (authenticated status read) and attaches it to the raised
+        exception as ``exc.fresh_vector``. Retry behavior depends on
+        ``recompute_fn``:
+
+        - ``recompute_fn is None`` (default): fail closed immediately — raise
+          the ``StaleVectorError`` carrying ``fresh_vector`` so the caller can
+          explicitly re-evaluate.
+        - ``recompute_fn(current_heads) -> payload``: called with the fresh
+          head vector; must return a complete CONTRACT v0.1 payload re-evaluated
+          at those heads (every original participant present, pinned to the
+          fresh shas, results consistent with the vector). A valid recomputed
+          payload replaces the attempt payload and the submission is retried
+          within the bounded budget. If ``recompute_fn`` is missing from a
+          participant, returns stale shas, fails, or raises, the client fails
+          closed and raises the original ``StaleVectorError``.
+
+        The retry budget is bounded: at most ``max_attempts`` HTTP attempts.
+        Authentication failures (``TokenExpiredError`` / ``TokenRevokedError``)
+        are never retried.
 
         Args:
             payload: CONTRACT v0.1 check payload dictionary (not mutated).
-            runner_token: Optional runner bearer token (defaults to $RUNNER_TOKEN).
+            runner_token: Optional runner bearer token (defaults to $RUNNER_TOKEN);
+                used both for POST /checks and the authenticated resync read.
             max_attempts: Total attempts including the first (must be >= 1).
+            recompute_fn: Optional callback ``recompute_fn(current_heads) -> payload``
+                that re-evaluates the checks at the fresh head vector.
 
         Returns:
             Coordinator response dict on success.
 
         Raises:
             ValueError: If payload fails validation or max_attempts < 1.
-            StaleVectorError: If the vector remains stale after the final attempt,
-                or the head vector cannot be resynced (fail closed).
+            StaleVectorError: If the vector remains stale (no recompute_fn,
+                recompute failed/invalid, or retry budget exhausted). The
+                exception carries ``fresh_vector`` when the current heads were
+                fetched successfully.
             TokenExpiredError / TokenRevokedError: On credential rejection (never retried).
             AgentBranchesAPIError: On other API errors.
         """
         if max_attempts < 1:
             raise ValueError("max_attempts must be >= 1")
+        if not isinstance(payload, dict):
+            raise ValueError("checks payload must be a JSON dictionary")
 
         attempt_payload = copy.deepcopy(payload)
         stale_exc: Optional[StaleVectorError] = None
@@ -407,19 +485,35 @@ class AgentBranchesClient:
                 return self.send_checks(attempt_payload, runner_token=runner_token)
             except StaleVectorError as exc:
                 stale_exc = exc
-                if attempt >= max_attempts - 1:
-                    break
-                vector = attempt_payload.get("vector")
-                if not isinstance(vector, dict) or not vector:
-                    break
+                # Always try to attach the coordinator's current heads so the
+                # caller can re-evaluate explicitly, even when we fail closed.
+                fresh_heads: Optional[Dict[str, str]] = None
                 try:
-                    fresh_heads = self.refresh_head_vector()
+                    fresh_heads = self.refresh_head_vector(runner_token=runner_token)
                 except AgentBranchesError:
-                    break  # coordinator unreachable during resync: fail closed
-                resynced = {k: fresh_heads[k] for k in vector if k in fresh_heads}
-                if not resynced:
-                    break  # nothing resyncable: fail closed, no pointless retry
-                attempt_payload["vector"] = resynced
+                    fresh_heads = None  # resync source unreachable: fail closed
+                if fresh_heads is not None:
+                    exc.fresh_vector = fresh_heads
+
+                if attempt >= max_attempts - 1 or fresh_heads is None:
+                    break
+                if recompute_fn is None:
+                    break  # no re-evaluation callback: fail closed, never replay
+                original_vector = attempt_payload.get("vector")
+                if not isinstance(original_vector, dict) or not original_vector:
+                    break
+                if any(key not in fresh_heads for key in original_vector):
+                    break  # missing participant: fail closed, never retry with a pruned vector
+                try:
+                    recomputed = recompute_fn(dict(fresh_heads))
+                except Exception:
+                    break  # recompute failed: fail closed, stale results never replayed
+                validated = self._validated_recomputed_payload(
+                    original_vector, fresh_heads, recomputed
+                )
+                if validated is None:
+                    break  # invalid recompute: fail closed
+                attempt_payload = copy.deepcopy(validated)
 
         assert stale_exc is not None
         raise stale_exc

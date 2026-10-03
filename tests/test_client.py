@@ -3,12 +3,15 @@
 import datetime
 import json
 import os
+import socketserver
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from agent_branches.client import (
@@ -26,7 +29,39 @@ from agent_branches.git_utils import (
     get_remote_url,
     run_git_cmd,
 )
-from tests.mock_l1_server import start_mock_l1_server
+from tests.mock_l1_server import (
+    MockCoordinatorState,
+    MockL1Handler,
+    MockL1Server,
+    start_mock_l1_server,
+)
+
+
+class _StatusAuthHandler(MockL1Handler):
+    """Mock L1 handler that bearer-protects GET /status (mirrors current L1)."""
+
+    expected_status_token = "run-status-token"
+
+    def do_GET(self):
+        if urllib.parse.urlparse(self.path).path == "/status":
+            err = self.state.check_bearer_token(
+                self.headers.get("Authorization", ""),
+                self.expected_status_token,
+                None,
+                "runner",
+            )
+            if err:
+                self._send_json(err[0], err[1])
+                return
+        super().do_GET()
+
+
+class _StatusAuthServer(MockL1Server):
+    """MockL1Server bound to the /status-authenticating handler."""
+
+    def __init__(self, server_address, state=None):
+        socketserver.TCPServer.__init__(self, server_address, _StatusAuthHandler)
+        self.state = state or MockCoordinatorState()
 
 
 class _AlwaysStaleClient(AgentBranchesClient):
@@ -42,9 +77,23 @@ class _AlwaysStaleClient(AgentBranchesClient):
         self.send_calls += 1
         raise StaleVectorError(409, "Head vector is stale: unit-stub", None)
 
-    def refresh_head_vector(self):
+    def refresh_head_vector(self, runner_token=None):
         self.refresh_calls += 1
         return dict(self.fresh_heads)
+
+
+class _CountingSendClient(AgentBranchesClient):
+    """Real client that counts how many /checks submissions are attempted."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.send_calls = 0
+
+    def send_checks(self, payload, runner_token=None, return_error_dict=False):
+        self.send_calls += 1
+        return super().send_checks(
+            payload, runner_token=runner_token, return_error_dict=return_error_dict
+        )
 
 
 class TestAgentBranchesClient(unittest.TestCase):
@@ -788,8 +837,8 @@ class TestAgentBranchesClient(unittest.TestCase):
                 os.remove(tf_path)
 
 
-    def test_11_stale_vector_resync_and_retry(self):
-        """409 StaleVectorError triggers head-vector resync, bounded retry, then success."""
+    def test_11_stale_vector_fail_closed_without_recompute(self):
+        """409 StaleVectorError: no recompute_fn => fail closed, old results NEVER replayed."""
         client = AgentBranchesClient(server_url=self.server_url)
         t_a = client.create_task(
             repo="https://github.com/cf/repo.git",
@@ -839,75 +888,86 @@ class TestAgentBranchesClient(unittest.TestCase):
         self.assertEqual(heads[t_b["agentId"]], sha_b)
         self.assertEqual(heads[t_b["taskId"]], sha_b)
 
-        # 3. send_checks_with_resync resyncs the vector and the retry succeeds;
-        #    the caller's payload is never mutated
-        res = client.send_checks_with_resync(stale_payload)
-        self.assertEqual(res["accepted"], 1)
-        self.assertEqual(len(res["pairs"]), 1)
-        self.assertEqual(res["pairs"][0]["status"], "clean")
+        # 3. C1479 FAIL CLOSED: without recompute_fn the client must NOT update
+        #    the vector and replay the old clean results as if they were fresh.
+        counting = _CountingSendClient(server_url=self.server_url)
+        with self.assertRaises(StaleVectorError) as ctx:
+            counting.send_checks_with_resync(stale_payload)
+        self.assertEqual(counting.send_calls, 1, "no retry without re-evaluation")
         self.assertEqual(
             stale_payload["vector"], stale_vector, "input payload must not be mutated"
         )
+        # The raised error carries the coordinator's current heads so the
+        # caller can explicitly re-evaluate.
+        self.assertIsInstance(ctx.exception.fresh_vector, dict)
+        self.assertEqual(ctx.exception.fresh_vector[t_a["agentId"]], sha_a)
+        self.assertEqual(ctx.exception.fresh_vector[t_b["agentId"]], sha_b)
 
-        # 4. Resync is bounded: max_attempts=1 raises without any resync attempt
+        # 4. Even after heads move, the old results are still not replayed
+        client.push(task_id=t_b["taskId"], head_sha="3333333333333333333333333333333333333333")
+        counting2 = _CountingSendClient(server_url=self.server_url)
+        with self.assertRaises(StaleVectorError) as ctx:
+            counting2.send_checks_with_resync(stale_payload)
+        self.assertEqual(counting2.send_calls, 1)
+        self.assertEqual(ctx.exception.fresh_vector[t_b["agentId"]],
+                         "3333333333333333333333333333333333333333")
 
-        class _CountingClient(AgentBranchesClient):
+        # 5. max_attempts=1 still attaches the fresh vector, but never resends
+        class _CountingClient(_CountingSendClient):
             def __init__(self, **kw):
                 super().__init__(**kw)
                 self.refresh_calls = 0
 
-            def refresh_head_vector(self):
+            def refresh_head_vector(self, runner_token=None):
                 self.refresh_calls += 1
-                return super().refresh_head_vector()
+                return super().refresh_head_vector(runner_token=runner_token)
 
         counter = _CountingClient(server_url=self.server_url)
         with self.assertRaises(StaleVectorError):
             counter.send_checks_with_resync(stale_payload, max_attempts=1)
-        self.assertEqual(counter.refresh_calls, 0)
+        self.assertEqual(counter.send_calls, 1)
+        self.assertEqual(counter.refresh_calls, 1)
 
-        # 5. Loop bound: with max_attempts=N there are exactly N attempts and
-        #    N-1 resyncs before the original StaleVectorError is re-raised
+        # 6. Loop bound WITH recompute_fn: exactly N attempts (N >= 2), and the
+        #    raised error carries the last fresh vector
+        def recompute_generic(current_heads):
+            return {
+                "contract": "0.1",
+                "vector": dict(current_heads),
+                "results": [],
+            }
+
         always_stale = _AlwaysStaleClient(fresh_heads={"agent-x": "fresh-sha"})
         with self.assertRaises(StaleVectorError) as ctx:
             always_stale.send_checks_with_resync(
                 {"contract": "0.1", "vector": {"agent-x": "stale-sha"}, "results": []},
                 max_attempts=3,
+                recompute_fn=recompute_generic,
             )
         self.assertIn("unit-stub", ctx.exception.message)
         self.assertEqual(always_stale.send_calls, 3)
-        self.assertEqual(always_stale.refresh_calls, 2)
+        self.assertEqual(always_stale.refresh_calls, 3)
 
-        # 6. Fail closed when nothing is resyncable: vector keys unknown to the
-        #    coordinator trigger one resync, then raise without a pointless retry
-        blind = _AlwaysStaleClient(fresh_heads={})
-        with self.assertRaises(StaleVectorError):
+        # 7. Fail closed on missing participants: an agent the coordinator no
+        #    longer knows triggers one resync, then raises without retrying
+        #    with a silently pruned vector
+        blind = _AlwaysStaleClient(fresh_heads={"known-agent": "fresh-sha"})
+        with self.assertRaises(StaleVectorError) as ctx:
             blind.send_checks_with_resync(
-                {"contract": "0.1", "vector": {"ghost-agent": "sha"}, "results": []}
+                {"contract": "0.1", "vector": {"ghost-agent": "sha"}, "results": []},
+                recompute_fn=recompute_generic,
             )
         self.assertEqual(blind.send_calls, 1)
         self.assertEqual(blind.refresh_calls, 1)
+        self.assertEqual(ctx.exception.fresh_vector, {"known-agent": "fresh-sha"})
 
-        # 7. Missing/invalid vector skips resync entirely
+        # 8. Missing/invalid vector: resync read still happens (fresh vector is
+        #    attached) but no recompute or retry is attempted
         no_vector = _AlwaysStaleClient(fresh_heads={"agent-x": "fresh-sha"})
         with self.assertRaises(StaleVectorError):
             no_vector.send_checks_with_resync({"contract": "0.1", "results": []})
         self.assertEqual(no_vector.send_calls, 1)
-        self.assertEqual(no_vector.refresh_calls, 0)
-
-        # 8. Resynced check reflects real state: vector now carries current heads
-        fresh_payload = {
-            "contract": "0.1",
-            "vector": dict(stale_vector),
-            "results": [
-                {
-                    "pair": [t_a["agentId"], t_b["agentId"]],
-                    "status": "clean",
-                }
-            ],
-        }
-        client.push(task_id=t_b["taskId"], head_sha="3333333333333333333333333333333333333333")
-        res2 = client.send_checks_with_resync(fresh_payload)
-        self.assertEqual(res2["accepted"], 1)
+        self.assertEqual(no_vector.refresh_calls, 1)
 
     def test_12_token_expiry_401_reported_and_halt(self):
         """Correct-but-expired tokens yield 401 TokenExpiredError; client halts (no retry)."""
@@ -1111,6 +1171,187 @@ class TestAgentBranchesClient(unittest.TestCase):
         finally:
             revoked_srv.shutdown()
             revoked_srv.server_close()
+
+    def test_14_resync_recompute_paths_real_server(self):
+        """C1479: resync only retries with recompute_fn; stale evidence is never relabeled."""
+        client = AgentBranchesClient(server_url=self.server_url)
+        t_a = client.create_task(
+            repo="https://github.com/cf/repo.git",
+            base_sha="0000000000000000000000000000000000000000",
+            intent="Recompute agent A",
+            branch="feat/recompute-a",
+            agent="recompute-alpha",
+        )
+        t_b = client.create_task(
+            repo="https://github.com/cf/repo.git",
+            base_sha="0000000000000000000000000000000000000000",
+            intent="Recompute agent B",
+            branch="feat/recompute-b",
+            agent="recompute-beta",
+        )
+        sha_a = "aaaa111111111111111111111111111111111111"
+        sha_b_old = "bbbb222222222222222222222222222222222222"
+        client.push(task_id=t_a["taskId"], head_sha=sha_a)
+        client.push(task_id=t_b["taskId"], head_sha=sha_b_old)
+
+        stale_vector = {
+            t_a["agentId"]: "9999000000000000000000000000000000000000",
+            t_b["agentId"]: "8888000000000000000000000000000000000000",
+        }
+        stale_payload = {
+            "contract": "0.1",
+            "vector": dict(stale_vector),
+            "results": [
+                {
+                    "pair": [t_a["agentId"], t_b["agentId"]],
+                    "status": "clean",
+                }
+            ],
+        }
+        # Heads move while the runner is evaluating: the old "clean" result is
+        # now computed against a superseded head.
+        sha_b_new = "bbbb333333333333333333333333333333333333"
+        client.push(task_id=t_b["taskId"], head_sha=sha_b_new)
+
+        # (a) GENUINE recompute: callback re-evaluates at the fresh vector and
+        #     the retry succeeds; the callback receives the CURRENT heads.
+        seen_heads = {}
+
+        def recompute_genuine(current_heads):
+            seen_heads.update(current_heads)
+            return {
+                "contract": "0.1",
+                "vector": {
+                    t_a["agentId"]: current_heads[t_a["agentId"]],
+                    t_b["agentId"]: current_heads[t_b["agentId"]],
+                },
+                "results": [
+                    {
+                        "pair": [t_a["agentId"], t_b["agentId"]],
+                        "status": "re-evaluated-clean",
+                    }
+                ],
+            }
+
+        counting = _CountingSendClient(server_url=self.server_url)
+        res = counting.send_checks_with_resync(stale_payload, recompute_fn=recompute_genuine)
+        self.assertEqual(counting.send_calls, 2, "initial 409 + one recomputed retry")
+        self.assertEqual(res["accepted"], 1)
+        self.assertEqual(seen_heads[t_b["agentId"]], sha_b_new, "recompute got CURRENT heads")
+        self.assertEqual(
+            stale_payload["vector"], stale_vector, "input payload must not be mutated"
+        )
+
+        # (b) FAKED recompute: callback returns the payload with the OLD stale
+        #     sha relabeled into the vector -> fail closed, never submitted.
+        def recompute_fake(current_heads):
+            return {
+                "contract": "0.1",
+                "vector": {
+                    t_a["agentId"]: current_heads[t_a["agentId"]],
+                    t_b["agentId"]: sha_b_old,  # stale sha smuggled back in
+                },
+                "results": [
+                    {"pair": [t_a["agentId"], t_b["agentId"]], "status": "clean"}
+                ],
+            }
+
+        counting_b = _CountingSendClient(server_url=self.server_url)
+        with self.assertRaises(StaleVectorError):
+            counting_b.send_checks_with_resync(stale_payload, recompute_fn=recompute_fake)
+        self.assertEqual(counting_b.send_calls, 1, "stale-sha recompute must not be sent")
+
+        # (c) Missing participant: recompute drops agent B from the vector
+        #     -> fail closed, never retry with a pruned vector.
+        def recompute_drops(current_heads):
+            return {
+                "contract": "0.1",
+                "vector": {t_a["agentId"]: current_heads[t_a["agentId"]]},
+                "results": [],
+            }
+
+        counting_c = _CountingSendClient(server_url=self.server_url)
+        with self.assertRaises(StaleVectorError):
+            counting_c.send_checks_with_resync(stale_payload, recompute_fn=recompute_drops)
+        self.assertEqual(counting_c.send_calls, 1)
+
+        # (d) recompute_fn raises -> fail closed, stale results never replayed.
+        def recompute_boom(current_heads):
+            raise RuntimeError("evaluator crashed")
+
+        counting_d = _CountingSendClient(server_url=self.server_url)
+        with self.assertRaises(StaleVectorError):
+            counting_d.send_checks_with_resync(stale_payload, recompute_fn=recompute_boom)
+        self.assertEqual(counting_d.send_calls, 1)
+
+        # (e) Recomputed result references an unknown participant -> fail closed.
+        def recompute_ghost_pair(current_heads):
+            return {
+                "contract": "0.1",
+                "vector": {
+                    t_a["agentId"]: current_heads[t_a["agentId"]],
+                    t_b["agentId"]: current_heads[t_b["agentId"]],
+                },
+                "results": [
+                    {"pair": [t_a["agentId"], "ghost-agent"], "status": "clean"}
+                ],
+            }
+
+        counting_e = _CountingSendClient(server_url=self.server_url)
+        with self.assertRaises(StaleVectorError):
+            counting_e.send_checks_with_resync(stale_payload, recompute_fn=recompute_ghost_pair)
+        self.assertEqual(counting_e.send_calls, 1)
+
+    def test_15_status_reads_carry_runner_token(self):
+        """C1479: GET /status (resync source) is read with the runner bearer token."""
+        srv = _StatusAuthServer(("127.0.0.1", 0), MockCoordinatorState())
+        thread = threading.Thread(target=srv.serve_forever, daemon=True)
+        thread.start()
+        url = f"http://127.0.0.1:{srv.server_address[1]}"
+        try:
+            client = AgentBranchesClient(server_url=url)
+            task = client.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="Authed status read",
+                branch="feat/authed-status",
+                agent="status-auth",
+            )
+            client.push(task_id=task["taskId"], head_sha="abcdefabcdefabcdefabcdefabcdefabcdefab")
+
+            # 1. Unauthenticated GET /status is rejected by the coordinator
+            with self.assertRaises(AgentBranchesAPIError) as ctx:
+                client.get_status()
+            self.assertEqual(ctx.exception.status_code, 401)
+
+            # 2. Authenticated read succeeds
+            status = client.get_status(runner_token="run-status-token")
+            self.assertIn("tasks", status)
+
+            # 3. refresh_head_vector without a token fails closed (401)
+            with self.assertRaises(AgentBranchesAPIError) as ctx:
+                client.refresh_head_vector()
+            self.assertEqual(ctx.exception.status_code, 401)
+
+            # 4. refresh_head_vector with the runner token returns current heads
+            heads = client.refresh_head_vector(runner_token="run-status-token")
+            self.assertEqual(heads[task["agentId"]], "abcdefabcdefabcdefabcdefabcdefabcdefab")
+            self.assertEqual(heads[task["taskId"]], "abcdefabcdefabcdefabcdefabcdefabcdefab")
+
+            # 5. $RUNNER_TOKEN env fallback also authenticates status reads
+            old_env = os.environ.get("RUNNER_TOKEN")
+            os.environ["RUNNER_TOKEN"] = "run-status-token"
+            try:
+                status = client.get_status()
+                self.assertIn("tasks", status)
+            finally:
+                if old_env is None:
+                    os.environ.pop("RUNNER_TOKEN", None)
+                else:
+                    os.environ["RUNNER_TOKEN"] = old_env
+        finally:
+            srv.shutdown()
+            srv.server_close()
 
 
 if __name__ == "__main__":
