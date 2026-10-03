@@ -39,3 +39,7 @@ The design implementation commit187d5c375be05498b3b9f3175ca47a817b9f7458 deploye
 Public site: https://alexeygrigorev.com/cloudflare-agent-git/
 First actual Opus/stylint report: https://alexeygrigorev.com/cloudflare-agent-git/daily/2026-10-03/
 Daily publishing check:09:30 Europe/Berlin. Regular evidence updates publish through the repository workflow. Five project landings remain provisional; the sixth slot and final selection approvals remain open.
+
+## Correction — fidelity acceptance withdrawn
+
+The user subsequently rejected the production design as different from the Claude Design reference. Earlier checks above proved narrower deployment/responsiveness/assets facts, not reference fidelity. The production marketing headline/CTA split hierarchy differs from the image-led daily-story hierarchy and detailed status treatment in the reference. Adapting the prototype to production was not a valid substitute for fidelity review. No complete version-pinned export and independent desktop/mobile side-by-side verdict is recorded. Visual acceptance remains FAIL / unreviewed repair; follow QUALITY.md and registered publication tasks. This correction does not retract independently verified factual or functional checks.

@@ -75,3 +75,7 @@ Human33 authorizes website email signup via Relay following the actual Pocketshe
 ## Human34 — time-aware provider routing
 
 Prioritize eligible ZCode Flash tasks17:00–03:00 Berlin through the verified October7 campaign; outside use Space Bunny/Muse/Antigravity. Read RESOURCE-POLICY for exact model/version/route, expiry ambiguity, quotas and eligibility verification. Heads own scheduling; principals monitor.
+
+## Superseding responsibility clarification — design quality and desktop interface
+
+Latest human clarification supersedes older descriptions of desktop root as an implementation, observability-repair or routine quality owner. Desktop root is the user–Hetzner interface, periodic principal/head pings and requested browser interactions only. Principals own operational oversight and escalation; publication coordinator owns independently reviewed implementation, editorial/visual/functional acceptance, release and recovery. Root is not an approval dependency or default acceptance reviewer. See [publication quality gates](../website/editorial/QUALITY.md). Preserve all existing privacy/resource/recovery rules.

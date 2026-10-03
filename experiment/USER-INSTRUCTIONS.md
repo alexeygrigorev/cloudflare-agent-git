@@ -166,3 +166,17 @@ in case the website generates some traffic let's also capture their emails via r
 ## Message34 — verified ZCode promotion window and alternative capacity
 
 also some more information: zcode is free from 5pm till 3am - you can look it up where the deal ends. we can use it as much as we want during this time. outside of it we can use space bunny and muse as much as we want plus antigravity
+
+## Latest human messages — visual fidelity, role boundary and documentation
+
+I don't think aegnts implemented the design properly why was it not contorlled
+
+it's just different
+
+it shoudln't be your job to oversee it - you're only orhcestrating. let's think how to make sure quality checks are there. see how we can adjust the process
+
+your role is to ping them periodically and use the browser when needed. that's all
+
+and also be the interface between me and hetzner
+
+let's document it all somewhere

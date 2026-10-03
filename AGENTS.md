@@ -100,3 +100,7 @@ Register every actual executor and harness subagent with head/team/parent/native
 ## Time-aware provider routing — human34
 
 Heads prioritize eligible GLM-5.3-Flash ZCode tasks in17:00–03:00 Berlin while the verified campaign applies, then use Space Bunny/Muse/Antigravity alternatives. Verify actual model/version/route and fresh allowance; do not assume every adapter call is free. Read coordination/RESOURCE-POLICY.md for official source, October7 expiry handling and retained limits. Keep useful owned work progressing outside the window.
+
+## Superseding responsibility clarification — design quality and desktop interface
+
+Latest human clarification supersedes older descriptions of desktop root as an implementation, observability-repair or routine quality owner. Desktop root is the user–Hetzner interface, periodic principal/head pings and requested browser interactions only. Principals own operational oversight and escalation; publication coordinator owns independently reviewed implementation, editorial/visual/functional acceptance, release and recovery. Root is not an approval dependency or default acceptance reviewer. See [publication quality gates](website/editorial/QUALITY.md). Preserve all existing privacy/resource/recovery rules.

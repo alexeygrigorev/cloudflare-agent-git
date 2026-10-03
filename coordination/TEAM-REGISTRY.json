@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T05:52:36.394384+00:00",
+  "updated_at": "2026-10-03T06:17:25.635843+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -317,6 +317,48 @@
           "status": "done",
           "completed_at": "2026-10-03T05:17:57.029807+00:00"
         }
+      ]
+    },
+    {
+      "id": "publication",
+      "name": "Public journal and website quality",
+      "head_tag": "public-journal-site",
+      "principal_tags": [
+        "codex-principal",
+        "claude-principal"
+      ],
+      "agents": [
+        {
+          "tag": "public-journal-site",
+          "role": "coordinator",
+          "mode": "native-harness-subagent",
+          "native_identity": "/root/public_journal_site",
+          "parent_identity": "/root",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "assignment_ack": "actual task accepted; no standalone interactive session claimed",
+          "owned_paths": [
+            "website/editorial",
+            "coordination publication entries"
+          ]
+        },
+        {
+          "tag": "publication-process-reviewer",
+          "role": "independent-process-reviewer",
+          "mode": "native-harness-subagent",
+          "native_identity": "/root/public_journal_site/relay_signup_review",
+          "parent_identity": "/root/public_journal_site",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "assignment_ack": "actual task accepted; no standalone interactive session claimed",
+          "owned_paths": [
+            "website/editorial/QUALITY-REVIEW.md"
+          ]
+        }
+      ],
+      "unassigned_roles": [
+        "prototype-capture-executor",
+        "fidelity-repair-executor",
+        "independent-visual-reviewer",
+        "release-verifier"
       ]
     }
   ],

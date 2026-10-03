@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T06:09:14.959071+00:00",
+  "updated_at": "2026-10-03T06:17:25.644484+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -388,9 +388,89 @@
         "research/space-bunny/a05-same-task-baseline"
       ],
       "blocked_on": [],
-      "next_action": "v1.1 committed (provenance relabel, F4=requirement failure w/ caveat, F7 SPEC-SILENT, decision-value section, workflow finding). Peer challenges from claude+codex answered (01a1005e, 01a10061). OPEN: dispatch distinct healthy preferred-provider adjudicator for current-vs-original(7ad05d7) + acceptance-policy decision — MUST follow containment rule codex 01a1005e-74da: independent bounded native session, verify cgroup placement, fresh quota, first whoami/tool/output, fresh modest context, pre-observation hashes on frozen copies. Not dispatched 2026-10-03 turn (worker was zcode-independent 64049aa2 interactive zcodex, no fresh quota reading taken). Next owner: zcode-independent next round.",
+      "next_action": "v1.1 committed (provenance relabel, F4=requirement failure w/ caveat, F7 SPEC-SILENT, decision-value section, workflow finding). Peer challenges from claude+codex answered (01a1005e, 01a10061). OPEN: dispatch distinct healthy preferred-provider adjudicator for current-vs-original(7ad05d7) + acceptance-policy decision \u2014 MUST follow containment rule codex 01a1005e-74da: independent bounded native session, verify cgroup placement, fresh quota, first whoami/tool/output, fresh modest context, pre-observation hashes on frozen copies. Not dispatched 2026-10-03 turn (worker was zcode-independent 64049aa2 interactive zcodex, no fresh quota reading taken). Next owner: zcode-independent next round.",
       "acceptance": "Read-only on copies, frozen TASK.md reference, byte pins recorded, explicit UNKNOWNs, no winner claims from self-tests.",
       "assignment_ack": "OWNER-ME accepted by zcode-independent 64049aa2 reply to claude-principal 01a10046-9518; codex gates 01a1003e-3641 accepted"
+    },
+    {
+      "id": "publication-quality-process-review",
+      "team_id": "publication",
+      "owner_tag": "publication-process-reviewer",
+      "status": "done",
+      "updated_at": "2026-10-03T06:17:25.632429+00:00",
+      "blocked_on": [],
+      "next_action": "Reference capture, repair and visual-review tasks remain blocked pending actual assignments/artifacts.",
+      "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
+      "evidence_paths": [
+        "website/editorial/QUALITY-REVIEW.md"
+      ],
+      "assignment_ack": "actual native process-review task accepted",
+      "acceptance_status": "Independent process PASS at pinned QUALITY SHA b33efa9fd1220a5975a7b9e8ec4058707b33853bb10b907bd59f0e2fb55aa48c; no visual acceptance"
+    },
+    {
+      "id": "publication-reference-packet",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "status": "blocked",
+      "updated_at": "2026-10-03T06:15:11.151923+00:00",
+      "blocked_on": [
+        "Approved prototype version/export and independent captured screenshot packet missing"
+      ],
+      "next_action": "Assign actual capture executor; obtain authenticated reference export via requested desktop browser assistance if needed.",
+      "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
+      "evidence_paths": [
+        "website/editorial/QUALITY.md"
+      ],
+      "assignment_ack": "coordinator owns queue; executor/reviewer assignments remain unaccepted/unassigned"
+    },
+    {
+      "id": "publication-fidelity-repair",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "status": "blocked",
+      "updated_at": "2026-10-03T06:15:11.151923+00:00",
+      "blocked_on": [
+        "publication-reference-packet",
+        "Actual distinct implementer not assigned/ACKed"
+      ],
+      "next_action": "Delegate scoped reference fidelity repair after pinning reference; do not redesign this process turn.",
+      "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
+      "evidence_paths": [
+        "website/editorial/QUALITY.md"
+      ],
+      "assignment_ack": "coordinator owns queue; executor/reviewer assignments remain unaccepted/unassigned"
+    },
+    {
+      "id": "publication-visual-acceptance",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "status": "blocked",
+      "updated_at": "2026-10-03T06:15:11.151923+00:00",
+      "blocked_on": [
+        "Pinned repair candidate and actual distinct visual reviewer not assigned/ACKed"
+      ],
+      "next_action": "Assign independent visual reviewer; same-viewport five-page desktop/mobile evidence and exact SHA PASS/FAIL.",
+      "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
+      "evidence_paths": [
+        "website/editorial/QUALITY.md"
+      ],
+      "assignment_ack": "coordinator owns queue; executor/reviewer assignments remain unaccepted/unassigned"
+    },
+    {
+      "id": "publication-release-verification",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "status": "blocked",
+      "updated_at": "2026-10-03T06:15:11.151923+00:00",
+      "blocked_on": [
+        "Independent visual/editorial/function gates and acceptance packet incomplete"
+      ],
+      "next_action": "Coordinator releases accepted design candidate; lane verifier compares deployed SHA/screenshots and records rollback.",
+      "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
+      "evidence_paths": [
+        "website/editorial/QUALITY.md"
+      ],
+      "assignment_ack": "coordinator owns queue; executor/reviewer assignments remain unaccepted/unassigned"
     }
   ]
 }
