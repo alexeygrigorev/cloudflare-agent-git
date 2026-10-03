@@ -379,8 +379,30 @@ class AgentHarnessDriver:
             os.makedirs(ws_dir, exist_ok=True)
             t.workspace_dir = ws_dir
 
-            # Initialize git clone from repo_root checked out at base_sha
-            subprocess.run(["git", "clone", "--quiet", self.repo_root, ws_dir], check=True, capture_output=True)
+            is_mock_remote = not t.fork_remote or "cloudflare.local" in t.fork_remote or "example.com" in t.fork_remote
+            if not is_mock_remote:
+                # Real sidecar / remote repository: clone directly from the remote fork
+                clone_cmd = ["git"]
+                if t.token:
+                    clone_cmd.extend(["-c", f"http.extraHeader=Authorization: Bearer {t.token}"])
+                clone_cmd.extend(["clone", "--quiet", t.fork_remote, ws_dir])
+                subprocess.run(clone_cmd, check=True, capture_output=True)
+                subprocess.run(["git", "-C", ws_dir, "checkout", "-q", "-B", t.branch], check=True, capture_output=True)
+            else:
+                # Mock or local remote: clone from self.repo_root and create bare remote
+                subprocess.run(["git", "clone", "--quiet", self.repo_root, ws_dir], check=True, capture_output=True)
+                subprocess.run(["git", "-C", ws_dir, "checkout", "-q", "-b", t.branch, base_sha], check=True, capture_output=True)
+                bare_repo = os.path.join(remotes_root, f"fork-{t.task_id.lower()}.git")
+                if not os.path.exists(bare_repo):
+                    subprocess.run(["git", "init", "--bare", "--quiet", bare_repo], check=True, capture_output=True)
+                    subprocess.run(
+                        ["git", "-C", self.repo_root, "push", "--quiet", bare_repo, f"{base_sha}:refs/heads/main", f"{base_sha}:refs/heads/{t.branch}"],
+                        check=True,
+                        capture_output=True,
+                    )
+                t.fork_remote = bare_repo
+                subprocess.run(["git", "-C", ws_dir, "remote", "set-url", "origin", t.fork_remote], check=True, capture_output=True)
+
             subprocess.run(
                 ["git", "-C", ws_dir, "config", "user.name", f"Agent {t.task_id} ({t.engine})"],
                 check=True,
@@ -391,25 +413,6 @@ class AgentHarnessDriver:
                 check=True,
                 capture_output=True,
             )
-            subprocess.run(["git", "-C", ws_dir, "checkout", "-q", "-b", t.branch, base_sha], check=True, capture_output=True)
-
-            # Ensure genuine remote repository for fork (bare repo if mock/local, or remote HTTP URL)
-            is_mock_remote = not t.fork_remote or "cloudflare.local" in t.fork_remote or "example.com" in t.fork_remote
-            if is_mock_remote:
-                bare_repo = os.path.join(remotes_root, f"fork-{t.task_id.lower()}.git")
-                if not os.path.exists(bare_repo):
-                    subprocess.run(["git", "init", "--bare", "--quiet", bare_repo], check=True, capture_output=True)
-                    subprocess.run(
-                        ["git", "-C", self.repo_root, "push", "--quiet", bare_repo, f"{base_sha}:refs/heads/main", f"{base_sha}:refs/heads/{t.branch}"],
-                        check=True,
-                        capture_output=True,
-                    )
-                t.fork_remote = bare_repo
-
-            # Point origin to fork_remote
-            subprocess.run(["git", "-C", ws_dir, "remote", "set-url", "origin", t.fork_remote], check=True, capture_output=True)
-
-            # Configure bearer auth header for HTTP remotes if token exists
             if t.token:
                 subprocess.run(
                     ["git", "-C", ws_dir, "config", "http.extraHeader", f"Authorization: Bearer {t.token}"],
