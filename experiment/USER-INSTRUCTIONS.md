@@ -192,3 +192,9 @@ Earlier same-day user lines given directly to claude-principal (verbatim): "cont
 ## 2026-10-03 15:12 CEST: user to claude-principal (verbatim)
 
 > please use mostly zcodex muse space bunny antigravity and grok not codex+claude (especially zcode for implementation)
+
+## 2026-10-03 15:15 CEST: user to claude-principal (verbatim, two messages)
+
+> make sure they check each other because they are worse models than opus or sol
+
+> if double execution still exists solve it via zcodex. zcode is open source btw
