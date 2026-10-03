@@ -54,7 +54,8 @@
     (function () {
       var p = new URLSearchParams(window.location.search);
       var back = document.getElementById("back");
-      back.setAttribute("href", "index.html" + (p.get("fixture") === "1" ? "?fixture=1" : ""));
+      var fx = p.get("fixture");
+      back.setAttribute("href", "index.html" + (fx ? "?fixture=" + encodeURIComponent(fx) : ""));
     })();
   </script>
   <script src="ui.js"></script>
