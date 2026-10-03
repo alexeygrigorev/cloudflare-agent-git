@@ -306,7 +306,7 @@
      "provider": "gemini",
      "workspace": "/home/alexey/git/agent-branches-l2-client",
      "branch": "proto/l2-client",
-     "task": "L2 Agent Client implementation (CLI + MCP schema, task register, WIP push, status/warning polling, ACK)",
+     "task": "L2 Client POST /checks command and 409 StaleVectorError handling (CONTRACT v0.1)",
      "owned_paths": [
       "/home/alexey/git/agent-branches-l2-client/**"
      ],
@@ -315,7 +315,7 @@
      "completed_at": "2026-10-03T12:47:00Z",
      "usage": "UNKNOWN",
      "launched_by": "antigravity-head",
-     "status": "completed"
+     "status": "running"
     },
     {
      "tag": "l3-radar-builder",
@@ -327,16 +327,53 @@
      "provider": "gemini",
      "workspace": "/home/alexey/git/agent-branches-l3-radar",
      "branch": "proto/l3-radar",
-     "task": "L3 Radar Engine implementation (in-memory pairwise git merge-tree trial merge matrix + budgeted combined-tree test runner)",
+     "task": "L3 Radar Engine CONTRACT v0.1 export adapter and tests (C-1321)",
      "owned_paths": [
       "/home/alexey/git/agent-branches-l3-radar/**"
      ],
      "first_tool": "view_file (/home/alexey/git/cloudflare-agent-git/research/antigravity/agent-branches/CONTRACT-L2-L3.md)",
-     "completed_commit": "603204e416d4dcd6e6156296874b30cb2be24d57",
+     "completed_commit": "1632a3138602d48795ec15e3181c88d75495ad7d",
      "completed_at": "2026-10-03T12:57:00Z",
      "usage": "UNKNOWN",
      "launched_by": "antigravity-head",
-     "status": "completed"
+     "status": "running"
+    },
+    {
+     "tag": "l3-radar-dogfood-producer",
+     "role": "executor",
+     "parent_tag": "antigravity-head",
+     "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+     "mode": "native-harness-subagent",
+     "harness_conversation_id": "ed37ae34-c1b8-48bf-a2fe-7ca76b766770",
+     "provider": "gemini",
+     "workspace": "/home/alexey/git/agent-branches-l3-radar",
+     "branch": "proto/l3-radar",
+     "task": "5-agent concurrency and memory stress benchmark (tests/test_radar_concurrency_stress.py)",
+     "owned_paths": [
+      "/home/alexey/git/agent-branches-l3-radar/tests/test_radar_concurrency_stress.py",
+      "research/antigravity/dogfood/DOGFOOD-CONCURRENCY-REPORT.md"
+     ],
+     "usage": "UNKNOWN",
+     "launched_by": "antigravity-head",
+     "status": "running"
+    },
+    {
+     "tag": "l1-l2-l3-integration-tester",
+     "role": "executor",
+     "parent_tag": "antigravity-head",
+     "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+     "mode": "native-harness-subagent",
+     "harness_conversation_id": "f197d26f-4827-47eb-972d-7c2dfc811b81",
+     "provider": "gemini",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "task": "End-to-end integration test suite connecting L1, L2, L3 under CONTRACT v0.1 with 409 stale vector and unknown preservation",
+     "owned_paths": [
+      "tests/test_agent_branches_integration.py",
+      "research/antigravity/agent-branches/INTEGRATION-TEST-REPORT.md"
+     ],
+     "usage": "UNKNOWN",
+     "launched_by": "antigravity-head",
+     "status": "running"
     }
    ]
   },
