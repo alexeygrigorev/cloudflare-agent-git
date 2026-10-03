@@ -13,3 +13,13 @@ GitHub Pages was enabled only on this public experiment repo using its workflow 
 The new daily-public-journal automation runs at09:30 Europe/Berlin after09:00 standup. Existing30-minute and daily monitoring automations remain active, with journal policy added. Daily writer is separate from the principals, quota-aware and genuinely bound; only reviewed successful Opus drafts publish. Regular public evidence/source updates trigger GitHub Pages Actions. No social messages, purchases, Cloudflare credential or contest entry were made.
 
 Selection remains provisional: five hypotheses, sixth open, A01 primary withdrawn, no identical-digest two-principal signoff or productive five-project handoff. Publishing landings does not establish viability.
+
+
+## Deployment and actual review update
+
+Initial deployment53ec46c succeeded in GitHub Pages Actions and the public HTTPS homepage and first daily article were observed in the browser. The inherited account domain is https://alexeygrigorev.com/cloudflare-agent-git/; HTTPS enforced. Root390px daily/checklist checks showed no document-wide horizontal overflow, and the hero image loaded at1536×1024. Dedicated daily writer idempotency check returned already_published for2026-10-03 without launching another writer. Claude Design completed both requested web rounds, generated/iterated its actual prototype, and returned five source-based production refinements; it explicitly lacked a production browser. Implementation follow-up adds consistent project diagrams/mobile legibility/provenance and dated gate states. Further deployment verification follows that owned release.
+
+
+## Accepted design iteration
+
+Claude Design second-round source feedback drove an owned follow-up that adds five matching project diagrams, portrait mobile team diagram, minimum12px text, dated gate states (including actual storage/runtime failures and primary withdrawal), human-readable field-note headings/dates, and exact build/source/cutoff stamps on every page. Root independently reran the full article validation and confirmed actual Opus provenance; implementation local static-site checks passed again. Updated deployment and live mobile diagram verification follow this commit.

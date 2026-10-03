@@ -19,3 +19,7 @@ Prefer editable SVG for responsibility maps, code-state diagrams, and measured c
 ## Publication checks
 
 Check a narrow mobile viewport and a wide desktop viewport. Headings and project status must remain visible without horizontal scrolling. Table/code scroll is confined to the content block. All links have visible keyboard focus. Never rely on color alone for a gate or status.
+
+## Consistent project marker family
+
+Project workflow diagrams use a circle for A01, square for A16, triangle for A05, diamond for A06, and pentagon for A10. These distinguish hypotheses without implying product maturity. The orange outlined question circle marks the open comparison or falsifier. Project diagrams stack three readable steps in a 600-pixel viewBox with 28-pixel main labels; keep rendered main labels above 14 pixels on narrow mobile screens. Every landing captions its diagram as a proposed, unvalidated workflow. The team map has a matching stacked mobile variant that preserves two principals, five research heads, task executors, remote oversight, evidence and review.
