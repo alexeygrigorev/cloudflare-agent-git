@@ -845,8 +845,8 @@ class TestRadarEngine(unittest.TestCase):
             self.assertEqual(res.status, "unknown")
             self.assertEqual(res.kind, "test")
             self.assertEqual(res.evidence.get("summary"), "resource-skipped: insufficient memory")
-            self.assertIn("mem_available_mb", res.evidence)
-            self.assertEqual(res.evidence.get("required_mb"), 999999.0)
+            self.assertEqual(res.evidence.get("reserve_mb"), 999999.0)
+            self.assertEqual(res.evidence.get("required_mb"), 512.0)
             self.assertIn("wait_time_seconds", res.evidence)
 
     def test_ram_admission_gate_healthy_memory_runs_and_records_telemetry(self):

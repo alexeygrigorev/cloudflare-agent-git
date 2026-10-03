@@ -387,35 +387,13 @@ def safe_extract_tar(archive_bytes: bytes, target_dir: str) -> None:
                     os.chmod(target_dir_path, 0o755)
 
 
-def get_mem_available_mb() -> float:
-    """Read host MemAvailable from /proc/meminfo in MB. Fallback to 4096.0 if unreadable."""
-    try:
-        with open("/proc/meminfo", "r") as f:
-            for line in f:
-                if line.startswith("MemAvailable:"):
-                    parts = line.split()
-                    if len(parts) >= 2:
-                        kb = float(parts[1])
-                        return kb / 1024.0
-    except Exception:
-        pass
-    return 4096.0
-
-
-def get_psi_memory_some_avg10() -> Optional[float]:
-    """Read Linux memory pressure (PSI) some avg10 value. Returns None if unreadable or unavailable."""
-    try:
-        if os.path.exists("/proc/pressure/memory"):
-            with open("/proc/pressure/memory", "r") as f:
-                for line in f:
-                    if line.startswith("some"):
-                        parts = line.split()
-                        for p in parts[1:]:
-                            if p.startswith("avg10="):
-                                return float(p.split("=")[1])
-    except Exception:
-        pass
-    return None
+from radar.admission import (
+    AdmissionLease,
+    AdmissionManager,
+    format_rusage_children_telemetry,
+    get_mem_available_mb,
+    get_psi_memory_some_avg10,
+)
 
 
 class RadarEngine:
@@ -433,6 +411,7 @@ class RadarEngine:
         default_base_sha: Optional[str] = None,
         run_tests_on_disjoint: bool = False,
         min_mem_available_mb: float = 2048.0,
+        job_estimate_mb: float = 512.0,
         max_concurrency: int = 2,
         queue_timeout_seconds: float = 10.0,
         max_psi_some_avg10: float = 10.0,
@@ -444,9 +423,18 @@ class RadarEngine:
         self.default_base_sha = default_base_sha
         self.run_tests_on_disjoint = run_tests_on_disjoint
         self.min_mem_available_mb = float(min_mem_available_mb)
+        self.job_estimate_mb = float(job_estimate_mb)
         self.max_concurrency = int(max_concurrency)
         self.queue_timeout_seconds = float(queue_timeout_seconds)
         self.max_psi_some_avg10 = float(max_psi_some_avg10)
+        self.admission = AdmissionManager(
+            reserve_mb=self.min_mem_available_mb,
+            default_job_estimate_mb=self.job_estimate_mb,
+            max_concurrency=self.max_concurrency,
+            queue_timeout_seconds=self.queue_timeout_seconds,
+            max_psi_some_avg10=self.max_psi_some_avg10,
+            scope_name="process_radar_engine",
+        )
         self._concurrency_sem = threading.Semaphore(max(1, self.max_concurrency))
 
     def _run_git(
@@ -684,82 +672,44 @@ class RadarEngine:
         budget = budget_seconds if budget_seconds is not None else self.test_budget_seconds
         start_time = time.time()
         snap_dir = tempfile.mkdtemp(prefix="radar_snap_")
-        sem_acquired = False
         wait_time_seconds = 0.0
 
         try:
-            # RAM and PSI admission wait queue (Claude Principal requirement from dogfood evidence, 01a101e2-bcb9, 01a101e4-136b)
-            t_queue_start = time.time()
-            sem_acquired = self._concurrency_sem.acquire(timeout=max(0.01, self.queue_timeout_seconds))
-            if not sem_acquired:
-                elapsed_queue = time.time() - t_queue_start
-                return None, {
-                    "error": "resource_skipped_concurrency_limit",
-                    "summary": "resource-skipped: concurrency limit reached",
-                    "kind": "test",
-                    "wait_time_seconds": round(elapsed_queue, 3),
-                }
+            with self.admission.acquire(total_budget_seconds=budget, job_estimate_mb=self.job_estimate_mb) as lease:
+                if not lease.admitted:
+                    evidence = dict(lease.details)
+                    evidence["kind"] = "test"
+                    evidence["wait_time_seconds"] = lease.wait_time_seconds
+                    return None, evidence
 
-            while True:
-                current_mem = get_mem_available_mb()
-                current_psi = get_psi_memory_some_avg10()
+                wait_time_seconds = lease.wait_time_seconds
 
-                mem_ok = current_mem >= self.min_mem_available_mb
-                psi_ok = (current_psi is None) or (current_psi <= self.max_psi_some_avg10)
+                # Check remaining unified wall-clock budget
+                remaining = lease.remaining_budget_seconds
+                if remaining <= 0.05:
+                    return None, {
+                        "error": "timeout",
+                        "summary": "resource-skipped: budget timeout exceeded",
+                        "kind": "test",
+                        "details": f"Total budget exceeded before snapshot extraction: {budget}s",
+                        "wait_time_seconds": wait_time_seconds,
+                    }
 
-                if mem_ok and psi_ok:
-                    break
-
-                elapsed_queue = time.time() - t_queue_start
-                if elapsed_queue >= self.queue_timeout_seconds:
-                    wait_time_seconds = round(elapsed_queue, 3)
-                    if not mem_ok:
-                        return None, {
-                            "error": "resource_skipped_insufficient_memory",
-                            "summary": "resource-skipped: insufficient memory",
-                            "kind": "test",
-                            "mem_available_mb": round(current_mem, 1),
-                            "required_mb": self.min_mem_available_mb,
-                            "wait_time_seconds": wait_time_seconds,
-                        }
-                    else:
-                        return None, {
-                            "error": "resource_skipped_high_memory_pressure",
-                            "summary": "resource-skipped: high memory pressure",
-                            "kind": "test",
-                            "psi_some_avg10": round(current_psi, 2) if current_psi is not None else None,
-                            "max_psi_some_avg10": self.max_psi_some_avg10,
-                            "wait_time_seconds": wait_time_seconds,
-                        }
-
-                time.sleep(min(0.05, max(0.005, self.queue_timeout_seconds - elapsed_queue)))
-
-            wait_time_seconds = round(time.time() - t_queue_start, 3)
-
-            # Check elapsed wall-clock budget
-            elapsed = time.time() - start_time
-            if elapsed >= budget:
-                return None, {
-                    "error": "timeout",
-                    "details": f"Total budget exceeded before snapshot extraction: {budget}s",
-                    "wait_time_seconds": wait_time_seconds,
-                }
-
-            extract_timeout = max(0.1, min(5.0, budget - elapsed))
-            try:
-                self.extract_tree_to_directory(tree_sha, snap_dir, timeout=extract_timeout)
-            except subprocess.TimeoutExpired:
-                return None, {
-                    "error": "timeout",
-                    "details": f"Snapshot extraction timed out after {extract_timeout:.2f}s",
-                    "wait_time_seconds": wait_time_seconds,
-                }
-            except Exception as exc:
-                return None, {
-                    "error": "extraction_failure",
-                    "details": f"Failed to extract tree {tree_sha}: {exc}",
-                    "wait_time_seconds": wait_time_seconds,
-                }
+                extract_timeout = max(0.1, min(5.0, remaining))
+                try:
+                    self.extract_tree_to_directory(tree_sha, snap_dir, timeout=extract_timeout)
+                except subprocess.TimeoutExpired:
+                    return None, {
+                        "error": "timeout",
+                        "details": f"Snapshot extraction timed out after {extract_timeout:.2f}s",
+                        "wait_time_seconds": wait_time_seconds,
+                    }
+                except Exception as exc:
+                    return None, {
+                        "error": "extraction_failure",
+                        "details": f"Failed to extract tree {tree_sha}: {exc}",
+                        "wait_time_seconds": wait_time_seconds,
+                    }
 
             # Determine test command
             cmd = test_command or self.test_command
@@ -860,8 +810,7 @@ class RadarEngine:
                 except Exception:
                     pass
 
-                ru_after = resource.getrusage(resource.RUSAGE_CHILDREN)
-                peak_rss_mb = round(max(ru_after.ru_maxrss, 0) / 1024.0, 2)
+                telemetry = format_rusage_children_telemetry()
                 stdout_text = exc.stdout.decode() if isinstance(exc.stdout, bytes) else (exc.stdout or "")
                 stderr_text = exc.stderr.decode() if isinstance(exc.stderr, bytes) else (exc.stderr or "")
                 return None, {
@@ -871,7 +820,8 @@ class RadarEngine:
                     "stdout": stdout_text,
                     "stderr": stderr_text,
                     "wait_time_seconds": wait_time_seconds,
-                    "peak_rss_mb": peak_rss_mb,
+                    **telemetry,
+                    **lease.details,
                 }
             except Exception as exc:
                 try:
@@ -879,18 +829,17 @@ class RadarEngine:
                     os.killpg(pgid, signal.SIGKILL)
                 except Exception:
                     pass
-                ru_after = resource.getrusage(resource.RUSAGE_CHILDREN)
-                peak_rss_mb = round(max(ru_after.ru_maxrss, 0) / 1024.0, 2)
+                telemetry = format_rusage_children_telemetry()
                 return None, {
                     "error": "execution_failure",
                     "test_command": cmd_str,
                     "details": f"Failed to execute test command: {exc}",
                     "wait_time_seconds": wait_time_seconds,
-                    "peak_rss_mb": peak_rss_mb,
+                    **telemetry,
+                    **lease.details,
                 }
 
-            ru_after = resource.getrusage(resource.RUSAGE_CHILDREN)
-            peak_rss_mb = round(max(ru_after.ru_maxrss, 0) / 1024.0, 2)
+            telemetry = format_rusage_children_telemetry()
 
             stdout_snippet = stdout[-2000:] if stdout else ""
             stderr_snippet = stderr[-2000:] if stderr else ""
@@ -907,7 +856,8 @@ class RadarEngine:
                         "stdout": stdout_snippet,
                         "stderr": stderr_snippet,
                         "wait_time_seconds": wait_time_seconds,
-                        "peak_rss_mb": peak_rss_mb,
+                        **telemetry,
+                        **lease.details,
                     }
 
                 return True, {
@@ -918,7 +868,8 @@ class RadarEngine:
                     "stderr": stderr_snippet,
                     "details": "All combined-tree tests passed cleanly",
                     "wait_time_seconds": wait_time_seconds,
-                    "peak_rss_mb": peak_rss_mb,
+                    **telemetry,
+                    **lease.details,
                 }
             else:
                 if (
@@ -935,7 +886,8 @@ class RadarEngine:
                         "stderr": stderr_snippet,
                         "details": f"Test runner collected 0 tests (exit code {proc.returncode})",
                         "wait_time_seconds": wait_time_seconds,
-                        "peak_rss_mb": peak_rss_mb,
+                        **telemetry,
+                        **lease.details,
                     }
 
                 return False, {
@@ -945,15 +897,11 @@ class RadarEngine:
                     "stderr": stderr_snippet,
                     "details": f"Combined-tree test runner failed with exit code {proc.returncode}\n{stderr_snippet or stdout_snippet}".strip(),
                     "wait_time_seconds": wait_time_seconds,
-                    "peak_rss_mb": peak_rss_mb,
+                    **telemetry,
+                    **lease.details,
                 }
 
         finally:
-            if sem_acquired:
-                try:
-                    self._concurrency_sem.release()
-                except Exception:
-                    pass
             shutil.rmtree(snap_dir, ignore_errors=True)
 
     def evaluate_pair(
