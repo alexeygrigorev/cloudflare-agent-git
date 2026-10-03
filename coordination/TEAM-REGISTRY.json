@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T03:48:10.487407+00:00",
+  "updated_at": "2026-10-03T04:05:26.690959+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -78,7 +78,34 @@
           "tag": "zcy-transcript",
           "role": "executor",
           "parent_tag": "antigravity-head",
-          "workspace": "/home/alexey/git/aplexer-wt/transcript"
+          "workspace": "/home/alexey/git/aplexer-wt/transcript",
+          "status": "ended",
+          "telemetry": {
+            "type": "zcodex-rollout",
+            "path": "~/.zcodex/sessions/2026/10/03/rollout-2026-10-03T04-49-14-01a0ffaa-6f2b-74c0-b16b-d551b8189a8e.jsonl"
+          }
+        },
+        {
+          "tag": "zcy-reply-identity",
+          "role": "executor",
+          "parent_tag": "claude-principal",
+          "workspace": "/home/alexey/git/aplexer-wt/reply-identity",
+          "status": "ended",
+          "telemetry": {
+            "type": "zcodex-rollout",
+            "path": "~/.zcodex/sessions/2026/10/02/rollout-2026-10-02T22-09-43-01a0fe3c-aa6f-7ba0-ad72-03498623a6d2.jsonl"
+          }
+        },
+        {
+          "tag": "zcy-agent-detect",
+          "role": "executor",
+          "parent_tag": "claude-principal",
+          "workspace": "/home/alexey/git/aplexer-wt/agent-detect",
+          "status": "ended",
+          "telemetry": {
+            "type": "zcodex-rollout",
+            "path": "~/.zcodex/sessions/2026/10/02/rollout-2026-10-02T22-09-44-01a0fe3c-ab7e-7e52-ab06-b1a9289d445c.jsonl"
+          }
         }
       ]
     },
@@ -144,6 +171,18 @@
           "tag": "experiment-supervision",
           "role": "service",
           "workspace": "/home/alexey/git/cloudflare-agent-git"
+        },
+        {
+          "tag": "zcy-dup-research",
+          "role": "executor",
+          "parent_tag": "claude-principal",
+          "workspace": "/tmp/claude-1000/zcy-research",
+          "status": "ended",
+          "telemetry": {
+            "type": "zcodex-rollout",
+            "path": "~/.zcodex/sessions/2026/10/03/rollout-2026-10-03T05-25-14-01a0ffcb-64fe-7163-a9f3-ee6e95fbbd76.jsonl"
+          },
+          "session_id": "5e58187b-1385-4d39-9cfb-d49108b1ab3f"
         }
       ]
     }
