@@ -78,6 +78,19 @@
      "quota_evidence": "opencode-go route covered by quse go 2026-10-03T08:16CEST 97-98% remaining; gemini CLI admission failed (deprecated) \u2014 fallback recorded",
      "first_tool_evidence": "research/zcode/independent/a05-adjudication/WORKLOG.md",
      "parent_team": "a01-harness"
+    },
+    {
+     "tag": "a07-demand-worker",
+     "role": "worker",
+     "mode": "headless",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "telemetry": {
+      "type": "opencode-db",
+      "conversation_id": "ses_eff49f17fffefDxEW6ZdT1IzGj",
+      "path": "/home/alexey/.local/share/opencode/opencode.db"
+     },
+     "task": "a07 demand-gate corpus review",
+     "parent_team": "a01-harness"
     }
    ]
   },
@@ -279,6 +292,71 @@
      "cgroup_memory": "4G",
      "cgroup_pids": 256,
      "started_at": "2026-10-03T06:48:40+00:00"
+    },
+    {
+     "tag": "muse-r13-reviewer",
+     "role": "worker",
+     "mode": "headless",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "telemetry": {
+      "type": "opencode-db",
+      "conversation_id": "ses_eff2a00eaffeRPPxsAZRAHNe7k",
+      "path": ".local/opencode-isolated/opencode/opencode.db"
+     },
+     "task": "muse-r13 independent review",
+     "parent_team": "independent-review"
+    },
+    {
+     "tag": "muse-r15-reviewer",
+     "role": "worker",
+     "mode": "headless",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "telemetry": {
+      "type": "opencode-db",
+      "conversation_id": "ses_eff2384acffel8g1jaArFJfyj0",
+      "path": ".local/opencode-isolated/opencode/opencode.db"
+     },
+     "task": "muse-r15 multi-store adapter review",
+     "parent_team": "independent-review"
+    },
+    {
+     "tag": "muse-r16-reviewer",
+     "role": "worker",
+     "mode": "headless",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "telemetry": {
+      "type": "opencode-db",
+      "conversation_id": "ses_eff238446ffe1RA8K9Xmhzb2wi",
+      "path": ".local/opencode-isolated/opencode/opencode.db"
+     },
+     "task": "muse-r16 multi-store adapter review",
+     "parent_team": "independent-review"
+    },
+    {
+     "tag": "muse-r17-reviewer",
+     "role": "worker",
+     "mode": "headless",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "telemetry": {
+      "type": "opencode-db",
+      "conversation_id": "ses_eff1b8a92ffeCOo5jnjTkfBnBv",
+      "path": ".local/opencode-isolated/opencode/opencode.db"
+     },
+     "task": "muse-r17 after-idle safety review",
+     "parent_team": "independent-review"
+    },
+    {
+     "tag": "muse-pilot-retest-reviewer",
+     "role": "worker",
+     "mode": "headless",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "telemetry": {
+      "type": "opencode-db",
+      "conversation_id": "ses_eff13ce04ffeE8t1SjmmYPMaG3",
+      "path": ".local/opencode-isolated/opencode/opencode.db"
+     },
+     "task": "muse ca1 pilot verification review",
+     "parent_team": "independent-review"
     }
    ]
   },
@@ -323,9 +401,9 @@
      "tag": "experiment-metrics",
      "role": "service",
      "workspace": "/home/alexey/git/cloudflare-agent-git",
-     "session_id": "d1b378a3-e22a-45cd-a510-773efe839717",
-     "resumed_from_session_id": "89dafc10-47c9-49b4-bb4c-466b17a96aa9",
-     "resumed_at": "2026-10-03T05:52:36.394384+00:00",
+     "session_id": "664c4677-a60d-44c3-93d5-1b4a1285e3b5",
+     "resumed_from_session_id": "d1b378a3-e22a-45cd-a510-773efe839717",
+     "resumed_at": "2026-10-03T08:42:00.000000+00:00",
      "recovery_reason": "Owned atomic sample checkpoint reload for pinned OpenCode adapter6b04384; archives/baselines/8766 retained"
     },
     {
