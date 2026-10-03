@@ -308,7 +308,8 @@ def query_db_part_command(cmd_substr):
                       json_extract(data, '$.state.status'),
                       json_extract(data, '$.state.time.start'),
                       json_extract(data, '$.state.time.end'),
-                      json_extract(data, '$.state.input.command')
+                      json_extract(data, '$.state.input.command'),
+                      json_extract(data, '$.state.output')
                FROM part
                WHERE json_extract(data, '$.tool') = 'bash'
                  AND json_extract(data, '$.state.input.command') LIKE ?
@@ -494,9 +495,13 @@ def main():
         whoami_part = query_db_part_command("whoami")
         print(f"DB Part row for baseline whoami tool: {whoami_part}")
         assert whoami_part is not None, "Baseline whoami tool call not found in DB part table!"
-        whoami_part_id, _, _, whoami_status, whoami_start, whoami_end, whoami_cmd = whoami_part
+        whoami_part_id, _, _, whoami_status, whoami_start, whoami_end, whoami_cmd, whoami_output = whoami_part
         assert whoami_status == "completed", f"Baseline whoami tool status is '{whoami_status}', expected 'completed'!"
         print(f"Verified baseline whoami execution in DB: id={whoami_part_id}, status={whoami_status}")
+        print(f"Baseline whoami tool output: {whoami_output}")
+        assert whoami_output is not None and len(whoami_output) > 0, "Baseline whoami tool output is empty!"
+        assert receiver_uuid in whoami_output, f"First-model whoami output does not contain receiver UUID {receiver_uuid}! Output: {whoami_output}"
+        assert WORKSPACE in whoami_output, f"First-model whoami output does not contain workspace {WORKSPACE}! Output: {whoami_output}"
 
         results["steps"]["boot_turn_baseline"] = {
             "passed": True,
@@ -505,6 +510,7 @@ def main():
             "evidence_capture_2": ev2,
             "whoami_part_id": whoami_part_id,
             "whoami_status": whoami_status,
+            "whoami_output": whoami_output,
             "note": "Native executor launch with initial task entrypoint. Verified whoami tool completed and settled into authentic reported_state=='idle'."
         }
 
