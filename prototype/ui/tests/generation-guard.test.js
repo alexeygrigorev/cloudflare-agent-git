@@ -200,9 +200,9 @@ test("refresh rule: status failure records lastError, marks the view stale-error
   assert.equal(ui.rendered.clean, true);
 });
 
-/* ---------- tripwire on ui.js itself ---------- */
+/* ---------- tripwire on ui.js itself (C-1385 & C-1399) ---------- */
 
-test("ui.js keeps the guard wired and the old swallow-to-null gone", function () {
+test("ui.js keeps the guard wired, old swallow-to-null gone, and index stale downgrade active (C-1399)", function () {
   var src = fs.readFileSync(path.join(__dirname, "..", "ui.js"), "utf8");
   /* the exact swallow C-1385 forbids — status failures hidden as null: */
   assert.equal(src.indexOf("loadStatus().catch"), -1);
@@ -214,10 +214,57 @@ test("ui.js keeps the guard wired and the old swallow-to-null gone", function ()
   assert.match(src, /statusFresh\.markStale\(/);
   assert.match(src, /statusFresh\.markFresh\(\)/);
   assert.match(src, /setStatusErrorView/);
+  /* C-1399 index DOM negative fix: failure branch re-renders index when !currentTaskId */
+  assert.match(src, /!currentTaskId\s*&&\s*lastStatus/, "status-failure branch re-renders index when on overview");
+  assert.match(src, /stale\s*&&\s*badgeType\s*===\s*"clean"/, "clean pair badges downgraded to unknown when stale");
   /* both pages carry the banner element the guard writes to */
   ["index.html", "task.html"].forEach(function (page) {
     var html = fs.readFileSync(path.join(__dirname, "..", page), "utf8");
     assert.match(html, /id="status-error"/, page + " has the stale-error banner");
     assert.match(html, /request-guard\.js/, page + " loads request-guard.js");
   });
+});
+
+test("index pair badges: clean badges are downgraded to unknown when live status fails (C-1399)", function () {
+  var fresh = Guard.createStatusFreshness();
+  var pairResult = {
+    pair: ["agent-1", "agent-2"],
+    status: "clean",
+    heads: { "agent-1": "h1", "agent-2": "h2" },
+    coverage: { tests_collected: 5 },
+  };
+  var PairLogic = require("../pair-status.js");
+  var statusDoc = {
+    agents: [{ agentId: "agent-1", head: "h1" }, { agentId: "agent-2", head: "h2" }],
+    heads: { "agent-1": "h1", "agent-2": "h2" },
+    pairs: [pairResult],
+  };
+
+  function computeBadge(agentA, agentB, status, stale) {
+    var st = PairLogic.pairStatus(agentA, agentB, status);
+    var badgeType = st.type;
+    var why = st.why;
+    if (stale && badgeType === "clean") {
+      badgeType = "unknown";
+      why = why + " · live status could not be refreshed (" + stale.error.message + "); treated as unknown, not clean";
+    }
+    return { badgeType: badgeType, why: why };
+  }
+
+  /* 1. Fresh status: clean pair badge renders clean */
+  var initial = computeBadge(statusDoc.agents[0], statusDoc.agents[1], statusDoc, fresh.describe());
+  assert.equal(initial.badgeType, "clean");
+  assert.match(initial.why, /found no conflict/);
+
+  /* 2. Status fetch fails: stale error set -> clean downgraded to unknown (DOM negative) */
+  fresh.markStale(new Error("HTTP 503 Service Unavailable"), 100);
+  var staleRender = computeBadge(statusDoc.agents[0], statusDoc.agents[1], statusDoc, fresh.describe());
+  assert.equal(staleRender.badgeType, "unknown");
+  assert.notEqual(staleRender.badgeType, "clean");
+  assert.match(staleRender.why, /treated as unknown, not clean/);
+
+  /* 3. Later successful fetch clears stale -> badge returns to clean */
+  fresh.markFresh();
+  var recovered = computeBadge(statusDoc.agents[0], statusDoc.agents[1], statusDoc, fresh.describe());
+  assert.equal(recovered.badgeType, "clean");
 });

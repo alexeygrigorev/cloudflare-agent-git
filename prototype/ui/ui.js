@@ -452,11 +452,21 @@
     for (var i = 0; i < agents.length; i++) {
       for (var j = i + 1; j < agents.length; j++) {
         var st = pairStatus(agents[i], agents[j], status);
+        var badgeType = st.type;
+        var why = st.why;
+        if (stale && badgeType === "clean") {
+          badgeType = "unknown";
+          why =
+            why +
+            " · live status could not be refreshed (" +
+            esc(stale.error.message) +
+            "); treated as unknown, not clean";
+        }
         pairs.push(
           "<li class='pair'>" +
           "<span class='who'><code>" + esc(agents[i].agentId) + "</code> ↔ <code>" + esc(agents[j].agentId) + "</code></span> " +
-          badgeHtml(st.type) +
-          "<p class='why'>" + esc(st.why) + "</p>" +
+          badgeHtml(badgeType) +
+          "<p class='why'>" + esc(why) + "</p>" +
           "</li>"
         );
       }
@@ -793,6 +803,10 @@
           if (currentTaskId && r.task) {
             lastTask = r.task; /* the task story loaded; render it marked stale */
             renderTask(lastTask, lastStatus);
+            everRendered = true;
+          } else if (!currentTaskId && lastStatus) {
+            /* Index view re-render marked stale (C-1399): downgrades clean badges to unknown */
+            renderIndex(lastStatus);
             everRendered = true;
           }
           return;
