@@ -747,6 +747,13 @@ class AgentHarnessDriver:
         # Export CONTRACT v0.1 payload with the full vector
         payload = export_l1_payload(results, vector=full_vector, engine=radar)
 
+        # Filter out pairs with status "not_checked" per L1 coordinator contract (coordinator.ts:801)
+        valid_results = [r for r in payload.get("results", []) if r.get("status") != "not_checked"]
+        if not valid_results:
+            return {"evaluated": False, "reason": "no_checked_pairs", "results": results}
+
+        payload["results"] = valid_results
+
         # Post canonical typed CONTRACT v0.1 checks to L1 Coordinator via L2 Client (CONTRACT 0.1.2 / C-1350)
         post_res = self.client.send_checks(payload, runner_token=self.runner_token)
 
