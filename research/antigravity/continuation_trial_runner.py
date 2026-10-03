@@ -359,12 +359,21 @@ def main():
     gemini_quota = all_quotas.get("gemini", {})
     zai_quota = all_quotas.get("zai", {})
 
+    target_limit_reached = target_quota.get("details", {}).get("limit_reached", False)
     go_5h = target_quota.get("windows", {}).get("5h", {}).get("percent_remaining")
     go_7d = target_quota.get("windows", {}).get("7d", {}).get("percent_remaining")
+    go_monthly = target_quota.get("windows", {}).get("monthly", {}).get("percent_remaining")
+
+    assert not target_limit_reached, "Target OpenCode Go provider limit_reached is True!"
+    assert go_5h is not None and go_5h >= 15.0, f"Target OpenCode Go 5h quota insufficient or missing: {go_5h}% (reserve 15%)"
+    assert go_7d is not None and go_7d >= 15.0, f"Target OpenCode Go 7d quota insufficient or missing: {go_7d}% (reserve 15%)"
+    if go_monthly is not None:
+        assert go_monthly >= 15.0, f"Target OpenCode Go monthly quota insufficient: {go_monthly}%"
+
     quota_data = {
         "target_provider": "go (opencode-go / muse)",
-        "go_windows": {"5h_remaining": go_5h, "7d_remaining": go_7d},
-        "target_allowed": (go_5h is None or go_5h >= 15.0),
+        "go_windows": {"5h_remaining": go_5h, "7d_remaining": go_7d, "monthly_remaining": go_monthly},
+        "target_allowed": True,
         "codex_windows": codex_quota.get("windows", {}),
         "gemini_windows": gemini_quota.get("windows", {}),
         "zai_windows": zai_quota.get("windows", {}),
@@ -459,9 +468,11 @@ def main():
         assert ok_ui, f"Receiver failed to reach initial UI resting idle!\n{screen_ui}"
         print("Receiver UI initialized and resting idle.")
 
-        # Step 2b: Establish Genuine Turn-Completion Baseline via initial 'whoami' tool call
-        # No workspace override per Codex C-1125: actual tool binding determines workspace
-        print("\n--- Step 2b: Establishing Genuine Turn-Completion Baseline via 'whoami' ---")
+        # Step 2b: Cold Boot Readiness Probe & Bootstrap Delivery via 'whoami'
+        # Codex C-1140 & Claude Principal: Native deliver must test readiness. If reported_state is None on cold boot,
+        # native deliver correctly rejects (not-ready fail-closed). We record this rejection, then use raw send bootstrap
+        # delivery (not a readiness gate) to execute initial tool turn and transition reported_state -> 'idle'.
+        print("\n--- Step 2b: Cold Boot Readiness Probe & Bootstrap Delivery via 'whoami' ---")
         init_cmd = f"{PILOT_BIN} whoami --json"
         
         send_init_rc, send_init_out = exec_in_sender(
@@ -475,17 +486,28 @@ def main():
             sender_uuid,
             [PILOT_BIN, "message", "deliver", init_msg_id, "--workspace", WORKSPACE, "--json"]
         )
-        assert deliv_init_rc == 0, f"Failed to deliver boot trigger: {deliv_init_out}"
-        print("Boot trigger delivered. Waiting for receiver to complete initial turn and debounce to idle...")
+        if deliv_init_rc == 0:
+            delivery_mode = "native deliver"
+            print(f"Cold boot delivery succeeded via native deliver: {deliv_init_out.strip()}")
+        else:
+            print(f"Cold boot native deliver correctly rejected (not-ready, rc={deliv_init_rc}): {deliv_init_out.strip()}")
+            print("Executing bootstrap delivery via raw send (bootstrap delivery, not a readiness gate)...")
+            run_host_cmd([PILOT_BIN, "send", receiver_uuid, f"Run this tool command: {init_cmd}\n", "--workspace", WORKSPACE])
+            delivery_mode = "raw send (bootstrap delivery, not a readiness gate)"
 
-        ok_idle, screen_idle, ev1, ev2 = verify_receiver_idle_twice(receiver_uuid, "boot_turn_idle", delta=2.0, max_wait=90)
+        print("Waiting for receiver to execute baseline turn and transition to authentic reported idle...")
+        ok_idle, screen_idle, ev1, ev2 = verify_receiver_idle_twice(receiver_uuid, "boot_turn_idle", delta=2.0, max_wait=90, allow_reported_none=False)
         assert ok_idle, f"Receiver failed to reach authentic resting idle after boot turn! Screen:\n{screen_idle}"
         print("Receiver successfully completed initial turn and settled into authentic resting idle.")
         results["steps"]["boot_turn_baseline"] = {
             "passed": True,
             "boot_msg_id": init_msg_id,
+            "cold_boot_native_deliver_rc": deliv_init_rc,
+            "cold_boot_native_deliver_out": deliv_init_out.strip(),
+            "bootstrap_delivery_mode": delivery_mode,
             "evidence_capture_1": ev1,
-            "evidence_capture_2": ev2
+            "evidence_capture_2": ev2,
+            "note": "Bootstrap delivery, not a readiness gate. Official verified gates start at authentic reported_state=='idle'."
         }
 
         # Step 3: Test Negative 1 - Active Child Tool Process Rejection
@@ -844,7 +866,11 @@ def main():
             f.write("## Verified Gates & Results\n\n")
             f.write("| Test Step | Target Condition | Observed Outcome | Gate Status |\n")
             f.write("|---|---|---|---|\n")
-            f.write(f"| Boot Baseline Turn | Initial tool execution -> debounced idle | Initial whoami executed, resting idle confirmed with twice empty-composer | {s_boot} |\n")
+            boot_step = results["steps"].get("boot_turn_baseline", {})
+            b_mode = boot_step.get("bootstrap_delivery_mode", "N/A")
+            b_rc = boot_step.get("cold_boot_native_deliver_rc", "N/A")
+            boot_out = f"Baseline tool turn executed via `{b_mode}` (cold boot native deliver rc={b_rc}); authentic reported idle confirmed with twice empty-composer"
+            f.write(f"| Baseline Turn (Bootstrap Delivery) | Initial tool execution -> debounced idle | {boot_out} | {s_boot} |\n")
             neg1 = results["steps"].get("negative_active_tool", {})
             neg1_out = f"Exit {neg1.get('deliver_probe_exit_code')} (not-ready), envelope preserved, no probe echo (appended {neg1.get('appended_history_bytes')} bytes)" if neg1 else "Not reached"
             f.write(f"| Negative 1 (Active Tool) | Deliver during child sleep ({neg1.get('child_pid', 'N/A')}) | {neg1_out} | {s_neg1} |\n")
