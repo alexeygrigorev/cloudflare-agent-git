@@ -1,7 +1,7 @@
 # R12: A01 Pre-Registration Protocol — Engineering Feasibility Gate & Conditional Efficacy Specification
 
-**Status:** REVISED PRE-REGISTRATION v2.1 — UNSCORED ENGINEERING FEASIBILITY GATE ONLY  
-**Revision:** v2.1 (Incorporating Claude-Principal `01a10069-1343` and Codex-Principal `01a10069-a82b` / `01a10063-3f8b` Directives)  
+**Status:** REVISED PRE-REGISTRATION v2.2 — UNSCORED ENGINEERING FEASIBILITY GATE ONLY  
+**Revision:** v2.2 (Incorporating Grader Interface & Assertion Corrections per Codex-Principal `01a1007d-5cf2` and Claude-Principal `01a1007d-a1a5`)  
 **Author:** Antigravity Head (`antigravity-head`, session `46fdb644-9b58-4e2f-aab3-9be5e1e33337`)  
 **Target Proposal:** A01 (Concurrent-Agent Collision Radar / Semantic Conflict Detection)  
 **Execution Authority:**
@@ -74,7 +74,7 @@ Rather than predicting a single error mode, the protocol classifies actual model
 To establish whether live radar warnings have unique value, Arm 2 is tested against both silence (Arm 1a) and the standard low-cost engineering incumbent: **shared intent notes** (Arm 1b).
 
 ### 3.1 Strict Channel & Availability Parity
-Per Codex critique (`01a10069-a82b`), Arm 1b and Arm 2 **must share the exact same delivery channel and timing opportunity**. Having Arm 1b as a passive file on disk while Arm 2 uses active inbox messages creates an unfair delivery asymmetry.
+Per Codex critique (`01a10069-a82b`), Arm 1b and Arm 2 **must share the exact same delivery channel and timing opportunity**.
 
 | Parameter | Arm 1a: Silent Isolation | Arm 1b: Cheap Incumbent (Intent Note) | Arm 2: Experimental (Live Collision Radar) |
 | :--- | :--- | :--- | :--- |
@@ -119,18 +119,30 @@ Per Claude directive (`01a10069-1343`), evaluation logs must independently recor
 
 All detectors, tests, and graders are frozen before execution.
 
-### 4.1 Pinned Static AST Detector
+### 4.1 Pinned Static AST Detector (Scope Boundary)
 - **Source Script:** [`scripts/detectors/contract_drift_detector.py`](file:///home/alexey/git/cloudflare-agent-git/scripts/detectors/contract_drift_detector.py)
   - **SHA256:** `572a6198a0dc0de250a9f0f078d64bd98b3f3086b3850985456051f0c99e0eac` (8,205 bytes)
   - Deterministic AST visitor parsing class definitions, dictionary assignments, attribute accesses, and `@property` compatibility aliases.
+- **Explicit Scope Boundary:** The static AST detector detects **schema field renames and missing keys** (e.g. `timestamp` vs `timestamp_us`), **NOT general mathematical unit drift** where the variable name remains unchanged but the scale shifts. Unit drift is caught by the integration acceptance checks, not the AST detector.
 - **Unit Test Suite:** [`scripts/detectors/test_contract_drift_detector.py`](file:///home/alexey/git/cloudflare-agent-git/scripts/detectors/test_contract_drift_detector.py)
   - **SHA256:** `6b424420f27d19f7c4865f53954b2a24a6da3c12587ceea0d889be0a1c6a4f2e` (4,818 bytes)
   - 4 test cases verifying: positive drift detection (exit 1), aligned schemas (exit 0), backward-compatible property aliases (exit 0), and false-positive resistance (exit 0).
 
 ### 4.2 Protected Acceptance Checks (Outside Agent Worktrees)
 - **Grader Script:** [`.local/protected/a01-ground-truth/test_integration_stream.py`](file:///home/alexey/git/cloudflare-agent-git/.local/protected/a01-ground-truth/test_integration_stream.py)
-  - **SHA256:** `d9e6c852b9a4f7a95c5a06ba1e7a817d5c7fee68ce92a1ac34dcc29d7d4a8150` (4,455 bytes)
-  - Evaluates actual end-to-end data flow compatibility between candidate producer and consumer modules.
+  - **SHA256:** `af7512990f8da25afc7b53fc638166c8bcc75c5648759186e73e35d79a816887` (11,453 bytes)
+  - Strict Interface Enforcement:
+    - Producer: `emit_event(event)` and `flush_batch() -> List[dict]`
+    - Consumer: `SessionAggregator.process_stream(events) -> List[{'session_id': str, 'duration_seconds': float}]`
+  - Strict Numerical & Value Assertions: Evaluates seeded test fixture with ground-truth durations: `sess_alpha` ($5.5$s) and `sess_beta` ($12.25$s).
+- **Independent Grader Verification Suite:** [`.local/protected/a01-ground-truth/test_grader_verifications.py`](file:///home/alexey/git/cloudflare-agent-git/.local/protected/a01-ground-truth/test_grader_verifications.py)
+  - **SHA256:** `8b5f459a0c2b823b45dda5c5d2d4c083565ab13b4e758739c95812c7f0bd6735` (4,762 bytes)
+  - Independently demonstrates and verifies all 5 required grader behaviors:
+    1. `compatible_known_duration` -> **PASS** (exit 0)
+    2. `empty_output` -> **FAIL** (exit 1)
+    3. `missing_field` -> **FAIL** (exit 1)
+    4. `microseconds_as_seconds` (unit distortion) -> **FAIL** (exit 1)
+    5. `unexpected_interface` -> **ERROR** (exit 2)
 - **Checksums Manifest:** [`.local/protected/a01-ground-truth/CHECKSUMS.json`](file:///home/alexey/git/cloudflare-agent-git/.local/protected/a01-ground-truth/CHECKSUMS.json)
 
 ---
@@ -173,6 +185,7 @@ The sole purpose of this gate is to prove operational feasibility:
 3. **Telemetry & Logging:** Confirm delivery, notice, and uptake events are accurately captured with timestamps.
 4. **Token Metric Provenance:** Confirm provider-native token breakdown (input, output, reasoning) is extracted without errors or double-counting.
 5. **Grader Independence:** Confirm `.local/protected/a01-ground-truth/test_integration_stream.py` runs outside agent worktrees and produces clean pass/fail verdicts.
+   - *Procedural Separation Clarification:* Storing protected tests in `.local/protected/` is a procedural separation under the experiment operating model (agents are instructed to operate strictly within their owned worktree directories), NOT OS-level hardware or filesystem virtualization.
 
 ### 6.3 Post-Gate Decision
 Upon completion of the 3 feasibility pairs:
