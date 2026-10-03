@@ -6,16 +6,16 @@
       "id": "runtime-one-effect",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "in_progress",
-      "updated_at": "2026-10-03T04:33:00.000000+00:00",
+      "status": "running",
+      "updated_at": "2026-10-03T04:36:00.000000+00:00",
       "evidence_paths": [
         "research/antigravity/r9-runtime-single-effect-verification.md",
         "coordination/aplexer-repair.md"
       ],
       "blocked_on": [],
-      "next_action": "Reopened per Codex review (01a10006-b4f1): synthetic adapter regression (3 vs 1 count) and real production CJS child denial ('No permission client configured for Bash') are accepted as separate bounded evidence. Next bounded step: head-owned tiny real outer live probe with existing debug binary against real production CJS (fresh ZAI quota 96% 5h / 81% 7d, scratch <= 100 MiB, preserved private logs, zero new build, zero global install). Pinned review by Muse/principals pending.",
+      "next_action": "Live outer probe against real production CJS (/opt/ZCode/resources/glm/zcode.cjs) completed in /tmp/live_outer_probe (scratch 12 KiB, thread 01a1000a-8f19, rollout-2026-10-03T06-34-14). Outer client ToolCallRuntime successfully executed tool call (created /tmp/live_outer_probe/probe.txt with 'PROBE_OK') and recorded tool result, while inner child agent was denied ('No permission client configured for Bash'). Trace showed inner model observed child denial and attempted retries before outer tool results caught up, confirming unvarnished interaction dynamics. Next: synthesize full R9 trace and submit for pinned independent review; zero new build, zero global install.",
       "acceptance": "Existing owner work, not a new duplicate writer. Installed binary, full suite outcome and resource evidence must be explicit.",
-      "assignment_ack": "ACK: owned by antigravity-head. Verified bf9d7ed22a on codex-zcode main. Debug binary at codex-rs/target/debug/zcodex (SHA256 bc72fcf78044ad6078fbd8501a16b6c90b253e053dcc7666a250917184761f69). Synthetic adapter test and real child denial verified; live outer probe with real CJS in progress; global install awaits user authorization."
+      "assignment_ack": "ACK: owned by antigravity-head. Verified bf9d7ed22a on codex-zcode main. Debug binary at codex-rs/target/debug/zcodex (SHA256 bc72fcf78044ad6078fbd8501a16b6c90b253e053dcc7666a250917184761f69). Synthetic adapter test, real child denial, and real outer live probe executed; global install awaits user authorization."
     },
     {
       "id": "safe-autonomous-continuation",
