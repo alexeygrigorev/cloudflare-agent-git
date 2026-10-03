@@ -10,6 +10,7 @@ import { deepStrictEqual, match, ok, strictEqual } from "node:assert";
 import { parseChecksPayload } from "../../src/checks-wire.js";
 import { StubRadar } from "../../src/radar.js";
 import { sha256Hex } from "../../src/core/auth.js";
+import { BearerRateLimiter } from "../../src/core/router.js";
 import { CoordinatorCore } from "../../src/core/coordinator.js";
 import type { CoordinatorModel } from "../../src/core/model.js";
 import { FileCoordinationStore, MemoryCoordinationStore } from "../../src/local/store.js";
@@ -443,4 +444,82 @@ test("legacy hash-only state migrates to an already-expired record — no silent
   // Revoking a migrated agent still works and keeps the credential denied.
   strictEqual(await migrated.revokeAgentToken("legacy-0001"), true);
   strictEqual(await migrated.credentialAgent("legacy-token-plaintext"), null);
+});
+
+test("BearerRateLimiter: 5-failure threshold arms the block on the 6th (C-1441)", () => {
+  let now = 1_000_000;
+  const limiter = new BearerRateLimiter({ now: () => now });
+  for (let i = 0; i < 5; i++) {
+    strictEqual(limiter.recordFailure("203.0.113.7"), false, `failure ${i + 1} must stay a 401`);
+  }
+  strictEqual(limiter.recordFailure("203.0.113.7"), true, "6th consecutive failure is the first 429");
+  strictEqual(limiter.recordFailure("203.0.113.7"), true, "still blocked after arming");
+  // A different client is tracked independently.
+  strictEqual(limiter.recordFailure("198.51.100.9"), false, "another client is not blocked");
+});
+
+test("BearerRateLimiter: failures outside the 60s window restart the count (C-1441)", () => {
+  let now = 10_000_000;
+  const spread = new BearerRateLimiter({ now: () => now });
+  for (let i = 0; i < 5; i++) {
+    strictEqual(spread.recordFailure("c"), false, "sub-threshold within any single window");
+    now += 15_000;
+  }
+  // The 5th failure landed exactly at the window edge: fresh count, never armed.
+  strictEqual(spread.recordFailure("c"), false, "window expiry re-arms 401s");
+
+  const tight = new BearerRateLimiter({ now: () => now });
+  for (let i = 0; i < 5; i++) {
+    tight.recordFailure("c");
+  }
+  strictEqual(tight.recordFailure("c"), true, "a tight burst arms on the 6th");
+  now += 60_001;
+  strictEqual(tight.recordFailure("c"), false, "after the window passes, 401s resume");
+});
+
+test("BearerRateLimiter: successful authentication clears the failure count (C-1441)", () => {
+  let now = 1_000_000;
+  const limiter = new BearerRateLimiter({ now: () => now });
+  for (let i = 0; i < 5; i++) {
+    limiter.recordFailure("c");
+  }
+  limiter.recordSuccess("c");
+  for (let i = 0; i < 5; i++) {
+    strictEqual(limiter.recordFailure("c"), false, "count restarted after success");
+  }
+  strictEqual(limiter.recordFailure("c"), true, "a fresh burst still arms eventually");
+  // Clearing an untracked key is a no-op.
+  limiter.recordSuccess("never-seen");
+});
+
+test("BearerRateLimiter: the tracked-client table is hard-capped (C-1441)", () => {
+  let now = 1_000_000;
+  // Defaults: 500-entry cap — a 5000-key flood cannot grow the table.
+  const flood = new BearerRateLimiter({ now: () => now });
+  for (let i = 0; i < 5000; i++) {
+    flood.recordFailure(`10.${Math.floor(i / 65536) % 256}.${Math.floor(i / 256) % 256}.${i % 256}`);
+    ok(flood.size <= 500, `table size ${flood.size} exceeded the cap at key ${i}`);
+  }
+  strictEqual(flood.size, 500, "exactly the cap after 5000 unique clients");
+
+  // Small cap: LRU eviction, and an evicted client starts over.
+  const capped = new BearerRateLimiter({ now: () => now, maxEntries: 3, maxFailures: 2 });
+  for (const key of ["a", "b", "c", "d", "e"]) {
+    capped.recordFailure(key);
+  }
+  strictEqual(capped.size, 3);
+  strictEqual(capped.recordFailure("c"), false, "recently-seen key keeps its count (2nd failure)");
+  strictEqual(capped.recordFailure("c"), true, "3rd failure on the retained key arms (maxFailures=2)");
+  strictEqual(capped.recordFailure("a"), false, "a/b were evicted: their count restarted");
+  strictEqual(capped.size, 3, "cap holds after reinsertion");
+});
+
+test("BearerRateLimiter: unidentifiable clients share one conservative bucket (C-1441)", () => {
+  let now = 1_000_000;
+  const limiter = new BearerRateLimiter({ now: () => now });
+  for (let i = 0; i < 5; i++) {
+    limiter.recordFailure(null);
+  }
+  strictEqual(limiter.recordFailure(null), true, "null-key callers share the unknown bucket");
+  strictEqual(limiter.size, 1, "exactly one bucket entry");
 });

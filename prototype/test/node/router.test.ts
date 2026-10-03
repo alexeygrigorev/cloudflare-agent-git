@@ -288,3 +288,68 @@ test("rejectionMessage helper stays honest (guards the suite itself)", async () 
   const rig = makeRig();
   await rejectionMessage(rig.core.getTask("task-9999"), /^unknown task:/);
 });
+
+test("invalid-bearer flood: 5x401 then 429 with Retry-After; valid auth clears (C-1441)", async () => {
+  const rig = makeRig();
+  const attempt = (token?: string) => call(rig, "POST", "/setup", {}, token);
+
+  for (let i = 0; i < 5; i++) {
+    strictEqual((await attempt("not-the-admin")).status, 401, `invalid attempt ${i + 1} stays 401`);
+  }
+  const blocked = await attempt("not-the-admin");
+  strictEqual(blocked.status, 429, "6th consecutive invalid bearer is rate limited");
+  deepStrictEqual(blocked.body, {
+    error: "rate_limited",
+    message: "Too many failed authentication attempts. Please retry later.",
+  });
+  strictEqual(blocked.headers?.["retry-after"], "60");
+
+  // While blocked, the SAME client with a VALID credential still succeeds
+  // (valid authentication is never rate limited) and clears the count.
+  strictEqual((await attempt("admin-t")).status, 201);
+  strictEqual((await attempt("not-the-admin")).status, 401, "count restarted after the success");
+
+  // A different client key is tracked independently.
+  const other = await handleRoute(rig.services, neutralRequest("POST", "/setup", {}, "not-the-admin", "198.51.100.9"));
+  strictEqual(other.status, 401);
+});
+
+test("invalid-bearer counting: 403/503 outcomes are not counted (C-1441)", async () => {
+  // 503 fail-closed (ADMIN_TOKEN unconfigured) is a server state, not a
+  // client failure. If it were counted, the runner probe below would 429.
+  const halfConfigured = makeRig({ admin: undefined, runner: "runner-t", sidecar: undefined });
+  for (let i = 0; i < 8; i++) {
+    strictEqual((await call(halfConfigured, "POST", "/setup", {}, "anything")).status, 503);
+  }
+  const runnerProbe = await call(
+    halfConfigured,
+    "POST",
+    "/checks",
+    { contract: "0.0", vector: {}, policy: "p", results: [] },
+    "wrong-runner",
+  );
+  strictEqual(runnerProbe.status, 401, "503 outcomes must not count toward the block");
+
+  // 403 cross-agent is an authenticated rejection (valid stranger token on
+  // someone else's task): eight of them must not arm the block either.
+  const rig = makeRig();
+  const owner = (await call(rig, "POST", "/tasks", { agent: "own" }, "admin-t")).body as { taskId: string };
+  const stranger = (await call(rig, "POST", "/tasks", { agent: "str" }, "admin-t")).body as {
+    token: { plaintext: string };
+  };
+  for (let i = 0; i < 8; i++) {
+    const cross = await call(
+      rig,
+      "POST",
+      `/tasks/${owner.taskId}/tests`,
+      { command: "npm test", exit: 0, head_sha: "0".repeat(40) },
+      stranger.token.plaintext,
+    );
+    strictEqual(cross.status, 403);
+  }
+  const probe = await call(rig, "POST", "/setup", {}, "not-the-admin");
+  strictEqual(probe.status, 401, "403 outcomes must not count toward the block");
+
+  const stillOk = await call(rig, "POST", "/tasks", { agent: "after-flood" }, "admin-t");
+  strictEqual(stillOk.status, 201, "valid admin auth unaffected throughout");
+});

@@ -15,7 +15,7 @@
 
 import { pathToFileURL } from "node:url";
 import { CoordinatorCore } from "../core/coordinator.js";
-import type { RouterServices } from "../core/router.js";
+import { BearerRateLimiter, type RouterServices } from "../core/router.js";
 import { cryptoIds, systemClock } from "../ports/clock.js";
 import { radarFromEnv } from "../radar.js";
 import { SidecarArtifacts } from "./githost.js";
@@ -51,6 +51,9 @@ export async function startLocalRuntime(options: LocalRuntimeOptions = {}): Prom
     },
     pushes: webhookPushEvents,
     artifactsEvents: localArtifactsPushEvents,
+    // C-1441: clean defaults (500-entry table, 5 failures / 60s); one
+    // instance per runtime so it persists across requests.
+    rateLimiter: new BearerRateLimiter(),
   };
   const server = (options.serve ?? serveCoordinator)(services);
   const port = Number(env.PORT ?? 8787);

@@ -6,8 +6,13 @@
  */
 
 import type { CoordinatorAccess } from "../core/coordinator.js";
-import { handleRoute, type HttpRequest, type RouterServices } from "../core/router.js";
+import { BearerRateLimiter, handleRoute, type HttpRequest, type RouterServices } from "../core/router.js";
 import { artifactsPushEvents, directPushEvents } from "./push-events.js";
+
+// C-1441: module scope so the tracked-client table persists across
+// requests within this isolate (clean defaults: 500 entries, 5 failures
+// per 60s). Isolate eviction resets it — bounded memory by construction.
+const bearerRateLimiter = new BearerRateLimiter();
 
 export interface FetchHandler {
   fetch(request: Request, env: Env): Promise<Response>;
@@ -28,6 +33,8 @@ function toHttpRequest(request: Request): HttpRequest {
     path: new URL(request.url).pathname,
     header: (name) => request.headers.get(name),
     json: () => request.json(),
+    // C-1441: the edge always provides the real client IP.
+    clientKey: request.headers.get("cf-connecting-ip"),
   };
 }
 
@@ -55,6 +62,7 @@ const handler: FetchHandler = {
       },
       pushes: directPushEvents,
       artifactsEvents: artifactsPushEvents,
+      rateLimiter: bearerRateLimiter,
     };
     return toResponse(await handleRoute(services, toHttpRequest(request)));
   },

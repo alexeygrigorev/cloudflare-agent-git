@@ -295,3 +295,35 @@ describe("token expiry & revocation gate (C-1422/C-1425)", () => {
     expect(own.status).toBe(200);
   });
 });
+
+describe("bounded invalid-bearer rate limiter (C-1441)", () => {
+  it("returns 429 with Retry-After on the 6th consecutive invalid bearer; valid tokens pass", async () => {
+    // Reset this isolate's failure count: a successful admin auth clears
+    // any 401s earlier tests in this file accumulated for our client key.
+    const reset = await post("/tasks", { agent: "limiter-reset" }, ADMIN);
+    expect(reset.status).toBe(201);
+
+    for (let i = 0; i < 5; i++) {
+      const response = await post("/tasks", { agent: "limiter-abuse" }, `limiter-wrong-token-${i}`);
+      expect(response.status).toBe(401);
+    }
+    const blocked = await post("/tasks", { agent: "limiter-abuse" }, "limiter-wrong-token-5");
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("retry-after")).toBe("60");
+    const blockedText = await blocked.text();
+    expect(JSON.parse(blockedText)).toEqual({
+      error: "rate_limited",
+      message: "Too many failed authentication attempts. Please retry later.",
+    });
+    // The 429 body never echoes the presented (wrong) token.
+    expect(blockedText).not.toContain("limiter-wrong-token-5");
+
+    // A valid credential is never rate limited — and clears the count.
+    const valid = await post("/tasks", { agent: "limiter-legit" }, ADMIN);
+    expect(valid.status).toBe(201);
+
+    // After the success, an invalid bearer is a plain 401 again.
+    const after = await post("/tasks", { agent: "limiter-abuse" }, "limiter-wrong-token-6");
+    expect(after.status).toBe(401);
+  });
+});
