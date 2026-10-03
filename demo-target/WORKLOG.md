@@ -34,4 +34,23 @@ and `verify-overlap.sh` prints the 3 facts.
 
 ## Verification transcript (verify-overlap.sh, 2026-10-03)
 
-(appended after script lands)
+    demo-target overlap verification (base ff4decd7be)
+
+    FACT 1 — each task alone passes the full suite:
+             T1=PASS  T2=PASS  T3=PASS
+
+    FACT 2 — merging T1 with T2 yields a TEXTUAL git merge conflict:
+             CONFLICT in: demo-target/src/shortlinks.js
+
+    FACT 3 — merging T2 with T3 is clean but the suite FAILS (SEMANTIC conflict):
+             merge rc=0 (clean); failing test: "POST /links/bulk imports every link and returns slugs in order"
+
+    ALL 3 FACTS VERIFIED
+
+Also verified manually: in the T2+T3 merge the bulk endpoint returns 400 (assertion
+`400 !== 201`) because T3's positional `create(item.slug, item.url)` hits T2's
+object-form contract (`slug` destructures to undefined → "slug is required").
+
+Reference branches: `demo-l5-task-1` (9f992dc), `demo-l5-task-2` (a292e7e),
+`demo-l5-task-3` (e9d109a), all cut from BASE ff4decd; patches + notes in
+`reference-solutions/` (harness-only, not for demo agents).
