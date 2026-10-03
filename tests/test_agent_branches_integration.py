@@ -82,20 +82,28 @@ class TestAgentBranchesIntegration(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Start mock L1 coordinator on ephemeral port
-        cls.server, cls.thread, cls.server_url, cls.state = start_mock_l1_server(
-            host="127.0.0.1", port=0
-        )
+        target_url = os.environ.get("AGENT_BRANCHES_TEST_SERVER_URL")
+        if target_url:
+            cls.server = None
+            cls.server_url = target_url.rstrip("/")
+            cls.state = None
+        else:
+            # Start mock L1 coordinator on ephemeral port
+            cls.server, cls.thread, cls.server_url, cls.state = start_mock_l1_server(
+                host="127.0.0.1", port=0
+            )
         cls.client = AgentBranchesClient(server_url=cls.server_url, timeout=5.0)
 
     @classmethod
     def tearDownClass(cls):
-        cls.server.shutdown()
-        cls.server.server_close()
+        if cls.server:
+            cls.server.shutdown()
+            cls.server.server_close()
 
     def setUp(self):
         # Reset mock coordinator state for clean isolation between tests
-        self.state.reset()
+        if self.state:
+            self.state.reset()
         # Fresh temporary Git repository for each test
         self.tmpdir = tempfile.mkdtemp(prefix="agent_branches_test_repo_")
         self._init_git_repo(self.tmpdir)
