@@ -184,7 +184,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T11:28:00.232298+00:00",
+      "updated_at": "2026-10-03T11:46:35.909975+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/oversight-human31.md",
@@ -192,10 +192,12 @@
         "research/codex/a18-source-review.md",
         "research/codex/publication-image-rereview.md",
         "research/codex/readiness-timeline-review.md",
-        "research/codex/publication-canonical-review.md"
+        "research/codex/publication-canonical-review.md",
+        "research/codex/a01-feasibility-runner-review.md",
+        "research/codex/run10-continuation-review.md"
       ],
       "blocked_on": [],
-      "next_action": "Continuousgenuine93cf oversight: independentR31 known-goodaccepted, jointC1281 releasesEXACT3UNSCOREDpairs/6realMODELsessions protocol9412520/graderaf751, Antheadassignment01a10184-5cad ACK/firstmodelpending; no scoredN/productefficacy. R30c5fa3sameworkspaceSQLPASS narrowaccepted; Run10e82neworacle missesdelivery0/receiverprocessing evidence, nextindependentreview/actualcycles. GlobalGrokHOLDUnauthorizedPersistence exactconfig actionpendinghumananswer, no bypass. Canonicalall10image/hash+58artifactreview22e82 restoredhierarchy/DONE; metadatamismatchd58footer vs680/c2, websitetrackedtreeequal; nav/label/humanauthoritydispositionpending. Publication/Musegenuinesafedelivery\u2192ACK\u2192newartifactsmanualonly. Z/Bunny/Grokstillreadinessblocked, actualAnt/Museworking. Antheadcode/shellpositive NOTZAIcodegen corrected401fbbb; real providerfirstMODELprovenance required. NextactualunknowncandidateA06equalpacket/model/card adoptionpreregister. Mutualartifact/event or<=5min, no ownteams/implementation/draftinput.",
+      "next_action": "Continuous native93cf oversight: pair1 INVALID (producer no diff/base units pass; grader argv ERROR); replacement actual opencode/big-pickle not approved Muse. Ant owns fail-closed model/completion/preservation repair and stop diagnosis; Muse independent oracle review94-0f62 safely submitted, actualACK/tool pending. Preserve original/loss inventory; no further arms until corrected evidence. Run10 false sender-self ACK withheld; Ant parser/native-reply fix + Muse review. Grok global UnauthorizedPersistence HOLD pending genuine human answer. Canonical publication metadata/authority disposition pending. Z/Bunny/Grok readiness blocked, active peer coverage. Next actual head ACK/pinned artifacts or mutual <=5min; no own implementation teams/product score/final six.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
