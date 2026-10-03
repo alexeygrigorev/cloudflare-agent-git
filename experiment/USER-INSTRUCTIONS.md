@@ -156,3 +156,8 @@ I think it's also not clear what the reponsibilities are give them clear reponsi
 ## Message32 — heads orchestrate larger execution teams
 
 remember that we can run A LOT MORE AGENTS via headless mode, or via subagents. not only the heads shoud work. the heads should actually be orchestrators of work for each direction
+
+
+## Message33 — Relay email capture following Pocketshell
+
+in case the website generates some traffic let's also capture their emails via relay - like we did with pocketshell web (ask some agent to implement that)

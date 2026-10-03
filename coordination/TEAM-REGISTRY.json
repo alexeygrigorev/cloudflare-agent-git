@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T04:05:26.690959+00:00",
+  "updated_at": "2026-10-03T04:06:58.567902+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -201,6 +201,17 @@
       },
       "task_id": "daily-2026-10-03",
       "measurement_scope": "actual completed first daily report, not ongoing live executor"
+    },
+    {
+      "tag": "public-journal-site",
+      "team_id": "publication",
+      "role": "executor",
+      "mode": "native-harness-subagent",
+      "native_agent_identity": "/root/public_journal_site",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "website-relay-email-signup",
+      "measurement_scope": "desktop native harness subagent; no remote aplexer workload PID inferred",
+      "usage": "unknown unless actual harness usage is available"
     }
   ]
 }
