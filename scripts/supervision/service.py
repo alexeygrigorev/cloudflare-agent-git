@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Principal event watchdog. Never implements work or fabricates session readiness."""
 import argparse, datetime, fcntl, hashlib, json, os, pathlib, re, subprocess, time
+from ack_reconciliation import exact_ack
 from retention import StorageFull, archive_operational, archive_verified, read_archived, storage_guard
 
 ROOT = pathlib.Path('/home/alexey/git/cloudflare-agent-git')
@@ -203,6 +204,16 @@ def run():
                 event_key = hashlib.sha256(f'{digest}:{session["id"]}:{episode}'.encode()).hexdigest()[:20]
                 item.update(event_key=event_key, episode=episode)
                 pending = old.get('pending')
+                if old.get('last_request'):
+                    item['last_request'] = old['last_request']
+                if pending:
+                    evidence = exact_ack(pending, session['id'], tag, ROOT)
+                    if evidence:
+                        item['last_request'] = {**pending, 'acknowledged_at':now(), 'ack_evidence':evidence}
+                        atomic(PRIVATE / ('native-ack-' + pending['id'] + '.json'), evidence)
+                        event('pending-reconciled-native-ack', principal=tag, **evidence)
+                        report['actions'].append({'kind':'pending-reconciled-native-ack', 'principal':tag, 'message_id':pending['id']})
+                        pending = None
                 # At most one envelope per task revision, sparse Claude min 30m; no hourly busywork.
                 cooldown = old.get('cooldown_until', 0)
                 if active and not pending and (old.get('sent_event') != event_key) and time.time() >= cooldown:

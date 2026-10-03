@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T05:07:00.000000+00:00",
+  "updated_at": "2026-10-03T05:15:44.237596+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -334,6 +334,21 @@
       ],
       "linked_head_session": "c0ff0e92-99f2-46d0-9e3d-f1d078badfde",
       "private_evidence": ".local/journal/relay-owner-channel/"
+    },
+    {
+      "id": "supervision-exact-ack-reconciliation",
+      "team_id": "oversight",
+      "owner_tag": "supervision-ack-repair",
+      "status": "running",
+      "updated_at": "2026-10-03T05:15:44.237596+00:00",
+      "evidence_paths": [
+        "scripts/supervision/ack_reconciliation.py",
+        "scripts/supervision/test_ack_reconciliation.py"
+      ],
+      "blocked_on": [],
+      "next_action": "Graceful owned supervision restart, verify persisted exact ACK clears stale pending and next healthy poll.",
+      "acceptance": "35 tests pass; native original envelope and exact recipient cursor prove ACK; no spoofing/mutation of mailbox; preserve service state/archives and metrics.",
+      "assignment_ack": "Accepted by native harness /root/supervision_ack_repair, parent desktop-orchestrator."
     }
   ]
 }

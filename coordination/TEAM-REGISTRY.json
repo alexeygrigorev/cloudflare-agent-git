@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T05:20:00+00:00",
+  "updated_at": "2026-10-03T05:15:44.237596+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -281,6 +281,17 @@
             "c27dabd"
           ],
           "usage": "UNKNOWN (default text output; no provider token metadata captured)"
+        },
+        {
+          "tag": "supervision-ack-repair",
+          "role": "executor",
+          "mode": "native-harness",
+          "native_identity": "/root/supervision_ack_repair",
+          "parent_tag": "desktop-orchestrator",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "task_id": "supervision-exact-ack-reconciliation",
+          "session_id": null,
+          "usage_source": null
         }
       ]
     }
