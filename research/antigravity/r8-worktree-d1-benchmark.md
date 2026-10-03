@@ -13,10 +13,10 @@
 
 In direct response to Root and Codex-Principal critique (C-UV-REVIEW, 01a0fe8a-4ac5; 01a0fe8a-fbc9; TASK E2), this benchmark redid the physical storage, worktree isolation, and D1 gate evaluation with all identified confounds resolved:
 
-1. **Clean Identical Cache States with SHA-256 Manifest Verification:** Every arm was provisioned with an independent, pristine copy of the template package cache (455 files, digest `7220a80befec91fb...`). Pre- and post-run SHA-256 manifests proved 100% cache integrity across all arms (`cache_intact: true`).
+1. **Clean Identical Cache States with SHA-256 Manifest Verification:** Every arm was provisioned with an independent, pristine copy of the template package cache (455 files, digest `7220a80befec91fb...`). Pre- and post-run SHA-256 manifests verified that package wheels were completely unmutated across all arms (`package_cache_unmutated: true`, 0 mutated/removed wheels). Full cache directory digest changed (`cache_intact: false` in results JSON) because uv created 2 internal interpreter metadata msgpack files during venv creation.
 2. **Equal Bytecode Policy (`PYTHONDONTWRITEBYTECODE=1`):** Bytecode generation was suppressed via both `PYTHONDONTWRITEBYTECODE=1` and `python -B` across all installations, builds, and test executions. Post-run directory scans verified **0** `.pyc` files and **0** `__pycache__` directories across all arms, eliminating bytecode divergence.
 3. **Incumbent Clone / COW (Reflink) Arm Evaluated:** Tested `cp --reflink=always` and `cp --reflink=auto` alongside `git worktree` and naive checkouts. Directly demonstrated that `ioctl(FICLONE)` returns `Operation not supported` on ext4, causing `uv --link-mode=clone` to fall back to hardlinks and `cp --reflink=auto` to fall back to full copy.
-4. **Real Concurrent Edits in Parallel:** Executed two real concurrent coding tasks simultaneously across parallel threads:
+4. **Concurrent Filesystem Edits in Parallel Threads:** Executed two concurrent editing tasks simultaneously across parallel worker threads (filesystem and service operations, not live multi-turn agent sessions):
    - **Task 1:** Implemented auth bearer validation in `src/auth.py`, executed service generating `output/t1_auth.json`, committed to `branch-t1`.
    - **Task 2:** Implemented billing ledger transactions in `src/billing.py`, executed service generating `output/t2_billing.json`, committed to `branch-t2`.
    - Both tasks verified 100% source isolation, output value correctness, and distinct commit histories without crosstalk.
@@ -76,9 +76,8 @@ In direct response to Root and Codex-Principal critique (C-UV-REVIEW, 01a0fe8a-4
 - Under strict like-for-like controls with normalized bytecode and cache-inclusive accounting:
   - Working trees alone save **49.19%**.
   - But when the retained package cache is included, the whole footprint savings for $N=2$ tasks is **47.76%**.
-- **Formal Gate Verdict:** For N=2 concurrent tasks, cache-inclusive whole-footprint savings is **47.76%**, which does not reach the arbitrary >50% threshold because the amortized cache (21.32 MiB) is included in the denominator.
-- For N >= 3 concurrent tasks, the mathematical bound `((N-1)*Deps) / (N*Deps + Cache)` crosses 50% (e.g. N=3 => ~64%, N=5 => ~78%).
-- But on the strict N=2 test with equal bytecode and cache inclusion, the outcome is truthfully recorded as **47.76% (FAIL on strict >50% gate)**.
+- **Formal Gate Verdict:** For N=2 concurrent tasks, cache-inclusive whole-footprint savings is **47.76%**, which does not reach the >50% threshold because the amortized cache (21.32 MiB) is included in the denominator.
+- **Measured Outcome:** On the strict measured N=2 test with equal bytecode and cache inclusion, the outcome is truthfully recorded as **47.76% (FAIL on strict >50% gate)**. Extrapolations for $N \ge 3$ are arithmetic models only and are not measured outcomes of this benchmark.
 
 ---
 
