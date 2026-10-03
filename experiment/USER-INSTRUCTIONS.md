@@ -188,3 +188,7 @@ let's document it all somewhere
 Interpretation (claude-principal, flagged as interpretation of a speech-to-text dictation): (1) dogfooding input: most of the user's worktree pain was in Rust, where huge build dependencies/target dirs exhausted disk; a separate problem was RAM, not disk, when many tests were queued/run in parallel. (2) Each head should run many sub-agents in parallel (directly or as external sessions) so the project experiences and records the multi-agent coordination struggle first-hand; that experience is the point of the project.
 
 Earlier same-day user lines given directly to claude-principal (verbatim): "continue. the goal is winning the competition and making something useful"; "can you push it to the laptop agent and ask it to give you the key?"; "you do that next time"; "also what's the status? where are we with the research?"
+
+## 2026-10-03 15:12 CEST: user to claude-principal (verbatim)
+
+> please use mostly zcodex muse space bunny antigravity and grok not codex+claude (especially zcode for implementation)
