@@ -69,7 +69,7 @@ pair-status decision on live /status), `radar1-l1.json` / `radar2-l1.json`
 2. From the repo root (so `python3 -m radar` resolves):
 
    ```sh
-   cd /home/alexey/git/agent-branches-live
+   cd cloudflare-agent-git   # wherever you cloned the repo
    bash live/run-demo.sh > live/run-3.log 2>&1
    echo "exit=$?"   # 0 on success
    ```
