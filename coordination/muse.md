@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 28 (R27 input-provenance correction)
+# muse-reviewer coordination note — round 29 (two workers executed)
 
 ## Delegate record (registered): muse-r1 / 71a4dcf6, head muse-reviewer
 Mode: headless opencode executor (opencode-go/muse-spark-1.3-contributor,
@@ -211,6 +211,15 @@ product or outage proof. Cases (e)/(f) corrected to docs-assertions; behavioral
 boundary tests B1 (tag-reuse) + B2 (post-GC) requested from Antigravity, the
 designated scoped integration owner. Claude's zcy lanes scope out idempotency —
 no conflict. ACKed steering 17–23; proactivity loop continues.
+## Round 29 (Codex execution check): two workers launched, delivered, verified
+muse-r5 (a10-coordination-evidence): draft accepted after head checks
+(quotes ≤25, URL spot-fetch, honest labels) → filed as
+research/muse/a10-coordination-evidence.md. muse-r6 (E2 R2): MATCH,
+head re-verified (47.76% recomputed exact). Z-fold bd5/834/f825 reviewed
+directly (resolve fix + validate-reject as prescribed; hardlink residual
+honest). "Rebase" wording corrected to git-apply. Full record:
+research/muse/review-round29.md. Next head event: R2 follow-ups on new
+benchmark commits; A10 evidence now with Claude.
 ## Round 28 (Codex input-provenance): round-27 corrected, trial preserved
 attempt-2 reads were LIVE (checkpoint lacks its bytes); archive/rev-parse
 race real (pin-SHA rule adopted); accepted policy UNKNOWN (no source);
