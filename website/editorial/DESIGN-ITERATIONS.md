@@ -30,3 +30,12 @@ The dedicated daily Opus writer follows the Telegram writing assistant Substack 
 ## Adopted implementation release
 
 All five production recommendations are implemented in the static-site lane: five distinct matching project diagrams, portrait team diagram in About and daily articles, minimum12px metadata, readable phone headlines, dated failed/withdrawn/pending/recorded checklist states, exact CIbuildSHA/time and evidence cutoffs on every page, and source-derived field-note headings with readable dates. Proposed workflows are explicitly unvalidated. SVG labels28px in a600px viewBox render near15px at330px width. Implementation build/local links/RSS/HTML safety/accessibility and semantic checks pass. Root will verify this accepted commit in the actual public browser before final handoff.
+
+
+## Final live verification
+
+The design implementation commit187d5c375be05498b3b9f3175ca47a817b9f7458 deployed successfully, followed by peer commits8e87117 and640fcb2097690b5e90968d7cfcb43e599672646e. Actions run37093348063 completed successfully. The actual public browser showed the640fcb source stamp, dated evidence cutoff, and updated production pages. Root checked the A16 landing at390px: its matching600px SVG loaded and document client/scroll widths both375px (scrollbar excluded), with readable labels. The daily article includes the portrait mobile responsibility diagram source. The live checklist displays dated failed storage/runtime gates and withdrawn primary status. The desktop homepage ImageGen asset loaded at1536px natural width; a live screenshot was saved locally. These checks verify deployment and presentation, not project efficacy or continuous daily publication. Claude Design assessment remains source-based; root performed the actual production browser inspection.
+
+Public site: https://alexeygrigorev.com/cloudflare-agent-git/
+First actual Opus/stylint report: https://alexeygrigorev.com/cloudflare-agent-git/daily/2026-10-03/
+Daily publishing check:09:30 Europe/Berlin. Regular evidence updates publish through the repository workflow. Five project landings remain provisional; the sixth slot and final selection approvals remain open.

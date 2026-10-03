@@ -23,3 +23,12 @@ Initial deployment53ec46c succeeded in GitHub Pages Actions and the public HTTPS
 ## Accepted design iteration
 
 Claude Design second-round source feedback drove an owned follow-up that adds five matching project diagrams, portrait mobile team diagram, minimum12px text, dated gate states (including actual storage/runtime failures and primary withdrawal), human-readable field-note headings/dates, and exact build/source/cutoff stamps on every page. Root independently reran the full article validation and confirmed actual Opus provenance; implementation local static-site checks passed again. Updated deployment and live mobile diagram verification follow this commit.
+
+
+## Final live verification
+
+The design implementation commit187d5c375be05498b3b9f3175ca47a817b9f7458 deployed successfully, followed by peer commits8e87117 and640fcb2097690b5e90968d7cfcb43e599672646e. Actions run37093348063 completed successfully. The actual public browser showed the640fcb source stamp, dated evidence cutoff, and updated production pages. Root checked the A16 landing at390px: its matching600px SVG loaded and document client/scroll widths both375px (scrollbar excluded), with readable labels. The daily article includes the portrait mobile responsibility diagram source. The live checklist displays dated failed storage/runtime gates and withdrawn primary status. The desktop homepage ImageGen asset loaded at1536px natural width; a live screenshot was saved locally. These checks verify deployment and presentation, not project efficacy or continuous daily publication. Claude Design assessment remains source-based; root performed the actual production browser inspection.
+
+Public site: https://alexeygrigorev.com/cloudflare-agent-git/
+First actual Opus/stylint report: https://alexeygrigorev.com/cloudflare-agent-git/daily/2026-10-03/
+Daily publishing check:09:30 Europe/Berlin. Regular evidence updates publish through the repository workflow. Five project landings remain provisional; the sixth slot and final selection approvals remain open.
