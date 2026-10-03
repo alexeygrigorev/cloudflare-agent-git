@@ -357,9 +357,9 @@
       "id": "metrics-opencode-message-usage",
       "team_id": "oversight",
       "owner_tag": "metrics-opencode-usage",
-      "status": "running",
+      "status": "done",
       "assignment_ack": true,
-      "updated_at": "2026-10-03T05:46:32.144359+00:00",
+      "updated_at": "2026-10-03T05:54:21.308582+00:00",
       "owned_paths": [
         "scripts/metrics/opencode_usage.py",
         "scripts/metrics/collect.py",
@@ -367,10 +367,15 @@
         "scripts/metrics/dashboard.html",
         "scripts/metrics/README.md"
       ],
-      "next_action": "Bounded read-only adapter tests, principal review, controlled collector reload and two real snapshots",
+      "next_action": "Principals maintain actual native-worker identity coverage; uncovered providers stay unknown",
       "acceptance": "Actual Muse/Bunny per-message counters; exact identities, no double counting, explicit interval/unknown pending/cost scope; tested dashboard and private retention",
-      "evidence_paths": [],
-      "blocked_on": []
+      "evidence_paths": [
+        "research/orchestrator/opencode-usage-20261003.md",
+        "scripts/metrics/test_opencode_usage.py"
+      ],
+      "blocked_on": [],
+      "acceptance_status": "Accepted: root independent20-test replay/source review plus actual two automatic snapshot dedup",
+      "reviewer_tag": "desktop-orchestrator"
     }
   ]
 }

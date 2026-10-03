@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T05:46:32.144359+00:00",
+  "updated_at": "2026-10-03T05:52:36.394384+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -260,7 +260,11 @@
         {
           "tag": "experiment-metrics",
           "role": "service",
-          "workspace": "/home/alexey/git/cloudflare-agent-git"
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "session_id": "d1b378a3-e22a-45cd-a510-773efe839717",
+          "resumed_from_session_id": "89dafc10-47c9-49b4-bb4c-466b17a96aa9",
+          "resumed_at": "2026-10-03T05:52:36.394384+00:00",
+          "recovery_reason": "Owned atomic sample checkpoint reload for pinned OpenCode adapter6b04384; archives/baselines/8766 retained"
         },
         {
           "tag": "experiment-supervision",
@@ -407,7 +411,8 @@
       "session_id": null,
       "usage_source": null,
       "task_id": "metrics-opencode-message-usage",
-      "status": "running"
+      "status": "done",
+      "completed_at": "2026-10-03T05:54:21.308582+00:00"
     }
   ]
 }
