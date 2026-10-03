@@ -434,20 +434,21 @@
       "id": "publication-fidelity-repair",
       "team_id": "publication",
       "owner_tag": "public-journal-site",
-      "status": "done",
-      "updated_at": "2026-10-03T07:07:52.211165+00:00",
+      "status": "running",
+      "updated_at": "2026-10-03T08:27:00.000000+00:00",
       "blocked_on": [],
-      "next_action": "Template fidelity repaired in build.py and site.css (committed 7babb95); preview rebuilt and styled screenshots re-captured. Handed off to independent visual re-review.",
+      "next_action": "Worker journal-fidelity-repair-2 (e4c47950, opencode-go/muse-spark-1.3-contributor) active in .local/journal/worktree on branch journal-design-repair: fixing live overprint defect (honest-row grid columns) and implementing reference header, hypothesis markers, measured pain bar treatment, and homepage research library block.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "website/build.py",
         "website/assets/site.css",
-        ".local/journal/screenshots/SCREENSHOT-MANIFEST.json",
-        ".local/journal/fidelity-repair/repair-run.log"
+        ".local/journal/fidelity-repair-2/**",
+        ".local/journal/screenshots/**",
+        ".local/journal/candidate-preview/**"
       ],
-      "assignment_ack": "Completed by journal-fidelity-repair (c70a786d, opencode-go/muse-spark-1.3-contributor); commit 7babb95.",
-      "executor_tag": "journal-fidelity-repair",
-      "executor_session": "c70a786d-eae6-4d28-a5a9-b03635a509d5"
+      "executor_tag": "journal-fidelity-repair-2",
+      "executor_session": "e4c47950-0dd6-4431-ba1d-94431033bc3f",
+      "assignment_ack": "Launched under aplexer in isolated worktree .local/journal/worktree on branch journal-design-repair. First tool call verified."
     },
     {
       "id": "publication-visual-acceptance",
