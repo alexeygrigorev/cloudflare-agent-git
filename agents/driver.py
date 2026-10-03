@@ -658,7 +658,7 @@ class AgentHarnessDriver:
                 elif t.engine == "space-bunny":
                     cmd = ["timeout", timeout_str, "opencode", "run", "--model", "opencode-go/space-bunny-free", prompt_text]
                 elif t.engine == "grok":
-                    cmd = ["timeout", timeout_str, "grok", prompt_text]
+                    cmd = ["timeout", timeout_str, "grok", "--always-approve", prompt_text]
                 else:
                     cmd = ["bash", "-c", f"echo 'Running {t.task_id}'; sleep 2"]
 
@@ -683,7 +683,7 @@ class AgentHarnessDriver:
                 ] + cmd
 
                 proc = subprocess.run(aplexer_cmd, capture_output=True, text=True)
-                session_id = proc.stdout.strip() if proc.returncode == 0 else f"failed-{proc.returncode}"
+                session_id = proc.stdout.strip().splitlines()[0].strip() if proc.returncode == 0 else f"failed-{proc.returncode}"
                 t.session_id = session_id
 
                 self.record_event(
