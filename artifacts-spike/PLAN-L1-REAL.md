@@ -9,11 +9,13 @@ evidence-backed by the ops ledger; items not exercised by the spike are marked U
   `agent-branches-dev` and repos `demo-canonical` / `demo-agent-1` / `demo-agent-2` exist (tiny, reusable
   for integration tests — see RESULTS.md cleanup list before deleting).
 - Binding-relevant deltas found: commit metadata uses `hash`/`committedAt` (epoch s) over REST
-  (binding shape still unverified); tokens are `art_v2_x_…`, not the documented `art_v1_…`;
+  (binding shape still unverified); tokens are `art_v2_x_…`, not the documented `art_v1_…` (shape
+  attested structurally — appendix-transcript.md token-shape line; hex elided at capture);
   `status` only on repo LIST; `last_push_at` stays null; read-scope push → HTTP 400.
-- Wrangler 4.147.0 (L1's node_modules) runs `artifacts namespaces|repos list/get` headless with
-  `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` env vars. No wrangler subcommand exists for
-  namespace create or fork — those are REST-only.
+- Wrangler 4.147.0 (L1's node_modules) runs `artifacts namespaces|repos list` headless with
+  `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` env vars (O20/O21). The `get` subcommands and the
+  existence/absence of create/fork subcommands are UNVERIFIED (not exercised/captured) — REST is the
+  validated path for namespace create and fork.
 
 ## 1. Binding vs REST — which surface for what
 
@@ -92,7 +94,8 @@ ops token with `ttl=3600`). Do not port the whole port to REST.
    time). An unauthenticated event ingest forges arbitrary push state.
 2. **Token storage**: minted repo tokens and the API token never in logs/URLs/Git (redactor gate in
    CI + commit hook); at-rest plaintext only in DO/KV with a documented blast radius; revoke-on-task-end
-   path must be exercised in tests (routes validated O28/O29).
+   path must be exercised in tests (revoke route validated O28; the O29 hygiene revoke was not
+   captured — cover the revoke path for every token class in tests).
 3. **Least privilege**: read tokens for clones/review; write only for the pushing agent; canonical
    repo write token held only by the coordinator; short TTLs (≤1h) with documented re-mint.
 4. **Rate limits / budgets**: documented 2,000 req/10s per namespace (control plane) and per artifact

@@ -7,8 +7,10 @@ pages in docs/ (wrangler, REST API, authentication, git-protocol, workers-bindin
 ## Verdict
 
 **STEP 1: PASS** — all task items (a)–(f) completed against the real service using only documented
-APIs. STEP 2 plan written (PLAN-L1-REAL.md). Total billable ops: **29** (budget < 100). Storage:
-3 repos, 15 objects each (~KB scale). Nothing deployed; no resources beyond the listed ones.
+APIs. STEP 2 plan written (PLAN-L1-REAL.md). Total billable ops: **28 evidenced** (budget < 100) — the
+reported 29th op (the O29 hygiene revoke) was **not captured**; see ledger row O29. Storage: 3 repos
+(~KB scale); `objects:15` is evidenced for the two forks only (O9/O10) — the canonical repo's object
+count was never captured. Nothing deployed; no resources beyond the listed ones.
 
 ## Ops ledger (1 op = 1 REST call, 1 wrangler invocation, or 1 git network command)
 
@@ -38,14 +40,17 @@ APIs. STEP 2 plan written (PLAN-L1-REAL.md). Total billable ops: **29** (budget 
 | O22 | list tokens | GET .../repos/demo-canonical/tokens?state=all | 2 active (minted 1h + initial 24h), scope/state/expires_at | 207 |
 | O23 | revoke unused | DELETE .../tokens/{initial canonical token} | 200 `{id}` | 267 |
 | O24 | list tokens f2 | GET .../repos/demo-agent-2/tokens?state=all | 1 active | 238 |
-| O25 | revoke unused | DELETE .../tokens/{demo-agent-2 initial} | 200 `{id}` | 218 |
-| O26 | mint read token | POST .../tokens `{scope:read, ttl:600}` | id jni5lv…, +10min expiry | 197 |
+| O25 | revoke unused | DELETE .../tokens/{demo-agent-2 initial} | 200 `{id}` | 217 |
+| O26 | mint read token | POST .../tokens `{scope:read, ttl:600}` | id jni5lv… only — no `expires_at` captured; +10min honoring **UNVERIFIED** | 197 |
 | O27 | negative: push with read token | `git push` (read token) | **rejected: HTTP 400**, exit 128, 52ms — no objects landed | 52 |
 | O28 | revoke read token | DELETE .../tokens/jni5lv… | 200 `{id}` | 218 |
-| O29 | hygiene revoke | DELETE .../tokens/{canonical minted write token} | 200 `{id}` (canonical push done; least privilege) | 575 |
+| O29 | hygiene revoke | DELETE .../tokens/{canonical minted write token} | **NOT CAPTURED** — executor-reported 200 `{id}`, but no transcript line or raw capture exists; treat as UNVERIFIED | (not captured) |
 
-Two local-only failures never reached the network (bad git-include file syntax on first O6 attempt —
-fixed by writing a proper `[http] extraHeader` INI include; not counted as ops).
+Two claims above were re-derived after independent review because they depended on the uncaptured O29:
+"all unused tokens revoked" (see Resources section) and the revoke-route validation cited in
+PLAN-L1-REAL.md §5.2 (only O28 is evidenced). One local-only failure never reached the network (the
+transcript's `[O6 ls-remote-empty ms=4] fatal: bad config line 1` — bad git-include file syntax on the
+first O6 attempt, fixed by writing a proper `[http] extraHeader` INI include; not counted as an op).
 
 ## Assumption scorecard (docs-notes.md ASSUMED A–F)
 
@@ -56,13 +61,17 @@ fixed by writing a proper `[http] extraHeader` INI include; not counted as ops).
 | C — createToken result carries scope | **CONFIRMED** | O5 mint returns `{id, plaintext, scope, expires_at}`; O22 list shows scope/state |
 | D — DO in same Worker sees env.ARTIFACTS binding | **UNVERIFIED** | No Worker deployed (out of scope); requires binding config + deploy step |
 | E — event subscription wiring unknown | **UNVERIFIED** | Not exercised (needs a Worker/webhook target); documented envelope unchanged |
-| F — no fork-at-commit; fork default branch only | **CONFIRMED** | Fork body accepts only name/description/read_only/default_branch_only (REST page + O9/O10); fork head == source default-branch head (O13); `default_branch_only:true` worked, objects:15 copied |
+| F — no fork-at-commit; fork default branch only | **PARTIAL** | Fork body accepts only name/description/read_only/default_branch_only (REST page + O9/O10); fork head == source default-branch head (O13); `objects:15` copied (fork response). **UNVERIFIED:** the fork response never echoes `default_branch_only`, and no pre-push ref listing of demo-agent-1 was captured — "fork copies only the default branch" is inferred, not directly evidenced |
 
 ## Additional findings (not in docs-notes)
 
 1. **Token format DIFFERENT from docs**: real service issues `art_v2_x_<40 hex>?expires=<unix>`, not
    the documented `art_v1_<40 hex>`. Anything validating the `art_v1_` prefix will reject real tokens.
-   The `?expires=` suffix convention is confirmed (create/fork tokens +24h; minted ttl honored: 3600→+1h, 600→+10min).
+   Token **shape** is recorded as a structural attestation line at the end of appendix-transcript.md
+   (`art_v2_x_` + 40-hex elided + `?expires=<epoch seconds>`) — whole tokens were redacted at capture
+   time, so the prefix is not recoverable from the transcript itself. The `?expires=` suffix convention
+   is confirmed for captured cases (create/fork tokens +24h via O22/O24; minted ttl honored 3600→+1h
+   via O5/O22); `ttl=600` honoring is **UNVERIFIED** (O26 captured only the token id, no `expires_at`).
 2. **`status` field only on LIST**: `GET /repos` (list) includes `"status":"ready"`; single `GET /repos/:name`
    omits it (docs' RepoInfo type has no status). Forks were immediately `ready`/GET-200 at ~2s after
    fork POST — no 409 "forking" window observed at this size. Port note: don't poll single-GET for status.
@@ -72,9 +81,12 @@ fixed by writing a proper `[http] extraHeader` INI include; not counted as ops).
    Port error mapping should treat 4xx-on-push as auth/scope failure.
 5. **Namespace-not-found error**: code `10200` "Namespace not found" with 404 — same numeric code family
    as the docs' "File not found" example; useful for NOT_FOUND mapping.
-6. **Wrangler CLI**: `artifacts namespaces list/get` and `artifacts repos list/get` work headless with
-   `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` env (wrangler 4.147.0 from L1's node_modules, no install).
-   No wrangler subcommands exist for namespace create or fork — those are REST-only.
+6. **Wrangler CLI**: `artifacts namespaces list` and `artifacts repos list` work headless with
+   `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` env (wrangler 4.147.0 from L1's node_modules, no
+   install) — that is all this spike exercised (O20/O21). **UNVERIFIED:** the `list`'s sibling `get`
+   subcommands were never run, and no `--help` capture supports any claim about create/fork
+   subcommands existing or not. Treat namespace create and fork as REST-only (the validated path)
+   until a `--help`/`get` capture lands.
 7. **Auth mechanics**: Bearer repo token via `http.extraHeader` works for clone/fetch/push. To keep tokens
    out of argv and URLs, this spike persisted the header in a 0600 git-include file referenced via
    `-c include.path=<file>` — viable pattern for L1's git-sidecar scripts. Basic-auth-in-URL (documented
@@ -93,10 +105,20 @@ fixed by writing a proper `[http] extraHeader` INI include; not counted as ops).
   subtree of cloudflare-agent-git ff4decd; **no .harness**)
 - Repo `demo-agent-1` (id z23vslwndyq9lz2b, fork of demo-canonical) — main @ c809475… (1-line README change)
 - Repo `demo-agent-2` (id nzhkzbxleu7eyjds, fork of demo-canonical) — main @ b4346112…, untouched
-- Active tokens remaining: demo-agent-1 write token (24h, needed for next step, stored 0600 outside git).
-  All other tokens revoked (O23/O25/O28/O29).
+- Active tokens remaining: demo-agent-1 write token (24h TTL — now **measured**, not assumed: read-only
+  `GET .../repos/demo-agent-1/tokens?state=all` on 2026-10-03 returned exactly one active write token,
+  id i8ppt364o5tsgguf, created 2026-10-03T17:00:33.909Z, expires_at 2026-10-04T17:00:33.909Z, i.e.
+  +24h exactly; stored 0600 outside git). Needed for the next step; revoke at/after use — see the
+  cleanup gate item (PLAN-L1-REAL.md §5.9).
+- Token revocations evidenced in the transcript: O23/O25/O28. The O29 revoke (canonical minted write
+  token) is executor-reported but **not captured** — treat that token as possibly live until the
+  cleanup gate item verifies it (same read-only list call against demo-canonical).
 
-### Later cleanup checklist (when the demo is torn down)
+### Later cleanup checklist — promoted to a dated gate item
+
+Tracked as **PLAN-L1-REAL.md §5.9** (owner: claude-principal lane; due 2026-10-07, before the Oct-14
+billable-ops switchover; hard prerequisite for any public deploy or recorded demo). Checklist retained
+here for the concrete steps:
 
 - DELETE repos demo-agent-1, demo-agent-2, demo-canonical (`DELETE .../repos/:name`, returns 202)
 - DELETE namespace agent-branches-dev (verify route availability; if absent, deleting repos empties it)
@@ -111,8 +133,10 @@ fixed by writing a proper `[http] extraHeader` INI include; not counted as ops).
   via 0600 git-include files. GIT_TERMINAL_PROMPT=0 everywhere.
 - All evidence passed artifacts-spike/redact.py before persisting. First pass missed the real
   `art_v2_x_` prefix (docs said `art_v1_`) — caught in review, redactor generalized, transcript
-  re-redacted and re-scanned (0 live-token patterns), and the one still-useful exposed token was
-  revoked (O29). Local /tmp scratch and throwaway clones removed at cleanup time.
+  re-redacted and re-scanned (0 live-token patterns). The executor reports the one still-useful exposed
+  token was revoked as hygiene (O29), but **that call was not captured** — the cleanup gate item
+  (PLAN-L1-REAL.md §5.9) verifies it via the read-only token list and revokes if still live.
+  Local /tmp scratch and throwaway clones removed at cleanup time.
 - Commit gate before each commit: `git diff --cached | grep -iE 'token|secret|bearer'`.
 
 ## Full sanitized transcript
