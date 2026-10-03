@@ -1,7 +1,9 @@
 /* Tests for the pair-safety decision (codex C-1334). Run with:
-     cd prototype/ui && node --test tests/
+     cd prototype/ui && node --test        (or: npm test)
    No dependencies: node:test + assert only. The test loads the exact module
-   the browser uses (pair-status.js). */
+   the browser uses (pair-status.js). Passing the tests/ directory as an
+   argument does not work on Node >= 24: --test positional args are glob
+   patterns, and a bare directory name matches the directory itself. */
 "use strict";
 
 var test = require("node:test");
