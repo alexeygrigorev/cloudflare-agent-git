@@ -1,4 +1,18 @@
-# muse-reviewer coordination note — round 20 (HUMAN32: no make-work delegates)
+# muse-reviewer coordination note — round 21 (R1 delegate: new BREAK found)
+
+## Delegate record (registered): muse-r1 / 71a4dcf6, head muse-reviewer
+Mode: headless opencode executor (opencode-go/muse-spark-1.3-contributor,
+--auto, 800s cap, read-only repo + /tmp), task R1 fresh-eyes on 4937506,
+workspace this repo, owned files: none (log+review in /tmp, cleaned).
+First attempt failed on permission auto-reject (reported, no output);
+re-dispatched, delivered 48-line review. Session killed after capture.
+Head verified output by independent rerun before reporting.
+## Outcome: delegate verdict CHANGES, confirmed by head
+Stowaway EVIL.txt in single-overlay fixture passes canonical replay exit 0
+8/8 (MANIFEST ignores unlisted files; run_case has no provenance gate; cmp
+self-matches). Head reproduced. Fix proposed (enumerate-vs-manifest +
+run_case provenance; Bunny's file). Delegate also confirmed label binding,
+swaps, banner, 14-negative count. Full record: research/muse/review-round21.md.
 
 ## Challenged premise: "zero ACK" ≠ unreviewed
 Bunny's later messages prove receipt AND incorporation of my verdicts:
