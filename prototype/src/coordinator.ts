@@ -146,6 +146,21 @@ function randomSuffix(): string {
   return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/**
+ * muse-r46 D1: a pair may arrive in either agent order ([a,b] or [b,a]);
+ * canonicalize the pair AND its per-slot heads (same a <= b rule as pairKey)
+ * so both orders map to ONE pairChecks record and at most ONE active
+ * warning for a pair at a given head vector.
+ */
+function canonicalPairHeads(
+  pair: readonly [string, string],
+  heads: { a: string; b: string },
+): { pair: [string, string]; heads: { a: string; b: string } } {
+  return pair[0] <= pair[1]
+    ? { pair: [pair[0], pair[1]], heads: { a: heads.a, b: heads.b } }
+    : { pair: [pair[1], pair[0]], heads: { a: heads.b, b: heads.a } };
+}
+
 export class Coordinator extends DurableObject {
   private readonly state: DurableObjectState;
   private readonly radar: Radar;
@@ -639,10 +654,15 @@ export class Coordinator extends DurableObject {
       if (result.status === "not_checked") {
         throw new Error("runner results must be conflict|clean|unknown, not not_checked");
       }
-      const vector = { a: model.heads[a], b: model.heads[b] };
+      // muse-r46 D1: canonical order before deriving the vector, so a
+      // reversed pair overwrites/refreshes the same record instead of
+      // duplicating warnings or storing a slot-flipped vector.
+      const ordered = canonicalPairHeads(result.pair, { a: model.heads[result.pair[0]], b: model.heads[result.pair[1]] });
+      const pair = ordered.pair;
+      const vector = ordered.heads;
       const record: PairCheckRecord = {
-        key: pairKey(result.pair),
-        pair: [a, b],
+        key: pairKey(pair),
+        pair,
         status: result.status as RadarStatus,
         kind: result.kind,
         evidence: result.evidence,
@@ -651,14 +671,14 @@ export class Coordinator extends DurableObject {
       };
       model.pairChecks[record.key] = record;
       this.pushRadarLog(model, {
-        pair: [a, b],
+        pair,
         heads: vector,
         status: record.status,
         kind: record.kind,
         evidence: record.evidence,
       }, now);
       if (record.status === "conflict") {
-        const warning = this.warningForPairAtHeads(model, [a, b], vector, record, input.policy, now);
+        const warning = this.warningForPairAtHeads(model, pair, vector, record, input.policy, now);
         if (warning) {
           createdWarnings.push(warning);
         }
@@ -689,13 +709,17 @@ export class Coordinator extends DurableObject {
     policy: string,
     now: string,
   ): WarningRecord | null {
-    const key = pairKey(pair);
+    // muse-r46 D1: canonicalize the incoming pair/heads so the duplicate
+    // lookup and the stored headsAtIssue are slot-order independent, no
+    // matter what order the radar/runner reported.
+    const ordered = canonicalPairHeads(pair, heads);
+    const key = pairKey(ordered.pair);
     const existing = model.warnings.find(
       (warning) =>
         warning.status === "active" &&
         pairKey(warning.pair) === key &&
-        warning.headsAtIssue.a === heads.a &&
-        warning.headsAtIssue.b === heads.b,
+        warning.headsAtIssue.a === ordered.heads.a &&
+        warning.headsAtIssue.b === ordered.heads.b,
     );
     if (existing) {
       return null;
@@ -703,8 +727,8 @@ export class Coordinator extends DurableObject {
     model.warnSeq += 1;
     const warning: WarningRecord = {
       id: `warn-${model.warnSeq}`,
-      pair,
-      headsAtIssue: heads,
+      pair: ordered.pair,
+      headsAtIssue: ordered.heads,
       reason: record.kind ?? "conflict",
       status: "active",
       createdAt: now,
@@ -774,17 +798,20 @@ export class Coordinator extends DurableObject {
       // in-Worker StubRadar reports not_checked; conflicts arrive via
       // applyCheckResults from the trusted runner.
       if (check.status === "conflict") {
+        // muse-r46 D1: canonical order here too — the StubRadar emits pairs
+        // in heads-iteration order, not sorted order.
+        const ordered = canonicalPairHeads(check.pair, check.heads);
         const record: PairCheckRecord = {
-          key: pairKey(check.pair),
-          pair: check.pair,
+          key: pairKey(ordered.pair),
+          pair: ordered.pair,
           status: check.status,
           kind: check.kind,
           evidence: check.evidence,
-          vector: check.heads,
+          vector: ordered.heads,
           at: now,
         };
         model.pairChecks[record.key] = record;
-        const warning = this.warningForPairAtHeads(model, check.pair, check.heads, record, "radar-inline", now);
+        const warning = this.warningForPairAtHeads(model, ordered.pair, ordered.heads, record, "radar-inline", now);
         if (warning) {
           created.push(warning);
         }

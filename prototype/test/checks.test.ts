@@ -106,6 +106,40 @@ describe("trusted runner checks (vector-gated, conflict-only warnings)", () => {
     expect(view.activeWarningIds).toHaveLength(1);
   });
 
+  it("a reversed pair [b,a] at the same heads does NOT duplicate the active warning (muse-r46 D1)", async () => {
+    const { alpha, beta, alphaSha, betaSha } = await primedPair();
+    const first = await checks({
+      vector: await currentVector(),
+      policy: "merge-tree-v1",
+      results: [{ pair: [alpha, beta], status: "conflict", kind: "merge-conflict" }],
+    });
+    expect(first.status).toBe(200);
+    expect((await json<ChecksResponse>(first)).createdWarnings).toHaveLength(1);
+
+    // Same logical conflict, submitted in the other slot order, unchanged heads.
+    const reversed = await checks({
+      vector: await currentVector(),
+      policy: "merge-tree-v1",
+      results: [{ pair: [beta, alpha], status: "conflict", kind: "merge-conflict" }],
+    });
+    expect(reversed.status).toBe(200);
+    expect((await json<ChecksResponse>(reversed)).createdWarnings).toHaveLength(0);
+
+    const status = await json<StatusSnapshot>(await get("/status"));
+    const active = status.warnings.filter(
+      (w) => w.pair.includes(alpha) && w.pair.includes(beta) && w.status === "active",
+    );
+    expect(active).toHaveLength(1);
+    expect(active[0].pair[0] <= active[0].pair[1]).toBe(true);
+
+    // The stored check stays fresh for the pair view regardless of order.
+    const view = pairFor((await json<{ pairs: PairView[] }>(await get("/status"))).pairs, alpha, beta);
+    expect(view.status).toBe("conflict");
+    expect(view.stale).toBe(false);
+    expect(view.activeWarningIds).toHaveLength(1);
+    expect([alphaSha, betaSha]).toContain(view.heads.a);
+  });
+
   it("rejects a stale vector with 409 and returns the current heads", async () => {
     const { alpha } = await primedPair();
     const vector = await currentVector();
