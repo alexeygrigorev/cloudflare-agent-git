@@ -1,6 +1,6 @@
 # Dogfood resource evidence: Rust build disk + parallel-test RAM (for Agent Branches)
 
-2026-10-03 ~16:40 CEST, claude-scribe-dogfood (opencode, glm-5.3, session 8a35b6bb, parent claude-principal b3a92dd0). Read-only gathering except this file. All numbers below are quoted from cited files or measured today by the commands named; nothing is estimated. Coordination-file line numbers are as of writing and will drift as peers append; paths are stable.
+2026-10-03 ~15:05 CEST (corrected; original header said ~16:40, a future time), claude-scribe-dogfood (opencode, glm-5.3, session 8a35b6bb, parent claude-principal b3a92dd0). Read-only gathering except this file. All numbers below are quoted from cited files or measured today by the commands named; nothing is estimated. Coordination-file line numbers are as of writing and will drift as peers append; paths are stable.
 
 ## 1. User-reported vs measured (labelled)
 
@@ -25,7 +25,7 @@ Fresh read-only measurements today (2026-10-03, commands in parentheses):
 - `df -h /`: 436G total, 315G used, 100G avail, 77%.
 - Standalone Rust target dirs under /home/alexey/git (`find -maxdepth 4 -xdev -type d -name target` + `du -sh`, 120s timeout): **codex-zcode/codex-rs/target 52G**, aplexer/target 7.5G, cloudflare-aplexer-protocol/target 4.3G, next largest 266M.
 - That 52G is not in the u7 linked-worktree scan (standalone checkout) and corroborates the user's Rust pain by magnitude: coordination/antigravity.md:613 measured codex-rs/target at ~39.65 GiB after the first scratch compile (debug/incremental 25 GiB, debug/deps 14 GiB, debug/build 512 MiB), which alone dropped `/` free by ~16 GiB (132→115 GiB).
-- One cargo build in research/antigravity/r9-runtime-single-effect-verification.md:20,40 grew a target dir by **+12,259,708,928 bytes (~12.26 GiB)**, breaching the 512 MiB growth budget; the single unstripped debug binary is 1,545,061,640 bytes (~1.54 GiB). Build processes were halted; builds frozen.
+- One cargo build in research/antigravity/r9-runtime-single-effect-verification.md:20,40 grew a target dir by **+12,259,708,928 bytes (12.26 GB = 11.42 GiB; corrected unit)**, breaching the 512 MiB growth budget; the single unstripped debug binary is 1,545,061,640 bytes (~1.54 GiB). Build processes were halted; builds frozen.
 - Our own shared aplexer target grew +1.2 GiB over the 512 MiB cap before being stopped (coordination/claude.md:76).
 - Dogfood positive (research/claude/u7-real-worktree-measurement.md §Dogfood link): two aplexer worktrees (6.7 MiB source each) share one CARGO_TARGET_DIR instead of per-worktree target dirs (main checkout target 7.5 GiB).
 
@@ -33,7 +33,7 @@ Reconciliation (challenge to the user's framing, evidence-based): within *linked
 
 ### 1c. Measured by us — RAM
 
-- Host now (`free -g`, 2026-10-03): 62 GiB total, 36 GiB available, 0 free, 36 buff/cache; **swap 31 GiB with 21 GiB used** — heavy used swap is direct evidence of sustained past memory pressure (inference from the reading, labelled as such). `nproc` = 12.
+- Host now (`free -g`, 2026-10-03): 62 GiB total, 36 GiB available, 0 free, 36 buff/cache; **swap 31 GiB with 21 GiB used** — heavy used swap is evidence of PAST memory pressure only; /proc/pressure/memory showed some/full avg10/60/300 = 0.00 at the same time, i.e. no current pressure (correction after codex C-1323) (inference from the reading, labelled as such). `nproc` = 12.
 - Muse OOM incident (coordination/codex.md:412, R8): memory_peak 2,147,495,936 bytes against a 2,147,483,648-byte (2 GiB) cgroup limit, **two OOM kills**, 13 processes left; attributed to parallel children inside head containment.
 - Resulting standing policy (coordination/zcode.md:265): executor caps set to 1 GiB because "512MiB aggregate is an OOM risk for node CLIs (muse OOM lesson at 2GiB)"; 8 GiB floor held with 41 GiB available. Note: the 512 MiB / 8 GiB figures are the *disk* growth cap and free floor (also coordination/codex/project-registry.md:13), frequently co-cited with the RAM caps.
 - Scale-up broadcast after the user intake (coordination/claude.md:172, 2026-10-03 15:06): each executor ≤1500 MiB, **no launch when <10 GiB RAM available**, plus friction logging.
