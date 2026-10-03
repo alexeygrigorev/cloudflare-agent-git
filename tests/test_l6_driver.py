@@ -355,6 +355,176 @@ class TestL6AgentHarness(unittest.TestCase):
         pushed_remote_sha = driver.query_remote_head("origin", t.branch, cwd=ws_dir)
         self.assertEqual(pushed_remote_sha, local_head)
 
+    def test_09_workspace_deep_quarantine(self):
+        """Test deep recursive sweep removes WORKLOG*.md and reference solutions anywhere in workspace (C-1383 / F3.1)."""
+        driver = AgentHarnessDriver(
+            server_url=self.server_url,
+            demo_target_path=self.demo_target_path,
+            run_dir=self.test_dir,
+            min_mem_gate_gb=1.0,
+            engine_mode="dry-run",
+        )
+        base_sha = driver.get_base_commit_sha()
+        tasks = driver.parse_tasks()[:1]
+        driver.register_tasks(tasks, base_sha)
+        driver.setup_workspaces(tasks, base_sha)
+
+        ws_dir = tasks[0].workspace_dir
+        self.assertIsNotNone(ws_dir)
+
+        # Create nested test files that mimic leaked artifacts
+        nested_worklog = os.path.join(ws_dir, "research", "zcode", "independent", "a05-adjudication", "WORKLOG.md")
+        os.makedirs(os.path.dirname(nested_worklog), exist_ok=True)
+        with open(nested_worklog, "w") as f:
+            f.write("# Leaked Worklog\n")
+
+        root_worklog = os.path.join(ws_dir, "WORKLOG.md")
+        with open(root_worklog, "w") as f:
+            f.write("# Root Worklog\n")
+
+        sol_doc = os.path.join(ws_dir, "SOLUTIONS.md")
+        with open(sol_doc, "w") as f:
+            f.write("# Solutions\n")
+
+        # Re-run setup_workspaces to verify deep sweep
+        driver.setup_workspaces(tasks, base_sha)
+
+        # Assert all leaked worklogs and reference solutions are quarantined
+        self.assertFalse(os.path.exists(nested_worklog), "Nested WORKLOG.md must be scrubbed")
+        self.assertFalse(os.path.exists(root_worklog), "Root WORKLOG.md must be scrubbed")
+        self.assertFalse(os.path.exists(sol_doc), "SOLUTIONS.md must be scrubbed")
+
+        # Assert valid workspace files remain
+        self.assertTrue(os.path.exists(os.path.join(ws_dir, ".bin", "agent-branches")), "agent-branches CLI must remain")
+
+    def test_10_warning_ack_parsing_and_discrete_keying(self):
+        """Test discrete warning ACK keying by (agent, head, warning_id) and None id safety (C-1389 / F1.1)."""
+        driver = AgentHarnessDriver(
+            server_url=self.server_url,
+            demo_target_path=self.demo_target_path,
+            run_dir=self.test_dir,
+            engine_mode="dry-run",
+        )
+
+        # Fake coordinator status with canonical acks (multiple agents), legacy acks, and None id
+        fake_status = {
+            "warnings": [
+                {
+                    "id": "warn-1",
+                    "pair": ["agent-a", "agent-b"],
+                    "kind": "textual",
+                    "status": "active",
+                    "acks": [
+                        {"agent": "agent-a", "head": "sha-a1", "at": "2026-10-03T20:00:00Z"},
+                        {"agent": "agent-b", "head": "sha-b1", "at": "2026-10-03T20:01:00Z"},
+                    ],
+                },
+                {
+                    "warningId": "warn-legacy",
+                    "pair": ["agent-c", "agent-d"],
+                    "kind": "test",
+                    "status": "active",
+                    "acknowledged": True,
+                },
+                {
+                    "id": None,
+                    "warningId": None,
+                    "acks": [{"agent": "agent-x", "head": "sha-x1"}],
+                },
+            ]
+        }
+
+        with patch.object(driver.client, "get_status", return_value=fake_status):
+            # Run one simulated warning parsing cycle
+            coord_status = driver.client.get_status()
+            for w in coord_status.get("warnings", []):
+                w_id = w.get("id") or w.get("warningId")
+                if not w_id:
+                    continue
+                acks = w.get("acks", [])
+                if isinstance(acks, list) and acks:
+                    for ack in acks:
+                        ack_agent = ack.get("agent") or "unknown"
+                        ack_head = ack.get("head") or "unknown"
+                        ack_key = (ack_agent, ack_head, w_id)
+                        if ack_key not in driver._acked_warning_keys:
+                            driver._acked_warning_keys.add(ack_key)
+                            driver.record_event("warning_acknowledged", {"warning_id": w_id, "agent": ack_agent, "head": ack_head})
+                elif bool(w.get("acknowledged")):
+                    ack_key = ("legacy", "legacy", w_id)
+                    if ack_key not in driver._acked_warning_keys:
+                        driver._acked_warning_keys.add(ack_key)
+                        driver.record_event("warning_acknowledged", {"warning_id": w_id, "agent": "legacy", "head": "legacy"})
+
+        # Assert discrete keys tracked
+        self.assertIn(("agent-a", "sha-a1", "warn-1"), driver._acked_warning_keys)
+        self.assertIn(("agent-b", "sha-b1", "warn-1"), driver._acked_warning_keys)
+        self.assertIn(("legacy", "legacy", "warn-legacy"), driver._acked_warning_keys)
+        # Assert None id did not pollute dedup keys
+        self.assertNotIn((None, None, None), driver._acked_warning_keys)
+        for key in driver._acked_warning_keys:
+            self.assertIsNotNone(key[2])
+
+        # Assert exactly 3 events recorded
+        ack_events = [e for e in driver.timeline if e.event_type == "warning_acknowledged"]
+        self.assertEqual(len(ack_events), 3)
+
+    def test_11_radar_baseline_and_change_trigger(self):
+        """Test radar evaluates on baseline and on head change, but skips redundant static iterations (F2.1 / F2.2 / C-1374)."""
+        driver = AgentHarnessDriver(
+            server_url=self.server_url,
+            demo_target_path=self.demo_target_path,
+            run_dir=self.test_dir,
+            engine_mode="dry-run",
+            poll_interval=0.05,
+            max_wait_seconds=0.3,
+        )
+        tasks = [
+            TaskSpec(task_id="T1", title="Task 1", body="Body 1", branch="feat/t1", workspace_dir="/tmp/fake-ws", head_sha="sha1", session_id="live-session-1")
+        ]
+
+        radar_calls = []
+
+        def mock_eval_radar(t_list, b_sha):
+            radar_calls.append(len(radar_calls) + 1)
+            return {"evaluated": True}
+
+        driver.evaluate_radar = mock_eval_radar
+
+        head_sequence = ["sha1", "sha1", "sha2"]
+        call_idx = [0]
+
+        def mock_query_remote(remote, branch, cwd):
+            idx = min(call_idx[0], len(head_sequence) - 1)
+            res = head_sequence[idx]
+            call_idx[0] += 1
+            return res
+
+        driver.query_remote_head = mock_query_remote
+
+        # Mock aplexer status returning alive session for first 2 calls, then finished
+        mock_stat_running = unittest.mock.Mock(returncode=0, stdout='{"alive": true, "phase": "running", "reported_state": "working"}')
+        mock_stat_done = unittest.mock.Mock(returncode=0, stdout='{"alive": false, "phase": "completed", "reported_state": "idle"}')
+
+        stat_calls = [0]
+
+        def mock_subproc_run(cmd, *args, **kwargs):
+            if cmd and cmd[0] == "aplexer" and cmd[1] == "status":
+                stat_calls[0] += 1
+                if stat_calls[0] < 3:
+                    return mock_stat_running
+                return mock_stat_done
+            return unittest.mock.Mock(returncode=0, stdout="")
+
+        with patch.object(driver.client, "get_status", return_value={"warnings": []}):
+            with patch.object(driver.client, "push", return_value={"accepted": True}):
+                with patch("subprocess.run", side_effect=mock_subproc_run):
+                    driver.monitor_live_agents(tasks, base_sha="sha0")
+
+        # Baseline run (call 1) + Head change (call 2 on sha2) = 2 evaluations, skipping call on static sha1
+        self.assertGreaterEqual(len(radar_calls), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
+

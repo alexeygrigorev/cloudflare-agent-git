@@ -152,7 +152,7 @@ class AgentHarnessDriver:
         )
         self.timeline: List[TimelineEvent] = []
         self.start_time = time.time()
-        self._acked_warning_ids: set[str] = set()
+        self._acked_warning_keys: set[Tuple[str, str, str]] = set()
 
     def record_event(self, event_type: str, details: Dict[str, Any]) -> None:
         """Record a structured timeline event."""
@@ -410,18 +410,20 @@ class AgentHarnessDriver:
             if not is_mock_remote:
                 # Real sidecar / remote repository: clone directly from the remote fork
                 # Pass auth token via GIT_CONFIG_* env vars to strictly prevent token exposure in process argv (Codex C-1360)
-                clone_cmd = ["git", "clone", "--quiet", t.fork_remote, ws_dir]
-                clone_env = dict(os.environ)
-                if t.token:
-                    clone_env["GIT_CONFIG_COUNT"] = "1"
-                    clone_env["GIT_CONFIG_KEY_0"] = "http.extraHeader"
-                    clone_env["GIT_CONFIG_VALUE_0"] = f"Authorization: Bearer {t.token}"
-                subprocess.run(clone_cmd, check=True, capture_output=True, env=clone_env)
+                if not os.path.exists(os.path.join(ws_dir, ".git")):
+                    clone_cmd = ["git", "clone", "--quiet", t.fork_remote, ws_dir]
+                    clone_env = dict(os.environ)
+                    if t.token:
+                        clone_env["GIT_CONFIG_COUNT"] = "1"
+                        clone_env["GIT_CONFIG_KEY_0"] = "http.extraHeader"
+                        clone_env["GIT_CONFIG_VALUE_0"] = f"Authorization: Bearer {t.token}"
+                    subprocess.run(clone_cmd, check=True, capture_output=True, env=clone_env)
                 subprocess.run(["git", "-C", ws_dir, "checkout", "-q", "-B", t.branch], check=True, capture_output=True)
             else:
                 # Mock or local remote: clone from self.repo_root and create bare remote
-                subprocess.run(["git", "clone", "--quiet", self.repo_root, ws_dir], check=True, capture_output=True)
-                subprocess.run(["git", "-C", ws_dir, "checkout", "-q", "-b", t.branch, base_sha], check=True, capture_output=True)
+                if not os.path.exists(os.path.join(ws_dir, ".git")):
+                    subprocess.run(["git", "clone", "--quiet", self.repo_root, ws_dir], check=True, capture_output=True)
+                subprocess.run(["git", "-C", ws_dir, "checkout", "-q", "-B", t.branch, base_sha], check=True, capture_output=True)
                 bare_repo = os.path.join(remotes_root, f"fork-{t.task_id.lower()}.git")
                 if not os.path.exists(bare_repo):
                     subprocess.run(["git", "init", "--bare", "--quiet", bare_repo], check=True, capture_output=True)
@@ -497,25 +499,24 @@ class AgentHarnessDriver:
             with open(exclude_file, "a", encoding="utf-8") as f:
                 f.write("\n.bin/\nagent-branches\nAGENT_TASK.md\n.agent-token\n")
 
-            # Ensure agent workspace gets ONLY the base code: scrub reference solutions, solutions docs, and inherited worklogs (C-1383)
-            for scrub_target in ["reference-solutions", ".harness", "SOLUTIONS.md", "WORKLOG.md", "verify-overlap.sh", "verify-overlap.work.sh"]:
-                st_path = os.path.join(ws_dir, scrub_target)
-                if os.path.isdir(st_path):
-                    shutil.rmtree(st_path, ignore_errors=True)
-                elif os.path.isfile(st_path):
-                    try:
-                        os.remove(st_path)
-                    except OSError:
-                        pass
-                # Also scrub inside demo-target subdirectory if present
-                st_sub = os.path.join(ws_dir, "demo-target", scrub_target)
-                if os.path.isdir(st_sub):
-                    shutil.rmtree(st_sub, ignore_errors=True)
-                elif os.path.isfile(st_sub):
-                    try:
-                        os.remove(st_sub)
-                    except OSError:
-                        pass
+            # Deep recursive quarantine sweep for WORKLOG*.md, reference solutions, and solutions docs (C-1383, F3.1)
+            for root, dirs, files in os.walk(ws_dir):
+                if ".git" in dirs:
+                    dirs.remove(".git")
+                for d in list(dirs):
+                    if d in ("reference-solutions", ".harness"):
+                        shutil.rmtree(os.path.join(root, d), ignore_errors=True)
+                        dirs.remove(d)
+                for f in files:
+                    if (f.startswith("WORKLOG") and f.endswith(".md")) or f in (
+                        "SOLUTIONS.md",
+                        "verify-overlap.sh",
+                        "verify-overlap.work.sh",
+                    ):
+                        try:
+                            os.remove(os.path.join(root, f))
+                        except OSError:
+                            pass
 
             self.record_event(
                 "workspace_created",
@@ -874,6 +875,7 @@ class AgentHarnessDriver:
         poll_start = time.time()
         last_check_time = 0.0
         check_interval = max(5.0, self.poll_interval)
+        radar_baseline_done = False
 
         while time.time() - poll_start < self.max_wait_seconds:
             any_head_changed = False
@@ -967,30 +969,68 @@ class AgentHarnessDriver:
                     all_done = False
                     self.record_event("session_status_exception", {"session_id": t.session_id, "error": str(exc)})
 
-            # Check for warning acknowledgements from coordinator (C-1374)
+            # Check for warning acknowledgements from coordinator (C-1374 / C-1389 / F1.1 / F1.2)
             try:
                 coord_status = self.client.get_status()
                 for w in coord_status.get("warnings", []):
                     w_id = w.get("id") or w.get("warningId")
+                    if not w_id:
+                        continue
                     acks = w.get("acks", [])
-                    is_acked = bool(w.get("acknowledged") or (isinstance(acks, list) and acks))
-                    if is_acked and w_id not in self._acked_warning_ids:
-                        self._acked_warning_ids.add(w_id)
-                        self.record_event(
-                            "warning_acknowledged",
-                            {
-                                "warning_id": w_id,
-                                "pair": w.get("pair"),
-                                "kind": w.get("kind"),
-                                "acks": acks,
-                            },
-                        )
+                    if isinstance(acks, list) and acks:
+                        for ack in acks:
+                            ack_agent = ack.get("agent") or "unknown"
+                            ack_head = ack.get("head") or "unknown"
+                            ack_key = (ack_agent, ack_head, w_id)
+                            if ack_key not in self._acked_warning_keys:
+                                self._acked_warning_keys.add(ack_key)
+                                self.record_event(
+                                    "warning_acknowledged",
+                                    {
+                                        "warning_id": w_id,
+                                        "agent": ack_agent,
+                                        "head": ack_head,
+                                        "status": w.get("status"),
+                                        "resolved_by": w.get("resolvedBy"),
+                                        "pair": w.get("pair"),
+                                        "kind": w.get("kind"),
+                                        "note": ack.get("note"),
+                                        "at": ack.get("at"),
+                                    },
+                                )
+                    elif bool(w.get("acknowledged")):
+                        ack_key = ("legacy", "legacy", w_id)
+                        if ack_key not in self._acked_warning_keys:
+                            self._acked_warning_keys.add(ack_key)
+                            self.record_event(
+                                "warning_acknowledged",
+                                {
+                                    "warning_id": w_id,
+                                    "agent": "legacy",
+                                    "head": "legacy",
+                                    "status": w.get("status"),
+                                    "resolved_by": w.get("resolvedBy"),
+                                    "pair": w.get("pair"),
+                                    "kind": w.get("kind"),
+                                    "acks": [],
+                                },
+                            )
             except Exception:
                 pass
 
-            # Run radar when any head changed (avoiding redundant CPU/test overhead on static vectors - C-1374)
-            if any_head_changed:
-                last_check_time = time.time()
+            # Run radar trigger (F2.1 baseline + F2.2 recovery net + C-1374 change detection)
+            now = time.time()
+            run_radar = False
+            if not radar_baseline_done:
+                run_radar = True
+                radar_baseline_done = True
+            elif any_head_changed:
+                run_radar = True
+            elif (now - last_check_time >= 30.0) and any(t.head_sha for t in tasks):
+                run_radar = True
+
+            if run_radar:
+                last_check_time = now
                 try:
                     self.evaluate_radar(tasks, base_sha)
                 except Exception as exc:
