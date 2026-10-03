@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T05:15:44.237596+00:00",
+  "updated_at": "2026-10-03T05:17:57.029807+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -251,7 +251,11 @@
         {
           "tag": "experiment-supervision",
           "role": "service",
-          "workspace": "/home/alexey/git/cloudflare-agent-git"
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "session_id": "2ec63a80-7539-4d4a-8d11-563873706c08",
+          "resumed_from_session_id": "79ac730c-5aac-4423-b492-a0efd6d76285",
+          "resumed_at": "2026-10-03T05:17:57.029807+00:00",
+          "recovery_reason": "Graceful owned checkpoint for exact native ACK reconciliation; state and approved CLI preserved."
         },
         {
           "tag": "zcy-dup-research",
@@ -291,7 +295,9 @@
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "task_id": "supervision-exact-ack-reconciliation",
           "session_id": null,
-          "usage_source": null
+          "usage_source": null,
+          "status": "done",
+          "completed_at": "2026-10-03T05:17:57.029807+00:00"
         }
       ]
     }
