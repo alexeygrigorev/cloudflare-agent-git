@@ -27,30 +27,37 @@ def get_dir_size_mb(path: str, timeout: float = 5.0) -> int:
     """
     if not os.path.exists(path):
         return 0
-    try:
-        res = subprocess.run(
-            ["du", "-sm", path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            timeout=timeout,
-        )
-    except subprocess.TimeoutExpired:
-        raise RuntimeError(f"du timed out after {timeout}s on {path}")
-    except Exception as e:
-        raise RuntimeError(f"du invocation failed on {path}: {e}")
+    for attempt in range(2):
+        try:
+            res = subprocess.run(
+                ["du", "-sm", path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=timeout,
+            )
+        except subprocess.TimeoutExpired:
+            raise RuntimeError(f"du timed out after {timeout}s on {path}")
+        except Exception as e:
+            raise RuntimeError(f"du invocation failed on {path}: {e}")
 
-    if res.returncode != 0:
+        if res.returncode == 0:
+            tokens = res.stdout.split()
+            if not tokens:
+                raise RuntimeError(f"du produced empty output for {path}")
+            try:
+                return int(tokens[0])
+            except ValueError as e:
+                raise RuntimeError(f"du produced non-integer size '{tokens[0]}': {e}")
+
+        # If du encountered a transient file that vanished mid-traversal (e.g. rustc lock/temp file), retry once
+        if attempt == 0 and "No such file or directory" in res.stderr:
+            time.sleep(0.02)
+            continue
+
         raise RuntimeError(
             f"du failed on {path} (exit {res.returncode}): {res.stderr.strip()}"
         )
-    tokens = res.stdout.split()
-    if not tokens:
-        raise RuntimeError(f"du produced empty output for {path}")
-    try:
-        return int(tokens[0])
-    except ValueError as e:
-        raise RuntimeError(f"du produced non-integer size '{tokens[0]}': {e}")
 
 
 def get_free_mb(path: str = "/home") -> int:
