@@ -190,13 +190,13 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T23:24:07.327158+00:00",
+      "updated_at": "2026-10-03T23:59:07.529093+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md"
       ],
       "blocked_on": [],
-      "next_action": "Human capacity steering C1462: verify head-owned parallel product/review workers, first native tools, caps and shared resource admission; replenish useful completed queues. Original supervisor81 genuinely ACKed on human resume; parser automatic recovery unproven.",
+      "next_action": "C1495: verify new radar first tool and actual SDK wire-shape negative; review adoption2738157e verdict and limiter314 fix. Ant owns 180s completion/readiness/resource checkpoints and automatic disjoint replenishment. Product remote recovery f582 now evidenced; deployment/adoption benefit gates held. Claude intentionally stopped; fresh quota/root scratch floors unchanged.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
