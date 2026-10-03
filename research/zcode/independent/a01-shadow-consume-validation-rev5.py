@@ -251,6 +251,30 @@ def main() -> int:
               lines == [expected_first, "explicit-optout"],
               f"exactly one line per evidence case: {lines}")
 
+        # --- 4. rev1f input validation (Muse round-24 finding 2): clean
+        # rejection instead of deep crashes; journal untouched ---
+        vjournal = tmp / "validated.jsonl"
+        vjournal.write_text("")
+        try:
+            mod.append_event_dedup(vjournal, ["not", "a", "dict"])
+            crashed = False
+        except TypeError as exc:
+            crashed = "dict" in str(exc)
+        check("non_dict_event_clean_rejection", crashed,
+              "TypeError naming the actual type, before any lock/mutation")
+        try:
+            mod.append_event_dedup(vjournal, {"etype": "x", "payload": {1, 2}})
+            crashed2 = False
+        except ValueError as exc:
+            crashed2 = "JSON-serializable" in str(exc)
+        check("unserializable_event_clean_rejection", crashed2,
+              "ValueError naming serializability, not a mid-write TypeError")
+        check("validated_journal_untouched",
+              vjournal.read_text() == "",
+              "reject happened before mutation")
+        good = mod.append_event_dedup(vjournal, {"etype": "ok"})
+        check("valid_event_still_appends", good == "appended", f"-> {good}")
+
         # --- repo shared files untouched ---
         check("repo_journal_untouched",
               (repo_events.read_bytes() if repo_events.exists() else b"") == repo_before,

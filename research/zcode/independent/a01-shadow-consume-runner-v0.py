@@ -492,6 +492,22 @@ def _append_locked(events_path: Path, event: dict) -> str:
     return "appended"
 
 
+def _validate_event(event: object) -> dict:
+    """rev1f (Muse round-24 finding 2, head-confirmed): validate-and-reject
+    BEFORE any lock acquisition or mutation. A durable-journal helper must
+    fail with a clear, early error instead of a deep AttributeError on
+    non-dict input, or a TypeError escaping mid-write for unserializable
+    values (the dedup key's default=str hashing previously masked those
+    until the bare json.dumps write)."""
+    if not isinstance(event, dict):
+        raise TypeError(f"event must be a dict, got {type(event).__name__}")
+    try:
+        json.dumps(event, sort_keys=True)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"event is not JSON-serializable: {exc}") from exc
+    return event
+
+
 def append_event_dedup(
     events_path: Path, event: dict, lock_path: Path | None = None
 ) -> str:
@@ -503,7 +519,10 @@ def append_event_dedup(
     else sibling <events>.lock). rev1e: passing a DIFFERENT explicit
     lock_path still opts out (back-compat), but prints a stderr warning —
     validation rev5 proves with fstat/flock evidence that such callers are
-    NOT mutually excluded with canonical callers."""
+    NOT mutually excluded with canonical callers. rev1f: event is validated
+    (dict + JSON-serializable) before any lock or mutation — clean early
+    rejection instead of deep crashes (Muse round-24 finding 2)."""
+    _validate_event(event)
     if lock_path is None:
         lock_path = canonical_lock_for(events_path)
     else:

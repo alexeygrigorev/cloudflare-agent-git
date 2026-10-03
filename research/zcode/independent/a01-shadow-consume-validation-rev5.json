@@ -1,16 +1,16 @@
 {
   "suite": "a01-shadow-consume-validation-rev5",
   "expect": "unified",
-  "runner_sha256": "f426dc76b8083235715dae13eade131e42969c109d8e2bacbf99f94e5bcbbbd3",
-  "generated_at": "2026-10-03T05:18:27.206458+00:00",
-  "passed": 16,
-  "total": 16,
+  "runner_sha256": "c4218c8ce86acb009d7102e99f41d05671772908ea1fa22975ab18f77828c9cd",
+  "generated_at": "2026-10-03T05:22:21.582052+00:00",
+  "passed": 20,
+  "total": 20,
   "all_pass": true,
   "checks": [
     {
       "check": "lexical_diff_strings_same_inode",
       "pass": true,
-      "detail": "direct=/tmp/a01-rev5-63ab0_pb/lex/guard.lock dotted=/tmp/a01-rev5-63ab0_pb/lex/sub/../guard.lock"
+      "detail": "direct=/tmp/a01-rev5-u9ijk6h0/lex/guard.lock dotted=/tmp/a01-rev5-u9ijk6h0/lex/sub/../guard.lock"
     },
     {
       "check": "same_inode_locks_mutually_exclude",
@@ -35,7 +35,7 @@
     {
       "check": "dir_symlink_lock_strings_converge_POST_FIX",
       "pass": true,
-      "detail": "/tmp/a01-rev5-63ab0_pb/dreal/events.jsonl.lock == /tmp/a01-rev5-63ab0_pb/dreal/events.jsonl.lock"
+      "detail": "/tmp/a01-rev5-u9ijk6h0/dreal/events.jsonl.lock == /tmp/a01-rev5-u9ijk6h0/dreal/events.jsonl.lock"
     },
     {
       "check": "dir_symlink_locks_same_inode_no_split",
@@ -50,7 +50,7 @@
     {
       "check": "file_symlink_single_lock_name_POST_FIX",
       "pass": true,
-      "detail": "/tmp/a01-rev5-63ab0_pb/away/events.jsonl.lock == /tmp/a01-rev5-63ab0_pb/away/events.jsonl.lock"
+      "detail": "/tmp/a01-rev5-u9ijk6h0/away/events.jsonl.lock == /tmp/a01-rev5-u9ijk6h0/away/events.jsonl.lock"
     },
     {
       "check": "file_symlink_lock_single_inode_POST_FIX",
@@ -81,6 +81,26 @@
       "check": "explicit_opt_out_journal_intact",
       "pass": true,
       "detail": "exactly one line per evidence case: ['file-symlink-unified', 'explicit-optout']"
+    },
+    {
+      "check": "non_dict_event_clean_rejection",
+      "pass": true,
+      "detail": "TypeError naming the actual type, before any lock/mutation"
+    },
+    {
+      "check": "unserializable_event_clean_rejection",
+      "pass": true,
+      "detail": "ValueError naming serializability, not a mid-write TypeError"
+    },
+    {
+      "check": "validated_journal_untouched",
+      "pass": true,
+      "detail": "reject happened before mutation"
+    },
+    {
+      "check": "valid_event_still_appends",
+      "pass": true,
+      "detail": "-> appended"
     },
     {
       "check": "repo_journal_untouched",
