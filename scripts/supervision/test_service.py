@@ -169,4 +169,24 @@ class Safety(unittest.TestCase):
   service.record_cycle_failure(report,service.MailboxBusy('command failed: mailbox busy after 5 retries'))
   self.assertTrue(report['degraded'])
   self.assertEqual(report['observation'],'incomplete-cycle: MailboxBusy')
+ def test_active_principals_default(self):
+  self.assertEqual(service.active_principals(), ['codex-principal', 'claude-principal'])
+ def test_active_principals_env_exclusion(self):
+  old = service.os.environ.get('SUPERVISION_EXCLUDE_PRINCIPALS')
+  try:
+   service.os.environ['SUPERVISION_EXCLUDE_PRINCIPALS'] = 'claude-principal'
+   self.assertEqual(service.active_principals(), ['codex-principal'])
+  finally:
+   if old is not None: service.os.environ['SUPERVISION_EXCLUDE_PRINCIPALS'] = old
+   else: service.os.environ.pop('SUPERVISION_EXCLUDE_PRINCIPALS', None)
+ def test_active_principals_registry_exclusion(self):
+  reg = {'excluded_principals': ['claude-principal']}
+  self.assertEqual(service.active_principals(registry_raw=reg), ['codex-principal'])
+  reg2 = {'agents': [{'tag': 'claude-principal', 'status': 'quiet'}]}
+  self.assertEqual(service.active_principals(registry_raw=reg2), ['codex-principal'])
+  reg3 = {'teams': [{'agents': [{'tag': 'claude-principal', 'status': 'morning-only'}]}]}
+  self.assertEqual(service.active_principals(registry_raw=reg3), ['codex-principal'])
+  reg4 = {'agents': [{'tag': 'claude-principal', 'supervision_excluded': True}]}
+  self.assertEqual(service.active_principals(registry_raw=reg4), ['codex-principal'])
 if __name__=='__main__':unittest.main()
+

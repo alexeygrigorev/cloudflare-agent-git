@@ -7,7 +7,52 @@ from retention import StorageFull, archive_operational, archive_verified, read_a
 ROOT = pathlib.Path('/home/alexey/git/cloudflare-agent-git')
 PRIVATE = ROOT / '.local/supervision'
 BINARY = os.environ.get('SUPERVISION_APLEXER_BINARY', '/home/alexey/git/cloudflare-aplexer-protocol/target/debug/aplexer')
-PRINCIPALS = ('codex-principal', 'claude-principal')
+ALL_KNOWN_PRINCIPALS = ('codex-principal', 'claude-principal')
+PRINCIPALS = ALL_KNOWN_PRINCIPALS  # backward-compatibility alias
+
+def active_principals(teams_data=None, spool=None, registry_raw=None):
+    """
+    Dynamically determine active principals, honoring quiet/morning-only status,
+    exclusion files, and environment overrides (C-1396).
+    """
+    excluded = set()
+    env_ex = os.environ.get('SUPERVISION_EXCLUDE_PRINCIPALS', '')
+    if env_ex:
+        for item in env_ex.split(','):
+            if item.strip():
+                excluded.add(item.strip())
+    if spool:
+        for ex_file in (spool / 'excluded-principals.json', spool / 'excluded_principals.json'):
+            if ex_file.exists():
+                try:
+                    loaded = json.loads(ex_file.read_text())
+                    if isinstance(loaded, list):
+                        excluded.update(loaded)
+                    elif isinstance(loaded, dict) and 'excluded' in loaded:
+                        excluded.update(loaded['excluded'])
+                except Exception:
+                    pass
+    if registry_raw and isinstance(registry_raw, dict):
+        if 'excluded_principals' in registry_raw and isinstance(registry_raw['excluded_principals'], list):
+            excluded.update(registry_raw['excluded_principals'])
+        for a in registry_raw.get('agents', []):
+            tag = a.get('tag')
+            if tag and (a.get('status') in ('quiet', 'morning-only', 'paused', 'inactive', 'offline', 'exited') or a.get('active') is False or a.get('supervision_excluded') is True):
+                excluded.add(tag)
+        for t in registry_raw.get('teams', []):
+            for a in t.get('agents', []):
+                tag = a.get('tag')
+                if tag and (a.get('status') in ('quiet', 'morning-only', 'paused', 'inactive', 'offline', 'exited') or a.get('active') is False or a.get('supervision_excluded') is True):
+                    excluded.add(tag)
+
+    candidates = list(ALL_KNOWN_PRINCIPALS)
+    if teams_data and isinstance(teams_data, list):
+        for team in teams_data:
+            for ptag in team.get('principal_tags', []):
+                if ptag not in candidates:
+                    candidates.append(ptag)
+    return [tag for tag in candidates if tag not in excluded]
+
 
 def now():
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
@@ -223,10 +268,13 @@ def run():
             report['storage'] = storage_guard(PRIVATE)
             if report['storage']['state'] == 'paused-hard-limit':
                 raise StorageFull('storage hard limit reached; native messages and ACKs paused; evidence preserved')
-            teams = records(ROOT / 'coordination/TEAM-REGISTRY.json', 'teams')
+            registry_full = json.loads((ROOT / 'coordination/TEAM-REGISTRY.json').read_text())
+            teams = registry_full if isinstance(registry_full, list) else registry_full.get('teams', [])
             tasks = records(ROOT / 'coordination/TASKS.json', 'tasks')
             active, digest, counts = task_event(tasks)
             report['task_counts'] = counts
+            active_tags = active_principals(teams, PRIVATE, registry_full)
+            report['active_principals'] = active_tags
             sessions = json.loads(command(['aplexer', 'list', '--json']))
             sessions = [x for x in sessions if x.get('workspace') == str(ROOT)]
             same_binary = hashlib.sha256(pathlib.Path(BINARY).read_bytes()).hexdigest() == expected_hash
@@ -243,7 +291,7 @@ def run():
                 sender = message.get('from', {})
                 reply_to = message.get('reply_to', message.get('in_reply_to'))
                 body = message.get('body', '')
-                tags = [tag for tag in PRINCIPALS if sender.get('tag') == tag]
+                tags = [tag for tag in ALL_KNOWN_PRINCIPALS if sender.get('tag') == tag]
                 for tag in tags:
                     pending = memory.get(tag, {}).get('pending')
                     correlated = bool(pending and (reply_to == pending.get('id') or f"SUPERVISION-{pending.get('event')}" in body))
@@ -254,7 +302,7 @@ def run():
                 event('reply-received', message_id=mid, sender_id=sender.get('session_id'), sender_tag=sender.get('tag'), reply_to=reply_to,
                       classification='coordination-reply; inspect evidence before agreement', body_sha256=hashlib.sha256(body.encode()).hexdigest())
                 command([BINARY, 'message', 'ack', mid, '--json'])
-            for tag in PRINCIPALS:
+            for tag in active_tags:
                 match = [x for x in sessions if x.get('tag') == tag]
                 old = memory.get(tag, {})
                 item = {'event_key': digest, 'ready_snapshot_count': 0}
@@ -292,32 +340,34 @@ def run():
                 # At most one envelope per task revision, sparse Claude min 30m; no hourly busywork.
                 cooldown = old.get('cooldown_until', 0)
                 if active and not pending and (old.get('sent_event') != event_key) and time.time() >= cooldown:
-                    selected = [t for t in active if any(tag in team.get('principal_tags', []) and team['id'] == t.get('team_id') for team in teams)]
-                    if selected:
-                        body = (f'SUPERVISION-{event_key}: User requests autonomous useful execution and clear roles. '
-                                'Read coordination/TEAM-REGISTRY.json, TASKS.json and SUPERVISION.md. '
-                                'As monitoring principal, inspect your teams, ask heads to claim ready owned work, '
-                                'verify first actual tool/output, review completion and choose next useful step. '
-                                'Diagnose blockers or arrange acknowledged repair and continue independent work. '
-                                'Do not create implementation teams yourself, invent busywork, overwrite drafts or bypass quotas. '
-                                'Reply with task IDs, accepted owners, first evidence, blocked reasons and next check; update TASKS.json with ownership. '
-                                'Tasks: ' + ', '.join(f"{t['id']} ({t.get('status','unknown')}, {t.get('owner_tag','unowned')})" for t in selected))
-                        # Inbox first, then existing-ID delivery after independent fresh snapshots.
-                        receipt = recorded_send(BINARY,tag,f'{event_key}-{tag}',body,PRIVATE,identity['id'],supports_key)
-                        atomic(PRIVATE / f'receipt-{event_key}-{tag}.json', receipt)
-                        if receipt.get('delivery') == 'send-uncertain':
-                            # Frozen ambiguity: retain UNKNOWN outcome in the report, degraded cycle.
-                            report['degraded'] = True
-                            report['uncertain_outcome'] = {'outcome': 'UNKNOWN', 'class': 'send-uncertain', 'principal': tag, 'event_key': event_key, 'reason': receipt.get('reason')}
-                        envelope = receipt.get('message', receipt)
-                        pending = {'id': envelope.get('id', receipt.get('id')), 'sender_id':identity['id'], 'event': event_key,
-                                   'delivery':receipt.get('delivery','inbox'), 'created_at': now()}
-                        item['sent_event'] = event_key
-                        item['cooldown_until'] = time.time() + (1800 if tag == 'claude-principal' else 300)
-                        event('request-recorded', principal=tag, message_id=pending['id'], event_key=event_key)
+                    if item.get('alive'):
+                        selected = [t for t in active if any(tag in team.get('principal_tags', []) and team['id'] == t.get('team_id') for team in teams)]
+                        if selected:
+                            body = (f'SUPERVISION-{event_key}: User requests autonomous useful execution and clear roles. '
+                                    'Read coordination/TEAM-REGISTRY.json, TASKS.json and SUPERVISION.md. '
+                                    'As monitoring principal, inspect your teams, ask heads to claim ready owned work, '
+                                    'verify first actual tool/output, review completion and choose next useful step. '
+                                    'Diagnose blockers or arrange acknowledged repair and continue independent work. '
+                                    'Do not create implementation teams yourself, invent busywork, overwrite drafts or bypass quotas. '
+                                    'Reply with task IDs, accepted owners, first evidence, blocked reasons and next check; update TASKS.json with ownership. '
+                                    'Tasks: ' + ', '.join(f"{t['id']} ({t.get('status','unknown')}, {t.get('owner_tag','unowned')})" for t in selected))
+                            # Inbox first, then existing-ID delivery after independent fresh snapshots.
+                            receipt = recorded_send(BINARY,tag,f'{event_key}-{tag}',body,PRIVATE,identity['id'],supports_key)
+                            atomic(PRIVATE / f'receipt-{event_key}-{tag}.json', receipt)
+                            if receipt.get('delivery') == 'send-uncertain':
+                                # Frozen ambiguity: retain UNKNOWN outcome in the report, degraded cycle.
+                                report['degraded'] = True
+                                report['uncertain_outcome'] = {'outcome': 'UNKNOWN', 'class': 'send-uncertain', 'principal': tag, 'event_key': event_key, 'reason': receipt.get('reason')}
+                            envelope = receipt.get('message', receipt)
+                            pending = {'id': envelope.get('id', receipt.get('id')), 'sender_id':identity['id'], 'event': event_key,
+                                       'delivery':receipt.get('delivery','inbox'), 'created_at': now()}
+                            item['sent_event'] = event_key
+                            item['cooldown_until'] = time.time() + (1800 if tag == 'claude-principal' else 300)
+                            event('request-recorded', principal=tag, message_id=pending['id'], event_key=event_key)
                 else:
                     item['sent_event'] = old.get('sent_event')
                     item['cooldown_until'] = cooldown
+
                 if pending and pending.get('sender_id') != identity['id']:
                     item['pending_reason'] = 'original sender changed; original recipient ACK/reply required'
                 if may_deliver(pending,identity['id']) and count >= 2:

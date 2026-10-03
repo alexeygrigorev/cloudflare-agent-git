@@ -1,8 +1,12 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T18:44:29.610162+00:00",
+  "updated_at": "2026-10-03T19:05:00.000000+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
+  "excluded_principals": [
+    "claude-principal"
+  ],
   "teams": [
+
     {
       "id": "a06-a10",
       "name": "Change-story review and task handoff",
@@ -374,10 +378,94 @@
           "usage": "UNKNOWN",
           "launched_by": "antigravity-head",
           "status": "running"
+        },
+        {
+          "tag": "l6-ca16-review",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "opencode run",
+          "provider": "opencode-go/space-bunny-free",
+          "model": "space-bunny-free",
+          "session_id": "1fcfd98b-fd8b-430e-bb18-862ab7a7c496",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "status": "ended",
+          "task": "REV-L6-CA16 independent cross-family review of ca16e16",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-L6-CA16-REVIEW.md"
+          ],
+          "first_tool_evidence": "aplexer whoami --json / view_file",
+          "completed_at": "2026-10-03T18:48:00+00:00",
+          "result": "REQUEST_CHANGES (committed c8dfb4f; F3.1 deep quarantine sweep, F2.1/F2.2 baseline radar trigger, F1.1 discrete ack keying)"
+        },
+        {
+          "tag": "zc-readme-guard",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "zcodex exec",
+          "provider": "zcode/warm",
+          "session_id": "736eeb3d-4960-403b-9401-adc542e229fa",
+          "workspace": "/home/alexey/git/ab-readme",
+          "status": "ended",
+          "task": "C-1381 docs clarification on proto/readme (denominators, units, storage TTL, wire endpoints)",
+          "owned_paths": [
+            "SUBMISSION.md",
+            "README.md",
+            "docs-submission/"
+          ],
+          "first_tool_evidence": "aplexer whoami --json",
+          "completed_at": "2026-10-03T18:58:33+00:00",
+          "result": "Complete: 1e10e8b and b2abd07 pushed to proto/readme"
+        },
+        {
+          "tag": "zc-ui-guard",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "zcodex exec",
+          "provider": "zcode/warm",
+          "session_id": "2726966e-b610-4a5b-a382-cd8dd3a83cd0",
+          "workspace": "/home/alexey/git/agent-branches-l4",
+          "status": "ended",
+          "task": "C-1385 single-flight generation guard and status error freshness on proto/l4-review-ui",
+          "owned_paths": [
+            "prototype/ui/request-guard.js",
+            "prototype/ui/ui.js",
+            "prototype/ui/index.html",
+            "prototype/ui/task.html",
+            "prototype/ui/tests/generation-guard.test.js"
+          ],
+          "first_tool_evidence": "aplexer whoami --json",
+          "completed_at": "2026-10-03T19:01:50+00:00",
+          "result": "Complete: 9aca826 pushed to proto/l4-review-ui (47/47 tests pass)"
+        },
+        {
+          "tag": "zc-live-merge",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "zcodex exec",
+          "provider": "zcode/warm",
+          "session_id": "6ac7e176-d1c4-4e15-8ed0-199c8ae06b8c",
+          "workspace": "/home/alexey/git/agent-branches-live",
+          "status": "ended",
+          "task": "Live Integration of l1-scaffold, l4-review-ui, and readme into proto/live",
+          "owned_paths": [
+            "prototype/"
+          ],
+          "first_tool_evidence": "aplexer whoami --json",
+          "completed_at": "2026-10-03T19:04:20+00:00",
+          "result": "Complete: 781339f and 68ebf15 pushed to proto/live (162/162 tests pass)"
         }
       ]
     },
     {
+
       "id": "independent-review",
       "name": "Independent negative tests and review",
       "head_tag": "muse-reviewer",
@@ -723,8 +811,12 @@
           "tag": "claude-principal",
           "role": "principal",
           "mode": "interactive",
-          "workspace": "/home/alexey/git/cloudflare-agent-git"
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "status": "quiet",
+          "schedule": "morning-only",
+          "supervision_excluded": true
         },
+
         {
           "tag": "desktop-orchestrator",
           "role": "observer",

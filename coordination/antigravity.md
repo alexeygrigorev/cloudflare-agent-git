@@ -777,3 +777,48 @@ Following the joint refocus directives (Claude `01a101c3-775b`, Codex `C-1303`, 
      - Task T2 (Object-form create with TTL expiry): session `c5964bca-e68a-4f4f-b35a-b26a424a60da` (`space-bunny` via `opencode-go/space-bunny-free`). Implemented breaking object-form `create` and TTL expiry, passing 25/25 unit tests (`test/create.test.js`, `test/ttl.test.js`) and updating documentation.
      - Task T3 (Bulk import endpoint): session `60fc9185-3ab6-44ca-9b9b-8920c2bd68c9` (`grok` via `grok --always-approve`). Implemented bulk import in `src/worker.js`, passed unit tests, committed and pushed commit `21e664f` (`feat: add POST /links/bulk import endpoint`) to `origin/feat/t3`.
      - Timeline log: `agent-branches-l6-agents/.local/agents-runs/run-1791051153-56011d/timeline.json`.
+---
+
+## 32. Multi-Branch Harmonization, Space Bunny Review Resolution & Operational Hardening (2026-10-03)
+
+Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb4f`) and Codex Principal directives (C-1381, C-1385, C-1389, C-1391, C-1395, C-1396, C-1397, C-1400), Antigravity Head has directed and delivered the following cross-lane progress:
+
+1. **Space Bunny Review Verification & L6 Driver Hardening (`proto/l6-agents`, Commit `5902f67`):**
+   - **Review Findings (c8dfb4f):** Space Bunny (`1fcfd98b`) verified and approved the canonical wire ACK parsing fix, proving `ca16e16` eliminated redundant static evaluation loops (1x vs 0x). Requested changes: F3.1 (deep recursive sweep for `WORKLOG*.md`), F2.1/F2.2 (restore baseline radar evaluation and coarse recovery net), F1.1 (guard `None` warning ID and discrete ACK keying).
+   - **Resolution (`5902f67`):**
+     - **F3.1 Deep Quarantine Sweep:** Replaced shallow two-path scrub with recursive sweep across `ws_dir` removing any `WORKLOG*.md`, `SOLUTIONS.md`, `verify-overlap*.sh`, and reference directories (preserving `.git/` and agent CLI wrappers).
+     - **F2.1 & F2.2 Radar Triggers:** Restored one-shot baseline radar run on iteration 1 (`radar_baseline_done`), preserved change-driven trigger on `any_head_changed`, and added a coarse 30s recovery net when heads exist.
+     - **F1.1 & C-1389 Discrete Warning ACK Keying:** Guarded against `None` warning IDs, and tracked ACKs as discrete `(ack_agent, ack_head, warning_id)` tuples, surfacing warning lifecycle `status`, `resolved_by`, `pair`, `kind`, and `at`.
+     - **Idempotent Workspace Setup:** Added `.git` check before cloning so `setup_workspaces` can run idempotently without exit 128 destination collisions.
+   - **Verification:** Full test suite: **66/66 unit tests PASS in 37.85s**. Pushed to `origin/proto/l6-agents`.
+
+2. **Parallel Warm ZCode Executor Orchestration & Cross-Branch Acceptance:**
+   - **Task B: `zc-ui-guard` (`2726966e`) on `proto/l4-review-ui` (Commits `9aca826`, `84f2825`):**
+     - Implemented C-1385 single-flight generation counter (`currentReqGen`, monotonic settle) in `prototype/ui/request-guard.js` and `ui.js`: older out-of-order responses and late failures are dropped (`if (gen < latestCompletedGen) return;`).
+     - Fixed status freshness: eliminated `loadStatus().catch(->null)` swallowing. Status failures surface an explicit `#status-error` role=alert banner, render task pages with "Status out of date" warnings, and strictly treat empty warnings as unknown (never clean).
+     - Verification: **47/47 node --test unit tests PASS** (35 pre-existing + 12 new in `tests/generation-guard.test.js`). Headless browser outage simulation verified banner appearance on 503 and clearance on recovery. Pushed to `origin/proto/l4-review-ui`.
+   - **Task C: `zc-readme-guard` (`736eeb3d`) on `proto/readme` (Commits `1e10e8b`, `b2abd07`):**
+     - Addressed C-1381 and C-1400 submission documentation and metric rigor in `SUBMISSION.md`, `README.md`, and `docs-submission/DEMO-SCRIPT.md`.
+     - Clarified SQLite DO storage semantics: no non-existent `expirationTtl`; deterministic in-code retention caps (push-dedup ring 16/agent, warnings cap 200, radarLog cap 50).
+     - Fixed resource denominators and byte units: 472 linked worktrees hold 131.7 GiB per-directory (69.4 GiB of 111.7 GiB physical disk denominator, 62.1%) in duplicated deps/build; single Rust debug build +12.26 GB (11.42 GiB; 12,259,708,928 bytes).
+     - Accurately distinguished token expiry scopes: Git sidecar enforces token expiry on push; coordinator DO mutating auth currently verifies SHA-256 digest without checking expiration timestamp pending auth gate fix.
+     - Documented exact wire fields: `ttlSeconds` (camelCase) and `base_sha` (snake_case). Confirmed 36/36 assertion totals and 3/3 active pair coverage ($N(N-1)/2 = 3$). Pushed to `origin/proto/readme`.
+   - **Task A: `zc-live-merge` (`6ac7e176`) on `proto/live` (Commits `8a48810`, `781339f`, `68ebf15`):**
+     - Merged `origin/proto/l1-scaffold`, `origin/proto/l4-review-ui`, and `origin/proto/readme` into `proto/live`.
+     - Preserved disjoint file boundaries; re-ported C-1306 intent/baseSha `/status` enrichment into `src/core/coordinator.ts` and CORS+OPTIONS headers into `src/core/router.ts`.
+     - Verification: **162/162 tests PASS** (vitest 88/88, ui 47/47, node 27/27, typechecks clean). Pushed to `origin/proto/live`.
+   - **Task D: `zc-deploy-prep` (`50a0e8c7`) on `proto/deploy-prep` (Commit `6c5377a`):**
+     - Completed PLAN-L1-REAL §5 pre-deploy checklist against CONTRACT 0.1.4: CORS allowlist + preflight, mutating-auth sweep, HMAC webhook signature verification, per-principal DO rate limiting (429 + Retry-After), token-at-rest hashing, log redaction. 17 test files / 111 vitest tests pass.
+
+3. **Supervision Active Principal Roster & Safe Reload (Codex C-1396):**
+   - **Diagnosis:** `scripts/supervision/service.py` hardcoded `PRINCIPALS = ('codex-principal', 'claude-principal')`. While Claude Principal was quiet/morning-only, the watchdog continued queueing supervision requests (`01a10317-8697`) into Claude's inbox because the dispatch condition checked only task event hash changes without verifying if the target workload process was alive.
+   - **Implementation:**
+     - Added `active_principals(teams_data, spool, registry_raw)` discovering active principals dynamically and filtering out quiet, paused, morning-only, or excluded principals via `TEAM-REGISTRY.json` (`excluded_principals` and agent status), spool files, or `SUPERVISION_EXCLUDE_PRINCIPALS`.
+     - Retained `ALL_KNOWN_PRINCIPALS` for incoming reply processing and ACK reconciliation so historical envelopes are never dropped.
+     - Hardened send guard: `if item.get('alive'):` strictly prevents queueing new requests to missing or dead processes.
+     - Added 3 unit tests in `scripts/supervision/test_service.py` covering default, env exclusion, and registry exclusion. All 46/46 unit tests PASS.
+   - **Safe Reload:** Verified graceful stop via `.local/supervision/stop`. Old PID 1301927 exited cleanly with code 0. Launched refreshed service `3038209d` (`tag=experiment-supervision`, PID 3915539). Verified unread mailbox cursors and existing envelopes preserved without forging ACKs.
+
+4. **Resource Mount Admission & Pre-Deploy Gates (Codex C-1396, C-1397):**
+   - **Per-Mount Disk Floor:** Confirmed root mount `/` has 67 GiB available (exceeding 50 GB floor), while `/tmp` has 41 GiB available (below 50 GB floor). Enforced strict admission gate: zero new allocations on `/tmp`; all future harness scratch directories routed to root mount (`TMPDIR=/home/alexey/git/cloudflare-agent-git/.local/scratch`), preserving all existing jobs, worktrees, and caches without destructive cleanup.
+   - **Pre-Deploy Security Gate (C-1397):** Acknowledged that while commit `6c5377a` removed unsupported `expirationTtl`, residual one-shot rate-limit keys and public unauthenticated `GET /status` & `GET /tasks/:id` hold the public deploy gate strictly CLOSED. Zero public deployment to Cloudflare will occur until pre-deploy security code, CORS, and auth are fully reviewed and accepted by principals.
