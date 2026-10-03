@@ -442,9 +442,9 @@
       "team_id": "publication",
       "owner_tag": "public-journal-site",
       "status": "done",
-      "updated_at": "2026-10-03T08:52:26.000000+00:00",
+      "updated_at": "2026-10-03T10:08:00.000000+00:00",
       "blocked_on": [],
-      "next_action": "Repairs merged to main at 39166de8916d. Independent visual acceptance PASS completed (1bcb3cdb, INDEPENDENT-REVIEW-FINAL.md).",
+      "next_action": "Repairs merged to main at 39166de8916d; structural review by 1bcb3cdb (GLM, no image input); not visual acceptance.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "website/build.py",
@@ -456,7 +456,7 @@
       "executor_tag": "journal-fidelity-repair-2",
       "executor_session": "e4c47950-0dd6-4431-ba1d-94431033bc3f",
       "assignment_ack": "Launched under aplexer in isolated worktree .local/journal/worktree on branch journal-design-repair. First tool call verified.",
-      "acceptance_status": "PASS (implemented by journal-fidelity-repair-2 e4c47950, branch commit 5c67f72, merged to main in commit 39166de; live overprint resolved with verified 0-collision OCR word bounding boxes; reference Georgia 30px header, ruled nav row, hypothesis shape markers with open star, measured pain 62.1% bar, and research library verified)"
+      "acceptance_status": "PASS on implementation and merge (commit 39166de); live overprint resolved with verified 0-collision OCR word bounding boxes; structural review completed by 1bcb3cdb (GLM, no image input); visual acceptance not established by this task."
     },
     {
       "id": "publication-visual-acceptance",
@@ -464,19 +464,22 @@
       "owner_tag": "public-journal-site",
       "executor_tag": "journal-visual-reviewer-2",
       "executor_session": "1bcb3cdb-e0fd-44cb-bbc2-34e38fda5147",
-      "status": "done",
-      "updated_at": "2026-10-03T08:52:00.000000+00:00",
-      "blocked_on": [],
-      "next_action": "Visual acceptance satisfied. Awaiting release authorization and 09:30 Claude Opus daily story for production deployment to docs/.",
+      "status": "blocked",
+      "updated_at": "2026-10-03T10:08:00.000000+00:00",
+      "blocked_on": [
+        "desktop-root-browser-recheck (separate-session visual acceptance HELD pending desktop/root re-check)"
+      ],
+      "next_action": "Same-session coordinator image review ec7b4c3a (32 view_file calls, genuine work, not independent). Separate-session visual acceptance HELD pending desktop/root re-check.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         ".local/journal/visual-review/INDEPENDENT-REVIEW-FINAL.md",
+        ".local/journal/visual-review/IMAGE-INDEPENDENT-REVIEW.md",
         ".local/journal/screenshots/SCREENSHOT-MANIFEST.json",
         ".local/journal/visual-review/model-reviewer-2-run.log"
       ],
       "assignment_ack": "Launched under aplexer (memory 2G, pids 256). Reviewing commit 5c67f72 on branch journal-design-repair across all 5 families.",
       "model": "opencode-go/glm-5.3",
-      "acceptance_status": "PASS (Independent visual reviewer 1bcb3cdb-e0fd-44cb-bbc2-34e38fda5147 evaluated all 10 matrix cells: 5 page families x 2 viewports 1440x1000 and 390x844; 10/10 PASS; zero overprint collisions; pain bar fill 62.08% desktop / 62.13% mobile; all 6 marker shapes verified; full report at .local/journal/visual-review/INDEPENDENT-REVIEW-FINAL.md)"
+      "acceptance_status": "HELD (coordinator-launched same-session image review ec7b4c3a passed 10/10 with 32 view_file calls; separate-session independent visual acceptance remains HELD pending desktop/root re-check)"
     },
     {
       "id": "publication-release-verification",
