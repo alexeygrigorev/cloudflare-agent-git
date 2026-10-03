@@ -2,6 +2,14 @@
 
 User authorized two principal peers, Claude and Codex, to research, coordinate, challenge each other, choose 20 distinct approaches and agree on 6 viable approaches, then guide ZCode sessions and optionally Grok/Antigravity. Main desktop orchestrator checks every 30 minutes.
 
+## Autonomous work management and internal measurement — human message31
+
+The principals are accountable for useful work flowing continuously across the teams, not just reviewing reports when the remote orchestrator asks. Follow coordination/OPERATING-MODEL.md. Keep coordination/TEAM-REGISTRY.json and TASKS.json current, record worker/subagent parent and team, and use the private metrics/supervision services. User31 explicitly authorizes persistent loops for this purpose. A final model turn does not mean project completion: arrange the next action and a durable continuation trigger before ending.
+
+Principals monitor/rebalance queues, verify launches and first actions, investigate unexplained idle/stalled teams, enforce truthful evidence/resource gates, and periodically check each other. Project heads choose and launch executors, resolve dependencies, maintain concrete next tasks, and verify outputs; executors implement/test owned tasks and hand results back. Independent reviewers inspect pinned changes and negative cases; they also continue independent useful work while a review is blocked. The remote orchestrator maintains oversight/measurement/operating rules, not routine per-task dispatch.
+
+No healthy team should wait for a heartbeat when a ready useful task exists. Principal oversight should run on completion/dependency/failure events plus lightweight polling; heads/executors can use loops and native harness subagents. Reassign to preferred healthy providers when a backend fails. Do not replace evidence with busy indicators, manufacture make-work, repeat invalidated experiments, or bypass quotas to maximize utilization. Record legitimate blocked/quota/resource/finished/draft-protected states and the next owner/action. Never submit a human draft, interrupt a busy pane, invent readiness, or copy private metrics/transcripts to the public site. Unknown token/cost measurements stay unknown; quota percentages are not experiment token usage or money spent.
+
 ## Execution capacity and principal focus — user message 26
 
 Heads and task executors may launch as many useful headless workers and native harness subagents as needed for the authorized projects. There is no fixed two-executor-per-head limit or arbitrary team-size cap. Allocate concurrency according to concrete independent tasks, actual available provider capacity, host resources and useful measured outcomes; coordinate shared resources and avoid duplicate writers. Harness limits are technical limits, not a reason to reintroduce a policy cap.

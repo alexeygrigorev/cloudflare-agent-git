@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-03T03:38:55.022924+00:00",
+  "tasks": [
+    {
+      "id": "runtime-one-effect",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "status": "running",
+      "updated_at": "2026-10-03T03:38:55.022924+00:00",
+      "evidence_paths": [
+        "research/antigravity",
+        "coordination/aplexer-repair.md"
+      ],
+      "blocked_on": [],
+      "next_action": "Continue existing runtime owner work at a safe checkpoint: explain current full test failures and actual deployment gap; account build growth before compiling; verify supported real outer effect + replay/resume without weakening acceptance.",
+      "acceptance": "Existing owner work, not a new duplicate writer. Installed binary, full suite outcome and resource evidence must be explicit.",
+      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+    },
+    {
+      "id": "safe-autonomous-continuation",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "status": "running",
+      "updated_at": "2026-10-03T03:38:55.022924+00:00",
+      "evidence_paths": [
+        "coordination/aplexer-repair.md"
+      ],
+      "blocked_on": [],
+      "next_action": "Implement the current owned safe completion/readiness delivery correction, then route existing pending messages and obtain receiver ACK plus new useful artifact.",
+      "acceptance": "Source/negative draft-busy tests and actual repeated continuation cycles; no invented all-engine recovery.",
+      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+    },
+    {
+      "id": "prospective-review-task",
+      "team_id": "a06-a10",
+      "owner_tag": "grok-head",
+      "status": "ready",
+      "updated_at": "2026-10-03T03:38:55.022924+00:00",
+      "evidence_paths": [
+        "research/grok"
+      ],
+      "blocked_on": [],
+      "next_action": "Own the next real unfamiliar decision using a change-story card and equal-evidence ordinary review; arrange independent evaluator and preregister acceptance before observing outcomes.",
+      "acceptance": "Real adoption task or explicit negative result; known retrospective cases cannot establish timing advantage.",
+      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+    },
+    {
+      "id": "recoverable-task-handoff",
+      "team_id": "a06-a10",
+      "owner_tag": "grok-head",
+      "status": "ready",
+      "updated_at": "2026-10-03T03:38:55.022924+00:00",
+      "evidence_paths": [
+        "research/grok"
+      ],
+      "blocked_on": [],
+      "next_action": "Continue the assigned actual A10 handoff task against a plain-file/Git baseline: record code state, dependency, crash/restart and next actor action; avoid external irreversible effects.",
+      "acceptance": "Verified disposable recovery and consumer action, comparison limits stated; no market benefit invented.",
+      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+    },
+    {
+      "id": "fork-replay-negative-review",
+      "team_id": "a05",
+      "owner_tag": "space-bunny-head",
+      "status": "review",
+      "updated_at": "2026-10-03T03:38:55.022924+00:00",
+      "evidence_paths": [
+        "research/space-bunny",
+        "coordination/space-bunny.md"
+      ],
+      "blocked_on": [
+        "Independent reviewer must inspect pinned twelve-case suite"
+      ],
+      "next_action": "Deliver existing pinned review at the receiver safe checkpoint and continue an independent realistic baseline/next bounded adoption task meanwhile. Prefer a verified OpenCode/Gemini executor if ZCode runtime is unavailable.",
+      "acceptance": "Review of exact current source with missing/corrupt input negatives; no forced bugs/signposted coupling.",
+      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+    },
+    {
+      "id": "frozen-harness-consumer",
+      "team_id": "a01-harness",
+      "owner_tag": "zcode-independent",
+      "status": "ready",
+      "updated_at": "2026-10-03T03:38:55.022924+00:00",
+      "evidence_paths": [
+        "research/zcode",
+        "coordination/zcode.md"
+      ],
+      "blocked_on": [],
+      "next_action": "Resolve actual current pinned reviewer residuals, then give the consumer adapter a real bounded internal user/task on immutable inputs; withhold unsafe emit and maintain task-level uncertainty.",
+      "acceptance": "Schema-valid event and stable task dedup negatives; consumer action is distinct from scripted checks.",
+      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+    },
+    {
+      "id": "pinned-independent-review",
+      "team_id": "independent-review",
+      "owner_tag": "muse-reviewer",
+      "status": "running",
+      "updated_at": "2026-10-03T03:38:55.022924+00:00",
+      "evidence_paths": [
+        "research/muse",
+        "coordination/muse.md"
+      ],
+      "blocked_on": [],
+      "next_action": "Process current owned review queue and verify pinned runtime/protocol/harness/fork results independently; distribute review tasks to preferred healthy models where useful.",
+      "acceptance": "Exact source/test verdict and owner handoff; old reviews do not approve new code.",
+      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+    },
+    {
+      "id": "worktree-user-task",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "status": "queued",
+      "updated_at": "2026-10-03T03:38:55.022924+00:00",
+      "evidence_paths": [
+        "research/orchestrator/worktree-storage-pain.md"
+      ],
+      "blocked_on": [],
+      "next_action": "Delegate a separate read-only workspace diagnostic/lifecycle comparison or a uniquely owned small equivalent-task experiment once its guard is corrected; do not chase N3 to fill a threshold.",
+      "acceptance": "User pain/outcome, physical union and mutation/build parity; never delete existing worktrees.",
+      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+    },
+    {
+      "id": "principal-continuous-coverage",
+      "team_id": "oversight",
+      "owner_tag": "codex-principal",
+      "status": "running",
+      "updated_at": "2026-10-03T03:38:55.022924+00:00",
+      "evidence_paths": [
+        "coordination/codex.md",
+        "coordination/claude.md"
+      ],
+      "blocked_on": [],
+      "next_action": "Read operating model and metrics; confirm both-principal coverage; inspect every head, maintain ready queues, route safe real next tasks, verify first action/artifact and next mutual check.",
+      "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
+      "assignment_ack": "pending current owner confirmation; seeded state is an observed/proposed checkpoint, not accepted outcome"
+    }
+  ]
+}

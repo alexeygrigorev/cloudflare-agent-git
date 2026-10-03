@@ -144,3 +144,10 @@ all the diagrams and illustrations should be in the same style. use claude desig
 ## Message 30 — exact Claude Design interface
 
 [https://claude.ai/design](https://claude.ai/design) - this
+
+
+## Message31 — autonomous teams, clear duties and internal metrics
+
+also I see that the agents are idle your goal is to make sure that the principals are alwasy keeping the rest of the agents busy. we also need to track the number of agents that are running (also per team) and the numbers of tokens and other metrics s olet's create some sort of internal dashboards with metircs that make sense also other metrics and collect data so at the end we have all the data that we need which agents did how much and we can make sure the agents are never idle 
+
+I think it's also not clear what the reponsibilities are give them clear reponsibilities like principals heads etc so it's clear what they do what kind of work. I want them to automonously figure out things and keep busy. use loops and stuff if they need
