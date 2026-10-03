@@ -24,6 +24,7 @@ from research.antigravity.a01_feasibility_gate_runner import (
     composer_classifier,
     create_intervention_data,
     parse_delivery_disposition,
+    setup_opencode_env,
     verify_session_model_route,
 )
 
@@ -314,6 +315,39 @@ class TestA01RunnerHardening(unittest.TestCase):
         res_empty = composer_classifier(empty_screen)
         self.assertEqual(res_empty, "empty", "Clean composer must return 'empty'")
 
+    def test_7_opencode_env_populates_provider_config(self):
+        """Test 7: setup_opencode_env populates config/opencode/opencode.json (mode 0600) with opencode-go provider."""
+        with tempfile.TemporaryDirectory() as td:
+            env_dir = os.path.join(td, "env_test")
+            env_info = setup_opencode_env(env_dir)
+
+            # Check directory keys returned
+            self.assertIn("data", env_info)
+            self.assertIn("config", env_info)
+            self.assertIn("state", env_info)
+            self.assertIn("db", env_info)
+
+            # Verify opencode.db was copied
+            self.assertTrue(os.path.exists(env_info["db"]))
+
+            # Verify opencode.json was populated
+            cfg_path = os.path.join(env_info["config"], "opencode", "opencode.json")
+            if os.path.exists(os.path.expanduser("~/.config/opencode/opencode.json")):
+                self.assertTrue(os.path.exists(cfg_path))
+                # Check mode 0600
+                st_mode = os.stat(cfg_path).st_mode & 0o777
+                self.assertEqual(st_mode, 0o600, f"Expected mode 0600, got {oct(st_mode)}")
+                # Check JSON validity and provider
+                with open(cfg_path) as f:
+                    cfg_data = json.load(f)
+                self.assertIn("provider", cfg_data)
+                self.assertIn("opencode-go", cfg_data["provider"])
+
+            # Verify immutability policy: re-running on existing env_dir strictly raises FileExistsError
+            with self.assertRaises(FileExistsError):
+                setup_opencode_env(env_dir)
+
 
 if __name__ == "__main__":
     unittest.main()
+

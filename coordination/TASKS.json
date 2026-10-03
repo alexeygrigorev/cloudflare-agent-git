@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T08:05:14.618740+00:00",
+  "updated_at": "2026-10-03T13:06:44.846240+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -22,14 +22,14 @@
       "id": "zcodex-retry-design",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-03T09:05:00.000000+00:00",
+      "status": "parked",
+      "updated_at": "2026-10-03T13:06:44.846240+00:00",
       "evidence_paths": [
         "research/antigravity/r10-zcodex-retry-suppression-design.md",
         "research/antigravity/r11-real-duplicate-incidence.md"
       ],
       "blocked_on": [],
-      "next_action": "R10 design updated (commit 0c75ec7): pinned zcode.cjs to 14,796,490 B (SHA256 8f5cfccf2a899b92e57bc2a5760b949c1a928f739652fffc9e6d07c24f11ba05), retracted ToolBatchComplete as pre-permission boundary (byte 13,146,421 proves it is execution completion), and marked stdout buffer/synchrony UNKNOWN. R11 empirical audit completed (commit 2859edc): 12,619 hidden inner duplicates (99.3% incidence) and 177 visible model retries (27.9% incidence) quantified across 147 rollouts. Retained in design state pending runtime lifecycle stabilization.",
+      "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
       "acceptance": "DIAGNOSIS + patch diff + test plan for denial suppression/turn-end at tool boundary, Muse review, no build without a budget guard.",
       "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10014-a645). Design only, no compilation until budget guard is established."
     },
@@ -37,8 +37,8 @@
       "id": "prompt-ready-lifecycle",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-03T09:14:00.000000+00:00",
+      "status": "parked",
+      "updated_at": "2026-10-03T13:06:44.846240+00:00",
       "evidence_paths": [
         "research/antigravity/r17-after-idle-safety-fix.md",
         "research/antigravity/r12-scoped-ca1-pilot-verification.md",
@@ -48,7 +48,7 @@
         ".local/muse-r21/verdict.md"
       ],
       "blocked_on": [],
-      "next_action": "R17 after-idle safety fix completed on fix/prompt-ready-lifecycle (commit 7efa493): removed premature setSessionState(sessionID, \"idle\") on pending.size === 0 in tool.execute.after. Pinned candidate binary .local/producer-review/bin/aplexer-7efa493 (sha256 06b1a842...). muse-r20 passed 16/16 negatives (exit 0) and owner runtime test (exit 0). muse-r21 verified binary fidelity (126/126 region lines verbatim, 0 MISS), extended negatives (21/21 PASS, exit 0), and 492cf76 rerun review, issuing APPROVE (.local/muse-r21/verdict.md). Scoped reversible receiver continuation trial in progress on candidate binary.",
+      "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
       "acceptance": "Genuine PromptReady / turn-completion readiness signal per engine (hook-emitted at end of each turn, refreshed rather than expiring while the composer stays empty), with narrow negative tests (busy, draft, unknown screen, expired-without-refresh), reviewed by Muse before rollout.",
       "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10011-df10). Reproductions analyzed: Grok (0000ea93) waiting-expired and Bunny (848ff637) idle contradicted by PTY redraw. Fix designed and committed in protocol repo on fix/prompt-ready-lifecycle."
     },
@@ -56,8 +56,8 @@
       "id": "safe-autonomous-continuation",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-03T09:14:00.000000+00:00",
+      "status": "parked",
+      "updated_at": "2026-10-03T13:06:44.846240+00:00",
       "evidence_paths": [
         "research/antigravity/r12-scoped-ca1-pilot-verification.md",
         "research/antigravity/r17-after-idle-safety-fix.md",
@@ -67,7 +67,7 @@
         ".local/continuation-trial/**"
       ],
       "blocked_on": [],
-      "next_action": "Receiver-owned native continuation trial packet prepared at .local/continuation-trial/ with candidate binary .local/producer-review/bin/aplexer-7efa493 (06b1a842...). Protocol: twice empty-composer verification, active-busy tool negative (sleep 15 live in proc), active model reasoning negative, unfinished draft negative, followed by two consecutive autonomous receiver cycles with zero PTY leak, disk artifacts, and correlated ACKs. Rollback path to installed 8d49a216 preserved.",
+      "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
       "acceptance": "Source/negative draft-busy tests and actual repeated continuation cycles; no invented all-engine recovery.",
       "assignment_ack": "ACK: owned by antigravity-head. Pinned commit 7a9b46d on fix/continuation-readiness-pane-race in cloudflare-aplexer-protocol (PromptState enum Empty/Draft/Unknown, real OpenCode/Grok/Codex/Shell fixtures, verify_pane_delivery correlated working transition, --next continuation queue; 212 unit + 31 integration pass, 0B net compile growth). Change-story card published at research/antigravity/change-story-card-pane-continuation.md (commit 6214dec)."
     },
@@ -184,7 +184,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T12:08:33.512674+00:00",
+      "updated_at": "2026-10-03T12:54:21.906731+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/oversight-human31.md",
@@ -194,10 +194,11 @@
         "research/codex/readiness-timeline-review.md",
         "research/codex/publication-canonical-review.md",
         "research/codex/a01-feasibility-runner-review.md",
-        "research/codex/run10-continuation-review.md"
+        "research/codex/run10-continuation-review.md",
+        "research/codex/product-refocus-review.md"
       ],
       "blocked_on": [],
-      "next_action": "Continuous native oversight: original A01 INVALID;915 assistant route/key fix reviewed, R34 confirms notice/unknown-delivery/test/draft defects; notice arms held. Both principals conditionally split ONE silent1a feasibility attempt only after explicit Muse route/validity/preservation/grader verdict. Ant accepted parallel Run10 repair ee9b4b35/source0b6f53e; Codex source finds tag fallback bypassing exact UUID, C1297 strict negatives pending. R33 supervisor reload challenged because installed-binary mutation retry assumption unproven; Claude agrees/HOLD, existing supfix2 read-only retry/one-call mutation/degraded negatives, Muse next. Claude covers publication current tree/landing recheck/lane live proof. Z/Bunny/Grok native readiness still blocked; globalGrok exact-action human HOLD remains. Next actual reviewed fixes/first artifacts/receiver cycles and mutual<=5min; no own implementation team or final-six/product efficacy.",
+      "next_action": "L1B realnativefirstwhoamiverified c3cd0e48, contract/realGit/DO/token/stalechecksactive. AntL2f3ddd IDfailclosedsource; L379f78 callbackresidual C1316 accepted headfix, exactnewpin/Muse independentnegative next. R41initial37CHANGES sixdefects; emptyunittestpremisefalsified/corrected. R40e455 narrowreloadaccepted actualdigests/new91c/degradedthen2healthycycles, noautonomyscheduler claim. Claudeproducttaskrowsf28305b; publicationauthorityHELD. A01routeconfig/readinessheadownedC1317 next whileintegrationpending; noownteam/fakewake. Checkevent<=5min.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
@@ -429,10 +430,10 @@
       "owner_tag": "public-journal-site",
       "executor_tag": "journal-capture-spec",
       "executor_session": "5a862579-1a2f-4956-9c9a-014ffa12a45c",
-      "status": "running",
-      "updated_at": "2026-10-03T08:44:00.000000+00:00",
+      "status": "done",
+      "updated_at": "2026-10-03T13:10:51.500173+00:00",
       "blocked_on": [],
-      "next_action": "Complete reference bundle pinned in REFERENCE-MANIFEST.json (Agent-Git-Lab.dc.html, support.js, assets/agent-git-illustration.png, desktop-export.json). Invariants labeled for measured source vs current repo facts.",
+      "next_action": "Reference bundle pinned and validated; superseding captures completed on canonical tree.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "website/editorial/QUALITY.md",
@@ -470,7 +471,7 @@
       "executor_tag": "project-landing-visual-reviewer",
       "executor_session": "430beef8-55cc-42ed-8459-a49ccb08c7a7",
       "status": "review",
-      "updated_at": "2026-10-03T12:06:49.108407+00:00",
+      "updated_at": "2026-10-03T13:10:51.500173+00:00",
       "blocked_on": [
         "principal-visual-acceptance-review (website tree c2eb7aa833434fa3ca204ec0b9aa79e383960278)"
       ],
@@ -485,7 +486,7 @@
       ],
       "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
       "model": "gemini-3.1-pro-high",
-      "acceptance_status": "RECHECK PASS on project landing family (report .local/journal/visual-review/PROJECT-FAMILY-RECHECK.md by independent session 430beef8). New website tree hash: c2eb7aa833434fa3ca204ec0b9aa79e383960278. Visual acceptance HELD pending principal confirmation."
+      "acceptance_status": "RECHECK PASS on project landing family (report .local/journal/visual-review/PROJECT-FAMILY-RECHECK.md by independent session 430beef8). New website tree hash: c2eb7aa833434fa3ca204ec0b9aa79e383960278. Visual acceptance HELD pending user decision on numbered mono headings vs plain headings."
     },
     {
       "id": "publication-release-verification",
@@ -535,6 +536,117 @@
       "assignment_ack": "worker DISPATCHED and verified - native aplexer session z-a07-demand-1 [0e2a04ff], engine shell wrapper over real opencode run (muse-spark-1.3-contributor), cgroup memory 1G/pids 128, first tool a whoami + WORKLOG",
       "executor_tag": "z-a07-demand-1",
       "executor_session": "0e2a04ff"
+    },
+    {
+      "id": "agent-branches-l1-base",
+      "team_id": "agent-branches",
+      "owner_tag": "claude-principal",
+      "status": "running",
+      "updated_at": "2026-10-03T12:52:48.000000+00:00",
+      "evidence_paths": [
+        "research/claude/refocus-2026-10-03.md",
+        "branch:proto/l1-scaffold (worktree /home/alexey/git/agent-branches-l1/prototype)"
+      ],
+      "blocked_on": [],
+      "assignment_ack": "executors claude-exec-l1 d87c9657 (done, 4837a78, 18/18) and claude-exec-l1b c3cd0e48 (running)",
+      "acceptance": "CONTRACT.md v0.1 published; real bare-git sidecar (no fake SHAs); ADMIN/RUNNER tokens; stale-vector 409; DO restart persistence; tests pass; Muse pinned review",
+      "next_action": "L1B lands fixes per codex C-1305/1306/1309 -> pin -> Muse review -> L2/L3 integration"
+    },
+    {
+      "id": "agent-branches-l2-client",
+      "team_id": "agent-branches",
+      "owner_tag": "antigravity-head",
+      "status": "in_progress",
+      "updated_at": "2026-10-03T13:06:44.846240+00:00",
+      "evidence_paths": [
+        "research/antigravity/agent-branches/CONTRACT-L2-L3.md",
+        "branch:proto/l2-client",
+        "branch:proto/l2-client (f3ddd67)"
+      ],
+      "blocked_on": [],
+      "assignment_ack": "antigravity-head ACK 01a101c5-6ded; executor l2-client-builder 98576653",
+      "acceptance": "agents use plain git push; client registers tasks, reads status/warnings, acks, posts test provenance against L1 CONTRACT.md; tests; Muse review",
+      "next_action": "L2 client delivered at f3ddd67 (approved by Muse R43); adapting to CONTRACT v0.1 POST /checks and handling 409 stale vector"
+    },
+    {
+      "id": "agent-branches-l3-radar",
+      "team_id": "agent-branches",
+      "owner_tag": "antigravity-head",
+      "status": "in_progress",
+      "updated_at": "2026-10-03T13:06:44.846240+00:00",
+      "evidence_paths": [
+        "branch:proto/l3-radar",
+        ".local/muse-r41/verdict.md",
+        "branch:proto/l3-radar (1632a31)"
+      ],
+      "blocked_on": [],
+      "assignment_ack": "antigravity-head ACK 01a101c5-6ded; executor l3-radar-builder 00ea32c5",
+      "acceptance": "trusted local runner; status conflict|clean|unknown|not_checked, clean only with merge+>=1 collected test; sandboxed exec; POST /checks versioned; Muse re-review",
+      "next_action": "L3 radar delivered at 1632a31 (excised custom callback, pure hardened CLI runner with RLIMIT/safe-tar/positive tests, under Muse R44 review); adding CONTRACT v0.1 export adapter"
+    },
+    {
+      "id": "publication-link-audit",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "executor_tag": "journal-link-audit",
+      "executor_session": "1ba6473a-441f-47cf-8ca1-456cb3c68021",
+      "status": "done",
+      "updated_at": "2026-10-03T13:10:51.500173+00:00",
+      "blocked_on": [],
+      "next_action": "Static link and asset audit complete. 35 HTML pages, 1005 links, 79 static assets verified; 0 broken links, 0 missing assets.",
+      "evidence_paths": [
+        ".local/journal/audits/LINK-AUDIT.md",
+        ".local/journal/audits/link-audit.json"
+      ],
+      "acceptance": "35 HTML pages, 1005 links, 79 static assets verified with 0 broken links and 0 missing assets."
+    },
+    {
+      "id": "publication-meta-feed-audit",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "executor_tag": "journal-meta-feed-audit",
+      "executor_session": "115c8e4a-9b4e-4f16-86c2-1279dfc8b91a",
+      "status": "done",
+      "updated_at": "2026-10-03T13:10:51.500173+00:00",
+      "blocked_on": [],
+      "next_action": "Metadata and RSS feed audit complete. 35 HTML pages + feed.xml verified; 28 RSS items valid with RFC 822 pubDate; 100% metadata pass.",
+      "evidence_paths": [
+        ".local/journal/audits/META-FEED-AUDIT.md",
+        ".local/journal/audits/meta-feed-audit.json"
+      ],
+      "acceptance": "35 HTML pages + feed.xml verified; 28 RSS items valid with RFC 822 pubDate; 100% metadata pass."
+    },
+    {
+      "id": "publication-viewport-audit",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "executor_tag": "journal-viewport-audit",
+      "executor_session": "dcd7b624-7389-493e-ba15-df787e97d193",
+      "status": "done",
+      "updated_at": "2026-10-03T13:10:51.500173+00:00",
+      "blocked_on": [],
+      "next_action": "Responsive viewport testing complete. Playwright headless Chromium across 4 viewports x 5 routes (20 tests); 0 horizontal overflow defects; mobile diagram label >=14px verified.",
+      "evidence_paths": [
+        ".local/journal/audits/VIEWPORT-AUDIT.md",
+        ".local/journal/audits/viewport-audit.json"
+      ],
+      "acceptance": "Playwright headless Chromium across 4 viewports x 5 routes (20 tests); 0 horizontal overflow defects; mobile diagram label >=14px verified."
+    },
+    {
+      "id": "publication-dogfood-scribe",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "executor_tag": "journal-dogfood-scribe",
+      "executor_session": "3af667e1-4560-4966-ba09-2475e7a9307c",
+      "status": "done",
+      "updated_at": "2026-10-03T13:10:51.500173+00:00",
+      "blocked_on": [],
+      "next_action": "Host telemetry and dogfood friction synthesis complete. Quantified Rust target/ bloat (59.5G total), test queue RAM spikes, and git lock contention.",
+      "evidence_paths": [
+        ".local/journal/audits/DOGFOOD-ANALYSIS.md",
+        ".local/journal/audits/dogfood-analysis.json"
+      ],
+      "acceptance": "Host telemetry (RAM 35G avail >=10G, NVMe 100G) and dogfood synthesis on Rust build bloat (59.5G target/), test RAM spikes, and git lock serialization."
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "updated_at": "2026-10-03T11:51:08Z",
+ "updated_at": "2026-10-03T12:25:22Z",
  "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
  "teams": [
   {
@@ -294,7 +294,86 @@
      "first_tool": "view_file (viewing continuation_trial_runner.py at 2026-10-03T11:59:47Z)",
      "usage": "UNKNOWN",
      "launched_by": "antigravity-head",
-     "status": "in_progress"
+     "status": "completed"
+    },
+    {
+     "tag": "l2-client-builder",
+     "role": "executor",
+     "parent_tag": "antigravity-head",
+     "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+     "mode": "native-harness-subagent",
+     "harness_conversation_id": "98576653-7522-4ac7-8549-2ef297cb1faf",
+     "provider": "gemini",
+     "workspace": "/home/alexey/git/agent-branches-l2-client",
+     "branch": "proto/l2-client",
+     "task": "L2 Client POST /checks command and 409 StaleVectorError handling (CONTRACT v0.1)",
+     "owned_paths": [
+      "/home/alexey/git/agent-branches-l2-client/**"
+     ],
+     "first_tool": "view_file (/home/alexey/git/cloudflare-agent-git/research/antigravity/agent-branches/CONTRACT-L2-L3.md)",
+     "completed_commit": "f3ddd6705dbb49389f417ff2499d6365b2d2f788",
+     "completed_at": "2026-10-03T12:47:00Z",
+     "usage": "UNKNOWN",
+     "launched_by": "antigravity-head",
+     "status": "running"
+    },
+    {
+     "tag": "l3-radar-builder",
+     "role": "executor",
+     "parent_tag": "antigravity-head",
+     "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+     "mode": "native-harness-subagent",
+     "harness_conversation_id": "00ea32c5-da15-40b6-b3fc-b28e7ad4fdf0",
+     "provider": "gemini",
+     "workspace": "/home/alexey/git/agent-branches-l3-radar",
+     "branch": "proto/l3-radar",
+     "task": "L3 Radar Engine CONTRACT v0.1 export adapter and tests (C-1321)",
+     "owned_paths": [
+      "/home/alexey/git/agent-branches-l3-radar/**"
+     ],
+     "first_tool": "view_file (/home/alexey/git/cloudflare-agent-git/research/antigravity/agent-branches/CONTRACT-L2-L3.md)",
+     "completed_commit": "1632a3138602d48795ec15e3181c88d75495ad7d",
+     "completed_at": "2026-10-03T12:57:00Z",
+     "usage": "UNKNOWN",
+     "launched_by": "antigravity-head",
+     "status": "running"
+    },
+    {
+     "tag": "l3-radar-dogfood-producer",
+     "role": "executor",
+     "parent_tag": "antigravity-head",
+     "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+     "mode": "native-harness-subagent",
+     "harness_conversation_id": "ed37ae34-c1b8-48bf-a2fe-7ca76b766770",
+     "provider": "gemini",
+     "workspace": "/home/alexey/git/agent-branches-l3-radar",
+     "branch": "proto/l3-radar",
+     "task": "5-agent concurrency and memory stress benchmark (tests/test_radar_concurrency_stress.py)",
+     "owned_paths": [
+      "/home/alexey/git/agent-branches-l3-radar/tests/test_radar_concurrency_stress.py",
+      "research/antigravity/dogfood/DOGFOOD-CONCURRENCY-REPORT.md"
+     ],
+     "usage": "UNKNOWN",
+     "launched_by": "antigravity-head",
+     "status": "running"
+    },
+    {
+     "tag": "l1-l2-l3-integration-tester",
+     "role": "executor",
+     "parent_tag": "antigravity-head",
+     "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+     "mode": "native-harness-subagent",
+     "harness_conversation_id": "f197d26f-4827-47eb-972d-7c2dfc811b81",
+     "provider": "gemini",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "task": "End-to-end integration test suite connecting L1, L2, L3 under CONTRACT v0.1 with 409 stale vector and unknown preservation",
+     "owned_paths": [
+      "tests/test_agent_branches_integration.py",
+      "research/antigravity/agent-branches/INTEGRATION-TEST-REPORT.md"
+     ],
+     "usage": "UNKNOWN",
+     "launched_by": "antigravity-head",
+     "status": "running"
     }
    ]
   },
@@ -594,6 +673,34 @@
      },
      "task": "muse-r32 A01 runner oracle review CHANGES (5 defects)",
      "parent_team": "independent-review"
+    },
+    {
+     "tag": "muse-r38-reviewer",
+     "role": "worker",
+     "mode": "headless",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "session_id": "cf3daf15-81dc-40f3-9037-a95d38e734c3",
+     "telemetry": {
+      "type": "opencode-db",
+      "conversation_id": "ses_efe4b92e2ffepJUIbl0c0QC9Lk",
+      "path": ".local/opencode-isolated/opencode/opencode.db"
+     },
+     "task": "muse-r38 Run10 7bc02d7 re-review APPROVE",
+     "parent_team": "independent-review"
+    },
+    {
+     "tag": "muse-r39-reviewer",
+     "role": "worker",
+     "mode": "headless",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "session_id": "6da142a1-f519-4738-946c-4f1977c33a82",
+     "telemetry": {
+      "type": "opencode-db",
+      "conversation_id": "ses_efe4b927dffe9J15lMJQPOolT1",
+      "path": ".local/opencode-isolated/opencode/opencode.db"
+     },
+     "task": "muse-r39 c2a03d7 arm1a-release RELEASE-ONE-ARM1A",
+     "parent_team": "independent-review"
     }
    ]
   },
@@ -841,6 +948,74 @@
       "website/content/daily/**",
       ".local/journal/opus-writer/**"
      ]
+    },
+    {
+     "tag": "journal-link-audit",
+     "role": "site-link-and-asset-audit",
+     "mode": "headless",
+     "engine": "python-automation",
+     "session_id": "1ba6473a-441f-47cf-8ca1-456cb3c68021",
+     "parent_tag": "public-journal-site",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "assignment_ack": "verified 35 HTML pages, 1005 links, 79 static assets; 0 broken links, 0 missing assets",
+     "task_id": "publication-link-audit",
+     "owned_paths": [
+      ".local/journal/audits/LINK-AUDIT.md",
+      ".local/journal/audits/link-audit.json"
+     ],
+     "completed_at": "2026-10-03T13:07:00Z",
+     "status": "done"
+    },
+    {
+     "tag": "journal-meta-feed-audit",
+     "role": "site-metadata-and-feed-audit",
+     "mode": "headless",
+     "engine": "python-automation",
+     "session_id": "115c8e4a-9b4e-4f16-86c2-1279dfc8b91a",
+     "parent_tag": "public-journal-site",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "assignment_ack": "verified 35 HTML pages + feed.xml; 28 RSS items valid with RFC 822 pubDate; 100% metadata pass",
+     "task_id": "publication-meta-feed-audit",
+     "owned_paths": [
+      ".local/journal/audits/META-FEED-AUDIT.md",
+      ".local/journal/audits/meta-feed-audit.json"
+     ],
+     "completed_at": "2026-10-03T13:07:00Z",
+     "status": "done"
+    },
+    {
+     "tag": "journal-viewport-audit",
+     "role": "site-responsive-viewport-audit",
+     "mode": "headless",
+     "engine": "playwright",
+     "session_id": "dcd7b624-7389-493e-ba15-df787e97d193",
+     "parent_tag": "public-journal-site",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "assignment_ack": "Playwright headless Chromium across 4 viewports (390px, 768px, 1024px, 1440px) x 5 routes (20 tests); 0 horizontal overflow defects; mobile diagram label >=14px verified",
+     "task_id": "publication-viewport-audit",
+     "owned_paths": [
+      ".local/journal/audits/VIEWPORT-AUDIT.md",
+      ".local/journal/audits/viewport-audit.json"
+     ],
+     "completed_at": "2026-10-03T13:08:00Z",
+     "status": "done"
+    },
+    {
+     "tag": "journal-dogfood-scribe",
+     "role": "host-telemetry-and-dogfood-scribe",
+     "mode": "headless",
+     "engine": "python-automation",
+     "session_id": "3af667e1-4560-4966-ba09-2475e7a9307c",
+     "parent_tag": "public-journal-site",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "assignment_ack": "measured host resources (RAM 35 GiB avail >= 10 GiB guard, NVMe 100G avail); quantified Rust target/ disk bloat (52G codex-rs + 7.5G aplexer); analyzed test queue RAM pressure and git lock contention",
+     "task_id": "publication-dogfood-scribe",
+     "owned_paths": [
+      ".local/journal/audits/DOGFOOD-ANALYSIS.md",
+      ".local/journal/audits/dogfood-analysis.json"
+     ],
+     "completed_at": "2026-10-03T13:07:00Z",
+     "status": "done"
     }
    ],
    "unassigned_roles": [

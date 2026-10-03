@@ -138,6 +138,16 @@ def setup_opencode_env(env_dir):
     os.makedirs(config_dir, exist_ok=True)
     os.makedirs(state_dir, exist_ok=True)
     shutil.copy2(PRISTINE_DB_SOURCE, db_path)
+
+    # Populate isolated config with host opencode.json (mode 0600) so opencode-go provider is available
+    host_config = os.path.expanduser("~/.config/opencode/opencode.json")
+    target_config_dir = os.path.join(config_dir, "opencode")
+    os.makedirs(target_config_dir, exist_ok=True)
+    target_config = os.path.join(target_config_dir, "opencode.json")
+    if os.path.exists(host_config):
+        shutil.copy2(host_config, target_config)
+        os.chmod(target_config, 0o600)
+
     return {"data": data_dir, "config": config_dir, "state": state_dir, "db": db_path}
 
 
