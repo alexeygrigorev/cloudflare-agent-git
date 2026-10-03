@@ -37,6 +37,7 @@ CARD_MARKS = {
     'SLOT6': '<svg width="56" height="56" viewBox="0 0 52 52" role="img" aria-label="open star marker">'+_legs()+'<polygon points="26,6 30.5,19 44,19 33,27.5 37,41 26,33 15,41 19,27.5 8,19 21.5,19" fill="#FCFCF8" stroke="#1C2027" stroke-width="2" stroke-dasharray="4 3"/>'+_eyes('#1C2027')+'</svg>',
 }
 STATUS_SVG = {
+    'done': '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="#1C2027"/></svg>',
     'withdrawn': '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="#1C2027" stroke-width="2"/><path d="M2.5 13.5 L13.5 2.5" stroke="#1C2027" stroke-width="2"/></svg>',
     'pending': '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="#2455ED" stroke-width="2.4"/></svg>',
     'open': '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="#1C2027" stroke-width="1.8" stroke-dasharray="2.5 2.5"/></svg>',
@@ -369,7 +370,7 @@ def main():
     top = sorted((ROOT/'research').glob('*.md'))
     write('research/', 'Research library', '<section class="page-intro"><p class="eyebrow">The public source material</p><h1>Open the notebooks.</h1><p class="deck">Research, challenges, and evidence live in the public repository. Private agent logs and credentials are excluded.</p></section><section class="library"><h2>Selection and shared research</h2><ul>'+''.join('<li><a href="'+public_source(p.relative_to(ROOT))+'">'+E(p.stem.replace('-', ' '))+'</a></li>' for p in top)+'</ul>'+''.join(groups)+'</section>')
     STATE_LABEL = {'recorded': 'DONE', 'done': 'DONE', 'failed': 'FAILED', 'open': 'OPEN', 'withdrawn': 'WITHDRAWN', 'pending': 'PENDING'}
-    STATE_MARK = {'recorded': STATUS_SVG['pending'], 'done': STATUS_SVG['pending'], 'failed': '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="#EF7134"/><path d="M5.5 5.5 L10.5 10.5 M10.5 5.5 L5.5 10.5" stroke="#1C2027" stroke-width="2" stroke-linecap="round"/></svg>', 'open': STATUS_SVG['open'], 'withdrawn': STATUS_SVG['withdrawn'], 'pending': STATUS_SVG['pending']}
+    STATE_MARK = {'recorded': STATUS_SVG['done'], 'done': STATUS_SVG['done'], 'failed': '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="#EF7134"/><path d="M5.5 5.5 L10.5 10.5 M10.5 5.5 L5.5 10.5" stroke="#1C2027" stroke-width="2" stroke-linecap="round"/></svg>', 'open': STATUS_SVG['open'], 'withdrawn': STATUS_SVG['withdrawn'], 'pending': STATUS_SVG['pending']}
     gate_groups = [
         ('Research gates', [
             ('recorded', '20 approaches written', 'The research inventory is public. Scores and the original shortlist are historical, not final approval.', '2 Oct', 'research/approaches-20.md'),
@@ -406,7 +407,7 @@ def main():
             counts[key] = counts.get(key, 0) + 1
     legend_order = [('done', 'DONE'), ('pending', 'PENDING'), ('failed', 'FAILED'), ('withdrawn', 'WITHDRAWN'), ('open', 'OPEN')]
     legend = ''.join(
-        '<div class="legend-item"><span aria-hidden="true">'+STATE_MARK['pending' if k == 'done' else k]+'</span><span class="legend-label">'+label+'</span><span class="legend-count">'+str(counts.get(k, 0))+'</span></div>'
+        '<div class="legend-item"><span aria-hidden="true">'+STATE_MARK[k]+'</span><span class="legend-label">'+label+'</span><span class="legend-count">'+str(counts.get(k, 0))+'</span></div>'
         for k, label in legend_order
     )
     group_html = ''
