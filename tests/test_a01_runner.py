@@ -194,11 +194,67 @@ class TestA01RunnerHardening(unittest.TestCase):
                 }
             }),))
             con.commit()
-            con.close()
 
             # Must return 1500
             res_succ = check_session_notice(tf.name, ws, launch_t0, delivered_t0, target_msg_id)
             self.assertEqual(res_succ, 1500, "Genuine completed show with read output must satisfy notice")
+
+            # Case D: Absent status (status=None or "") with valid command and envelope output -> must return None
+            cur.execute("INSERT INTO part VALUES ('p_nostatus', 'm1', 's1', 1600, ?);", (json.dumps({
+                "type": "tool",
+                "tool": "bash",
+                "state": {
+                    "input": {"command": f"aplexer message show {target_msg_id}"},
+                    "output": json.dumps({"id": target_msg_id, "status": "delivered", "body": "Coordination Notice"})
+                }
+            }),))
+            con.commit()
+            res_nostatus = check_session_notice(tf.name, ws, launch_t0, 1550, target_msg_id)
+            self.assertIsNone(res_nostatus, "Absent status must NOT satisfy notice")
+
+            # Case E: Arbitrary output mentioning ID without envelope structure -> must return None
+            cur.execute("INSERT INTO part VALUES ('p_arbitrary', 'm1', 's1', 1700, ?);", (json.dumps({
+                "type": "tool",
+                "tool": "bash",
+                "state": {
+                    "input": {"command": f"aplexer message show {target_msg_id}"},
+                    "status": "completed",
+                    "output": f"Arbitrary log message mentioning {target_msg_id} somewhere in random text"
+                }
+            }),))
+            con.commit()
+            res_arbitrary = check_session_notice(tf.name, ws, launch_t0, 1650, target_msg_id)
+            self.assertIsNone(res_arbitrary, "Arbitrary unstructured text containing ID must NOT satisfy notice")
+
+            # Case F: JSON envelope output with matching id -> must return timestamp
+            cur.execute("INSERT INTO part VALUES ('p_json_env', 'm1', 's1', 1800, ?);", (json.dumps({
+                "type": "tool",
+                "tool": "bash",
+                "state": {
+                    "input": {"command": f"aplexer message show {target_msg_id}"},
+                    "status": "completed",
+                    "output": json.dumps({"id": target_msg_id, "status": "delivered", "body": "Coordination Notice"})
+                }
+            }),))
+            con.commit()
+            res_json_env = check_session_notice(tf.name, ws, launch_t0, 1750, target_msg_id)
+            self.assertEqual(res_json_env, 1800, "JSON envelope output with matching id must satisfy notice")
+
+            # Case G: Formatted text output with matching id header -> must return timestamp
+            formatted_text = f"id: {target_msg_id}\nfrom: coordinator\nbody: Action required\n"
+            cur.execute("INSERT INTO part VALUES ('p_text_env', 'm1', 's1', 1900, ?);", (json.dumps({
+                "type": "tool",
+                "tool": "bash",
+                "state": {
+                    "input": {"command": f"aplexer message show {target_msg_id}"},
+                    "status": "completed",
+                    "output": formatted_text
+                }
+            }),))
+            con.commit()
+            res_text_env = check_session_notice(tf.name, ws, launch_t0, 1850, target_msg_id)
+            self.assertEqual(res_text_env, 1900, "Formatted text output with matching id header must satisfy notice")
+            con.close()
 
     def test_5_delivery_disposition_mapping(self):
         """Test 5: Delivery outcome parsing must strictly map malformed, missing status, and uncertain to UNKNOWN."""

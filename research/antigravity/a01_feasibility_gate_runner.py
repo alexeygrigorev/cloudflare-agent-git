@@ -307,8 +307,8 @@ def check_session_notice(db_path, session_workspace, launch_t0_ms, delivered_at_
             if not re.search(r'\b(?:a|aplexer)?\s*message\s+(?:show|read)\b', cmd_str):
                 continue
 
-            # 2. Tool execution must be completed / successful
-            if status_str and status_str not in ("completed", "success"):
+            # 2. Tool execution must be positively completed / successful (reject absent/empty/failed status)
+            if status_str not in ("completed", "success"):
                 continue
 
             # 3. Output must NOT indicate failure
@@ -316,8 +316,19 @@ def check_session_notice(db_path, session_workspace, launch_t0_ms, delivered_at_
             if re.search(r'\b(?:error|failed|failure|rc=[1-9])\b', out_lower):
                 continue
 
-            # 4. Read output must expose the envelope (target_msg_id in output)
-            if target_msg_id not in output_str:
+            # 4. Read output must expose the envelope: either valid JSON envelope with matching id/body
+            # or formatted envelope output with matching id header (^id:\s*<target_msg_id>)
+            envelope_matched = False
+            try:
+                env_json = json.loads(output_str)
+                if isinstance(env_json, dict) and (env_json.get("id") == target_msg_id or target_msg_id in env_json.get("body", "")):
+                    envelope_matched = True
+            except Exception:
+                pass
+            if not envelope_matched:
+                if re.search(rf"(?:^|\n)\s*id:\s*{re.escape(target_msg_id)}\b", output_str):
+                    envelope_matched = True
+            if not envelope_matched:
                 continue
 
             con.close()
