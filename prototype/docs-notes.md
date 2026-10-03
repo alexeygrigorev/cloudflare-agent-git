@@ -147,3 +147,38 @@ Other events (account-level `artifacts` source): `repo.created`, `repo.deleted`,
   and returns it as `base_sha`. When the requested base IS the canonical tip
   (the default and common case), the realized base equals it exactly; an
   explicit older `base_sha` in real mode therefore records the tip instead.
+- **ASSUMED-G (unprocessed-push ledger is local-only)**: the C-1357
+  callback-loss ledger exists only in the local sidecar; a real deployment
+  learns delivery state from its event subscription. `RealArtifacts
+  .unprocessedPushes()` returns `[]`.
+
+## Spike validation status (2026-10-03, artifacts-spike @ c75faa1)
+
+The real service was exercised end-to-end (29 ops). Corrections and
+confirmations relative to the pages above — full evidence in
+`artifacts-spike/RESULTS.md` on `origin/proto/artifacts-spike`:
+
+- **Token format above is WRONG (finding 1)**: the real service issues
+  `art_v2_x_<40hex>?expires=<unix>`, not `art_v1_…`. Tokens are treated as
+  OPAQUE everywhere; no prefix validation. ttl is honored exactly
+  (3600→+1h, 600→+10min; create/fork defaults +24h).
+- **ASSUMED-A CONFIRMED**: no REST refs route; head via `log({limit:1})`;
+  full ref listing only via `git ls-remote`.
+- **ASSUMED-B DIFFERENT over REST (finding B)**: real commits are
+  `{hash, treeHash, message, author, committer, parents[], authoredAt,
+  committedAt}` with EPOCH-SECONDS instants — not the push-event shape
+  (`id` + ISO `timestamp`). The binding-side generated type is still
+  unverified; `src/artifacts/map.ts` maps the raw shape at one boundary.
+- **ASSUMED-C CONFIRMED**: mint returns `{id, plaintext, scope,
+  expires_at}` (REST snake_case); token list shows scope/state.
+- **ASSUMED-D UNVERIFIED** (no Worker deployed); **ASSUMED-E UNVERIFIED**
+  (no subscription created).
+- **ASSUMED-F CONFIRMED**: fork accepts only name/description/read_only/
+  default_branch_only; fork head == source default-branch head; objects
+  copied (15); fork response embeds a live ~24h write token.
+- **New findings**: `status` only on repo LIST (single GET omits it);
+  `last_push_at` stays `null` even after pushes; read-scope push rejected
+  with HTTP **400** (not 401/403), ~52 ms, nothing written; not-found =
+  404 + code **10200**; wrangler 4.147.0 has list/get subcommands only —
+  namespace create + fork are REST-only from scripts; Bearer-via-0600-git-
+  include works for clone/fetch/push with tokens out of argv/URLs.
