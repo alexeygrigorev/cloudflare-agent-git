@@ -1,16 +1,10 @@
 name: Publish experiment journal
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'website/**'
-      - 'research/**'
-      - 'experiment/**'
-      - 'coordination/**'
-      - 'AGENTS.md'
-      - '.github/workflows/publish-journal.yml'
   workflow_dispatch:
+  push:
+    tags:
+      - 'release-journal-*'
 
 permissions:
   contents: read
