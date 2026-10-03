@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Build the public journal. Python standard library only; no private inputs."""
+"""Build the public journal. Python standard library only; no private inputs.
+
+Layout and type follow the Claude Design reference (Agent Git Lab, design-reference
+Agent-Git-Lab.dc.html): one 1180 px content column for header, main, signup and footer,
+mono cobalt eyebrows, Georgia display type, 2 px ink section rules and 1 px hairline rows.
+"""
 import argparse
 import html
 import json
@@ -23,36 +28,41 @@ PROJECTS = json.loads((ROOT/'website/projects.json').read_text())
 ACTIVE_COUNT = sum(not p['status'].lower().startswith('parked') for p in PROJECTS)
 OPEN_PLACES = max(0, 6 - ACTIVE_COUNT)
 PARKED_COUNT = len(PROJECTS) - ACTIVE_COUNT
-LOGO_SVG = '<svg width="44" height="44" viewBox="0 0 52 52" role="img" aria-label="Agent"><line x1="21.5" y1="31.7" x2="19" y2="49.9" stroke="#1C2027" stroke-width="2.1" stroke-linecap="round"/><line x1="30.5" y1="31.7" x2="31.9" y2="49.9" stroke="#1C2027" stroke-width="2.1" stroke-linecap="round"/><circle cx="26" cy="24" r="14" fill="#2455ED"/><circle cx="22.6" cy="23.3" r="1.5" fill="#fff"/><circle cx="29.4" cy="23.3" r="1.5" fill="#fff"/></svg>'
-def _legs():
-    return '<line x1="21.5" y1="31.7" x2="19" y2="49.9" stroke="#1C2027" stroke-width="2.1" stroke-linecap="round"/><line x1="30.5" y1="31.7" x2="31.9" y2="49.9" stroke="#1C2027" stroke-width="2.1" stroke-linecap="round"/>'
-def _eyes(fill):
-    return '<circle cx="22.6" cy="23.3" r="1.5" fill="'+fill+'"/><circle cx="29.4" cy="23.3" r="1.5" fill="'+fill+'"/>'
-CARD_MARKS = {
-    'A01': '<svg width="56" height="56" viewBox="0 0 52 52" role="img" aria-label="circle marker">'+_legs()+'<circle cx="26" cy="24" r="14" fill="#2455ED"/>'+_eyes('#fff')+'</svg>',
-    'A16': '<svg width="56" height="56" viewBox="0 0 52 52" role="img" aria-label="square marker">'+_legs()+'<rect x="14" y="12" width="24" height="24" fill="#2455ED"/>'+_eyes('#fff')+'</svg>',
-    'A05': '<svg width="56" height="56" viewBox="0 0 52 52" role="img" aria-label="triangle marker">'+_legs()+'<polygon points="26,6.5 39.3,32.4 12.7,32.4" fill="#2455ED"/>'+_eyes('#fff')+'</svg>',
-    'A06': '<svg width="56" height="56" viewBox="0 0 52 52" role="img" aria-label="diamond marker">'+_legs()+'<polygon points="26,7.9 42.1,24 26,40.1 9.9,24" fill="#2455ED"/>'+_eyes('#fff')+'</svg>',
-    'A10': '<svg width="56" height="56" viewBox="0 0 52 52" role="img" aria-label="pentagon marker">'+_legs()+'<polygon points="26,8.9 40.4,19.3 34.9,36.2 17.1,36.2 11.6,19.3" fill="#2455ED"/>'+_eyes('#fff')+'</svg>',
-    'SLOT6': '<svg width="56" height="56" viewBox="0 0 52 52" role="img" aria-label="open star marker">'+_legs()+'<polygon points="26,6 30.5,19 44,19 33,27.5 37,41 26,33 15,41 19,27.5 8,19 21.5,19" fill="#FCFCF8" stroke="#1C2027" stroke-width="2" stroke-dasharray="4 3"/>'+_eyes('#1C2027')+'</svg>',
-}
-STATUS_SVG = {
-    'withdrawn': '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="#1C2027" stroke-width="2"/><path d="M2.5 13.5 L13.5 2.5" stroke="#1C2027" stroke-width="2"/></svg>',
-    'pending': '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="#2455ED" stroke-width="2.4"/></svg>',
-    'open': '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="#1C2027" stroke-width="1.8" stroke-dasharray="2.5 2.5"/></svg>',
-    'unknown': '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" fill="none" stroke="#1C2027" stroke-width="1.8" stroke-dasharray="2.5 2.5"/><circle cx="8" cy="8" r="1.8" fill="#1C2027"/></svg>',
-}
-def status_mark_for(proj):
-    s = str(proj.get('status','')).lower()
-    if 'withdrawn' in s:
-        return STATUS_SVG['withdrawn']
-    if 'parked' in s:
-        return STATUS_SVG['withdrawn']
-    if 'internal use' in s:
-        return STATUS_SVG['pending']
-    return STATUS_SVG['pending']
+ASSETS = ROOT/'website/assets'
+ARROW = '<span class="arr" aria-hidden="true">\u2192</span>'
+EXT = '<span class="arr" aria-hidden="true">\u2197</span>'
+BACK = '<span class="arr-l" aria-hidden="true">\u2190</span>'
 
-BUILD_TIME = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
+def _mark(shape):
+    return (ASSETS/'marks'/(shape+'.svg')).read_text().strip()
+SHAPE = {'A01': 'circle', 'A16': 'square', 'A05': 'triangle', 'A06': 'diamond', 'A10': 'pentagon', 'SLOT6': 'star'}
+CARD_MARKS = {k: _mark(v) for k, v in SHAPE.items()}
+LOGO_SVG = CARD_MARKS['A01'].replace('aria-label="circle"', 'aria-hidden="true"').replace('role="img" ', '')
+
+def smark(kind, size=16):
+    """Status vocabulary from the reference: shape plus a text label, never colour alone."""
+    s = size; c = s/2; r = s/2-2
+    f = lambda v: ('%.2f' % v).rstrip('0').rstrip('.')
+    g = {
+        'done': f'<circle cx="{f(c)}" cy="{f(c)}" r="{f(r)}" fill="#1C2027"/>',
+        'supports': f'<circle cx="{f(c)}" cy="{f(c)}" r="{f(r)}" fill="#1C2027"/>',
+        'pending': f'<circle cx="{f(c)}" cy="{f(c)}" r="{f(r-.5)}" fill="none" stroke="#2455ED" stroke-width="2.4"/>',
+        'failed': f'<circle cx="{f(c)}" cy="{f(c)}" r="{f(r)}" fill="#EF7134"/><path d="M{f(c-r*.45)} {f(c-r*.45)} L{f(c+r*.45)} {f(c+r*.45)} M{f(c+r*.45)} {f(c-r*.45)} L{f(c-r*.45)} {f(c+r*.45)}" stroke="#1C2027" stroke-width="2" stroke-linecap="round"/>',
+        'withdrawn': f'<circle cx="{f(c)}" cy="{f(c)}" r="{f(r-.5)}" fill="none" stroke="#1C2027" stroke-width="2"/><path d="M{f(c-r)} {f(c+r)} L{f(c+r)} {f(c-r)}" stroke="#1C2027" stroke-width="2"/>',
+        'open': f'<circle cx="{f(c)}" cy="{f(c)}" r="{f(r-.5)}" fill="none" stroke="#1C2027" stroke-width="1.8" stroke-dasharray="2.5 2.5"/>',
+        'unknown': f'<rect x="2" y="2" width="{s-4}" height="{s-4}" fill="none" stroke="#1C2027" stroke-width="1.8" stroke-dasharray="2.5 2.5"/><circle cx="{f(c)}" cy="{f(c)}" r="1.8" fill="#1C2027"/>',
+        'against': f'<rect x="2" y="2" width="{s-4}" height="{s-4}" fill="#EF7134"/>',
+        'limits': f'<polygon points="{f(c)},2 {s-2},{s-2} 2,{s-2}" fill="none" stroke="#2455ED" stroke-width="2"/>',
+    }[kind]
+    return f'<svg width="{s}" height="{s}" viewBox="0 0 {s} {s}" aria-hidden="true" focusable="false">{g}</svg>'
+
+def status_kind(proj):
+    s = str(proj.get('status', '')).lower()
+    if 'withdrawn' in s or 'parked' in s:
+        return 'withdrawn'
+    return 'pending'
+
+BUILD_TIME = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
 BUILD_SHA = os.environ.get('GITHUB_SHA', '')
 if not re.fullmatch(r'[0-9a-f]{40}', BUILD_SHA):
     try:
@@ -60,8 +70,19 @@ if not re.fullmatch(r'[0-9a-f]{40}', BUILD_SHA):
     except (subprocess.SubprocessError, OSError):
         BUILD_SHA = ''
 
+def git_last(path):
+    try:
+        out = subprocess.check_output(['git', 'log', '-1', '--format=%h %cI', '--', str(path)], cwd=ROOT, text=True, timeout=5).strip()
+        sha, stamp = out.split(' ', 1)
+        return sha, datetime.fromisoformat(stamp).astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+    except (subprocess.SubprocessError, OSError, ValueError):
+        return '', ''
+
 def public_source(path):
-    return REPO + '/blob/main/' + quote(str(path), safe='/')
+    return REPO + ('/tree/main/' if str(path).endswith('/') else '/blob/main/') + quote(str(path), safe='/')
+
+def exists(rel):
+    return (ROOT/rel.rstrip('/')).exists()
 
 def safe_url(url, source=None):
     url = html.unescape(url.strip())
@@ -84,10 +105,13 @@ def safe_url(url, source=None):
 
 def image_markup(alt, url, source=None):
     image_url = safe_url(url, source)
+    portrait = image_url == BASE+'/assets/team-workflow.svg'
+    if portrait:
+        # The landscape diagram's labels drop below 12 px inside the 640 px article measure;
+        # the portrait version keeps every label at 12 px or more at every width.
+        image_url = BASE+'/assets/team-workflow-mobile.svg'
     image = '<img loading="lazy" src="'+E(image_url, quote=True)+'" alt="'+E(alt, quote=True)+'">'
-    if image_url == BASE+'/assets/team-workflow.svg':
-        image = '<picture><source media="(max-width: 600px)" srcset="'+BASE+'/assets/team-workflow-mobile.svg">'+image+'</picture>'
-    return '<figure>'+image+'<figcaption>'+E(alt)+'</figcaption></figure>'
+    return '<figure'+(' class="portrait-fig"' if portrait else '')+'>'+image+'<figcaption>'+E(alt)+'</figcaption></figure>'
 
 def inline(text, source=None):
     tokens = []
@@ -103,10 +127,12 @@ def inline(text, source=None):
     return re.sub(r'\x00(\d+)\x00', lambda m: tokens[int(m[1])], text)
 
 def markdown(text, source=None):
+    """Small Markdown subset. The document title (#) is rendered by the page, so ## maps to h2."""
     out, paragraph, listing, code = [], [], None, None
     def flush():
         if paragraph:
-            out.append('<p>'+inline(' '.join(paragraph), source)+'</p>')
+            rendered = inline(' '.join(paragraph), source)
+            out.append(rendered if rendered.startswith('<figure>') and rendered.endswith('</figure>') else '<p>'+rendered+'</p>')
             paragraph.clear()
     def close_list():
         nonlocal listing
@@ -143,8 +169,8 @@ def markdown(text, source=None):
         bullet = re.match(r'^\s*(?:[-*]|\d+\.)\s+(.*)', line)
         if heading:
             flush(); close_list()
-            level = min(6, len(heading[1])+1)
-            out.append(f'<h{level}>'+inline(heading[2], source)+f'</h{level}>')
+            level = min(6, max(2, len(heading[1])))
+            out.append(f'<h{level}>'+inline(tidy(heading[2]), source)+f'</h{level}>')
         elif bullet:
             flush()
             kind = 'ol' if re.match(r'^\s*\d+\.', line) else 'ul'
@@ -162,6 +188,104 @@ def markdown(text, source=None):
         out.append('<pre><code>'+E('\n'.join(code))+'</code></pre>')
     return '\n'.join(out)
 
+def tidy(text):
+    """Restore spaces lost around dates and times in some note headings ("3 October2026,07:41")."""
+    text = re.sub(r'([A-Za-z])(\d{4})\b', r'\1 \2', text)
+    text = re.sub(r'([A-Za-z])(\d{1,2}:\d\d)', r'\1 \2', text)
+    text = re.sub(r'(\d\d:\d\d)(UTC|Berlin)', r'\1 \2', text)
+    text = re.sub(r',(\d{1,2}:\d\d)', r', \1', text)
+    text = re.sub(r'\u2014(\S)', '\u2014 \\1', text)
+    return text
+
+# ---------------------------------------------------------------- shared data
+def load_daily():
+    daily = []
+    for meta in sorted((ROOT/'website/content/daily').glob('*.json'), reverse=True):
+        data = json.loads(meta.read_text())
+        if data.get('published') is not True:
+            continue
+        data['path'] = meta.with_suffix('.md')
+        data['route'] = 'daily/'+meta.stem+'/'
+        data.setdefault('date', meta.stem)
+        daily.append(data)
+    return daily
+DAILY = load_daily()
+REPORTS = sorted((ROOT/'research/orchestrator').glob('heartbeat-*.md'), reverse=True)
+
+def parse_utc(value):
+    try:
+        stamp = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+        return stamp if stamp.tzinfo else stamp.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return None
+
+def utc_text(value):
+    stamp = parse_utc(value)
+    return stamp.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M UTC') if stamp else str(value)
+
+def readable_cutoff(value):
+    stamp = parse_utc(value)
+    if not stamp:
+        return str(value)
+    utc = stamp.astimezone(timezone.utc).strftime('%d %b %Y, %H:%M UTC')
+    berlin = stamp.astimezone(ZoneInfo('Europe/Berlin')).strftime('%H:%M %Z, Europe/Berlin')
+    return utc+' / '+berlin
+
+def note_stamp(path):
+    return datetime.strptime(path.stem.removeprefix('heartbeat-'), '%Y%m%dT%H%M').replace(tzinfo=timezone.utc)
+
+LATEST = DAILY[0] if DAILY else None
+LATEST_CUTOFF = parse_utc(LATEST.get('source_cutoff')) if LATEST else None
+LATEST_NOTE = note_stamp(REPORTS[0]) if REPORTS else None
+
+# Field-note headlines and summaries. Four come from the design reference; the newer three
+# are written from the notes themselves. Every other note uses its own section headings.
+NOTE_TEXT = {
+    '20261003T0541': ('A10 parked after ordinary recovery worked; an overread is withdrawn', 'Both principals provisionally parked A10 in draft 9 after ordinary Git and file recovery succeeded in two actual tasks. Root withdrew its 05:11 reading of restored Bunny output as new execution.', 'decision'),
+    '20261003T0511': ('Draft 8 parks A16; the supervisor repair is verified', 'Draft 8 retains A01, A05, A06 and A10, parks A16 and leaves two product places open. A scoped supervisor repair passed 35 tests, rerun by root.', 'decision'),
+    '20261003T0441': ('A16 parked as a competition product; A06 card left the verdict unchanged', 'A16 was parked after three failed D1 gates. A06\u2019s first real review kept the same APPROVE verdict with and without the story card. Exactly-once task execution remains unproved.', 'decision'),
+    '20261003T0224': ('Runtime regression failed; disk dropped 16 GiB', 'Expected one outer side effect, observed zero. Root free disk 132 \u2192 116 GiB; shared Rust target measured at 39.65 GiB. Nothing killed or deleted; compilation held.', 'failed'),
+    '20261002T2124': ('A01 loses primary status', 'Equal-policy actual pair shows null separation. Claude proposes retain-conditional, lose-primary; Codex accepts the correction.', 'decision'),
+    '20261002T2024': ('Root review corrects the worktree number', 'The ~80% dependency share mixed a per-directory sum with a physical union. Corrected to 62.1%.', 'decision'),
+    '20261002T1950': ('A14 folded into A01; slot six reopens', 'Codex draft 4 folds runtime verification into A01 after Bunny\u2019s selection challenge.', 'decision'),
+}
+
+def note_info(path):
+    key = path.stem.removeprefix('heartbeat-')
+    if key in NOTE_TEXT:
+        title, summary, kind = NOTE_TEXT[key]
+        return title, summary, kind
+    heads = [tidy(h).strip() for h in re.findall(r'^##\s+(.+)$', path.read_text(), re.MULTILINE)]
+    title = heads[0] if heads else 'Orchestrator check-in'
+    summary = ' \u00b7 '.join(heads[1:]) if len(heads) > 1 else 'Read the full note for the details.'
+    return title, summary, 'routine'
+
+def note_time(path):
+    return note_stamp(path).strftime('%H:%M UTC')
+
+def note_day(path):
+    return note_stamp(path).strftime('%a %-d %b').upper()
+
+def report_title(path):
+    heading = re.search(r'^#\s+(.+)$', path.read_text(), re.MULTILINE)
+    return tidy(heading[1]) if heading else 'Orchestrator check-in'
+
+# ---------------------------------------------------------------- page frame
+NAV = [('Journal', ''), ('Hypotheses', 'projects/'), ('Checklist', 'checklist/'), ('Daily report', 'daily/'), ('Field notes', 'reports/'), ('Library', 'research/'), ('About', 'experiment/')]
+
+def nav_html(route):
+    out = []
+    for label, path in NAV:
+        current = (route == '') if path == '' else route.startswith(path)
+        href = BASE+'/'+(LATEST['route'] if path == 'daily/' and LATEST else path)
+        out.append('<a '+('aria-current="page" ' if current else '')+'href="'+href+'">'+label+'</a>')
+    return ''.join(out)
+
+def eyebrow(text):
+    return '<p class="kicker">'+E(text.upper())+'</p>'
+
+def intro(kicker, title, deck, extra=''):
+    return '<header class="page-intro">'+eyebrow(kicker)+'<h1>'+E(title)+'</h1>'+('<p class="intro-deck">'+deck+'</p>' if deck else '')+extra+'</header>'
 
 def signup_section(dedicated=False):
     enabled = SIGNUP.get('enabled') is True
@@ -170,124 +294,307 @@ def signup_section(dedicated=False):
         raise ValueError('Unexpected Relay public-list endpoint; review configuration before publishing.')
     unavailable = '<p class="signup-setup-note">Email signup is being connected. You can follow the <a href="'+BASE+'/feed.xml">RSS feed</a> meanwhile.</p>' if not enabled else ''
     disabled = '' if enabled else ' disabled'
-    return '<section class="email-signup '+('dedicated-signup' if dedicated else '')+'" aria-labelledby="signup-title"><div class="signup-copy"><p class="eyebrow">Follow the useful results</p><h2 id="signup-title">Get experiment updates.</h2><p>New findings, honest failures, and what we build next. Confirm your address before joining the list.</p><p class="signup-detail">Sign up for occasional experiment updates. Read the daily reports in the journal.</p></div><form id="journal-signup" class="signup-form" data-relay-list="'+E(endpoint,quote=True)+'" data-enabled="'+('true' if enabled else 'false')+'" aria-busy="false"><label for="signup-email">Your email address</label><div class="signup-controls"><input id="signup-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="you@example.com" required'+disabled+'><button id="signup-submit" class="button" type="submit"'+disabled+'>Keep me posted <span aria-hidden="true">↗</span></button></div><label class="signup-consent" for="signup-consent"><input id="signup-consent" name="consent" type="checkbox" required'+disabled+'><span>I agree to receive occasional Agent Git Lab experiment updates by email.</span></label><p class="signup-detail">Your address is processed by DataTalks.Club Relay for this list. Unsubscribe through the link in an update email. <a href="'+BASE+'/privacy/">Email privacy</a>.</p>'+unavailable+'<p id="signup-status" class="signup-status" role="status" aria-live="polite" aria-atomic="true" tabindex="-1" hidden></p><noscript><p>Email signup needs JavaScript for the confirmation flow. The <a href="'+BASE+'/feed.xml">RSS feed</a> works without it.</p></noscript></form></section>'
+    return ('<section class="email-signup'+(' dedicated-signup' if dedicated else '')+'" aria-labelledby="signup-title"><div class="signup-copy">'+eyebrow('Follow the useful results')+'<h2 id="signup-title">Get experiment updates</h2><p>New findings, honest failures, and what we build next. Confirm your address before joining the list.</p><p class="signup-detail">Sign up for occasional experiment updates. Read the daily reports in the journal.</p></div>'
+            '<form id="journal-signup" class="signup-form" data-relay-list="'+E(endpoint, quote=True)+'" data-enabled="'+('true' if enabled else 'false')+'" aria-busy="false"><label for="signup-email">Your email address</label><div class="signup-controls"><input id="signup-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="you@example.com" required'+disabled+'><button id="signup-submit" class="button" type="submit"'+disabled+'>Keep me posted'+ARROW+'</button></div><label class="signup-consent" for="signup-consent"><input id="signup-consent" name="consent" type="checkbox" required'+disabled+'><span>I agree to receive occasional Agent Git Lab experiment updates by email.</span></label><p class="signup-detail">Your address is processed by DataTalks.Club Relay for this list. Unsubscribe through the link in an update email. <a href="'+BASE+'/privacy/">Email privacy</a>.</p>'+unavailable+'<p id="signup-status" class="signup-status" role="status" aria-live="polite" aria-atomic="true" tabindex="-1" hidden></p><noscript><p>Email signup needs JavaScript for the confirmation flow. The <a href="'+BASE+'/feed.xml">RSS feed</a> works without it.</p></noscript></form></section>')
 
-def page(title, body, route='', description='A public experiment in Git, coding agents, and the work between them.'):
-    links = [('Daily', 'daily/'), ('Projects', 'projects/'), ('Checklist', 'checklist/'), ('Field notes', 'reports/'), ('Research', 'research/'), ('About', 'experiment/')]
-    footer_metadata = '<p class="build-metadata">Site built '+BUILD_TIME+(' · <a href="'+REPO+'/commit/'+BUILD_SHA+'">Source revision '+BUILD_SHA[:12]+' ↗</a>' if BUILD_SHA else ' · Source revision unavailable')+'</p>'
-    cutoff_files = sorted((ROOT/'research/orchestrator').glob('heartbeat-*.md'), reverse=True)
-    if cutoff_files:
-        stamp = datetime.strptime(cutoff_files[0].stem.removeprefix('heartbeat-'), '%Y%m%dT%H%M').replace(tzinfo=timezone.utc)
-        footer_metadata += '<p class="build-metadata">Latest field-note cutoff: '+E(readable_cutoff(stamp.isoformat()))+'. Evidence is dated; build time is not a live agent status.</p>'
-    nav = ''.join('<a '+('aria-current="page" ' if route.startswith(path) else '')+'href="'+BASE+'/'+path+'">'+label+'</a>' for label,path in links)
-    header = '<header class="site-header"><div class="header-top"><a class="header-brand" href="'+BASE+'''/'"><span class="header-logo" aria-hidden="true">'''+LOGO_SVG+'''</span><span><span class="header-title">Agent Git Lab</span><span class="header-subtitle">Alexey Grigorev\'s build-in-public experiment on Git and coding agents</span></span></a><div class="header-meta"><span>LATEST DAILY 2026-10-03</span><span class="header-cutoff">EVIDENCE CUTOFF 02:24 UTC</span></div></div><nav class="site-nav" aria-label="Main navigation">'''+nav+'</nav></header>'
-    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+E(title)+' · Agent Git Lab</title><meta name="description" content="'+E(description, quote=True)+'"><meta name="theme-color" content="#2455ed"><link rel="stylesheet" href="'+BASE+'/assets/site.css"><link rel="alternate" type="application/rss+xml" title="Agent Git Lab journal" href="'+BASE+'/feed.xml"><link rel="canonical" href="'+ORIGIN+BASE+'/'+route+'"><script src="'+BASE+'/assets/signup.js" defer></script></head><body><a class="skip" href="#main">Skip to content</a><div class="research-banner"><span class="banner-title">RESEARCH IN PROGRESS</span><span>All project labels are provisional · no final six · nothing here is a validated product</span></div>'+header+'<main id="main">'+body+'</main>'+('' if route=='subscribe/' else signup_section())+'<footer><div><a class="brand" href="'+BASE+'/">Agent Git Lab</a><p>Alexey Grigorev · Building, testing, and changing our minds in public.</p></div><div class="footer-links"><a href="'+REPO+'">Source & evidence ↗</a><a href="'+BASE+'/research/">Research library</a><a href="'+BASE+'/feed.xml">RSS feed</a><a href="'+BASE+'/privacy/">Email privacy</a></div><p class="footer-note">Published reports are dated snapshots. Research hypotheses are not validated products. Corrections stay with the evidence.</p>'+footer_metadata+'</footer></body></html>'
+def footer_html():
+    sha = BUILD_SHA[:7].upper()
+    stamp = 'BUILT FROM MAIN @ '+(('<a href="'+REPO+'/commit/'+BUILD_SHA+'">'+sha+'</a>') if BUILD_SHA else 'UNKNOWN')
+    if LATEST_CUTOFF:
+        stamp += ' \u00b7 EVIDENCE CUTOFF '+LATEST_CUTOFF.strftime('%Y-%m-%d %H:%M')+' UTC'
+    lines = ['SITE BUILT '+BUILD_TIME]
+    if LATEST_NOTE:
+        lines.append('LATEST FIELD NOTE '+LATEST_NOTE.strftime('%Y-%m-%d %H:%M')+' UTC')
+    return ('<footer class="site-footer"><div class="footer-inner"><div class="footer-brand"><a class="footer-title" href="'+BASE+'/">Agent Git Lab</a>'
+            '<p>Alexey Grigorev \u00b7 Every status on this site links to a file in the public repo. Nothing here is a validated product.</p>'
+            '<p class="footer-note">Published reports are dated snapshots. Research hypotheses are not validated products. Corrections stay with the evidence. Evidence is dated; build time is not a live agent status.</p></div>'
+            '<div class="footer-side"><a href="'+REPO+'">github.com/alexeygrigorev/cloudflare-agent-git'+EXT+'</a>'
+            '<p class="mono-line">'+stamp+'</p><p class="mono-line">'+' \u00b7 '.join(lines)+'</p>'
+            '<div class="footer-links"><a href="'+BASE+'/research/">Research library</a><a href="'+BASE+'/feed.xml">RSS feed</a><a href="'+BASE+'/privacy/">Email privacy</a></div></div></div></footer>')
 
-def readable_cutoff(value):
-    try:
-        stamp = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
-        if stamp.tzinfo is None:
-            stamp = stamp.replace(tzinfo=timezone.utc)
-        utc = stamp.astimezone(timezone.utc).strftime('%d %b %Y, %H:%M UTC')
-        berlin = stamp.astimezone(ZoneInfo('Europe/Berlin')).strftime('%H:%M %Z, Europe/Berlin')
-        return utc+' / '+berlin
-    except (ValueError, TypeError):
-        return str(value)
+GRAIN = '<div class="grain" aria-hidden="true"></div>'
 
-def report_title(path):
-    heading = re.search(r'^#\s+(.+)$', path.read_text(), re.MULTILINE)
-    return heading[1] if heading else 'Orchestrator check-in'
+def page(title, body, route='', description='A public experiment in Git, coding agents, and the work between them.', kind='wide'):
+    meta = ''
+    if LATEST:
+        meta = '<span>LATEST DAILY '+E(str(LATEST['date']))+'</span>'+('<span class="header-cutoff">EVIDENCE CUTOFF '+LATEST_CUTOFF.strftime('%H:%M')+' UTC</span>' if LATEST_CUTOFF else '')
+    header = ('<header class="site-header"><div class="header-top"><a class="header-brand" href="'+BASE+'/"><span class="header-logo" aria-hidden="true">'+LOGO_SVG+'</span><span class="header-name"><span class="header-title">Agent Git Lab</span><span class="header-subtitle">Alexey Grigorev\u2019s build-in-public experiment on Git and coding agents</span></span></a>'
+              '<div class="header-meta">'+meta+'</div></div><nav class="site-nav" aria-label="Main navigation">'+nav_html(route)+'</nav></header>')
+    signup = '' if route == 'subscribe/' else '<div class="column signup-wrap">'+signup_section()+'</div>'
+    return ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+E(title)+' \u00b7 Agent Git Lab</title><meta name="description" content="'+E(description, quote=True)+'"><meta name="theme-color" content="#2455ed"><link rel="stylesheet" href="'+BASE+'/assets/site.css"><link rel="alternate" type="application/rss+xml" title="Agent Git Lab journal" href="'+BASE+'/feed.xml"><link rel="canonical" href="'+ORIGIN+BASE+'/'+route+'"><script src="'+BASE+'/assets/signup.js" defer></script></head>'
+            '<body>'+GRAIN+'<div class="frame"><a class="skip" href="#main">Skip to content</a><div class="research-banner"><span class="banner-title">RESEARCH IN PROGRESS</span><span>All project labels are provisional \u00b7 no final six \u00b7 nothing here is a validated product</span></div>'
+            +header+'<main id="main" class="page page-'+kind+'">'+body+'</main>'+signup+footer_html()+'</div></body></html>')
 
-def report_stamp(path):
-    stamp = datetime.strptime(path.stem.removeprefix('heartbeat-'), '%Y%m%dT%H%M').replace(tzinfo=timezone.utc)
-    return readable_cutoff(stamp.isoformat())
+# ---------------------------------------------------------------- components
+def card(p, with_next=False):
+    tag = 'PROVISIONAL'
+    nxt = ''
+    if with_next:
+        first = re.split(r'(?<=[.;])\s', p['test'].strip(), maxsplit=1)[0]
+        nxt = '<p class="card-next">Next test: '+E(first)+'</p>'
+    return ('<a class="hyp-card" href="'+BASE+'/projects/'+p['slug']+'/"><span class="card-top"><span class="card-mark" aria-hidden="true">'+CARD_MARKS.get(p['id'], CARD_MARKS['A01'])+'</span><span class="badge">'+tag+'</span></span>'
+            '<span class="card-head"><span class="card-id">'+E(p['id'])+'</span><span class="card-name">'+E(p['name'])+'</span></span>'
+            '<span class="status-line">'+smark(status_kind(p))+'<span>'+E(p['status'])+'</span></span><span class="card-short">'+E(p['summary'])+'</span>'+nxt+'</a>')
 
+def open_card(with_next=False):
+    return ('<div class="hyp-card is-open"><span class="card-top"><span class="card-mark" aria-hidden="true">'+CARD_MARKS['SLOT6']+'</span><span class="badge">OPEN</span></span>'
+            '<span class="card-head"><span class="card-id">SLOT 6</span><span class="card-name">Open slot \u2014 no replacement selected</span></span>'
+            '<span class="status-line">'+smark('open')+'<span>Reopened \u00b7 no candidate approved</span></span><span class="card-short">A14 was folded into A01. Nothing has earned the sixth place yet.</span>'+('<p class="card-next">Next test: Open</p>' if with_next else '')+'</div>')
+
+def cards(with_next=False):
+    return '<div class="card-grid">'+''.join(card(p, with_next) for p in PROJECTS)+open_card(with_next)+'</div>'
+
+def num_html(n):
+    m = re.fullmatch(r'([\d.,/]+)\s*(\D.*)?', n)
+    if m and m[2]:
+        return E(m[1])+'<small>'+E(m[2])+'</small>'
+    return E(n)
+
+PAIN_STATS = [('472', 'linked worktrees'), ('25', 'repositories'), ('111.7', 'GiB physical union'), ('62.1%', 'dependencies + build')]
+
+# Extra per-project reference detail (who it is for, source files). Facts about current
+# status come from projects.json only; these lists are filtered to files that exist.
+PROJECT_EXTRA = {
+    'A01': ('an operator running 3\u201320 different agent tasks at once.', ['research/shortlist-6.md', 'research/grok/a01-fair-results.md', 'research/codex/a01-live-independent-replay.json', 'research/codex/local-validation.md', 'research/debate/codex-a01-pilot-review.md']),
+    'A16': ('Alexey, and operators constrained by local disk.', ['research/claude/u7-real-worktree-measurement.md', 'research/orchestrator/worktree-storage-pain.md', 'research/codex/storage-validation.md', 'research/codex/package-storage-validation.md', 'research/codex/retained-lanes-review-2324.md', 'research/antigravity/r8-physical-storage-isolation.md']),
+    'A05': ('people who already run best-of-N agent attempts.', ['research/shortlist-6.md', 'research/claude/hn-evidence.md', 'research/claude/workflows-competitors.md']),
+    'A06': ('an accountable reviewer on a team that accepts AI-written changes.', ['research/claude/maintainer-review-evidence.md', 'research/grok/a06-adoption-decision.md', 'research/grok/a06-evidence-card-plan.md', 'research/shortlist-6.md']),
+    'A10': ('an operator restarting or replacing an agent mid-task.', ['research/shortlist-6.md', 'research/codex/evidence.md', 'research/claude/workflows-competitors.md', 'research/codex/pro-integration-round-1.md']),
+}
+# Earlier evidence rows with their stance, from the design reference's research summary.
+PROJECT_EVIDENCE = {
+    'A01': [('supports', 'Our clean-merge fixture reproduces individually green, combined-red behaviour. Synthetic only.', 'research/codex/local-validation.md'),
+            ('limits', 'The retrospective study (E-X018) is textual and observational. It says nothing about live uptake.', 'research/shortlist-6.md'),
+            ('against', 'Equal-policy pair with actual concurrent agents (D-G25): compatible first commits in both arms, zero source repairs, no notices. Null separation.', 'research/grok/a01-fair-results.md')],
+    'A16': [('supports', 'Read-only scan of the real host: 111.7 GiB physical union; Python .venv 57.3 GiB across 215 dirs, sharing nothing.', 'research/claude/u7-real-worktree-measurement.md'),
+            ('against', '264 worktrees sit on commits already in origin/main. Cleanup, not a platform, may be the bigger lever.', 'research/claude/u7-real-worktree-measurement.md'),
+            ('against', 'An ordinary pnpm union is already ~49.97% below summed individual trees. Strong incumbent baseline.', 'research/codex/package-storage-validation.md')],
+    'A05': [('supports', 'Best-of-N integration gap reported (E-C320, E-C323) and review workload (E-C326, E-C364).', 'research/claude/hn-evidence.md'),
+            ('limits', 'This is not evidence that most developers want N attempts.', 'research/shortlist-6.md'),
+            ('against', 'Cursor best-of-N, Agent HQ and Codex Cloud attempts exist. Their current capability must be refreshed before claiming a gap.', 'research/claude/workflows-competitors.md')],
+    'A06': [('supports', 'Maintainer synthesis E-C201\u2013252: review burden is the recurring pain.', 'research/claude/maintainer-review-evidence.md'),
+            ('limits', 'Anti-AI projects are non-buyers. HN E-X014 says review is needed, not that summaries help.', 'research/shortlist-6.md'),
+            ('against', 'CodeRabbit navigation and snapshot controls overlap our generic UI claims (E-X028).', 'research/grok/a06-adoption-decision.md')],
+    'A10': [('supports', 'Stale worktree PSA (E-X003) and stale-base workflow (E-X008).', 'research/codex/evidence.md'),
+            ('limits', 'E-X003 is an incidental tool issue. Contextual recovery needs first-hand corroboration.', 'research/shortlist-6.md'),
+            ('against', 'Entire already offers checkpoint refs and resume. Metadata storage alone is not novel.', 'research/claude/workflows-competitors.md')],
+}
+FIGS = {
+    'A01': 'FIG. A01 \u2014 TWO WIP FORKS CHECKED AGAINST EACH OTHER BEFORE EITHER IS DONE',
+    'A16': 'FIG. A16 \u2014 THE PILE IS MOSTLY DEPENDENCY SHEETS, NOT SOURCE',
+    'A05': 'FIG. A05 \u2014 THREE FORKS, ONE LANDS, LOSERS KEPT WITH REASONS',
+    'A06': 'FIG. A06 \u2014 TWO CHANGES FOLDED INTO ONE REVIEW SHEET',
+    'A10': 'FIG. A10 \u2014 ONE AGENT HANDS OFF; THE BASE HAS MOVED',
+}
+STANCE = {'supports': 'SUPPORTS', 'against': 'AGAINST', 'limits': 'LIMITS', 'latest': 'LATEST'}
+
+def src_link(rel, cls='src'):
+    return '<a class="'+cls+'" href="'+public_source(rel)+'">'+E(rel)+'</a>'
+
+def project_page(i, p):
+    who, sources = PROJECT_EXTRA.get(p['id'], ('', []))
+    sources = [s for s in sources if exists(s)]
+    sha, when = git_last('website/projects.json')
+    prev, nxt = PROJECTS[(i-1) % len(PROJECTS)], PROJECTS[(i+1) % len(PROJECTS)]
+    ev_rows = [('latest', p['evidence'], 'website/projects.json')] + [e for e in PROJECT_EVIDENCE.get(p['id'], []) if exists(e[2])]
+    def ev(stance, text, rel):
+        mark = smark(status_kind(p), 12) if stance == 'latest' else smark(stance, 12)
+        when = '' if stance == 'latest' else '<span class="ev-when">BEFORE 3 OCT</span>'
+        return '<div class="ev-row"><span class="ev-stance"><span class="ev-label">'+mark+'<span>'+STANCE[stance]+'</span></span>'+when+'</span><span class="ev-body"><span class="ev-text">'+E(text)+'</span>'+src_link(rel)+'</span></div>'
+    prov = '<span>PROVISIONAL \u00b7 NO FINAL SHORTLIST APPROVAL</span>'+('<span>STATUS AS OF '+E(when)+'</span><span>SOURCE projects.json @ '+E(sha)+'</span>' if sha else '')
+    return ('<nav class="crumbs" aria-label="Breadcrumb"><a href="'+BASE+'/projects/">Hypotheses</a><span aria-hidden="true">/</span><span class="mono">'+E(p['id'])+'</span></nav>'
+            '<div class="proj-head"><div class="proj-title"><div class="proj-id"><span class="mono">'+E(p['id'])+'</span><span class="badge">PROVISIONAL</span></div><h1>'+E(p['name'])+'</h1>'
+            '<div class="proj-status">'+smark(status_kind(p), 18)+'<span>'+E(p['status'])+'</span></div><div class="mono-meta">'+prov+'</div></div>'
+            '<figure class="proj-figure"><img src="'+BASE+'/assets/scenes/'+p['slug']+'.svg" width="640" height="320" alt="'+E(p['name'], quote=True)+': conceptual diagram of the hypothesis, not a measured result"><figcaption>'+E(FIGS.get(p['id'], 'FIG. '+p['id']))+'</figcaption></figure></div>'
+            '<article class="proj-body">'
+            '<section class="proj-sec">'+eyebrow('01 \u00b7 Problem')+'<p class="proj-problem">'+E(p['problem'])+'</p>'+('<p class="proj-who">Who: '+E(who)+'</p>' if who else '')+'</section>'
+            '<section class="proj-sec">'+eyebrow('02 \u00b7 Hypothesis')+'<p class="proj-lead">'+E(p['idea'])+'</p></section>'
+            '<section class="proj-sec">'+eyebrow('03 \u00b7 Evidence so far')+ev(*ev_rows[0])+('<p class="ev-earlier">EARLIER RESEARCH \u00b7 BEFORE 3 OCT 02:24 UTC \u00b7 KEPT FOR CONTEXT, NOT CURRENT STATUS</p>'+''.join(ev(*e) for e in ev_rows[1:]) if len(ev_rows) > 1 else '')+'</section>'
+            '<section class="proj-sec test-box">'+eyebrow('04 \u00b7 Next falsification test')+'<p>'+E(p['test'])+'</p><div class="test-grid"><div><span class="mono-label">STATUS</span><span class="test-strong">'+E(p['status'])+'</span></div><div><span class="mono-label">KILL / PARK IF</span><span>'+E(p['falsifier'])+'</span></div></div></section>'
+            '<section class="proj-sec">'+eyebrow('05 \u00b7 Public sources')+''.join(src_link(s, 'src-row') for s in sources)+'</section>'
+            '<div class="prev-next"><a href="'+BASE+'/projects/'+prev['slug']+'/">'+BACK+E(prev['id']+' \u00b7 '+prev['name'])+'</a><a href="'+BASE+'/projects/'+nxt['slug']+'/">'+E(nxt['id']+' \u00b7 '+nxt['name'])+ARROW+'</a></div>'
+            '</article>')
+
+def checklist_page():
+    daily = DAILY
+    def item(state, title, note, date, rel):
+        return (state, title, note, date, rel)
+    groups = [
+        ('Research and publication', [
+            item('done', 'Explore twenty distinct approaches', 'The research inventory is public. Scores and the original shortlist are historical, not final approval.', '2 Oct', 'research/approaches-20.md'),
+            item('done', 'Challenge assumptions from both sides', 'Independent principals challenge outputs, methods, and the human brief. A01 lost its primary recommendation.', '2 Oct', 'research/debate/'),
+            item('done' if daily else 'pending', 'Publish evidence-checked daily stories', 'First report published and the daily 09:30 Europe/Berlin workflow configured. Ongoing daily continuity remains to be verified.' if daily else 'Claude Opus writes with stylint; factual claims, diagrams, and illustrations are checked before publishing.', (parse_utc(daily[0].get('published_at')).strftime('%-d %b') if daily and parse_utc(daily[0].get('published_at')) else '\u2014'), ('website/content/daily/'+daily[0]['path'].name) if daily else 'website/README.md'),
+        ]),
+        ('Hypothesis gates', [
+            item('withdrawn', 'A01 primary recommendation withdrawn', 'Decision at the 03 October 2026, 02:24 UTC evidence cutoff: both principals withdrew primary status after the fair live comparison showed no separation. This does not prove warnings can never help.', 'cutoff 3 Oct, 02:24 UTC', 'research/shortlist-6.md'),
+            item('failed', 'Storage test below its registered gate', 'At that cutoff, clean-identical-cache N2 whole-footprint savings were 48.17%, below the registered greater-than-50% gate. This is a limited fixture, not safe savings from existing worktrees.', 'cutoff 3 Oct, 02:24 UTC', 'research/codex/retained-lanes-review-2324.md'),
+            item('failed', 'Runtime regression still failed', 'The 02:24 UTC field note records zero passing tests and one failure: COUNT 0 where COUNT 1 was expected. Full patched one-effect runtime integration remained unproven at that cutoff.', '3 Oct, 02:24 UTC', 'research/orchestrator/heartbeat-20261003T0224.md'),
+            item('done', 'A16 parked in draft8', 'Repeated whole-footprint gates failed and the incumbent arm was near-equal. Storage advice survives; the parked competition product does not occupy a selected place.', '3 Oct', 'research/shortlist-6.md'),
+            item('done', 'Current runtime evidence is scoped', 'At 03 October 2026, 05:11 UTC, independent review confirms one outer call/one effect in the constrained patched probe, but two successful outer writes in the unconstrained task. Exactly-once retry/resume and reliable between-turn handoffs remain open. Historical test failures above retain their original cutoff.', '3 Oct, 05:11 UTC', 'research/orchestrator/heartbeat-20261003T0511.md'),
+        ]),
+        ('Selection, use and handoff', [
+            item('open', 'Agree on six viable approaches', 'The current draft retains '+str(ACTIVE_COUNT)+' hypotheses and parks '+str(PARKED_COUNT)+' candidates. '+str(OPEN_PLACES)+' product places remain open; identical-digest approval from both principals is still required.', '\u2014', 'research/shortlist-6.md'),
+            item('pending', 'Demonstrate actual agent use', 'Show a useful task, real agent actions, and accepted outcomes. A scripted fixture alone does not pass.', '\u2014', 'research/shortlist-6.md'),
+            item('pending', 'Prove an advantage over ordinary tools', 'Compare equal tasks, information, and acceptance checks. Preserve ties, failures, and negative results.', '\u2014', 'research/shortlist-6.md'),
+            item('pending', 'Keep development recoverable', 'Ordinary Git recovery stays independent of the prototype. A source-only restore is limited evidence.', '\u2014', 'experiment/EXPERIMENT.md'),
+            item('pending', 'Hand off five productive project teams', 'Verify meaningful deliverables, independent ownership, and an actual next task; a live process is insufficient.', '\u2014', 'experiment/EXPERIMENT.md'),
+        ]),
+    ]
+    label = {'done': 'DONE', 'pending': 'PENDING', 'failed': 'FAILED', 'withdrawn': 'WITHDRAWN', 'open': 'OPEN'}
+    counts = {}
+    for _, items in groups:
+        for it in items:
+            counts[it[0]] = counts.get(it[0], 0)+1
+    legend = '<div class="legend" aria-label="Gate states">'+''.join('<span class="legend-item">'+smark(k)+'<span class="legend-label">'+label[k]+'</span><span class="legend-count">'+str(counts.get(k, 0))+'</span></span>' for k in label)+'</div>'
+    def row(state, title, note, date, rel):
+        return ('<div class="gate'+(' is-failed' if state == 'failed' else '')+'"><div class="gate-main"><span class="gate-mark">'+smark(state)+'</span><div class="gate-text"><span class="gate-title">'+E(title)+'</span><span class="gate-note">'+E(note)+'</span></div></div>'
+                '<div class="gate-meta"><span class="gate-state">'+label[state]+' \u00b7 '+E(date)+'</span>'+(src_link(rel) if exists(rel) else '')+'</div></div>')
+    body = ''.join('<section class="gate-group"><h2>'+E(t)+'</h2>'+''.join(row(*it) for it in items)+'</section>' for t, items in groups)
+    latest_cutoff = LATEST_NOTE.strftime('%d %b %Y, %H:%M UTC') if LATEST_NOTE else 'no field note published'
+    closing = ('<p class="closing-note">Status comes from the published selection draft and orchestrator reports. Snapshot built '+BUILD_TIME+'; latest field-note cutoff '+E(latest_cutoff)+'. Daily publication: '+('first report recorded; continuing daily reliability unproven' if daily else 'first report pending')+'. '
+               +('<a href="'+BASE+'/'+daily[0]['route']+'">First daily story'+ARROW+'</a> \u00b7 ' if daily else '')+'<a href="'+public_source('research/shortlist-6.md')+'">Inspect the selection gates'+EXT+'</a></p>')
+    return '<div class="narrow">'+intro('Checklist \u00b7 what earns a claim \u00b7 changes only by commit', 'Gates, with dates', 'A public view of the gates, not a score for how many agents we can launch. A gate passes, fails, or waits. Project teams test their hypotheses while selection continues.')+legend+body+closing+'</div>'
+
+def library_page():
+    curated = [
+        ('Decisions', 'What we currently believe, and what nobody has signed.', [('Shortlist draft (unsigned)', 'research/shortlist-6.md'), ('Consensus record \u2014 pending', 'research/consensus.md'), ('All 20 approaches', 'research/approaches-20.md'), ('Prototype plan', 'research/prototype-plan.md')]),
+        ('Measurements', 'Numbers from fixtures and one real host.', [('Worktree disk on the real host', 'research/claude/u7-real-worktree-measurement.md'), ('Storage fixture validation', 'research/codex/storage-validation.md'), ('Package storage validation', 'research/codex/package-storage-validation.md'), ('Physical storage isolation', 'research/antigravity/r8-physical-storage-isolation.md'), ('A01 fair-pair results', 'research/grok/a01-fair-results.md'), ('A01 live independent replay', 'research/codex/a01-live-independent-replay.json')]),
+        ('Evidence', 'Pain reported by developers and maintainers.', [('Evidence ledger', 'research/evidence-ledger.md'), ('Hacker News evidence', 'research/claude/hn-evidence.md'), ('Maintainer review evidence', 'research/claude/maintainer-review-evidence.md'), ('Codex evidence (Reddit, coordination)', 'research/codex/evidence.md'), ('Social evidence', 'research/orchestrator/social-evidence.md')]),
+        ('Competitors and feasibility', 'What already exists, and what Artifacts can actually do.', [('Workflows and competitors', 'research/claude/workflows-competitors.md'), ('Engineering feasibility', 'research/codex/engineering-feasibility.md'), ('Pro investigations, integrated', 'research/codex/pro-integration-round-1.md')]),
+        ('Debate', 'Rejection arguments and responses.', [('Debate folder', 'research/debate/'), ('Retained lanes review, 23:24', 'research/codex/retained-lanes-review-2324.md'), ('Open disagreements', 'research/debate/codex-open-disagreements.md')]),
+        ('How the experiment runs', 'Rules, instructions and resource limits.', [('Brief', 'BRIEF.md'), ('Experiment', 'experiment/EXPERIMENT.md'), ('User instructions', 'experiment/USER-INSTRUCTIONS.md'), ('Resource policy', 'coordination/RESOURCE-POLICY.md')]),
+    ]
+    def lib_row(title, rel):
+        return '<a class="lib-item" href="'+public_source(rel)+'"><span class="lib-title">'+E(title)+'</span><span class="lib-path">'+E(rel)+'</span></a>'
+    def group(title, note, rows, collapsible=None):
+        inner = ''.join(rows)
+        if collapsible:
+            inner = '<details class="lib-more"><summary>'+E(collapsible)+'</summary>'+inner+'</details>'
+        return '<section class="lib-group"><div class="lib-head"><h2>'+E(title)+'</h2><p>'+E(note)+'</p></div><div class="lib-rows">'+inner+'</div></section>'
+    out = [group(t, n, [lib_row(a, b) for a, b in items if exists(b)]) for t, n, items in curated]
+    top = sorted((ROOT/'research').glob('*.md'))
+    out.append(group('Selection and shared research', 'Every top-level research file, in the order the repository lists them.', [lib_row(p.stem.replace('-', ' ').capitalize(), str(p.relative_to(ROOT))) for p in top]))
+    for g in ['orchestrator', 'claude', 'codex', 'grok', 'antigravity', 'zcode', 'space-bunny', 'muse', 'debate']:
+        paths = sorted((ROOT/'research'/g).rglob('*.md'))
+        paths = [p for p in paths if not any(part.startswith('.') for part in p.relative_to(ROOT).parts)]
+        if paths:
+            name = g.replace('-', ' ').title()
+            out.append(group(name, str(len(paths))+' documents from the '+name+' workspace.', [lib_row(str(p.relative_to(ROOT/'research'/g)), str(p.relative_to(ROOT))) for p in paths], 'Show all '+str(len(paths))+' documents'))
+    return '<div class="narrow">'+intro('Research library \u00b7 public source material', 'The evidence, filed', 'Research, challenges, and evidence live in the public repository. Private agent logs and credentials are excluded. Grouped by what a document is for, then by engine.')+''.join(out)+'</div>'
+
+def notes_page():
+    entries = []
+    for i, rp in enumerate(REPORTS):
+        title, summary, kind = note_info(rp)
+        entries.append('<li class="tl-item tl-'+kind+('' if i else ' is-first')+'"><span class="tl-rail" aria-hidden="true"><span class="tl-top"></span><span class="tl-dot"></span><span class="tl-line"></span></span>'
+                       '<a class="tl-body" href="'+BASE+'/reports/'+rp.stem+'/"><span class="tl-when"><span class="tl-time">'+note_time(rp)+'</span><span class="tl-day">'+note_day(rp)+'</span></span><span class="tl-title">'+E(title)+'</span><span class="tl-summary">'+E(summary)+'</span><span class="tl-path">'+E(str(rp.relative_to(ROOT)))+'</span></a></li>')
+    legend = '<p class="tl-legend"><span class="tl-key"><span class="tl-dot k-failed"></span>Failure</span><span class="tl-key"><span class="tl-dot k-decision"></span>Decision or correction</span><span class="tl-key"><span class="tl-dot k-routine"></span>Routine check</span></p>'
+    return '<div class="narrow">'+intro('Field notes \u00b7 dated remote checks \u00b7 UTC', 'Field notes, with receipts', 'Dated remote check-ins, including failures and corrections. Older reports describe what was known then; read later updates before reusing a claim.')+legend+'<ol class="timeline">'+''.join(entries)+'</ol></div>'
+
+def article_head(kicker, title, deck, byline_rows):
+    return '<header class="article-head">'+eyebrow(kicker)+'<h1>'+E(title)+'</h1>'+('<p class="article-deck">'+E(deck)+'</p>' if deck else '')+byline_rows+'</header>'
+
+def byline_block(person_line, mono_spans):
+    return ('<div class="byline-block"><div class="byline-person"><span class="byline-logo" aria-hidden="true">'+LOGO_SVG+'</span>'+person_line+'</div>'
+            '<div class="mono-meta">'+''.join(mono_spans)+'</div></div>')
+
+def daily_page(d):
+    content = d['path'].read_text()
+    content = re.sub(r'^#\s+[^\n]+\n?', '', content, count=1)
+    prose = markdown(content, d['path'])
+    strip = '<div class="stat-strip">'+''.join('<div><span class="stat-n">'+E(n)+'</span><span class="stat-l">'+E(l)+'</span></div>' for n, l in PAIN_STATS)+'</div>'
+    prose = re.sub(r'(<p>[^\n]*111\.7 GiB of physical disk[^\n]*</p>)', lambda m: m[1]+strip, prose, count=1)
+    spans = ['<span class="ink">EVIDENCE CUTOFF '+E(utc_text(d.get('source_cutoff', d['date'])))+'</span>']
+    if d.get('update_cutoff'):
+        spans.append('<span>MORNING UPDATE CUTOFF '+E(utc_text(d['update_cutoff']))+'</span>')
+    spans.append('<span>'+str(len(d.get('sources', [])))+' SOURCES LINKED BELOW</span>')
+    person = '<span class="byline-name">'+E(d.get('author', 'Alexey Grigorev'))+'</span><span class="muted">Written with Claude Opus</span>'
+    sources = ''.join('<a class="src" href="'+E(u, quote=True)+'">'+E(re.sub(r'^https://(github\.com/alexeygrigorev/)?', '', u))+'</a>' for u in d.get('sources', []))
+    return ('<article class="article">'+article_head('Daily journal \u00b7 '+str(d['date']), d['title'], d.get('summary', ''), byline_block(person, spans))
+            +'<div class="prose">'+prose+'</div>'
+            '<div class="article-sources">'+eyebrow('Sources for this report')+sources+'<p class="source-line">Writing assistance: Claude Opus. Original Markdown: <a href="'+public_source(d['path'].relative_to(ROOT))+'">read in the repository'+EXT+'</a>. Illustrations are conceptual artwork.</p></div></article>')
+
+def note_page(rp):
+    title, summary, kind = note_info(rp)
+    spans = ['<span class="ink">CUTOFF '+note_stamp(rp).strftime('%Y-%m-%d %H:%M')+' UTC</span>', '<span>'+E(readable_cutoff(note_stamp(rp).isoformat()).split(' / ')[1].upper())+'</span>', '<span>HISTORICAL SNAPSHOT, NOT CURRENT PRODUCT VALIDATION</span>']
+    person = '<span class="byline-name">Orchestrator field note</span><a href="'+public_source(rp.relative_to(ROOT))+'">Original report and version history'+EXT+'</a>'
+    return ('<article class="article field-note">'+article_head('Field note \u00b7 '+note_time(rp)+' \u00b7 '+note_day(rp), report_title(rp), title+'. '+summary if kind != 'routine' else '', byline_block(person, spans))
+            +'<div class="prose">'+markdown(re.sub(r'^#\s+[^\n]+\n?', '', rp.read_text(), count=1), rp)+'</div>'
+            '<p class="back-link"><a href="'+BASE+'/reports/">'+BACK+'All field notes</a></p></article>')
+
+def home_page():
+    if LATEST:
+        cutoff = LATEST_CUTOFF.strftime('%Y-%m-%d %H:%M')+' UTC' if LATEST_CUTOFF else str(LATEST['date'])
+        feature = ('<article class="feature">'+eyebrow('Latest daily journal \u00b7 '+str(LATEST['date']))+'<h1><a href="'+BASE+'/'+LATEST['route']+'">'+E(LATEST['title'])+'</a></h1><p class="feature-deck">'+E(LATEST.get('summary', ''))+'</p>'
+                   '<p class="feature-byline"><span class="ink">'+E(LATEST.get('author', 'Alexey Grigorev'))+'</span><span>Written with Claude Opus</span><span class="chip">CUTOFF '+E(cutoff)+'</span></p>'
+                   '<a class="read-more" href="'+BASE+'/'+LATEST['route']+'">Read the daily report'+ARROW+'</a></article>')
+        cut_chip = 'CUTOFF '+cutoff
+    else:
+        feature = '<article class="feature">'+eyebrow('The first daily journal')+'<h1>What we learn belongs here</h1><p class="feature-deck">The opening story is being written and checked against the evidence. Read the dated field notes while it is prepared.</p><a class="read-more" href="'+BASE+'/reports/">Read the field notes'+ARROW+'</a></article>'
+        cut_chip = ''
+    rows = [('20', 'Approaches researched', 'Independent briefs in repo'), (str(ACTIVE_COUNT), 'Retained hypotheses', 'Provisional, for falsification (A01 conditional, A06)'), ('0', 'Agreed final six', 'Principals have not converged'), (str(OPEN_PLACES), 'Product places open', 'Unfilled candidates'), ('111.7 GiB', 'Worktree disk measured', 'Across 472 worktrees'), ('62.1%', 'Dependencies & builds', 'Not ordinary Git storage')]
+    honest = ('<aside class="honest" aria-labelledby="honest-title"><div class="honest-head"><h2 id="honest-title">Honest status</h2><span class="honest-cutoff">'+E(cut_chip)+'</span></div><div class="honest-rows">'
+              +''.join('<div class="honest-row"><span class="honest-n">'+num_html(n)+'</span><span class="honest-detail"><span class="honest-label">'+E(l)+'</span><span class="honest-note">'+E(note)+'</span></span></div>' for n, l, note in rows)
+              +'</div><a class="honest-link" href="'+BASE+'/checklist/">See every gate on the checklist'+ARROW+'</a></aside>')
+    hero = ('<section class="hero"><figure class="hero-figure"><img src="'+BASE+'/assets/agent-git-illustration.png" width="1536" height="1024" alt="Geometric blue agents carry folders along branching commit lines into an orange merge"><figcaption>FIG. 0 \u2014 MANY AGENTS, ONE CANONICAL HISTORY</figcaption></figure>'
+            '<div class="hero-grid">'+feature+honest+'</div></section>')
+    hyp = ('<section class="hyp-section" aria-labelledby="hyp-title"><div class="section-head"><h2 id="hyp-title">The hypotheses</h2><p>'+str(ACTIVE_COUNT)+' retained for falsification. '+str(PARKED_COUNT)+' parked. '+str(OPEN_PLACES)+' places open. None selected.</p></div>'+cards()+'</section>')
+    stats = ''.join('<div class="pain-stat"><span class="pain-n">'+E(n)+'</span><span class="pain-l">'+E(l)+'</span></div>' for n, l in PAIN_STATS)
+    pain = ('<section class="pain" aria-labelledby="pain-title"><div class="pain-copy">'+eyebrow('Measured pain \u00b7 one host \u00b7 read-only scan')+'<h2 id="pain-title">Most of the worktree pile isn\u2019t Git. It\u2019s dependencies.</h2><p>The pain is real and measured. Whether anyone would adopt a product for it is unknown. Ordinary shared stores may already be enough.</p><a class="read-more-sm" href="'+BASE+'/projects/storage-aware-workspaces/">A16 \u00b7 Storage-aware workspaces'+ARROW+'</a></div>'
+            '<div class="pain-data"><div class="pain-stats">'+stats+'</div><div class="pain-chart"><div class="pain-bar" role="img" aria-label="62.1% of the physical union is dependencies and build output"><span class="pain-fill"></span></div><div class="pain-caps"><span>62.1% DEPENDENCY + BUILD (69.4 GIB)</span><span class="muted">SOURCE + OTHER ~42 GIB</span></div><div class="status-line pain-unknown">'+smark('unknown')+'<span>Product viability: unknown</span></div></div></div></section>')
+    fields = ''.join('<a class="row-link field-row" href="'+BASE+'/reports/'+rp.stem+'/"><span class="field-time">'+note_time(rp)+'</span><span class="field-title">'+E(note_info(rp)[0])+'</span></a>' for rp in REPORTS[:4])
+    libs = [('Shortlist draft (unsigned)', 'research/shortlist-6.md'), ('Worktree disk on the real host', 'research/claude/u7-real-worktree-measurement.md'), ('Consensus record \u2014 pending', 'research/consensus.md'), ('All 20 approaches', 'research/approaches-20.md')]
+    lib_rows = ''.join('<a class="row-link lib-row" href="'+public_source(rel)+'"><span class="lib-title">'+E(t)+'</span><span class="lib-path">'+E(rel)+'</span></a>' for t, rel in libs)
+    bottom = ('<section class="home-bottom"><div class="home-col"><div class="col-head"><h2>Field notes</h2><a class="read-more-sm" href="'+BASE+'/reports/">Archive'+ARROW+'</a></div><p class="col-sub">Orchestrator checks, dated. Times in UTC.</p>'+fields+'</div>'
+              '<div class="home-col"><div class="col-head"><h2>Research library</h2><a class="read-more-sm" href="'+BASE+'/research/">All sources'+ARROW+'</a></div><p class="col-sub">Everything links to a file in the public repo.</p>'+lib_rows+'</div></section>')
+    return hero+hyp+pain+bottom
+
+# ---------------------------------------------------------------- build
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', default='docs')
     args = parser.parse_args()
     output = Path(args.output).resolve()
     output.mkdir(parents=True, exist_ok=True)
-    def write(route, title, body, description=None):
+    def write(route, title, body, description=None, kind='wide'):
         target = output / route / 'index.html'
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(page(title, body, route, description or 'A public experiment in Git, coding agents, and the work between them.'), encoding='utf-8')
-    shutil.copytree(ROOT/'website/assets', output/'assets', dirs_exist_ok=True)
+        target.write_text(page(title, body, route, description or 'A public experiment in Git, coding agents, and the work between them.', kind), encoding='utf-8')
+    shutil.copytree(ASSETS, output/'assets', dirs_exist_ok=True)
     (output/'.nojekyll').write_text('')
-    projects = PROJECTS
-    daily = []
-    for meta in sorted((ROOT/'website/content/daily').glob('*.json'), reverse=True):
-        data = json.loads(meta.read_text())
-        if data.get('published') is not True:
-            continue
-        data['path'] = meta.with_suffix('.md')
-        data['route'] = 'daily/'+meta.stem+'/'
-        daily.append(data)
-        content = data['path'].read_text()
-        content = re.sub(r'^#\s+[^\n]+\n?', '', content, count=1)
-        byline = '<p class="eyebrow">Daily journal / '+E(str(data.get('date', meta.stem)))+'</p><h1>'+E(data['title'])+'</h1><p class="deck">'+E(data.get('summary', ''))+'</p><p class="byline">Alexey Grigorev · Written with Claude Opus · Evidence cutoff '+E(readable_cutoff(data.get('source_cutoff', data.get('date', meta.stem))))+'</p>'
-        write(data['route'], data['title'], '<article class="article">'+byline+'<div class="prose">'+markdown(content, data['path'])+'</div><aside class="source-note">Writing assistance: Claude Opus. Sources and original Markdown: <a href="'+public_source(data['path'].relative_to(ROOT))+'">read in the repository ↗</a>. Illustration is conceptual artwork.</aside></article>', data.get('summary'))
-    reports = sorted((ROOT/'research/orchestrator').glob('heartbeat-*.md'), reverse=True)
-    latest_cutoff = datetime.strptime(reports[0].stem.removeprefix('heartbeat-'), '%Y%m%dT%H%M').strftime('%d %b %Y, %H:%M UTC') if reports else 'No field note published'
-    def cards():
-        out = []
-        for p in projects:
-            mark = CARD_MARKS.get(p['id'], CARD_MARKS['A01'])
-            out.append('<a class="project-card hypothesis-card" href="'+BASE+'/projects/'+p['slug']+'/"><div class="card-top"><span class="card-mark" aria-hidden="true">'+mark+'</span><span class="card-tag">PROVISIONAL</span></div><div><span class="card-id">'+E(p['id'])+'</span><span class="card-name">'+E(p['name'])+'</span></div><div class="card-status"><span aria-hidden="true">'+status_mark_for(p)+'</span><span>'+E(p['status'])+'</span></div><p class="card-short">'+E(p['summary'])+'</p></a>')
-        out.append('<div class="project-card hypothesis-card open-slot"><div class="card-top"><span class="card-mark" aria-hidden="true">'+CARD_MARKS['SLOT6']+'</span><span class="card-tag">OPEN</span></div><div><span class="card-id">SLOT 6</span><span class="card-name">Open slot \u2014 no replacement selected</span></div><div class="card-status"><span aria-hidden="true">'+STATUS_SVG['open']+'</span><span>Reopened \u00b7 no candidate approved</span></div><p class="card-short">A14 was folded into A01. Nothing has earned the sixth place yet.</p></div>')
-        return ''.join(out)
-    def report_list(items):
-        return ''.join('<a class="list-row" href="'+BASE+'/reports/'+p.stem+'/"><span class="eyebrow">'+E(report_stamp(p))+'</span><span>'+E(report_title(p))+'</span><span aria-hidden="true">↗</span></a>' for p in items)
-    latest = daily[0] if daily else None
-    if latest:
-        feature = '<article class="feature-story"><span class="eyebrow">Latest daily journal / '+E(str(latest.get('date', '')))+'</span><h1>'+E(latest['title'])+'</h1><p class="deck">'+E(latest.get('summary', ''))+'</p><p class="byline">Alexey Grigorev · Written with Claude Opus · Cutoff 2026-10-03 02:24 UTC</p><a class="text-link" href="'+BASE+'/'+latest['route']+'">Read the daily report <span aria-hidden="true">↗</span></a></article>'
-    else:
-        feature = '<article class="feature-story"><span class="eyebrow">The first daily journal</span><h1>What we learn belongs here.</h1><p class="deck">The opening story is being written and checked against the evidence. Read the dated field notes while it is prepared.</p><a class="text-link" href="'+BASE+'/reports/">Read the field notes <span aria-hidden="true">↗</span></a></article>'
-    status_rows = [('20', 'Approaches researched', 'Independent briefs in repo'), ('2', 'Retained hypotheses', 'Provisional, for falsification (A01 conditional, A06)'), ('0', 'Agreed final six', 'Principals have not converged'), ('4', 'Product places open', 'Unfilled candidates'), ('111.7 GiB', 'Worktree disk measured', 'Across 472 worktrees'), ('62.1%', 'Dependencies & builds', 'Not ordinary Git storage')]
-    honest = '<aside class="honest-status"><div class="honest-head"><span class="honest-title">Honest status</span><span class="honest-cutoff">Cutoff 2026-10-03 02:24 UTC</span></div>' + ''.join('<div class="honest-row"><span class="honest-number">'+E(n)+'</span><div class="honest-detail"><span class="honest-label">'+E(label)+'</span><span class="honest-note">'+E(note)+'</span></div></div>' for n, label, note in status_rows) + '<a class="text-link" href="'+BASE+'/checklist/">See every gate on the checklist <span aria-hidden="true">↗</span></a></aside>'
-    hero = '<figure class="hero-figure"><img src="'+BASE+'/assets/agent-git-illustration.png" alt="Geometric blue agents carry folders along branching commit lines into an orange merge"><figcaption>FIG. 0 — MANY AGENTS, ONE CANONICAL HISTORY</figcaption></figure><section class="latest-section">'+feature+honest+'</section>'
-    home_title = latest['title'] if latest else 'Agent Git Lab'
-    storage = '<section class="pain-section"><div><span class="pain-eyebrow">MEASURED PAIN \u00b7 ONE HOST \u00b7 READ-ONLY SCAN</span><h2 class="pain-title">Most of the worktree pile isn\u2019t Git. It\u2019s dependencies.</h2><p class="pain-text">The pain is real and measured. Whether anyone would adopt a product for it is unknown. Ordinary shared stores may already be enough.</p><a class="pain-link" href="'+BASE+'/projects/storage-aware-workspaces/">A16 \u00b7 Storage-aware workspaces \u2192</a></div><div><div class="pain-stats"><div class="pain-stat"><span class="pain-stat-n">472</span><span class="pain-stat-l">linked worktrees</span></div><div class="pain-stat"><span class="pain-stat-n">25</span><span class="pain-stat-l">repositories</span></div><div class="pain-stat"><span class="pain-stat-n">111.7</span><span class="pain-stat-l">GiB physical union</span></div><div class="pain-stat"><span class="pain-stat-n">62.1%</span><span class="pain-stat-l">dependencies + build</span></div></div><div><div class="pain-bar"><div class="pain-bar-fill"></div><div class="pain-bar-rest"></div></div><div class="pain-caps"><span>62.1% DEPENDENCY + BUILD (69.4 GIB)</span><span class="dim">SOURCE + OTHER ~42 GIB</span></div><div class="pain-unknown"><span aria-hidden="true">'+STATUS_SVG['unknown']+'</span><span>Product viability: unknown</span></div></div></div></section>'
-    home_fields = ''.join('<a class="field-row" href="'+BASE+'/reports/'+rp.stem+'/"><span class="field-time">'+E(rp.stem.removeprefix('heartbeat-')[9:11]+':'+rp.stem.removeprefix('heartbeat-')[11:13]+' UTC')+'</span><span class="field-title">'+E(report_title(rp))+'</span></a>' for rp in reports[:4])
-    home_libs = [('Shortlist draft 7 (unsigned)', 'research/shortlist-6.md'), ('Worktree disk on the real host', 'research/claude/u7-real-worktree-measurement.md'), ('Consensus record \u2014 pending', 'research/consensus.md'), ('All 20 approaches', 'research/approaches-20.md')]
-    home_lib_rows = ''.join('<a class="lib-row" href="'+public_source(rel)+'"><span class="lib-title">'+E(t)+'</span><span class="lib-path">'+E(rel)+'</span></a>' for t, rel in home_libs)
-    home_bottom = '<section class="home-bottom"><div class="home-col"><div class="home-col-head"><h2>Field notes</h2><a class="pain-link" href="'+BASE+'/reports/">Archive \u2192</a></div><span class="home-col-sub">Orchestrator checks every 30 minutes. Times in UTC.</span>'+home_fields+'</div><div class="home-col"><div class="home-col-head"><h2>Research library</h2><a class="pain-link" href="'+BASE+'/research/">All sources \u2192</a></div><span class="home-col-sub">Everything links to a file in the public repo.</span>'+home_lib_rows+'</div></section>'
-    home_html = hero+'<section><div class="section-heading"><div><p class="eyebrow">The project notebook</p><h2>'+str(ACTIVE_COUNT)+' active ideas. '+str(PARKED_COUNT)+' parked candidates.</h2></div><p>Each gets its own problem, evidence, and next test. None has earned a product claim yet.</p></div><div class="projects-grid">'+cards()+'</div></section>'+storage+home_bottom
-    write('', home_title, home_html)
-    daily_rows = ''.join('<a class="journal-entry" href="'+BASE+'/'+d['route']+'"><span class="eyebrow">'+E(str(d.get('date', '')))+'</span><h2>'+E(d['title'])+'</h2><p>'+E(d.get('summary', ''))+'</p><span class="text-link">Read the story ↗</span></a>' for d in daily)
-    write('daily/', 'Daily journal', '<section class="page-intro"><p class="eyebrow">A story each day</p><h1>The daily journal.</h1><p class="deck">What we tried, what held up, and what changed our minds. Written with Claude Opus, checked against the experiment.</p><a href="'+BASE+'/feed.xml">Subscribe via RSS ↗</a></section><section class="journal-list">'+(daily_rows or '<p>The first evidence-checked story is being prepared.</p>')+'</section>')
-    write('projects/', 'Projects', '<section class="page-intro"><p class="eyebrow">Retained research hypotheses</p><h1>Ideas with work to do.</h1><p class="deck">Five directions are under investigation. Selection and development gates are separate; these are provisional research lanes.</p></section><section class="projects-grid">'+cards()+'</section>')
-    for p in projects:
-        body = '<article class="project-landing"><p class="eyebrow">'+p['id']+' / '+E(p['status'])+'</p><h1>'+E(p['name'])+'</h1><p class="deck">'+E(p['summary'])+'</p><div class="status-strip">Provisional hypothesis · No final shortlist approval</div><figure class="hypothesis-diagram"><img src="'+BASE+'/assets/'+p['slug']+'-workflow.svg" alt="'+E(p['name'], quote=True)+' proposed workflow: '+E(p['idea'], quote=True)+'"><figcaption>Proposed workflow — not validated. Arrows describe the hypothesis, not measured uptake or a finished product.</figcaption></figure><div class="project-detail"><section><h2>The problem</h2><p>'+E(p['problem'])+'</p><h2>The working idea</h2><p>'+E(p['idea'])+'</p><h2>What the evidence says</h2><p>'+E(p['evidence'])+'</p><h2>The next useful test</h2><p>'+E(p['test'])+'</p><h2>What would change our mind</h2><p>'+E(p['falsifier'])+'</p></section><aside class="project-sidebar"><span class="eyebrow">Experiment record</span><p>Read the original research before treating an illustration, fixture, or proposal as a working product.</p><a href="'+public_source('research/shortlist-6.md')+'">Current selection draft ↗</a><a href="'+public_source('research/approaches-20.md')+'">All twenty approaches ↗</a><a href="'+BASE+'/checklist/">Shared validation checklist ↗</a></aside></div><a class="text-link" href="'+BASE+'/projects/">← All projects</a></article>'
-        write('projects/'+p['slug']+'/', p['name'], body, p['summary'])
-    write('reports/', 'Field notes', '<section class="page-intro"><p class="eyebrow">The regular reports</p><h1>Field notes, with receipts.</h1><p class="deck">Dated remote check-ins, including failures and corrections. Older reports describe what was known then; read later updates before reusing a claim.</p></section><section class="report-list">'+report_list(reports)+'</section>')
-    for report in reports:
-        write('reports/'+report.stem+'/', report_title(report)+' — '+report_stamp(report), '<article class="article field-report"><p class="eyebrow">Historical field note / '+E(report_stamp(report))+'</p><h1>'+E(report_title(report))+'</h1><aside class="source-note">This is a dated evidence snapshot, not current product validation. <a href="'+public_source(report.relative_to(ROOT))+'">Original report and version history ↗</a></aside><div class="prose">'+markdown(re.sub(r'^#\s+[^\n]+\n?', '', report.read_text(), count=1), report)+'</div></article>')
-    groups = []
-    for group in ['orchestrator', 'claude', 'codex', 'grok', 'antigravity', 'zcode', 'space-bunny', 'muse', 'debate']:
-        paths = sorted((ROOT/'research'/group).rglob('*.md'))
-        paths = [p for p in paths if not any(part.startswith('.') for part in p.relative_to(ROOT).parts)]
-        if paths:
-            groups.append('<details><summary>'+E(group.replace('-', ' ').title())+' <span>'+str(len(paths))+' documents</span></summary><ul>'+''.join('<li><a href="'+public_source(p.relative_to(ROOT))+'">'+E(str(p.relative_to(ROOT/'research'/group)))+'</a></li>' for p in paths)+'</ul></details>')
-    top = sorted((ROOT/'research').glob('*.md'))
-    write('research/', 'Research library', '<section class="page-intro"><p class="eyebrow">The public source material</p><h1>Open the notebooks.</h1><p class="deck">Research, challenges, and evidence live in the public repository. Private agent logs and credentials are excluded.</p></section><section class="library"><h2>Selection and shared research</h2><ul>'+''.join('<li><a href="'+public_source(p.relative_to(ROOT))+'">'+E(p.stem.replace('-', ' '))+'</a></li>' for p in top)+'</ul>'+''.join(groups)+'</section>')
-    checks = [('recorded','Explore twenty distinct approaches','The research inventory is public. Scores and the original shortlist are historical, not final approval.'),('recorded','Challenge assumptions from both sides','Independent principals challenge outputs, methods, and the human brief. A01 lost its primary recommendation.'),('open','Agree on six viable approaches','The current draft retains '+str(ACTIVE_COUNT)+' hypotheses and parks '+str(PARKED_COUNT)+' candidates. '+str(OPEN_PLACES)+' product places remain open; identical-digest approval from both principals is still required.'),('open','Demonstrate actual agent use','Show a useful task, real agent actions, and accepted outcomes. A scripted fixture alone does not pass.'),('open','Prove an advantage over ordinary tools','Compare equal tasks, information, and acceptance checks. Preserve ties, failures, and negative results.'),('open','Keep development recoverable','Ordinary Git recovery stays independent of the prototype. A source-only restore is limited evidence.'),('open','Hand off five productive project teams','Verify meaningful deliverables, independent ownership, and an actual next task; a live process is insufficient.'),('recorded' if daily else 'open','Publish evidence-checked daily stories','First report published and the daily 09:30 Europe/Berlin workflow configured. Ongoing daily continuity remains to be verified.' if daily else 'Claude Opus writes with stylint; factual claims, diagrams, and illustrations are checked before publishing.')]
-    checks += [('recorded','Current runtime evidence is scoped','At 03 October 2026, 05:11 UTC, independent review confirms one outer call/one effect in the constrained patched probe, but two successful outer writes in the unconstrained task. Exactly-once retry/resume and reliable between-turn handoffs remain open. Historical test failures below retain their original cutoff.'),('recorded','A16 parked in draft8','Repeated whole-footprint gates failed and the incumbent arm was near-equal. Storage advice survives; the parked competition product does not occupy a selected place.')]
-    checks += [('recorded','A01 primary recommendation withdrawn','Decision at the 03 October 2026, 02:24 UTC evidence cutoff: both principals withdrew primary status after the fair live comparison showed no separation. This does not prove warnings can never help.'),('failed','Storage test below its registered gate','At that cutoff, clean-identical-cache N2 whole-footprint savings were 48.17%, below the registered greater-than-50% gate. This is a limited fixture, not safe savings from existing worktrees.'),('failed','Runtime regression still failed','The 02:24 UTC field note records zero passing tests and one failure: COUNT 0 where COUNT 1 was expected. Full patched one-effect runtime integration remained unproven at that cutoff.')]
-    write('checklist/', 'Experiment checklist', '<section class="page-intro"><p class="eyebrow">What earns a claim</p><h1>The checklist.</h1><p class="deck">A public view of the gates, not a score for how many agents we can launch. Project teams test their hypotheses while selection continues.</p></section><p class="source-note">Snapshot built '+BUILD_TIME+'. Latest field-note cutoff: '+E(latest_cutoff)+'. Daily publication: '+('first report recorded; continuing daily reliability unproven' if daily else 'first report pending')+'.</p><section class="checklist">'+''.join('<div class="check-item"><span class="check-symbol '+state+'" aria-hidden="true">'+({'recorded':'●','failed':'×'}.get(state,'○'))+'</span><div><span class="eyebrow">'+({'recorded':'Work recorded','failed':'Gate not passed'}.get(state,'Evidence still needed'))+'</span><h2>'+E(title)+'</h2><p>'+E(desc)+'</p></div></div>' for state,title,desc in checks)+'</section><p class="source-note">Status comes from the published selection draft and orchestrator reports. '+('<a href="'+BASE+'/'+daily[0]['route']+'">First daily story ↗</a> · ' if daily else '')+'<a href="'+public_source('research/shortlist-6.md')+'">Inspect the selection gates ↗</a></p>')
-    write('experiment/', 'About the experiment', '<article class="article"><p class="eyebrow">Why this exists</p><h1>Build it. Test it.<br>Tell the whole story.</h1><p class="deck">A new Git platform competition prompted a wider question: where does Git make a team of coding agents harder to run?</p><div class="prose"><h2>Start with actual pain</h2><p>Alexey’s worktrees filled disk quickly. A read-only scan found 472 linked worktrees across 25 repositories, occupying a physical union of 111.7 GiB. Dependencies and builds accounted for 69.4 GiB, or 62.1%. These are measurements from one host, not a claim about every developer.</p><h2>Let the agents challenge each other</h2><p>Claude and Codex principals monitor and challenge evidence. Project heads coordinate useful tasks, and task executors can work headless. The team is free to improve its working method, while preserving quotas, code recovery, and privacy.</p><figure><picture><source media="(max-width: 600px)" srcset="'+BASE+'/assets/team-workflow-mobile.svg"><img src="'+BASE+'/assets/team-workflow.svg" alt="Team workflow: Alexey and remote oversight connect to Claude and Codex principals, project heads, task executors, evidence, and review."></picture><figcaption>The operating model. Arrows show responsibilities, not proof of continuous activity.</figcaption></figure><h2>Keep the failures visible</h2><p>Research is not product validation. No final six-approach shortlist has been approved. The first live integration comparison showed no separation, so that idea’s primary status was withdrawn. A small storage experiment fell below its registered savings gate.</p><h2>Use what survives</h2><p>Teams should build the smallest useful prototype and use it in their own development. Accepted outcomes, peer review, and recoverable Git history matter more than a launch count.</p><p><a href="'+public_source('experiment/USER-INSTRUCTIONS.md')+'">The original user brief ↗</a> · <a href="'+public_source('AGENTS.md')+'">How the agents are expected to work ↗</a> · <a href="https://blog.cloudflare.com/next-git-platform-on-cloudflare/">The competition that started it ↗</a></p></div></article>')
-    write('subscribe/', 'Confirm your experiment updates', '<section class="page-intro"><p class="eyebrow">A separate, confirmed opt-in</p><h1>Stay with the experiment.</h1><p class="deck">Sign up for Agent Git Lab updates, or use the confirmation link from your inbox. This list is separate from PocketShell and other newsletters.</p></section>'+signup_section(dedicated=True))
-    write('privacy/', 'Email privacy', '<article class="article"><p class="eyebrow">Email opt-in</p><h1>Your address stays private.</h1><div class="prose"><h2>What you are signing up for</h2><p>Agent Git Lab experiment updates: useful findings, project progress, and corrections. A signup does not enroll you in PocketShell or another newsletter. You can read daily reports in the journal; the email list is for occasional experiment updates.</p><h2>Confirmation and storage</h2><p>We use DataTalks.Club Relay, the same public double opt-in flow used by PocketShell. Your email address and pending or confirmed subscription state are stored in a separate Agent Git Lab audience. Relay sends a confirmation link; you join the confirmed list only after using it.</p><p>The website sends your address directly to the fixed Relay signup endpoint. No client API key is placed in the page. We do not put submitted addresses or confirmation tokens into the public repository, research reports, agent prompts, or browser storage.</p><h2>Leaving the list</h2><p>You can ignore a confirmation you did not request. Unsubscribe through the link in an update email. Repeated requests can be rate limited; that is separate from confirmation.</p><h2>Website and service requests</h2><p>The website is hosted on GitHub Pages and the email flow is handled by Relay. Those services process the requests needed to deliver the page and manage the opt-in, including their ordinary operational records. No visitor analytics or public signup telemetry is added by this form.</p><p><a href="'+BASE+'/subscribe/">Back to signup</a> · <a href="https://github.com/DataTalksClub/relay">Relay source</a></p></div></article>')
+    daily = DAILY
+    for d in daily:
+        write(d['route'], d['title'], daily_page(d), d.get('summary'), 'article')
+    write('', LATEST['title'] if LATEST else 'Agent Git Lab', home_page(), kind='home')
+    rows = ''.join('<a class="journal-row" href="'+BASE+'/'+d['route']+'"><span class="mono-meta"><span>'+E(str(d['date']))+'</span><span>CUTOFF '+E(utc_text(d.get('source_cutoff', d['date'])))+'</span></span><span class="journal-title">'+E(d['title'])+'</span><span class="journal-summary">'+E(d.get('summary', ''))+'</span><span class="read-more-sm">Read the story'+ARROW+'</span></a>' for d in daily)
+    write('daily/', 'Daily journal', '<div class="narrow">'+intro('Daily journal \u00b7 a story each day', 'The daily journal', 'What we tried, what held up, and what changed our minds. Written with Claude Opus, checked against the experiment.', '<a class="read-more-sm" href="'+BASE+'/feed.xml">Subscribe via RSS'+ARROW+'</a>')+'<div class="journal-list">'+(rows or '<p>The first evidence-checked story is being prepared.</p>')+'</div></div>')
+    write('projects/', 'Hypotheses', intro('Hypotheses \u00b7 '+str(ACTIVE_COUNT)+' retained \u00b7 '+str(PARKED_COUNT)+' parked \u00b7 unsigned', 'Ideas with work to do', str(len(PROJECTS))+' directions have pages here: '+str(ACTIVE_COUNT)+' retained for falsification and '+str(PARKED_COUNT)+' parked. Selection and development gates are separate; these are provisional research lanes, not products. Each page states what would change our mind.')+cards(with_next=True))
+    for i, p in enumerate(PROJECTS):
+        write('projects/'+p['slug']+'/', p['name'], project_page(i, p), p['summary'], 'project')
+    write('reports/', 'Field notes', notes_page())
+    for rp in REPORTS:
+        write('reports/'+rp.stem+'/', report_title(rp), note_page(rp), None, 'article')
+    write('research/', 'Research library', library_page())
+    write('checklist/', 'Experiment checklist', checklist_page())
+    team_fig = '<figure class="portrait-fig"><img loading="lazy" src="'+BASE+'/assets/team-workflow-mobile.svg" alt="Team workflow: Alexey and remote oversight connect to Claude and Codex principals, project heads, task executors, evidence, and review."><figcaption>The operating model. Arrows show responsibilities, not proof of continuous activity.</figcaption></figure>'
+    about = ('<article class="article">'+article_head('About \u00b7 why this exists', 'Build it. Test it. Tell the whole story.', 'A new Git platform competition prompted a wider question: where does Git make a team of coding agents harder to run?', '')
+             +'<div class="prose"><h2>Start with actual pain</h2><p>Alexey\u2019s worktrees filled disk quickly. A read-only scan found 472 linked worktrees across 25 repositories, occupying a physical union of 111.7 GiB. Dependencies and builds accounted for 69.4 GiB, or 62.1%. These are measurements from one host, not a claim about every developer.</p><h2>Let the agents challenge each other</h2><p>Claude and Codex principals monitor and challenge evidence. Project heads coordinate useful tasks, and task executors can work headless. The team is free to improve its working method, while preserving quotas, code recovery, and privacy.</p>'+team_fig+'<h2>Keep the failures visible</h2><p>Research is not product validation. No final six-approach shortlist has been approved. The first live integration comparison showed no separation, so that idea\u2019s primary status was withdrawn. A small storage experiment fell below its registered savings gate.</p><h2>Use what survives</h2><p>Teams should build the smallest useful prototype and use it in their own development. Accepted outcomes, peer review, and recoverable Git history matter more than a launch count.</p>'
+             '<p><a href="'+public_source('experiment/USER-INSTRUCTIONS.md')+'">The original user brief'+EXT+'</a> \u00b7 <a href="'+public_source('AGENTS.md')+'">How the agents are expected to work'+EXT+'</a> \u00b7 <a href="https://blog.cloudflare.com/next-git-platform-on-cloudflare/">The competition that started it'+EXT+'</a></p></div></article>')
+    write('experiment/', 'About the experiment', about, None, 'article')
+    write('subscribe/', 'Confirm your experiment updates', intro('Updates \u00b7 a separate, confirmed opt-in', 'Stay with the experiment', 'Sign up for Agent Git Lab updates, or use the confirmation link from your inbox. This list is separate from PocketShell and other newsletters.')+signup_section(dedicated=True))
+    privacy = ('<article class="article">'+article_head('Email opt-in \u00b7 privacy', 'Your address stays private', '', '')+'<div class="prose"><h2>What you are signing up for</h2><p>Agent Git Lab experiment updates: useful findings, project progress, and corrections. A signup does not enroll you in PocketShell or another newsletter. You can read daily reports in the journal; the email list is for occasional experiment updates.</p><h2>Confirmation and storage</h2><p>We use DataTalks.Club Relay, the same public double opt-in flow used by PocketShell. Your email address and pending or confirmed subscription state are stored in a separate Agent Git Lab audience. Relay sends a confirmation link; you join the confirmed list only after using it.</p><p>The website sends your address directly to the fixed Relay signup endpoint. No client API key is placed in the page. We do not put submitted addresses or confirmation tokens into the public repository, research reports, agent prompts, or browser storage.</p><h2>Leaving the list</h2><p>You can ignore a confirmation you did not request. Unsubscribe through the link in an update email. Repeated requests can be rate limited; that is separate from confirmation.</p><h2>Website and service requests</h2><p>The website is hosted on GitHub Pages and the email flow is handled by Relay. Those services process the requests needed to deliver the page and manage the opt-in, including their ordinary operational records. No visitor analytics or public signup telemetry is added by this form.</p>'
+               '<p><a href="'+BASE+'/subscribe/">Back to signup</a> \u00b7 <a href="https://github.com/DataTalksClub/relay">Relay source'+EXT+'</a></p></div></article>')
+    write('privacy/', 'Email privacy', privacy, None, 'article')
     rss = ET.Element('rss', version='2.0')
     channel = ET.SubElement(rss, 'channel')
-    for tag, value in [('title','Agent Git Lab — Daily journal'),('link',ORIGIN+BASE+'/'),('description','The experiments, failures, and decisions behind Git for coding agents.')]:
+    for tag, value in [('title', 'Agent Git Lab \u2014 Daily journal'), ('link', ORIGIN+BASE+'/'), ('description', 'The experiments, failures, and decisions behind Git for coding agents.')]:
         ET.SubElement(channel, tag).text = value
     for d in daily:
         item = ET.SubElement(channel, 'item')
-        for tag,value in [('title',d['title']),('link',ORIGIN+BASE+'/'+d['route']),('guid',ORIGIN+BASE+'/'+d['route']),('description',d.get('summary',''))]:
+        for tag, value in [('title', d['title']), ('link', ORIGIN+BASE+'/'+d['route']), ('guid', ORIGIN+BASE+'/'+d['route']), ('description', d.get('summary', ''))]:
             ET.SubElement(item, tag).text = value
     ET.ElementTree(rss).write(output/'feed.xml', encoding='utf-8', xml_declaration=True)
-    print(json.dumps({'output':str(output),'html_pages':len(list(output.rglob('*.html'))),'published_daily':len(daily),'field_notes':len(reports),'projects':len(projects)}))
+    print(json.dumps({'output': str(output), 'html_pages': len(list(output.rglob('*.html'))), 'published_daily': len(daily), 'field_notes': len(REPORTS), 'projects': len(PROJECTS)}))
 
 if __name__ == '__main__':
     main()
