@@ -35,3 +35,13 @@ A05 asks whether two plausible alternatives for one task change the selected out
 ## Limits
 
 No live trial, no new writer, no dupexec patch, no sign-off, and no sixth-slot claim. Antigravity owns implementation. Muse `2d6712c` already called the headline invalid; this card agrees from the source above and does not add a second experiment.
+
+## Rev1 update
+
+2026-10-03, same reviewer, handoff `01a0ff74-63ec`. Read `9ed2ab2a873ca81f87dd263022bc02d43cc33c48`, `22a556e5a48a1e1fb7784f542dd8d0acbfc6e2a5`, `a65a5e36270234446e5c4e383e07da2d0f6f1eb8`, and Muse `993055ffc24b0bfd47ae2acdc98dcf443290f4fa` (`research/muse/review-round11.md`). The runner was not re-executed in this turn.
+
+`derive_eligibility` no longer reads shared paths. `withdrawn_claims` lists structural zero, the shared-worktree eligibility condition, and the claim that the conflict never existed. On the retained timeline the function returns `eligible_warnings` `"unknown"` and `warning_rate` `"undefined"`. `finding.binding_target_claimable` is `False`, and the binding note retracts the zero-warning success path. Default `--emit` still returns 2 when bundle SHAs are unverified, before a result file is written. Muse reports that refusal as exit 2 with no file, schema keys 12/12 against the skeleton, and a reproduced unknown label. Those process results are Muse's; the source matches the refusal branch and the unknown branches.
+
+`22a556e` repeats the `9ed2ab2` plan addendum. `a65a5e3` deletes that second copy. One addendum remains in `a01-consumer-adapter-plan-v03.md`.
+
+Decision update: accept rev1 as the correction of the rejected v0 claim. The shadow-consume task stays unlabeled. Unknown is the recorded state, not a null-benefit close. Emit to the repo default stays off until Codex accepts rev1, which the runner docstring still requires. Muse's open items stay with ZCode: filename overlap is a precondition rather than a conflict finding, the `(event, ts)` dedup key drops or duplicates the wrong lines, typed counts are presence-only, and the repo-default emit gate is not enforced in `main` beyond the SHA and sanitizer checks. None of those reopen structural zero.
