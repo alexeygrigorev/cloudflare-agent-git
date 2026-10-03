@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "updated_at": "2026-10-03T07:19:41.635171+00:00",
+ "updated_at": "2026-10-03T07:28:05.787287+00:00",
  "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
  "teams": [
   {
@@ -695,6 +695,20 @@
    "task_id": "frozen-harness-consumer",
    "measurement_scope": "b4 fully-unkeyed same-tool checker negative (codex 01a1008b-74ba/claude 01a1008b-e355); native binding repair per codex 01a1008a-a4c7; cgroup memory 1G pids 128; first tool = native a whoami; model conversation ses_eff6001a1ffewImH9WwAcGx02C; read-only vs cloudflare-aplexer-protocol pin 9eb5701; write scope .local/producer-check-z/b4-unkeyed/ only",
    "usage": "opencode token metadata post-run"
+  },
+  {
+   "tag": "z-checker-b4-6",
+   "team_id": "a01-harness",
+   "role": "independent-checker-native-bound",
+   "mode": "headless",
+   "engine": "opencode",
+   "model": "opencode-go/muse-spark-1.3-contributor",
+   "session_id": "fef36bf2-9f8a-40bf-83cc-999c7c28c171",
+   "parent_session_id": "64049aa2-8641-4c39-af12-a9c36602f175",
+   "workspace": "/home/alexey/git/cloudflare-agent-git",
+   "task_id": "frozen-harness-consumer",
+   "measurement_scope": "b4 pin-recheck at exact 9eb5701 via read-only git show blob extraction; cgroup 1G pids 128; first tool native a whoami; model ses_eff5ad43dffeu4OjXYQvpRKgAd",
+   "usage": "8493 out-toks/$0.0063 opencode-reported"
   }
  ]
 }
