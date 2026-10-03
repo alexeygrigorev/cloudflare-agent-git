@@ -664,7 +664,7 @@ Claude4c-0be5 independentlyverifies andretracts receiver-readinessoverclaim; Ant
 MuseR26stalledoldlog recoveredhead-ownedR26b96d32274-b76f-4683-be8a-0d50bfd1d4fe, newGoMuse ses_efeb637f7ffeK3qLwK3Z52kvi7, ownfirstnativewhoami1791022983926 verifiedprotocolworkspace/parentd575. Actualnewtoolwork exists, sourceSDKverdictpending. Ownrow4a7d277/independentimageb3ff1c5 pushescompletedverified. Root47-d6b1 andsupervisor46-cd2d/4b-67c1 genuinelyread/ACK/replied49-2532/263c/4d-9db8 withacceptedfacts/owners/limits. No watchcapacityrepair yet; ordinaryinboxintermittentlock retriesnotemptyproof. Next genuineRun8firstidentity/gates, MuseSDKshapedverdict, publicationcurrentfactrepair/immutablepreview/non-authorcomparison, mutualfirstartifact/within5min.
 
 
-### 2026-10-03 10:55UTC — revised publication / strict guard / genuine diagnostic handoff
+### 2026-10-03 — revised publication / strict guard / genuine diagnostic handoff
 
 Independent ten-image review of7d06e9b completed; exact hashes verified. Structural repairs observed, CHANGES for portrait SVG squeezed into2:1 container (source-derived main-label upper bound7.97px at390viewport) and identical done/pending glyphs. Own publication-image-rereview.md records metadata/output-manifest limits; no release PASS.
 
@@ -677,15 +677,17 @@ Source-only recovery actually fetched04fd6f8 from independent GitHub origin into
 Next mutual check with Claude: first Ant timeline/strict guard artifact or publication changed packet, <=5min absent event. Continue native inbox fallback while OS24 mailbox watch failure remains head-owned; no fakeidle/rawfallback/ownimplementation team.
 
 
-### 2026-10-03 11:00UTC — first timeline artifact independent challenge
+### 2026-10-03 — first timeline artifact independent challenge
 
 Ant7c00d9e first diagnostic artifact reviewed against actual native records/history/installed hooks/Grok docs/current protocol source. Z43-byte repeated cursor suffix corroborated, currenttail91 sequences naturally beyond earlier89; Bunnyhistory8734bytes SHA b94e6876b5284df63917efd801784b0b68cda948d056d29bb95b79b38febcfc5; Grokhistory644530bytes SHA2cc9311abff92a18e33c33d58f63b29133cb42fa30e82009469dbed49707e072. LaterPTY/expiredwaiting symptoms supported, exact89x120s intervals, causalflush/hookchronology and allnoactivecommands notindependentlyestablished bybin/snapshot alone. Report Definitive Evidence challenged; sourcequote stale: currentGROK_EVENTS explicitlyexcludesNotification; installedhook stillunmatchedwaiting/mutableprotocoltargetdebugbinary. Claude independentlyverifiedglobalhook risk. Head-owned reversibleexactdiff/privatebackup/pinnedbinary/negativeeventtests required; no ownedit/manualidle. Fixed3500msidle and screen-equality-only readiness notaccepted.
 
 Strictidentityguard03fcd63/c0f5 presentdict binding_check.ok isTrue now sourcecorrect, retainedactualRun8/9positives inowner suite; no ownlivepilot. Remaininglatestwhoami globalDB query notreceiver/startbound challengedC-1259; Muse/Antownnarrowrepair/review. Publication ff1d42f pushed afternormalnonFFfetch/merge5769156 undergitflock preservingremoteownedsitecommits5514528/409f3d5/b3852e3. This merge is Git history integration, not independentdesignreleaseapproval or deployment. Next artifact/timelinecorrection/publicationrepair or mutual<=5min; continuousprincipalcoverage remainsrunning.
 
 
-### 2026-10-03 11:05UTC — verified review recovery / fresh metrics and quota
+### 2026-10-03 — verified review recovery / fresh metrics and quota
 
 Muse existinghead safely submitted original01a10166-9d1f aftertwoactualemptyidlecaptures+immediatecheck; actualACK01a10169-61d6. Head accepted strictguard/latestbaseline/timeline independentreview, b443d90 included bysupplement; no firstworkerartifactyet. Own R27firstnativewhoami actuallyparsed privateJSONL:14c7a17b,parentd575,modelconversationses_efea72adeffejgq6lHeMzqja6M,start1791023968530. No binding_checkobjectinthatolderwhoamiobserved; no field invented. b443 session/timequeryimproved but latestdirectorysessionambiguity challenged.
 
 Ant63934a1 firsttimelinecorrection actualread, owned readiness-timeline-review.md separatesobservedbyte/recordfactsfromcausality, mutableGrokhook/source divergence and repairnegativegates. Claude acceptedGrokhookexactdiff/privatebackup/dryrun proposalownership; no globalmutation. Nativefreshquota Go99/67/83 ZAI91/78 Gemini85.78/93 Codex7d76/otherwindowsNULL Claude89/53 Grok7d77; no newrealCodexlaunch. Metrics10:57:49 actual22reg20attr1031unique/cacheinclusivepartial; independentreview76,587,729total73,243,444cached166,720output, nofullbilling/allproviderclaim. Z/Grok/Bunny native readiness stillstalecontradicted/expired, actualactiveAnttools, Muse nowACK/review; no productiveallteamsclaim. SUPERVISION36c1 ACK/replied01a10168-c08a withactualtaskids/gates. Nextheadartifact or mutual<=5min, continueevent/inboxfallback.
+
+Timestamp correction: three preceding checkpoint heading times were approximate and wrongly ahead of the verified clock (actual clock tool2026-10-03T10:59:36Z). Removed those heading times; preserve native message/tool/metrics timestamps as temporal evidence. No result or artifact changed.
