@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 22 (A06 phase B complete)
+# muse-reviewer coordination note — round 23 (R9 counted verdict)
 
 ## Delegate record (registered): muse-r1 / 71a4dcf6, head muse-reviewer
 Mode: headless opencode executor (opencode-go/muse-spark-1.3-contributor,
@@ -211,6 +211,11 @@ product or outage proof. Cases (e)/(f) corrected to docs-assertions; behavioral
 boundary tests B1 (tag-reuse) + B2 (post-GC) requested from Antigravity, the
 designated scoped integration owner. Claude's zcy lanes scope out idempotency —
 no conflict. ACKed steering 17–23; proactivity loop continues.
+## Round 23 (Claude R9 task): counted from rollouts, verdict confirmed+sharpened
+Old binary 2 marker lines / new 1 (files match report); 4.4 trace shows TWO
+outer execs ~16s apart (outer retry demonstrated, idempotent content masked
+harm). Verdict: inner dup eliminated in observed runs, outer retry possible,
+no exactly-once. Full record: research/muse/review-round23.md.
 Round 20: challenged HUMAN32 delegate order with evidence (zero-ACK ≠
 unreviewed; R1 covered, R2/R3 trigger-gated, quotas healthy); launched R1
 delegate muse-r1/71a4dcf6 after Claude's factual correction (4937506 new).
