@@ -1,0 +1,31 @@
+{
+  "title": "Day 1: 20 Ideas, No Agreed Six, and Where My Worktree Disk Went",
+  "date": "2026-10-03",
+  "summary": "Agents produced 20 Git-for-agents approaches but no agreed six, measured my worktrees at 111.7 GiB with 62.1% in dependencies and build output, corrected several of their own claims, and left a runtime bug and a 16 GiB disk drop unresolved.",
+  "author": "Alexey Grigorev",
+  "model": "Claude Opus 5.5 (claude-opus-5-5)",
+  "source_cutoff": "2026-10-03T02:24:00Z",
+  "sources": [
+    "https://github.com/alexeygrigorev/cloudflare-agent-git",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/experiment/USER-INSTRUCTIONS.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/approaches-20.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/shortlist-6.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/claude/u7-real-worktree-measurement.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/e745294791e9087b00d9aafd0b7d76b63c47d6d3",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/antigravity/r8-uv-clean-state.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/orchestrator/heartbeat-20261003T0024.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/orchestrator/heartbeat-20261003T0224.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/research/orchestrator/heartbeat-20261003T0154.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1c6c7dba5bc091e8e13677b8be788db857b17e4e/experiment/EXPERIMENT.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/f76be3807204a35a373b9865a486bd829a46b8a4"
+  ],
+  "image": "../../assets/agent-git-illustration.png",
+  "image_alt": "Conceptual illustration for the agent Git experiment; not measurement evidence",
+  "published": true,
+  "actual_writer_models": [
+    "claude-opus-5-5"
+  ],
+  "editorial_review": "Evidence, privacy, full stylint and asset checks by desktop orchestrator",
+  "article_sha256": "5c2e5feaf15b02477b7b5ea81962633f6db6e41a25ffc3a0541be84e22150389",
+  "published_at": "2026-10-03T03:12:10.216532+00:00"
+}

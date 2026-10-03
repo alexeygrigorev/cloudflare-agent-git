@@ -124,3 +124,23 @@ check my research-dump git repo for books that I read and other ideas let's see 
 ## Message 26 — headless and harness capacity; principals monitor
 
 we can start as many headless agents as we need - also subagents within the harness (except principals - they should be focused on monitoring everyone )
+
+
+## Message 27 — public website and daily Opus reports
+
+let's create a website for these efforts where we publish all the infomraiton about it. we can post the regular reports there but also once per day user-facing reports will be there. I want to build in public and every day share with peole the status of this. I want claude opus do the writing of these reports using stylint (it knows) include diagrams and using imagegen to support the writing with images. the writing style should be similr to my substack - it can find all the data in telegram writing assistant. let's set up everything that we need for that
+
+
+## Message 28 — website visual style
+
+i like the style so let's make the website in the same style
+
+
+## Message 29 — consistent visuals and Claude Design
+
+all the diagrams and illustrations should be in the same style. use claude designer via web interface ot iterate on it for the website, landing, checklist, daily reports, etc. each selected project should have a separate section in the webstie, like a landing
+
+
+## Message 30 — exact Claude Design interface
+
+[https://claude.ai/design](https://claude.ai/design) - this

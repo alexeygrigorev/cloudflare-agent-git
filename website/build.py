@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+"""Build the public journal. Python standard library only; no private inputs."""
+import argparse
+import html
+import json
+import re
+import shutil
+from datetime import datetime
+from pathlib import Path
+from urllib.parse import quote, urlparse
+from xml.etree import ElementTree as ET
+
+ROOT = Path(__file__).resolve().parents[1]
+BASE = '/cloudflare-agent-git'
+REPO = 'https://github.com/alexeygrigorev/cloudflare-agent-git'
+ORIGIN = 'https://alexeygrigorev.com'
+E = html.escape
+
+def public_source(path):
+    return REPO + '/blob/main/' + quote(str(path), safe='/')
+
+def safe_url(url, source=None):
+    url = html.unescape(url.strip())
+    if url.startswith('../../assets/'):
+        return BASE + '/assets/' + url.split('../../assets/', 1)[1]
+    if url.startswith('/cloudflare-agent-git/') or url.startswith('#'):
+        return url
+    parsed = urlparse(url)
+    if parsed.scheme:
+        return url if parsed.scheme in ('https', 'http', 'mailto') else '#'
+    if source:
+        path = (source.parent / url).resolve()
+        try:
+            rel = path.relative_to(ROOT)
+            if rel.parts[0] in ('research', 'experiment', 'coordination', 'website'):
+                return public_source(rel)
+        except ValueError:
+            pass
+    return '#'
+
+def inline(text, source=None):
+    tokens = []
+    def token(value):
+        tokens.append(value)
+        return '\x00' + str(len(tokens)-1) + '\x00'
+    text = re.sub(r'`([^`]+)`', lambda m: token('<code>'+E(m[1])+'</code>'), text)
+    text = re.sub(r'!\[([^\]]*)\]\(([^\s)]+)\)', lambda m: token('<figure><img loading="lazy" src="'+E(safe_url(m[2], source), quote=True)+'" alt="'+E(m[1], quote=True)+'"><figcaption>'+E(m[1])+'</figcaption></figure>'), text)
+    text = re.sub(r'\[([^\]]+)\]\(([^\s)]+)\)', lambda m: token('<a href="'+E(safe_url(m[2], source), quote=True)+'">'+E(m[1])+'</a>'), text)
+    text = E(text)
+    text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', text)
+    text = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', text)
+    return re.sub(r'\x00(\d+)\x00', lambda m: tokens[int(m[1])], text)
+
+def markdown(text, source=None):
+    out, paragraph, listing, code = [], [], None, None
+    def flush():
+        if paragraph:
+            out.append('<p>'+inline(' '.join(paragraph), source)+'</p>')
+            paragraph.clear()
+    def close_list():
+        nonlocal listing
+        if listing:
+            out.append('</'+listing+'>')
+            listing = None
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        i += 1
+        if line.startswith('```'):
+            flush(); close_list()
+            if code is None:
+                code = []
+            else:
+                out.append('<pre><code>'+E('\n'.join(code))+'</code></pre>')
+                code = None
+            continue
+        if code is not None:
+            code.append(line); continue
+        if not line.strip():
+            flush(); close_list(); continue
+        if line.startswith('|') and i < len(lines) and re.match(r'^\|[\s:|\-]+\|?$', lines[i]):
+            flush(); close_list()
+            headers = [x.strip() for x in line.strip('|').split('|')]
+            i += 1
+            rows = []
+            while i < len(lines) and lines[i].startswith('|'):
+                rows.append([x.strip() for x in lines[i].strip('|').split('|')]); i += 1
+            out.append('<div class="table-scroll"><table><thead><tr>'+''.join('<th>'+inline(x, source)+'</th>' for x in headers)+'</tr></thead><tbody>'+''.join('<tr>'+''.join('<td>'+inline(x, source)+'</td>' for x in row)+'</tr>' for row in rows)+'</tbody></table></div>')
+            continue
+        heading = re.match(r'^(#{1,6})\s+(.*)', line)
+        bullet = re.match(r'^\s*(?:[-*]|\d+\.)\s+(.*)', line)
+        if heading:
+            flush(); close_list()
+            level = min(6, len(heading[1])+1)
+            out.append(f'<h{level}>'+inline(heading[2], source)+f'</h{level}>')
+        elif bullet:
+            flush()
+            kind = 'ol' if re.match(r'^\s*\d+\.', line) else 'ul'
+            if listing != kind:
+                close_list(); listing = kind; out.append('<'+kind+'>')
+            out.append('<li>'+inline(bullet[1], source)+'</li>')
+        elif line.startswith('> '):
+            flush(); close_list(); out.append('<blockquote>'+inline(line[2:], source)+'</blockquote>')
+        elif re.fullmatch(r'\s*[-*_]{3,}\s*', line):
+            flush(); close_list(); out.append('<hr>')
+        else:
+            close_list(); paragraph.append(line.strip())
+    flush(); close_list()
+    if code is not None:
+        out.append('<pre><code>'+E('\n'.join(code))+'</code></pre>')
+    return '\n'.join(out)
+
+def page(title, body, route='', description='A public experiment in Git, coding agents, and the work between them.'):
+    links = [('Journal', 'daily/'), ('Projects', 'projects/'), ('Field notes', 'reports/'), ('Checklist', 'checklist/'), ('About', 'experiment/')]
+    nav = ''.join('<a '+('aria-current="page" ' if route.startswith(path) else '')+'href="'+BASE+'/'+path+'">'+label+'</a>' for label,path in links)
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+E(title)+' · Agent Git Lab</title><meta name="description" content="'+E(description, quote=True)+'"><meta name="theme-color" content="#2455ed"><link rel="stylesheet" href="'+BASE+'/assets/site.css"><link rel="alternate" type="application/rss+xml" title="Agent Git Lab journal" href="'+BASE+'/feed.xml"><link rel="canonical" href="'+ORIGIN+BASE+'/'+route+'"></head><body><a class="skip" href="#main">Skip to content</a><div class="research-banner">Research in progress <span>Five hypotheses · no final shortlist approval</span></div><header class="site-header"><a class="brand" href="'+BASE+'/"><span class="brand-mark" aria-hidden="true">●</span> Agent Git Lab<span class="brand-caption">an experiment in public</span></a><nav aria-label="Main navigation">'+nav+'</nav></header><main id="main">'+body+'</main><footer><div><a class="brand" href="'+BASE+'/">Agent Git Lab</a><p>Alexey Grigorev · Building, testing, and changing our minds in public.</p></div><div class="footer-links"><a href="'+REPO+'">Source & evidence ↗</a><a href="'+BASE+'/research/">Research library</a><a href="'+BASE+'/feed.xml">RSS feed</a></div><p class="footer-note">Published reports are dated snapshots. Research hypotheses are not validated products. Corrections stay with the evidence.</p></footer></body></html>'
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--output', default='docs')
+    args = parser.parse_args()
+    output = Path(args.output).resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    def write(route, title, body, description=None):
+        target = output / route / 'index.html'
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(page(title, body, route, description or 'A public experiment in Git, coding agents, and the work between them.'), encoding='utf-8')
+    shutil.copytree(ROOT/'website/assets', output/'assets', dirs_exist_ok=True)
+    (output/'.nojekyll').write_text('')
+    projects = json.loads((ROOT/'website/projects.json').read_text())
+    daily = []
+    for meta in sorted((ROOT/'website/content/daily').glob('*.json'), reverse=True):
+        data = json.loads(meta.read_text())
+        if data.get('published') is not True:
+            continue
+        data['path'] = meta.with_suffix('.md')
+        data['route'] = 'daily/'+meta.stem+'/'
+        daily.append(data)
+        content = data['path'].read_text()
+        content = re.sub(r'^#\s+[^\n]+\n?', '', content, count=1)
+        byline = '<p class="eyebrow">Daily journal / '+E(str(data.get('date', meta.stem)))+'</p><h1>'+E(data['title'])+'</h1><p class="deck">'+E(data.get('summary', ''))+'</p><p class="byline">Alexey Grigorev · Written with Claude Opus · Evidence cutoff '+E(str(data.get('source_cutoff', data.get('date', meta.stem))))+'</p>'
+        write(data['route'], data['title'], '<article class="article">'+byline+'<div class="prose">'+markdown(content, data['path'])+'</div><aside class="source-note">Writing assistance: Claude Opus. Sources and original Markdown: <a href="'+public_source(data['path'].relative_to(ROOT))+'">read in the repository ↗</a>. Illustration is conceptual artwork.</aside></article>', data.get('summary'))
+    reports = sorted((ROOT/'research/orchestrator').glob('heartbeat-*.md'), reverse=True)
+    latest_cutoff = datetime.strptime(reports[0].stem.removeprefix('heartbeat-'), '%Y%m%dT%H%M').strftime('%d %b %Y, %H:%M UTC') if reports else 'No field note published'
+    def cards():
+        return ''.join('<a class="project-card" href="'+BASE+'/projects/'+p['slug']+'/"><span class="eyebrow">'+p['id']+' / research hypothesis</span><h3>'+E(p['name'])+'</h3><p>'+E(p['summary'])+'</p><span class="card-bottom">'+E(p['status'])+' <span aria-hidden="true">↗</span></span></a>' for p in projects)
+    def report_list(items):
+        return ''.join('<a class="list-row" href="'+BASE+'/reports/'+p.stem+'/"><span class="eyebrow">'+E(p.stem.replace('heartbeat-', '').replace('T', ' · '))+' UTC</span><span>Orchestrator check-in</span><span aria-hidden="true">↗</span></a>' for p in items)
+    latest = daily[0] if daily else None
+    story = '<a class="feature-story" href="'+BASE+'/'+latest['route']+'"><span class="eyebrow">Latest daily journal / '+E(str(latest.get('date', '')))+'</span><h2>'+E(latest['title'])+'</h2><p>'+E(latest.get('summary', ''))+'</p><span class="text-link">Read the story ↗</span></a>' if latest else '<div class="feature-story"><span class="eyebrow">The first daily journal</span><h2>What we learn belongs here.</h2><p>The opening story is being written and checked against the evidence. Read the dated field notes while it is prepared.</p><a class="text-link" href="'+BASE+'/reports/">Read the field notes ↗</a></div>'
+    hero = '<section class="hero"><div class="hero-copy"><p class="eyebrow">Git × coding agents × real work</p><h1>More agents.<br>Better work?</h1><p class="deck">We’re exploring what Git should feel like when a team includes coding agents. The ideas, experiments, dead ends, and decisions are all here.</p><a class="button" href="'+BASE+'/daily/">Follow the experiment <span aria-hidden="true">↗</span></a><a class="quiet-link" href="'+BASE+'/experiment/">How we work</a></div><figure class="hero-art"><img src="'+BASE+'/assets/agent-git-illustration.png" alt="Conceptual illustration: blue agent markers, Git branches, copied folders, and a shared graph."><figcaption>Isolation has a cost. Coordination does too.</figcaption></figure></section>'
+    storage = '<section class="storage-note"><div><p class="eyebrow">One measured starting point / U7 host scan</p><h2>Where the disk went.</h2><p>The original pain was real: worktrees filled the disk. Most measured bytes came from dependencies and builds, which challenges the idea that a new Git platform is the first remedy.</p><a class="text-link" href="'+BASE+'/projects/storage-aware-workspaces/">Follow the storage research ↗</a></div><div class="storage-measures"><div><span class="measure-number">111.7 <small>GiB</small></span><span>Physical union across 472 worktrees</span></div><div><span class="measure-number">62.1 <small>%</small></span><span>Dependencies and builds: 69.4 GiB</span></div><p>One host, 25 repositories. Physical union includes deduplication; these figures are not reclaimable-byte promises.</p></div></section>'
+    write('', 'More agents. Better work?', hero+'<section class="latest-section">'+story+'<aside class="margin-note"><span class="eyebrow">Selection is still open</span><p class="big-number">20 → 5 + ?</p><p>Twenty approaches explored. Five hypotheses retained. A sixth slot remains open; no final shortlist has been signed.</p><a href="'+BASE+'/checklist/">See the gates ↗</a><p class="cutoff">Latest field note<br>'+E(latest_cutoff)+'<br>Dated evidence, not live status.</p></aside></section><section><div class="section-heading"><div><p class="eyebrow">The project notebook</p><h2>Five ideas worth testing.</h2></div><p>Each gets its own problem, evidence, and next test. None has earned a product claim yet.</p></div><div class="projects-grid">'+cards()+'<div class="project-card open-slot"><span class="eyebrow">Sixth slot / open</span><h3>A useful idea beats a filled slot.</h3><p>We will add another approach when the evidence supports it.</p><a href="'+public_source('research/shortlist-6.md')+'">Read the selection draft ↗</a></div></div></section>'+storage+'<section class="notes-section"><div class="section-heading"><div><p class="eyebrow">Behind the daily story</p><h2>The regular check-ins.</h2></div><a href="'+BASE+'/reports/">All field notes ↗</a></div>'+report_list(reports[:4])+'</section>')
+    daily_rows = ''.join('<a class="journal-entry" href="'+BASE+'/'+d['route']+'"><span class="eyebrow">'+E(str(d.get('date', '')))+'</span><h2>'+E(d['title'])+'</h2><p>'+E(d.get('summary', ''))+'</p><span class="text-link">Read the story ↗</span></a>' for d in daily)
+    write('daily/', 'Daily journal', '<section class="page-intro"><p class="eyebrow">A story each day</p><h1>The daily journal.</h1><p class="deck">What we tried, what held up, and what changed our minds. Written with Claude Opus, checked against the experiment.</p><a href="'+BASE+'/feed.xml">Subscribe via RSS ↗</a></section><section class="journal-list">'+(daily_rows or '<p>The first evidence-checked story is being prepared.</p>')+'</section>')
+    write('projects/', 'Projects', '<section class="page-intro"><p class="eyebrow">Retained research hypotheses</p><h1>Ideas with work to do.</h1><p class="deck">Five directions are under investigation. Selection and development gates are separate; these are provisional research lanes.</p></section><section class="projects-grid">'+cards()+'</section>')
+    for p in projects:
+        body = '<article class="project-landing"><p class="eyebrow">'+p['id']+' / '+E(p['status'])+'</p><h1>'+E(p['name'])+'</h1><p class="deck">'+E(p['summary'])+'</p><div class="status-strip">Provisional hypothesis · No final shortlist approval</div><div class="project-detail"><section><h2>The problem</h2><p>'+E(p['problem'])+'</p><h2>The working idea</h2><p>'+E(p['idea'])+'</p><h2>What the evidence says</h2><p>'+E(p['evidence'])+'</p><h2>The next useful test</h2><p>'+E(p['test'])+'</p><h2>What would change our mind</h2><p>'+E(p['falsifier'])+'</p></section><aside class="project-sidebar"><span class="eyebrow">Experiment record</span><p>Read the original research before treating an illustration, fixture, or proposal as a working product.</p><a href="'+public_source('research/shortlist-6.md')+'">Current selection draft ↗</a><a href="'+public_source('research/approaches-20.md')+'">All twenty approaches ↗</a><a href="'+BASE+'/checklist/">Shared validation checklist ↗</a></aside></div><a class="text-link" href="'+BASE+'/projects/">← All projects</a></article>'
+        write('projects/'+p['slug']+'/', p['name'], body, p['summary'])
+    write('reports/', 'Field notes', '<section class="page-intro"><p class="eyebrow">The regular reports</p><h1>Field notes, with receipts.</h1><p class="deck">Dated remote check-ins, including failures and corrections. Older reports describe what was known then; read later updates before reusing a claim.</p></section><section class="report-list">'+report_list(reports)+'</section>')
+    for report in reports:
+        write('reports/'+report.stem+'/', 'Orchestrator check-in '+report.stem, '<article class="article field-report"><p class="eyebrow">Historical field note / '+E(report.stem)+'</p><h1>Orchestrator check-in.</h1><aside class="source-note">This is a dated evidence snapshot, not current product validation. <a href="'+public_source(report.relative_to(ROOT))+'">Original report and version history ↗</a></aside><div class="prose">'+markdown(report.read_text(), report)+'</div></article>')
+    groups = []
+    for group in ['orchestrator', 'claude', 'codex', 'grok', 'antigravity', 'zcode', 'space-bunny', 'muse', 'debate']:
+        paths = sorted((ROOT/'research'/group).rglob('*.md'))
+        paths = [p for p in paths if not any(part.startswith('.') for part in p.relative_to(ROOT).parts)]
+        if paths:
+            groups.append('<details><summary>'+E(group.replace('-', ' ').title())+' <span>'+str(len(paths))+' documents</span></summary><ul>'+''.join('<li><a href="'+public_source(p.relative_to(ROOT))+'">'+E(str(p.relative_to(ROOT/'research'/group)))+'</a></li>' for p in paths)+'</ul></details>')
+    top = sorted((ROOT/'research').glob('*.md'))
+    write('research/', 'Research library', '<section class="page-intro"><p class="eyebrow">The public source material</p><h1>Open the notebooks.</h1><p class="deck">Research, challenges, and evidence live in the public repository. Private agent logs and credentials are excluded.</p></section><section class="library"><h2>Selection and shared research</h2><ul>'+''.join('<li><a href="'+public_source(p.relative_to(ROOT))+'">'+E(p.stem.replace('-', ' '))+'</a></li>' for p in top)+'</ul>'+''.join(groups)+'</section>')
+    checks = [('recorded','Explore twenty distinct approaches','The research inventory is public. Scores and the original shortlist are historical, not final approval.'),('recorded','Challenge assumptions from both sides','Independent principals challenge outputs, methods, and the human brief. A01 lost its primary recommendation.'),('open','Agree on six viable approaches','Five hypotheses are retained; slot six is open. Identical-digest approval from both principals is still required.'),('open','Demonstrate actual agent use','Show a useful task, real agent actions, and accepted outcomes. A scripted fixture alone does not pass.'),('open','Prove an advantage over ordinary tools','Compare equal tasks, information, and acceptance checks. Preserve ties, failures, and negative results.'),('open','Keep development recoverable','Ordinary Git recovery stays independent of the prototype. A source-only restore is limited evidence.'),('open','Hand off five productive project teams','Verify meaningful deliverables, independent ownership, and an actual next task; a live process is insufficient.'),('open','Publish evidence-checked daily stories','Claude Opus writes with stylint; factual claims, diagrams, and illustrations are checked before publishing.')]
+    write('checklist/', 'Experiment checklist', '<section class="page-intro"><p class="eyebrow">What earns a claim</p><h1>The checklist.</h1><p class="deck">A public view of the gates, not a score for how many agents we can launch. Project teams test their hypotheses while selection continues.</p></section><section class="checklist">'+''.join('<div class="check-item"><span class="check-symbol '+state+'" aria-hidden="true">'+('↗' if state=='recorded' else '○')+'</span><div><span class="eyebrow">'+('Work recorded' if state=='recorded' else 'Evidence still needed')+'</span><h2>'+E(title)+'</h2><p>'+E(desc)+'</p></div></div>' for state,title,desc in checks)+'</section><p class="source-note">Status comes from the published selection draft and orchestrator reports. <a href="'+public_source('research/shortlist-6.md')+'">Inspect the selection gates ↗</a></p>')
+    write('experiment/', 'About the experiment', '<article class="article"><p class="eyebrow">Why this exists</p><h1>Build it. Test it.<br>Tell the whole story.</h1><p class="deck">A new Git platform competition prompted a wider question: where does Git make a team of coding agents harder to run?</p><div class="prose"><h2>Start with actual pain</h2><p>Alexey’s worktrees filled disk quickly. A read-only scan found 472 linked worktrees across 25 repositories, occupying a physical union of 111.7 GiB. Dependencies and builds accounted for 69.4 GiB, or 62.1%. These are measurements from one host, not a claim about every developer.</p><h2>Let the agents challenge each other</h2><p>Claude and Codex principals monitor and challenge evidence. Project heads coordinate useful tasks, and task executors can work headless. The team is free to improve its working method, while preserving quotas, code recovery, and privacy.</p><figure><img src="'+BASE+'/assets/team-workflow.svg" alt="Team workflow: Alexey and remote oversight connect to Claude and Codex principals, project heads, task executors, evidence, and review."><figcaption>The operating model. Arrows show responsibilities, not proof of continuous activity.</figcaption></figure><h2>Keep the failures visible</h2><p>Research is not product validation. No final six-approach shortlist has been approved. The first live integration comparison showed no separation, so that idea’s primary status was withdrawn. A small storage experiment fell below its registered savings gate.</p><h2>Use what survives</h2><p>Teams should build the smallest useful prototype and use it in their own development. Accepted outcomes, peer review, and recoverable Git history matter more than a launch count.</p><p><a href="'+public_source('experiment/USER-INSTRUCTIONS.md')+'">The original user brief ↗</a> · <a href="'+public_source('AGENTS.md')+'">How the agents are expected to work ↗</a> · <a href="https://blog.cloudflare.com/next-git-platform-on-cloudflare/">The competition that started it ↗</a></p></div></article>')
+    rss = ET.Element('rss', version='2.0')
+    channel = ET.SubElement(rss, 'channel')
+    for tag, value in [('title','Agent Git Lab — Daily journal'),('link',ORIGIN+BASE+'/'),('description','The experiments, failures, and decisions behind Git for coding agents.')]:
+        ET.SubElement(channel, tag).text = value
+    for d in daily:
+        item = ET.SubElement(channel, 'item')
+        for tag,value in [('title',d['title']),('link',ORIGIN+BASE+'/'+d['route']),('guid',ORIGIN+BASE+'/'+d['route']),('description',d.get('summary',''))]:
+            ET.SubElement(item, tag).text = value
+    ET.ElementTree(rss).write(output/'feed.xml', encoding='utf-8', xml_declaration=True)
+    print(json.dumps({'output':str(output),'html_pages':len(list(output.rglob('*.html'))),'published_daily':len(daily),'field_notes':len(reports),'projects':len(projects)}))
+
+if __name__ == '__main__':
+    main()
