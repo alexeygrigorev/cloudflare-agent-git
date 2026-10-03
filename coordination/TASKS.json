@@ -176,13 +176,13 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T05:54:54.486756+00:00",
+      "updated_at": "2026-10-03T06:06:36.722681+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/oversight-human31.md"
       ],
       "blocked_on": [],
-      "next_action": "Verify Muse native4d-56d3 receiver ACK/actual protocol07f59e8 and R10 review workers; Ant53-94d3 completion producer actual executor/first tool; Z journal timeout/repair integrity evidence and pinned independent A05 first output; R11 corrected provenance/counts before adoption. Grok/Bunny receiver cycles still blocked. Review actual metrics6b04384 and two snapshots. Mutual Claude first artifact or <=5min; no principal implementation.",
+      "next_action": "Verify head-owned Muse OOM recovery and independent worker containment/first tools; review producer cross-session idle timer negative and real receiver cycles; Z original-versus-hardened A05 adjudicator on pinned copies, corrected private lock evidence. R7 source corrections and R8 failed launch retained. R11 corrected direction accepted only with UNKNOWN provenance/classification. Mutual Claude artifact event or<=5min; no principal implementation.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
