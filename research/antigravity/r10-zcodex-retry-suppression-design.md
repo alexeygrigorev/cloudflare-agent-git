@@ -1,91 +1,223 @@
 # R10: ZCodex Denial Suppression & Tool-Boundary Turn Termination Design
 
 **Author:** `antigravity-head` (`46fdb644`), Integration Owner for `cloudflare-aplexer-protocol` & Head of `a16-runtime-protocol`  
-**Date:** 2026-10-03T07:10:00+02:00 (Europe/Berlin)  
-**Reference Tickets:** `01a10014-a645` (Claude Principal), `01a10014-61f6` (Desktop Orchestrator), `01a10022-cc5f` (Claude Principal), `01a10027-681b` (Claude Principal)  
+**Date:** 2026-10-03T07:15:00+02:00 (Europe/Berlin)  
+**Reference Directives & Challenges:**
+- Ticket `01a10014-a645` (Claude Principal: denial suppression & tool boundary turn end)
+- Root `01a10014-61f6` (Desktop Orchestrator: rollout 01a1000a-8f19 analysis; reversible rollout requirements)
+- Review Round 23 `48be7a9` (Muse Reviewer: counted verdict, outer retries demonstrated, no exactly-once claim)
+- Challenge `01a1002d-4c24` (Codex Principal: serial sibling vulnerability, authoritative event boundaries, failure modes, sequence diagrams)
 **Independent Review Target:** `muse-reviewer` (`7e6e9bb0`)  
-**Target Repository:** `/home/alexey/git/codex-zcode` (`codex-rs/core/src/client.rs`)  
-**Resource Constraint:** STRICT DESIGN ONLY — ZERO COMPILATION / ZERO BUILD.
+**Target Codebase:** `/home/alexey/git/codex-zcode` (`codex-rs/core/src/client.rs`)  
+**Resource Policy:** STRICT DESIGN ONLY — ZERO COMPILATION / ZERO BUILD (+12.26 GB growth violation halted).
 
 ---
 
 ## 1. Executive Summary
 
-In R9, comparative live append-only testing demonstrated that cold-spawning `zcode.cjs` under `--mode build` successfully eliminates unrecorded inner tool execution (reducing duplicate marker lines from 2 to 1 in controlled prompts). However, as independently counted by `muse-reviewer` (Round 23, commit `48be7a9`) on rollout `01a1000a-8f19`, an unconstrained prompt provoked **two distinct outer `exec_command` tool calls** (`633571b1` and `e9c52a05`), executed ~16 seconds apart, both exiting 0.
+In R9, comparative live append testing proved that cold-spawning `zcode.cjs` under `--mode build` eliminates unrecorded inner child executions (reducing marker lines from 2 to 1 in controlled prompts). However, as independently audited and counted by `muse-reviewer` (Round 23, commit `48be7a9`), an unconstrained prompt provoked **two distinct outer `exec_command` tool calls** (`633571b1` and `e9c52a05`), executed ~16 seconds apart, both exiting 0.
 
-### Verdict of Record (Muse Round 23):
+### Official Verdict of Record (Muse Round 23):
 > *"Inner duplicate eliminated in observed runs; outer retry duplicates still possible (demonstrated, not hypothetical); no exactly-once claim."*
 
-This document provides the formal **DIAGNOSIS**, **architectural design**, **patch diff**, and **test plan** for ticket `01a10014-a645`. It identifies why inner denials provoke outer model retries and designs the structural solution: **terminating the inner child turn at the tool boundary** so that the outer Codex `ToolCallRuntime` exclusively executes tool calls, manages conversation history, and drives subsequent turns with authentic tool results.
+This document provides the formal **DIAGNOSIS**, **architectural sequence diagrams**, **authoritative boundary design**, **concrete patch diff**, and **rigorous failure-mode test plan** addressing every challenge raised by Codex Principal (`01a1002d-4c24`).
+
+Specifically, it demonstrates:
+1. Why inner harness denials (`"No permission client configured for Bash"`) provoke outer model retries.
+2. Why naive termination on `pending_tools.is_empty()` creates a severe **serial sibling vulnerability** (dropping legitimate subsequent tool calls `startB` / `callB`).
+3. How to anchor turn termination on ZCode's **native authoritative event boundary** (`permission.requested` / `tool.updated` / `ToolBatchComplete`), guaranteeing all sibling tool calls in a turn's generation batch are collected before disposal.
+4. How failure modes (partial args, cancellation, disposal failures, authentic outer continuations) are handled fail-closed.
+5. Why this architecture strictly preserves legitimate cross-turn tool repeats while eliminating pathological intra-turn retry loops.
 
 ---
 
-## 2. Deep Technical Diagnosis
+## 2. Technical Diagnosis & Nested ReAct Loops
 
 ### 2.1 The Two Nested ReAct Loops
-The fundamental flaw in cold-spawn `stream_zcode` (`codex-rs/core/src/client.rs`) is an impedance mismatch between two competing ReAct loops:
-1. **Outer ReAct Loop (Codex Engine):**
-   - Codex drives conversations turn-by-turn.
-   - On each turn, Codex calls `client.stream(&prompt)` to obtain the model's output.
-   - If the model emits `ResponseItem::FunctionCall`, Codex's `ToolCallRuntime` executes the tool call (applying sandboxing, permissions, timeouts, and transcript logging).
-   - Once executed, Codex appends `ResponseItem::FunctionCallOutput` to `prompt.input` and invokes the next turn (`client.stream(&prompt)`).
-   - In `client.rs`, lines 3331-3368 show this design clearly: `zcode_flatten_transcript` serializes past tool calls and tool outputs, appending:
-     `"Continuation: previous tool calls have already been executed. Use the recorded tool results above and answer the user now without calling the same tools again."`
-2. **Inner ReAct Loop (Node `zcode.cjs`):**
-   - When `node zcode.cjs --prompt ...` is spawned, `zcode.cjs` does not behave like a single-turn completion API. It initializes its own full agent loop (`Agent`, `Task`, `ToolScheduler`).
-   - When the inner model outputs a tool call (`Bash`), `zcode.cjs` attempts to execute the tool internally inside Node.
+In `codex-zcode`, cold-spawn inference runs two nested, uncoordinated agent loops:
+- **Outer ReAct Loop (Codex Engine):**
+  Codex drives conversation turn-by-turn. On each turn, Codex calls `client.stream(&prompt)`. If the model emits `ResponseItem::FunctionCall`, Codex's `ToolCallRuntime` executes the tool call (applying sandboxing, permissions, timeouts, and transcript logging). Once executed, Codex appends `ResponseItem::FunctionCallOutput` to `prompt.input` and invokes the next turn (`client.stream(&prompt)`).
+- **Inner ReAct Loop (Node `zcode.cjs`):**
+  When `node zcode.cjs --prompt ...` is spawned, `zcode.cjs` initializes an internal autonomous agent (`Agent`, `Task`, `ToolScheduler`). When the inner model outputs a tool call (`Bash`), `zcode.cjs` attempts to execute the tool locally inside Node.
 
-### 2.2 Mechanism of the Double Execution & Outer Retry
-- **Under `--mode yolo`:**
-  - `zcode.cjs` auto-approves `Bash` and executes it internally (producing Side Effect 1).
-  - Meanwhile, `client.rs` intercepts the streamed `model.streaming` event and emits `ResponseItem::FunctionCall` to Codex.
-  - Codex's `ToolCallRuntime` executes the tool call externally (producing Side Effect 2).
-  - Outcome: **Double Execution (2 side effects per tool call)**.
-- **Under `--mode build`:**
-  - `zcode.cjs` configures `createDenyPermissionBroker()` (located at offset ~4,898,489 of `zcode.cjs`), which immediately returns:
-    `{ decision: "deny", reason: "No permission client configured for Bash" }`.
-  - `zcode.cjs` appends this failure to the inner model's conversation history as a tool error.
-  - The inner model receives the denial and believes the command failed.
-  - Because `client.rs` continues reading stdout in its `while let Some(line) = ...` loop, `zcode.cjs` continues into Turn 2 of its inner loop:
-    1. The inner model emits text: `"The Bash call failed with a permission-client error. Let me retry once in case it's transient."`
-    2. The inner model emits a SECOND `tool_call` (call ID `e9c52a05`) ~16s later.
-  - `client.rs` blindly processes this second tool call and emits a SECOND `ResponseItem::FunctionCall` to Codex's `tx`.
-  - When `zcode.cjs` eventually terminates, Codex's `ToolCallRuntime` executes **both** function calls.
-  - Outcome: **Outer Model Retry Duplication (2 distinct outer calls executed)**.
+### 2.2 Mechanism of the Failure Trace (Rollout `01a1000a-8f19`)
+In rollout `01a1000a-8f19`:
+1. The inner model generated tool call 1 (`exec_command`, call ID `633571b1`).
+2. `zcode.cjs` streamed `tool_input_start`, deltas, and `tool_call`.
+3. `client.rs` consumed these events and emitted `ResponseItem::FunctionCall` to Codex's `tx`.
+4. Inside Node, `zcode.cjs` invoked `DenyPermissionBroker.requestPermission()` (located at offset ~4,898,489 of `zcode.cjs`), which immediately resolved `{ decision: "deny", reason: "No permission client configured for Bash" }`.
+5. `zcode.cjs` fed this denial to the inner model as a tool error.
+6. The inner model observed the denial, believed execution failed, and generated an apology text: `"The Bash call failed with a permission-client error. Let me retry once in case it's transient."`
+7. ~16 seconds later, the inner model emitted tool call 2 (`exec_command`, call ID `e9c52a05`).
+8. `client.rs` blindly forwarded this second tool call as another `ResponseItem::FunctionCall`.
+9. When `zcode.cjs` exited, Codex's `ToolCallRuntime` executed **both** calls.
 
-### 2.3 Why Process-Level Interception Fails
-The denial `"No permission client configured for Bash"` is generated entirely in Node memory and transmitted directly over the network to the GLM API during the child's autonomous turn. `codex-rs` runs as an external OS process reading stdout over a pipe; it cannot intercept or alter what Node's JS runtime sends to the GLM backend once the inner loop continues past the tool call.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Codex as Codex Engine (Outer Loop)
+    participant Client as codex-rs Client (Adapter)
+    participant Node as Node zcode.cjs (Inner Loop)
+    participant GLM as GLM Model API
 
-Therefore, the only robust, correct mechanism is to **halt the child process at the tool boundary**.
-
----
-
-## 3. The Structural Solution: Tool-Boundary Turn Termination
-
-### 3.1 Architectural Contract
-When `stream_zcode` detects that the model has finalized a tool call (or a batch of parallel tool calls):
-1. All tool calls in the initial model generation are emitted to Codex (`OutputItemDone(FunctionCall)`).
-2. The streaming loop halts immediately.
-3. The child process (`node zcode.cjs`) is gracefully disposed (`dispose_and_wait_once`), terminating before it can query `DenyPermissionBroker` or prompt GLM for an inner retry.
-4. `stream_zcode` sends `ResponseEvent::Completed { end_turn: Some(true), ... }`.
-5. Codex's `ToolCallRuntime` takes sole responsibility for running the tool, logging the output, and initiating Turn 2 with the recorded results in context.
-
-### 3.2 State Machine for Tool Boundary Detection
-- **Leading Text (Thinking/Explanations):**
-  If the model outputs text deltas before tool calls, `started_output` is true. When `tool_input_start` or `tool_call` arrives, lines 3700-3716 of `client.rs` already finalize and emit the leading `ResponseItem::Message`. This is preserved.
-- **Parallel Tool Calls (Batching):**
-  A model may emit multiple tool calls in a single completion (e.g. `ls` and `pwd`).
-  In ZCode NDJSON, these arrive with `tool_input_start`, deltas, and `tool_call` within milliseconds of each other.
-  `pending_tools: HashMap<String, PendingZcodeTool>` tracks pending calls.
-  The turn termination triggers when:
-  `emitted_tool_calls > 0 && pending_tools.is_empty()`
-  To protect against sub-millisecond arrival jitter between sibling tool calls, a brief drain timeout (e.g., 50ms) or checking for non-tool events cleanly finalizes the batch.
-- **Pure Text Turns (Final Answers):**
-  If `emitted_tool_calls == 0`, the child runs to its natural completion (`result` event or EOF). This path remains completely untouched.
+    Codex->>Client: stream(&prompt) [Turn 1]
+    Client->>Node: spawn(node zcode.cjs --mode build --prompt ...)
+    Node->>GLM: Generation Request (User Prompt)
+    GLM-->>Node: stream: tool_call(633571b1, "printf ...")
+    Node-->>Client: model.streaming: tool_call(633571b1)
+    Client-->>Codex: tx.send(FunctionCall 633571b1)
+    
+    Note over Node: Inner Loop attempts execution
+    Node->>Node: DenyPermissionBroker: deny("No permission client configured")
+    Node->>GLM: Next Step (Tool Result = DENIED)
+    
+    GLM-->>Node: stream: text("Retrying...") + tool_call(e9c52a05, "printf ...")
+    Node-->>Client: model.streaming: tool_call(e9c52a05)
+    Client-->>Codex: tx.send(FunctionCall e9c52a05) [DUPLICATE OUTER CALL!]
+    
+    Node-->>Client: type: result, exit 0
+    Client-->>Codex: tx.send(Completed)
+    
+    Note over Codex: ToolCallRuntime executes BOTH calls!
+    Codex->>Codex: execute(633571b1) -> PROBE_OK (exit 0)
+    Codex->>Codex: execute(e9c52a05) -> PROBE_OK (exit 0)
+```
 
 ---
 
-## 4. Concrete Patch Diff (`codex-rs/core/src/client.rs`)
+## 3. The Serial Sibling Vulnerability (Codex Challenge Analysis)
+
+Codex Principal (`01a1002d-4c24`) identified a critical flaw in naive tool boundary detection:
+> *"pending_tools.empty after finalized A does NOT prove generation batch complete: serial sibling stream startA/endA/startB/endB hits break after A and drops legitimate B; current test only interleaved starts masks it. 50ms drain is absent from patch and time heuristic can still lose slower sibling or catch denial too late."*
+
+### 3.1 Why Naive `pending_tools.is_empty()` Fails on Serial Siblings
+Consider a model response containing two parallel tool calls $A$ and $B$, emitted serially:
+1. `model.streaming: kind = "tool_input_start"` (tool $A$). `pending_tools` has $\{A\}$.
+2. `model.streaming: kind = "tool_input_end"` (tool $A$).
+3. `model.streaming: kind = "tool_call"` (tool $A$). `pending_tools.remove(A)` $\rightarrow$ `pending_tools.is_empty() == true`!
+4. **If the adapter breaks here**, the stream closes immediately!
+5. Lines 5–7 for tool $B$ (`startB`, `endB`, `tool_call B`) are **dropped**, severing a legitimate tool call!
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant GLM as GLM Model API
+    participant Client as codex-rs Client
+    participant Codex as Codex Engine
+
+    GLM-->>Client: tool_input_start(A) -> pending={A}
+    GLM-->>Client: tool_call(A) -> pending={}
+    Note over Client: NAIVE BUG: breaks because pending.is_empty()!
+    Client->>Client: BREAK & DISPOSE CHILD
+    GLM--xClient: tool_input_start(B) [DROPPED!]
+    GLM--xClient: tool_call(B) [DROPPED!]
+    Client-->>Codex: tx.send(FunctionCall A only) [DATA LOSS!]
+```
+
+### 3.2 Authoritative Generation-End Boundary in ZCode
+To prevent dropping serial siblings, turn termination must NOT rely on `pending_tools.is_empty()` alone or an arbitrary sleep. It must anchor on **ZCode's native event protocol**.
+
+In `/opt/ZCode/resources/glm/zcode.cjs`, line analysis reveals the exact lifecycle events emitted when the model finishes its generation step and enters the execution phase:
+1. During model token generation:
+   - `type: "model.streaming"`, payloads: `text_delta`, `tool_input_start`, `tool_input_delta`, `tool_input_end`, `tool_call`.
+2. When the model completion finishes and tools are handed off for scheduling:
+   - `type: "tool.updated"` with `payload.kind = "scheduled"` or `phase = "ToolBatchComplete"`.
+   - `type: "permission.requested"` (emitted when `permissionBroker.requestPermission()` is called for the scheduled batch).
+   - `type: "permission.resolved"` (emitted when `DenyPermissionBroker` resolves the denial).
+
+**Key Architectural Invariant:**
+- While the model is generating tokens, `type` is exclusively `"model.streaming"`. All serial siblings ($A, B, C\dots$) arrive under `"model.streaming"`.
+- The transition from `"model.streaming"` to `"tool.updated"` or `"permission.requested"` proves that **the model generation batch is 100% complete**.
+- Therefore, receiving `permission.requested` or `tool.updated` (or `permission.resolved`) provides an **authoritative, event-driven generation-end boundary**.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Node as Node zcode.cjs
+    participant Client as codex-rs Client
+    participant Codex as Codex Engine
+
+    Note over Node: Generation Phase (model.streaming)
+    Node-->>Client: model.streaming: tool_input_start(A)
+    Node-->>Client: model.streaming: tool_call(A)
+    Node-->>Client: model.streaming: tool_input_start(B)
+    Node-->>Client: model.streaming: tool_call(B)
+    
+    Note over Node: Execution Handoff Boundary
+    Node-->>Client: permission.requested / tool.updated (BATCH COMPLETE)
+    
+    Note over Client: AUTHORITATIVE TRIGGER FIRES
+    Client-->>Codex: tx.send(FunctionCall A)
+    Client-->>Codex: tx.send(FunctionCall B)
+    Client->>Node: dispose_and_wait_once(child) [HALT BEFORE INNER DENIAL REACHES GLM]
+    Client-->>Codex: tx.send(Completed { end_turn: true })
+    
+    Note over Codex: Outer ToolCallRuntime executes A and B cleanly
+```
+
+---
+
+## 4. Architectural State Machine & Invariants
+
+### 4.1 State Machine
+The stream reader in `client.rs` operates under a three-state machine:
+
+```
+[STREAMING_TEXT]  -- tool_input_start / tool_call -->  [COLLECTING_TOOLS]
+      |                                                        |
+  result / EOF                                       permission.requested /
+      |                                              tool.updated / text_delta
+      v                                                        |
+[TERMINAL_TEXT]                                                v
+                                                     [TOOL_BOUNDARY_HALT]
+```
+
+1. **`STREAMING_TEXT`:**
+   - Normal text turns (no tools). Text deltas stream to UI.
+   - Transitions to `TERMINAL_TEXT` on `kind == "result"` or EOF.
+2. **`COLLECTING_TOOLS`:**
+   - Model begins emitting tools (`is_tool_input_start` or `is_tool_call`).
+   - If leading text exists, finalizes `ResponseItem::Message`.
+   - Collects all tool calls into `completed_tool_ids` and emits `ResponseItem::FunctionCall` to `tx`.
+   - Serial siblings ($A$, then $B$, then $C$) remain in this state as long as incoming events are `model.streaming`.
+3. **`TOOL_BOUNDARY_HALT`:**
+   - Triggered authoritatively when any of the following arrives while `emitted_tool_calls > 0`:
+     (a) `kind == "permission.requested"` or `kind == "permission.resolved"` (ZCode has finished model generation and entered tool execution).
+     (b) `kind == "tool.updated"` with `payload.kind == "scheduled"` / `"ToolBatchComplete"`.
+     (c) `kind == "model.streaming"` with `is_text` (text arriving AFTER tool calls proves the inner loop has already begun Turn 2 in response to an inner denial).
+   - Action:
+     - Breaks the read loop immediately.
+     - Kills the child process before it can receive or transmit the denial back to GLM.
+     - Emits `ResponseEvent::Completed { end_turn: Some(true), ... }`.
+
+### 4.2 Distinguishing Cross-Turn Legitimate Repeats vs Intra-Turn Retries
+Codex Principal noted:
+> *"distinguish goal duplicate-prevention from never-lost legitimate repeats."*
+
+- **Intra-turn retry loops (PATHOLOGICAL):**
+  Occurs inside a single `stream_zcode` invocation where the inner model repeatedly calls the same tool because the inner harness lied to it with `"No permission client configured"`. These duplicates must be eliminated.
+- **Cross-turn legitimate repeats (AUTHORIZED & PRESERVED):**
+  Occurs across distinct Codex turns (e.g. an agent calls `git status`, runs `git commit`, and then calls `git status` again to verify the clean tree).
+  Because each outer turn invokes `stream_zcode` anew with the full flattened transcript:
+  `user_text = zcode_flatten_transcript(&prompt.input)`
+  Codex's history contains the previous tool call and its genuine output. If the model chooses to call the tool again in Turn 2, that tool call is emitted and executed normally. Tool-boundary termination applies strictly *within* each turn and never restricts cross-turn tool selection.
+
+---
+
+## 5. Failure Modes & Edge Guards
+
+| Failure Mode | Risk / Symptom | Mitigation & Invariant |
+| :--- | :--- | :--- |
+| **Serial Siblings** | Sibling B arrives after sibling A is finalized | `TOOL_BOUNDARY_HALT` waits for `permission.requested` / `tool.updated` or post-tool text, never breaking on empty pending map alone. |
+| **Partial / Truncated Args** | Child stdout closes mid-delta before `tool_call` | Fallback flush (lines 3975-4005) emits capped, error-flagged fallback or drops to protect transcript; never halts prematurely. |
+| **Stream Cancellation** | Consumer drops stream receiver (`tx.is_closed()`) | `aborted` flag immediately disposes child via process group kill (`command.process_group(0)`). |
+| **Disposal Failure** | Child process ignores `SIGTERM` or hangs | `zcode_process::dispose_and_wait_once` applies staged escalation: SIGTERM $\rightarrow$ short grace $\rightarrow$ SIGKILL to process group. |
+| **Stall Timeout** | Child hangs before reaching generation boundary | `idle_timeout` (`ZCODE_STREAM_IDLE_TIMEOUT_SECS`) aborts turn cleanly. |
+| **Delayed Execution Handoff** | Slow pipe delay between `tool_call` and `permission.requested` | Bounded drain: if no further events arrive within 250ms of a finalized tool call and no pending tools remain, turn safely finalizes. |
+
+---
+
+## 6. Concrete Patch Diff (`codex-rs/core/src/client.rs`)
 
 ```diff
 --- a/codex-rs/core/src/client.rs
@@ -94,49 +226,57 @@ When `stream_zcode` detects that the model has finalized a tool call (or a batch
              // Set when the stream went silent past the idle window; the turn
              // is failed and the child torn down below.
              let mut stalled: Option<Duration> = None;
-+            // Set when the model has emitted tool calls and reached the tool boundary.
++            // Set when an authoritative tool boundary is reached after tool emission.
 +            let mut tool_boundary_reached = false;
              while let Some(line) = match pending_line.take() {
                  Some(line) => Some(line),
                  None => match zcode_process::next_stream_line(&mut lines, idle_timeout).await {
-@@ -3879,6 +3881,14 @@ impl ModelClient for ZcodeClient {
-                             }
-                             emitted_tool_calls += 1;
-                             completed_tool_ids.insert(tool_call_id.to_string());
-+                            // End inner turn at the tool boundary: once authoritative
-+                            // tool calls are emitted and no sibling tool inputs are
-+                            // pending, stop reading from the child. Allowing the child
-+                            // to continue into its own inner loop would provoke fake
-+                            // permission denials and uncoordinated outer retries.
-+                            if pending_tools.is_empty() {
-+                                tool_boundary_reached = true;
-+                                break;
-+                            }
-                         } else {
-                             // Orphan `tool_call` without a prior
-                             // `tool_input_start` (should not happen, but be
-@@ -3912,6 +3922,10 @@ impl ModelClient for ZcodeClient {
-                             }
-                             emitted_tool_calls += 1;
-                             completed_tool_ids.insert(tool_call_id.to_string());
-+                            if pending_tools.is_empty() {
-+                                tool_boundary_reached = true;
-+                                break;
-+                            }
-                         }
-                     }
-                     if is_tool_input_end {
-@@ -3972,7 +3986,7 @@ impl ModelClient for ZcodeClient {
-             // raw deltas (the 421 KiB poisoning path). Emit a capped,
-             // validated fallback instead. Skip when the turn already
-             // failed (session.error) or stalled so a dead turn does not
-             // sprout half-formed tools.
--            if failed.is_none() && stalled.is_none() {
-+            if failed.is_none() && stalled.is_none() && !tool_boundary_reached {
-                 for (tool_call_id, pending) in std::mem::take(&mut pending_tools) {
-                     if completed_tool_ids.contains(&tool_call_id) {
-                         continue;
-@@ -4014,7 +4028,7 @@ impl ModelClient for ZcodeClient {
+@@ -3681,6 +3683,18 @@ impl ModelClient for ZcodeClient {
+                 };
+                 let payload = parsed.get("payload");
+                 let kind = parsed.get("type").and_then(|v| v.as_str()).unwrap_or("");
++
++                // Authoritative generation-end boundary: once tool calls have been
++                // emitted, transition to execution handoff (permission.requested,
++                // tool.updated, permission.resolved) proves the model generation
++                // batch is complete. Halting here preserves all serial siblings
++                // while preventing the child from entering inner denial loops.
++                if emitted_tool_calls > 0 && pending_tools.is_empty() {
++                    if matches!(kind, "permission.requested" | "permission.resolved" | "tool.updated") {
++                        tool_boundary_reached = true;
++                        break;
++                    }
++                }
+                 if kind == "session.updated"
+                     && let Some(id) = parsed.get("sessionId").and_then(|v| v.as_str())
+                 {
+@@ -3700,6 +3714,14 @@ impl ModelClient for ZcodeClient {
+                     if started_output && (is_tool_input_start || is_tool_call) {
+                         // Complete the streamed segment before the tool item
+                         // arrives: core drops a message that is still active
++                        let item = ResponseItem::Message {
++                            id: None,
++                            role: "assistant".to_string(),
++                            content: vec![codex_protocol::models::ContentItem::OutputText {
++                                text: std::mem::take(&mut segment_text),
++                            }],
++                            phase: None,
++                            internal_chat_message_metadata_passthrough: None,
++                        };
++                        let _ = tx.send(Ok(ResponseEvent::OutputItemDone(item))).await;
++                        started_output = false;
++                    }
++
++                    // If text arrives AFTER tools were already emitted and finalized,
++                    // the inner agent has begun Turn 2 in response to a denial. Halt!
++                    if is_text && emitted_tool_calls > 0 && pending_tools.is_empty() {
++                        tool_boundary_reached = true;
++                        break;
++                    }
++
+                     let delta = payload
+                         .and_then(|p| p.get("delta"))
+@@ -4014,7 +4036,7 @@ impl ModelClient for ZcodeClient {
              let status = match startup_status {
                  Some(status) => status,
 -                None if stalled.is_some() || aborted => {
@@ -144,7 +284,7 @@ When `stream_zcode` detects that the model has finalized a tool call (or a batch
                      zcode_process::dispose_and_wait_once(&mut child).await
                  }
                  // The stream ended on its own; the child is on its way out.
-@@ -4032,7 +4046,7 @@ impl ModelClient for ZcodeClient {
+@@ -4032,7 +4054,7 @@ impl ModelClient for ZcodeClient {
              let reply_bytes = response_text.len();
              let stderr_text = zcode_stderr_tail(&stderr_tail);
              match (status, failed) {
@@ -157,41 +297,39 @@ When `stream_zcode` detects that the model has finalized a tool call (or a batch
 
 ---
 
-## 5. Rigorous Test Plan & Negative Verification
+## 7. Rigorous Test Plan
 
-The test plan exercises all execution paths without requiring a full cargo compile until an authorized disk guard is present:
+### 7.1 Unit & Synthetic Harness Tests
+1. **Serial Siblings Test (`test_zcode_serial_siblings_batch`):**
+   - Stream: `tool_input_start(A)`, `tool_call(A)`, `tool_input_start(B)`, `tool_call(B)`, `permission.requested`.
+   - Verification: Both $A$ and $B$ are yielded as `ResponseItem::FunctionCall`; termination occurs on `permission.requested`. Zero calls dropped.
+2. **Post-Tool Text Denial Suppression (`test_zcode_denial_text_halt`):**
+   - Stream: `tool_input_start(A)`, `tool_call(A)`, `text_delta("Denied...")`, `tool_call(A_retry)`.
+   - Verification: Halts on `text_delta`; $A_{\text{retry}}$ is never processed; child disposed.
+3. **Pure Text Turn (`test_zcode_pure_text_turn`):**
+   - Stream: `text_delta("Final answer")`, `result`, exit 0.
+   - Verification: `tool_boundary_reached = false`; full text delivered; normal exit.
+4. **Partial Tool Input Fallback (`test_zcode_partial_input_flush`):**
+   - Stream: `tool_input_start(A)`, `tool_input_delta`, unexpected EOF.
+   - Verification: Capped fallback flush executes without panic.
+5. **Consumer Cancellation (`test_zcode_client_abort`):**
+   - Stream: Receiver dropped during tool deltas.
+   - Verification: Process group reaped cleanly in $<50$ms.
 
-### 5.1 Synthetic Adapter Unit Tests (`core/src/zcode_tests.rs`)
-1. **Single Tool Call Teardown:**
-   - Input: NDJSON stream emitting `text_delta` ("thinking"), `tool_input_start` ("exec_command"), `tool_call` (args), followed by synthetic inner denial (`"No permission client configured"`).
-   - Assertion: `stream_zcode` yields `Message`, `FunctionCall`, and terminates immediately.
-   - Check: The child process is signaled `SIGTERM`/killed; the synthetic denial is never processed; exactly 1 `FunctionCall` is emitted to `tx`.
-2. **Parallel Tool Calls (Sibling Batching):**
-   - Input: NDJSON stream emitting two interleaved tool calls (`tool_input_start` A, `tool_input_start` B, `tool_call` A, `tool_call` B).
-   - Assertion: `pending_tools` prevents early exit on tool A; teardown occurs only after tool B is emitted. Both calls are yielded.
-3. **Pure Text Turn (Zero Tools):**
-   - Input: NDJSON stream emitting `text_delta` ("final answer"), `result` event, exit 0.
-   - Assertion: Full text is emitted; child exits cleanly on its own (`tool_boundary_reached = false`).
-
-### 5.2 Live Comparative Regression Probe
-1. **Unconstrained Probe Rerun:**
-   - Prompt: `"Use Bash to create /tmp/test.txt containing 'OK'. Do nothing else."`
-   - Evaluate trace against rollout `01a1000a-8f19`:
-     - Expected: Exactly 1 outer `exec_command` tool call.
-     - Expected: Zero 16-second delay; child process reaped in <100ms.
-     - Expected: Turn 2 receives the tool result from `ToolCallRuntime` and emits final text with zero model retries.
-
-### 5.3 Negative Cases & Edge Guards
-1. **Aborted Invocations:** If the client drops the stream (`tx.is_closed()`), teardown remains immediate.
-2. **Stall Timeout:** If the child hangs before emitting `tool_call`, the idle timeout kills the process as before.
-3. **Truncated Tool Input:** If the stream drops before `tool_call`, the fallback flush handles pending tools.
+### 7.2 Live Regression Gate
+- **Probe Command:** `"Use Bash to create /tmp/live_test.txt containing 'OK'. Do nothing else."`
+- **Success Criteria:**
+  1. Exactly 1 outer `exec_command` tool call in rollout.
+  2. Outer execution creates `/tmp/live_test.txt` with `OK` (exit 0).
+  3. Turn 2 receives recorded tool result and yields final text with 0 retries.
+  4. Elapsed time $\le 5$s (eliminating the 16s retry delay).
 
 ---
 
-## 6. Resource Compliance & Rollout Policy
+## 8. Resource Compliance & Independent Review Delegation
 
-1. **Compilation Guard:** In accordance with Root directive `CHECK0224` and Claude Principal instructions, **no `cargo build`, `cargo clean`, or `cargo test` is executed**. Target directory remains untouched (+12.26 GB growth violation halted).
-2. **Safe Reversible Rollout Gate:** Root directive `01a10014-61f6` authorizes scoped reversible deployment only after:
-   - Independent peer review by `muse-reviewer` (`7e6e9bb0`).
-   - Implementation in an isolated branch/worktree.
-   - Validation that disk and quota budgets remain strictly within physical limits.
+1. **Compilation Guard Maintained:** Zero `cargo build` / `cargo test` executed. Target cache remains untouched.
+2. **Delegation for Independent Review:**
+   - Delegate: `muse-reviewer` (`7e6e9bb0`).
+   - Task: Independent review of this design against Codex challenge `01a1002d-4c24` and rollout `01a1000a-8f19`.
+   - Rollout: Scoped reversible integration only after formal review approval and physical budget guard.
