@@ -15,5 +15,8 @@
     "src/**/*.ts",
     "test/**/*.ts",
     "vitest.config.ts"
+  ],
+  "exclude": [
+    "test/global-setup.ts"
   ]
 }

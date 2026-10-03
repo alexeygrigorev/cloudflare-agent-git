@@ -56,6 +56,11 @@ export class RealArtifacts implements ArtifactsPort {
   }
 
   async fork(source: RepoName, target: RepoName, opts?: ForkOptions): Promise<ArtifactsCreateRepoResult> {
+    if (opts?.baseSha) {
+      // No documented binding parameter forks at an arbitrary commit
+      // (docs-notes ASSUMED-A): refuse instead of inventing an API.
+      throw new Error("fork at explicit baseSha is UNSUPPORTED by the documented Artifacts binding");
+    }
     using repo = await this.binding.get(source);
     return repo.fork(target, opts);
   }
@@ -74,11 +79,11 @@ export class RealArtifacts implements ArtifactsPort {
     return handle.log(opts);
   }
 
-  async listRefs(repo: RepoName): Promise<Record<string, string>> {
+  async headCommit(repo: RepoName, ref = "HEAD"): Promise<string | null> {
     using handle = await this.binding.get(repo);
-    const commits = await handle.log({ ref: "HEAD", limit: 1 });
-    const head = commits[0]?.id ?? null;
-    return head ? { HEAD: head } : {};
+    // Only documented operations: log({ref, limit:1}) yields the tip commit.
+    const commits = await handle.log({ ref, limit: 1 });
+    return commits[0]?.id ?? null;
   }
 
   async hasCommit(repo: RepoName, sha: string): Promise<boolean> {
