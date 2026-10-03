@@ -38,6 +38,15 @@ Both pages re-fetch `GET /status` every 3 s and pause while the tab is hidden
 A status line above the content shows the current state: live/demo,
 last-loaded time, and whether the tab is paused or a fetch failed.
 
+Requests are single-flight guarded (C-1385): each refresh takes a generation
+and a response that settles after a newer one is dropped, so an
+out-of-order result can never overwrite newer state. When a `/status` fetch
+fails, the page never pretends to be clean: an explicit red banner
+(`role="alert"`) says the live status is out of date, the task page marks the
+affected sections “Status out of date” (an empty warning list reads as
+unknown, not as “no warnings”), and only a later successful fetch clears the
+banner. See `request-guard.js` and `tests/generation-guard.test.js`.
+
 Newly appeared warnings and pushes are highlighted (amber outline + a “New”
 badge) for 5 s. The first page load only establishes a baseline — nothing is
 highlighted just for being there. In fixture mode the same machinery re-reads
