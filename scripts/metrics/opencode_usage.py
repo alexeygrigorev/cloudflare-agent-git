@@ -23,12 +23,14 @@ def read_usage(root, assignments, interval_start_ms, *, max_sessions=128, max_me
     The fixed owned DB must not be a symlink outside root. Rescanning PK rows means
     late completion updates replace prior values, never append/double-count them.
     The user home store is observed too (same attribution rule: session directory
-    must resolve inside root); rows dedupe across stores by (provider,sid,mid) so
-    one message kept in both stores counts once. A missing store is skipped.
+    must resolve inside root). Cross-store duplicates reconcile deterministically:
+    completed over pending, latest completed/created time, larger totals, then the
+    owned store wins ties, so one message kept in both stores counts once with the
+    freshest values. A missing store is skipped.
     """
     root=pathlib.Path(root).resolve(); path=root/DB_REL
     home=pathlib.Path(home_db) if home_db is not None else default_home_db()
-    result={'source':SOURCE,'interval_start':dt.datetime.fromtimestamp(interval_start_ms/1000,dt.timezone.utc).isoformat(),'observed_at':dt.datetime.now(dt.timezone.utc).isoformat(),'status':'unknown','sessions':[],'by_model':[],'by_team':{},'stores':[],'limits':['Stored provider totals include cached processing and are not unique text or money spent.','Raw output/reasoning categories are shown separately; total is authoritative and never recomputed by adding reasoning.','Reported cost is OpenCode/provider estimate, not subscription billing.','Interval uses message creation time; late completion updates may backfill earlier messages.','Only exact registered conversation IDs and same-directory DB parent-linked children are attributed.']}
+    result={'source':SOURCE,'interval_start':dt.datetime.fromtimestamp(interval_start_ms/1000,dt.timezone.utc).isoformat(),'observed_at':dt.datetime.now(dt.timezone.utc).isoformat(),'status':'unknown','sessions':[],'by_model':[],'by_team':{},'stores':[],'limits':['Stored provider totals include cached processing and are not unique text or money spent.','Raw output/reasoning categories are shown separately; total is authoritative and never recomputed by adding reasoning.','Reported cost is OpenCode/provider estimate, not subscription billing.','Interval uses message creation time; late completion updates may backfill earlier messages.','Only exact registered conversation IDs and same-directory DB parent-linked children are attributed.','Cross-store duplicates reconcile to one record: completed over pending, latest completed/created time, larger totals, owned store on full ties.']}
     try:
         stores=[]
         if path.is_file() and root in path.resolve().parents:stores.append(('owned',path))
@@ -48,15 +50,20 @@ def read_usage(root, assignments, interval_start_ms, *, max_sessions=128, max_me
         admitted=set();all_rows=[]
         for role,dbpath in stores:
             try:
-                rows=_query_store(dbpath,root,owners,admitted,max_sessions,max_messages,deadline)
+                store_admitted,rows=_query_store(dbpath,root,owners,max_sessions,max_messages,deadline)
             except (sqlite3.Error,OSError,ValueError,TypeError,OverflowError):
                 result['stores'].append({'role':role,'path':str(dbpath),'status':'unavailable-skipped','assistant_rows':0});continue
             result['stores'].append({'role':role,'path':str(dbpath),'status':'queried','assistant_rows':len(rows)})
-            all_rows.extend(rows)
+            admitted.update(store_admitted)
+            if len(admitted)>max_sessions:raise ValueError('session bound')
+            all_rows.extend([(*r,role) for r in rows])
         if not admitted:return result
         if len(all_rows)>max_messages:raise ValueError('message bound')
+        winners=list(_reconcile(all_rows).values())
+        winners.sort(key=lambda r:(r[1],r[0]))
         groups={};seen=set()
-        for mid,sid,created,provider,model,completed,*values in all_rows:
+        for mid,sid,created,provider,model,completed,*rest in winners:
+            values,role=rest[:-1],rest[-1]
             key=(provider,sid,mid)
             if key in seen:continue
             seen.add(key)
@@ -97,8 +104,28 @@ def read_usage(root, assignments, interval_start_ms, *, max_sessions=128, max_me
         result.update(status='unavailable-or-bound-exceeded',sessions=[],by_model=[],by_team={})
     return result
 
-def _query_store(dbpath, root, owners, admitted, max_sessions, max_messages, deadline):
-    """Read-only WAL snapshot of one store; expands shared admitted set, returns rows."""
+def _score(row):
+    mid,sid,created,provider,model,completed,total,input_v,output_v,reasoning_v,read_v,write_v,cost_v,role=row
+    done=number(completed) is not None
+    stamp=completed if done else created
+    total_n=number(total)
+    return (done,stamp if isinstance(stamp,(int,float)) else -1,total_n if total_n is not None else -1,role=='owned')
+
+def _reconcile(rows):
+    """One winner per (provider,sid,mid): completed first, then latest stamp,
+    then larger total, then owned store. Owned is queried first so full ties
+    keep it by strict-greater replacement."""
+    best={}
+    for r in rows:
+        key=(r[3],r[1],r[0])
+        cur=best.get(key)
+        if cur is None or _score(r)>_score(cur):best[key]=r
+    return best
+
+def _query_store(dbpath, root, owners, max_sessions, max_messages, deadline):
+    """Read-only WAL snapshot of one store. Admission is strictly per-store:
+    only session IDs present in THIS store with directory==root, plus children
+    parent-linked within THIS store. Returns (admitted, rows)."""
     con=sqlite3.connect(dbpath.as_uri()+'?mode=ro',uri=True,timeout=.2)
     try:
         con.execute('PRAGMA query_only=ON');con.set_progress_handler(lambda: int(time.monotonic()>deadline),1000)
@@ -106,9 +133,9 @@ def _query_store(dbpath, root, owners, admitted, max_sessions, max_messages, dea
         ids=list(owners); placeholders=','.join('?' for _ in ids)
         # Do not infer an owner from a human-readable title.
         catalog=con.execute(f'SELECT id,parent_id,directory FROM session WHERE id IN ({placeholders})',ids).fetchall()
-        new={sid for sid,parent,directory in catalog if pathlib.Path(directory).resolve()==root}
-        admitted.update(new)
-        frontier=list(new)
+        admitted={sid for sid,parent,directory in catalog if pathlib.Path(directory).resolve()==root}
+        if len(admitted)>max_sessions:raise ValueError('session bound')
+        frontier=list(admitted)
         while frontier:
             p=','.join('?' for _ in frontier)
             rows=con.execute(f'SELECT id,parent_id,directory FROM session WHERE parent_id IN ({p}) LIMIT ?',frontier+[max_sessions+1]).fetchall()
@@ -117,9 +144,9 @@ def _query_store(dbpath, root, owners, admitted, max_sessions, max_messages, dea
                 if pathlib.Path(directory).resolve()!=root or sid in admitted:continue
                 admitted.add(sid);owners.setdefault(sid,set()).update(owners[parent]);frontier.append(sid)
                 if len(admitted)>max_sessions:raise ValueError('session bound')
-        if not admitted:return []
+        if not admitted:return admitted,[]
         ids=sorted(admitted); p=','.join('?' for _ in ids)
-        return con.execute(f'''SELECT id,session_id,time_created,
+        return admitted,con.execute(f'''SELECT id,session_id,time_created,
             json_extract(data,'$.providerID'),json_extract(data,'$.modelID'),
             json_extract(data,'$.time.completed'),json_extract(data,'$.tokens.total'),
             json_extract(data,'$.tokens.input'),json_extract(data,'$.tokens.output'),
