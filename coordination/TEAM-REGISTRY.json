@@ -944,6 +944,26 @@
           ],
           "first_tool_evidence": "a work join / a message inbox",
           "memory_cap": "1500M"
+        },
+        {
+          "tag": "sb-reviewer-sdk",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "45995169-c259-41d2-b9af-a03da7c9665f",
+          "mode": "interactive",
+          "engine": "opencode",
+          "model": "opencode-go/space-bunny-free",
+          "workspace": "/home/alexey/git/agent-branches-l2-client",
+          "branch": "proto/l2-client",
+          "status": "running",
+          "started_at": "2026-10-04T01:52:09+02:00",
+          "task": "Independent review of SDK client commit 3b19a42 (409 recompute callback, authenticated status read, negative replay tests)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-SDK-CLIENT-3B19A42.md"
+          ],
+          "first_tool_evidence": "a work join / a message inbox",
+          "memory_cap": "1500M"
         }
       ]
     },
