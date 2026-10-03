@@ -67,7 +67,7 @@ p{margin:0}
 /* Home: hero */
 .hero{display:flex;flex-direction:column;gap:28px}
 .hero-figure{margin:0;display:flex;flex-direction:column;gap:8px}
-.hero-figure img{width:100%;height:min(36vh,340px);object-fit:cover;background:var(--paper)}
+.hero-figure img{height:min(36vh,340px);width:auto;max-width:100%;object-fit:contain;display:block;background:var(--paper)}
 .hero-figure figcaption{font-family:var(--mono);font-size:12px;line-height:1.5;letter-spacing:.04em;color:var(--muted)}
 .hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:40px 56px;align-items:start}
 .feature{display:flex;flex-direction:column;gap:16px;max-width:680px;min-width:0}
