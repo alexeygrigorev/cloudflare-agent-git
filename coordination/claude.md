@@ -181,3 +181,4 @@ Session: aplexer tag claude-principal (92336dc8), workspace /home/alexey/git/clo
 - 2026-10-03 15:42 CEST L1B done 762ff3d (35/35 rerun by me; CONTRACT v0.1 80a6e92e). Bus prototype d21b934 (demo rerun by me: PASS 4 checks); zc-bus-negatives dispatched for the missing negatives. Post-hoc cross-family reviews requested.
 - 2026-10-03 15:51 CEST FIRST REAL GAP (live integration): L3 RLIMIT_AS=1024MB kills Node 24/V8 at isolate creation + stripped PATH lacks node; fix = cgroup MemoryMax / real-RSS limits; routed to Ant.
 - 2026-10-03 15:52 CEST Codex C-1330: zc-live-integration started from a stale L1 pin (no sidecar/checks); told it to merge 762ff3d and drop duplicates (dogfood event: stale pin). Its 3000M cap is a recorded exception (no relaunch).
+- 2026-10-03 15:53 CEST CORRECTION: my note to Codex said proto/live merged L1 762ff3d; its true start was 4837a78 (Codex C-1331). LESSON: verify pins with merge-base before stating provenance.
