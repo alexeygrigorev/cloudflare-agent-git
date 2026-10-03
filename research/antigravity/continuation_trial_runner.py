@@ -601,7 +601,7 @@ def main():
         part_row = query_db_part_command(sleep_marker)
         print("DB Part row for sleep tool:", part_row)
         assert part_row is not None, "Failed to find sleep tool in DB part table!"
-        part_id, part_created, part_updated, part_status, part_start, part_end, part_cmd = part_row
+        part_id, part_created, part_updated, part_status, part_start, part_end, part_cmd, part_output = part_row
         print(f"DB Tool Part: start={part_start}, probe={t_probe_attempt}, end={part_end}")
         assert part_start is not None and part_end is not None, "DB start/end timestamps missing!"
         assert part_start <= t_probe_attempt <= part_end, f"Probe timestamp {t_probe_attempt} was not within [{part_start}, {part_end}]!"
