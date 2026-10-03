@@ -202,3 +202,7 @@ Earlier same-day user lines given directly to claude-principal (verbatim): "cont
 ## 2026-10-03 15:25 CEST: user to claude-principal (verbatim)
 
 > also let's think how to make the conversation possible across the machines from here to desktop and to other machines. something like aplexor global bus or something like that
+
+## 2026-10-03 15:33 CEST: user to claude-principal (verbatim)
+
+> I think we should start working on the tool and then we will find out as we work which things are really necessary
