@@ -1250,3 +1250,30 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Public deploy gate remains strictly **HELD**.
    - Host memory (32+ GB free) and disk (66 GB free) healthy.
 
+
+
+---
+
+## 48. Independent Negative Review & Hardening of Supervision Fallback (Commit c14b474)
+
+- **Date:** 2026-10-04T00:18:00+02:00
+- **Executor & Model:** Space Bunny `sb-reviewer-sup` (`b01f1415-5a23-4a62-b379-5bf24a431caa`), model `opencode-go/space-bunny-free`.
+- **Review Artifact:** [`research/antigravity/reviews/REV-SUPERVISION-C14B474.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SUPERVISION-C14B474.md).
+- **Core Findings & Remediation:**
+  1. **Empirical Negative Suite (27 checks):** Evaluated against isolated scratch harness executing production `service.run()`. Initially identified 4 defects:
+     - Hardcoded inline literal `/home/alexey/.local/bin/aplexer` $\implies$ Remediated by exposing module constant `INSTALLED_BINARY = os.environ.get('SUPERVISION_FALLBACK_APLEXER_BINARY', '/home/alexey/.local/bin/aplexer')`.
+     - Overwritten diagnostic detail $\implies$ Remediated by retaining primary binary's rejection detail in `fallback_outcome['fallback']['primary_detail']`.
+     - Unhandled mailbox lock on fallback $\implies$ Remediated by inspecting stderr for `MAILBOX_BUSY` regex and raising `DeliveryUncertain` to prevent unmanaged retries.
+     - False triggering on rate limits mentioning GPT $\implies$ Remediated by requiring `'unsubmitted draft' in detail and 'GPT-' in detail`.
+     - Tautological test $\implies$ Remediated by replacing inline reimplementation with `test_service_run_codex_status_bar_fallback_and_negatives` driving `service.run()`.
+  2. **Mutation Testing (5 load-bearing mutants):**
+     - M1 (bypass composer empty check): **KILLED** (by `fresh_screen` draft/busy assertions).
+     - M2 (drop GPT filter conjunct): **KILLED** (by non-GPT draft assertion).
+     - M3 (drop codex principal tag conjunct): **KILLED** (by `claude-principal` negative assertion).
+     - M4 (accept non-submitted outcome): **KILLED** (by outcome verification assertion).
+     - M5 (forge brand-new message ID): **KILLED** (by ID preservation assertion).
+     - **Result:** 5/5 mutants killed (0 survivors).
+  3. **Verification Verdict:**
+     - 26/26 unit tests passing in 0.10s (`pytest -v scripts/supervision/test_service.py`).
+     - 27/27 negative checks passing (`negative_suite.py`).
+     - Final Review Verdict: **ACCEPT**.

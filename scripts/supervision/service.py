@@ -7,6 +7,7 @@ from retention import StorageFull, archive_operational, archive_verified, read_a
 ROOT = pathlib.Path('/home/alexey/git/cloudflare-agent-git')
 PRIVATE = ROOT / '.local/supervision'
 BINARY = os.environ.get('SUPERVISION_APLEXER_BINARY', '/home/alexey/git/cloudflare-aplexer-protocol/target/debug/aplexer')
+INSTALLED_BINARY = os.environ.get('SUPERVISION_FALLBACK_APLEXER_BINARY', '/home/alexey/.local/bin/aplexer')
 ALL_KNOWN_PRINCIPALS = ('codex-principal', 'claude-principal')
 PRINCIPALS = ALL_KNOWN_PRINCIPALS  # backward-compatibility alias
 
@@ -244,9 +245,12 @@ def run():
     expected_hash = hashlib.sha256(pathlib.Path(BINARY).read_bytes()).hexdigest()
     supports_key = '--idempotency-key' in command([BINARY, 'message', 'send', '--help'])
     atomic(PRIVATE / 'identity.json', {k: identity.get(k) for k in ('id', 'tag', 'workspace')})
-    atomic(PRIVATE / 'binary-manifest.json', {'path':BINARY, 'sha256':expected_hash, 'selected_at':now(),
+    manifest = {'path':BINARY, 'sha256':expected_hash, 'selected_at':now(),
            'authority':'root-approved immutable copy of installed production CLI; no all-engine readiness guarantee',
-           'supports_idempotency_key':supports_key, 'send_recovery':'native key when available; otherwise crash-safe local intent, ambiguous sends frozen'})
+           'supports_idempotency_key':supports_key, 'send_recovery':'native key when available; otherwise crash-safe local intent, ambiguous sends frozen'}
+    if pathlib.Path(INSTALLED_BINARY).exists():
+        manifest['fallback_binary'] = {'path': INSTALLED_BINARY, 'sha256': hashlib.sha256(pathlib.Path(INSTALLED_BINARY).read_bytes()).hexdigest()}
+    atomic(PRIVATE / 'binary-manifest.json', manifest)
     statepath = PRIVATE / 'state.json'
     memory = json.loads(statepath.read_text()) if statepath.exists() else {}
     def event(kind, **fields):
@@ -385,13 +389,24 @@ def run():
                         except json.JSONDecodeError:
                             outcome = {'status': 'delivery-uncertain', 'returncode': result.returncode}
                         # If BINARY rejected due to known status-line false-draft on Codex, retry with installed production binary:
-                        if outcome.get('status') == 'not-ready' and tag == 'codex-principal' and 'GPT-' in outcome.get('detail', ''):
-                            installed_binary = '/home/alexey/.local/bin/aplexer'
-                            if pathlib.Path(installed_binary).exists():
-                                fallback_result = subprocess.run([installed_binary, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json'], capture_output=True, text=True, timeout=20)
+                        detail = outcome.get('detail', '') if isinstance(outcome.get('detail'), str) else ''
+                        if outcome.get('status') == 'not-ready' and tag == 'codex-principal' and 'unsubmitted draft' in detail and 'GPT-' in detail:
+                            primary_detail = detail
+                            if pathlib.Path(INSTALLED_BINARY).exists():
+                                fallback_args = [INSTALLED_BINARY, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json']
+                                fallback_result = subprocess.run(fallback_args, capture_output=True, text=True, timeout=20)
+                                fallback_stderr = (fallback_result.stderr or '').strip()
+                                if fallback_result.returncode and MAILBOX_BUSY.search(fallback_stderr):
+                                    raise DeliveryUncertain(fallback_args, fallback_stderr, fallback_result.returncode)
                                 try:
                                     fallback_outcome = json.loads(fallback_result.stdout)
                                     if fallback_outcome.get('status') == 'submitted':
+                                        fallback_outcome['fallback'] = {
+                                            'from_binary': BINARY,
+                                            'primary_status': 'not-ready',
+                                            'primary_detail': primary_detail,
+                                            'fallback_binary': INSTALLED_BINARY,
+                                        }
                                         outcome = fallback_outcome
                                 except json.JSONDecodeError:
                                     pass

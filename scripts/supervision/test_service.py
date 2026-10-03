@@ -1,4 +1,4 @@
-import importlib.util,pathlib,unittest,tempfile,json
+import importlib.util,pathlib,unittest,tempfile,json,os
 spec=importlib.util.spec_from_file_location('service',pathlib.Path(__file__).with_name('service.py'))
 service=importlib.util.module_from_spec(spec);spec.loader.exec_module(service)
 class Safety(unittest.TestCase):
@@ -188,28 +188,171 @@ class Safety(unittest.TestCase):
   self.assertEqual(service.active_principals(registry_raw=reg3), ['codex-principal'])
   reg4 = {'agents': [{'tag': 'claude-principal', 'supervision_excluded': True}]}
   self.assertEqual(service.active_principals(registry_raw=reg4), ['codex-principal'])
- def test_codex_status_bar_fallback(self):
-  calls = []
-  def fake_run(args, capture_output=True, text=True, timeout=20):
-   calls.append(args[0])
-   if 'debug' in args[0]:
-    return type('Result', (), {'returncode': 0, 'stdout': json.dumps({'status': 'not-ready', 'detail': 'recipient composer has an unsubmitted draft in progress (GPT-6.1-Sol medium · Context 43% left...); delivery fail-closed'}), 'stderr': ''})()
-   return type('Result', (), {'returncode': 0, 'stdout': json.dumps({'status': 'submitted', 'id': 'test-msg'}), 'stderr': ''})()
-  real_run = service.subprocess.run
-  try:
-   service.subprocess.run = fake_run
-   deliver_args = ['/target/debug/aplexer', 'message', 'deliver', 'm1', '--workspace', '.', '--json']
-   result = fake_run(deliver_args)
-   outcome = json.loads(result.stdout)
-   tag = 'codex-principal'
-   if outcome.get('status') == 'not-ready' and tag == 'codex-principal' and 'GPT-' in outcome.get('detail', ''):
-    fallback_result = fake_run(['/home/alexey/.local/bin/aplexer', 'message', 'deliver', 'm1', '--workspace', '.', '--json'])
-    fallback_outcome = json.loads(fallback_result.stdout)
-    if fallback_outcome.get('status') == 'submitted':
-     outcome = fallback_outcome
-   self.assertEqual(outcome['status'], 'submitted')
-   self.assertEqual(calls, ['/target/debug/aplexer', '/home/alexey/.local/bin/aplexer'])
-  finally:
-   service.subprocess.run = real_run
+ def test_service_run_codex_status_bar_fallback_and_negatives(self):
+  with tempfile.TemporaryDirectory() as td:
+   tmp = pathlib.Path(td)
+   root = tmp / 'root'
+   (root / 'coordination').mkdir(parents=True)
+   (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps({'teams': [{'id': 'T1', 'principal_tags': ['codex-principal']}]}))
+   (root / 'coordination/TASKS.json').write_text(json.dumps({'tasks': [{'id': 'task-1', 'team_id': 'T1', 'status': 'ready', 'owner_tag': 'codex-principal'}]}))
+   private = tmp / 'private'
+   private.mkdir()
+   bin_dir = tmp / 'bin'
+   bin_dir.mkdir()
+   pinned = bin_dir / 'aplexer'
+   pinned.write_bytes(b'PINNED')
+   installed = bin_dir / 'installed-aplexer'
+   installed.write_bytes(b'INSTALLED')
+
+   cycles = [0]
+   calls = []
+   captures_in_cycle = [0]
+   principal_tag = ['codex-principal']
+   screen_holder = ['› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left\n  ? for shortcuts']
+   fresh_screen_holder = [None]
+   deliver_ret = [{'status': 'not-ready', 'detail': 'recipient composer has an unsubmitted draft in progress (GPT-6.1-Sol medium · Context 43% left...); delivery fail-closed'}]
+   fallback_ret = [{'status': 'submitted', 'id': 'm1'}]
+
+   def fake_cmd(args, timeout=20):
+    words = [a for a in args[1:] if not a.startswith('-')]
+    if words[:1] == ['whoami']:
+     return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-1'})
+    if 'idempotency-key' in args and 'help' in args:
+     return '  --idempotency-key'
+    if words[:1] == ['list']:
+     captures_in_cycle[0] = 0
+     cycles[0] += 1
+     if cycles[0] >= 3:
+      (private / 'stop').write_text('stop')
+     return json.dumps([{'workspace': str(root), 'tag': principal_tag[0], 'id': 'sess-' + principal_tag[0], 'reported_state': 'idle', 'workload_pid': str(os.getpid())}])
+    if 'inbox' in args:
+     return json.dumps({'messages': []})
+    if 'capture' in args:
+     captures_in_cycle[0] += 1
+     if captures_in_cycle[0] >= 2 and fresh_screen_holder[0] is not None:
+      return fresh_screen_holder[0]
+     return screen_holder[0]
+    if args[0] == 'quse':
+     return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 90}}}})
+    if words[:2] == ['message', 'send']:
+     return json.dumps({'id': 'm1', 'delivery': 'inbox'})
+    return '{}'
+
+   class R:
+    def __init__(self, rc, out, err=''):
+     self.returncode, self.stdout, self.stderr = rc, out, err
+
+   def fake_run(args, **kw):
+    calls.append(list(args))
+    if 'send' in args:
+     return R(0, json.dumps({'id': 'm1', 'delivery': 'inbox'}))
+    if 'deliver' in args:
+     if str(pinned) in args[0]:
+      return R(0, json.dumps(deliver_ret[0]))
+     if str(installed) in args[0]:
+      return R(0, json.dumps(fallback_ret[0]))
+    return R(0, '{}')
+
+   real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+   real_root, real_priv, real_bin, real_inst = service.ROOT, service.PRIVATE, service.BINARY, service.INSTALLED_BINARY
+   real_defaults = service.recorded_send.__defaults__
+
+   try:
+    service.command = fake_cmd
+    service.subprocess.run = fake_run
+    service.recorded_send.__defaults__ = (fake_cmd,)
+    service.time = type('T', (), {'time': staticmethod(lambda: 1000.0), 'sleep': staticmethod(lambda s: None)})()
+    service.ROOT, service.PRIVATE = root, private
+    service.BINARY = str(pinned)
+    service.INSTALLED_BINARY = str(installed)
+
+    # 1. Happy path: false-draft status line triggers fallback via service.run()
+    service.run()
+    delivers = [c for c in calls if 'deliver' in c]
+    self.assertEqual(len(delivers), 2)
+    self.assertEqual(delivers[0][0], str(pinned))
+    self.assertEqual(delivers[1][0], str(installed))
+    self.assertEqual(delivers[0][3], 'm1')
+    self.assertEqual(delivers[1][3], 'm1')
+    ev = json.loads((private / 'delivery-m1.json').read_text())
+    self.assertEqual(ev.get('status'), 'submitted')
+    self.assertIn('primary_detail', ev.get('fallback', {}))
+
+    # 2. Negative: fresh_screen draft prevents delivery even when initial snapshot was empty (kills M1)
+    calls.clear()
+    cycles[0] = 0
+    captures_in_cycle[0] = 0
+    (private / 'stop').unlink(missing_ok=True)
+    (private / 'state.json').unlink(missing_ok=True)
+    screen_holder[0] = '› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left'
+    fresh_screen_holder[0] = '› Fix rate limiter\n  GPT-6.1-Sol medium · Context 43% left'
+    service.run()
+    delivers = [c for c in calls if 'deliver' in c]
+    self.assertEqual(delivers, [])
+
+    # 3. Negative: fresh_screen busy prevents delivery (kills M1)
+    calls.clear()
+    cycles[0] = 0
+    captures_in_cycle[0] = 0
+    (private / 'stop').unlink(missing_ok=True)
+    (private / 'state.json').unlink(missing_ok=True)
+    screen_holder[0] = '› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left'
+    fresh_screen_holder[0] = '• Working (2m • esc to interrupt)\n› Ask Codex to do anything'
+    service.run()
+    delivers = [c for c in calls if 'deliver' in c]
+    self.assertEqual(delivers, [])
+
+    # 4. Negative: detail with 'unsubmitted draft' but NO 'GPT-' skips fallback (kills M2)
+    calls.clear()
+    cycles[0] = 0
+    captures_in_cycle[0] = 0
+    fresh_screen_holder[0] = None
+    (private / 'stop').unlink(missing_ok=True)
+    (private / 'state.json').unlink(missing_ok=True)
+    screen_holder[0] = '› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left'
+    deliver_ret[0] = {'status': 'not-ready', 'detail': 'recipient composer has an unsubmitted draft in progress (git commit -m "fix"); delivery fail-closed'}
+    service.run()
+    delivers = [c for c in calls if 'deliver' in c]
+    self.assertTrue(delivers)
+    self.assertTrue(all(str(pinned) in c[0] for c in delivers))
+    self.assertFalse(any(str(installed) in c[0] for c in delivers))
+
+    # 5. Negative: fallback outcome not submitted does not mark submitted (kills M4)
+    calls.clear()
+    cycles[0] = 0
+    captures_in_cycle[0] = 0
+    fresh_screen_holder[0] = None
+    (private / 'stop').unlink(missing_ok=True)
+    (private / 'state.json').unlink(missing_ok=True)
+    screen_holder[0] = '› Ask Codex to do anything\n  GPT-6.1-Sol medium · Context 43% left'
+    deliver_ret[0] = {'status': 'not-ready', 'detail': 'recipient composer has an unsubmitted draft in progress (GPT-6.1-Sol medium · Context 43% left...); delivery fail-closed'}
+    fallback_ret[0] = {'status': 'not-ready', 'detail': 'installed binary also not-ready'}
+    service.run()
+    ev = json.loads((private / 'delivery-m1.json').read_text())
+    self.assertEqual(ev.get('status'), 'not-ready')
+    self.assertNotIn('fallback', ev)
+
+    # 6. Negative: tag == 'claude-principal' skips fallback even with 'unsubmitted draft' and 'GPT-' (kills M3)
+    calls.clear()
+    cycles[0] = 0
+    captures_in_cycle[0] = 0
+    fresh_screen_holder[0] = None
+    (private / 'stop').unlink(missing_ok=True)
+    (private / 'state.json').unlink(missing_ok=True)
+    principal_tag[0] = 'claude-principal'
+    (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps({'teams': [{'id': 'T1', 'principal_tags': ['claude-principal']}]}))
+    (root / 'coordination/TASKS.json').write_text(json.dumps({'tasks': [{'id': 'task-1', 'team_id': 'T1', 'status': 'ready', 'owner_tag': 'claude-principal'}]}))
+    screen_holder[0] = '❯\n────'
+    deliver_ret[0] = {'status': 'not-ready', 'detail': 'recipient composer has an unsubmitted draft in progress (GPT-6.1-Sol medium · Context 43% left...); delivery fail-closed'}
+    fallback_ret[0] = {'status': 'submitted', 'id': 'm1'}
+    service.run()
+    delivers = [c for c in calls if 'deliver' in c]
+    self.assertTrue(delivers)
+    self.assertTrue(all(str(pinned) in c[0] for c in delivers))
+    self.assertFalse(any(str(installed) in c[0] for c in delivers))
+   finally:
+    service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
+    service.recorded_send.__defaults__ = real_defaults
+    service.ROOT, service.PRIVATE, service.BINARY, service.INSTALLED_BINARY = real_root, real_priv, real_bin, real_inst
 if __name__=='__main__':unittest.main()
 
