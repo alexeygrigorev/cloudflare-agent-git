@@ -472,7 +472,7 @@
           "provider": "zcode/warm",
           "session_id": "2becf3fd-791e-49c1-be43-eac9583ca049",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
-          "status": "running",
+          "status": "ended",
           "task": "C-1408/C-1410 metrics completed-session attribution fallback + telemetry + tests",
           "owned_paths": [
             "scripts/metrics/collect.py",
@@ -480,7 +480,9 @@
             "scripts/metrics/opencode_usage.py"
           ],
           "first_tool_evidence": "aplexer work join / bash / ls session records",
-          "memory_cap": "1500M"
+          "memory_cap": "1500M",
+          "completed_at": "2026-10-03T19:36:54+00:00",
+          "result": "8102d4d accepted by Codex Principal C-1424 (43/43 tests pass)"
         },
         {
           "tag": "rev-l4-ui",
@@ -492,14 +494,22 @@
           "provider": "opencode-go/space-bunny-free",
           "model": "space-bunny-free",
           "session_id": "df0de19e-2ec3-4993-86e1-3550e4f87722",
+          "opencode_session_id": "ses_efcc9a16dffezXPkdMZOR7cw66",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
-          "status": "running",
+          "status": "ended",
           "task": "C-1399/C-1409/C-1410 independent review of UI DOM negative fix and Playwright live browser test suite",
           "owned_paths": [
             "research/antigravity/reviews/REV-L4-DOM-NEGATIVE.md"
           ],
-          "first_tool_evidence": "python3 tests/test_dom_negative_browser.py (3/3 passed in 1.775s)",
-          "memory_cap": "1500M"
+          "first_tool_evidence": "bash 1791055261914->1791055263961 (session ses_efcc9a16dffezXPkdMZOR7cw66 DB verified)",
+          "telemetry": {
+            "type": "opencode-db",
+            "conversation_id": "ses_efcc9a16dffezXPkdMZOR7cw66",
+            "path": ".local/share/opencode/opencode.db"
+          },
+          "memory_cap": "1500M",
+          "completed_at": "2026-10-03T19:25:00+00:00",
+          "result": "REQUEST_CHANGES (REV-L4-DOM-NEGATIVE.md @ cd85ae7); addressed at 738a591"
         },
         {
           "tag": "pristine-product-agent",
@@ -511,15 +521,18 @@
           "provider": "zcode/warm",
           "session_id": "d56f52a5-42ea-48ba-a636-d216df2e3810",
           "workspace": "/home/alexey/git/demo-target-pristine",
-          "status": "running",
-          "task": "C-1402/C-1410 unfamiliar product adoption on pristine single-commit baseline (GET /healthz, GET /links/:slug/stats)",
+          "status": "ended",
+          "task": "C-1402/C-1410 unfamiliar product baseline on pristine single-commit (GET /healthz, GET /links/:slug/stats)",
+          "task_nature": "source-only prototype task (C-1415, C-1421), not adoption",
           "owned_paths": [
             "src/shortlinks.js",
             "src/worker.js",
             "test/stats.test.js"
           ],
           "first_tool_evidence": "read test conventions and shortlinks.js",
-          "memory_cap": "1500M"
+          "memory_cap": "1500M",
+          "completed_at": "2026-10-03T19:15:00+00:00",
+          "result": "50953bb on demo-target-pristine (11/11 tests pass); recorded as source-only prototype task per C-1415/C-1421"
         }
       ]
     },

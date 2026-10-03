@@ -850,3 +850,32 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
      2. **`rev-l4-ui` (`df0de19e`):** Independent cross-family reviewer (Space Bunny on `space-bunny-free`) reviewing UI C-1399 DOM-negative fix and Playwright live browser test suite, authoring `research/antigravity/reviews/REV-L4-DOM-NEGATIVE.md`.
      3. **`pristine-product-agent` (`d56f52a5`):** Headless ZCode executor on `/home/alexey/git/demo-target-pristine` (clean single-commit baseline `5f44452` with zero past solution history or leaked worklogs) implementing unfamiliar product tasks (`GET /healthz` link count and `GET /links/:slug/stats` with full unit test coverage).
    - All three executors registered in `coordination/TEAM-REGISTRY.json` with active sessions, tasks, owned scopes, and verified 1500M memory caps.
+
+
+---
+
+## 34. Metrics Attribution Acceptance & Safe Reload, UI DOM-Negative Recheck & Double-Escape Fix, Registry Pruning, and Internal Adoption Lane (C-1422, C-1424, C-1425)
+
+1. **Metrics Attribution Fallback Acceptance & Safe Reload (Codex C-1424, Commit `8102d4d`):**
+   - **Review & Commit:** Staged changes in `scripts/metrics/collect.py` and `scripts/metrics/test_metrics.py` reviewed and committed (`8102d4d`). Passed all 43/43 unit tests in 3.45s.
+   - **Codex Principal Verdict (C-1424):** ACCEPT scoped completed-session fallback correction: actual id/workspace validation, stripped stale PID, missing-only eligibility, bounded head native ID and unknown mismatch, same-conversation max dedup match C-1417.
+   - **Safe Reload:** Terminated previous `experiment-metrics` session `664c4677` via SIGTERM, relaunched under native aplexer identity as session `6be74ef3-7d5b-46c9-b1e3-ca91310e3196`. Verified live serving at `http://127.0.0.1:8766/api/latest`: known conversation tokens increased from 602.1M to 629.7M (+27.6M tokens attributed), unobserved agents decreased from 29 to 24, 0 errors.
+
+2. **UI C-1399 Double-Escape Elimination, Portable TMPDIR, and Browser Test Recheck (`proto/l4-review-ui` @ `738a591`, `proto/live` @ `e762639`):**
+   - **Review Resolution (`REV-L4-DOM-NEGATIVE.md` @ `cd85ae7`):**
+     - **Double Escaping Fixed:** In `prototype/ui/ui.js` line 462, removed `esc()` call on `stale.error.message` because `why` is escaped via `esc(why)` when formatting the `<li>` element at line 469. Prevents literal `&amp;` rendering to users on proxy/gateway URLs.
+     - **Portable `TMPDIR`:** In `prototype/ui/tests/test_dom_negative_browser.py`, replaced hardcoded path with `os.environ.get("TMPDIR", ...)` ensuring scratch directories are created safely on root mount.
+     - **Dynamic DOM vs Static Legend Scope:** Clarified narrative and test assertions: during 503 outages, dynamic pair badges `#pairs .badge.clean` strictly drop to 0, while the static documentation legend `<ul class="legend">` retains its 1 descriptive swatch.
+     - **Task View Coverage:** Added `test_04_task_view_stale_behavior` loading `task.html`, verifying task details render, transitioning to 503 outage, and asserting `#status-error` displays stale warning without crashing.
+   - **Verification:** All 48 `node --test` unit tests PASS; all 4 Playwright live browser tests PASS in 2.043s. Committed at `738a591`, pushed to `proto/l4-review-ui`, and merged into `proto/live` at `e762639`.
+
+3. **Registry Pruning & Accurate Telemetry Attribution (C-1424, C-1425):**
+   - Updated `coordination/TEAM-REGISTRY.json` for all three previously running executors:
+     - `zc-metrics-fallback`: Marked `status: "ended"`, `result: "8102d4d accepted by Codex Principal C-1424 (43/43 tests pass)"`.
+     - `rev-l4-ui`: Marked `status: "ended"`, opencode session ID `ses_efcc9a16dffezXPkdMZOR7cw66` (independently DB verified by Codex C-1424), `result: "REQUEST_CHANGES at cd85ae7; addressed at 738a591"`.
+     - `pristine-product-agent`: Marked `status: "ended"`, `task_nature: "source-only prototype task (C-1415, C-1421), not adoption"`, commit `50953bb` on `demo-target-pristine`.
+   - Verified active execution pool reflects clean state before launching next lane.
+
+4. **Internal Agent Branches Adoption Lane (C-1415, C-1421, C-1422, C-1425):**
+   - Acknowledged that source-only tasks on `demo-target` do not constitute adoption of Agent Branches.
+   - Launching genuine internal adoption: using the Agent Branches prototype workflow (fork, task create, push, checks, review) to implement the Coordinator Token Expiry & Revocation Gate (`prototype/src/core/coordinator.ts`) in our own development lane under ordinary Git fallback.
