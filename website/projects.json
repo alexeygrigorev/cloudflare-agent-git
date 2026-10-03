@@ -52,11 +52,11 @@
     "slug": "durable-task-handoff",
     "name": "Durable task handoff",
     "summary": "Resume the right task on the right code state without reconstructing an entire conversation.",
-    "status": "Recovery comparison pending",
+    "status": "Parked provisionally; ordinary recovery baseline sufficed",
     "problem": "An agent restart or replacement can lose intent, unfinished work, acceptance criteria, or awareness that the canonical branch has advanced.",
     "idea": "Keep a versioned task manifest with exact base and current SHAs, unresolved decisions, actual checks, and a receiver acknowledgement. Exclude private traces and credentials.",
-    "evidence": "Structured handoffs and ordinary Git recovery offer plausible mechanisms. Existing checkpoint and session-resume products are strong controls; metadata storage alone is not novel. Comparative recovery and live gates remain open.",
-    "test": "Restart and drift tasks compared with native session resume, checkpoints, and git log plus a structured plan. Include permitted dirty or untracked work and stale-owner cases.",
+    "evidence": "3October: both principals provisionally parked A10 after actual ordinary Git/file recovery succeeded in two observed tasks. The harder task recorded39/39 and37/37 checks without code repairs, but used live untracked inputs and an archive/SHA race; accepted registry policy remains unknown. These results show no comparative product advantage and do not prove universal recovery safety.",
+    "test": "Reopen only with firsthand demand, a gap against incumbent recovery, and an actual ordinary-baseline failure. Do not manufacture harder fixtures to retain a product place.",
     "falsifier": "If correct-base recovery, preserved acceptance, time, and review effort do not improve over ordinary tools, avoid adding another coordination layer."
   }
 ]
