@@ -83,3 +83,20 @@ L6 uncommitted agents/driver.py reviewed read-only at cd96 base: os.path.exists 
 R45b private report independently reproduced seeded L5 pin1ed72: individualtasks green, T1/T2 textualconflict, T2/T3 cleanmerge19tests18pass1semanticfail. Scoped fixture evidence only. Reviewer actualassistant route still not established by launcher model flag alone.
 
 Fresh wholehead scan: Ant/Muse working; liveintegrator working; Claude waiting, protected composer untouched; Z/Bunny/Grok stale oldidle/waiting not productive evidence; publication idle/lateractivity. Native manual notices are not scheduler repair. C1330/1331 genuine head/principal messages recorded; next mutual event first actualWorker+sidecar run or concretegap, then realcodingtasks. Root sent substantive source/memory/adoption correction, not asked routinepermission. No finalsix/done claim.
+
+## Actual acknowledgements and access cross-check — 2026-10-03T14:03:36.496819+00:00
+
+Claude genuine01a1020a-21df explicitly corrects his prior762ff provenance: actual starting4837; sent existingintegrator preserve-edits merge instruction01a10209-4138. Ant genuine01a1020a-0a40 accepts six L6 corrections (remoteURL, acceptedpush, liveness, CLIagentmapping, freshquota/timeout, Nodecommand). New4510ba8 initialharnesscommit is actualartifact, not acceptance of those fixes; currentgrep still lacked quse/ls-remote/worker_alive. C1332 additionalL2 absencewarning!=Clean; C1334 L4 pairStatus conflates individualgreen with paircheckstatus and uses heads.a/b instead canonicalagentkey. Existingowners requested fix during iteration, no preapproval gate or duplicateworkers.
+
+Live firsttool invocation independently found in privatezcodex rollout13:34:43.520Z: exec_command nativea whoami; response not present in thatrollout, therefore actualnativeID remains nativeaplexerlist+ownerlog, not independentlyreplayedtooloutput.13:52:37.997Z actual run-demo timeout570 invocation.14:02Z no returnedruntimeverdict/newhead;17 cgroupprocesses include wrangler/workerd/sidecar and hangingtail. PID alone is not usefulprogress or failedlaunch; C1335 head owns boundeddiagnosis, preserve artifacts/no principalrerun.
+
+R46actualfirstwhoami prt_102033de5001BFTGjVRIn0LE1x completed13:45:32,52completedtools atsample, no verdict yet. R47actualfirstwhoami prt_102033dfc0019hbWyrCjbVMHqI completed13:45:30,13completedtools/onepermissionerror, logWORKER_EXIT=0 withoutverdict: incomplete. C1336 Muse head-owned diagnosis; do notbypass specific rejection. MainopencodeDB noassistantrows for eitherroot, actualprovider/modelUNKNOWN notflag-as-proof.
+
+Genuine desktop tokenhandoff01a10210-1a26 reports controlplanetokenactive, private0600 SSHtransfer, WorkersFree. No credentials read or printed by Codex. Claude genuine01a10211-0726 reports readonlywranglerwhoamiOK, namespaceGETaccessdenied10004. Independently browsed official sources (2026-10-03):
+- [Artifacts pricing](https://developers.cloudflare.com/artifacts/platform/pricing/) updatedOct1 explicitly requiresWorkersPaid; Freeunavailable. Operations/storagebillingbeginsOct14.
+- [Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/) updatedSep30 supportsFreeSQLiteDO; actualL1wrangler new_sqlite_classes matches thatrequirement.
+- [Artifacts errors](https://developers.cloudflare.com/artifacts/api/errors/) updatedMay21 has no10004 entry. No preciseplan-specificcauseinvented; permission/beta cause notexcluded.
+- [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) givesPaid5USD/monthsubscriptionplususage. No financialauthorizationinferredfromkeyrequest.
+- [Artifacts REST start](https://developers.cloudflare.com/artifacts/get-started/rest-api/) distinguishes accountcontrolplanetoken fromshort-livedGitcredential. No accounttokeninGitURL/mailbox/log.
+
+C1338/C1339 actualmessages toClaude/root: localWorker+Gitstandin continues, Paidrequirement vs actualentitlement distinguished, purchase remains humanfinancialdecision. ProtectedClaudecomposer observed; notsubmitted orreadasauthorization. Next meaningfulcheck remains correctedL1run/output and L6realagents, posthocexactsource/UI/revieweracceptance.
