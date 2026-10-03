@@ -1,0 +1,17 @@
+PASS  radar2: contract 0.1 payload has 3 pair results  [n=3]
+PASS  T1-T2 verdict: conflict (textual)  [status=conflict kind=textual]
+PASS  T2-T3 verdict: conflict (test)  [status=conflict kind=test]
+PASS  T1-T3 verdict: recorded (expected clean)  [status=conflict kind=textual]
+PASS  /checks receipt: not stale; every conflicted pair has an active warning  [stale=False accepted=3 createdWarnings=2 conflictPairs=3 covered=3]
+PASS  status: head vector t1 == pushed sha  [0277ae3dcf55d2bf1f51cbadf64f9a9f31aba4ad vs 0277ae3d]
+PASS  status: head vector t2 == pushed sha  [bcab40db81cd1a381f2bf47d811ee1a649f38bb6 vs bcab40db]
+PASS  status: head vector t3 == pushed sha  [e4e6339a4e047d96b9d8f9c5b88deefb76c26e5c vs e4e6339a]
+PASS  status: active warning for T1-T2
+PASS  status: active warning for T2-T3
+PASS  status: active warnings carry radar conflict reasons  [3 radar-kinded warnings (reason is the radar kind per CONTRACT v0.1)]
+PASS  stale check after new push rejected 409  [got 409]
+PASS  409 body names the moved agent (t1)  [replayed t1=54384561 current=0277ae3d]
+PASS  evidence: UI screenshot exists
+PASS  evidence: /status JSON saved
+
+15/15 assertions passed (final)

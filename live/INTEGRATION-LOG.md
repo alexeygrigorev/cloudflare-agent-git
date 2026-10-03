@@ -60,3 +60,29 @@ Only PIDs written by run-demo.sh itself to live/state/*.pid may be killed, and o
 verifying pid != shell pid, not an ancestor of the shell, cmdline matches the expected
 server, and /proc starttime+exe+cwd match what was recorded at start (PID-reuse guard).
 If any check is inconclusive: leave it running, use different ports.
+
+## 2026-10-03 — RUN 2 GREEN: 15/15 assertions (zc-live-4)
+
+Full flow executed against the merged tree (L1 sidecar + CONTRACT v0.1): services up →
+/setup → canonical seeded at 2d03d63d (token-minted push) → 3 tasks/forks → 3 reference
+pushes (t1 5438456, t2 bcab40d, t3 e4e6339; churn 0277ae3) → radar pass 1
+(T1-T2 conflict/textual, T1-T3 conflict/textual, T2-T3 conflict/test) → POST /checks 200 →
+stale replay 409 naming the moved agent → radar pass 2 → POST /checks 200 → headless
+screenshot of the review UI rendering live data → 15/15 final assertions,
+live/evidence/result.json allPassed=true. Idempotency proven across 5 invocations
+(failures were fixed in place; markers kept completed data steps consistent).
+
+Notable findings (full list in live/README.md GAP LIST):
+- **G1 dogfood proof:** safe_stop refused a PID recycled by the script's own shell
+  mid-run; wrangler CLI kills orphaned workerd twice (needs process-group kills).
+- **G2:** sidecar 401s unauthenticated git CLONE/FETCH (token required on every git
+  endpoint) — this was the real cause of run 1's seed failure symptoms.
+- **G6:** worker had no CORS for the UI's documented cross-origin ?api= usage — fixed
+  on proto/live (prototype/src/index.ts: CORS headers + OPTIONS preflight); L1 should
+  adopt. First screenshot (size-only-asserted) had captured the UI error state.
+- **G8 fixture drift:** demo-target SOLUTIONS.md says T1+T3 don't textually overlap;
+  both patches insert routes at the same anchor in src/worker.js → real textual
+  conflict, reproduced with git merge-tree. Radar honest; fixture docs stale.
+- Process cleanup after run: sidecar/UI/trap-killed; two verified orphans (workerd
+  :8787, ui :8788) killed after positive identity checks (exe+cwd), recorded here.
+  All demo ports free at handoff.

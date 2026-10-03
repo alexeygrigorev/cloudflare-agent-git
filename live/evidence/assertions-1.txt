@@ -1,0 +1,13 @@
+PASS  radar1: contract 0.1 payload has 3 pair results  [n=3]
+PASS  T1-T2 verdict: conflict (textual)  [status=conflict kind=textual]
+PASS  T2-T3 verdict: conflict (test)  [status=conflict kind=test]
+PASS  T1-T3 verdict: recorded (expected clean)  [status=conflict kind=textual]
+PASS  /checks receipt: accepted (not stale) with a warning per conflict  [stale=False accepted=3 createdWarnings=3 conflicts=3]
+PASS  status: head vector t1 == pushed sha  [543845616b0265b38fb3ef2e81f3c97e5dfc0693 vs 54384561]
+PASS  status: head vector t2 == pushed sha  [bcab40db81cd1a381f2bf47d811ee1a649f38bb6 vs bcab40db]
+PASS  status: head vector t3 == pushed sha  [e4e6339a4e047d96b9d8f9c5b88deefb76c26e5c vs e4e6339a]
+PASS  status: active warning for T1-T2
+PASS  status: active warning for T2-T3
+PASS  status: active warnings carry radar conflict reasons  [3 radar-kinded warnings (reason is the radar kind per CONTRACT v0.1)]
+
+11/11 assertions passed (phase1)
