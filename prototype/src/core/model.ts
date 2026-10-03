@@ -147,10 +147,21 @@ export interface CoordinatorModel {
    * and never persisted or logged.
    */
   agentTokenHashes: Record<string, string>;
+  /**
+   * Structured token records with cryptographic digest, expiry ISO timestamp,
+   * and optional revocation timestamp (C-1425).
+   */
+  agentTokens: Record<string, AgentTokenRecord>;
   warnings: WarningRecord[];
   radarLog: RadarLogEntry[];
   pairChecks: Record<string, PairCheckRecord>;
   lastRunnerReport: RunnerReport | null;
+}
+
+export interface AgentTokenRecord {
+  hash: string;
+  expiresAt: string;
+  revokedAt: string | null;
 }
 
 export const CANONICAL_BASE = "agent-branches-canonical";
@@ -171,6 +182,7 @@ export function emptyModel(): CoordinatorModel {
     heads: {},
     seenPushes: {},
     agentTokenHashes: {},
+    agentTokens: {},
     warnings: [],
     radarLog: [],
     pairChecks: {},
@@ -204,6 +216,16 @@ export function migrateStoredModel(stored: CoordinatorModel | undefined): Coordi
   }
   // muse-r46 AUTH: agents created before 0.1.1 have no stored digest.
   model.agentTokenHashes ??= {};
+  model.agentTokens ??= {};
+  for (const [agentId, hash] of Object.entries(model.agentTokenHashes)) {
+    if (!model.agentTokens[agentId]) {
+      model.agentTokens[agentId] = {
+        hash,
+        expiresAt: new Date(Date.now() + 86400_000).toISOString(),
+        revokedAt: null,
+      };
+    }
+  }
   return model;
 }
 

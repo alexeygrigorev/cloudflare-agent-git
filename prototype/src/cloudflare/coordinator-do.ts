@@ -83,8 +83,12 @@ export class Coordinator extends DurableObject {
     return this.core.applyCheckResults(input);
   }
 
-  credentialAgent(presented: string): Promise<string | null> {
-    return this.core.credentialAgent(presented);
+  credentialAgent(presented: string, nowMs?: number): Promise<string | null> {
+    return this.core.credentialAgent(presented, nowMs);
+  }
+
+  revokeAgentToken(agentId: string, revokedAt?: string): Promise<boolean> {
+    return this.core.revokeAgentToken(agentId, revokedAt);
   }
 
   taskOwner(taskId: string): Promise<string | null> {
