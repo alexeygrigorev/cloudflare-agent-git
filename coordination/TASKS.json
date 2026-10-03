@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T06:17:25.644484+00:00",
+  "updated_at": "2026-10-03T06:15:11.151923+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -411,66 +411,74 @@
       "id": "publication-reference-packet",
       "team_id": "publication",
       "owner_tag": "public-journal-site",
-      "status": "blocked",
-      "updated_at": "2026-10-03T06:15:11.151923+00:00",
+      "executor_tag": "journal-capture-spec",
+      "executor_session": "5a862579-1a2f-4956-9c9a-014ffa12a45c",
+      "status": "in_progress",
+      "updated_at": "2026-10-03T08:26:22.000000+00:00",
       "blocked_on": [
-        "Approved prototype version/export and independent captured screenshot packet missing"
+        "Desktop root 1440x1000 and 390x844 browser screenshots pending; reference HTML and support files ingested and pinned"
       ],
-      "next_action": "Assign actual capture executor; obtain authenticated reference export via requested desktop browser assistance if needed.",
+      "next_action": "Capture-spec executor ingested reference HTML (SHA256: 3ff499a5...); generated CONTRACT.md, INVARIANTS.json, REFERENCE-MANIFEST.json. Awaiting browser screenshot packet.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
-        "website/editorial/QUALITY.md"
+        "website/editorial/QUALITY.md",
+        ".local/journal/capture-spec/CONTRACT.md",
+        ".local/journal/capture-spec/INVARIANTS.json",
+        ".local/journal/capture-spec/REFERENCE-MANIFEST.json"
       ],
-      "assignment_ack": "coordinator owns queue; executor/reviewer assignments remain unaccepted/unassigned"
+      "assignment_ack": "ACKED by journal-capture-spec (session 5a862579-1a2f-4956-9c9a-014ffa12a45c, antigravity) via aplexer message 01a10071-3884."
     },
     {
       "id": "publication-fidelity-repair",
       "team_id": "publication",
       "owner_tag": "public-journal-site",
       "status": "blocked",
-      "updated_at": "2026-10-03T06:15:11.151923+00:00",
+      "updated_at": "2026-10-03T08:26:22.000000+00:00",
       "blocked_on": [
-        "publication-reference-packet",
-        "Actual distinct implementer not assigned/ACKed"
+        "publication-reference-packet (sealed reference packet and capture contract required before code repair)"
       ],
-      "next_action": "Delegate scoped reference fidelity repair after pinning reference; do not redesign this process turn.",
+      "next_action": "Dispatch fidelity repair implementer once reference packet is sealed to update website/build.py and site.css, preserving Relay signup and Opus provenance.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "website/editorial/QUALITY.md"
       ],
-      "assignment_ack": "coordinator owns queue; executor/reviewer assignments remain unaccepted/unassigned"
+      "assignment_ack": "coordinator public-journal-site (088a2387) owns queue; implementation worker to be launched upon packet sealing"
     },
     {
       "id": "publication-visual-acceptance",
       "team_id": "publication",
       "owner_tag": "public-journal-site",
-      "status": "blocked",
-      "updated_at": "2026-10-03T06:15:11.151923+00:00",
+      "executor_tag": "journal-visual-reviewer",
+      "executor_session": "676eb72d-c3d6-4fa9-85a0-3b9d2ff05679",
+      "status": "in_progress",
+      "updated_at": "2026-10-03T08:26:40.000000+00:00",
       "blocked_on": [
-        "Pinned repair candidate and actual distinct visual reviewer not assigned/ACKed"
+        "Fidelity repair candidate and full browser screenshot packet"
       ],
-      "next_action": "Assign independent visual reviewer; same-viewport five-page desktop/mobile evidence and exact SHA PASS/FAIL.",
+      "next_action": "Initial 5-family comparison matrix completed in .local/journal/visual-review/COMPARISON-MATRIX.md (FAIL on homepage hierarchy, UNKNOWN on missing screenshots). Reviewer will audit repair candidate once implemented.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
-        "website/editorial/QUALITY.md"
+        "website/editorial/QUALITY.md",
+        ".local/journal/visual-review/COMPARISON-MATRIX.md"
       ],
-      "assignment_ack": "coordinator owns queue; executor/reviewer assignments remain unaccepted/unassigned"
+      "assignment_ack": "ACKED by journal-visual-reviewer (session 676eb72d-c3d6-4fa9-85a0-3b9d2ff05679, opencode) via aplexer message 01a10071-801f."
     },
     {
       "id": "publication-release-verification",
       "team_id": "publication",
       "owner_tag": "public-journal-site",
       "status": "blocked",
-      "updated_at": "2026-10-03T06:15:11.151923+00:00",
+      "updated_at": "2026-10-03T08:26:40.000000+00:00",
       "blocked_on": [
+        "publication-visual-acceptance",
         "Independent visual/editorial/function gates and acceptance packet incomplete"
       ],
-      "next_action": "Coordinator releases accepted design candidate; lane verifier compares deployed SHA/screenshots and records rollback.",
+      "next_action": "Coordinator releases accepted design candidate once independent visual PASS is achieved; lane verifier compares deployed SHA/screenshots and records rollback.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "website/editorial/QUALITY.md"
       ],
-      "assignment_ack": "coordinator owns queue; executor/reviewer assignments remain unaccepted/unassigned"
+      "assignment_ack": "coordinator public-journal-site (088a2387) owns queue; releases only upon independent visual PASS"
     }
   ]
 }
