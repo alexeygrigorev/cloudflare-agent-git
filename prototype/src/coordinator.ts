@@ -22,6 +22,27 @@ export interface TaskRecord {
   forkRemote: string;
   ref: string;
   createdAt: string;
+  /** Canonical commit this task's fork was created from (codex C-1306). */
+  baseSha: string;
+  /** Free-form intent text supplied at task creation (codex C-1306). */
+  intent: string | null;
+  /** Last posted test provenance (codex C-1306); agents POST /tasks/:id/tests. */
+  testProvenance: TestProvenance | null;
+}
+
+export interface TestProvenance {
+  command: string;
+  exit: number;
+  head_sha: string;
+  at: string;
+}
+
+export interface WarningAck {
+  agent: string;
+  /** Head of the acknowledging agent's fork at ack time (codex C-1306). */
+  head: string | null;
+  note?: string;
+  at: string;
 }
 
 export interface WarningRecord {
@@ -38,6 +59,8 @@ export interface WarningRecord {
   evidence?: string;
   /** Set when a later clean check at the same heads resolved the warning. */
   resolvedBy?: string;
+  /** Acknowledgements recorded via POST /warnings/:id/ack. */
+  acks: WarningAck[];
 }
 
 export interface RadarLogEntry {
@@ -181,11 +204,18 @@ export class Coordinator extends DurableObject {
     return null;
   }
 
-  async createTask(input: { agent?: string; ttlSeconds?: number }): Promise<{
+  async createTask(input: {
+    agent?: string;
+    intent?: string;
+    baseSha?: string;
+    ttlSeconds?: number;
+  }): Promise<{
     taskId: string;
     agentId: string;
     fork: { name: string; remote: string };
     ref: string;
+    base_sha: string;
+    intent: string | null;
     token: { scope: string; expiresAt: string; plaintext: string };
     head: string | null;
   }> {
@@ -195,6 +225,19 @@ export class Coordinator extends DurableObject {
     }
     const canonical = model.canonicalName!;
     const port = this.port();
+    const canonicalHead = await port.headCommit(canonical);
+    const baseSha = input.baseSha ?? canonicalHead ?? "";
+    if (!/^[0-9a-f]{40}$/.test(baseSha)) {
+      throw new Error(`base_sha must be a 40-hex commit id (got invalid value)`);
+    }
+    if (baseSha !== canonicalHead) {
+      // Verify the requested base exists in the canonical first-parent
+      // history (documented log op; capped at its max limit).
+      const history = await port.log(canonical, { limit: 1000 });
+      if (!history.some((commit) => commit.id === baseSha)) {
+        throw new Error(`base_sha ${baseSha} not found in canonical history`);
+      }
+    }
     model.seq += 1;
     const seq = String(model.seq).padStart(4, "0");
     const slug = (input.agent ?? "agent")
@@ -207,6 +250,7 @@ export class Coordinator extends DurableObject {
     const fork = await port.fork(canonical, forkName, {
       description: `Agent Branches fork for ${agentId}`,
       defaultBranchOnly: true,
+      baseSha,
     });
     const token = await port.mintToken(forkName, "write", input.ttlSeconds ?? 3600);
     const forkLog = await port.log(forkName, { limit: 1 });
@@ -231,6 +275,9 @@ export class Coordinator extends DurableObject {
       forkRemote: fork.remote,
       ref,
       createdAt: now,
+      baseSha,
+      intent: input.intent ?? null,
+      testProvenance: null,
     };
     if (head) {
       const before = model.heads[agentId] ?? null;
@@ -243,6 +290,8 @@ export class Coordinator extends DurableObject {
       agentId,
       fork: { name: forkName, remote: fork.remote },
       ref,
+      base_sha: baseSha,
+      intent: input.intent ?? null,
       token: { scope: token.scope, expiresAt: token.expiresAt, plaintext: token.plaintext },
       head,
     };
@@ -330,13 +379,88 @@ export class Coordinator extends DurableObject {
     };
   }
 
-  async getTask(taskId: string): Promise<TaskRecord & { agent: AgentRecord | null }> {
+  async getTask(
+    taskId: string,
+  ): Promise<
+    TaskRecord & {
+      base_sha: string;
+      agent: AgentRecord | null;
+      head: string | null;
+      pushes: number;
+      warnings: WarningRecord[];
+      testProvenance: TestProvenance | null;
+    }
+  > {
     const model = await this.load();
     const task = model.tasks[taskId];
     if (!task) {
       throw new Error(`unknown task: ${taskId}`);
     }
-    return { ...task, agent: model.agents[task.agentId] ?? null };
+    const agent = model.agents[task.agentId] ?? null;
+    const warnings = model.warnings
+      .filter((warning) => warning.pair.includes(task.agentId))
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    return {
+      ...task,
+      base_sha: task.baseSha,
+      agent,
+      head: agent?.head ?? null,
+      pushes: agent?.pushes ?? 0,
+      warnings,
+      testProvenance: task.testProvenance,
+    };
+  }
+
+  /** Record which agent acknowledged which warning at which head (C-1306). */
+  async ackWarning(
+    warningId: string,
+    input: { agent: string; note?: string },
+  ): Promise<{ warning: WarningRecord }> {
+    const model = await this.load();
+    if (!(input.agent in model.agents)) {
+      throw new Error(`unknown agent: ${input.agent}`);
+    }
+    const warning = model.warnings.find((candidate) => candidate.id === warningId);
+    if (!warning) {
+      throw new Error(`unknown warning: ${warningId}`);
+    }
+    warning.acks ??= [];
+    warning.acks.push({
+      agent: input.agent,
+      head: model.heads[input.agent] ?? null,
+      note: input.note,
+      at: new Date().toISOString(),
+    });
+    await this.persist();
+    return { warning };
+  }
+
+  /** Attach test provenance to a task (C-1306): {command, exit, head_sha, at}. */
+  async recordTestProvenance(
+    taskId: string,
+    input: { command: string; exit: number; head_sha: string },
+  ): Promise<{ testProvenance: TestProvenance }> {
+    const model = await this.load();
+    const task = model.tasks[taskId];
+    if (!task) {
+      throw new Error(`unknown task: ${taskId}`);
+    }
+    if (typeof input.command !== "string" || input.command.length === 0) {
+      throw new Error("test provenance requires a non-empty command");
+    }
+    if (!Number.isInteger(input.exit)) {
+      throw new Error("test provenance requires an integer exit code");
+    }
+    if (!/^[0-9a-f]{40}$/.test(input.head_sha)) {
+      throw new Error("test provenance requires a 40-hex head_sha");
+    }
+    const port = this.port();
+    if (!(await port.hasCommit(task.forkName, input.head_sha))) {
+      throw new Error(`commit ${input.head_sha} not found in ${task.forkName}`);
+    }
+    task.testProvenance = { command: input.command, exit: input.exit, head_sha: input.head_sha, at: new Date().toISOString() };
+    await this.persist();
+    return { testProvenance: task.testProvenance };
   }
 
   private invalidateWarningsFor(model: CoordinatorModel, agent: string, now: string): string[] {
@@ -450,6 +574,7 @@ export class Coordinator extends DurableObject {
       invalidatedAt: null,
       kind: record.kind,
       evidence: record.evidence ?? `policy ${policy}`,
+      acks: [],
     };
     model.warnings.push(warning);
     if (model.warnings.length > WARNINGS_CAP) {

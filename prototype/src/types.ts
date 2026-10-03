@@ -12,6 +12,13 @@ export interface ForkOptions {
   description?: string;
   readOnly?: boolean;
   defaultBranchOnly?: boolean;
+  /**
+   * Fork starting at this commit of the source's default branch instead of
+   * its tip (codex C-1306 base_sha). Local implementations realize it with
+   * ordinary git ref updates; the documented Cloudflare binding has no such
+   * parameter, so RealArtifacts refuses it (see docs-notes ASSUMED-A).
+   */
+  baseSha?: string;
 }
 
 export interface ArtifactsCreateRepoResult {

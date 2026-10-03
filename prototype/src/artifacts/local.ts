@@ -100,6 +100,9 @@ export class LocalArtifacts implements ArtifactsPort {
     if (this.repos.has(target)) {
       throw new Error(`repo already exists: ${target}`);
     }
+    if (opts?.baseSha && !src.commits.has(opts.baseSha)) {
+      throw new Error(`fork base ${opts.baseSha} not found in ${source}`);
+    }
     const repo: FakeRepo = {
       name: target,
       description: opts?.description ?? `Fork of ${source}`,
@@ -110,6 +113,9 @@ export class LocalArtifacts implements ArtifactsPort {
       commits: new Map(src.commits),
       tokens: [],
     };
+    if (opts?.baseSha) {
+      repo.refs.set(`refs/heads/${repo.defaultBranch}`, opts.baseSha);
+    }
     this.repos.set(target, repo);
     const token = this.mintTokenFor(repo, "write", 3600);
     return {

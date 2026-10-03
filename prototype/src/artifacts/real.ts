@@ -56,6 +56,11 @@ export class RealArtifacts implements ArtifactsPort {
   }
 
   async fork(source: RepoName, target: RepoName, opts?: ForkOptions): Promise<ArtifactsCreateRepoResult> {
+    if (opts?.baseSha) {
+      // No documented binding parameter forks at an arbitrary commit
+      // (docs-notes ASSUMED-A): refuse instead of inventing an API.
+      throw new Error("fork at explicit baseSha is UNSUPPORTED by the documented Artifacts binding");
+    }
     using repo = await this.binding.get(source);
     return repo.fork(target, opts);
   }

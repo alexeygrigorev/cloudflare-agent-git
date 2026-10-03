@@ -110,6 +110,8 @@ const handler: FetchHandler = {
         const body = await readJson(request);
         const created = await coordinator(env).createTask({
           agent: typeof body.agent === "string" ? body.agent : undefined,
+          intent: typeof body.intent === "string" ? body.intent : undefined,
+          baseSha: typeof body.base_sha === "string" ? body.base_sha : undefined,
           ttlSeconds: typeof body.ttlSeconds === "number" ? body.ttlSeconds : undefined,
         });
         return json(created, 201);
@@ -186,10 +188,40 @@ const handler: FetchHandler = {
         }
       }
 
+      const taskTestsMatch = /^\/tasks\/([^/]+)\/tests$/.exec(path);
+      if (method === "POST" && taskTestsMatch) {
+        const body = await readJson(request);
+        if (typeof body.command !== "string" || typeof body.exit !== "number" || typeof body.head_sha !== "string") {
+          return json({ error: "command (string), exit (number) and head_sha (string) are required" }, 400);
+        }
+        const result = await coordinator(env).recordTestProvenance(decodeURIComponent(taskTestsMatch[1]), {
+          command: body.command,
+          exit: body.exit,
+          head_sha: body.head_sha,
+        });
+        return json(result, 201);
+      }
+
+      const ackMatch = /^\/warnings\/([^/]+)\/ack$/.exec(path);
+      if (method === "POST" && ackMatch) {
+        const body = await readJson(request);
+        if (typeof body.agent !== "string" || body.agent.length === 0) {
+          return json({ error: "agent is a required string" }, 400);
+        }
+        const result = await coordinator(env).ackWarning(decodeURIComponent(ackMatch[1]), {
+          agent: body.agent,
+          note: typeof body.note === "string" ? body.note : undefined,
+        });
+        return json(result);
+      }
+
       return json({ error: `no route for ${method} ${path}` }, 404);
     } catch (error) {
       const message = (error as Error).message ?? "internal error";
-      const status = /^(unknown agent|fork |commit |repo already|request body|unsupported event|missing artifacts|pushed payload|invalid radar status|check result requires|runner results must|results must)/.test(
+      if (/^unknown (task|warning)/.test(message)) {
+        return json({ error: message }, 404);
+      }
+      const status = /^(unknown agent|fork |commit |repo already|request body|unsupported event|missing artifacts|pushed payload|invalid radar status|check result requires|runner results must|results must|base_sha|test provenance|command \(string\))/.test(
         message,
       )
         ? 400
