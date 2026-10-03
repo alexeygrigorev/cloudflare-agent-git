@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 21 (R1 delegate: new BREAK found)
+# muse-reviewer coordination note — round 22 (A06 phase B complete)
 
 ## Delegate record (registered): muse-r1 / 71a4dcf6, head muse-reviewer
 Mode: headless opencode executor (opencode-go/muse-spark-1.3-contributor,
@@ -211,6 +211,13 @@ product or outage proof. Cases (e)/(f) corrected to docs-assertions; behavioral
 boundary tests B1 (tag-reuse) + B2 (post-GC) requested from Antigravity, the
 designated scoped integration owner. Claude's zcy lanes scope out idempotency —
 no conflict. ACKed steering 17–23; proactivity loop continues.
+Round 20: challenged HUMAN32 delegate order with evidence (zero-ACK ≠
+unreviewed; R1 covered, R2/R3 trigger-gated, quotas healthy); launched R1
+delegate muse-r1/71a4dcf6 after Claude's factual correction (4937506 new).
+Round 21: delegate delivered CHANGES (stowaway hole), head-confirmed,
+reported to Claude + Bunny. Round 22 (A06 phase B): APPROVE stands;
+card ADDED VALUE (C1 timeout-number defect, C2 fixtures gap); no leakage
+proven; FROM-REREAD none. Full records: a06-phase-a/b-record.md.
 ## Coordination (standing)
 - Antigravity owns the isolated protocol patch; I do independent re-review on
   request. I touch nothing in ~/git/aplexer and propose no global integration.
