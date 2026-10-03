@@ -948,6 +948,74 @@
       "website/content/daily/**",
       ".local/journal/opus-writer/**"
      ]
+    },
+    {
+     "tag": "journal-link-audit",
+     "role": "site-link-and-asset-audit",
+     "mode": "headless",
+     "engine": "python-automation",
+     "session_id": "1ba6473a-441f-47cf-8ca1-456cb3c68021",
+     "parent_tag": "public-journal-site",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "assignment_ack": "verified 35 HTML pages, 1005 links, 79 static assets; 0 broken links, 0 missing assets",
+     "task_id": "publication-link-audit",
+     "owned_paths": [
+      ".local/journal/audits/LINK-AUDIT.md",
+      ".local/journal/audits/link-audit.json"
+     ],
+     "completed_at": "2026-10-03T13:07:00Z",
+     "status": "done"
+    },
+    {
+     "tag": "journal-meta-feed-audit",
+     "role": "site-metadata-and-feed-audit",
+     "mode": "headless",
+     "engine": "python-automation",
+     "session_id": "115c8e4a-9b4e-4f16-86c2-1279dfc8b91a",
+     "parent_tag": "public-journal-site",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "assignment_ack": "verified 35 HTML pages + feed.xml; 28 RSS items valid with RFC 822 pubDate; 100% metadata pass",
+     "task_id": "publication-meta-feed-audit",
+     "owned_paths": [
+      ".local/journal/audits/META-FEED-AUDIT.md",
+      ".local/journal/audits/meta-feed-audit.json"
+     ],
+     "completed_at": "2026-10-03T13:07:00Z",
+     "status": "done"
+    },
+    {
+     "tag": "journal-viewport-audit",
+     "role": "site-responsive-viewport-audit",
+     "mode": "headless",
+     "engine": "playwright",
+     "session_id": "dcd7b624-7389-493e-ba15-df787e97d193",
+     "parent_tag": "public-journal-site",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "assignment_ack": "Playwright headless Chromium across 4 viewports (390px, 768px, 1024px, 1440px) x 5 routes (20 tests); 0 horizontal overflow defects; mobile diagram label >=14px verified",
+     "task_id": "publication-viewport-audit",
+     "owned_paths": [
+      ".local/journal/audits/VIEWPORT-AUDIT.md",
+      ".local/journal/audits/viewport-audit.json"
+     ],
+     "completed_at": "2026-10-03T13:08:00Z",
+     "status": "done"
+    },
+    {
+     "tag": "journal-dogfood-scribe",
+     "role": "host-telemetry-and-dogfood-scribe",
+     "mode": "headless",
+     "engine": "python-automation",
+     "session_id": "3af667e1-4560-4966-ba09-2475e7a9307c",
+     "parent_tag": "public-journal-site",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "assignment_ack": "measured host resources (RAM 35 GiB avail >= 10 GiB guard, NVMe 100G avail); quantified Rust target/ disk bloat (52G codex-rs + 7.5G aplexer); analyzed test queue RAM pressure and git lock contention",
+     "task_id": "publication-dogfood-scribe",
+     "owned_paths": [
+      ".local/journal/audits/DOGFOOD-ANALYSIS.md",
+      ".local/journal/audits/dogfood-analysis.json"
+     ],
+     "completed_at": "2026-10-03T13:07:00Z",
+     "status": "done"
     }
    ],
    "unassigned_roles": [

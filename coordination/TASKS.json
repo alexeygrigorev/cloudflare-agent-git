@@ -430,10 +430,10 @@
       "owner_tag": "public-journal-site",
       "executor_tag": "journal-capture-spec",
       "executor_session": "5a862579-1a2f-4956-9c9a-014ffa12a45c",
-      "status": "running",
-      "updated_at": "2026-10-03T08:44:00.000000+00:00",
+      "status": "done",
+      "updated_at": "2026-10-03T13:10:51.500173+00:00",
       "blocked_on": [],
-      "next_action": "Complete reference bundle pinned in REFERENCE-MANIFEST.json (Agent-Git-Lab.dc.html, support.js, assets/agent-git-illustration.png, desktop-export.json). Invariants labeled for measured source vs current repo facts.",
+      "next_action": "Reference bundle pinned and validated; superseding captures completed on canonical tree.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "website/editorial/QUALITY.md",
@@ -471,7 +471,7 @@
       "executor_tag": "project-landing-visual-reviewer",
       "executor_session": "430beef8-55cc-42ed-8459-a49ccb08c7a7",
       "status": "review",
-      "updated_at": "2026-10-03T12:06:49.108407+00:00",
+      "updated_at": "2026-10-03T13:10:51.500173+00:00",
       "blocked_on": [
         "principal-visual-acceptance-review (website tree c2eb7aa833434fa3ca204ec0b9aa79e383960278)"
       ],
@@ -486,7 +486,7 @@
       ],
       "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
       "model": "gemini-3.1-pro-high",
-      "acceptance_status": "RECHECK PASS on project landing family (report .local/journal/visual-review/PROJECT-FAMILY-RECHECK.md by independent session 430beef8). New website tree hash: c2eb7aa833434fa3ca204ec0b9aa79e383960278. Visual acceptance HELD pending principal confirmation."
+      "acceptance_status": "RECHECK PASS on project landing family (report .local/journal/visual-review/PROJECT-FAMILY-RECHECK.md by independent session 430beef8). New website tree hash: c2eb7aa833434fa3ca204ec0b9aa79e383960278. Visual acceptance HELD pending user decision on numbered mono headings vs plain headings."
     },
     {
       "id": "publication-release-verification",
@@ -583,6 +583,70 @@
       "assignment_ack": "antigravity-head ACK 01a101c5-6ded; executor l3-radar-builder 00ea32c5",
       "acceptance": "trusted local runner; status conflict|clean|unknown|not_checked, clean only with merge+>=1 collected test; sandboxed exec; POST /checks versioned; Muse re-review",
       "next_action": "L3 radar delivered at 1632a31 (excised custom callback, pure hardened CLI runner with RLIMIT/safe-tar/positive tests, under Muse R44 review); adding CONTRACT v0.1 export adapter"
+    },
+    {
+      "id": "publication-link-audit",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "executor_tag": "journal-link-audit",
+      "executor_session": "1ba6473a-441f-47cf-8ca1-456cb3c68021",
+      "status": "done",
+      "updated_at": "2026-10-03T13:10:51.500173+00:00",
+      "blocked_on": [],
+      "next_action": "Static link and asset audit complete. 35 HTML pages, 1005 links, 79 static assets verified; 0 broken links, 0 missing assets.",
+      "evidence_paths": [
+        ".local/journal/audits/LINK-AUDIT.md",
+        ".local/journal/audits/link-audit.json"
+      ],
+      "acceptance": "35 HTML pages, 1005 links, 79 static assets verified with 0 broken links and 0 missing assets."
+    },
+    {
+      "id": "publication-meta-feed-audit",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "executor_tag": "journal-meta-feed-audit",
+      "executor_session": "115c8e4a-9b4e-4f16-86c2-1279dfc8b91a",
+      "status": "done",
+      "updated_at": "2026-10-03T13:10:51.500173+00:00",
+      "blocked_on": [],
+      "next_action": "Metadata and RSS feed audit complete. 35 HTML pages + feed.xml verified; 28 RSS items valid with RFC 822 pubDate; 100% metadata pass.",
+      "evidence_paths": [
+        ".local/journal/audits/META-FEED-AUDIT.md",
+        ".local/journal/audits/meta-feed-audit.json"
+      ],
+      "acceptance": "35 HTML pages + feed.xml verified; 28 RSS items valid with RFC 822 pubDate; 100% metadata pass."
+    },
+    {
+      "id": "publication-viewport-audit",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "executor_tag": "journal-viewport-audit",
+      "executor_session": "dcd7b624-7389-493e-ba15-df787e97d193",
+      "status": "done",
+      "updated_at": "2026-10-03T13:10:51.500173+00:00",
+      "blocked_on": [],
+      "next_action": "Responsive viewport testing complete. Playwright headless Chromium across 4 viewports x 5 routes (20 tests); 0 horizontal overflow defects; mobile diagram label >=14px verified.",
+      "evidence_paths": [
+        ".local/journal/audits/VIEWPORT-AUDIT.md",
+        ".local/journal/audits/viewport-audit.json"
+      ],
+      "acceptance": "Playwright headless Chromium across 4 viewports x 5 routes (20 tests); 0 horizontal overflow defects; mobile diagram label >=14px verified."
+    },
+    {
+      "id": "publication-dogfood-scribe",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "executor_tag": "journal-dogfood-scribe",
+      "executor_session": "3af667e1-4560-4966-ba09-2475e7a9307c",
+      "status": "done",
+      "updated_at": "2026-10-03T13:10:51.500173+00:00",
+      "blocked_on": [],
+      "next_action": "Host telemetry and dogfood friction synthesis complete. Quantified Rust target/ bloat (59.5G total), test queue RAM spikes, and git lock contention.",
+      "evidence_paths": [
+        ".local/journal/audits/DOGFOOD-ANALYSIS.md",
+        ".local/journal/audits/dogfood-analysis.json"
+      ],
+      "acceptance": "Host telemetry (RAM 35G avail >=10G, NVMe 100G) and dogfood synthesis on Rust build bloat (59.5G target/), test RAM spikes, and git lock serialization."
     }
   ]
 }
