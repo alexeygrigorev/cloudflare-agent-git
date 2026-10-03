@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "updated_at": "2026-10-03T07:28:05.787287+00:00",
+ "updated_at": "2026-10-03T07:00:00+00:00",
  "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
  "teams": [
   {
@@ -16,12 +16,12 @@
      "role": "head",
      "mode": "interactive",
      "workspace": "/home/alexey/git/cloudflare-agent-git",
-     "session_id": "eb20adc0-48cf-405e-ab35-dcfde4303d0e",
-     "resumed_from_session_id": "0000ea93-e734-4a00-ac93-b6e2ea16d70a",
+     "session_id": "d85e5cd8-c283-40c8-9e3c-ca745aec4710",
+     "resumed_from_session_id": "eb20adc0-48cf-405e-ab35-dcfde4303d0e",
      "resumed_conversation": "01a0fe00-6ecd-7c73-a852-e9862578d192",
      "resumed_by": "readiness-recovery-executor",
-     "resumed_at": "2026-10-03T04:41:00+00:00",
-     "resumed_with_task": "Codex 01a10002-98c9-75e3-84d0-3a83d02f0e7b in initial CLI request"
+     "resumed_at": "2026-10-03T07:00:00+00:00",
+     "resumed_with_task": "Codex 01a100b4-f13f bounded recovery task in initial request"
     }
    ]
   },
@@ -94,12 +94,12 @@
      "role": "head",
      "mode": "interactive",
      "workspace": "/home/alexey/git/cloudflare-agent-git",
-     "session_id": "848ff637-c159-4c00-a0f9-4c5c78ebf8a5",
-     "resumed_from_session_id": "8620fdc9-0518-4d21-a7e2-fc8bd8e58726",
+     "session_id": "2d829c93-8363-477d-b2fd-10f0a3af006e",
+     "resumed_from_session_id": "848ff637-c159-4c00-a0f9-4c5c78ebf8a5",
      "resumed_conversation": "ses_f01ef9c54ffe86f5DrG7n8GCsY",
-     "resumed_with_task": "A05 same-task-baseline continuation in initial CLI request (Codex 01a10018)",
+     "resumed_with_task": "Codex 01a100b4-f13f bounded recovery task in initial request",
      "resumed_by": "readiness-recovery-executor",
-     "resumed_at": "2026-10-03T05:20:00+00:00",
+     "resumed_at": "2026-10-03T07:00:00+00:00",
      "resumed_store": "XDG_DATA_HOME=.local/opencode-isolated",
      "telemetry": {
       "type": "opencode-db",
@@ -510,6 +510,22 @@
       "website/content/daily/**",
       ".local/journal/opus-writer/**"
      ]
+    },
+    {
+     "tag": "journal-opus-writer-fix",
+     "role": "daily-writer-correction",
+     "mode": "headless",
+     "engine": "claude",
+     "model": "claude-opus-5-5",
+     "session_id": "080ce5c4-7b66-4b62-a1df-ca0eb47f7db7",
+     "parent_tag": "public-journal-site",
+     "workspace": "/home/alexey/git/cloudflare-agent-git",
+     "assignment_ack": "correcting 09:30 daily report per independent fact-check report df9815b and claude-principal instructions; restoring byte-identical pre-cutoff body and appending corrected morning section",
+     "task_id": "daily-2026-10-03",
+     "owned_paths": [
+      "website/content/daily/**",
+      ".local/journal/opus-writer/**"
+     ]
     }
    ],
    "unassigned_roles": [
@@ -738,6 +754,20 @@
    "workspace": "/home/alexey/git/cloudflare-agent-git",
    "task_id": "daily-2026-10-03",
    "measurement_scope": "09:30 Europe/Berlin dedicated Claude Opus daily report executor; memory 2G, pids 256",
+   "usage": "measured via claude quota telemetry"
+  },
+  {
+   "tag": "journal-opus-writer-fix",
+   "team_id": "publication",
+   "role": "daily-writer-correction",
+   "mode": "headless",
+   "engine": "claude",
+   "model": "claude-opus-5-5",
+   "session_id": "080ce5c4-7b66-4b62-a1df-ca0eb47f7db7",
+   "parent_session_id": "088a2387-89e4-468b-9ca5-20be7ffec202",
+   "workspace": "/home/alexey/git/cloudflare-agent-git",
+   "task_id": "daily-2026-10-03",
+   "measurement_scope": "dedicated Claude Opus daily report correction pass; memory 2G, pids 256",
    "usage": "measured via claude quota telemetry"
   }
  ]
