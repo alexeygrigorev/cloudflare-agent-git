@@ -1,4 +1,4 @@
-# 20 approaches (Claude integration, v2.1)
+# 20 approaches (Claude integration, v3)
 
 Owner: Claude principal. Date: 2026-10-02 (Europe/Berlin). Status: v2.1 = v2 (sha256 edd5f34f) plus body fixes R-A/R-B/R-C from zcode-independent and Pro/ArtifactFS qualifications; no scoring or selection change. Task Passports (Pro 4) is assessed in research/claude/consultation-2026-10-02.md, NOT merged here. v1 digest per Codex: c68de131. No peer has approved anything in this file; scores below are Claude's alone. Codex scores independently (research/codex/), other heads challenge in their own files.
 
@@ -22,6 +22,22 @@ Two separate verdicts, so contest constraints do not kill long-term ideas (user 
 Families (Z5): F1 integration/coordination, F2 candidate selection, F3 review burden, F4 provenance/context, F5 safety/permissions, F6 runtime verification, F7 workspace storage, F8 scale/multi-repo, F9 autonomy policy.
 
 Common architecture vocabulary: **canonical repo** (only the platform publisher holds write token), **agent fork** (`ARTIFACTS.fork()` per task, repo-scoped write token with TTL, E-C305), **push consumer** (Queue consumer Worker for `cf.artifacts.repo.pushed`, E-C006/E-C308), **coordinator DO** (Durable Object per canonical repo holding live state), **runner** (Sandbox/Container or CI SDK job that does git merge/test, because no merge API exists, E-C305; E-X015).
+
+## v3 disposition log (2026-10-03; decisions are joint only where a peer message ID is cited)
+
+| ID | v3 status | Basis |
+|---|---|---|
+| A01 | Conditional, **no longer primary** | Fair live pair: zero hazard, zero repair in both arms (Grok D-G25, 8623362); Claude proposal 01a0fe86-e1e2, Codex ACCEPT 01a0fe88-0dc8 after independent replay. Reopen primary only with a pre-registered neutral task family that has a naturally recurring composition hazard. |
+| A14 | Folded into A01 runtime verification | Codex proposal relayed 01a0fe3a-a47b, Claude ACCEPT 01a0fe3b-2151; local isolation tied ordinary control (E-X023). |
+| A16 | Active; D1 env-sharing gate **not passed** | Real host: 111.7 GiB linked worktrees, deps/build 62.1% physical, .venv 57.3 GiB (research/claude/u7-real-worktree-measurement.md). uv tiny fixture cache-inclusive 42.37%/36.05% (E-A040 corrected), clean N=2 48.17% (E-A042): all below the 50% bar. Next: Codex/root critiques (clean identical cache states, bytecode policy) before a rerun. |
+| A05, A06, A10 | Retained research hypotheses | Codex draft 7. A06 novelty lowered after CodeRabbit layered review/snapshots (Codex 1050107). |
+| A12 | Task Passports refinement parked | Reopen tests R-TP1..4 (consultation-2026-10-02.md); Codex Q1 modify/accept. |
+| A18 | Contract Packs refinement: investigate-first for slot 6 | Pact can-i-deploy already handles version tuples (E-X025); must win on concurrent-agent coordination + interrupted publication. |
+| Slot 6 | Open | No replacement selected; do not fill for count (root, Codex). |
+
+### New slot-6 proposal from our own dogfood evidence (Claude, not agreed)
+
+**A09 refinement: exactly-once agent side effects (operation receipts).** In this experiment the most frequent, first-hand, measured multi-agent failures were not merge conflicts but side-effect integrity: zcodex executed every shell call twice with the second run unrecorded (live repro, research/claude coordination + ~/git/codex-zcode-wt-dupexec/.local/DIAGNOSIS.md), duplicate durable messages, "nothing added to commit" after an invisible commit, stale session identities routing replies to dead sessions (fixed in aplexer 1d9814c). Product shape on Workers+Artifacts: every agent mutation (push, publish, message, deploy) goes through a Worker that requires a stable operation id, checks a precondition (expected head/state), records the outcome in a DO ledger, and returns the recorded outcome on retry; publication to the canonical repo is accepted once per operation id. Incumbents to beat: HTTP idempotency keys (Stripe-style), Temporal activity semantics, git's own non-fast-forward refusal. Kill test: on a replay of today's duplicate-exec traces (same commands executed twice), the ledger must yield exactly one effect per operation id for sends/commits/publishes with zero lost legitimate repeats; and at least two independent first-hand reports outside this experiment of duplicated agent side effects must be found, else it is our tooling bug, not a product.
 
 ## Summary table
 
