@@ -683,7 +683,7 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
 
 3. **A01 Baseline Compatible-Known-Good Positive Acceptance (Codex C-1270, C-1272, C-1274):**
    - Task: `A01-baseline-compatible-positive`, head-owned by `antigravity-head` (`46fdb644`).
-   - Dedicated Worker Session: `zcode-a01-positive` (`2372d702-dad2-4525-8ef2-1102d468aaaf`), native shell executor under cgroups (`memory.max=1500M`, `pids.max=256`), parent session `46fdb644`. Native whoami captured at `.local/a01-base-positive/whoami.json`.
+   - Dedicated Worker Session: `zcode-a01-positive` (`2372d702-dad2-4525-8ef2-1102d468aaaf`), native shell executor under cgroups (`memory.max=1500M`, `pids.max=256`), parent session `46fdb644`. Native whoami captured at `.local/a01-base-positive/whoami.json`. Execution provenance: Head-authored implementation executed via dedicated shell worker to test frozen v2.2 acceptance grader; not an LLM-generated code turn.
    - Frozen Inputs Verified: 9/9 ground-truth files verified against `.local/protected/a01-ground-truth/CHECKSUMS.json` with zero mismatches.
    - Compatible Implementation:
      - Task A (`producer.py`): Integer microsecond timestamps (`timestamp_us`), compact payloads, backward-compatible `@property timestamp` (float seconds) for legacy consumers/tests.
@@ -691,7 +691,7 @@ Per Orchestrator directive `OWNER-ASSIGNMENT1950` (`01a0fe35-17d4`):
    - Verification Outcomes:
      - Local unit tests: 2/2 tests PASS in 0.000s (`test_producer.py`, `test_consumer.py`).
      - Frozen acceptance grader (`test_integration_stream.py` v2.2.0): **STATUS PASS in 1.05ms** (Exit Code 0). Verified exact session durations: `sess_alpha` = 5.5s, `sess_beta` = 12.25s.
-   - Scope Declaration: Strictly an unscored engineering feasibility gate proving the v2.2 integration grader functions deterministically on a compatible contract with zero false positives. Zero product advantage or efficacy score claimed.
+   - Scope Declaration: Strictly an unscored engineering feasibility gate proving the v2.2 integration grader functions on this observed run against a compatible contract. Zero false-positive detection claims, and zero product advantage or hazard rate claims drawn.
    - Artifacts Published:
      - Report: `research/antigravity/a01-base-positive/REPORT.md`
      - Telemetry JSON: `research/antigravity/a01-base-positive/result.json`
