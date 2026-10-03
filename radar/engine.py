@@ -31,7 +31,11 @@ import io
 import itertools
 import json
 import os
+import pickle
 import re
+import resource
+import select
+import shlex
 import shutil
 import signal
 import subprocess
@@ -321,11 +325,25 @@ def parse_collected_test_count(output: str) -> Optional[int]:
 
 
 def safe_extract_tar(archive_bytes: bytes, target_dir: str) -> None:
-    """Safely extract tar archive bytes into target_dir preventing traversal and symlink escapes."""
+    """Safely extract tar archive bytes into target_dir preventing traversal, special files, and symlink escapes (D5)."""
     target_dir_real = os.path.realpath(target_dir)
 
     with tarfile.open(fileobj=io.BytesIO(archive_bytes)) as tar:
         for member in tar.getmembers():
+            norm_name = member.name.replace("\\", "/")
+
+            # Reject absolute paths
+            if os.path.isabs(norm_name) or norm_name.startswith("/"):
+                raise RuntimeError(f"Absolute path rejected in tar archive: {member.name}")
+
+            # Reject '..' components
+            if any(part == ".." for part in norm_name.split("/")):
+                raise RuntimeError(f"Directory traversal rejected in tar archive: {member.name}")
+
+            # Reject special device/FIFO files
+            if member.isdev() or member.ischr() or member.isblk() or member.isfifo():
+                raise RuntimeError(f"Special file rejected in tar archive: {member.name}")
+
             # Validate destination path is strictly inside target_dir
             dest_path = os.path.realpath(os.path.join(target_dir_real, member.name))
             if os.path.commonpath([target_dir_real, dest_path]) != target_dir_real:
@@ -344,7 +362,16 @@ def safe_extract_tar(archive_bytes: bytes, target_dir: str) -> None:
         if hasattr(tarfile, "data_filter"):
             tar.extractall(target_dir_real, filter="data")
         else:
-            tar.extractall(target_dir_real)
+            # Safe fallback: extract only regular files and directories with normalized permissions
+            for member in tar.getmembers():
+                if member.isreg():
+                    tar.extract(member, target_dir_real)
+                    target_file = os.path.join(target_dir_real, member.name)
+                    os.chmod(target_file, 0o644)
+                elif member.isdir():
+                    tar.extract(member, target_dir_real)
+                    target_dir_path = os.path.join(target_dir_real, member.name)
+                    os.chmod(target_dir_path, 0o755)
 
 
 class RadarEngine:
@@ -583,6 +610,128 @@ class RadarEngine:
         archive_bytes = res.stdout if isinstance(res.stdout, bytes) else res.stdout.encode("utf-8")
         safe_extract_tar(archive_bytes, target_dir)
 
+    def _run_custom_runner_isolated(
+        self,
+        runner_fn: Callable[[str], Any],
+        snap_dir: str,
+        timeout: float,
+    ) -> Tuple[Optional[bool], Dict[str, Any]]:
+        """Run custom runner in an isolated worker process with strict timeout and process group kill (D4 & C-1316)."""
+        pipe_r, pipe_w = os.pipe()
+        pid = os.fork()
+
+        if pid == 0:
+            os.close(pipe_r)
+            os.setsid()
+            try:
+                res = runner_fn(snap_dir)
+                payload = pickle.dumps({"ok": True, "res": res})
+            except BaseException as exc:
+                payload = pickle.dumps({"ok": False, "error": str(exc)})
+            try:
+                os.write(pipe_w, payload)
+            except Exception:
+                pass
+            finally:
+                os.close(pipe_w)
+                os._exit(0)
+        else:
+            os.close(pipe_w)
+            ready, _, _ = select.select([pipe_r], [], [], max(0.01, timeout))
+            if not ready:
+                try:
+                    os.killpg(pid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError, OSError):
+                    pass
+                try:
+                    os.kill(pid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError, OSError):
+                    pass
+                try:
+                    os.waitpid(pid, 0)
+                except Exception:
+                    pass
+                os.close(pipe_r)
+                return None, {
+                    "error": "timeout",
+                    "details": f"Custom test runner timed out after {timeout:.2f}s",
+                }
+
+            data = b""
+            while True:
+                try:
+                    chunk = os.read(pipe_r, 65536)
+                    if not chunk:
+                        break
+                    data += chunk
+                except Exception:
+                    break
+            os.close(pipe_r)
+            try:
+                os.waitpid(pid, 0)
+            except Exception:
+                pass
+
+            if not data:
+                return None, {
+                    "error": "runner_crash",
+                    "details": "Custom runner process exited without returning data",
+                }
+
+            try:
+                out = pickle.loads(data)
+            except Exception as exc:
+                return None, {
+                    "error": "deserialization_failure",
+                    "details": f"Failed to deserialize custom runner result: {exc}",
+                }
+
+            if not out.get("ok"):
+                return None, {
+                    "error": "runner_exception",
+                    "details": f"Custom runner raised: {out.get('error')}",
+                }
+
+            runner_res = out.get("res")
+
+            # Strict return validation:
+            # 1. Bare bool True: strictly treated as missing test count evidence -> STATUS_UNKNOWN
+            if runner_res is True:
+                return False, {
+                    "error": "no_collected_test_evidence",
+                    "tests_collected": 0,
+                    "details": "Custom runner returned bare True without collected test count evidence",
+                }
+            # 2. Bare bool False: test failure -> STATUS_CONFLICT kind='test'
+            if runner_res is False:
+                return False, {
+                    "error": "test_failure",
+                    "details": "Custom runner returned False",
+                }
+            # 3. Tuple (passed, evidence_dict):
+            if isinstance(runner_res, (tuple, list)) and len(runner_res) == 2:
+                passed, ev = runner_res
+                ev_dict = ev if isinstance(ev, dict) else {"details": str(ev)}
+                if passed is True:
+                    tc = ev_dict.get("tests_collected")
+                    if isinstance(tc, int) and tc > 0:
+                        return True, ev_dict
+                    else:
+                        return False, {
+                            "error": "no_collected_test_evidence",
+                            "tests_collected": 0,
+                            "details": "Custom runner passed but produced no positive collected test count evidence",
+                            "evidence": ev_dict,
+                        }
+                else:
+                    ev_dict.setdefault("error", "test_failure")
+                    return False, ev_dict
+
+            return False, {
+                "error": "invalid_runner_output",
+                "details": f"Custom runner returned unexpected output: {repr(runner_res)}",
+            }
+
     def run_combined_tree_tests(
         self,
         tree_sha: str,
@@ -594,7 +743,8 @@ class RadarEngine:
         Enforces:
         - Process group isolation (os.setsid + os.killpg on timeout).
         - Total wall-clock timeout budget.
-        - Sanitized minimal execution environment.
+        - Sanitized minimal execution environment (D6).
+        - Resource limits via setrlimit (RLIMIT_CPU, RLIMIT_AS, RLIMIT_FSIZE).
         - Positive collected tests verification (> 0 tests required for clean).
 
         Returns (result, evidence):
@@ -629,43 +779,16 @@ class RadarEngine:
                     "details": f"Failed to extract tree {tree_sha}: {exc}",
                 }
 
-            # Custom callable test runner if provided
+            # Custom callable test runner if provided (D4 & C-1316: isolated worker process with strict budget)
             if self.test_runner is not None:
                 elapsed = time.time() - start_time
-                if elapsed >= budget:
+                remaining_budget = budget - elapsed
+                if remaining_budget <= 0:
                     return None, {
                         "error": "timeout",
                         "details": f"Execution timed out before custom runner: {budget}s",
                     }
-                try:
-                    runner_res = self.test_runner(snap_dir)
-                    if isinstance(runner_res, tuple) and len(runner_res) == 2:
-                        passed, ev = runner_res
-                        ev_dict = ev if isinstance(ev, dict) else {"details": str(ev)}
-                        if passed and (ev_dict.get("tests_collected") == 0 or ev_dict.get("tests_run") == 0):
-                            return False, {
-                                "error": "no_tests_collected",
-                                "tests_collected": 0,
-                                "details": "Custom runner passed but 0 tests were collected",
-                            }
-                        return passed, ev_dict
-                    elif isinstance(runner_res, bool):
-                        return runner_res, {"details": f"Custom runner returned {runner_res}"}
-                    else:
-                        return None, {
-                            "error": "invalid_runner_output",
-                            "details": str(runner_res),
-                        }
-                except TimeoutError:
-                    return None, {
-                        "error": "timeout",
-                        "details": "Custom test runner timed out",
-                    }
-                except Exception as exc:
-                    return None, {
-                        "error": "runner_exception",
-                        "details": f"Custom runner raised: {exc}",
-                    }
+                return self._run_custom_runner_isolated(self.test_runner, snap_dir, remaining_budget)
 
             # Determine test command
             cmd = test_command or self.test_command
@@ -696,30 +819,56 @@ class RadarEngine:
                     "details": f"Wall-clock budget exhausted before test execution: {budget}s",
                 }
 
-            cmd_str = cmd if isinstance(cmd, str) else " ".join(cmd)
+            # Command parsing and sanitization (D6: shell=False ALWAYS, parse string via shlex.split)
+            if isinstance(cmd, str):
+                cmd_list = shlex.split(cmd)
+            else:
+                cmd_list = list(cmd)
+            cmd_str = " ".join(cmd_list)
 
-            # Sanitize environment: minimal clean dict
+            # Minimal clean allowlist env (D6)
             clean_env = {
-                "PATH": os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"),
-                "HOME": tempfile.gettempdir(),
-                "PYTHONPATH": os.path.abspath(snap_dir),
-                "PYTHONDONTWRITEBYTECODE": "1",
-                "PYTHONUNBUFFERED": "1",
+                "PATH": "/usr/local/bin:/usr/bin:/bin",
+                "HOME": snap_dir,
+                "TMPDIR": snap_dir,
                 "LANG": "C.UTF-8",
                 "LC_ALL": "C.UTF-8",
-                "TMPDIR": tempfile.gettempdir(),
+                "PYTHONPATH": snap_dir,
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "PYTHONUNBUFFERED": "1",
             }
 
-            # Execute with process group isolation
+            def _preexec_limits():
+                os.setsid()
+                # CPU time limit: budget + 2s margin
+                cpu_sec = max(1, int(remaining_budget + 2))
+                try:
+                    resource.setrlimit(resource.RLIMIT_CPU, (cpu_sec, cpu_sec + 2))
+                except (ValueError, OSError):
+                    pass
+                # Virtual memory limit: 1024 MB
+                vmem = 1024 * 1024 * 1024
+                try:
+                    resource.setrlimit(resource.RLIMIT_AS, (vmem, vmem))
+                except (ValueError, OSError):
+                    pass
+                # Max file size: 50 MB
+                fsize = 50 * 1024 * 1024
+                try:
+                    resource.setrlimit(resource.RLIMIT_FSIZE, (fsize, fsize))
+                except (ValueError, OSError):
+                    pass
+
+            # Execute with process group isolation, resource limits, and shell=False ALWAYS
             proc = subprocess.Popen(
-                cmd,
+                cmd_list,
                 cwd=snap_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                preexec_fn=os.setsid,
+                preexec_fn=_preexec_limits,
                 env=clean_env,
-                shell=isinstance(cmd, str),
+                shell=False,
             )
 
             try:

@@ -563,9 +563,9 @@ class TestRadarEngine(unittest.TestCase):
                 self.assertFalse(is_alive, f"Child process {child_pid} was not killed with process group!")
 
     def test_7_safe_archive_extraction_rejects_traversal(self):
-        """Test 7: Safe archive extraction strictly rejects directory traversal attacks."""
+        """Test 7: Safe archive extraction strictly rejects traversal, absolute paths, and special files (D5)."""
         with tempfile.TemporaryDirectory() as td:
-            # Create a malicious tar archive with ../ traversal
+            # 1. Traversal: ../escape.txt
             bio = io.BytesIO()
             with tarfile.open(fileobj=bio, mode="w") as tar:
                 ti = tarfile.TarInfo(name="../escape.txt")
@@ -573,10 +573,133 @@ class TestRadarEngine(unittest.TestCase):
                 ti.size = len(content)
                 tar.addfile(ti, io.BytesIO(content))
             bio.seek(0)
-
             with self.assertRaises(RuntimeError) as ctx:
                 safe_extract_tar(bio.read(), td)
             self.assertIn("Directory traversal", str(ctx.exception))
+
+            # 2. Absolute path: /etc/evil.txt
+            bio_abs = io.BytesIO()
+            with tarfile.open(fileobj=bio_abs, mode="w") as tar:
+                ti = tarfile.TarInfo(name="/etc/evil.txt")
+                ti.size = 4
+                tar.addfile(ti, io.BytesIO(b"evil"))
+            bio_abs.seek(0)
+            with self.assertRaises(RuntimeError) as ctx:
+                safe_extract_tar(bio_abs.read(), td)
+            self.assertIn("Absolute path rejected", str(ctx.exception))
+
+            # 3. Special file: FIFO
+            bio_fifo = io.BytesIO()
+            with tarfile.open(fileobj=bio_fifo, mode="w") as tar:
+                ti = tarfile.TarInfo(name="my_device_fifo")
+                ti.type = tarfile.FIFOTYPE
+                tar.addfile(ti)
+            bio_fifo.seek(0)
+            with self.assertRaises(RuntimeError) as ctx:
+                safe_extract_tar(bio_fifo.read(), td)
+            self.assertIn("Special file rejected", str(ctx.exception))
+
+    def test_9_custom_runner_contract_validation(self):
+        """Test 9: Custom runner contract validation (D4 & C-1316).
+
+        - Bare True -> strictly 'unknown' (no_collected_test_evidence)
+        - Tuple (True, {}) -> strictly 'unknown' (no_collected_test_evidence)
+        - Tuple (True, {'tests_collected': 5}) -> strictly 'clean'
+        - Bare False -> strictly 'conflict' (kind='test')
+        """
+        with tempfile.TemporaryDirectory() as td:
+            self._init_repo(td)
+
+            lines = ["x = 1"] + [""] * 25
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines) + "\n")
+            base_sha = self._commit(td, "base")
+
+            lines_a = ["x = 2"] + [""] * 25
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines_a) + "\n")
+            hA = self._commit(td, "headA")
+
+            subprocess.run(["git", "-C", td, "checkout", "-b", "branch-b", base_sha], check=True, capture_output=True)
+            lines_b = lines + ["y = 3", ""]
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines_b) + "\n")
+            hB = self._commit(td, "headB")
+
+            head_a = AgentHead("agent-A", hA, base_sha=base_sha)
+            head_b = AgentHead("agent-B", hB, base_sha=base_sha)
+
+            # Case A: Bare True -> returns unknown
+            e1 = RadarEngine(repo_path=td, test_runner=lambda _: True)
+            r1 = e1.evaluate_pair(head_a, head_b)
+            self.assertEqual(r1.status, STATUS_UNKNOWN)
+            self.assertEqual(r1, "unknown")
+            self.assertFalse(r1.is_clean)
+            self.assertEqual(r1.evidence.get("error"), "no_collected_test_evidence")
+
+            # Case B: Tuple (True, {}) with missing tests_collected -> returns unknown
+            e2 = RadarEngine(repo_path=td, test_runner=lambda _: (True, {}))
+            r2 = e2.evaluate_pair(head_a, head_b)
+            self.assertEqual(r2.status, STATUS_UNKNOWN)
+            self.assertEqual(r2, "unknown")
+            self.assertFalse(r2.is_clean)
+            self.assertEqual(r2.evidence.get("error"), "no_collected_test_evidence")
+
+            # Case C: Tuple (True, {'tests_collected': 5}) -> returns clean
+            e3 = RadarEngine(repo_path=td, test_runner=lambda _: (True, {"tests_collected": 5}))
+            r3 = e3.evaluate_pair(head_a, head_b)
+            self.assertEqual(r3.status, STATUS_CLEAN)
+            self.assertEqual(r3, "clean")
+            self.assertTrue(r3.is_clean)
+            self.assertEqual(r3.evidence.get("tests_collected"), 5)
+
+            # Case D: Bare False -> returns conflict with kind='test'
+            e4 = RadarEngine(repo_path=td, test_runner=lambda _: False)
+            r4 = e4.evaluate_pair(head_a, head_b)
+            self.assertEqual(r4.status, STATUS_CONFLICT)
+            self.assertEqual(r4, "conflict")
+            self.assertEqual(r4.kind, "test")
+            self.assertTrue(r4.is_conflict)
+
+    def test_10_custom_runner_bounded_timeout(self):
+        """Test 10: Custom runner bounded execution enforces strict process timeout (D4)."""
+        with tempfile.TemporaryDirectory() as td:
+            self._init_repo(td)
+
+            lines = ["x = 1"] + [""] * 25
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines) + "\n")
+            base_sha = self._commit(td, "base")
+
+            lines_a = ["x = 2"] + [""] * 25
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines_a) + "\n")
+            hA = self._commit(td, "headA")
+
+            subprocess.run(["git", "-C", td, "checkout", "-b", "branch-b", base_sha], check=True, capture_output=True)
+            lines_b = lines + ["y = 3", ""]
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines_b) + "\n")
+            hB = self._commit(td, "headB")
+
+            head_a = AgentHead("agent-A", hA, base_sha=base_sha)
+            head_b = AgentHead("agent-B", hB, base_sha=base_sha)
+
+            t0 = time.time()
+            engine = RadarEngine(
+                repo_path=td,
+                test_runner=lambda _: time.sleep(30),
+                test_budget_seconds=0.5,
+            )
+            res = engine.evaluate_pair(head_a, head_b)
+            dur = time.time() - t0
+
+            # Must return unknown with error=timeout within ~1s
+            self.assertEqual(res.status, STATUS_UNKNOWN)
+            self.assertEqual(res, "unknown")
+            self.assertTrue(res.is_unknown)
+            self.assertEqual(res.evidence.get("error"), "timeout")
+            self.assertLess(dur, 2.0, f"Custom runner timeout took too long: {dur:.2f}s")
 
     def test_8_matrix_computation_and_bounding(self):
         """Test matrix computation across active head vectors with deterministic bounding."""
