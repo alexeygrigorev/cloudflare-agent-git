@@ -17,7 +17,7 @@ Headline: the pain is real and externally documented, but it is concentrated in 
 - Persona: solo dev, Codex CLI 0.139.0 on Windows
 - Severity/frequency: intermittent; tied to "uncertain execution outcome (timeout/network uncertainty)"; thread id cited in report
 - Workaround mentioned: commenter SylvainWinning proposes treating side-effecting commands as unknown-outcome after timeout and verifying-before-retry (query latest comments, compare body hash) instead of reissuing
-- Status: VERIFIED (issue body + comments fetched via GitHub API 2026-10-03)
+- Status: VERIFIED (issue body + comments fetched via GitHub API 2026-10-03); independently VERIFIED-by-Muse (b8ca24d, research/muse/review-round16.md) — scope note: single-reporter existence proof, distinct failure shape, not a rate.
 
 ### E-C502
 - URL: https://github.com/openai/codex/issues/35935
@@ -37,7 +37,7 @@ Headline: the pain is real and externally documented, but it is concentrated in 
 - Persona: solo dev, Claude Code v2.0.27, cross-project/model, regression report (issue closed since)
 - Severity/frequency: intermittent but "across all projects and all Claude models"; 30-50+ repeats per episode
 - Workaround mentioned: "Each command should execute once. If a command succeeds, it should not be retried."
-- Status: VERIFIED (issue body fetched via GitHub API 2026-10-03)
+- Status: VERIFIED (issue body fetched via GitHub API 2026-10-03); independently VERIFIED-by-Muse (b8ca24d, research/muse/review-round16.md) — scope note: single-reporter existence proof, distinct failure shape, not a rate.
 
 ### E-C504
 - URL: https://github.com/anthropics/claude-code/issues/70909
@@ -80,7 +80,7 @@ Headline: the pain is real and externally documented, but it is concentrated in 
 - Status: VERIFIED (HN items API 2026-10-03)
 
 ### E-C508
-- URL: https://news.ycombinator.com/item?id=47294329 (thread: "Show HN: SafeAgent – exactly-once execution guard for AI agent side effects")
+- URL: https://news.ycombinator.com/item?id=47294291 (Show HN: SafeAgent – exactly-once execution guard for AI agent side effects; the previously cited 47294329 is a COMMENT on that thread, parent title verified — CORRECTED 2026-10-03 per Space Bunny research/space-bunny/a09-incumbents.md, 5817275)
 - Author / date: Lions2026 / 2026-03-08
 - Quote: "retries can easily trigger irreversible actions more than once. ... network timeout -> retry ... side effect runs twice. That can mean: duplicate payment, duplicate email, duplicate ticket, duplicate trade"
 - Category: retried tool calls -> duplicate payments (builder first-hand)
@@ -90,7 +90,7 @@ Headline: the pain is real and externally documented, but it is concentrated in 
 - Status: VERIFIED (HN items API 2026-10-03)
 
 ### E-C509
-- URL: https://news.ycombinator.com/item?id=47270121 (thread: "Show HN: Kybernis – Prevent AI agents from executing the same action twice")
+- URL: https://news.ycombinator.com/item?id=47270121 (COMMENT on "Show HN: Kybernis – Prevent AI agents from executing the same action twice"; thread parent 47268331 returned EMPTY via Algolia, so the thread itself is UNVERIFIED — CORRECTED 2026-10-03 per Space Bunny research/space-bunny/a09-incumbents.md, 5817275: the previously cited 47270121 is a comment, not the thread)
 - Author / date: wingrammer / 2026-03-06
 - Quote: "even when the agent output itself is correct and admissible, distributed systems behavior can still produce duplicate mutations once execution starts — retries, worker restarts, async scheduling"
 - Category: exactly-once execution boundary for approved agent actions (builder first-hand)
