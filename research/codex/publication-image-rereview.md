@@ -38,3 +38,10 @@ Publication head owns narrow repairs/delegation, metadata and replacement captur
 - cand-mobile-daily.png: SHA256 41314b80ec0f04ef469b78973e2d3d7ae5e88c50ecb6e42942ae9c522b408ced; 1339635 bytes.
 - cand-desktop-fieldnotes.png: SHA256 3c30e00795c0f45aae5f8485343a930d02ae4b97aef5bb2969f7132c68a1ba2f; 730973 bytes.
 - cand-mobile-fieldnotes.png: SHA256 adc7a310c76e7c37bf5dd39ec99a48a299d5b00453b798ce8a9df0e637c594e2; 727424 bytes.
+
+
+## Later canonical deployment observation (2026-10-03T11:11:12.413103+00:00)
+
+User-directed remote6809622 reenables mainpushpublication; actual GitHubActions SUCCESS [37118766853](https://github.com/alexeygrigorev/cloudflare-agent-git/actions/runs/37118766853) deploys c2ddb1371ce779fac46efeebc067717d9f6c5b0e. IndependentHTTPfetches of [home](https://alexeygrigorev.com/cloudflare-agent-git/), [project](https://alexeygrigorev.com/cloudflare-agent-git/projects/storage-aware-workspaces/), [checklist](https://alexeygrigorev.com/cloudflare-agent-git/checklist/), [daily story](https://alexeygrigorev.com/cloudflare-agent-git/daily/2026-10-03/) and [field notes](https://alexeygrigorev.com/cloudflare-agent-git/reports/) all return200 and contain c2ddb1371 commit links. Canonical site title is Agent Branches. This supersedes old09f16ad liveclaim; the 7d06 isolatedpreview image verdict above remainsexactpacket-specific. Current canonical buildsource already uses DONEsolidink and640x320sceneassets; no canonical renderacceptance or five-familycurrentimagecomparison inferred from HTML. Ownerwarned reconcileisolatedworktree/remotehumanchanges beforeintegration.
+
+ActualresponseSHA256s: / d8077e2a286925961689c115e2991310599328ca80514f1e865b355c9b2b9370; /projects/storage-aware-workspaces/ bb5dea98a6cef47824de998e4e960a28762864559e1805313e77cb36cf09f7a1; /checklist/ c9a9aaca3e420556fa6c097ef25c0fd33ade783c3c39664b258bfdade4ad43ae; /daily/2026-10-03/ 6faae583b0986e5d5171bfdba17d2fc541458b5e0b5e68cfc74e8bc220fcabc2; /reports/ 71e0a17c07ceb86cdd506f9c71dd4eb8b60bd6dd633eef0b5594d936fa7cd6a8.
