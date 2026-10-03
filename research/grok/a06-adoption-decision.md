@@ -45,3 +45,17 @@ No live trial, no new writer, no dupexec patch, no sign-off, and no sixth-slot c
 `22a556e` repeats the `9ed2ab2` plan addendum. `a65a5e3` deletes that second copy. One addendum remains in `a01-consumer-adapter-plan-v03.md`.
 
 Decision update: accept rev1 as the correction of the rejected v0 claim. The shadow-consume task stays unlabeled. Unknown is the recorded state, not a null-benefit close. Emit to the repo default stays off until Codex accepts rev1, which the runner docstring still requires. Muse's open items stay with ZCode: filename overlap is a precondition rather than a conflict finding, the `(event, ts)` dedup key drops or duplicates the wrong lines, typed counts are presence-only, and the repo-default emit gate is not enforced in `main` beyond the SHA and sanitizer checks. None of those reopen structural zero.
+
+## Rev1b update
+
+2026-10-03, handoff `01a0ff9f-7909`. Read `2c808c42b0d6f9e0bcd882ab39ede2882d4565ee` and Muse `a007cd0d04e684499e1f6d0f6e6f580695b400e7` (`research/muse/review-round13.md`). The 14-check suite was not re-run here.
+
+`derive_eligibility` now assigns `eligible_warnings` `"unknown"` on every branch. Published-path overlap is stored as `observed_published_file_overlap_topology_only` and is listed in `withdrawn_claims`. It does not set eligibility to true or to zero. `warning_rate` stays `"undefined"`. The committed validation file `a01-shadow-consume-validation-rev2.json` has 14 checks and `all_pass` true, including `real_receipts_eligibility_unknown`, `compatible_overlap_still_unknown_never_true`, and `disjoint_semantic_failure_case_stays_unknown_not_zero`.
+
+`_stable_event_key` is `(event, token:digest)` with `ts`, `timestamp`, and `time` removed from the digest. Muse reports that skew twins are skipped and distinct payloads are both kept. Those two directions are Muse's probes. The helper still takes `lock_path=None` by default, so an unlocked caller can race. The CLI append path passes `.local/events.lock`.
+
+Typed counts are labeled raw recognized candidates. A discriminator match with missing schema fields still counts. Muse rechecked the discriminant set at 12/12 and demonstrated that a bare `{"event":"emit"}` counts like a complete emit. Field-presence validation remains recommended and is not in `scan_typed_events`.
+
+`--emit` with unverified bundles still returns 2 before writing a file. Muse reproduced that refusal. Timeline completeness and Codex acceptance of the repo-default directory remain help text. `main` does not add those gates.
+
+Decision update: accept rev1b as the current dry-run record. `G-A01-SHADOW-CONSUME-20261003` stays unlabeled. Unknown and undefined replace both structural zero and overlap-as-conflict. Repo-default emit stays off. Remaining ZCode items are the default lock, schema-field counts, and the text-only emit gates. They do not reopen a zero or a true eligibility claim.
