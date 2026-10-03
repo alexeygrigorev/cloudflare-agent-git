@@ -3,7 +3,9 @@
 Executor: zc-artifacts-1 (ZCode/zcodex, warm path), parent session claude-principal (b3a92dd0).
 Date: 2026-10-03, Europe/Berlin.
 Worktree: /home/alexey/git/agent-branches-artifacts (branch proto/artifacts-spike, from origin/proto/l1-scaffold @ 3e9983b).
-Scope: artifacts-spike/ only. No Worker deploys. No resources beyond namespace `agent-branches-dev`
+Scope: artifacts-spike/ only, plus one repo-root addition — `.githooks/pre-commit` (3 lines, added at
+32bf65c as this worktree's commit hook; nothing pre-existing was overwritten). No Worker deploys. No
+resources beyond namespace `agent-branches-dev`
 and repos `demo-canonical`, `demo-agent-1`, `demo-agent-2` (left in place, tiny, for the next step).
 Billing gate: Workers Paid confirmed; ops/storage billed from Oct 14 — keep total ops < 100 (target ~20),
 repos each < a few KB.
@@ -67,8 +69,13 @@ repos each < a few KB.
 - Credentials: CLOUDFLARE_API_TOKEN/CLOUDFLARE_ACCOUNT_ID loaded from
   ~/.config/cloudflare/agent-branches.env (0600) per command; minted repo tokens stored at
   ~/.config/cloudflare/artifacts-spike-demo.env (0600, outside every git tree). GIT_TERMINAL_PROMPT=0 always.
-- Redaction: all evidence passes artifacts-spike/redact.py before landing in RESULTS.md
-  (art_v1_* tokens, API token, account id). Commit gate: `git diff --cached | grep -iE 'token|secret|bearer'`.
+- Redaction — **HISTORICAL as written; superseded post-review**: all evidence passed
+  artifacts-spike/redact.py before landing in RESULTS.md — at the time scoped to `art_v1_*` tokens,
+  API token, account id; the real `art_v2_x_` shape forced a generalized, fail-closed redactor and a
+  transcript re-redaction (0 live-token patterns). Commit gate as actually run during the spike —
+  **HISTORICAL**: `git diff --cached | grep -iE 'token|secret|bearer'` (a keyword grep that fires on
+  benign lines and misses a bare live token) — superseded by `artifacts-spike/precommit-secret-scan.sh`
+  (redact.py's token-shape patterns over staged diffs), installed as this worktree's pre-commit hook.
 - Op counting convention: 1 op = 1 wrangler invocation hitting the API, 1 REST call, or 1 git network
   command (ls-remote/clone/push). A git command is 1+ HTTP requests internally; counted as one operation.
 - Latency: wall-clock ms around each command (`date +%s%3N` deltas), local curl start-to-end.
@@ -76,12 +83,14 @@ repos each < a few KB.
 ## Log
 
 - 2026-10-03: identity recorded; worktree created; docs read; plan fixed (ops ledger in RESULTS.md).
-- 2026-10-03: STEP 1 executed — O1–O29 (29 ops): namespace agent-branches-dev, repos demo-canonical /
+- 2026-10-03: STEP 1 executed — O1–O29 (**28 evidenced ops; O29 not captured**): namespace
+  agent-branches-dev, repos demo-canonical /
   demo-agent-1 / demo-agent-2, base push (ff4decd:demo-target subtree, orphan, no .harness), fork×2,
   clone+1-line-commit+push+readback MATCH, lists (REST + wrangler CLI), token lifecycle incl.
   read-scope negative test (push rejected, HTTP 400). All evidence in RESULTS.md + appendix-transcript.md.
 - 2026-10-03: review caught real tokens use prefix `art_v2_x_` (docs say `art_v1_`) — redact.py
-  generalized, transcript re-redacted (0 live-token patterns), still-useful exposed canonical token
-  revoked (O29). STEP 1 verdict PASS → PLAN-L1-REAL.md written (STEP 2).
+  generalized, transcript re-redacted (0 live-token patterns); still-useful exposed canonical token
+  revoke reported (O29 — **not captured; see RESULTS.md**). STEP 1 verdict PASS → PLAN-L1-REAL.md
+  written (STEP 2).
 - Next owner/action: claude-principal reviews RESULTS.md + PLAN-L1-REAL.md; ordered next steps §6
   (binding types reconciliation first, then bootstrap script, DO smoke, event subscription spike).

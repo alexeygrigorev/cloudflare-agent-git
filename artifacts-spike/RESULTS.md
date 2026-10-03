@@ -1,7 +1,9 @@
 # artifacts-spike RESULTS — real Cloudflare Artifacts, 2026-10-03
 
 Executor: zc-artifacts-1 (parent: claude-principal). Worktree proto/artifacts-spike.
-Scope: artifacts-spike/ only. Docs read first: prototype/docs-notes.md + freshly fetched official
+Scope: `artifacts-spike/` plus one repo-root addition — `.githooks/pre-commit` (3 lines, added at
+32bf65c as this worktree's commit hook; nothing pre-existing was overwritten). Docs read first:
+prototype/docs-notes.md + freshly fetched official
 pages in docs/ (wrangler, REST API, authentication, git-protocol, workers-binding; fetched 2026-10-03).
 
 ## Verdict
@@ -19,7 +21,7 @@ count was never captured. Nothing deployed; no resources beyond the listed ones.
 | O1 | ns get guard | GET namespaces/agent-branches-dev | 404 code 10200 (absent) | 1178 (cold) |
 | O2 | create namespace | POST /artifacts/namespaces | 201 created | 1116 |
 | O3 | verify namespace | GET namespaces/agent-branches-dev | 200, repo_count 0 | 181 |
-| O4 | create repo | POST .../agent-branches-dev/repos `demo-canonical` | 200, id u7usp14xkllei2on, remote+token returned | 3046 |
+| O4 | create repo | POST .../agent-branches-dev/repos `demo-canonical` | success body: id u7usp14xkllei2on, remote+token returned — status **"200" UNVERIFIED** (no `HTTP=` line captured) | 3046 |
 | O5 | mint git credential | POST .../tokens `{repo, scope:write, ttl:3600}` | id e78473…, expires_at +1h exactly | 179 |
 | O6 | refs of empty repo | `git ls-remote` demo-canonical | exit 0, empty output | 970 |
 | O7 | push base commit | `git push` orphan commit (ff4decd:demo-target tree, no .harness) → main | `[new branch] main -> main` | 416 |
@@ -92,7 +94,7 @@ first O6 attempt, fixed by writing a proper `[http] extraHeader` INI include; no
    `-c include.path=<file>` — viable pattern for L1's git-sidecar scripts. Basic-auth-in-URL (documented
    alternative) not used per task rules.
 8. **Latencies**: control-plane reads 120–450ms; repo create 3.0s; forks 3.4–4.5s; git clone 500ms,
-   push 350–420ms, ls-remote 220–970ms (first call includes TLS setup). Comfortably within the demo's
+   push 346–416ms, ls-remote 220–970ms (first call includes TLS setup). Comfortably within the demo's
    5–10 min video budget.
 9. **Fork response carries a full write token + remote** — convenient for agent handoff, but it means
    every fork creation mints a live 24h write secret; the coordinator side must store/revoke it deliberately
@@ -105,14 +107,18 @@ first O6 attempt, fixed by writing a proper `[http] extraHeader` INI include; no
   subtree of cloudflare-agent-git ff4decd; **no .harness**)
 - Repo `demo-agent-1` (id z23vslwndyq9lz2b, fork of demo-canonical) — main @ c809475… (1-line README change)
 - Repo `demo-agent-2` (id nzhkzbxleu7eyjds, fork of demo-canonical) — main @ b4346112…, untouched
-- Active tokens remaining: demo-agent-1 write token (24h TTL — now **measured**, not assumed: read-only
-  `GET .../repos/demo-agent-1/tokens?state=all` on 2026-10-03 returned exactly one active write token,
-  id i8ppt364o5tsgguf, created 2026-10-03T17:00:33.909Z, expires_at 2026-10-04T17:00:33.909Z, i.e.
-  +24h exactly; stored 0600 outside git). Needed for the next step; revoke at/after use — see the
-  cleanup gate item (PLAN-L1-REAL.md §5.9).
+- Active tokens remaining: demo-agent-1 write token (24h TTL — **executor-reported post-review, not in
+  the transcript; treat as UNVERIFIED**: a read-only `GET .../repos/demo-agent-1/tokens?state=all`
+  reportedly returned exactly one active write token, id i8ppt364o5tsgguf, created
+  2026-10-03T17:00:33.909Z, expires_at 2026-10-04T17:00:33.909Z, i.e. +24h; no capture exists — the
+  cleanup gate item, PLAN-L1-REAL.md §5.9, verifies it; token stored 0600 outside git). Needed for the
+  next step; revoke at/after use.
 - Token revocations evidenced in the transcript: O23/O25/O28. The O29 revoke (canonical minted write
   token) is executor-reported but **not captured** — treat that token as possibly live until the
-  cleanup gate item verifies it (same read-only list call against demo-canonical).
+  cleanup gate item verifies it (same read-only list call against demo-canonical). Reviewer arithmetic
+  bounds the exposure: per the O5/O22 capture, that token's own expiry was 2026-10-03T17:58:29.832Z
+  (+1h TTL), so it self-expired at that time even if O29 never executed; §5.9's list-check still
+  confirms zero active tokens remain.
 
 ### Later cleanup checklist — promoted to a dated gate item
 

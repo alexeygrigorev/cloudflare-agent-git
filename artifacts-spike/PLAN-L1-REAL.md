@@ -152,12 +152,15 @@ ops token with `ttl=3600`). Do not port the whole port to REST.
 9. **Cleanup of spike/demo resources — dated gate item** (promoted from RESULTS.md's "later"
    checklist so nothing forces it to be skipped). **Owner: claude-principal lane. Due: 2026-10-07**
    (before the Oct-14 billable-ops switchover) **and a hard prerequisite for any public deploy or
-   recorded demo.** State as of 2026-10-03, measured via the documented read-only token list
-   (`GET .../repos/demo-agent-1/tokens?state=all`): namespace `agent-branches-dev` + 3 repos live;
-   demo-agent-1 has exactly one active write token (id `i8ppt364o5tsgguf`), created
-   2026-10-03T17:00:33.909Z, **expires_at 2026-10-04T17:00:33.909Z — +24h measured, not assumed**;
-   the canonical minted token's revoke (O29) was not captured, so demo-canonical needs the same
-   list-check. Steps: revoke any still-active spike tokens (demo-agent-1's after its next-step use,
+   recorded demo.** State as of 2026-10-03: **executor-reported post-review, not in the transcript;
+   treat as UNVERIFIED — this gate item verifies it** (the read-only token list
+   `GET .../repos/demo-agent-1/tokens?state=all` it cites has no capture): namespace
+   `agent-branches-dev` + 3 repos live; demo-agent-1 reportedly has exactly one active write token
+   (id `i8ppt364o5tsgguf`), created 2026-10-03T17:00:33.909Z, expires_at 2026-10-04T17:00:33.909Z
+   (+24h, per the uncaptured list). The canonical minted token's revoke (O29) was not captured either,
+   so demo-canonical needs the same list-check; reviewer arithmetic bounds it — the O5/O22 capture
+   shows that token's own +1h expiry at 2026-10-03T17:58:29Z, so it self-expired even if O29 never
+   executed. Steps: revoke any still-active spike tokens (demo-agent-1's after its next-step use,
    at its expiry at the latest); verify each of the three repos' token list returns zero active;
    `DELETE` the three repos (expect 202s); `DELETE` the namespace (verify route availability; if
    absent, deleting the repos empties it); remove the local 0600 files and /tmp scratch paths listed
