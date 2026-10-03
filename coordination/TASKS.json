@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T13:06:44.846240+00:00",
+  "updated_at": "2026-10-03T13:11:30.758172+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -22,13 +22,15 @@
       "id": "zcodex-retry-design",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "parked",
-      "updated_at": "2026-10-03T13:06:44.846240+00:00",
+      "status": "blocked",
+      "updated_at": "2026-10-03T13:11:30.758172+00:00",
       "evidence_paths": [
         "research/antigravity/r10-zcodex-retry-suppression-design.md",
         "research/antigravity/r11-real-duplicate-incidence.md"
       ],
-      "blocked_on": [],
+      "blocked_on": [
+        "joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md)"
+      ],
       "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
       "acceptance": "DIAGNOSIS + patch diff + test plan for denial suppression/turn-end at tool boundary, Muse review, no build without a budget guard.",
       "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10014-a645). Design only, no compilation until budget guard is established."
@@ -37,8 +39,8 @@
       "id": "prompt-ready-lifecycle",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "parked",
-      "updated_at": "2026-10-03T13:06:44.846240+00:00",
+      "status": "blocked",
+      "updated_at": "2026-10-03T13:11:30.758172+00:00",
       "evidence_paths": [
         "research/antigravity/r17-after-idle-safety-fix.md",
         "research/antigravity/r12-scoped-ca1-pilot-verification.md",
@@ -47,7 +49,9 @@
         ".local/producer-review/bin/aplexer-7efa493",
         ".local/muse-r21/verdict.md"
       ],
-      "blocked_on": [],
+      "blocked_on": [
+        "joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md)"
+      ],
       "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
       "acceptance": "Genuine PromptReady / turn-completion readiness signal per engine (hook-emitted at end of each turn, refreshed rather than expiring while the composer stays empty), with narrow negative tests (busy, draft, unknown screen, expired-without-refresh), reviewed by Muse before rollout.",
       "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10011-df10). Reproductions analyzed: Grok (0000ea93) waiting-expired and Bunny (848ff637) idle contradicted by PTY redraw. Fix designed and committed in protocol repo on fix/prompt-ready-lifecycle."
@@ -56,8 +60,8 @@
       "id": "safe-autonomous-continuation",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "parked",
-      "updated_at": "2026-10-03T13:06:44.846240+00:00",
+      "status": "blocked",
+      "updated_at": "2026-10-03T13:11:30.758172+00:00",
       "evidence_paths": [
         "research/antigravity/r12-scoped-ca1-pilot-verification.md",
         "research/antigravity/r17-after-idle-safety-fix.md",
@@ -66,7 +70,9 @@
         ".local/muse-r21/verdict.md",
         ".local/continuation-trial/**"
       ],
-      "blocked_on": [],
+      "blocked_on": [
+        "joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md)"
+      ],
       "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
       "acceptance": "Source/negative draft-busy tests and actual repeated continuation cycles; no invented all-engine recovery.",
       "assignment_ack": "ACK: owned by antigravity-head. Pinned commit 7a9b46d on fix/continuation-readiness-pane-race in cloudflare-aplexer-protocol (PromptState enum Empty/Draft/Unknown, real OpenCode/Grok/Codex/Shell fixtures, verify_pane_delivery correlated working transition, --next continuation queue; 212 unit + 31 integration pass, 0B net compile growth). Change-story card published at research/antigravity/change-story-card-pane-continuation.md (commit 6214dec)."
@@ -184,7 +190,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T12:54:21.906731+00:00",
+      "updated_at": "2026-10-03T13:34:54.865750+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/oversight-human31.md",
@@ -198,7 +204,7 @@
         "research/codex/product-refocus-review.md"
       ],
       "blocked_on": [],
-      "next_action": "L1B realnativefirstwhoamiverified c3cd0e48, contract/realGit/DO/token/stalechecksactive. AntL2f3ddd IDfailclosedsource; L379f78 callbackresidual C1316 accepted headfix, exactnewpin/Muse independentnegative next. R41initial37CHANGES sixdefects; emptyunittestpremisefalsified/corrected. R40e455 narrowreloadaccepted actualdigests/new91c/degradedthen2healthycycles, noautonomyscheduler claim. Claudeproducttaskrowsf28305b; publicationauthorityHELD. A01routeconfig/readinessheadownedC1317 next whileintegrationpending; noownteam/fakewake. Checkevent<=5min.",
+      "next_action": "Nativeoversight: Ant4actualworkersACK/tools; L1B nativeGLMsource3e30/0201/af054/bc797 active. Mock3d794/029e7cases relabel +actualWorker/Git sidecar integration pending; Claudeindependentlyagrees. R441632/R43f3ddd narrowreviews, aa60/96c50/2b928 successor crossmodel reviewpending/backendsource requested. New345/dd20 ZCode throughheads/no duplicate302e fix. be817 A01fixtureonly actualrouteunproven held. Keyrequest originalhumanverified toroot scoped0600, no financialauthority. Blockedheads/HOLDs preserved, scanSLOmiss documented/freshnaturalboundary correction. Nextartifact/ACK/review/newZfirsttool event andmutual<=5min, zero ownimplementationworkers.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
@@ -556,8 +562,8 @@
       "id": "agent-branches-l2-client",
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
-      "status": "in_progress",
-      "updated_at": "2026-10-03T13:06:44.846240+00:00",
+      "status": "running",
+      "updated_at": "2026-10-03T13:11:30.758172+00:00",
       "evidence_paths": [
         "research/antigravity/agent-branches/CONTRACT-L2-L3.md",
         "branch:proto/l2-client",
@@ -572,8 +578,8 @@
       "id": "agent-branches-l3-radar",
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
-      "status": "in_progress",
-      "updated_at": "2026-10-03T13:06:44.846240+00:00",
+      "status": "running",
+      "updated_at": "2026-10-03T13:11:30.758172+00:00",
       "evidence_paths": [
         "branch:proto/l3-radar",
         ".local/muse-r41/verdict.md",
