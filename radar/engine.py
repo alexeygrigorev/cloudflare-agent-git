@@ -641,9 +641,14 @@ class RadarEngine:
                     runner_res = self.test_runner(snap_dir)
                     if isinstance(runner_res, tuple) and len(runner_res) == 2:
                         passed, ev = runner_res
-                        if isinstance(ev, dict):
-                            return passed, ev
-                        return passed, {"details": str(ev)}
+                        ev_dict = ev if isinstance(ev, dict) else {"details": str(ev)}
+                        if passed and (ev_dict.get("tests_collected") == 0 or ev_dict.get("tests_run") == 0):
+                            return False, {
+                                "error": "no_tests_collected",
+                                "tests_collected": 0,
+                                "details": "Custom runner passed but 0 tests were collected",
+                            }
+                        return passed, ev_dict
                     elif isinstance(runner_res, bool):
                         return runner_res, {"details": f"Custom runner returned {runner_res}"}
                     else:
@@ -757,32 +762,42 @@ class RadarEngine:
             stderr_snippet = stderr[-2000:] if stderr else ""
             collected_count = parse_collected_test_count(f"{stdout_snippet}\n{stderr_snippet}")
 
-            # Check for 0 collected tests across any exit code (e.g. exit 0 or unittest exit 5)
-            if (
-                collected_count == 0
-                or "no tests ran" in stderr_snippet.lower()
-                or "0 tests collected" in stderr_snippet.lower()
-            ):
-                return None, {
-                    "error": "no_tests_collected",
-                    "tests_collected": 0,
-                    "test_command": cmd_str,
-                    "exit_code": proc.returncode,
-                    "stdout": stdout_snippet,
-                    "stderr": stderr_snippet,
-                    "details": f"Test runner collected 0 tests (exit code {proc.returncode})",
-                }
-
             if proc.returncode == 0:
+                if collected_count is None or collected_count == 0:
+                    return False, {
+                        "test_command": cmd_str,
+                        "exit_code": 0,
+                        "tests_collected": 0,
+                        "error": "no_collected_test_evidence",
+                        "details": "Test command exited 0 but produced no parseable collected test count evidence",
+                        "stdout": stdout_snippet,
+                        "stderr": stderr_snippet,
+                    }
+
                 return True, {
                     "test_command": cmd_str,
                     "exit_code": 0,
-                    "tests_collected": collected_count if collected_count is not None else 1,
+                    "tests_collected": collected_count,
                     "stdout": stdout_snippet,
                     "stderr": stderr_snippet,
                     "details": "All combined-tree tests passed cleanly",
                 }
             else:
+                if (
+                    collected_count == 0
+                    or "no tests ran" in stderr_snippet.lower()
+                    or "0 tests collected" in stderr_snippet.lower()
+                ):
+                    return False, {
+                        "error": "no_tests_collected",
+                        "tests_collected": 0,
+                        "test_command": cmd_str,
+                        "exit_code": proc.returncode,
+                        "stdout": stdout_snippet,
+                        "stderr": stderr_snippet,
+                        "details": f"Test runner collected 0 tests (exit code {proc.returncode})",
+                    }
+
                 return False, {
                     "test_command": cmd_str,
                     "exit_code": proc.returncode,
@@ -927,8 +942,12 @@ class RadarEngine:
                 budget_seconds=test_budget_seconds or self.test_budget_seconds,
             )
 
-            # Check if 0 tests collected occurred:
-            if test_evidence.get("error") == "no_tests_collected":
+            # Check if 0 tests collected or unparseable test evidence occurred:
+            if test_evidence.get("error") in (
+                "no_tests_collected",
+                "no_collected_test_evidence",
+                "missing_collected_test_evidence",
+            ):
                 return PairResult(
                     status=STATUS_UNKNOWN,
                     pair=pair,
@@ -936,7 +955,10 @@ class RadarEngine:
                     tree_sha=tree_sha,
                     overlapping_files=overlapping_files,
                     evidence=test_evidence,
-                    error=test_evidence.get("details", "no_tests_collected"),
+                    error=test_evidence.get(
+                        "details",
+                        test_evidence.get("error", "No positive collected test evidence"),
+                    ),
                 )
 
             if test_res is None:

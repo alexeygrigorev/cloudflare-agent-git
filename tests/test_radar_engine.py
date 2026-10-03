@@ -377,6 +377,130 @@ class TestRadarEngine(unittest.TestCase):
             self.assertEqual(rep["status"], "unknown")
             self.assertIsNone(rep["kind"])
 
+    def test_5b_unparseable_exit_zero_command_returns_unknown(self):
+        """Test 5b: Command exiting 0 without test count evidence (e.g. echo) -> strictly 'unknown' (never 'clean')."""
+        with tempfile.TemporaryDirectory() as td:
+            self._init_repo(td)
+
+            lines = ["x = 1"] + [""] * 25
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines) + "\n")
+            base_sha = self._commit(td, "base")
+
+            lines_a = ["x = 2"] + [""] * 25
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines_a) + "\n")
+            hA = self._commit(td, "headA")
+
+            subprocess.run(["git", "-C", td, "checkout", "-b", "branch-b", base_sha], check=True, capture_output=True)
+            lines_b = lines + ["y = 3", ""]
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines_b) + "\n")
+            hB = self._commit(td, "headB")
+
+            engine = RadarEngine(
+                repo_path=td,
+                test_command=["echo", "Success without counts"],
+            )
+            res = engine.evaluate_pair(
+                AgentHead("agent-A", hA, base_sha=base_sha),
+                AgentHead("agent-B", hB, base_sha=base_sha),
+            )
+
+            # Strict fail-closed check: No test count evidence -> MUST be 'unknown', NEVER 'clean'
+            self.assertEqual(res.status, STATUS_UNKNOWN)
+            self.assertEqual(res, "unknown")
+            self.assertTrue(res.is_unknown)
+            self.assertFalse(res.is_clean)
+            self.assertNotEqual(res.status, STATUS_CLEAN)
+            self.assertEqual(res.evidence.get("error"), "no_collected_test_evidence")
+            self.assertEqual(res.evidence.get("tests_collected"), 0)
+
+    def test_5c_bin_true_command_returns_unknown(self):
+        """Test 5c: /bin/true exiting 0 with no counts -> strictly 'unknown' (never 'clean')."""
+        with tempfile.TemporaryDirectory() as td:
+            self._init_repo(td)
+
+            lines = ["x = 1"] + [""] * 25
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines) + "\n")
+            base_sha = self._commit(td, "base")
+
+            lines_a = ["x = 2"] + [""] * 25
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines_a) + "\n")
+            hA = self._commit(td, "headA")
+
+            subprocess.run(["git", "-C", td, "checkout", "-b", "branch-b", base_sha], check=True, capture_output=True)
+            lines_b = lines + ["y = 3", ""]
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines_b) + "\n")
+            hB = self._commit(td, "headB")
+
+            engine = RadarEngine(
+                repo_path=td,
+                test_command=["/bin/true"],
+            )
+            res = engine.evaluate_pair(
+                AgentHead("agent-A", hA, base_sha=base_sha),
+                AgentHead("agent-B", hB, base_sha=base_sha),
+            )
+
+            # /bin/true produces 0 output and no counts -> MUST be 'unknown'
+            self.assertEqual(res.status, STATUS_UNKNOWN)
+            self.assertEqual(res, "unknown")
+            self.assertTrue(res.is_unknown)
+            self.assertFalse(res.is_clean)
+            self.assertNotEqual(res.status, STATUS_CLEAN)
+            self.assertEqual(res.evidence.get("error"), "no_collected_test_evidence")
+
+    def test_5d_genuine_test_output_with_ran_3_tests_returns_clean(self):
+        """Test 5d: Genuine test output reporting 'Ran 3 tests in ... OK' -> strictly 'clean'."""
+        with tempfile.TemporaryDirectory() as td:
+            self._init_repo(td)
+
+            lines = ["x = 1"] + [""] * 25
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines) + "\n")
+            # Create a test file with 3 passing tests
+            test_content = (
+                "import unittest\n\n"
+                "class TriTest(unittest.TestCase):\n"
+                "    def test_1(self): self.assertTrue(True)\n"
+                "    def test_2(self): self.assertTrue(True)\n"
+                "    def test_3(self): self.assertTrue(True)\n"
+            )
+            with open(os.path.join(td, "test_app.py"), "w") as f:
+                f.write(test_content)
+            base_sha = self._commit(td, "base with 3 tests")
+
+            lines_a = ["x = 2"] + [""] * 25
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines_a) + "\n")
+            hA = self._commit(td, "headA")
+
+            subprocess.run(["git", "-C", td, "checkout", "-b", "branch-b", base_sha], check=True, capture_output=True)
+            lines_b = lines + ["y = 3", ""]
+            with open(os.path.join(td, "app.py"), "w") as f:
+                f.write("\n".join(lines_b) + "\n")
+            hB = self._commit(td, "headB")
+
+            engine = RadarEngine(
+                repo_path=td,
+                test_command=[sys.executable, "-m", "unittest", "discover", "-s", "."],
+            )
+            res = engine.evaluate_pair(
+                AgentHead("agent-A", hA, base_sha=base_sha),
+                AgentHead("agent-B", hB, base_sha=base_sha),
+            )
+
+            # Genuine positive test evidence with 3 tests -> strictly 'clean'
+            self.assertEqual(res.status, STATUS_CLEAN)
+            self.assertEqual(res, "clean")
+            self.assertTrue(res.is_clean)
+            self.assertFalse(res.is_unknown)
+            self.assertEqual(res.evidence.get("tests_collected"), 3)
+
     def test_6_process_hang_timeout_kills_process_group(self):
         """Test 6: Process hang / timeout strictly kills process group and returns 'unknown'."""
         with tempfile.TemporaryDirectory() as td:
