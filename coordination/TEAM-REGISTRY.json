@@ -83,7 +83,11 @@
           "tag": "antigravity-head",
           "role": "head",
           "mode": "interactive",
-          "workspace": "/home/alexey/git/cloudflare-agent-git"
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "active_tasks": [
+            "zcodex-retry-design (R10 design-only, head-authored in research/antigravity/r10-zcodex-retry-suppression-design.md)",
+            "prompt-ready-lifecycle (head-implemented in cloudflare-aplexer-protocol)"
+          ]
         },
         {
           "tag": "zcy-dupexec",
@@ -181,36 +185,6 @@
             "research/antigravity/r9-runtime-single-effect-verification.md"
           ],
           "usage": "UNKNOWN",
-          "launched_by": "antigravity-head"
-        },
-        {
-          "tag": "zcodex-retry-design-executor",
-          "role": "executor",
-          "parent_tag": "antigravity-head",
-          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
-          "mode": "headless",
-          "engine": "gemini",
-          "workspace": "/home/alexey/git/cloudflare-agent-git",
-          "task": "R10 zcodex retry suppression & tool-boundary turn termination design (ticket 01a10014-a645)",
-          "artifacts": [
-            "0b372f0",
-            "c96a249",
-            "research/antigravity/r10-zcodex-retry-suppression-design.md"
-          ],
-          "usage": "UNKNOWN",
-          "status": "ended",
-          "launched_by": "antigravity-head"
-        },
-        {
-          "tag": "prompt-ready-executor",
-          "role": "executor",
-          "parent_tag": "antigravity-head",
-          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
-          "mode": "headless",
-          "engine": "gemini",
-          "workspace": "/home/alexey/git/cloudflare-aplexer-protocol",
-          "task": "PromptReady turn-completion readiness signal & empty-composer refresh (ticket 01a10011-df10)",
-          "status": "running",
           "launched_by": "antigravity-head"
         }
       ]
