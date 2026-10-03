@@ -298,19 +298,14 @@ def signup_section(dedicated=False):
             '<form id="journal-signup" class="signup-form" data-relay-list="'+E(endpoint, quote=True)+'" data-enabled="'+('true' if enabled else 'false')+'" aria-busy="false"><label for="signup-email">Your email address</label><div class="signup-controls"><input id="signup-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="you@example.com" required'+disabled+'><button id="signup-submit" class="button" type="submit"'+disabled+'>Keep me posted'+ARROW+'</button></div><label class="signup-consent" for="signup-consent"><input id="signup-consent" name="consent" type="checkbox" required'+disabled+'><span>I agree to receive occasional Agent Branches experiment updates by email.</span></label><p class="signup-detail">Your address is processed by DataTalks.Club Relay for this list. Unsubscribe through the link in an update email. <a href="'+BASE+'/privacy/">Email privacy</a>.</p>'+unavailable+'<p id="signup-status" class="signup-status" role="status" aria-live="polite" aria-atomic="true" tabindex="-1" hidden></p><noscript><p>Email signup needs JavaScript for the confirmation flow. The <a href="'+BASE+'/feed.xml">RSS feed</a> works without it.</p></noscript></form></section>')
 
 def footer_html():
-    sha = BUILD_SHA[:7].upper()
-    stamp = 'BUILT FROM MAIN @ '+(('<a href="'+REPO+'/commit/'+BUILD_SHA+'">'+sha+'</a>') if BUILD_SHA else 'UNKNOWN')
+    # Build provenance stays out of the visible page; it is kept as an HTML comment for checks.
+    stamp = 'built from main @ '+(BUILD_SHA or 'unknown')+' \u00b7 site built '+BUILD_TIME
     if LATEST_CUTOFF:
-        stamp += ' \u00b7 EVIDENCE UP TO '+LATEST_CUTOFF.strftime('%Y-%m-%d %H:%M')+' UTC'
-    lines = ['SITE BUILT '+BUILD_TIME]
+        stamp += ' \u00b7 evidence up to '+LATEST_CUTOFF.strftime('%Y-%m-%d %H:%M')+' UTC'
     if LATEST_NOTE:
-        lines.append('LATEST FIELD NOTE '+LATEST_NOTE.strftime('%Y-%m-%d %H:%M')+' UTC')
-    return ('<footer class="site-footer"><div class="footer-inner"><div class="footer-brand"><a class="footer-title" href="'+BASE+'/">Agent Branches</a>'
-            '<p>Alexey Grigorev \u00b7 Every status on this site links to a file in the public repo. Nothing here is a validated product.</p>'
-            '<p class="footer-note">Published reports are dated snapshots. Research hypotheses are not validated products. Corrections stay with the evidence. Evidence is dated; build time is not a live agent status.</p></div>'
-            '<div class="footer-side"><a href="'+REPO+'">github.com/alexeygrigorev/cloudflare-agent-git'+EXT+'</a>'
-            '<p class="mono-line">'+stamp+'</p><p class="mono-line">'+' \u00b7 '.join(lines)+'</p>'
-            '<div class="footer-links"><a href="'+BASE+'/research/">Research library</a><a href="'+BASE+'/feed.xml">RSS feed</a><a href="'+BASE+'/privacy/">Email privacy</a></div></div></div></footer>')
+        stamp += ' \u00b7 latest field note '+LATEST_NOTE.strftime('%Y-%m-%d %H:%M')+' UTC'
+    return ('<footer class="site-footer"><!-- '+E(stamp)+' --><div class="footer-inner"><nav class="footer-links" aria-label="Footer">'
+            '<a href="'+REPO+'">GitHub repository'+EXT+'</a><a href="'+BASE+'/research/">Research library</a><a href="'+BASE+'/feed.xml">RSS feed</a><a href="'+BASE+'/privacy/">Email privacy</a></nav></div></footer>')
 
 GRAIN = '<div class="grain" aria-hidden="true"></div>'
 
@@ -347,7 +342,7 @@ def num_html(n):
         return E(m[1])+'<small>'+E(m[2])+'</small>'
     return E(n)
 
-PAIN_STATS = [('472', 'linked worktrees'), ('25', 'repositories'), ('111.7', 'GiB on disk'), ('62.1%', 'dependencies + build')]
+PAIN_STATS = [('472', 'linked worktrees'), ('25', 'repositories'), ('111.7', 'GiB on disk'), ('62.1%', 'dependencies and build output')]
 
 # Extra per-project reference detail (who it is for, source files). Facts about current
 # status come from projects.json only; these lists are filtered to files that exist.
@@ -555,10 +550,10 @@ def home_page():
               +'</div><a class="honest-link" href="'+BASE+'/checklist/">See every check on the checklist'+ARROW+'</a></aside>')
     hero = ('<section class="hero"><figure class="hero-figure"><img src="'+BASE+'/assets/agent-git-illustration.png" width="1536" height="1024" alt="Geometric blue agents carry folders along branching commit lines into an orange merge"><figcaption>FIG. 0 \u2014 MANY AGENTS, ONE SHARED HISTORY</figcaption></figure>'
             '<div class="hero-grid">'+feature+honest+'</div></section>')
-    hyp = ('<section class="hyp-section" aria-labelledby="hyp-title"><div class="section-head"><h2 id="hyp-title">The hypotheses</h2><p>'+str(ACTIVE_COUNT)+' still being tested. '+str(PARKED_COUNT)+' parked. '+str(OPEN_PLACES)+' places open. None selected. <a href="'+BASE+'/ideas/">Read what all 20 ideas would do'+ARROW+'</a></p></div>'+cards()+'</section>')
+    hyp = ('<section class="hyp-section" aria-labelledby="hyp-title"><div class="section-head"><h2 id="hyp-title">The hypotheses</h2><p>'+str(ACTIVE_COUNT)+' still being tested. '+str(PARKED_COUNT)+' parked. '+str(OPEN_PLACES)+' places open. None selected.<span class="only-phone"> Every idea is provisional.</span> <a href="'+BASE+'/ideas/">Read what all 20 ideas would do'+ARROW+'</a></p></div>'+cards()+'</section>')
     stats = ''.join('<div class="pain-stat"><span class="pain-n">'+E(n)+'</span><span class="pain-l">'+E(l)+'</span></div>' for n, l in PAIN_STATS)
-    pain = ('<section class="pain" aria-labelledby="pain-title"><div class="pain-copy">'+eyebrow('Measured pain \u00b7 one host \u00b7 read-only scan')+'<h2 id="pain-title">Most of the worktree pile isn\u2019t Git. It\u2019s dependencies.</h2><p>The pain is real and measured. Whether anyone would adopt a product for it is unknown. Ordinary shared stores may already be enough.</p><a class="read-more-sm" href="'+BASE+'/projects/storage-aware-workspaces/">Idea 16 \u00b7 Storage-aware workspaces'+ARROW+'</a></div>'
-            '<div class="pain-data"><div class="pain-stats">'+stats+'</div><div class="pain-chart"><div class="pain-bar" role="img" aria-label="62.1% of the disk space is dependencies and build output"><span class="pain-fill"></span></div><div class="pain-caps"><span>62.1% DEPENDENCY + BUILD (69.4 GIB)</span><span class="muted">SOURCE + OTHER ~42 GIB</span></div><div class="status-line pain-unknown">'+smark('unknown')+'<span>Product viability: unknown</span></div></div></div></section>')
+    pain = ('<section class="pain" aria-labelledby="pain-title"><div class="pain-copy">'+'<h2 id="pain-title">Most of the worktree pile isn\u2019t Git. It\u2019s dependencies.</h2><p>The pain is real and measured. Whether anyone would adopt a product for it is unknown. Package managers that already keep one shared copy of dependencies for many folders may solve it without a new product.</p><a class="read-more-sm" href="'+BASE+'/projects/storage-aware-workspaces/">Read the storage-aware workspaces idea'+ARROW+'</a></div>'
+            '<div class="pain-data"><div class="pain-stats">'+stats+'</div><div class="pain-chart"><div class="pain-bar" role="img" aria-label="62.1% of the disk space is dependencies and build output"><span class="pain-fill"></span></div><div class="pain-caps"><span>Dependencies and build output: 69.4 GiB (62.1%)</span><span class="muted">Source code and everything else: about 42 GiB</span></div><div class="status-line pain-unknown">'+smark('unknown')+'<span>Whether this needs a new product: unknown</span></div></div></div></section>')
     fields = ''.join('<a class="row-link field-row" href="'+BASE+'/reports/'+rp.stem+'/"><span class="field-time">'+note_time(rp)+'</span><span class="field-title">'+E(note_info(rp)[0])+'</span></a>' for rp in REPORTS[:4])
     libs = [('Shortlist draft (unsigned)', 'research/shortlist-6.md'), ('Worktree disk on the real host', 'research/claude/u7-real-worktree-measurement.md'), ('Consensus record \u2014 pending', 'research/consensus.md'), ('All 20 approaches', 'research/approaches-20.md')]
     lib_rows = ''.join('<a class="row-link lib-row" href="'+public_source(rel)+'"><span class="lib-title">'+E(t)+'</span><span class="lib-path">'+E(rel)+'</span></a>' for t, rel in libs)

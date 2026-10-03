@@ -125,7 +125,7 @@ a.hyp-card:hover{background:var(--hover);color:var(--ink)}
 .pain-chart{display:flex;flex-direction:column;gap:6px}
 .pain-bar{display:flex;height:34px;border:2px solid var(--ink);background:var(--paper)}
 .pain-fill{width:62.1%;background:var(--blue)}
-.pain-caps{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;font-family:var(--mono);font-size:12px;line-height:1.5}
+.pain-caps{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;font-size:13px;line-height:1.5}
 .pain-unknown{margin-top:8px}
 
 /* Home: field notes and library */
@@ -296,17 +296,9 @@ th{border-top:2px solid var(--ink);font-weight:600}
 
 /* Footer */
 .site-footer{margin-top:80px;padding-top:24px;padding-bottom:48px}
-.footer-inner{border-top:2px solid var(--ink);padding-top:18px;display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-between;align-items:flex-start}
-.footer-brand{display:flex;flex-direction:column;gap:6px;max-width:520px;flex:1 1 300px}
-.footer-title{font-family:var(--serif);font-size:20px;font-weight:500;color:var(--ink);text-decoration:none;align-self:flex-start;min-height:24px}
-.footer-brand p{font-size:13px;color:var(--muted);line-height:1.55}
-.footer-side{display:flex;flex-direction:column;gap:6px;font-size:14px;min-width:0;flex:0 1 auto}
-.footer-side>a{overflow-wrap:anywhere;min-height:24px;display:inline-block}
-.mono-line{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.5;overflow-wrap:anywhere}
-.mono-line a{color:inherit}
-.footer-links{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px}
+.footer-inner{border-top:2px solid var(--ink);padding-top:14px}
+.footer-links{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px}
 .footer-links a{min-height:24px;display:inline-flex;align-items:center}
-@media(min-width:768px){.footer-side{align-items:flex-end;text-align:right}.footer-links{justify-content:flex-end}}
 
 /* Phones */
 @media(max-width:412px){
@@ -323,7 +315,7 @@ th{border-top:2px solid var(--ink);font-weight:600}
 }
 .byline-person a{display:inline-flex;align-items:center;min-height:24px}
 a.src{display:inline-flex;align-items:center;min-height:24px;align-self:flex-start;max-width:100%}
-.mono-line a,.back-link a{display:inline-flex;align-items:center;min-height:24px}
+.back-link a{display:inline-flex;align-items:center;min-height:24px}
 /* Arrow glyphs carry their own spacing so flex links never butt them against the label */
 .arr{display:inline-block;margin-left:.35em}
 .arr-l{display:inline-block;margin-right:.35em}
@@ -333,3 +325,38 @@ a.src{display:inline-flex;align-items:center;min-height:24px;align-self:flex-sta
 .ev-label{display:flex;gap:6px;align-items:center}
 .ev-when{font-size:12px;color:var(--muted);letter-spacing:.04em;line-height:1.5}
 .ev-earlier{font-family:var(--mono);font-size:12px;letter-spacing:.04em;line-height:1.5;color:var(--muted);border-top:2px solid var(--ink);padding-top:10px;margin-top:8px}
+
+/* Phones: compact, composed homepage */
+.only-phone{display:none}
+@media(max-width:600px){
+  .only-phone{display:inline}
+  .page-home{gap:44px}
+  .hyp-section{gap:6px}
+  .section-head{border-bottom:0;padding-bottom:0}
+  .card-grid{gap:0}
+  .hyp-card{display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:14px;row-gap:6px;align-items:start;border-top:1px solid var(--ink);padding:14px 0 18px}
+  .hyp-card:first-child{margin-top:10px}
+  .card-top{display:contents}
+  .card-mark,.card-mark svg{width:40px;height:40px}
+  .card-mark{grid-column:1;grid-row:1}
+  .hyp-card .badge{display:none}
+  .card-head{grid-column:2;grid-row:1;gap:2px}
+  .card-name{font-size:22px;line-height:1.15}
+  .hyp-card .status-line,.card-short,.card-next{grid-column:2}
+  .card-short{font-size:15px;line-height:1.5}
+  .pain,.home-bottom{padding-top:20px;gap:28px}
+  .pain-copy{gap:12px}
+  .pain-data{gap:14px}
+  .pain-stats{gap:14px 20px}
+  .home-col{gap:10px}
+  .signup-wrap{margin-top:44px}
+  .email-signup{padding-top:20px}
+  .site-footer{margin-top:36px;padding-top:0;padding-bottom:32px}
+  .hero{gap:20px}
+  .hero-grid{gap:32px}
+  .honest{padding:18px;gap:12px}
+  .honest-rows{row-gap:10px}
+  .honest-row{padding-top:10px}
+  .field-row{grid-template-columns:minmax(0,1fr);gap:2px}
+  .field-time{line-height:1.5}
+}
