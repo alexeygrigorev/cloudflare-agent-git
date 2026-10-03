@@ -13,6 +13,8 @@ Genuine interactive93cf/login:false verified. BUILD-FIRST human3349efa read: hea
 
 C1340–1343: actual head-owned hung-tail recovery acknowledged; executor resumed and reports real/setup500, NOT E2Epass. R46CHANGES realmodebaseSha/reversedpair/dedupstorage delivered; SHA256vsGitblob falsemismatch corrected. Next exactcorrectedrun/gap and L6realagents; continuoushead/scheduler notclaimed.
 
+Latest 2026-10-03T14:28:01.402725+00:00: preserved/reconciled ae9c/bfdfea/3469/33cb; L6actual2ccf/427 runtimecorrections. R46D1–3 ownerb656/8b6/e5b, R47d21CHANGESaux/unverified5c. Canonicalwiregap1350ACK/headfix. DupefullrebuildC1347STOP owner. a03EXIT137causeUNKNOWN/C1353warmroute/PIDidentitychallenge, newheadcontinuationpreserve-first. NoE2E/adoptionclaim; scanSLOmiss6m19 truthfullyrecorded. Nextactualrun/wire/UI+threecodingtasks.
+
 ## Historical entry point (superseded where the current checkpoint differs)
 
 Updated 2026-10-02 interactive continuation. Original headless session338df944 is historical. Orchestrator records current UI session codex-principal56420916-7c6a-4ba9-a95a-79790dd9dce7, same native conversation01a0fdd7-109e-7972-9199-e082a7a1383d. Actual tool-process whoami currently resolves outside this experiment, so native principal messaging is withheld; no identity override. Resume these durable files, not old discovery. Latest continuation below supersedes historical pending/priority statements.
