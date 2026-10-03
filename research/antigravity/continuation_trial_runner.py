@@ -7,8 +7,8 @@ under CONDITIONAL-PILOT-OK (Muse R21 / head-scope-correction.md):
    Rollback CLI: /home/alexey/.local/bin/aplexer (sha256: 8d49a216...) - strictly preserved.
 2. Isolated workspace (.local/continuation-trial/workspace) with standalone git repo.
 3. Fresh quota, disk headroom, and memory floor captured at preflight.
-4. Genuine turn-completion boot: receiver executes initial 'aplexer whoami --json' tool call
-   and debounces to idle, establishing authentic turn completion baseline.
+4. Genuine turn-completion boot: receiver boots, settles to UI idle, executes initial
+   'aplexer whoami --json' tool call, and debounces to idle, establishing authentic turn completion baseline.
 5. Strict composer classification via service.py composer() regex (requiring 'empty').
 6. Twice-captured full composer/state captures before every delivery with durable evidence storage.
 7. Negative 1: Active child tool execution negative (probe deliver occurs strictly while child
@@ -17,7 +17,7 @@ under CONDITIONAL-PILOT-OK (Muse R21 / head-scope-correction.md):
 9. Positive Turn 1: External-driver receiver continuation cycle 1 (turn1_<nonce>.txt + correlated receiver ACK).
 10. Positive Turn 2: External-driver receiver continuation cycle 2 (turn2_<nonce>.txt + correlated receiver ACK).
 11. PTY echo & raw diff preservation (verifying no probe echo in output history).
-12. Full Markdown & JSON telemetry report with exact timestamps, PIDs, and DB verification.
+12. Full Markdown & JSON telemetry report with dynamic gate derivations (never hardcoded PASS).
 13. Clean teardown and verification that installed binary remains untouched.
 """
 import hashlib
@@ -29,6 +29,7 @@ import sqlite3
 import subprocess
 import sys
 import time
+import traceback
 
 PILOT_BIN = "/home/alexey/git/cloudflare-agent-git/.local/producer-review/bin/aplexer-7efa493"
 ROLLBACK_BIN = "/home/alexey/.local/bin/aplexer"
@@ -46,7 +47,7 @@ OPENCODE_BIN = "/home/alexey/.nvm/versions/node/v24.13.1/bin/opencode"
 OPENCODE_SESSION_ID = "ses_eff35bb8dffetYQ0aauR2uX2qo"
 
 # Named subsequent adoption target
-REAL_HEAD_TARGET = "space-bunny-head (2d829c93-8363-477d-b2fd-10f0a3af006e) on task a05-same-task-baseline"
+REAL_HEAD_TARGET = "space-bunny-head (2d829c93-8363-477d-b2fd-10f0a3af006e) on task label-binding-residual-repair / stowaway manifest"
 
 REPORT_MD = os.path.join(BASE_DIR, "TRIAL-REPORT.md")
 REPORT_JSON = os.path.join(BASE_DIR, "trial_results.json")
@@ -204,7 +205,7 @@ def is_resting(session_uuid):
     return True, screen, "empty"
 
 
-def verify_receiver_idle_twice(receiver_uuid, step_name, delta=2.0, max_wait=60):
+def verify_receiver_idle_twice(receiver_uuid, step_name, delta=2.0, max_wait=90):
     """Twice-captured full composer/state captures: ensures resting state at t and t+delta.
     Saves both captures into evidence directory for durable auditability.
     """
@@ -360,13 +361,19 @@ def main():
             "df": df_out,
             "free": free_out
         },
-        "steps": {}
+        "steps": {},
+        "overall_status": "IN_PROGRESS"
     }
 
     try:
-        # Step 2: Establish Genuine Turn-Completion Baseline
-        print("\n--- Step 2: Genuine Turn-Completion Boot Baseline ---")
-        print("Prompting receiver with initial 'aplexer whoami --json' tool command...")
+        # Step 2a: Wait for Receiver UI to initialize and reach initial UI resting idle
+        print("\n--- Step 2a: Waiting for Receiver to reach Initial UI Resting Idle ---")
+        ok_ui, screen_ui, ev1_ui, ev2_ui = verify_receiver_idle_twice(receiver_uuid, "initial_ui_idle", delta=2.0, max_wait=90)
+        assert ok_ui, f"Receiver failed to reach initial UI resting idle!\n{screen_ui}"
+        print("Receiver UI initialized and resting idle.")
+
+        # Step 2b: Establish Genuine Turn-Completion Baseline via initial 'whoami' tool call
+        print("\n--- Step 2b: Establishing Genuine Turn-Completion Baseline via 'whoami' ---")
         init_nonce = str(int(time.time()))
         init_cmd = f"{PILOT_BIN} whoami --workspace {WORKSPACE} --json"
         
@@ -382,13 +389,13 @@ def main():
             [PILOT_BIN, "message", "deliver", init_msg_id, "--workspace", WORKSPACE, "--json"]
         )
         assert deliv_init_rc == 0, f"Failed to deliver boot trigger: {deliv_init_out}"
-        print("Boot trigger delivered. Waiting for receiver to complete initial turn and reach resting idle...")
+        print("Boot trigger delivered. Waiting for receiver to complete initial turn and debounce to idle...")
 
-        ok_idle, screen_idle, ev1, ev2 = verify_receiver_idle_twice(receiver_uuid, "boot_idle", delta=2.0, max_wait=90)
-        assert ok_idle, f"Receiver failed to reach authentic resting idle! Screen:\n{screen_idle}"
+        ok_idle, screen_idle, ev1, ev2 = verify_receiver_idle_twice(receiver_uuid, "boot_turn_idle", delta=2.0, max_wait=90)
+        assert ok_idle, f"Receiver failed to reach authentic resting idle after boot turn! Screen:\n{screen_idle}"
         print("Receiver successfully completed initial turn and settled into authentic resting idle.")
         results["steps"]["boot_turn_baseline"] = {
-            "verified": True,
+            "passed": True,
             "boot_msg_id": init_msg_id,
             "evidence_capture_1": ev1,
             "evidence_capture_2": ev2
@@ -696,41 +703,74 @@ def main():
         print(f"Installed CLI SHA256 post-trial: {final_rollback_sha}")
         assert final_rollback_sha == EXPECTED_ROLLBACK_SHA, "Installed CLI /home/alexey/.local/bin/aplexer was modified!"
         results["rollback_verified_untouched"] = True
+        results["overall_status"] = "PASS"
 
         print("\n=================================================================")
         print("ALL CONTINUATION PREFLIGHT STEPS PASSED SUCCESSFULLY!")
         print("=================================================================")
 
+    except Exception as e:
+        results["error"] = str(e)
+        results["traceback"] = traceback.format_exc()
+        results["overall_status"] = "FAIL"
+        raise
+
     finally:
         print("\n--- Cleaning up trial sessions ---")
         cleanup_trial_sessions()
+
+        final_rollback_sha = sha256_file(ROLLBACK_BIN)
+        results["post_trial_rollback_sha256"] = final_rollback_sha
+        rollback_intact = (final_rollback_sha == EXPECTED_ROLLBACK_SHA and rollback_sha == EXPECTED_ROLLBACK_SHA)
+        results["rollback_verified_untouched"] = rollback_intact
 
         with open(REPORT_JSON, "w") as f:
             json.dump(results, f, indent=2)
         print(f"Results saved to {REPORT_JSON}")
 
+        def get_gate_status(step_key):
+            step_data = results["steps"].get(step_key)
+            if step_data is None:
+                return "**NOT-RUN**"
+            return "**PASS**" if step_data.get("passed") else "**FAIL**"
+
+        s_boot = get_gate_status("boot_turn_baseline")
+        s_neg1 = get_gate_status("negative_active_tool")
+        s_neg2 = get_gate_status("negative_draft_composer")
+        s_t1 = get_gate_status("turn1")
+        s_t2 = get_gate_status("turn2")
+        s_roll = "**PASS**" if rollback_intact else "**FAIL**"
+        overall = results.get("overall_status", "FAIL")
+
         with open(REPORT_MD, "w") as f:
             f.write("# Continuation Trial Preflight Report: External-Driver Repeated Receiver Cycles & Reversible Safety Verification\n\n")
             f.write(f"- **Execution Timestamp:** {time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime())}\n")
             f.write(f"- **Candidate Binary:** `{PILOT_BIN}` (SHA256: `{bin_sha}`)\n")
-            f.write(f"- **Rollback CLI:** `{ROLLBACK_BIN}` (SHA256: `{rollback_sha}`, verified untouched)\n")
+            f.write(f"- **Rollback CLI:** `{ROLLBACK_BIN}` (SHA256: `{final_rollback_sha}`, verified untouched: {rollback_intact})\n")
             f.write(f"- **Receiver Session:** `{receiver_uuid}` (engine `opencode`, model `muse-spark-1.3-contributor`)\n")
             f.write(f"- **Sender Session:** `{sender_uuid}` (engine `shell`)\n")
             f.write(f"- **Workspace:** `{WORKSPACE}` (isolated git repo)\n")
-            f.write(f"- **Subsequent Real-Head Target:** `{REAL_HEAD_TARGET}`\n\n")
+            f.write(f"- **Subsequent Real-Head Target:** `{REAL_HEAD_TARGET}`\n")
+            f.write(f"- **Overall Status:** **{overall}**\n\n")
+            if "error" in results:
+                f.write(f"> [!WARNING] **Trial Error Encountered:** `{results['error']}`\n\n")
             f.write("## Verified Gates & Results\n\n")
             f.write("| Test Step | Target Condition | Observed Outcome | Gate Status |\n")
             f.write("|---|---|---|---|\n")
-            f.write("| Boot Baseline Turn | Initial tool execution -> debounced idle | Initial whoami executed, resting idle confirmed with twice empty-composer | **PASS** |\n")
+            f.write(f"| Boot Baseline Turn | Initial tool execution -> debounced idle | Initial whoami executed, resting idle confirmed with twice empty-composer | {s_boot} |\n")
             neg1 = results["steps"].get("negative_active_tool", {})
-            f.write(f"| Negative 1 (Active Tool) | Deliver during child sleep ({neg1.get('child_pid')}) | Exit {neg1.get('deliver_probe_exit_code')} (not-ready), envelope preserved, 0 probe echo in history | **PASS** |\n")
+            neg1_out = f"Exit {neg1.get('deliver_probe_exit_code')} (not-ready), envelope preserved, no probe echo (appended {neg1.get('appended_history_bytes')} bytes)" if neg1 else "Not reached"
+            f.write(f"| Negative 1 (Active Tool) | Deliver during child sleep ({neg1.get('child_pid', 'N/A')}) | {neg1_out} | {s_neg1} |\n")
             neg2 = results["steps"].get("negative_draft_composer", {})
-            f.write(f"| Negative 2 (Draft Composer) | Deliver during unsubmitted draft | Exit {neg2.get('deliver_draft_exit_code')} (not-ready), envelope preserved | **PASS** |\n")
+            neg2_out = f"Exit {neg2.get('deliver_draft_exit_code')} (not-ready), envelope preserved, draft detected" if neg2 else "Not reached"
+            f.write(f"| Negative 2 (Draft Composer) | Deliver during unsubmitted draft | {neg2_out} | {s_neg2} |\n")
             t1 = results["steps"].get("turn1", {})
-            f.write(f"| Turn 1 (Continuation Cycle) | Delivery -> file write -> ACK | Created `{t1.get('target_file')}`, ACK verified | **PASS** |\n")
+            t1_out = f"Created `{t1.get('target_file')}`, ACK verified" if t1 else "Not reached"
+            f.write(f"| Turn 1 (Continuation Cycle) | Delivery -> file write -> ACK | {t1_out} | {s_t1} |\n")
             t2 = results["steps"].get("turn2", {})
-            f.write(f"| Turn 2 (Continuation Cycle) | Delivery -> file write -> ACK | Created `{t2.get('target_file')}`, ACK verified | **PASS** |\n")
-            f.write(f"| Rollback CLI Integrity | Installed binary untouched | SHA256 verified identical post-trial | **PASS** |\n\n")
+            t2_out = f"Created `{t2.get('target_file')}`, ACK verified" if t2 else "Not reached"
+            f.write(f"| Turn 2 (Continuation Cycle) | Delivery -> file write -> ACK | {t2_out} | {s_t2} |\n")
+            f.write(f"| Rollback CLI Integrity | Installed binary untouched | SHA256 verified identical post-trial | {s_roll} |\n\n")
             f.write("## Evidence Artifacts\n\n")
             f.write(f"- Detailed JSON: `{REPORT_JSON}`\n")
             f.write(f"- Evidence directory: `{EVIDENCE_DIR}`\n")
