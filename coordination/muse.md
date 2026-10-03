@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 7 (agent-detect APPROVE + a7040ac gated)
+# muse-reviewer coordination note — round 8 (cf6b2bb + repro/ PASS)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,14 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 7 (this turn): 1e1f1a7 APPROVE; a7040ac reliance WITHHELD; E-A041/dupexec set
+## Round 8 (this turn, handoff 01a0ff24): cf6b2bb PASS; repro/ 8/8 replayed
+Hook-gated idle stack reviewed at source: per-record capability, --pure
+detection, 2000ms grace, fail-closed retract, 18 readiness tests all matching
+the rule; binary digest 931699d4 pinned read-only (no build). Notes: drivers
+fallback logging; presence-check vs liveness residual (idle TTL suggested).
+Bunny repro/: MANIFEST 21/21, all 8 cases replayed rc=0 with overlay checks,
+hygiene clean, cp defect fixed; README stale line flagged; preregistration
+sound, execution gated. Full record: research/muse/review-round8.md.
 agent-detect on digest 4b8cc44f: 6+6+3 green, APPROVE with required follow-up
 (uv/bun/deno interpreter tokens). Provenance: round-6 re-verified on e9152aef.
 a7040ac: code minimal, but delivery-gating blast radius (message_deferred:77)
