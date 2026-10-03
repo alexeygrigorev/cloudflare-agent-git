@@ -224,3 +224,7 @@ Earlier same-day user lines given directly to claude-principal (verbatim): "cont
 ## 2026-10-03 17:40 CEST: user to claude-principal (verbatim)
 
 > it shouldn't be rust focused though
+
+## 2026-10-03 19:24 CEST: user to claude-principal (verbatim)
+
+> I want you to start zcodex session to update the landing page currently the hero image talked too much space and barely anything else is visible
