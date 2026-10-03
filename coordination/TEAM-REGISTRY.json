@@ -229,21 +229,21 @@
           "launched_by": "antigravity-head"
         },
         {
-          "tag": "producer-negative-reviewer",
+          "tag": "producer-negative-reviewer-r3",
           "role": "worker",
           "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
-          "session_id": "2c129817-2f15-43aa-9a1d-60cc895e4132",
+          "session_id": "6bf317fa-5669-420d-ab1e-224d1da8c30f",
           "mode": "headless",
           "engine": "opencode",
           "model": "opencode-go/muse-spark-1.3-contributor",
           "cgroup_memory": "2G",
           "cgroup_pids": 256,
           "workspace": "/home/alexey/git/cloudflare-agent-git",
-          "task": "producer-negative-review",
+          "task": "producer-negative-review-r3",
           "owned_paths": [
             ".local/producer-review/**"
           ],
-          "started_at": "2026-10-03T06:31:01Z"
+          "started_at": "2026-10-03T06:37:43Z"
         }
       ]
     },
@@ -391,15 +391,19 @@
         {
           "tag": "public-journal-site",
           "role": "coordinator",
-          "mode": "native-harness-subagent",
+          "mode": "interactive",
           "native_identity": "/root/public_journal_site",
           "parent_identity": "/root",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
-          "assignment_ack": "actual task accepted; no standalone interactive session claimed",
+          "assignment_ack": "actual task accepted; succeeding native harness /root/public_journal_site by clean handoff (01a1006d-6417 / 01a1006d-6d76)",
           "owned_paths": [
             "website/editorial",
-            "coordination publication entries"
-          ]
+            "coordination publication entries",
+            ".local/journal/publication-coordinator/**"
+          ],
+          "session_id": "088a2387-89e4-468b-9ca5-20be7ffec202",
+          "engine": "antigravity",
+          "predecessor_identity": "/root/public_journal_site"
         },
         {
           "tag": "publication-process-reviewer",
@@ -411,6 +415,48 @@
           "assignment_ack": "actual task accepted; no standalone interactive session claimed",
           "owned_paths": [
             "website/editorial/QUALITY-REVIEW.md"
+          ]
+        },
+        {
+          "tag": "journal-capture-spec",
+          "role": "prototype-capture-automation",
+          "mode": "automation-script",
+          "session_id": "5a862579-1a2f-4956-9c9a-014ffa12a45c",
+          "parent_tag": "public-journal-site",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "assignment_ack": "head-authored reference ingestion & contract generator (no model invocation; usage N/A)",
+          "task_id": "publication-reference-packet",
+          "owned_paths": [
+            ".local/journal/capture-spec/**",
+            ".local/journal/design-reference/**"
+          ]
+        },
+        {
+          "tag": "journal-visual-reviewer",
+          "role": "visual-comparison-automation",
+          "mode": "automation-script",
+          "session_id": "676eb72d-c3d6-4fa9-85a0-3b9d2ff05679",
+          "parent_tag": "public-journal-site",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "assignment_ack": "head-authored candidate vs reference matrix generator (no model invocation; independent verdict withheld; usage N/A)",
+          "task_id": "publication-visual-acceptance",
+          "owned_paths": [
+            ".local/journal/visual-review/**"
+          ]
+        },
+        {
+          "tag": "journal-visual-reviewer-model",
+          "role": "independent-visual-reviewer",
+          "mode": "headless",
+          "engine": "opencode",
+          "model": "opencode-go/muse-spark-1.3-contributor",
+          "session_id": "8c8e8aaf-3b8b-4038-8c07-5be6219de96c",
+          "parent_tag": "public-journal-site",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "assignment_ack": "genuine independent model visual review completed; verdict FAIL (hero defect) & UNKNOWN (styling harness failure) reported in 01a10083-b62c",
+          "task_id": "publication-visual-acceptance",
+          "owned_paths": [
+            ".local/journal/visual-review/**"
           ]
         }
       ],
@@ -440,13 +486,16 @@
     {
       "tag": "public-journal-site",
       "team_id": "publication",
-      "role": "executor",
-      "mode": "native-harness-subagent",
+      "role": "coordinator",
+      "mode": "interactive",
       "native_agent_identity": "/root/public_journal_site",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
-      "task_id": "website-relay-email-signup",
-      "measurement_scope": "desktop native harness subagent; no remote aplexer workload PID inferred",
-      "usage": "unknown unless actual harness usage is available"
+      "task_id": "publication-coordinator-handoff",
+      "measurement_scope": "interactive publication head session, memory 2G, pids 256",
+      "usage": "measured via quse gemini",
+      "session_id": "088a2387-89e4-468b-9ca5-20be7ffec202",
+      "engine": "antigravity",
+      "predecessor_identity": "/root/public_journal_site"
     },
     {
       "tag": "relay-signup-review",
@@ -515,6 +564,44 @@
       "task_id": "metrics-opencode-message-usage",
       "status": "done",
       "completed_at": "2026-10-03T05:54:21.308582+00:00"
+    },
+    {
+      "tag": "journal-capture-spec",
+      "team_id": "publication",
+      "role": "prototype-capture-automation",
+      "mode": "automation-script",
+      "session_id": "5a862579-1a2f-4956-9c9a-014ffa12a45c",
+      "parent_session_id": "088a2387-89e4-468b-9ca5-20be7ffec202",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "publication-reference-packet",
+      "measurement_scope": "head-authored Python script; no model tokens or API costs",
+      "usage": "N/A (automation script)"
+    },
+    {
+      "tag": "journal-visual-reviewer",
+      "team_id": "publication",
+      "role": "visual-comparison-automation",
+      "mode": "automation-script",
+      "session_id": "676eb72d-c3d6-4fa9-85a0-3b9d2ff05679",
+      "parent_session_id": "088a2387-89e4-468b-9ca5-20be7ffec202",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "publication-visual-acceptance",
+      "measurement_scope": "head-authored Python script; no model tokens or API costs",
+      "usage": "N/A (automation script)"
+    },
+    {
+      "tag": "journal-visual-reviewer-model",
+      "team_id": "publication",
+      "role": "independent-visual-reviewer",
+      "mode": "headless",
+      "engine": "opencode",
+      "model": "opencode-go/muse-spark-1.3-contributor",
+      "session_id": "8c8e8aaf-3b8b-4038-8c07-5be6219de96c",
+      "parent_session_id": "088a2387-89e4-468b-9ca5-20be7ffec202",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "publication-visual-acceptance",
+      "measurement_scope": "independent model evaluation with tool execution and screenshots inspection",
+      "usage": "measured via opencode token metadata"
     }
   ]
 }

@@ -415,12 +415,10 @@
       "owner_tag": "public-journal-site",
       "executor_tag": "journal-capture-spec",
       "executor_session": "5a862579-1a2f-4956-9c9a-014ffa12a45c",
-      "status": "in_progress",
-      "updated_at": "2026-10-03T08:26:22.000000+00:00",
-      "blocked_on": [
-        "Desktop root 1440x1000 and 390x844 browser screenshots pending; reference HTML and support files ingested and pinned"
-      ],
-      "next_action": "Capture-spec executor ingested reference HTML (SHA256: 3ff499a5...); generated CONTRACT.md, INVARIANTS.json, REFERENCE-MANIFEST.json. Awaiting browser screenshot packet.",
+      "status": "running",
+      "updated_at": "2026-10-03T08:44:00.000000+00:00",
+      "blocked_on": [],
+      "next_action": "Complete reference bundle pinned in REFERENCE-MANIFEST.json (Agent-Git-Lab.dc.html, support.js, assets/agent-git-illustration.png, desktop-export.json). Invariants labeled for measured source vs current repo facts.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "website/editorial/QUALITY.md",
@@ -428,59 +426,62 @@
         ".local/journal/capture-spec/INVARIANTS.json",
         ".local/journal/capture-spec/REFERENCE-MANIFEST.json"
       ],
-      "assignment_ack": "ACKED by journal-capture-spec (session 5a862579-1a2f-4956-9c9a-014ffa12a45c, antigravity) via aplexer message 01a10071-3884."
+      "assignment_ack": "Reference bundle pinned; preliminary capture spec and contract drafted by head automation script (5a862579)."
     },
     {
       "id": "publication-fidelity-repair",
       "team_id": "publication",
       "owner_tag": "public-journal-site",
       "status": "blocked",
-      "updated_at": "2026-10-03T08:26:22.000000+00:00",
+      "updated_at": "2026-10-03T08:46:40.000000+00:00",
       "blocked_on": [
-        "publication-reference-packet (sealed reference packet and capture contract required before code repair)"
+        "publication-visual-acceptance FAIL verdict (homepage hero fidelity defect) requires template repair in website/build.py:208"
       ],
-      "next_action": "Dispatch fidelity repair implementer once reference packet is sealed to update website/build.py and site.css, preserving Relay signup and Opus provenance.",
+      "next_action": "Dispatch fidelity repair worker under explicit handoff to update website/build.py:208 and site.css, replacing marketing hero with reference FIG.0 + Daily H1 + honest status panel.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
-        "website/editorial/QUALITY.md"
+        "website/editorial/QUALITY.md",
+        ".local/journal/visual-review/INDEPENDENT-REVIEW.md"
       ],
-      "assignment_ack": "coordinator public-journal-site (088a2387) owns queue; implementation worker to be launched upon packet sealing"
+      "assignment_ack": "coordinator public-journal-site (088a2387) owns queue; implementation worker to be launched for template repair"
     },
     {
       "id": "publication-visual-acceptance",
       "team_id": "publication",
       "owner_tag": "public-journal-site",
-      "executor_tag": "journal-visual-reviewer",
-      "executor_session": "676eb72d-c3d6-4fa9-85a0-3b9d2ff05679",
-      "status": "in_progress",
-      "updated_at": "2026-10-03T08:26:40.000000+00:00",
+      "executor_tag": "journal-visual-reviewer-model",
+      "executor_session": "8c8e8aaf-3b8b-4038-8c07-5be6219de96c",
+      "status": "review",
+      "updated_at": "2026-10-03T08:46:40.000000+00:00",
       "blocked_on": [
-        "Fidelity repair candidate and full browser screenshot packet"
+        "Fidelity repair candidate and screenshot harness serve-root fix"
       ],
-      "next_action": "Initial 5-family comparison matrix completed in .local/journal/visual-review/COMPARISON-MATRIX.md (FAIL on homepage hierarchy, UNKNOWN on missing screenshots). Reviewer will audit repair candidate once implemented.",
+      "next_action": "Independent model review completed in .local/journal/visual-review/INDEPENDENT-REVIEW.md. Verdict: FAIL (material homepage hero fidelity defect) & UNKNOWN (screenshot harness base-path styling failure). Candidate repair required before re-review.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
         "website/editorial/QUALITY.md",
-        ".local/journal/visual-review/COMPARISON-MATRIX.md"
+        ".local/journal/visual-review/INDEPENDENT-REVIEW.md",
+        ".local/journal/screenshots/SCREENSHOT-MANIFEST.json"
       ],
-      "assignment_ack": "ACKED by journal-visual-reviewer (session 676eb72d-c3d6-4fa9-85a0-3b9d2ff05679, opencode) via aplexer message 01a10071-801f."
+      "assignment_ack": "ACKED and executed by independent model reviewer journal-visual-reviewer-model (session 8c8e8aaf-3b8b-4038-8c07-5be6219de96c, opencode-go/muse-spark-1.3-contributor) via aplexer message 01a10083-b62c.",
+      "model": "opencode-go/muse-spark-1.3-contributor"
     },
     {
       "id": "publication-release-verification",
       "team_id": "publication",
       "owner_tag": "public-journal-site",
       "status": "blocked",
-      "updated_at": "2026-10-03T08:26:40.000000+00:00",
+      "updated_at": "2026-10-03T08:46:40.000000+00:00",
       "blocked_on": [
-        "publication-visual-acceptance",
-        "Independent visual/editorial/function gates and acceptance packet incomplete"
+        "publication-visual-acceptance (visual FAIL blocks design release)"
       ],
-      "next_action": "Coordinator releases accepted design candidate once independent visual PASS is achieved; lane verifier compares deployed SHA/screenshots and records rollback.",
+      "next_action": "Coordinator holds design release in preview. Factual existing template updates continue.",
       "acceptance": "QUALITY.md exact-source evidence; actual role identities/ACKs, no root approval dependency or process-PASS-as-visual-PASS",
       "evidence_paths": [
-        "website/editorial/QUALITY.md"
+        "website/editorial/QUALITY.md",
+        ".local/journal/visual-review/INDEPENDENT-REVIEW.md"
       ],
-      "assignment_ack": "coordinator public-journal-site (088a2387) owns queue; releases only upon independent visual PASS"
+      "assignment_ack": "coordinator public-journal-site (088a2387) owns queue; design release strictly held until visual PASS"
     },
     {
       "id": "a18-demand-scout",
