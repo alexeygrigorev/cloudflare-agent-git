@@ -340,7 +340,8 @@ export class CoordinatorCore implements CoordinatorAccess {
         accepted: true,
         deduped: true,
         agent: agentId,
-        heads: model.heads,
+        // Snapshot: callers must never hold a live reference into the model.
+        heads: { ...model.heads },
         invalidatedWarnings: [],
         newWarnings: [],
         radarChecks: 0,
@@ -371,7 +372,8 @@ export class CoordinatorCore implements CoordinatorAccess {
       accepted: true,
       deduped: false,
       agent: agentId,
-      heads: model.heads,
+      // Snapshot: callers must never hold a live reference into the model.
+      heads: { ...model.heads },
       invalidatedWarnings,
       newWarnings,
       radarChecks: radarOutcome.checks.length,
@@ -389,7 +391,9 @@ export class CoordinatorCore implements CoordinatorAccess {
     return {
       canonical: { name: model.canonicalName, remote: model.canonicalRemote },
       agents: Object.values(model.agents),
-      heads: model.heads,
+      // Snapshot: over RPC/wire this was always cloned; the direct core API
+      // must not hand out the live heads object either.
+      heads: { ...model.heads },
       pairs: this.pairViews(model, unprocessedAgents),
       warnings: [...model.warnings]
         .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
