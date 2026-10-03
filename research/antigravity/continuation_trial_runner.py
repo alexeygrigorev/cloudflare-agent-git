@@ -47,7 +47,6 @@ EVIDENCE_DIR = os.path.join(BASE_DIR, "evidence")
 DB_PATH = os.path.join(DATA_DIR, "opencode", "opencode.db")
 PRISTINE_DB_SOURCE = "/home/alexey/git/cloudflare-agent-git/.local/pilot-ca1/data/opencode/opencode.db"
 OPENCODE_BIN = "/home/alexey/.nvm/versions/node/v24.13.1/bin/opencode"
-OPENCODE_SESSION_ID = "ses_eff35bb8dffetYQ0aauR2uX2qo"
 
 # Named subsequent adoption target
 REAL_HEAD_TARGET = "space-bunny-head (2d829c93-8363-477d-b2fd-10f0a3af006e) on task label-binding-residual-repair / stowaway manifest"
@@ -411,15 +410,14 @@ def main():
             os.remove(target_f)
     shutil.copy2(PRISTINE_DB_SOURCE, DB_PATH)
 
-    # Verify real opencode.db session is present before launch
+    # Verify opencode.db is present before launch
     assert os.path.exists(DB_PATH), f"opencode.db missing at {DB_PATH}!"
     con_check = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
     cur_check = con_check.cursor()
-    cur_check.execute("SELECT id, title, time_created FROM session WHERE id=?", (OPENCODE_SESSION_ID,))
-    sess_row = cur_check.fetchone()
+    cur_check.execute("SELECT count(*) FROM session;")
+    sess_count = cur_check.fetchone()[0]
     con_check.close()
-    assert sess_row is not None, f"Session {OPENCODE_SESSION_ID} not found in DB {DB_PATH}!"
-    print(f"Verified pre-existing pristine session in DB: {sess_row}")
+    print(f"Verified pristine DB restored with {sess_count} baseline session(s).")
 
     # 2. Launch fresh disposable sessions under cgroups
     print("\n--- Step 1: Launching disposable receiver and sender sessions ---")
@@ -437,7 +435,6 @@ def main():
         "--json",
         "--",
         OPENCODE_BIN,
-        "--session", OPENCODE_SESSION_ID,
         "--auto",
         "--prompt", f"Run this initial baseline tool command: {init_cmd}"
     ]
@@ -474,7 +471,7 @@ def main():
         "rollback_sha256": rollback_sha,
         "receiver_session_id": receiver_uuid,
         "sender_session_id": sender_uuid,
-        "opencode_session_id": OPENCODE_SESSION_ID,
+        "opencode_session_id": "auto_created",
         "workspace": WORKSPACE,
         "subsequent_real_head_target": REAL_HEAD_TARGET,
         "resource_headroom": {
