@@ -79,11 +79,10 @@ p{margin:0}
 .feature-byline{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:14px;line-height:1.4;color:var(--muted)}
 .chip{font-family:var(--mono);font-size:12px;border:1px solid var(--ink);padding:2px 6px;color:var(--ink)}
 
-/* Honest status: one label column for every row (subgrid sized to the widest number) */
+/* Status panel: one label column for every row (subgrid sized to the widest number) */
 .honest{border:2px solid var(--ink);padding:22px;display:flex;flex-direction:column;gap:14px;background:var(--paper);min-width:0}
 .honest-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;align-items:baseline}
 .honest-head h2{font-size:24px;font-weight:500;line-height:1.2}
-.honest-cutoff{font-family:var(--mono);font-size:12px;color:var(--muted)}
 .honest-rows{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;row-gap:12px}
 .honest-row{grid-column:1/-1;display:grid;grid-template-columns:subgrid;border-top:1px solid var(--line);padding-top:12px;align-items:baseline}
 .honest-n{font-family:var(--serif);font-size:34px;line-height:1;font-weight:500;white-space:nowrap}
