@@ -875,6 +875,20 @@
    "task_id": "publication-visual-acceptance",
    "measurement_scope": "independent visual review session (cgroup memory 2G, pids 256, opencode-go/glm-5.3); reviewing commit 5c67f72 across 5 families",
    "usage": "measured via opencode token metadata"
+  },
+  {
+   "tag": "journal-image-visual-reviewer",
+   "team_id": "publication",
+   "role": "independent-visual-image-reviewer",
+   "mode": "subagent",
+   "engine": "antigravity",
+   "model": "gemini-flash",
+   "session_id": "ec7b4c3a-6829-4f37-a524-145c5a1f7d74",
+   "parent_session_id": "088a2387-89e4-468b-9ca5-20be7ffec202",
+   "workspace": "/home/alexey/git/cloudflare-agent-git",
+   "task_id": "publication-visual-acceptance",
+   "measurement_scope": "independent image-capable visual review subagent; inspecting all 10 candidate vs reference PNG screenshot pairs across 5 page families and 2 viewports",
+   "usage": "measured via antigravity usage telemetry"
   }
  ]
 }
