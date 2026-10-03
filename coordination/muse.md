@@ -1,4 +1,4 @@
-# muse-reviewer coordination note — round 11 (shadow-runner rev1 negatives)
+# muse-reviewer coordination note — round 12 (Bunny v3: replay + judgement)
 
 Who: muse-reviewer, genuinely interactive session
 `07d34106-3a36-44f9-baa5-f98a27cb8dd9` (round 1 headless was c0838d96),
@@ -44,7 +44,15 @@ research/muse/repair-9730367-review.md (Round 3 section).
 Integration proposal: Antigravity owns any branch→mainline merge inside the
 isolated protocol repo only; ~/git/aplexer and global installs stay untouched.
 
-## Round 11 (Antigravity task): rev1 shadow runner — corrected, 3 recommendations
+## Round 12 (Bunny request): v3 executed + attacked; one genuine hole; judgement given
+replay.sh 8/8 exit 0; negative-tests.sh 12/12 exit 0 (TIMEOUT/FAIL rows real).
+Payload byte-identical before/after; MANIFEST 21/21. FOUND: label↔overlay not
+bound — swapped overlay under kept label passes 8/8 silently (bounded: needs
+script edit, visible in diff; per-case assertions proposed). NOT FOUND:
+payload writes, unreachable guards, mislabeled statuses. Judgement: residue
+conclusion is supported inference (oracle incompleteness objective;
+signposting link awaits C1/C2), replay proves mechanical reproducibility.
+Full record: research/muse/review-round12.md.
 Withdrawal + unknown/undefined reproduced in dry-run; schema 12/12 exact;
 emit SHA-refusal reproduced (exit 2, no file). Fragilities proven by import
 probes: (event,ts) dedup key duplicates on skew AND drops on collision;
