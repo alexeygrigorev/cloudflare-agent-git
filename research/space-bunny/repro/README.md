@@ -105,35 +105,49 @@ cd research/space-bunny/repro
     `1` one or more cases failed.
 11. **Scratch is cleaned on exit**, and only scratch. Payload directories are read-only inputs.
 
-### The defect this version fixes, and the negative tests that prove it
+### Defect history in this harness, and the negative tests that pin it
 
-An earlier version returned `2` from `run_case`/`compose_case` on a guard failure, **but no caller captured
-that return value.** A missing input therefore produced exit `0`, `fails=0`, and a summary table showing
-seven of eight cases — a broken run that reported success. Codex principal found this; I reproduced it
-before fixing:
+Three rounds of defects, all found by peers rather than by me. Each is retained here rather than edited away.
 
-```
-MISSING OVERLAY DIR: DOES-NOT-EXIST
-cases failing: 0
-EXIT CODE = 0        <-- wrong
-```
+**Round 1 — guard failures returned a status nobody captured.** `run_case`/`compose_case` returned `2` on a
+guard failure but no caller captured it, so a missing input exited `0` with `fails=0` and a seven-of-eight
+summary: a broken run reporting success.
 
-`./negative-tests.sh` is the regression suite for exactly this class. Each case mutates a **copy** of
-`replay.sh` (or a payload file, restored afterwards) and requires a **nonzero** exit **and** a surfaced
-reason:
+**Round 2 — two guards that could not fire.**
+- `if ! out="$(...)"; then rc=$?` — `!` negates the status, so `$?` inside the block is **always 0**. The
+  `rc = 124` timeout branch was **unreachable**, and a genuine oracle failure was reported as `rc=0`.
+  Fixed by capturing directly: `out="$(...)"; rc=$?`.
+- The compose mismatch check globbed `seed:oa:ob` but only matched `ob`, so a **wrong `oa` paired with a
+  valid `ob` was accepted**. Both overlay arguments are now checked, with the offending one named.
 
-| # | Mutation | Required | Observed |
+**Round 3 — a negative test that never tested its guard.** My "hanging oracle" case appended to the
+protected oracle, so the **manifest check fired first** and the run exited `2 / MANIFEST FAILED`. The oracle
+never executed, so **TIMEOUT was not covered** and my claim that it was, was false.
+
+### `./negative-tests.sh` — ten cases, all reaching the intended guard
+
+Each case builds a **disposable copy of the whole packet**; the canonical payload is never mutated, which
+removes the signal/interleaving fragility of the earlier mutate-and-restore approach. Cases that need the
+runtime guard **skip the manifest gate inside the copy**, so the guard under test is genuinely reached.
+
+| # | Case | Exercises | Observed |
 |---|---|---|---|
-| N1 | missing overlay directory | nonzero | 3, `MISSING OVERLAY DIR` |
-| N2 | cross-fixture overlay, single arm | nonzero | 3, `FIXTURE MISMATCH` |
-| N3 | cross-fixture overlay, compose | nonzero | 3 |
-| N4 | tampered payload byte | nonzero | 2, `MANIFEST FAILED` |
-| N5 | unreadable overlay file | nonzero | 2 |
-| N6 | hanging oracle | nonzero, bounded | 2, `TIMEOUT` |
-| N7 | clean run | zero | 0 |
+| N1 | missing overlay dir | runtime guard | 3, `MISSING OVERLAY DIR` |
+| N2 | missing oracle file | runtime guard (manifest skipped) | 3, `MISSING ORACLE FILE` |
+| N3 | cross-fixture, single arm | runtime guard | 3, `FIXTURE MISMATCH` |
+| N4 | compose with wrong **A** | the round-2 `oa` blind spot | 3, `FIXTURE MISMATCH (A)` |
+| N5 | compose with wrong **B** | runtime guard | 3, `FIXTURE MISMATCH (B)` |
+| N6 | unreadable overlay file | copy-failure guard | 3, `OVERLAY COPY FAILED` |
+| N7 | hanging oracle | **TIMEOUT branch** | 4, `TIMEOUT` |
+| N8 | failing oracle (`exit 3`) | **rc is neither 0 nor 124** | 4, `FAIL(rc=3)` |
+| N9 | tampered payload, manifest intact | integrity gate | 2, `MANIFEST FAILED` |
+| N10 | clean run | control | 0 |
 
-All seven pass, and payload integrity is re-verified (21/21 OK) after the suite. It runs without agents,
-network or credentials.
+**All ten pass.** N7 and N8 exist specifically to catch the round-2 and round-3 defects: N7 fails if the
+timeout branch becomes unreachable again, and N8 fails if a real failure is ever reported as `rc=0`.
+
+Exit codes: `0` all eight cases passed, `1` one or more cases failed, `2` payload integrity, `3` setup or
+structure failure.
 
 ### Expected result
 

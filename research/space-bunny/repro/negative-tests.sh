@@ -1,59 +1,126 @@
 #!/usr/bin/env bash
-# NEGATIVE TESTS for replay.sh - Codex principal delegated these (01a0ff5f).
+# Negative tests for replay.sh - Codex principal delegated these (01a0ff5f, 01a0ff61).
 #
-# Each mutation MUST make replay.sh exit nonzero, and MUST surface a reason. No agents,
-# no network, no credentials. Every mutation is applied to a COPY of replay.sh and to
-# payload files that are restored afterwards; payload integrity is re-verified at the end.
+# Each case works on a DISPOSABLE COPY of the whole packet. The canonical payload in
+# this directory is never mutated: an earlier version edited payload files and restored
+# them, which is fragile under a signal or interleaving. Here, only a scratch copy is
+# ever touched, and only scratch is removed.
+#
+# Every case requires a NONZERO exit AND a surfaced reason, and must exercise the RUNTIME
+# guarded path rather than being preempted by the manifest check.
 #
 # Usage: ./negative-tests.sh     (exit 0 means every negative test behaved correctly)
+set -uo pipefail
+
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$HERE"
-pass=0; fail=0
-chk(){ # name expected_nonzero actual_code
-  if [ "$2" = "yes" ] && [ "$3" -ne 0 ]; then echo "  OK   $1 -> exit $3 (nonzero as required)"; pass=$((pass+1))
-  elif [ "$2" = "no" ] && [ "$3" -eq 0 ]; then echo "  OK   $1 -> exit 0 (happy path)"; pass=$((pass+1))
-  else echo "  BAD  $1 -> exit $3 (wanted nonzero=$2)"; fail=$((fail+1)); fi
-}
-WORK="$(mktemp -d /tmp/g3neg.XXXXXX)"
-cleanup(){ rm -f ./neg.sh; rm -rf "$WORK"; }
+WORK="$(mktemp -d /tmp/g3neg.XXXXXX)" || { echo "FATAL: no scratch" >&2; exit 3; }
+cleanup(){ rm -rf "$WORK"; }
 trap cleanup EXIT
-mut(){ cp replay.sh "$WORK/neg.sh"; chmod +x "$WORK/neg.sh"; cp "$WORK/neg.sh" ./neg.sh; }
-run(){ ./neg.sh >"$WORK/out" 2>&1; echo $?; }
-grep_out(){ grep -m1 "$1" "$WORK/out"; }
 
-echo "N1 missing overlay dir (must be nonzero)"
-mut; sed -i 's|run_case f2-B     seed-arm2 arm2-signposted/B|run_case f2-B     seed-arm2 NOPE|' neg.sh; c=$(run)
-chk "missing input" yes "$c"; grep -q "MISSING OVERLAY DIR\|STRUCTURE FAILURE" $WORK/out && echo "       reason surfaced: $(grep -m1 'MISSING OVERLAY DIR\|STRUCTURE FAILURE' $WORK/out)"
+pass=0; bad=0
 
-echo "N2 cross-fixture overlay (must be nonzero)"
-mut; sed -i 's|run_case f2-A     seed-arm2 arm2-signposted/A|run_case f2-A     seed-arm2 arm1-signposted/A|' neg.sh; c=$(run)
-chk "cross-fixture" yes "$c"; grep -q "FIXTURE MISMATCH" $WORK/out && echo "       reason surfaced: $(grep -m1 FIXTURE $WORK/out)"
+# fresh_packet: a full disposable copy of the packet, with its own replay.sh
+fresh_packet(){
+  local name="$1"
+  local d="$WORK/$name"
+  mkdir -p "$d"
+  # Copy the CONTENTS of this directory. `cp -a "$HERE"/* "$d"/` rather than
+  # `cp -a "$HERE"/. "$d"/`: with a trailing "/." the copy silently produced an empty
+  # tree in my first attempt, and every case then "passed" for the wrong reason.
+  cp -a "$HERE"/. "$d"/ || return 1
+  cp -a "$HERE"/*.py "$d"/ 2>/dev/null || true
+  for sub in seed-arm1 seed-arm2 arm1-signposted arm2-signposted protected-oracle repro; do
+    [ -e "$HERE/$sub" ] && cp -a "$HERE/$sub" "$d/"
+  done
+  cp "$HERE/replay.sh" "$HERE/MANIFEST.sha256" "$d"/
+  rm -f "$d/negative-tests.sh"   # avoid recursion in the copy
+  # Prove the copy is usable before any case depends on it.
+  [ -x "$d/replay.sh" ] || { chmod +x "$d/replay.sh" 2>/dev/null; }
+  [ -f "$d/replay.sh" ] || { echo "FATAL: fresh_packet produced no replay.sh" >&2; return 1; }
+  [ -d "$d/protected-oracle" ] || { echo "FATAL: fresh_packet produced no payload" >&2; return 1; }
+  printf '%s' "$d"
+}
 
-echo "N3 cross-fixture in compose (must be nonzero)"
-mut; sed -i 's|compose_case f2-AB seed-arm2 arm2-signposted/A arm2-signposted/B|compose_case f2-AB seed-arm2 arm2-signposted/A arm1-signposted/B|' neg.sh; c=$(run)
-chk "cross-fixture compose" yes "$c"
+# skip_manifest: neuter the integrity gate inside a COPY so the RUNTIME guarded path is
+# genuinely exercised. Without this, deleting or editing a payload file is preempted by
+# the manifest check and the runtime guard is never reached - which is exactly what
+# Codex caught in my earlier "hanging oracle" test.
+skip_manifest(){ sed -i 's|^sha256sum -c MANIFEST.sha256 .*|echo "(manifest check skipped by negative test)"|' "$1/replay.sh"; }
 
-echo "N4 tampered payload / copy failure (must be nonzero)"
-mut; cp arm1-signposted/A/cache.py $WORK/cache.keep
-printf '\n# tampered\n' >> arm1-signposted/A/cache.py; c=$(run)
-chk "tampered payload" yes "$c"; grep -q "MANIFEST FAILED" $WORK/out && echo "       reason surfaced: MANIFEST FAILED"
-cp $WORK/cache.keep arm1-signposted/A/cache.py
+# check <name> <packet> <expected_exit_may_be_zero:yes|no> <reason-regex>
+check(){
+  local name="$1" pkt="$2" want_zero="$3" reason="$4"
+  local out code
+  out="$( cd "$pkt" && timeout 120 ./replay.sh 2>&1 )"; code=$?
+  if [ "$want_zero" = "no" ] && [ "$code" -ne 0 ] && printf '%s' "$out" | grep -qE "$reason"; then
+    printf '  OK   %-34s exit=%-3s reason=%s\n' "$name" "$code" "$(printf '%s' "$out" | grep -oE "$reason" | head -1)"
+    pass=$((pass+1))
+  elif [ "$want_zero" = "yes" ] && [ "$code" -eq 0 ]; then
+    printf '  OK   %-34s exit=0 (happy path)\n' "$name"
+    pass=$((pass+1))
+  else
+    printf '  BAD  %-34s exit=%-3s wanted_zero=%s reason=/%s/\n' "$name" "$code" "$want_zero" "$reason"
+    bad=$((bad+1))
+  fi
+}
 
-echo "N5 unreadable overlay (copy failure path, must be nonzero)"
-mut; cp -r arm1-signposted/A $WORK/Akeep; chmod 000 arm1-signposted/A/cache.py
-c=$(run); chmod 644 arm1-signposted/A/cache.py
-chk "unreadable overlay" yes "$c"
+echo "N1  missing overlay dir              (runtime guard, not integrity)"
+p="$(fresh_packet n1)"; sed -i 's|run_case f2-B     seed-arm2 arm2-signposted/B|run_case f2-B     seed-arm2 NOPE|' "$p/replay.sh"
+check "missing overlay dir" "$p" no 'MISSING OVERLAY DIR'
 
-echo "N6 oracle timeout (must be nonzero, bounded)"
-mut; cp protected-oracle/oracle-arm1.py $WORK/o.keep
-printf '\nimport time\ntime.sleep(600)\n' >> protected-oracle/oracle-arm1.py
-c=$(ORACLE_TIMEOUT=3 timeout 120 bash ./neg.sh >$WORK/out 2>&1; echo $?)
-chk "oracle timeout" yes "$c"; grep -q "TIMEOUT" $WORK/out && echo "       reason surfaced: $(grep -m1 TIMEOUT $WORK/out)"
-cp $WORK/o.keep protected-oracle/oracle-arm1.py
+echo "N2  missing oracle FILE             (manifest skipped, runtime guard)"
+p="$(fresh_packet n2)"; rm -f "$p/protected-oracle/oracle-arm2.py"
+skip_manifest "$p"
+check "missing oracle file" "$p" no 'MISSING ORACLE FILE'
 
-echo "N7 happy path still zero"
-mut; c=$(run); chk "clean run" no "$c"
-rm -f neg.sh
-echo; echo "negative tests: $pass passed, $fail bad"
-sha256sum -c MANIFEST.sha256 >/dev/null 2>&1 && echo "payload restored: 21/21 OK"
-exit $fail
+echo "N3  cross-fixture overlay, single A  (runtime guard)"
+p="$(fresh_packet n3)"; sed -i 's|run_case f2-A     seed-arm2 arm2-signposted/A|run_case f2-A     seed-arm2 arm1-signposted/A|' "$p/replay.sh"
+check "cross-fixture single A" "$p" no 'FIXTURE MISMATCH'
+
+echo "N4  cross-fixture compose, wrong A only (regression: guard must check A too)"
+p="$(fresh_packet n4)"; sed -i 's|compose_case f2-AB seed-arm2 arm2-signposted/A arm2-signposted/B|compose_case f2-AB seed-arm2 arm1-signposted/A arm2-signposted/B|' "$p/replay.sh"
+check "cross-fixture compose wrong A" "$p" no 'FIXTURE MISMATCH \(A\)'
+
+echo "N5  cross-fixture compose, wrong B only"
+p="$(fresh_packet n5)"; sed -i 's|compose_case f2-AB seed-arm2 arm2-signposted/A arm2-signposted/B|compose_case f2-AB seed-arm2 arm2-signposted/A arm1-signposted/B|' "$p/replay.sh"
+check "cross-fixture compose wrong B" "$p" no 'FIXTURE MISMATCH \(B\)'
+
+echo "N6  unreadable overlay file          (copy-failure guard, manifest skipped)"
+p="$(fresh_packet n6)"; skip_manifest "$p"; chmod 000 "$p/arm1-signposted/A/cache.py"
+check "unreadable overlay" "$p" no 'OVERLAY COPY FAILED'
+chmod 644 "$p/arm1-signposted/A/cache.py" 2>/dev/null
+
+echo "N7  hanging oracle -> real TIMEOUT   (manifest skipped, guard reached)"
+p="$(fresh_packet n7)"; skip_manifest "$p"
+printf '\nimport time\ntime.sleep(600)\n' >> "$p/protected-oracle/oracle-arm1.py"
+out="$( cd "$p" && ORACLE_TIMEOUT=3 timeout 180 ./replay.sh 2>&1 )"; code=$?
+if [ "$code" -ne 0 ] && printf '%s' "$out" | grep -q 'TIMEOUT'; then
+  printf '  OK   %-34s exit=%-3s reason=%s\n' "hanging oracle" "$code" "$(printf '%s' "$out" | grep -oE 'TIMEOUT' | head -1)"
+  pass=$((pass+1))
+else
+  printf '  BAD  %-34s exit=%-3s (expected nonzero + TIMEOUT)\n' "hanging oracle" "$code"; bad=$((bad+1))
+fi
+
+echo "N8  failing oracle -> real rc        (not TIMEOUT, not rc=0)"
+p="$(fresh_packet n8)"; skip_manifest "$p"
+printf '\nraise SystemExit(3)\n' >> "$p/protected-oracle/oracle-arm1.py"
+out="$( cd "$p" && ORACLE_TIMEOUT=20 timeout 180 ./replay.sh 2>&1 )"; code=$?
+if [ "$code" -ne 0 ] && printf '%s' "$out" | grep -qE 'FAIL\(rc=3\)'; then
+  printf '  OK   %-34s exit=%-3s reason=%s\n' "failing oracle" "$code" "$(printf '%s' "$out" | grep -oE 'FAIL\(rc=3\)' | head -1)"
+  pass=$((pass+1))
+else
+  printf '  BAD  %-34s exit=%-3s (expected nonzero + FAIL(rc=3); rc must NOT be 0)\n' "failing oracle" "$code"; bad=$((bad+1))
+fi
+
+echo "N9  tampered payload, manifest NOT resealed (integrity gate, expected)"
+p="$(fresh_packet n9)"; printf '\n# tampered\n' >> "$p/arm1-signposted/A/cache.py"
+check "tampered payload" "$p" no 'MANIFEST FAILED'
+
+echo "N10 happy path control"
+p="$(fresh_packet n10)"
+check "clean run" "$p" yes ''
+
+echo
+echo "negative tests: $pass passed, $bad bad"
+[ "$bad" -eq 0 ] || exit 1
+exit 0

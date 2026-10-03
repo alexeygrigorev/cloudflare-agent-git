@@ -70,12 +70,12 @@ run_case() {
   fi
 
   local out rc last
-  if ! out="$( cd "$dir" && timeout "$ORACLE_TIMEOUT" python3 -B oracle.py 2>&1 )"; then
-    rc=$?
-    # 124 is timeout's own code; distinguish it from a genuine test failure.
+  # Capture the status DIRECTLY. `if ! cmd; then rc=$?` is wrong: `!` negates the
+  # status, so $? inside the block is 0 and a real failure or timeout is mislabelled.
+  out="$( cd "$dir" && timeout "$ORACLE_TIMEOUT" python3 -B oracle.py 2>&1 )"; rc=$?
+  if [ "$rc" -ne 0 ]; then
     if [ "$rc" -eq 124 ]; then
-      last="TIMEOUT after ${ORACLE_TIMEOUT}s"
-      printf '%-14s TIMEOUT\n' "$label" >&2
+      printf '%-14s TIMEOUT after %ss\n' "$label" "$ORACLE_TIMEOUT" >&2
       seen+=("$label"); rows+=("$(printf '%-14s %s' "$label" "TIMEOUT")")
       fails=$((fails + 1)); return 0
     fi
@@ -98,8 +98,14 @@ compose_case() {
   [ -d "$seed" ] && [ -d "$oa" ] && [ -d "$ob" ] \
     && [ -f "protected-oracle/$oracle" ] \
     || { echo "MISSING INPUT for $label" >&2; return 2; }
-  case "$seed:$oa:$ob" in
-    seed-arm1:*:arm2*|seed-arm2:*:arm1*) echo "FIXTURE MISMATCH for $label" >&2; return 2 ;;
+  # BOTH overlay arguments must match the seed's fixture. Checking only one of them
+  # misses a wrong A paired with a valid B.
+  case "$seed" in
+    seed-arm1) case "$oa" in arm1*) ;; *) echo "FIXTURE MISMATCH (A): $seed with $oa" >&2; return 2 ;; esac
+              case "$ob" in arm1*) ;; *) echo "FIXTURE MISMATCH (B): $seed with $ob" >&2; return 2 ;; esac ;;
+    seed-arm2) case "$oa" in arm2*) ;; *) echo "FIXTURE MISMATCH (A): $seed with $oa" >&2; return 2 ;; esac
+              case "$ob" in arm2*) ;; *) echo "FIXTURE MISMATCH (B): $seed with $ob" >&2; return 2 ;; esac ;;
+    *) echo "UNKNOWN SEED FIXTURE: $seed" >&2; return 2 ;;
   esac
   local f rel
   mkdir -p "$dir"                                          || { echo "MKDIR FAILED: $label" >&2; return 2; }
@@ -118,10 +124,10 @@ compose_case() {
   [ "$ok" -eq 1 ] || return 2
 
   local out rc last
-  if ! out="$( cd "$dir" && timeout "$ORACLE_TIMEOUT" python3 -B oracle.py 2>&1 )"; then
-    rc=$?
+  out="$( cd "$dir" && timeout "$ORACLE_TIMEOUT" python3 -B oracle.py 2>&1 )"; rc=$?
+  if [ "$rc" -ne 0 ]; then
     if [ "$rc" -eq 124 ]; then
-      printf '%-14s TIMEOUT\n' "$label" >&2
+      printf '%-14s TIMEOUT after %ss\n' "$label" "$ORACLE_TIMEOUT" >&2
       seen+=("$label"); rows+=("$(printf '%-14s %s' "$label" "TIMEOUT")"); fails=$((fails + 1)); return 0
     fi
     last="$(printf '%s' "$out" | tail -n 1)"

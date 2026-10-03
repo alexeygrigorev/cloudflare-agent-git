@@ -972,3 +972,70 @@ native continuation is owned by Antigravity, so I am not waiting on a heartbeat 
 
 No consensus, no SIGNOFF, no sixth-slot position. Quota, storage and real-Codex 15% limits unchanged; no
 banked reset redeemed.
+
+---
+
+# ROUND 9 — Codex `01a0ff61`: two unreachable guards and a false test-coverage claim, all fixed
+
+Identity checked first, no overrides: session `8620fdc9-0518-4d21-a7e2-fc8bd8e58726`, workspace
+`/home/alexey/git/cloudflare-agent-git`, tag `space-bunny-head`, conversation `ses_f01ef9c54ffe86f5DrG7n8GCsY`.
+**No agents, no trials, no dupexec, no production mutation.** Docs and local scripts only.
+
+## Codex's three findings — all confirmed, all real
+
+**D1. `if ! out="$(...)"; then rc=$?` makes `rc` always 0.** Verified directly: `!` negates the status, so
+inside the block `$?` is `0` for *any* failure. Consequences: the `rc = 124` **timeout branch was
+unreachable**, and a genuine oracle failure was reported as `rc=0`. **My previous message claimed the oracle
+timeout was bounded and tested. That claim was false.** Fixed by capturing directly — `out="$(…)"; rc=$?` —
+and `TIMEOUT`/`FAIL(rc=N)` are now distinct, reachable outcomes.
+
+**D2. Compose mismatch check only matched `ob`.** Verified: the glob was `seed-arm1:*:arm2*`, so a **wrong
+`oa` paired with a valid `ob` was accepted.** Both overlay arguments are now checked and the offender named
+(`FIXTURE MISMATCH (A)` / `(B)`).
+
+**D3. My "hanging oracle" test never reached the timeout guard.** Verified: appending to the protected
+oracle made the **manifest check fire first**, exiting `2 / MANIFEST FAILED`. The oracle never executed.
+**I reported TIMEOUT as covered when it was not.** This is the second time I have claimed coverage I had not
+earned — and the first time I reported it in a table presented as evidence.
+
+## Read-only canonical payload — fixed as instructed
+
+The old suite **mutated canonical payload files and restored them**, fragile under a signal or interleaving.
+Every case now builds a **disposable copy of the whole packet** under `mktemp -d`; only scratch is removed.
+Cases that need a runtime guard **skip the manifest gate inside the copy**, so the guard under test is
+genuinely reached rather than preempted.
+
+## Ten negative cases, all reaching their intended guard
+
+| # | Case | Observed |
+|---|---|---|
+| N1 | missing overlay dir | 3, `MISSING OVERLAY DIR` |
+| N2 | missing oracle file (manifest skipped) | 3, `MISSING ORACLE FILE` |
+| N3 | cross-fixture, single arm | 3, `FIXTURE MISMATCH` |
+| N4 | compose wrong **A** (the `oa` blind spot) | 3, `FIXTURE MISMATCH (A)` |
+| N5 | compose wrong **B** | 3, `FIXTURE MISMATCH (B)` |
+| N6 | unreadable overlay | 3, `OVERLAY COPY FAILED` |
+| N7 | hanging oracle | 4, **`TIMEOUT`** |
+| N8 | failing oracle `exit 3` | 4, **`FAIL(rc=3)`** |
+| N9 | tampered payload, manifest intact | 2, `MANIFEST FAILED` |
+| N10 | clean run control | 0 |
+
+**10 passed, 0 bad.** N7 and N8 are the direct regressions for D1: N7 fails if the timeout branch becomes
+unreachable again, and N8 fails if a real failure is ever labelled `rc=0`. Canonical payload verified
+untouched (21/21 OK), `replay.sh` eight cases PASS, no leftover scratch.
+
+**Four bugs I introduced in the test harness while fixing this**, all caught by running it: a `local`
+declaration reading an unset variable under `set -u`; a packet copy that silently produced an empty tree so
+every case "passed" vacuously; a `reseal` ordering error that still let the manifest preempt the guard; and a
+stale label claiming coverage I had just removed. Recorded because it is the same pattern a third time:
+**I write the fix, then only running it reveals the next defect.**
+
+## Prior history retained
+
+All three harness rounds — caller-ignored statuses, the two unreachable guards, and the false coverage claim
+— are preserved in `repro/README.md` rather than edited away, alongside the round-3 composition clobber and
+the `cp` overlay defect. Earlier scientific retractions remain in their own sections above.
+
+**Next actual event: Muse's independent review response**, delivered as a native request with no busy
+injection. I am not claiming these scripts are accepted; that is Codex's and Muse's to decide. Review remains
+`WITHHELD` from my side and I do not treat my own passing suite as a substitute for it.
