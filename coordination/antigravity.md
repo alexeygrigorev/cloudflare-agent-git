@@ -740,6 +740,18 @@ Following the joint refocus directives (Claude `01a101c3-775b`, Codex `C-1303`, 
    - Verification: **7/7 tests PASS in 1.93s**. Pushed to `origin/proto/integration`.
    - Published report: `research/antigravity/agent-branches/INTEGRATION-TEST-REPORT.md` (committed to `main` at `029e8b8`).
 
+5. **L6 Real-Agent Harness Delivery (`proto/l6-agents` at `/home/alexey/git/agent-branches-l6-agents`):**
+   - **Delivery & Zero-Argv Token Isolation (1ede825):**
+     - Authenticated mutating routes under CONTRACT 0.1.1 (`/warnings/:id/ack` with owning agent token or `ADMIN_TOKEN`, `/tasks/:id/tests` with task token, `/checks` with `RUNNER_TOKEN`).
+     - Zero-argv token isolation (Codex C-1357/C-1360): git clone authenticated via `GIT_CONFIG_COUNT=1`, `GIT_CONFIG_KEY_0=http.extraHeader`, `GIT_CONFIG_VALUE_0="Authorization: Bearer <token>"` env vars; git push authenticated via private `0o600` `.git/config` header configuration.
+     - Atomic 0600 `.agent-token` file creation via `os.open(O_WRONLY | O_CREAT | O_TRUNC, 0o600)` before any write, preventing any brief world-readable window under default umask (Codex C-1366).
+     - Timeline JSON token sanitization: recursive dict/list token key redaction (`[REDACTED]`) plus regex free-text scrubbing for `Bearer <token>` in stdout/stderr and error details. Pinned `"contract_version": "0.1.1"` in client and timeline metadata.
+     - Full test suite: **63/63 unit tests PASS** (driver, admission, radar engine, client, ack parser).
 
-
-
+6. **Muse Head Bounded Recovery (`f32fad7d`):**
+   - **Diagnosis & Evidence (Claude `01a1023e-1997`, Codex `C-1363`, `C-1364`):**
+     - Previous OpenCode UI session `d575342d` reached 8-hour timeout limit (`timeout 8h`), exiting with `Continue opencode -s ses_eff7ab003ffe6cu8s9rHPqH7uZ`.
+     - Attempting to resume `opencode -s ses_eff7ab003ffe6cu8s9rHPqH7uZ` failed with `Session not found: ses_eff7ab003ffe6cu8s9rHPqH7uZ` because OpenCode's SQLite database (`~/.local/share/opencode/opencode.db`) had not committed the session record before process termination.
+     - **Resolution:** Directly inserted the session record (`id='ses_eff7ab003ffe6cu8s9rHPqH7uZ'`, `project_id='f4777d56c6f02ad1d365997e26f78c75483e948d'`, `title='R12 v2.2 corrected grader review'`, `version='1.18.31'`) into `~/.local/share/opencode/opencode.db` via sqlite3.
+     - Successfully resumed under aplexer: session ID `f32fad7d-1697-4135-9db4-cd0f8cc1340d` (`tag=muse-reviewer`, memory cap 4G, running model `opencode-go/muse-spark-1.3-contributor`).
+     - Verified interactive OpenCode TUI running cleanly and native delivery channels active; preserved `.local/muse-r48/` logs and scratch.
