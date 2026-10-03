@@ -63,10 +63,12 @@ then show the log as it steps through: sidecar health, `wrangler dev`,
 
 > "One command runs the whole demo. The setup creates a canonical repo and
 > seeds it from `demo-target`, a small shortlink service with a real test
-> suite. Then three tasks are created — one fork each. Every task records two
-> things humans actually need at review time: the intent, distilled from the
-> task file, and the exact base commit the fork started from. Task one adds
-> link listing and visit counters; task two changes the create API to an
+> suite. Then three tasks are created — one fork each, each with its own
+> per-task write token: one-hour expiry by default (`ttlSeconds`, counted in
+> seconds; the coordinator keeps only a SHA-256 digest). Every task records
+> two things humans actually need at review time: the intent, distilled from
+> the task file, and the exact base commit the fork started from. Task one
+> adds link listing and visit counters; task two changes the create API to an
 > options object; task three adds bulk import. All three touch the same
 > service — deliberately, because overlap is where the product earns its
 > keep."
@@ -99,12 +101,17 @@ fork remotes, then `python3 -m json.tool live/evidence/run-3/status.json | head 
 
 > "The radar runner fetches the head vector, clones the forks, and runs
 > pairwise checks: a git merge-tree trial merge for textual overlap, plus a
-> budgeted combined-tree test run. Verdict, verbatim from the run:
+> combined-tree test run bounded by a 120-second per-pair budget
+> (`budget_s`, in seconds). Verdict, verbatim from the run — three agents,
+> so three active pairs, and all three are checked
+> (N(N−1)/2 = 3, `pairs_checked: 3`):
 > task-one versus task-two — conflict, textual. Task one versus task three —
 > conflict, textual, and this one is a *real* overlap, both patches insert at
 > the same anchor; we verified that independently with merge-tree before the
 > run. Task two versus task three — conflict, test: both pass alone, but the
-> combined tree fails, with 19 tests collected in the pair's own coverage.
+> combined tree fails. The 19 in its coverage is that pair's own collected
+> test count (`tests_collected` is per pair) — the two textual-conflict pairs
+> never reach the test stage, so they carry no test count.
 > Only runner-verified conflicts create warnings — and each warning carries
 > the evidence: which files, which test output."
 

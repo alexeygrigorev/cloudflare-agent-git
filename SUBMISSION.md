@@ -9,8 +9,11 @@ and test-merges each pair of agent heads and posts typed results back; a
 change-story review UI shows, per agent, the intent it was given, the commit it
 started from, its pushes, test provenance and every active conflict — and it
 never renders an unchecked or inconclusive state as "safe". The full flow
-(fork → push → radar → warning → stale-gate → review UI) is verified end to end
-at 36/36 assertions on a local stand-in store of real bare git repositories
+(fork → push → radar → warning → stale-gate → review UI) is verified end to
+end at 36/36 assertions — every assertion the run script defines
+(`passed: 36, total: 36` in `result.json`), with the radar covering all
+**3 of 3** active pairs (N = 3 agents → N·(N−1)/2 = 3 pairs) — on a local
+stand-in store of real bare git repositories
 (`live/evidence/run-3/`), and the Cloudflare Artifacts operations the design
 depends on (create repo, fork, per-repo write tokens, read-cannot-push, clone
 and push latencies) are verified against the real service in a 28-op evidenced
@@ -43,29 +46,42 @@ once. Today that breaks in three ways:
 ## What it does
 
 - **One fork per agent.** `POST /tasks` forks the canonical repo and mints a
-  per-task write token (24 h TTL, stored hashed — the coordinator keeps only a
-  SHA-256 digest). Agents clone and push with ordinary git; read-scope tokens
-  cannot push. Each task records its **intent** (what the agent was asked) and
-  **base_sha** (the exact commit it started from).
+  per-task write token (default TTL **1 hour**: the request field is
+  `ttlSeconds` in **seconds**, default 3600; the response carries an ISO
+  `expiresAt`, and the store rejects an expired token on use. Stored hashed —
+  the coordinator keeps only a SHA-256 digest). Agents clone and push with
+  ordinary git; read-scope tokens cannot push. Each task records its
+  **intent** (what the agent was asked) and **base_sha** (the exact commit it
+  started from).
 - **Worker + Durable Object coordinator.** All mutating routes are
   bearer-gated with cross-agent 403s (an agent cannot report pushes, tests or
   acks for another agent) and fail closed (503) when a secret is unconfigured.
   Pushes are verified against the real fork (`sha` must exist), deduped, and
   advance the head vector. The Worker **never runs git and never runs tests**
-  — coordination only.
+  — coordination only. SQLite-backed DO storage has **no per-key
+  `expirationTtl`** (that option does not exist on DO storage), so nothing
+  expires silently: token expiry is an explicit timestamp the store checks on
+  use, and retention is enforced deterministically in code at write time by
+  bounded caps — the push-dedup ring keeps the latest **16** accepted pushes
+  per agent, warnings the newest **200**, and the radar log the newest
+  **50** entries.
 - **Live conflict radar run by a trusted runner.** A separate process reads
   `GET /status`, does pairwise `git merge-tree` trial merges plus budgeted
-  combined-tree tests, and posts a typed payload to `POST /checks`. The vector
-  is gated: if any head moved since the runner fetched `/status`, the POST is
-  rejected with **409** naming the current heads. Only runner-verified
-  `conflict` results create warnings; a later `clean` at the same heads
-  resolves them.
+  combined-tree tests (per-pair test budget `budget_s`, in **seconds** —
+  120 s in run 3), and posts a typed payload to `POST /checks`. The payload
+  must declare its wire: `contract: "0.1"` (canonical typed shape) or
+  `"0.0"` (legacy string adapter); a missing or unknown `contract` field is
+  rejected with **400**. The vector is gated: if any head moved since the
+  runner fetched `/status`, the POST is rejected with **409** naming the
+  current heads. Only runner-verified `conflict` results create warnings; a
+  later `clean` at the same heads resolves them.
 - **Unknown is never shown as safe.** Pair status is four-valued:
   `conflict | clean | unknown | not_checked`. The UI badges "Clean" only for a
-  clean result at exactly the current heads with tests actually collected
-  (`tests_collected > 0`); anything else — unchecked, stale, inconclusive, or
-  a push whose report-back failed (durable unprocessed-push ledger) — shows as
-  not checked, never as clean.
+  clean result at exactly the current heads with tests actually collected in
+  that pair's **own** combined test run (per-pair
+  `coverage.tests_collected > 0`); anything else — unchecked, stale,
+  inconclusive, or a push whose report-back failed (durable unprocessed-push
+  ledger) — shows as not checked, never as clean.
 - **Change-story review UI.** Per agent: intent, base SHA, pushes, test
   provenance (`command`/`exit`/`head_sha`, authenticated to that agent); per
   pair: status badge, conflict kind (`textual` / `test`), human-readable
@@ -125,9 +141,9 @@ Evidence-first; every row cites its file.
 
 | Capability | Status | Evidence |
 | --- | --- | --- |
-| End-to-end demo flow: 3 concurrent agents, fork → push → typed radar checks → 3 conflict warnings (2 textual + 1 test) → review UI badges, **36/36 assertions** | ✅ Verified **on the local stand-in** (real bare git repos via Node sidecar + Worker under `wrangler dev`) | `live/evidence/run-3/result.json`, `summary.txt`, `ui-index.png`, `ui-task-task-0002.png` (branch `proto/live`) |
+| End-to-end demo flow: 3 concurrent agents, fork → push → typed radar checks → 3 conflict warnings (2 textual + 1 test) → review UI badges, **36/36 assertions** (all 36 assertions the script defines passed; radar coverage **3/3 active pairs** — N = 3 → N·(N−1)/2 = 3; per-pair `tests_collected: 19` on the one pair whose combined test stage ran) | ✅ Verified **on the local stand-in** (real bare git repos via Node sidecar + Worker under `wrangler dev`) | `live/evidence/run-3/result.json`, `summary.txt`, `ui-index.png`, `ui-task-task-0002.png` (branch `proto/live`) |
 | Stale-result gate: replaying an old radar payload after a push → `409` naming current heads | ✅ Verified locally | `live/evidence/run-3/stale-409.json` |
-| "Unknown ≠ clean" semantics incl. failed push-report ledger forcing `not_checked` | ✅ Verified locally + in worker tests | `prototype/CONTRACT.md` §0.1.2 change 3; `prototype/` vitest suites (`npm run test:all`) |
+| "Unknown ≠ clean" semantics incl. failed push-report ledger forcing `not_checked` | ✅ Verified locally + in worker unit suites (no headline count recorded; `npm run test:all` = typecheck + vitest worker suites + sidecar tests) | `prototype/CONTRACT.md` §0.1.2 change 3; `prototype/` vitest suites |
 | Real Cloudflare Artifacts: create namespace/repo, fork ×2, mint tokens, clone, push, read-scope push rejected, cross-checked via wrangler CLI — **28 evidenced ops** | ✅ Verified **against the real service** (2026-10-03) | `artifacts-spike/RESULTS.md` (branch `proto/artifacts-spike`) |
 | Real Artifacts latencies (reads 120–450 ms, fork 3.4–4.5 s, clone 500 ms, push 346–416 ms) fit the demo budget | ✅ Measured once, spike scale | `artifacts-spike/RESULTS.md` §latencies |
 | Resource rationale: worktree/build duplication and parallel-test memory (disk 3.0× at N=3 on a zero-dep crate; 62.1% of 111.7 GiB worktree bytes are deps/build; single Rust build +12.26 GiB) | ✅ Measured on our host, small scale, honestly caveated | `rust-demo/bench/README.md` (branch `proto/rust-demo`); `research/claude/dogfood-resource-evidence.md` |
