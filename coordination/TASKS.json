@@ -1,21 +1,52 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T04:37:20.258218+00:00",
+  "updated_at": "2026-10-03T05:07:00.000000+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-03T04:36:00.000000+00:00",
+      "status": "done",
+      "updated_at": "2026-10-03T05:07:00.000000+00:00",
       "evidence_paths": [
         "research/antigravity/r9-runtime-single-effect-verification.md",
+        "research/muse/review-round23.md",
         "coordination/aplexer-repair.md"
       ],
       "blocked_on": [],
-      "next_action": "Live outer probe against real production CJS (/opt/ZCode/resources/glm/zcode.cjs) completed in /tmp/live_outer_probe (scratch 12 KiB, thread 01a1000a-8f19, rollout-2026-10-03T06-34-14). Outer client ToolCallRuntime successfully executed tool call (created /tmp/live_outer_probe/probe.txt with 'PROBE_OK') and recorded tool result, while inner child agent was denied ('No permission client configured for Bash'). Trace showed inner model observed child denial and attempted retries before outer tool results caught up, confirming unvarnished interaction dynamics. Next: synthesize full R9 trace and submit for pinned independent review; zero new build, zero global install.",
-      "acceptance": "Existing owner work, not a new duplicate writer. Installed binary, full suite outcome and resource evidence must be explicit.",
-      "assignment_ack": "ACK: owned by antigravity-head. Verified bf9d7ed22a on codex-zcode main. Debug binary at codex-rs/target/debug/zcodex (SHA256 bc72fcf78044ad6078fbd8501a16b6c90b253e053dcc7666a250917184761f69). Synthetic adapter test, real child denial, and real outer live probe executed; global install awaits user authorization."
+      "next_action": "Bounded verification completed and independently reviewed by Muse round 23 (commit 48be7a9). Counted verdict: inner duplicate eliminated in observed runs (old 1 call -> 2 marker lines, new 1 call -> 1 line); outer retry duplicates demonstrated (rollout 01a1000a-8f19, 2 distinct calls ~16s apart, exit 0); no exactly-once claim. Scoped follow-on work split into zcodex-retry-design (ticket 01a10014-a645); zero builds, zero global install.",
+      "acceptance": "Existing owner work, not a new duplicate writer. Scoped reversible rollout is authorized per root 01a10014-61f6 but requires real review, rollback, and proven benefit; no global install inferred.",
+      "assignment_ack": "ACK: owned by antigravity-head. Verified bf9d7ed22a on codex-zcode main. Debug binary at codex-rs/target/debug/zcodex (SHA256 bc72fcf78044ad6078fbd8501a16b6c90b253e053dcc7666a250917184761f69). Synthetic adapter test, real child denial, and comparative live append probe executed and independently counted by Muse R9 (48be7a9); negative result on outer retries recorded."
+    },
+    {
+      "id": "zcodex-retry-design",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "status": "running",
+      "updated_at": "2026-10-03T05:07:00.000000+00:00",
+      "evidence_paths": [
+        "research/antigravity/r10-zcodex-retry-suppression-design.md",
+        "research/muse/review-round23.md"
+      ],
+      "blocked_on": [],
+      "next_action": "Author DIAGNOSIS, patch diff, and test plan for codex-rs client.rs to end inner turn at tool boundary and suppress inner permission denials before they reach model context. Zero build, zero cargo/rustc invocations. Submit design for Muse review.",
+      "acceptance": "DIAGNOSIS + patch diff + test plan for denial suppression/turn-end at tool boundary, Muse review, no build without a budget guard.",
+      "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10014-a645). Design only, no compilation until budget guard is established."
+    },
+    {
+      "id": "prompt-ready-lifecycle",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "status": "running",
+      "updated_at": "2026-10-03T05:07:00.000000+00:00",
+      "evidence_paths": [
+        "research/antigravity/change-story-card-pane-continuation.md",
+        "coordination/aplexer-repair.md"
+      ],
+      "blocked_on": [],
+      "next_action": "Design and implement PromptReady turn-completion readiness hook per engine in cloudflare-aplexer-protocol (refreshing empty-composer states, extending post-idle TUI redraw grace, avoiding waiting-expired hole during repeated cycles). Narrow negative tests (busy, draft, unknown screen, expired-without-refresh); submit for Muse review.",
+      "acceptance": "Genuine PromptReady / turn-completion readiness signal per engine (hook-emitted at end of each turn, refreshed rather than expiring while the composer stays empty), with narrow negative tests (busy, draft, unknown screen, expired-without-refresh), reviewed by Muse before rollout.",
+      "assignment_ack": "ACK: owned by antigravity-head (ticket 01a10011-df10). Reproductions analyzed: Grok (0000ea93) waiting-expired and Bunny (848ff637) idle contradicted by PTY redraw. Fix designed in protocol repo."
     },
     {
       "id": "safe-autonomous-continuation",
@@ -130,13 +161,13 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-03T04:34:00.344997+00:00",
+      "updated_at": "2026-10-03T05:07:09.075752+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/oversight-human31.md"
       ],
       "blocked_on": [],
-      "next_action": "Verify actual resumed Grok0000ea/Z0156 mapped handoff ACK and first task tools, not startup readiness; Ant E1 diagnose absent Bunny head and preserve real A05 attempts; Muse A065000527 review corrections plus fresh E2/R9 independent delegates; Ant reopen R9 done claim to real outer/retry scope. Continue lightweight event/wait supervision; Claude mutual event or <=5min.",
+      "next_action": "Verify Muse27-54ae receiver ACK and actual pinned fd5a1bd/65d1d76 independent review; Ant E4 genuine lifecycle repair and same queued Bunny22-586a firstwhoami/ACK/artifact; Grok actual next consumer; Claude mutual R2/retry design check within5min or next meaningful event. No principal implementation teams, no repeated restart or forged readiness.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
