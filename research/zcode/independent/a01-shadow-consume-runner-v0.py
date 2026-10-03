@@ -43,7 +43,17 @@ R9 (dedup): the stable dedup key binds a task/source token plus a digest of
     the event minus volatile timestamps, so regenerated twins with fresh ts
     are still skipped.
 
-Gate: repo emit (default dir) only after codex-principal accepts this rev1.
+Rev1c applies the C-REV1B-READONLY-ACCEPT (ffcd-ebd8 / 01a10008) withhold
+conditions, read-only scope unchanged, production emit still WITHHELD:
+H1 (schema-field validation): REQUIRED_FIELDS mirrored from the harness
+    SCHEMA; scan_typed_events now reports a second tier
+    typed_event_counts_field_complete (presence + non-empty only; digests
+    are not recomputed, vector currency not re-checked).
+H2 (default journal lock): append_event_dedup with lock_path=None now takes
+    a sibling <events>.lock instead of racing unlocked; concurrent default-
+    path writers are serialized (validated by rev3 concurrency negatives).
+
+Gate: repo emit (default dir) only after codex-principal accepts rev1c.
 """
 
 from __future__ import annotations
@@ -86,6 +96,51 @@ TYPED_EVENTS = {
     "run_failure", "run_outcome", "run_start",
 }
 ETYPE_KEYS = ("etype", "event", "kind", "type")
+
+# H1 (C-REV1B-READONLY-ACCEPT withhold condition): required-field sets
+# mirrored from the harness SCHEMA (a01-harness-skeleton-v0.py). Validation
+# is presence + non-empty ONLY: digests are not recomputed, vector currency
+# is not re-checked, so "schema_valid" means field-complete, nothing more.
+REQUIRED_FIELDS: dict[str, set[str]] = {
+    "run_start": {"run_id", "protocol_version", "fixture_id", "harness_rev",
+                  "agents", "seed_pairs"},
+    "push_observed": {"run_id", "agent_id", "sha", "parent_sha",
+                      "ts_push_observed", "branch"},
+    "emit": {"warning_id", "run_id", "base_sha", "head_vector", "pair",
+             "failing", "oracle_id", "test_digest", "ts_emitted",
+             "generation", "wip_basis"},
+    "deliver": {"warning_id", "ts_delivered", "channel"},
+    "consume": {"warning_id", "ts_consumed", "agent_id", "vector_current"},
+    "agent_action": {"warning_id", "run_id", "agent_id", "action",
+                     "ts_action_started", "ts_action_ended", "new_head_sha",
+                     "generation"},
+    "run_outcome": {"run_id", "merged_clean", "combined_pass", "landed_sha",
+                    "ts_integration_tested", "repair_seconds",
+                    "wasted_work_seconds"},
+    "fence_event": {"run_id", "kind", "old_generation", "new_generation",
+                    "ts"},
+    "run_end": {"run_id", "ts"},
+    "run_failure": {"run_id", "kind", "pair", "detail", "ts"},
+    "interface_observed": {"run_id", "agent_id", "interface_kind", "ref",
+                           "ts"},
+    "discovery_action": {"run_id", "agent_id", "warning_id", "wip_digest",
+                         "action_kind", "ts"},
+}
+
+
+def event_kind(obj: dict) -> str | None:
+    kind = next((obj[k] for k in ETYPE_KEYS if k in obj), None)
+    return kind if isinstance(kind, str) and kind in REQUIRED_FIELDS else None
+
+
+def validate_bound_event(obj: dict) -> tuple[bool, list[str]]:
+    """H1: required-field presence check for a recognized typed event.
+    Returns (field_complete, missing_fields). Not a digest or vector check."""
+    kind = event_kind(obj)
+    if kind is None:
+        return False, ["<unrecognized kind>"]
+    missing = sorted(f for f in REQUIRED_FIELDS[kind] if obj.get(f) in (None, "", [], {}))
+    return not missing, missing
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
@@ -171,6 +226,7 @@ def probe_bundle(
 def scan_typed_events(bundle_dir: Path) -> dict:
     """R3: count typed journal events by schema discriminant, not tokens."""
     counts = {k: 0 for k in sorted(TYPED_EVENTS)}
+    counts_valid = {k: 0 for k in sorted(TYPED_EVENTS)}
     files_with: dict[str, dict[str, int]] = {}
     jsonl_seen = 0
     for fname in sorted(bundle_dir.glob("*.jsonl")):
@@ -185,21 +241,26 @@ def scan_typed_events(bundle_dir: Path) -> dict:
                 continue
             if not isinstance(obj, dict):
                 continue
-            kind = next((obj[k] for k in ETYPE_KEYS if k in obj), None)
-            if isinstance(kind, str) and kind in TYPED_EVENTS:
+            kind = event_kind(obj)
+            if kind is not None:
                 counts[kind] += 1
+                ok, _ = validate_bound_event(obj)
+                if ok:
+                    counts_valid[kind] += 1
                 per = files_with.setdefault(fname.name, {})
                 per[kind] = per.get(kind, 0) + 1
     return {
         "jsonl_files_scanned": jsonl_seen,
         "typed_event_schema_present_in_receipts": any(counts.values()),
         "typed_event_counts": counts,
+        "typed_event_counts_field_complete": counts_valid,
         "files_with_typed_events": files_with,
         "count_qualification": (
-            "raw recognized event candidates: a discriminator-key match "
-            "(etype/event/kind/type) only; these are NOT schema-validated "
-            "bound discovery/consume events (required fields, digests and "
-            "vector IDs are not validated here)"
+            "two tiers: typed_event_counts = raw recognized event candidates "
+            "(discriminator-key match only); typed_event_counts_field_complete "
+            "= required-field presence validation per the harness SCHEMA "
+            "(H1). Field-complete is still NOT a full bound-event proof: "
+            "digests are not recomputed and vector currency is not re-checked"
         ),
         "scope_note": (
             "the grok fair-pair receipts predate the v0.3/v0.4 typed journal "
@@ -394,10 +455,13 @@ def _append_locked(events_path: Path, event: dict) -> str:
 def append_event_dedup(
     events_path: Path, event: dict, lock_path: Path | None = None
 ) -> str:
-    """R5: durable append that dedups on a stable task/source token before
-    mutating; regenerated twins with fresh timestamps are skipped."""
+    """R5+H2: durable append that dedups on a stable task/source token before
+    mutating; regenerated twins with fresh timestamps are skipped. The
+    DEFAULT path is now locked too: lock_path=None takes a sibling
+    <events>.lock file, so concurrent writers through the default path are
+    serialized instead of racing unlocked."""
     if lock_path is None:
-        return _append_locked(events_path, event)
+        lock_path = events_path.parent / (events_path.name + ".lock")
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
     try:
@@ -459,8 +523,8 @@ def main() -> int:
         # premised on the withdrawn structural zero and is retracted.
         result = {
             "schema": "a01-shadow-consume-results/v1",
-            "runner_rev": "rev1b (C-0124-Z-REVISION/HEARTBEAT0054/01a0ff66 + "
-                          "C-0124-Z-REV1-SOURCE/01a0ff6e corrections)",
+            "runner_rev": "rev1c (rev1b + H1 schema-field validation, "
+                          "H2 default journal lock per C-REV1B-READONLY-ACCEPT)",
             "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "owner": "zcode-independent",
             "session": "7bd5b3c2-4399-4b2e-9797-e8e0014740ee (resumed as a4a578d1)",

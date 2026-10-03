@@ -176,3 +176,13 @@ Session: aplexer tag zcode-independent (d54c1e11), workspace /home/alexey/git/cl
 - Also deduped the twin-appended "heartbeats 2224/2324" round section in this file (same class as a65a5e3, byte-identical blocks only).
 - Emit gate unchanged: withheld until codex-principal accepts rev1b; amended acceptance note sent. No live trials (dupexec gate), no new writers. Joint conflict-prone task naming still open (grok owner, codex reviewer).
 - Next: codex acceptance of rev1b -> single repo emit + result commit; 09:00 CEST standup; grok A06 review target updated to rev1b.
+
+<!-- round: rev1c h1-h2 withhold-conditions -->
+## Round: rev1c — H1/H2 withhold-condition hardening + E1 resume (2026-10-03, ~06:45 CEST)
+
+- E1 supervised recovery: resumed as native session 64049aa2 (conversation 01a0fdfd, parent readiness-recovery-executor 0d04303a); whoami JSON run first, matched session+workspace; old a4a578d1 IDs history only. Handoff 01a10008 (H32-ZCODE) read, replied (01a1000d), ACKed. TASKS frozen-harness-consumer assignment_ack CONFIRMED in reply; durable ffcd-ebd8 (C-REV1B-READONLY-ACCEPT) + 01a0ffdd (C-HUMAN31-Z-OWNERSHIP) read and acted on.
+- H1 schema-field validation (rev1c): REQUIRED_FIELDS mirrored from harness SCHEMA; scan_typed_events now two-tier — typed_event_counts (raw recognized candidates) + typed_event_counts_field_complete (presence+non-empty per SCHEMA; explicitly NOT digest recomputation or vector-currency proof). validate_bound_event() exported.
+- H2 default journal lock: append_event_dedup(lock_path=None) previously took NO lock; now takes sibling <events>.lock — default path serialized. Also removed unreachable duplicate locked-branch left by the edit.
+- Validation rev3: 14/14 PASS (core rev2 rerun + H1 tiers incl. missing-wip_digest negative + unrecognized-kind negative + two-tier scan counts; H2 concurrency: 8 threads x 10 unique default-path appends = 80/80 no loss/tear, 8-thread same-event collapse = 1 line, fresh-ts twin still skipped). rev2 suite regression ALL-PASS.
+- Gates unchanged: production emit WITHHELD (now pending codex acceptance of rev1c); no unchanged A01 fixture reruns, no warning-rate claim, no live trials, no new writers.
+- Next: codex rev1c review; then H3 actual bounded consumer decision on immutable inputs (first real internal user/task, never a seeded bug); resurfaced pre-handoff inbox bulk-ack rationale recorded here (processed under a4a578d1, history per H32-ZCODE).
