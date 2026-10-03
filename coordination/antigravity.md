@@ -911,4 +911,42 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Shared `node_modules` via symlink (zero disk amplification, root mount free space maintained at 67 GiB > 50 GB floor).
    - Dispatched headless ZCode executor under aplexer (`tag=zc-cred-expiry`, session `5b88ead6`, 1500M memory cap) implementing Coordinator Token Expiry & Revocation Gate (`model.ts`, `coordinator.ts`, `coordinator-do.ts`, `router.ts`, `auth.test.ts`).
    - Registered in `coordination/TEAM-REGISTRY.json` (commit `f05a758`).
-   - Executor confirmed active, declared exclusive edit scopes, and is running vitest test suite implementation.
+   - Executor confirmed active, declared exclusive edit scopes, and completed vitest test suite implementation.
+
+---
+
+## 36. Coordinator Token Expiry & Revocation Gate Verification and Integration into proto/live (C-1422, C-1425, C-1427)
+
+1. **`zc-cred-expiry` (`5b88ead6`) Completion & Verification:**
+   - **Model & State Migration (`prototype/src/core/model.ts`):**
+     - Defined `AgentTokenRecord { hash: string; expiresAt: string; revokedAt: string | null; }`.
+     - Added `agentTokens: Record<string, AgentTokenRecord>` to `CoordinatorModel`.
+     - Updated `emptyModel()` and `migrateStoredModel()` (backfills legacy agent tokens with a safe 24-hour expiration window and null revocation).
+   - **Core Enforcement & Revocation Method (`prototype/src/core/coordinator.ts`):**
+     - In `createTaskNow`: populates `model.agentTokens[agentId] = { hash: tokenHash, expiresAt: token.expiresAt, revokedAt: null }`.
+     - In `credentialAgent(presented, nowMs = Date.now())`: enforces revocation (`record.revokedAt != null -> null`) and expiration (`nowMs > expiryTime -> null`) with constant-time digest comparison (`timingSafeEqual`).
+     - Implemented `revokeAgentToken(agentId, revokedAt = clock.iso()): Promise<boolean>` with serialized persistence.
+   - **DO Passthrough (`prototype/src/cloudflare/coordinator-do.ts`):**
+     - Exposed `revokeAgentToken(agentId: string, revokedAt?: string): Promise<boolean>` RPC method stub.
+   - **Admin Revocation Route (`prototype/src/core/router.ts`):**
+     - Implemented `POST /tasks/:id/revoke` with authentication first (`ADMIN_TOKEN` required; unauthenticated calls return 401 before task lookup to prevent task probing).
+     - Returns 404 for unknown task ID. Revokes token cleanly and is idempotent.
+   - **Comprehensive Wire Test Suite (`prototype/test/auth.test.ts`):**
+     - `createTaskWithTtl(agent, -10)` creates deterministic pre-expired tokens.
+     - Verified expired tokens return 401 on `POST /events/push` and `POST /warnings/:id/ack`.
+     - Verified `POST /tasks/:id/revoke` requires `ADMIN_TOKEN` (agent token returns 401).
+     - Verified revocation immediately turns previously valid agent token into 401 on subsequent pushes while admin and unexpired tokens continue to succeed.
+   - **Test Results:** 13/13 Vitest test files PASS, 91/91 tests PASS in workerd against real-git sidecar. Peak memory 1.34 GiB / 1.5 GiB cap (0 OOM kills).
+   - **Commit:** Committed at `28488f7` on branch `proto/cred-expiry-gate` and pushed to `origin`.
+
+2. **Integration into `proto/live`:**
+   - Joined work on `/home/alexey/git/agent-branches-live`.
+   - Merged `proto/cred-expiry-gate` (`28488f7`) into `proto/live` at `659b81a` (100% disjoint file scopes with UI DOM-negative commits `3568780` and `738a591`, zero conflicts).
+   - Pushed `proto/live` to `origin/proto/live`.
+   - Released work declaration cleanly.
+
+3. **Registry & Oversight Reconciliation:**
+   - Updated `coordination/TEAM-REGISTRY.json` marking `zc-cred-expiry` as `completed` with full results and commit SHA `28488f7` (commit `8912295`).
+   - Received and acknowledged completion notices `01a10356-8ce5-73f0-9629-919c1019dfea` and `01a10356-8d94-7512-9e02-4070deda0a0c`.
+   - Public deploy gate remains strictly **HELD**.
+
