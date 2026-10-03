@@ -9,12 +9,20 @@ interface CreatedTask {
   taskId: string;
   agentId: string;
   fork: { name: string };
-  token: { plaintext: string };
+  token: { plaintext: string; expiresAt: string };
   head: string | null;
 }
 
 async function createTask(agent: string): Promise<CreatedTask> {
   const response = await post("/tasks", { agent }, ADMIN);
+  expect(response.status).toBe(201);
+  return (await response.json()) as CreatedTask;
+}
+
+/** ttlSeconds flows to the sidecar unvalidated, so a NEGATIVE ttl mints an
+ * already-expired token — the deterministic way to exercise the expiry gate. */
+async function createTaskWithTtl(agent: string, ttlSeconds: number): Promise<CreatedTask> {
+  const response = await post("/tasks", { agent, ttlSeconds }, ADMIN);
   expect(response.status).toBe(201);
   return (await response.json()) as CreatedTask;
 }
@@ -192,5 +200,98 @@ describe("auth on mutating routes (muse-r46 AUTH, CONTRACT 0.1.1)", () => {
     expect(sidecar.status).toBe(202);
     const admin = await post("/events/artifacts", event, ADMIN);
     expect(admin.status).toBe(202);
+  });
+});
+
+describe("token expiry & revocation gate (C-1422/C-1425)", () => {
+  it("an expired task token is rejected on POST /events/push with 401", async () => {
+    const expired = await createTaskWithTtl("cred-gate-expired", -10);
+    expect(Date.parse(expired.token.expiresAt)).toBeLessThan(Date.now());
+
+    // An unexpired valid token still succeeds (gate does not over-reject).
+    const valid = await createTask("cred-gate-valid");
+    const validSha = await sidecarCommit(valid.fork.name, "wip: unexpired token push");
+    const validPush = await post("/events/push", { agent: valid.agentId, sha: validSha }, valid.token.plaintext);
+    expect(validPush.status).toBe(200);
+
+    const expiredSha = await sidecarCommit(expired.fork.name, "wip: expired token push");
+    const denied = await post("/events/push", { agent: expired.agentId, sha: expiredSha }, expired.token.plaintext);
+    expect(denied.status).toBe(401);
+    const text = await bodyText(denied);
+    expect(text).not.toContain(expired.token.plaintext);
+
+    // The admin override is unaffected by the agent token's expiry.
+    const adminPush = await post("/events/push", { agent: expired.agentId, sha: expiredSha }, ADMIN);
+    expect(adminPush.status).toBe(200);
+  });
+
+  it("POST /tasks/:id/revoke (ADMIN_TOKEN only) revokes the agent token; later pushes are 401", async () => {
+    const agent = await createTask("cred-gate-revoke");
+    const shaBefore = await sidecarCommit(agent.fork.name, "wip: before revoke");
+    const before = await post("/events/push", { agent: agent.agentId, sha: shaBefore }, agent.token.plaintext);
+    expect(before.status).toBe(200);
+
+    // Revocation is an admin control: no token and the agent's own token are 401.
+    const noToken = await post(`/tasks/${agent.taskId}/revoke`, {});
+    expect(noToken.status).toBe(401);
+    const selfRevoked = await post(`/tasks/${agent.taskId}/revoke`, {}, agent.token.plaintext);
+    expect(selfRevoked.status).toBe(401);
+
+    const revoked = await post(`/tasks/${agent.taskId}/revoke`, {}, ADMIN);
+    expect(revoked.status).toBe(200);
+    const revokedBody = (await revoked.json()) as { taskId: string; agentId: string; revoked: boolean };
+    expect(revokedBody).toMatchObject({ taskId: agent.taskId, agentId: agent.agentId, revoked: true });
+
+    const unknown = await post("/tasks/task-9999/revoke", {}, ADMIN);
+    expect(unknown.status).toBe(404);
+
+    // The SAME plaintext now fails: revocation is recorded against the
+    // agent's token record, not the presented credential.
+    const shaAfter = await sidecarCommit(agent.fork.name, "wip: after revoke");
+    const after = await post("/events/push", { agent: agent.agentId, sha: shaAfter }, agent.token.plaintext);
+    expect(after.status).toBe(401);
+
+    // Revocation is idempotent and the admin path still works.
+    const again = await post(`/tasks/${agent.taskId}/revoke`, {}, ADMIN);
+    expect(again.status).toBe(200);
+  });
+
+  it("expired and revoked tokens are rejected on POST /warnings/:id/ack with 401", async () => {
+    const alice = await createTask("cred-gate-ack-a");
+    const bob = await createTask("cred-gate-ack-b");
+    const aliceSha = await sidecarCommit(alice.fork.name, "wip: cred gate conflict a");
+    const bobSha = await sidecarCommit(bob.fork.name, "wip: cred gate conflict b");
+    await post("/events/push", { agent: alice.agentId, sha: aliceSha }, alice.token.plaintext);
+    await post("/events/push", { agent: bob.agentId, sha: bobSha }, bob.token.plaintext);
+    const status = (await (await SELF.fetch("http://localhost/status")).json()) as { heads: Record<string, string> };
+    const checked = await post(
+      "/checks",
+      {
+        contract: "0.0",
+        vector: status.heads,
+        policy: "p",
+        results: [{ pair: [alice.agentId, bob.agentId], status: "conflict", kind: "merge-conflict" }],
+      },
+      RUNNER,
+    );
+    const warningId = ((await checked.json()) as { createdWarnings: { id: string }[] }).createdWarnings[0].id;
+
+    const expired = await createTaskWithTtl("cred-gate-ack-expired", -10);
+    const expiredAck = await post(`/warnings/${warningId}/ack`, { agent: expired.agentId }, expired.token.plaintext);
+    expect(expiredAck.status).toBe(401);
+
+    const revokedAgent = await createTask("cred-gate-ack-revoked");
+    const revoke = await post(`/tasks/${revokedAgent.taskId}/revoke`, {}, ADMIN);
+    expect(revoke.status).toBe(200);
+    const revokedAck = await post(
+      `/warnings/${warningId}/ack`,
+      { agent: revokedAgent.agentId },
+      revokedAgent.token.plaintext,
+    );
+    expect(revokedAck.status).toBe(401);
+
+    // A valid unexpired token for the acking agent still succeeds.
+    const own = await post(`/warnings/${warningId}/ack`, { agent: alice.agentId }, alice.token.plaintext);
+    expect(own.status).toBe(200);
   });
 });

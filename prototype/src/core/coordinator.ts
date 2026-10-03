@@ -149,7 +149,8 @@ export interface CoordinatorAccess {
     input: { command: string; exit: number; head_sha: string },
   ): Promise<{ testProvenance: TestProvenance }>;
   submitChecks(input: NormalizedChecksPayload): Promise<SubmitChecksResult | StaleChecksResult>;
-  credentialAgent(presented: string): Promise<string | null>;
+  credentialAgent(presented: string, nowMs?: number): Promise<string | null>;
+  revokeAgentToken(agentId: string, revokedAt?: string): Promise<boolean>;
   taskOwner(taskId: string): Promise<string | null>;
   forkOwner(fork: string): Promise<string | null>;
 }
@@ -270,7 +271,14 @@ export class CoordinatorCore implements CoordinatorAccess {
     const token = await git.mintToken(forkName, "write", input.ttlSeconds ?? 3600);
     // muse-r46 AUTH: store only the digest for later verification of
     // agent-authenticated routes (/events/push, /tasks/:id/tests, acks).
-    model.agentTokenHashes[agentId] = await sha256Hex(token.plaintext);
+    const tokenHash = await sha256Hex(token.plaintext);
+    model.agentTokenHashes[agentId] = tokenHash;
+    model.agentTokens ??= {};
+    model.agentTokens[agentId] = {
+      hash: tokenHash,
+      expiresAt: token.expiresAt,
+      revokedAt: null,
+    };
     const forkLog = await git.log(forkName, { limit: 1 });
     const head = forkLog[0]?.id ?? null;
     const ref = "refs/heads/main";
@@ -534,18 +542,54 @@ export class CoordinatorCore implements CoordinatorAccess {
 
   /**
    * muse-r46 AUTH: which agent (if any) owns this presented per-task token.
-   * Returns null for unknown/garbage tokens; digests are compared
-   * constant-time and the plaintext is never stored.
+   * Returns null for unknown/garbage tokens, expired tokens, or revoked tokens;
+   * digests are compared constant-time and the plaintext is never stored.
    */
-  async credentialAgent(presented: string): Promise<string | null> {
+  async credentialAgent(presented: string, nowMs: number = Date.now()): Promise<string | null> {
     const model = await this.load();
     const digest = await sha256Hex(presented);
+    if (model.agentTokens) {
+      for (const [agentId, record] of Object.entries(model.agentTokens)) {
+        if (timingSafeEqual(digest, record.hash)) {
+          if (record.revokedAt) {
+            return null; // Explicitly revoked
+          }
+          const expiryTime = new Date(record.expiresAt).getTime();
+          if (Number.isFinite(expiryTime) && nowMs > expiryTime) {
+            return null; // Expired
+          }
+          return agentId;
+        }
+      }
+    }
     for (const [agentId, hash] of Object.entries(model.agentTokenHashes)) {
       if (timingSafeEqual(digest, hash)) {
         return agentId;
       }
     }
     return null;
+  }
+
+  /**
+   * Explicitly revoke an agent's write token so subsequent mutating requests are rejected (C-1425).
+   */
+  async revokeAgentToken(agentId: string, revokedAt: string = this.ports.clock.iso()): Promise<boolean> {
+    return this.serialized(async () => {
+      const model = await this.load();
+      let found = false;
+      if (model.agentTokens && model.agentTokens[agentId]) {
+        model.agentTokens[agentId].revokedAt = revokedAt;
+        found = true;
+      }
+      if (model.agentTokenHashes && model.agentTokenHashes[agentId]) {
+        delete model.agentTokenHashes[agentId];
+        found = true;
+      }
+      if (found) {
+        await this.persist();
+      }
+      return found;
+    });
   }
 
   /** Owning agent of a task, or null for unknown tasks (route: /tasks/:id/tests). */

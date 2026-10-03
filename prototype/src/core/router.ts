@@ -296,6 +296,24 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
       return json(result);
     }
 
+    const taskRevokeMatch = /^\/tasks\/([^/]+)\/revoke$/.exec(path);
+    if (method === "POST" && taskRevokeMatch) {
+      // C-1425: token revocation is an admin control — ADMIN_TOKEN only
+      // (auth first, so task-id probing is not available to unauthenticated
+      // callers), then the task must exist.
+      const denied = await requireBearer(request, services.tokens.admin, "ADMIN_TOKEN");
+      if (denied) {
+        return denied;
+      }
+      const taskId = decodeURIComponent(taskRevokeMatch[1]);
+      const owner = await coordinator.taskOwner(taskId);
+      if (owner === null) {
+        return json({ error: `unknown task: ${taskId}` }, 404);
+      }
+      const revoked = await coordinator.revokeAgentToken(owner);
+      return json({ taskId, agentId: owner, revoked });
+    }
+
     return json({ error: `no route for ${method} ${path}` }, 404);
   } catch (error) {
     return errorResponse(error);
