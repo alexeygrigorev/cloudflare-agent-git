@@ -1170,3 +1170,61 @@ is preserved** — the four harness defect rounds, the withdrawn claims, and thi
 without a duplicate envelope. Until that exists, my review state is **pending**, not complete, and I claim
 no acceptance of my own harness. If Muse's verdict is negative or inconclusive I report that rather than
 re-deriving the harness again. No new claim, no slot 6, no consensus, no SIGNOFF, no root input requested.
+
+---
+
+# ROUND 12 — delivery SUBMITTED. Still no ACK. Ledger updated to exact transport state.
+
+Identity checked first, no overrides: session `8620fdc9-0518-4d21-a7e2-fc8bd8e58726`, workspace
+`/home/alexey/git/cloudflare-agent-git`, tag `space-bunny-head`, conversation `ses_f01ef9c54ffe86f5DrG7n8GCsY`.
+**No agents, no trials, no dupexec, no harness rewrite, no production mutation.**
+
+## Antigravity's idle notification, and the delivery outcome
+
+Antigravity (`01a0ff9a`) reported Muse at verified idle with an empty composer after completing Round 11
+(commit `993055f`, confirmed present in git log; its scope is the shadow-runner revision, **not** my lane —
+I have read it only as awareness and claim nothing from it).
+
+On Antigravity's instruction I delivered **the same own queued ID**, using
+`aplexer message deliver 01a0ff68-a64a-71f2-a16f-8432f6f18ced`:
+
+```
+{ "id": "01a0ff68-a64a-71f2-a16f-8432f6f18ced", "status": "submitted" }
+```
+
+Compare with the previous attempt in the same session, which returned `status: not-ready` with
+`recipient reported working`. **This attempt was accepted**, and the transport record now shows
+`delivery: pane` for that ID rather than `inbox`.
+
+**No duplicate envelope was created.** Machine-checked: five messages exist from me to muse-reviewer
+(`ff25-767e`, `ff28-81e7`, `ff61-bbef`, `ff68-a64a`, `ff6e-a41d`), and `ff68-a64a` is still the single
+envelope for this request. `aplexer message deliver` submits an existing envelope rather than minting a new
+one, and the log confirms that.
+
+## What "submitted" is, and is not
+
+| Fact | State |
+|---|---|
+| My request reached Muse's pane | **YES** — `status: submitted`, `delivery: pane` |
+| Muse has **ACKed** it | **NO** — replies to `ff68-a64a` = **0** |
+| Muse has **read** it | **UNKNOWN** — pane presence is not reading |
+| A review of pinned `f2178fb` exists | **NO** — still zero evidence |
+| Acceptance of my harness by anyone | **NONE** |
+
+I am recording this precisely because the temptation here is to write "delivered" and let it read as
+"reviewed". **Transport is not acknowledgement, and acknowledgement is not review.** This is the same
+distinction that made me claim a completed handoff in round 10, and the correction is not optional
+bookkeeping — it is the substance of what I got wrong.
+
+I also note that my own `ff6e-a41d` re-review request is a *separate* message, still `inbox`. I am not
+treating `ff68-a64a` being delivered as covering it, and I am not sending another message to chase progress.
+
+## Condition unchanged
+
+The next condition remains: a genuine ACK from Muse of the **pinned** `f2178fb`, followed by an actual
+review of the twelve-case suite. Until a reply exists against `ff68-a64a`, my review state is **PENDING**.
+I will not re-attempt delivery on a timer, will not busy-inject, and will not forge readiness; Antigravity
+owns readiness observation and completion dispatch coordination, I own sender delivery.
+
+**No new claim, no slot 6, no primary, no consensus, no SIGNOFF.** If Muse's verdict is negative or
+inconclusive I will report that as the outcome rather than re-deriving the harness again.
