@@ -19,7 +19,7 @@
     "status": "Parked as competition candidate; final shortlist unsigned",
     "problem": "Alexey\u2019s linked worktrees grew quickly on disk. A scan of one host found 111.7 GiB across 472 worktrees, with dependencies and builds accounting for 62.1% of the physical union.",
     "idea": "Account for source, immutable dependencies, mutable outputs, caches, and logs separately. Compare ordinary package sharing, sparse or copy-on-write worktrees, and remote execution without hiding allocation costs.",
-    "evidence": "3 October: the principals proposed parking the local competition product after repeated whole-footprint gate failures. The latest fixture measured47.76% savings against a greater-than-50% gate, with incumbent clone47.38% near-equal. These tiny fixtures do not establish host-wide savings or safe removal of existing worktrees; remote mode remains unvalidated.",
+    "evidence": "3 October: the principals proposed parking the local competition product after repeated whole-footprint gate failures. The latest fixture measured 47.76% savings against a greater-than-50% gate, with incumbent clone 47.38% near-equal. These tiny fixtures do not establish host-wide savings or safe removal of existing worktrees; remote mode remains unvalidated.",
     "test": "Keep useful storage advice and read-only diagnostics. Reopen a product only with new user/task evidence beyond ordinary sharing and lifecycle tools; do not move the gate or extrapolate a passing third-workspace result.",
     "falsifier": "If ordinary package and workspace lifecycle tools solve the pain with less complexity, an Artifacts-specific local product may not be needed. A useful workspace diagnostic could still survive."
   },
@@ -28,7 +28,7 @@
     "slug": "fork-tournament",
     "name": "Behavior-based fork tournament",
     "summary": "Choose between parallel attempts by what they do, with a bounded and independent review.",
-    "status": "Comparative trial pending",
+    "status": "Parked provisionally; selection advantage not demonstrated",
     "problem": "People already using best-of-N agents must compare attempts, identify behavior that is wrong, and safely land the useful result.",
     "idea": "Run the same versioned task in a few forks, compare accepted behavior and independent checks, allow ties or neither, and preserve the losing attempts with their evidence.",
     "evidence": "This remains a hypothesis supported by reports from existing best-of-N users. A comparative live trial and advantage over current vendor selection workflows have not been demonstrated.",
@@ -43,7 +43,7 @@
     "status": "Internal use; comparative benefit unproven",
     "problem": "Reviewers remain responsible for quality as coding agents create more changes. A longer generated summary can increase work or anchor a reviewer on an inaccurate story.",
     "idea": "Connect a task contract, exact diff, tested behavior, impacted consumers, and evidence links in a concise review artifact. Keep transcripts optional.",
-    "evidence": "3 October: the first real internal review (N=1) kept the same APPROVE verdict and confidence80 with and without the story card. The card prompted extra checking and contained a timing error. This is descriptive internal use, not a controlled timing benefit or external demand; incumbent overlap remains.",
+    "evidence": "3 October: the first real internal review (N=1) kept the same APPROVE verdict and confidence 80 with and without the story card. The card prompted extra checking and contained a timing error. This is descriptive internal use, not a controlled timing benefit or external demand; incumbent overlap remains.",
     "test": "A prospective unfamiliar review decision with equal evidence and an ordinary PR-list control. Measure review effort and defect catch without manufacturing a helpful bug.",
     "falsifier": "If a story hides a defect, biases the reviewer, or fails to reduce effort with equal quality, a generated summary is not an improvement."
   },
@@ -55,7 +55,7 @@
     "status": "Parked provisionally; ordinary recovery baseline sufficed",
     "problem": "An agent restart or replacement can lose intent, unfinished work, acceptance criteria, or awareness that the canonical branch has advanced.",
     "idea": "Keep a versioned task manifest with exact base and current SHAs, unresolved decisions, actual checks, and a receiver acknowledgement. Exclude private traces and credentials.",
-    "evidence": "3October: both principals provisionally parked A10 after actual ordinary Git/file recovery succeeded in two observed tasks. The harder task recorded39/39 and37/37 checks without code repairs, but used live untracked inputs and an archive/SHA race; accepted registry policy remains unknown. These results show no comparative product advantage and do not prove universal recovery safety.",
+    "evidence": "3 October: both principals provisionally parked A10 after actual ordinary Git/file recovery succeeded in two observed tasks. The harder task recorded 39/39 and 37/37 checks without code repairs, but used live untracked inputs and an archive/SHA race; accepted registry policy remains unknown. These results show no comparative product advantage and do not prove universal recovery safety.",
     "test": "Reopen only with firsthand demand, a gap against incumbent recovery, and an actual ordinary-baseline failure. Do not manufacture harder fixtures to retain a product place.",
     "falsifier": "If correct-base recovery, preserved acceptance, time, and review effort do not improve over ordinary tools, avoid adding another coordination layer."
   }
