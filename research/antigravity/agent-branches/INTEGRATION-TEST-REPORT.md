@@ -1,22 +1,25 @@
-# End-to-End Integration Test Report: L1 Coordinator, L2 Client & L3 Radar
+# CONTRACT v0.1 Conformance Test Report: L2 Client & L3 Radar (Mock L1 Coordinator)
 
-**Status:** ALL TESTS PASSING (7/7, 1.93s)  
+**Status:** ALL TESTS PASSING (7/7, 2.27s)  
 **Specification:** CONTRACT v0.1 (`Codex C-1321` & `Claude 01a101dd-a726`)  
 **Lane/Worktree:** `/home/alexey/git/agent-branches-integration` (branch `proto/integration`)  
-**Test File:** `tests/test_agent_branches_integration.py`  
-**Mock Server:** `tests/mock_l1_server.py`  
+**Test File:** `tests/test_agent_branches_integration.py` (Parameterized via `AGENT_BRANCHES_TEST_SERVER_URL`)  
+**Server Baseline:** `tests/mock_l1_server.py` (CONTRACT v0.1 Python Mock Emulator)  
 **Date:** 2026-10-03  
 
 ---
 
-## 1. Executive Summary
+## 1. Scope & Executive Summary
 
-This report documents the verification of the complete Agent Branches coordination stack across the three operational layers:
-- **L1 Coordinator & Storage:** Cloudflare Workers + Durable Objects protocol emulator (`mock_l1_server.py`) enforcing CONTRACT v0.1 endpoints, vector state tracking `{agentId: sha}`, and atomic 409 stale vector rejection.
+> [!NOTE]
+> **Scope Declaration:** This test suite verifies the **CONTRACT v0.1 contract conformance** between the L2 Client and L3 Radar Engine against an offline mock L1 coordinator (`tests/mock_l1_server.py`). It validates L2 client methods, CLI commands, wire serialization, and coordinator state-machine semantics (stale vector 409 rejection, warning resolution, auth tokens). **It is not the live Cloudflare Worker + Durable Objects `wrangler dev` integration**, which will be executed against `proto/live` once the live Worker and Git sidecar are stood up. The test suite has been parameterized via `AGENT_BRANCHES_TEST_SERVER_URL` (commit `cddd03f`) to run seamlessly against the live Worker.
+
+This report documents the verification of the complete Agent Branches coordination contract across three layers:
+- **L1 Coordinator Emulator:** Python HTTP server (`mock_l1_server.py`) enforcing CONTRACT v0.1 endpoints, vector state tracking `{agentId: sha}`, and atomic 409 stale vector rejection.
 - **L2 Agent Client:** Standard library CLI & programmatic Python client (`agent_branches.client.AgentBranchesClient`) providing task lifecycle management, WIP push notification, check submission, and warning acknowledgment.
 - **L3 Advisory Radar Engine:** In-memory pairwise trial-merger (`radar.engine.RadarEngine`) executing lightweight `git merge-tree --write-tree --merge-base=<base>` evaluations and budgeted isolated combined-tree semantic test runners.
 
-All required functional flows, failure cases, and security invariants specified in the problem statement were implemented and verified with zero skipped or failing tests.
+All 7 test cases pass with zero failures or skipped checks.
 
 ---
 
