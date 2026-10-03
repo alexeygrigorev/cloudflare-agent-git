@@ -128,6 +128,7 @@ describe("task contract additions (codex C-1306)", () => {
       await post(
         "/checks",
         {
+          contract: "0.0",
           vector: await currentVector(),
           policy: "p",
           results: [{ pair: [alpha.agentId, beta.agentId], status: "conflict", kind: "merge-conflict" }],

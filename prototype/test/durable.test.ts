@@ -49,6 +49,7 @@ describe("persistence across DO restart", () => {
       await post(
         "/checks",
         {
+          contract: "0.0",
           vector,
           policy: "restart-policy",
           results: [{ pair: [created.agentId, other.agentId], status: "conflict", kind: "merge-conflict" }],

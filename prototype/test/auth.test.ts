@@ -158,6 +158,7 @@ describe("auth on mutating routes (muse-r46 AUTH, CONTRACT 0.1.1)", () => {
     const checked = await post(
       "/checks",
       {
+        contract: "0.0",
         vector: status.heads,
         policy: "p",
         results: [{ pair: [alice.agentId, bob.agentId], status: "conflict", kind: "merge-conflict" }],

@@ -1,5 +1,6 @@
 import type { ArtifactsNamespaceBinding } from "./artifacts/real.js";
 import { Coordinator, sha256Hex, timingSafeEqual } from "./coordinator.js";
+import { parseChecksPayload, type NormalizedChecksPayload } from "./checks-wire.js";
 import { parseArtifactsPushedEvent } from "./types.js";
 
 export { Coordinator } from "./coordinator.js";
@@ -220,18 +221,16 @@ const handler: FetchHandler = {
           return denied;
         }
         const body = await readJson(request);
-        if (!body.vector || typeof body.vector !== "object") {
-          return json({ error: "vector {agent: sha} is required" }, 400);
+        // C-1350: the payload declares its wire — contract "0.1" is the
+        // canonical typed shape (L3 export_l1_payload), "0.0" the legacy
+        // string adapter; anything else (incl. no contract field) is 400.
+        let parsed: NormalizedChecksPayload;
+        try {
+          parsed = parseChecksPayload(body);
+        } catch (error) {
+          return json({ error: (error as Error).message }, 400);
         }
-        if (!Array.isArray(body.results)) {
-          return json({ error: "results must be an array" }, 400);
-        }
-        const outcome = await coordinator(env).submitChecks({
-          vector: body.vector as Record<string, string>,
-          policy: typeof body.policy === "string" ? body.policy : "unknown-policy",
-          coverage: Array.isArray(body.coverage) ? (body.coverage as string[]) : undefined,
-          results: body.results as { pair: [string, string]; status: string; kind?: string; evidence?: string }[],
-        });
+        const outcome = await coordinator(env).submitChecks(parsed);
         if (outcome.stale) {
           return json(
             {
@@ -311,7 +310,7 @@ const handler: FetchHandler = {
       if (/^unknown (task|warning)/.test(message)) {
         return json({ error: message }, 404);
       }
-      const status = /^(unknown agent|fork |commit |repo already|repo not found|request body|unsupported event|missing artifacts|pushed payload|invalid radar status|check result requires|runner results must|results must|base_sha|test provenance|command \(string\)|no Artifacts backend)/.test(
+      const status = /^(unknown agent|fork |commit |repo already|repo not found|request body|unsupported event|missing artifacts|pushed payload|invalid radar status|invalid radar kind|check result requires|runner results must|result heads|results must|base_sha|test provenance|command \(string\)|no Artifacts backend)/.test(
         message,
       )
         ? 400

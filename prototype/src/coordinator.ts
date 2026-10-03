@@ -1,7 +1,15 @@
 import { DurableObject } from "cloudflare:workers";
 import { RealArtifacts } from "./artifacts/real.js";
 import { SidecarArtifacts } from "./artifacts/sidecar.js";
+import {
+  type ChecksCoverageCounts,
+  type ChecksPolicySpec,
+  type EvidenceBag,
+  type NormalizedCheckResult,
+  type NormalizedChecksPayload,
+} from "./checks-wire.js";
 import { RADAR_STATUSES, pairKey, radarFromEnv, type Radar, type RadarPairResult, type RadarStatus } from "./radar.js";
+import type { UnprocessedPush } from "./types.js";
 
 export interface AgentRecord {
   agentId: string;
@@ -78,7 +86,12 @@ export interface PairCheckRecord {
   pair: [string, string];
   status: RadarStatus;
   kind?: string;
+  /** Summary string (0.0 evidence, or 0.1 evidence.summary chain). */
   evidence?: string;
+  /** C-1350: verbatim typed evidence object served on the pair view (0.1). */
+  evidenceDetail?: EvidenceBag;
+  /** C-1350: combined tests the runner collected for this pair, when reported. */
+  testsCollected?: number;
   vector: { a: string; b: string };
   at: string;
 }
@@ -86,13 +99,23 @@ export interface PairCheckRecord {
 /** Derived per-pair view for /status: fresh results only; stale => not_checked. */
 export interface PairStatusView {
   pair: [string, string];
-  heads: { a: string; b: string };
+  /** C-1350: heads keyed by agentId (was positional {a, b}). */
+  heads: Record<string, string>;
   status: RadarStatus;
   kind?: string;
-  evidence?: string;
+  /** C-1350: string (0.0) or verbatim typed evidence object (0.1). Must stay
+   * EvidenceBag, not Record<string, unknown>: an unknown-valued index
+   * signature collapses the typed-RPC stub method to `never`. */
+  evidence?: string | EvidenceBag;
+  /** C-1350: per-pair coverage of the FRESH check (L4 gate: clean counts only
+   * with tests_collected > 0 at current heads); omitted when stale. */
+  coverage?: { tests_collected: number };
   checkedAt: string | null;
   /** True when a stored check exists but no longer matches the current heads. */
   stale: boolean;
+  /** codex C-1357: set while a member agent has an unprocessed push — the
+   * pair's true head state is unknown, so nothing presents as current. */
+  unprocessedReason?: string;
   activeWarningIds: string[];
 }
 
@@ -104,8 +127,10 @@ const WARNINGS_CAP = 200;
 export const SEEN_PUSHES_CAP_PER_AGENT = 16;
 
 export interface RunnerReport {
-  policy: string;
-  coverage: string[];
+  /** Verbatim: the 0.0 policy string or the 0.1 policy object (C-1350). */
+  policy: string | ChecksPolicySpec;
+  /** Verbatim: the 0.0 string[] or the 0.1 counts object (C-1350). */
+  coverage: string[] | ChecksCoverageCounts;
   accepted: number;
   at: string;
   vector: Record<string, string>;
@@ -491,19 +516,48 @@ export class Coordinator extends DurableObject {
     warnings: WarningRecord[];
     radarLog: RadarLogEntry[];
     lastRunnerReport: RunnerReport | null;
+    /** codex C-1357: pushes the Worker never accepted (callback lost). */
+    unprocessedPushes: (UnprocessedPush & { agentId: string | null })[];
   }> {
     const model = await this.load();
+    const unprocessed = await this.unprocessedPushesSafe();
+    const unprocessedAgents = new Set(
+      unprocessed
+        .map((push) => this.agentForFork(model, push.repo)?.agentId ?? null)
+        .filter((agentId): agentId is string => agentId !== null),
+    );
     return {
       canonical: { name: model.canonicalName, remote: model.canonicalRemote },
       agents: Object.values(model.agents),
       heads: model.heads,
-      pairs: this.pairViews(model),
+      pairs: this.pairViews(model, unprocessedAgents),
       warnings: [...model.warnings]
         .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
         .slice(0, 20),
       radarLog: [...model.radarLog].slice(-20).reverse(),
       lastRunnerReport: model.lastRunnerReport,
+      unprocessedPushes: unprocessed.map((push) => ({
+        ...push,
+        agentId: this.agentForFork(model, push.repo)?.agentId ?? null,
+      })),
     };
+  }
+
+  private agentForFork(model: CoordinatorModel, repo: string): AgentRecord | undefined {
+    return Object.values(model.agents).find((agent) => agent.forkName === repo || agent.forkRemote === repo);
+  }
+
+  /**
+   * codex C-1357: pulls the sidecar's callback-loss ledger. A failing or
+   * absent ledger must never break /status — an unreadable guard degrades to
+   * the pre-guard behavior, it does not fabricate certainty.
+   */
+  private async unprocessedPushesSafe(): Promise<UnprocessedPush[]> {
+    try {
+      return (await this.port().unprocessedPushes?.()) ?? [];
+    } catch {
+      return [];
+    }
   }
 
   async getTask(
@@ -678,12 +732,7 @@ export class Coordinator extends DurableObject {
    * `{stale: true}` (the route maps that to 409) instead of throwing, since
    * custom error properties do not survive RPC marshalling.
    */
-  private async submitChecksNow(input: {
-    vector: Record<string, string>;
-    policy: string;
-    coverage?: string[];
-    results: { pair: [string, string]; status: string; kind?: string; evidence?: string }[];
-  }): Promise<
+  private async submitChecksNow(input: NormalizedChecksPayload): Promise<
     | { stale: true; currentHeads: Record<string, string> }
     | {
         stale: false;
@@ -706,8 +755,8 @@ export class Coordinator extends DurableObject {
     const applied = await this.applyCheckResultsNow({ policy: input.policy, results: input.results });
     const model2 = await this.load();
     const runnerReport: RunnerReport = {
-      policy: input.policy,
-      coverage: input.coverage ?? [],
+      policy: input.policyVerbatim,
+      coverage: input.coverageVerbatim ?? [],
       accepted: applied.accepted,
       at: new Date().toISOString(),
       vector: { ...input.vector },
@@ -732,7 +781,7 @@ export class Coordinator extends DurableObject {
    */
   private async applyCheckResultsNow(input: {
     policy: string;
-    results: { pair: [string, string]; status: string; kind?: string; evidence?: string }[];
+    results: NormalizedCheckResult[];
   }): Promise<{ accepted: number; pairs: PairStatusView[]; createdWarnings: WarningRecord[] }> {
     const model = await this.load();
     const now = new Date().toISOString();
@@ -751,6 +800,17 @@ export class Coordinator extends DurableObject {
       if (result.status === "not_checked") {
         throw new Error("runner results must be conflict|clean|unknown, not not_checked");
       }
+      // C-1350: per-result heads VALUES (0.1 wire) must agree with the heads
+      // the vector declared. Checked here, after submitChecksNow's stale
+      // gate, so a stale submission still gets its 409 — parser shape checks
+      // stay 400s, value disagreements are 400s only for a CURRENT vector.
+      if (result.heads) {
+        for (const agent of result.pair) {
+          if (result.heads[agent] !== model.heads[agent]) {
+            throw new Error(`result heads for ${agent} disagree with the submitted vector`);
+          }
+        }
+      }
       // muse-r46 D1: canonical order before deriving the vector, so a
       // reversed pair overwrites/refreshes the same record instead of
       // duplicating warnings or storing a slot-flipped vector.
@@ -763,6 +823,8 @@ export class Coordinator extends DurableObject {
         status: result.status as RadarStatus,
         kind: result.kind,
         evidence: result.evidence,
+        evidenceDetail: result.evidenceDetail,
+        testsCollected: result.testsCollected,
         vector,
         at: now,
       };
@@ -852,26 +914,38 @@ export class Coordinator extends DurableObject {
     }
   }
 
-  private pairViews(model: CoordinatorModel): PairStatusView[] {
+  private pairViews(model: CoordinatorModel, unprocessedAgents: ReadonlySet<string> = new Set()): PairStatusView[] {
     const ids = Object.keys(model.heads).sort();
     const views: PairStatusView[] = [];
     for (let i = 0; i < ids.length; i++) {
       for (let j = i + 1; j < ids.length; j++) {
         const pair: [string, string] = [ids[i], ids[j]];
-        const heads = { a: model.heads[ids[i]], b: model.heads[ids[j]] };
+        const heads: Record<string, string> = { [ids[i]]: model.heads[ids[i]], [ids[j]]: model.heads[ids[j]] };
         const stored = model.pairChecks[pairKey(pair)];
         const fresh =
           stored !== undefined &&
-          stored.vector.a === heads.a &&
-          stored.vector.b === heads.b;
+          stored.vector.a === heads[ids[i]] &&
+          stored.vector.b === heads[ids[j]];
+        // codex C-1357: while an agent has an unprocessed push, its TRUE head
+        // is unknown — the Worker never accepted the move. Any stored check
+        // (however fresh it looks against the known heads) must NOT present
+        // as current: the pair is not_checked with a reason, never clean.
+        const uncertain = unprocessedAgents.has(ids[i]) || unprocessedAgents.has(ids[j]);
         views.push({
           pair,
           heads,
-          status: fresh ? stored.status : "not_checked",
-          kind: fresh ? stored.kind : undefined,
-          evidence: fresh ? stored.evidence : undefined,
+          status: uncertain ? "not_checked" : fresh ? stored.status : "not_checked",
+          kind: fresh && !uncertain ? stored.kind : undefined,
+          evidence: fresh && !uncertain ? (stored.evidenceDetail ?? stored.evidence) : undefined,
+          coverage:
+            fresh && !uncertain && typeof stored.testsCollected === "number"
+              ? { tests_collected: stored.testsCollected }
+              : undefined,
           checkedAt: stored ? stored.at : null,
-          stale: stored !== undefined && !fresh,
+          stale: (stored !== undefined && !fresh) || (fresh && uncertain),
+          unprocessedReason: uncertain
+            ? "an agent in this pair has an unprocessed push (Worker callback failed after bounded sidecar retries); its true head is unknown"
+            : undefined,
           activeWarningIds: model.warnings
             .filter((warning) => warning.status === "active" && pairKey(warning.pair) === pairKey(pair))
             .map((warning) => warning.id),
