@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "updated_at": "2026-10-03T08:27:54.825537+00:00",
+ "updated_at": "2026-10-03T08:31:52.702806+00:00",
  "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
  "teams": [
   {
@@ -782,6 +782,20 @@
    "workspace": "/home/alexey/git/cloudflare-agent-git/.local/journal/worktree",
    "task_id": "publication-fidelity-repair-2",
    "measurement_scope": "isolated worktree on branch journal-design-repair (cgroup memory 2G, pids 256); fixing live overprint defect and implementing reference fidelity repairs",
+   "usage": "measured via opencode token metadata"
+  },
+  {
+   "tag": "journal-visual-reviewer-2",
+   "team_id": "publication",
+   "role": "independent-visual-reviewer",
+   "mode": "headless",
+   "engine": "opencode",
+   "model": "opencode-go/glm-5.3",
+   "session_id": "1bcb3cdb-e0fd-44cb-bbc2-34e38fda5147",
+   "parent_session_id": "088a2387-89e4-468b-9ca5-20be7ffec202",
+   "workspace": "/home/alexey/git/cloudflare-agent-git",
+   "task_id": "publication-visual-acceptance",
+   "measurement_scope": "independent visual review session (cgroup memory 2G, pids 256, opencode-go/glm-5.3); reviewing commit 5c67f72 across 5 families",
    "usage": "measured via opencode token metadata"
   }
  ]
