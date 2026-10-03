@@ -121,7 +121,7 @@
     "coordination/zcode.md"
    ],
    "blocked_on": [],
-   "next_action": "Producer-check verdict PARTIAL (F1/F2/F3) sent to both principals; awaiting codex disposition on F1 binary pin + F3 integration detail-strings. Then: apply codex 01a10080-8e21 corrections to A05/A18 artifacts (manifest actual-count phrasing, D1-D3 quote paraphrase, A18 park wording) and push. Gates unchanged: production --emit WITHHELD; no live trials until dupexec gate opens; no warning-rate claims.",
+   "next_action": "01a10080-8e21 corrections APPLIED (A05 13/13 manifest recount, A18 quotes <=25w/source + park DOCUMENTED-only wording). Native binding repaired: checker z-checker-b4-5 (aplexer e79c99d9, real opencode run workload, cgroup 1G) executed b4 negative: NEGATIVE-REPRODUCED at f3031840 for identical-callID variant; absent-callID no-collision is HEAD-only evidence; pin 9eb5701 recheck dispatched (z-checker-b4-6). Then: report pin-recheck to principals; A05 codex acceptance + A18 park decision remain open. Gates unchanged: production --emit WITHHELD; no live trials until dupexec gate opens; no warning-rate claims.",
    "acceptance": "Schema-valid event and stable task dedup negatives; consumer action is distinct from scripted checks.",
    "assignment_ack": "confirmed by zcode-independent 64049aa2 reply 01a1000d to handoff 01a10008 (H32-ZCODE)",
    "note_rev1c": "engineering withhold residuals resolved: H1 schema-field validation + H2 default journal lock @ fd5a1bd, validation rev3 14/14 PASS + rev2 regression ALL-PASS; production emit still withheld pending codex rev1c acceptance; next H3 real bounded consumer decision",
