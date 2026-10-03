@@ -459,7 +459,7 @@
           why =
             why +
             " · live status could not be refreshed (" +
-            esc(stale.error.message) +
+            stale.error.message +
             "); treated as unknown, not clean";
         }
         pairs.push(

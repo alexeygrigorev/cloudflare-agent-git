@@ -30,7 +30,9 @@ import unittest
 from playwright.sync_api import sync_playwright
 
 UI_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-os.environ["TMPDIR"] = "/home/alexey/git/cloudflare-agent-git/.local/scratch"
+scratch_dir = os.environ.get("TMPDIR", "/home/alexey/git/cloudflare-agent-git/.local/scratch")
+os.makedirs(scratch_dir, exist_ok=True)
+os.environ["TMPDIR"] = scratch_dir
 
 CLEAN_STATUS = {
     "agents": [
@@ -95,6 +97,29 @@ class MockUIHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 self.send_response(500)
                 self.end_headers()
+        elif self.path.startswith("/tasks/"):
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            task_data = {
+                "taskId": "task-alpha",
+                "agentId": "agent-alpha",
+                "branch": "feature/auth",
+                "intent": "feature auth",
+                "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "pushes": [
+                    {
+                        "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        "base_sha": "0000000000000000000000000000000000000000",
+                        "files_changed": ["auth.py"],
+                        "intent": "feature auth",
+                        "pushed_at": 1791000000
+                    }
+                ],
+                "warnings": []
+            }
+            self.wfile.write(json.dumps(task_data).encode("utf-8"))
         else:
             super().do_GET()
 
@@ -165,9 +190,12 @@ class TestDOMNegativeBrowser(unittest.TestCase):
         self.assertIn("HTTP 503", err_text)
 
         # CRITICAL DOM NEGATIVE ASSERTION:
-        # Zero .badge.clean elements must exist anywhere in the DOM!
+        # Zero dynamic green .badge.clean elements in the pair status list during outage!
         remaining_clean = page.locator(".pair .badge.clean").count()
-        self.assertEqual(remaining_clean, 0, "No green .badge.clean elements may remain in the DOM during 503 outage!")
+        self.assertEqual(remaining_clean, 0, "No green .badge.clean elements may remain in .pair during 503 outage!")
+        self.assertEqual(page.locator("#pairs .badge.clean").count(), 0, "No green .badge.clean elements in #pairs")
+        # Clarify distinction: static legend swatch in index.html is 1, dynamic pair count is 0
+        self.assertEqual(page.locator(".legend .badge.clean").count(), 1, "Static documentation legend swatch preserved")
 
         unknown_badges = page.locator(".pair .badge.unknown")
         self.assertEqual(unknown_badges.count(), 1, "Expected pair badge to be downgraded to unknown")
@@ -298,6 +326,45 @@ class TestDOMNegativeBrowser(unittest.TestCase):
         self.assertEqual(page.locator("#agents .badge.clean").count(), 0, "No dynamic clean badges in #agents")
 
         # Zero uncaught page exceptions
+        page.close()
+        self.assertEqual(page_errors, [], f"Page threw unhandled exceptions: {page_errors}")
+
+    def test_04_task_view_stale_behavior(self):
+        """
+        Task view (task.html) stale status behavior:
+        When /status fails after task data is rendered, the page must surface
+        the #status-error alert and retain rendered task details without crashing.
+        """
+        self.server.ui_state = {"mode": "clean", "delay_s": 0}
+        page = self.browser.new_page()
+        page_errors = []
+        page.on("pageerror", lambda err: page_errors.append(str(err)))
+
+        url = f"http://127.0.0.1:{self.port}/task.html?id=task-alpha&api=http://127.0.0.1:{self.port}"
+        page.goto(url)
+
+        # Wait for task content to load
+        page.wait_for_selector("#task-head", timeout=5000)
+        page.wait_for_function("document.getElementById('loading').hidden === true", timeout=5000)
+
+        # Verify task head rendered
+        self.assertIn("agent-alpha", page.locator("#task-head").text_content())
+        status_error = page.locator("#status-error")
+        self.assertTrue(status_error.get_attribute("hidden") is not None or not status_error.is_visible())
+
+        # Switch server to 503 outage and re-boot task view
+        self.server.ui_state = {"mode": "503", "delay_s": 0}
+        page.evaluate("window.AgentBranchesUI.bootTask('task-alpha')")
+
+        # Wait for status-error alert to show
+        page.wait_for_function("document.getElementById('status-error').hidden === false", timeout=5000)
+        err_text = page.locator("#status-error").text_content()
+        self.assertIn("Live status is out of date", err_text)
+        self.assertIn("HTTP 503", err_text)
+
+        # Verify task details remain intact and rendered
+        self.assertIn("agent-alpha", page.locator("#task-head").text_content())
+
         page.close()
         self.assertEqual(page_errors, [], f"Page threw unhandled exceptions: {page_errors}")
 
