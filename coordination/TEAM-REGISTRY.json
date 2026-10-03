@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T04:37:20.258218+00:00",
+  "updated_at": "2026-10-03T05:20:00+00:00",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "teams": [
     {
@@ -59,7 +59,14 @@
           "tag": "space-bunny-head",
           "role": "head",
           "mode": "interactive",
-          "workspace": "/home/alexey/git/cloudflare-agent-git"
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "session_id": "848ff637-c159-4c00-a0f9-4c5c78ebf8a5",
+          "resumed_from_session_id": "8620fdc9-0518-4d21-a7e2-fc8bd8e58726",
+          "resumed_conversation": "ses_f01ef9c54ffe86f5DrG7n8GCsY",
+          "resumed_with_task": "A05 same-task-baseline continuation in initial CLI request (Codex 01a10018)",
+          "resumed_by": "readiness-recovery-executor",
+          "resumed_at": "2026-10-03T05:20:00+00:00",
+          "resumed_store": "XDG_DATA_HOME=.local/opencode-isolated"
         }
       ]
     },
@@ -122,6 +129,59 @@
             "path": "~/.zcodex/sessions/2026/10/02/rollout-2026-10-02T22-09-44-01a0fe3c-ab7e-7e52-ab06-b1a9289d445c.jsonl"
           },
           "launched_by": "claude-principal"
+        },
+        {
+          "tag": "readiness-recovery-executor",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "interactive",
+          "engine": "opencode",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "session_id": "0d04303a-34d6-49ef-bcc7-3ebd971f5491",
+          "conversation": "ses_f000a7b4affeRaC9U90FnmDDaB",
+          "task": "E1 readiness recovery: grok-head + zcode-independent supervised resumes, space-bunny-head attempt",
+          "usage": "unknown",
+          "launched_by": "antigravity-head"
+        },
+        {
+          "tag": "worktree-d1-benchmark-executor",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "conversation_id": "08191f9e-388f-4ef6-a3a7-68e043f0223e",
+          "status": "ended",
+          "task": "E2 worktree D1 benchmark redo (4-arm cache-inclusive allocation)",
+          "artifacts": [
+            "03c3605",
+            "c49504e",
+            "research/antigravity/r8-worktree-d1-benchmark.md"
+          ],
+          "usage": "UNKNOWN",
+          "launched_by": "antigravity-head"
+        },
+        {
+          "tag": "runtime-effect-executor",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "conversation_id": "a1a7e84f-207b-4b6d-94aa-467bbbdacfb3",
+          "status": "ended",
+          "task": "E3 runtime single-effect probe & comparative append audit",
+          "artifacts": [
+            "29da523",
+            "b5ecbc5",
+            "adcdb19",
+            "research/antigravity/r9-runtime-single-effect-verification.md"
+          ],
+          "usage": "UNKNOWN",
+          "launched_by": "antigravity-head"
         }
       ]
     },
@@ -201,6 +261,22 @@
           },
           "session_id": "5e58187b-1385-4d39-9cfb-d49108b1ab3f",
           "launched_by": "claude-principal"
+        },
+        {
+          "tag": "claude-scribe-oc",
+          "role": "executor",
+          "parent_tag": "claude-principal",
+          "launched_by": "claude-principal",
+          "mode": "headless",
+          "engine": "opencode run (default model, via aplexer shell session)",
+          "session_id": "6742704b-684a-4976-b175-bef757777001",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "status": "ended",
+          "task": "claude-evidence-integration tasks 7-8",
+          "artifacts": [
+            "c27dabd"
+          ],
+          "usage": "UNKNOWN (default text output; no provider token metadata captured)"
         }
       ]
     }
