@@ -1,0 +1,33 @@
+You are the independent Space Bunny reviewer (tag: sb-reviewer-limiter) launched by antigravity-head (46fdb644) under Codex Principal C1462 directive:
+"2 independentSpaceBunny reviewactual limiter321feb5/a205 source for residualold-mapgrowth/failopen and spoofkeybounds, notselfapproval."
+
+Workspace: /home/alexey/git/agent-branches-adopt (branch proto/ab-adoption, containing commits 321feb5 and a2055e3).
+
+Your task: Conduct a thorough, independent negative security review and mutation testing of the in-memory invalid-bearer rate limiter implemented in commit 321feb5:
+1. Examine the source code:
+   - `prototype/src/core/router.ts` (rate limiter implementation, map data structures, IP extraction, counter updates)
+   - `prototype/test/node/router.test.ts` and `prototype/test/auth.test.ts`
+2. Investigate specific security properties:
+   - Residual old-map growth: Does the in-memory Map prune expired entries or enforce a maximum entry cap? Or can an attacker forging arbitrary IPs exhaust memory? Check for memory leak vulnerabilities.
+   - Fail-open vs fail-closed: If IP extraction fails or client sends empty/malformed header, does the limiter fail-closed or fail-open?
+   - Spoof key bounds: How is the client IP extracted? Is it vulnerable to `X-Forwarded-For` header spoofing, or does it strictly bind to trusted proxy headers / socket remote addresses?
+3. Mutation testing:
+   - Run the existing test suite: inside `prototype/`, run `npm test` or `node --test`.
+   - Apply at least 4 semantic mutants to `prototype/src/core/router.ts`:
+     - M1: Bypass rate limit check (e.g. `if (false && count > limit)`).
+     - M2: Alter threshold (e.g. increase burst limit or decrease window).
+     - M3: Bypass IP extraction / return fixed IP.
+     - M4: Remove counter increment.
+   - Measure whether the test suite kills each mutant or if any survive.
+4. Deliverable: Write your comprehensive independent review report to:
+   `/home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-LIMITER-321FEB5.md`
+   Include:
+   - Summary of findings and overall verdict (ACCEPT, REQUEST_CHANGES, or DEFECTS_NOTED).
+   - Analysis of map growth / memory leak risk.
+   - Analysis of spoofability / header trust boundaries.
+   - Mutation log with kill/survive results.
+   - Recommendations for hardening.
+5. Invariants:
+   - Zero `/tmp` allocations: use your assigned TMPDIR `.local/scratch/sb-limiter-review/`.
+   - Memory cap 1500M.
+   - Do NOT modify prototype source permanently (revert all mutation experiments).

@@ -660,6 +660,44 @@
           "first_tool_evidence": "opencode run -m opencode-go/space-bunny-free (PROMPT-REV-SUP-C14B474.txt)",
           "memory_cap": "1500M",
           "result": "VERDICT REQUEST_CHANGES (commit c14b474): sb-reviewer-sup identified 2 blockers (B1: older fallback binary /home/alexey/.local/bin/aplexer lacks composer draft detection/fail-closed semantics; B2: tautology test in c14b474). Head remediation commit 499d37a tightened tests to drive service.run() directly, but B1 fallback mechanism was rejected as an unsafe downgrade by reviewer and Desktop Orchestrator. Unsafe fallback mechanism subsequently removed from service.py and test_service.py, restoring pure fail-closed delivery semantics under reviewed BINARY. Delivery stays not-ready pending Rust status-line parser fix (prohibited under noRustbuild) or recipient native read/ACK. Exact pending ID 01a10381-a948 and original sender identity preserved. Full report: research/antigravity/reviews/REV-SUPERVISION-C14B474.md."
+        },
+        {
+          "tag": "sb-reviewer-limiter",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "opencode run",
+          "provider": "opencode-go/space-bunny-free",
+          "pid": 2775657,
+          "workspace": "/home/alexey/git/agent-branches-adopt",
+          "status": "running",
+          "started_at": "2026-10-04T01:21:09+02:00",
+          "task": "Independent negative security review and mutation testing of in-memory rate limiter in commit 321feb5 (residual map growth, fail-open vs fail-closed, spoof key bounds, C1462 Task 2)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-LIMITER-321FEB5.md"
+          ],
+          "first_tool_evidence": "opencode run -m opencode-go/space-bunny-free (PROMPT-REV-LIMITER-321FEB5.txt)",
+          "memory_cap": "1500M"
+        },
+        {
+          "tag": "muse-reviewer-fe312",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "headless",
+          "engine": "opencode run",
+          "provider": "opencode-go/muse-spark-1.3-contributor",
+          "pid": 2778028,
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "status": "running",
+          "started_at": "2026-10-04T01:21:15+02:00",
+          "task": "Independent review and verification of commit fe312c7 (supervision safe fallback removal, fail-closed delivery semantics, runtime provenance, C1462 Task 6)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-SUPERVISION-FE312C7.md"
+          ],
+          "first_tool_evidence": "opencode run -m opencode-go/muse-spark-1.3-contributor (PROMPT-REV-FE312-MUSE.txt)",
+          "memory_cap": "1500M"
         }
       ]
     },

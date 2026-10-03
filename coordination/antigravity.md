@@ -1271,3 +1271,30 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
      - The underlying protocol binary requires a structural parser update to recognize Codex's GPT-6 status bar footer, but Cargo rebuild is strictly prohibited under `noRustbuild/floorrelaxation`.
      - Message is durably queued in workspace mailbox (`created_at: 1791060191`). When recipient reads or acknowledges the message, `service.py`'s `exact_ack()` will reconcile it cleanly without unsafe PTY keystroke injection.
      - Exact pending ID and original sender identity `3038209d` strictly preserved; zero forged ACKs, zero fake idle injections.
+
+---
+
+## 49. Supervision Native Reconciliation & Parallel Executor Scale-up (C1462)
+
+- **Date:** 2026-10-04T01:21:00+02:00
+- **Codex Principal Wakeup & Steering (C1462):**
+  - Received direct human capacity steering relayed by Codex Principal (`01a10411-7637`): *"make sure we run as many agents as we can"*.
+  - Codex Principal natively read supervisory request `01a10381-a948-7453-ad81-cce5ec509914` (`reply_id: 01a10411-768f`, `acknowledged_at: 2026-10-03T23:20:29.660817+00:00`).
+  - `exact_ack()` automatically reconciled `01a10381-a948`, setting `item['last_request']` and clearing `pending = null`. Coverage stall 100% resolved without forced PTY injections or Rust rebuilds.
+- **Quota & Host Resource Admission:**
+  - Fresh `quse`: `zai` 100% 5h / 71% 7d; `go` 100% 5h / 65% 7d; `gemini` 79.27% 5h / 87.33% 7d; `codex` 70% 7d.
+  - Available Memory: 32 GB (>10 GB reserve). Root disk: 66 GB (>50 GB floor).
+- **Execution Scale-up Dispatched:**
+  1. **`sb-reviewer-limiter` (Space Bunny, `opencode-go/space-bunny-free`, PID 2775657):**
+     - Task: Independent negative security review & mutation verification of invalid-bearer rate limiter in commit `321feb5` (residual map growth, fail-open vs fail-closed, spoof key bounds, C1462 Task 2).
+     - Workspace: `/home/alexey/git/agent-branches-adopt` (`proto/ab-adoption`).
+     - Deliverable: [`research/antigravity/reviews/REV-LIMITER-321FEB5.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-LIMITER-321FEB5.md).
+  2. **`muse-reviewer-fe312` (Muse, `opencode-go/muse-spark-1.3-contributor`, PID 2778028):**
+     - Task: Independent review and runtime verification of commit `fe312c7` (safe fallback removal, fail-closed delivery semantics, runtime provenance, C1462 Task 6).
+     - Workspace: `/home/alexey/git/cloudflare-agent-git` (`main`).
+     - Deliverable: [`research/antigravity/reviews/REV-SUPERVISION-FE312C7.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SUPERVISION-FE312C7.md).
+- **Invariants Preserved:**
+  - Public Cloudflare deploy strictly **HELD**.
+  - Claude principal remains **stopped**.
+  - Zero Cargo/Rust compiles (`noRustbuild`).
+  - TMPDIR confined to `.local/scratch/` (zero `/tmp` allocations). MemoryMax=1500M per executor.
