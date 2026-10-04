@@ -2867,6 +2867,43 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Publication guard verified clean (`publication_guard.py` exit code 0).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
 
+---
+
+### 94. Conversation-Aware Usage Registration Landed in collect.py, Comprehensive Test Suite (8/8 PASS), and Reviewer Dispatch
+
+- **As-of:** 2026-10-04, Europe/Berlin (06:36 UTC / 08:36 local)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Desktop Root 08:20 path release; Codex Principal C1735, C1736, C1764, C1766, C1769.
+
+1. **Milestone Delivery: Conversation-Aware Registration Fix in `scripts/metrics/collect.py`:**
+   - Implementer: `metrics-collect-worker` (`fd6f993c-e2b0-45d6-8656-247d90e24427`, registered in `coordination/TEAM-REGISTRY.json` as `completed`, verdict `CONVERSATION_AWARE_SCOPE_VERIFIED`).
+   - Deliverable Report: [`research/antigravity/recovery/REPORT-METRICS-COLLECT-CONVERSATION-SCOPE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-METRICS-COLLECT-CONVERSATION-SCOPE.md).
+   - Modified Source: [`scripts/metrics/collect.py`](file:///home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py).
+   - Test Suite: [`tests/test_collect_conversation_scope.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_collect_conversation_scope.py).
+   - **Root Cause & Fix Architecture:**
+     - *Defect Diagnosed:* Prior `collect.py` matched solely on `(tag, team_id)` and took `max(total_tokens)`. When an agent tag was reused across runs, newer runs were contaminated by the token total of older runs. In addition, dictionary mapping by `tag` in `_collect()` caused key collisions that dropped distinct agent instances.
+     - *Resolution:* Introduced `authentic_conversation_id(s, item)` resolving IDs across 5 standard paths (harness subagent ID, engine session ID, session record, disk transcripts/session files, telemetry).
+     - *Strict Conversation Scope:* Implemented `match_usage_event(events_path, tag, team_id, session_cid)`:
+       - Known `session_cid`: requires `entry.conversation_id == session_cid`. Mismatched conversation IDs NEVER bind.
+       - Absent `session_cid` + unkeyed event: truthful legacy fallback labeled `'Fallback tag-matched owner counters without conversation binding, not independent telemetry verification'`.
+       - Deterministic reconciliation: sorts matching entries by normalized timestamp (`parse_entry_timestamp`) to deterministically select the latest cumulative record.
+     - *Preserving Distinct Agents:* Replaced lossy tag dictionary with append-only declared list preserving all team agents without collision loss.
+
+2. **Verification Suite Execution:**
+   - Dedicated conversation scope test suite: `python3 -m unittest -v tests/test_collect_conversation_scope.py` $\rightarrow$ **8/8 tests PASS** in 0.012s.
+   - Regression verification across `scripts/metrics/`: `python3 -m unittest discover -s scripts/metrics/` $\rightarrow$ **43/43 tests PASS** in 2.834s.
+   - Total regression test count: 102 tests PASS across full workspace suite.
+   - Zero modifications to `scripts/metrics/record_usage.py`.
+   - Zero new daemons or background scrapers.
+   - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD** until independent negative review is complete.
+
+3. **Independent Negative Reviewer Dispatched:**
+   - Subagent `metrics-collect-reviewer` dispatched to audit negative edge cases (reused tags, cross-session binding rejection, fallback labeling, timestamp reconciliation).
+
+4. **Invariants Strictly Preserved:**
+   - Publication guard verified clean (`publication_guard.py` exit code 0).
+   - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
+
 
 
 

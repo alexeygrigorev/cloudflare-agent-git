@@ -126,6 +126,91 @@ def proc(pid):
 def count_status(rows):
     return {key:sum(bool(r.get(key)) for r in rows) for key in ['pid_live','hook_working','stale_hook','unregistered']}
 
+def authentic_conversation_id(s, item):
+    """Determine the session's authentic conversation ID.
+    Checks:
+    1. item.get('harness_conversation_id')
+    2. s.get('engine_session_id')
+    3. s.get('conversation_id')
+    4. Disk session binding (transcript.json or session record on disk)
+    5. item.get('conversation_id') or item telemetry conversation_id
+    """
+    if not isinstance(item, dict): item = {}
+    if not isinstance(s, dict): s = {}
+
+    for val in (item.get('harness_conversation_id'),
+                s.get('engine_session_id'),
+                s.get('conversation_id')):
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+
+    sid = s.get('id') or item.get('session_id')
+    if sid:
+        binding = read_json(APLEXER_STATE/str(sid)/'transcript.json', {}) or {}
+        for val in (binding.get('engine_session_id'), binding.get('conversation_id')):
+            if isinstance(val, str) and val.strip():
+                return val.strip()
+        disk = disk_session(sid, item.get('workspace', str(ROOT)))
+        if disk:
+            for val in (disk.get('engine_session_id'), disk.get('conversation_id')):
+                if isinstance(val, str) and val.strip():
+                    return val.strip()
+
+    for val in (item.get('conversation_id'),
+                item.get('telemetry', {}).get('conversation_id') if isinstance(item.get('telemetry'), dict) else None,
+                s.get('telemetry', {}).get('conversation_id') if isinstance(s.get('telemetry'), dict) else None):
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+
+    return None
+
+def parse_entry_timestamp(entry):
+    if not isinstance(entry, dict): return 0.0
+    ts = entry.get('observed_at') or entry.get('at') or entry.get('timestamp')
+    if ts is None: return 0.0
+    if isinstance(ts, (int, float)): return float(ts)
+    if isinstance(ts, str):
+        try: return dt.datetime.fromisoformat(ts.replace('Z', '+00:00')).timestamp()
+        except ValueError: return 0.0
+    return 0.0
+
+def match_usage_event(events_path, tag, team_id, session_cid=None):
+    """Match usage event from usage-events.jsonl.
+    - If session_cid is known: require entry.conversation_id == session_cid. Mismatched IDs NEVER bind.
+    - If session_cid is None and event has no conversation_id: legacy fallback to (tag, team_id).
+    - If multiple events match: deterministically reconcile by timestamp to select latest cumulative record.
+    Returns (found_entry, is_fallback).
+    """
+    p = pathlib.Path(events_path)
+    if not p.is_file() or p.stat().st_size > 16*1024*1024:
+        return None, False
+    matches = []
+    has_fallback = False
+    try:
+        with p.open('r', encoding='utf-8', errors='replace') as f:
+            for line in f:
+                try: entry = json.loads(line)
+                except ValueError: continue
+                if not isinstance(entry, dict): continue
+                if entry.get('tag') != tag or entry.get('team_id') != team_id:
+                    continue
+                entry_cid = entry.get('conversation_id')
+                if session_cid:
+                    if entry_cid == session_cid:
+                        matches.append(entry)
+                else:
+                    if not entry_cid:
+                        matches.append(entry)
+                        has_fallback = True
+    except OSError:
+        return None, False
+
+    if not matches:
+        return None, False
+
+    matches.sort(key=lambda e: (parse_entry_timestamp(e), e.get('total_tokens', 0)))
+    return matches[-1], has_fallback
+
 def _collect():
     now=time.time(); errors=[]
     try:
@@ -139,14 +224,22 @@ def _collect():
     tasks_obj=read_json(ROOT/'coordination/TASKS.json',{}) or {}
     tasks=tasks_obj.get('tasks',[]) if isinstance(tasks_obj,dict) else tasks_obj
     teams=registry.get('teams',[]) if isinstance(registry,dict) else []
-    config={}; declared=[]
+    declared=[]
+    seen_team_tags=set()
     for team in teams:
+        tid=team.get('id')
         for item in team.get('agents',[]):
-            config[item.get('tag')]=(team.get('id'),item); declared.append(item)
+            tag=item.get('tag')
+            declared.append((tid,item))
+            if tag: seen_team_tags.add(tag)
     # Also accept top-level agent list, including principals and private services.
-    for item in registry.get('agents',[]): config[item.get('tag')]=(item.get('team_id','oversight'),item); declared.append(item)
+    for item in registry.get('agents',[]):
+        tag=item.get('tag')
+        if tag not in seen_team_tags:
+            declared.append((item.get('team_id','oversight'),item))
     selected=[]; seen=set()
-    for tag,(team_id,item) in config.items():
+    for team_id,item in declared:
+        tag=item.get('tag')
         matches=[s for s in catalog if s.get('tag')==tag and s.get('workspace')==item.get('workspace',str(ROOT))]
         exact=[s for s in matches if s.get('id')==item.get('session_id')]
         matches.sort(key=lambda s:s.get('created_at_ms',0),reverse=True)
@@ -168,7 +261,8 @@ def _collect():
             selected.append((s,'unregistered',{'tag':s.get('tag'),'role':'unknown'},'unregistered; launch parent does not imply team'))
     # Explicit saved native IDs; DB human-readable titles never establish identity.
     opencode_assignments=[]
-    for tag,(team_id,item) in config.items():
+    for team_id,item in declared:
+        tag=item.get('tag')
         sid=opencode_sid(item,item.get('telemetry',{}))
         if sid and item.get('workspace',str(ROOT))==str(ROOT):
             opencode_assignments.append({'conversation_id':sid,'tag':tag,'team_id':team_id})
@@ -191,13 +285,13 @@ def _collect():
             # session UUID is never substituted when rollout metadata is absent.
             if rp: usage=rollout_usage(rp,tele.get('conversation_id'))
         if usage is None:
-            events=STORE/'usage-events.jsonl'; found=None
-            if events.exists() and events.stat().st_size<=16*1024*1024:
-                for line in events.open():
-                    try: entry=json.loads(line)
-                    except ValueError: continue
-                    if entry.get('tag')==item.get('tag') and entry.get('team_id')==team_id and (found is None or entry.get('total_tokens',0)>found.get('total_tokens',0)): found=entry
-            if found: usage={**found,'source':'owner-metadata-'+found.get('provider','unknown')+'-'+found.get('model','unknown'),'scope':'Exact owner-registered cumulative counters, not independent telemetry verification'}
+            sess_cid=authentic_conversation_id(s,item)
+            found,is_fallback=match_usage_event(STORE/'usage-events.jsonl',item.get('tag'),team_id,sess_cid)
+            if found:
+                scope=('Fallback tag-matched owner counters without conversation binding, not independent telemetry verification'
+                       if is_fallback else
+                       'Exact owner-registered cumulative counters, not independent telemetry verification')
+                usage={**found,'source':'owner-metadata-'+found.get('provider','unknown')+'-'+found.get('model','unknown'),'scope':scope}
         telemetry=item.get('telemetry',{})
         if telemetry.get('type')=='claude-result':
             source=read_json(ROOT/telemetry.get('path',''),{}) or {}
