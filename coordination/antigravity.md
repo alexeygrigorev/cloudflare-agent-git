@@ -1468,7 +1468,19 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
      - Test Suite Coverage in `tests/test_client.py`:
        - Added `test_19_push_mutating_bearer_auth` verifying cached-token auto-bearer, explicit token, admin token, env fallback, 401 unauthenticated negative assertion, and 403 foreign token negative assertion.
        - **19/19 tests pass** in 7.64s. `py_compile` clean.
-     - Independent Reviewer Dispatched: `sdk-push-auth-reviewer` (`e7303a55-1233-4dc4-9e2f-1b5cf51270aa`) reviewing `bc0bf1c`.
+     - **Independent Review Accepted (Commit `adae306`):**
+       - Reviewer: `sdk-push-auth-reviewer` (`e7303a55-1233-4dc4-9e2f-1b5cf51270aa`).
+       - Report: [`research/antigravity/reviews/REV-SDK-CLIENT-BC0BF1C.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SDK-CLIENT-BC0BF1C.md).
+       - **Verdict: ACCEPT**. 37/37 tests passing across full workspace discovery. All 3 targeted mutants (M1: auth header removal, M2: mock auth bypass, M3: foreign agent 403 check removal) killed.
+     - **Real Node Router Integration Smoke Suite Updated (Commit `13a3ecb`):**
+       - File: [`research/antigravity/agent-branches/test_real_router_sdk_smoke.py`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/agent-branches/test_real_router_sdk_smoke.py).
+       - 6/6 tests PASS in 0.109s against real Node `serveCoordinator` / `handleRoute` without synthetic doubles or `_request` bypass:
+         1. `CreateTaskResult` real wire shape & normalization (ref top-level).
+         2. Authenticated `get_task` detail read.
+         3. Unauthenticated `bare_client.push()` fails closed with HTTP 401.
+         4. Public `client.push()` automatically forwards cached bearer token (200 OK); cold-cache explicit token passes (200 OK); admin token passes (200 OK); cross-agent foreign token rejected with HTTP 403.
+         5. `get_status` returns live heads and agents.
+         6. CONTRACT v0.1 checks accepted with live head vector; stale vector rejected with 409.
   2. **Sidecar Commit `d8ac3b5` Independent Review Accepted (Commit `e35241e`):**
      - Reviewer: `sidecar-d8ac3b5-reviewer` (`21fd1985-020c-4a9a-88f7-4badd56068fb`).
      - Report: [`research/antigravity/reviews/REV-SIDECAR-D8AC3B5.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SIDECAR-D8AC3B5.md) (commit `e35241e` on `origin/main`).
@@ -1476,17 +1488,59 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
      - Verification: 156/156 total tests pass (91 Vitest + 16 Sidecar + 49 Node tests).
      - Negative and boundary checks: verified unauthenticated git probe returns 401 with `WWW-Authenticate: Basic realm="git"`, API routes return 401 without Basic challenge, percent-encoded tokens authenticate cleanly, malformed percent-encoding fails closed without server crash.
      - Mutation Testing: Mutants M1 (percent-decoding removal), M2 (challenge header removal), and M3 (regex narrowing) all decisively KILLED.
-  3. **C1525 Concurrency Expansion (Tasks A, B, C Launched):**
+     - Codex C1530 Hypothesis Resolution: Inspected `sidecar.mjs:586-593` and confirmed that unauthenticated `/api/...` calls return early with `sendJson(res, 401, ...)`, bypassing the catch block; verified live that query strings containing `.git` do not leak `WWW-Authenticate: Basic`.
+  3. **C1525 Concurrency Expansion (Tasks A, B, C Running):**
      - **Task A (Real Product Code First Use):** Subagent `product-firstuse-runner` (`6fcdbbee-ee00-40b3-a997-6c881510804f`) executing authentic maintenance task on imported `agent_branches` Python package in bare canonical repo. Deliverable: `research/antigravity/dogfood/REAL-PRODUCT-FIRSTUSE-REPORT.md`.
      - **Task B (L3 Attestation Contract Review):** Subagent `l3-attestation-reviewer` (`6398cc19-fee5-4cf9-95cd-02adab764d2d`) reviewing CLI -> `/checks` CONTRACT v0.1 attestation, tested SHAs, positive collected counts, cache reuse, and fail-closed negative assertions. Deliverable: `research/antigravity/reviews/REV-L3-ATTESTATION-CONTRACT.md`.
      - **Task C (Consumer Newcomer Decision Observation):** Subagent `consumer-decision-observer` (`1f1611d5-80ef-46df-b44e-b2a69f278c72`) running head-to-head comparison of Agent-Branches protocol vs ordinary Git fallback against preregistered friction criteria and time bounds. Deliverable: `research/antigravity/dogfood/CONSUMER-NEWCOMER-DECISION-OBSERVATION.md`.
-- **Invariants Strictly Preserved:**
-  - Public Cloudflare deploy remains **HELD**.
+- **Resource Governance & Invariant Transparency (C1531):**
+  - Host RAM: 62.7 GB total, 31.8 GB available (>10 GB floor). Root disk: 63.7 GB free (>50 GB floor).
+  - Leaf cgroup reservations: 15 finite external cgroups reserve 23.6 GB maximum cap, with 8.3 GB currently used (15.3 GB unused reservation).
+  - Native harness helpers share the parent process/session slice (`memory.max=max` on the shared slice), operating within managed scratch directories (<1 MB in `.local/scratch/`).
+  - Quotas: Gemini 86.17% weekly / 92.74% 5h; ZAI 71% weekly / 99% 5h; Go 64% weekly / 100% 5h; Codex 70% weekly.
+  - Zero unmanaged `/tmp` growth. Public deploy and shortlist gates strictly HELD.
+
+
+
+
+## 55. Real Product First-Use Delivery, C1534 Rescope Ingestion & C1535 Next-Step Preregistration
+
+- **Milestone Delivery: Real Product First-Use Run (Commit `294e005` on `origin/main`):**
+  - Executed by `product-firstuse-runner` (`6fcdbbee-ee00-40b3-a997-6c881510804f`).
+  - Report: [`research/antigravity/dogfood/REAL-PRODUCT-FIRSTUSE-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/dogfood/REAL-PRODUCT-FIRSTUSE-REPORT.md).
+  - Scope: Authentic AgentBranches product codebase (`agent_branches` package and 37 unit tests from `agent-branches-sdk-adoption` at commit `bc0bf1c`) seeded into bare canonical repo `agent-branches-canonical-product`.
+  - Maintenance Patch: Agent implemented `push_batch` with pre-validation and transient error retry backoff in `agent_branches/client.py`; added unit tests `test_19_push_batch_success` and `test_20_push_batch_validation` in `tests/test_client.py`.
+  - Test Results: **39/39 collected tests pass cleanly** in 8.1s.
+  - End-to-End Transport: Cloned fork via Smart HTTP, patched code, committed (`7de6836be35387d321bda8be3e6b476434c254d7`, tree `3a38131d88b8655f28a45284c1716d09e644ff2d`), pushed to sidecar Smart HTTP; post-receive webhook fired and updated coordinator head vector in 132.1ms.
+  - Recovery: Clean disposable worktree clone verified byte-for-byte SHA match and 100% test pass. Scratch disk: 16.23 MB (strictly <= 512 MB budget).
+  - Credentials: Plaintexts redacted with `[REDACTED_TOKEN]` / `[REDACTED_SECRET]`; unredacted raw traces preserved at `.local/scratch/real-product-firstuse/REAL-PRODUCT-FIRSTUSE-REPORT.unredacted.md` (mode `0600`).
+  - Review Gate per Codex C1535: Noted that sequential mutating pushes in `push_batch` without an outer idempotence key could retry after an accepted event during network splits; requires independent review prior to canonical integration.
+
+- **Codex C1534 & C1535 Review Ingestion & Clarifications:**
+  1. **Task C Rescope (`CONSUMER-NEWCOMER-DECISION-OBSERVATION.md` - Commit `1901993` updated):**
+     - Rescoped from newcomer agent adoption to an automated scripted comparison with actor fiction ("Alice" and "Bob") explicitly disclosed.
+     - Disclosed the confounding factor: uncommitted dirty pull/stash vs committed fork push confounds workspace isolation with commit policy (ordinary Git worktrees or topic branches with WIP commits also avoid dirty-tree pull collisions).
+     - Removed "Winner / structural advantage / adoption" overclaims; retained actual measured negative infrastructure costs (daemon requirement, URL percent encoding, HTTP 401 challenge mechanics).
+     - Disclosed that the 74.29ms radar check evaluated textual merge-tree only (`policy.tests.command: null`) with 0 semantic tests collected.
+  2. **Task B Clarifications (`REV-L3-ATTESTATION-CONTRACT.md` - Commit `8118fac` updated):**
+     - Recorded target source pins: `agent-branches-l3-radar` commit `2b928fc` on `proto/l3-radar`, `agent-branches-webhook` commit `d8ac3b5` on `proto/webhook-auth`.
+     - Disclosed mock boundary: the `/checks` submission test exercised `CoordinatorCore.submitChecksNow` with in-memory `MemoryCoordinationStore` and synthetic placeholder vectors (`...0004` / `...0005`) to verify schema parsing and 409 stale vector rejection, rather than live Git repository hashes.
+     - Disclosed that repeated second evaluation confirms output determinism and idempotence invariance, not a measured cache-speed benchmark.
+     - Clarified that process-group termination (`os.killpg(SIGKILL)`) was verified on the unit test infinite-loop harness, not an isolated cgroup sandbox.
+  3. **Preregistration of Authentic Next-Step Newcomer Task (C1535):**
+     - Replaces scripted two-actor fixtures with an existing genuinely bound released actor (e.g. `zcode-shortlist-gate` `5df4e39f` or `zcode-a14-gate` `31436338`).
+     - Actor consumes the real product diff and test receipts from `7de6836` under a strictly matched baseline (ordinary Git worktrees + WIP commits vs. Agent-Branches task forks).
+     - Records actual decisions, commands, and repair effort with hypotheses preregistered before observing warnings or fixes.
+
+- **Status of C1532 SDK Cold-Cache Fix:**
+  - Dispatched to `zcode-sdk-adopt` (`3104eb21`) via aplexer message `01a1048e-232f-7c10-b5ee-c00b5aa1638f`.
+  - Acknowledged via replies `01a10490-1e46` and `01a10490-2023`.
+  - `zcode-sdk-adopt` has joined work on `proto/sdk-get-task-auth` in `/home/alexey/git/agent-branches-sdk-adoption` and is implementing the fix.
+
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy strictly **HELD**.
   - Claude principal remains **stopped**.
   - Six shortlist gates remain **HELD**.
-  - Root disk >50 GB (63.7 GB free); available RAM >10 GB (31.8 GB available).
+  - Root disk >50 GB free (63.7 GB free); available RAM >10 GB (31.8 GB available).
   - Physical quotas: Gemini 86.17% weekly / 92.74% 5h; ZAI 71% weekly / 99% 5h; Go 64% weekly / 100% 5h; Codex 70% weekly.
   - Zero unmanaged `/tmp` growth.
-
-
-

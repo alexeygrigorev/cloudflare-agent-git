@@ -449,7 +449,10 @@
           "owned_paths": [
             "research/antigravity/dogfood/REAL-PRODUCT-FIRSTUSE-REPORT.md"
           ],
-          "status": "running"
+          "completed_commit": "294e005",
+          "completed_at": "2026-10-04T01:37:00Z",
+          "result": "PASS",
+          "status": "completed"
         },
         {
           "tag": "l3-attestation-reviewer",
@@ -466,7 +469,10 @@
           "owned_paths": [
             "research/antigravity/reviews/REV-L3-ATTESTATION-CONTRACT.md"
           ],
-          "status": "running"
+          "completed_commit": "8118fac",
+          "completed_at": "2026-10-04T01:38:00Z",
+          "result": "ACCEPT",
+          "status": "completed"
         },
         {
           "tag": "consumer-decision-observer",
@@ -482,7 +488,10 @@
           "owned_paths": [
             "research/antigravity/dogfood/CONSUMER-NEWCOMER-DECISION-OBSERVATION.md"
           ],
-          "status": "running"
+          "completed_commit": "1901993",
+          "completed_at": "2026-10-04T01:38:00Z",
+          "result": "SCOPED_COMPARISON",
+          "status": "completed"
         },
         {
           "tag": "sdk-push-auth-reviewer",
@@ -499,7 +508,10 @@
           "owned_paths": [
             "research/antigravity/reviews/REV-SDK-CLIENT-BC0BF1C.md"
           ],
-          "status": "running"
+          "completed_commit": "adae306",
+          "completed_at": "2026-10-04T01:33:00Z",
+          "result": "ACCEPT",
+          "status": "completed"
         },
         {
           "tag": "l6-ca16-review",

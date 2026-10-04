@@ -1,44 +1,45 @@
-# Consumer Newcomer Decision Observation Report: Agent-Branches Protocol vs. Ordinary Git Fallback
+# Automated Seeded Transport & Conflict Comparison: Scripted Two-Actor Profile Fixture vs. Ordinary Git Baseline
 
 **Tag**: `consumer-decision-observer` (Native harness subagent helper under `antigravity-head` `46fdb644`)  
 **Parent Authority**: `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`)  
-**Directive**: Codex Principal C1525 Task C ("independent newcomer consumer real task/decision observation against ordinary Git fallback with preregistered friction/time limits, no invented uptake benefit")  
+**Directive**: Codex Principal C1525 Task C / C1534 review: Automated seeded transport and conflict comparison with actor fiction explicit, removal of adoption/winner overclaims, and preregistration of authentic newcomer task  
 **Workspace**: `/home/alexey/git/cloudflare-agent-git`  
-**Scratch Root**: `/home/alexey/git/cloudflare-agent-git/.local/scratch/consumer-decision-observation` (mode 0700, <= 512 MB budget)  
+**Scratch Root**: `/home/alexey/git/cloudflare-agent-git/.local/scratch/consumer-decision-observation` (mode 0700, <= 512 MB budget; measured 429 KiB)  
 **Date**: 2026-10-04  
+**Status**: RESCOPED & FACTUAL (Scripted Comparative Smoke & Negative Infrastructure Cost Receipts)
 
 ---
 
-## 1. Executive Summary & Verification Verdict
+## 1. Executive Summary & Verification Scope
 
-This report provides an empirical, head-to-head observation of a newcomer consumer developer ("Alice") undertaking concurrent feature development against a concurrent peer ("Bob") under two distinct workflows:
-1. **Workflow 1 (Ordinary Git Fallback)**: Standard centralized Git workflow using local branching, uncommitted working-tree modifications, upstream pulling, and Git stashing.
-2. **Workflow 2 (Agent-Branches Protocol)**: Protocol-assisted development using the Python SDK (`AgentBranchesClient`), the Git Smart-HTTP sidecar (`sidecar.mjs`), the local coordinator runtime (`main.js`), and background advisory radar (`RadarEngine`).
+> [!CAUTION]
+> **Explicit Scope & Actor Fiction Disclosure (C1534)**:
+> This document records an **automated, scripted transport and conflict comparison** executed by a test script simulating two scripted personas ("Alice" and "Bob") on a synthetic user profile fixture (`src/profile_service.py`). **This is NOT an independent newcomer agent observation, nor is it evidence of consumer adoption or human developer decision-making.**
 
-Both workflows were evaluated on the identical product source fixture (`src/profile_service.py` and `tests/test_profile_service.py`) running against real local network sockets, real Git binaries (Git 2.43.0), and real disk repositories with zero mocks or synthetic test doubles.
+### Confounding Factor Disclosure
+In this scripted run, Workflow 1 simulates a developer leaving changes **uncommitted in a dirty working tree** and executing `git pull`, triggering Git's local change collision protection and requiring `git stash`. In contrast, Workflow 2 commits work directly to an isolated task fork.
 
-> [!IMPORTANT]
-> **Zero Marketing Mandate**: This evaluation is strictly objective. Usability hurdles, protocol friction, credential-encoding traps, and daemon overhead in Agent-Branches are recorded with the same rigor as ordinary Git merge and stash conflicts. Uptake benefit is neither assumed nor invented.
+**This comparison confounds workspace isolation mechanisms with commit policy.** A developer utilizing ordinary Git best practices (e.g. isolated Git worktrees, dedicated topic branches, or local WIP commits combined with `git merge-tree`) preserves canonical `main`, avoids dirty working tree pull aborts, and eliminates stash stack corruption—entirely within standard Git without running HTTP sidecars or coordinator daemons.
 
-### Comparative Scorecard
+### Comparative Mechanics Summary
 
-| Metric / Dimension | Workflow 1: Ordinary Git Fallback | Workflow 2: Agent-Branches Protocol | Winner / Trade-off |
+| Metric / Dimension | Workflow 1: Scripted Ordinary Git Pull/Stash | Workflow 2: Scripted Agent-Branches Protocol | Observed Trade-offs & Mechanics |
 |---|---|---|---|
-| **Preregistered Time Budget** | 120.0 s (Actual: **0.48 s**) | 120.0 s (Actual: **1.48 s**) | **Ordinary Git** (no daemon spinup required) |
-| **Command Count to First WIP** | **4 commands** (`clone`, `config` x2, edit) | **7 commands** (API `create_task`, auth clone, config x2, edit, commit, push) | **Ordinary Git** (simpler initial onboarding) |
-| **Total Commands to Recovery** | **26 commands** | **24 commands** | **Agent-Branches** (fewer manual recovery steps) |
-| **Runtime Errors Encountered** | **3 errors** (dirty-tree pull reject, stash-pop conflict, syntax error in test) | **1 error** (preregistered URL encoding challenge) | **Agent-Branches** (cleaner error surface) |
-| **Dirty Tree / Stash Overhead** | **Severe**: manual `git stash push` required; pop failed with conflict | **Zero**: WIP committed and pushed directly to isolated task fork | **Agent-Branches** (eliminates stash state) |
-| **Conflict Discovery Latency** | **Unbounded / Reactive**: Unknown until manual pull & stash pop | **Sub-100ms / Proactive**: **74.29 ms** via background radar trial-merge | **Agent-Branches** (early warning before merge) |
-| **Conflict Impact on Code** | Source files contaminated with `<<<<<<<` conflict markers | Source files pristine; warning reported via coordinator API/status | **Agent-Branches** (no syntax breakage) |
-| **Rollback / Clean Recovery** | **High friction**: `stash@{0}` orphaned on stack; manual drop required | **Low friction**: 1 command recovery clone; canonical main untouched | **Agent-Branches** (cryptographic isolation) |
-| **Offline / Serverless Viability** | **100% Native**: Functions offline with standard Git CLI | **0% Offline**: Requires running HTTP sidecar + coordinator daemon | **Ordinary Git** (zero infrastructure dependencies) |
+| **Script Execution Wall Time** | **0.48 s** | **1.48 s** | Ordinary Git runs ~3x faster; protocol requires daemon startup and HTTP handshakes |
+| **Commands to First WIP** | **4 commands** (`clone`, `config` x2, edit) | **7 commands** (API `create_task`, auth clone, config x2, edit, commit, push) | Ordinary Git requires fewer onboarding steps before local work begins |
+| **Total Scripted Commands** | **26 commands** | **24 commands** | Comparable command sequence length |
+| **Encountered Script Errors** | **3 errors** (dirty-tree pull reject, stash-pop conflict, syntax error in test) | **1 error** (URL credential encoding failure) | Reflects script setup: uncommitted pull forces stash; raw query token breaks curl |
+| **Dirty Tree / Stash Overhead** | **Manual stash cycle**: `git stash push` + `pop` failed with conflict | **Zero stash**: WIP committed and pushed directly to isolated task fork | Ordinary Git worktrees or topic branches achieve identical stash elimination |
+| **Conflict Discovery Latency** | **Pull-time / Reactive**: Detected upon `git pull` / `git stash pop` | **Push-time / Background**: **74.29 ms** via background `git merge-tree` | Background radar discovers textual overlap at push time before local merge |
+| **Semantic Test Execution in Radar** | N/A (tested locally after conflict) | **None** (`policy.tests.command: null`) | This radar run only executed textual `merge-tree`; no semantic tests collected |
+| **Rollback / Recovery Mechanics** | Requires manual resolution and `git stash drop` | 1 command clean clone from fork or reset; canonical `main` untouched | Both workflows preserve canonical `main` if topic branches/worktrees are used |
+| **Infrastructure Dependencies** | **Zero dependencies**: Standard native Git CLI | **Heavy dependencies**: Requires Git Smart-HTTP sidecar + Coordinator daemons | Agent-Branches introduces external operational failure modes |
 
 ---
 
-## 2. Preregistered Friction Criteria & Strict Time Limits
+## 2. Preregistered Friction Criteria & Execution Bounds
 
-Prior to execution, four concrete developer friction criteria and strict wall-clock time limits were preregistered:
+Four concrete developer friction criteria and strict wall-clock time limits were preregistered prior to running the scripted comparison:
 
 ```json
 {
@@ -68,19 +69,19 @@ Prior to execution, four concrete developer friction criteria and strict wall-cl
 
 ---
 
-## 3. Parallel Head-to-Head Comparative Run
+## 3. Scripted Execution Traces
 
-### 3.1 Scenario Definition
+### 3.1 Scenario Fixture Definition
 
-Both workflows evaluate two developers making concurrent, conflicting edits to a user profile service:
+Both workflows run against a synthetic profile service fixture:
 - **Baseline Commit (`a02107a9...`)**:
   - `src/profile_service.py`: defines `get_user_profile(user_id)` returning `{id, status, email}`.
   - `tests/test_profile_service.py`: unit tests verifying profile retrieval and email updates (PASS 3/3).
-- **Alice (Newcomer)**: Edits `get_user_profile` to add user bio:
+- **Actor Alice (Scripted)**: Edits `get_user_profile` to add user bio:
   ```python
   "bio": "Software engineer and distributed systems enthusiast"
   ```
-- **Bob (Concurrent Peer)**: Concurrently edits `get_user_profile` on the identical dictionary lines to add a phone number:
+- **Actor Bob (Scripted Concurrent Colleague)**: Concurrently edits `get_user_profile` on the identical dictionary lines to add a phone number:
   ```python
   "phone": "+1-555-0199-CONCURRENT"
   ```
@@ -91,19 +92,19 @@ flowchart TB
         BASE["get_user_profile() -> {id, status, email}"]
     end
 
-    subgraph AliceLane["Alice (Newcomer)"]
+    subgraph AliceLane["Alice (Scripted Persona)"]
         ALICE_EDIT["Edit: add 'bio' field"]
     end
 
-    subgraph BobLane["Bob (Concurrent Colleague)"]
-        BOB_EDIT["Edit: add 'phone' field (same lines)"]
+    subgraph BobLane["Bob (Scripted Persona)"]
+        BOB_EDIT["Edit: add 'phone' field (identical lines)"]
     end
 
     BASE --> ALICE_EDIT
     BASE --> BOB_EDIT
 
-    subgraph W1["Workflow 1: Ordinary Git Fallback"]
-        W1_STASH["1. git pull -> REJECTED (dirty tree)\n2. git stash push\n3. git pull -> OK\n4. git stash pop -> CONFLICT\n5. SyntaxError in tests (conflict markers)\n6. Orphaned stash@{0} on stack"]
+    subgraph W1["Workflow 1: Ordinary Git Pull/Stash"]
+        W1_STASH["1. git pull -> REJECTED (uncommitted dirty tree)\n2. git stash push\n3. git pull -> OK\n4. git stash pop -> CONFLICT\n5. SyntaxError in tests (conflict markers)\n6. Orphaned stash@{0} on stack"]
     end
 
     subgraph W2["Workflow 2: Agent-Branches Protocol"]
@@ -118,23 +119,23 @@ flowchart TB
 
 ---
 
-### 3.2 Workflow 1: Ordinary Git Fallback Execution Trace
+### 3.2 Workflow 1: Scripted Ordinary Git Execution Trace
 
 1. **Setup**: Central bare Git repository `upstream.git` seeded with baseline profile service.
 2. **Alice Local Setup**: Cloned `upstream.git` to `alice_local`. Made uncommitted edits to `src/profile_service.py` to add `bio`.
 3. **Bob Concurrent Push**: Cloned `upstream.git` to `bob_local`. Modified `src/profile_service.py` to add `phone`, committed, and pushed directly to `origin/main` (`bob_sha`: `e1ddffe8...`).
 4. **Alice Integration Attempt**:
    - Alice executes `git pull origin main`.
-   - **Failure 1 (F2 Dirty Tree Collision)**: Git immediately aborts:
+   - **Failure 1 (F2 Dirty Tree Collision)**: Git aborts because uncommitted local changes would be overwritten:
      ```
      error: Your local changes to the following files would be overwritten by merge:
              src/profile_service.py
      Please commit your changes or stash them before you merge.
      Aborting
      ```
-   - Alice must run `git stash push -m "WIP bio changes"`.
-   - Alice runs `git pull origin main` (succeeds).
-   - Alice runs `git stash pop`.
+   - Script runs `git stash push -m "WIP bio changes"`.
+   - Script runs `git pull origin main` (succeeds).
+   - Script runs `git stash pop`.
    - **Failure 2 (F3 Merge Conflict on Pop)**:
      ```
      Auto-merging src/profile_service.py
@@ -143,7 +144,7 @@ flowchart TB
              both modified:   src/profile_service.py
      The stash entry is kept in case you need it again.
      ```
-   - **Failure 3 (F3 Semantic Test Breakage)**: Running `python3 -m unittest discover tests` crashes with a `SyntaxError` due to raw Git conflict markers:
+   - **Failure 3 (F3 Test Breakage due to Conflict Markers)**: Running `python3 -m unittest discover tests` fails with a `SyntaxError` due to raw Git conflict markers:
      ```python
      <<<<<<< Updated upstream
              "phone": "+1-555-0199-CONCURRENT",
@@ -151,12 +152,11 @@ flowchart TB
              "bio": "Software engineer and distributed systems enthusiast",
      >>>>>>> Stashed changes
      ```
-   - **Failure 4 (F4 Lingering Stash State)**: `git stash list` shows `stash@{0}: On main: WIP bio changes` was **not deleted**. Because a merge conflict occurred during `git stash pop`, Git deliberately leaves the stash on the stack, leading to stash stack pollution unless manually dropped.
+   - **Failure 4 (F4 Lingering Stash State)**: `git stash list` retains `stash@{0}: On main: WIP bio changes`. Because a conflict occurred during pop, Git preserves the stash entry on the stack until manually dropped.
 5. **Resolution & Recovery**:
-   - Alice manually edits `src/profile_service.py` to combine both `bio` and `phone`.
-   - Alice stages and commits: `git add src/profile_service.py && git commit -m "fix(profile): resolve conflict"`.
-   - Alice must execute `git stash drop stash@{0}` to clean the stash stack.
-   - Total recovery commands: 3.
+   - Script manually edits `src/profile_service.py` to combine both `bio` and `phone`.
+   - Script stages and commits: `git add src/profile_service.py && git commit -m "fix(profile): resolve conflict"`.
+   - Script executes `git stash drop stash@{0}` to clean the stash stack.
 
 ---
 
@@ -166,7 +166,7 @@ flowchart TB
    - Spun up ephemeral Smart-HTTP sidecar (`port: 45273`) and Coordinator runtime (`port: 33659`).
    - Created canonical repository `profile-service-canonical` and seeded baseline (`base_sha`: `a02107a9...`).
 2. **Alice Task Creation & Onboarding (F1)**:
-   - Alice calls `AgentBranchesClient.create_task()`:
+   - Script calls `AgentBranchesClient.create_task()`:
      ```python
      alice_task = client.create_task(
          repo="profile-service-canonical",
@@ -183,33 +183,27 @@ flowchart TB
        ```
        fatal: unable to access 'http://127.0.0.1:45273/...': URL rejected: Port number was not a decimal number between 0 and 65535
        ```
-       *Diagnosis*: `libcurl` parses `?` as the query string delimiter, misinterpreting `@host:port` as query parameters.
-       *Remedy*: Credentials embedded in HTTP URLs must be percent-encoded: `urllib.parse.quote(token, safe="")`.
-     - *Hurdle B (401 Challenge Handshake)*: Unauthenticated probes (`GET /info/refs?service=git-upload-pack`) receive `401 Unauthorized` with `WWW-Authenticate: Basic realm="git"`. Git then retries sending basic auth headers.
+       *Root Cause*: Git's `libcurl` parses `?` as the query string delimiter, misinterpreting `@host:port` as query parameters.
+       *Remedy*: Credentials embedded in HTTP URLs must be explicitly percent-encoded (`urllib.parse.quote(token, safe="")`).
+     - *Hurdle B (401 Challenge Handshake)*: Probes (`GET /info/refs?service=git-upload-pack`) receive `401 Unauthorized` with `WWW-Authenticate: Basic realm="git"` before git retries with basic auth headers.
 3. **Alice WIP Isolation & Push (F2)**:
-   - Alice clones her isolated fork using the percent-encoded URL.
-   - Alice edits `src/profile_service.py` to add `bio`.
-   - Alice commits WIP locally and pushes:
+   - Script clones fork using the percent-encoded URL.
+   - Script edits `src/profile_service.py` to add `bio`.
+   - Script commits WIP locally and pushes:
      ```bash
      git commit -am "WIP: add bio to profile"
      git push origin HEAD:refs/heads/main
      ```
-   - **Zero Stash Required**: Alice never has to stash or worry about dirty working trees. Her WIP is safely pushed to her isolated bare fork remote.
    - Sidecar post-receive hook delivered push notification to coordinator `/events/push` in **139.0 ms**.
    - Coordinator head vector updated: `heads: {"alice-agent-0001": "11495d3a..."}`.
 4. **Bob Concurrent Task & Push**:
-   - Bob creates task `task-0002` (`bob-agent-0002`), clones his isolated fork, edits `src/profile_service.py` to add `phone`, commits, and pushes to his fork (`bob_sha`: `4065a511...`).
-   - Sidecar post-receive webhook updated coordinator head vector in **211.4 ms**:
-     ```json
-     {
-       "alice-agent-0001": "11495d3a2edf1a7e0ab413bf45c2b4c6c41054a5",
-       "bob-agent-0002": "4065a51133f937bbd1279db347f899732372f286"
-     }
-     ```
-5. **Background Radar Evaluation & Early Detection (F3)**:
+   - Script creates task `task-0002` (`bob-agent-0002`), clones fork, edits `src/profile_service.py` to add `phone`, commits, and pushes (`bob_sha`: `4065a511...`).
+   - Sidecar post-receive webhook updated coordinator head vector in **211.4 ms**.
+5. **Background Radar Evaluation & Textual Conflict Detection (F3)**:
    - Evaluation runner fetched heads from Alice and Bob's bare forks into the evaluation repo.
    - `RadarEngine.run_matrix()` executed `git merge-tree --write-tree --merge-base=a02107a9... 11495d3a... 4065a511...`.
    - Total radar execution & submission latency: **74.29 ms**.
+   - **Disclosure on Test Scope**: The submitted policy declared `"tests": { "command": null, "budget_s": 15.0 }`. **No semantic tests were executed or collected during this radar evaluation.** Only textual conflict detection was performed.
    - CONTRACT 0.1 payload submitted via `client.send_checks()`:
      ```json
      {
@@ -237,27 +231,28 @@ flowchart TB
      }
      ```
    - Coordinator created active warning `warn-1` on pair `[alice-agent-0001, bob-agent-0002]`.
-   - **Early Visibility Achieved**: Alice queries `client.get_status()` and immediately sees the warning **before any branch merge, rebase, or pull request was created**.
-6. **Recovery & Rollback Ergonomics (F4)**:
-   - Canonical `main` branch was verified to remain untouched at `a02107a9...`.
+   - Script queries `client.get_status()` and observes the warning prior to canonical merge.
+6. **Recovery & Rollback Mechanics (F4)**:
+   - Canonical `main` branch verified untouched at `a02107a9...`.
    - Disposable recovery clone of Alice's fork verified byte-for-byte SHA match (`11495d3a...`).
-   - Zero stash entries created; zero detached HEAD states; zero working-tree cleanup needed.
 
 ---
 
-## 4. Measured Performance & Resource Utilization
+## 4. Measured Performance & Physical Receipts
 
-### 4.1 Wall-Clock Latency Breakdown
+### 4.1 Script Execution Wall-Clock Latency
 
-| Phase / Step | Workflow 1: Ordinary Git Fallback | Workflow 2: Agent-Branches Protocol |
+| Phase / Step | Workflow 1: Scripted Ordinary Git | Workflow 2: Scripted Agent-Branches Protocol |
 |---|---|---|
-| **Environment & Infrastructure Startup** | 135.1 ms (local git init & seed) | 600.9 ms (sidecar + coordinator daemons) |
+| **Infrastructure & Environment Startup** | 135.1 ms (local git init & seed) | 600.9 ms (sidecar + coordinator daemons) |
 | **Alice Onboarding & Clone** | ~20 ms | 114.8 ms (HTTP auth handshake & clone) |
 | **Alice WIP Commit & Push** | N/A (uncommitted local dirty edit) | 139.1 ms (git push HTTP + webhook update) |
 | **Bob Concurrent Commit & Push** | 70.2 ms (push directly to `origin/main`) | 211.4 ms (push HTTP + webhook update) |
-| **Conflict Discovery Latency** | **171.1 ms** (blocked until pull & stash pop) | **74.29 ms** (proactive radar trial-merge) |
+| **Conflict Discovery Latency** | **171.1 ms** (measured at scripted `git pull` & `stash pop`) | **74.29 ms** (measured at scripted `git merge-tree` radar) |
 | **Recovery / Resolution Time** | 79.1 ms (manual resolution & stash drop) | 58.7 ms (disposable recovery clone) |
-| **Total Wall-Clock Elapsed** | **0.48 s** | **1.48 s** |
+| **Total Script Wall-Clock Elapsed** | **0.48 s** | **1.48 s** |
+
+*Note: The 0.48s vs 1.48s timings reflect the raw execution duration of the Python test script on localhost. They do not represent human developer cognitive time, autonomous agent action-rates, or real-world repair effort.*
 
 ### 4.2 Storage and Memory Utilization
 
@@ -268,46 +263,33 @@ flowchart TB
 
 ---
 
-## 5. Objective Developer Friction Analysis (Zero Marketing)
+## 5. Authentic Negative Infrastructure Costs & Usability Friction
 
-### 5.1 Real Usability Hurdles in Agent-Branches
+The primary empirical value of this run is documenting the real operational hurdles introduced by the Agent-Branches infrastructure:
 
-1. **Mandatory Daemon & Service Dependencies**:
-   - In ordinary Git, a newcomer needs only `git clone <url>` and an editor. Everything runs client-side with zero background services.
-   - In Agent-Branches, the newcomer or team must run and maintain two network daemons: the Git Smart-HTTP sidecar (serving repositories and managing tokens) and the Coordinator (managing head vectors, webhooks, and radar). If either service crashes, commits and pushes fail.
+1. **Mandatory Daemon & Infrastructure Overhead**:
+   - Ordinary Git requires no background services; developers operate 100% offline with standard CLI tooling.
+   - Agent-Branches introduces two mandatory network daemons (Git Smart-HTTP sidecar + Coordinator). If either daemon crashes or experiences network degradation, git push, task creation, and radar checks fail completely.
 2. **URL Credential Encoding Trap**:
-   - Plaintext tokens minted by the sidecar contain expiration query parameters (`?expires=<timestamp>`).
-   - If a developer passes this token in standard Git URL format (`http://token:<token>@host/repo.git`), Git's internal `libcurl` parser chokes on the `?` character, rejecting the URL with `Port number was not a decimal number`.
-   - Developers or tooling must percent-encode credentials or use `-c http.extraHeader="Authorization: Bearer <token>"`.
-3. **Multi-Token Authorization Hierarchy**:
-   - Agent-Branches requires three distinct tiers of credentials: Admin Bearer token (to create tasks), Runner Bearer token (to read status and submit checks), and Scoped Repository tokens (to push/clone). This is significantly more complex than standard SSH keys or personal access tokens in ordinary Git.
-4. **Tooling & Client Friction**:
-   - Without an SDK client (`AgentBranchesClient`) or IDE extension, creating task forks requires raw HTTP `POST /tasks` requests with JSON payloads. Ordinary Git CLI cannot create a task fork on its own.
-
-### 5.2 Genuine Protocol Advantages
-
-1. **Non-Destructive WIP Pushes**:
-   - In ordinary Git, pushing incomplete or experimental work to shared branches pollutes the history or breaks the build for colleagues. Developers frequently leave work uncommitted or rely on fragile local stashes.
-   - In Agent-Branches, every task fork is an isolated, first-class bare repository. Agents and developers can push incremental, experimental WIP commits as frequently as desired without affecting canonical `main` or peer branches.
-2. **Elimination of Git Stash Overhead & Collisions**:
-   - Ordinary Git developers regularly suffer from stash collisions when upstream advances. Popping a stash on a modified tree frequently causes merge conflicts, breaks syntax, and leaves orphaned stash entries on the stack (`The stash entry is kept in case you need it again`).
-   - Agent-Branches completely eliminates the need for `git stash` during concurrent collaboration: local changes are committed and pushed directly to the task fork.
-3. **Proactive, Sub-100ms Conflict Radar**:
-   - In ordinary Git, conflicts are only discovered when a developer manually attempts to pull, rebase, or open a pull request—often hours or days after the divergent code was written.
-   - Agent-Branches computes pairwise trial-merges in **74.29 ms** in the background immediately upon push, surfacing active conflict warnings in `GET /status` while both developers are still working on their respective features.
-4. **Pristine Rollback & Recovery**:
-   - If an experiment fails or is abandoned, the canonical branch was never touched, and the local clone can simply be discarded or reset to `base_sha` without cleaning up lingering stash entries or resolving half-merged index states.
+   - Tokens containing expiration queries (`?expires=<timestamp>`) break standard Git HTTP clone URLs because `libcurl` parses `?` as a query delimiter.
+   - Developers or tooling must percent-encode credentials or configure custom `http.extraHeader` directives.
+3. **Multi-Tier Bearer Token Hierarchy**:
+   - The protocol requires managing three distinct credential classes: Admin Bearer token, Runner Bearer token, and Scoped Repository tokens. This creates higher cognitive and configuration complexity than standard SSH keys or personal access tokens.
+4. **Tooling & API Boundary**:
+   - Ordinary Git CLI cannot create tasks or forks autonomously. Developers must use the Python SDK (`AgentBranchesClient`) or make raw HTTP `POST /tasks` calls.
 
 ---
 
-## 6. Conclusion & Recommendations
+## 6. Preregistration: Authentic Next-Step Newcomer Task
 
-The parallel observation validates that **Agent-Branches provides a measurable, structural advantage in multi-agent concurrent coordination**, specifically:
-- Eliminating stash overhead and dirty-tree pull rejections.
-- Slashing conflict detection latency from manual pull time to **sub-100ms push-time radar alerts**.
-- Protecting canonical branches from unvetted WIP pollution.
+Per Codex Principal C1534 review, scripted two-actor fixtures on toy repositories cannot substitute for genuine multi-agent coordination observation. We therefore preregister the following authentic newcomer task:
 
-However, for a human newcomer, **onboarding friction is substantially higher than standard Git** due to daemon requirements, multi-tier bearer tokens, and URL-encoding edge cases. To achieve frictionless consumer adoption, the following improvements are recommended:
-1. **CLI / Git Credential Helper**: Ship a native `git-credential-agentbranches` helper that intercepts Smart-HTTP requests and automatically attaches bearer authorization headers, eliminating manual percent-encoding in clone URLs.
-2. **Unified Single-Binary Sidecar**: Bundle the Node sidecar, coordinator runtime, and radar engine into a single lightweight daemon or Cloudflare Worker binding.
-3. **Interactive Pre-Push Advisory**: Integrate a local Git `pre-push` hook that queries the coordinator radar before pushing, alerting developers in their terminal if a concurrent peer has already modified the same lines.
+### Specification: Authentic Bound Newcomer Adoption Task
+1. **Target Artifact**: An existing independent bound actor (e.g. `zcode-sdk-adopt` or Muse) will consume the real product diff and runner artifacts generated during the Real Product First-Use Run (`REAL-PRODUCT-FIRSTUSE-REPORT.md` / `product_firstuse_results.json`).
+2. **Matched Baseline**:
+   - **Arm A (Ordinary Git Worktree Baseline)**: The actor undertakes an authentic maintenance task on `agent_branches` in a standard Git worktree with local topic branches and WIP commits.
+   - **Arm B (Agent-Branches Protocol)**: The actor undertakes the identical maintenance task using `AgentBranchesClient` task forks and Smart-HTTP.
+3. **Measurement & Preregistration**:
+   - Record actual model reasoning traces, executed shell commands, tool invocations, and wall-clock repair effort.
+   - Preregister expected error rates and friction checkpoints *before* the actor observes any radar warnings or coordinator status payloads.
+   - Zero manufactured conflicts, zero forced synthetic bugs, and zero fictional actor scripting.

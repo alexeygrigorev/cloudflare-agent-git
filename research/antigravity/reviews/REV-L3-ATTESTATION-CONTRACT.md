@@ -2,9 +2,9 @@
 
 - **Reviewer:** Independent L3 Attestation Contract Reviewer (tag: `l3-attestation-reviewer`)
 - **Dispatched by:** `antigravity-head` (`46fdb644`), under Codex Principal C1525 Task B: *"independent L3 actual CLI->/checks attestation contract review: real command, positive collected count, exact tested SHAs/vector, cache effects and fail-closed missing/zero tests (read-only/disposable tests, no harness author duplicate)."*
-- **Workspaces:**
-  - L3 Advisory Radar: `/home/alexey/git/agent-branches-l3-radar` (branch `proto/l3-radar`)
-  - Webhook/Coordinator Prototype: `/home/alexey/git/agent-branches-webhook/prototype` (branch `proto/webhook-auth`, CONTRACT v0.1.4)
+- **Workspaces & Target Source Pins:**
+  - L3 Advisory Radar: `/home/alexey/git/agent-branches-l3-radar` (branch `proto/l3-radar`, Target Commit SHA: `2b928fc`)
+  - Webhook/Coordinator Prototype: `/home/alexey/git/agent-branches-webhook/prototype` (branch `proto/webhook-auth`, CONTRACT v0.1.4, Target Commit SHA: `d8ac3b5`)
 - **Target Repository:** `/home/alexey/git/cloudflare-agent-git`
 - **Scratch Root:** `/home/alexey/git/cloudflare-agent-git/.local/scratch/l3-attestation-review/` (mode `0700`, strictly bounded <= 512 MB budget, zero `/tmp` growth; measured 632 KiB)
 - **Date of Review:** 2026-10-04 (Europe/Berlin)
@@ -18,11 +18,11 @@ The L3 Radar Engine CLI (`radar/engine.py`), its attestation export adapter (`ex
 Our independent assessment confirms:
 1. **Real CLI & CONTRACT v0.1 Schema Compliance:** The CLI command `python3 -m radar.engine ... --l1` produces valid, parseable JSON conforming byte-for-byte to the canonical CONTRACT v0.1 schema specification (`contract`, `vector`, `policy`, `coverage`, `results`).
 2. **Positive Collected Count & Exact Head SHAs:** The engine enforces that `status: "clean"` is granted only when semantic test execution succeeds with a strictly positive collected test count (`tests_collected > 0`). The payload vector deterministically matches the exact 40-hex commit SHAs evaluated.
-3. **Idempotence & Git Object Store Caching:** Repeated executions on identical head vectors produce idempotent evaluation results without state corruption or repository degradation (`git fsck --full` verified clean).
+3. **Idempotence & Git Object Store Caching:** Repeated executions on identical head vectors produce idempotent evaluation results without state corruption or repository degradation (`git fsck --full` verified clean). *Clarification: this verifies output determinism and idempotence invariance across runs; it does NOT constitute an empirical cache-speed acceleration measurement.*
 4. **Decisive Fail-Closed Behavior:**
    - Missing commit objects fail closed to `status: "unknown"`, never `clean`.
    - Semantic test regressions produce `status: "conflict"`, `kind: "test"`.
-   - Test execution timeouts terminate the isolated process group via `os.killpg(SIGKILL)` and fail closed to `status: "unknown"`.
+   - Test execution timeouts terminate the isolated process group via `os.killpg(SIGKILL)` and fail closed to `status: "unknown"`. *Clarification: process-group termination was verified specifically on the unit test infinite-loop harness (`time.sleep(100)`), and does not represent an isolated container sandbox or universal leak-proof guarantee under arbitrary uncooperative external test binaries without Linux cgroup enforcement.*
    - Zero tests collected on overlapping files fail closed to `status: "unknown"`, reflecting `tests_collected: 0` in coverage and never claiming clean verification.
    - Stale head vectors are rejected by Coordinator `POST /checks` with HTTP `409 Conflict`, returning the current head vector for retry.
 5. **Process Slice & Memory Governance:** Concurrency and memory limits are strictly governed by the shared environment/process slice. Memory telemetry truthfully discloses that `ru_maxrss` is cumulative across process children (`scope: "cumulative_process_children"`), and host memory availability is read live from `/proc/meminfo` without fabricated fallbacks.
@@ -225,6 +225,7 @@ We subjected the L3 Radar Engine and the Coordinator `/checks` endpoint to a bat
      }
      ```
    - Verified both over neutral route handler and across a live `node:http` socket.
+   - *Provenance & Mock Boundary Disclosure (C1534)*: In this test harness step, the `/checks` submission test exercised `CoordinatorCore.submitChecksNow` and `handleRoute` backed by an in-memory `MemoryCoordinationStore` with synthetic placeholder test vectors (`0000000000000000000000000000000000000004` / `...0005`) to verify the CONTRACT v0.1 schema parser and stale vector 409 rejection logic, rather than live Git repository hashes from `FakeArtifacts` or real Smart-HTTP sidecar. Live git integration testing of the complete wire stack was separately validated in `test_real_router_sdk_smoke.py` and `REAL-PRODUCT-FIRSTUSE-REPORT.md`.
 
 ---
 
