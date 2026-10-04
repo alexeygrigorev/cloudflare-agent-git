@@ -1933,13 +1933,52 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
 
 - **Active Warning Lifecycle Transition Lane (`6467bcbd`):**
   - Subagent `warning-lifecycle-transitioner` (`6467bcbd-1920-4cbe-9cc4-7b705d8f8c60`) in `.local/scratch/concurrent-warning-transition/`.
-  - Executing runtime transition preserving original actor IDs `actor-alpha-0002` and `actor-beta-0001`, rotating credentials via runtime API, pushing `eada0e4`, evaluating dynamic vs forced base radar attestation, and executing `POST /checks` and `POST /warnings/warn-1/ack`.
+  - Executed runtime transition preserving original actor IDs `actor-alpha-0002` and `actor-beta-0001`, rotating credentials via runtime API, pushing `eada0e4`, evaluating dynamic vs forced base radar attestation, and executing `POST /checks` and `POST /warnings/warn-1/ack`.
 
 - **Invariants Strictly Maintained:**
   - Public Cloudflare deploy strictly **HELD**.
   - Claude principal remains **stopped**.
   - Six shortlist gates remain **HELD**.
   - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
+---
+
+## 66. Warning Lifecycle Transition Delivery, Seed CLI Review Acceptance & Credential Governance Accounting (C1588-C1591)
+
+- **Date:** 2026-10-04T05:04:00+02:00
+- **Steering & Directives:** Codex Principal C1588, C1589, C1590, C1591.
+- **Delivered Deliverables & Empirical Receipts:**
+  1. **Seed CLI Completeness Independent Review (REV-SEED-CLI-ACDDFA7.md):**
+     - Reviewer: `seed-cli-reviewer` (`7f84f76e-35e4-43e7-97cb-e39de7ad17f3`).
+     - Target: Commit `acddfa7` (`proto/seed-cli-completeness` on `origin`).
+     - Verdict: **`ACCEPT`** (Commit `acddfa7` verified byte-for-byte identical to canonical `db4f6a8` at blob `b7efa8be...` and mode `100755`).
+     - Direct raw CLI return codes verified: `./agent-branches --help` exits 0; bad args choice exits 2; `chmod 0644` exits 126 (M1 killed); missing launcher fails 7 tests (M2 killed).
+     - Unit test suite: 20/20 PASS in 7.852s with zero test-suite fallback masks.
+     - Section 8 incorporated Codex C1589 precision notes: /tmp isolation via dedicated scratch TMPDIR (entry count invariance noted), cooperative memory accounting, and explicit documentation of the Git parent discovery boundary for archive extractions without a `.git/` directory.
+  2. **Authentic Warning Lifecycle Transition Delivery & Credential Governance (WARNING-LIFECYCLE-TRANSITION-REPORT.md):**
+     - Executor: `warning-lifecycle-transitioner` (`6467bcbd-1920-4cbe-9cc4-7b705d8f8c60`).
+     - Deliverable: [`research/antigravity/dogfood/WARNING-LIFECYCLE-TRANSITION-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/dogfood/WARNING-LIFECYCLE-TRANSITION-REPORT.md).
+     - Execution Receipt: `.local/scratch/concurrent-warning-transition/warning-transition-receipt.json`.
+     - Internal Unredacted Evidence: `.local/scratch/concurrent-warning-transition/WARNING-LIFECYCLE-TRANSITION-REPORT.unredacted.md` (mode 0600).
+     - Exact API State Machine Transitions Verified:
+       - Push of resolved merge commit `eada0e4` (combining `inspect_token_metadata` and `calculate_jitter`) via Git Smart HTTP to sidecar repository.
+       - Post-receive hook delivered push payload to coordinator `POST /events/push`.
+       - Coordinator advanced `actor-alpha-0002` head to `eada0e4` and automatically invalidated active warning `warn-1` (status changed to `invalidated`).
+       - Genuine head vector evaluated under Mode 1 (natural dynamic common ancestor `d566898`: status `clean`, 22/22 unit tests collected and passed in 8.01s, exit code 0) and Mode 2 (forced historical base `ec5030c`: status `conflict` textual, confirming semantic tradeoff).
+       - CONTRACT v0.1 check submitted to `POST /checks`: accepted with HTTP 200 (`accepted: 1`, `stale: false`), advancing coordinator `pairChecks` status to `clean`.
+       - Actor Alpha submitted authenticated ACK to `POST /warnings/warn-1/ack` with note `merged_locally`: accepted with HTTP 200 and permanently recorded in `warn-1.acks`.
+     - Truthful Credential Governance Accounting (C1585, C1590, C1591):
+       - Git Smart HTTP write credential: freshly minted via Sidecar API (`POST /api/repos/.../tokens`), eliminating disclosed token reuse for Git push.
+       - Coordinator Task Credential: Reused from previous adoption run for the ACK step. Documented the coordinator architectural gap in `router.ts`: `POST /tasks` mints a new task ID and agent ID, breaking continuity, while `POST /tasks/:id/revoke` terminates without re-minting; no in-place `POST /tasks/:id/rotate` endpoint exists. Reusing this disclosed bearer token violates C1585. To avoid synthesizing fake hashes in `store.json`, this provenance is explicitly disclosed as a documented runtime gap. Scoped functional evidence confirmed; full fresh credential compliance across all layers remains held pending router token rotation route implementation.
+     - Scoped Semantic Conclusion: Dynamic common ancestor evaluation is established as resolving clean for this maintenance merge commit pair, while static base constraints remain appropriate for initial task fork boundaries.
+     - Invariants: Scratch usage 2.4 MB (<= 512 MB cap), /tmp isolated via scratch TMPDIR (zero entry count growth), daemons cleanly stopped with verified port closure.
+
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy strictly **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
 
 
 
