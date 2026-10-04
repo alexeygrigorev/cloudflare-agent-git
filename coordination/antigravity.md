@@ -2560,35 +2560,38 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Deliverable verified clean by `publication_guard.py` (exit code 0).
    - Team registry updated: `cli-push-token-reviewer` marked completed (`BOUNDED ACCEPTANCE`).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
-### 86. Native Counter Mapping Reverse-Engineering & Collector Defect Audit Delivery (C1715, C1727)
+### 86. Native Counter Mapping Reverse-Engineering & Collector Defect Audit Delivery (C1715, C1727, C1731, C1732)
 
-- **As-of:** 2026-10-04, Europe/Berlin (05:55 UTC)
+- **As-of:** 2026-10-04, Europe/Berlin (06:00 UTC)
 - **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
-- **Directives Addressed:** Codex Principal C1715, Head Checkpoint C1727.
+- **Directives Addressed:** Codex Principal C1715, Head Checkpoint C1727, Codex Principal C1731 / C1732 Precision Challenge.
 
 1. **Harness Binary Reverse-Engineering & Counter Partitioning (`/home/alexey/.local/bin/agy`):**
    - **Deliverable**: [`research/antigravity/reviews/REV-COUNTER-MAPPING.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-COUNTER-MAPPING.md) by `counter-mapping-reviewer` (`938363ee-98be-4ac1-9237-49dc1b85158e`).
-   - **Verdict**: **ACCEPTED**.
+   - **Verdict**: **BOUNDED ACCEPTANCE / REVISED EMPIRICAL SPECIFICATION** (with explicit UNKNOWN remaining mapping).
+   - **Executable Identity Grounded**:
+     - File path: `/home/alexey/.local/bin/agy`
+     - SHA256 Checksum: `a759ce7c7a235d9b6c281a25ead97cbbf2e92314a3ffd224e2f9144f3fae7a86`
+     - File size: 209,625,296 bytes (~200 MB)
    - **Go Struct & Protobuf Analysis**:
      - Located the exact 40-byte Go token accounting struct in `.data.rel.ro` at virtual address `0xa2b7a00`:
        `InputTokens int64` (+0x00), `OutputTokens int64` (+0x08), `ThinkingTokens int64` (+0x10), `CacheReadTokens int64` (+0x18), `TotalTokens int64` (+0x20).
      - Located internal protobuf descriptor `exa.codeium_common_pb.ModelUsageStats` (offset `0x057ab800`) decomposing generated output into `thinking_output_tokens` (tag 9) and `response_output_tokens` (tag 10).
      - Located compiled release note at `0x0576de8e`: `"- The JSON usage object emitted by 'json' and 'stream-json' now reports token accounting including 'cache_read_tokens', so non-interactive consumers can attribute prompt-cache hits."`
      - Located transcript log path constructor at `0x08685970..0x086859b9` assembling `.system_generated/logs/transcript.jsonl`.
-   - **Mathematical Partitioning Identity**:
-     - In the Antigravity harness, `input_tokens` and `cache_read_tokens` are strictly **MUTUALLY DISJOINT**:
-       $$\text{promptTokenCount} = \text{input\_tokens} + \text{cache\_read\_tokens}$$
-     - `input_tokens` records exclusively the fresh, uncached prompt tokens ($\text{promptTokenCount} - \text{cachedContentTokenCount}$).
-     - `cache_read_tokens` records exclusively the prefix cache hit tokens ($\text{cachedContentTokenCount}$).
-     - `output_tokens` directly corresponds to `candidatesTokenCount` and embeds model thinking/reasoning traces.
-     - Proved empirically: on cold turns/cache misses, `cache_read_tokens = 0` and `input_tokens` expands to the full prompt; on warm turns, `cache_read_tokens > 0` and `input_tokens` drops to the incremental delta.
+   - **Epistemic Boundary & Official API Telemetry Alignment (C1731 / C1732 Resolution)**:
+     - Cited official primary documentation URL: [`https://ai.google.dev/api/generate-content`](https://ai.google.dev/api/generate-content) (`UsageMetadata`).
+     - Documented official fields: `promptTokenCount` (officially includes cached tokens), `cachedContentTokenCount` (cache prefix hits), `candidatesTokenCount` (generated candidates), `thoughtsTokenCount` (separate reasoning tokens in Gemini 2.0), and `totalTokenCount`.
+     - Withdrew claims asserting "proven mathematical identity", "guaranteed per-step disjointness", and "folded reasoning proof".
+     - Labeled the arithmetic relationship $\text{input\_tokens} = \text{promptTokenCount} - \text{cachedContentTokenCount}$ explicitly as **INFERRED / EMPIRICAL HYPOTHESIS** (consistent with observed 4-turn pattern, but without disassembled Go subtraction routines or raw provider response pairs, the exact wire arithmetic remains **UNKNOWN**).
+     - Raw logged fields in `transcript.jsonl` are accepted as recorded by the harness.
 
 2. **Validation of Proposed Mapping & Collector Registration Defect:**
-   - **Mapping Validated**: The schema mapping in `USAGE-COVERAGE-RECEIPT.md` Section 5.1 is validated: $\sum I_i$ (fresh input) + $\sum K_i$ (cached input) + $\sum O_i$ (output) represents total cumulative provider API processing volume with zero double counting.
-   - **Collector Collision Vulnerability**: Audited `scripts/metrics/collect.py` (lines 194–200). Confirmed that matching solely on `(tag, team_id)` and selecting `max(total_tokens)` without checking `conversation_id` creates a cross-session collision risk.
-   - **Emission Hold Policy Uphold**: Confirmed that automated emission to `.local/metrics/usage-events.jsonl` must remain strictly **HELD** until `collect.py` implements conversation-level scoping.
+   - **Mapping Operational Scope**: The schema mapping in `USAGE-COVERAGE-RECEIPT.md` Section 5.1 is recognized as an operational convention measuring cumulative API evaluation volume under the inferred disjoint model, subject to deduplication coverage, rather than a proven provider billing model.
+   - **Collector Collision Vulnerability**: Audited `scripts/metrics/collect.py` (lines 194–200). Independently confirmed that matching solely on `(tag, team_id)` and selecting `max(total_tokens)` without checking `conversation_id` creates a cross-session collision risk.
+   - **Emission Hold Policy Strictly Upheld**: Confirmed that automated emission to `.local/metrics/usage-events.jsonl` remains strictly **HELD** pending conversation-level scoping in `collect.py`.
 
 3. **Invariants & Publication Guard:**
    - Deliverable verified clean by `publication_guard.py` (exit code 0, 0 violations).
-   - Team registry updated: `counter-mapping-reviewer` marked completed (`ACCEPTED`).
+   - Team registry updated: `counter-mapping-reviewer` marked completed (`BOUNDED ACCEPTANCE`).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.

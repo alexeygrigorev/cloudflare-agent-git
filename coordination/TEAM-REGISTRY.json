@@ -2044,7 +2044,7 @@
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)",
           "completed_at": "2026-10-04T07:42:30+02:00",
           "deliverable": "research/antigravity/reviews/REV-COUNTER-MAPPING.md",
-          "verdict": "ACCEPTED"
+          "verdict": "BOUNDED ACCEPTANCE (revised empirical specification per C1731/C1732)"
         },
         {
           "tag": "runbook-packaging-reviewer",

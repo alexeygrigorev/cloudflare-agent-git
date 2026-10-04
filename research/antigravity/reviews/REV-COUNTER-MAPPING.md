@@ -4,8 +4,10 @@
 - **Reviewer Tag / Role:** `counter-mapping-reviewer` (Independent Counter Mapping Reviewer)
 - **Author Session:** `938363ee-98be-4ac1-9237-49dc1b85158e`
 - **Parent Session:** `antigravity-head` (`46fdb644`, conversation ID `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
-- **Directives Addressed:** Codex Principal C1715, Head Checkpoint C1727
-- **Target Subject:** Native Antigravity CLI binary (`agy`), transcript serialization, Google Gemini API telemetry specs, and metrics registry mapping
+- **Directives Addressed:** Codex Principal C1715, Head Checkpoint C1727, Codex Principal C1731 / C1732 Precision Review
+- **Target Subject:** Native Antigravity CLI binary (`agy`), transcript serialization, official Google Gemini API telemetry specs, and metrics registry mapping
+- **Official Documentation URL:** `https://ai.google.dev/api/generate-content` (`UsageMetadata`)
+- **Executable Identity:** `/home/alexey/.local/bin/agy` (SHA256: `a759ce7c7a235d9b6c281a25ead97cbbf2e92314a3ffd224e2f9144f3fae7a86`, size: 209,625,296 bytes)
 - **As-of Date:** 2026-10-04, Europe/Berlin
 - **Scratch Root:** `/home/alexey/git/cloudflare-agent-git/.local/scratch/counter-mapping-review/` (mode `0700`, strictly <= 512 MB, zero `/tmp` growth)
 - **Publication Guard:** Verified clean via [publication_guard.py](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/tooling/publication_guard.py) (exit code 0)
@@ -14,22 +16,24 @@
 
 ## 1. Executive Summary & Verdict
 
-Under Codex Principal C1715 and Head Checkpoint C1727, this review conducts a technical investigation into the native Antigravity CLI harness (`/home/alexey/.local/bin/agy`), its Go runtime serialization structures, official Google Gemini API telemetry specifications, and the repository metrics collection pipeline (`scripts/metrics/collect.py` and `scripts/metrics/record_usage.py`).
+Under Codex Principal C1715, C1731, and C1732, this review conducts a technical audit of the native Antigravity CLI harness (`/home/alexey/.local/bin/agy`), its Go runtime serialization structures, official Google Gemini API telemetry specifications ([Google GenAI API: GenerateContent](https://ai.google.dev/api/generate-content)), and the repository metrics collection pipeline (`scripts/metrics/collect.py` and `scripts/metrics/record_usage.py`).
 
 ```mermaid
 flowchart TD
-    subgraph GoogleGeminiAPI["Google Gemini API (v1beta / Live Inference)"]
-        PTC["promptTokenCount<br/>(Total Prompt Context)"]
+    subgraph GoogleGeminiAPI["Official Google Gemini API (UsageMetadata Specification)"]
+        PTC["promptTokenCount<br/>(Total Prompt Context, includes cached tokens)"]
         CTC["cachedContentTokenCount<br/>(Prefix Cache Hits)"]
-        CanTC["candidatesTokenCount<br/>(Generated Output + Thoughts)"]
-        TTC["totalTokenCount<br/>(= promptTokenCount + candidatesTokenCount)"]
+        CanTC["candidatesTokenCount<br/>(Generated Candidate Output)"]
+        ThTC["thoughtsTokenCount<br/>(Separate Reasoning Tokens in Gemini 2.0)"]
+        TTC["totalTokenCount<br/>(= promptTokenCount + candidatesTokenCount + thoughtsTokenCount)"]
     end
 
     subgraph NativeHarness["Antigravity CLI Binary (agy Go Struct & Serializer)"]
-        IT["input_tokens = promptTokenCount - cachedContentTokenCount<br/>(Fresh Uncached Prompt Slice)"]
-        CRT["cache_read_tokens = cachedContentTokenCount<br/>(Cached Context Slice)"]
-        OT["output_tokens = candidatesTokenCount<br/>(Includes Thinking Tokens)"]
-        TT["total_tokens = input_tokens + cache_read_tokens + output_tokens"]
+        VS["Verified Binary Discovery:<br/>40-byte Go struct at 0xa2b7a00 & ModelUsageStats protobuf"]
+        IT["input_tokens: fresh uncached prompt<br/>(EMPIRICAL INFERENCE, arithmetic subtraction UNVERIFIED)"]
+        CRT["cache_read_tokens: cached prefix<br/>(Direct 1:1 mapping from cache hit)"]
+        OT["output_tokens: candidate output<br/>(Emitted at step root; thinking containment INFERRED)"]
+        TT["total_tokens: overall total<br/>(Raw logged fields accepted as recorded)"]
     end
 
     subgraph TranscriptDisk["Transcript Disk Logs (transcript.jsonl)"]
@@ -38,50 +42,47 @@ flowchart TD
 
     subgraph MetricsStore["Repository Metrics System"]
         RU["scripts/metrics/record_usage.py<br/>(Emits to usage-events.jsonl)"]
-        CP["scripts/metrics/collect.py<br/>(DEFECT: Matches tag, team_id without conversation_id)"]
-        HOLD["EMISSION HELD<br/>(Uphold hold policy until registry alignment)"]
+        CP["scripts/metrics/collect.py<br/>(DEFECT CONFIRMED: Matches tag, team_id without conversation_id)"]
+        HOLD["EMISSION HELD<br/>(Uphold hold policy until conversation-level scoping)"]
     end
 
-    PTC -.->|"Decomposed into fresh + cached"| IT
-    CTC -->|"Direct 1:1 mapping"| CRT
-    CanTC -->|"Direct 1:1 mapping"| OT
-    TTC -->|"Matches sum"| TT
+    PTC -.->|"Empirical decomposition (INFERRED)"| IT
+    CTC -.->|"Direct mapping"| CRT
+    CanTC -.->|"Candidate mapping"| OT
+    ThTC -.->|"Containment UNVERIFIED on wire"| OT
 
     IT --> PR
     CRT --> PR
     OT --> PR
 
-    PR -.->|"Audit-Verified Source"| HOLD
-    HOLD -.->|"Blocked until collector fix"| RU
+    PR -.->|"Raw logged fields accepted"| HOLD
+    HOLD -.->|"Blocked by collector defect"| RU
     RU --> CP
 ```
 
-### Core Technical Verdicts
+### Core Technical Verdicts (Revised under C1731 / C1732)
 
-1. **Disjoint Partitioning of `input_tokens` and `cache_read_tokens`:**
-   - **Verdict:** In the Antigravity harness, `input_tokens` and `cache_read_tokens` represent **mutually disjoint partitions** of the total prompt context.
-   - **Mathematical Identity:** 
-     $$\text{promptTokenCount} = \text{input\_tokens} + \text{cache\_read\_tokens}$$
-   - `input_tokens` records only the **fresh, uncached prompt tokens** ingested on that specific turn ($\text{promptTokenCount} - \text{cachedContentTokenCount}$), while `cache_read_tokens` records the prompt tokens served via prefix cache hit.
-   - Total prompt tokens evaluated by the provider on step $i$ is the exact sum $I_i + K_i$.
+1. **Epistemic Boundary: Verified Struct Fields vs. Inferred Arithmetic Partitioning:**
+   - **Verified in Binary:** The 40-byte Go struct at virtual address `0xa2b7a00` contains `InputTokens`, `OutputTokens`, `ThinkingTokens`, `CacheReadTokens`, and `TotalTokens`. The embedded protobuf descriptor `ModelUsageStats` (offset `0x057ab800`) defines explicit fields for `input_tokens`, `output_tokens`, `cache_read_tokens`, `thinking_output_tokens`, and `response_output_tokens`.
+   - **Inference Labeled (Not Proven):** The hypothesis that `input_tokens = promptTokenCount - cachedContentTokenCount` is an **EMPIRICAL INFERENCE** consistent with observed 4-turn context growth patterns, NOT a proven mathematical identity. No same-invocation raw provider response pair or Go subtraction assembly code was inspected.
+   - **Withdrawal of Certainty Claims:** Prior claims asserting a "proven mathematical identity", "guaranteed per-step disjointness", and "folded reasoning proof" are **FORMALLY WITHDRAWN**. The exact arithmetic relationship between `input_tokens` and `cache_read_tokens` is labeled **UNKNOWN / INFERRED**.
 
-2. **Output Token Semantics & Model Thinking Containment:**
-   - **Verdict:** `output_tokens` directly corresponds to Google Gemini API `candidatesTokenCount`.
-   - In Gemini 2.0 / thinking models, reasoning traces (thoughts) are generated by the model as part of the candidate response stream and are accounted within `candidatesTokenCount` (with detailed breakdowns in `thoughtsTokenCount` or `candidatesTokensDetails`).
-   - In the harness Go struct, `ThinkingTokens` is tracked alongside `OutputTokens`, confirming that generated reasoning tokens are part of the total output volume.
+2. **Official Google Gemini API Telemetry Specification (`UsageMetadata`):**
+   - Per official Google API documentation at `https://ai.google.dev/api/generate-content`:
+     - `promptTokenCount`: Total tokens in prompt (officially **inclusive** of cached tokens).
+     - `cachedContentTokenCount`: Number of tokens in the prompt served from cache.
+     - `candidatesTokenCount`: Number of tokens generated in candidate responses.
+     - `thoughtsTokenCount`: Number of reasoning/thinking tokens (tracked as a distinct field in Gemini 2.0).
+     - `totalTokenCount`: Documented as including prompt, candidate output, and reasoning tokens (`promptTokenCount + candidatesTokenCount + thoughtsTokenCount`).
+   - In `transcript.jsonl`, only `output_tokens` is recorded at the step root. Whether reasoning tokens are folded into `output_tokens`, tracked separately on the wire, or excluded from certain generation steps is **UNKNOWN / UNVERIFIED** at the raw HTTP wire layer.
 
-3. **Validation of `USAGE-COVERAGE-RECEIPT.md` Proposed Field Mapping:**
-   - The proposed schema mapping in `USAGE-COVERAGE-RECEIPT.md` Section 5.1 is **validated as mathematically sound and semantically accurate**:
-     - `--input-tokens`: $\sum I_i$ (fresh uncached prompt evaluations)
-     - `--cached-input-tokens`: $\sum K_i$ (cached prefix prompt evaluations)
-     - `--output-tokens`: $\sum O_i$ (generated candidate evaluations)
-     - `--total-tokens`: $\sum (I_i + K_i + O_i)$ (total cumulative provider API processing volume)
-   - Because $I_i$ and $K_i$ are disjoint partitions, summing $I_i + K_i + O_i$ yields the exact provider processing volume without double-counting prompt tokens.
+3. **Status of Raw Logged Fields & Proposed Operational Mapping:**
+   - The raw logged fields (`input_tokens`, `cache_read_tokens`, `output_tokens`) in `transcript.jsonl` are **accepted as recorded** by the harness for each session step.
+   - The schema mapping proposed in `USAGE-COVERAGE-RECEIPT.md` Section 5.1 is an **operational convention** based on the empirical model, subject to deduplication coverage, rather than a proven provider billing model.
 
-4. **Upholding the Emission Hold Policy (`collect.py` Registration Defect):**
-   - **Verdict:** The emission hold on writing native counters to `.local/metrics/usage-events.jsonl` **must remain in force**.
-   - **Registration Defect in `collect.py`:** Line 199 matches usage events solely on `entry.get('tag') == item.get('tag') and entry.get('team_id') == team_id` and selects `max(total_tokens)`. It completely omits `conversation_id`.
-   - **Risk:** Reusing agent tags across tasks or runs under the same team causes `collect.py` to conflate distinct sessions, attributing historical token peaks to newly initiated sessions. Counter emission must remain held until the collector supports conversation-level scoping.
+4. **Collector Registration Defect Independently Confirmed & Emission Hold Upheld:**
+   - **Verdict:** The defect in `scripts/metrics/collect.py` (lines 194–200) is **independently confirmed**: matching solely on `(tag, team_id)` and taking `max(total_tokens)` without checking `conversation_id` causes cross-session collisions when tags are reused.
+   - **Emission Hold Policy:** Emission of native counters to `.local/metrics/usage-events.jsonl` remains **STRICTLY HELD** pending conversation-level scoping in `collect.py`.
 
 ---
 
@@ -89,6 +90,7 @@ flowchart TD
 
 ### 2.1. Executable Identity & Runtime Architecture
 - **Binary Path:** `/home/alexey/.local/bin/agy`
+- **SHA256 Checksum:** `a759ce7c7a235d9b6c281a25ead97cbbf2e92314a3ffd224e2f9144f3fae7a86`
 - **Format:** ELF 64-bit LSB PIE (Position-Independent Executable), x86-64, stripped
 - **Size:** 209,625,296 bytes (~200 MB)
 - **Compiler / Layout Toolchain:** Go 1.20+ runtime linked with Google internal libraries (`google3`), optimized via BOLT (Binary Optimization and Layout Tool, evidenced by `.text.hot`, `.text.split`, `.text.startup` sections).
@@ -109,13 +111,15 @@ type TokenUsageStats struct {
 ```
 
 #### Field Layout in Memory:
-| Struct Field | Offset | Type | JSON Tag | Purpose |
+| Struct Field | Offset | Type | JSON Tag | Purpose (from Schema & Context) |
 | :--- | :---: | :---: | :--- | :--- |
-| `InputTokens` | `+0x00` | `int64` | `json:"input_tokens"` | Fresh (uncached) prompt token count |
+| `InputTokens` | `+0x00` | `int64` | `json:"input_tokens"` | Prompt tokens (fresh/uncached in empirical runs) |
 | `OutputTokens` | `+0x08` | `int64` | `json:"output_tokens"` | Model candidate output token count |
 | `ThinkingTokens`| `+0x10` | `int64` | `json:"thinking_tokens"` | Model reasoning/thinking token count |
 | `CacheReadTokens`| `+0x18` | `int64` | `json:"cache_read_tokens"`| Prefix cache-hit token count |
 | `TotalTokens` | `+0x20` | `int64` | `json:"total_tokens"` | Overall token evaluation total |
+
+*Note on Structural Existence vs. Behavioral Proof:* Discovering these struct fields proves that the Go binary maintains internal slots for these counters. However, struct field existence alone does **NOT** prove the runtime arithmetic or API wire translation logic that populates them.
 
 ### 2.3. Internal Protobuf Telemetry Specification: `ModelUsageStats`
 At file offset `0x057ab800`, the binary embeds the complete protocol buffer descriptor for `exa.codeium_common_pb.ModelUsageStats`:
@@ -143,8 +147,9 @@ message ModelUsageStats {
 ```
 
 Key observations from the protobuf schema:
-1. `thinking_output_tokens` (tag 9) and `response_output_tokens` (tag 10) explicitly decompose `output_tokens` (tag 3).
+1. `thinking_output_tokens` (tag 9) and `response_output_tokens` (tag 10) define explicit sub-fields for decomposing generated output.
 2. `cache_read_tokens` (tag 5) and `input_tokens` (tag 2) are separate scalar fields accompanied by `prompt_tokens_details` (tag 14) and `cache_tokens_details` (tag 15).
+3. The presence of these protobuf fields confirms architectural support for fine-grained telemetry, but how each field is mapped from the upstream Google Gemini REST/gRPC response requires comparison with official API specifications.
 
 ### 2.4. Compiled Release Note Assertion
 At string offset `0x0576de8e`, the binary includes an explicit release note confirming the role of `cache_read_tokens`:
@@ -167,60 +172,57 @@ This confirms that `transcript.jsonl` is the canonical per-conversation log dest
 
 ## 3. Mapping to Official Google Gemini API Telemetry Specifications
 
-### 3.1. Official Google Gemini API v1beta Usage Metadata Schema
-In the official Google GenAI SDK and Gemini REST API (`v1beta`), usage metadata returned with generation calls is structured as follows:
+### 3.1. Official Google Gemini API `UsageMetadata` Specification
+Per official Google GenAI documentation at [`https://ai.google.dev/api/generate-content`](https://ai.google.dev/api/generate-content), the `UsageMetadata` object returned in generation responses contains:
+
+| Official API Field | Type | Official Semantics & Documentation Definition |
+| :--- | :---: | :--- |
+| `promptTokenCount` | `int` | Number of tokens in the prompt. Officially **includes cached tokens** (`cachedContentTokenCount`). |
+| `cachedContentTokenCount` | `int` | Number of tokens in the prompt served from the implicit or explicit context cache. |
+| `candidatesTokenCount` | `int` | Number of tokens in the generated candidate response. |
+| `thoughtsTokenCount` | `int` | Number of tokens in the generated reasoning/thoughts trace (tracked as a distinct field in Gemini 2.0 / thinking models). |
+| `totalTokenCount` | `int` | Total token count across the request. Documented as: `promptTokenCount + candidatesTokenCount + thoughtsTokenCount` when reasoning tokens are tracked separately. |
 
 ```json
 {
   "usageMetadata": {
     "promptTokenCount": 23140,
     "candidatesTokenCount": 133,
+    "thoughtsTokenCount": 0,
     "totalTokenCount": 23273,
     "cachedContentTokenCount": 20344
   }
 }
 ```
 
-Official Google API field semantics:
-- `promptTokenCount` ($\text{int}$): Total number of tokens in the prompt context (inclusive of system instructions, history, tools, and cached prefixes).
-- `cachedContentTokenCount` ($\text{int}$): Number of tokens in the prompt that were served from implicit or explicit context cache.
-- `candidatesTokenCount` ($\text{int}$): Total tokens generated in candidate responses (inclusive of reasoning traces in thinking models).
-- `totalTokenCount` ($\text{int}$): Total token count for the request ($\text{promptTokenCount} + \text{candidatesTokenCount}$).
-
-### 3.2. Technical Proof of Partitioning: Disjoint vs. Subsumptive
+### 3.2. Technical Analysis of Partitioning: Empirical Inference vs. Proof
 A critical question in telemetry modeling is whether the harness `input_tokens` equals `promptTokenCount` (total prompt subsuming the cache) or `promptTokenCount - cachedContentTokenCount` (fresh uncached tokens only).
 
-#### Empirical Proof from Live Transcript Turns:
-Inspection of sequential `PLANNER_RESPONSE` records in the current session (`938363ee`) provides definitive mathematical proof:
+#### Empirical Context Growth Observation:
+Inspection of sequential `PLANNER_RESPONSE` records in the audit session (`938363ee`) shows:
 
-| Step Index | Logged `input_tokens` ($I_i$) | Logged `cache_read_tokens` ($K_i$) | Sum ($I_i + K_i$) | Logged `output_tokens` ($O_i$) | Context Dynamics & Observations |
+| Step Index | Logged `input_tokens` ($I_i$) | Logged `cache_read_tokens` ($K_i$) | Sum ($I_i + K_i$) | Logged `output_tokens` ($O_i$) | Context Dynamics & Empirical Observation |
 | :---: | :---: | :---: | :---: | :---: | :--- |
 | **9** | 6,537 | 16,286 | **22,823** | 220 | Cache hit active. Cache read = 16,286; fresh input = 6,537. Total prompt = 22,823. |
 | **11** | 23,140 | 0 | **23,140** | 133 | Cache miss / cold turn. $K_i = 0$. $I_i$ jumps to **23,140** (full prompt size). |
 | **13** | 3,045 | 20,344 | **23,389** | 313 | Cache hit active. Cache read = 20,344; fresh input = 3,045. Total prompt = 23,389. |
 | **15** | 24,055 | 0 | **24,055** | 372 | Cache miss / cold turn. $K_i = 0$. $I_i$ jumps to **24,055** (full prompt size). |
 
-#### Mathematical Proof:
-1. When $K_i = 0$ (steps 11 and 15), $I_i$ is **23,140** and **24,055** tokens respectively. This represents the total conversation history and system instructions.
-2. When $K_i > 0$ (steps 9 and 13), $I_i$ is **6,537** and **3,045** tokens. If `input_tokens` were total prompt tokens ($\text{promptTokenCount}$), $I_i$ would have remained ~23,000 tokens. Instead, $I_i$ dropped to only the incremental uncached tokens added in that turn.
-3. The sum $I_i + K_i$ matches the monotonically expanding conversation context (~22.8k -> ~23.1k -> ~23.4k -> ~24.0k).
-
-#### Definitive Semantic Mapping:
-$$\boxed{\text{input\_tokens} = \text{promptTokenCount} - \text{cachedContentTokenCount}}$$
-$$\boxed{\text{cache\_read\_tokens} = \text{cachedContentTokenCount}}$$
-$$\boxed{\text{promptTokenCount} = \text{input\_tokens} + \text{cache\_read\_tokens}}$$
-
-**Conclusion:** In the Antigravity harness, `input_tokens` and `cache_read_tokens` are **strictly disjoint partitions** of the prompt context.
+#### Epistemic Boundary (C1731 / C1732 Challenge Resolution):
+1. **Consistency with Disjoint Partitioning:** The observed pattern where $I_i$ drops from ~23k to ~3k-6k when $K_i > 0$, while the sum $I_i + K_i$ matches the monotonically growing context (~22.8k -> ~23.1k -> ~23.4k -> ~24.0k), is **strongly consistent** with `input_tokens` representing uncached tokens and `cache_read_tokens` representing cached tokens.
+2. **Absence of Mathematical Proof:** However, observing this 4-turn pattern is **empirical evidence and inference, NOT definitive mathematical proof** of the underlying Go implementation. No disassembled Go arithmetic subtraction routine (`SUBQ prompt, cached`) and no raw, simultaneous upstream HTTP provider response pairs were inspected.
+3. **Explicit Classification:**
+   - The relationship $\text{input\_tokens} = \text{promptTokenCount} - \text{cachedContentTokenCount}$ is labeled **INFERRED / EMPIRICAL HYPOTHESIS**.
+   - The exact arithmetic mapping remains **UNKNOWN** until verified against upstream API wire traces or decompiled Go subtraction routines.
+   - Raw logged fields (`input_tokens`, `cache_read_tokens`, `output_tokens`) are accepted as recorded by the harness.
 
 ### 3.3. Output Token & Thinking Token Semantics
-In Google Gemini 2.0 models, reasoning traces (thinking) are emitted prior to the visible response.
-- In Google Gemini API specifications, thinking tokens are billed and accounted under `candidatesTokenCount` (with detailed attribution under `thoughtsTokenCount`).
-- In the harness protobuf `ModelUsageStats`:
-  - `output_tokens = thinking_output_tokens + response_output_tokens`
-- In `transcript.jsonl`:
-  - Only `output_tokens` is logged at the step root.
-  - The step's `"thinking"` string records the reasoning text, while `output_tokens` records the full generated token volume.
-- **Conclusion:** `output_tokens` in `transcript.jsonl` encompasses all model-generated tokens, including reasoning/thinking traces.
+In Google Gemini 2.0 specifications ([Google GenAI API: GenerateContent](https://ai.google.dev/api/generate-content)), reasoning traces (thinking) are tracked via `thoughtsTokenCount`, while generated candidates are tracked via `candidatesTokenCount`.
+- In the harness protobuf `ModelUsageStats`, explicit fields exist for `thinking_output_tokens` and `response_output_tokens`.
+- In the Go struct, `ThinkingTokens` exists alongside `OutputTokens`.
+- In `transcript.jsonl`, however, only `output_tokens` is recorded at the step root, while the reasoning text is stored in the `"thinking"` string.
+- **Wire Layer Boundary:** Whether `output_tokens` on disk folds thinking tokens into a combined candidate total, or whether thinking tokens are tracked separately on the wire and omitted from disk logging, is **UNKNOWN / UNVERIFIED** without raw provider HTTP wire captures.
+- **Conclusion:** Prior claims asserting "folded reasoning proof" are withdrawn; the exact wire disposition of thinking tokens is labeled **UNKNOWN / INFERRED**.
 
 ---
 
@@ -235,13 +237,15 @@ In [USAGE-COVERAGE-RECEIPT.md](file:///home/alexey/git/cloudflare-agent-git/rese
 | `--conversation-id` | `<conversation-id>` UUID | **Valid.** Directly isolates telemetry to the specific agent execution. |
 | `--input-tokens` | $\sum I_i$ (`input_tokens`) | **Valid.** Correctly records cumulative fresh uncached prompt evaluations. |
 | `--cached-input-tokens` | $\sum K_i$ (`cache_read_tokens`) | **Valid.** Correctly records cumulative cached prompt evaluations. |
-| `--output-tokens` | $\sum O_i$ (`output_tokens`) | **Valid.** Correctly records cumulative candidate generation volume. |
-| `--total-tokens` | $\sum (I_i + K_i + O_i)$ | **Valid.** Exactly reflects total provider API processing volume. |
+| `--output-tokens` | $\sum O_i$ (`output_tokens`) | **Accepted as recorded.** Reflects cumulative candidate output volume. |
+| `--total-tokens` | $\sum (I_i + K_i + O_i)$ | **Operational Metric.** Reflects cumulative provider API evaluation volume under inferred partition. |
 
-Because $I_i$ and $K_i$ are disjoint partitions:
-$$\text{Total Prompt Evaluations} = \sum I_i + \sum K_i$$
-$$\text{Total API Processing Volume} = \sum I_i + \sum K_i + \sum O_i$$
-There is **zero double-counting** when adding $\sum I_i$ and $\sum K_i$.
+Under the empirical hypothesis:
+$$\text{Cumulative Prompt Evaluation Volume} = \sum I_i + \sum K_i$$
+$$\text{Cumulative Candidate Output Volume} = \sum O_i$$
+$$\text{Overall Cumulative API Evaluation Metric} = \sum (I_i + K_i + O_i)$$
+
+*Epistemic Boundary Note:* This metric represents an operational convention measuring cumulative provider API computational volume across discrete multi-turn turns under the inferred disjoint model. It does **not** assert unique deduplicated text content or exact provider billing charges. If upstream prompt cache hits and fresh prompt tokens overlap under unverified API conditions, the exact provider processing volume remains **UNKNOWN / INFERRED**.
 
 ### 4.2. Registration Defect in `scripts/metrics/collect.py`
 Inspection of `scripts/metrics/collect.py` lines 194–200 reveals an architectural matching defect:
@@ -272,14 +276,14 @@ if events.exists() and events.stat().st_size <= 16 * 1024 * 1024:
 
 ## 5. Technical Comparison: Telemetry Semantics Across Ecosystems
 
-| Telemetry Dimension | Antigravity CLI (`transcript.jsonl`) | Google Gemini API (`v1beta`) | ZCode Rollouts (`~/.zcodex/`) | Claude Result (`modelUsage`) |
+| Telemetry Dimension | Antigravity CLI (`transcript.jsonl`) | Official Google Gemini API ([GenerateContent](https://ai.google.dev/api/generate-content)) | ZCode Rollouts (`~/.zcodex/`) | Claude Result (`modelUsage`) |
 | :--- | :--- | :--- | :--- | :--- |
-| **Fresh Uncached Prompt** | `input_tokens` | Derived: `promptTokenCount - cachedContentTokenCount` | `usage.input_tokens` (when uncompressed) | `inputTokens` |
+| **Fresh Uncached Prompt** | `input_tokens` | Derived (Inferred): `promptTokenCount - cachedContentTokenCount` | `usage.input_tokens` (when uncompressed) | `inputTokens` |
 | **Cached Prompt Tokens** | `cache_read_tokens` | `cachedContentTokenCount` | `usage.cached_input_tokens` | `cacheReadInputTokens` |
-| **Total Prompt Context** | Derived: `input_tokens + cache_read_tokens` | `promptTokenCount` | `turn_token_usage.input_tokens` | `inputTokens + cacheReadInputTokens` |
+| **Total Prompt Context** | Derived: `input_tokens + cache_read_tokens` (Inferred) | `promptTokenCount` (Officially includes cached tokens) | `turn_token_usage.input_tokens` | `inputTokens + cacheReadInputTokens` |
 | **Completion / Output** | `output_tokens` | `candidatesTokenCount` | `usage.output_tokens` | `outputTokens` |
-| **Thinking / Reasoning** | Embedded in `output_tokens` (tracked in Go struct as `ThinkingTokens`) | Tracked in `candidatesTokenCount` & `thoughtsTokenCount` | `reasoning_output_tokens` | `thinkingTokens` (when present) |
-| **Turn Relationship** | Mutually disjoint ($I_i \cap K_i = \emptyset$) | Total context subsumes cache | Disjoint turn payload | Disjoint turn payload |
+| **Thinking / Reasoning** | Tracked in Go struct (`ThinkingTokens`) & protobuf; on disk logged at step root (`output_tokens`); wire disposition **UNKNOWN / INFERRED** | Tracked in `thoughtsTokenCount` (distinct field in Gemini 2.0 specs) | `reasoning_output_tokens` | `thinkingTokens` (when present) |
+| **Turn Relationship** | Inferred disjoint partition in empirical runs | Prompt officially subsumes cache (`promptTokenCount >= cachedContentTokenCount`) | Disjoint turn payload | Disjoint turn payload |
 
 ---
 
