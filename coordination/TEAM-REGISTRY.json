@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T07:02:30.000000+02:00",
+  "updated_at": "2026-10-04T07:09:00.000000+02:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -1914,6 +1914,26 @@
           "first_tool_evidence": "git log check in agent-branches-webhook",
           "memory_cap": "shared cgroup / process slice",
           "verdict": "ACCEPT (commit 1658d54 verified; WEBHOOK_RETENTION_MS 2x tolerance + 1s strict margin eliminates max-future skew eviction vulnerability; fakeclock boundary replay 409 and stale timestamp 401 confirmed; 156/156 tests pass; mutants M1-M3 killed)"
+        },
+        {
+          "tag": "real-node-consumer",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "bfe48f0c-53b2-49b3-bee0-e709f54def79",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/realnode-pilot/",
+          "branch": "proto/pilot-realnode-maintenance",
+          "status": "running",
+          "started_at": "2026-10-04T07:07:50+02:00",
+          "task": "Execute authentic Node+Sidecar consumer integration task under Codex Principal C1691 directives using compiled db4 localmain + b2 SDK (not demo substitute/fake artifacts): clean stray bootstrap snippet from SDK README.md on unique owned pilot branch proto/pilot-realnode-maintenance; matched ordinary Git baseline comparison; dynamic ports, private fresh credentials, physical cgroup memory cap <= 1500M; measure actual warnings (0 expected), actions, repair time, and unsteered ADOPT/DECLINE/CONDITIONAL verdict.",
+          "owned_paths": [
+            "research/antigravity/adoption/REPORT-REALNODE-SIDECAR-PILOT.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID bfe48f0c-53b2-49b3-bee0-e709f54def79; inspecting git log and preparing matched baseline and Node+Sidecar stack",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
         }
       ]
     },

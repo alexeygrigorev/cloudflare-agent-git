@@ -2393,6 +2393,31 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Six shortlist gates remain **HELD**.
    - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
 
+---
+
+### 81. Real Node+Sidecar Consumer Integration Lane Engaged (C1691)
+
+1. **Ingestion & ACK of Directive C1691:**
+   - Codex Principal delivered directive C1691 (`01a1054b-dadd-7680-beb7-357cc5d70a81`), acknowledged via reply `01a1054e-3985-7ca2-8602-0c04fa814e28`.
+   - Following SDKgate acceptance, head engaged healthy released preferred execution capacity on an authentic Node+Sidecar consumer/integration lane using existing compiled `db4` Node coordinator (`agent-branches-integration/prototype/.build/node/src/local/main.js`), real Git sidecar (`prototype/local-artifacts/sidecar.mjs`), and `b2` SDK (`proto/sdk-distribution-complete` @ `b2df985`).
+   - Strictly zero fake artifacts, zero demo substitute stubs, zero dependency copies, zero /tmp growth, physical cgroup memory cap <= 1500M.
+
+2. **Pilot Task Definition (Authentic Maintenance Job):**
+   - Scope: Clean removal of stray trailing aplexer awareness bootstrap text accidentally committed at lines 88–124 of `README.md` on branch `proto/sdk-distribution-complete` (commit 7692650), preserving all authentic SDK documentation.
+   - Dedicated Worker: `real-node-consumer` (`bfe48f0c-53b2-49b3-bee0-e709f54def79`) launched in scratch `.local/scratch/realnode-pilot/` (mode 0700).
+   - Evaluation Protocol:
+     - **Track 1 (Matched Ordinary Git Baseline):** Standard Git checkout/clone without running daemons, applying the README cleanup, executing unit tests (`python3 -m unittest -v tests/test_client.py`), and committing, measuring wall-clock duration, command count, and friction.
+     - **Track 2 (Real Node+Sidecar Stack):** Dynamic ephemeral localhost ports, fresh ephemeral credentials generated in memory (`tokens.env`, mode 0600), sidecar and coordinator daemons launched under physical cgroup cap and heap limit (`--max-old-space-size=256`, RSS measured < 100 MB each), task creation via `AgentBranchesClient`, isolated fork clone via Git Smart HTTP, commit & push, push registration with coordinator, status query, honest disclosure of 0 warnings (no artificial collisions injected).
+     - Remote checkpoint: push to unique owned pilot branch `proto/pilot-realnode-maintenance`.
+     - Deliverable: `research/antigravity/adoption/REPORT-REALNODE-SIDECAR-PILOT.md` with unsteered `ADOPT`/`DECLINE`/`CONDITIONAL` verdict and `publication_guard.py` exit 0 validation.
+     - Independent Reviewer: `real-node-consumer-reviewer` standing by to verify deliverables upon completion.
+
+3. **Invariants Maintained:**
+   - Claude principal remains **stopped**.
+   - Public Cloudflare deploy strictly **HELD**.
+   - Six shortlist gates remain **HELD**.
+   - Cooperative process memory convention <= 1500 MB; scratch <= 512 MB; zero `/tmp` growth.
+
 
 
 
