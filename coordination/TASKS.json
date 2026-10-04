@@ -2294,6 +2294,31 @@
       "next_action": "Review delivered to quota-launcher-head for acceptance/integration; continue parallel turn-boundary event repair.",
       "blocked_on": [],
       "continuation_trigger": "quota-launcher-head acceptance -> live fleet launch."
+    },
+    {
+      "id": "supervision-routing-repair",
+      "project_id": "agent-branches",
+      "team_id": "agent-branches",
+      "owner_tag": "antigravity-head",
+      "status": "running",
+      "updated_at": "2026-10-04T14:18:00.000000+00:00",
+      "acceptance": "Supervision routing repair: service.py normalizes both projects and teams from TEAM-REGISTRY.json, matching product tasks (quota-launcher, agent-coordination, agent-dashboard, agent-branches) and alias names. Deterministic head completion tracking captures done tasks, and ready queue subscriptions enumerate queued/ready tasks. Message body explicitly enumerates current QL/product tasks for codex-principal. Offline regression test suite green, canonical 47 tests pass. Independent review via isolated scratch FileBus store, followed by controlled reload and >= 2 fresh ticks.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1629/C1630. Delegated to supervision-routing-worker (ffe1c67c-ab5d-446e-bb38-1407a36e4166).",
+      "first_action": "Subagent ffe1c67c launched; inspected projects/teams schema in TEAM-REGISTRY.json and TASKS.json; developing candidate and offline regression suite in tests/test_supervision_routing.py; initialized FileBus dogfood store in .local/scratch/filebus-dogfood/.",
+      "executor_ids": [
+        "ffe1c67c-ab5d-446e-bb38-1407a36e4166"
+      ],
+      "owned_paths": [
+        "research/antigravity/tooling/supervision/service_candidate.py",
+        "tests/test_supervision_routing.py",
+        "research/antigravity/recovery/REPORT-SUPERVISION-ROUTING-REPAIR.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-SUPERVISION-ROUTING-REPAIR.md"
+      ],
+      "next_action": "Worker completes candidate and tests; dispatch independent reviewer via isolated FileBus store; verify ACK/reply over bus; controlled service reload + 2 ticks.",
+      "blocked_on": [],
+      "continuation_trigger": "Worker deliverable complete -> FileBus review dispatch -> service reload."
     }
   ]
 }
