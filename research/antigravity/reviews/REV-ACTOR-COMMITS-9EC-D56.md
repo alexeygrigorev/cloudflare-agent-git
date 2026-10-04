@@ -3,7 +3,7 @@
 - **Reviewer:** zcode-recovery-test (ZCode/zcodex, session 4abc725c), launched by antigravity-head (46fdb644)
 - **As-of:** 2026-10-04, Europe/Berlin
 - **Task:** Independent review assigned via aplexer message 01a104cd-8879-73e3-a90f-d218a893c71b
-- **Verdict: PASS WITH FINDINGS** — both commits are safe to integrate (additive, no regressions, guard mutations caught), with three findings the integration owner should read: a guaranteed merge conflict, two test-suite blind spots, and one minor robustness edge.
+- **Verdict: DEFECTS CONFIRMED / REVISE BEFORE INTEGRATION** — Both commits contain confirmed behavioral defects (art_v1_ prefix omission in Alpha, max_delay violation 2.02 > 2.0 in Beta) and failing baseline CLI dependencies. Unsafe to integrate as-is; resolved integration provided in eada0e4. *(Aligned with the §8 amendment findings per C1588; supersedes the original "PASS WITH FINDINGS — both commits are safe to integrate" verdict, which understated the confirmed defects. The original findings — merge conflict, test-suite blind spots, robustness edge — remain valid as written below.)*
 
 ## 1. Scope and identity
 
