@@ -516,22 +516,142 @@ class SupervisionRoutingTests(unittest.TestCase):
         self.assertIn('ask heads to claim ready owned work', body)
 
     def test_13_conflicting_entities_excluded_from_authoritative_principal_selection(self):
-        """Test 13 (C1636 conflict routing): Conflicting entities are excluded from authoritative principal selection."""
-        conflicted_e = {
-            'id': 'agent-quota-launcher',
-            'principal_tags': ['codex-principal'],
-            'conflict': {'detected': True, 'summary': 'Conflicting registration'}
-        }
-        unconflicted_e = {
-            'id': 'agent-coordination',
-            'principal_tags': ['codex-principal'],
-            'conflict': None
-        }
-        entities = [conflicted_e, unconflicted_e]
-        # In service logic: unconflicted authoritative entities
-        authoritative = [e for e in entities if 'codex-principal' in e.get('principal_tags', []) and not (e.get('conflict') and e['conflict'].get('detected'))]
-        self.assertEqual(len(authoritative), 1)
-        self.assertEqual(authoritative[0]['id'], 'agent-coordination')
+        """Test 13 (C1636 / C1640 conflict routing): Conflicting entities are excluded from authoritative principal selection during service.run()."""
+        with tempfile.TemporaryDirectory(dir=SCRATCH_BASE) as temp_dir:
+            temp_path = pathlib.Path(temp_dir)
+            root = temp_path / 'repo'
+            private = temp_path / 'private'
+            root.mkdir(parents=True, exist_ok=True)
+            private.mkdir(parents=True, exist_ok=True)
+            (root / 'coordination').mkdir(parents=True, exist_ok=True)
+            pinned = private / 'aplexer-pinned'
+            pinned.write_bytes(pathlib.Path(service.BINARY).read_bytes())
+
+            registry_content = {
+                'teams': [
+                    {
+                        'id': 'quota-launcher',
+                        'name': 'Old QL Team',
+                        'head_tag': 'old-ql-head',
+                        'workspace': '/home/alexey/git/cloudflare-agent-git',
+                        'principal_tags': ['claude-principal']
+                    }
+                ],
+                'projects': [
+                    {
+                        'id': 'agent-quota-launcher',  # Normalizes to 'quota-launcher' -> CONFLICT!
+                        'name': 'New QL Project',
+                        'head_tag': 'quota-launcher-head',  # Conflicting head
+                        'workspace': '/home/alexey/git/agent-quota-launcher',  # Conflicting workspace
+                        'principal_tags': ['codex-principal']
+                    },
+                    {
+                        'id': 'agent-coordination',
+                        'name': 'Cross-computer Agent Coordination',
+                        'head_tag': 'agent-coordination-head',
+                        'workspace': '/home/alexey/git/agent-coordination',
+                        'principal_tags': ['codex-principal']
+                    }
+                ]
+            }
+
+            tasks_content = {
+                'tasks': [
+                    {
+                        'id': 't-conflicted-ql',
+                        'team_id': 'quota-launcher',
+                        'project_id': 'agent-quota-launcher',
+                        'status': 'queued',
+                        'owner_tag': 'quota-launcher-head'
+                    },
+                    {
+                        'id': 't-unconflicted-coord',
+                        'team_id': 'agent-coordination',
+                        'project_id': 'agent-coordination',
+                        'status': 'queued',
+                        'owner_tag': 'agent-coordination-head'
+                    }
+                ]
+            }
+
+            (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps(registry_content))
+            (root / 'coordination/TASKS.json').write_text(json.dumps(tasks_content))
+
+            sent_bodies = []
+            cycles = [0]
+
+            def fake_cmd(args, timeout=20):
+                words = [a for a in args[1:] if not a.startswith('-')]
+                if words[:1] == ['whoami']:
+                    return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-test-13'})
+                if '--help' in args or 'help' in args:
+                    return '  --idempotency-key'
+                if words[:1] == ['list']:
+                    cycles[0] += 1
+                    if cycles[0] >= 1:
+                        (private / 'stop').write_text('stop')
+                    return json.dumps([{
+                        'workspace': str(root),
+                        'tag': 'codex-principal',
+                        'id': 'sess-codex-1',
+                        'reported_state': 'idle',
+                        'workload_pid': str(os.getpid())
+                    }])
+                if 'inbox' in args:
+                    return json.dumps({'messages': []})
+                if 'capture' in args:
+                    return "› Ask Codex to do anything\n  GPT-6.1 Context 50% left"
+                if args[0] == 'quse':
+                    return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 85}}}})
+                if words[:2] == ['message', 'send']:
+                    body_arg = args[-1]
+                    sent_bodies.append(body_arg)
+                    mid = f"m-{hashlib.sha256(body_arg.encode()).hexdigest()[:8]}"
+                    return json.dumps({'id': mid, 'delivery': 'inbox', 'body': body_arg})
+                return '{}'
+
+            real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+            real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
+            real_defaults = service.recorded_send.__defaults__
+
+            try:
+                service.command = fake_cmd
+                service.recorded_send.__defaults__ = (fake_cmd,)
+                service.time = type('T', (), {
+                    'time': staticmethod(lambda: 2000.0),
+                    'sleep': staticmethod(lambda s: None)
+                })()
+                service.ROOT = root
+                service.PRIVATE = private
+                service.BINARY = str(pinned)
+
+                # Execute cycle
+                service.run()
+
+                # Verify message send occurred
+                self.assertTrue(len(sent_bodies) >= 1, "service.run() must send a supervision request to codex-principal")
+                body = sent_bodies[0]
+
+                # Assert unconflicted coordination task IS present
+                self.assertIn('[agent-coordination]', body)
+                self.assertIn('t-unconflicted-coord (queued, agent-coordination-head)', body)
+
+                # Assert conflicted quota-launcher task is STRICTLY EXCLUDED from authoritative body!
+                self.assertNotIn('t-conflicted-ql', body, "Conflicted entity task must NOT be authoritatively assigned to codex-principal")
+                self.assertNotIn('[quota-launcher]', body)
+                self.assertNotIn('[agent-quota-launcher]', body)
+
+                # Assert status.json tracked the conflict
+                status_path = private / 'status.json'
+                if status_path.exists():
+                    status_data = json.loads(status_path.read_text())
+                    self.assertTrue(status_data.get('degraded'), "Cycle with conflicting entities must report degraded")
+                    self.assertIn('conflicting_entities', status_data)
+                    self.assertIn('agent-quota-launcher', status_data['conflicting_entities'])
+            finally:
+                service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
+                service.recorded_send.__defaults__ = real_defaults
+                service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
 
     def test_14_explicit_empty_list_vs_absent_principal_tags(self):
         """Test 14 (C1636 semantics): Explicit empty list principal_tags=[] overrides owner; absent field checks owner."""
