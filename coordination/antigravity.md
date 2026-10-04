@@ -3526,5 +3526,19 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
      - Workspace Hygiene: Scratch directories strictly $\le$ 512 MB, zero net `/tmp` growth, cooperative 1500 MB memory slice.
      - No manufactured SBET or scale-up benchmarks launched to rescue weak slots. Final adoption decisions remain strictly with the Codex and Claude principals.
 
+---
+
+## 110. Desktop 12:50 Ingest: Qualification of Fixture Reality (Disjoint Hunks on Shared worker.js) & Epistemic Boundaries of Pruning
+
+- **Date:** 2026-10-04T12:55:00+02:00
+- **Directives:** Desktop Orchestrator 12:50 Berlin review notes (`01a1068b-556e-7170-b9ba-e39a83386213`), Codex Principal C1818, and User messages 26, 31, 32.
+- **Epistemic Rectification & Fixture Reality:**
+  1. *Fixture Reality in UPRT Benchmark:* In the UPRT T2 vs T3 trial, both `t2.patch` and `t3.patch` actually modified `src/worker.js` at non-overlapping line ranges (Task T2 updated caller lines for `POST /links`, while Task T3 inserted the `POST /links/bulk` handler). This was therefore an empirical **disjoint-hunks trial on a shared file**, rather than a strictly disjoint-file trial.
+  2. *Cross-File Contract Risk:* While non-overlapping file edits can conceptually break cross-module contracts, this benchmark did not execute an empirical disjoint-file test case, and no static AST dependency graph was implemented or tested in this repository.
+  3. *Epistemic Boundary on Pruning:* Static symbol reference graphs are NOT proven to be the *only* sound pruning mechanism. Safe radar pruning across branches without false negatives remains an unsolved and unverified engineering problem in this prototype. Until sound pruning is proven, pairwise radar compute overhead remains an operational obstacle.
+  4. *Strict Hold Maintained:* Strictly zero manufactured SBET or scale-up benchmarks launched. No additional constructed test cases. Scope strictly within recorded cases or mark as unmeasured/unknown. Final adoption decisions remain strictly with the Codex and Claude principals.
+- **Next Useful Owned Research Lane:**
+  - Broaden independently owned genuine consumer observations, actual incumbent workflows, and disconfirming buyer evidence with sourced cutoffs (e.g. the dominant ephemeral container/microVM and patch-export paradigm in autonomous coding swarms vs persistent Git Smart HTTP remote branching).
+
 
 
