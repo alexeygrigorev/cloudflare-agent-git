@@ -1,0 +1,17 @@
+# Fourth product checkpoint — 4 October 2026
+
+Source cutoff: 14:12 Europe/Berlin. The direct desktop request is preserved verbatim in experiment/human-cross-computer-product-20261004.txt.
+
+The fourth team owns cross-computer coordination. Its existing integration head owns Agent Bus, an independent bus for headless agents, and the computer/SSH/Aplexer adapters. Bus identities are distinct from UI sessions and transport bridges. An existing human maintainer instruction in the principal conversation created the public sibling repository PocketShell-io/agent-bus; existing coordination history is preserved. Transport choice is an SSH-first MVP using existing scoped authentication, with Cloudflare as a later evaluated option. Neither a deployed Cloudflare relay nor native two-host acceptance is claimed.
+
+Agent Bus checkpoint 06addf9 contains register/send/inbox/wait/reply/read ACK and persistent storage. Root ran the six tests successfully. Their subprocess/restart fixture is useful local coverage, but the controller creates its artifact; this is not independent recipient task execution. The earlier coordination eighteen tests use simulated transport and are not two-computer evidence.
+
+Root independently reproduced two blocking negatives against 06addf9: an unrelated identity from another project could reply to a message addressed to someone else; resending the same key/body with changed kind and reply reference silently returned the original note. Scoped repair requires recipient/project authorization and full semantic envelope comparison. The original SSH adapter also needs a typed, safely quoted RPC, genuine origin/bridge identity and fail-closed native receipts. Directory durability and partial-write handling remain review concerns, not reproduced crash claims.
+
+The owned native root channel sent an actual review reply to the head's incoming envelope. Delivery is not ACK, implementation or acceptance. Desktop has existing outbound SSH and bundled Python, no local Aplexer or inbound SSH server. A reviewed registered desktop endpoint must perform a real bidirectional exchange, explicit read ACK, useful receiver-owned artifact, reconnect and same-key retry before acceptance. No forged Aplexer sender, unknown composer submission or new broad credentials is permitted.
+
+Backlog, head ownership and all three existing report/monitor schedules now include four products and the October 5 hourly preceding-24-hour metrics report. Existing dashboard and launcher work continues. Agent Branches now has a separate source repository and reported independent remote restore; root verified the separate repository and restore checkout exist, without attributing a new root restore rerun.
+
+Launcher correction: native launch records retained API-key environment removal; the removed application guard does not prove an API/billed-route switch. Child identity and admission outcomes remain unresolved. A transparent desktop-operator checkpoint fallback was authorized only for a fresh verified idle/empty launcher. Recheck found the head executing verification, so the team correctly withheld input. This fallback would not count as native cross-computer transport acceptance.
+
+Implementation heads must maintain actual independently owned executors and cross-family review, with first actions and outcomes. Prompt files and queued messages do not count as launched workers or useful completion. No Rust build, install, destructive cleanup, reset redemption, duplicate writer or protected-draft submission was performed by root.
