@@ -3017,6 +3017,53 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
    - Public Cloudflare deploy gate strictly **HELD**; Claude principal remains **stopped**; shortlist gates remain **HELD**.
 
+---
+
+## 97. C1793/C1796 Metrics Negative Repro & Fix, C1789/C1793 Raw SDK Smoke, and Standup Handoff
+
+- **Date:** 2026-10-04T09:05:00+02:00
+- **Steering & Directives:** Codex Principal C1793, C1796, C1798, C1801, C1804; Desktop Orchestrator 09:01/09:04 Berlin Directives (`01a105b8-b5fd`, `01a105bb-370b`).
+- **Delivered Actions & Verified Artifacts:**
+  1. **Metrics Negative Reproduction & Narrow Fix (`REPORT-METRICS-COLLECT-NEGATIVE-REPRO.md`):**
+     - Executor: `metrics-collect-repro-worker` (`cd27191e-4b21-43b7-95eb-096ae69c3e07`), native harness subagent in `.local/scratch/metrics-collect-repro/` (8.0 KB scratch, mode 0700).
+     - Deliverable: [`research/antigravity/recovery/REPORT-METRICS-COLLECT-NEGATIVE-REPRO.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-METRICS-COLLECT-NEGATIVE-REPRO.md).
+     - Test Suite: Expanded [`tests/test_collect_conversation_scope.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_collect_conversation_scope.py) from 8 to 17 tests (+505 lines), reproducing:
+       - Conflicting CIDs between session record and telemetry event (fails closed, zero binding).
+       - Legacy fallback marker verification (`is_fallback=True`, truthful labeling, excluded from known conversation tokens).
+       - Empty string and whitespace CID normalization (`""` and `"   "` safely treated as `None`).
+       - Safe handling of corrupted/non-dict JSON lines in `usage-events.jsonl` (logs warning via logger, emits `UserWarning`, skips safely without swallowing subsequent lines).
+       - C1796 Counterexample 1: Stale Registry CID $H1$ vs Fresh Native Session CID $E2$ (prioritizing live `s.get('engine_session_id')` and disk transcript bindings over static registry items).
+       - C1796 Counterexample 2: Top-level monitor preservation in `_collect()` (prevents tag deduplication from silencing distinct monitors sharing tags).
+       - C1796 Counterexample 3: Mixed anonymous legacy vs new bound events in the same catalog.
+     - Narrow Fix in [`scripts/metrics/collect.py`](file:///home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py): prioritized live engine session IDs, normalized empty strings, added safe corrupted line warnings, and preserved distinct top-level monitors.
+     - Verification: 17/17 tests PASS in `test_collect_conversation_scope.py` (0.025s); 43/43 PASS in `scripts/metrics/` suite; 68/68 PASS in full unit tests.
+     - Invariants: `scripts/metrics/record_usage.py` strictly untouched; Gemini usage emission strictly **HELD**.
+  2. **Raw Unwrapped SDK Integration Smoke (`RECEIPT-RAW-SDK-SMOKE.md`):**
+     - Executor: `raw-sdk-smoke-worker` (`63cbcb31-88ef-4f79-96c1-4517ee064fe3`), native harness subagent in `.local/scratch/raw-sdk-smoke/` (0.14 MB scratch, mode 0700).
+     - Deliverable: [`research/antigravity/recovery/RECEIPT-RAW-SDK-SMOKE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-RAW-SDK-SMOKE.md).
+     - Live Runtime Execution: Run against prebuilt reference daemons (Sidecar RSS 59.63 MB, Coordinator RSS 62.54 MB, total RSS 122.17 MB $\le 1500$ MB limit; 0 `/tmp` growth; 1.134s runtime).
+     - Raw Unwrapped SDK Invocations:
+       - Constructor: `AgentBranchesClient(server_url=...)` (no `admin_token` argument).
+       - Raw `create_task(repo, base_sha, intent, branch="main", admin_token=ADMIN_TOKEN)`.
+       - Raw `push(task_id, head_sha, token=task_token, files_changed=["MARKER.md"])`.
+       - Raw `get_task(task_id, token=task_token)`.
+       - Introspection verified: calling `create_task(task=...)` or `push(task=...)` raises `TypeError: unexpected keyword argument 'task'`.
+     - Non-Noop Canonical Baseline Advance: Authored real specification commit `BASELINE_SPEC.md` (`bf4f2990`), advanced canonical `main`, and pushed with exact seed lease `--force-with-lease=refs/heads/main:<seedCommit>` before fork creation.
+     - Negative Security Checks: Passed cold unauthenticated push HTTP 401; passed wire HTTP 401 and Git exit 128 on invalid bearer Smart HTTP push.
+  3. **Canonical Standup 2026-10-04 Ownership Handoff:**
+     - In response to Desktop Orchestrator and Codex C1804 directives, canonical standup authoring is assigned to Codex Principal under shared lock.
+     - Antigravity preserved the draft on disk at `experiment/standups/2026-10-04.md` for Codex to integrate with exact root corrections, private collector time-series export, and live quotas.
+     - Released `experiment/standups/**` scope from `antigravity-head` work declaration; excluded from commit.
+  4. **Task & Registry Reconciliation:**
+     - `coordination/TASKS.json`: Updated `metrics-collect-negative-repro` and `raw-sdk-integration-smoke` to `done`; registered `raw-sdk-smoke-review` and `metrics-collect-repro-review` as `ready`.
+     - `coordination/TEAM-REGISTRY.json`: Marked `metrics-collect-repro-worker` (`cd27191e`) and `raw-sdk-smoke-worker` (`63cbcb31`) as `completed`.
+- **Invariants Strictly Preserved:**
+  - Strict human no-Rust-build hold enforced: zero cargo/rustc invocations.
+  - Native NOTREADY rejection preserved; zero state spoofing or out-of-band PTY injection.
+  - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
+  - Public Cloudflare deploy gate strictly **HELD**; Claude principal remains **stopped**; shortlist gates remain **HELD**.
+
+
 
 
 

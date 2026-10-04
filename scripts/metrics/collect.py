@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Private experiment observation. Never dispatches agents or changes hook state."""
-import argparse, datetime as dt, fcntl, json, os, pathlib, subprocess, threading, time, hashlib, http.server, signal
+import argparse, datetime as dt, fcntl, json, logging, os, pathlib, subprocess, threading, time, hashlib, http.server, signal, warnings
+logger = logging.getLogger('collect')
 ROOT=pathlib.Path(__file__).resolve().parents[2]
 STORE=ROOT/'.local/metrics'
 STORE.mkdir(parents=True,exist_ok=True); os.chmod(STORE,0o700)
@@ -129,17 +130,15 @@ def count_status(rows):
 def authentic_conversation_id(s, item):
     """Determine the session's authentic conversation ID.
     Checks:
-    1. item.get('harness_conversation_id')
-    2. s.get('engine_session_id')
-    3. s.get('conversation_id')
-    4. Disk session binding (transcript.json or session record on disk)
-    5. item.get('conversation_id') or item telemetry conversation_id
+    1. Live session engine_session_id or conversation_id from live record `s`
+    2. Disk session binding (transcript.json or session record on disk)
+    3. item.get('harness_conversation_id') or item.get('conversation_id')
+    4. item telemetry conversation_id or s telemetry conversation_id
     """
     if not isinstance(item, dict): item = {}
     if not isinstance(s, dict): s = {}
 
-    for val in (item.get('harness_conversation_id'),
-                s.get('engine_session_id'),
+    for val in (s.get('engine_session_id'),
                 s.get('conversation_id')):
         if isinstance(val, str) and val.strip():
             return val.strip()
@@ -156,8 +155,12 @@ def authentic_conversation_id(s, item):
                 if isinstance(val, str) and val.strip():
                     return val.strip()
 
-    for val in (item.get('conversation_id'),
-                item.get('telemetry', {}).get('conversation_id') if isinstance(item.get('telemetry'), dict) else None,
+    for val in (item.get('harness_conversation_id'),
+                item.get('conversation_id')):
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+
+    for val in (item.get('telemetry', {}).get('conversation_id') if isinstance(item.get('telemetry'), dict) else None,
                 s.get('telemetry', {}).get('conversation_id') if isinstance(s.get('telemetry'), dict) else None):
         if isinstance(val, str) and val.strip():
             return val.strip()
@@ -184,17 +187,39 @@ def match_usage_event(events_path, tag, team_id, session_cid=None):
     p = pathlib.Path(events_path)
     if not p.is_file() or p.stat().st_size > 16*1024*1024:
         return None, False
+
+    if session_cid:
+        session_cid = session_cid.strip() if session_cid else None
+    if not session_cid:
+        session_cid = None
+
     matches = []
     has_fallback = False
     try:
         with p.open('r', encoding='utf-8', errors='replace') as f:
             for line in f:
-                try: entry = json.loads(line)
-                except ValueError: continue
-                if not isinstance(entry, dict): continue
+                line_str = line.strip()
+                if not line_str:
+                    continue
+                try:
+                    entry = json.loads(line_str)
+                except (json.JSONDecodeError, ValueError) as exc:
+                    logger.warning("Skipping corrupted line in %s: %s", events_path, exc)
+                    warnings.warn(f"Skipping corrupted line in {events_path}: {exc}", UserWarning)
+                    continue
+                if not isinstance(entry, dict):
+                    logger.warning("Skipping non-dict JSON entry in %s: %r", events_path, entry)
+                    warnings.warn(f"Skipping non-dict JSON entry in {events_path}: {entry}", UserWarning)
+                    continue
                 if entry.get('tag') != tag or entry.get('team_id') != team_id:
                     continue
                 entry_cid = entry.get('conversation_id')
+                if entry_cid:
+                    entry_cid = entry_cid.strip() if isinstance(entry_cid, str) else None
+                if not entry_cid:
+                    entry_cid = None
+                    if 'conversation_id' in entry:
+                        entry['conversation_id'] = None
                 if session_cid:
                     if entry_cid == session_cid:
                         matches.append(entry)
@@ -226,16 +251,25 @@ def _collect():
     teams=registry.get('teams',[]) if isinstance(registry,dict) else []
     declared=[]
     seen_team_tags=set()
+    seen_team_cids=set()
+    seen_team_sids=set()
     for team in teams:
         tid=team.get('id')
         for item in team.get('agents',[]):
             tag=item.get('tag')
             declared.append((tid,item))
             if tag: seen_team_tags.add(tag)
-    # Also accept top-level agent list, including principals and private services.
+            cid=item.get('harness_conversation_id') or item.get('conversation_id')
+            if cid: seen_team_cids.add(cid)
+            sid=item.get('session_id')
+            if sid: seen_team_sids.add(sid)
+    # Also accept top-level agent list, including principals, monitors and private services.
     for item in registry.get('agents',[]):
         tag=item.get('tag')
-        if tag not in seen_team_tags:
+        cid=item.get('harness_conversation_id') or item.get('conversation_id')
+        sid=item.get('session_id')
+        is_distinct = (tag not in seen_team_tags) or (cid and cid not in seen_team_cids) or (sid and sid not in seen_team_sids)
+        if is_distinct:
             declared.append((item.get('team_id','oversight'),item))
     selected=[]; seen=set()
     for team_id,item in declared:

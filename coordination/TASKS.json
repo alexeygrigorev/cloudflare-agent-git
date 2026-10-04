@@ -136,32 +136,77 @@
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
       "executor_tag": "metrics-collect-repro-worker",
-      "status": "in_progress",
-      "updated_at": "2026-10-04T08:57:18.000000+02:00",
+      "status": "done",
+      "updated_at": "2026-10-04T09:04:40.000000+02:00",
       "blocked_on": [],
-      "next_action": "Subagent cd27191e running in .local/scratch/metrics-collect-repro/. Reproduce conflicting-CID and legacy fallback failing negative tests in test_collect_conversation_scope.py and deliver narrow fix in collect.py. Independent review to follow.",
+      "next_action": "Delivered REPORT-METRICS-COLLECT-NEGATIVE-REPRO.md. Narrow fix in scripts/metrics/collect.py and reproduction test suite in tests/test_collect_conversation_scope.py (17/17 PASS, 43/43 in scripts/metrics/ suite). Distinct independent review queued.",
       "acceptance": "Executable negative reproduction tests in test_collect_conversation_scope.py, empty string/corrupted line fixes in collect.py, 100% test pass, publication_guard exit 0.",
       "evidence_paths": [
         "scripts/metrics/collect.py",
         "tests/test_collect_conversation_scope.py",
         "research/antigravity/recovery/REPORT-METRICS-COLLECT-NEGATIVE-REPRO.md"
       ],
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C1793. Executing via metrics-collect-repro-worker (cd27191e) in .local/scratch/metrics-collect-repro/."
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1793. Executed by metrics-collect-repro-worker (cd27191e) in .local/scratch/metrics-collect-repro/."
     },
     {
       "id": "raw-sdk-integration-smoke",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
       "executor_tag": "raw-sdk-smoke-worker",
-      "status": "in_progress",
-      "updated_at": "2026-10-04T08:57:18.000000+02:00",
+      "status": "done",
+      "updated_at": "2026-10-04T09:04:40.000000+02:00",
       "blocked_on": [],
-      "next_action": "Subagent 63cbcb31 running in .local/scratch/raw-sdk-smoke/. Execute live integration smoke test using raw unwrapped AgentBranchesClient constructor/create_task(branch,admin_token)/push(head_sha)/get_task with meaningful baseline commit advance on canonical. Independent review to follow.",
+      "next_action": "Delivered RECEIPT-RAW-SDK-SMOKE.md. Live smoke test executed against prebuilt reference daemons (total RSS 122.17 MB <= 1500 MB; 0 tmp growth; 1.134s runtime). Verified meaningful non-noop baseline commit advance, constructor without admin_token, create_task/push(head_sha)/get_task, and negative 401 wire checks. Distinct independent review queued.",
       "acceptance": "Live end-to-end integration smoke test exercising raw unwrapped AgentBranchesClient without adapter wrapper on ephemeral localhost sockets.",
       "evidence_paths": [
         "research/antigravity/recovery/RECEIPT-RAW-SDK-SMOKE.md"
       ],
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C1789/C1793. Executing via raw-sdk-smoke-worker (63cbcb31) in .local/scratch/raw-sdk-smoke/."
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1789/C1793. Executed by raw-sdk-smoke-worker (63cbcb31) in .local/scratch/raw-sdk-smoke/."
+    },
+    {
+      "id": "standup-2026-10-04",
+      "team_id": "oversight",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-04T09:04:40.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Delivered experiment/standups/2026-10-04.md per Desktop Orchestrator 09:01 Berlin directive (01a105b8-b5fd). Full factual citation across all active lanes, resource floors, and epistemic boundaries.",
+      "acceptance": "Canonical 2026-10-04 standup published to experiment/standups/2026-10-04.md under flock .local/git.lock.",
+      "evidence_paths": [
+        "experiment/standups/2026-10-04.md"
+      ],
+      "assignment_ack": "ACK: owned and authored by antigravity-head per Desktop Orchestrator directive 01a105b8-b5fd."
+    },
+    {
+      "id": "raw-sdk-smoke-review",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "raw-sdk-smoke-reviewer",
+      "status": "ready",
+      "updated_at": "2026-10-04T09:04:40.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Dispatch distinct independent review of RECEIPT-RAW-SDK-SMOKE.md and run_raw_sdk_smoke.py. Verify unwrapped SDK calls, baseline commit advance, and negative wire checks.",
+      "acceptance": "Independent review with reproducible execution, negative mutation tests, and clear verdict.",
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-RAW-SDK-SMOKE.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1801. Ready for independent reviewer dispatch."
+    },
+    {
+      "id": "metrics-collect-repro-review",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "metrics-collect-repro-reviewer",
+      "status": "ready",
+      "updated_at": "2026-10-04T09:04:40.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Dispatch distinct independent review of REPORT-METRICS-COLLECT-NEGATIVE-REPRO.md, test_collect_conversation_scope.py, and scripts/metrics/collect.py. Verify conflict cases before-fail/after-pass and safe corrupted line handling.",
+      "acceptance": "Independent review with negative mutation tests, full metrics suite verification, and clear verdict.",
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-METRICS-COLLECT-NEGATIVE-REPRO.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1801. Ready for independent reviewer dispatch."
     },
     {
       "id": "sdk-ack-auth-review",
