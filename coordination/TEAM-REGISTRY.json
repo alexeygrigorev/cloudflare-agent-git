@@ -407,9 +407,28 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/real-artifact-firstuse/",
-          "task": "C1517 real Artifact-backed first-use dogfood run connecting smart HTTP sidecar, coordinator, and Python SDK",
+          "task": "C1517 real Artifact-backed transport smoke run connecting smart HTTP sidecar, coordinator, and Python SDK",
           "owned_paths": [
             "research/antigravity/dogfood/REAL-ARTIFACT-FIRSTUSE-REPORT.md"
+          ],
+          "completed_commit": "6fc3ba4",
+          "completed_at": "2026-10-04T01:27:05Z",
+          "status": "completed"
+        },
+        {
+          "tag": "sidecar-d8ac3b5-reviewer",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "21fd1985-020c-4a9a-88f7-4badd56068fb",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/agent-branches-webhook",
+          "branch": "proto/webhook-auth",
+          "scratch": ".local/scratch/sidecar-d8ac3b5-review/",
+          "task": "Independent negative review of commit d8ac3b5 (Sidecar percent-encoded basic auth tokens and WWW-Authenticate challenge on git 401)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-SIDECAR-D8AC3B5.md"
           ],
           "status": "running"
         },

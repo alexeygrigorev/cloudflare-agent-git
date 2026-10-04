@@ -1418,3 +1418,34 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Root disk >50 GB (63.7 GB free); available RAM >10 GB (32.0 GB available).
   - Zero unmanaged `/tmp` growth.
 
+---
+
+## 53. C1521-C1524 Dogfood Scope Rescoping, Credential Redaction & Sidecar Review Dispatch
+
+- **Date:** 2026-10-04T03:27:00+02:00
+- **Steering & Directives:** Codex Principal C1521, C1522, C1523, C1524; Desktop Orchestrator `01a10483-903b`.
+- **Delivered Actions & Evidence:**
+  1. **Credential Redaction & First-Use Rescoping (Commits `582729f`, `6fc3ba4`):**
+     - Full audit of `research/antigravity/dogfood/REAL-ARTIFACT-FIRSTUSE-REPORT.md`: replaced all raw token plaintexts (`art_v1_...`) and secret keys (`sidecar-secret-token`, `admin-secret-token`, `runner-secret-token`) with `[REDACTED_TOKEN]` and `[REDACTED_SECRET]`.
+     - Preserved unredacted raw evidence privately in mode 0600 file `.local/scratch/real-artifact-firstuse/REAL-ARTIFACT-FIRSTUSE-REPORT.unredacted.md`.
+     - Rescoped document title and executive summary to: **"Real Artifact First-Use Smoke Report: Smart-HTTP Transport, Fork, Webhook & Recovery Infrastructure Smoke"**.
+     - Explicitly recorded that `pairs: []` and `lastRunnerReport: null` were observed because this smoke run validated infrastructure transport on a single seeded math module (`math_service.py`), not full multi-agent product adoption or trusted-runner attestation across concurrent branches.
+     - Declared `real-artifact-firstuse-runner` (`7ced496b`) as a native harness helper under `antigravity-head` (`46fdb644`) parent authority.
+  2. **Active SDK Public Push Mutating Auth Execution (C1518):**
+     - Verified authentic receiver ACK from `zcode-sdk-adopt` (`3104eb21`, message `01a10483-ee14-7791-8d0b-32109ab9525a`).
+     - Inspected active scope declaration in `agent-branches-sdk-adoption`: `task "C1518: public push() forwards mutating bearer auth" mode=edit scopes: agent_branches/client.py, tests/test_client.py, tests/mock_l1_server.py`.
+     - Confirmed first tool execution in `agent-branches-sdk-adoption` working on the bearer auth forward and unauthenticated negative test.
+  3. **Dispatched Independent Review of Sidecar Commit `d8ac3b5`:**
+     - Launched native harness reviewer subagent `sidecar-d8ac3b5-reviewer` (`21fd1985-020c-4a9a-88f7-4badd56068fb`) targeting `origin/proto/webhook-auth` commit `d8ac3b5` in `/home/alexey/git/agent-branches-webhook`.
+     - Review tasks: verify percent-decoding of basic auth tokens, `WWW-Authenticate: Basic` header on 401 git challenges, route regex flexibility, negative tests, and mutation kill log (M1, M2, M3).
+     - Scratch directory: `.local/scratch/sidecar-d8ac3b5-review/` (mode 0700). Deliverable: `research/antigravity/reviews/REV-SIDECAR-D8AC3B5.md`.
+  4. **Next Scheduled Lane:**
+     - Real product-code multi-agent decision lane: import substantial product modules into canonical repository, create concurrent agent forks, collect trusted-runner attestation, and export CONTRACT v0.1 radar checks with non-empty pairs.
+- **Invariants Strictly Preserved:**
+  - Public Cloudflare deploy remains **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Physical quotas: Gemini 86.17% weekly / 92.74% 5h; ZAI 71% weekly / 99% 5h; Go 64% weekly / 100% 5h; Codex 70% weekly.
+  - Scratch memory/disk budgets respected (<1 MB in `.local/scratch/`, 63.7 GB free on root).
+
+
