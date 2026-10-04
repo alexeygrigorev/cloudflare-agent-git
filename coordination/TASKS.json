@@ -317,7 +317,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T06:27:37.374197+00:00",
+      "updated_at": "2026-10-04T06:41:51.985510+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -325,10 +325,11 @@
         "research/codex/auth-integration-evidence-2026-10-04.md",
         "research/codex/a07-source-check-2026-10-04.md",
         "research/codex/continuation-runtime-check-2026-10-04.md",
-        "research/codex/readiness-hold-audit-2026-10-04.md"
+        "research/codex/readiness-hold-audit-2026-10-04.md",
+        "research/codex/metrics-conversation-scope-review-2026-10-04.md"
       ],
       "blocked_on": [],
-      "next_action": "Enforce root no-Cargo/read-only hold: actual d430 step76 Cargo test invocation/19passed cached output occurred before step89 hold ACK; no compilation/growth established. C1764/65 corrections sent, private matching snapshot preserved, head audit current processes/mutations and future read-only. Root explicitly releases only scripts/metrics/collect.py conversation fallback to Ant preferred-worker isolated branch + independent negatives; actual worker registration/first tool pending, record_usage.py outside scope, no daemon/derived emission. Z runbook coordinator-managed sequence/source/runtime current-pin review continues independently. Native Z640 NOTREADY preserved. Event/45s oversight<=5min, fresh quota/caps/owners, no principal implementation/Claude/final-six/deploy.",
+      "next_action": "Review additional metrics negatives on6b02f2c (actual worker/reviewer outputs exist; conflicting CID, legacy/provider/mode/generation/parent-alias acceptance pending), current7aa live review and head-owned renewed Z4abc assignment/receiver ACK/first tools. Correct readiness pre-hold/zero-growth/draft-inspection claims; enforce no-Cargo/no-source-mutation, retain native NOTREADY. Event/45s oversight; heads implement with fresh quotas/resources, no principal team/Claude/emission/service reload/final-six/deploy.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
