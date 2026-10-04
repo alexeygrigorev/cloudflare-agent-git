@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T13:57:44.290421+00:00",
+  "updated_at": "2026-10-04T15:45:15.251346+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -457,7 +457,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T15:04:50.834647+00:00",
+      "updated_at": "2026-10-04T15:45:15.251346+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -474,13 +474,14 @@
         "research/codex/maintainer-intake-agent-bus-20261004.md",
         "research/codex/session-lifecycle-actions-20261004.md",
         "research/codex/monitoring-continuation-20261004-1240.md",
-        "research/codex/runtime-recovery-20261004-1340.md"
+        "research/codex/runtime-recovery-20261004-1340.md",
+        "research/codex/public-update-admission-20261004.md"
       ],
       "blocked_on": [],
-      "next_action": "Ant0201 nativeSOURCE firsttool+2Rustfilecandidate observed; principal rejects blanketPTY-ignore and broadfooter draft swallowing. Genuine head01a10770 accepts both and reusesworker; separate reviewer957d firstgrep active. Head currentregistry/fullCID pending. bc6 runtime491/PID3265459 correctbinding/two clean14:56:05/14:57:06 ticks verified; FileBus correctedreplies recipientACK14:49:20 verified. Nativewake/toolprovenance/Windows/QLholds open.",
+      "next_action": "C1661 publication088a ACK/actual build.py reads: curate material findings only, omit routine public cards, document authoring; inspect corrected source/live HTML. C1662 SDK source duplicate-effect challenge accepted Ant: existing4b81 worker/390d reviewer commit-then-timeout/fail-closed correction; reconcile premature done state. Native readiness Rev3 source-only held, protected menus/drafts preserved.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
-      "continuation_trigger": "Head-owned0201 correctedpatch/offlinechecks -> independent957d pinned negativeverdict -> head completion-nexttask; principal reviews real artifacts on that event, no root scheduler wait. No Rust/install/liveinput, no invented native identities/consensus."
+      "continuation_trigger": "Existing publication head corrected diff/tests/live output -> own editorial acceptance. Existing SDK head corrected patch+independent negative verdict -> own review and next useful head task. Genuine native inbox/event wait at boundaries, no root scheduler prerequisite or implementation team."
     },
     {
       "id": "a09-incumbent-check",
