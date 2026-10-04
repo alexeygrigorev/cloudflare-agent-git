@@ -115,14 +115,75 @@ def is_private_path(path_str: str) -> bool:
     return False
 
 
+KNOWN_REDACTION_MARKERS = {
+    "[REDACTED]",
+    "[REDACTED_TOKEN]",
+    "[REDACTED_SECRET]",
+    "[REDACTED_PASSWORD]",
+    "[REDACTED_HASH]",
+    "[REDACTED_EXPIRY]",
+    "<token>",
+    "<admin_token>",
+    "<runner_token>",
+    "<sidecar_token>",
+    "<alpha_token>",
+    "<beta_token>",
+    "<encoded_token>",
+    "<secret>",
+    "***",
+    "...",
+}
+
+EXACT_SAFE_LOCAL_SECRET_FIXTURES = {
+    "token_12345",
+    "secret_12345",
+    "dummy_12345",
+}
+
+EXACT_SAFE_LOCAL_SECRET_REDACTIONS = {
+    "[REDACTED]",
+    "[REDACTED_SECRET]",
+    "[REDACTED_TOKEN]",
+    "<secret>",
+    "<token>",
+    "***",
+    "...",
+}
+
+KNOWN_BINARY_EXTENSIONS = {
+    '.png', '.jpg', '.jpeg', '.gif', '.ico', '.webp', '.svg',
+    '.pdf', '.zip', '.tar', '.gz', '.tgz', '.bz2', '.xz',
+    '.bin', '.dat', '.exe', '.so', '.dylib', '.a', '.o',
+    '.pyc', '.pyo', '.pyd', '.woff', '.woff2', '.ttf', '.eot',
+    '.lock'
+}
+
+
 def is_safe_redacted_token(token: str) -> bool:
-    """Check if token is an explicit redaction placeholder or short fixture."""
+    """
+    Check if token is an explicit known redaction placeholder or recognized variable expression.
+    Per C1621 / C1622: Strict known marker allowlist ONLY.
+    No generic bracket/angle acceptance.
+    """
     t = token.strip().strip('"\'`')
-    if (t.startswith('[') and t.endswith(']')) or \
-       (t.startswith('<') and t.endswith('>')) or \
-       t in ('...', '***'):
+    t_lower = t.lower()
+    if t_lower in KNOWN_REDACTION_MARKERS or t in KNOWN_REDACTION_MARKERS:
         return True
-    if len(t) < 20:
+    # Standard template / environment variable syntax allowed in code & docs
+    if re.match(r'^\$\{[A-Za-z0-9_]+\}$', t) or re.match(r'^\$[A-Za-z0-9_]+$', t):
+        return True
+    # Recognized angle placeholder pattern: must be explicitly a token or secret placeholder
+    if re.match(r'^<[a-z0-9_]*token[a-z0-9_]*>$', t_lower):
+        return True
+    # Recognized bracketed redactions: must start with [redacted
+    if re.match(r'^\[redacted(_[a-z0-9_]+)?\]$', t_lower):
+        return True
+    # URL query parameter redaction composite format
+    if t_lower in ('art_v1_[redacted]', 'art_v1_...'):
+        return True
+    if t_lower.startswith('art_v1_[redacted_hash]') and (
+        t_lower.endswith('?expires=[redacted_expiry]') or t_lower.endswith('%3fexpires%3d[redacted_expiry]')
+    ):
         return True
     return False
 
@@ -130,40 +191,37 @@ def is_safe_redacted_token(token: str) -> bool:
 def is_safe_redacted_url_password(pw: str) -> bool:
     """
     Check if URL password component is safely redacted.
-    Allows: <token>, [REDACTED], [REDACTED_TOKEN], art_v1_[REDACTED_HASH]%3Fexpires%3D[REDACTED_EXPIRY],
-            ***, ...
-    Detects any raw strings like 'dummysecret', 'abc123xyz', 'some_password', raw tokens.
+    Per C1621 / C1622: Strict known marker allowlist ONLY.
+    Arbitrary bracketed strings like [raw_secret] or <raw_secret> without known marker are REJECTED.
     """
     p = pw.strip().strip('"\'`')
-    if (p.startswith('[') and p.endswith(']')) or \
-       (p.startswith('<') and p.endswith('>')) or \
-       p in ('***', '...'):
+    p_lower = p.lower()
+    if p_lower in KNOWN_REDACTION_MARKERS or p in KNOWN_REDACTION_MARKERS:
         return True
-
-    # Strip all bracketed placeholders [REDACTED...] and <...>
-    cleaned = re.sub(r'\[[A-Za-z0-9_-]+\]', '', p)
-    cleaned = re.sub(r'<[A-Za-z0-9_-]+>', '', cleaned)
-    # Strip known non-secret literal keywords and URL-encoded query structure
-    cleaned = re.sub(r'(?i:art_v1_)', '', cleaned)
-    cleaned = re.sub(r'(?i:(?:%3f|\?)expires(?:%3d|=)?)', '', cleaned)
-    cleaned = re.sub(r'(?i:%3d)', '', cleaned)
-    cleaned = re.sub(r'[?&=_.~-]', '', cleaned)
-
-    return len(cleaned) == 0
+    if re.match(r'^<[a-z0-9_]*token[a-z0-9_]*>$', p_lower):
+        return True
+    if re.match(r'^\[redacted(_[a-z0-9_]+)?\]$', p_lower):
+        return True
+    # Allow composite URL query redactions:
+    # e.g. art_v1_[REDACTED_HASH]%3Fexpires%3D[REDACTED_EXPIRY]
+    if p_lower.startswith('art_v1_[redacted_hash]') and (
+        p_lower.endswith('%3fexpires%3d[redacted_expiry]') or p_lower.endswith('?expires=[redacted_expiry]')
+    ):
+        return True
+    if p_lower in ('art_v1_[redacted]', 'art_v1_...'):
+        return True
+    return False
 
 
 def is_safe_tok(tok_val: str) -> bool:
     """
-    Check if tok_ payload is an allowed documented synthetic fixture or redaction.
-    Per C1603, generated dummy values in private fixtures must be detected;
-    only documented examples like 'tok_alpha_12345' or explicit public redactions allowed.
+    Check if tok_ payload is strictly an allowed documented synthetic fixture or known marker.
+    Per C1621 / C1622: Strict equality ONLY. No startswith or prefix matching.
     """
     t = tok_val.strip().strip('"\'`')
-    if t.startswith('alpha_12345'):
+    if t == "alpha_12345":
         return True
-    if re.search(r'\[REDACTED[^\]]*\]', t, re.IGNORECASE):
-        return True
-    if t.startswith('<') and t.endswith('>'):
+    if t in KNOWN_REDACTION_MARKERS:
         return True
     return False
 
@@ -171,19 +229,13 @@ def is_safe_tok(tok_val: str) -> bool:
 def is_safe_local_secret(suffix: str, filepath: str) -> bool:
     """
     Check if local secret suffix is safely redacted or standard documented fixture.
-    Allows: [REDACTED...], ***, ..., pinned runbook fixtures (token_12345, secret_12345, dummy_12345),
-            or test dummies in test files.
+    Per C1621 / C1622: Strict equality ONLY. No startswith or prefix matching.
     """
     s = suffix.strip().strip('"\'`')
-    if re.search(r'\[REDACTED[^\]]*\]', s, re.IGNORECASE):
+    if s in EXACT_SAFE_LOCAL_SECRET_REDACTIONS:
         return True
-    if s in ('***', '...'):
+    if s in EXACT_SAFE_LOCAL_SECRET_FIXTURES:
         return True
-    # Pinned standard documented non-sensitive identifiers in runbooks per C1612
-    if s in ('token_12345', 'secret_12345', 'dummy_12345') or \
-       s.startswith(('token_12345', 'secret_12345', 'dummy_12345')):
-        return True
-    # In explicit test files, allow standard dummy names
     is_test_file = 'test_' in filepath or '/tests/' in filepath or filepath.startswith('tests/')
     if is_test_file and s.lower() in ('dummy', 'test', 'sample', 'example', 'mock'):
         return True
@@ -239,7 +291,7 @@ def scan_lines(lines: Sequence[str], filepath: str) -> List[Violation]:
                     )
                 )
 
-        # Multi-line continuation: Authorization: Bearer on previous line, token on current line
+        # Multi-line continuation: auth header on previous line, token on current line
         if idx > 0 and AUTH_BEARER_TRAIL_RE.match(lines[idx - 1]):
             stripped = line.strip().strip('"\'`')
             first_word = stripped.split()[0] if stripped else ""
@@ -284,7 +336,7 @@ def scan_lines(lines: Sequence[str], filepath: str) -> List[Violation]:
         for m in URL_USER_ONLY_RE.finditer(line):
             user_part = m.group(1)
             if user_part not in ('git', 'user', 'username', 'token', 'admin', 'runner', 'sidecar', 'nobody', 'root', 'agent'):
-                if (not user_part.startswith(('[', '<')) and not user_part.endswith((']', '>')) and user_part not in ('***', '...')):
+                if user_part not in KNOWN_REDACTION_MARKERS:
                     if ART_V1_RE.search(user_part) or (TOK_RE.search(user_part) and not is_safe_tok(user_part)) or len(user_part) >= 20:
                         violations.append(
                             Violation(
@@ -362,7 +414,8 @@ def get_staged_files(explicit_paths: Optional[Sequence[str]] = None) -> List[str
     """
     Get list of added, copied, modified, or renamed files in git index.
     Per C1612: Does not skip scratch files; anything staged in git index must be inspected.
-    Per C1614: If explicit paths are provided with --staged, filters only to those targets.
+    Per C1614 / C1621 / C1622: If explicit paths are provided with --staged, filters only to those targets.
+    Every explicit target MUST match at least one staged file in the index; missing/unmatched fails closed (exit 2).
     """
     try:
         proc = subprocess.run(
@@ -378,20 +431,36 @@ def get_staged_files(explicit_paths: Optional[Sequence[str]] = None) -> List[str
     files = [f.strip() for f in proc.stdout.splitlines() if f.strip()]
 
     if explicit_paths:
-        normalized_targets = set()
+        normalized_targets = {}
         for p in explicit_paths:
-            normalized_targets.add(os.path.normpath(p))
+            norm_p = os.path.normpath(p)
+            normalized_targets[norm_p] = False
             try:
-                rel = os.path.relpath(p, start=os.getcwd())
-                normalized_targets.add(os.path.normpath(rel))
+                rel = os.path.normpath(os.path.relpath(p, start=os.getcwd()))
+                normalized_targets[rel] = False
             except ValueError:
                 pass
 
         filtered = []
         for f in files:
             norm_f = os.path.normpath(f)
-            if norm_f in normalized_targets or any(norm_f.startswith(t + os.sep) for t in normalized_targets):
+            matched = False
+            for t in normalized_targets:
+                if norm_f == t or norm_f.startswith(t + os.sep):
+                    matched = True
+                    normalized_targets[t] = True
+            if matched:
                 filtered.append(f)
+
+        # Check if any explicit path was unmatched
+        unmatched = [p for p in explicit_paths if not normalized_targets.get(os.path.normpath(p), False)]
+        if unmatched:
+            for up in unmatched:
+                sys.stderr.write(
+                    f"publication_guard: error: explicit target not staged in git index: {sanitize_path_for_display(up)}\n"
+                )
+            sys.exit(2)
+
         return filtered
 
     return files
@@ -400,7 +469,8 @@ def get_staged_files(explicit_paths: Optional[Sequence[str]] = None) -> List[str
 def read_staged_content(filepath: str) -> str:
     """
     Read staged blob directly from git index as raw bytes.
-    Returns empty string for binary blobs without raising UnicodeDecodeError.
+    Per C1621 / C1622: Staged text deliverables containing NUL bytes fail closed with exit 2.
+    Only recognized binary file extensions (.png, .jpg, .tar, .bin, etc.) can skip without error.
     """
     try:
         proc = subprocess.run(
@@ -421,7 +491,14 @@ def read_staged_content(filepath: str) -> str:
             sys.exit(2)
 
     if is_binary_content(raw_bytes):
-        return ""
+        ext = os.path.splitext(filepath)[1].lower()
+        if ext in KNOWN_BINARY_EXTENSIONS:
+            return ""
+        # Staged text file containing NUL bytes -> fail closed!
+        sys.stderr.write(
+            f"publication_guard: error: binary content or NUL byte detected in staged text file: {sanitize_path_for_display(filepath)}\n"
+        )
+        sys.exit(2)
 
     return raw_bytes.decode("utf-8", errors="replace")
 

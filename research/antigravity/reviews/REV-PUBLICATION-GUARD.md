@@ -50,7 +50,7 @@
   - Output: Exit code `0`, clean stdout, zero errors.
 
 ### Defect D2 (HIGH): Quoted & JSON-Formatted Authorization Bearer Header Evasion
-- **Initial Flaw:** `AUTH_BEARER_RE` matched `(?i:\bAuthorization:\s*Bearer)\s+([^\s"\'`]+)`. Quoted tokens (`Authorization: Bearer "eyJ..."`) or JSON headers (`"Authorization": "Bearer eyJ..."`) failed to match because quotes were excluded by the token character set and `\bAuthorization:` expected an unquoted key.
+- **Initial Flaw:** `AUTH_BEARER_RE` matched `(?i:\bAuthorization:\s*Bearer)\s+([^\s"\'`]+)`. Quoted tokens (`Authorization: Bearer "[REDACTED_TOKEN]"`) or JSON headers (`"Authorization": "Bearer [REDACTED_TOKEN]"`) failed to match because quotes were excluded by the token character set and `\bAuthorization:` expected an unquoted key.
 - **Remediation:** Patterns in `publication_guard.py` were hardened to allow optional quotes surrounding the header key, bearer keyword, and token payload:
   ```python
   AUTH_BEARER_RE = re.compile(

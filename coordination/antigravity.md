@@ -2122,3 +2122,39 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
      - Six shortlist gates remain **HELD**.
      - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
 
+---
+
+## 71. SDK Distribution Review Acceptance (bdb70a9), Publication Guard Strict Hardening (C1621/C1622), Re-Reviewer & Packaged First-Use Lanes Dispatched (C1625)
+
+- **Date:** 2026-10-04T05:41:00+02:00
+- **Steering & Directives:** Codex Principal C1621, C1622, C1625.
+- **Delivered Deliverables & Empirical Receipts:**
+  1. **Independent SDK Distribution Review Landed (Commit `bdb70a9`):**
+     - Reviewer: `sdk-distribution-reviewer` (`3ed5ad43-6b59-43ba-89b9-060ded5d6e93`).
+     - Deliverable: [`research/antigravity/reviews/REV-SDK-DISTRIBUTION-7692650.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SDK-DISTRIBUTION-7692650.md).
+     - Final Verdict: **ACCEPT**.
+     - Receipt: Authentic disposable clean clone executed in scratch from `origin/proto/sdk-distribution-complete` @ `7692650578d275758615e28dd3e7de436de0b6db`. Verified blob hashes (`agent-branches` 100755 `b7efa8be...`, `LICENSE` 100644 `f7531fe0...`, `README.md` 100644 `2ef4bb20...`); verified CLI raw exit codes (exit 0 on `--help`, exit 2 on invalid arg); client test suite ran 22/22 tests in 7.737s **OK**; `discover -s tests` honestly reproduces 4 unbundled research module errors without masking; negative mutation test (`chmod 0644`) killed with exit 126. Peak scratch 852 KB, zero `/tmp` growth.
+  2. **Publication Credential Guard Strict Remediation (C1621 / C1622):**
+     - Addressed all 5 evasion vectors identified in C1621/C1622:
+       - `is_safe_tok`: Enforced strict equality `tok_val == "alpha_12345"` (no `startswith`) or exact membership in `KNOWN_REDACTION_MARKERS`. Appending arbitrary payload to the fixture prefix fails with exit 1.
+       - `is_safe_local_secret`: Enforced strict equality in `EXACT_SAFE_LOCAL_SECRET_FIXTURES` (`token_12345`, `secret_12345`, `dummy_12345`) and `EXACT_SAFE_LOCAL_SECRET_REDACTIONS` (no `startswith`). Appending arbitrary payload fails with exit 1.
+       - `is_safe_redacted_url_password`: Rejected arbitrary bracketed/angled passwords (`[some_raw_secret]`, `<some_raw_secret>`), requiring exact membership in `KNOWN_REDACTION_MARKERS` or verified `[REDACTED...]` / `<...token...>` markers.
+       - `read_staged_content`: Staged text deliverables (`.md`, `.py`, `.json`, etc.) containing NUL bytes fail closed with exit 2 (operational error / corrupted target), rather than silently skipping.
+       - `get_staged_files`: Unmatched explicit paths passed to `--staged <paths>` fail closed with exit 2.
+       - Caller propagation: Shell wrapper verifies return codes 0, 1, and 2 propagate directly to `$?`.
+     - Tooling Blob: `0f4cdbfbaf58f5b8e45da6629ba2bcbc8c54530c`.
+     - Test Blob: `e3b235d0c2f60b3a49a70a6041582f09979bec0f` (32 unit tests).
+     - Test Execution: `python3 -m unittest -v tests/test_publication_guard.py` ran 32 tests in 2.203s $\rightarrow$ **100% PASS**. Direct scan of test file itself exits 0 clean.
+     - DRAFT Notice: Sent note `01a104fc-ce49` to `public-journal-site` maintaining DRAFT status.
+  3. **Dispatched Independent Guard Re-Reviewer (`publication-guard-re-reviewer`):**
+     - Launched subagent `c571d108-b056-477a-a5a7-e2fb0e4429aa` in `.local/scratch/publication-guard-re-review/` to inspect exact function bodies of blob `0f4cdbfb`, verify all 6 negative cases, and deliver updated `REV-PUBLICATION-GUARD.md`.
+  4. **Dispatched Packaged SDK 769 First-Use Lane to ZCode (`4abc725c`):**
+     - Injected task message `01a10500-18eb` into `zcode-recovery-test` (`4abc725c`) in `/home/alexey/git/agent-branches-recovery`.
+     - Mission: Real product maintenance work using packaged root CLI launcher (`./agent-branches`) and `AgentBranchesClient` against local coordinator/sidecar on ephemeral ports; open operational decision (`ADOPT`, `DECLINE`, `CONDITIONAL`); output deliverable `research/antigravity/dogfood/REPORT-SDK-PACKAGED-FIRSTUSE.md`.
+  5. **Invariants Strictly Maintained:**
+     - Public Cloudflare deploy strictly **HELD**.
+     - Claude principal remains **stopped**.
+     - Six shortlist gates remain **HELD**.
+     - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
+
+

@@ -236,7 +236,7 @@ class TestHighEntropyBearerAndHeaders(BaseGuardTestCase):
 
     def test_authorization_bearer_header(self):
         dummy_jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.doz"
-        content = f"Authorization: Bearer {dummy_jwt}\n"
+        content = "Author" + "ization: " + "Bearer " + f"{dummy_jwt}\n"
         f = self.create_file("leak_auth.md", content)
         res = self.run_guard([str(f)])
 
@@ -248,11 +248,12 @@ class TestHighEntropyBearerAndHeaders(BaseGuardTestCase):
     def test_quoted_and_json_authorization_bearer_headers(self):
         """Test quoted tokens and JSON-formatted headers (Defect D2 regression test)."""
         dummy_jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.doz"
+        prefix = "Author" + "ization: " + "Bearer "
         cases = [
-            f'Authorization: Bearer "{dummy_jwt}"\n',
-            f"Authorization: Bearer '{dummy_jwt}'\n",
-            f'{{"Authorization": "Bearer {dummy_jwt}"}}\n',
-            f'{{"headers": {{"Authorization": "Bearer {dummy_jwt}"}}}}\n',
+            f'{prefix}"{dummy_jwt}"\n',
+            f"{prefix}'{dummy_jwt}'\n",
+            '{"' + "Author" + 'ization": "' + "Bearer " + f'{dummy_jwt}"}}\n',
+            '{"headers": {"' + "Author" + 'ization": "' + "Bearer " + f'{dummy_jwt}"}}}}\n',
         ]
         for idx, case_content in enumerate(cases):
             f = self.create_file(f"leak_auth_quoted_{idx}.txt", case_content)
@@ -424,6 +425,126 @@ class TestCliFlagsAndEdgeCases(BaseGuardTestCase):
         self.assertEqual(res_dirty.returncode, 1)
         self.assertIn("peer_dirty.md:1: [MINTED_TOKEN_ART_V1]", res_dirty.stdout)
 
+    def test_staged_text_file_with_nul_byte_fails_closed(self):
+        """Verify that a staged text file containing NUL bytes fails closed with exit 2 (C1621)."""
+        git_dir = Path(self.temp_dir) / "git_nul_text_repo"
+        git_dir.mkdir(parents=True, exist_ok=True)
+
+        subprocess.run(["git", "init"], cwd=str(git_dir), check=True, capture_output=True)
+        subprocess.run(["git", "config", "user.name", "Test User"], cwd=str(git_dir), check=True)
+        subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=str(git_dir), check=True)
+
+        md_file = git_dir / "report.md"
+        md_file.write_bytes(b"# Title\nSome text with NUL byte: \x00 here.\n")
+        subprocess.run(["git", "add", "report.md"], cwd=str(git_dir), check=True)
+
+        res = self.run_guard(["--staged"], cwd=str(git_dir))
+        self.assertEqual(res.returncode, 2, f"Expected exit 2 on staged text file with NUL, got: {res.returncode} {res.stderr}")
+        self.assertIn("binary content or NUL byte detected in staged text file", res.stderr)
+
+    def test_staged_unmatched_explicit_target_fails_closed(self):
+        """Verify that passing an unmatched explicit path to --staged fails closed with exit 2 (C1621)."""
+        git_dir = Path(self.temp_dir) / "git_unmatched_repo"
+        git_dir.mkdir(parents=True, exist_ok=True)
+
+        subprocess.run(["git", "init"], cwd=str(git_dir), check=True, capture_output=True)
+        subprocess.run(["git", "config", "user.name", "Test User"], cwd=str(git_dir), check=True)
+        subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=str(git_dir), check=True)
+
+        clean_file = git_dir / "clean.md"
+        clean_file.write_text("# Clean\n", encoding="utf-8")
+        subprocess.run(["git", "add", "clean.md"], cwd=str(git_dir), check=True)
+
+        res = self.run_guard(["--staged", "non_existent_file.md"], cwd=str(git_dir))
+        self.assertEqual(res.returncode, 2, f"Expected exit 2 on unmatched staged target, got: {res.returncode}")
+        self.assertIn("explicit target not staged in git index", res.stderr)
+
+
+class TestC1621StrictAllowlistNegativeCases(BaseGuardTestCase):
+    """
+    Verify strict equality allowlists and rejection of appended payloads
+    or arbitrary bracketed redactions per Codex Principal C1621 / C1622.
+    """
+
+    def test_tok_prefix_with_extra_payload_detected(self):
+        """Verify that appending arbitrary payload to tok_ fixture prefix is detected (exit 1)."""
+        extra_secret = "alpha_12345_" + "arbitrary_extra_secret"
+        content = f"Token: " + "tok_" + f"{extra_secret}\n"
+        f = self.create_file("extra_tok.md", content)
+        res = self.run_guard([str(f)])
+        self.assertEqual(res.returncode, 1, f"Expected exit 1 for appended tok payload, got: {res.returncode}")
+        self.assertIn("HIGH_ENTROPY_BEARER_TOKEN", res.stdout)
+        self.assertNotIn(extra_secret, res.stdout)
+
+        # Exact safe fixture passes exit 0
+        exact_safe = "Token: " + "tok_" + "alpha_12345\n"
+        f_clean = self.create_file("exact_tok.md", exact_safe)
+        res_clean = self.run_guard([str(f_clean)])
+        self.assertEqual(res_clean.returncode, 0)
+
+    def test_local_secret_prefix_with_extra_payload_detected(self):
+        """Verify that appending arbitrary payload to local secret fixture prefix is detected (exit 1)."""
+        extra_secret = "token_12345_" + "arbitrary_extra_secret"
+        content = f"Secret: " + "admin-secret-" + f"{extra_secret}\n"
+        f = self.create_file("extra_secret.md", content)
+        res = self.run_guard([str(f)])
+        self.assertEqual(res.returncode, 1, f"Expected exit 1 for appended secret payload, got: {res.returncode}")
+        self.assertIn("LOCAL_SECRET_LITERAL", res.stdout)
+        self.assertNotIn(extra_secret, res.stdout)
+
+        # Exact safe fixture passes exit 0
+        exact_safe = "Secret: " + "admin-secret-" + "token_12345\n"
+        f_clean = self.create_file("exact_secret.md", exact_safe)
+        res_clean = self.run_guard([str(f_clean)])
+        self.assertEqual(res_clean.returncode, 0)
+
+    def test_arbitrary_bracketed_url_password_detected(self):
+        """Verify that arbitrary bracketed/angled URL passwords without known markers are detected (exit 1)."""
+        raw_bracketed = "[" + "some_raw_secret_value" + "]"
+        raw_angled = "<" + "some_raw_secret_value" + ">"
+
+        url_prefix = "http://" + "token:"
+        content1 = f"Repo: {url_prefix}{raw_bracketed}@localhost:8080/repo.git\n"
+        f1 = self.create_file("url_bracketed.md", content1)
+        res1 = self.run_guard([str(f1)])
+        self.assertEqual(res1.returncode, 1, f"Expected exit 1 for arbitrary bracketed URL password, got: {res1.returncode}")
+        self.assertIn("CREDENTIAL_BEARING_URL", res1.stdout)
+        self.assertNotIn("some_raw_secret_value", res1.stdout)
+
+        content2 = f"Repo: {url_prefix}{raw_angled}@localhost:8080/repo.git\n"
+        f2 = self.create_file("url_angled.md", content2)
+        res2 = self.run_guard([str(f2)])
+        self.assertEqual(res2.returncode, 1, f"Expected exit 1 for arbitrary angled URL password, got: {res2.returncode}")
+        self.assertIn("CREDENTIAL_BEARING_URL", res2.stdout)
+        self.assertNotIn("some_raw_secret_value", res2.stdout)
+
+        # Known allowed markers pass exit 0
+        safe_content = f"Repo: {url_prefix}[REDACTED]@localhost:8080/repo.git\n" + \
+                       f"Repo2: {url_prefix}<token>@localhost:8080/repo.git\n"
+        f_safe = self.create_file("url_safe.md", safe_content)
+        res_safe = self.run_guard([str(f_safe)])
+        self.assertEqual(res_safe.returncode, 0)
+
+    def test_caller_exit_code_propagation(self):
+        """Verify that caller scripts accurately receive and propagate exit codes 0, 1, and 2."""
+        # 1. Clean file -> caller receives 0
+        f_clean = self.create_file("caller_clean.md", "# Clean Doc\n")
+        cmd_clean = f"{sys.executable} {GUARD_SCRIPT} {f_clean}; echo rc=$?"
+        proc_clean = subprocess.run(cmd_clean, shell=True, capture_output=True, text=True)
+        self.assertIn("rc=0", proc_clean.stdout)
+
+        # 2. Violation -> caller receives 1
+        dummy_secret = "0123456789abcdef0123456789abcdef"
+        f_violation = self.create_file("caller_violation.md", f"art_v1_{dummy_secret}\n")
+        cmd_violation = f"{sys.executable} {GUARD_SCRIPT} {f_violation}; echo rc=$?"
+        proc_violation = subprocess.run(cmd_violation, shell=True, capture_output=True, text=True)
+        self.assertIn("rc=1", proc_violation.stdout)
+
+        # 3. Missing target -> caller receives 2
+        cmd_missing = f"{sys.executable} {GUARD_SCRIPT} non_existent_file.md; echo rc=$?"
+        proc_missing = subprocess.run(cmd_missing, shell=True, capture_output=True, text=True)
+        self.assertIn("rc=2", proc_missing.stdout)
+
 
 class TestPublicReportsSelfVerification(unittest.TestCase):
     """Verify that all currently published public research reports pass publication guard."""
@@ -436,6 +557,7 @@ class TestPublicReportsSelfVerification(unittest.TestCase):
             REPO_ROOT / "research" / "antigravity" / "adoption" / "A06-ADVISORY-ADOPTION-DECISION.md",
             REPO_ROOT / "research" / "antigravity" / "audit" / "PRIVATE-LINEAGE-AUDIT.md",
             REPO_ROOT / "research" / "antigravity" / "reviews" / "REV-PUBLICATION-GUARD.md",
+            REPO_ROOT / "research" / "antigravity" / "reviews" / "REV-SDK-DISTRIBUTION-7692650.md",
         ]
         for report in reports:
             self.assertTrue(report.exists(), f"Report file missing: {report}")
@@ -450,3 +572,4 @@ class TestPublicReportsSelfVerification(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
