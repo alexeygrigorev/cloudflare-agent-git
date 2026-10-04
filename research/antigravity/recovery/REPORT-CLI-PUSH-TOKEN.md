@@ -50,20 +50,30 @@ sidecar under `ulimit -v 1500000`.
 
 Real commits were pushed into real forks over sidecar git HTTP (Bearer via
 `http.extraHeader`; note: minted tokens contain URL-special characters that break
-`user:pass@host` basic-auth URLs), then the packaged CLI ran the ladder:
+`user:pass@host` basic-auth URLs), then the packaged CLI ran the ladder.
 
-| case | CLI invocation | live result |
-|---|---|---|
-| owner token | `push --task-id task-0008 --head-sha fef66273… --token <owner>` | `accepted: true`, persisted head `cli-alpha-0008 → fef66273…` |
-| admin token | `push --task-id task-0008 --head-sha fef66273… --admin-token <admin>` | `accepted: true, deduped: true` (same task+sha dedupe is correct) |
-| env fallback | cold process, `TASK_TOKEN=<gamma>`, no flags, real sha `515b4450…` | `accepted: true`, persisted head `cli-gamma-0010 → 515b4450…` |
-| foreign token | `--token <beta token>` on alpha's task | `API Error (403): forbidden: this token belongs to cli-beta-0009, not cli-alpha-0008` |
-| revoked token | after `POST /tasks/task-0008/revoke` (persisted `revokedAt`), `--token <revoked owner>` | `API Error (401): unauthorized: ADMIN_TOKEN, the agent's task token or the sidecar bearer required` |
-| no credentials (bonus) | cold process, no flags, no env | fails closed 401 at task resolution — never sends an unauthenticated mutation |
+**Evidence discipline (per C1712/C1717/C1720):** the FINAL ladder run captured each
+case's actual CLI stdout, exit code and stderr in one pass, one mutation per case —
+no mutation was retried on a lost/ambiguous response. Raw outputs quoted below are
+from that run. Persisted coordinator state (`seenPushes`, token `revokedAt`) is
+reported separately as corroboration, never as a substitute for a captured response.
+Two EARLIER runs (c1673-live, c1673-live2/3) lost wire responses (curl ECONNREFUSED
+while the coordinator demonstrably processed and persisted requests); those runs are
+preserved in `.local/scratch/flagtest/logs/` as inconclusive and were NOT scored —
+the 403/401 boundaries they surfaced were re-established in the final run with
+captured responses.
 
-Ground truth anchored in persisted coordinator state (`seenPushes` contains exactly
-the two accepted real commits), not in wire responses — the sandbox intermittently
-loses HTTP responses while still processing requests.
+| case | CLI invocation (final run) | captured CLI response (stdout/exit) | persisted-state corroboration |
+|---|---|---|---|
+| owner token | `push --task-id task-0008 --head-sha fef66273… --token <owner>` | `{"accepted": true, "deduped": false, "agent": "cli-alpha-0008", …}` exit 0 | `seenPushes: cli-alpha-0008 → fef662735722…` |
+| admin token | `push --task-id task-0008 --head-sha fef66273… --admin-token <admin>` | `{"accepted": true, "deduped": true, …}` exit 0 (dedupe correct: same task+sha as case 1) | no new seenPushes entry (deduped server-side) |
+| env fallback | cold process, `TASK_TOKEN=<gamma>`, no flags, real sha `515b4450…` | `{"accepted": true, "deduped": false, "agent": "cli-gamma-0010", …}` exit 0 | `seenPushes: cli-gamma-0010 → 515b4450cbbe…` |
+| foreign token | `--token <beta token>` on alpha's task | `API Error (403): forbidden: this token belongs to cli-beta-0009, not cli-alpha-0008` exit 1 | — (rejected, no state change) |
+| revoked token | after `POST /tasks/task-0008/revoke`, `--token <revoked owner>` | `API Error (401): unauthorized: ADMIN_TOKEN, the agent's task token or the sidecar bearer required` exit 1 | `agentTokens[cli-alpha-0008].revokedAt` set |
+| no credentials (bonus) | cold process, no flags, no env | fails closed 401 at task resolution — never sends an unauthenticated mutation | — |
+
+The `deduped: true` label in case 2 is read from the CAPTURED response body, not
+inferred from state.
 
 ## Invariants
 
