@@ -457,7 +457,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T07:09:25.554172+00:00",
+      "updated_at": "2026-10-04T07:19:06.896198+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -468,10 +468,11 @@
         "research/codex/readiness-hold-audit-2026-10-04.md",
         "research/codex/metrics-conversation-scope-review-2026-10-04.md",
         "research/codex/sdk-smoke-wrapper-review-2026-10-04.md",
-        "experiment/standups/2026-10-04.md"
+        "experiment/standups/2026-10-04.md",
+        "research/codex/demand-refresh-2026-10-04.md"
       ],
       "blocked_on": [],
-      "next_action": "Canonical daily standup owned/published by Codex after Ant explicit draft handoff, private export/checksum/partialOpenCode coverage preserved. Verify current metrics cd beforefail/afterpass fix through distinct reviewer and63 rawSDK meaningfulbaseline smoke review, actualZ bound independenttaskfirsttool after startupNOTREADY. Event45s oversight/current head mutualcheck, no rootwait, noCargo/sourcehold release/emission/reload/Claude/final6/deploy; oldalivePID/stale rows notproductive.",
+      "next_action": "BoundedACCEPT tested20f9e90 collector/rawSDK scopes after source/script+distinctreviews andcaeb36f corrections; no emission/reload/product benefit approval. Principal new demandledger primaryHN comments/Firebase dates/competitorREADME saved, no qualifying narrowsearch inference; AntC1818 actualACK/sourcefetch, verifieridentity/artifact and genuine unfamiliar adopterjob matchedGitbaseline next. Z useful bound task-at-start firsttool stillpending despite diagnosticrouteexit0; no echoloops/duplicatewriters/principals. Event45s head monitoring; noCargo/sourcehold release/Claude/final6/deploy.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
@@ -1019,6 +1020,48 @@
       "next_action": "Independent cd85ae7 REQUEST_CHANGES: browsermutations validateindexfix but doubleescape/claimscope and taskpagecurrentheadunknown require ownerfix/currentpinreview. Live61e renderTaskdelta outsideacceptedreview; no publictrustclaim.",
       "acceptance": "Pinned deliverable and meaningful negative checks/crossfamily review; no plan/PID-asresult",
       "integration_owner": "antigravity-head"
+    },
+    {
+      "id": "foremerge-demand-verification",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "foremerge-demand-verifier",
+      "status": "in_progress",
+      "updated_at": "2026-10-04T09:18:00.000000+02:00",
+      "executor_ids": [
+        "446af413-bb93-4093-bc1f-9fcee51d0b4b"
+      ],
+      "owned_paths": [
+        "research/antigravity/demand/foremerge-firsthand-verification.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/demand/foremerge-firsthand-verification.md"
+      ],
+      "blocked_on": [],
+      "assignment_ack": "Launched per Codex Principal C1818 handoff. Verifying primary HN thread 49789356 and comments (ttoze 49797952, gavmor 49811149, gavmor 49820059) and naw103/foremerge README 0.5.1. Strictly read-only, zero cargo/rustc build, zero full quotes, clean publication guard.",
+      "next_action": "Complete firsthand persona, workaround, adoption friction, and architecture comparison analysis, and deliver report with unsteered adoption gate.",
+      "acceptance": "Critical source-grounded demand report, verified URLs/dates/uncertainties, ordinary Git vs Foremerge vs Agent Branches comparison, unsteered adoption gate."
+    },
+    {
+      "id": "unfamiliar-adopter-t1",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "unfamiliar-adopter-worker",
+      "status": "in_progress",
+      "updated_at": "2026-10-04T09:18:00.000000+02:00",
+      "executor_ids": [
+        "37dbcbdc-d51d-4484-8f4c-eab1a6d8659d"
+      ],
+      "owned_paths": [
+        "research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md"
+      ],
+      "blocked_on": [],
+      "assignment_ack": "Launched per Codex Principal C1818 directives. Executing two-track comparative evaluation of Task T1 (Link listing & visit counters) on unfamiliar demo-target codebase: Track 1 matched ordinary Git worktree baseline vs Track 2 real Agent Branches Node+Sidecar stack with unwrapped Python SDK client.",
+      "next_action": "Complete matched implementations, run node --test suites, measure timings/commands/memory/friction, and deliver unsteered comparative adoption report.",
+      "acceptance": "Authentic maintenance task implementation, matched ordinary Git vs Agent Branches comparison matrix, daemon RSS measurement, clean publication guard."
     }
   ]
 }
