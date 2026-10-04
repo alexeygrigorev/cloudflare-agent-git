@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T23:29:58.468879+00:00",
+  "updated_at": "2026-10-04T23:49:34.969016+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -4394,13 +4394,13 @@
       }
     },
     {
-      "session_id": "7c27190c-05ea-4170-8edb-b8513801296c",
+      "session_id": "369e1e44-678f-4918-a061-e8400651d6eb",
       "tag": "t-zcode-sdk-rev-2",
       "project_id": "agent-branches",
       "parent_tag": "antigravity-head",
       "mode": "headless",
       "workspace": "/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-sdk-consumer-trial",
-      "task_id": "self-org-live-model-runtime",
+      "task_id": "self-org-sdk-consumer-trial",
       "owned_paths": [
         "/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-sdk-consumer-trial/"
       ],
@@ -4409,7 +4409,7 @@
         "recorded_at_utc": "2026-10-04T23:23:18Z",
         "tool": "zcodex exec --model glm-5.3-flash",
         "selected": {
-          "id": "7c27190c-05ea-4170-8edb-b8513801296c",
+          "id": "369e1e44-678f-4918-a061-e8400651d6eb",
           "tag": "t-zcode-sdk-rev-2",
           "workspace": "/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-sdk-consumer-trial",
           "engine": "zcodex",
@@ -4417,12 +4417,16 @@
           "reported_state": "completed",
           "phase": "done",
           "worker_pid": 633053,
-          "scope": "agent-scope-t-zcode-sdk-e4a14b45.scope"
+          "scope": "agent-scope-t-zcode-sdk-e4a14b45.scope",
+          "auto_enrolled_bridge_identity": "7c27190c-05ea-4170-8edb-b8513801296c"
         },
-        "task_id": "self-org-live-model-runtime",
+        "task_id": "self-org-sdk-consumer-trial",
         "semantic_ack": {
-          "token": "EX-ACK-7c27190c",
+          "token": "EX-ACK-369e1e44",
           "status": "ACK",
+          "actual_sender_id": "369e1e44-678f-4918-a061-e8400651d6eb",
+          "auto_enrolled_bridge_identity": "7c27190c-05ea-4170-8edb-b8513801296c",
+          "note": "Bridge auto-enrolled 7c27190c during adapter startup; worker utilized pre-provisioned worker_cred.json (369e1e44) per task instructions. Provenance corrected per C2132 (no phantom credit).",
           "read_ack_at": "2026-10-04T23:20:15Z",
           "reply_delivered_at": "2026-10-04T23:27:48Z",
           "head_ack_at": "2026-10-04T23:28:42Z",
@@ -4436,7 +4440,7 @@
       "expected_checkpoint": "completed",
       "quota_source": "quse --json (zai glm-5.3-flash admitted)",
       "provider": "zai",
-      "state_evidence": "Successful execution inside systemd scope agent-scope-t-zcode-sdk-e4a14b45.scope; exit code 0; 61/61 unit tests pass; publication_guard exit 0; scope verified dissolved"
+      "state_evidence": "Successful execution inside systemd scope agent-scope-t-zcode-sdk-e4a14b45.scope; exit code 0; 61/61 unit tests pass; publication_guard exit 0; scope verified dissolved. Actual bus sender 369e1e44-678f-4918-a061-e8400651d6eb."
     }
   ]
 }

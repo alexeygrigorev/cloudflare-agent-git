@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T23:29:58.464580+00:00",
+  "updated_at": "2026-10-04T23:49:34.969016+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -2467,12 +2467,15 @@
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
       "executor_ids": [
-        "7f5a2f14-092d-4676-b4f9-ff96bdc32a01",
-        "7c27190c-05ea-4170-8edb-b8513801296c"
+        "7f5a2f14-092d-4676-b4f9-ff96bdc32a01"
       ],
-      "status": "done",
-      "updated_at": "2026-10-04T23:29:58.464601+00:00",
-      "blocked_on": [],
+      "status": "held",
+      "updated_at": "2026-10-04T23:49:34.969016+00:00",
+      "blocked_on": [
+        "supervisor_loop unattended timer activation",
+        "canonical child adapter verification in loop",
+        "verified temp-path containment eliminating global /tmp writes"
+      ],
       "evidence_paths": [
         "research/antigravity/reviews/REV-SDK-CLI-TIMEOUT-ZCODE.md",
         "research/antigravity/recovery/REPORT-LAUNCHER-BUS-BRIDGE-C2106.md",
@@ -2480,11 +2483,11 @@
         "research/antigravity/tooling/self_org/launcher_bus_bridge.py",
         "tests/test_launcher_bus_bridge.py"
       ],
-      "acceptance": "Live model execution via supervisor loop and FileBus bridge executed under C2128/C2130/C2131. Controlled ZCode trial completed in verified systemd scope (agent-scope-t-zcode-sdk-e4a14b45.scope, MemoryMax=1500M, rootfs>=50GB, PID 633053, model glm-5.3-flash, quse admitted). FileBus task 6ad717ea-2e9f-45a3-8422-da87846e0f47 ingested, readACK 23:20:15Z, reply 48139464-2f3c-428a-b4f8-031678bfcb25 delivered at 23:27:48Z, headACK issued at 23:28:42Z. Independent review REV-SDK-CLI-TIMEOUT-ZCODE.md delivered (BOUNDED ACCEPTANCE, publication_guard exit 0). 61/61 unit tests pass in 21.157s. Two Generals commit-then-timeout invariant and pure fail-closed push semantics proven. Scope dissolved and verified clean.",
+      "acceptance": "Live model execution via supervisor loop. Strictly HELD under C2053/C2054/C2056/C2062/C2132 pending supervisor_loop unattended timer activation, child adapter proof in canonical loop, and verified temp-path containment. Controlled SDK trial completed in isolated scratch and split into self-org-sdk-consumer-trial.",
       "assignment_ack": "ACK: live model adapter strictly held in child_adapter.py per Codex C2062; prerequisites split into self-org-custody-prerequisites.",
-      "acceptance_status": "ACCEPTED",
-      "continuation_trigger": "agent-branches docstring/import hygiene patch and test verification",
-      "next_action": "Selected next concrete product queue: apply the two non-blocking doc/hygiene fixes requested in \u00a74 of REV-SDK-CLI-TIMEOUT-ZCODE.md to agent-branches (clean up stale docstring at client.py:404 and unused import time at client.py:6), verify 61/61 unit test PASS, and proceed with agent-branches cross-machine social research or radar integration."
+      "acceptance_status": "HELD",
+      "continuation_trigger": "supervisor_loop unattended timer activation and canonical child adapter verification",
+      "next_action": "Unattended canonical parent loop strictly held. Controlled SDK trial split into self-org-sdk-consumer-trial. Targeted bus replay/default idempotency diagnosis underway."
     },
     {
       "id": "hourly-24h-four-product-payload",
@@ -2717,6 +2720,30 @@
       "acceptance_status": "ACCEPTED",
       "next_action": "Deliver reconciled four-product analytical payload to codex-principal and integration into daily report.",
       "continuation_trigger": "Daily report publication."
+    },
+    {
+      "id": "self-org-sdk-consumer-trial",
+      "project_id": "agent-branches",
+      "team_id": "agent-branches",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "369e1e44-678f-4918-a061-e8400651d6eb"
+      ],
+      "status": "done",
+      "updated_at": "2026-10-04T23:49:34.969016+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-SDK-CLI-TIMEOUT-ZCODE.md",
+        "research/antigravity/recovery/REPORT-LAUNCHER-BUS-BRIDGE-C2106.md",
+        "research/antigravity/reviews/REV-LAUNCHER-BUS-BRIDGE-C2106.md",
+        "research/antigravity/tooling/self_org/launcher_bus_bridge.py",
+        "tests/test_launcher_bus_bridge.py"
+      ],
+      "acceptance": "Controlled ZCode trial completed in verified systemd scope (agent-scope-t-zcode-sdk-e4a14b45.scope, MemoryMax=1500M, rootfs>=50GB, PID 633053, model glm-5.3-flash, quse admitted). FileBus task 6ad717ea-2e9f-45a3-8422-da87846e0f47 ingested, readACK 23:20:15Z, reply 48139464-2f3c-428a-b4f8-031678bfcb25 delivered at 23:27:48Z, headACK issued at 23:28:42Z. Independent review REV-SDK-CLI-TIMEOUT-ZCODE.md delivered (BOUNDED ACCEPTANCE, publication_guard exit 0). 61/61 unit tests pass in 21.157s. Verified that one client invocation suppresses automatic mutating retry on timeout/429 (Two Generals test 11; qualified per C2132 as suppression of automatic mutating retry, not a universal exactly-once theorem). Scope dissolved and verified clean.",
+      "acceptance_status": "ACCEPTED",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2128-C2132. Controlled sessionless review executed by zcode-sdk-reviewer in .local/scratch/zcode-sdk-consumer-trial.",
+      "next_action": "Completed and independently accepted. Follow-up bus semantic replay / default idempotency diagnosis underway in isolated scratch snapshot.",
+      "continuation_trigger": "narrow bus semantic replay/default idempotency diagnosis and test"
     }
   ]
 }
