@@ -1340,7 +1340,7 @@ class ChildModelRuntimeAdapter:
             else:
                 # Quota Admission Check
                 chosen, provenance = self.check_quse_admission(
-                    quse_data=quse_override,
+                    quse_data=_DEFAULT if quse_override is None else quse_override,
                     model_requirements=model_requirements,
                 )
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T20:54:13.943667+00:00",
+  "updated_at": "2026-10-04T23:29:58.468879+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -4392,6 +4392,51 @@
         "first_tool_at_utc": "2026-10-04T20:10:00Z",
         "timestamp_verification": "unverified_owner_metadata"
       }
+    },
+    {
+      "session_id": "7c27190c-05ea-4170-8edb-b8513801296c",
+      "tag": "t-zcode-sdk-rev-2",
+      "project_id": "agent-branches",
+      "parent_tag": "antigravity-head",
+      "mode": "headless",
+      "workspace": "/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-sdk-consumer-trial",
+      "task_id": "self-org-live-model-runtime",
+      "owned_paths": [
+        "/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-sdk-consumer-trial/"
+      ],
+      "first_action": {
+        "schema_version": 1,
+        "recorded_at_utc": "2026-10-04T23:23:18Z",
+        "tool": "zcodex exec --model glm-5.3-flash",
+        "selected": {
+          "id": "7c27190c-05ea-4170-8edb-b8513801296c",
+          "tag": "t-zcode-sdk-rev-2",
+          "workspace": "/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-sdk-consumer-trial",
+          "engine": "zcodex",
+          "agent": "zcode",
+          "reported_state": "completed",
+          "phase": "done",
+          "worker_pid": 633053,
+          "scope": "agent-scope-t-zcode-sdk-e4a14b45.scope"
+        },
+        "task_id": "self-org-live-model-runtime",
+        "semantic_ack": {
+          "token": "EX-ACK-7c27190c",
+          "status": "ACK",
+          "read_ack_at": "2026-10-04T23:20:15Z",
+          "reply_delivered_at": "2026-10-04T23:27:48Z",
+          "head_ack_at": "2026-10-04T23:28:42Z",
+          "filebus_task_id": "6ad717ea-2e9f-45a3-8422-da87846e0f47",
+          "filebus_reply_id": "48139464-2f3c-428a-b4f8-031678bfcb25",
+          "deliverable": "research/antigravity/reviews/REV-SDK-CLI-TIMEOUT-ZCODE.md",
+          "verdict": "BOUNDED ACCEPTANCE"
+        }
+      },
+      "launch_verified": true,
+      "expected_checkpoint": "completed",
+      "quota_source": "quse --json (zai glm-5.3-flash admitted)",
+      "provider": "zai",
+      "state_evidence": "Successful execution inside systemd scope agent-scope-t-zcode-sdk-e4a14b45.scope; exit code 0; 61/61 unit tests pass; publication_guard exit 0; scope verified dissolved"
     }
   ]
 }
