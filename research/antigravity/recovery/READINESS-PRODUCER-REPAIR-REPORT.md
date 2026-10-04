@@ -252,9 +252,7 @@ flowchart TD
     EngineType -- "Yes (TUI Engine)" --> ChildCheck{"Active Child Processes in /proc?"}
     ChildCheck -- Yes --> RejectChildBusy["Reject: active tool subprocess running"]
     ChildCheck -- No --> ScreenCheck{"Screen Captured from Worker"}
-    ScreenCheck --> DraftCheck{"Composer Has Unsubmitted Draft?"}
-    DraftCheck -- Yes --> RejectDraft["Reject: unsubmitted draft in composer"]
-    DraftCheck -- No --> WorkingScreen{"Screen Shows Active Working?"}
+    ScreenCheck --> WorkingScreen{"Screen Shows Active Working Banner (• Working / • Running)?"}
     WorkingScreen -- Yes --> RejectScreenBusy["Reject: screen indicates busy execution"]
     WorkingScreen -- No --> AcceptReady
 ```
@@ -429,7 +427,7 @@ index 51ecb64..d4710ea 100644
 +            }
 +        }
 +    }
-+    // Screen Inspection: ensure composer has no unsubmitted draft
++    // Screen Banner Inspection: heuristic rejection if working/running banner is present (does NOT inspect composer draft contents)
 +    if let Ok(screen_bytes) = rpc_capture_screen(record, true) {
 +        if let Ok(screen_text) = std::str::from_utf8(&screen_bytes) {
 +            if screen_text.contains("• Working (") || screen_text.contains("• Running ") {
@@ -440,6 +438,8 @@ index 51ecb64..d4710ea 100644
      Ok(())
  }
 ```
+
+*(Epistemic Boundary per C1774: Checking for active child processes in `/proc` combined with scanning screen text for `• Working (` or `• Running ` is a heuristic safeguard against unhooked execution. It does **not** inspect composer draft contents or reliably verify prompt readiness/empty composer across heterogeneous TUI engines. Empty child processes and absence of working substrings do not constitute proof of an empty composer prompt.)*
 
 ---
 
