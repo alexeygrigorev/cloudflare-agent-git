@@ -97,7 +97,7 @@ export `ADMIN_TOKEN` (admin bearer) or drive pushes through
 ```python
 from agent_branches.client import AgentBranchesClient
 
-c = AgentBranchesClient(server="http://127.0.0.1:<port>")
+c = AgentBranchesClient(server_url="http://127.0.0.1:<port>")
 task = c.create_task(repo="...", base_sha="...", intent="...", branch="...",
                      admin_token=os.environ["ADMIN_TOKEN"])
 c.push(task_id=task["taskId"], files_changed=["README.md"],
