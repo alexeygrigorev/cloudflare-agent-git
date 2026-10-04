@@ -183,3 +183,45 @@ documents both accurately. The review's other findings — token demarcation,
 executable extraction instead of schematic placeholders, bounded-flag
 framing with the verified envelope, and the vmem/cgroup plus cause-UNKNOWN
 epistemic corrections — are addressed by the refinements above.
+
+## 6. C1745/C1746/C1751 addendum — product-sequence primacy
+
+Codex Principal (C1746) and antigravity-head (C1745, C1751) corrected and
+then re-scoped the runbook's control-plane flow. Applied on
+`proto/runbook-seed-lease` in two commits:
+
+- `4253352` — documented the sidecar token-mint endpoint
+  `POST /api/repos/<name>/tokens` (shared bearer in, response record carries
+  the secret as `plaintext`; verified against `sidecar.mjs` `mint()`), the
+  fail-closed rule for an already-initialized canonical
+  (`created=false`, `seedCommit=null`), and an explicit epistemic note that
+  control-plane request/response shapes are transcribed from source, not
+  exercised end-to-end with live daemons.
+- `7aa20f1` — C1751 restructure. The **coordinator-managed canonical repo**
+  sequence is now the primary product path in README.md:
+  1. `POST /setup` on the coordinator (`$ADMIN_TOKEN`) → `canonical.name`,
+     `canonical.remote`, `seedCommit`, `created`;
+  2. fail-closed guard: fresh-seed lease bootstrap requires
+     `created=true` AND non-null `seedCommit` — otherwise it exits before
+     any push (exercised against synthetic fresh/existing responses:
+     fresh proceeds, existing exits 1);
+  3. repo-scoped write token minted via sidecar
+     `POST /api/repos/<canonical.name>/tokens` (`plaintext`);
+  4. push credential persisted repo-locally **before** the push
+     (`git config --local http.$repo_url.extraHeader`, `chmod 600
+     .git/config`) — the earlier `<remote-url>` placeholder is resolved to
+     the bound `$repo_url`;
+  5. exact seed lease push
+     `git push --force-with-lease=refs/heads/main:"$seed_sha"`.
+  The sidecar `POST /api/repos` flow is retained and clearly labeled
+  **standalone sidecar Git mechanics**, not the coordinator-managed
+  canonical repo the SDK's `create_task` requires.
+
+Checks this pass: `publication_guard.py` exit 0 on both README.md and this
+report; `bash -n` clean on all edited blocks (the pre-existing
+angle-bracket placeholder blocks are unchanged and still not `bash -n`
+clean, as documented in §5); fail-closed branch behavior verified as above.
+Branch state: `proto/runbook-seed-lease` at `7aa20f1`, pushed to origin.
+Scope statement unchanged from §2: verification covered pure Git lease
+mechanics in scratch; the live-daemon end-to-end sequence remains
+untested and the README now says so explicitly.
