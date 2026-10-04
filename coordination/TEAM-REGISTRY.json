@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T11:07:39.139235+00:00",
+  "updated_at": "2026-10-04T11:29:43.733414+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -3223,6 +3223,87 @@
       ],
       "integration_handoff": "ACK genuine01a10311-193b toC1371; headMERGE/RUN, Codexprincipalreview/cleanup",
       "agents": []
+    },
+    {
+      "id": "agent-dashboard",
+      "name": "Agent Dashboard product delivery",
+      "head_tag": "agent-dashboard-head",
+      "principal_tags": [
+        "codex-principal",
+        "claude-principal"
+      ],
+      "agents": [
+        {
+          "tag": "agent-dashboard-head",
+          "role": "head",
+          "mode": "interactive",
+          "workspace": "/home/alexey/git/agent-dashboard",
+          "session_id": "c7a75f76-1f51-4f14-873e-7a60569838c3",
+          "engine": "zcodex",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "registered_at": "2026-10-04T11:29:43.399244+00:00",
+          "first_action": "aplexer whoami --json at 2026-10-04T11:17:49Z; receipts .local/head-first-action.json, .local/head-ack.json",
+          "owned": [
+            "integration",
+            ".local/",
+            "decomposition",
+            "recovery",
+            "commits under .local/git.lock"
+          ]
+        },
+        {
+          "tag": "ad-backend-exec",
+          "role": "executor",
+          "mode": "headless",
+          "workspace": "/home/alexey/git/agent-dashboard",
+          "session_id": "82f06339-353c-4c21-84aa-01e57c7b040f",
+          "engine": "grok",
+          "parent_session_id": "c7a75f76-1f51-4f14-873e-7a60569838c3",
+          "team": "agent-dashboard",
+          "task": "AD-B1",
+          "owned": [
+            "/home/alexey/git/agent-dashboard/src/dashboard/",
+            "/home/alexey/git/agent-dashboard/tests/"
+          ],
+          "expected_checkpoint": "progress receipt + fixed hourly.py + green negative tests, ~20min",
+          "usage_source": "quse grok",
+          "registered_at": "2026-10-04T11:29:43.399244+00:00"
+        },
+        {
+          "tag": "ad-frontend-exec",
+          "role": "executor",
+          "mode": "headless",
+          "workspace": "/home/alexey/git/agent-dashboard",
+          "session_id": "fa49c91e-913a-46f4-b3c7-cdaef14eeb0f",
+          "engine": "opencode",
+          "parent_session_id": "c7a75f76-1f51-4f14-873e-7a60569838c3",
+          "team": "agent-dashboard",
+          "task": "AD-F1",
+          "owned": [
+            "/home/alexey/git/agent-dashboard/static/"
+          ],
+          "expected_checkpoint": "progress receipt + static/index.html/css/js, ~20min",
+          "usage_source": "quse go",
+          "registered_at": "2026-10-04T11:29:43.399244+00:00"
+        },
+        {
+          "tag": "ad-independent-reviewer",
+          "role": "independent-reviewer",
+          "mode": "headless",
+          "workspace": "/home/alexey/git/agent-dashboard",
+          "session_id": "96a4693f-2fa6-4a5f-a67f-9c251d847645",
+          "engine": "antigravity",
+          "parent_session_id": "c7a75f76-1f51-4f14-873e-7a60569838c3",
+          "team": "agent-dashboard",
+          "task": "AD-R1",
+          "owned": [
+            "/home/alexey/git/agent-dashboard/reviews/"
+          ],
+          "expected_checkpoint": "reviews/AD-R1-hourly-scaffold.md verdict on pin 9c2244c, ~20min",
+          "usage_source": "quse antigravity",
+          "registered_at": "2026-10-04T11:29:43.399244+00:00"
+        }
+      ]
     }
   ],
   "agents": [
@@ -3680,10 +3761,94 @@
       "owned_paths": [
         "/home/alexey/git/agent-branches/"
       ],
-      "first_action": null,
+      "first_action": {
+        "schema_version": 1,
+        "recorded_at_utc": "2026-10-04T11:26:26Z",
+        "tool": "aplexer whoami --json",
+        "selected": {
+          "id": "40ddf9b7-f7d8-4deb-8535-df3575e07182",
+          "tag": "ab-source-extractor",
+          "workspace": "/home/alexey/git/agent-branches",
+          "engine": "shell",
+          "agent": "grok",
+          "reported_state": "working",
+          "phase": "running",
+          "worker_pid": 1812941,
+          "workload_pid": 1812994
+        },
+        "task_id": "ab-standalone-private-source-project",
+        "semantic_ack": {
+          "token": "EX-ACK-40ddf9b7",
+          "status": "ACK",
+          "owns": [
+            "/home/alexey/git/agent-branches",
+            "/home/alexey/git/agent-branches/.local",
+            "/home/alexey/git/agent-branches/.local/tmp",
+            "/home/alexey/git/agent-branches/.local/raw",
+            "/home/alexey/git/agent-branches/.local/restore",
+            "/home/alexey/git/agent-branches/code",
+            "/home/alexey/git/agent-branches/docs",
+            "/home/alexey/git/agent-branches/scripts",
+            "/home/alexey/git/agent-branches/tests"
+          ],
+          "readonly_source": "/home/alexey/git/agent-branches-integration",
+          "will_not_modify": [
+            "/home/alexey/git/agent-branches-integration",
+            "Ant peer paths outside owned extraction workspace"
+          ],
+          "head": {
+            "tag": "antigravity-head",
+            "id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+            "workspace": "/home/alexey/git/cloudflare-agent-git"
+          },
+          "orchestrator": {
+            "tag": "desktop-orchestrator",
+            "id": "79ffb8c7-3f32-46ee-bd60-423a255ebbae",
+            "workspace": "/home/alexey/git/cloudflare-agent-git"
+          },
+          "no_duplicate_extractor": true,
+          "no_spoofing": true,
+          "next_action": "Pin source HEAD/tree, extract product paths, create private GitHub alexeygrigorev/agent-branches if absent, push main without force, verify remote clone restore."
+        }
+      },
       "launch_verified": true,
       "expected_checkpoint": "20min",
-      "quota_source": "project.local/extraction-quota.json"
+      "quota_source": "project.local/extraction-quota.json",
+      "semantic_ack": {
+        "token": "EX-ACK-40ddf9b7",
+        "status": "ACK",
+        "owns": [
+          "/home/alexey/git/agent-branches",
+          "/home/alexey/git/agent-branches/.local",
+          "/home/alexey/git/agent-branches/.local/tmp",
+          "/home/alexey/git/agent-branches/.local/raw",
+          "/home/alexey/git/agent-branches/.local/restore",
+          "/home/alexey/git/agent-branches/code",
+          "/home/alexey/git/agent-branches/docs",
+          "/home/alexey/git/agent-branches/scripts",
+          "/home/alexey/git/agent-branches/tests"
+        ],
+        "readonly_source": "/home/alexey/git/agent-branches-integration",
+        "will_not_modify": [
+          "/home/alexey/git/agent-branches-integration",
+          "Ant peer paths outside owned extraction workspace"
+        ],
+        "head": {
+          "tag": "antigravity-head",
+          "id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "workspace": "/home/alexey/git/cloudflare-agent-git"
+        },
+        "orchestrator": {
+          "tag": "desktop-orchestrator",
+          "id": "79ffb8c7-3f32-46ee-bd60-423a255ebbae",
+          "workspace": "/home/alexey/git/cloudflare-agent-git"
+        },
+        "no_duplicate_extractor": true,
+        "no_spoofing": true,
+        "next_action": "Pin source HEAD/tree, extract product paths, create private GitHub alexeygrigorev/agent-branches if absent, push main without force, verify remote clone restore."
+      },
+      "provider": "grok",
+      "state_evidence": "Native successful read/terminal/write tools verified in private PID1813023 log; PTY buffered headlessJSON, not lack of progress"
     },
     {
       "session_id": "82f06339-353c-4c21-84aa-01e57c7b040f",

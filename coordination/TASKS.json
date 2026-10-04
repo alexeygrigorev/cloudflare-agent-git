@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T11:07:39.139235+00:00",
+  "updated_at": "2026-10-04T11:32:00.445175+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -1631,12 +1631,12 @@
       "project_id": "agent-branches",
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
-      "status": "ready",
+      "status": "running",
       "updated_at": "2026-10-04T11:19:14.808651+00:00",
       "next_action": "Executor pin/extract tracked integrationproduct source, create privateGitHub main, safe sync and remotecloneverify; Ant independent exactpin reviewer accepts.",
       "acceptance": "Actual private repo/sourceSHA/mainSHA/fallbackrestore tree match and secret scan; preserved existing work; no code-only unreviewed extraction claim.",
       "blocked_on": [
-        "Worker firsttool/semanticACK and accepted extraction outcome pending"
+        "Actual source extraction/private GitHub remote restore and independent acceptance pending"
       ],
       "executor_ids": [
         "40ddf9b7-f7d8-4deb-8535-df3575e07182"
@@ -1645,14 +1645,209 @@
         "/home/alexey/git/agent-branches/"
       ],
       "evidence_paths": [],
-      "first_action": null,
+      "first_action": {
+        "schema_version": 1,
+        "recorded_at_utc": "2026-10-04T11:26:26Z",
+        "tool": "aplexer whoami --json",
+        "selected": {
+          "id": "40ddf9b7-f7d8-4deb-8535-df3575e07182",
+          "tag": "ab-source-extractor",
+          "workspace": "/home/alexey/git/agent-branches",
+          "engine": "shell",
+          "agent": "grok",
+          "reported_state": "working",
+          "phase": "running",
+          "worker_pid": 1812941,
+          "workload_pid": 1812994
+        },
+        "task_id": "ab-standalone-private-source-project",
+        "semantic_ack": {
+          "token": "EX-ACK-40ddf9b7",
+          "status": "ACK",
+          "owns": [
+            "/home/alexey/git/agent-branches",
+            "/home/alexey/git/agent-branches/.local",
+            "/home/alexey/git/agent-branches/.local/tmp",
+            "/home/alexey/git/agent-branches/.local/raw",
+            "/home/alexey/git/agent-branches/.local/restore",
+            "/home/alexey/git/agent-branches/code",
+            "/home/alexey/git/agent-branches/docs",
+            "/home/alexey/git/agent-branches/scripts",
+            "/home/alexey/git/agent-branches/tests"
+          ],
+          "readonly_source": "/home/alexey/git/agent-branches-integration",
+          "will_not_modify": [
+            "/home/alexey/git/agent-branches-integration",
+            "Ant peer paths outside owned extraction workspace"
+          ],
+          "head": {
+            "tag": "antigravity-head",
+            "id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+            "workspace": "/home/alexey/git/cloudflare-agent-git"
+          },
+          "orchestrator": {
+            "tag": "desktop-orchestrator",
+            "id": "79ffb8c7-3f32-46ee-bd60-423a255ebbae",
+            "workspace": "/home/alexey/git/cloudflare-agent-git"
+          },
+          "no_duplicate_extractor": true,
+          "no_spoofing": true,
+          "next_action": "Pin source HEAD/tree, extract product paths, create private GitHub alexeygrigorev/agent-branches if absent, push main without force, verify remote clone restore."
+        }
+      },
       "commit": null,
       "pr_url": null,
       "tests": null,
       "reviewer": null,
       "accepted_at": null,
       "continuation_trigger": "Owned safe checkpoint; independent tasks proceed meanwhile",
-      "assignment_ack": "Root explicitly scoped extraction; genuine nativeworker launched; semantic workerACK/firsttool pending."
+      "assignment_ack": {
+        "token": "EX-ACK-40ddf9b7",
+        "status": "ACK",
+        "owns": [
+          "/home/alexey/git/agent-branches",
+          "/home/alexey/git/agent-branches/.local",
+          "/home/alexey/git/agent-branches/.local/tmp",
+          "/home/alexey/git/agent-branches/.local/raw",
+          "/home/alexey/git/agent-branches/.local/restore",
+          "/home/alexey/git/agent-branches/code",
+          "/home/alexey/git/agent-branches/docs",
+          "/home/alexey/git/agent-branches/scripts",
+          "/home/alexey/git/agent-branches/tests"
+        ],
+        "readonly_source": "/home/alexey/git/agent-branches-integration",
+        "will_not_modify": [
+          "/home/alexey/git/agent-branches-integration",
+          "Ant peer paths outside owned extraction workspace"
+        ],
+        "head": {
+          "tag": "antigravity-head",
+          "id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "workspace": "/home/alexey/git/cloudflare-agent-git"
+        },
+        "orchestrator": {
+          "tag": "desktop-orchestrator",
+          "id": "79ffb8c7-3f32-46ee-bd60-423a255ebbae",
+          "workspace": "/home/alexey/git/cloudflare-agent-git"
+        },
+        "no_duplicate_extractor": true,
+        "no_spoofing": true,
+        "next_action": "Pin source HEAD/tree, extract product paths, create private GitHub alexeygrigorev/agent-branches if absent, push main without force, verify remote clone restore."
+      }
+    },
+    {
+      "id": "ad-b1-backend-repair",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "agent-dashboard-head",
+      "status": "running",
+      "updated_at": "2026-10-04T11:29:43.399244+00:00",
+      "next_action": "Verify backend executor receipts, integrate commit under .local/git.lock, route AD-R2 review",
+      "acceptance": "Exact [as_of-24h,as_of) 24 buckets; dedup/overlap single-count; invalid ended_at=unknown not alive; future clamp; negative tests green; independent AD-R2 verdict",
+      "blocked_on": [
+        "AD-B1 worker in flight"
+      ],
+      "executor_ids": [
+        "82f06339-353c-4c21-84aa-01e57c7b040f"
+      ],
+      "owned_paths": [
+        "/home/alexey/git/agent-dashboard/src/dashboard/",
+        "/home/alexey/git/agent-dashboard/tests/"
+      ],
+      "evidence_paths": [
+        "/home/alexey/git/agent-dashboard/.local/tasks/backend-executor-brief.md"
+      ],
+      "first_action": "grok session running tool calls (List project dir) at 2026-10-04T11:23Z",
+      "commit": null,
+      "pr_url": null,
+      "tests": null,
+      "reviewer": null,
+      "accepted_at": null,
+      "feature_id": null
+    },
+    {
+      "id": "ad-f1-frontend-static",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "agent-dashboard-head",
+      "status": "running",
+      "updated_at": "2026-10-04T11:29:43.399244+00:00",
+      "next_action": "Verify frontend executor receipts, integrate, visual localhost check",
+      "acceptance": "static/ vanilla UI renders three project IDs, 24-bucket bars, unknown/null states visible, fetch-failure fallback; no external assets",
+      "blocked_on": [
+        "AD-F1 worker in flight"
+      ],
+      "executor_ids": [
+        "fa49c91e-913a-46f4-b3c7-cdaef14eeb0f"
+      ],
+      "owned_paths": [
+        "/home/alexey/git/agent-dashboard/static/"
+      ],
+      "evidence_paths": [
+        "/home/alexey/git/agent-dashboard/.local/tasks/frontend-executor-brief.md"
+      ],
+      "first_action": "opencode session reading AGENTS.md/pyproject.toml at 2026-10-04T11:26Z",
+      "commit": null,
+      "pr_url": null,
+      "tests": null,
+      "reviewer": null,
+      "accepted_at": null,
+      "feature_id": null
+    },
+    {
+      "id": "ad-r1-scaffold-review",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "agent-dashboard-head",
+      "status": "running",
+      "updated_at": "2026-10-04T11:29:43.399244+00:00",
+      "next_action": "Collect AD-R1 verdict; fold required negative tests into AD-B1 acceptance; schedule AD-R2 on repair commit",
+      "acceptance": "reviews/AD-R1-hourly-scaffold.md with exact pin 9c2244c, per-defect CONFIRMED/REFUTED + repro, new defects, required negative tests",
+      "blocked_on": [
+        "AD-R1 worker in flight"
+      ],
+      "executor_ids": [
+        "96a4693f-2fa6-4a5f-a67f-9c251d847645"
+      ],
+      "owned_paths": [
+        "/home/alexey/git/agent-dashboard/reviews/"
+      ],
+      "evidence_paths": [
+        "/home/alexey/git/agent-dashboard/.local/tasks/reviewer-brief.md"
+      ],
+      "first_action": "antigravity session reading reviewer-brief.md at 2026-10-04T11:29Z",
+      "commit": null,
+      "pr_url": null,
+      "tests": null,
+      "reviewer": null,
+      "accepted_at": null,
+      "feature_id": null
+    },
+    {
+      "id": "ad-p1-oct5-morning-payload",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "agent-dashboard-head",
+      "status": "queued",
+      "updated_at": "2026-10-04T11:32:00.445175+00:00",
+      "next_action": "After AD-B1/AD-F1 integrate and AD-R2 review: generate exact last-24h per-project hourly outcomes/coverage payload and deliver to public-journal-site head via aplexer",
+      "acceptance": "Payload over exact [as_of-24h,as_of), 24 UTC buckets, per-project unique agents/agent-hours, dedup identities, coverage/unknown visible, source-proven fields only",
+      "blocked_on": [
+        "AD-B1 integration",
+        "AD-F1 integration"
+      ],
+      "executor_ids": [],
+      "owned_paths": [
+        "/home/alexey/git/agent-dashboard/.local/exports/"
+      ],
+      "evidence_paths": [],
+      "first_action": null,
+      "commit": null,
+      "pr_url": null,
+      "tests": null,
+      "reviewer": null,
+      "accepted_at": null,
+      "feature_id": null
     }
   ]
 }
