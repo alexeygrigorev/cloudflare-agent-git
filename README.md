@@ -176,9 +176,10 @@ Do not conflate the two credentials this stack uses:
   for push. (The coordinator's own `POST /setup` route takes `$ADMIN_TOKEN`
   instead — two control planes, two different bearers.)
 - The **minted repo write token** returned in the `POST /api/repos` response
-  (`token` field; per-repo, short-lived) — or a task token minted for the
-  same repo — is what Git Smart HTTP push requires. It belongs to the repo or
-  task that requested it; keep it out of `.env.local`.
+  (`token` field; per-repo, short-lived) — or minted separately for an
+  existing repo via `POST /api/repos/<name>/tokens` with scope `write`
+  (response field `plaintext`) — is what Git Smart HTTP push requires. It
+  belongs to the repo or task that requested it; keep it out of `.env.local`.
 
 #### Pushing work to a canonical repo: exact seed lease
 
@@ -206,10 +207,30 @@ repo_tok=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.
 # jq equivalents: seed_sha=$(printf '%s' "$setup_resp" | jq -r .seedCommit), etc.
 
 # Alternative control plane: the coordinator's `POST /setup` (authenticated
-# with `$ADMIN_TOKEN`, not $SIDECAR_TOKEN) creates the canonical repo too;
-# its response nests the URL and seed as `canonical.remote` / `seedCommit`
-# (`null` if the canonical repo already exists) and carries no write token —
-# task tokens then come from the task-creation flow.
+# with `$ADMIN_TOKEN`, not $SIDECAR_TOKEN) creates the canonical repo too.
+# Its response nests the URL and seed as `canonical.remote` / `seedCommit`
+# and carries NO write token:
+coord_port="${PORT:-8787}"                # coordinator listens on $PORT
+admin_bearer="Bearer $ADMIN_TOKEN"        # scheme + admin credential, composed
+setup_resp=$(curl -fsS -X POST "http://127.0.0.1:$coord_port/setup" \
+    -H "Authorization: $admin_bearer")
+canonical_name=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["canonical"]["name"])')
+repo_url=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["canonical"]["remote"])')
+seed_sha=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["seedCommit"])')
+# Fail closed on an existing canonical: `created` is false and `seedCommit`
+# is null — no seed SHA is known, so a fresh-seed lease bootstrap must stop
+# here (never lease against a guessed SHA) and proceed, if at all, through
+# ordinary Git integration with the existing canonical history.
+
+# /setup mints no token — create a repo-scoped write token on the sidecar
+# control plane instead (same shared bearer as repo creation; the response
+# record carries the secret as `plaintext`):
+token_resp=$(curl -fsS -X POST \
+    "http://127.0.0.1:$SIDECAR_PORT/api/repos/$canonical_name/tokens" \
+    -H "Authorization: $sidecar_bearer" \
+    -H 'Content-Type: application/json' \
+    -d '{"scope": "write", "ttlSeconds": 3600}')
+repo_tok=$(printf '%s' "$token_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["plaintext"])')
 
 # Push with the exact lease on the seed commit, authenticated as the minted
 # repo write token $repo_tok (0600 file-backed variant below — never argv
@@ -232,7 +253,12 @@ a coordinated recovery to a known-good state), and the displaced commits
 must be preserved, never discarded.
 (Verified with git 2.43: lease-at-seed succeeds against a freshly seeded
 canonical repo; the same lease after the ref advanced is rejected and the
-advanced commit survives.)
+advanced commit survives.) The control-plane request/response shapes above
+are transcribed from source (coordinator `setupNow()`, sidecar `/api/*`
+route table and token mint), not exercised end-to-end with live daemons in
+this runbook's verification — that pass covered the pure Git lease
+mechanics in scratch. Do not treat the full stack flow as runtime-verified
+until a live daemon run confirms it.
 
 #### Token hygiene: argv exposure on multi-user hosts
 
