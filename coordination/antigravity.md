@@ -2963,6 +2963,60 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Publication guard verified clean (`publication_guard.py` exit code 0).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
 
+---
+
+### 96. Primary Coordinator Bootstrap Smoke Delivered (SUCCESS), Adversarial Readiness Review Completed (REQUEST_CHANGES), and Reconciliation of Registry & Tasks (C1781–C1791, Desktop Orchestrator 08:50)
+
+- **As-of:** 2026-10-04, Europe/Berlin (06:55 UTC / 08:55 local)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Codex Principal C1781, C1783, C1785, C1788, C1789, C1791; Desktop Orchestrator 08:50 Berlin interface; Public Journal Site scope coordination (`01a105af-79d4`).
+
+1. **Primary Coordinator Bootstrap Smoke Test Delivered (RECEIPT-PRIMARY-COORDINATOR-BOOTSTRAP-SMOKE.md: SUCCESS):**
+   - **Executor:** `primary-coordinator-smoke-worker` (`ca5cd4a4-f9bd-424a-ac23-66d76197b7ba`, native harness subagent in `.local/scratch/primary-coordinator-smoke/`).
+   - **Deliverable:** [`research/antigravity/recovery/RECEIPT-PRIMARY-COORDINATOR-BOOTSTRAP-SMOKE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-PRIMARY-COORDINATOR-BOOTSTRAP-SMOKE.md).
+   - **Outcome: `SUCCESS`**.
+   - **Prebuilt Daemons Verified:** Git Smart HTTP sidecar (`sidecar.mjs` SHA256 `04a75628...`) and Coordinator (`main.js` SHA256 `7747d511...`) bound to ephemeral loopback ports `9894`/`9895` with memory-generated mode `0600` tokens (`ADMIN_TOKEN`, `LOCAL_ARTIFACTS_TOKEN`, `RUNNER_TOKEN`).
+   - **End-to-End Primary Sequence:**
+     - Step 1: Coordinator `POST /setup` with `$ADMIN_TOKEN` returns HTTP 201 (`created: true`, canonical name `agent-branches-canonical-b7a8bef1`, and 40-hex `seedCommit: 5c6bc1c1...`).
+     - Step 2: Repeated `POST /setup` returns HTTP 201 (`created: false`, `seedCommit: null`), confirming idempotent fail-closed isolation.
+     - Step 3: Sidecar `POST /api/repos/.../tokens` mints scoped repository write token.
+     - Step 4: Local seed repo cloned, verified `HEAD == seedCommit`, configured repo-local `http.<remote>.extraHeader` (mode `0600` `.git/config`), and pushed exact lease `--force-with-lease=refs/heads/main:<seedCommit>` $\rightarrow$ exit code 0.
+     - Step 5: `create_task` registered `task-0001` / `agent-0001`, created isolated fork, and minted per-task write bearer.
+     - Step 6: Smart HTTP fork clone, maintenance commit `5ed15be...`, Smart HTTP push $\rightarrow$ exit code 0; webhook delivery forwarded to Coordinator `POST /events/push`; SDK push registration and status query confirmed.
+     - Neg 1: Cold unauthenticated SDK push failed closed with HTTP 401.
+     - Neg 2: Git Smart HTTP push with invalid bearer failed closed with wire HTTP 401 challenge and exit code 128 (with `GIT_TERMINAL_PROMPT=0`).
+   - **Epistemic Demarcation per Codex C1789:**
+     - *Adapter Wrapper:* `run_smoke.py` used `FlexibleAgentBranchesClient` adapter wrapper bridging parameter discrepancies (`task` vs `task_id`, `branch` vs `base_ref`, `head_sha` vs `commit`, `get_task` vs `status`, constructor `admin_token`). Live coordinator protocol is validated, but raw unwrapped SDK invocation was adapter-assisted.
+     - *Seed Lease Scope:* Step 4 pushed the cloned synthetic seed commit, verifying lease acceptance and write auth on canonical without replacing maintenance commits.
+     - *Measurements:* 0.764s reflects final clean script wall clock (~6 minutes total testbed duration); Sidecar RSS 59.42 MB, Coord RSS 62.47 MB are point-in-time `ps -o rss=` samples ($\le$ 100 MB limits); scratch consumed 0.13 MB ($\le$ 512 MB). Zero `/tmp` growth (`TMPDIR` isolated). Strictly zero cargo/rustc invocations.
+   - Publication guard verified clean (`publication_guard.py` exit code 0).
+
+2. **Readiness Producer Adversarial Review Complete (REV-READINESS-PRODUCER-REPAIR-SPEC.md: REQUEST_CHANGES):**
+   - **Reviewer:** `readiness-producer-adversarial-reviewer` (`5bfa14d3-9181-4932-96a4-976c0ab8f17a`, native harness subagent in `.local/scratch/readiness-adversarial-review/`).
+   - **Deliverable:** [`research/antigravity/reviews/REV-READINESS-PRODUCER-REPAIR-SPEC.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-READINESS-PRODUCER-REPAIR-SPEC.md).
+   - **Verdict: `REQUEST_CHANGES` (Defects Noted)**.
+   - **Strict Hold Compliance:** 100% read-only inspection; strictly zero cargo, rustc, or compiler invocations.
+   - **Adversarial Defect Analysis:**
+     - *Layer 1 (Engine Whitelist Fragility):* Hardcoding engine family strings in `engine_has_turn_boundary_hooks` creates contradiction blindness if hooks fail or `a state-report` is missing; unlisted engines fall back to PTY contradiction failure.
+     - *Layer 2 (PID Recycling & Zombie False-Busy):* `workload_leader_alive()` bare `libc::kill(pid, 0)` lacks process start-time verification and is vulnerable to Linux PID recycling; `/proc/.../children` retains zombie (`Z`) processes awaiting reaping, causing false-busy rejections.
+     - *Layer 3 (Screen Working Banner Heuristic):* Substring search for `• Working (` / `• Running ` is engine-specific to Codex CLI (no-op on Claude, OpenCode, Grok, Antigravity); **completely omits composer draft checking**; screen scrollback text creates false-positive delivery blocks.
+   - **Report Section 7 Corrected per Desktop Orchestrator & Codex C1791:**
+     - Updated [`READINESS-PRODUCER-REPAIR-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/READINESS-PRODUCER-REPAIR-REPORT.md): formally withdrew unearned claims that Section 5 resolves all engines and strengthens draft inspection; withdrew recommendation to patch dirty existing aplexer checkout; reaffirmed human-only hold authority and intact native `NOTREADY` fail-closed rejection.
+
+3. **Reconciliation of Registry & Tasks:**
+   - **`coordination/TEAM-REGISTRY.json`:** Marked `readiness-producer-adversarial-reviewer` (`5bfa14d3`, verdict `REQUEST_CHANGES`) and `primary-coordinator-smoke-worker` (`ca5cd4a4`, result `SUCCESS`) as completed.
+   - **`coordination/TASKS.json`:** Following scope release by `public-journal-site` (`01a105af-79d4`), updated task rows for:
+     - `runbook-seed-lease-7aa-review`: `done` (ACCEPT, `REV-RUNBOOK-SEED-LEASE-7AA20F1.md`)
+     - `metrics-collect-conversation-scope`: `done` (BOUNDED ACCEPTANCE, `REV-METRICS-COLLECT-CONVERSATION-SCOPE.md`)
+     - `readiness-producer-repair-spec`: `done` (REQUEST_CHANGES, `REV-READINESS-PRODUCER-REPAIR-SPEC.md`)
+     - `primary-coordinator-bootstrap-smoke`: `done` (SUCCESS, `RECEIPT-PRIMARY-COORDINATOR-BOOTSTRAP-SMOKE.md`)
+
+4. **Invariants Strictly Preserved:**
+   - Strict human no-Rust-build hold enforced: zero cargo/rustc invocations.
+   - Native NOTREADY rejection preserved; zero state spoofing or out-of-band PTY injection.
+   - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
+   - Public Cloudflare deploy gate strictly **HELD**; Claude principal remains **stopped**; shortlist gates remain **HELD**.
+
 
 
 

@@ -465,11 +465,24 @@ This deliverable was inspected using `publication_guard.py` with zero secrets, z
 
 ---
 
-## 7. Recommended Next Actions
+## 7. Review Verdict & Recommended Actions
 
-1. **Codex Principal & Antigravity Head Review:**
-   Review the unified diff specification in Section 5. The proposed spec resolves the Z640 contradiction bug across all TUI engines (`zcodex`, `codex`, `antigravity`, `opencode`) while strengthening safety with child process and screen draft inspection.
-2. **Post-Hold Integration:**
-   **Only the human operator can release the explicit no-Rust-build hold.** Principals and heads are not release authorities. Until the human operator explicitly releases the hold, no cargo/rustc commands or aplexer binary replacements may occur. Upon human release, apply the bounded patch to `/home/alexey/git/aplexer`, execute `cargo test --lib watch`, and run the native delivery validation cycle on message `01a10581-3a13-7642-8a3c-a075b93ac7c5`.
-3. **Queue Preservation:**
-   Original message envelope `01a10581-3a13-7642-8a3c-a075b93ac7c5` remains safely queued in `/home/alexey/.local/state/aplexer/messages/` ready for immediate delivery upon repair application.
+1. **Independent Adversarial Review Verdict (REQUEST_CHANGES):**
+   Independent review [`REV-READINESS-PRODUCER-REPAIR-SPEC.md`](../reviews/REV-READINESS-PRODUCER-REPAIR-SPEC.md) (delivered by `readiness-producer-adversarial-reviewer` / `5bfa14d3`) audited the proposed Section 5 specification and issued a verdict of **REQUEST_CHANGES (Defects Noted)**.
+   - The unearned claim that Section 5 "resolves all engines and strengthens screen draft inspection" is formally withdrawn: Section 5 explicitly omits composer prompt draft checking (line 442), and substring matching (`• Working (` / `• Running `) is engine-specific to Codex CLI, acting as a complete no-op on other engines.
+   - The specification introduces severe architectural failure modes: Layer 1 whitelist brittleness and contradiction blindness if hooks fail; Layer 2 `libc::kill(pid, 0)` vulnerability to Linux PID recycling and `/proc/.../children` zombie (`Z`) false-busy denials; and Layer 3 screen scrollback false positives.
+   - Offline Python simulation cases in scratch demonstrated modeled defects, not universal native recovery.
+
+2. **Strict Human No-Rust-Build Hold Invariant:**
+   - **Only the human operator can release the explicit no-Rust-build hold.** Principals, heads, and workers possess strictly zero release authority.
+   - The proposed specification must remain **strictly unimplemented**. Zero cargo/rustc compilation commands and zero aplexer binary replacements are permitted.
+   - Native `NOTREADY` delivery rejection remains intact; zero state spoofing, zero fake idle reporting, and zero unhooked terminal PTY injection.
+
+3. **Implementation Prerequisites (Post-Human-Release):**
+   - The recommendation to apply changes into the dirty existing checkout (`/home/alexey/git/aplexer`) is formally withdrawn. Any future implementation authorized by the human operator must:
+     a) Preserve uncommitted peer changes in `/home/alexey/git/aplexer` without clobbering or resetting working tree state.
+     b) Be conducted in an isolated, dedicated branch or worktree under clean ownership.
+     c) Resolve the 5 architectural defects identified in `REV-READINESS-PRODUCER-REPAIR-SPEC.md` (e.g. CAS turn token handshakes, PID start-time validation, zombie state filtering, and structured composer draft inspection).
+
+4. **Queue & Message Preservation:**
+   - Original message envelope `01a10581-3a13-7642-8a3c-a075b93ac7c5` remains safely queued in `/home/alexey/.local/state/aplexer/messages/` preserving intact delivery semantics until legitimate harness readiness is established.

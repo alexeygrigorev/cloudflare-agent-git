@@ -2252,13 +2252,36 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/readiness-adversarial-review/",
-          "status": "running",
+          "status": "completed-review",
+          "verdict": "REQUEST_CHANGES",
           "started_at": "2026-10-04T08:44:00+02:00",
+          "completed_at": "2026-10-04T08:47:06+02:00",
           "task": "Independent source-only adversarial edge-case review of proposed readiness repair specification in READINESS-PRODUCER-REPAIR-REPORT.md under strict human no-Rust-build hold per Codex C1771/C1774. Audit engine family hardcoding, PID liveness/recycling, /proc children edge cases, and screen working-banner substring limits vs empty composer prompt guarantees.",
           "owned_paths": [
             "research/antigravity/reviews/REV-READINESS-PRODUCER-REPAIR-SPEC.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID 5bfa14d3-9181-4932-96a4-976c0ab8f17a; inspecting READINESS-PRODUCER-REPAIR-REPORT.md and /home/alexey/git/aplexer source (read-only)",
+          "first_tool_evidence": "subagent launched with native conversation ID 5bfa14d3-9181-4932-96a4-976c0ab8f17a; completed adversarial audit deliverable REV-READINESS-PRODUCER-REPAIR-SPEC.md with verdict REQUEST_CHANGES (publication_guard exit 0, strictly zero cargo/rustc invocations)",
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
+        },
+        {
+          "tag": "primary-coordinator-smoke-worker",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "ca5cd4a4-f9bd-424a-ac23-66d76197b7ba",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/primary-coordinator-smoke/",
+          "status": "completed-smoke",
+          "result": "SUCCESS",
+          "started_at": "2026-10-04T08:46:00+02:00",
+          "completed_at": "2026-10-04T08:52:36+02:00",
+          "task": "Live end-to-end integration smoke test of exact-primary coordinator bootstrap sequence through SDK create_task and push authorization per Codex C1771/C1774/C1780. Start sidecar + coordinator daemons on ephemeral ports, POST /setup with ADMIN_TOKEN, verify created/seedCommit fail-closed guard, sidecar write token minting, local extraHeader push with exact seed lease, SDK create_task fork creation, fork commit push via Smart HTTP, and client.push registration.",
+          "owned_paths": [
+            "research/antigravity/recovery/RECEIPT-PRIMARY-COORDINATOR-BOOTSTRAP-SMOKE.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID ca5cd4a4-f9bd-424a-ac23-66d76197b7ba; delivered RECEIPT-PRIMARY-COORDINATOR-BOOTSTRAP-SMOKE.md (status: SUCCESS in 0.764s, Sidecar RSS 59.42 MB, Coord RSS 62.47 MB, Neg 1 HTTP 401, Neg 2 Git exit 128 / HTTP 401, publication_guard exit 0)",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]

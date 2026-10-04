@@ -69,6 +69,69 @@
       "assignment_ack": "ACK: owned by antigravity-head under Codex C1598/C1601/C1603/C1615/C1620 directives. Executed by lineage-auditor (772bf420) in .local/scratch/private-lineage-audit/."
     },
     {
+      "id": "runbook-seed-lease-7aa-review",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "runbook-seed-lease-7aa-reviewer",
+      "status": "done",
+      "updated_at": "2026-10-04T08:44:00.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Delivered REV-RUNBOOK-SEED-LEASE-7AA20F1.md with verdict ACCEPT. Primary coordinator setup, sidecar write token minting, repo-local extraHeader push with exact seed lease, wire 401 on control bearer, and stale lease rejection verified live across prebuilt daemons.",
+      "acceptance": "Live runtime verification of commit 7aa20f1 runbook sequence across sidecar (04a75628...) and coordinator (7747d511...) on ephemeral loopback ports.",
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-7AA20F1.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1769/C1771/C1780. Executed by runbook-seed-lease-7aa-reviewer (02261a65) in .local/scratch/seed-lease-7aa-review/."
+    },
+    {
+      "id": "metrics-collect-conversation-scope",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "metrics-collect-worker",
+      "status": "done",
+      "updated_at": "2026-10-04T08:44:00.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Delivered scripts/metrics/collect.py conversation-aware fix and tests/test_collect_conversation_scope.py (8/8 PASS). Independently reviewed by metrics-collect-reviewer (24e23518) in REV-METRICS-COLLECT-CONVERSATION-SCOPE.md (BOUNDED ACCEPTANCE). Epistemic boundaries disclosed; derived Gemini emission strictly HELD.",
+      "acceptance": "Conversation-aware usage event matching in collect.py without conflating distinct sessions sharing a tag; independent review with 4 killed negative mutants.",
+      "evidence_paths": [
+        "scripts/metrics/collect.py",
+        "tests/test_collect_conversation_scope.py",
+        "research/antigravity/reviews/REV-METRICS-COLLECT-CONVERSATION-SCOPE.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Desktop Root and Codex C1735/C1764/C1769. Executed by metrics-collect-worker (fd6f993c); reviewed by metrics-collect-reviewer (24e23518)."
+    },
+    {
+      "id": "readiness-producer-repair-spec",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "readiness-producer-adversarial-reviewer",
+      "status": "done",
+      "updated_at": "2026-10-04T08:47:06.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Delivered READINESS-PRODUCER-REPAIR-REPORT.md and REV-READINESS-PRODUCER-REPAIR-SPEC.md (verdict REQUEST_CHANGES). Diagnosed Ratatui 43B ANSI cursor updates causing PTY activity contradiction. Audited 5 adversarial failure modes (Layer 1 whitelist coupling, Layer 2 PID recycling/zombie false-busy, Layer 3 screen working banner heuristic / composer draft omission). Strictly 0 cargo/rustc invocations. Hold remains human-only.",
+      "acceptance": "Source-only diagnostic report and adversarial edge-case review of proposed aplexer readiness producer repair specification; zero rust builds.",
+      "evidence_paths": [
+        "research/antigravity/recovery/READINESS-PRODUCER-REPAIR-REPORT.md",
+        "research/antigravity/reviews/REV-READINESS-PRODUCER-REPAIR-SPEC.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1753/C1756/C1771/C1774. Diagnosed by readiness-producer-worker (d430037a); reviewed by readiness-producer-adversarial-reviewer (5bfa14d3)."
+    },
+    {
+      "id": "primary-coordinator-bootstrap-smoke",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "primary-coordinator-smoke-worker",
+      "status": "done",
+      "updated_at": "2026-10-04T08:52:36.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Delivered RECEIPT-PRIMARY-COORDINATOR-BOOTSTRAP-SMOKE.md with status SUCCESS in 0.764s. Verified prebuilt daemons, POST /setup created true, sidecar write token minting, exact seed lease push, SDK create_task fork creation, fork commit push via Smart HTTP, client.push registration, Neg 1 unauthenticated 401, Neg 2 invalid bearer 401 / Git exit 128. Compliant RSS (Sidecar 59.42 MB, Coord 62.47 MB). Disclosed FlexibleAgentBranchesClient wrapper adapter.",
+      "acceptance": "Live end-to-end integration smoke test of primary coordinator bootstrap sequence through Python SDK and Git Smart HTTP push authorization on ephemeral localhost sockets.",
+      "evidence_paths": [
+        "research/antigravity/recovery/RECEIPT-PRIMARY-COORDINATOR-BOOTSTRAP-SMOKE.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1771/C1774/C1780. Executed by primary-coordinator-smoke-worker (ca5cd4a4) in .local/scratch/primary-coordinator-smoke/."
+    },
+    {
       "id": "sdk-ack-auth-review",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
