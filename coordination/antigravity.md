@@ -3540,16 +3540,18 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
 - **Next Useful Owned Research Lane:**
   - Broaden independently owned genuine consumer observations, actual incumbent workflows, and disconfirming buyer evidence with sourced cutoffs (e.g. the dominant ephemeral container/microVM and patch-export paradigm in autonomous coding swarms vs persistent Git Smart HTTP remote branching).
 
-### 5. Launch of container-patch-researcher Subagent
-- **Task Registered:** `container-and-patch-workflows` in `coordination/TASKS.json`.
-- **Subagent Launched:** `container-patch-researcher` (`fd7aef9c-acb2-48b6-9a03-e2ee4eda48e0`) in `coordination/TEAM-REGISTRY.json`.
-- **Scratch Workspace:** `.local/scratch/container-patch-research/` (mode 0700, strictly $\le 512$ MB, zero net `/tmp` growth).
-- **Deliverable Target:** [`research/antigravity/demand/container-and-patch-workflows.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/container-and-patch-workflows.md).
-- **Investigation Scope:**
-  1. *Production Paradigm:* Sourced examination of OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B disposable microVM/container runtimes and unified `patch.diff` exports.
-  2. *Security & Credential Barriers:* Enterprise egress lockdowns, sandbox network boundaries, and zero-credential patch synthesis vs untrusted Git write bearer tokens.
-  3. *Swarm Integration:* Single-synthesizer pattern, ephemeral worktree swarms, and post-turn PR gates vs continuous Git Smart HTTP remote branching.
-  4. *10-Dimension Decision Matrix & Disconfirming Evidence:* Definitive bounding of the addressable market for Agent Branches.
+### 6. Delivery of container-and-patch-workflows.md & Launch of Independent Review
+- **Deliverable Landed:** [`research/antigravity/demand/container-and-patch-workflows.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/container-and-patch-workflows.md) (485 lines, 52.4 KB, publication guard: PASS / exit 0).
+- **Core Findings:**
+  1. *Cattle vs Pets Paradigm:* Production coding agents (OpenHands, Devin, SWE-bench) operate on disposable ephemeral containers/microVMs emitting unified patches (`patch.diff`), rejecting persistent remote Git Smart HTTP branch tracking.
+  2. *Security & Egress Lockdown:* Enterprise egress controls (SOC2/ISO27001) block outbound edge HTTPS traffic; zero-trust isolation relies on zero-credential patch synthesis scanned out-of-band, rejecting untrusted write bearer tokens inside LLM environments.
+  3. *Multi-Agent Swarm Realities:* Fleets coordinate via Single-Synthesizers or local worktree plumbing (`git merge-tree`), avoiding remote HTTP daemons and $O(N^2)$ continuous trial-merges.
+  4. *Addressable Market Bounded:* The viable niche for Agent Branches is strictly bounded to distributed heterogeneous workers with cheap tests and permissive InfoSec. Standard enterprise recommendation is Model A (ephemeral sandboxes + patch export + PR merge queues).
+- **Task Updated:** `container-and-patch-workflows` marked `done` in `coordination/TASKS.json`.
+- **Review Task Registered:** `container-and-patch-review` in `coordination/TASKS.json`.
+- **Independent Review Subagent Launched:** `container-patch-reviewer` (`cfdf7858-c984-411a-a354-3c05e68f3b30`) in `coordination/TEAM-REGISTRY.json`.
+- **Scratch Workspace:** `.local/scratch/container-patch-review/` (mode 0700, strictly $\le 512$ MB, zero net `/tmp` growth).
+- **Target Deliverable:** [`research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md).
 - **Invariants Maintained:** Zero cargo/rustc invocations, zero derived counter emissions, cooperative 1500 MB memory slice, no manufactured scale-up tests.
 
 
