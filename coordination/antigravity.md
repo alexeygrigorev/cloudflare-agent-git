@@ -1793,6 +1793,57 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Six shortlist gates remain **HELD**.
   - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
 
+## 63. Concurrent Two-Actor Dogfood Adoption Completed, L3 Radar Conflict Attestation & ZCode Recovery Ingestion (C1560–C1563)
+
+- **Milestone Delivery: Concurrent Two-Actor Dogfood Adoption (Report Landed):**
+  - Report: [`research/antigravity/dogfood/CONCURRENT-TWO-ACTOR-ADOPTION-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/dogfood/CONCURRENT-TWO-ACTOR-ADOPTION-REPORT.md).
+  - Executed by: Native Gemini harness subagents under `antigravity-head` (`46fdb644`) parent authority:
+    - **Actor Alpha** (`actor-alpha-0002`): Context ID `97416e08-9f95-44e1-a1f9-92ac52d1ee4b`.
+    - **Actor Beta** (`actor-beta-0001`): Context ID `27982fc1-9d7e-405e-aa89-1eb6b387c956`.
+    - Disclosed: Native subagent helpers operating under parent session authority, not fabricated ZCode or aplexer IDs.
+  - Runtime Services: Real Git Smart HTTP sidecar daemon (port `48767`) and real Node coordinator daemon (port `46583`) backed by `FileCoordinationStore` on scratch `store.json`.
+  - Infrastructure Failure & Repair Analysis:
+    - Initial `Connection refused` (ECONNREFUSED) occurred when child processes were terminated upon subshell completion; resolved via persistent AGY supervisor.
+    - Initial `POST /tasks` returned HTTP 400 (`base_sha ... not found in canonical history`) because `prototype/src/local/main.ts:39` checks `COORDINATOR_STATE_FILE`, whereas the launch script passed `COORDINATION_STORE_PATH`, falling back to legacy `local-coordinator-state.json`. Repaired by explicitly passing `COORDINATOR_STATE_FILE=.local/scratch/concurrent-two-actor/state/store.json`.
+    - Disclosed truthfully as operational infrastructure evidence; not scored as product defects.
+  - Concrete Maintenance Implementations (Zero Synthetic Doubles):
+    - **Actor Beta:** Added `calculate_jitter(attempt, base_delay, max_delay)` helper to `AgentBranchesClient` and `test_22_calculate_jitter` in `tests/test_client.py` (**21/21 PASS**).
+    - **Actor Alpha:** Added `inspect_token_metadata(token)` helper to `AgentBranchesClient` and `test_21_inspect_token_metadata` in `tests/test_client.py` (**21/21 PASS**).
+  - Authenticated Git Smart HTTP Transport & Push Receipts:
+    - **Actor Beta:** Pushed commit `d56689841b78ec0db77e66eb7934f042751c142b` (tree `b267cb0df38d455968db3efcf7df8c02d15adf39`) via Smart HTTP with percent-encoded token; status 0 in ~130ms; post-receive webhook latency 1.2ms.
+    - **Actor Alpha:** Pushed commit `9ec79dbcc5eb8be117a941c40e98deddc80e3c2f` (tree `e39fdcac9d5169cf887ed40a997e60bcfea648bc`) via Smart HTTP with percent-encoded token; status 0 in ~140ms; post-receive webhook latency 1.5ms.
+  - Mutual Read Authorization Isolation:
+    - Actor Alpha reading `task-0002` (own task) $\rightarrow$ **HTTP 200 OK** (head matches `9ec79db...`).
+    - Actor Alpha reading `task-0001` (Beta task) $\rightarrow$ **HTTP 403 Forbidden** (`"forbidden: this token belongs to actor-alpha-0002, not actor-beta-0001"`).
+    - Actor Beta reading `task-0001` (own task) $\rightarrow$ **HTTP 200 OK** (head matches `d566898...`).
+    - Actor Beta reading `task-0002` (Alpha task) $\rightarrow$ **HTTP 403 Forbidden** (`"forbidden: this token belongs to actor-beta-0001, not actor-alpha-0002"`).
+
+- **L3 Advisory Radar Attestation on Real Concurrent Vector:**
+  - Head vector evaluated: `{actor-alpha-0002: 9ec79dbcc5eb..., actor-beta-0001: d56689841b78...}`.
+  - Command: `PYTHONPATH=/home/alexey/git/agent-branches-l3-radar python3 -m radar.engine --repo ... --base ec5030cf... --heads ... --test-cmd "python3 -m unittest -v tests/test_client.py" --force-test --l1`.
+  - Evidence: `git-merge-tree` detected authentic textual merge conflict in `agent_branches/client.py` and `tests/test_client.py` due to overlapping footer method insertions.
+  - CONTRACT v0.1 check payload submitted to coordinator `POST /checks` with runner token: **HTTP 200 accepted** (`stale: false`, `accepted: 1`).
+  - Coordinator registered active warning `warn-1` for pair `[actor-alpha-0002, actor-beta-0001]`.
+
+- **Security & Governance Disclosures (Codex C1562 / C1563):**
+  1. *Token Metadata Boundary:* `inspect_token_metadata` is strictly a client-side formatting inspection utility; it is **never** an authorization authority.
+  2. *Backoff Jitter vs Batch Retry:* `calculate_jitter` provides bounded backoff calculation; it does **not** rescue the held commit `7de6836` batch retry policy or justify an atomic endpoint without consensus.
+  3. *Concurrency Transport vs Uptake Scope:* Demonstrates authentic concurrent agent coding, authenticated transport, post-receive hook propagation, and advisory radar conflict detection; not scored as consumer adoption.
+  4. *Memory Accounting Truth:* Kernel `memory.max` is `max` in `session-8309.scope`; 1500M is an agreed cooperative process convention. Scratch disk usage 52 MB.
+
+- **ZCode Recovery Executor (`4abc725c`) Ingestion (Commits `3409907` and `4811d38`):**
+  - Report: [`research/antigravity/recovery/ZCODE-RECOVERY-AUTH-MATRIX-DB4F6A8.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/ZCODE-RECOVERY-AUTH-MATRIX-DB4F6A8.md) (commit `3409907`).
+  - Causality correction: Commit `4811d38` on `PROTOTYPE-RECOVERY-REPORT.md` (incident causality corrected to observed-unknown per C1493, scratch bytes measured).
+  - Receipts: Remote ref `origin/proto/integration-auth-matrix` resolves to `db4f6a8c398d` exact; tree hash `f31c6865d278` matches exact; `git fsck --full` exit 0; Python 65/65 tests pass, Vitest 91/91 tests pass. Git bundle created (`.local/checkpoints/proto-integration-auth-matrix-db4f6a8.bundle`, 6,879,109 bytes).
+  - Registry updated: `zcode-recovery-test-c1554` marked `completed` (`RESTORATION_VERIFIED_PASS`).
+
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy strictly **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
+
 
 
 
