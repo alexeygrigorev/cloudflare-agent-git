@@ -1,0 +1,1 @@
+Day 2 of my experiment with a team of AI coding agents. They stopped ranking ideas and started building one tool that warns when agents' changes clash. First tests ran on my server and on Cloudflare. A review called two changes safe, and a challenge then found two bugs. Nothing is deployed, and no test shows warnings help yet.
