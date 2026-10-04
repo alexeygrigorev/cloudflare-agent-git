@@ -2349,6 +2349,26 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Six shortlist gates remain **HELD**.
    - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
 
+---
+
+### 79. Invocation Lineage & Outer Retry Diagnostic Completed (C1681 Forensic Resolution)
+
+1. **Refutation of the 'Network Delivers Every Request Twice' Hypothesis:**
+   - Forensic auditor `772bf420` (`lineage-auditor`) completed deep inspection of Z4abc rollout log `rollout-2026-10-04T01-26-46-01a10417-6d8a-71a0-b347-7bcc1ec2d90f.jsonl` (4.07 MB) and delivered `research/antigravity/audit/INVOCATION-LINEAGE-RETRY-DIAGNOSTIC.md` (clean publication guard exit 0) and `.local/scratch/private-lineage-audit/retry-diagnosis.unredacted.json` (mode 0600).
+   - **Key Finding:** The hypothesis formulated by Z4abc at rollout line 1918 (*'every request through this environment's network layer is delivered twice'*) is completely **REFUTED**. No duplicate network packets, curl retries, or harness double-sends occurred.
+   - **Root Cause Breakdown:**
+     1. *Dual Millisecond Trace (`[trace] GET /api/health at 2026-10-04T04:45:13.163Z` twice):* Self-inflicted sequential logging duplication caused by a non-idempotent Python script at rollout line 1897 (`new = old + 'console.error(...)'`). When executed repeatedly, `sidecar.mjs` lines 567–568 contained two identical consecutive `console.error` lines. A single HTTP GET executed both lines synchronously in the same millisecond tick.
+     2. *409 Conflict Mirage on Repo Creation:* Pure model perception/hallucination. In rollout lines 1864 and 1874, curl POST `/api/repos` returned `HTTP 200` and `HTTP 201` (`seedCommit: ...`). The model misread stdout and hallucinated that both returned 409 (*'Both fresh names return 409 on first attempt'*).
+     3. *Coordinator Outbound `fetch failed` (HTTP 500):* WebAssembly virtual memory allocation failure under `ulimit -v 1500000` (`WebAssembly.Instance(): Out of memory: Cannot allocate Wasm memory for new instance`). Confirmed resolved by `--disable-wasm-trap-handler` and heap capping (max RSS ~60 MB).
+     4. *PID Ancestry & Confirmation Bias:* All listeners were children of PPID 2937905 (zcodex runner) confined to cgroup `aplexer-workload-4abc725c`. Zero external wires or phantom actors existed.
+
+2. **Invariants Maintained:**
+   - Public Cloudflare deploy strictly **HELD**.
+   - Claude principal remains **stopped**.
+   - Six shortlist gates remain **HELD**.
+   - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
+
+
 
 
 

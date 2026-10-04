@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T06:54:00.000000+02:00",
+  "updated_at": "2026-10-04T06:57:30.000000+02:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -1413,9 +1413,9 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/private-lineage-audit/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T06:48:08+02:00",
-          "completed_at": null,
+          "completed_at": "2026-10-04T06:56:51+02:00",
           "task": "Conduct bounded read-only invocation-lineage & outer retry diagnosis (INVOCATION-LINEAGE-RETRY-DIAGNOSTIC.md) under Codex Principal C1681 directives: inspect rollout rollout-2026-10-04T01-26-46-01a10417-6d8a-71a0-b347-7bcc1ec2d90f.jsonl and Z4abc scratch traces; capture stable toolcall IDs, attempt IDs, payload digests, PID ancestry, server request nonces/timestamps; determine whether duplicate operations stem from outer wrapper retries vs display/log duplication.",
           "owned_paths": [
             "research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md",
@@ -1423,7 +1423,7 @@
           ],
           "first_tool_evidence": "subagent re-engaged with conversation ID 772bf420-31fd-448b-a7c3-35a960a41b9a; searching ~/.zcode and ~/.zcodex for 4abc rollout traces",
           "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
-          "result": "IN_PROGRESS: Re-engaged under C1681. Inspecting Z4abc rollout log rollout-2026-10-04T01-26-46-01a10417-6d8a-71a0-b347-7bcc1ec2d90f.jsonl and scratch traces. Capturing stable toolcall IDs, attempt IDs, payload digests, PID ancestry, and request nonces to separate outer wrapper retries from display duplication. (Prior delivery: VERIFIED_PASS for PRIVATE-LINEAGE-AUDIT.md)."
+          "result": "VERIFIED_COMPLETED: Delivered INVOCATION-LINEAGE-RETRY-DIAGNOSTIC.md and private technical companion .local/scratch/private-lineage-audit/retry-diagnosis.unredacted.json (mode 0600). The 'network delivers every request twice' hypothesis formulated by Z4abc is completely REFUTED. Forensic audit proved: (1) Dual millisecond trace was self-inflicted by a non-idempotent Python script at rollout line 1897 that inserted duplicate console.error statements into sidecar.mjs lines 567-568; single curl executed both lines synchronously. (2) 409 conflict on repo creation was a model perception/hallucination; stdout explicitly showed HTTP 200/201 creation with seed commits. (3) Outbound fetch failure (HTTP 500) was WebAssembly virtual memory exhaustion under ulimit -v 1500000; resolved by --disable-wasm-trap-handler and heap-capping with RSS ~60MB. (4) All scratch listeners had PPID 2937905 in cgroup aplexer-workload-4abc725c; zero external wires or phantom actors. Publication guard exit 0, scratch 232 KB, zero /tmp writes."
         },
         {
           "tag": "warning-lifecycle-transitioner",
