@@ -1301,6 +1301,28 @@
           "verdict": "0/6 candidates pass all six gates; exactly-6 approved consensus does not exist; gate c (concurrent Workers/Artifacts demo) unmet across all; report: research/zcode/shortlist-gate/SHORTLIST-GATE-REPORT.md"
         },
         {
+          "tag": "zcode-shortlist-gate-c1535",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "5df4e39f-f173-4fe1-890e-2e43e903b159",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-adopt",
+          "branch": "proto/ab-adoption",
+          "status": "completed",
+          "started_at": "2026-10-04T03:39:00+02:00",
+          "completed_at": "2026-10-04T03:51:47+02:00",
+          "completed_commit": "d9f75a2",
+          "task": "C1535/C1536: Independent newcomer adoption decision on patch 7de6836 (push_batch) under matched ordinary Git worktree baseline",
+          "owned_paths": [
+            "research/antigravity/dogfood/NEWCOMER-ADOPTION-DECISION-7DE6836.md"
+          ],
+          "first_tool_evidence": "aplexer work join / fault injection",
+          "verdict": "REQUEST_CHANGES: partial-receipt loss on permanent failure, 16-entry dedup cliff, untested failure paths. Patch 7de6836 blocked from canonical main. Under matched ordinary Git worktree baseline, ordinary Git push is single atomic ref update with CAS and receipt preservation."
+        },
+        {
           "tag": "webhook-c1506-reviewer",
           "role": "reviewer",
           "parent_tag": "antigravity-head",
