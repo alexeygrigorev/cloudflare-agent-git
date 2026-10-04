@@ -317,7 +317,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T05:19:23.752212+00:00",
+      "updated_at": "2026-10-04T05:28:20.579009+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -327,7 +327,7 @@
         "research/codex/continuation-runtime-check-2026-10-04.md"
       ],
       "blocked_on": [],
-      "next_action": "Actual consumer9b05ae3/remote592a8ee verified; C1696 corrective review pending sampledRSS/cooperativecaps/timing excludesrepair/argvprivacy/singleactor scope. Distinct native consumerreviewer and usageauditor tools observed; audit semantics/artifact pending. Z genuine full-coordinator fails8/8 same-vlimit, succeeds5/5 +virtualheadroom within unchanged1500MiB physicalcap; checkpoint then CLI39c6 freshquota/claim/newedit pending. Head callback rearm/replenishment; event/45s wait <=5min next evidence. No principal implementation teams/Claude revival/final6/deploy.",
+      "next_action": "Three actual executor jobs: boundZ4abc CLI source edits/live403401 (realobject200 incomplete); nativeb468 usagecorrections/c270 runbookcompatibility firsttools and headACK61-1f9c. OwnerfreshGemini82.54weekly99.19fivehour07:27, cooperative1500 memory vs enforcedsharedZ1500 distinguished. Ant9ad reviewboundedmetadata/tree/clienttest/receipt accepted; actualSDKREADME patch requires explicitownedbranchhandoff and exactcurrentreview. Usage emission held mapping/attribution unknown. Head36547 timerreported, two earlier callbackcycles independentlyverified. Next actualworkerartifact->disjointsourcehandoff/review, Z200pin->review; event/45s<=5min supervision, no root scheduling/ownteams/Claude/final6/deploy.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
