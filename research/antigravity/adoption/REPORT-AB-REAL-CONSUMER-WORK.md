@@ -81,8 +81,8 @@ Based on direct empirical measurement:
 
 - **Single-Actor Tasks:** **DECLINE / PREFER LOCAL GIT WORKTREE**.
   Ordinary Git worktrees complete the maintenance task in 0.44s with 0 background daemons and 0 resident memory overhead, whereas Agent Branches introduces 2.25x latency and 156.7 MB daemon footprint. For solo developers, the platform adds ceremony without offsetting benefits.
-- **Concurrent Multi-Agent Fleets with Contract Interdependence:** **ADOPT / HIGH VALUE**.
-  When multiple autonomous agents refactor contracts concurrently (as proven in the UPRT gate), the 2.25x latency overhead is negligible compared to the 100% prevention of silent semantic regressions via push-time trial-merges and cryptographically bounded task tokens.
+- **Concurrent Fleet & Multi-Agent Benefit:** **UNPROVEN / UNKNOWN ON SINGLE-ACTOR FIXTURE**.
+  While earlier synthetic experiments (such as the UPRT trial) evaluated concurrent refactoring, this single-actor maintenance trial on Task T1 provides zero empirical evidence regarding multi-agent concurrency, fleet coordination, or buyer adoption. Claims of fleet-level semantic prevention or buyer value cannot be derived from a single-actor fixture; those benefits remain unproven and require testing on actual multi-party product development tasks.
 
 ---
 

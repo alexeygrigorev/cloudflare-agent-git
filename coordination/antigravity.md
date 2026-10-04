@@ -3722,3 +3722,38 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
   - Strictly **0** tokens emitted to `usage-events.jsonl` (counter emission held).
   - Scratch memory and disk budgets respected (scratch < 2 MB, 63 GB free on root, 32 GB RAM available).
   - Clean publication guard across all landed deliverables (PASS / exit 0).
+
+
+---
+
+## 116. Single-Actor Dogfooding Calibrated, Tasks S & M Delegated, and Dashboard Snapshot Review Launched
+
+- **Date:** 2026-10-04T14:55:00+02:00
+- **Directives:** Codex Principal C1444, C1448, C1452, C1454 directives, Direct Human Reset, and User Messages 26/31.
+- **Coordination Messages Handled:**
+  - `01a106f5-4b0b-7701-a252-0a5040f3a90a` (Codex Principal C1448 dispatch): Acknowledged.
+  - `01a106f8-effb-7760-b462-1765f209993a` (Codex Principal C1452 course correction): Acknowledged.
+  - `01a106fa-2e29-7901-a4a4-17d758ffa309` (Codex Principal C1454 action checkpoint): Acknowledged. Sent detailed execution update via `01a106fa-aea3-7db2-a5d9-24e8602a8ef1`.
+- **Dogfooding Calibration & Scope Correction (Task `ab-real-consumer-work`):**
+  - Updated [`REPORT-AB-REAL-CONSUMER-WORK.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/REPORT-AB-REAL-CONSUMER-WORK.md) and [`REV-AB-REAL-CONSUMER-WORK.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md).
+  - Corrected as-of timestamp to actual execution time `12:10 UTC`.
+  - Re-anchored report and review strictly to measured single-actor facts (0.441s vs 0.994s timing, 14/14 tests, 156.7 MB daemon RSS, exact `b1a84d` final tree).
+  - Explicitly struck down unmeasured claims attributing fleet-wide 100% semantic prevention to the single-actor T1 maintenance task; marked concurrent fleet and buyer adoption benefits strictly **UNKNOWN / UNPROVEN** on single-actor fixtures.
+  - Re-verified clean publication guard (`publication_guard.py` exit code 0).
+- **Task (S) — Supervision Classifier Offline Repro & Candidate Fix Delegated:**
+  - Delegated to independent subagent `supervision-classifier-repro-worker` (`74cf74d1-08ba-4e9c-b8d9-adb680b48895`).
+  - Target files: `tests/test_supervision_classifier.py`, `research/antigravity/tooling/classifier_candidate.py`, and `research/antigravity/reviews/REV-SUPERVISION-CLASSIFIER-REPAIR.md`.
+  - Mission: Reproduce offline native NOTREADY false-positive on Codex interactive terminal (status bar text `GPT-6.1-Sol`, `Context % left`, `weekly limit`, shortcuts/warnings misclassified as unsubmitted drafts), reproduce dashboard idle contradicted by later PTY redraws, preserve real draft fail-closed protection, and formulate candidate source fixes under strict human no-Rust-build hold.
+- **Task (M) — Multi-Workspace Metrics Collector Extension Delegated:**
+  - Delegated to independent subagent `multiworkspace-collector-worker` (`c3556ba9-e36e-4ff5-873d-f71083da5e1d`).
+  - Target files: `research/antigravity/tooling/collect_multiworkspace.py`, `tests/test_collect_multiworkspace.py`, and `research/antigravity/recovery/REPORT-MULTIWORKSPACE-COLLECTOR-EXTENSION.md`.
+  - Mission: Resolve `scripts/metrics/collect.py` single-workspace `ROOT` filter defect; extend collector coverage across all 4 product workspaces (`/home/alexey/git/{cloudflare-agent-git,agent-branches,agent-dashboard,agent-quota-launcher,agent-coordination}`); reconcile `workspace` + `generation` + `role` / `conversation_id` / `parent`; ensure unknown usage remains null, prevent cache double-counting, and ensure zero retroactive fake 24h data.
+- **Task (D) — Agent Dashboard 44-Test Snapshot Read-Only Audit Launched:**
+  - Delegated to independent subagent `dashboard-44-snapshot-reviewer` (`c6ee2909-a281-43f2-8c1c-fe50bebaf264`).
+  - Leased review path: Declared `aplexer work join /home/alexey/git/agent-dashboard --mode review`.
+  - Strictly read-only audit: zero writes to dashboard backend; exact per-file SHA256 manifest; independent verification of 44 tests in `research/antigravity/reviews/REV-DASHBOARD-44-TEST-SNAPSHOT.md`.
+- **Invariants Maintained:**
+  - Strictly **0** cargo/rustc compiler invocations under human hold.
+  - Strictly **0** tokens emitted to `usage-events.jsonl` (counter emission held).
+  - Zero writes to peer-owned dashboard files.
+  - Scratch memory and disk budgets respected (<2 MB in scratch, 63 GB free on root, 32 GB RAM available).

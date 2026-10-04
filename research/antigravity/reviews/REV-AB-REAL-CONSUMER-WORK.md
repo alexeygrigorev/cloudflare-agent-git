@@ -2,7 +2,7 @@
 
 - **Reviewer:** Independent Consumer Dogfooding Reviewer (tag: `consumer-dogfooding-reviewer`).
 - **Dispatched by:** `antigravity-head` (`46fdb644`), under Direct Human Reset directives (`experiment/human-delivery-reset-20261004.txt`), User Messages 26/31, and `coordination/OPERATING-MODEL.md`.
-- **As-of:** 2026-10-04 12:20 UTC (14:20 CEST).
+- **As-of:** 2026-10-04 12:10 UTC (14:10 CEST).
 - **Target Report Audited:** [`research/antigravity/adoption/REPORT-AB-REAL-CONSUMER-WORK.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/REPORT-AB-REAL-CONSUMER-WORK.md).
 - **Target Raw Receipts:** [`.local/scratch/ab-dogfood/results.json`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/ab-dogfood/results.json).
 - **Target Repository & Subsystem:** `demo-target/` in standalone repository `/home/alexey/git/agent-branches` (Cloudflare-Worker-style shortlinks service).
@@ -28,7 +28,7 @@ The dogfooding trial evaluated the end-to-end consumer workflow for maintaining 
    - Post-Task T1 implementation unit tests: **14 / 14 tests PASS** (0 failures, 0 timeouts).
    - Final Git tree SHA: **`b1a84dacc47f79afafb327d9f7667fe41c565f71`** — bit-for-bit identical to both Arm A and Arm B outputs.
 3. **Developer Ergonomics & Friction Analysis:** The 4 friction points identified in Section 4 (nested fork structure, task key normalization, coordinator state persistence, and credential exposure mitigation) were verified through code analysis of `AgentBranchesClient`, `coordinator.ts`, and `main.ts`. Each reflects an authentic integration challenge encountered when using the standalone platform.
-4. **Unsteered, Intellectually Honest Adoption Verdict:** The report avoids marketing hyperbole by explicitly **declining** Agent Branches for single-actor developer workflows (where Git worktree is 2.25x faster with 0 background daemons), while **recommending** adoption for concurrent multi-agent fleets with contract interdependence (where push-time trial-merges and bounded tokens prevent semantic breakage).
+4. **Unsteered, Intellectually Honest Adoption Verdict:** The report avoids marketing hyperbole by explicitly **declining** Agent Branches for single-actor developer workflows (where Git worktree is 2.25x faster with 0 background daemons), and notes that concurrent multi-agent and buyer fleet benefits remain **unknown and unproven** on single-actor fixtures such as Task T1, requiring evaluation on actual multi-party development tasks.
 
 **Verdict: ACCEPT (FULL ENGINEERING ACCEPTANCE).** The platform consumer dogfooding deliverable is verified as rigorous, authentic, reproducible, and compliant with all project and safety invariants.
 
@@ -215,14 +215,14 @@ The reviewer conducted an in-depth audit of the four developer ergonomics and fr
 Section 5 of `REPORT-AB-REAL-CONSUMER-WORK.md` presents a two-sided adoption policy:
 1. **Single-Actor Tasks:** **DECLINE / PREFER LOCAL GIT WORKTREE**.
    - *Rationale:* Git worktree executes in 0.44s with 0 background daemons and 0 MB resident memory overhead. Agent Branches introduces 2.25x wall-clock latency (0.99s) and 156.66 MB daemon memory. For a single developer or single agent, the coordination platform provides no tangible benefit and adds operational ceremony.
-2. **Concurrent Multi-Agent Fleets with Contract Interdependence:** **ADOPT / HIGH VALUE**.
-   - *Rationale:* When multiple autonomous agents refactor contracts concurrently across the same codebase (as proven in the UPRT gate), the 2.25x latency overhead is negligible compared to the 100% prevention of silent semantic regressions via push-time trial-merges and cryptographically bounded task tokens.
+2. **Concurrent Multi-Agent Fleets & Buyer Workflows:** **UNPROVEN / UNKNOWN ON SINGLE-ACTOR FIXTURE**.
+   - *Rationale:* While earlier synthetic trials (like the UPRT gate) evaluated concurrent refactoring, this single-actor maintenance task on Task T1 provides no evidence regarding fleet coordination or buyer adoption. Claims of fleet-level semantic prevention or buyer value cannot be derived from single-actor fixtures. Real adoption must be evaluated on actual multi-party product development tasks.
 
 ### Reviewer Assessment:
 - The adoption policy is **rigorous, sober, and unsteered**.
 - It directly contradicts any commercial pressure to claim universal superiority or mandatory adoption for all workflows.
 - It appropriately categorizes Agent Branches as a **multi-agent coordination platform**, rather than a replacement for local developer Git tooling.
-- The conclusion is fully supported by the empirical data.
+- It honestly boundaries claims to what the single-actor trial actually measured (0.44s vs 0.99s, 14/14 tests, bit-for-bit tree parity) without extrapolating fleet-wide claims.
 
 ---
 
