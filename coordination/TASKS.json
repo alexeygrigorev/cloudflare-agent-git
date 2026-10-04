@@ -286,14 +286,14 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T03:59:10.251668+00:00",
+      "updated_at": "2026-10-04T04:06:21.606671+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
         "research/codex/publication-guard-review-2026-10-04.md"
       ],
       "blocked_on": [],
-      "next_action": "C1637/38 bounded actual db69/e3 guard adoption after817 re-review; explicit own reports CLI0. Verify head ACK and Z4abc committed component first-use report (mock server, not real Node/sidecar adoption); e681 real demo/runtime first artifact and independent source-pinned review. Replenish released head-owned workers with useful disjoint tasks and fresh quotas/resources; record next actual timer-to-inbox/tools cycle. Event or <=5min monitoring; no own implementation teams. Claude stopped; final6/deploy HELD.",
+      "next_action": "C1645 genuine Ant ACK/e38 registry; observed real inbox->ACK->fetch->two review launch cycle. de173 actual demo provenance/mutation first tools and18d actual protected SDK ack-auth first tools; Z4abc report correction third actual job. Event/<=5min inspect first pinned reviewer artifacts, arrange head-owned correction/independent rerun then real caller adoption; replenish released Z with fresh quotas/resource reservations. Stale Z640/Grok completed, absent Bunny/old Muse require head recovery/healthy alternative coverage. No principal implementation teams; Claude stopped/final6/deploy HELD.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
