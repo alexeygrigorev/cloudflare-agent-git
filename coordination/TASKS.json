@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T15:45:15.251346+00:00",
+  "updated_at": "2026-10-04T16:08:58.395203+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -457,7 +457,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T15:45:15.251346+00:00",
+      "updated_at": "2026-10-04T16:08:58.395203+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -478,10 +478,10 @@
         "research/codex/public-update-admission-20261004.md"
       ],
       "blocked_on": [],
-      "next_action": "C1661 publication088a ACK/actual build.py reads: curate material findings only, omit routine public cards, document authoring; inspect corrected source/live HTML. C1662 SDK source duplicate-effect challenge accepted Ant: existing4b81 worker/390d reviewer commit-then-timeout/fail-closed correction; reconcile premature done state. Native readiness Rev3 source-only held, protected menus/drafts preserved.",
+      "next_action": "Publication C1661/C1668 complete: actual live six finding cards and inside-report six verified contributors, unchanged title; documented58544f9. Await Ant existing reviewer390d final exactpin f4f6c3e mutatingfailclosed verdict and head-owned next useful task. Reject unverified20/21 headcounts, keep nativewake/QLmenu/typedSSH/Windows/shortlist holds.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
-      "continuation_trigger": "Existing publication head corrected diff/tests/live output -> own editorial acceptance. Existing SDK head corrected patch+independent negative verdict -> own review and next useful head task. Genuine native inbox/event wait at boundaries, no root scheduler prerequisite or implementation team."
+      "continuation_trigger": "Genuine Ant finalpin reviewer receipt -> principal source/verdict challenge and next acknowledged head task; publication only on material findings. Maintain actual native inbox supervision at natural boundaries, no implementation team or protected composer input."
     },
     {
       "id": "a09-incumbent-check",
