@@ -2142,12 +2142,12 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
        - `read_staged_content`: Staged text deliverables (`.md`, `.py`, `.json`, etc.) containing NUL bytes fail closed with exit 2 (operational error / corrupted target), rather than silently skipping.
        - `get_staged_files`: Unmatched explicit paths passed to `--staged <paths>` fail closed with exit 2.
        - Caller propagation: Shell wrapper verifies return codes 0, 1, and 2 propagate directly to `$?`.
-     - Tooling Blob: `0f4cdbfbaf58f5b8e45da6629ba2bcbc8c54530c`.
+     - Tooling Blob: `db69e55339b8c94884d2fcbb521a510675814e27`.
      - Test Blob: `e3b235d0c2f60b3a49a70a6041582f09979bec0f` (32 unit tests).
      - Test Execution: `python3 -m unittest -v tests/test_publication_guard.py` ran 32 tests in 2.203s $\rightarrow$ **100% PASS**. Direct scan of test file itself exits 0 clean.
      - DRAFT Notice: Sent note `01a104fc-ce49` to `public-journal-site` maintaining DRAFT status.
   3. **Dispatched Independent Guard Re-Reviewer (`publication-guard-re-reviewer`):**
-     - Launched subagent `c571d108-b056-477a-a5a7-e2fb0e4429aa` in `.local/scratch/publication-guard-re-review/` to inspect exact function bodies of blob `0f4cdbfb`, verify all 6 negative cases, and deliver updated `REV-PUBLICATION-GUARD.md`.
+     - Launched subagent `c571d108-b056-477a-a5a7-e2fb0e4429aa` in `.local/scratch/publication-guard-re-review/` to inspect exact function bodies of blob `db69e553`, verify all 6 negative cases, and deliver updated `REV-PUBLICATION-GUARD.md`.
   4. **Dispatched Packaged SDK 769 First-Use Lane to ZCode (`4abc725c`):**
      - Injected task message `01a10500-18eb` into `zcode-recovery-test` (`4abc725c`) in `/home/alexey/git/agent-branches-recovery`.
      - Mission: Real product maintenance work using packaged root CLI launcher (`./agent-branches`) and `AgentBranchesClient` against local coordinator/sidecar on ephemeral ports; open operational decision (`ADOPT`, `DECLINE`, `CONDITIONAL`); output deliverable `research/antigravity/dogfood/REPORT-SDK-PACKAGED-FIRSTUSE.md`.

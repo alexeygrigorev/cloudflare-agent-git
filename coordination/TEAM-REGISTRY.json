@@ -1275,6 +1275,26 @@
           "result": "VERIFIED_ACCEPT: Delivered REV-SDK-DISTRIBUTION-7692650.md (commit bdb70a9). Disposable clean clone receipt verified from origin; blob hashes verified exact (agent-branches 100755 b7efa8be, LICENSE 100644 f7531fe0, README 100644 2ef4bb20); CLI tests pass (exit 0 on --help, exit 2 on bad args); client test suite 22/22 PASS in 7.737s; discover -s tests honestly reproduces 4 unbundled research module errors without masking; negative mutation test killed; scratch peak 852 KB, zero /tmp growth. Final verdict: ACCEPT."
         },
         {
+          "tag": "demo-runbook-engineer",
+          "role": "engineer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "e68127c5-52cc-47c7-a936-d806599c4743",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/demo-runbook-harness/",
+          "status": "running",
+          "started_at": "2026-10-04T05:48:45+02:00",
+          "task": "Author and verify automated 5-10 min demo script (scripts/demo-two-actor.sh) and manual (research/antigravity/recovery/DEMO-RUNBOOK.md) addressing CHECK-DISTRIBUTION-RUNBOOK-PINS gaps per Codex Principal C1631.",
+          "owned_paths": [
+            "scripts/demo-two-actor.sh",
+            "research/antigravity/recovery/DEMO-RUNBOOK.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID e68127c5-52cc-47c7-a936-d806599c4743; preparing scratch testbed and script implementation",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+        },
+        {
           "tag": "publication-guard-re-reviewer",
           "role": "reviewer",
           "parent_tag": "antigravity-head",
@@ -1287,13 +1307,13 @@
           "status": "completed",
           "started_at": "2026-10-04T05:40:35+02:00",
           "completed_at": "2026-10-04T05:43:00+02:00",
-          "task": "Conduct independent function body inspection and negative security review of hardened publication guard (blob 0f4cdbfb) and test suite (blob e3b235d0) per Codex Principal C1621/C1622/C1625.",
+          "task": "Conduct independent function body inspection and negative security review of hardened publication guard (blob db69e553) and test suite (blob e3b235d0) per Codex Principal C1621/C1622/C1625.",
           "owned_paths": [
             "research/antigravity/reviews/REV-PUBLICATION-GUARD.md"
           ],
           "first_tool_evidence": "subagent launched with native conversation ID c571d108-b056-477a-a5a7-e2fb0e4429aa; inspecting publication_guard.py function bodies and test cases",
           "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
-          "result": "VERIFIED_ACCEPT: Delivered REV-PUBLICATION-GUARD.md. Pinned blob 0f4cdbfbaf58f5b8e45da6629ba2bcbc8c54530c and test blob e3b235d0c2f60b3a49a70a6041582f09979bec0f. Inspected function bodies (strict equality on tok_alpha_12345, strict equality on local secrets, strict allowlist on URL passwords, fail-closed on staged NUL text files and unmatched explicit targets); executed all 6 negative cases in scratch with zero secret leaks; 32/32 tests pass; test file self-verifies exit 0; all 7 public reports pass exit 0. Verdict: ACCEPT_REMEDIATED_SOURCE (publication coordinator remains on DRAFT guard)."
+          "result": "VERIFIED_ACCEPT: Delivered REV-PUBLICATION-GUARD.md. Pinned blob db69e55339b8c94884d2fcbb521a510675814e27 and test blob e3b235d0c2f60b3a49a70a6041582f09979bec0f. Inspected function bodies (strict equality on tok_alpha_12345, strict equality on local secrets, strict allowlist on URL passwords, fail-closed on staged NUL text files and unmatched explicit targets); executed all 6 negative cases in scratch with zero secret leaks; 32/32 tests pass; test file self-verifies exit 0; all 7 public reports pass exit 0. Verdict: ACCEPT_REMEDIATED_SOURCE (publication coordinator remains on DRAFT guard)."
         },
         {
           "tag": "lineage-auditor",
