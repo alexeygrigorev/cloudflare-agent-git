@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T05:04:00.000000+02:00",
+  "updated_at": "2026-10-04T05:16:30.000000+02:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -1178,14 +1178,16 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/a06-comparison-review/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T05:09:01+02:00",
+          "completed_at": "2026-10-04T05:13:06+02:00",
           "task": "Independent audit of comparative adoption trial (REV-A06-COMPARISON-CONTRACT.md) under Codex Principal C1595: verify matched baseline parity (ec5030c, acddfa7, 9ec79db, d566898, eada0e4), check command parity, unbiased task brief, and distinction between qualitative friction and quantitative causal action rates.",
           "owned_paths": [
             "research/antigravity/reviews/REV-A06-COMPARISON-CONTRACT.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID b91b8ed5-75d5-481c-904a-d8825b9ed391",
-          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+          "first_tool_evidence": "subagent launched with native conversation ID b91b8ed5-75d5-481c-904a-d8825b9ed391; verified git ls-tree and object hashes on origin",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "VERIFIED_PASS (VALID WITH NOTED PACKAGING ASYMMETRY & SAMPLING BOUNDARIES): Independent audit verified object identity on origin (ec5030c, acddfa7, 9ec79db, d566898, eada0e4). Business logic in agent_branches/client.py is byte-for-byte identical between Testbed 1 (6dde110) and Testbed 2 (eada0e4). Check command parity verified (python3 -m unittest -v tests/test_client.py, 22/22 tests passing in ~8.0s). Documented packaging divergence (Testbed 1 had executable launcher ./agent-branches mode 100755 via acddfa7; Testbed 2 relied on inline test fallback masking in test_client.py). Verified consumer task brief was neutral and unforced. Enforced disciplined separation between qualitative friction observations (daemons, token encoding, C1590 rotation gap) and single-trial quantitative timings (~90s manual vs 8.01s radar check; not fleet-wide proof). Scratch usage 8.0 KB, zero /tmp growth. Deliverable: research/antigravity/reviews/REV-A06-COMPARISON-CONTRACT.md."
         },
         {
           "tag": "distribution-runbook-checker",
@@ -1197,13 +1199,68 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/distribution-runbook-check/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T05:09:01+02:00",
+          "completed_at": "2026-10-04T05:15:08+02:00",
           "task": "Read-only audit of current pins (acddfa7, eada0e4, db4f6a8) for distribution, CLI readiness, local fallback runbook, and 5-10 min demo prerequisites (CHECK-DISTRIBUTION-RUNBOOK-PINS.md) under Codex Principal C1595.",
           "owned_paths": [
             "research/antigravity/recovery/CHECK-DISTRIBUTION-RUNBOOK-PINS.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID 93d164a5-fac9-4a2e-88b2-de8d8d4d0b68",
+          "first_tool_evidence": "subagent launched with native conversation ID 93d164a5-fac9-4a2e-88b2-de8d8d4d0b68; completed read-only audit across pins",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "VERIFIED_PASS (8 GAPS AUDITED): Completed thorough read-only audit of target pins acddfa7, eada0e4, db4f6a8 for distribution readiness, CLI launcher completeness, local fallback runbook, and 5-10 min demo prerequisites. Critical finding: eada0e4 lacked root launcher ./agent-branches (masked by tests/test_client.py fallback); acddfa7 and db4f6a8 have valid 100755 launcher (blob b7efa8be...). Clean clone test discovery gaps identified (unshipped radar and leaked research test suites). Local fallback runbook fully documented on ephemeral ports with 4-tier auth model. Gaps inventory documented in research/antigravity/recovery/CHECK-DISTRIBUTION-RUNBOOK-PINS.md."
+        },
+        {
+          "tag": "publication-guard-builder",
+          "role": "implementer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/publication-guard/",
+          "status": "running",
+          "started_at": "2026-10-04T05:16:00+02:00",
+          "task": "Implement concrete publication credential guard (research/antigravity/tooling/publication_guard.py) and rigorous stdlib unit tests (tests/test_publication_guard.py) per Codex Principal C1601.",
+          "owned_paths": [
+            "research/antigravity/tooling/publication_guard.py",
+            "tests/test_publication_guard.py"
+          ],
+          "first_tool_evidence": "subagent initialized under antigravity-head",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+        },
+        {
+          "tag": "publication-guard-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/publication-guard-review/",
+          "status": "queued",
+          "task": "Independent negative review of publication credential guard (REV-PUBLICATION-GUARD.md) under Codex Principal C1601.",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-PUBLICATION-GUARD.md"
+          ],
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+        },
+        {
+          "tag": "lineage-auditor",
+          "role": "auditor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/private-lineage-audit/",
+          "status": "running",
+          "started_at": "2026-10-04T05:16:00+02:00",
+          "task": "Conduct private invocation-lineage audit (PRIVATE-LINEAGE-AUDIT.md) tracing scratch worktree creation history, toolcall timestamps, and provenance per Codex Principal C1598; strictly zero contact with Z4abc active files.",
+          "owned_paths": [
+            "research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md"
+          ],
+          "first_tool_evidence": "subagent initialized under antigravity-head",
           "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
         },
         {

@@ -2012,6 +2012,43 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Six shortlist gates remain **HELD**.
   - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
 
+---
+
+## 68. Independent Audit Landed (REV-A06-COMPARISON-CONTRACT.md), Distribution Runbook Check Completed (CHECK-DISTRIBUTION-RUNBOOK-PINS.md) & Publication Guard Launched (C1600-C1602)
+
+- **Date:** 2026-10-04T05:16:00+02:00
+- **Steering & Directives:** Codex Principal C1598, C1600, C1601, C1602.
+- **Delivered Deliverables & Empirical Receipts:**
+  1. **Independent Audit of A06 Comparative Trial (REV-A06-COMPARISON-CONTRACT.md):**
+     - Reviewer: `a06-comparison-reviewer` (`b91b8ed5-75d5-481c-904a-d8825b9ed391`).
+     - Deliverable: [`research/antigravity/reviews/REV-A06-COMPARISON-CONTRACT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-A06-COMPARISON-CONTRACT.md).
+     - Rescoped Verdict (C1600): **ACCEPT QUALITATIVE EXPOSED DECISION REVIEW (NOT VALID MATCHED CONTROLLED EXPERIMENT OR CONFIRMED UNBIASED)**.
+     - Confirmed Matched Parity: Verified 100% byte-for-byte identity of `agent_branches/client.py` and test commands (`python3 -m unittest -v tests/test_client.py`, 22/22 pass in ~8.0s) between Testbed 1 (`6dde110`) and Testbed 2 (`eada0e4`).
+     - Packaging Asymmetry Documented: Testbed 1 had executable launcher `./agent-branches` mode 100755 via `acddfa7`; Testbed 2 relied on inline test fallback masking in `tests/test_client.py`.
+     - Methodological Boundaries Enforced: Strict separation between qualitative friction observations (daemons, token encoding, C1590 rotation gap) and single-trial quantitative timings (~90s manual vs 8.01s radar check). Single-run wall-clock measurements must NOT be cited as causal proof of fleet acceleration.
+     - Zero raw secrets logged in public deliverable. Scratch usage 8.0 KB, zero `/tmp` growth.
+  2. **Distribution & Runbook Readiness Audit (CHECK-DISTRIBUTION-RUNBOOK-PINS.md):**
+     - Auditor: `distribution-runbook-checker` (`93d164a5-fac9-4a2e-88b2-de8d8d4d0b68`).
+     - Deliverable: [`research/antigravity/recovery/CHECK-DISTRIBUTION-RUNBOOK-PINS.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/CHECK-DISTRIBUTION-RUNBOOK-PINS.md).
+     - Target Pins Audited: `acddfa7` (`proto/seed-cli-completeness`), `eada0e4` (`proto/actor-warning-resolution`), `db4f6a8` (`proto/integration-auth-matrix`).
+     - Key Audit Findings:
+       - Root CLI Entrypoint: `acddfa7` and `db4f6a8` contain valid root launcher `./agent-branches` (mode 100755, blob `b7efa8be...`). Critical gap in `eada0e4`: path `agent-branches` is missing (masked by inline fallback in `tests/test_client.py`).
+       - Clean Clone Test Discovery Gaps: In clean checkouts of seed pins, `python3 -m unittest discover -s tests` fails with 4 errors due to missing `radar/` package and research harness test leaks in `tests/`. Only `tests/test_client.py` passes directly.
+       - Local Fallback Runbook: Full daemon sequences documented on ephemeral ports with 4-tier auth model. Noted sidecar ephemeral port logging bug (line 755 prints port 0 instead of allocated port) and hardcoded `notify-hook.mjs` path.
+       - 5-10 Min Demo Prerequisites: Real 2-actor warning lifecycle verified from logs. Identified missing `LICENSE` file in seed pins and complete absence of an automated demo script (`demo/run-concurrent-demo.sh`).
+     - 8 concrete distribution gaps inventoried. Scratch usage 908 KB, zero `/tmp` growth.
+  3. **Ingestion of Codex C1601 Directives & Active Lane Deployments:**
+     - **Publication Credential Guard (`publication-guard-builder`):** Deployed to implement `research/antigravity/tooling/publication_guard.py` + stdlib tests in `.local/scratch/publication-guard/`. Detects full minted task bearers (`art_v1_...`, `tok_...` with entropy), credential-bearing URLs (`http(s)://token:...@...`), and local secret literals. Reports path/line/type WITHOUT printing secret values; non-zero exit blocks publish. Allows explicit redacted markers (`[REDACTED_...]`) and narrow synthetic test fixtures. Excludes private scratch / unredacted logs.
+     - **Publication Guard Independent Reviewer (`publication-guard-reviewer`):** Registered to conduct independent negative review of guard edge cases (newlines, urlencoding, missing input fail-closed).
+     - **Private Lineage Auditor (`lineage-auditor`):** Deployed to conduct read-only audit of scratch worktree creation history and toolcall timestamps (`PRIVATE-LINEAGE-AUDIT.md`) per C1598; strictly zero contact or interference with Z4abc active files in `.local/scratch/zc-4abc725c-eada0e4`.
+
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy strictly **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
+
 
 
 
