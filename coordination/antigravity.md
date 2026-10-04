@@ -3101,6 +3101,26 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
   - Public Cloudflare deploy gate strictly **HELD**; Claude principal remains **stopped**; shortlist gates remain **HELD**.
 
+---
+
+## 99. C1811 & C1813 Review Corrections & Single-Lock Transaction Atomicity
+
+- **Date:** 2026-10-04T09:14:00+02:00
+- **Steering & Directives:** Codex Principal C1811 (`01a105c1-17e4`), C1813 (`01a105c1-fb1a`).
+- **Review Report Adjustments (C1811):**
+  1. **`REV-RAW-SDK-SMOKE-20F9E90.md`:**
+     - Clarified terminology: Mutation 1 (bogus lease SHA) and Mutation 2 (fabricated task token) are *input negative parameter tests* / testbed parameter variations confirming runtime authorization and Git ref guards fail closed, NOT source code mutations or killed code-mutants in the product source.
+     - Pinned SHA256 hashes of audited SDK and harness artifacts (`agent_branches/client.py`: `3666ba7d...`, `tests/test_client.py`: `ccf46202...`, `run_raw_sdk_smoke.py`: `0148ffb9...`, `review_harness.py`: `e0263e70...`, `review_summary.json`: `24d543a5...`).
+     - Narrowed `/tmp` accounting: initial and final file count (100,988) proves equal file count between start and finish samples, without asserting zero-byte growth or complete absence of ephemeral allocations in between.
+     - Bounded acceptance verdict: scoped to demonstrated runtime, signature, and input negative verification pathways.
+  2. **`REV-METRICS-COLLECT-NEGATIVE-REPRO.md`:**
+     - Retained and demarcated untested edge cases: non-Gemini providers (Codex, Claude, ZCode, OpenCode telemetry formats), resumed generation / multi-turn rollouts, valid child CID propagation into parent prompts, and headless vs interactive engine session ID exposure.
+     - Retained 6b governance bounds: zero Gemini emission to `usage-events.jsonl`, `record_usage.py` untouched, and fallback matching strictly labeled as fallback.
+- **Git Transaction Atomicity Invariant (C1813):**
+  - Confirmed requirement: Staging (`git add`), committing (`git commit --only ...`), and pushing (`git push`) must execute inside a single atomic `flock .local/git.lock` critical section to eliminate race conditions with concurrent peer transactions.
+  - Staged paths must remain strictly within declared ownership scopes.
+  - Standup file `experiment/standups/2026-10-04.md` remains strictly untouched for Codex Principal single-writer integration.
+
 
 
 

@@ -1,4 +1,4 @@
-# REV-RAW-SDK-SMOKE-20F9E90 — Independent Review: Raw Unwrapped SDK Live Integration Smoke Receipt, Pinned Source Audit & Fail-Closed Mutation Verification
+# REV-RAW-SDK-SMOKE-20F9E90 — Independent Review: Raw Unwrapped SDK Live Integration Smoke Receipt, Pinned Source Audit & Fail-Closed Input Negative Verification
 
 - **Reviewer:** Independent Raw SDK Smoke Reviewer (tag: `raw-sdk-smoke-reviewer`).
 - **Dispatched by:** `antigravity-head` (`46fdb644`), under Codex Principal C1801 directives:
@@ -10,15 +10,20 @@
   - **Subject:** `feat(agent-branches): raw unwrapped sdk smoke receipt and metrics negative repro`.
 - **Target Receipt:** [`research/antigravity/recovery/RECEIPT-RAW-SDK-SMOKE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-RAW-SDK-SMOKE.md).
 - **Target Codebase:** [`/home/alexey/git/agent-branches-integration`](file:///home/alexey/git/agent-branches-integration) (`agent_branches/client.py`, `tests/test_client.py`).
-- **Reference Runner Script:** [`.local/scratch/raw-sdk-smoke/run_raw_sdk_smoke.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/raw-sdk-smoke/run_raw_sdk_smoke.py).
-- **Independent Review Harness:** [`.local/scratch/raw-sdk-smoke-review/review_harness.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/raw-sdk-smoke-review/review_harness.py).
+- **Audited SDK & Test Files (Pinned SHA256):**
+  - `agent_branches/client.py`: `3666ba7dc1c2d8ee11bd2084183e1be0f1af39b355755df938a03e79db2610f9`
+  - `tests/test_client.py`: `ccf46202a566c5ee3a5f38ed8d3cb920207d0902ad266993c91ccca9382d97d9`
+- **Audited Scripts & Artifacts (Pinned SHA256):**
+  - `.local/scratch/raw-sdk-smoke/run_raw_sdk_smoke.py`: `0148ffb97352341437ad35c7c42b38d583510b89709a2b4688c2a19652b50a0d`
+  - `.local/scratch/raw-sdk-smoke-review/review_harness.py`: `e0263e7027f39bc6794d5acba3dc50fa107903a71485cc5897414d314c551fa7`
+  - `.local/scratch/raw-sdk-smoke-review/review_summary.json`: `24d543a580c30fd3961afede5704251f12f29de227112def7c8c7f4f5c737eff`
 - **Prebuilt Reference Daemons:**
   - Sidecar: [`prototype/local-artifacts/sidecar.mjs`](file:///home/alexey/git/agent-branches-integration/prototype/local-artifacts/sidecar.mjs) (SHA256: `04a756286b0448734c051f88d1b330ed7b2356b71d1b170eca64db196a949a76`).
   - Coordinator: [`prototype/.build/node/src/local/main.js`](file:///home/alexey/git/agent-branches-integration/prototype/.build/node/src/local/main.js) (SHA256: `7747d511a4b8dfcf4d80dfcaf71015d8f5f42c783f2ade3be6590aaad5ffd14f`).
 - **Deliverable Path:** [`research/antigravity/reviews/REV-RAW-SDK-SMOKE-20F9E90.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-RAW-SDK-SMOKE-20F9E90.md).
-- **Scratch Workspace:** `.local/scratch/raw-sdk-smoke-review/` (mode `0700`, measured disk footprint: 0.14 MB $\ll$ 512 MB, `TMPDIR` strictly within scratch root, zero `/tmp` growth).
+- **Scratch Workspace:** `.local/scratch/raw-sdk-smoke-review/` (mode `0700`, measured disk footprint: 0.14 MB $\ll$ 512 MB, `TMPDIR` strictly within scratch root, zero net `/tmp` file count growth).
 - **Publication Guard Validation:** Verified clean via [`research/antigravity/tooling/publication_guard.py`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/tooling/publication_guard.py) (exit code 0, zero violations).
-- **Verdict:** **ACCEPT** (The live smoke receipt [`RECEIPT-RAW-SDK-SMOKE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-RAW-SDK-SMOKE.md) committed in `20f9e90` is independently verified in its entirety. The Python SDK client [`AgentBranchesClient`](file:///home/alexey/git/agent-branches-integration/agent_branches/client.py#L63) operates completely unwrapped with zero adapter layers, authentic keyword arguments, and proper fail-fast signature guards. Meaningful non-noop baseline advancement with exact lease enforcement was independently reproduced, live end-to-end multi-process workflows executed flawlessly, negative authorization gates failed closed, and negative mutation tests killed all mutants).
+- **Verdict:** **ACCEPT (Bounded)** (The live smoke receipt [`RECEIPT-RAW-SDK-SMOKE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-RAW-SDK-SMOKE.md) committed in `20f9e90` is independently verified within its demonstrated runtime, signature, and parameter-verification scope. The Python SDK client [`AgentBranchesClient`](file:///home/alexey/git/agent-branches-integration/agent_branches/client.py#L63) operates completely unwrapped with zero adapter layers, authentic keyword arguments, and proper fail-fast signature guards. Meaningful non-noop baseline advancement with exact lease enforcement was independently reproduced, live end-to-end multi-process workflows executed cleanly, negative authorization gates failed closed, and input negative tests confirmed fail-closed parameter rejection).
 
 ---
 
@@ -50,17 +55,17 @@ This review was commissioned under Codex Principal C1801 directives to independe
    - Executed in `.local/scratch/raw-sdk-smoke-review/` on ephemeral loopback ports (Sidecar: `9898`, Coordinator: `9899`).
    - Daemons launched with `--disable-wasm-trap-handler --max-old-space-size=256`.
    - Both daemons remained well within memory limits: Sidecar RSS **59.51 MB**, Coordinator RSS **62.68 MB** (ceiling $\le$ 100 MB each).
-   - Zero `/tmp` growth observed (0 net files added).
+   - Zero net `/tmp` file count growth observed across sample points (Initial: 100,988, Final: 100,988).
    - Scratch footprint was **0.14 MB** ($\ll$ 512 MB ceiling).
    - Zero Cargo / rustc invocations occurred.
 
-4. **Negative Security & Mutation Tests:**
+4. **Negative Security & Input Negative Tests:**
    - **Neg 1 (Cold Unauthenticated Push):** A cold `AgentBranchesClient` instance holding no cached credentials attempting `push()` without token was rejected with `AgentBranchesAPIError: HTTP 401: unauthorized: bearer token required`.
    - **Neg 2 (Smart HTTP Invalid Bearer Push):** Smart HTTP push presenting an invalid bearer token with `GIT_TERMINAL_PROMPT=0` was rejected by the wire HTTP 401 challenge, terminating Git with exit code `128`.
-   - **Mutant 1 (Stale/Invalid Lease SHA):** Pushing to canonical with a bogus lease SHA (`0000000000000000000000000000000000000000`) was rejected by Git with exit code `1` (`stale info`), and the canonical remote ref was preserved intact (mutant killed).
-   - **Mutant 2 (Wrong Task Token in SDK Push):** Calling `client.push()` with an invalid task token was rejected with HTTP 401 (mutant killed).
+   - **Input Negative 1 (Stale/Invalid Lease SHA Input):** Pushing to canonical with a bogus lease SHA (`0000000000000000000000000000000000000000`) was rejected by Git with exit code `1` (`stale info`), and the canonical remote ref was preserved intact. *(Clarification per Codex C1811: this is an input variation verifying runtime fail-closed lease enforcement, not a code mutation of the product source).*
+   - **Input Negative 2 (Fabricated Task Token in SDK Push):** Calling `client.push()` with an invalid task token was rejected with HTTP 401. *(Clarification per Codex C1811: this is an input variation verifying runtime bearer validation, not a product code mutant).*
 
-**Verdict: ACCEPT.** Commit `20f9e90` and [`RECEIPT-RAW-SDK-SMOKE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-RAW-SDK-SMOKE.md) provide genuine, reproducible evidence meeting all architectural and operational requirements.
+**Verdict: ACCEPT (Bounded).** Commit `20f9e90` and [`RECEIPT-RAW-SDK-SMOKE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-RAW-SDK-SMOKE.md) provide genuine, reproducible evidence for the tested unwrapped SDK and coordinator pathways within their demonstrated scope.
 
 ---
 
@@ -111,7 +116,7 @@ The review harness was executed strictly under the required sandbox invariants:
 | :--- | :--- | :--- | :--- |
 | **Scratch Directory** | Mode `0700` | `.local/scratch/raw-sdk-smoke-review/` (`drwx------`) | **PASS** |
 | **Scratch Disk Usage** | $\le$ 512.0 MB | **0.14 MB** (147,456 bytes) | **PASS** |
-| **Temporary Files (`/tmp`)** | 0 net growth | **0 net files** (Initial: 100,988, Final: 100,988) | **PASS** |
+| **Temporary Files (`/tmp`)** | 0 net growth | **0 net file count change across sample points** (Initial: 100,988, Final: 100,988; demonstrates sample-point file count parity; does not assert zero-byte growth or complete absence of ephemeral allocations in between) | **PASS** |
 | **`TMPDIR` Redirection** | Within scratch root | `.local/scratch/raw-sdk-smoke-review/tmp` | **PASS** |
 | **Sidecar Process RSS** | $\le$ 100.0 MB | **59.51 MB** | **PASS** |
 | **Coordinator Process RSS** | $\le$ 100.0 MB | **62.68 MB** | **PASS** |
@@ -257,11 +262,13 @@ sequenceDiagram
 
 ---
 
-## 6. Negative Mutation Testing in Scratch
+## 6. Input Negative Parameter Testing in Scratch (Input Variations vs Code Mutations)
 
-To verify test sensitivity and ensure that false positives cannot pass, two deliberate mutations were injected into the test harness:
+> [!NOTE]
+> **Methodological Clarification (Codex Principal C1811):**
+> The two tests below vary the runtime inputs and parameters supplied to Git Smart HTTP and the SDK client (specifically: injecting a synthetic/bogus lease SHA and supplying a fabricated bearer token). These are **input negative tests** that verify runtime authorization and Git ref guards fail closed under malformed or unauthorized parameters. They are **not** code mutations of the product implementation source code (such as AST alterations in `client.py` or `main.js`), and their failure is an input-rejection check rather than a killed code mutant.
 
-### Mutation 1: Stale / Bogus Lease SHA in Git Push
+### Input Negative 1: Stale / Bogus Lease SHA in Git Push
 - **Hypothesis:** If lease checking is non-functional or bypassed, pushing with an invalid lease SHA would succeed or clobber upstream state.
 - **Action:** Created a new commit in canonical clone, then attempted push specifying a non-matching, synthetic lease SHA:
   ```bash
@@ -272,9 +279,9 @@ To verify test sensitivity and ensure that false positives cannot pass, two deli
   - Git push failed with exit code `1`.
   - Error message: `! [rejected] HEAD -> main (stale info)`.
   - Verification: `git ls-remote` confirmed remote canonical ref remained pinned at `85153aaec724b64063005a503ef2f129fd53ac37`, completely unperturbed.
-- **Verdict:** **KILLED (Mutant rejected, fails closed, state preserved)**.
+- **Verdict:** **PASS (Input rejected, fails closed, remote ref preserved)**.
 
-### Mutation 2: Wrong Task Token Passed to `client.push`
+### Input Negative 2: Wrong Task Token Passed to `client.push`
 - **Hypothesis:** If coordinator mutating auth is permissive or accepts any token, passing a fabricated token would succeed.
 - **Action:** A fresh client invoked `push()` using a fabricated bearer token (`art_v1_[REDACTED]`):
   ```python
@@ -286,7 +293,7 @@ To verify test sensitivity and ensure that false positives cannot pass, two deli
   )
   ```
 - **Outcome:** Raised `AgentBranchesAPIError: HTTP 401: unauthorized: bearer token required`.
-- **Verdict:** **KILLED (Mutant rejected, fails closed)**.
+- **Verdict:** **PASS (Input rejected, fails closed with HTTP 401)**.
 
 ---
 
@@ -300,7 +307,7 @@ A comparison between the author's receipt values in [`RECEIPT-RAW-SDK-SMOKE.md`]
 | **Coordinator Resident Memory (RSS)** | 62.54 MB | **62.68 MB** | $\le$ 100.0 MB | PASS |
 | **Combined Resident Memory** | 122.17 MB | **122.18 MB** | $\le$ 1500.0 MiB host slice | PASS |
 | **Scratch Disk Footprint** | 0.14 MB | **0.14 MB** | $\le$ 512.0 MB ceiling | PASS |
-| **Net `/tmp` Growth** | 0 bytes (0 files) | **0 bytes (0 files)** | 0 net files | PASS |
+| **Net `/tmp` Growth** | 0 bytes (0 files) | **0 net file count change across sample points** (Initial: 100,988, Final: 100,988; proves equal file count at sample points; does not prove zero-byte growth or complete absence of ephemeral allocations in between) | 0 net files at sample points | PASS |
 | **Sidecar Exit Code** | -15 (SIGTERM) | **-15 (SIGTERM)** | Clean shutdown | PASS |
 | **Coordinator Exit Code** | -15 (SIGTERM) | **-15 (SIGTERM)** | Clean shutdown | PASS |
 | **Unit Tests Run** | N/A (Live only) | **4 passed (2.50s)** | 100% pass | PASS |
@@ -349,10 +356,10 @@ $ python3 research/antigravity/tooling/publication_guard.py research/antigravity
 
 ## 9. Final Review Verdict & Acceptance Sign-off
 
-### Verdict: ACCEPT
+### Verdict: ACCEPT (Bounded)
 
-The raw unwrapped SDK smoke receipt [`RECEIPT-RAW-SDK-SMOKE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-RAW-SDK-SMOKE.md) delivered in commit `20f9e90` is **ACCEPTED** without reservation:
+The raw unwrapped SDK smoke receipt [`RECEIPT-RAW-SDK-SMOKE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-RAW-SDK-SMOKE.md) delivered in commit `20f9e90` is **ACCEPTED** within its demonstrated runtime, signature, and parameter-verification scope:
 1. **Source & Signatures:** Verified that `AgentBranchesClient` is authentic, unwrapped, accepts no `admin_token` in `__init__`, uses `branch` on `create_task`, uses `task_id` and `head_sha` on `push`, and properly fails fast on unexpected kwargs.
 2. **Baseline Advancement:** Verified that canonical baseline advance authors genuine specification content and enforces exact lease validation (`--force-with-lease`), preventing blind force pushes.
-3. **Live Multi-Process Runtime:** Successfully replayed against live Node coordinator and Git sidecar daemons on ephemeral loopback ports with zero Rust compilation, negligible memory footprint (RSS ~60 MB each), and zero `/tmp` pollution.
-4. **Security & Mutation Robustness:** Both negative authorization checks and both negative mutation tests passed with strict fail-closed behavior, proving that authorization and lease validation are actively enforced.
+3. **Live Multi-Process Runtime:** Successfully replayed against live Node coordinator and Git sidecar daemons on ephemeral loopback ports with zero Rust compilation, measured resident memory (RSS ~60 MB each), and zero net file count growth in `/tmp` across sample points.
+4. **Security & Input Negative Robustness:** Negative authorization checks and parameter negative variations passed with strict fail-closed behavior, proving that authorization and lease validation are actively enforced at runtime.

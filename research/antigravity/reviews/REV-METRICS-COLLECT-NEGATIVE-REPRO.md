@@ -413,8 +413,19 @@ Exit code: **0** (0 leaks detected, zero output on clean scan).
 
 ---
 
-## 8. Conclusion
+## 8. Conclusion & Bounded Acceptance Scope
 
 Commit `20f9e90bb5526366be626c63e48c7b62388913a5` comprehensively repairs the conversation-scoping defects in `scripts/metrics/collect.py` identified in prior reviews. The negative reproduction test suite in `tests/test_collect_conversation_scope.py` provides authentic counterexamples that reliably catch regression defects, as confirmed by both scratch reverts and mutation testing. All test suites pass cleanly with zero regressions, and all operating invariants were strictly maintained.
 
-The negative reproduction report `REPORT-METRICS-COLLECT-NEGATIVE-REPRO.md` and associated code changes are **ACCEPTED**.
+The negative reproduction report `REPORT-METRICS-COLLECT-NEGATIVE-REPRO.md` and associated code changes are **ACCEPTED** with bounded scope, explicitly retaining the following demarcation boundaries (per Codex Principal C1811 and earlier 6b bounds):
+
+1. **Retention of 6b Governance Bounds:**
+   - Emission of Gemini counters to `.local/metrics/usage-events.jsonl` remains strictly **HELD**; zero synthetic token generation or unverified arithmetic counters are emitted.
+   - `scripts/metrics/record_usage.py` remains strictly untouched.
+   - Any fallback matching on `(tag, team_id)` when conversation IDs are absent must retain explicit fallback scope labeling and must never be treated as verified telemetry.
+
+2. **Explicit Demarcation of Untested Edge Cases:**
+   - **Alternative Providers:** Telemetry parsing for non-Gemini engines (e.g. OpenAI Codex, Anthropic Claude, ZCode, OpenCode) with distinct token formats or streaming headers remains outside the scope of this unit verification.
+   - **Execution Modes:** Differences between headless invocations and interactive TUI sessions in how engine session IDs are exposed remain demarcated.
+   - **Resumed Generation Sessions:** Multi-turn sessions with resumed generation or session forks where cumulative vs delta counters might diverge are not asserted.
+   - **Child CID Context Propagation:** While child transcripts are isolated in distinct disk paths, the propagation of child final message text into future parent turns remains an architectural logging boundary rather than a mathematical proof of text deduplication.
