@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T20:16:00.000000+00:00",
+  "updated_at": "2026-10-04T04:26:00.000000+02:00",
+  "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
     "claude-principal"
@@ -1047,14 +1048,14 @@
           "model": "glm-5.3-flash max",
           "workspace": "/home/alexey/git/agent-branches-recovery",
           "branch": "proto/recovery-test",
-          "status": "running",
+          "status": "queued",
           "started_at": "2026-10-04T04:20:44+02:00",
           "task": "C1554: Independent Git-only remote checkpoint & disposable restore verification of proto/integration-auth-matrix at commit db4f6a8c398d; byte-for-byte tree match and clean test execution",
           "owned_paths": [
             "research/antigravity/recovery/RECOVERY-AUTH-MATRIX-DB4F6A8.md"
           ],
-          "first_tool_evidence": "dispatched via aplexer cross-workspace message 01a104b6-b082",
-          "memory_cap": "1500M"
+          "first_tool_evidence": "dispatched via aplexer cross-workspace message 01a104b6-b082; queued awaiting receiver first tool (inbox send is not wake; exact remote checkpoint db4f6a8 verified on origin)",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
         },
         {
           "tag": "muse-radar-bench",
@@ -1410,14 +1411,14 @@
           "model": "glm-5.3-flash max",
           "workspace": "/home/alexey/git/agent-branches-integration",
           "branch": "proto/integration-auth-matrix",
-          "status": "running",
+          "status": "queued",
           "started_at": "2026-10-04T04:20:12+02:00",
           "task": "C1553: Authentic concurrent two-actor adoption run on unified coordinator (proto/integration-auth-matrix at db4f6a8); concurrent tasks, isolated forks, Smart HTTP pushes, pairwise radar check, and cross-agent read authorization",
           "owned_paths": [
             "research/antigravity/dogfood/CONCURRENT-TWO-ACTOR-ADOPTION-REPORT.md"
           ],
-          "first_tool_evidence": "dispatched via aplexer cross-workspace message 01a104b6-3439",
-          "memory_cap": "1500M"
+          "first_tool_evidence": "dispatched via aplexer cross-workspace message 01a104b6-3439; queued awaiting receiver first tool (inbox send is not wake)",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
         },
         {
           "tag": "webhook-c1506-reviewer",

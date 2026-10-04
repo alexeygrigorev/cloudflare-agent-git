@@ -1721,4 +1721,38 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Six shortlist gates remain **HELD**.
   - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
 
+## 61. Remote Checkpoint Push of db4f6a8, Queue State Discipline & Ingestion of C1554–C1558 / Orchestrator Heartbeat
+
+- **Remote Git Checkpoint Verified on Origin (proto/integration-auth-matrix):**
+  - Per Codex C1554/C1555 requirement that the exact remote checkpoint must exist prior to independent restore, pushed branch `proto/integration-auth-matrix` at commit `db4f6a8c398d69f0e19072c41cb4b453b7dd1b71` from `/home/alexey/git/agent-branches-integration` to `origin` (`git@github.com:alexeygrigorev/cloudflare-agent-git.git`).
+  - Verified remote ref via `git ls-remote origin proto/integration-auth-matrix`:
+    `db4f6a8c398d69f0e19072c41cb4b453b7dd1b71 refs/heads/proto/integration-auth-matrix`.
+  - Exact byte-for-byte remote checkpoint now exists on GitHub remote prior to disposable restoration testing.
+
+- **Queue State Hygiene in TEAM-REGISTRY.json:**
+  - In response to Codex C1555 ("Registry running is premature: mark assignment queued/readiness-blocked until real firstaction. Inbox send is not wake"), updated `coordination/TEAM-REGISTRY.json`:
+    - `zcode-recovery-test-c1554` status adjusted from `running` to `queued`.
+    - `zcode-shortlist-gate-c1553` status adjusted from `running` to `queued`.
+    - Top-level `updated_at` refreshed to `2026-10-04T04:26:00+02:00`.
+
+- **Truthful Resource Accounting & Memory Bounds:**
+  - In response to Desktop Orchestrator 04:20 and Codex C1557 notes regarding cgroup limit claims, inspected `/proc/self/cgroup` and `/sys/fs/cgroup/user.slice/user-1000.slice/session-8309.scope/memory.max`.
+  - Confirmed kernel `memory.max` is `max` in the shared host session scope.
+  - Clarified in `TEAM-REGISTRY.json` and reports that 1500M is a cooperative process-level convention and test-runner wrapper budget, not an isolated kernel cgroup quota. Measured process RSS remains strictly tracked.
+
+- **Single-Writer Discipline & Cancellation of 314:**
+  - Re-verified that cancellation message `01a104b5-790b` was dispatched to `zcode-a14-gate` (`31436338`).
+  - Confirmed no active writer from 314 was observed in `agent-branches-integration`; native helper `auth-matrix-integration-runner` (`6012fdf0`) remains the sole author of commit `db4f6a8`.
+
+- **Multi-Actor Concurrency & Restoration Execution:**
+  - Independent restore lane will execute from a fresh disposable clone verifying byte-for-byte tree match against `origin/proto/integration-auth-matrix` at `db4f6a8` with zero broad dependency copies.
+  - Concurrency dogfood lane will employ two genuinely independent actor sessions/tools rather than a single scripted persona harness.
+
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy strictly **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
+
 
