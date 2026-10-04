@@ -1,7 +1,8 @@
-# Real Artifact First-Use Dogfood Report
+# Real Artifact First-Use Smoke Report: Smart-HTTP Transport, Fork, Webhook & Recovery Infrastructure Smoke
 
-**Tag**: `real-artifact-firstuse-runner`  
-**Directive**: Codex Principal C1517 directive / antigravity-head (`46fdb644`)  
+**Tag**: `real-artifact-firstuse-runner` (Native harness subagent helper `7ced496b` under `antigravity-head` `46fdb644`)  
+**Parent Authority**: `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`)  
+**Directive**: Codex Principal C1517 / C1521 directives / antigravity-head (`46fdb644`)  
 **Workspace**: `/home/alexey/git/cloudflare-agent-git`  
 **Scratch Root**: `/home/alexey/git/cloudflare-agent-git/.local/scratch/real-artifact-firstuse`  
 **Prototype Directory**: `/home/alexey/git/agent-branches-webhook/prototype`  
@@ -11,12 +12,18 @@
 
 ## 1. Executive Summary & Verification Verdict
 
-We have executed a complete, authentic first-use dogfood run connecting:
+We have executed a real Smart-HTTP transport, fork, webhook, and recovery infrastructure smoke test connecting:
 1. **Real Git Smart HTTP Sidecar** (`prototype/local-artifacts/sidecar.mjs`) running on Node.js v24.13.1, serving genuine bare git repositories on disk with `git http-backend` CGI emulation and token-based smart HTTP authentication.
 2. **Real Local Coordinator Runtime** (`prototype/src/local/main.ts` built to `.build/node/src/local/main.js`) backed by `SidecarArtifacts`, `FileCoordinationStore`, and genuine router authentication.
 3. **Python SDK Client** (`agent_branches.client.AgentBranchesClient` from `/home/alexey/git/agent-branches-sdk-adoption`).
 
 Every operational phase was executed with real network sockets, real disk I/O, real git binaries, real unit test executions, and genuine HTTP payloads. Zero mocks, zero synthetic test doubles, and zero fakes were used.
+
+> [!NOTE]
+> **Scope Clarification (C1521)**: This smoke run validates the fundamental Git Smart-HTTP transport, bare repository creation, task fork, git push over HTTP, and post-receive webhook delivery into the coordinator using a single seeded math service module (`math_service.py`).
+> As shown in Section 3.3, `pairs: []` and `lastRunnerReport: null` because this run was scoped strictly as transport/webhook smoke and does not constitute full multi-agent product adoption or trusted-runner attestation across concurrent branches. The real imported product-code concurrent decision lane is scheduled as the immediate next milestone.
+> 
+> Unredacted raw execution logs and artifacts are preserved privately in `.local/scratch/real-artifact-firstuse/REAL-ARTIFACT-FIRSTUSE-REPORT.unredacted.md` (mode 0600). All credential plaintexts in this report are redacted.
 
 ### Verification Matrix
 
@@ -82,9 +89,9 @@ flowchart TD
 - **Sidecar Base URL**: `http://127.0.0.1:45313`
 - **Coordinator Base URL**: `http://127.0.0.1:45685`
 - **Sidecar Webhook Push Target**: `http://127.0.0.1:45685/events/push`
-- **Sidecar Shared Token**: `sidecar-secret-token`
-- **Coordinator Admin Token**: `admin-secret-token`
-- **Coordinator Runner Token**: `runner-secret-token`
+- **Sidecar Shared Token**: `[REDACTED_SECRET]`
+- **Coordinator Admin Token**: `[REDACTED_SECRET]`
+- **Coordinator Runner Token**: `[REDACTED_SECRET]`
 
 ---
 
@@ -97,7 +104,7 @@ flowchart TD
   "name": "agent-branches-canonical-prod",
   "remote": "http://127.0.0.1:45313/git/agent-branches-canonical-prod.git",
   "defaultBranch": "main",
-  "token": "art_v1_fa59b8fea0f37cfb3d8c3d89f7d47b48082014bc?expires=1791080245",
+  "token": "[REDACTED_TOKEN]?expires=1791080245",
   "seedCommit": "38a44354b49f0a4fa8d0ae6b5f7a6eac22adb22d"
 }
 ```
@@ -120,7 +127,7 @@ Executed via Python SDK `AgentBranchesClient.create_task()`:
   "token": {
     "scope": "write",
     "expiresAt": "2026-10-04T02:17:26.000Z",
-    "plaintext": "art_v1_206b26ee1914bdeb83a8ddff46fb37988eede9b1?expires=1791080246"
+    "plaintext": "[REDACTED_TOKEN]?expires=1791080246"
   },
   "head": "c7b441deb48c5780bbcec2f0e5a004acb35f07ac",
   "task_id": "task-0001",
@@ -186,7 +193,7 @@ Executed via Python SDK `AgentBranchesClient.create_task()`:
 
 ### 3.4 Owner-Authenticated Task Detail (`GET /tasks/task-0001`)
 
-Requested with `Authorization: Bearer art_v1_206b26ee...`:
+Requested with `Authorization: Bearer [REDACTED_TOKEN]`:
 
 ```json
 {
@@ -288,7 +295,7 @@ During the execution of this dogfood run, four concrete areas of developer and i
 ### Friction 1: Basic Auth URL Parsing with `?expires=` Query Separators
 
 - **Symptom**: Constructing a standard git clone URL with embedded credentials such as:
-  `http://token:art_v1_<hex>?expires=<unix>@127.0.0.1:<port>/<repo>.git`
+  `http://token:[REDACTED_TOKEN]?expires=<unix>@127.0.0.1:<port>/<repo>.git`
   caused `git clone` to fail immediately with:
   `fatal: unable to access 'http://127.0.0.1:<port>/.../': URL rejected: Port number was not a decimal number between 0 and 65535`.
 - **Root Cause**: The character `?` in the token is parsed by `libcurl` as the delimiter between the URL authority and query string. As a result, `@127.0.0.1:...` was treated as part of the query parameter string, completely corrupting hostname and port parsing.
