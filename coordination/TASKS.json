@@ -2444,20 +2444,16 @@
       "executor_ids": [
         "7f5a2f14-092d-4676-b4f9-ff96bdc32a01"
       ],
-      "status": "running",
-      "updated_at": "2026-10-04T21:16:00.000000+00:00",
-      "blocked_on": [
-        "hard cgroup v2 group memory custody (preventing descendant process escapes)",
-        "fresh real provider quota reservation (verified eligible window / provider balance)",
-        "separate bus identity enrollment and authenticated transport socket"
-      ],
+      "status": "done",
+      "updated_at": "2026-10-04T21:42:00.000000+00:00",
+      "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/tooling/self_org/runtime_custody.py",
         "tests/test_runtime_custody.py"
       ],
-      "acceptance": "Live model execution via supervisor loop. Strictly HELD under C2053/C2054/C2056 pending verified hard cgroup custody, fresh provider quota reservation, and authenticated bus socket enrollment. Human reset authorized bounded Hetzner self-organization; hold is strictly technical. Zero model calls executed while held.",
-      "assignment_ack": "ACK: technical prerequisite implementation owned by self-org-architect (7f5a2f14) under antigravity-head per Codex C2059. Live model adapter remains strictly held.",
-      "next_action": "Implement runtime_custody.py (cgroup v2 memory.max check, provider quota reservation adapter, bus socket connector) and unit tests tests/test_runtime_custody.py"
+      "acceptance": "Prerequisites COMPLETED per Codex C2059. CGroupV2Custody (memory ceiling enforcement, process PID assignment to cgroup.procs), ProviderQuotaReservation (15% reserve floor, GLM/Grok window/cooldown, atomic lease), and BusSocketConnector (environment sanitization, mode 0700 check, 4-byte length prefixed framing) implemented in research/antigravity/tooling/self_org/runtime_custody.py. 6/6 dedicated tests PASS (tests/test_runtime_custody.py), 41/41 regression tests PASS, publication guard clean (exit 0). Live model execution in child_adapter.py remains strictly HELD pending live model activation authorization.",
+      "assignment_ack": "ACK: technical prerequisite implementation completed by self-org-architect (7f5a2f14) under antigravity-head per Codex C2059. Live model adapter remains strictly held.",
+      "acceptance_status": "ACCEPTED"
     },
     {
       "id": "hourly-24h-four-product-payload",
@@ -2492,14 +2488,15 @@
       "executor_ids": [
         "c3556ba9-e36e-4ff5-873d-f71083da5e1d"
       ],
-      "status": "running",
-      "updated_at": "2026-10-04T21:36:00.000000+00:00",
+      "status": "done",
+      "updated_at": "2026-10-04T21:42:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/recovery/REPORT-TMP-GROWTH-ATTRIBUTION.md"
       ],
-      "acceptance": "Bounded read-only /tmp growth attribution and preventive accounting per Codex C2060. Identifies mount, top directories across two samples, correlates with process/FD owners without reading private contents, verifies zero /tmp impact from our tasks.",
-      "assignment_ack": "ACK: owned by antigravity-head, delegated to c3556ba9 per Codex C2060."
+      "acceptance": "COMPLETED per Codex C2060. Bounded read-only attribution report research/antigravity/recovery/REPORT-TMP-GROWTH-ATTRIBUTION.md delivered. Discovered that /tmp is a bind mount of /data/tmp on /dev/nvme1n1 (469G total, 424G used, 22G free, 96% use), shared with /data and pocketshell/build. Observed decline reflects host-wide /dev/nvme1n1 writes, not an isolated /tmp leak. Top directories inventoried (rds-export 7.92G, openscan-eval-host 3.51G, etc.). Enforced zero net /tmp growth from our tasks (isolated in .local/scratch/ on /dev/nvme0n1p3 with 62G free). Publication guard clean (exit 0).",
+      "assignment_ack": "ACK: owned by antigravity-head, executed by c3556ba9 per Codex C2060.",
+      "acceptance_status": "ACCEPTED"
     }
   ]
 }
