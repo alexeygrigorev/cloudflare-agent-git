@@ -300,5 +300,64 @@ class TestRealCoordinatorSDKSmoke(unittest.TestCase):
         with self.assertRaises(StaleVectorError):
             self.client.send_checks(stale_payload, runner_token=self.runner_token)
 
+    def test_07_cold_client_resolves_agent_id_over_real_router(self):
+        """C1532/C1539: Verify cold client (no agent_id, no cache, no env) resolves agent_id via real Node router."""
+        token = self.client.task_tokens["task-0001"]
+
+        # Ensure no ADMIN_TOKEN env var leaks into cold client
+        saved_admin = os.environ.get("ADMIN_TOKEN")
+        try:
+            os.environ.pop("ADMIN_TOKEN", None)
+            cold_client = AgentBranchesClient(server_url=self.server_url, timeout=5.0)
+            self.assertNotIn("task-0001", cold_client.task_tokens)
+            self.assertNotIn("task-0001", cold_client.task_to_agent)
+
+            # 1. Cold client calling push() with NO agent_id, passing only task_id= and explicit token=
+            # Must authenticate get_task() on real Node coordinator and resolve agentId -> 200 accepted
+            res = cold_client.push(
+                task_id="task-0001",
+                head_sha="0000000000000000000000000000000000000001",
+                base_sha="0000000000000000000000000000000000000001",
+                files_changed=["src/cold_resolve.ts"],
+                token=token,
+                intent="cold client push resolving agent_id on real router"
+            )
+            self.assertTrue(res.get("accepted"))
+            self.assertEqual(res.get("agent"), "smoke-alpha-0001")
+
+            # 2. Cold client with admin_token= only (no agent_id, no token) resolves agentId and succeeds
+            cold_admin = AgentBranchesClient(server_url=self.server_url, timeout=5.0)
+            res_admin = cold_admin.push(
+                task_id="task-0001",
+                head_sha="0000000000000000000000000000000000000001",
+                admin_token=self.admin_token,
+                intent="cold client admin token push resolving agent_id"
+            )
+            self.assertTrue(res_admin.get("accepted"))
+            self.assertEqual(res_admin.get("agent"), "smoke-alpha-0001")
+
+            # 3. Negative 1: unknown/non-existent task ID fails lookup with 404, raising guiding ValueError
+            bare_cold = AgentBranchesClient(server_url=self.server_url, timeout=5.0)
+            with self.assertRaises(ValueError) as ctx:
+                bare_cold.push(
+                    task_id="task-non-existent-9999",
+                    head_sha="0000000000000000000000000000000000000001",
+                )
+            self.assertIn("Cannot resolve agentId", str(ctx.exception))
+
+            # 4. Negative 2: cold client with existing task but NO token anywhere resolves agentId via public read,
+            # but mutating POST /events/push fails closed with HTTP 401 per requireMutatingAuth
+            with self.assertRaises(AgentBranchesAPIError) as ctx:
+                bare_cold.push(
+                    task_id="task-0001",
+                    head_sha="0000000000000000000000000000000000000001",
+                )
+            self.assertEqual(ctx.exception.status_code, 401)
+            self.assertIn("bearer token required", ctx.exception.message)
+        finally:
+            if saved_admin is not None:
+                os.environ["ADMIN_TOKEN"] = saved_admin
+
 if __name__ == "__main__":
     unittest.main()
+
