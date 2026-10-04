@@ -53,8 +53,17 @@ class MockCoordinatorState:
         expected_runner_token: Optional[str] = None,
         admin_token_expires_at: Optional[float] = None,
         runner_token_expires_at: Optional[float] = None,
+        token_wire_object: bool = True,
     ):
         self.lock = threading.Lock()
+        # C1509: True = POST /tasks answers with the real coordinator wire
+        # shape (token {scope, expiresAt, plaintext}); False = legacy flat
+        # plaintext string. The stored record always keeps the plaintext
+        # string so bearer checks compare strings.
+        self.token_wire_object = token_wire_object
+        # Authorization header as last presented on GET /tasks/<id> (test
+        # observability: lets tests assert the exact bearer header sent).
+        self.last_authorization: Optional[str] = None
         self.seq = 0
         self.tasks: Dict[str, Dict[str, Any]] = {}
         self.agents: Dict[str, Dict[str, Any]] = {}
@@ -558,6 +567,19 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
                 self._send_json(400, {"error": str(exc)})
                 return
             created = self.state.create_task(body)
+            if self.state.token_wire_object and isinstance(created.get("token"), str):
+                # C1509: real coordinator CreateTaskResult wire shape
+                # (prototype/src/core/coordinator.ts) — the minted token is
+                # an object and fork carries remote/ref; the stored record
+                # keeps the plaintext string for bearer comparisons.
+                created = dict(created)
+                created["token"] = {
+                    "scope": f"task:{created.get('taskId')}",
+                    "expiresAt": int(time.time()) + 3600,
+                    "plaintext": created["token"],
+                }
+                created["fork"] = dict(created.get("fork") or {})
+                created["fork"].setdefault("ref", created.get("ref"))
             self._send_json(201, created)
             return
 
@@ -640,6 +662,7 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
         task_match = re.match(r"^/tasks/([^/]+)$", path)
         if task_match:
             task_id = urllib.parse.unquote(task_match.group(1))
+            self.state.last_authorization = self.headers.get("Authorization")
             # C1462/C1499: owner-or-admin read auth when the mock runs with a
             # configured admin token (same conditional pattern as POST /tasks);
             # the unconfigured default stays an open read for legacy fixtures.
@@ -678,6 +701,7 @@ def start_mock_l1_server(
     expected_runner_token: Optional[str] = None,
     admin_token_expires_at: Optional[float] = None,
     runner_token_expires_at: Optional[float] = None,
+    token_wire_object: bool = True,
 ) -> Tuple[MockL1Server, threading.Thread, str, MockCoordinatorState]:
     """Start mock L1 coordinator on host and ephemeral or specified port.
 
@@ -694,6 +718,7 @@ def start_mock_l1_server(
         expected_runner_token=expected_runner_token,
         admin_token_expires_at=admin_token_expires_at,
         runner_token_expires_at=runner_token_expires_at,
+        token_wire_object=token_wire_object,
     )
     server = MockL1Server((host, port), state=state)
     actual_port = server.server_address[1]

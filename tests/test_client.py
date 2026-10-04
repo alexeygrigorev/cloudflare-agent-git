@@ -1488,7 +1488,7 @@ class TestAgentBranchesClient(unittest.TestCase):
                 admin_token="adm-get-task-token",
             )
             task_id = task["taskId"]
-            owner_token = task["token"]
+            owner_token = task["token"]["plaintext"]  # C1509: wire object {scope, expiresAt, plaintext}
             self.assertTrue(owner_token, "create_task must return the minted task token")
             self.assertEqual(client.task_tokens[task_id], owner_token)
 
@@ -1500,7 +1500,7 @@ class TestAgentBranchesClient(unittest.TestCase):
                 agent="ladder-beta",
                 admin_token="adm-get-task-token",
             )
-            foreign_token = foreign["token"]
+            foreign_token = foreign["token"]["plaintext"]
             self.assertNotEqual(owner_token, foreign_token)
 
             # 1. Unauthenticated read -> 401 (the regression the fix addresses)
@@ -1587,6 +1587,80 @@ class TestAgentBranchesClient(unittest.TestCase):
                 os.environ.pop("ADMIN_TOKEN", None)
             else:
                 os.environ["ADMIN_TOKEN"] = saved_admin_token
+            auth_srv.shutdown()
+            auth_srv.server_close()
+
+
+    def test_18_create_task_token_wire_normalization(self):
+        """C1509: the real coordinator CreateTaskResult mints the token as an
+        object {scope, expiresAt, plaintext} and fork as {name, remote, ref}.
+        The client must cache the plaintext STRING (never the dict) so
+        get_task sends exactly 'Bearer <plaintext>' on the wire, flatten the
+        fork object into fork_remote/fork_ref, and keep legacy coordinators
+        that answer with the flat plaintext string working end to end."""
+        auth_srv, _t, auth_url, auth_state = start_mock_l1_server(
+            host="127.0.0.1",
+            port=0,
+            expected_admin_token="adm-wire-token",
+        )
+        try:
+            client = AgentBranchesClient(server_url=auth_url)
+            task = client.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="Wire normalization",
+                branch="feat/wire-token",
+                agent="wire-alpha",
+                admin_token="adm-wire-token",
+            )
+            # Real wire shape arrives as the minted-token object.
+            self.assertIsInstance(task["token"], dict)
+            self.assertEqual(task["token"]["scope"], f"task:{task['taskId']}")
+            self.assertIsInstance(task["token"]["expiresAt"], int)
+            plaintext = task["token"]["plaintext"]
+            self.assertIsInstance(plaintext, str)
+
+            # The client cached the plaintext STRING, not the dict.
+            self.assertIsInstance(client.task_tokens[task["taskId"]], str)
+            self.assertEqual(client.task_tokens[task["taskId"]], plaintext)
+
+            # get_task authenticates with the EXACT Bearer <plaintext> header
+            # (a dict would render as "Bearer {'scope': ...}" and 401).
+            rec = client.get_task(task["taskId"])
+            self.assertEqual(rec["taskId"], task["taskId"])
+            self.assertEqual(auth_state.last_authorization, f"Bearer {plaintext}")
+
+            # Fork wire object is flattened into plain keys.
+            self.assertEqual(task["fork_remote"], task["fork"]["remote"])
+            self.assertEqual(task["fork_ref"], task["ref"])
+
+            # Legacy compatibility: a coordinator answering with the flat
+            # plaintext string still caches and authenticates owner reads.
+            legacy_srv, _lt, legacy_url, legacy_state = start_mock_l1_server(
+                host="127.0.0.1",
+                port=0,
+                expected_admin_token="adm-legacy-token",
+                token_wire_object=False,
+            )
+            try:
+                legacy = AgentBranchesClient(server_url=legacy_url)
+                legacy_task = legacy.create_task(
+                    repo="https://github.com/cf/repo.git",
+                    base_sha="0000000000000000000000000000000000000000",
+                    intent="Legacy string token",
+                    branch="feat/legacy-token",
+                    agent="legacy-alpha",
+                    admin_token="adm-legacy-token",
+                )
+                self.assertIsInstance(legacy_task["token"], str)
+                self.assertEqual(legacy.task_tokens[legacy_task["taskId"]], legacy_task["token"])
+                legacy_rec = legacy.get_task(legacy_task["taskId"])
+                self.assertEqual(legacy_rec["taskId"], legacy_task["taskId"])
+                self.assertEqual(legacy_state.last_authorization, f"Bearer {legacy_task['token']}")
+            finally:
+                legacy_srv.shutdown()
+                legacy_srv.server_close()
+        finally:
             auth_srv.shutdown()
             auth_srv.server_close()
 

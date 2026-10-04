@@ -189,8 +189,23 @@ class AgentBranchesClient:
 
         # Cache the minted per-task bearer token so later reads of this task
         # (get_task, push agent resolution) authenticate as the owning agent.
-        if task_id and res.get("token"):
-            self.task_tokens[task_id] = res["token"]
+        # Real coordinators mint the token as an object {scope, expiresAt,
+        # plaintext} (CreateTaskResult, C1509); older deployments and legacy
+        # mocks return the plaintext string directly. Only the plaintext
+        # string may ever reach the Authorization header.
+        raw_token = res.get("token")
+        if isinstance(raw_token, dict):
+            plaintext = raw_token.get("plaintext", "")
+            if task_id and plaintext:
+                self.task_tokens[task_id] = plaintext
+        elif isinstance(raw_token, str) and task_id and raw_token:
+            self.task_tokens[task_id] = raw_token
+
+        # Flatten the fork wire object into plain keys for CLI consumers.
+        raw_fork = res.get("fork")
+        if isinstance(raw_fork, dict):
+            res["fork_remote"] = raw_fork.get("remote")
+            res["fork_ref"] = raw_fork.get("ref")
 
         return res
 
