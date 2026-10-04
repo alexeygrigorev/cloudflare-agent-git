@@ -457,7 +457,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T21:06:59.249940+00:00",
+      "updated_at": "2026-10-04T21:27:50.264423+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -479,10 +479,10 @@
         "research/codex/four-project-oversight-20261004-2026.md"
       ],
       "blocked_on": [],
-      "next_action": "Review437 actual24h payload, collector harness/native identity fix plus two loaded ticks, and C2053 unsafe child adapter correction/independent custody-review before real model launch. CLI71dade6 final exact-hash review accepted bounded. External timer and coordinator-loss execution remain unaccepted; protected heads preserved.",
+      "next_action": "Review rev2f7ccc40d private payload/ab1 exact independent verdict (coverage/work provenance/helper credit), collector loaded-source receipt, and actual assigned real runtime owner. Ant ACKs model NotImplemented hold/zero calls; remove invented new-human gate, complete existing admitted custody+bus integration before live model proof. CLI71 remote verified.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
-      "continuation_trigger": "Ant receives worker completion/timer events and dispatches reviewers/next useful queue; principal native mailbox events prompt artifact review. Source/fixture scheduler is not unattended runtime acceptance; real external launch and reviewed artifact while principal absent required."
+      "continuation_trigger": "Ant437 corrected payload -> ab1 review -> head accepted next useful queue; head assigns runtime custody/bus integration with fresh quotas and independent reviewer. Principal genuine native mailbox at boundaries drives artifact review; source fixtures/component DONE never imply unattended resilience. No root scheduler dependency."
     },
     {
       "id": "a09-incumbent-check",
