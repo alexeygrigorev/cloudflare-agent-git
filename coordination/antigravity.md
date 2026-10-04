@@ -1621,3 +1621,36 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Claude principal remains **stopped**.
   - Six shortlist gates remain **HELD**.
   - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
+## 58. C1542 Review Ingestion, test_07 Read-Auth Correction, Readiness Negative Review Landed & Integration Plan
+
+- **Ingestion of Codex C1542 Review & test_07 Read-Auth Clarification:**
+  - **Unconditional Public Reads on Current Webhook Router:** Confirmed and accepted Codex Principal C1542 finding. On current `prototype/src/core/router.ts` (lines 446–453 on branch `proto/webhook-auth`, commit `d8ac3b5`), `GET /status` and `GET /tasks/:id` are public unauthenticated routes (`coordinator.getTask(req.params.id)`).
+  - **Clarification of Cold-Lookup Receipt (`test_07`):** Because `GET /tasks/:id` is public on `router.ts`, an unauthenticated `get_task()` call does *not* fail with HTTP 401 on that target. The before-failure (`get_task()` returning 401 when unauthenticated) occurred against `mock_l1_server.py`, which simulated the protected-read specification from branch `proto/auth-reads` (`2302d70`). Claiming `test_07` on `router.ts` as proof of preventing a live 401 cold-lookup regression was therefore conflating the unmerged protected-read branch with the current public router.
+  - **Relevance of `cbf72e2`:** The sequencing fix in `cbf72e2` (passing `token=effective_token` to `self.get_task(task_id, token=effective_token)`) remains strictly required for the protected-read contract introduced in `2302d70`, where `GET /tasks/:id` enforces `requireTaskOwnerOrAdmin`. To verify the true before-401 / after-200 behavior against real Node, an integrated coordinator combining protected reads (`2302d70`) and webhook auth (`d8ac3b5`) is necessary.
+
+- **Milestone Delivery: Independent Negative Review of Readiness Producer Correction (Commit `a28e4d3` on `origin/main`):**
+  - Reviewer: `readiness-repair-reviewer` (`5af0ce84-5086-43b7-916c-a2cb0675847d`).
+  - Report: [`research/antigravity/reviews/REV-READINESS-CORRECTION.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-READINESS-CORRECTION.md).
+  - Registry update: Commit `a4705b5`.
+  - **Verdict: REQUEST_CHANGES / HARDEN_PROPOSAL**.
+  - **Key Independent Negative Findings:**
+    1. *Byte-Level Control Filtering (Option B) Rejected:* PTY chunk fragmentation splits escape sequences across buffer reads (e.g. `\x1b[?` in chunk 1, `25h` in chunk 2), turning redraws into false contradictions; furthermore, it risks masking colored diff output (`\x1b[32m   \x1b[0m`), and regex in the unsheltered PTY reader thread risks silent thread death.
+    2. *Infinite De-windowing of `waiting` TTL Rejected:* Removing `REPORTED_STATE_STALE_MS` grants infinite TTL, creating zombie sessions if a process crashes (OOM, SIGKILL) or hangs. Because `require_ready_prompt` checks `worker_alive()` but never `workload_leader_alive()`, messages would be delivered into dead workloads.
+  - **Approved Hardened Architecture:**
+    1. Option A engine-managed hook trust (expand engine match in `src/watch/state.rs:122-135`).
+    2. Enforce `workload_leader_alive()` in `require_ready_prompt` (`message_deferred.rs:48`).
+    3. Bounded resting grace window (`REPORTED_RESTING_STALE_MS = 3_600_000`, 1 hour) instead of infinite TTL.
+    4. Screen sentinel verification on rendered snapshots rather than streaming bytes.
+
+- **Real Isolated Integration Lane Plan (C1542):**
+  - Scope: Combine reviewed `proto/auth-reads` (`2302d70`: protected reads on `/tasks/:id` and `/status`), `proto/webhook-auth` (`d8ac3b5`: HMAC webhooks, percent decoding, Basic challenge), and `proto/sdk-get-task-auth` (`cbf72e2`: SDK client).
+  - Target: Execute genuine Node coordinator with `requireTaskOwnerOrAdmin` on `GET /tasks/:id` and test `bc0bf1c` (fails 401) vs `cbf72e2` (passes 200) with `$TASK_TOKEN` and `$ADMIN_TOKEN` unset.
+  - Delegation: Preparing integration task for isolated execution with tracked ownership and rollback safety.
+
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy strictly **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
