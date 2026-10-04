@@ -1,0 +1,9 @@
+# Maintainer intake: standalone Agent Bus
+
+Direct human instruction in saved principal conversation,4October2026: separate message bus from aplexer so synchronous/headless executors communicate without terminal sessions; use it as cross-machine foundation; immediately dogfood first viable version, turn encountered workarounds into native features and intake. Subsequent exact placement: sibling project in PocketShell org. Visibility explicitly corrected to PUBLIC.
+
+Actual sibling /home/alexey/git/agent-bus initialized; public https://github.com/PocketShell-io/agent-bus main65b3c27 verified isPrivate=false. Bootstrap only README/AGENTS/.gitignore/maintainer intake. Existing coordination head81e801 assigned integration/implementation delegation, explicit handoff ACK pending; existing agent-coordination code/history preserved. This is foundation/refocus of fourth product, no duplicate principal/head team.
+
+Bus identities/device/task credentials independent of aplexer session records, not invented native senders. Aplexer should become optional UI adapter; plain headless register/send/receive/wait/reply/ACK with durableIDs/restart/dedup; ACK separate acceptance/outcome. First real dogfood actualtask+artifact between plain no-aplexer processes with restart/redelivery, then twohosts using scoped auth. Preserve ordinary Git recovery. No working bus/native crosshost outcome claimed at bootstrap.
+
+New lifecycle intake: inspect idle sessions; stop unnecessary completed/abandoned executors, concrete reason for every retained idle session. Principal split read-only audits by competition/product vs unrelated user work, no blindkill, no history/worktree deletion. Heads coordinate releases/checkpoints; protected drafts/active tasks and needed services stay. This overrides keeping all old executor UIs solely for mailbox access.
