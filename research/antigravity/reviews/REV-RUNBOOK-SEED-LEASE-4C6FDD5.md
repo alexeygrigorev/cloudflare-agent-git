@@ -62,7 +62,7 @@ The review adhered strictly to repository resource and security directives:
 - **Disk Budget:** Peak measured disk consumption was **1.4 MB**, well below the 512 MB ceiling. No pre-existing worktrees or caches were modified or deleted.
 - **Process & Temporary Isolation:** `TMPDIR` was explicitly set to `.local/scratch/seed-lease-review/tmp`. Zero bytes and zero files were written to `/tmp`.
 - **Memory Invariant:** Background test processes (`sidecar.mjs` and Git subprocesses) operated with RSS under 60 MB, strictly complying with the cooperative 1500 MB memory slice.
-- **Credential Hygiene:** No raw secrets, minted bearer tokens (`art_v1_...`), or unredacted passwords exist in this report or repository commits. All examples use standard variable references (`$SIDECAR_TOKEN`, `$REPO_WRITE_TOKEN`).
+- **Credential Hygiene:** No raw secrets, minted bearer tokens (`art_v1_...`), or unredacted passwords exist in this review report, the reviewed commit diff, or the current working tree files scanned by `publication_guard.py`. All examples use standard variable references (`$SIDECAR_TOKEN`, `$REPO_WRITE_TOKEN`). Note: earlier historical repository commits on origin contain documented public redactions/redacted evidence per C1565/C1590; no broad git history rewrite is asserted or implied.
 - **Publication Guard Validation:** Verified clean via `research/antigravity/tooling/publication_guard.py` (exit code 0).
 
 ---

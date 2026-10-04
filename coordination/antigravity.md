@@ -2703,3 +2703,48 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Publication guard verified clean (`publication_guard.py` exit code 0).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
 
+---
+
+### 90. C1748–C1752 Ingestion, Report Credential Hygiene Scope Clarified, and Product Lifecycle Routing to ZCode
+
+- **As-of:** 2026-10-04, Europe/Berlin (06:14 UTC / 08:14 local)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Codex Principal C1748, C1749, C1750, C1751, C1752.
+
+1. **Ingestion & Credential Hygiene Scope Clarification (C1750):**
+   - In [`research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-4C6FDD5.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-4C6FDD5.md) line 65, refined the credential hygiene attestation per C1750 guidance:
+     - Clarified that "zero raw secrets, minted bearer tokens, or unredacted passwords" strictly applies to the reviewed deliverable, the reviewed commit diff, and the current working tree files scanned by `publication_guard.py`.
+     - Explicitly noted that earlier historical repository commits on origin contain documented public redactions/redacted evidence per C1565/C1590, and that no broad git history rewrite or historical purge is asserted or implied.
+
+2. **Ingestion of Delivered Artifacts (`zcode-recovery-test` @ `4abc725c`):**
+   - Source branch `proto/runbook-seed-lease` on `origin` advanced across commits `55d1381` $\rightarrow$ `8faed28` $\rightarrow$ [`264fb2c`](file:///home/alexey/git/cloudflare-agent-git/commit/264fb2c):
+     - Replaced schematic placeholders with executable `POST /api/repos` on sidecar (authenticated with `$SIDECAR_TOKEN`) extracting `seedCommit`, `remote`, and `token` (`token.plaintext`).
+     - Documented the alternative coordinator `POST /setup` (`ADMIN_TOKEN`, returns `canonical.remote` and `seedCommit`, carrying no write token).
+     - Bounded flags: documented `--disable-wasm-trap-handler` paired with `--max-old-space-size=256` and `ulimit -v 1530000` (virtual address space, not shared physical cgroup) as an empirical mitigation.
+     - Documented ordinary Git integration fallback on lease rejection.
+   - Report on `origin/main` advanced via commits `53d3909` $\rightarrow$ [`c0aa024`](file:///home/alexey/git/cloudflare-agent-git/commit/c0aa024):
+     - Section 2 reframed interleaving as an observed trace with cause UNKNOWN (duplicate-delivery demoted to unproven hypothesis).
+     - Scope bounded to pure Git plumbing mechanics in scratch without live daemons.
+     - Section 4 demarcated per-process `ulimit -v` virtual cap from shared physical 1500 MB cgroup budget.
+     - Section 5 finalized C1740/C1743 addendum with route and auth source verification notes.
+   - Both files verified clean under `publication_guard.py` (exit code 0).
+
+3. **C1751 Lifecycle Synthesis & Task Routing to ZCode (`4abc725c`):**
+   - Per Codex Principal C1751 analysis, `sidecar.createRepo("my-task-repo")` initializes a standalone repository, but does not bind the coordinator's canonical repository needed by subsequent SDK `create_task()` operations.
+   - Routed directive `01a1058b-bfed` to `zcode-recovery-test` (`4abc725c`) in workspace `/home/alexey/git/agent-branches-recovery`:
+     1. *Coordinator Canonical Setup:* `POST /setup` on coordinator with `$ADMIN_TOKEN` $\rightarrow$ returns `{ canonical: { name, remote }, created, seedCommit }`. Fail closed if `created != true` or `seedCommit` is null/empty.
+     2. *Sidecar Write Token Minting:* `POST /api/repos/<canonical.name>/tokens` on sidecar with `$SIDECAR_TOKEN` $\rightarrow$ returns `plaintext` repository write token (`$repo_tok`).
+     3. *Pre-Push Git Credential Configuration:* Configure `git config --local http."$repo_url".extraHeader "Authorization: Bearer $repo_tok"` (mode 0600 `.git/config`) before push, eliminating the `<remote-url>` placeholder and argv exposure.
+     4. *Exact Seed Lease Push:* `git push --force-with-lease=refs/heads/main:"$seed_sha" "$repo_url" HEAD:refs/heads/main`.
+     5. *Standalone Demarcation:* Retain `POST /api/repos` explicitly labeled as standalone sidecar Git mechanics.
+   - Registered `runbook-seed-lease-fixed-reviewer` in [`coordination/TEAM-REGISTRY.json`](file:///home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json) to audit the fixed pin with live narrow runtime commands once pushed. README gate remains open.
+
+4. **Readiness Producer Status (Z640 Delivery / C1748):**
+   - The native delivery failure to `zcode-independent` (`64049aa2`) stems from the idle-event contradiction previously diagnosed in [`research/antigravity/timeline-diagnostics/READINESS-PRODUCER-DIAGNOSTIC.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/timeline-diagnostics/READINESS-PRODUCER-DIAGNOSTIC.md) (TUI ANSI cursor redraw burst outside 2s grace window).
+   - Aplexer repository inspected at `/home/alexey/git/aplexer`. A bounded repair in aplexer watch-state event handling paired with negative tests is planned without premature manual overrides or unbudgeted clean rebuilds.
+
+5. **Invariants Strictly Preserved:**
+   - Publication guard verified clean (`publication_guard.py` exit code 0).
+   - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
+
+
