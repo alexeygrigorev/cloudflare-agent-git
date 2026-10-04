@@ -43,7 +43,10 @@ export interface AuthTokens {
   sidecar?: string;
 }
 
-export type AuthDecision = { ok: true } | { ok: false; status: 401 | 403 | 503; error: string };
+/** Failure bodies carry `error`; reads additionally carry a fixed `message` (C1462 Task 1). */
+export type AuthDecision =
+  | { ok: true }
+  | { ok: false; status: 401 | 403 | 503; error: string; message?: string };
 
 export function bearerFrom(headerValue: string | null): string | null {
   if (!headerValue || !headerValue.toLowerCase().startsWith("bearer ")) {
@@ -109,6 +112,57 @@ export async function decideMutatingAuth(
     return { ok: false, status: 403, error: `forbidden: this token belongs to ${owner}, not ${opts.agent}` };
   }
   return { ok: false, status: 401, error: "unauthorized: ADMIN_TOKEN, the agent's task token or the sidecar bearer required" };
+}
+
+/** Shared read-route 401 body (C1462 Task 1): identical for every flavor of
+ * missing/invalid credential so callers cannot distinguish failure causes. */
+export const READ_AUTH_UNAUTHORIZED = {
+  error: "unauthorized",
+  message: "Missing or invalid bearer token",
+} as const;
+
+export interface ReadAuthOptions {
+  /** Ownership narrowing for GET /tasks/:id: only this agent (or admin) may
+   * read; a valid token for a DIFFERENT agent stays 403 per CONTRACT.
+   * Undefined = no narrowing (GET /status). */
+  agent?: string;
+}
+
+/**
+ * C1462 Task 1: read endpoints are authenticated too. Accepted credentials:
+ * ADMIN_TOKEN; RUNNER_TOKEN on unnarrowed reads only (the runner fetches
+ * /status for its heads vector before POST /checks); and any valid per-task
+ * agent token — credentialAgent already denies revoked and expired tokens
+ * (at the expiry instant) and unparsable expiry, so those gates apply to
+ * reads exactly as to writes. Everything else — anonymous, non-bearer or
+ * malformed header, unknown/garbage/expired/revoked token — is the shared
+ * 401 above. The sidecar webhook bearer is ingest-only and is NOT a read
+ * credential. Unconfigured admin does not fail reads closed with 503: an
+ * unauthenticated caller gets 401 without learning whether secrets exist.
+ */
+export async function decideReadAuth(
+  presented: string | null,
+  tokens: AuthTokens,
+  opts: ReadAuthOptions,
+  credentialAgent: (presented: string) => Promise<string | null>,
+): Promise<AuthDecision> {
+  if (presented === null) {
+    return { ok: false, status: 401, ...READ_AUTH_UNAUTHORIZED };
+  }
+  if (tokens.admin && (await tokensMatch(presented, tokens.admin))) {
+    return { ok: true };
+  }
+  if (opts.agent === undefined && tokens.runner && (await tokensMatch(presented, tokens.runner))) {
+    return { ok: true };
+  }
+  const owner = await credentialAgent(presented);
+  if (owner === null) {
+    return { ok: false, status: 401, ...READ_AUTH_UNAUTHORIZED };
+  }
+  if (opts.agent === undefined || owner === opts.agent) {
+    return { ok: true };
+  }
+  return { ok: false, status: 403, error: `forbidden: this token belongs to ${owner}, not ${opts.agent}` };
 }
 
 /**

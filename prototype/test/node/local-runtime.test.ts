@@ -25,8 +25,9 @@ async function withServer(run: (base: string, rig: ReturnType<typeof makeRig>) =
 
 test("local node:http runtime serves the same routes from the core", async () => {
   await withServer(async (base, rig) => {
-    // GET /status before anything: empty coordinator state.
-    const initial = await fetch(`${base}/status`);
+    // GET /status before anything: empty coordinator state (C1462 Task 1:
+    // reads are bearer-gated like every other route).
+    const initial = await fetch(`${base}/status`, { headers: { authorization: "Bearer admin-t" } });
     strictEqual(initial.status, 200);
     deepStrictEqual((await initial.json() as { heads: Record<string, string> }).heads, {});
 
@@ -60,17 +61,17 @@ test("local node:http runtime serves the same routes from the core", async () =>
     strictEqual(pushBody.accepted, true);
     strictEqual(pushBody.agent, task.agentId);
 
-    // Status reflects the move; task detail resolves.
-    const status = await fetch(`${base}/status`);
+    // Status reflects the move; task detail resolves (owner token reads).
+    const status = await fetch(`${base}/status`, { headers: { authorization: "Bearer admin-t" } });
     const statusBody = await status.json() as { heads: Record<string, string> };
     strictEqual(statusBody.heads[task.agentId], sha);
 
-    const detail = await fetch(`${base}/tasks/${task.taskId}`);
+    const detail = await fetch(`${base}/tasks/${task.taskId}`, { headers: { authorization: "Bearer admin-t" } });
     strictEqual(detail.status, 200);
     strictEqual(((await detail.json()) as { pushes: number }).pushes, 1);
 
     // 404 still shapes the same.
-    const missing = await fetch(`${base}/tasks/task-9999`);
+    const missing = await fetch(`${base}/tasks/task-9999`, { headers: { authorization: "Bearer admin-t" } });
     strictEqual(missing.status, 404);
   });
 });
