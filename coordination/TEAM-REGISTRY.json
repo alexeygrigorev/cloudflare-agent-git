@@ -2180,6 +2180,25 @@
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         },
         {
+          "tag": "metrics-collect-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "24e23518-3420-4953-b990-3f146ce42e5f",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/metrics-collect-review/",
+          "status": "running",
+          "started_at": "2026-10-04T08:36:00+02:00",
+          "task": "Independent negative and edge-case review of conversation-aware registration fix in scripts/metrics/collect.py @ commit 6b02f2c per Codex Principal C1769. Run test suites, verify exact function bodies, execute 4 negative mutation tests in scratch (CID mismatch leak, tag collision overwrite, fallback marker suppression, reconciliation break), audit corrupted JSONL handling and CID empty vs None.",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-METRICS-COLLECT-CONVERSATION-SCOPE.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID 24e23518-3420-4953-b990-3f146ce42e5f; inspecting scripts/metrics/collect.py and tests/test_collect_conversation_scope.py",
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
+        },
+        {
           "tag": "readiness-producer-worker",
           "role": "diagnostician",
           "parent_tag": "antigravity-head",
