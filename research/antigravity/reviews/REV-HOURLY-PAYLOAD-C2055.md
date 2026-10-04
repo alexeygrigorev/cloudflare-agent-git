@@ -41,7 +41,7 @@ The remediated payload (`hourly_24h_payload.json`) comprehensively resolves all 
 
 | Artifact | File Size | Mode | Expected SHA256 | Measured SHA256 | Status |
 | :--- | :---: | :---: | :--- | :--- | :---: |
-| **Remediated Payload** (`hourly_24h_payload.json`) | 38,899 B | `0600` | `f7ccc40d33c0351cb49ac80728e7ddbb3f2ca72abf0873bb9b28434d280aebe2` | `f7ccc40d33c0351cb49ac80728e7ddbb3f2ca72abf0873bb9b28434d280aebe2` | **MATCH** |
+| **Remediated Payload (Rev4)** (`hourly_24h_payload.json`) | 43,133 B | `0600` | `9d30a73195865a8ff1c427770c93a50151f81de9e8dc82228e2dd16f068c94ca` | `9d30a73195865a8ff1c427770c93a50151f81de9e8dc82228e2dd16f068c94ca` | **MATCH** |
 | **Quarantined Rev1** (`hourly_24h_payload_rev1_rejected.json`) | 42,548 B | `0600` | `d7cba8e5f693589b03c76f6b138b65c50fc189e6174d6166b6970a7838c31d4d` | `d7cba8e5f693589b03c76f6b138b65c50fc189e6174d6166b6970a7838c31d4d` | **MATCH** |
 
 Both artifacts were verified directly on disk using SHA256 checksums and stat file mode validation.
@@ -249,8 +249,14 @@ In rev2, `presence_coverage_fraction` computed `total_presence_hours / window_ho
    - `quota-launcher`: **3.2064** concurrent actors
    - `agent-coordination`: **0.6030** concurrent actors
 
-### 9.2 Artifact-Backed Contributor Ledger
-Completed subagents, headless workers, and independent reviewers without persistent PTY sessions (e.g., `consumer-dogfooding-reviewer`, `ab-cli-batch-worker`, `dashboard-patch-worker`, `ab1e10b9`, `304b28c9`) are explicitly credited in `artifact_backed_contributors` per product based on verified deliverables in `coordination/TASKS.json`.
+### 9.2 Artifact-Backed Contributor Ledger & Canonical Deduplication
+Completed subagents, headless workers, and independent reviewers without persistent PTY sessions (e.g., `consumer-dogfooding-reviewer`, `ab-cli-batch-worker`, `dashboard-patch-worker`, `ab1e10b9`, `304b28c9`) are credited in `artifact_backed_contributors` per product based on verified deliverables in `coordination/TASKS.json`.
+
+Following Codex Principal C2059 review (`01a108d2-78e0`), all contributor identities are mapped through `canonical_actor_map`, resolving duplicate pairs where both native session CIDs and head tags were declared:
+- In `agent-branches`: `46fdb644-9b58-4e2f-aab3-9be5e1e33337` $\to$ `antigravity-head` (single canonical tag).
+- In `agent-dashboard`: `c7a75f76-1f51-4f14-873e-7a60569838c3` $\to$ `agent-dashboard-head`; `437865be-e09a...` $\to$ `dashboard-patch-worker`; `ab1e10b9-f777...` $\to$ `dashboard-adr2-reviewer`.
+- In `agent-coordination`: `81e8010c-89e4-478b-be3a-4ee6991607f3` $\to$ `agent-coordination-head`.
+- Raw task-declared identifiers are preserved in `task_declared_raw_identities` for full provenance and auditability.
 
 ### 9.3 Producer Freshness & Telemetry Limits
 The epistemic policy formally notes that `verified_working_hours` requires affirmative observed working state transitions or active tool execution hooks. The absence of working hooks denotes that productive work was not directly observed; it discloses telemetry limits and does not prove complete physical dormancy for uninstrumented workers.
@@ -259,7 +265,8 @@ The epistemic policy formally notes that `verified_working_hours` requires affir
 | :--- | :--- | :--- |
 | **Rev 1 (Quarantined)** | `d7cba8e5f693589b03c76f6b138b65c50fc189e6174d6166b6970a7838c31d4d` | Rejected: Conflated presence with work, un-deduped actors, synthetic zeros |
 | **Rev 2 (Remediated)** | `f7ccc40d33c0351cb49ac80728e7ddbb3f2ca72abf0873bb9b28434d280aebe2` | Passed: Epistemic separation, resting zeroed, canonical actor dedup |
-| **Rev 3 (C2057 Refined)**| `1d482407f90e6b70afcbf91f50779d1a089be678c18eb3b09a146398406f6f47` | Full mathematical precision: bounded coverage $\le 1.0$, avg concurrency, contributor ledger |
+| **Rev 3 (C2057 Refined)**| `1d482407f90e6b70afcbf91f50779d1a089be678c18eb3b09a146398406f6f47` | Full mathematical precision: bounded coverage $\le 1.0$, avg concurrency |
+| **Rev 4 (C2059 Canonical)**| `9d30a73195865a8ff1c427770c93a50151f81de9e8dc82228e2dd16f068c94ca` | Full contributor ledger canonical dedup + raw task identity preservation |
 
 ---
 
@@ -267,18 +274,19 @@ The epistemic policy formally notes that `verified_working_hours` requires affir
 
 | Audit Item | Verification Status | Notes |
 | :--- | :---: | :--- |
-| **Payload SHA256 Integrity** | **PASS** | Matches `1d482407f90e6b...` (rev3) / `f7ccc40d...` (rev2) |
+| **Payload SHA256 Integrity** | **PASS** | Matches `9d30a73195865a...` (Rev4) exactly |
 | **Quarantined Rev1 Rejection** | **PASS** | Confirmed rejection of `d7cba8e5f693589b...` |
 | **Epistemic Separation** | **PASS** | `presence_hours` vs `verified_working_hours` separated |
 | **Resting / Menu State Zeroing** | **PASS** | Idle prompts and menus yield strictly 0.00 h |
 | **Canonical Actor Deduplication** | **PASS** | 774 aliases/CIDs resolved; zero actor inflation |
 | **Truthful Telemetry** | **PASS** | Pre-commissioning buckets emit `unobserved` (`null`) |
 | **Bounded Coverage Fractions** | **PASS** | All coverage fractions strictly $\le 1.0$ |
-| **Contributor Ledger** | **PASS** | Artifact-backed contributors recorded from `TASKS.json` |
+| **Contributor Ledger Canonicalization** | **PASS** | All CID/tag duplicates resolved; raw IDs preserved |
 | **Task / Feature Alignment** | **PASS** | Matches `coordination/TASKS.json` exact counts |
 | **Compiler Hold Invariant** | **PASS** | Zero cargo/rustc invocations |
 | **Resource Bounds** | **PASS** | Scratch: 4.0 KB $\le 512$ MB; mode `0700` |
 | **Publication Guard** | **PASS** | Exit code 0 |
 
-**Verdict:** **FULL ACCEPTANCE.** The remediated payload [`.local/metrics/hourly_24h_payload.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_payload.json) (rev3 `1d482407...`) is certified and approved as the authoritative 24-hour fleet operational baseline under Codex Principal directives C2055 and C2057.
+**Verdict:** **FULL ACCEPTANCE.** The remediated payload [`.local/metrics/hourly_24h_payload.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_payload.json) (Rev4 `9d30a731...`) is certified and approved as the authoritative 24-hour fleet operational baseline under Codex Principal directives C2055, C2057, and C2059.
+
 

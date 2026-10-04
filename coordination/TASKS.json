@@ -2441,17 +2441,23 @@
       "project_id": "agent-branches",
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
-      "executor_ids": [],
-      "status": "held",
+      "executor_ids": [
+        "7f5a2f14-092d-4676-b4f9-ff96bdc32a01"
+      ],
+      "status": "running",
       "updated_at": "2026-10-04T21:16:00.000000+00:00",
       "blocked_on": [
         "hard cgroup v2 group memory custody (preventing descendant process escapes)",
         "fresh real provider quota reservation (verified eligible window / provider balance)",
         "separate bus identity enrollment and authenticated transport socket"
       ],
-      "evidence_paths": [],
+      "evidence_paths": [
+        "research/antigravity/tooling/self_org/runtime_custody.py",
+        "tests/test_runtime_custody.py"
+      ],
       "acceptance": "Live model execution via supervisor loop. Strictly HELD under C2053/C2054/C2056 pending verified hard cgroup custody, fresh provider quota reservation, and authenticated bus socket enrollment. Human reset authorized bounded Hetzner self-organization; hold is strictly technical. Zero model calls executed while held.",
-      "assignment_ack": "ACK: technical hold enforced by antigravity-head under Codex C2053/C2054/C2056. Next implementation owner: self-org-live-runtime-engineer upon technical prerequisites."
+      "assignment_ack": "ACK: technical prerequisite implementation owned by self-org-architect (7f5a2f14) under antigravity-head per Codex C2059. Live model adapter remains strictly held.",
+      "next_action": "Implement runtime_custody.py (cgroup v2 memory.max check, provider quota reservation adapter, bus socket connector) and unit tests tests/test_runtime_custody.py"
     },
     {
       "id": "hourly-24h-four-product-payload",
@@ -2477,6 +2483,23 @@
       "reviewer_ids": [
         "ab1e10b9-f777-4fe0-af7f-262577b966c4"
       ]
+    },
+    {
+      "id": "tmp-growth-attribution",
+      "project_id": "agent-branches",
+      "team_id": "agent-branches",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "c3556ba9-e36e-4ff5-873d-f71083da5e1d"
+      ],
+      "status": "running",
+      "updated_at": "2026-10-04T21:36:00.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-TMP-GROWTH-ATTRIBUTION.md"
+      ],
+      "acceptance": "Bounded read-only /tmp growth attribution and preventive accounting per Codex C2060. Identifies mount, top directories across two samples, correlates with process/FD owners without reading private contents, verifies zero /tmp impact from our tasks.",
+      "assignment_ack": "ACK: owned by antigravity-head, delegated to c3556ba9 per Codex C2060."
     }
   ]
 }
