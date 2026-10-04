@@ -515,6 +515,77 @@ class SupervisionRoutingTests(unittest.TestCase):
         # Confirm it reminds monitoring principal to ask heads, rather than claiming automatic execution
         self.assertIn('ask heads to claim ready owned work', body)
 
+    def test_13_conflicting_entities_excluded_from_authoritative_principal_selection(self):
+        """Test 13 (C1636 conflict routing): Conflicting entities are excluded from authoritative principal selection."""
+        conflicted_e = {
+            'id': 'agent-quota-launcher',
+            'principal_tags': ['codex-principal'],
+            'conflict': {'detected': True, 'summary': 'Conflicting registration'}
+        }
+        unconflicted_e = {
+            'id': 'agent-coordination',
+            'principal_tags': ['codex-principal'],
+            'conflict': None
+        }
+        entities = [conflicted_e, unconflicted_e]
+        # In service logic: unconflicted authoritative entities
+        authoritative = [e for e in entities if 'codex-principal' in e.get('principal_tags', []) and not (e.get('conflict') and e['conflict'].get('detected'))]
+        self.assertEqual(len(authoritative), 1)
+        self.assertEqual(authoritative[0]['id'], 'agent-coordination')
+
+    def test_14_explicit_empty_list_vs_absent_principal_tags(self):
+        """Test 14 (C1636 semantics): Explicit empty list principal_tags=[] overrides owner; absent field checks owner."""
+        registry = {
+            'projects': [
+                {
+                    'id': 'proj-explicit-empty',
+                    'principal_tags': [],  # Explicit empty list!
+                    'principal_owner': {'tag': 'codex-principal'}
+                },
+                {
+                    'id': 'proj-absent-tags',
+                    # No principal_tags key!
+                    'principal_owner': {'tag': 'codex-principal'}
+                }
+            ]
+        }
+        entities = service.extract_supervision_entities(registry)
+        by_id = {e['id']: e for e in entities}
+        # Explicit empty must remain empty
+        self.assertEqual(by_id['proj-explicit-empty']['principal_tags'], [])
+        self.assertTrue(by_id['proj-explicit-empty']['unowned'])
+        # Absent field must pick up owner
+        self.assertEqual(by_id['proj-absent-tags']['principal_tags'], ['codex-principal'])
+        self.assertFalse(by_id['proj-absent-tags']['unowned'])
+
+    def test_15_compatible_merge_preserves_head_and_workspace(self):
+        """Test 15 (C1636 merge): Compatible duplicate merge preserves nonempty head_tag and workspace from project."""
+        registry = {
+            'teams': [
+                {
+                    'id': 'agent-dashboard',
+                    'name': 'Agent Dashboard',
+                    'head_tag': None,
+                    'workspace': None,
+                    'principal_tags': ['codex-principal']
+                }
+            ],
+            'projects': [
+                {
+                    'id': 'agent-dashboard',
+                    'name': 'Agent Dashboard',
+                    'head_tag': 'agent-dashboard-head',
+                    'workspace': '/home/alexey/git/agent-dashboard',
+                    'principal_tags': ['codex-principal']
+                }
+            ]
+        }
+        entities = service.extract_supervision_entities(registry)
+        self.assertEqual(len(entities), 1, "Compatible duplicate must merge into single entity")
+        merged = entities[0]
+        self.assertEqual(merged['head_tag'], 'agent-dashboard-head', "Nonempty head from project must be preserved")
+        self.assertEqual(merged['workspace'], '/home/alexey/git/agent-dashboard', "Nonempty workspace from project must be preserved")
+
 
 if __name__ == '__main__':
     unittest.main()

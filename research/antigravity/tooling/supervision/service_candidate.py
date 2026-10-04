@@ -114,11 +114,13 @@ def extract_supervision_entities(registry_full):
         if not pid:
             continue
 
-        # Determine principal tags without invented fallbacks:
-        # Respect explicitly defined principal_tags, principal_owner, or assignment_ack.
-        # If none present, preserve strictly empty ownership ([]). Never default to codex-principal.
-        principal_tags = project.get('principal_tags')
-        if not principal_tags:
+        # Determine principal tags without invented fallbacks (C1634/C1636):
+        # Distinguish explicit empty list ('principal_tags': []) from absent field!
+        # If 'principal_tags' key is explicitly present in project, respect it directly (including []).
+        if 'principal_tags' in project:
+            val = project['principal_tags']
+            principal_tags = list(val) if isinstance(val, (list, tuple)) else ([val] if val else [])
+        else:
             owner = project.get('principal_owner')
             if isinstance(owner, dict) and owner.get('tag'):
                 principal_tags = [owner['tag']]
@@ -161,10 +163,16 @@ def extract_supervision_entities(registry_full):
                     'reasons': reasons,
                     'summary': f"Conflicting registration for {norm_pid}: " + "; ".join(reasons)
                 }
+                # Mutual conflict marking (C1636): flag both conflicting entities
+                existing['conflict'] = conflict_info
             else:
-                # Compatible duplicate: merge aliases
+                # Compatible duplicate: merge aliases, preserve nonempty head/workspace from project (C1636)
                 merged_aliases = set(existing.get('aliases', [])) | aliases
                 existing['aliases'] = sorted(merged_aliases)
+                if not existing.get('head_tag') and project.get('head_tag'):
+                    existing['head_tag'] = project['head_tag']
+                if not existing.get('workspace') and project.get('workspace'):
+                    existing['workspace'] = project['workspace']
                 if not existing.get('principal_tags') and principal_tags:
                     existing['principal_tags'] = list(principal_tags)
                     existing['unowned'] = False
@@ -889,7 +897,14 @@ def run():
                 cooldown = old.get('cooldown_until', 0)
                 if active and not pending and (old.get('sent_event') != event_key) and time.time() >= cooldown:
                     if item.get('alive'):
-                        principal_entities = [e for e in entities if tag in e.get('principal_tags', [])]
+                        # Filter unconflicted authoritative entities for this principal (C1636)
+                        principal_entities = [e for e in entities if tag in e.get('principal_tags', []) and not (e.get('conflict') and e['conflict'].get('detected'))]
+                        conflicting_entities = [e for e in entities if tag in e.get('principal_tags', []) and e.get('conflict') and e['conflict'].get('detected')]
+                        if conflicting_entities:
+                            report['conflicting_entities'] = [c['id'] for c in conflicting_entities]
+                            report['degraded'] = True
+                            report['errors'].append(f"principal {tag} has conflicting entity registrations: {', '.join(c['id'] for c in conflicting_entities)}")
+
                         selected = []
                         seen_selected = set()
                         for t in active:
