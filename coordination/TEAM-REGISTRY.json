@@ -1015,14 +1015,17 @@
           "harness_conversation_id": "22ba9456-e2e6-4c4f-9109-f1c0ff2e4b67",
           "provider": "gemini",
           "workspace": "/home/alexey/git/agent-branches-sdk-adoption",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T02:32:00+02:00",
+          "completed_at": "2026-10-04T02:34:43+02:00",
+          "completed_commit": "7109d82",
           "task": "Independent review of SDK client wire shape and token normalization commit 3bba5fe (C1509)",
           "owned_paths": [
             "research/antigravity/reviews/REV-SDK-CLIENT-3BBA5FE.md"
           ],
-          "first_tool_evidence": "subagent launched",
-          "memory_cap": "shared cgroup / process slice"
+          "first_tool_evidence": "subagent launched / 18 tests pass",
+          "memory_cap": "shared cgroup / process slice",
+          "verdict": "ACCEPT (commit 3bba5fe verified; token dict normalized to plaintext string; flat string tokens preserved for legacy; fork flattened; exact Bearer <plaintext> header verified; mutant caching raw dict token decisively killed in test_18)"
         },
         {
           "tag": "webhook-auth-reviewer",
@@ -1097,14 +1100,17 @@
           "harness_conversation_id": "c1a32248-834b-416d-9814-fda911da0fae",
           "provider": "gemini",
           "workspace": "/home/alexey/git/agent-branches-webhook",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T02:24:41+02:00",
+          "completed_at": "2026-10-04T02:27:13+02:00",
+          "completed_commit": "5f22024",
           "task": "Independent review of webhook auth C1506 follow-up commit 1658d54 (WEBHOOK_RETENTION_MS margin + fakeclock regression test)",
           "owned_paths": [
             "research/antigravity/reviews/REV-WEBHOOK-AUTH-1658D54.md"
           ],
           "first_tool_evidence": "git log check in agent-branches-webhook",
-          "memory_cap": "shared cgroup / process slice"
+          "memory_cap": "shared cgroup / process slice",
+          "verdict": "ACCEPT (commit 1658d54 verified; WEBHOOK_RETENTION_MS 2x tolerance + 1s strict margin eliminates max-future skew eviction vulnerability; fakeclock boundary replay 409 and stale timestamp 401 confirmed; 156/156 tests pass; mutants M1-M3 killed)"
         }
       ]
     },

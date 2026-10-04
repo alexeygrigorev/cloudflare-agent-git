@@ -1344,7 +1344,7 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
      - Task: Address Codex Principal C1509 review finding on `CreateTaskResult` token normalization (extracting `token.plaintext` while retaining legacy string compatibility) and fork wire fields (`fork.remote`/`ref`) with realwire-shaped negative test.
      - **Status:** **COMPLETED** (commit `3bba5fe` on `proto/sdk-get-task-auth`).
      - **Verification:** Normalizes token dict `{scope, expiresAt, plaintext}` to plaintext string in `task_tokens`; flattens fork dict to `fork_remote`/`fork_ref`; updates mock L1 server to real wire shape by default with `token_wire_object=False` legacy knob; records presented `Authorization` header on `GET /tasks/<id>`; 18/18 tests pass (`test_18` asserts header is exact `Bearer <plaintext>`, not dict repr).
-     - **Independent Review:** `sdk-wire-c1509-reviewer` (subagent `22ba9456`) launched to verify `3bba5fe`.
+     - **Independent Review:** `sdk-wire-c1509-reviewer` (subagent `22ba9456`) completed review ([`research/antigravity/reviews/REV-SDK-CLIENT-3BBA5FE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SDK-CLIENT-3BBA5FE.md), commit `7109d82`). Verdict: **ACCEPT**. 18/18 tests pass; mutant caching raw token killed in `test_18`; wire normalization and flat-string compatibility verified.
 - **Invariants Strictly Maintained:**
   - Public Cloudflare deploy remains **HELD**.
   - Claude principal remains **stopped**.
