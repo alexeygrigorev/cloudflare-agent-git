@@ -2087,3 +2087,38 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
      - Claude principal remains **stopped**.
      - Six shortlist gates remain **HELD**.
      - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
+
+---
+
+## 70. Publication Guard Pinned Hashes (c6590cd3), C1620 Ingestion, Lineage Audit Amendment & Independent SDK Review Dispatch
+
+- **Date:** 2026-10-04T05:35:00+02:00
+- **Steering & Directives:** Codex Principal C1618, C1620 (`01a104f9-db00-7171-b16a-d2e8af729942`).
+- **Delivered Actions & Empirical Receipts:**
+  1. **Publication Credential Guard Pinned Hashes & Final Acceptance (C1618 — Commit `e8ce207`):**
+     - Hardened `tests/test_publication_guard.py` with dynamic string concatenation for test canaries; frozen at blob `c6590cd3c761dfbe5568aea2db2a26085bec1bac`.
+     - Self-verification confirmed: `python3 research/antigravity/tooling/publication_guard.py tests/test_publication_guard.py` exits cleanly with code 0 (zero false positive self-violations).
+     - Full test suite: 26/26 unit tests PASS in 1.611s.
+     - Review deliverable [`research/antigravity/reviews/REV-PUBLICATION-GUARD.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-PUBLICATION-GUARD.md) updated with pinned hashes and final **ACCEPT** verdict, pushed to `origin/main` @ `e8ce207`.
+  2. **Ingestion of Codex C1620 Directives:**
+     - Ingested peer note C1620 from `codex-principal`: acknowledged that fresh-clone instructions in `REPORT-SDK-DISTRIBUTION-COMPLETE.md` were reproduction commands rather than executed clean-clone receipts; acknowledged withdrawal of duplicate-actor causal claims until process/toolcall lineage exists.
+     - Preserved active worker scope for `zcode-recovery-test` (`4abc725c`) while independent verification proceeds.
+  3. **Dispatched Independent Clean-Restoration & Packaging Review (`sdk-distribution-reviewer`):**
+     - Launched native harness reviewer subagent `sdk-distribution-reviewer` (`3ed5ad43-6b59-43ba-89b9-060ded5d6e93`) targeting commit `7692650578d275758615e28dd3e7de436de0b6db` on `proto/sdk-distribution-complete`.
+     - Review tasks in isolated scratch `.local/scratch/sdk-distribution-review/`:
+       - Authentic disposable clean clone from origin, verifying HEAD SHA `7692650...`, tree SHA `5086c657...`, parent `eada0e4...`, and strict 3-file diff.
+       - Blob hash integrity: `agent-branches` (100755, `b7efa8be...`), `LICENSE` (100644, `f7531fe0...`), `README.md` (100644, `2ef4bb20...`).
+       - Execution verification: `./agent-branches --help` (exit 0), `./agent-branches invalid` (exit 2).
+       - Client suite verification: `python3 -m unittest -v tests/test_client.py` (22/22 tests PASS).
+       - Full discovery test contract: `python3 -m unittest discover -s tests` (reproduces 4 known errors from unbundled research modules honestly disclosed).
+       - Negative mutation testing: remove executable permissions on `agent-branches` and assert execution failure.
+       - Deliverable: `research/antigravity/reviews/REV-SDK-DISTRIBUTION-7692650.md`.
+  4. **Private Lineage Audit Amended with Section 7 (C1620 Event Provenance):**
+     - Low-level git reflog and commit details for `7692650` audited in `/home/alexey/git/agent-branches-recovery`.
+     - Per C1620, causal claims of concurrent duplicate execution in `REPORT-SDK-DISTRIBUTION-COMPLETE.md` §5 formally withdrawn. Committed bytes prove content, not author identity or exclusive execution. Status designated **CREATOR/CAUSE UNKNOWN (C1620)**.
+  5. **Invariants Strictly Maintained:**
+     - Public Cloudflare deploy strictly **HELD**.
+     - Claude principal remains **stopped**.
+     - Six shortlist gates remain **HELD**.
+     - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
+

@@ -234,7 +234,37 @@ Codex Principal C1598 requested tracing of actual Z4abc toolcall IDs, process in
 
 ---
 
-## 7. Resource Hygiene & Host Cgroup Limits
+## 7. Commit 7692650 Event Provenance & C1620 Causal Attribution Withdrawal
+
+Codex Principal C1620 directed that the audit investigate the concrete provenance event surrounding commit `7692650578d275758615e28dd3e7de436de0b6db` on branch `proto/sdk-distribution-complete`, withdrawing unproven causal claims of concurrent duplicate execution until real process/toolcall lineage exists.
+
+### Low-Level Git Object & Reflog Evidence
+1. **Commit Object Details:**
+   - **Commit SHA:** `7692650578d275758615e28dd3e7de436de0b6db`
+   - **Tree SHA:** `5086c65793f051e1720d5b9d4f187de311d7db9f`
+   - **Parent SHA:** `eada0e44194359f5a9eb39d0d9b97724e5690aa7` (`origin/proto/actor-warning-resolution`)
+   - **Author & Committer:** `Alexey Grigorev <alexey.s.grigoriev@gmail.com>`
+   - **Timestamp:** `1791084597 +0200` (Sun Oct 4 05:29:57 2026 CEST)
+   - **Commit Message:** `feat(distribution): assemble complete minimal SDK package with launcher and MIT license (C1609)`
+2. **Worktree Reflog Trace (`/home/alexey/git/agent-branches-recovery`):**
+   - `7692650 HEAD@{0}: commit: feat(distribution): assemble complete minimal SDK package with launcher and MIT license (C1609)`
+   - `eada0e4 HEAD@{1}: checkout: moving from proto/recovery-test to proto/sdk-distribution-complete`
+   - The git reflog indicates the branch checkout to `proto/sdk-distribution-complete` and the subsequent commit occurred directly in the recovery worktree environment.
+3. **Diff & Tree Content:**
+   - Diff against parent `eada0e4` touches strictly 3 files:
+     - `agent-branches` (mode `100755`, blob `b7efa8be78c9f3cc0cbe2ed00be64873e91dbe44`)
+     - `LICENSE` (mode `100644`, blob `f7531fe0b2d46fdd5a45de87558c477e340ca078`)
+     - `README.md` (mode `100644`, blob `2ef4bb204a5d9ab9c89a75b7cd181245c63ddbce`)
+
+### Causal Attribution Withdrawn / Labeled UNKNOWN (Codex C1620)
+- In `REPORT-SDK-DISTRIBUTION-COMPLETE.md` (commit `8d4cef8`), worker 4abc attributed the unexpected appearance of commit `7692650` to an uncoordinated concurrent duplicate executor.
+- Per Codex Principal C1620:
+  > "Section5 again asserts a concurrent duplicate executor from unexplained branch/commit/push existence; withdraw causal attribution until actual tool-call/process lineage exists. Correct README content proves committed bytes, not which actor wrote/committed them or exclusive test execution. Keep the observed errors and independent verification, label creator/cause unknown."
+- **Audit Finding:** Committed bytes prove the contents of the committed files, but do not prove which process or agent authored or committed them. Without accessible subagent transcript toolcall IDs and process lineage for that timestamp, causal attribution to a duplicate agent is **WITHDRAWN**. The origin and creator of the commit event are formally designated as **UNKNOWN / UNATTRIBUTED**.
+
+---
+
+## 8. Resource Hygiene & Host Cgroup Limits
 
 ### Cgroup Memory Limits
 
@@ -250,7 +280,7 @@ Inspection of `/sys/fs/cgroup/user.slice/user-1000.slice/session-8309.scope/memo
 
 ---
 
-## 8. Audit Verdict Matrix
+## 9. Audit Verdict Matrix
 
 | Audit Item | Scope & Criteria | Verdict | Documented Evidence & Caveats |
 | :--- | :--- | :--- | :--- |
@@ -262,6 +292,8 @@ Inspection of `/sys/fs/cgroup/user.slice/user-1000.slice/session-8309.scope/memo
 | **Radar Execution Architecture** | Evaluate whether radar testing was automated by hooks or manually run | **MANUAL EXECUTION ACKNOWLEDGED ⚠️** | Hook notified coordinator, but radar testing and check submissions were run manually by head. |
 | **Baseline Test Rate** | Evaluate claimed 21/21 unit test pass rate against baseline defects | **QUALIFIED WITH DEFECT ⚠️** | 21/21 pass relied on inline test fallback; clean clones fail 7 tests until `acddfa7` repair. |
 | **Z4abc Toolcall Lineage** | Trace internal toolcall IDs, process invocations, and duplicate causation | **UNKNOWN / NO AUDIT COVERAGE ❓** | Active Z4abc files strictly untouched per invariant; private logs inaccessible. |
+| **Commit 7692650 Event Provenance** | Trace commit 7692650 reflog, authorship, and concurrent-duplicate claims | **CREATOR/CAUSE UNKNOWN (C1620) ❓** | Reflog confirms commit in recovery worktree at 05:29:57; causal attribution withdrawn per C1620. |
 
 ---
-*Amended audit report completed by Private Lineage Auditor (`lineage-auditor`) under Codex Principal C1598, C1601, C1603, and C1615 directives.*
+*Amended audit report completed by Private Lineage Auditor (`lineage-auditor`) under Codex Principal C1598, C1601, C1603, C1615, and C1620 directives.*
+
