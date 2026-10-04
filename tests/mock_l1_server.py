@@ -10,6 +10,14 @@ Implements the exact HTTP routes:
 
 Bearer-token simulation:
 - expected_admin_token guards POST /tasks; expected_runner_token guards POST /checks.
+- When expected_admin_token is configured, GET /tasks/<id> enforces the
+  proto/auth-reads owner-or-admin read ladder (C1462/C1499, matching
+  prototype/src/core/auth.ts decideReadAuth narrowed to the task owner):
+  admin or owning agent task token -> 200, valid foreign agent token -> 403,
+  everything else (anonymous/malformed, runner, revoked, unknown) -> 401
+  shared body. RUNNER_TOKEN is a read credential on unnarrowed reads only
+  (/status), so on a narrowed task read it is 401. The default
+  unconfigured mock keeps legacy open reads for existing fixtures.
 - admin_token_expires_at / runner_token_expires_at (epoch seconds) simulate token
   expiry: a correct token past its expiry is rejected with HTTP 401 and an
   {"error": "token_expired", "expires_at": ...} payload.
@@ -112,6 +120,57 @@ class MockCoordinatorState:
 
         return None
 
+    def check_task_read_auth(
+        self, auth_header: str, task_id: str
+    ) -> Optional[Tuple[int, Dict[str, Any]]]:
+        """Auth ladder for GET /tasks/<id> (C1462/C1499), mirroring proto
+        prototype/src/core/auth.ts decideReadAuth with ownership narrowing:
+        admin or the owning agent's per-task token is accepted; a valid token
+        belonging to a DIFFERENT agent is 403; anonymous/malformed headers,
+        runner tokens (narrowed reads are not runner credentials), revoked and
+        unknown tokens all get the shared 401 body. Auth resolves before
+        existence: a valid agent credential on an unknown task still reaches
+        the 404 (unknown tasks narrow nothing).
+
+        Returns (http_status, error_payload) when the request must be
+        rejected, else None.
+        """
+        with self.lock:
+            unauthorized = (
+                401,
+                {"error": "unauthorized", "message": "Missing or invalid bearer token"},
+            )
+            match = re.match(r"^Bearer\s+(\S+)$", (auth_header or "").strip())
+            presented = match.group(1) if match else None
+            if presented is None:
+                return unauthorized
+            if self.expected_admin_token and presented == self.expected_admin_token:
+                return None
+            if self.expected_runner_token and presented == self.expected_runner_token:
+                # RUNNER_TOKEN is accepted on unnarrowed reads (/status) only.
+                return unauthorized
+            if presented in self.revoked_tokens:
+                # proto: credentialAgent denies revoked tokens on reads -> 401.
+                return unauthorized
+            owner = None
+            for rec in self.tasks.values():
+                if rec.get("token") == presented:
+                    owner = rec
+                    break
+            if owner is None:
+                return unauthorized
+            target = self.tasks.get(task_id) or self.agents.get(task_id)
+            if target is None or target.get("agent_id") == owner.get("agent_id"):
+                return None
+            return (
+                403,
+                {
+                    "error": (
+                        f"forbidden: this token belongs to {owner.get('agent_id')}, "
+                        f"not {target.get('agent_id')}"
+                    )
+                },
+            )
 
     def create_task(self, data: Dict[str, Any]) -> Dict[str, Any]:
         with self.lock:
@@ -581,6 +640,16 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
         task_match = re.match(r"^/tasks/([^/]+)$", path)
         if task_match:
             task_id = urllib.parse.unquote(task_match.group(1))
+            # C1462/C1499: owner-or-admin read auth when the mock runs with a
+            # configured admin token (same conditional pattern as POST /tasks);
+            # the unconfigured default stays an open read for legacy fixtures.
+            if self.state.expected_admin_token is not None:
+                err = self.state.check_task_read_auth(
+                    self.headers.get("Authorization", ""), task_id
+                )
+                if err:
+                    self._send_json(err[0], err[1])
+                    return
             try:
                 res = self.state.get_task(task_id)
                 self._send_json(200, res)

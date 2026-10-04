@@ -1453,6 +1453,144 @@ class TestAgentBranchesClient(unittest.TestCase):
         self.assertIsNone(res_stale)
 
 
+    def test_17_get_task_auth_owner_or_admin(self):
+        """C1499: authenticated GET /tasks/:id detail reads and auto token cache.
+
+        Ladder against a token-configured mock (mirrors proto/auth-reads
+        decideReadAuth narrowed to the task owner, commit 2302d70):
+        anonymous -> 401, owner task token -> 200, admin -> 200, foreign agent
+        token -> 403, runner -> 401 (RUNNER_TOKEN is a read credential on
+        unnarrowed reads only per prototype/src/core/auth.ts decideReadAuth;
+        the C1499 brief's "runner -> 403" does not match the router it cites).
+        Also covers: create_task auto-caches the minted token (get_task and
+        push's agent resolution then authenticate without an explicit token),
+        the $TASK_TOKEN env fallback, and auth-before-existence (valid
+        credential on an unknown task still reaches the 404).
+        """
+        saved_task_token = os.environ.get("TASK_TOKEN")
+        saved_admin_token = os.environ.get("ADMIN_TOKEN")
+        os.environ.pop("TASK_TOKEN", None)
+        os.environ.pop("ADMIN_TOKEN", None)
+        auth_srv, auth_thread, auth_url, _auth_state = start_mock_l1_server(
+            host="127.0.0.1",
+            port=0,
+            expected_admin_token="adm-get-task-token",
+            expected_runner_token="run-get-task-token",
+        )
+        try:
+            client = AgentBranchesClient(server_url=auth_url)
+            task = client.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="Get-task auth ladder",
+                branch="feat/get-task-auth",
+                agent="ladder-alpha",
+                admin_token="adm-get-task-token",
+            )
+            task_id = task["taskId"]
+            owner_token = task["token"]
+            self.assertTrue(owner_token, "create_task must return the minted task token")
+            self.assertEqual(client.task_tokens[task_id], owner_token)
+
+            foreign = client.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="Foreign reader",
+                branch="feat/get-task-foreign",
+                agent="ladder-beta",
+                admin_token="adm-get-task-token",
+            )
+            foreign_token = foreign["token"]
+            self.assertNotEqual(owner_token, foreign_token)
+
+            # 1. Unauthenticated read -> 401 (the regression the fix addresses)
+            anon = AgentBranchesClient(server_url=auth_url)
+            with self.assertRaises(AgentBranchesAPIError) as ctx:
+                anon.get_task(task_id)
+            self.assertEqual(ctx.exception.status_code, 401)
+
+            # 2. Explicit owner task token -> 200
+            rec = client.get_task(task_id, token=owner_token)
+            self.assertEqual(rec["taskId"], task_id)
+            self.assertEqual(rec["agentId"], task["agentId"])
+
+            # 3. Explicit admin token -> 200
+            rec_admin = client.get_task(task_id, token="adm-get-task-token")
+            self.assertEqual(rec_admin["taskId"], task_id)
+
+            # 4. Runner token on a narrowed task read -> 401 (not a read
+            #    credential here; decideReadAuth accepts it on /status only)
+            with self.assertRaises(AgentBranchesAPIError) as ctx:
+                client.get_task(task_id, token="run-get-task-token")
+            self.assertEqual(ctx.exception.status_code, 401)
+            self.assertNotIsInstance(ctx.exception, (TokenExpiredError, TokenRevokedError))
+
+            # 5. Valid foreign agent token -> 403 (cross-agent read rejected)
+            with self.assertRaises(AgentBranchesAPIError) as ctx:
+                client.get_task(task_id, token=foreign_token)
+            self.assertEqual(ctx.exception.status_code, 403)
+            self.assertIn("forbidden", ctx.exception.message.lower())
+
+            # 6. Auto token resolution: create_task then get_task with no
+            #    explicit token reads as the owning agent
+            auto = AgentBranchesClient(server_url=auth_url)
+            own = auto.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="Auto token resolution",
+                branch="feat/get-task-auto",
+                agent="ladder-gamma",
+                admin_token="adm-get-task-token",
+            )
+            rec_auto = auto.get_task(own["taskId"])
+            self.assertEqual(rec_auto["taskId"], own["taskId"])
+            self.assertEqual(rec_auto["agentId"], own["agentId"])
+
+            # 7. push() without agent_id resolves it via the authenticated
+            #    get_task path when the task_to_agent cache is empty
+            auto.task_to_agent.pop(own["taskId"])
+            push_res = auto.push(
+                task_id=own["taskId"],
+                head_sha="cccccccccccccccccccccccccccccccccccccccc",
+            )
+            self.assertTrue(push_res["accepted"])
+            self.assertEqual(push_res["agentId"], own["agentId"])
+
+            # 8. $TASK_TOKEN env fallback authenticates a client with no cache
+            os.environ["TASK_TOKEN"] = owner_token
+            try:
+                env_client = AgentBranchesClient(server_url=auth_url)
+                rec_env = env_client.get_task(task_id)
+                self.assertEqual(rec_env["taskId"], task_id)
+            finally:
+                os.environ.pop("TASK_TOKEN", None)
+
+            # 9. Auth resolves before existence: valid credential on an
+            #    unknown task still reaches the coordinator's 404
+            with self.assertRaises(AgentBranchesAPIError) as ctx:
+                client.get_task("task-non-existent-9999", token=owner_token)
+            self.assertEqual(ctx.exception.status_code, 404)
+
+            # 10. Cache is per-task: auto's cached ladder-gamma token is not
+            #     replayed against ladder-beta's (uncached) task — the read
+            #     fails closed as anonymous (401), never with the wrong
+            #     credential (which would surface as 403)
+            with self.assertRaises(AgentBranchesAPIError) as ctx:
+                auto.get_task(foreign["taskId"])
+            self.assertEqual(ctx.exception.status_code, 401)
+        finally:
+            if saved_task_token is None:
+                os.environ.pop("TASK_TOKEN", None)
+            else:
+                os.environ["TASK_TOKEN"] = saved_task_token
+            if saved_admin_token is None:
+                os.environ.pop("ADMIN_TOKEN", None)
+            else:
+                os.environ["ADMIN_TOKEN"] = saved_admin_token
+            auth_srv.shutdown()
+            auth_srv.server_close()
+
+
 if __name__ == "__main__":
     unittest.main()
 

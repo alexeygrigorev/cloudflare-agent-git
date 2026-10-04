@@ -76,6 +76,9 @@ class AgentBranchesClient:
         self.timeout = timeout
         self.task_to_agent: Dict[str, str] = {}
         self.known_tasks: Dict[str, Dict[str, Any]] = {}
+        # taskId -> per-task bearer token minted at create_task (C1499); used
+        # to authenticate owner-scoped reads such as GET /tasks/:id.
+        self.task_tokens: Dict[str, str] = {}
 
     def _request(
         self,
@@ -184,15 +187,35 @@ class AgentBranchesClient:
             self.task_to_agent[task_id] = agent_id
             self.known_tasks[task_id] = res
 
+        # Cache the minted per-task bearer token so later reads of this task
+        # (get_task, push agent resolution) authenticate as the owning agent.
+        if task_id and res.get("token"):
+            self.task_tokens[task_id] = res["token"]
+
         return res
 
-    def get_task(self, task_id: str) -> Dict[str, Any]:
+    def get_task(self, task_id: str, token: Optional[str] = None) -> Dict[str, Any]:
         """Fetch task status and active warnings for a specific task (GET /tasks/:id).
+
+        GET /tasks/:id is owner-or-admin on authenticated coordinators (C1499),
+        so the request carries a bearer token resolved in this order: the
+        explicit ``token`` argument, the per-task token cached by
+        ``create_task``, $TASK_TOKEN, then $ADMIN_TOKEN. Anonymous requests
+        are rejected with 401.
 
         Returns the full task record including distinct agentId and taskId.
         """
         encoded_id = urllib.parse.quote(task_id, safe="")
-        res = self._request("GET", f"/tasks/{encoded_id}")
+        effective_token = (
+            token
+            or self.task_tokens.get(task_id)
+            or os.environ.get("TASK_TOKEN")
+            or os.environ.get("ADMIN_TOKEN")
+        )
+        req_headers: Optional[Dict[str, str]] = None
+        if effective_token:
+            req_headers = {"Authorization": f"Bearer {effective_token}"}
+        res = self._request("GET", f"/tasks/{encoded_id}", headers=req_headers)
 
         t_id = res.get("taskId") or res.get("id") or res.get("task_id") or task_id
         a_id = res.get("agentId") or res.get("agent_id") or res.get("agent")
@@ -220,7 +243,9 @@ class AgentBranchesClient:
         """Register a WIP commit push (POST /events/push).
 
         Sends agentId (required by L1 coordinator), head_sha, base_sha, files_changed, intent, test_provenance.
-        If agent_id is not passed, resolves it via task_id mapping or get_task(task_id).
+        If agent_id is not passed, resolves it via task_id mapping or an
+        authenticated get_task(task_id) lookup (C1499: the per-task token
+        cached by create_task authenticates the read as the owning agent).
         """
         # Resolve agent_id if not explicitly provided
         effective_agent_id = agent_id
