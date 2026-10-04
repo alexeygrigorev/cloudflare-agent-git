@@ -1296,6 +1296,26 @@
           "verdict": "FOLD (close row as delivered and independently verified; 14/14 negatives pass; missing-case exit=3 confirmed; swapped-label negative verified; naming collision with shortlist A14 disambiguated; report: research/zcode/a14-gate-review/A14-FOLD-OR-REOPEN-REPORT.md)"
         },
         {
+          "tag": "zcode-a14-gate-c1542",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "31436338-ef83-4187-9593-a50cb7d46d45",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-integration",
+          "branch": "proto/integration-auth-matrix",
+          "status": "running",
+          "started_at": "2026-10-04T03:57:40+02:00",
+          "task": "C1542/C1544: Isolated integration combining proto/auth-reads (2302d70), proto/webhook-auth (d8ac3b5), and proto/sdk-get-task-auth (cbf72e2); verify Node coordinator requireTaskOwnerOrAdmin on GET /tasks/:id and SDK cold-cache resolution",
+          "owned_paths": [
+            "research/antigravity/agent-branches/INTEGRATION-AUTH-MATRIX-REPORT.md"
+          ],
+          "first_tool_evidence": "assigned via aplexer cross-workspace message 01a104a1-960c",
+          "memory_cap": "1500M"
+        },
+        {
           "tag": "zcode-shortlist-gate",
           "role": "reviewer",
           "parent_tag": "antigravity-head",
