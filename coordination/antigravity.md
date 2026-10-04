@@ -2503,3 +2503,32 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Both deliverables verified clean by `publication_guard.py` (exit code 0).
    - Team registry updated: `usage-corrections-worker` and `runbook-compatibility-worker` marked completed; `counter-mapping-reviewer` and `runbook-packaging-reviewer` registered as active reviewers.
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
+### 84. Runbook Compatibility Independent Review & Remediated Patch Delivery (C1717, C1724)
+
+- **As-of:** 2026-10-04, Europe/Berlin (05:45 UTC)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Codex Principal C1717, C1719, C1721, C1724.
+
+1. **Independent Runbook Review Delivery & Bounded Acceptance (C1717):**
+   - **Deliverable**: [`research/antigravity/reviews/REV-RUNBOOK-COMPATIBILITY.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-RUNBOOK-COMPATIBILITY.md) by `runbook-packaging-reviewer` (`d217967f-2a66-4a61-8310-b7e395bb1a7b`).
+   - **Verdict**: **BOUNDED ACCEPTANCE (Section 4 Unified Diff Requires Remediation — Clean Corrected Patch Provided)**.
+   - **Core Findings & Remediations**:
+     - **Diff Syntax Corruption**: The initial draft diff in Section 4 of `RUNBOOK-COMPATIBILITY-PATCH.md` failed `git apply --check` (exit 128: corrupt patch at line 121 due to trailing markdown fence ` ``` `) and GNU `patch --dry-run` (exit 2: malformed patch due to off-by-2 hunk line count declaration `@@ -110,23 +110,95 @@` vs actual 25 old lines and 97 new lines).
+     - **Push Safety Defect**: The draft diff introduced an unconstrained `push -f` on initial canonical seeding instead of a safe push to the empty canonical namespace or an expected-head guard.
+     - **Security Disclosure Omission**: The draft diff omitted the process list / argv token exposure disclosure (`/proc/<pid>/cmdline`, `ps aux`) and mode 0600 header file recommendation present in Section 3.
+     - **Command Truncation**: Step 5 was truncated to task registration only, dropping the fork clone, commit, push, and coordinator push registration commands.
+     - **Remediated Drop-in Patch**: §4 of `REV-RUNBOOK-COMPATIBILITY.md` provides the complete, tested, drop-in unified diff against `592a8ee:README.md` that passes `git apply --check` with exit code 0.
+     - **Receipt Demarcation**: Clarified that the measured 1.340s total runtime, 0 warnings verification, and sampled RSS figures (Sidecar: 59.79 -> 78.79 MB; Coord: 62.98 -> 79.46 MB; Combined: 158.25 MB) originate strictly from the automated Python lifecycle runner (`test_runbook_lifecycle.py`), not the Bash runner (`test_bash_runbook.sh`). Redundant 22 client unit tests (`tests/test_client.py`) test client mock behavior and do not constitute path compatibility proof for external Node coordinator + Git sidecar runbooks.
+
+2. **ZCode Wire / Exit Ladder Clarifications Forwarded (C1724):**
+   - Transmitted Z4abc's final captured wire/exit ladder to `cli-push-token-reviewer` (`f8cfa6e2-11ae-4e09-964f-b6d0f8181fd3`):
+     - Final captured ladder: owner 200 (exit 0), admin 200 deduped body (exit 0), cold-env 200 (exit 0), foreign 403 (exit 1), revoked 401 (exit 1), each mutation applied exactly once.
+     - Earlier lost response and minted private orphan forks preserved as INCONCLUSIVE.
+     - Read retries (4) in the cold-env case confirmed as read retries, not mutations.
+     - Pinned commit: branch `proto/cli-push-token` @ `862d17f` (tree `f19ea6db62ba6e1b4b9b73d842ffcf1d2d3a32dc`).
+
+3. **Invariants & Publication Guard:**
+   - Deliverable verified clean via `publication_guard.py` (exit code 0, 0 violations).
+   - Registry updated: `runbook-packaging-reviewer` marked completed (`BOUNDED ACCEPTANCE`).
+   - Active reviewers progressing in parallel: `counter-mapping-reviewer` (`938363ee`) and `cli-push-token-reviewer` (`f8cfa6e2`).
+   - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
