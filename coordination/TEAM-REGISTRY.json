@@ -2501,6 +2501,25 @@
           ],
           "first_tool_evidence": "subagent launched with native conversation ID fb862142-9a0f-4420-a8ae-d2b4777a1b3d; audited research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md; executed independent scratch replay on demo-target baseline ff4decd7; verified identical test oracle across local worktree, PR CI, and merge queue (AssertionError: 400 !== 201); verified official technical documentation (on: merge_group, merged_results, Actions checkout v4); verified O(N^2) scaling math (190 pairs at N=20) vs linear/batched queues; verified bounded trunk protection realities, PR CI timing, and prototype vs proposal demarcations; retracted naive file-diff filtering as potentially unsound for cross-file contracts; delivered REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md with verdict BOUNDED ACCEPTANCE (clean publication guard, exit 0).",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
+        },
+        {
+          "tag": "container-patch-researcher",
+          "role": "researcher",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "fd7aef9c-acb2-48b6-9a03-e2ee4eda48e0",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/container-patch-research/",
+          "status": "in_progress",
+          "started_at": "2026-10-04T12:56:51+02:00",
+          "task": "Investigating the dominant ephemeral container/microVM and patch-export paradigm in autonomous coding swarms (OpenHands, SWE-bench, Devin, Daytona, Modal, E2B) vs persistent Git Smart HTTP remote branching per Desktop Orchestrator 12:50 directives.",
+          "owned_paths": [
+            "research/antigravity/demand/container-and-patch-workflows.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID fd7aef9c-acb2-48b6-9a03-e2ee4eda48e0; scratch root .local/scratch/container-patch-research/ allocated; researching container and patch workflows deliverable.",
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]
     },

@@ -1152,6 +1152,27 @@
       "next_action": "Review completed in research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md (verdict: BOUNDED ACCEPTANCE). Bounded acceptance findings ready for principal integration and peer notification.",
       "acceptance": "Independent review report with clear verdict, rigorous technical verification across all 10 evaluation dimensions, SBET mathematical threshold audit, and clean publication guard.",
       "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by incumbent-premerge-reviewer (fb862142) under Desktop Orchestrator 11:50 and 12:20 Berlin directives. Verdict: BOUNDED ACCEPTANCE (PROVISIONAL ADOPTION HYPOTHESES & PRIMARY SOURCING DEMARCATED; UNSOUND FILE-DIFF PREFILTER WITHDRAWN). Verified: (1) Sourced official technical documentation and exact workflow configuration invariants (on: merge_group, merged_results, checkout v4); (2) Bounded trunk protection realities (test suite coverage, flakiness, drift, admin bypasses); (3) Corrected PR CI timing (draft PRs, push triggers, polling) and demarcated manual scripted prototype vs automated proposal; (4) Verified O(N^2) combinatorial upper bound (190 pairs at N=20) vs linear/batched queues; (5) Formally labeled buyer friction and SBET criteria as provisional engineering hypotheses; (6) Withdrew naive file-diff filtering as potentially unsound for cross-file contracts; (7) Reaffirmed human hold on manufactured SBET tests. Clean publication guard (exit 0)."
+    },
+    {
+      "id": "container-and-patch-workflows",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "container-patch-researcher",
+      "status": "in_progress",
+      "updated_at": "2026-10-04T12:57:15.000000+02:00",
+      "executor_ids": [
+        "fd7aef9c-acb2-48b6-9a03-e2ee4eda48e0"
+      ],
+      "owned_paths": [
+        "research/antigravity/demand/container-and-patch-workflows.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/demand/container-and-patch-workflows.md"
+      ],
+      "blocked_on": [],
+      "assignment_ack": "Launched per Desktop Orchestrator 12:50 Berlin directives to continue independently owned genuine consumer observations, actual incumbent workflows, and disconfirming buyer evidence with sourced cutoffs. Investigating the dominant ephemeral container/microVM and patch-export paradigm in autonomous coding swarms (OpenHands, SWE-bench, Devin, Daytona, Modal, E2B) vs persistent Git Smart HTTP remote branching.",
+      "next_action": "Launch native subagent container-patch-researcher to conduct sourced investigation into container/microVM task isolation, patch export vs remote branching, and sandbox network/credential boundaries.",
+      "acceptance": "Comprehensive research deliverable in research/antigravity/demand/container-and-patch-workflows.md with authoritative dated primary technical URLs, architectural comparison between ephemeral container/patch export and Git Smart HTTP remote branching, analysis of sandbox egress/security barriers, developer/operator workflow friction, and clean publication guard."
     }
   ]
 }
