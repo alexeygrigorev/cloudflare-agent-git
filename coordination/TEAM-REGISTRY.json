@@ -3712,6 +3712,10 @@
       "head_tag": "antigravity-head",
       "head_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
       "integration_owner": "antigravity-head",
+      "principal_tags": [
+        "codex-principal"
+      ],
+      "monitoring_provenance": "Codex C1637 ACK under human/OPERATING-MODEL",
       "ownership_state": "Acknowledged; active implementation head on platform extraction, backup sync, and consumer dogfooding"
     },
     {
@@ -3720,6 +3724,10 @@
       "head_tag": "agent-dashboard-head",
       "head_session_id": "c7a75f76-1f51-4f14-873e-7a60569838c3",
       "integration_owner": "agent-dashboard-head",
+      "principal_tags": [
+        "codex-principal"
+      ],
+      "monitoring_provenance": "Codex C1637 ACK under human/OPERATING-MODEL",
       "ownership_state": "Actual semantic head ACK and firstwhoami11:17:49Z verified; renderedscreen working on precise executor briefs despite catalogidle",
       "workspace": "/home/alexey/git/agent-dashboard",
       "first_action": {
@@ -3740,6 +3748,10 @@
       "head_tag": "quota-launcher-head",
       "head_session_id": "6be4c247-4410-4bdb-968e-7fc2d5844941",
       "integration_owner": "quota-launcher-head",
+      "principal_tags": [
+        "codex-principal"
+      ],
+      "monitoring_provenance": "Codex C1637 ACK under human/OPERATING-MODEL",
       "ownership_state": "Genuine Grok head active in /home/alexey/git/agent-quota-launcher; owns launcher/, tests/, README, pyproject, examples",
       "workspace": "/home/alexey/git/agent-quota-launcher",
       "first_action": {

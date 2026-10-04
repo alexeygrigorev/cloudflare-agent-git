@@ -120,23 +120,23 @@ class SupervisionRoutingTests(unittest.TestCase):
         for prod in expected_products:
             self.assertIn(prod, entity_ids, f"Product {prod} missing from extracted supervision entities")
 
-        # Verify each product project has valid head_tag and truthful principal_tags (C1634: no invented fallback)
+        # Verify each product project has valid head_tag and truthful principal_tags (C1637: Codex monitoring ACK)
         by_id = {e['id']: e for e in entities}
         self.assertEqual(by_id['agent-branches']['head_tag'], 'antigravity-head')
-        self.assertEqual(by_id['agent-branches']['principal_tags'], [], "Unowned project must have empty principal_tags")
-        self.assertTrue(by_id['agent-branches']['unowned'])
+        self.assertEqual(by_id['agent-branches']['principal_tags'], ['codex-principal'], "agent-branches monitored by codex-principal under C1637 ACK")
+        self.assertFalse(by_id['agent-branches']['unowned'])
 
         self.assertEqual(by_id['agent-dashboard']['head_tag'], 'agent-dashboard-head')
-        self.assertIn('codex-principal', by_id['agent-dashboard']['principal_tags'], "agent-dashboard registered with codex and claude")
-        self.assertIn('claude-principal', by_id['agent-dashboard']['principal_tags'])
+        self.assertEqual(by_id['agent-dashboard']['principal_tags'], ['codex-principal'], "agent-dashboard monitored by codex-principal under C1637 ACK")
         self.assertFalse(by_id['agent-dashboard']['unowned'])
 
         self.assertEqual(by_id['quota-launcher']['head_tag'], 'quota-launcher-head')
-        self.assertEqual(by_id['quota-launcher']['principal_tags'], [], "Unowned project must have empty principal_tags")
-        self.assertTrue(by_id['quota-launcher']['unowned'])
+        self.assertEqual(by_id['quota-launcher']['principal_tags'], ['codex-principal'], "quota-launcher monitored by codex-principal under C1637 ACK")
+        self.assertFalse(by_id['quota-launcher']['unowned'])
 
         self.assertEqual(by_id['agent-coordination']['head_tag'], 'agent-coordination-head')
-        self.assertIn('codex-principal', by_id['agent-coordination']['principal_tags'], "agent-coordination specifies codex-principal")
+        self.assertEqual(by_id['agent-coordination']['principal_tags'], ['codex-principal'], "agent-coordination specifies codex-principal")
+        self.assertFalse(by_id['agent-coordination']['unowned'])
 
     def test_4_stopped_or_excluded_principals_remain_excluded(self):
         """Test 4: Stopped or excluded principals (e.g. claude-principal) remain excluded."""
