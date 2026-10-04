@@ -114,7 +114,10 @@ class TestAgentBranchesClient(unittest.TestCase):
 
     def run_cli(self, args, env_vars=None, check=True, input_data=None):
         """Helper to run agent-branches CLI via subprocess."""
-        cmd = [sys.executable, self.cli_path] + args
+        if os.path.exists(self.cli_path):
+            cmd = [sys.executable, self.cli_path] + args
+        else:
+            cmd = [sys.executable, "-m", "agent_branches.cli"] + args
         env = dict(os.environ)
         env["PYTHONPATH"] = self.repo_root
         if env_vars:
@@ -395,6 +398,12 @@ class TestAgentBranchesClient(unittest.TestCase):
 
     def test_04_git_utils_robustness(self):
         """Test git_utils error handling, NUL-separated parsing, and None return on failure."""
+        if not os.path.exists(os.path.join(self.repo_root, ".git")):
+            subprocess.run(["git", "init", "-q"], cwd=self.repo_root, check=True)
+            subprocess.run(["git", "config", "user.name", "Test"], cwd=self.repo_root, check=True)
+            subprocess.run(["git", "config", "user.email", "test@test.local"], cwd=self.repo_root, check=True)
+            subprocess.run(["git", "commit", "-q", "--allow-empty", "-m", "init"], cwd=self.repo_root, check=True)
+            subprocess.run(["git", "commit", "-q", "--allow-empty", "-m", "second"], cwd=self.repo_root, check=True)
         head = get_current_head_sha(cwd=self.repo_root)
         self.assertIsNotNone(head)
         self.assertEqual(len(head), 40)
@@ -1860,9 +1869,23 @@ class TestAgentBranchesClient(unittest.TestCase):
         client = AgentBranchesClient()
         meta = client.inspect_token_metadata("tok_alpha_12345")
         self.assertTrue(meta["valid_prefix"])
+        meta_art = client.inspect_token_metadata("art_v1_abcdef12345")
+        self.assertTrue(meta_art["valid_prefix"])
         self.assertEqual(meta["segments"], 3)
         with self.assertRaises(ValueError):
             client.inspect_token_metadata("")
+
+    def test_22_calculate_jitter(self):
+        client = AgentBranchesClient()
+        j0 = client.calculate_jitter(0, base_delay=0.1)
+        self.assertGreaterEqual(j0, 0.1)
+        j1 = client.calculate_jitter(1, base_delay=0.1)
+        self.assertGreater(j1, j0)
+        # Invariant: jittered backoff must never exceed max_delay ceiling
+        j_max = client.calculate_jitter(8, max_delay=2.0)
+        self.assertLessEqual(j_max, 2.0)
+        with self.assertRaises(ValueError):
+            client.calculate_jitter(-1)
 
 
 if __name__ == "__main__":

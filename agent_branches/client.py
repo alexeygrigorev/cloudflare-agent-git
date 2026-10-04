@@ -678,5 +678,23 @@ class AgentBranchesClient:
         if not token or not isinstance(token, str):
             raise ValueError("Token must be a non-empty string")
         parts = token.replace("_", "-").split("-")
-        return {"valid_prefix": token.startswith("tok_") or token.startswith("task-") or token.startswith("sidecar-"), "segments": len(parts), "length": len(token)}
+        valid_prefix = any(
+            token.startswith(p) for p in ("tok_", "task-", "sidecar-", "art_v1_")
+        )
+        return {
+            "valid_prefix": valid_prefix,
+            "segments": len(parts),
+            "length": len(token),
+        }
+
+    def calculate_jitter(
+        self, attempt: int, base_delay: float = 0.05, max_delay: float = 2.0
+    ) -> float:
+        """Calculate exponential backoff with bounded deterministic jitter strictly <= max_delay."""
+        if attempt < 0:
+            raise ValueError("Attempt must be non-negative")
+        delay = base_delay * (2 ** attempt)
+        # deterministic pseudo-jitter using attempt parity
+        jitter = 0.01 * (attempt % 3)
+        return min(max_delay, round(delay + jitter, 4))
 
