@@ -3706,8 +3706,35 @@
       "project_id": "agent-dashboard",
       "parent_tag": "agent-dashboard-head",
       "workspace": "/home/alexey/git/agent-dashboard",
-      "first_action": null,
-      "launch_verified": true
+      "first_action": {
+        "engine": "opencode",
+        "first_tool": "aplexer whoami --json",
+        "first_tool_at_utc": "2026-10-04T11:25:10Z",
+        "session_id": "fa49c91e-913a-46f4-b3c7-cdaef14eeb0f",
+        "tag": "ad-frontend-exec",
+        "workspace": "/home/alexey/git/agent-dashboard"
+      },
+      "launch_verified": true,
+      "provider": "opencode"
+    },
+    {
+      "session_id": "96a4693f-2fa6-4a5f-a67f-9c251d847645",
+      "tag": "ad-independent-reviewer",
+      "project_id": "agent-dashboard",
+      "parent_tag": "agent-dashboard-head",
+      "role": "independent-reviewer",
+      "provider": "antigravity",
+      "workspace": "/home/alexey/git/agent-dashboard",
+      "owned_paths": [
+        "reviews/"
+      ],
+      "first_action": {
+        "session_id": "96a4693f-2fa6-4a5f-a67f-9c251d847645",
+        "tag": "ad-independent-reviewer",
+        "engine": "antigravity",
+        "first_tool": "run_command",
+        "first_tool_at_utc": "2026-10-04T11:26:41Z"
+      }
     }
   ]
 }
