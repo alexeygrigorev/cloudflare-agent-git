@@ -170,8 +170,9 @@ session instead of reusing stale tokens.
 Do not conflate the two credentials this stack uses:
 
 - `$SIDECAR_TOKEN` is the **shared sidecar control bearer**: it authorizes
-  sidecar control-plane calls (e.g. creating canonical repos via
-  `POST /api/repos`) and is what the coordinator presents as
+  sidecar control-plane calls (creating standalone repos via `POST /api/repos`
+  and minting repo write tokens via `POST /api/repos/<name>/tokens`) and is
+  what the coordinator presents as
   `LOCAL_ARTIFACTS_TOKEN`. It is not the credential Git Smart HTTP accepts
   for push. (The coordinator's own `POST /setup` route takes `$ADMIN_TOKEN`
   instead — two control planes, two different bearers.)
@@ -183,48 +184,46 @@ Do not conflate the two credentials this stack uses:
 
 #### Pushing work to a canonical repo: exact seed lease
 
-The sidecar's `createRepo()` initializes every canonical bare repo with a
-synthetic seed commit (`chore: seed canonical baseline` on `main`) and returns
-its SHA as `seedCommit` next to the remote URL and a minted write token. A
-freshly created canonical repo is therefore **not** empty: pushing your
-unrelated local history (e.g. a branch based on `b2df985`) is a
+Both control planes initialize the canonical bare repo with a synthetic seed
+commit (`chore: seed canonical baseline` on `main`) and expose its SHA as
+`seedCommit`: the coordinator's `POST /setup` creates the
+**coordinator-managed canonical repo** that the SDK's `create_task` branches
+from — the product path, used as the primary sequence below — while the
+sidecar's `POST /api/repos` creates a standalone repo for sidecar-only Git
+mechanics. A freshly created canonical repo is therefore **not** empty:
+pushing your unrelated local history (e.g. a branch based on `b2df985`) is a
 non-fast-forward. Do **not** recover with an unconstrained `git push --force`
 — that silently clobbers anything any other actor lands on `main`. Push with
 an exact lease on the seed commit instead:
 
 ```bash
-# Create the canonical repo on the sidecar control plane; the JSON response
-# carries remote (canonical URL), seedCommit (seed SHA) and token (repo
-# write token).
-sidecar_bearer="Bearer $SIDECAR_TOKEN"   # scheme + control credential, composed once
-setup_resp=$(curl -fsS -X POST "http://127.0.0.1:$SIDECAR_PORT/api/repos" \
-    -H "Authorization: $sidecar_bearer" \
-    -H 'Content-Type: application/json' \
-    -d '{"name":"my-task-repo"}')
-seed_sha=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["seedCommit"])')
-repo_url=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["remote"])')
-repo_tok=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["token"])')
-# jq equivalents: seed_sha=$(printf '%s' "$setup_resp" | jq -r .seedCommit), etc.
-
-# Alternative control plane: the coordinator's `POST /setup` (authenticated
-# with `$ADMIN_TOKEN`, not $SIDECAR_TOKEN) creates the canonical repo too.
-# Its response nests the URL and seed as `canonical.remote` / `seedCommit`
-# and carries NO write token:
+# --- Product sequence: coordinator-managed canonical repo (the repo the
+# SDK's create_task branches from). Step 1 — initialize canonical on the
+# coordinator control plane:
 coord_port="${PORT:-8787}"                # coordinator listens on $PORT
 admin_bearer="Bearer $ADMIN_TOKEN"        # scheme + admin credential, composed
 setup_resp=$(curl -fsS -X POST "http://127.0.0.1:$coord_port/setup" \
     -H "Authorization: $admin_bearer")
+created=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["created"])')
 canonical_name=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["canonical"]["name"])')
 repo_url=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["canonical"]["remote"])')
 seed_sha=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["seedCommit"])')
-# Fail closed on an existing canonical: `created` is false and `seedCommit`
-# is null — no seed SHA is known, so a fresh-seed lease bootstrap must stop
-# here (never lease against a guessed SHA) and proceed, if at all, through
-# ordinary Git integration with the existing canonical history.
+# jq equivalents: canonical_name=$(printf '%s' "$setup_resp" | jq -r .canonical.name), etc.
 
-# /setup mints no token — create a repo-scoped write token on the sidecar
-# control plane instead (same shared bearer as repo creation; the response
-# record carries the secret as `plaintext`):
+# Fail closed unless the canonical repo was freshly initialized: a fresh-seed
+# lease bootstrap requires created=true AND a non-null seedCommit. An already
+# initialized canonical (created=false, seedCommit=null) offers no seed SHA —
+# never lease against a guessed one; integrate through ordinary Git instead.
+if [ "$created" != "True" ] || [ "$seed_sha" = "None" ]; then
+    echo "canonical already initialized (created=$created seedCommit=$seed_sha);" \
+         "refusing fresh-seed lease bootstrap" >&2
+    exit 1
+fi
+
+# Step 2 — /setup mints no write token: create a repo-scoped one on the
+# sidecar control plane (shared bearer; the response record carries the
+# secret as `plaintext`):
+sidecar_bearer="Bearer $SIDECAR_TOKEN"    # scheme + control credential, composed once
 token_resp=$(curl -fsS -X POST \
     "http://127.0.0.1:$SIDECAR_PORT/api/repos/$canonical_name/tokens" \
     -H "Authorization: $sidecar_bearer" \
@@ -232,11 +231,31 @@ token_resp=$(curl -fsS -X POST \
     -d '{"scope": "write", "ttlSeconds": 3600}')
 repo_tok=$(printf '%s' "$token_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["plaintext"])')
 
-# Push with the exact lease on the seed commit, authenticated as the minted
-# repo write token $repo_tok (0600 file-backed variant below — never argv
-# on multi-user hosts):
+# Step 3 — persist the push credential in repo-local git config BEFORE the
+# push (0600 file, not per-command argv; header composed from scheme + token):
+umask 077
+repo_bearer="Bearer $repo_tok"   # scheme + minted repo write token
+git config --local "http.$repo_url.extraHeader" "Authorization: $repo_bearer"
+chmod 600 .git/config
+
+# Step 4 — push with the exact lease on the seed commit:
 git push --force-with-lease=refs/heads/main:"$seed_sha" \
     "$repo_url" HEAD:refs/heads/main
+
+# --- Standalone sidecar Git mechanics (sidecar-only testing; NOT the
+# coordinator-managed canonical repo the SDK's create_task requires):
+# sidecar POST /api/repos creates a repo and returns remote (canonical URL),
+# seedCommit (seed SHA) and token (repo write token) in one flat response.
+sidecar_resp=$(curl -fsS -X POST "http://127.0.0.1:$SIDECAR_PORT/api/repos" \
+    -H "Authorization: $sidecar_bearer" \
+    -H 'Content-Type: application/json' \
+    -d '{"name":"my-task-repo"}')
+seed_sha=$(printf '%s' "$sidecar_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["seedCommit"])')
+repo_url=$(printf '%s' "$sidecar_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["remote"])')
+repo_tok=$(printf '%s' "$sidecar_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["token"])')
+# jq equivalents: seed_sha=$(printf '%s' "$sidecar_resp" | jq -r .seedCommit), etc.
+# Then repeat steps 3-4 above: persist http.$repo_url.extraHeader with this
+# token and push with --force-with-lease=refs/heads/main:"$seed_sha".
 ```
 
 This succeeds only while canonical `main` still points at `seed_sha`. If
@@ -270,12 +289,14 @@ and the
 this; on multi-user hosts prefer mode `0600` files over argv:
 
 ```bash
-# Git: persist the header in the repo config once (file-backed, not per-command
-# argv). Use the minted repo write token here — the control bearer $SIDECAR_TOKEN
-# is not accepted by Git Smart HTTP push.
+# Git: persist the header in the repo config once (file-backed, not
+# per-command argv) — this is step 3 of the product sequence above, with
+# $repo_url bound to the canonical remote URL. Use the minted repo write
+# token here — the control bearer $SIDECAR_TOKEN is not accepted by Git
+# Smart HTTP push.
 umask 077
 repo_bearer="Bearer $repo_tok"   # scheme + minted repo write token
-git config --local http.<remote-url>.extraHeader "Authorization: $repo_bearer"
+git config --local "http.$repo_url.extraHeader" "Authorization: $repo_bearer"
 chmod 600 .git/config
 
 # curl: read options from a 0600 config file instead of -H
