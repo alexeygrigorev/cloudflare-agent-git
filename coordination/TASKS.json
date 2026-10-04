@@ -457,7 +457,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T22:43:39.483995+00:00",
+      "updated_at": "2026-10-04T22:54:07.701677+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -479,10 +479,10 @@
         "research/codex/four-project-oversight-20261004-2026.md"
       ],
       "blocked_on": [],
-      "next_action": "Verify Ant ACK C2105/C2106 and corrected second FileBus reviewer cycle on exact minimal backend+static patches; existing393 actual lifecycle negatives and437/082 preceding24h payload remain parallel. Do not promote mixed119KB backend-only review to rendered consumer acceptance.",
+      "next_action": "Dashboard minimal consumer bounded ACCEPT after5 actual SHA match and two genuine model FileBus cycles; preserve canonical ownerACK. Review actual06/37 lifecycle final revision/verdict and request C2116 exact new hourly payloadf918 denominator/feature/identity correction plus independentreview; original envelope queued NOTREADY, no busy input.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
-      "continuation_trigger": "Head reviewer completion -> next genuine bus task/readACK/tool/output/reply/headACK -> principal exact source/render verdict; head narrow fix and independent review when rejected. Existing head owns lifecycle repair and hourly payload while canonical owners remain protected; no root-clock prerequisite."
+      "continuation_trigger": "Existing head worker completion -> native head inbox read C2116 and next reviewer task -> exact pinned artifact principal verdict; head chooses ready useful product queue, not root-clock scheduling. Technical runtime gate requires actual owned unit lifecycle and route proof after negative review, no source-fixture promotion."
     },
     {
       "id": "a09-incumbent-check",
@@ -2634,19 +2634,86 @@
       "team_id": "agent-dashboard",
       "owner_tag": "antigravity-head",
       "executor_ids": [
-        "ab1e10b9-f777-4fe0-af7f-262577b966c4"
+        "259526a9-5deb-47ce-810c-ca5f2da56b68"
       ],
       "status": "done",
-      "updated_at": "2026-10-04T22:38:00.000000+00:00",
+      "updated_at": "2026-10-04T22:50:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
+        "research/antigravity/recovery/dashboard-alias-and-fourth-project-minimal.patch",
+        "research/antigravity/recovery/dashboard-static-fourth-project-minimal.patch",
         "research/antigravity/reviews/REV-DASHBOARD-STAGED-CONSUMER.md"
       ],
-      "acceptance": "Independent consumer review of staged dashboard patch (research/antigravity/recovery/dashboard-alias-and-fourth-project.patch) consumed and replied via private FileBus store (.local/scratch/dashboard-bus-dogfood/store). Verifies minimal alias (agent-quota-launcher -> quota-launcher) and fourth product (agent-coordination) rendered UI and served endpoint contracts in isolated scratch testbed. 0 writes to canonical agent-dashboard, 0 new dependencies. Publication guard exit 0.",
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C2099/C2101 directives. Dispatched to dashboard-consumer-reviewer (ab1e10b9) over FileBus.",
+      "acceptance": "Independent consumer review (Cycle 2) of decoupled minimal staged patches (backend 007a6ef3 + static f2e29142) atop pinned AD-R2 baseline in scratch testbed. 48/48 unit tests pass in 0.095s. Live served HTTP endpoints and programmatic Node client DOM simulation verified rendering of fourth-product card (<section id='agent-coordination'>) and JS PROJECT_IDS with seeded payloads. Blanket recommendation of git apply onto dirty canonical explicitly withdrawn; integration owned strictly by agent-dashboard-head. Cycle 1 preserved as historical/withdrawn. Publication guard exit 0.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2105/C2111/C2112 directives. Dispatched to dashboard-consumer-reviewer Cycle 2 (259526a9) over FileBus task 429363b6; reply 53a54f97 received and head-ACKed at 22:49:22Z.",
       "acceptance_status": "ACCEPTED",
-      "next_action": "Delivered REV-DASHBOARD-STAGED-CONSUMER.md via private FileBus store (.local/scratch/dashboard-bus-dogfood/store). All 48 tests pass in 0.603s; live endpoint replay verified; 0 writes to canonical agent-dashboard; ready for agent-dashboard-head staging and commit.",
-      "continuation_trigger": "Handoff review verdict to agent-dashboard-head and codex-principal."
+      "next_action": "Delivered REV-DASHBOARD-STAGED-CONSUMER.md (SHA: 3cf16a12) via private FileBus store (.local/scratch/dashboard-bus-dogfood/store). All 48 tests pass; live rendered UI verified; exact five post-patch hashes reconciled bit-for-bit; canonical integration ownerACK-only.",
+      "continuation_trigger": "Deliver exact post-patch hash reconciliation to codex-principal and await final pin."
+    },
+    {
+      "id": "canonical-launcher-model-runtime-c2106",
+      "project_id": "agent-branches",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "06ecf158-e51f-411c-89b8-083fc9fb3dd6"
+      ],
+      "status": "running",
+      "updated_at": "2026-10-04T22:45:00.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/tooling/self_org/launcher_bus_bridge.py",
+        "tests/test_launcher_bus_bridge.py",
+        "research/antigravity/recovery/REPORT-LAUNCHER-BUS-BRIDGE-C2106.md"
+      ],
+      "acceptance": "Complete all 6 C2106 kernel custody/prelude/bounded-log fixes in launcher_bus_bridge.py: descendant cgroups and cgroup.events populated==0 check, strict InvocationID match, fail-closed missing ControlGroup, prelude /proc/self/cgroup verification, route-to-command whitelist, bounded disk write pump <= 64 KiB, cleanup before missing output check, launch-uncertain on Popen failure. Tests 19-26 pass 100%. Publication guard exit 0.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2106/C2108 directives. Executed by self-org-architect (06ecf158) in .local/scratch/self-org-arch/.",
+      "acceptance_status": "PENDING_REVIEW",
+      "next_action": "self-org-architect delivers hardened code and report; hands off to self-org-challenger for independent negative verification.",
+      "continuation_trigger": "Delivery of REPORT-LAUNCHER-BUS-BRIDGE-C2106.md."
+    },
+    {
+      "id": "self-org-c2106-independent-challenge",
+      "project_id": "agent-branches",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "37aa1067-8bda-4dde-95b8-7b5bb927bd1f"
+      ],
+      "status": "running",
+      "updated_at": "2026-10-04T22:45:00.000000+00:00",
+      "blocked_on": [
+        "canonical-launcher-model-runtime-c2106"
+      ],
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-LAUNCHER-BUS-BRIDGE-C2106.md"
+      ],
+      "acceptance": "Independent adversarial negative test and mutation matrix audit challenging all 6 C2106 guarantees in scratch testbed. Publication guard exit 0.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2106/C2108 directives. Executed by self-org-challenger (37aa1067) in .local/scratch/self-org-challenge/.",
+      "acceptance_status": "PENDING_REVIEW",
+      "next_action": "self-org-challenger audits architect deliverables and executes negative mutation matrix.",
+      "continuation_trigger": "Delivery of REV-LAUNCHER-BUS-BRIDGE-C2106.md."
+    },
+    {
+      "id": "hourly-24h-four-product-payload-reconciliation",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "d6988df9-09a1-44f0-b7bd-7b28018f69a8"
+      ],
+      "status": "running",
+      "updated_at": "2026-10-04T22:45:00.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        ".local/metrics/hourly_24h_payload.json",
+        "research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md"
+      ],
+      "acceptance": "Reconcile preceding 24h analytical payload across all 4 products in .local/metrics/hourly_24h_payload.json (mode 0600) with exact as_of, actor CID dedup, and truthful disclosure of unobserved coverage as null rather than fake 0. Publication guard exit 0.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2059/C2108 directives. Executed by hourly-payload-reconciler (d6988df9) in .local/scratch/hourly-payload-reconcile/.",
+      "acceptance_status": "PENDING_REVIEW",
+      "next_action": "hourly-payload-reconciler generates payload and delivers report.",
+      "continuation_trigger": "Delivery of REPORT-HOURLY-24H-RECONCILIATION.md."
     }
   ]
 }
