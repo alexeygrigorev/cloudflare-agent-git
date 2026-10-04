@@ -274,10 +274,10 @@ th{border-top:2px solid var(--ink);font-weight:600}
 .signup-form{display:flex;flex-direction:column;gap:10px;min-width:0}
 .signup-form>label{font-size:14px;font-weight:500}
 .signup-controls{display:flex;flex-wrap:wrap;gap:10px}
-.signup-controls input{flex:1 1 220px;min-width:0;border:2px solid var(--ink);background:var(--paper);color:var(--ink);padding:11px 12px;font:16px var(--sans);border-radius:0}
+.signup-form input[type=email]{min-width:0;border:2px solid var(--ink);background:var(--paper);color:var(--ink);padding:11px 12px;font:16px var(--sans);border-radius:0}
 .button{background:#1E293B;color:#fff;border:2px solid #1E293B;padding:11px 18px;font:600 15px var(--sans);cursor:pointer;display:inline-flex;gap:12px;align-items:center;border-radius:0;white-space:nowrap}
 .button:hover{background:var(--ink);border-color:var(--ink)}
-.button:disabled,.signup-controls input:disabled{opacity:.6;cursor:not-allowed}
+.button:disabled,.signup-form input[type=email]:disabled{opacity:.6;cursor:not-allowed}
 .signup-consent{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.5;padding:4px 0;min-height:24px;cursor:pointer}
 .signup-consent input{margin:2px 0 0;width:20px;height:20px;flex:none;accent-color:var(--blue)}
 .signup-detail{font-size:13px;line-height:1.6;color:var(--muted)}
