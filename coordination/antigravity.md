@@ -3582,5 +3582,39 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
   - Scratch memory and disk budgets respected (<1 MB in scratch, 63 GB free on root).
   - Clean publication guard (PASS / exit 0).
 
+---
 
+## 112. Three-Project Delivery Contract Formal ACK, Agent Dashboard Launch, and Intake Reconciliation
 
+- **Date:** 2026-10-04T13:15:00+02:00
+- **Directives:** Direct Human Reset (`experiment/human-delivery-reset-20261004.txt`), Desktop Orchestrator 13:10 (`01a1069a-498f`) and 13:12 (`01a1069d-92c8`) notes, User messages 20, 21, 26, 31, 32, 34.
+- **Contract & Boundaries Formal ACK:**
+  1. **Three Actual Delivery Projects:**
+     - `agent-branches` (Cloudflare Agent Git runtime protocol): Head `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`), owning platform extraction, backup sync, and real consumer dogfooding.
+     - `agent-dashboard` (Standalone private operational dashboard): Head `agent-dashboard-head` (`c7a75f76-1f51-4f14-873e-7a60569838c3`), owning rolling 24h hourly utilization, usage accounting, and completed feature verification.
+     - `quota-launcher` (Quota-aware multi-provider launcher): Head `quota-launcher-head` (`6be4c247-4410-4bdb-968e-7fc2d5844941`), owning `launcher/`, `tests/`, `README.md`, `pyproject.toml`, and `examples/` in `/home/alexey/git/agent-quota-launcher`.
+  2. **Delivery Intake Reconciliation:**
+     - All 48 human source sections in [`coordination/DELIVERY-BACKLOG.json`](file:///home/alexey/git/cloudflare-agent-git/coordination/DELIVERY-BACKLOG.json) audited and indexed with concrete task mappings or explicit supersession notes.
+     - Task `delivery-intake-reconciliation` marked `done` in `coordination/TASKS.json`.
+- **Standalone Private Project `agent-dashboard` Established:**
+  - Workspace: `/home/alexey/git/agent-dashboard` initialized as independent Git repository.
+  - Interactive Head: `agent-dashboard-head` (`c7a75f76-1f51-4f14-873e-7a60569838c3`, engine `zcodex`, memory cap 1500M) launched and running.
+  - Core Modules Implemented:
+    * `src/dashboard/hourly.py`: 24 half-open UTC hourly buckets `[as_of-24h, as_of)` with single-agent clipping to 1.0 hour/bucket and identity deduplication.
+    * `src/dashboard/accounting.py`: Strict nullability token normalization (input, output, cache_read, cache_creation, reasoning) with reasoning token subset isolation (not double-added) and separate quota delta tracking.
+    * `src/dashboard/features.py`: Completed feature extraction and deduplication from accepted task evidence in `coordination/TASKS.json`.
+    * `src/dashboard/server.py`: Localhost preview HTTP server serving HTML and REST JSON endpoints (`/api/health`, `/api/hourly`, `/api/usage`, `/api/features`).
+  - Test Suite: 13/13 unit tests pass 100% in 0.134s.
+  - Ordinary Git Fallback & Backup/Restore: [`scripts/restore_test.sh`](file:///home/alexey/git/agent-dashboard/scripts/restore_test.sh) cloned to disposable checkout and validated full test suite execution. Initial commit `1876434`.
+  - Task `dashboard-private-project` marked `done` in `coordination/TASKS.json`.
+- **Epistemic Qualification on Enterprise Container Evidence:**
+  - Clarified that documented primary examples (OpenHands, SWE-bench, Devin, Modal Labs, E2B) establish the prominence and mechanics of the ephemeral container/patch-export paradigm in observed production coding agent frameworks, but do not assert universal absence across all possible unexamined enterprise deployments.
+- **Coordination Registers Synchronized:**
+  - [`coordination/DELIVERY-BACKLOG.json`](file:///home/alexey/git/cloudflare-agent-git/coordination/DELIVERY-BACKLOG.json): Updated `projects` mapping with active heads and session UUIDs.
+  - [`coordination/TEAM-REGISTRY.json`](file:///home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json): Updated `projects` block with native UUIDs, active heads, and standalone workspaces.
+  - [`coordination/TASKS.json`](file:///home/alexey/git/cloudflare-agent-git/coordination/TASKS.json): Tasks `delivery-intake-reconciliation` and `dashboard-private-project` marked `done` with formal acceptance receipts.
+- **Invariants Maintained:**
+  - Strictly **0** cargo/rustc compiler invocations under human hold.
+  - Strictly **0** tokens emitted to `usage-events.jsonl` (counter emission held).
+  - Scratch memory and disk budgets respected (<1 MB in scratch, 63 GB free on root).
+  - Publication guard clean (PASS / exit 0).

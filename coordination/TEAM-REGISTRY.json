@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T11:10:00.000000+02:00",
+  "updated_at": "2026-10-04T11:07:39.139235+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -3603,6 +3603,34 @@
       "expected_checkpoint": "task completion event or bounded20min no-output check; no PID-only acceptance",
       "usage_coverage": "Completed outer native rollout only; warm child usage coverage unknown; not billed experiment expenditure",
       "status": "completed-awaiting-review"
+    }
+  ],
+  "projects": [
+    {
+      "id": "agent-branches",
+      "name": "AgentBranches",
+      "head_tag": "antigravity-head",
+      "head_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+      "integration_owner": "antigravity-head",
+      "ownership_state": "Acknowledged; active implementation head on platform extraction, backup sync, and consumer dogfooding"
+    },
+    {
+      "id": "agent-dashboard",
+      "name": "Agent Dashboard",
+      "head_tag": "agent-dashboard-head",
+      "head_session_id": "c7a75f76-1f51-4f14-873e-7a60569838c3",
+      "integration_owner": "agent-dashboard-head",
+      "ownership_state": "Genuine interactive head launched; standalone repo /home/alexey/git/agent-dashboard; initial modules and test suite (13/13 PASS) landed; backup/restore test verified",
+      "workspace": "/home/alexey/git/agent-dashboard"
+    },
+    {
+      "id": "quota-launcher",
+      "name": "Quota-aware Launcher",
+      "head_tag": "quota-launcher-head",
+      "head_session_id": "6be4c247-4410-4bdb-968e-7fc2d5844941",
+      "integration_owner": "quota-launcher-head",
+      "ownership_state": "Genuine Grok head active in /home/alexey/git/agent-quota-launcher; owns launcher/, tests/, README, pyproject, examples",
+      "workspace": "/home/alexey/git/agent-quota-launcher"
     }
   ]
 }
