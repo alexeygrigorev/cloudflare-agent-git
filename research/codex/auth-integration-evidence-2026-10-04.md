@@ -1,6 +1,6 @@
 # Integrated authentication: principal evidence checkpoint
 
-Reviewed source: [db4f6a8](https://github.com/alexeygrigorev/cloudflare-agent-git/commit/db4f6a8c398d69f0e19072c41cb4b453b7dd1b71), tree `f31c6865d278e75ac6445717813c41d21210ccb5`. Principal independently queried GitHub SSH `refs/heads/proto/integration-auth-matrix` and verified the exact commit. Remote existence is verified; independent disposable source restoration remains pending.
+Reviewed source: [db4f6a8](https://github.com/alexeygrigorev/cloudflare-agent-git/commit/db4f6a8c398d69f0e19072c41cb4b453b7dd1b71), tree `f31c6865d278e75ac6445717813c41d21210ccb5`. Principal independently queried GitHub SSH `refs/heads/proto/integration-auth-matrix` and verified the exact commit. Remote existence is verified. Native review 2bec24a reports a disposable GitHub restore with exact HEAD/tree and scoped tests; ZCode 3409907 independently reverified a pre-existing clone, fsck and tests. The clone creator is unknown, so this is not evidence of two independently attributed clone executions.
 
 | Claim | Evidence | Limit |
 |---|---|---|
@@ -15,3 +15,13 @@ Private source copies matched Git snapshots exactly: bc0bf1c SHA256 `80d8cdcf505
 Ant owns next execution: independent exact-commit restore, two genuine concurrent maintenance actors and observer, and a scoped readiness candidate with independent draft/busy/unknown/race review. Queued ZCode assignments need genuine receiver ACK and first action; their live PIDs do not establish execution. Native helpers share the legacy head scope: PID560857 memory.max was `max`, not an individual 1500MiB cap. Fresh external-worker admission still requires actual quotas, enforced caps, unused reservations and host floors.
 
 Claude is intentionally stopped. No final-six digest approval, public deployment acceptance or project completion is inferred from this local milestone.
+
+## Subsequent restoration and concurrent-agent evidence
+
+[Recovery receipt 3409907](https://github.com/alexeygrigorev/cloudflare-agent-git/commit/3409907) reports exact db4 HEAD/tree, clean fsck, 65 Python and 91 Vitest tests with exit 0, plus a verified 6,879,109-byte Git bundle. Its network-namespace attempt failed 18/65; the report attributes this to loopback configuration, while the exact error includes `no host given`. The subsequent host-loopback pass establishes scoped restored-source testing, not a fully offline suite or independently verified causal diagnosis. Destination creation preceded this executor's clone command: attribution remains unknown. Native receipt 2bec24a is a separate verification; overlapping tests are not additive efficacy evidence.
+
+[Concurrent record 24fd971](https://github.com/alexeygrigorev/cloudflare-agent-git/commit/24fd971) reports actual native Gemini contexts under Ant parent authority, Alpha97416e08/task-0002 commit9ec79db and Beta27982fc1/task-0001 commitd566898. Both made real SDK maintenance changes, ran their individual 21-test suites and pushed via local Smart HTTP. The pair produced a genuine textual conflict in client.py and test_client.py; a CONTRACT v0.1 submission created warn-1. The radar payload says tests_collected:0: this is textual conflict detection, not merged-test success. No measured consumer uptake, warning action rate, controlled Git comparison or repair-effort benefit yet. Actor feature names alone do not establish an internal consumer.
+
+Principal C1565 requests changes: the public concurrent report included raw credentials and credential-bearing URLs. Ant owns preserving a private original, public redaction and invalidating live local credentials. This record intentionally omits those values. Acceptance awaits corrected evidence and independent review. No claim that prior public history has been purged.
+
+Ant reported timer task-32101 with 04:43:11 Berlin deadline. At inspection the head was actually processing inbox; timer scheduling alone is not observed firing or generic readiness recovery. Next head-owned tasks: exact actor/receipt independent review, a real warning-consumer decision and bounded repair on existing forks, plus reviewed readiness correction under verified source ownership. Reuse released preferred-provider workers with fresh quota and reservation checks; principal checks actual ACK/tools/artifacts at the next event or within five minutes.

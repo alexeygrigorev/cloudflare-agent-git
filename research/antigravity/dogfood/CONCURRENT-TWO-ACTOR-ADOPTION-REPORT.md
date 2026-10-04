@@ -40,12 +40,12 @@ This report documents the end-to-end execution of the **Authentic Concurrent Two
 ### 2.1 Component Topology & Configuration
 - **Scratch Directory:** `.local/scratch/concurrent-two-actor/` (mode 0700, strictly $\le$ 512 MB).
 - **Sidecar Host:** `http://127.0.0.1:48767`
-  - Token: `sidecar-secret-token-1791081130`
+  - Token: `[REDACTED_SECRET]`
   - Notify URL: `http://127.0.0.1:46583/events/push`
 - **Coordinator Host:** `http://127.0.0.1:46583`
-  - Admin Token: `admin-secret-token-1791081130`
-  - Runner Token: `runner-secret-token-1791081130`
-  - Webhook Secret: `webhook-shared-secret-1791081130`
+  - Admin Token: `[REDACTED_SECRET]`
+  - Runner Token: `[REDACTED_SECRET]`
+  - Webhook Secret: `[REDACTED_SECRET]`
   - State Store: `.local/scratch/concurrent-two-actor/state/store.json`
 - **Canonical Seed Repository:** `agent-branches-canonical-concurrent`
   - Base Commit SHA: `ec5030cf148b4207bde658a4fa1c0be7b2bf8e3e`
@@ -73,9 +73,9 @@ This report documents the end-to-end execution of the **Authentic Concurrent Two
 - **Native Context ID:** `27982fc1-9d7e-405e-aa89-1eb6b387c956`
 - **Assigned Task ID:** `task-0001`
 - **Intent:** `feat(client): add calculate_jitter helper and tests`
-- **Minted Bearer Token:** `art_v1_160840cd600de3b7f349bbe902c31b4d04d14ed7?expires=1791084895`
+- **Minted Bearer Token:** `[REDACTED_TOKEN]`
 - **Worktree:** `.local/scratch/concurrent-two-actor/actor-beta-worktree/`
-- **Smart HTTP Clone URL:** `http://token:art_v1_160840cd600de3b7f349bbe902c31b4d04d14ed7%3Fexpires%3D1791084895@127.0.0.1:48767/git/agent-branches-canonical-concurrent-actor-beta-0001.git`
+- **Smart HTTP Clone URL:** `http://token:[REDACTED_TOKEN]@127.0.0.1:48767/git/agent-branches-canonical-concurrent-actor-beta-0001.git`
 - **Implementation:**
   Added `calculate_jitter(self, attempt: int, base_delay: float = 0.05, max_delay: float = 2.0) -> float` to `AgentBranchesClient` and `test_22_calculate_jitter` in `tests/test_client.py`.
 - **Unit Test Execution:**
@@ -92,9 +92,9 @@ This report documents the end-to-end execution of the **Authentic Concurrent Two
 - **Native Context ID:** `97416e08-9f95-44e1-a1f9-92ac52d1ee4b`
 - **Assigned Task ID:** `task-0002`
 - **Intent:** `feat(auth): add inspect_token_metadata helper and tests`
-- **Minted Bearer Token:** `art_v1_da4f451934e261207930c604350e75e05f878704?expires=1791084897`
+- **Minted Bearer Token:** `[REDACTED_TOKEN]`
 - **Worktree:** `.local/scratch/concurrent-two-actor/actor-alpha-worktree/`
-- **Smart HTTP Clone URL:** `http://token:art_v1_da4f451934e261207930c604350e75e05f878704%3Fexpires%3D1791084897@127.0.0.1:48767/git/agent-branches-canonical-concurrent-actor-alpha-0002.git`
+- **Smart HTTP Clone URL:** `http://token:[REDACTED_TOKEN]@127.0.0.1:48767/git/agent-branches-canonical-concurrent-actor-alpha-0002.git`
 - **Implementation:**
   Added `inspect_token_metadata(self, token: str) -> Dict[str, Any]` to `AgentBranchesClient` and `test_21_inspect_token_metadata` in `tests/test_client.py`.
 - **Unit Test Execution:**
