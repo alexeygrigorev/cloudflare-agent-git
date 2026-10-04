@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-03T23:30:45.703262+00:00",
+  "updated_at": "2026-10-04T04:25:00.000000+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -17,6 +17,24 @@
       "next_action": "Bounded verification completed and independently reviewed by Muse round 23 (commit 48be7a9). Counted verdict: inner duplicate eliminated in observed runs (old 1 call -> 2 marker lines, new 1 call -> 1 line); outer retry duplicates demonstrated (rollout 01a1000a-8f19, 2 distinct calls ~16s apart, exit 0); no exactly-once claim. Scoped follow-on work split into zcodex-retry-design (ticket 01a10014-a645); zero builds, zero global install.",
       "acceptance": "Existing owner work, not a new duplicate writer. Scoped reversible rollout is authorized per root 01a10014-61f6 but requires real review, rollback, and proven benefit; no global install inferred.",
       "assignment_ack": "ACK: owned by antigravity-head. Verified bf9d7ed22a on codex-zcode main. Debug binary at codex-rs/target/debug/zcodex (SHA256 bc72fcf78044ad6078fbd8501a16b6c90b253e053dcc7666a250917184761f69). Synthetic adapter test, real child denial, and comparative live append probe executed and independently counted by Muse R9 (48be7a9); negative result on outer retries recorded."
+    },
+    {
+      "id": "auth-matrix-integration",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "auth-matrix-integration-runner",
+      "status": "done",
+      "updated_at": "2026-10-04T04:20:00.000000+00:00",
+      "blocked_on": [],
+      "next_action": "Remote checkpoint db4f6a8 pushed to origin/proto/integration-auth-matrix. Recovery-test and two-actor adoption tasks queued under antigravity-head.",
+      "acceptance": "Exact source integration combining proto/auth-reads (2302d70), proto/webhook-auth (d8ac3b5), and proto/sdk-get-task-auth (cbf72e2). Passing test suites (91 Vitest, 50 Node, 11 router, 20 Python SDK, 5 smoke) and independent review.",
+      "evidence_paths": [
+        "research/antigravity/agent-branches/INTEGRATION-AUTH-MATRIX-REPORT.md",
+        "research/reviews/REV-AUTH-MATRIX-INTEGRATION-DB4F6A8.md"
+      ],
+      "assignment_ack": "Integrated on proto/integration-auth-matrix at commit db4f6a8; report at 59f575d; independent review by auth-matrix-reviewer at 00829a4 (ACCEPT).",
+      "model": "gemini-3.1-pro-high",
+      "acceptance_status": "ACCEPTED (PASS) for integration commit db4f6a8. 177/177 tests green across unified auth matrix."
     },
     {
       "id": "zcodex-retry-design",
