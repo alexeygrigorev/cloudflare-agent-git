@@ -3469,5 +3469,16 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
 - **Scratch Workspace:** `.local/scratch/incumbent-premerge-review/` (mode 0700, strictly $\le 512$ MB, zero net `/tmp` growth).
 - **Invariants Maintained:** Strictly zero cargo/rustc compiler invocations under human hold; zero derived Gemini counter emission; cooperative 1500 MB memory slice.
 
+### 6. Landed Independent Review: Verdict ACCEPT
+- **Reviewer:** `incumbent-premerge-reviewer` (`fb862142-9a0f-4420-a8ae-d2b4777a1b3d`).
+- **Deliverable:** [`research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md) (354 lines, 29.8 KB, publication guard: PASS / exit 0).
+- **Verdict:** **ACCEPT — UNSTEERED CRITICAL TAXONOMY, TEST ORACLE EQUIVALENCE, AND BUYER ADOPTION POLICY FULLY VERIFIED**.
+- **Audit Findings:**
+  1. *Identical Test Oracle Invariant Replay:* Confirmed via independent scratch replay on baseline `ff4decd7be0e` that local ephemeral worktrees (`git merge --no-commit; node --test`), GitHub Actions PR CI on `refs/pull/*/merge`, and native Merge Queues emit the exact identical failure signal (`AssertionError: 400 !== 201`) and protect `main` before trunk landing.
+  2. *Production Taxonomy Verified:* Validated accuracy across GitHub Merge Queue (`refs/heads/gh-readonly-queue/...`), GitLab Merge Trains (`refs/merge-requests/:iid/train`), Bors-ng, Zuul, and Foremerge v0.5.1.
+  3. *Quadratic Scaling Math Verified:* Verified $N(N-1)/2 = 190$ pairs at $N=20$ branches (9.5x to 47.5x more compute than linear/batched merge queues).
+  4. *Buyer Persona Friction & Interruption Dilemma Verified:* Validated DevOps objections (daemon RSS ~155 MB, CLI bearer tokens), solo dev latency penalty (5.7x), and swarm operator friction (mid-turn apology loops on incomplete code).
+  5. *Three-Tier Adoption Policy & SBET Falsification Gate Verified:* Mathematical conditions ($C_{\text{token}} \ge 0.90$, $T_{\text{wall}}$, $E_{\text{compute}} > 3.0$, $N_{\text{thrash}} > 0.20$) audited and confirmed robust.
+
 
 
