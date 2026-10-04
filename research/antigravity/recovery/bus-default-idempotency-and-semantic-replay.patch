@@ -1,0 +1,33 @@
+--- /home/alexey/git/agent-bus/coordination/bus.py	2026-10-04 14:28:12.726647070 +0200
++++ .local/scratch/bus-idempotency-snapshot/agent-bus/coordination/bus.py	2026-10-05 01:50:50.632079527 +0200
+@@ -281,8 +281,12 @@
+         if recipient_id not in identities:
+             raise BusError("unknown_recipient", recipient_id)
+         self._require_same_project(sender, identities[recipient_id])
+-        key = idempotency_key or _new_id()
+         digest = payload_digest(body, data)
++        key = idempotency_key or (
++            f"reply:{reply_to}:{sender_id}:{digest}"
++            if kind == "reply" and reply_to
++            else _new_id()
++        )
+         messages: dict[str, Any] = self._read(self._messages, {})
+         for existing in messages.values():
+             if existing.get("idempotency_key") == key:
+@@ -295,6 +299,16 @@
+                 ):
+                     return _msg(existing)
+                 raise IdempotencyConflict(key)
++        if kind == "reply" and reply_to:
++            for existing in messages.values():
++                if (
++                    existing.get("kind") == "reply"
++                    and existing.get("reply_to") == reply_to
++                    and existing["sender_id"] == sender_id
++                    and existing["recipient_id"] == recipient_id
++                    and existing.get("digest") == digest
++                ):
++                    return _msg(existing)
+         self._require_reply_target_locked(
+             sender=sender,
+             sender_id=sender_id,
