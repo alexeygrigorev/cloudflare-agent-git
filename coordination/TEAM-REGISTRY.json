@@ -2499,7 +2499,7 @@
           "owned_paths": [
             "research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID fb862142-9a0f-4420-a8ae-d2b4777a1b3d; audited research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md; executed independent scratch replay on demo-target baseline ff4decd7; verified identical test oracle across local worktree, PR CI, and merge queue (AssertionError: 400 !== 201); verified O(N^2) scaling math (190 pairs at N=20) and SBET mathematical falsification thresholds; delivered REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md with verdict ACCEPT (clean publication guard, exit 0).",
+          "first_tool_evidence": "subagent launched with native conversation ID fb862142-9a0f-4420-a8ae-d2b4777a1b3d; audited research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md; executed independent scratch replay on demo-target baseline ff4decd7; verified identical test oracle across local worktree, PR CI, and merge queue (AssertionError: 400 !== 201); verified official technical documentation (on: merge_group, merged_results, Actions checkout v4); verified O(N^2) scaling math (190 pairs at N=20) vs linear/batched queues; verified bounded trunk protection realities, PR CI timing, and prototype vs proposal demarcations; retracted naive file-diff filtering as potentially unsound for cross-file contracts; delivered REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md with verdict BOUNDED ACCEPTANCE (clean publication guard, exit 0).",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]

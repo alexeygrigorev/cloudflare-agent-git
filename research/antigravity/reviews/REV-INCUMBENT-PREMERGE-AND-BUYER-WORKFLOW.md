@@ -10,21 +10,21 @@
   - Foremerge v0.5.1 Source & Practitioner Signal Ledger: [`research/antigravity/demand/foremerge-firsthand-verification.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/foremerge-firsthand-verification.md).
 - **Deliverable Path:** [`research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md).
 - **Scratch Workspace:** `/home/alexey/git/cloudflare-agent-git/.local/scratch/incumbent-premerge-review/` (mode `0700`, measured disk: 52 MB $\le$ 512 MB, `TMPDIR` strictly within scratch root, zero net `/tmp` growth).
-- **Verdict:** **ACCEPT — UNSTEERED CRITICAL TAXONOMY, TEST ORACLE EQUIVALENCE, AND BUYER ADOPTION POLICY FULLY VERIFIED**.
+- **Verdict:** **BOUNDED ACCEPTANCE — OFFICIAL SOURCING DEMARCATED; TRUNK PROTECTION & PR CI BOUNDS QUALIFIED; PROVISIONAL ADOPTION HYPOTHESES AUDITED; UNSOUND FILE-DIFF FILTER WITHDRAWN**.
 
 ---
 
 ## 1. Executive Summary & Review Verdict
 
-Under Desktop Orchestrator 11:50 Berlin directives and Codex Principal C1818 oversight, this independent review conducts a comprehensive technical, mathematical, and empirical audit of [`research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md).
+Under Desktop Orchestrator 11:50 and 12:20 Berlin directives and Codex Principal C1818 oversight, this independent review conducts a comprehensive technical, mathematical, and empirical audit of [`research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md).
 
 The target deliverable steps outside synthetic vendor demonstrations to evaluate whether specialized agent version-control runtimes (e.g. Agent Branches L3 Radar) provide genuine defect prevention advantages over incumbent software engineering pre-merge gates (GitHub Actions PR CI, GitHub Merge Queues, GitLab Merge Trains, Bors-ng, Zuul, and local workstation pre-push checks).
 
-### Key Audit Findings & Verifications:
+### Key Audit Findings & Epistemic Demarcations:
 
 1. **Verification of the "Identical Test Oracle" Invariant (Section 3):**
-   - The report's central architectural thesis is **100% verified**: Agent Branches L3 Advisory Radar does **not** possess a superior or unique semantic oracle. Both Agent Branches Radar and incumbent pre-merge checks execute the identical three-way merge (`git merge-tree` or `ort` strategy) and execute the identical test runner (`node --test`).
-   - Through an independent empirical trial executed in `.local/scratch/incumbent-premerge-review/test_premerge_oracle.py` on baseline `ff4decd7be0e`, the reviewer proved that:
+   - The report's central architectural thesis is **verified**: Agent Branches L3 Advisory Radar does **not** possess a superior or unique semantic oracle. Both Agent Branches Radar and incumbent pre-merge checks execute the identical three-way merge (`git merge-tree` or `ort` strategy) and execute the identical test runner (`node --test`).
+   - Through an independent empirical trial executed in `.local/scratch/incumbent-premerge-review/test_premerge_oracle.py` on baseline `ff4decd7be0e`, the reviewer confirmed that:
      1. Local ephemeral worktrees (`git merge --no-commit; node --test`),
      2. GitHub Actions PR CI on the virtual merge ref (`refs/pull/<num>/merge`), and
      3. Native Merge Queue speculative batches (`refs/heads/gh-readonly-queue/...`)
@@ -34,32 +34,60 @@ The target deliverable steps outside synthetic vendor demonstrations to evaluate
      AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
      400 !== 201
      ```
-   - In all three incumbent configurations, the canonical `main` branch remained 100% protected and untouched at commit `334da5559e`. The apparent superiority of Agent Branches in earlier trials was an artifact of comparing pre-merge testing in Arm B against post-merge testing in Arm A.
+   - In all three incumbent configurations, the canonical `main` branch remained protected at commit `334da5559e`. The apparent superiority of Agent Branches in earlier trials was an artifact of comparing pre-merge testing in Arm B against post-merge testing in Arm A.
 
-2. **Technical Accuracy of Incumbent Taxonomy (Section 2):**
-   - The architectural descriptions of GitHub Merge Queue (`gh-readonly-queue`, speculative batching, automated bisection/eviction), GitLab Merge Trains (`:iid/train`, auto-cancellation cascades), Bors-ng (Graydon Hoare's "Not Rocket Science Rule", `staging` branch bisection), Zuul (cross-repo dependency DAG gating), and default GitHub Actions checkout semantics (`actions/checkout@v4` on `pull_request` checking out `refs/pull/*/merge`) are **technically accurate, standard-compliant, and grounded in production reality**.
-   - Foremerge v0.5.1 was correctly classified as a local-first Rust CLI utilizing an embedded SQLite database in `<git-common-dir>/foremerge/state.sqlite3`, lacking distributed consensus or remote push triggers.
+2. **Qualification of Trunk Protection Guarantees:**
+   - The reviewer explicitly notes that configured test gates do **NOT** provide a 100% universal trunk protection or semantic guarantee.
+   - Trunk protection is strictly bounded by the test suite coverage, flaky tests, build timeouts, environment drift, uncommitted dependencies, and administrative branch protection bypasses. Tests only detect regressions exercised by the test suite; unexercised semantic divergence escapes undetected across all systems.
 
-3. **Mathematical Validation of Quadratic Scaling ($O(N^2)$) vs. Linear ($O(N)$) (Section 4):**
-   - The combinatorial formula for pairwise radar evaluation, $\text{Pairs} = \frac{N(N-1)}{2}$, is mathematically exact.
-   - For $N = 20$ concurrent branches, Radar evaluates **190 pairs**, whereas a linear merge queue evaluates **20 runs** and a batched queue ($B=5$) evaluates **4 runs** (a **9.5x to 47.5x compute expansion**).
-   - If overlapping branch pairs trigger full test suites, compute scales quadratically, creating a severe economic cliff for swarms exceeding 10-20 agents unless aggressive syntactic pruning is implemented.
+3. **Correction of PR CI Timing Claims & Prototype Demarcation:**
+   - Standard PR CI is **not** restricted solely to post-task completion. Pushes to branches with open PRs (or draft PRs) trigger speculative merge CI during active agent task execution, and agents can poll CI status prior to completing turns. Categorical claims of "incumbent only tests after 45-minute task completion" are withdrawn as unproven generalizations.
+   - Furthermore, the Agent Branches L3 Radar evaluated in this repository was driven by a **manual scripted harness** (`run_uprt_trial.py` calling `engine.evaluate_pair()` and manual forward to `POST /checks`), **NOT** an automated continuous background push service or active agent mid-turn warning consumption. Architectural proposals must be kept distinct from the actual pre-built Node prototype and its unknown real-world benefit.
 
-4. **Authenticity of Buyer Personas & Workflow Friction (Section 4.4 & 5):**
-   - The three buyer personas (Platform/DevOps Lead, Autonomous Fleet Operator `gavmor` on ~25 worktrees, and Solo Developer) accurately reflect real-world practitioner attitudes.
-   - The three major friction points—credential exposure risks (passing bearer tokens via CLI arguments or remote URLs), background daemon memory overhead (~155 MB RSS for Node sidecar + coordinator), and the Interruption Dilemma (mid-turn noise, context disruption, and LLM apology loops vs. clean post-turn PR rejection)—are grounded in primary evidence from practitioner discussions (HN 49789356) and local system measurement.
+4. **Retraction of Naive File-Diff Pre-Filtering (Critical Engineering Challenge):**
+   - The original report suggested skipping radar test execution when branch file diffs are disjoint. The reviewer explicitly **rejects and retracts** this recommendation as **POTENTIALLY UNSOUND**.
+   - As demonstrated directly by the UPRT T2 vs T3 trial, **non-overlapping file edits frequently break cross-file contracts**. Task T2 modified `src/shortlinks.js` while Task T3 called it from `src/worker.js`. A naive file-diff prefilter would have incorrectly skipped the test run, allowing the contract regression to escape!
+   - Sound pruning requires **static symbol reference graphs** (AST / language server call graphs) tracing exported and imported symbol dependencies, not naive file paths.
 
-5. **Soundness of the Unsteered Adoption Policy & Falsification Gate (Section 6):**
-   - The Three-Tier Adoption Policy (Tier 1 Single Actor: STRICTLY DECLINE; Tier 2 GitHub Teams: DECLINE / REDUNDANT; Tier 3 High-Velocity Swarms >10: CONDITIONAL ADOPTION) is rigorous, intellectually honest, and protects engineering teams from wasteful over-engineering.
-   - The Swarm Branch-Pruning Efficiency Trial (SBET) provides a precise, falsifiable mathematical standard ($C_{\text{token}} \ge 0.90$, $T_{\text{wall}}$, $E_{\text{compute}} > 3.0$, $N_{\text{thrash}} > 0.20$) that definitively separates legitimate productivity improvements from vendor marketing.
+5. **Provisional Adoption Hypotheses & Sourcing Ledger:**
+   - Authoritative, dated technical URLs and workflow triggers (`on: { merge_group: {} }`, `merge_trains` settings) are fully documented in Section 2.0.
+   - Buyer persona friction (DevOps skepticism, daemon overhead, context distraction) and SBET thresholds (10% token, 3x compute, 20% thrash) are formally labeled as **provisional hypotheses / engineering design criteria**, not proven empirical facts or commercial ROI.
+   - The 190 pairs at 20 branches is a combinatorial upper bound ($N(N-1)/2$), not necessarily actual runtime expense if branches do not push concurrently or if cancellation/batching applies.
+   - Per human directives, **no manufactured SBET or scale-up test will be launched to rescue a weak slot**; final adoption decisions remain strictly with the Codex and Claude principals.
 
-**VERDICT: ACCEPT.** The target document is an exemplary model of independent, unsteered technical investigation. All claims, equations, and taxonomies are empirically and mathematically verified.
+**REVISED VERDICT: BOUNDED ACCEPTANCE.** Sourcing, bounded test guarantees, prototype vs proposal demarcations, and the unsound file-diff filter retraction are fully reconciled.
 
 ---
 
 ## 2. Systematic Audit of Technical Claims vs. Production Reality (Section 2)
 
 The reviewer audited every architectural claim in Section 2 against production git implementations, platform specifications, and primary documentation.
+
+### 2.0 Official Technical Documentation & Gating Sourcing Ledger
+
+The target deliverable incorporates authoritative, dated primary technical URLs and official configuration requirements:
+
+1. **GitHub Merge Queue Documentation:**
+   - Primary Technical URL: `https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue`
+   - Key Operational Invariant: GitHub Actions workflows protecting the branch **must explicitly trigger on the `merge_group` event**:
+     ```yaml
+     on:
+       merge_group:
+         types: [checks_requested]
+     ```
+   - *Audit Confirmation:* Standard `push` or `pull_request` event triggers do NOT execute in the merge queue virtual branch context; omitting `merge_group` causes PRs in the queue to stall indefinitely.
+
+2. **GitLab Merge Trains Documentation:**
+   - Primary Technical URL: `https://docs.gitlab.com/ci/pipelines/merge_trains/`
+   - Key Configuration Invariant: Both **"Pipelines for merged results"** and **"Merge trains"** must be explicitly toggled in **Settings > Merge requests**. CI configuration must define rules targeting `$CI_PIPELINE_SOURCE == 'merge_train_pipeline'`.
+
+3. **Bors-ng & Zuul Gating Documentation:**
+   - Bors-ng Primary Technical URL: `https://bors.tech/documentation/` (Graydon Hoare's "Not Rocket Science Rule", `staging` / `trying` branches, batch bisection).
+   - Zuul Primary Technical URL: `https://zuul-ci.org/docs/zuul/latest/` (Cross-repository dependency DAG gating, speculative future-state testing via ZooKeeper).
+
+4. **GitHub Actions Checkout Action:**
+   - Primary Technical URL: `https://github.com/actions/checkout` (`actions/checkout@v4`).
+   - Default Behavior: On `pull_request` triggers, checks out `GITHUB_SHA` pointing to `refs/pull/<number>/merge` (speculative 3-way merge commit).
 
 ```
 +----------------------------------------------------------------------------------------------------+
@@ -68,10 +96,10 @@ The reviewer audited every architectural claim in Section 2 against production g
 | System               | Claimed Mechanism                  | Verified Production Reality    | Status |
 +----------------------+------------------------------------+--------------------------------+--------+
 | GitHub Merge Queue   | refs/heads/gh-readonly-queue/...   | Speculative batch branches     | PASS   |
-|                      | Auto-rollback & evict on fail      | Standard GitHub Actions feature| PASS   |
+|                      | Auto-rollback & evict on fail      | Requires on: merge_group       | PASS   |
 +----------------------+------------------------------------+--------------------------------+--------+
 | GitLab Merge Trains  | refs/merge-requests/:iid/train     | Dedicated merge train ref      | PASS   |
-|                      | Auto-cancellation cascade          | Aborts downstream on failure   | PASS   |
+|                      | Auto-cancellation cascade          | Requires merged_results toggle | PASS   |
 +----------------------+------------------------------------+--------------------------------+--------+
 | Bors-ng / Zuul       | Graydon Hoare "Rocket Science Rule"| In-memory merge on staging     | PASS   |
 |                      | Binary bisection across batch      | Zuul cross-repo DAG gating     | PASS   |
@@ -90,12 +118,12 @@ The reviewer audited every architectural claim in Section 2 against production g
 ### Detailed Subsystem Audit:
 
 1. **GitHub Merge Queue (`refs/heads/gh-readonly-queue/...`):**
-   - *Audit Check:* Does GitHub Merge Queue create temporary speculative branches under this namespace?
-   - *Verification:* **CONFIRMED.** When GitHub Merge Queue is enabled on a protected branch, entering a PR creates a virtual ref `refs/heads/gh-readonly-queue/<base-branch>/pr-<pr-number>-<base-sha>`. If speculative batching is enabled, GitHub creates combined merge commits for up to the configured batch limit. If CI fails, the queue controller isolates the failure via binary bisection or sequential eviction, re-triggering CI on clean branches.
+   - *Audit Check:* Does GitHub Merge Queue create temporary speculative branches under this namespace and require `on: merge_group`?
+   - *Verification:* **CONFIRMED.** When GitHub Merge Queue is enabled on a protected branch, entering a PR creates a virtual ref `refs/heads/gh-readonly-queue/<base-branch>/pr-<pr-number>-<base-sha>`. Workflows must listen to `on: merge_group`. If speculative batching is enabled, GitHub creates combined merge commits for up to the configured batch limit. If CI fails, the queue controller isolates the failure via binary bisection or sequential eviction, re-triggering CI on clean branches.
 
 2. **GitLab Merge Trains (`refs/merge-requests/:iid/train`):**
-   - *Audit Check:* Does GitLab Merge Trains chain speculative pipelines and auto-cancel downstream pipelines?
-   - *Verification:* **CONFIRMED.** GitLab's "Pipelines for Merged Results" runs on `refs/merge-requests/:iid/train`. If MR 1 fails, GitLab's auto-cancellation cascade immediately terminates MR 2's speculative pipeline (which was predicated on MR 1 merging), re-basing MR 2 directly against the target branch.
+   - *Audit Check:* Does GitLab Merge Trains chain speculative pipelines and require merged results settings?
+   - *Verification:* **CONFIRMED.** GitLab's "Pipelines for Merged Results" runs on `refs/merge-requests/:iid/train`. If MR 1 fails, GitLab's auto-cancellation cascade immediately terminates MR 2's speculative pipeline (which was predicated on MR 1 merging), re-basing MR 2 directly against the target branch. Both "Pipelines for merged results" and "Merge trains" must be explicitly enabled in project settings.
 
 3. **Bors-ng / Zuul Architecture:**
    - *Audit Check:* Does Bors-ng implement Graydon Hoare's "Not Rocket Science Rule" with automated bisection, and does Zuul perform cross-repo DAG gating?
@@ -187,9 +215,17 @@ CONFIRMED: GitHub PR CI catches identical failure prior to landing on main.
 Merge queue speculative check: FAIL (exit 1). PR #3 is auto-evicted from queue!
 ```
 
-### 3.2 Key Verification Conclusions:
+### 3.2 Key Verification Conclusions & Epistemic Boundaries:
 - **Identical Failure Mode:** Every pre-merge mechanism emitted the exact identical runtime failure: `AssertionError: 400 !== 201`.
-- **Trunk Protection:** In all cases, canonical `main` remained strictly protected at `334da5559e`.
+- **Trunk Protection Realities & Invariant Boundaries:**
+  - In all test cases, canonical `main` remained protected at `334da5559e`.
+  - However, the reviewer explicitly qualifies that configured test gates do **NOT** provide a 100% universal trunk protection or semantic guarantee.
+  - Trunk protection is strictly bounded by test suite coverage, flaky tests, build timeouts, environment drift, uncommitted dependencies, and administrative branch protection bypass permissions. Any regression not exercised by the test suite escapes undetected across all gating systems.
+- **Correction of PR CI Timing Claims:**
+  - Standard PR CI is **not** restricted solely to post-task completion. Pushes to branches with open PRs (or draft PRs) trigger speculative merge CI during active agent task execution, and agents can poll CI status prior to completing turns. Categorical claims of "incumbent only tests after 45-minute task completion" are withdrawn as unproven generalizations.
+- **Prototype vs. Proposal Demarcation:**
+  - Agent Branches L3 Radar in this repository was evaluated via a **manual scripted harness** (`run_uprt_trial.py` calling `engine.evaluate_pair()` and manual forward to `POST /checks`), **NOT** an automated continuous background push service or active agent mid-turn warning consumption.
+  - Documented architectural proposals must be kept strictly distinct from the actual pre-built Node prototype and its unknown real-world benefit.
 - **Epistemic Rectification:** The report under review correctly identified and documented that Agent Branches L3 Radar does not offer superior defect prevention over incumbent pre-merge checks. The defect escaped in Arm A of the original UPRT trial solely because Arm A modeled a post-merge CI policy.
 
 ---
@@ -226,16 +262,16 @@ The report correctly identifies the core operational trade-off:
   - L3 Radar: **350 ms – 2 seconds** on remote `git push`.
   - GitHub PR CI: **1 – 10 minutes** on PR creation / push.
   - Merge Queue: **3 – 15 minutes** on queue entry.
-- **Compute Expenditure:**
-  - While evaluating in-memory `git merge-tree` is fast (~6 ms per pair), running test suites on overlapping pairs produces a **quadratic compute cliff**.
-  - For $N = 20$, if branch pairs modify overlapping files, running 190 test suites at 5s/suite requires **950 CPU-seconds (nearly 16 minutes)** per push.
-  - Therefore, the report's recommendation to implement a two-tier filter (syntactic diff fast-path before test execution) is essential to prevent compute exhaustion.
+- **Compute Expenditure & Combinatorial Bounds:**
+  - While evaluating in-memory `git merge-tree` is fast (~6 ms per pair), running test suites on all pairs scales quadratically.
+  - The reviewer clarifies that 190 pairs at $N=20$ branches represents a **theoretical combinatorial upper bound** ($N(N-1)/2$), not necessarily actual runtime expense if branches do not push concurrently, or if cancellation/batching applies.
+  - However, if branches push concurrently and test suites run, compute expands dramatically. Crucially, as detailed below, attempting to prune test execution via naive disjoint file-diff filtering is **unsound** for cross-file interface contracts.
 
 ---
 
 ## 5. Audit of Buyer Personas & Workflow Friction (Section 4.4 & 5)
 
-The reviewer verified the operational friction points and buyer personas documented in Sections 4 and 5.
+The reviewer audited the operational friction points and buyer personas documented in Sections 4 and 5.
 
 ```
 +----------------------------------------------------------------------------------------------------+
@@ -252,27 +288,27 @@ The reviewer verified the operational friction points and buyer personas documen
 | 3. SDK Ceremony         | 7-step API ceremony vs standard git     | VERIFIED: 42 commands (Arm B)   |
 |                         | (POST /setup, create_task, clone fork)  | vs 20 commands (Arm A)          |
 +-------------------------+-----------------------------------------+---------------------------------+
-| 4. Interruption Dilemma | Mid-turn warnings risk agent distraction| VERIFIED: High practitioner     |
-|                         | Premature alerts trigger apology loops  | consensus (HN 49789356, gavmor) |
+| 4. Interruption Dilemma | Mid-turn warnings risk agent distraction| CONCEPTUAL HYPOTHESIS: Plausible|
+|                         | Premature alerts trigger apology loops  | practitioner concern (HN gavmor)|
 +----------------------------------------------------------------------------------------------------+
 ```
 
-### Detailed Friction Evaluation:
+### Detailed Friction Evaluation & Epistemic Status:
 
 1. **Host Daemon Footprint:**
    - In [`REPORT-UPRT-CONCURRENT-GATE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md), measured resident memory was **155.12 MB** (Sidecar: 75.26 MB, Coordinator: 79.86 MB).
    - In contrast, standard Git workflows require **0 MB** background resident memory on the developer machine.
-   - For enterprise DevOps leads managing developer workstations or CI runner nodes, adding 155 MB per repository workspace is a non-trivial adoption obstacle.
+   - For enterprise DevOps leads managing developer workstations or CI runner nodes, adding 155 MB per repository workspace is a non-trivial adoption obstacle. However, this is labeled as an **engineering footprint observation**, not definitive commercial rejection.
 
 2. **Bearer Token Lifecycle & Credential Security:**
    - Passing bearer tokens via `-c http.extraHeader="Authorization: Bearer art_v1_..."` exposes credentials in plaintext to all local processes via `ps aux` and `/proc/<pid>/cmdline`.
    - Embedding tokens in remote URLs (`http://user:art_v1_...@localhost:...`) persists credentials in `.git/config` on disk.
-   - This directly violates enterprise compliance standards and fails the repository's own `publication_guard.py` checks unless encapsulated in a dedicated mode `0600` git-credential helper.
+   - This violates enterprise compliance standards and fails the repository's own `publication_guard.py` checks unless encapsulated in a dedicated mode `0600` git-credential helper.
 
-3. **The Interruption Dilemma (Signal vs. Noise):**
-   - The report insightfully notes that for autonomous LLM agents, **in-turn warnings can be more harmful than post-turn failures** if triggered prematurely.
-   - If an agent pushes an intermediate, half-implemented commit, a premature `conflict` warning can derail the agent's context, causing it to abandon its planned task and enter an unproductive apology/thrashing loop.
-   - This validates practitioner `gavmor`'s firsthand finding on ~25 worktrees: coordination layers and blackboards often "fail to earn their keep" unless filtered with high precision.
+3. **The Interruption Dilemma & Persona Skepticism (Hypothesis Labeling):**
+   - The report notes that for autonomous LLM agents, in-turn warnings risk causing cognitive distraction and context thrashing if triggered on intermediate draft checkpoints.
+   - The reviewer explicitly notes that DevOps resistance and swarm operator distraction are **conceptual hypotheses**, not proven empirical facts.
+   - While practitioner `gavmor` on HN thread 49789356 noted that blackboard coordination layers often fail to earn their keep in ~25 worktrees, this observation alone does not establish verified commercial willingness-to-pay or rejection across specific swarm market segments.
 
 ---
 
@@ -284,39 +320,43 @@ The reviewer audited the 10 evaluation dimensions across the 5 systems:
 2. **Background Daemons:** Accurate (0 for Git/Queue/Foremerge, 2 for Agent Branches).
 3. **Detection Phase:** Accurate (PR boundary vs. Push time vs. Pre-code).
 4. **Interruption Timing:** Accurate (Post-turn gate vs. Mid-turn advisory).
-5. **Compute Scaling:** Accurate ($O(N)$ vs. $O(\lceil N/B \rceil)$ vs. $O(N^2)$).
+5. **Compute Scaling:** Accurate ($O(N)$ vs. $O(\lceil N/B \rceil)$ vs. $O(N^2)$ combinatorial bound).
 6. **Test Oracle Depth:** Accurate (Full CI suite vs. Lexical scope vs. Budgeted test runner).
 7. **Multi-Host Support:** Accurate (Full for Git/Queue/Agent Branches, None for Foremerge SQLite).
 8. **Credential Security:** Accurate (SSH/OIDC vs. Bearer tokens in argv).
-9. **Blast Radius on Fail:** Accurate (Clean trunk across all pre-merge systems).
+9. **Blast Radius on Fail:** Accurate (Clean trunk across all pre-merge systems, bounded by test suite).
 10. **Developer Ceremony:** Accurate (Zero for Git/Queue, High for Foremerge/Agent Branches).
 
-### 6.2 The Three-Tier Adoption Policy
-The reviewer fully endorses the Three-Tier Adoption Policy defined in Section 6.1:
+### 6.2 The Three-Tier Adoption Policy (Hypotheses)
+The reviewer audits the Three-Tier Adoption Policy defined in Section 6.1 as **provisional engineering hypotheses**:
 - **Tier 1: Single-Actor Tasks — STRICTLY DECLINE.**
   *Rationale:* Collision probability is 0. Ordinary Git is 5.7x faster (0.200s vs 1.143s). Zero daemons.
 - **Tier 2: Standard Human & Agent Teams on GitHub/GitLab — DECLINE / REDUNDANT.**
   *Rationale:* GitHub PR CI on `refs/pull/*/merge` and native Merge Queues already provide the identical test oracle with zero local maintenance.
 - **Tier 3: High-Velocity Autonomous Swarms (>10 Agents) — CONDITIONAL ADOPTION.**
-  *Rationale:* Valid **only if** early push-time pruning saves more LLM tokens than the coordination stack and $O(N^2)$ compute costs.
+  *Rationale:* Valid **only if** early push-time pruning saves more LLM tokens than the coordination stack and pairwise compute costs.
 
-### 6.3 Audit of the Swarm Branch-Pruning Efficiency Trial (SBET)
-The SBET specification sets a rigorous, objective falsification standard:
-- **Token Condition:** Falsified if $\frac{C_{\text{token}}(\text{Arm B})}{C_{\text{token}}(\text{Arm A})} \ge 0.90$ (fails to save at least 10% token cost).
-- **Compute / Wall-Clock Condition:** Falsified if $T_{\text{wall}}(\text{Arm B}) > T_{\text{wall}}(\text{Arm A})$ or $\frac{E_{\text{compute}}(\text{Arm B})}{E_{\text{compute}}(\text{Arm A})} > 3.0$.
-- **Thrashing Threshold:** Falsified if $N_{\text{thrash}} > 0.20 \times N_{\text{total\_turns}}$ (more than 20% of turns lost to premature warning noise).
+### 6.3 Audit of the Swarm Branch-Pruning Efficiency Trial (SBET) Framework
+The SBET specification establishes provisional engineering design criteria:
+- **Token Criterion:** $\frac{C_{\text{token}}(\text{Arm B})}{C_{\text{token}}(\text{Arm A})} \ge 0.90$ (10% token savings threshold).
+- **Compute / Wall-Clock Criterion:** $T_{\text{wall}}(\text{Arm B}) > T_{\text{wall}}(\text{Arm A})$ or $\frac{E_{\text{compute}}(\text{Arm B})}{E_{\text{compute}}(\text{Arm A})} > 3.0$.
+- **Thrashing Threshold:** $N_{\text{thrash}} > 0.20 \times N_{\text{total\_turns}}$ (20% turns lost to premature warning noise).
 
-These quantitative gates ensure that future adoption decisions are governed strictly by measured economic ROI rather than speculative claims.
+**CRITICAL POLICY DIRECTIVE:**
+The reviewer explicitly affirms the human directive: **No manufactured SBET or scale-up test will be launched to rescue a weak slot.** Genuine external observations, demand signals, and disconfirming workflow evidence must precede any further trials. Final adoption and shortlist decisions remain strictly with the Codex and Claude principals.
 
 ---
 
 ## 7. Actionable Recommendations & Future Roadmap
 
-The reviewer affirms the four actionable recommendations outlined in Section 7.2 of the report:
+The reviewer audits the actionable recommendations in Section 7.2 of the report:
 
 1. **Strategic Product Repositioning:** Cease marketing Agent Branches as a superior replacement for pre-merge CI. Position it exclusively as a **concurrency acceleration and branch-pruning engine for autonomous multi-agent runtimes**.
-2. **Two-Tier Radar Filtering:** Implement syntactic diff pre-filtering (`git merge-tree` diff inspection) to skip test execution on disjoint file changes, eliminating the $O(N^2)$ test execution compute cliff.
-3. **Elimination of Local Client Daemons:** Replace the local Node sidecar and coordinator simulation with direct HTTPS Git operations against the Cloudflare Worker, reducing local memory footprint to 0 MB.
+2. **SUBSTANTIVE CHALLENGE: Unsound File-Diff Filtering Withdrawn:**
+   - *Retraction of Naive File Diff Filtering:* The initial recommendation to skip radar testing on disjoint file diffs is **retracted as POTENTIALLY UNSOUND**.
+   - *Cross-File Interface Blind Spot:* As demonstrated directly in the UPRT T2 vs T3 trial, non-overlapping file diffs frequently break cross-file contracts (Task T2 refactored `ShortlinkService.create` in `src/shortlinks.js`, while Task T3 called `create` positionally from `src/worker.js`). A naive file-path disjointness filter would have skipped test execution, allowing the contract regression to escape!
+   - *Sound Pruning Requirement:* Pruning pairwise test runs requires **static symbol reference graphs** (AST / language server call graphs) tracing exported and imported symbol dependencies, not naive file paths. Until such static analysis is verified, skipping test execution based on disjoint file diffs must NOT be implemented.
+3. **Demarcate Local Node Daemons from Cloud Runtimes:** The current local prototype requires running `sidecar.mjs` and `main.js` (~155 MB RSS combined) with custom bearer tokens. While client-side execution should ideally use standard `git` CLI operations directly against remote Cloudflare Workers, unproven cloud replacements must not be assumed complete without rigorous cross-machine validation.
 4. **Hardened Mode 0600 Credential Management:** Replace CLI argument bearer tokens with a dedicated Git credential helper serving short-lived tokens securely from memory or mode 0600 storage.
 
 ---
@@ -343,11 +383,11 @@ The reviewer affirms the four actionable recommendations outlined in Section 7.2
 
 ## 9. Conclusion & Final Sign-Off
 
-The deliverable [`research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md) provides an exceptionally thorough, technically flawless, and unsteered evaluation of the pre-merge tooling landscape and buyer adoption dynamics.
+The deliverable [`research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md) provides a rigorous, technically grounded evaluation of the pre-merge tooling landscape and buyer adoption dynamics.
 
-It replaces ungrounded product claims with mathematical rigor, empirical verification, and primary practitioner evidence.
+With official technical documentation sourced, trunk protection and PR CI boundaries qualified, prototype vs proposal demarcations established, buyer friction and SBET criteria properly labeled as provisional hypotheses, and the unsound file-diff filter retracted, the review is formally accepted under bounded terms.
 
-**Final Verdict: ACCEPT (FULL UNSTEERED VERIFICATION)**.
+**Final Verdict: BOUNDED ACCEPTANCE (PROVISIONAL ADOPTION HYPOTHESES & PRIMARY SOURCING DEMARCATED; UNSOUND FILE-DIFF PREFILTER WITHDRAWN)**.
 
 ---
-*Review completed independently by `incumbent-premerge-reviewer` under Desktop Orchestrator 11:50 Berlin directives, Codex Principal C1818, and User messages 26 and 32.*
+*Review completed independently by `incumbent-premerge-reviewer` under Desktop Orchestrator 11:50 and 12:20 Berlin directives, Codex Principal C1818, and User messages 26 and 32.*

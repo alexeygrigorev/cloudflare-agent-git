@@ -3469,16 +3469,62 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
 - **Scratch Workspace:** `.local/scratch/incumbent-premerge-review/` (mode 0700, strictly $\le 512$ MB, zero net `/tmp` growth).
 - **Invariants Maintained:** Strictly zero cargo/rustc compiler invocations under human hold; zero derived Gemini counter emission; cooperative 1500 MB memory slice.
 
-### 6. Landed Independent Review: Verdict ACCEPT
+### 6. Landed Independent Review: Rescoped to BOUNDED ACCEPTANCE
 - **Reviewer:** `incumbent-premerge-reviewer` (`fb862142-9a0f-4420-a8ae-d2b4777a1b3d`).
-- **Deliverable:** [`research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md) (354 lines, 29.8 KB, publication guard: PASS / exit 0).
-- **Verdict:** **ACCEPT — UNSTEERED CRITICAL TAXONOMY, TEST ORACLE EQUIVALENCE, AND BUYER ADOPTION POLICY FULLY VERIFIED**.
+- **Deliverable:** [`research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md) (publication guard: PASS / exit 0).
+- **Verdict:** **BOUNDED ACCEPTANCE (PROVISIONAL ADOPTION HYPOTHESES & PRIMARY SOURCING DEMARCATED; UNSOUND FILE-DIFF PREFILTER WITHDRAWN)**.
 - **Audit Findings:**
   1. *Identical Test Oracle Invariant Replay:* Confirmed via independent scratch replay on baseline `ff4decd7be0e` that local ephemeral worktrees (`git merge --no-commit; node --test`), GitHub Actions PR CI on `refs/pull/*/merge`, and native Merge Queues emit the exact identical failure signal (`AssertionError: 400 !== 201`) and protect `main` before trunk landing.
-  2. *Production Taxonomy Verified:* Validated accuracy across GitHub Merge Queue (`refs/heads/gh-readonly-queue/...`), GitLab Merge Trains (`refs/merge-requests/:iid/train`), Bors-ng, Zuul, and Foremerge v0.5.1.
-  3. *Quadratic Scaling Math Verified:* Verified $N(N-1)/2 = 190$ pairs at $N=20$ branches (9.5x to 47.5x more compute than linear/batched merge queues).
-  4. *Buyer Persona Friction & Interruption Dilemma Verified:* Validated DevOps objections (daemon RSS ~155 MB, CLI bearer tokens), solo dev latency penalty (5.7x), and swarm operator friction (mid-turn apology loops on incomplete code).
-  5. *Three-Tier Adoption Policy & SBET Falsification Gate Verified:* Mathematical conditions ($C_{\text{token}} \ge 0.90$, $T_{\text{wall}}$, $E_{\text{compute}} > 3.0$, $N_{\text{thrash}} > 0.20$) audited and confirmed robust.
+  2. *Production Taxonomy & Official Sourcing Verified:* Validated accuracy across GitHub Merge Queue (`refs/heads/gh-readonly-queue/...`, `on: merge_group`), GitLab Merge Trains (`refs/merge-requests/:iid/train`, merged results enabled), Bors-ng, Zuul, and Foremerge v0.5.1.
+  3. *Quadratic Scaling Math Verified:* Verified $N(N-1)/2 = 190$ pairs at $N=20$ branches (combinatorial upper bound).
+  4. *Buyer Persona Friction & Interruption Dilemma Audited:* Validated DevOps objections (daemon RSS ~155 MB, CLI bearer tokens), solo dev latency penalty (5.7x), and swarm operator friction (mid-turn apology loops on incomplete code) as **provisional hypotheses**, not verified commercial ROI.
+  5. *Three-Tier Adoption Policy & SBET Falsification Gate Audited:* Mathematical conditions ($C_{\text{token}} \ge 0.90$, $T_{\text{wall}}$, $E_{\text{compute}} > 3.0$, $N_{\text{thrash}} > 0.20$) audited and confirmed as provisional engineering design criteria.
+  6. *Unsound File-Diff Prefilter Retracted:* Withdrew naive recommendation to skip test runs on disjoint file diffs; explained why cross-file contracts (e.g. T2 `shortlinks.js` vs T3 `worker.js`) render naive file-diff filtering unsound without static symbol reference graphs.
+
+---
+
+## 109. Desktop Orchestrator 12:20 Review Ingest, Bounded Pre-Merge Acceptance & Retraction of Unsound File-Diff Filter
+
+- **Date:** 2026-10-04T12:28:00+02:00
+- **Directives:** Desktop Orchestrator 12:20 Berlin review challenges (`01a10670-1210-7f93-adbf-f7b57eaa0727`), Codex Principal C1818, and User messages 26, 31, 32.
+- **Context & Operational Intent:**
+  Desktop Orchestrator 12:20 Berlin review challenged specific claims in the demand deliverable and review, requiring:
+  1. Official primary technical documentation URLs and exact workflow triggers for incumbent pre-merge checks (`on: merge_group`, GitLab merged results / merge trains settings, Bors-ng, Zuul, Actions checkout v4).
+  2. Softening trunk protection claims: configured test gates are bounded by test suite coverage, flaky tests, build timeouts, environment drift, uncommitted dependencies, and administrative branch protection bypass permissions, not a 100% universal guarantee.
+  3. Correcting PR CI timing claims: standard PR CI runs on draft PRs and branch updates; agents can poll CI status prior to turn completion; categorical claim of "incumbent only tests after 45-minute task completion" withdrawn as unproven generalization.
+  4. Demarcating prototype vs proposal: Agent Branches L3 Radar in this repository was evaluated via a manual test script (`run_uprt_trial.py` calling `engine.evaluate_pair()` and manual forward to `POST /checks`), NOT an automated continuous background push service or active agent mid-turn warning consumption.
+  5. Labeling buyer persona friction (DevOps skepticism, daemon overhead, context distraction) and SBET thresholds (10% token, 3x compute, 20% thrash) as provisional hypotheses / engineering design criteria, not proven empirical facts or commercial ROI.
+  6. Clarifying that 190 pairs at 20 branches is a combinatorial upper bound ($N(N-1)/2$), not necessarily actual runtime expense if branches do not push concurrently or if cancellation/batching applies.
+  7. Retracting naive recommendation to skip radar on disjoint file diffs: explicitly explaining why file-level syntactic diffs are POTENTIALLY UNSOUND for cross-file interface contracts (demonstrated directly by T2 modifying `src/shortlinks.js` while T3 called it from `src/worker.js` with zero textual conflict). Sound pruning requires static symbol reference graphs.
+  8. Rescoping review verdict from unconditional ACCEPT to BOUNDED ACCEPTANCE.
+  9. Strict hold: No manufactured SBET or scale-up test will be launched to rescue a weak slot; broaden genuine external observations / demand / disconfirming workflow evidence first. Final adoption decisions remain strictly with the Codex and Claude principals.
+
+- **Delivered Actions & Verified Artifacts:**
+  1. **Demand Research Deliverable Refined (`research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md`):**
+     - Sourced official primary technical documentation ledger in Section 2.0 with dated URLs and exact workflow configuration invariants (`merge_group`, `merged_results`).
+     - Softened and bounded trunk protection guarantees in Section 1 and Section 3.
+     - Corrected PR CI timing claims and demarcated manual scripted prototype from automated proposal in Section 1 and Section 4.2.
+     - Clarified $N=20$ combinatorial upper bound ($N(N-1)/2 = 190$ pairs) in Section 4.1.
+     - Formally labeled buyer persona friction and SBET criteria as provisional hypotheses / exploratory design criteria in Section 4.4 and Section 6.1.
+     - Substantive Engineering Challenge: Completely retracted naive disjoint file-diff filtering in Section 7.2; detailed why syntactic file diffs fail on cross-file interface contracts (T2 in `src/shortlinks.js` vs T3 in `src/worker.js`) and defined static symbol reference graphs as the only sound pruning mechanism.
+     - Removed duplicate recommendation item in Section 7.2. Publication guard clean (PASS / exit 0).
+  2. **Independent Review Rescoped to BOUNDED ACCEPTANCE (`research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md`):**
+     - Rescoped verdict to: **BOUNDED ACCEPTANCE (PROVISIONAL ADOPTION HYPOTHESES & PRIMARY SOURCING DEMARCATED; UNSOUND FILE-DIFF PREFILTER WITHDRAWN)**.
+     - Added Section 2.0 technical documentation sourcing audit.
+     - Added explicit qualification of trunk protection boundaries and PR CI timing in Section 3.2.
+     - Added combinatorial upper bound qualification in Section 4.2.
+     - Updated Section 5 to formally label buyer persona friction as conceptual hypotheses.
+     - Updated Section 6 to audit SBET criteria as provisional engineering hypotheses and affirmed human hold prohibiting manufactured scale-up tests.
+     - Updated Section 7 to explicitly audit the retraction of naive file-diff filtering.
+     - Publication guard clean (PASS / exit 0).
+  3. **Coordination Registers Synchronized:**
+     - `coordination/TASKS.json`: Updated `incumbent-premerge-and-buyer-workflow` and `incumbent-premerge-review` to BOUNDED ACCEPTANCE.
+     - `coordination/TEAM-REGISTRY.json`: Updated `incumbent-premerge-reviewer` first-tool evidence to reflect bounded acceptance.
+  4. **Strict Human Invariants Maintained:**
+     - Compiler Execution: Strictly **0** `cargo` or `rustc` compiler invocations under human hold.
+     - Usage Accounting: Strictly **0** tokens emitted to `usage-events.jsonl` (counter emission held).
+     - Workspace Hygiene: Scratch directories strictly $\le$ 512 MB, zero net `/tmp` growth, cooperative 1500 MB memory slice.
+     - No manufactured SBET or scale-up benchmarks launched to rescue weak slots. Final adoption decisions remain strictly with the Codex and Claude principals.
 
 
 

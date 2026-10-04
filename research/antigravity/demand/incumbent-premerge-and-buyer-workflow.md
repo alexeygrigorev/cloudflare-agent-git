@@ -43,25 +43,28 @@ This research paper subjects that claim to an independent, technically rigorous 
 
 ### Key Findings of this Investigation:
 
-1. **The "Identical Test Oracle" Invariant:**
+1. **The "Identical Test Oracle" Invariant & Bounded Guarantees:**
    In the empirical Unsteered Parallel Refactoring Trial ([`REPORT-UPRT-CONCURRENT-GATE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md)), an uncoordinated baseline (Arm A) allowed a semantic contract break (Task T2 object signature refactor vs. Task T3 positional bulk caller) to land on `main`, whereas the Agent Branches L3 Radar (Arm B) caught the defect prior to trunk landing. 
    Crucially, this occurred because Arm A modeled a *post-merge* CI policy. If Arm A had been configured with **any standard incumbent pre-merge check**—such as GitHub's native `refs/pull/<number>/merge` virtual ref, a GitLab Merge Train, or a simple 2-line pre-push worktree script (`git merge --no-commit; npm test`)—it would have caught the regression with the **exact identical failure signal** (`AssertionError: 400 !== 201`). Agent Branches does not possess an intrinsically superior semantic oracle; it executes the same Git merge and test runner.
+   *Crucial Operational Boundary:* Configured test gates are **NOT** a 100% universal trunk protection or semantic guarantee. All test gates (incumbent and experimental alike) remain strictly bounded by test suite coverage, test flakiness, build timeouts, environment drift, and repository administrator bypass permissions.
 
-2. **The Genuine Differentiators:**
-   Where Agent Branches and L3 Advisory Radar genuinely diverge from incumbent CI is:
+2. **The Genuine Differentiators (Proposal vs. Prototype):**
+   Where Agent Branches and L3 Advisory Radar conceptually diverge from incumbent CI is:
    - **Trigger Point:** Continuous push time (remote Smart HTTP push) rather than pull request or merge-queue submission boundary.
    - **Interruption Timing:** Delivering an in-flight advisory warning during an active agent turn rather than a blocking failure after the agent has concluded its turn.
-   - **Compute Profile:** A quadratic $O(N^2)$ pairwise matrix evaluation across all active heads on push, compared to the linear $O(N)$ or batched $O(\lceil N/B \rceil)$ speculative execution model of merge trains.
+   - **Compute Profile:** A quadratic $O(N^2)$ pairwise combination matrix upper bound ($N(N-1)/2$) across active heads on push, compared to the linear $O(N)$ or batched $O(\lceil N/B \rceil)$ speculative execution model of merge trains.
+   *Prototype Demarcation:* In this repository, Agent Branches L3 Radar was demonstrated via a scripted manual harness (`run_uprt_trial.py` invoking `engine.evaluate_pair()` and posting to `POST /checks`), **NOT** an automated continuous background push daemon or active agent mid-turn warning consumption service. The architectural design proposal must be kept distinct from the actual pre-built Node prototype and its currently unknown real-world benefit. Furthermore, standard PR CI can run on branch pushes and draft PRs (`on: [push]`, `on: [pull_request]`), and agents can poll CI status prior to completing turns; categorical claims of "incumbent only tests after task complete / 45-minute blind agent execution" are unproven generalizations.
 
-3. **Enterprise Buyer Friction & Market Realities:**
-   - **Platform Engineering / DevOps Leads** vigorously resist deploying custom background Node/Python sidecar daemons, managing custom token choreography, and paying for quadratic compute when standard GitHub Actions runners and native merge queues already provide 100% trunk protection.
-   - **Fleet Operators & Swarm Managers** report that ad hoc blackboards and coordination layers frequently "fail to earn their keep" (e.g. practitioner `gavmor` on ~25 worktrees). In-turn push warnings can easily devolve into token-wasting distraction if the signal-to-noise ratio is imperfect.
-   - **Single-Actor / Small Teams** experience negative ROI: 5.7x wall-clock latency overhead, daemon memory footprints (~155 MB RSS), and multi-step SDK ceremony for zero collision risk.
+3. **Enterprise Buyer Friction & Market Realities (Hypotheses):**
+   - **Platform Engineering / DevOps Leads:** Hypothesized to resist deploying custom background Node/Python sidecar daemons, managing custom token choreography, and paying for quadratic compute when standard GitHub Actions runners and native merge queues already provide standard trunk protection. Attributed firsthand buyer willingness-to-pay remains unproven.
+   - **Fleet Operators & Swarm Managers:** While primary practitioner testimony (e.g. `gavmor` on ~25 worktrees) confirms that ad hoc blackboards and coordination layers frequently "fail to earn their keep," this general skepticism does not prove commercial rejection of Agent Branches specifically. In-turn push warnings on intermediate draft code risk causing context distraction and apology loops if intermediate test failures are treated as contract regressions.
+   - **Single-Actor / Small Teams:** Experience negative ROI: 5.7x wall-clock latency overhead (0.200s vs 1.143s), daemon memory footprints (~155 MB RSS), and multi-step SDK ceremony for zero collision risk.
 
-4. **Adoption Policy:**
+4. **Provisional Adoption Hypotheses & Scope:**
    - Single-actor workloads: **STRICTLY DECLINE.**
    - Standard human/agent teams on GitHub: **DECLINE / REDUNDANT.**
-   - High-velocity autonomous agent swarms ($>10$ agents continuously pushing): **CONDITIONAL ADOPTION**, valid only if push-time warning prunes branch exploration faster than PR CI cycle times, offsetting the $O(N^2)$ compute bill.
+   - High-velocity autonomous agent swarms ($>10$ agents continuously pushing): **CONDITIONAL ADOPTION HYPOTHESIS**, valid only if push-time warning prunes branch exploration faster than PR CI cycle times, offsetting the compute bill.
+   *Authority Note:* These tiers and thresholds represent provisional engineering hypotheses and design criteria, NOT principal-approved corporate product policy or shortlist selection. Final adoption decisions remain strictly with the Codex and Claude principals.
 
 ---
 
@@ -69,7 +72,21 @@ This research paper subjects that claim to an independent, technically rigorous 
 
 Pre-merge test gating is not a new problem invented for AI agents. For over a decade, production software engineering teams operating at scale have deployed automated systems to prevent semantic and integration regressions from breaking the canonical trunk branch (`main` or `master`).
 
-To evaluate whether agent-specific coordination tooling earns its keep, we first conduct a comprehensive technical taxonomy of incumbent pre-merge systems.
+## 2. Incumbent Pre-Merge Check Ecosystem & Technical Taxonomy
+
+Pre-merge test gating is not a new problem invented for AI agents. For over a decade, production software engineering teams operating at scale have deployed automated systems to prevent semantic and integration regressions from breaking the canonical trunk branch (`main` or `master`).
+
+To evaluate whether agent-specific coordination tooling earns its keep, we first conduct a comprehensive technical taxonomy of incumbent pre-merge systems grounded in dated official documentation and primary technical sources.
+
+### 2.0 Authoritative Technical Source Ledger (As of October 2026)
+
+| Ecosystem / Tool | Primary Technical URL / Authority | Key Technical Requirement & Trigger Mechanism |
+| :--- | :--- | :--- |
+| **GitHub Merge Queue** | [GitHub Docs: Managing a merge queue](https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue) | Requires CI workflows to declare the `merge_group` event trigger (`on: { merge_group: {} }`). Operates on `refs/heads/gh-readonly-queue/<base-branch>/pr-<num>-<base-sha>`. |
+| **GitLab Merge Trains** | [GitLab Docs: Merge Trains](https://docs.gitlab.com/ci/pipelines/merge_trains/) | Requires enabling "Pipelines for merged results" and "Merge trains" in repository settings. Operates on `refs/merge-requests/:iid/train`. |
+| **Bors-ng** | [Bors-ng Documentation](https://bors.tech/documentation/) | Graydon Hoare's "Not Rocket Science Rule". Evaluates speculative batches on `staging` branch via bot commands (`bors r+`) with automated bisection. |
+| **Zuul Gating Engine** | [Zuul CI Documentation](https://zuul-ci.org/docs/zuul/latest/) | Multi-repository dependency DAG gating (`Depends-On:` headers); speculative future-state trees in distributed ZooKeeper clusters. |
+| **GitHub Actions Checkout** | [actions/checkout v4](https://github.com/actions/checkout) | Standard checkout action on `pull_request` events checks out virtual 3-way merge commit `refs/pull/<number>/merge` by default, NOT the isolated branch head. |
 
 ```
 +------------------------------------------------------------------------------------------------------------------------+
@@ -92,6 +109,16 @@ To evaluate whether agent-specific coordination tooling earns its keep, we first
 ### 2.1 GitHub Merge Queue (Native Actions)
 
 - **Origin & Purpose:** Introduced to GitHub Enterprise and public repositories to eliminate the classic "merge race condition" (where PR A and PR B both pass CI against `main`, but their combination breaks `main`).
+- **Required Workflow Configuration:**
+  Workflows intended to gate merge queue entry **must explicitly listen for the `merge_group` event**:
+  ```yaml
+  name: Merge Queue CI
+  on:
+    pull_request:
+    merge_group:
+      types: [checks_requested]
+  ```
+  If a workflow does not include `merge_group`, GitHub cannot execute check runs against speculative merge queue commits.
 - **Speculative Ref Architecture:** When a PR is queued for merge, GitHub creates a temporary speculative branch:
   ```text
   refs/heads/gh-readonly-queue/<base-branch>/pr-<pr-number>-<base-sha>
@@ -103,13 +130,18 @@ To evaluate whether agent-specific coordination tooling earns its keep, we first
   - Speculative Commit 3: $\text{main} + \text{PR}_1 + \text{PR}_2 + \text{PR}_3$
   GitHub Actions triggers CI on each speculative commit simultaneously.
 - **Auto-Rollback & Bisect:** If Speculative Commit 3 fails, the queue controller isolates the failure. It automatically removes the failing PR from the train, rolls back the queue, and re-triggers CI for the remaining clean PRs.
-- **Trunk Protection Guarantee:** 100% fail-closed. No PR can be merged to `main` unless its speculative merge commit has passed the required CI check suite.
+- **Trunk Protection Scope & Boundaries:**
+  The merge queue enforces fail-closed trunk protection for configured required checks, but this is **bounded, not absolute**:
+  1. *Test Suite Dependency:* If the test suite lacks coverage for a specific semantic interface, the defect will merge undetected.
+  2. *Flaky Tests & Timeouts:* Test flakiness can cause false-positive queue evictions, triggering unnecessary bisections.
+  3. *Administrator Bypass:* Repository administrators and automated deployment tokens with bypass permissions can push directly to `main` without entering the queue.
 - **Trigger Model:** Intent-to-merge signal (`gh pr merge --auto` or web UI queue button).
 - **Latency Profile:** Bound by GitHub Actions runner scheduling and test execution ($T \approx 3\text{--}15\text{ minutes}$).
 
 ### 2.2 GitLab Merge Trains
 
 - **Origin & Purpose:** Integrated into GitLab CI/CD under "Pipelines for Merged Results".
+- **Required Settings:** Requires explicitly enabling "Pipelines for merged results" and "Merge trains" in repository CI/CD settings.
 - **Speculative Ref Architecture:** Evaluates speculative merge pipelines on a dedicated virtual ref:
   ```text
   refs/merge-requests/:iid/train
@@ -145,6 +177,7 @@ To evaluate whether agent-specific coordination tooling earns its keep, we first
   2. `refs/pull/<number>/merge`: A virtual 3-way merge commit combining `refs/pull/<number>/head` with the current tip of `refs/heads/main`.
 - **Default Checkout Semantics:** When a GitHub Actions workflow is triggered with `on: [pull_request]`, the standard checkout action (`actions/checkout@v4`) **checks out `refs/pull/<number>/merge` by default**, NOT `refs/pull/<number>/head`.
 - **Significance:** Standard PR CI does **not** test the isolated branch code. It tests the **speculative result of merging the branch into main at that moment**. If `main` moves forward, GitHub marks the virtual merge commit dirty and re-evaluates it upon the next trigger.
+- **Timing Nuance:** PR CI is not restricted to post-turn boundaries. Developers and agents can push intermediate commits to a draft pull request (`gh pr create --draft`), triggering speculative merge CI during active development, and poll the check status before concluding their turn. Categorical assertions that standard CI can only test after task completion are unsupported.
 
 ### 2.5 Local Pre-Merge Worktree Integration
 
@@ -464,6 +497,12 @@ flowchart TD
 
 #### Tier 1: Single-Actor Tasks — STRICTLY DECLINE
 - **Context:** An individual developer, a single autonomous agent (e.g. executing an overnight ticket backlog sequentially), or multiple agents working in strictly partitioned, disjoint repository domains.
+### 6.1 Provisional Adoption Hypotheses & Exploratory Framework
+
+The following tiers represent **provisional engineering hypotheses and exploratory design criteria**, NOT verified economic ROI or finalized corporate adoption policy. Formal shortlist selection and adoption decisions remain strictly with the Codex and Claude principals.
+
+#### Tier 1: Single-Actor Tasks — STRICTLY DECLINE
+- **Context:** An individual developer, a single autonomous agent (e.g. executing an overnight ticket backlog sequentially), or multiple agents working in strictly partitioned, disjoint repository domains.
 - **Verdict:** **STRICTLY DECLINE ADOPTION.**
 - **Rationale:** 
   - Collision probability is exactly zero.
@@ -478,20 +517,22 @@ flowchart TD
   - Native GitHub Merge Queues and GitLab Merge Trains provide automated speculative batching, speculative chaining, and automatic failure eviction.
   - Adopting Agent Branches replaces a zero-maintenance, hardened, OIDC-compliant cloud infrastructure with self-hosted Cloudflare Workers, Durable Objects, local Git sidecars, and custom bearer token management without improving defect detection accuracy.
 
-#### Tier 3: High-Velocity Autonomous Agent Swarms (>10 Agents) — CONDITIONAL ADOPTION
+#### Tier 3: High-Velocity Autonomous Agent Swarms (>10 Agents) — CONDITIONAL ADOPTION HYPOTHESIS
 - **Context:** High-concurrency autonomous swarms where 10 to 50 agent instances concurrently modify overlapping subsystems in a shared repository, running long-horizon exploration tasks ($>30\text{ minutes per turn}$).
-- **Verdict:** **CONDITIONAL ADOPTION.**
-- **Condition:** Adoption is justified **only if** the push-time advisory warning prunes branch exploration early enough to save more LLM tokens than the coordination infrastructure and $O(N^2)$ pairwise test compute costs to operate.
+- **Verdict:** **CONDITIONAL ADOPTION HYPOTHESIS.**
+- **Condition:** Adoption is justified **only if** the push-time advisory warning prunes branch exploration early enough to save more LLM tokens than the coordination infrastructure and pairwise test compute costs to operate.
 
 ---
 
-### 6.2 The Empirical Falsification Gate: The Swarm Branch-Pruning Efficiency Trial (SBET)
+### 6.2 The Provisional Falsification Concept: Swarm Branch-Pruning Efficiency Trial (SBET)
 
-To eliminate vendor bias and definitively prove whether push-time advisory radar earns its keep over an incumbent GitHub Merge Queue, we formulate **one single, unambiguous empirical falsification trial**.
+To ground future investigation and avoid vendor bias, we outline a conceptual falsification framework. 
+
+*Governance Boundary:* Per Desktop Orchestrator guidance, **we do NOT launch a manufactured SBET or scale-up test to rescue a weak slot**. Genuine external observations, firsthand consumer demand, and disconfirming workflow evidence must precede any further synthetic trials.
 
 ```
 +----------------------------------------------------------------------------------------------------+
-|                SWARM BRANCH-PRUNING EFFICIENCY TRIAL (SBET) SPECIFICATION                         |
+|                SWARM BRANCH-PRUNING EFFICIENCY TRIAL (SBET) CONCEPTUAL SPECIFICATION               |
 +----------------------------------------------------------------------------------------------------+
 |                                                                                                    |
 |    Workload: 12 autonomous coding agents assigned 12 concurrent refactoring tasks on a shared      |
@@ -510,28 +551,28 @@ To eliminate vendor bias and definitively prove whether push-time advisory radar
 |    - On collision: Advisory warning delivered to agent's task state mid-turn.                      |
 |    - Agent inspects warning and attempts early branch pruning / contract realignment.              |
 |                                                                                                    |
-|    EVALUATION METRIC: NET ECONOMIC VALUE DELTA                                                     |
+|    EVALUATION METRIC: NET ECONOMIC VALUE DELTA (HYPOTHESIS)                                        |
 |    ΔNet = (LLM Tokens Saved via Early Pruning) - (Radar Compute Cost + Agent Distraction Cost)     |
 +----------------------------------------------------------------------------------------------------+
 ```
 
-#### Precise Mathematical Falsification Conditions:
+#### Provisional Design Criteria & Falsification Thresholds (Hypotheses):
 
-1. **Token Pruning Efficacy Condition:**
-   Let $C_{\text{token}}(\text{Arm A})$ be the total prompt and completion token cost across all 12 agents in Arm A, including rework after merge-queue rejection. Let $C_{\text{token}}(\text{Arm B})$ be the total token cost in Arm B, including mid-turn coordination.
-   The advisory radar is **falsified** if:
+1. **Token Pruning Efficacy Threshold:**
+   Let $C_{\text{token}}(\text{Arm A})$ be total token cost across all 12 agents in Arm A. Let $C_{\text{token}}(\text{Arm B})$ be total token cost in Arm B.
+   The advisory radar concept is **falsified** if:
    $$\frac{C_{\text{token}}(\text{Arm B})}{C_{\text{token}}(\text{Arm A})} \ge 0.90$$
-   *(If push-time warnings do not reduce total swarm token expenditure by at least 10%, the system fails to justify its existence).*
+   *(If push-time warnings do not reduce total swarm token expenditure by at least 10%, the system fails to justify its operational footprint).*
 
-2. **Compute & Wall-Clock Efficiency Condition:**
-   Let $T_{\text{wall}}$ be the total wall-clock time from task dispatch to all clean branches merged on `main`. Let $E_{\text{compute}}$ be total CPU-seconds consumed by test runners.
-   The advisory radar is **falsified** if:
+2. **Compute & Wall-Clock Efficiency Threshold:**
+   Let $T_{\text{wall}}$ be total wall-clock time from task dispatch to all clean branches merged. Let $E_{\text{compute}}$ be total CPU-seconds consumed.
+   The advisory radar concept is **falsified** if:
    $$T_{\text{wall}}(\text{Arm B}) > T_{\text{wall}}(\text{Arm A}) \quad \text{OR} \quad \frac{E_{\text{compute}}(\text{Arm B})}{E_{\text{compute}}(\text{Arm A})} > 3.0$$
-   *(If the $O(N^2)$ pairwise radar triples total compute consumption without reducing total wall-clock time to green main, it fails the scalability gate).*
+   *(If pairwise radar triples total compute consumption without reducing total wall-clock time to green main, it fails the scalability gate).*
 
 3. **Distraction & Thrashing Threshold:**
-   Let $N_{\text{thrash}}$ be the number of agent turns spent attempting to resolve false-alarm or premature warnings on intermediate, incomplete code checkpoints.
-   The advisory radar is **falsified** if:
+   Let $N_{\text{thrash}}$ be agent turns spent reacting to false-alarm or premature warnings on intermediate incomplete code checkpoints.
+   The advisory radar concept is **falsified** if:
    $$N_{\text{thrash}} > 0.20 \times N_{\text{total\_turns}}$$
    *(If more than 20% of agent turns are consumed reacting to intermediate advisory warnings, the tool is rejected as an active impediment to developer momentum).*
 
@@ -548,7 +589,7 @@ To eliminate vendor bias and definitively prove whether push-time advisory radar
    The sole architectural justification for push-time advisory radar is **shift-left branch pruning for long-horizon autonomous swarms**. If an agent is running a 45-minute task, discovering an architectural collision at minute 3 via a push advisory can prevent 42 minutes of wasted LLM generation. 
 
 3. **The Compute Scaling Trap:**
-   The shift-left benefit comes at a steep price: **quadratic $O(N^2)$ compute growth**. While merge queues evaluate speculative branches linearly or in batches ($O(N)$), pairwise radar explodes combinatorially. For swarms exceeding 20 agents, running full test suites on all pairs is economically and computationally unsustainable without aggressive syntactic pre-filtering (e.g. file overlap diffs).
+   The shift-left benefit comes at a steep price: **quadratic $O(N^2)$ compute growth upper bound ($N(N-1)/2$)**. While merge queues evaluate speculative branches linearly or in batches ($O(N)$), pairwise radar scales combinatorially. For swarms exceeding 20 agents, running full test suites on all 190 possible pairs is economically and computationally unsustainable.
 
 4. **Developer Ergonomics Are Currently Disastrous:**
    For human developers and solo agents, Agent Branches is uncompetitive against ordinary Git: 5.7x slower, two persistent Node daemons, complex token choreography, and risk of `/proc` credential exposure. 
@@ -558,12 +599,13 @@ To eliminate vendor bias and definitively prove whether push-time advisory radar
 1. **Stop Positioning as a Replacement for Git Pre-Merge CI:**
    Do not market Agent Branches as "the only way to catch semantic merge conflicts." Enterprise engineering leads know their existing merge queues already do this. Instead, position the technology as a **concurrency acceleration layer for autonomous agent runtimes** that reduces token burn during exploratory branching.
 
-2. **Replace $O(N^2)$ Full Pairwise Testing with Two-Tier Filtering:**
-   - **Tier 1 (Instant In-Memory Diff):** Run `git merge-tree --write-tree` (takes ~6ms). If merge-tree produces a textual conflict, flag immediately. If files are completely disjoint and do not share imported symbols, skip test execution (`status="not_checked"`).
-   - **Tier 2 (Budgeted Targeted Testing):** Execute combined-tree test suites ONLY for branch pairs that modify overlapping files or shared module interfaces.
+2. **CRITICAL WARNING: Disjoint File-Diff Skipping is Potentially UNSOUND:**
+   - *Previous Naive Suggestion:* It is tempting to propose skipping radar test runs when branch file diffs do not overlap.
+   - *Why Disjoint Diff Filtering Fails:* As demonstrated directly in the UPRT T2 vs T3 trial, **non-overlapping file edits frequently break cross-file contracts**. Task T2 refactored `ShortlinkService.prototype.create` in `src/shortlinks.js`. Task T3 added `test/bulk.test.js` and called `create` positionally from `src/worker.js`. If a prefilter had evaluated file paths and concluded that `test/bulk.test.js` and `src/shortlinks.js` were disjoint, the contract regression would have been skipped!
+   - *Sound Architectural Path:* Pruning pairwise test runs cannot rely on naive file-path disjointness. It requires **sound static symbol reference graphs** (e.g. language server / AST dependency graphs) tracing exported and imported symbol usages across files. Until such static analysis is verified, skipping test execution based on disjoint file diffs is unsafe and must NOT be implemented.
 
-3. **Eliminate Background Daemons on the Client:**
-   Replace the local Node.js sidecar and local coordinator simulation with direct HTTPS Git operations to the Cloudflare Worker. The developer or agent should only ever need standard `git` and standard environment variables, eliminating the ~155 MB RSS overhead and localhost port conflicts.
+3. **Demarcate Local Node Daemons from Cloud Runtimes:**
+   The current local prototype requires running `sidecar.mjs` and `main.js` (~155 MB RSS combined) with custom bearer tokens. To be commercially viable, client-side execution should use standard `git` CLI operations directly against remote Cloudflare Workers, eliminating local daemons and port allocation friction. However, unproven cloud replacements must not be assumed complete without rigorous cross-machine validation.
 
 4. **Harden Credential Management to Mode 0600:**
    Cease passing bearer tokens in command-line arguments (`-c http.extraHeader`) or embedding them in git remote URLs. Implement a lightweight Git credential helper that serves task bearer tokens securely from memory or mode 0600 storage, fully complying with enterprise security invariants and `publication_guard.py`.
