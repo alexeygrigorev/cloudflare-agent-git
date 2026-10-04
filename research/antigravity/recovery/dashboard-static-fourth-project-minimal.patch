@@ -1,0 +1,38 @@
+diff -ruN a/static/dashboard.js b/static/dashboard.js
+--- a/static/dashboard.js	2026-10-04 22:52:02.648297130 +0200
++++ b/static/dashboard.js	2026-10-04 22:52:02.651297170 +0200
+@@ -3,7 +3,7 @@
+  * never as 0. API failures leave the static fallback layout in place. */
+ "use strict";
+ 
+-var PROJECT_IDS = ["agent-branches", "agent-dashboard", "quota-launcher"];
++var PROJECT_IDS = ["agent-branches", "agent-dashboard", "quota-launcher", "agent-coordination"];
+ 
+ function isNullish(v) {
+   return v === null || v === undefined;
+diff -ruN a/static/index.html b/static/index.html
+--- a/static/index.html	2026-10-04 22:52:02.648297130 +0200
++++ b/static/index.html	2026-10-04 22:52:02.651297170 +0200
+@@ -80,6 +80,22 @@
+         </div>
+         <p class="muted small axis-note">Bars show agent-hours per half-open bucket <code>[start, end)</code> in UTC. Hover/tap a bar for exact bounds.</p>
+       </section>
++
++      <section class="card" id="agent-coordination" aria-label="Cross-computer Agent Coordination utilization">
++        <h2>Cross-computer Agent Coordination</h2>
++        <p class="proj-sub"><code>agent-coordination</code> <span id="unknown-agent-coordination" class="badge badge-unknown" hidden>unknown</span></p>
++        <dl class="metrics">
++          <div><dt>Unique agents</dt><dd id="unique-agent-coordination">loading&hellip;</dd></div>
++          <div><dt>Total agent-hours</dt><dd id="hours-agent-coordination">loading&hellip;</dd></div>
++          <div><dt>Coverage</dt><dd id="coverage-agent-coordination">loading&hellip;</dd></div>
++          <div><dt>Unattributed hours</dt><dd id="unattrib-agent-coordination">loading&hellip;</dd></div>
++        </dl>
++        <h3>Hourly buckets (UTC, 24 &times; 1h)</h3>
++        <div class="chart" id="chart-agent-coordination" aria-label="Hourly bar chart for agent-coordination">
++          <p class="muted">chart loading&hellip;</p>
++        </div>
++        <p class="muted small axis-note">Bars show agent-hours per half-open bucket <code>[start, end)</code> in UTC. Hover/tap a bar for exact bounds.</p>
++      </section>
+     </div>
+ 
+     <section class="panel" id="usage-section" aria-label="Usage accounting">

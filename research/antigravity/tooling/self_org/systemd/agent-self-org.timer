@@ -1,0 +1,11 @@
+[Unit]
+Description=Timer for Autonomous Agent Self-Organization Control Loop (Every 30 seconds)
+Documentation=file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-AUTONOMOUS-SELF-ORGANIZATION.md
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=30s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

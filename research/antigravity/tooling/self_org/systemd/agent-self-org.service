@@ -1,0 +1,15 @@
+[Unit]
+Description=Autonomous Agent Self-Organization Control Loop
+Documentation=file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-AUTONOMOUS-SELF-ORGANIZATION.md
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/alexey/git/cloudflare-agent-git
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 -m research.antigravity.tooling.self_org.supervisor_loop --tick --tasks-file /home/alexey/git/cloudflare-agent-git/.local/self_org/tasks.json
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

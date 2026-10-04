@@ -1,0 +1,2990 @@
+diff --git a/src/dashboard/__init__.py b/src/dashboard/__init__.py
+index 03c1a92..ce05244 100644
+--- a/src/dashboard/__init__.py
++++ b/src/dashboard/__init__.py
+@@ -3,3 +3,27 @@ Agent Dashboard package.
+ """
+ 
+ __version__ = "0.1.0"
++
++CANONICAL_PROJECT_IDS = (
++    "agent-branches",
++    "agent-dashboard",
++    "quota-launcher",
++    "agent-coordination",
++)
++PROJECT_ALIASES = {
++    "agent-quota-launcher": "quota-launcher",
++    "agent_quota_launcher": "quota-launcher",
++    "agent_branches": "agent-branches",
++    "agent_dashboard": "agent-dashboard",
++    "agent_coordination": "agent-coordination",
++}
++UNATTRIBUTED_PROJECT_ID = "unattributed"
++
++
++def canonical_project_id(project_id: str | None) -> str:
++    """Map a raw project id onto a canonical id or unattributed."""
++    if project_id in PROJECT_ALIASES:
++        return PROJECT_ALIASES[project_id]
++    if project_id in CANONICAL_PROJECT_IDS:
++        return project_id
++    return UNATTRIBUTED_PROJECT_ID
+diff --git a/src/dashboard/accounting.py b/src/dashboard/accounting.py
+index 38723c7..8f4999c 100644
+--- a/src/dashboard/accounting.py
++++ b/src/dashboard/accounting.py
+@@ -7,55 +7,149 @@ reasoning token subset rules, and separation of quota deltas from consumption.
+ 
+ from __future__ import annotations
+ 
++import datetime
+ import json
+ import os
+-from typing import Dict, List, Any, Optional
++from typing import Any, Dict, List, Optional, Tuple
++
++from dashboard import canonical_project_id
++from dashboard.hourly import parse_iso_timestamp, _as_utc, _iso
++
++_TOKEN_ALIASES = {
++    "input_tokens": ("input_tokens", "prompt_tokens", "inputTokens", "promptTokens"),
++    "output_tokens": ("output_tokens", "completion_tokens", "outputTokens", "completionTokens"),
++    "cache_read_tokens": (
++        "cache_read_tokens",
++        "cached_tokens",
++        "cached_input_tokens",
++        "cachedInputTokens",
++        "cacheReadTokens",
++    ),
++    "cache_creation_tokens": (
++        "cache_creation_tokens",
++        "cache_write_tokens",
++        "cacheWriteTokens",
++        "cacheCreationTokens",
++    ),
++    "reasoning_tokens": (
++        "reasoning_tokens",
++        "reasoning_output_tokens",
++        "reasoningTokens",
++        "reasoningOutputTokens",
++    ),
++    "noncache_input_tokens": (
++        "noncache_input_tokens",
++        "uncached_input_tokens",
++        "noncacheInputTokens",
++        "uncachedInputTokens",
++    ),
++}
++
++_COST_KEYS = ("cost", "cost_usd", "reported_cost", "costUsd", "reportedCost")
++_NEST_KEYS = ("usage", "tokens", "token_usage")
++
++
++class InvalidCountError(ValueError):
++    """Boolean or negative token count — the whole record is invalid."""
++
++
++def _flatten_raw(raw: Dict[str, Any]) -> Dict[str, Any]:
++    """Copy nested usage/token objects into a working dict without inventing values."""
++    out = dict(raw)
++    for nest in _NEST_KEYS:
++        inner = raw.get(nest)
++        if not isinstance(inner, dict):
++            continue
++        for key, value in inner.items():
++            if key not in out or out[key] is None or out[key] == "":
++                out[key] = value
++    return out
++
++
++def _first_present(raw: Dict[str, Any], keys: Tuple[str, ...]) -> Tuple[bool, Any]:
++    """Return (found, value) for the first matching key that is present."""
++    for key in keys:
++        if key in raw:
++            return True, raw[key]
++    return False, None
++
++
++def _as_token_int(value: Any) -> Optional[int]:
++    """Parse a token count. Bool and negative values raise InvalidCountError."""
++    if isinstance(value, bool):
++        raise InvalidCountError("boolean token count")
++    if value is None or value == "":
++        return None
++    try:
++        number = int(value)
++    except (ValueError, TypeError):
++        return None
++    if number < 0:
++        raise InvalidCountError("negative token count")
++    return number
++
++
++def _as_float(value: Any) -> Optional[float]:
++    if isinstance(value, bool):
++        return None
++    if value is None or value == "":
++        return None
++    try:
++        return float(value)
++    except (ValueError, TypeError):
++        return None
++
++
++def _token_field(raw: Dict[str, Any], field: str) -> Optional[int]:
++    found, value = _first_present(raw, _TOKEN_ALIASES[field])
++    if not found:
++        return None
++    return _as_token_int(value)
+ 
+ 
+ def normalize_usage_record(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+     """
+     Normalize raw telemetry or usage event record into strict schema.
+-    Enforces:
+-    - input_tokens: Optional[int] (null if unknown)
+-    - output_tokens: Optional[int] (null if unknown)
+-    - cache_read_tokens: Optional[int] (null if unknown)
+-    - cache_creation_tokens: Optional[int] (null if unknown)
+-    - reasoning_tokens: Optional[int] (null if unknown; must NOT be added to output_tokens)
+-    - quota_delta: Optional[float] (strictly tracked separately, never converted to tokens/cost)
++    Unknown cache/noncache/reasoning stay null unless the source proves them.
++    quota_delta is never converted into cost or tokens.
++    reasoning_tokens are a subset and are never added to output_tokens.
++    Boolean or negative token counts invalidate the whole record (returns None).
++    A proven 0 is preserved (not treated as missing).
+     """
+     if not isinstance(raw, dict):
+         return None
+ 
+-    project_id = raw.get("project_id") or raw.get("team_id") or "unattributed"
+-    provider = raw.get("provider") or raw.get("engine") or "unknown"
+-    conversation_id = raw.get("conversation_id") or raw.get("harness_conversation_id")
+-    response_id = raw.get("response_id") or raw.get("message_id")
+-    timestamp = raw.get("timestamp") or raw.get("observed_at") or raw.get("created_at")
+-
+-    # Safe token extraction
+-    def get_token_int(key: str) -> Optional[int]:
+-        val = raw.get(key)
+-        if val is None or val == "":
+-            return None
+-        try:
+-            return int(val)
+-        except (ValueError, TypeError):
+-            return None
+-
+-    input_tokens = get_token_int("input_tokens") or get_token_int("prompt_tokens")
+-    output_tokens = get_token_int("output_tokens") or get_token_int("completion_tokens")
+-    cache_read = get_token_int("cache_read_tokens") or get_token_int("cached_tokens")
+-    cache_creation = get_token_int("cache_creation_tokens")
+-    reasoning = get_token_int("reasoning_tokens")
+-
+-    # Quota delta (e.g. 5h quota drop)
+-    quota_delta_raw = raw.get("quota_delta")
+-    quota_delta = None
+-    if quota_delta_raw is not None and quota_delta_raw != "":
+-        try:
+-            quota_delta = float(quota_delta_raw)
+-        except (ValueError, TypeError):
+-            quota_delta = None
++    flat = _flatten_raw(raw)
++
++    project_id = canonical_project_id(
++        flat.get("project_id") if "project_id" in flat else None
++    )
++    provider = flat.get("provider") or flat.get("engine") or "unknown"
++    conversation_id = flat.get("conversation_id") or flat.get("harness_conversation_id")
++    response_id = flat.get("response_id") or flat.get("message_id")
++    timestamp = (
++        flat.get("timestamp")
++        or flat.get("observed_at")
++        or flat.get("created_at")
++        or flat.get("at")
++    )
++    mode = flat.get("mode")
++
++    try:
++        input_tokens = _token_field(flat, "input_tokens")
++        output_tokens = _token_field(flat, "output_tokens")
++        cache_read = _token_field(flat, "cache_read_tokens")
++        cache_creation = _token_field(flat, "cache_creation_tokens")
++        reasoning = _token_field(flat, "reasoning_tokens")
++        noncache_input = _token_field(flat, "noncache_input_tokens")
++    except InvalidCountError:
++        return None
++
++    quota_found, quota_raw = _first_present(flat, ("quota_delta", "quotaDelta"))
++    quota_delta = _as_float(quota_raw) if quota_found else None
++
++    cost_found, cost_raw = _first_present(flat, _COST_KEYS)
++    cost = _as_float(cost_raw) if cost_found else None
+ 
+     return {
+         "project_id": project_id,
+@@ -63,102 +157,439 @@ def normalize_usage_record(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+         "conversation_id": conversation_id,
+         "response_id": response_id,
+         "timestamp": timestamp,
++        "mode": mode,
+         "input_tokens": input_tokens,
+         "output_tokens": output_tokens,
+         "cache_read_tokens": cache_read,
+         "cache_creation_tokens": cache_creation,
+         "reasoning_tokens": reasoning,
++        "noncache_input_tokens": noncache_input,
+         "quota_delta": quota_delta,
++        "cost": cost,
+     }
+ 
+ 
+-def aggregate_project_usage(records: List[Dict[str, Any]]) -> Dict[str, Any]:
++def _parse_record_ts(value: Any) -> Optional[datetime.datetime]:
++    if value is None or value == "":
++        return None
++    if isinstance(value, datetime.datetime):
++        return _as_utc(value)
++    if not isinstance(value, str):
++        return None
++    try:
++        return parse_iso_timestamp(value)
++    except Exception:
++        return None
++
++
++def _empty_agg() -> Dict[str, Any]:
++    return {
++        "total_input_tokens": None,
++        "total_output_tokens": None,
++        "total_cache_read_tokens": None,
++        "total_cache_creation_tokens": None,
++        "total_reasoning_tokens": None,
++        "total_noncache_input_tokens": None,
++        "has_unknown_tokens": False,
++        "has_unknown_cache": False,
++        "has_unknown_reasoning": False,
++        "cache_coverage": None,
++        "reasoning_coverage": None,
++        "total_quota_delta_percent": None,
++        "total_cost": None,
++        "event_count": 0,
++        "unknown": False,
++    }
++
++
++def _sum_fail_closed(values: List[Optional[int | float]]) -> Tuple[Optional[int | float], int, int]:
++    """Sum known values only if every value is proven; else total is None.
++    Returns (total_or_none, known_count, n).
+     """
+-    Aggregate usage across projects with deduplication.
+-    Deduplicates by (provider, conversation_id, response_id) when response_id is present.
+-    If response_id is missing, deduplicates by (provider, conversation_id, timestamp).
++    n = len(values)
++    known = [v for v in values if v is not None]
++    if n == 0:
++        return None, 0, 0
++    if len(known) != n:
++        return None, len(known), n
++    return sum(known), len(known), n
++
++
++def aggregate_project_usage(
++    records: List[Dict[str, Any]],
++    as_of: Optional[datetime.datetime] = None,
++) -> Dict[str, Any]:
+     """
+-    seen_keys = set()
+-    projects: Dict[str, Dict[str, Any]] = {}
++    Aggregate usage across projects with response-identity deduplication
++    and a half-open [as_of-24h, as_of) window.
+ 
++    Records lacking response_id are not deduplicated by timestamp.
++    Cumulative snapshots (mode=cumulative) keep the latest per (provider, conversation_id).
++    Reasoning is never folded into output totals. Quota deltas stay out of cost/tokens.
++    """
++    if as_of is None:
++        as_of = datetime.datetime.now(datetime.timezone.utc)
++    else:
++        as_of = _as_utc(as_of)
++    window_start = as_of - datetime.timedelta(hours=24)
++    window_end = as_of
++
++    coverage_gaps: List[Dict[str, str]] = []
++    if not records:
++        coverage_gaps.append({"source": "records", "reason": "empty or missing usage input"})
++        return {
++            "as_of": _iso(as_of),
++            "window_start": _iso(window_start),
++            "window_end": _iso(window_end),
++            "unknown": True,
++            "coverage_gaps": coverage_gaps,
++            "invalid_records": 0,
++            "records_missing_response_id": 0,
++            "records_missing_timestamp": 0,
++            "projects": {},
++        }
++
++    normalized: List[Dict[str, Any]] = []
++    invalid_records = 0
+     for raw in records:
+-        norm = normalize_usage_record(raw)
++        if not isinstance(raw, dict):
++            invalid_records += 1
++            continue
++        try:
++            norm = normalize_usage_record(raw)
++        except InvalidCountError:
++            invalid_records += 1
++            continue
+         if norm is None:
++            invalid_records += 1
+             continue
++        normalized.append(norm)
+ 
++    if not normalized:
++        coverage_gaps.append({"source": "records", "reason": "no valid usage records"})
++        return {
++            "as_of": _iso(as_of),
++            "window_start": _iso(window_start),
++            "window_end": _iso(window_end),
++            "unknown": True,
++            "coverage_gaps": coverage_gaps,
++            "invalid_records": invalid_records,
++            "records_missing_response_id": 0,
++            "records_missing_timestamp": 0,
++            "projects": {},
++        }
++
++    windowed: List[Dict[str, Any]] = []
++    missing_ts = 0
++    for norm in normalized:
++        ts = _parse_record_ts(norm.get("timestamp"))
++        if ts is None:
++            missing_ts += 1
++            continue
++        if ts < window_start or ts >= window_end:
++            continue
++        windowed.append(norm)
++
++    if missing_ts:
++        coverage_gaps.append({
++            "source": "timestamp",
++            "reason": f"{missing_ts} record(s) missing or unparseable timestamp; excluded from window",
++        })
++
++    latest_cumulative: Dict[Tuple[Any, Any], Dict[str, Any]] = {}
++    seen_response: set = set()
++    kept: List[Dict[str, Any]] = []
++    missing_response_id = 0
++
++    for norm in windowed:
+         prov = norm["provider"]
+         cid = norm["conversation_id"]
+         rid = norm["response_id"]
+         ts = norm["timestamp"]
+-
+-        # Form unique deduplication key
++        if (norm.get("mode") or "").lower() == "cumulative" and cid:
++            key = (prov, cid)
++            prev = latest_cumulative.get(key)
++            prev_ts = "" if prev is None else str(prev.get("timestamp") or "")
++            if prev is None or str(ts or "") >= prev_ts:
++                latest_cumulative[key] = norm
++            continue
+         if rid:
+             dedup_key = (prov, cid, rid)
+-        elif ts and cid:
+-            dedup_key = (prov, cid, ts)
+-        else:
+-            dedup_key = None
+-
+-        if dedup_key is not None:
+-            if dedup_key in seen_keys:
++            if dedup_key in seen_response:
+                 continue
+-            seen_keys.add(dedup_key)
++            seen_response.add(dedup_key)
++            kept.append(norm)
++            continue
++        missing_response_id += 1
++        kept.append(norm)
+ 
+-        proj = norm["project_id"]
+-        if proj not in projects:
+-            projects[proj] = {
+-                "total_input_tokens": 0,
+-                "total_output_tokens": 0,
+-                "total_cache_read_tokens": 0,
+-                "total_cache_creation_tokens": 0,
+-                "total_reasoning_tokens": 0,
+-                "has_unknown_tokens": False,
+-                "total_quota_delta_percent": 0.0,
+-                "event_count": 0,
++    to_sum = list(latest_cumulative.values()) + kept
++    if missing_response_id:
++        coverage_gaps.append({
++            "source": "response_id",
++            "reason": f"{missing_response_id} windowed record(s) lack response identity; counted without timestamp dedup",
++        })
++
++    projects: Dict[str, Dict[str, Any]] = {}
++    buckets: Dict[str, Dict[str, List[Optional[int | float]]]] = {}
++
++    def _bucket(proj: str) -> Dict[str, List[Optional[int | float]]]:
++        if proj not in buckets:
++            buckets[proj] = {
++                "input_tokens": [],
++                "output_tokens": [],
++                "cache_read_tokens": [],
++                "cache_creation_tokens": [],
++                "reasoning_tokens": [],
++                "noncache_input_tokens": [],
++                "quota_delta": [],
++                "cost": [],
+             }
++            projects[proj] = _empty_agg()
++        return buckets[proj]
++
++    for norm in to_sum:
++        proj = norm["project_id"]
++        slot = _bucket(proj)
++        projects[proj]["event_count"] += 1
++        for field in (
++            "input_tokens",
++            "output_tokens",
++            "cache_read_tokens",
++            "cache_creation_tokens",
++            "reasoning_tokens",
++            "noncache_input_tokens",
++            "quota_delta",
++            "cost",
++        ):
++            slot[field].append(norm[field])
+ 
++    for proj, slot in buckets.items():
+         p_agg = projects[proj]
+-        p_agg["event_count"] += 1
++        in_total, in_known, in_n = _sum_fail_closed(slot["input_tokens"])
++        out_total, out_known, out_n = _sum_fail_closed(slot["output_tokens"])
++        p_agg["total_input_tokens"] = in_total
++        p_agg["total_output_tokens"] = out_total
++        p_agg["has_unknown_tokens"] = (in_known != in_n) or (out_known != out_n)
+ 
+-        if norm["input_tokens"] is not None:
+-            p_agg["total_input_tokens"] += norm["input_tokens"]
+-        else:
+-            p_agg["has_unknown_tokens"] = True
++        cr_total, cr_known, cr_n = _sum_fail_closed(slot["cache_read_tokens"])
++        cc_total, cc_known, cc_n = _sum_fail_closed(slot["cache_creation_tokens"])
++        p_agg["total_cache_read_tokens"] = cr_total
++        p_agg["total_cache_creation_tokens"] = cc_total
++        p_agg["cache_coverage"] = (cr_known / cr_n) if cr_n else None
++        p_agg["has_unknown_cache"] = cr_known != cr_n or cc_known != cc_n
+ 
+-        if norm["output_tokens"] is not None:
+-            p_agg["total_output_tokens"] += norm["output_tokens"]
+-        else:
+-            p_agg["has_unknown_tokens"] = True
++        rs_total, rs_known, rs_n = _sum_fail_closed(slot["reasoning_tokens"])
++        p_agg["total_reasoning_tokens"] = rs_total
++        p_agg["reasoning_coverage"] = (rs_known / rs_n) if rs_n else None
++        p_agg["has_unknown_reasoning"] = rs_known != rs_n
+ 
+-        if norm["cache_read_tokens"] is not None:
+-            p_agg["total_cache_read_tokens"] += norm["cache_read_tokens"]
++        nc_values = [v for v in slot["noncache_input_tokens"] if v is not None]
++        p_agg["total_noncache_input_tokens"] = sum(nc_values) if nc_values else None
+ 
+-        if norm["cache_creation_tokens"] is not None:
+-            p_agg["total_cache_creation_tokens"] += norm["cache_creation_tokens"]
++        qd_total, qd_known, qd_n = _sum_fail_closed(slot["quota_delta"])
++        p_agg["total_quota_delta_percent"] = qd_total
+ 
+-        if norm["reasoning_tokens"] is not None:
+-            p_agg["total_reasoning_tokens"] += norm["reasoning_tokens"]
++        cost_total, cost_known, cost_n = _sum_fail_closed(slot["cost"])
++        p_agg["total_cost"] = cost_total
+ 
+-        if norm["quota_delta"] is not None:
+-            p_agg["total_quota_delta_percent"] += norm["quota_delta"]
++    unknown = len(to_sum) == 0
++    if unknown:
++        coverage_gaps.append({"source": "window", "reason": "no usage records inside [as_of-24h, as_of)"})
+ 
+-    return projects
++    return {
++        "as_of": _iso(as_of),
++        "window_start": _iso(window_start),
++        "window_end": _iso(window_end),
++        "unknown": unknown,
++        "coverage_gaps": coverage_gaps,
++        "invalid_records": invalid_records,
++        "records_missing_response_id": missing_response_id,
++        "records_missing_timestamp": missing_ts,
++        "projects": projects,
++    }
+ 
+ 
+ def load_usage_events_jsonl(path: str) -> List[Dict[str, Any]]:
+-    """Safely load JSONL usage events file."""
+-    if not os.path.exists(path):
++    """Safely load JSONL usage events file. Missing file yields empty list."""
++    if not path or not os.path.exists(path):
+         return []
+-    records = []
+-    with open(path, "r", encoding="utf-8", errors="replace") as f:
+-        for line in f:
++    records: List[Dict[str, Any]] = []
++    with open(path, "r", encoding="utf-8", errors="replace") as handle:
++        for line in handle:
+             line = line.strip()
+             if not line:
+                 continue
+             try:
+                 rec = json.loads(line)
+-                if isinstance(rec, dict):
+-                    records.append(rec)
+             except Exception:
+                 continue
++            if isinstance(rec, dict):
++                records.append(rec)
++    return records
++
++
++def _known_standup_value(stats: Dict[str, Any], field: str, aliases: Tuple[str, ...]) -> Any:
++    missing = stats.get("missing_fields") or {}
++    missing_count = missing.get(field, 0) or 0
++    if missing_count:
++        return None
++    for alias in aliases:
++        if alias in stats:
++            return stats[alias]
++    return None
++
++
++def _flatten_opencode_sessions(data: Dict[str, Any]) -> List[Dict[str, Any]]:
++    records: List[Dict[str, Any]] = []
++    sessions = data.get("sessions") or []
++    if not isinstance(sessions, list):
++        return records
++    observed_at = data.get("observed_at") or data.get("at")
++    for session in sessions:
++        if not isinstance(session, dict):
++            continue
++        conversation_id = session.get("conversation_id")
++        owners = session.get("owners") or []
++        team_id = None
++        if isinstance(owners, list) and owners and isinstance(owners[0], dict):
++            team_id = owners[0].get("team_id")
++        models = session.get("models") or []
++        if not isinstance(models, list):
++            continue
++        for model in models:
++            if not isinstance(model, dict):
++                continue
++            cumulative = model.get("cumulative") if isinstance(model.get("cumulative"), dict) else model
++            known = cumulative.get("known_fields") if isinstance(cumulative.get("known_fields"), dict) else {}
++            missing = cumulative.get("missing_fields") if isinstance(cumulative.get("missing_fields"), dict) else {}
++
++            def pick(field: str, *alts: str) -> Any:
++                if missing.get(field):
++                    return None
++                if known and not known.get(field):
++                    return None
++                for name in (field,) + alts:
++                    if name in cumulative:
++                        return cumulative[name]
++                return None
++
++            records.append({
++                "provider": model.get("provider") or "opencode",
++                "project_id": session.get("project_id"),
++                "team_id": team_id,
++                "conversation_id": conversation_id,
++                "response_id": None,
++                "timestamp": observed_at,
++                "mode": "cumulative",
++                "input_tokens": pick("input_tokens"),
++                "output_tokens": pick("output_tokens"),
++                "reasoning_tokens": pick("reasoning_output_tokens", "reasoning_tokens"),
++                "cached_input_tokens": pick("cached_input_tokens"),
++                "cache_write_tokens": pick("cache_write_tokens"),
++                "cost": pick("reported_cost", "cost"),
++            })
++    return records
++
++
++def load_opencode_usage(path: str) -> List[Dict[str, Any]]:
++    """
++    Load OpenCode adapter usage: JSONL events, a JSON list, a single event,
++    a standup object with by_team aggregates, or session-level adapter output.
++    """
++    if not path or not os.path.exists(path):
++        return []
++    with open(path, "r", encoding="utf-8", errors="replace") as handle:
++        text = handle.read().strip()
++    if not text:
++        return []
++
++    if path.endswith(".jsonl"):
++        return load_usage_events_jsonl(path)
++
++    try:
++        data = json.loads(text)
++    except json.JSONDecodeError:
++        return load_usage_events_jsonl(path)
++
++    if isinstance(data, list):
++        return [row for row in data if isinstance(row, dict)]
++    if not isinstance(data, dict):
++        return []
++    if isinstance(data.get("sessions"), list) and data.get("sessions") and isinstance(data["sessions"][0], dict) and "models" in data["sessions"][0]:
++        return _flatten_opencode_sessions(data)
++    if "by_team" in data and isinstance(data["by_team"], dict):
++        records: List[Dict[str, Any]] = []
++        observed = data.get("observed_at") or data.get("at")
++        for team_id, stats in data["by_team"].items():
++            if not isinstance(stats, dict):
++                continue
++            records.append({
++                "provider": "opencode",
++                "team_id": team_id,
++                "timestamp": observed,
++                "mode": "cumulative",
++                "input_tokens": _known_standup_value(stats, "input_tokens", ("input_tokens",)),
++                "output_tokens": _known_standup_value(stats, "output_tokens", ("output_tokens",)),
++                "reasoning_tokens": _known_standup_value(
++                    stats, "reasoning_output_tokens", ("reasoning_output_tokens", "reasoning_tokens")
++                ),
++                "cached_input_tokens": _known_standup_value(
++                    stats, "cached_input_tokens", ("cached_input_tokens",)
++                ),
++                "cache_write_tokens": _known_standup_value(
++                    stats, "cache_write_tokens", ("cache_write_tokens",)
++                ),
++                "cost": _known_standup_value(stats, "reported_cost", ("reported_cost", "cost")),
++            })
++        return records
++    if "opencode_usage" in data and isinstance(data["opencode_usage"], dict):
++        return load_opencode_usage_from_obj(data["opencode_usage"])
++    return [data]
++
++
++def load_opencode_usage_from_obj(data: Dict[str, Any]) -> List[Dict[str, Any]]:
++    """Normalize an already-loaded OpenCode adapter object."""
++    if not isinstance(data, dict):
++        return []
++    if isinstance(data.get("sessions"), list) and data["sessions"] and isinstance(data["sessions"][0], dict) and "models" in (data["sessions"][0] or {}):
++        return _flatten_opencode_sessions(data)
++    if "by_team" in data and isinstance(data["by_team"], dict):
++        # Reuse file loader shape via a temporary dict dump path-free.
++        records: List[Dict[str, Any]] = []
++        observed = data.get("observed_at") or data.get("at")
++        for team_id, stats in data["by_team"].items():
++            if not isinstance(stats, dict):
++                continue
++            records.append({
++                "provider": "opencode",
++                "team_id": team_id,
++                "timestamp": observed,
++                "mode": "cumulative",
++                "input_tokens": _known_standup_value(stats, "input_tokens", ("input_tokens",)),
++                "output_tokens": _known_standup_value(stats, "output_tokens", ("output_tokens",)),
++                "reasoning_tokens": _known_standup_value(
++                    stats, "reasoning_output_tokens", ("reasoning_output_tokens", "reasoning_tokens")
++                ),
++                "cached_input_tokens": _known_standup_value(
++                    stats, "cached_input_tokens", ("cached_input_tokens",)
++                ),
++                "cache_write_tokens": _known_standup_value(
++                    stats, "cache_write_tokens", ("cache_write_tokens",)
++                ),
++                "cost": _known_standup_value(stats, "reported_cost", ("reported_cost", "cost")),
++            })
++        return records
++    return [data]
++
++
++def load_usage_records(
++    events_path: Optional[str] = None,
++    opencode_path: Optional[str] = None,
++) -> List[Dict[str, Any]]:
++    records: List[Dict[str, Any]] = []
++    if events_path:
++        records.extend(load_usage_events_jsonl(events_path))
++    if opencode_path:
++        records.extend(load_opencode_usage(opencode_path))
+     return records
+diff --git a/src/dashboard/features.py b/src/dashboard/features.py
+index 34beeb8..b5a7639 100644
+--- a/src/dashboard/features.py
++++ b/src/dashboard/features.py
+@@ -6,44 +6,167 @@ without counting repeated reviews or commits as duplicate features.
+ 
+ from __future__ import annotations
+ 
++import datetime
+ import json
+ import os
+-from typing import Dict, List, Any, Optional
++from typing import Any, Dict, List, Optional
+ 
++from dashboard import canonical_project_id
++from dashboard.hourly import parse_iso_timestamp, _as_utc, _iso
+ 
+-def load_accepted_features(tasks_json_path: str) -> Dict[str, List[Dict[str, Any]]]:
++ACCEPTED_STATUS = "ACCEPTED"
++
++
++def _exact_accepted(value: Any) -> bool:
++    """Exact ACCEPTED match. Substrings such as UNACCEPTED/NOT_ACCEPTED/ACCEPT: do not count."""
++    if not isinstance(value, str):
++        return False
++    return value.strip().upper() == ACCEPTED_STATUS
++
++
++def _has_artifact(task: Dict[str, Any]) -> bool:
++    commit = task.get("commit") or task.get("commit_sha") or task.get("sha")
++    pr = task.get("pr_url") or task.get("pr") or task.get("pull_request")
++    if isinstance(commit, str):
++        commit = commit.strip()
++    if isinstance(pr, str):
++        pr = pr.strip()
++    return bool(commit) or bool(pr)
++
++
++def _has_tests(task: Dict[str, Any]) -> bool:
++    tests = task.get("tests")
++    if tests is None or tests is False:
++        return False
++    if isinstance(tests, str):
++        return bool(tests.strip())
++    if isinstance(tests, (list, tuple, dict)):
++        return len(tests) > 0
++    return bool(tests)
++
++
++def _parse_accepted_at(task: Dict[str, Any]) -> Optional[datetime.datetime]:
++    """accepted_at only. updated_at is not acceptance evidence."""
++    raw = task.get("accepted_at")
++    if raw is None or raw == "":
++        return None
++    if isinstance(raw, datetime.datetime):
++        return _as_utc(raw)
++    if not isinstance(raw, str):
++        return None
++    try:
++        return parse_iso_timestamp(raw.strip())
++    except Exception:
++        return None
++
++
++def load_accepted_features(
++    tasks_json_path: str,
++    as_of: Optional[datetime.datetime] = None,
++) -> Dict[str, Any]:
+     """
+     Extract verified accepted features from coordination/TASKS.json.
+-    Groups by project_id.
+-    Deduplicates by feature_id or task_id.
++    Groups by project_id. Deduplicates by feature_id or task_id.
++
++    A feature requires:
++      - task id
++      - exact status or acceptance_status ACCEPTED
++      - non-null parseable accepted_at (updated_at is ignored)
++      - commit or PR
++      - tests
++    When as_of is provided, only accepted_at in [as_of-24h, as_of) is kept.
+     """
+-    if not os.path.exists(tasks_json_path):
+-        return {}
++    if as_of is not None:
++        as_of = _as_utc(as_of)
++        window_start = as_of - datetime.timedelta(hours=24)
++        window_end = as_of
++    else:
++        window_start = None
++        window_end = None
+ 
+-    with open(tasks_json_path, "r", encoding="utf-8") as f:
+-        data = json.load(f)
++    coverage_gaps: List[Dict[str, str]] = []
++    if not tasks_json_path or not os.path.exists(tasks_json_path):
++        coverage_gaps.append({"source": "tasks", "reason": "TASKS.json missing or unreadable"})
++        return {
++            "unknown": True,
++            "coverage_gaps": coverage_gaps,
++            "as_of": _iso(as_of) if as_of else None,
++            "window_start": _iso(window_start) if window_start else None,
++            "window_end": _iso(window_end) if window_end else None,
++            "projects": {},
++        }
++
++    try:
++        with open(tasks_json_path, "r", encoding="utf-8") as handle:
++            data = json.load(handle)
++    except Exception:
++        coverage_gaps.append({"source": "tasks", "reason": "TASKS.json unreadable or invalid JSON"})
++        return {
++            "unknown": True,
++            "coverage_gaps": coverage_gaps,
++            "as_of": _iso(as_of) if as_of else None,
++            "window_start": _iso(window_start) if window_start else None,
++            "window_end": _iso(window_end) if window_end else None,
++            "projects": {},
++        }
++
++    if not isinstance(data, dict):
++        coverage_gaps.append({"source": "tasks", "reason": "TASKS.json root is not an object"})
++        return {
++            "unknown": True,
++            "coverage_gaps": coverage_gaps,
++            "as_of": _iso(as_of) if as_of else None,
++            "window_start": _iso(window_start) if window_start else None,
++            "window_end": _iso(window_end) if window_end else None,
++            "projects": {},
++        }
+ 
+     tasks = data.get("tasks", [])
++    if not isinstance(tasks, list):
++        coverage_gaps.append({"source": "tasks", "reason": "tasks field is not a list"})
++        return {
++            "unknown": True,
++            "coverage_gaps": coverage_gaps,
++            "as_of": _iso(as_of) if as_of else None,
++            "window_start": _iso(window_start) if window_start else None,
++            "window_end": _iso(window_end) if window_end else None,
++            "projects": {},
++        }
++
+     projects: Dict[str, List[Dict[str, Any]]] = {}
+     seen_feature_ids = set()
++    rejected = 0
+ 
+-    for t in tasks:
+-        # Check if task is marked done or accepted
+-        status = t.get("status")
+-        acceptance_status = t.get("acceptance_status") or ""
+-        accepted_at = t.get("accepted_at") or t.get("updated_at")
++    for task in tasks:
++        if not isinstance(task, dict):
++            rejected += 1
++            continue
++        if not (_exact_accepted(task.get("status")) or _exact_accepted(task.get("acceptance_status"))):
++            continue
+ 
+-        # Must have accepted or done status
+-        if status != "done" and not (status == "accepted" or "ACCEPT" in acceptance_status):
++        task_id = task.get("id")
++        if not task_id:
++            rejected += 1
+             continue
+ 
+-        proj = t.get("project_id") or t.get("team_id") or "unattributed"
+-        task_id = t.get("id")
+-        feature_id = t.get("feature_id") or task_id
++        accepted_at = _parse_accepted_at(task)
++        if accepted_at is None:
++            rejected += 1
++            continue
+ 
+-        if not feature_id:
++        if window_start is not None and window_end is not None:
++            if accepted_at < window_start or accepted_at >= window_end:
++                continue
++
++        if not _has_artifact(task):
++            rejected += 1
++            continue
++        if not _has_tests(task):
++            rejected += 1
+             continue
+ 
++        proj = canonical_project_id(task.get("project_id"))
++        feature_id = task.get("feature_id") or task_id
+         if feature_id in seen_feature_ids:
+             continue
+         seen_feature_ids.add(feature_id)
+@@ -52,18 +175,28 @@ def load_accepted_features(tasks_json_path: str) -> Dict[str, List[Dict[str, Any
+             "feature_id": feature_id,
+             "task_id": task_id,
+             "project_id": proj,
+-            "owner_tag": t.get("owner_tag"),
+-            "accepted_at": accepted_at,
+-            "commit": t.get("commit"),
+-            "pr_url": t.get("pr_url"),
+-            "tests": t.get("tests"),
+-            "reviewer": t.get("reviewer"),
+-            "acceptance": t.get("acceptance"),
+-            "acceptance_status": acceptance_status,
++            "owner_tag": task.get("owner_tag"),
++            "accepted_at": _iso(accepted_at),
++            "commit": task.get("commit") or task.get("commit_sha") or task.get("sha"),
++            "pr_url": task.get("pr_url") or task.get("pr") or task.get("pull_request"),
++            "tests": task.get("tests"),
++            "reviewer": task.get("reviewer") or task.get("reviewer_tag"),
++            "acceptance": task.get("acceptance"),
++            "acceptance_status": task.get("acceptance_status") or task.get("status"),
+         }
++        projects.setdefault(proj, []).append(feat_entry)
+ 
+-        if proj not in projects:
+-            projects[proj] = []
+-        projects[proj].append(feat_entry)
++    if rejected:
++        coverage_gaps.append({
++            "source": "acceptance_evidence",
++            "reason": f"{rejected} ACCEPTED-status task(s) lacked accepted_at/commit-or-PR/tests/task id",
++        })
+ 
+-    return projects
++    return {
++        "unknown": False,
++        "coverage_gaps": coverage_gaps,
++        "as_of": _iso(as_of) if as_of else None,
++        "window_start": _iso(window_start) if window_start else None,
++        "window_end": _iso(window_end) if window_end else None,
++        "projects": projects,
++    }
+diff --git a/src/dashboard/hourly.py b/src/dashboard/hourly.py
+index ce7f782..27d9086 100644
+--- a/src/dashboard/hourly.py
++++ b/src/dashboard/hourly.py
+@@ -1,18 +1,24 @@
+ """
+ 24-Hour Hourly Utilization Engine.
+ Computes 24 half-open UTC hourly buckets [as_of - 24h, as_of) per project.
+-Deduplicates identities and clips agent-hours to bucket boundaries.
++Unique-identity dedup unions clipped intervals per (project, bucket, agent).
+ """
+ 
+ from __future__ import annotations
+ 
+ import datetime
+-from typing import Dict, List, Any, Optional
++import json
++import os
++from collections import defaultdict
++from typing import Any, Dict, Iterable, List, Optional, Tuple
++
++from dashboard import CANONICAL_PROJECT_IDS, UNATTRIBUTED_PROJECT_ID, canonical_project_id
++
++Interval = Tuple[datetime.datetime, datetime.datetime]
+ 
+ 
+ def parse_iso_timestamp(ts_str: str) -> datetime.datetime:
+     """Parse ISO timestamp string into UTC datetime."""
+-    # Replace Z with +00:00 for fromisoformat compatibility
+     clean = ts_str.replace("Z", "+00:00")
+     dt = datetime.datetime.fromisoformat(clean)
+     if dt.tzinfo is None:
+@@ -22,148 +28,456 @@ def parse_iso_timestamp(ts_str: str) -> datetime.datetime:
+     return dt
+ 
+ 
+-def generate_hourly_buckets(as_of: datetime.datetime) -> List[tuple[datetime.datetime, datetime.datetime]]:
++def _as_utc(dt: datetime.datetime) -> datetime.datetime:
++    if dt.tzinfo is None:
++        return dt.replace(tzinfo=datetime.timezone.utc)
++    return dt.astimezone(datetime.timezone.utc)
++
++
++def _iso(dt: datetime.datetime) -> str:
++    return _as_utc(dt).isoformat()
++
++
++def generate_hourly_buckets(as_of: datetime.datetime) -> List[Interval]:
+     """
+-    Generate 24 half-open hourly buckets in UTC: [start, end)
+-    spanning [as_of - 24h, as_of).
++    Generate 24 half-open hourly buckets tiling [as_of - 24h, as_of).
++
++    bucket i = [as_of-24h + i*1h, as_of-24h + (i+1)*1h)
++    window_start = as_of - 24h, window_end = as_of exactly.
++    Non-hour as_of is kept exact: no rounding and no future seconds.
+     """
+-    # Truncate as_of to current hour boundary
+-    end_of_window = as_of.replace(minute=0, second=0, microsecond=0)
+-    if as_of > end_of_window:
+-        end_of_window += datetime.timedelta(hours=1)
+-    
+-    start_of_window = end_of_window - datetime.timedelta(hours=24)
+-    buckets = []
+-    for h in range(24):
+-        b_start = start_of_window + datetime.timedelta(hours=h)
+-        b_end = b_start + datetime.timedelta(hours=1)
++    as_of = _as_utc(as_of)
++    window_start = as_of - datetime.timedelta(hours=24)
++    buckets: List[Interval] = []
++    for i in range(24):
++        b_start = window_start + datetime.timedelta(hours=i)
++        b_end = window_start + datetime.timedelta(hours=i + 1)
+         buckets.append((b_start, b_end))
+     return buckets
+ 
+ 
++def union_intervals(intervals: Iterable[Interval]) -> List[Interval]:
++    """Merge overlapping/adjacent intervals; duration is wall-clock coverage."""
++    ordered = sorted((s, e) for s, e in intervals if e > s)
++    if not ordered:
++        return []
++    merged: List[List[datetime.datetime]] = [[ordered[0][0], ordered[0][1]]]
++    for start, end in ordered[1:]:
++        last = merged[-1]
++        if start <= last[1]:
++            if end > last[1]:
++                last[1] = end
++        else:
++            merged.append([start, end])
++    return [(s, e) for s, e in merged]
++
++
++def union_seconds(intervals: Iterable[Interval]) -> float:
++    return sum((e - s).total_seconds() for s, e in union_intervals(intervals))
++
++
++def _parse_optional_ts(value: Any) -> Tuple[Optional[datetime.datetime], bool]:
++    """
++    Returns (dt, invalid).
++    invalid=True means the value was present but unparseable.
++    """
++    if value is None:
++        return None, False
++    if isinstance(value, datetime.datetime):
++        return _as_utc(value), False
++    if not isinstance(value, str):
++        return None, True
++    text = value.strip()
++    if text == "":
++        return None, False
++    try:
++        return parse_iso_timestamp(text), False
++    except Exception:
++        return None, True
++
++
++def _empty_bucket(b_start: datetime.datetime, b_end: datetime.datetime, unknown: bool) -> Dict[str, Any]:
++    return {
++        "bucket_start": _iso(b_start),
++        "bucket_end": _iso(b_end),
++        "active_agents": None if unknown else 0,
++        "agent_hours": None if unknown else 0.0,
++    }
++
++
++def _serialize_project(
++    *,
++    buckets: List[Interval],
++    unknown: bool,
++    unknown_ended: int,
++    invalid_spans: int,
++    agent_intervals: Dict[str, List[Interval]],
++    unattributed_intervals: List[Interval],
++) -> Dict[str, Any]:
++    window_seconds = 24.0 * 3600.0
++    if unknown:
++        return {
++            "unique_agents": None,
++            "total_agent_hours": None,
++            "coverage": None,
++            "unattributed_agent_hours": None,
++            "unknown_ended": unknown_ended,
++            "invalid_spans": invalid_spans,
++            "unknown": True,
++            "hourly_buckets": [_empty_bucket(s, e, True) for s, e in buckets],
++        }
++
++    per_agent_seconds = {
++        agent: union_seconds(ivals) for agent, ivals in agent_intervals.items()
++    }
++    attributed_agents = [a for a, sec in per_agent_seconds.items() if sec > 0]
++    total_agent_hours = sum(per_agent_seconds[a] for a in attributed_agents) / 3600.0
++    unattributed_hours = union_seconds(unattributed_intervals) / 3600.0
++
++    coverage_intervals: List[Interval] = []
++    for ivals in agent_intervals.values():
++        coverage_intervals.extend(ivals)
++    coverage_intervals.extend(unattributed_intervals)
++    covered = union_seconds(coverage_intervals)
++    coverage = covered / window_seconds if window_seconds else 0.0
++
++    hourly_buckets = []
++    for b_start, b_end in buckets:
++        active = 0
++        hours = 0.0
++        for agent, ivals in agent_intervals.items():
++            clipped: List[Interval] = []
++            for s, e in ivals:
++                overlap_start = max(s, b_start)
++                overlap_end = min(e, b_end)
++                if overlap_end > overlap_start:
++                    clipped.append((overlap_start, overlap_end))
++            bucket_seconds = union_seconds(clipped)
++            if bucket_seconds > 0:
++                active += 1
++                hours += bucket_seconds / 3600.0
++        hourly_buckets.append({
++            "bucket_start": _iso(b_start),
++            "bucket_end": _iso(b_end),
++            "active_agents": active,
++            "agent_hours": round(hours, 4),
++        })
++
++    return {
++        "unique_agents": len(attributed_agents),
++        "total_agent_hours": round(total_agent_hours, 4),
++        "coverage": round(coverage, 6),
++        "unattributed_agent_hours": round(unattributed_hours, 4),
++        "unknown_ended": unknown_ended,
++        "invalid_spans": invalid_spans,
++        "unknown": False,
++        "hourly_buckets": hourly_buckets,
++    }
++
++
+ def compute_hourly_utilization(
+-    agent_spans: List[Dict[str, Any]],
+-    as_of: Optional[datetime.datetime] = None
++    agent_spans: Optional[List[Dict[str, Any]]],
++    as_of: Optional[datetime.datetime] = None,
+ ) -> Dict[str, Any]:
+     """
+-    Compute 24-hour utilization across projects.
+-    
+-    agent_spans: list of dicts:
+-      - project_id: str ("agent-branches", "agent-dashboard", "quota-launcher")
+-      - agent_id: str (unique agent or session UUID)
+-      - started_at: str (ISO)
+-      - ended_at: Optional[str] (ISO, None if running)
+-      
+-    Returns dictionary with:
+-      - as_of: ISO str
+-      - window_start: ISO str
+-      - window_end: ISO str
+-      - projects: Dict[project_id, {
+-            "unique_agents": int,
+-            "total_agent_hours": float,
+-            "hourly_buckets": List[{
+-                "bucket_start": ISO str,
+-                "bucket_end": ISO str,
+-                "active_agents": int,
+-                "agent_hours": float
+-            }]
+-        }]
++    Compute 24-hour utilization across the three canonical projects.
++
++    Missing/empty input surfaces as coverage=null and unknown=true (not zeros).
++    Non-canonical project ids fold into the visible "unattributed" state.
+     """
+     if as_of is None:
+         as_of = datetime.datetime.now(datetime.timezone.utc)
+     else:
+-        if as_of.tzinfo is None:
+-            as_of = as_of.replace(tzinfo=datetime.timezone.utc)
+-        else:
+-            as_of = as_of.astimezone(datetime.timezone.utc)
++        as_of = _as_utc(as_of)
+ 
+     buckets = generate_hourly_buckets(as_of)
+-    window_start = buckets[0][0]
+-    window_end = buckets[-1][1]
+-
+-    # Pre-structure project maps
+-    projects: Dict[str, Dict[str, Any]] = {}
+-
+-    for span in agent_spans:
+-        proj = span.get("project_id", "unknown")
+-        if proj not in projects:
+-            projects[proj] = {
+-                "agents": set(),
+-                "total_agent_hours": 0.0,
+-                "hourly": [
+-                    {
+-                        "bucket_start": b[0].isoformat(),
+-                        "bucket_end": b[1].isoformat(),
+-                        "active_agents": set(),
+-                        "agent_hours": 0.0,
+-                    }
+-                    for b in buckets
+-                ]
++    window_start = as_of - datetime.timedelta(hours=24)
++    window_end = as_of
++
++    missing_input = agent_spans is None or len(agent_spans) == 0
++
++    states: Dict[str, Dict[str, Any]] = {}
++    for proj in CANONICAL_PROJECT_IDS:
++        states[proj] = {
++            "saw_span": False,
++            "unknown_ended": 0,
++            "invalid_spans": 0,
++            "agent_intervals": defaultdict(list),
++            "unattributed_intervals": [],
++        }
++
++    def _state(proj: str) -> Dict[str, Any]:
++        if proj not in states:
++            states[proj] = {
++                "saw_span": False,
++                "unknown_ended": 0,
++                "invalid_spans": 0,
++                "agent_intervals": defaultdict(list),
++                "unattributed_intervals": [],
+             }
++        return states[proj]
+ 
+-        agent_id = span.get("agent_id") or span.get("session_id")
+-        if not agent_id:
+-            continue
++    if not missing_input:
++        for span in agent_spans:
++            if not isinstance(span, dict):
++                continue
++            proj = canonical_project_id(span.get("project_id") or span.get("team_id"))
++            st = _state(proj)
++            st["saw_span"] = True
+ 
+-        try:
+-            start_dt = parse_iso_timestamp(span["started_at"])
+-        except Exception:
+-            continue
++            started_raw = span.get("started_at")
++            start_dt, start_invalid = _parse_optional_ts(started_raw)
++            if start_dt is None:
++                st["invalid_spans"] += 1
++                continue
+ 
+-        end_str = span.get("ended_at") or span.get("completed_at")
+-        if end_str:
+-            try:
+-                end_dt = parse_iso_timestamp(end_str)
+-            except Exception:
++            end_raw = span.get("ended_at")
++            if end_raw is None and "completed_at" in span:
++                end_raw = span.get("completed_at")
++            end_dt, end_invalid = _parse_optional_ts(end_raw)
++            if end_invalid:
++                st["unknown_ended"] += 1
++                continue
++            if end_dt is None:
+                 end_dt = as_of
+-        else:
+-            end_dt = as_of
+ 
+-        # Guard against backwards timestamps
+-        if end_dt < start_dt:
+-            continue
++            if end_dt < start_dt:
++                st["invalid_spans"] += 1
++                continue
+ 
+-        # Overlap with overall 24h window
+-        if end_dt <= window_start or start_dt >= window_end:
+-            continue
++            if end_dt > as_of:
++                end_dt = as_of
++            if end_dt <= start_dt:
++                # Entirely in the future after clamp: outside the window.
++                continue
++            if end_dt <= window_start or start_dt >= window_end:
++                continue
+ 
+-        projects[proj]["agents"].add(agent_id)
+-
+-        # Distribute into the 24 hourly buckets
+-        for idx, (b_start, b_end) in enumerate(buckets):
+-            overlap_start = max(start_dt, b_start)
+-            overlap_end = min(end_dt, b_end)
+-            if overlap_end > overlap_start:
+-                duration_seconds = (overlap_end - overlap_start).total_seconds()
+-                hours = duration_seconds / 3600.0
+-                # Clip max per single agent in 1 hour bucket to 1.0
+-                clipped_hours = min(hours, 1.0)
+-                
+-                b_dict = projects[proj]["hourly"][idx]
+-                b_dict["active_agents"].add(agent_id)
+-                b_dict["agent_hours"] += clipped_hours
+-                projects[proj]["total_agent_hours"] += clipped_hours
+-
+-    # Serialize sets to counts
+-    output_projects: Dict[str, Any] = {}
+-    for proj_id, p_data in projects.items():
+-        serialized_buckets = []
+-        for b_entry in p_data["hourly"]:
+-            serialized_buckets.append({
+-                "bucket_start": b_entry["bucket_start"],
+-                "bucket_end": b_entry["bucket_end"],
+-                "active_agents": len(b_entry["active_agents"]),
+-                "agent_hours": round(b_entry["agent_hours"], 4),
+-            })
+-        output_projects[proj_id] = {
+-            "unique_agents": len(p_data["agents"]),
+-            "total_agent_hours": round(p_data["total_agent_hours"], 4),
+-            "hourly_buckets": serialized_buckets,
+-        }
++            clip_start = max(start_dt, window_start)
++            clip_end = min(end_dt, window_end)
++            if clip_end <= clip_start:
++                continue
++
++            agent_id = span.get("agent_id") or span.get("session_id")
++            if isinstance(agent_id, str):
++                agent_id = agent_id.strip() or None
++            if not agent_id:
++                st["unattributed_intervals"].append((clip_start, clip_end))
++                continue
++            st["agent_intervals"][str(agent_id)].append((clip_start, clip_end))
++
++    projects: Dict[str, Any] = {}
++    agent_to_projects: Dict[str, set] = defaultdict(set)
++    emit_ids = list(CANONICAL_PROJECT_IDS)
++    if UNATTRIBUTED_PROJECT_ID in states and states[UNATTRIBUTED_PROJECT_ID]["saw_span"]:
++        emit_ids.append(UNATTRIBUTED_PROJECT_ID)
++
++    for proj in emit_ids:
++        st = states[proj]
++        unknown = missing_input or not st["saw_span"]
++        payload = _serialize_project(
++            buckets=buckets,
++            unknown=unknown,
++            unknown_ended=st["unknown_ended"],
++            invalid_spans=st["invalid_spans"],
++            agent_intervals=st["agent_intervals"],
++            unattributed_intervals=st["unattributed_intervals"],
++        )
++        projects[proj] = payload
++        if not unknown:
++            for agent in st["agent_intervals"]:
++                agent_to_projects[agent].add(proj)
++
++    shared_agent_ids = sorted(
++        agent for agent, projs in agent_to_projects.items() if len(projs) > 1
++    )
+ 
+     return {
+-        "as_of": as_of.isoformat(),
+-        "window_start": window_start.isoformat(),
+-        "window_end": window_end.isoformat(),
+-        "projects": output_projects,
++        "as_of": _iso(as_of),
++        "window_start": _iso(window_start),
++        "window_end": _iso(window_end),
++        "unknown": bool(missing_input),
++        "shared_agent_ids": shared_agent_ids,
++        "projects": projects,
+     }
++
++
++def load_agent_spans(path: Optional[str] = None) -> Optional[List[Dict[str, Any]]]:
++    """
++    Load agent spans from JSON list or JSONL.
++    Returns None when the file is missing (unknown input), [] when present but empty.
++    """
++    if not path:
++        return None
++    if not os.path.exists(path):
++        return None
++    with open(path, "r", encoding="utf-8", errors="replace") as handle:
++        text = handle.read().strip()
++    if not text:
++        return []
++    try:
++        data = json.loads(text)
++        if isinstance(data, list):
++            return [row for row in data if isinstance(row, dict)]
++        if isinstance(data, dict) and isinstance(data.get("spans"), list):
++            return [row for row in data["spans"] if isinstance(row, dict)]
++    except json.JSONDecodeError:
++        records: List[Dict[str, Any]] = []
++        for line in text.splitlines():
++            line = line.strip()
++            if not line:
++                continue
++            try:
++                row = json.loads(line)
++            except json.JSONDecodeError:
++                continue
++            if isinstance(row, dict):
++                records.append(row)
++        return records
++    return []
++
++
++def validate_registry_shape(data: Any) -> Tuple[bool, str]:
++    """TEAM-REGISTRY.json is a dict with teams/agents lists. teams[].agents, not members."""
++    if not isinstance(data, dict):
++        return False, "registry root is not an object"
++    teams = data.get("teams")
++    if teams is not None and not isinstance(teams, list):
++        return False, "registry.teams is not a list"
++    agents = data.get("agents")
++    if agents is not None and not isinstance(agents, list):
++        return False, "registry.agents is not a list"
++    if isinstance(teams, list):
++        for team in teams:
++            if not isinstance(team, dict):
++                return False, "registry.teams entry is not an object"
++            if "members" in team and "agents" not in team:
++                return False, "registry.teams uses members; expected agents list"
++            if "agents" in team and not isinstance(team.get("agents"), list):
++                return False, "registry.teams[].agents is not a list"
++    return True, "ok"
++
++
++def load_spans_from_registry(path: Optional[str] = None) -> Tuple[Optional[List[Dict[str, Any]]], Optional[str]]:
++    """
++    Load static registration records from TEAM-REGISTRY.json.
++    These are registration metadata, not observed live history.
++    Returns (records_or_none, error_reason).
++    """
++    if not path:
++        return None, "registry path not set"
++    if not os.path.exists(path):
++        return None, "registry file missing"
++    try:
++        with open(path, "r", encoding="utf-8") as handle:
++            reg_data = json.load(handle)
++    except Exception:
++        return None, "registry unreadable"
++    ok, reason = validate_registry_shape(reg_data)
++    if not ok:
++        return None, reason
++    return [], None
++
++
++def load_spans_from_observation(
++    metrics_dir: Optional[str],
++) -> Tuple[Optional[List[Dict[str, Any]]], List[Dict[str, str]]]:
++    """
++    Build agent spans from collector observation-state + latest.json sessions.
++    This is observed history, not TEAM-REGISTRY registration.
++    """
++    gaps: List[Dict[str, str]] = []
++    if not metrics_dir:
++        gaps.append({"source": "metrics", "reason": "metrics directory not set"})
++        return None, gaps
++    if not os.path.isdir(metrics_dir):
++        gaps.append({"source": "metrics", "reason": "metrics directory missing or unreadable"})
++        return None, gaps
++
++    obs_path = os.path.join(metrics_dir, "observation-state.json")
++    latest_path = os.path.join(metrics_dir, "latest.json")
++    agents: Dict[str, Any] = {}
++    last_unix = None
++    if os.path.exists(obs_path):
++        try:
++            with open(obs_path, "r", encoding="utf-8") as handle:
++                obs = json.load(handle)
++            if isinstance(obs, dict):
++                raw_agents = obs.get("agents") or {}
++                if isinstance(raw_agents, dict):
++                    agents = raw_agents
++                else:
++                    gaps.append({"source": "observation-state.json", "reason": "agents is not an object"})
++                last_unix = obs.get("last_unix")
++            else:
++                gaps.append({"source": "observation-state.json", "reason": "root is not an object"})
++        except Exception:
++            gaps.append({"source": "observation-state.json", "reason": "unreadable"})
++    else:
++        gaps.append({"source": "observation-state.json", "reason": "missing"})
++
++    live_ids = set()
++    snapshot_at = None
++    if os.path.exists(latest_path):
++        try:
++            with open(latest_path, "r", encoding="utf-8") as handle:
++                latest = json.load(handle)
++            if isinstance(latest, dict):
++                snapshot_at = latest.get("at")
++                sessions = latest.get("sessions") or []
++                if isinstance(sessions, list):
++                    for session in sessions:
++                        if not isinstance(session, dict):
++                            continue
++                        sid = session.get("id")
++                        if sid and session.get("pid_live") and session.get("counted_as_agent", True):
++                            live_ids.add(sid)
++                else:
++                    gaps.append({"source": "latest.json", "reason": "sessions is not a list"})
++            else:
++                gaps.append({"source": "latest.json", "reason": "root is not an object"})
++        except Exception:
++            gaps.append({"source": "latest.json", "reason": "unreadable"})
++    else:
++        gaps.append({"source": "latest.json", "reason": "missing"})
++
++    if not agents:
++        if gaps:
++            return None, gaps
++        return [], gaps
++
++    last_observed_iso = None
++    if snapshot_at:
++        last_observed_iso = snapshot_at
++    elif isinstance(last_unix, (int, float)):
++        last_observed_iso = _iso(datetime.datetime.fromtimestamp(last_unix, tz=datetime.timezone.utc))
++
++    spans: List[Dict[str, Any]] = []
++    for agent_id, rec in agents.items():
++        if not isinstance(rec, dict):
++            continue
++        started = rec.get("first_seen_at")
++        team_id = rec.get("team_id")
++        ended: Optional[str]
++        if agent_id in live_ids:
++            ended = None
++        else:
++            live_seconds = rec.get("pid_live_seconds")
++            if isinstance(live_seconds, (int, float)) and live_seconds > 0 and started:
++                try:
++                    start_dt = parse_iso_timestamp(started) if isinstance(started, str) else None
++                except Exception:
++                    start_dt = None
++                if start_dt is not None:
++                    ended = _iso(start_dt + datetime.timedelta(seconds=float(live_seconds)))
++                else:
++                    ended = last_observed_iso
++            else:
++                ended = last_observed_iso
++        spans.append({
++            "project_id": rec.get("project_id") or team_id,
++            "agent_id": agent_id,
++            "started_at": started,
++            "ended_at": ended,
++        })
++    return spans, gaps
+diff --git a/src/dashboard/server.py b/src/dashboard/server.py
+index 1fa37c8..2a98ae3 100644
+--- a/src/dashboard/server.py
++++ b/src/dashboard/server.py
+@@ -5,37 +5,266 @@ Lightweight standard library HTTP server providing HTML preview and REST JSON AP
+ 
+ from __future__ import annotations
+ 
++import datetime
+ import json
++import mimetypes
+ import os
+-from http.server import HTTPServer, BaseHTTPRequestHandler
+-from typing import Dict, Any, Optional
++from http.server import BaseHTTPRequestHandler, HTTPServer
++from typing import Any, Dict, List, Optional, Tuple
++from urllib.parse import parse_qs, unquote, urlparse
+ 
+-from dashboard.hourly import compute_hourly_utilization
+-from dashboard.accounting import aggregate_project_usage, load_usage_events_jsonl
++from dashboard.accounting import (
++    aggregate_project_usage,
++    load_opencode_usage,
++    load_opencode_usage_from_obj,
++    load_usage_events_jsonl,
++)
+ from dashboard.features import load_accepted_features
++from dashboard.hourly import (
++    compute_hourly_utilization,
++    load_agent_spans,
++    load_spans_from_observation,
++    parse_iso_timestamp,
++    validate_registry_shape,
++)
++
++DEFAULT_METRICS_DIR = "/home/alexey/git/cloudflare-agent-git/.local/metrics"
++DEFAULT_TASKS_PATH = "/home/alexey/git/cloudflare-agent-git/coordination/TASKS.json"
++DEFAULT_REGISTRY_PATH = "/home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json"
++
++
++def _repo_root() -> str:
++    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
++
++
++def _static_dir() -> str:
++    env = os.environ.get("DASHBOARD_STATIC_DIR")
++    if env:
++        return env
++    return os.path.join(_repo_root(), "static")
++
++
++def _metrics_dir() -> str:
++    return os.environ.get("DASHBOARD_METRICS_DIR", DEFAULT_METRICS_DIR)
++
++
++def _source_entry(kind: str, path: Optional[str], readable: bool, **extra: Any) -> Dict[str, Any]:
++    entry: Dict[str, Any] = {"kind": kind, "path": path, "readable": readable}
++    entry.update(extra)
++    return entry
++
++
++def _file_readable(path: Optional[str]) -> bool:
++    return bool(path) and os.path.isfile(path) and os.access(path, os.R_OK)
++
++
++def _dir_readable(path: Optional[str]) -> bool:
++    return bool(path) and os.path.isdir(path) and os.access(path, os.R_OK)
++
++
++def _parse_as_of(query: Dict[str, List[str]]) -> Tuple[Optional[datetime.datetime], Optional[str]]:
++    values = query.get("as_of") or []
++    if not values or not values[0]:
++        return datetime.datetime.now(datetime.timezone.utc), None
++    try:
++        return parse_iso_timestamp(values[0]), None
++    except Exception:
++        return None, "invalid as_of"
++
++
++def _load_hourly_payload(as_of: datetime.datetime) -> Dict[str, Any]:
++    coverage_gaps: List[Dict[str, str]] = []
++    sources: Dict[str, Any] = {}
++
++    spans_path = os.environ.get("AGENT_SPANS_PATH")
++    metrics_dir = _metrics_dir()
++    registry_path = os.environ.get("TEAM_REGISTRY_PATH", DEFAULT_REGISTRY_PATH)
++
++    spans: Optional[List[Dict[str, Any]]] = None
++    hourly_kind = "missing"
++
++    if spans_path:
++        readable = _file_readable(spans_path)
++        sources["hourly"] = _source_entry("observed-history", spans_path, readable, used_for_hours=readable)
++        if readable:
++            loaded = load_agent_spans(spans_path)
++            if loaded is None:
++                coverage_gaps.append({"source": spans_path, "reason": "spans file missing after open"})
++            else:
++                spans = loaded
++                hourly_kind = "observed-history"
++        else:
++            coverage_gaps.append({"source": spans_path, "reason": "AGENT_SPANS_PATH missing or unreadable"})
++    else:
++        sources["metrics"] = _source_entry(
++            "observed-history",
++            metrics_dir,
++            _dir_readable(metrics_dir),
++            used_for_hours=False,
++        )
++        obs_spans, obs_gaps = load_spans_from_observation(metrics_dir)
++        coverage_gaps.extend(obs_gaps)
++        if obs_spans is None:
++            sources["hourly"] = _source_entry("missing", metrics_dir, False, used_for_hours=False)
++        else:
++            spans = obs_spans
++            hourly_kind = "observed-history"
++            sources["hourly"] = _source_entry(
++                "observed-history",
++                os.path.join(metrics_dir, "observation-state.json"),
++                True,
++                used_for_hours=True,
++                companion=os.path.join(metrics_dir, "latest.json"),
++            )
++
++    registry_readable = _file_readable(registry_path)
++    registry_note = "static-registration; not observed live history; not used for hours"
++    if registry_readable:
++        try:
++            with open(registry_path, "r", encoding="utf-8") as handle:
++                reg_data = json.load(handle)
++            ok, reason = validate_registry_shape(reg_data)
++            sources["registry"] = _source_entry(
++                "static-registration",
++                registry_path,
++                ok,
++                used_for_hours=False,
++                note=registry_note if ok else reason,
++            )
++            if not ok:
++                coverage_gaps.append({"source": registry_path, "reason": reason})
++        except Exception:
++            sources["registry"] = _source_entry(
++                "static-registration",
++                registry_path,
++                False,
++                used_for_hours=False,
++                note="unreadable",
++            )
++            coverage_gaps.append({"source": registry_path, "reason": "unreadable"})
++    else:
++        sources["registry"] = _source_entry(
++            "static-registration",
++            registry_path,
++            False,
++            used_for_hours=False,
++            note=registry_note,
++        )
++        coverage_gaps.append({"source": registry_path, "reason": "missing or unreadable"})
++
++    result = compute_hourly_utilization(spans, as_of=as_of)
++    result["sources"] = sources
++    existing_gaps = result.get("coverage_gaps") or []
++    if not isinstance(existing_gaps, list):
++        existing_gaps = []
++    result["coverage_gaps"] = existing_gaps + coverage_gaps
++    result["hourly_source_kind"] = hourly_kind
++    return result
++
++
++def _load_usage_payload(as_of: datetime.datetime) -> Dict[str, Any]:
++    coverage_gaps: List[Dict[str, str]] = []
++    sources: Dict[str, Any] = {}
++    records: List[Dict[str, Any]] = []
++    metrics_dir = _metrics_dir()
++
++    events_path = os.environ.get(
++        "USAGE_EVENTS_PATH",
++        os.path.join(metrics_dir, "usage-events.jsonl"),
++    )
++    events_readable = _file_readable(events_path)
++    sources["usage_events"] = _source_entry("observed-history", events_path, events_readable)
++    if events_readable:
++        records.extend(load_usage_events_jsonl(events_path))
++    else:
++        coverage_gaps.append({"source": events_path, "reason": "usage-events.jsonl missing or unreadable"})
++
++    opencode_path = os.environ.get("OPENCODE_USAGE_PATH")
++    latest_path = os.path.join(metrics_dir, "latest.json")
++    adapter_path = os.path.join(metrics_dir, "opencode-adapter-acceptance.json")
++
++    opencode_loaded = False
++    if opencode_path:
++        readable = _file_readable(opencode_path)
++        sources["opencode_adapter"] = _source_entry("observed-history", opencode_path, readable)
++        if readable:
++            records.extend(load_opencode_usage(opencode_path))
++            opencode_loaded = True
++        else:
++            coverage_gaps.append({"source": opencode_path, "reason": "OPENCODE_USAGE_PATH unreadable"})
++
++    if not opencode_loaded and _file_readable(latest_path):
++        try:
++            with open(latest_path, "r", encoding="utf-8") as handle:
++                latest = json.load(handle)
++            usage_obj = latest.get("opencode_usage") if isinstance(latest, dict) else None
++            if isinstance(usage_obj, dict):
++                records.extend(load_opencode_usage_from_obj(usage_obj))
++                sources["opencode_adapter"] = _source_entry(
++                    "observed-history",
++                    latest_path,
++                    True,
++                    field="opencode_usage",
++                )
++                opencode_loaded = True
++            else:
++                coverage_gaps.append({"source": latest_path, "reason": "opencode_usage missing in latest.json"})
++        except Exception:
++            coverage_gaps.append({"source": latest_path, "reason": "latest.json unreadable for OpenCode usage"})
++
++    if not opencode_loaded:
++        readable = _file_readable(adapter_path)
++        sources.setdefault("opencode_adapter", _source_entry("observed-history", adapter_path, readable))
++        if readable:
++            records.extend(load_opencode_usage(adapter_path))
++            opencode_loaded = True
++        else:
++            coverage_gaps.append({"source": adapter_path, "reason": "OpenCode adapter missing or unreadable"})
++
++    result = aggregate_project_usage(records, as_of=as_of)
++    result["sources"] = {**sources, **(result.get("sources") or {})}
++    result["coverage_gaps"] = list(result.get("coverage_gaps") or []) + coverage_gaps
++    return result
++
++
++def _load_features_payload(as_of: datetime.datetime) -> Dict[str, Any]:
++    tasks_path = os.environ.get("TASKS_JSON_PATH", DEFAULT_TASKS_PATH)
++    result = load_accepted_features(tasks_path, as_of=as_of)
++    readable = _file_readable(tasks_path)
++    result["sources"] = {
++        "tasks": _source_entry("task-ledger", tasks_path, readable),
++    }
++    if not readable and not any(g.get("source") == "tasks" for g in result.get("coverage_gaps") or []):
++        result.setdefault("coverage_gaps", []).append(
++            {"source": tasks_path, "reason": "TASKS.json missing or unreadable"}
++        )
++    return result
+ 
+ 
+ class DashboardRequestHandler(BaseHTTPRequestHandler):
+     """Request handler for Agent Dashboard."""
+ 
++    def log_message(self, format: str, *args: Any) -> None:
++        return
++
+     def do_GET(self) -> None:
+-        """Route GET requests."""
+-        if self.path == "/" or self.path == "/index.html":
+-            self._handle_html()
+-        elif self.path == "/api/health":
+-            self._handle_json({"status": "ok", "service": "agent-dashboard"})
+-        elif self.path == "/api/hourly":
+-            # Load agent spans from registry or sample
+-            self._handle_hourly()
+-        elif self.path == "/api/usage":
+-            self._handle_usage()
+-        elif self.path == "/api/features":
+-            self._handle_features()
+-        else:
+-            self.send_response(404)
+-            self.send_header("Content-Type", "application/json")
+-            self.end_headers()
+-            self.wfile.write(b'{"error": "not found"}')
++        parsed = urlparse(self.path)
++        path = unquote(parsed.path or "/")
++        query = parse_qs(parsed.query)
++
++        if path == "/api/health":
++            self._handle_health()
++            return
++        if path == "/api/hourly":
++            self._handle_hourly(query)
++            return
++        if path == "/api/usage":
++            self._handle_usage(query)
++            return
++        if path == "/api/features":
++            self._handle_features(query)
++            return
++        self._handle_static(path)
+ 
+     def _handle_json(self, data: Any, status: int = 200) -> None:
+         payload = json.dumps(data, indent=2).encode("utf-8")
+@@ -45,82 +274,83 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
+         self.end_headers()
+         self.wfile.write(payload)
+ 
+-    def _handle_hourly(self) -> None:
+-        # Check if live spans available from TEAM-REGISTRY.json
+-        registry_path = os.environ.get("TEAM_REGISTRY_PATH", "/home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json")
+-        spans = []
+-        if os.path.exists(registry_path):
+-            try:
+-                with open(registry_path, "r", encoding="utf-8") as f:
+-                    reg_data = json.load(f)
+-                for team in reg_data.get("teams", []):
+-                    proj = team.get("id") or "unattributed"
+-                    for member in team.get("members", []):
+-                        spans.append({
+-                            "project_id": proj,
+-                            "agent_id": member.get("tag") or member.get("session_id"),
+-                            "started_at": member.get("started_at") or member.get("registered_at"),
+-                            "ended_at": member.get("completed_at"),
+-                        })
+-            except Exception:
+-                pass
+-        res = compute_hourly_utilization(spans)
+-        self._handle_json(res)
+-
+-    def _handle_usage(self) -> None:
+-        events_path = os.environ.get("USAGE_EVENTS_PATH", "/home/alexey/git/cloudflare-agent-git/.local/metrics/usage-events.jsonl")
+-        records = load_usage_events_jsonl(events_path)
+-        res = aggregate_project_usage(records)
+-        self._handle_json(res)
+-
+-    def _handle_features(self) -> None:
+-        tasks_path = os.environ.get("TASKS_JSON_PATH", "/home/alexey/git/cloudflare-agent-git/coordination/TASKS.json")
+-        res = load_accepted_features(tasks_path)
+-        self._handle_json(res)
+-
+-    def _handle_html(self) -> None:
++    def _handle_health(self) -> None:
++        static_path = os.path.join(_static_dir(), "index.html")
++        metrics_dir = _metrics_dir()
++        self._handle_json({
++            "status": "ok",
++            "service": "agent-dashboard",
++            "static_index_readable": _file_readable(static_path),
++            "metrics_dir_readable": _dir_readable(metrics_dir),
++        })
++
++    def _handle_hourly(self, query: Dict[str, List[str]]) -> None:
++        as_of, err = _parse_as_of(query)
++        if err:
++            self._handle_json({"error": err}, status=400)
++            return
++        assert as_of is not None
++        self._handle_json(_load_hourly_payload(as_of))
++
++    def _handle_usage(self, query: Dict[str, List[str]]) -> None:
++        as_of, err = _parse_as_of(query)
++        if err:
++            self._handle_json({"error": err}, status=400)
++            return
++        assert as_of is not None
++        self._handle_json(_load_usage_payload(as_of))
++
++    def _handle_features(self, query: Dict[str, List[str]]) -> None:
++        as_of, err = _parse_as_of(query)
++        if err:
++            self._handle_json({"error": err}, status=400)
++            return
++        assert as_of is not None
++        self._handle_json(_load_features_payload(as_of))
++
++    def _handle_static(self, path: str) -> None:
++        rel = "index.html" if path in ("/", "/index.html") else path.lstrip("/")
++        static_root = os.path.realpath(_static_dir())
++        candidate = os.path.realpath(os.path.join(static_root, rel))
++        if candidate == static_root or candidate.startswith(static_root + os.sep):
++            if os.path.isfile(candidate):
++                self._send_file(candidate)
++                return
++        if path in ("/", "/index.html"):
++            self._send_fallback_html()
++            return
++        self._handle_json({"error": "not found"}, status=404)
++
++    def _send_file(self, full_path: str) -> None:
++        ctype, _encoding = mimetypes.guess_type(full_path)
++        if not ctype:
++            if full_path.endswith(".css"):
++                ctype = "text/css"
++            elif full_path.endswith(".js"):
++                ctype = "text/javascript"
++            else:
++                ctype = "application/octet-stream"
++        with open(full_path, "rb") as handle:
++            payload = handle.read()
++        self.send_response(200)
++        self.send_header("Content-Type", ctype)
++        self.send_header("Content-Length", str(len(payload)))
++        self.end_headers()
++        self.wfile.write(payload)
++
++    def _send_fallback_html(self) -> None:
+         html = """<!DOCTYPE html>
+ <html lang="en">
+ <head>
+   <meta charset="utf-8">
+   <title>Agent Fleet Dashboard</title>
+-  <style>
+-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 2rem; background: #0f172a; color: #f8fafc; }
+-    h1 { color: #38bdf8; font-size: 1.8rem; margin-bottom: 0.5rem; }
+-    .subtitle { color: #94a3b8; font-size: 0.95rem; margin-bottom: 2rem; }
+-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+-    .card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+-    .card h2 { font-size: 1.2rem; color: #e2e8f0; margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }
+-    .metric { margin: 1rem 0; font-size: 1.1rem; }
+-    .metric-value { font-weight: bold; color: #38bdf8; }
+-    pre { background: #090d16; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; color: #cbd5e1; }
+-    a { color: #38bdf8; text-decoration: none; }
+-  </style>
+ </head>
+ <body>
+   <h1>Autonomous Agent Fleet Operational Dashboard</h1>
+-  <div class="subtitle">Rolling 24-Hour Utilization, Usage Accounting, and Completed Feature Verification</div>
+-  
+-  <div class="grid">
+-    <div class="card">
+-      <h2>Project: AgentBranches</h2>
+-      <div class="metric">Status: <span class="metric-value">Active Development</span></div>
+-      <div class="metric">Runtime Protocol: <span class="metric-value">Git Smart HTTP + DO</span></div>
+-      <p><a href="/api/hourly">View Hourly API &rarr;</a></p>
+-    </div>
+-    <div class="card">
+-      <h2>Project: Agent Dashboard</h2>
+-      <div class="metric">Status: <span class="metric-value">Operational</span></div>
+-      <div class="metric">Port: <span class="metric-value">Localhost Preview</span></div>
+-      <p><a href="/api/usage">View Usage API &rarr;</a></p>
+-    </div>
+-    <div class="card">
+-      <h2>Project: Quota-Aware Launcher</h2>
+-      <div class="metric">Status: <span class="metric-value">Active Integration</span></div>
+-      <div class="metric">Provider Gating: <span class="metric-value">Heuristic Quota Engine</span></div>
+-      <p><a href="/api/features">View Features API &rarr;</a></p>
+-    </div>
+-  </div>
++  <p>static/index.html is missing. JSON APIs: <a href="/api/health">/api/health</a>,
++     <a href="/api/hourly">/api/hourly</a>, <a href="/api/usage">/api/usage</a>,
++     <a href="/api/features">/api/features</a>.</p>
++  <p>Source coverage and unknown fields are in the JSON. This fallback does not assert live status.</p>
+ </body>
+ </html>"""
+         payload = html.encode("utf-8")
+@@ -132,7 +362,7 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
+ 
+ 
+ def run_server(port: int = 8765, host: str = "127.0.0.1") -> HTTPServer:
+-    """Instantiate and start HTTP server."""
++    """Instantiate HTTP server bound to localhost."""
+     server = HTTPServer((host, port), DashboardRequestHandler)
+     return server
+ 
+diff --git a/tests/test_accounting.py b/tests/test_accounting.py
+index 63170dc..16e7506 100644
+--- a/tests/test_accounting.py
++++ b/tests/test_accounting.py
+@@ -2,42 +2,102 @@
+ Unit tests for usage accounting engine.
+ """
+ 
++import datetime
++import json
++import os
+ import unittest
+-from dashboard.accounting import normalize_usage_record, aggregate_project_usage
++
++from dashboard import canonical_project_id
++from dashboard.accounting import (
++    aggregate_project_usage,
++    load_opencode_usage,
++    normalize_usage_record,
++)
++
++UTC = datetime.timezone.utc
++AS_OF = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
++IN_WINDOW = "2026-10-04T11:00:00Z"
++SCRATCH = os.environ.get("TMPDIR", "/home/alexey/git/agent-dashboard/.local/tmp")
++
++
++def _rec(**kwargs):
++    base = {
++        "project_id": "agent-branches",
++        "provider": "gemini",
++        "conversation_id": "conv-1",
++        "timestamp": IN_WINDOW,
++    }
++    base.update(kwargs)
++    return base
+ 
+ 
+ class TestUsageAccounting(unittest.TestCase):
+     def test_nullability_and_types(self):
+-        # Missing tokens should be None, not 0
+         raw = {
+             "project_id": "agent-branches",
+             "provider": "gemini",
+             "conversation_id": "conv-1",
+             "input_tokens": 100,
+-            # output_tokens omitted
+             "reasoning_tokens": 25,
+             "quota_delta": "-1.5%",
++            "timestamp": IN_WINDOW,
+         }
+         norm = normalize_usage_record(raw)
+         self.assertEqual(norm["input_tokens"], 100)
+         self.assertIsNone(norm["output_tokens"])
+         self.assertEqual(norm["reasoning_tokens"], 25)
+-        # Quota delta should fail-safe or parse
+-        # If string "-1.5%" fails float(), it becomes None
+         self.assertIsNone(norm["quota_delta"])
+ 
+-        # Valid numeric float quota delta
+         raw_float = {
+             "project_id": "agent-branches",
+             "provider": "gemini",
+             "conversation_id": "conv-1",
+             "quota_delta": -1.5,
++            "timestamp": IN_WINDOW,
+         }
+         norm2 = normalize_usage_record(raw_float)
+         self.assertEqual(norm2["quota_delta"], -1.5)
+ 
++    def test_known_zero_preserved(self):
++        norm = normalize_usage_record(_rec(input_tokens=0, output_tokens=0, cached_input_tokens=0, prompt_tokens=99))
++        self.assertEqual(norm["input_tokens"], 0)
++        self.assertEqual(norm["output_tokens"], 0)
++        self.assertEqual(norm["cache_read_tokens"], 0)
++        agg = aggregate_project_usage(
++            [_rec(input_tokens=0, output_tokens=0, cached_input_tokens=0, response_id="r0")],
++            as_of=AS_OF,
++        )
++        p = agg["projects"]["agent-branches"]
++        self.assertEqual(p["total_input_tokens"], 0)
++        self.assertEqual(p["total_output_tokens"], 0)
++        self.assertEqual(p["total_cache_read_tokens"], 0)
++
++    def test_boolean_and_negative_counts_invalid(self):
++        self.assertIsNone(normalize_usage_record(_rec(input_tokens=True)))
++        self.assertIsNone(normalize_usage_record(_rec(output_tokens=False)))
++        self.assertIsNone(normalize_usage_record(_rec(input_tokens=-5)))
++        agg = aggregate_project_usage(
++            [_rec(input_tokens=True, response_id="bad")],
++            as_of=AS_OF,
++        )
++        self.assertEqual(agg["invalid_records"], 1)
++        self.assertEqual(agg["projects"], {})
++
++    def test_unknown_cache_and_reasoning_stay_null(self):
++        raw = _rec(input_tokens=10, output_tokens=4, response_id="r1")
++        norm = normalize_usage_record(raw)
++        self.assertIsNone(norm["cache_read_tokens"])
++        self.assertIsNone(norm["reasoning_tokens"])
++        agg = aggregate_project_usage([raw], as_of=AS_OF)
++        p = agg["projects"]["agent-branches"]
++        self.assertIsNone(p["total_cache_read_tokens"])
++        self.assertIsNone(p["total_reasoning_tokens"])
++        self.assertEqual(p["cache_coverage"], 0.0)
++        self.assertEqual(p["reasoning_coverage"], 0.0)
++        self.assertTrue(p["has_unknown_cache"])
++        self.assertTrue(p["has_unknown_reasoning"])
++
+     def test_reasoning_token_subset_isolation(self):
+-        # Reasoning tokens must NOT be double-added to output tokens
+         raw = {
+             "project_id": "agent-dashboard",
+             "provider": "codex",
+@@ -45,9 +105,10 @@ class TestUsageAccounting(unittest.TestCase):
+             "response_id": "r-1",
+             "output_tokens": 50,
+             "reasoning_tokens": 30,
++            "timestamp": IN_WINDOW,
+         }
+-        agg = aggregate_project_usage([raw])
+-        d_agg = agg["agent-dashboard"]
++        agg = aggregate_project_usage([raw], as_of=AS_OF)
++        d_agg = agg["projects"]["agent-dashboard"]
+         self.assertEqual(d_agg["total_output_tokens"], 50)
+         self.assertEqual(d_agg["total_reasoning_tokens"], 30)
+ 
+@@ -59,15 +120,127 @@ class TestUsageAccounting(unittest.TestCase):
+             "response_id": "resp-1",
+             "input_tokens": 200,
+             "output_tokens": 100,
++            "timestamp": IN_WINDOW,
+         }
+-        # Duplicate record for same response_id
+         raw2 = dict(raw1)
+-        agg = aggregate_project_usage([raw1, raw2])
+-        ql_agg = agg["quota-launcher"]
++        agg = aggregate_project_usage([raw1, raw2], as_of=AS_OF)
++        ql_agg = agg["projects"]["quota-launcher"]
+         self.assertEqual(ql_agg["event_count"], 1)
+         self.assertEqual(ql_agg["total_input_tokens"], 200)
+         self.assertEqual(ql_agg["total_output_tokens"], 100)
+ 
++    def test_missing_response_id_does_not_dedup_on_timestamp(self):
++        a = _rec(input_tokens=10, output_tokens=1, timestamp=IN_WINDOW)
++        b = _rec(input_tokens=10, output_tokens=1, timestamp=IN_WINDOW)
++        agg = aggregate_project_usage([a, b], as_of=AS_OF)
++        p = agg["projects"]["agent-branches"]
++        self.assertEqual(p["event_count"], 2)
++        self.assertEqual(p["total_input_tokens"], 20)
++        self.assertGreaterEqual(agg["records_missing_response_id"], 2)
++
++    def test_24h_usage_filter(self):
++        inside = _rec(input_tokens=7, output_tokens=1, response_id="in", timestamp=IN_WINDOW)
++        outside = _rec(
++            input_tokens=100,
++            output_tokens=50,
++            response_id="out",
++            timestamp="2026-10-02T11:00:00Z",
++        )
++        agg = aggregate_project_usage([inside, outside], as_of=AS_OF)
++        p = agg["projects"]["agent-branches"]
++        self.assertEqual(p["event_count"], 1)
++        self.assertEqual(p["total_input_tokens"], 7)
++
++    def test_quota_not_converted_to_cost_or_tokens(self):
++        raw = _rec(input_tokens=3, output_tokens=1, quota_delta=-1.5, response_id="q1")
++        agg = aggregate_project_usage([raw], as_of=AS_OF)
++        p = agg["projects"]["agent-branches"]
++        self.assertEqual(p["total_input_tokens"], 3)
++        self.assertEqual(p["total_quota_delta_percent"], -1.5)
++        self.assertIsNone(p["total_cost"])
++
++    def test_noncanonical_project_unattributed(self):
++        raw = _rec(project_id="oversight", input_tokens=1, output_tokens=1, response_id="n1")
++        del raw["project_id"]
++        raw["team_id"] = "oversight"
++        # project_id missing -> unattributed (team_id is not a canonical project id)
++        raw2 = {
++            "team_id": "oversight",
++            "provider": "zcode",
++            "conversation_id": "c",
++            "response_id": "n1",
++            "input_tokens": 1,
++            "output_tokens": 1,
++            "timestamp": IN_WINDOW,
++        }
++        agg = aggregate_project_usage([raw2], as_of=AS_OF)
++        self.assertIn("unattributed", agg["projects"])
++        self.assertNotIn("oversight", agg["projects"])
++
++    def test_opencode_adapter_reasoning_not_folded(self):
++        os.makedirs(SCRATCH, exist_ok=True)
++        path = os.path.join(SCRATCH, "opencode-adapter-test.json")
++        payload = {
++            "observed_at": IN_WINDOW,
++            "by_team": {
++                "a16-runtime-protocol": {
++                    "input_tokens": 100,
++                    "output_tokens": 40,
++                    "reasoning_output_tokens": 12,
++                    "cached_input_tokens": 5,
++                    "cache_write_tokens": 0,
++                    "reported_cost": 0.0,
++                    "missing_fields": {
++                        "input_tokens": 0,
++                        "output_tokens": 0,
++                        "reasoning_output_tokens": 0,
++                        "cached_input_tokens": 0,
++                        "cache_write_tokens": 0,
++                        "reported_cost": 0,
++                    },
++                }
++            },
++        }
++        with open(path, "w", encoding="utf-8") as handle:
++            json.dump(payload, handle)
++        records = load_opencode_usage(path)
++        self.assertEqual(len(records), 1)
++        agg = aggregate_project_usage(records, as_of=AS_OF)
++        p = agg["projects"]["unattributed"]
++        self.assertEqual(p["total_output_tokens"], 40)
++        self.assertEqual(p["total_reasoning_tokens"], 12)
++        self.assertEqual(p["total_cache_read_tokens"], 5)
++        self.assertEqual(p["total_cost"], 0.0)
++
++    def test_canonical_project_id_aliases_and_fourth_product(self):
++        self.assertEqual(canonical_project_id("agent-quota-launcher"), "quota-launcher")
++        self.assertEqual(canonical_project_id("agent_quota_launcher"), "quota-launcher")
++        self.assertEqual(canonical_project_id("agent-coordination"), "agent-coordination")
++        self.assertEqual(canonical_project_id("agent_coordination"), "agent-coordination")
++        self.assertEqual(canonical_project_id("agent-branches"), "agent-branches")
++        self.assertEqual(canonical_project_id("agent-dashboard"), "agent-dashboard")
++        self.assertEqual(canonical_project_id("quota-launcher"), "quota-launcher")
++        self.assertEqual(canonical_project_id("unknown-xyz"), "unattributed")
++        self.assertEqual(canonical_project_id(None), "unattributed")
++        self.assertEqual(canonical_project_id(""), "unattributed")
++
++    def test_usage_accounting_alias_and_coordination_routing(self):
++        rec_ql = _rec(project_id="agent-quota-launcher", input_tokens=10, output_tokens=5, response_id="r-ql")
++        rec_coord = _rec(project_id="agent-coordination", input_tokens=20, output_tokens=8, response_id="r-coord")
++        rec_unknown = _rec(project_id="mysterious-lane", input_tokens=7, output_tokens=3, response_id="r-unk")
++        agg = aggregate_project_usage([rec_ql, rec_coord, rec_unknown], as_of=AS_OF)
++        self.assertIn("quota-launcher", agg["projects"])
++        self.assertNotIn("agent-quota-launcher", agg["projects"])
++        self.assertEqual(agg["projects"]["quota-launcher"]["total_input_tokens"], 10)
++        self.assertEqual(agg["projects"]["quota-launcher"]["total_output_tokens"], 5)
++        self.assertIn("agent-coordination", agg["projects"])
++        self.assertEqual(agg["projects"]["agent-coordination"]["total_input_tokens"], 20)
++        self.assertEqual(agg["projects"]["agent-coordination"]["total_output_tokens"], 8)
++        self.assertIn("unattributed", agg["projects"])
++        self.assertNotIn("mysterious-lane", agg["projects"])
++        self.assertEqual(agg["projects"]["unattributed"]["total_input_tokens"], 7)
++        self.assertEqual(agg["projects"]["unattributed"]["total_output_tokens"], 3)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()
+diff --git a/tests/test_features.py b/tests/test_features.py
+index 7eea1fc..0dffb5c 100644
+--- a/tests/test_features.py
++++ b/tests/test_features.py
+@@ -2,12 +2,25 @@
+ Unit tests for completed features tracking.
+ """
+ 
+-import unittest
+-import tempfile
++import datetime
+ import json
+ import os
++import unittest
++
+ from dashboard.features import load_accepted_features
+ 
++UTC = datetime.timezone.utc
++AS_OF = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
++SCRATCH = os.environ.get("TMPDIR", "/home/alexey/git/agent-dashboard/.local/tmp")
++
++
++def _write_tasks(payload):
++    os.makedirs(SCRATCH, exist_ok=True)
++    path = os.path.join(SCRATCH, "features-tasks-test.json")
++    with open(path, "w", encoding="utf-8") as handle:
++        json.dump(payload, handle)
++    return path
++
+ 
+ class TestFeaturesTracking(unittest.TestCase):
+     def test_feature_extraction_and_deduplication(self):
+@@ -17,52 +30,149 @@ class TestFeaturesTracking(unittest.TestCase):
+                     "id": "task-feat-1",
+                     "feature_id": "feat-001",
+                     "project_id": "agent-branches",
+-                    "status": "done",
+-                    "acceptance_status": "ACCEPT: verified live",
++                    "status": "ACCEPTED",
++                    "accepted_at": "2026-10-04T10:00:00Z",
+                     "commit": "abc1234",
++                    "tests": ["tests/test_hourly.py"],
+                 },
+-                # Duplicate entry for same feature (e.g. repeated review)
+                 {
+                     "id": "task-feat-1-review",
+                     "feature_id": "feat-001",
+                     "project_id": "agent-branches",
+-                    "status": "done",
+-                    "acceptance_status": "ACCEPT: review passed",
++                    "status": "ACCEPTED",
++                    "accepted_at": "2026-10-04T10:05:00Z",
+                     "commit": "def5678",
++                    "tests": ["tests/test_hourly.py"],
+                 },
+-                # In progress task (must NOT be counted)
+                 {
+                     "id": "task-feat-2",
+                     "feature_id": "feat-002",
+                     "project_id": "agent-branches",
+                     "status": "in_progress",
+                 },
+-                # Distinct feature in another project
+                 {
+                     "id": "task-dash-1",
+                     "feature_id": "feat-dash-001",
+                     "project_id": "agent-dashboard",
++                    "status": "ACCEPTED",
++                    "accepted_at": "2026-10-04T11:00:00Z",
++                    "commit": "dashc0de",
++                    "tests": {"path": "tests/test_server.py"},
++                },
++            ]
++        }
++        path = _write_tasks(sample_tasks)
++        feats = load_accepted_features(path, as_of=AS_OF)
++        ab_feats = feats["projects"]["agent-branches"]
++        self.assertEqual(len(ab_feats), 1)
++        self.assertEqual(ab_feats[0]["feature_id"], "feat-001")
++        d_feats = feats["projects"]["agent-dashboard"]
++        self.assertEqual(len(d_feats), 1)
++        self.assertEqual(d_feats[0]["feature_id"], "feat-dash-001")
++
++    def test_unaccepted_substring_not_counted(self):
++        path = _write_tasks({
++            "tasks": [
++                {
++                    "id": "t-un",
++                    "feature_id": "feat-un",
++                    "project_id": "agent-branches",
++                    "status": "UNACCEPTED",
++                    "acceptance_status": "NOT_ACCEPTED",
++                    "accepted_at": "2026-10-04T10:00:00Z",
++                    "commit": "abc",
++                    "tests": ["t"],
++                },
++                {
++                    "id": "t-done",
++                    "feature_id": "feat-done",
++                    "project_id": "agent-branches",
+                     "status": "done",
+-                    "acceptance_status": "ACCEPT: dashboard live",
++                    "acceptance_status": "ACCEPT: verified live",
++                    "accepted_at": "2026-10-04T10:00:00Z",
++                    "commit": "abc",
++                    "tests": ["t"],
++                },
++            ]
++        })
++        feats = load_accepted_features(path, as_of=AS_OF)
++        self.assertEqual(feats["projects"], {})
++
++    def test_updated_at_is_not_accepted_at(self):
++        path = _write_tasks({
++            "tasks": [
++                {
++                    "id": "t-upd",
++                    "feature_id": "feat-upd",
++                    "project_id": "agent-dashboard",
++                    "status": "ACCEPTED",
++                    "updated_at": "2026-10-04T10:00:00Z",
++                    "commit": "abc",
++                    "tests": ["t"],
+                 }
+             ]
+-        }
+-        with tempfile.NamedTemporaryFile("w", delete=False) as f:
+-            json.dump(sample_tasks, f)
+-            temp_path = f.name
++        })
++        feats = load_accepted_features(path, as_of=AS_OF)
++        self.assertEqual(feats["projects"], {})
+ 
+-        try:
+-            feats = load_accepted_features(temp_path)
+-            ab_feats = feats["agent-branches"]
+-            self.assertEqual(len(ab_feats), 1)
+-            self.assertEqual(ab_feats[0]["feature_id"], "feat-001")
++    def test_missing_commit_or_tests_rejected(self):
++        path = _write_tasks({
++            "tasks": [
++                {
++                    "id": "t-nocommit",
++                    "feature_id": "feat-nc",
++                    "project_id": "quota-launcher",
++                    "status": "ACCEPTED",
++                    "accepted_at": "2026-10-04T10:00:00Z",
++                    "tests": ["t"],
++                },
++                {
++                    "id": "t-notests",
++                    "feature_id": "feat-nt",
++                    "project_id": "quota-launcher",
++                    "status": "ACCEPTED",
++                    "accepted_at": "2026-10-04T10:00:00Z",
++                    "commit": "abc",
++                    "tests": [],
++                },
++            ]
++        })
++        feats = load_accepted_features(path, as_of=AS_OF)
++        self.assertEqual(feats["projects"], {})
++
++    def test_24h_completed_feature_filter(self):
++        path = _write_tasks({
++            "tasks": [
++                {
++                    "id": "t-old",
++                    "feature_id": "feat-old",
++                    "project_id": "agent-branches",
++                    "status": "ACCEPTED",
++                    "accepted_at": "2026-10-02T10:00:00Z",
++                    "commit": "old",
++                    "tests": ["t"],
++                },
++                {
++                    "id": "t-new",
++                    "feature_id": "feat-new",
++                    "project_id": "agent-branches",
++                    "status": "ACCEPTED",
++                    "accepted_at": "2026-10-04T11:00:00Z",
++                    "pr_url": "https://example.invalid/pr/1",
++                    "tests": "tests/test_features.py",
++                },
++            ]
++        })
++        feats = load_accepted_features(path, as_of=AS_OF)
++        items = feats["projects"]["agent-branches"]
++        self.assertEqual(len(items), 1)
++        self.assertEqual(items[0]["feature_id"], "feat-new")
+ 
+-            d_feats = feats["agent-dashboard"]
+-            self.assertEqual(len(d_feats), 1)
+-            self.assertEqual(d_feats[0]["feature_id"], "feat-dash-001")
+-        finally:
+-            if os.path.exists(temp_path):
+-                os.remove(temp_path)
++    def test_missing_tasks_file_unknown(self):
++        feats = load_accepted_features(os.path.join(SCRATCH, "no-such-tasks.json"), as_of=AS_OF)
++        self.assertTrue(feats["unknown"])
++        self.assertEqual(feats["projects"], {})
++        self.assertTrue(feats["coverage_gaps"])
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/tests/test_hourly.py b/tests/test_hourly.py
+index 8350e9b..95f7475 100644
+--- a/tests/test_hourly.py
++++ b/tests/test_hourly.py
+@@ -2,29 +2,50 @@
+ Unit tests for 24-hour hourly utilization engine.
+ """
+ 
+-import unittest
+ import datetime
++import os
++import unittest
++
++from dashboard import canonical_project_id
+ from dashboard.hourly import (
+-    parse_iso_timestamp,
+-    generate_hourly_buckets,
+     compute_hourly_utilization,
++    generate_hourly_buckets,
++    parse_iso_timestamp,
++    union_seconds,
++    validate_registry_shape,
+ )
+ 
++UTC = datetime.timezone.utc
++
+ 
+ class TestHourlyUtilization(unittest.TestCase):
+     def test_bucket_generation(self):
+-        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=datetime.timezone.utc)
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
+         buckets = generate_hourly_buckets(as_of)
+         self.assertEqual(len(buckets), 24)
+-        # Check first and last boundaries
+-        self.assertEqual(buckets[0][0], datetime.datetime(2026, 10, 3, 12, 0, 0, tzinfo=datetime.timezone.utc))
+-        self.assertEqual(buckets[-1][1], datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=datetime.timezone.utc))
++        self.assertEqual(buckets[0][0], datetime.datetime(2026, 10, 3, 12, 0, 0, tzinfo=UTC))
++        self.assertEqual(buckets[-1][1], datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC))
+         for b_start, b_end in buckets:
+             self.assertEqual((b_end - b_start).total_seconds(), 3600)
+ 
++    def test_non_hour_as_of_exact_window(self):
++        as_of = datetime.datetime(2026, 10, 4, 13, 17, 43, tzinfo=UTC)
++        buckets = generate_hourly_buckets(as_of)
++        self.assertEqual(len(buckets), 24)
++        window_start = as_of - datetime.timedelta(hours=24)
++        self.assertEqual(buckets[0][0], window_start)
++        self.assertEqual(buckets[-1][1], as_of)
++        for _start, end in buckets:
++            self.assertLessEqual(end, as_of)
++        res = compute_hourly_utilization([], as_of=as_of)
++        self.assertEqual(parse_iso_timestamp(res["window_start"]), window_start)
++        self.assertEqual(parse_iso_timestamp(res["window_end"]), as_of)
++        self.assertTrue(res["unknown"])
++        self.assertIsNone(res["projects"]["agent-branches"]["coverage"])
++        self.assertIsNone(res["projects"]["agent-branches"]["total_agent_hours"])
++
+     def test_single_agent_clipping(self):
+-        # Agent running for 3 hours across 3 buckets
+-        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=datetime.timezone.utc)
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
+         spans = [
+             {
+                 "project_id": "agent-branches",
+@@ -39,8 +60,7 @@ class TestHourlyUtilization(unittest.TestCase):
+         self.assertAlmostEqual(ab_data["total_agent_hours"], 3.0, places=3)
+ 
+     def test_partial_hour_calculation(self):
+-        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=datetime.timezone.utc)
+-        # 30-minute span in a single bucket
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
+         spans = [
+             {
+                 "project_id": "agent-dashboard",
+@@ -55,8 +75,7 @@ class TestHourlyUtilization(unittest.TestCase):
+         self.assertAlmostEqual(d_data["total_agent_hours"], 0.5, places=3)
+ 
+     def test_identity_deduplication(self):
+-        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=datetime.timezone.utc)
+-        # Same agent with two distinct task intervals
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
+         spans = [
+             {
+                 "project_id": "quota-launcher",
+@@ -76,6 +95,231 @@ class TestHourlyUtilization(unittest.TestCase):
+         self.assertEqual(ql_data["unique_agents"], 1)
+         self.assertAlmostEqual(ql_data["total_agent_hours"], 2.0, places=3)
+ 
++    def test_duplicate_identical_spans_do_not_change_hours(self):
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
++        span = {
++            "project_id": "agent-branches",
++            "agent_id": "dup-1",
++            "started_at": "2026-10-04T10:00:00Z",
++            "ended_at": "2026-10-04T11:30:00Z",
++        }
++        once = compute_hourly_utilization([span], as_of=as_of)["projects"]["agent-branches"]
++        twice = compute_hourly_utilization([span, dict(span)], as_of=as_of)["projects"]["agent-branches"]
++        self.assertEqual(once["unique_agents"], twice["unique_agents"])
++        self.assertAlmostEqual(once["total_agent_hours"], twice["total_agent_hours"], places=4)
++        self.assertAlmostEqual(once["total_agent_hours"], 1.5, places=3)
++
++    def test_overlapping_spans_union_once(self):
++        as_of = datetime.datetime(2026, 10, 4, 14, 0, 0, tzinfo=UTC)
++        spans = [
++            {
++                "project_id": "agent-dashboard",
++                "agent_id": "overlap-1",
++                "started_at": "2026-10-04T10:00:00Z",
++                "ended_at": "2026-10-04T12:00:00Z",
++            },
++            {
++                "project_id": "agent-dashboard",
++                "agent_id": "overlap-1",
++                "started_at": "2026-10-04T11:00:00Z",
++                "ended_at": "2026-10-04T13:00:00Z",
++            },
++        ]
++        res = compute_hourly_utilization(spans, as_of=as_of)["projects"]["agent-dashboard"]
++        self.assertEqual(res["unique_agents"], 1)
++        self.assertAlmostEqual(res["total_agent_hours"], 3.0, places=3)
++
++    def test_future_ended_at_clamped_to_as_of(self):
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
++        spans = [
++            {
++                "project_id": "quota-launcher",
++                "agent_id": "future-1",
++                "started_at": "2026-10-04T11:00:00Z",
++                "ended_at": "2026-10-04T15:00:00Z",
++            }
++        ]
++        res = compute_hourly_utilization(spans, as_of=as_of)["projects"]["quota-launcher"]
++        self.assertAlmostEqual(res["total_agent_hours"], 1.0, places=3)
++
++    def test_invalid_ended_at_unknown_ended_not_alive(self):
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
++        spans = [
++            {
++                "project_id": "agent-branches",
++                "agent_id": "bad-end",
++                "started_at": "2026-10-04T10:00:00Z",
++                "ended_at": "not-a-timestamp",
++            }
++        ]
++        res = compute_hourly_utilization(spans, as_of=as_of)["projects"]["agent-branches"]
++        self.assertEqual(res["unknown_ended"], 1)
++        self.assertEqual(res["total_agent_hours"], 0.0)
++        self.assertEqual(res["unique_agents"], 0)
++
++    def test_ended_before_started_invalid_spans(self):
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
++        spans = [
++            {
++                "project_id": "agent-dashboard",
++                "agent_id": "inverted",
++                "started_at": "2026-10-04T11:00:00Z",
++                "ended_at": "2026-10-04T10:00:00Z",
++            }
++        ]
++        res = compute_hourly_utilization(spans, as_of=as_of)["projects"]["agent-dashboard"]
++        self.assertEqual(res["invalid_spans"], 1)
++        self.assertEqual(res["total_agent_hours"], 0.0)
++
++    def test_span_entirely_outside_window(self):
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
++        spans = [
++            {
++                "project_id": "quota-launcher",
++                "agent_id": "old",
++                "started_at": "2026-10-02T08:00:00Z",
++                "ended_at": "2026-10-02T10:00:00Z",
++            }
++        ]
++        res = compute_hourly_utilization(spans, as_of=as_of)["projects"]["quota-launcher"]
++        self.assertEqual(res["total_agent_hours"], 0.0)
++        self.assertEqual(res["unique_agents"], 0)
++        self.assertFalse(res["unknown"])
++
++    def test_agent_across_three_adjacent_buckets(self):
++        as_of = datetime.datetime(2026, 10, 4, 14, 0, 0, tzinfo=UTC)
++        spans = [
++            {
++                "project_id": "agent-branches",
++                "agent_id": "cross-3",
++                "started_at": "2026-10-04T10:30:00Z",
++                "ended_at": "2026-10-04T12:45:00Z",
++            }
++        ]
++        res = compute_hourly_utilization(spans, as_of=as_of)
++        ab = res["projects"]["agent-branches"]
++        self.assertAlmostEqual(ab["total_agent_hours"], 2.25, places=3)
++        buckets = ab["hourly_buckets"]
++        by_start = {b["bucket_start"]: b for b in buckets}
++        self.assertAlmostEqual(by_start["2026-10-04T10:00:00+00:00"]["agent_hours"], 0.5, places=3)
++        self.assertAlmostEqual(by_start["2026-10-04T11:00:00+00:00"]["agent_hours"], 1.0, places=3)
++        self.assertAlmostEqual(by_start["2026-10-04T12:00:00+00:00"]["agent_hours"], 0.75, places=3)
++        self.assertEqual(by_start["2026-10-04T10:00:00+00:00"]["active_agents"], 1)
++        self.assertEqual(by_start["2026-10-04T11:00:00+00:00"]["active_agents"], 1)
++        self.assertEqual(by_start["2026-10-04T12:00:00+00:00"]["active_agents"], 1)
++
++    def test_missing_spans_unknown_not_zeros(self):
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
++        res = compute_hourly_utilization(None, as_of=as_of)
++        self.assertTrue(res["unknown"])
++        for proj in ("agent-branches", "agent-dashboard", "quota-launcher", "agent-coordination"):
++            self.assertIsNone(res["projects"][proj]["coverage"])
++            self.assertIsNone(res["projects"][proj]["total_agent_hours"])
++            self.assertTrue(res["projects"][proj]["unknown"])
++
++    def test_noncanonical_project_goes_to_unattributed(self):
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
++        spans = [
++            {
++                "project_id": "some-other-team",
++                "agent_id": "x",
++                "started_at": "2026-10-04T10:00:00Z",
++                "ended_at": "2026-10-04T11:00:00Z",
++            }
++        ]
++        res = compute_hourly_utilization(spans, as_of=as_of)
++        self.assertNotIn("some-other-team", res["projects"])
++        self.assertIn("unattributed", res["projects"])
++        self.assertAlmostEqual(res["projects"]["unattributed"]["total_agent_hours"], 1.0, places=3)
++
++    def test_shared_agent_ids_non_additive(self):
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
++        spans = [
++            {
++                "project_id": "agent-branches",
++                "agent_id": "shared-1",
++                "started_at": "2026-10-04T10:00:00Z",
++                "ended_at": "2026-10-04T11:00:00Z",
++            },
++            {
++                "project_id": "agent-dashboard",
++                "agent_id": "shared-1",
++                "started_at": "2026-10-04T10:00:00Z",
++                "ended_at": "2026-10-04T11:00:00Z",
++            },
++        ]
++        res = compute_hourly_utilization(spans, as_of=as_of)
++        self.assertEqual(res["shared_agent_ids"], ["shared-1"])
++        self.assertEqual(res["projects"]["agent-branches"]["unique_agents"], 1)
++        self.assertEqual(res["projects"]["agent-dashboard"]["unique_agents"], 1)
++
++    def test_missing_agent_id_unattributed_hours(self):
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
++        spans = [
++            {
++                "project_id": "agent-branches",
++                "started_at": "2026-10-04T10:00:00Z",
++                "ended_at": "2026-10-04T11:00:00Z",
++            }
++        ]
++        res = compute_hourly_utilization(spans, as_of=as_of)["projects"]["agent-branches"]
++        self.assertAlmostEqual(res["unattributed_agent_hours"], 1.0, places=3)
++        self.assertEqual(res["unique_agents"], 0)
++        self.assertEqual(res["total_agent_hours"], 0.0)
++
++    def test_union_seconds_helper(self):
++        a = datetime.datetime(2026, 10, 4, 10, 0, tzinfo=UTC)
++        b = datetime.datetime(2026, 10, 4, 12, 0, tzinfo=UTC)
++        c = datetime.datetime(2026, 10, 4, 11, 0, tzinfo=UTC)
++        d = datetime.datetime(2026, 10, 4, 13, 0, tzinfo=UTC)
++        self.assertEqual(union_seconds([(a, b), (c, d)]), 3 * 3600)
++
++    def test_registry_shape_rejects_members(self):
++        ok, reason = validate_registry_shape({"teams": [{"id": "t", "members": []}]})
++        self.assertFalse(ok)
++        self.assertIn("members", reason)
++        ok, reason = validate_registry_shape({"teams": [{"id": "t", "agents": []}], "agents": []})
++        self.assertTrue(ok)
++
++    def test_canonical_project_id_aliases_and_fourth_product(self):
++        self.assertEqual(canonical_project_id("agent-quota-launcher"), "quota-launcher")
++        self.assertEqual(canonical_project_id("agent_quota_launcher"), "quota-launcher")
++        self.assertEqual(canonical_project_id("agent-coordination"), "agent-coordination")
++        self.assertEqual(canonical_project_id("agent_coordination"), "agent-coordination")
++        self.assertEqual(canonical_project_id("agent-branches"), "agent-branches")
++        self.assertEqual(canonical_project_id("agent_branches"), "agent-branches")
++        self.assertEqual(canonical_project_id("agent-dashboard"), "agent-dashboard")
++        self.assertEqual(canonical_project_id("agent_dashboard"), "agent-dashboard")
++        self.assertEqual(canonical_project_id("quota-launcher"), "quota-launcher")
++        self.assertEqual(canonical_project_id("unknown-lane"), "unattributed")
++        self.assertEqual(canonical_project_id(None), "unattributed")
++        self.assertEqual(canonical_project_id(""), "unattributed")
++
++    def test_hourly_utilization_aliases_and_fourth_product(self):
++        as_of = datetime.datetime(2026, 10, 4, 12, 0, 0, tzinfo=UTC)
++        spans = [
++            {
++                "project_id": "agent-quota-launcher",
++                "agent_id": "ql-agent-1",
++                "started_at": "2026-10-04T10:00:00Z",
++                "ended_at": "2026-10-04T11:00:00Z",
++            },
++            {
++                "project_id": "agent-coordination",
++                "agent_id": "coord-agent-1",
++                "started_at": "2026-10-04T10:00:00Z",
++                "ended_at": "2026-10-04T11:00:00Z",
++            },
++        ]
++        res = compute_hourly_utilization(spans, as_of=as_of)
++        self.assertIn("quota-launcher", res["projects"])
++        self.assertNotIn("agent-quota-launcher", res["projects"])
++        self.assertEqual(res["projects"]["quota-launcher"]["unique_agents"], 1)
++        self.assertAlmostEqual(res["projects"]["quota-launcher"]["total_agent_hours"], 1.0, places=3)
++        self.assertIn("agent-coordination", res["projects"])
++        self.assertEqual(res["projects"]["agent-coordination"]["unique_agents"], 1)
++        self.assertAlmostEqual(res["projects"]["agent-coordination"]["total_agent_hours"], 1.0, places=3)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()
+diff --git a/tests/test_server.py b/tests/test_server.py
+index adeb8f5..7d99455 100644
+--- a/tests/test_server.py
++++ b/tests/test_server.py
+@@ -2,57 +2,170 @@
+ Unit tests for dashboard preview server endpoints.
+ """
+ 
+-import unittest
+-import urllib.request
++import datetime
++import json
++import os
+ import threading
+ import time
++import unittest
++import urllib.error
++import urllib.request
++
+ from dashboard.server import run_server
+ 
++SCRATCH = os.environ.get("TMPDIR", "/home/alexey/git/agent-dashboard/.local/tmp")
++UTC = datetime.timezone.utc
++
+ 
+ class TestDashboardServer(unittest.TestCase):
+     @classmethod
+     def setUpClass(cls):
+-        # Bind ephemeral port for testing
+-        cls.server = run_server(port=9876, host="127.0.0.1")
++        os.makedirs(SCRATCH, exist_ok=True)
++        cls.spans_path = os.path.join(SCRATCH, "server-spans.json")
++        cls.usage_path = os.path.join(SCRATCH, "server-usage.jsonl")
++        cls.tasks_path = os.path.join(SCRATCH, "server-tasks.json")
++        cls.registry_path = os.path.join(SCRATCH, "server-registry.json")
++        cls.metrics_dir = os.path.join(SCRATCH, "server-metrics")
++        os.makedirs(cls.metrics_dir, exist_ok=True)
++        with open(cls.spans_path, "w", encoding="utf-8") as handle:
++            json.dump(
++                [
++                    {
++                        "project_id": "agent-dashboard",
++                        "agent_id": "srv-1",
++                        "started_at": "2026-10-04T10:00:00Z",
++                        "ended_at": "2026-10-04T11:00:00Z",
++                    }
++                ],
++                handle,
++            )
++        with open(cls.usage_path, "w", encoding="utf-8") as handle:
++            handle.write(json.dumps({
++                "project_id": "agent-dashboard",
++                "provider": "zcode",
++                "conversation_id": "c1",
++                "response_id": "r1",
++                "input_tokens": 4,
++                "output_tokens": 2,
++                "timestamp": "2026-10-04T11:00:00Z",
++            }) + "\n")
++        with open(cls.tasks_path, "w", encoding="utf-8") as handle:
++            json.dump({"tasks": []}, handle)
++        with open(cls.registry_path, "w", encoding="utf-8") as handle:
++            json.dump({"schema_version": 1, "teams": [{"id": "t", "agents": []}], "agents": []}, handle)
++
++        cls._env = {
++            "AGENT_SPANS_PATH": cls.spans_path,
++            "USAGE_EVENTS_PATH": cls.usage_path,
++            "TASKS_JSON_PATH": cls.tasks_path,
++            "TEAM_REGISTRY_PATH": cls.registry_path,
++            "DASHBOARD_METRICS_DIR": cls.metrics_dir,
++            "OPENCODE_USAGE_PATH": os.path.join(cls.metrics_dir, "missing-opencode.json"),
++        }
++        cls._old_env = {}
++        for key, value in cls._env.items():
++            cls._old_env[key] = os.environ.get(key)
++            os.environ[key] = value
++
++        cls.server = run_server(port=0, host="127.0.0.1")
++        cls.port = cls.server.server_address[1]
++        cls.base = f"http://127.0.0.1:{cls.port}"
+         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
+         cls.thread.start()
+-        time.sleep(0.1)
++        time.sleep(0.05)
+ 
+     @classmethod
+     def tearDownClass(cls):
+         cls.server.shutdown()
+         cls.server.server_close()
++        for key, value in cls._old_env.items():
++            if value is None:
++                os.environ.pop(key, None)
++            else:
++                os.environ[key] = value
+ 
+-    def test_health_endpoint(self):
+-        req = urllib.request.Request("http://127.0.0.1:9876/api/health")
++    def _get(self, path):
++        req = urllib.request.Request(self.base + path)
+         with urllib.request.urlopen(req) as resp:
+-            self.assertEqual(resp.status, 200)
+-            data = resp.read()
+-            self.assertIn(b"agent-dashboard", data)
++            return resp.status, resp.headers, resp.read()
++
++    def test_health_endpoint(self):
++        status, _headers, data = self._get("/api/health")
++        self.assertEqual(status, 200)
++        self.assertIn(b"agent-dashboard", data)
+ 
+     def test_html_root_endpoint(self):
+-        req = urllib.request.Request("http://127.0.0.1:9876/")
+-        with urllib.request.urlopen(req) as resp:
+-            self.assertEqual(resp.status, 200)
+-            data = resp.read()
+-            self.assertIn(b"Autonomous Agent Fleet Operational Dashboard", data)
++        status, headers, data = self._get("/")
++        self.assertEqual(status, 200)
++        self.assertIn("text/html", headers.get("Content-Type", ""))
++        self.assertIn(b"Autonomous Agent Fleet Operational Dashboard", data)
++        self.assertNotIn(b"Status: Operational", data)
+ 
+     def test_hourly_endpoint(self):
+-        req = urllib.request.Request("http://127.0.0.1:9876/api/hourly")
+-        with urllib.request.urlopen(req) as resp:
+-            self.assertEqual(resp.status, 200)
+-            data = resp.read()
+-            self.assertIn(b"projects", data)
++        status, _headers, data = self._get("/api/hourly")
++        self.assertEqual(status, 200)
++        self.assertIn(b"projects", data)
++        payload = json.loads(data.decode("utf-8"))
++        self.assertIn("coverage_gaps", payload)
++        self.assertEqual(payload["sources"]["hourly"]["kind"], "observed-history")
++        self.assertEqual(payload["sources"]["registry"]["kind"], "static-registration")
++        self.assertFalse(payload["sources"]["registry"]["used_for_hours"])
++
++    def test_hourly_honors_as_of(self):
++        status, _headers, data = self._get("/api/hourly?as_of=2026-10-04T13:17:43Z")
++        self.assertEqual(status, 200)
++        payload = json.loads(data.decode("utf-8"))
++        self.assertTrue(payload["window_end"].startswith("2026-10-04T13:17:43"))
++        self.assertTrue(payload["window_start"].startswith("2026-10-03T13:17:43"))
++        self.assertEqual(len(payload["projects"]["agent-dashboard"]["hourly_buckets"]), 24)
++
++    def test_hourly_invalid_as_of(self):
++        req = urllib.request.Request(self.base + "/api/hourly?as_of=not-a-date")
++        with self.assertRaises(urllib.error.HTTPError) as ctx:
++            urllib.request.urlopen(req)
++        self.assertEqual(ctx.exception.code, 400)
+ 
+     def test_usage_endpoint(self):
+-        req = urllib.request.Request("http://127.0.0.1:9876/api/usage")
+-        with urllib.request.urlopen(req) as resp:
+-            self.assertEqual(resp.status, 200)
++        status, _headers, data = self._get("/api/usage?as_of=2026-10-04T12:00:00Z")
++        self.assertEqual(status, 200)
++        payload = json.loads(data.decode("utf-8"))
++        self.assertIn("projects", payload)
++        self.assertIn("coverage_gaps", payload)
++        self.assertEqual(payload["projects"]["agent-dashboard"]["total_input_tokens"], 4)
+ 
+     def test_features_endpoint(self):
+-        req = urllib.request.Request("http://127.0.0.1:9876/api/features")
+-        with urllib.request.urlopen(req) as resp:
+-            self.assertEqual(resp.status, 200)
++        status, _headers, data = self._get("/api/features")
++        self.assertEqual(status, 200)
++        payload = json.loads(data.decode("utf-8"))
++        self.assertIn("projects", payload)
++        self.assertIn("coverage_gaps", payload)
++
++    def test_missing_source_coverage_gap(self):
++        old = os.environ.get("AGENT_SPANS_PATH")
++        os.environ["AGENT_SPANS_PATH"] = os.path.join(SCRATCH, "missing-spans.json")
++        try:
++            status, _headers, data = self._get("/api/hourly?as_of=2026-10-04T12:00:00Z")
++            self.assertEqual(status, 200)
++            payload = json.loads(data.decode("utf-8"))
++            self.assertTrue(payload["unknown"])
++            reasons = " ".join(g.get("reason", "") for g in payload["coverage_gaps"]).lower()
++            self.assertTrue("unreadable" in reasons or "missing" in reasons)
++        finally:
++            if old is None:
++                os.environ.pop("AGENT_SPANS_PATH", None)
++            else:
++                os.environ["AGENT_SPANS_PATH"] = old
++
++    def test_static_css_if_present(self):
++        css_path = os.path.join(
++            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static")),
++            "dashboard.css",
++        )
++        if not os.path.isfile(css_path):
++            self.skipTest("static/dashboard.css not present")
++        status, headers, _data = self._get("/dashboard.css")
++        self.assertEqual(status, 200)
++        self.assertIn("text/css", headers.get("Content-Type", ""))
+ 
+ 
+ if __name__ == "__main__":
