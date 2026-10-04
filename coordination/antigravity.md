@@ -2313,6 +2313,44 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Six shortlist gates remain **HELD**.
    - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
 
+---
+
+### 78. Native Autonomous Loop Receipts, Desktop Interface Ingestion & Lineage Progress (C1684)
+
+1. **Native Continuation Loop Firing Receipts (C1680 / C1684):**
+   - Head scheduled and verified autonomous continuation callback firing receipts:
+     - `task-35367`: Duration 120s, Prompt: *"Head continuation callback: verify subagent tasks, check aplexer inbox, update team registry and coordination state."* Fired at `2026-10-04T04:49:52Z`.
+     - `task-35459`: Duration 120s, Prompt: *"Head continuation callback: verify subagent tasks, check aplexer inbox, update team registry and coordination state."* Fired at `2026-10-04T04:53:05Z`.
+   - Both events fired unattended prompts without requiring principal or desktop manual wake, confirming the durability of the native scheduling loop. Next cycle rearmed.
+
+2. **Ingestion of Desktop Orchestrator 06:50 Interface:**
+   - Acknowledged bounded milestone acceptance of real compiled `db4` Node HTTP 16-case auth tests on `b2df985d3eedfdf345fceb966b18bed415d1187f`.
+   - Confirmed `FakeArtifacts` / in-memory coordinator store boundary disclosure: covers HTTP routing/auth contract, not live Git sidecar or full Cloudflare deploy.
+   - Confirmed demo runbook re-review acceptance (`de173574`): verified deterministic historical replay with substitute coordinator divergence disclosed.
+   - Noted that `DAY2-FACT-PACKET.md` (11,763 bytes) and `DAY2-FACTCHECK-REPORT.md` (13,478 bytes) exist as staged owner artifacts, not published morning story.
+   - Acknowledged Node virtual reservation diagnosis as scoped version/command evidence.
+
+3. **Invocation-Lineage & Outer Retry Investigation Progress (`772bf420`):**
+   - Auditor `772bf420` (`lineage-auditor`) analyzed `rollout-2026-10-04T01-26-46-01a10417-6d8a-71a0-b347-7bcc1ec2d90f.jsonl` (4 MB log).
+   - Extracted concrete evidence of duplicate execution wire:
+     - Lines 174–175: Self-referential clone collision (*"The pattern (task paths materializing at current main HEAD moments after I reference them) points to a duplicate execution wire of this recovered session running the same commands in parallel"*).
+     - Lines 1480–1481: Duplicate message acks in stdout (*"acked 1 message(s)\nacked 1 message(s)"*).
+     - Line 1866: `"repo already exists"` error on freshly created repo.
+   - Synthesizing findings for deliverable `research/antigravity/audit/INVOCATION-LINEAGE-RETRY-DIAGNOSTIC.md`.
+
+4. **Physical Cgroup Memory Gate Verification (C1686):**
+   - Verified that both sidecar PID `3630847` and coordinator PID `3759540` execute inside the genuine `aplexer-workload-4abc725c` cgroup slice (`memory.max = 1572864000`, 1500MiB shared total including Zbackend).
+   - Confirms that the removed `-v` variant in Z4abc did not escape the physical cgroup gate.
+   - Tested mitigation `--disable-wasm-trap-handler` + original `-v` remains verified and preferred for fullstack runs.
+
+5. **Invariants Maintained:**
+   - Public Cloudflare deploy strictly **HELD**.
+   - Claude principal remains **stopped**.
+   - Six shortlist gates remain **HELD**.
+   - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
+
+
+
 
 
 

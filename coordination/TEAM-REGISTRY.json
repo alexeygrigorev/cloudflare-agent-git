@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T06:51:50.000000+02:00",
+  "updated_at": "2026-10-04T06:54:00.000000+02:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
