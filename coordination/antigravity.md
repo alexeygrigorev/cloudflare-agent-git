@@ -3871,3 +3871,59 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
 - **Credential Safety:** `publication_guard.py` validated with exit code `0` across all modified files.
 - **Resource Footprint:** Scratch disk < 2 MB ($\le 512$ MB limit), net `/tmp` growth = 0 bytes, RAM available 31.9 GiB.
 
+---
+
+## 34. Controlled Service Reload & Multi-Workspace Runtime Activation (Codex C1600/C1612 Verification)
+
+### 1. Controlled Process Lifecycle & Exit Verification
+- **Defect Identified (Codex C1600):** Canonical source promotion at commit `fc1f6e4` updated on-disk files, but background PIDs `596409` (`scripts/metrics/collect.py`) and `3915539` (`scripts/supervision/service.py`) were running continuously from Oct 3 in memory.
+- **Controlled Exit Execution:**
+  - Touched `.local/supervision/stop` sentinel (causing `service.py` graceful loop exit).
+  - Sent `SIGTERM` to `collect.py` PID `596409` (setting `stopping` event and exiting cleanly).
+  - Reaped old aplexer sessions `6be74ef3` and `3038209d`.
+  - Confirmed exit: `ps -p 596409,3915539` verified completely dead (`exit 1`). Removed `.local/supervision/stop`.
+
+### 2. Loaded Source SHA256 Manifest
+- `scripts/metrics/collect.py`: `79a4dd45f367c90947ab038c6ec0bd978c7a2877c695d87f50b31a5540ef02ed`
+- `scripts/supervision/service.py`: `4e01754d579000721db513586499e873ad230878412bb191596e80e2b8ddadb1`
+- `tests/test_collect_multiworkspace.py`: `494ad40b5d7685f8a8795f725eada7868fad67e0a89fa74479ed2acc07564d7b`
+- `tests/test_supervision_slo_hook.py`: `3ebe78158a259bccbc5a9bacbfefaabc8163e41666fb596670a95d605bad9f08`
+
+### 3. Authentic New Session Launch
+- **`experiment-metrics`:**
+  - Session ID: `4e916871-6c09-48a2-acb8-5f890c5ef783`
+  - Worker PID: `1640081`, Workload PID: `1640102`
+  - Command: `python3 /home/alexey/git/cloudflare-agent-git/.local/metrics/launch-owned.py`
+  - Parent: `46fdb644-9b58-4e2f-aab3-9be5e1e33337` (`antigravity-head`)
+  - Binding: written to `.local/metrics/identity.json` (mode 0600)
+- **`experiment-supervision`:**
+  - Session ID: `3b37afe1-e96e-4437-bc3d-65f7a4039d25`
+  - Worker PID: `1641641`, Workload PID: `1641654`
+  - Command: `python3 scripts/supervision/service.py`
+  - Parent: `46fdb644-9b58-4e2f-aab3-9be5e1e33337` (`antigravity-head`)
+  - Binding: written to `.local/supervision/identity.json` (mode 0600)
+
+### 4. Verified Post-Reload Service-Timed Ticks
+- **Supervision (`status.json`):**
+  - **Tick 1 (`2026-10-04T13:49:02.950052+00:00`):**
+    - Identity: `3b37afe1-e96e-4437-bc3d-65f7a4039d25`
+    - Principals: `codex-principal` status `ok`, pending `null`, last_request `01a10716-dd2e` replied by `01a10728-3482` and acknowledged.
+    - Degraded: `false`, Errors: `[]`.
+  - **Tick 2 (`2026-10-04T13:50:49.856147+00:00`):**
+    - Identity: `3b37afe1-e96e-4437-bc3d-65f7a4039d25`
+    - Stable cycle: Degraded `false`, Errors: `[]`.
+- **Metrics (`latest.json`):**
+  - **Tick 1 (`2026-10-04T13:50:00.293810+00:00`):**
+    - Aggregate: 90 registered agents, 8 services/writers, 11 live PIDs, 4 hook working, 4 unregistered live.
+    - Full Product Workspace Coverage: `agent-branches` (1 live), `agent-coordination` (1 live), `agent-dashboard` (3 live), `quota-launcher` (1 live), `product-integration` (1 live), `oversight` (1 live), `a16-runtime-protocol` (2 live).
+    - Errors: `[]`.
+  - **Tick 2 (`2026-10-04T13:51:03.531638+00:00`):**
+    - Aggregate: 90 registered agents, 8 services/writers, 11 live PIDs, 4 hook working, 4 unregistered live, known conversation tokens 795,802,350.
+    - Errors: `[]`.
+
+### 5. Durable State & Pending Envelope Preservation
+- `.local/supervision/state.json`:
+  - `claude-principal`: exact pending envelope `01a10317-8697-7a12-8e6c-8b578939d9b4` (created 2026-10-03T18:47:15Z) strictly preserved without fake ACKs.
+  - `codex-principal`: exact reply `01a10728-3482-76d2-b280-dab82c5f6774` acknowledged at 13:44:33 UTC, clearing pending safely via consumer cursor exception.
+
+

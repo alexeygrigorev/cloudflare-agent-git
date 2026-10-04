@@ -2934,19 +2934,19 @@
           "tag": "experiment-metrics",
           "role": "service",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
-          "session_id": "664c4677-a60d-44c3-93d5-1b4a1285e3b5",
-          "resumed_from_session_id": "d1b378a3-e22a-45cd-a510-773efe839717",
-          "resumed_at": "2026-10-03T08:42:00.000000+00:00",
-          "recovery_reason": "Owned atomic sample checkpoint reload for pinned OpenCode adapter6b04384; archives/baselines/8766 retained"
+          "session_id": "4e916871-6c09-48a2-acb8-5f890c5ef783",
+          "resumed_from_session_id": "6be74ef3-7d5b-46c9-b1e3-ca91310e3196",
+          "resumed_at": "2026-10-04T13:48:59.000000+00:00",
+          "recovery_reason": "Controlled owner reload for multi-workspace collector promotion; PIDs and hashes verified"
         },
         {
           "tag": "experiment-supervision",
           "role": "service",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
-          "session_id": "2ec63a80-7539-4d4a-8d11-563873706c08",
-          "resumed_from_session_id": "79ac730c-5aac-4423-b492-a0efd6d76285",
-          "resumed_at": "2026-10-03T05:17:57.029807+00:00",
-          "recovery_reason": "Graceful owned checkpoint for exact native ACK reconciliation; state and approved CLI preserved."
+          "session_id": "3b37afe1-e96e-4437-bc3d-65f7a4039d25",
+          "resumed_from_session_id": "3038209d-98ca-4a66-9887-b4a79012d3e2",
+          "resumed_at": "2026-10-04T13:49:02.000000+00:00",
+          "recovery_reason": "Controlled owner reload for supervision SLO and turn-boundary hook integration; pending envelopes preserved"
         },
         {
           "tag": "zcy-dup-research",

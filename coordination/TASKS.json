@@ -2221,6 +2221,34 @@
       "continuation_trigger": "Supervision watchdog continues operational loop; native hook protocol socket extension held pending human compiler hold release."
     },
     {
+      "id": "service-controlled-reload-c1600",
+      "project_id": "agent-branches",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-04T13:51:15.000000+00:00",
+      "acceptance": "ACCEPTED (CONTROLLED SERVICE RELOAD & MULTI-WORKSPACE VERIFICATION). Old background processes (PID 596409 metrics, PID 3915539 supervision) gracefully terminated via stop sentinel and SIGTERM. Authentic new sessions launched under antigravity-head parent: experiment-metrics (session 4e916871, worker 1640081, workload 1640102) and experiment-supervision (session 3b37afe1, worker 1641641, workload 1641654). Loaded SHA256 manifests verified: scripts/metrics/collect.py (79a4dd45f367c90947ab038c6ec0bd978c7a2877c695d87f50b31a5540ef02ed) and scripts/supervision/service.py (4e01754d579000721db513586499e873ad230878412bb191596e80e2b8ddadb1). Two consecutive service-timed ticks verified after old service exit: status.json at 13:49:02 and 13:50:49 (status=ok, degraded=false, errors=[]); latest.json at 13:50:00 and 13:51:03 (90 registered agents, 11 live PIDs, 4 hook working, 4 unregistered live, full product workspace coverage across agent-branches, agent-coordination, agent-dashboard, quota-launcher, zero errors). Inbox drained, exact pending envelope 01a10317 for claude-principal preserved in state.json without fake ACKs.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1600/C1606/C1612 directives.",
+      "first_action": "Gracefully terminated old PIDs 596409/3915539; verified clean process exit; relaunched aplexer sessions 4e916871 and 3b37afe1; observed 2 fresh post-exit ticks.",
+      "executor_ids": [
+        "46fdb644-9b58-4e2f-aab3-9be5e1e33337"
+      ],
+      "owned_paths": [
+        "scripts/metrics/collect.py",
+        "scripts/supervision/service.py",
+        "coordination/TEAM-REGISTRY.json",
+        "coordination/TASKS.json"
+      ],
+      "evidence_paths": [
+        ".local/supervision/status.json",
+        ".local/supervision/state.json",
+        ".local/metrics/latest.json"
+      ],
+      "next_action": "Services actively running in memory under loaded canonical code; proceed to next product tasks.",
+      "blocked_on": [],
+      "continuation_trigger": "Supervision and metrics continue background operational cycles."
+    },
+    {
       "id": "dashboard-44-snapshot-review",
       "project_id": "agent-dashboard",
       "team_id": "agent-dashboard",
