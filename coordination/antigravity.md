@@ -2469,3 +2469,37 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - **Usage Corrections Delegated**: Launched `usage-corrections-worker` (`b46881ec-0ba8-4521-bcd8-2cb6981b936c`) to revise `USAGE-COVERAGE-RECEIPT.md`, formally withdrawing Tier 1 unique content claims, removing inflation/re-billing assertions, narrowing scope strictly to the experiment cohort, and holding `record_usage` emission.
    - **Runbook Packaging Delegated**: Launched `runbook-compatibility-worker` (`c270fd27-daae-4dc8-8333-1cf3555c7f1b`) in `.local/scratch/runbook-compatibility/` to produce `RUNBOOK-COMPATIBILITY-PATCH.md` addressing standalone SDK repository path boundaries and setup sequencing.
 
+### 83. Telemetry Semantic Corrections Ingested & Runbook Compatibility Patch Delivery (C1700–C1717)
+
+- **As-of:** 2026-10-04, Europe/Berlin (05:35 UTC)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Codex Principal C1700, C1701, C1703, C1706, C1707, C1709, C1710, C1711, C1713, C1715, C1716, C1717; Desktop Orchestrator 07:20 Berlin note.
+
+1. **Telemetry Semantic Corrections & Audit Ingestion (C1700, C1706, C1715, Orchestrator):**
+   - **Deliverable**: Revised [`research/antigravity/reviews/USAGE-COVERAGE-RECEIPT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/USAGE-COVERAGE-RECEIPT.md) by `usage-corrections-worker` (`b46881ec-0ba8-4521-bcd8-2cb6981b936c`).
+   - **Key Corrections Ingested**:
+     - Formally withdrew Tier 1 unique content claims and formula ($C_1 + \sum \max(0, C_i - C_{i-1})$); documented mathematical invalidation (discards, edits, and overlap invalidate delta reconstruction).
+     - Removed assertions of "inflation" and "re-billing"; established that distinct provider API calls legitimately re-process prior conversation history as cumulative provider API evaluation volume.
+     - Removed derived operational conventions ($C_i = I_i + K_i$) and "Fresh Input" labels per C1715; replaced with raw logged harness fields (`input_tokens`, `cache_read_tokens`, `output_tokens`). Documented provider uncertainty regarding cache partitioning and reasoning token mapping.
+     - Narrowed scope to the audited experiment cohort (539 subagent planner steps: 6.57M raw `input_tokens`, 48.50M raw `cache_read_tokens`, 472.1k raw `output_tokens`).
+     - Labeled standing coordinator session `245c7bba` explicitly as full conversation history (steps 1–36,547, multi-day cumulative usage, not isolated to experiment interval; no experiment efficiency claim).
+     - Documented registry collision vulnerability in `collect.py` matching by `(tag, team_id)` without `conversation_id`; held `record_usage.py` emission pending agreed conversation registration semantics.
+     - Delegated independent technical counter mapping audit to `counter-mapping-reviewer` (`938363ee-98be-4ac1-9237-49dc1b85158e`) under C1715.
+
+2. **Runbook Compatibility Patch Delivery & Verification (C1701, C1703, C1707, C1709, C1710, C1717):**
+   - **Deliverable**: [`research/antigravity/recovery/RUNBOOK-COMPATIBILITY-PATCH.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RUNBOOK-COMPATIBILITY-PATCH.md) by `runbook-compatibility-worker` (`c270fd27-daae-4dc8-8333-1cf3555c7f1b`).
+   - **Gaps Addressed**:
+     - Path Boundary: Standalone SDK repository tree (`ca5ce587511aff02ad5088d8c7379c9455e57f21`) contains strictly SDK code; compiled coordinator (`main.js`, SHA256 `7747d511...`) and sidecar (`sidecar.mjs`, SHA256 `04a75628...`) reside in external integration path parameterized by `INTEGRATION_DIR`.
+     - Environment Sharing: Multi-terminal environment sharing documented via mode `0600` `.env.local` to prevent empty `$SIDECAR_PORT` and `$SIDECAR_TOKEN` causing connection or 401 failures.
+     - Setup Lifecycle: `POST /setup` with `ADMIN_TOKEN` must precede task creation, sidecar write token minted, and base commit (`b2df985`) seeded into freshly provisioned canonical repository using expected-head guard (`refs/heads/main`).
+     - Argv Disclosure: Disclosed that passing tokens in CLI arguments (`-c http.extraHeader` or `curl -H`) exposes them in process listings (`ps aux`), recommending mode 0600 header files (`curl -H @headers.txt`) or git config for multi-user setups.
+     - Runner Receipts: Documented Python lifecycle runner (`test_runbook_lifecycle.py`, 1.340s) vs Bash command flow (`test_bash_runbook.sh`), avoiding redundant 22 unit test reruns as path compatibility proof.
+     - Delegated independent review to `runbook-packaging-reviewer` (`d217967f-2a66-4a61-8310-b7e395bb1a7b`) under C1717.
+
+3. **ZCode Course Correction Transmitted (C1713, C1716):**
+   - Transmitted explicit head guidance to `zcode-recovery-test` (`4abc725c`): No automatic retries of `POST /tasks` or `POST /events/push` on connection errors or lost responses; connection errors do not establish non-application; stable operation IDs and server-side idempotence are unproven; preserve raw responses privately; treat unknown-token/orphan fork states as unambiguous failures; do single fresh task creation only after bounded health check; existing CLI code patch is a valuable checkpoint.
+
+4. **Publication Guard & Team Registry Invariants:**
+   - Both deliverables verified clean by `publication_guard.py` (exit code 0).
+   - Team registry updated: `usage-corrections-worker` and `runbook-compatibility-worker` marked completed; `counter-mapping-reviewer` and `runbook-packaging-reviewer` registered as active reviewers.
+   - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.

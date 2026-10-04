@@ -1992,14 +1992,16 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/usage-corrections/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T07:25:20+02:00",
           "task": "Thoroughly revise USAGE-COVERAGE-RECEIPT.md per Codex Principal C1700, C1706, and Desktop Orchestrator 07:20 challenges: withdraw Tier 1 unique content claims/formula; remove 'inflation' and 're-billing' assertions; clarify cumulative API call volume vs instantaneous context; narrow scope to audited experiment cohort; clarify ZCode rollout telemetry availability vs attribution; clarify transcript isolation vs prompt reuse; hold record_usage emission pending agreed registration semantics.",
           "owned_paths": [
             "research/antigravity/reviews/USAGE-COVERAGE-RECEIPT.md"
           ],
           "first_tool_evidence": "subagent launched with native conversation ID b46881ec-0ba8-4521-bcd8-2cb6981b936c; inspecting C1700/C1706 directives and revising USAGE-COVERAGE-RECEIPT.md",
-          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)",
+          "completed_at": "2026-10-04T07:33:00+02:00",
+          "deliverable": "research/antigravity/reviews/USAGE-COVERAGE-RECEIPT.md"
         },
         {
           "tag": "runbook-compatibility-worker",
@@ -2011,13 +2013,53 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/runbook-compatibility/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T07:25:20+02:00",
           "task": "Address runbook source path boundaries and environment dependencies per Codex Principal C1701/C1703: document external prototype/* integration path vs standalone SDK repo checkout; document Terminal 1/2 env sharing; document POST /setup canonical repo initialization before task creation; verify 22/22 unit tests; produce RUNBOOK-COMPATIBILITY-PATCH.md.",
           "owned_paths": [
             "research/antigravity/recovery/RUNBOOK-COMPATIBILITY-PATCH.md"
           ],
           "first_tool_evidence": "subagent launched with native conversation ID c270fd27-daae-4dc8-8333-1cf3555c7f1b; auditing 592a8ee README.md and preparing compatibility runbook",
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)",
+          "completed_at": "2026-10-04T07:30:00+02:00",
+          "deliverable": "research/antigravity/recovery/RUNBOOK-COMPATIBILITY-PATCH.md"
+        },
+        {
+          "tag": "counter-mapping-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "938363ee-98be-4ac1-9237-49dc1b85158e",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/counter-mapping-review/",
+          "status": "running",
+          "started_at": "2026-10-04T07:33:58+02:00",
+          "task": "Independent technical audit of Antigravity harness source and Google Gemini API usage metadata to determine exact definitions and partitioning of input_tokens, cache_read_tokens, and output_tokens under C1715.",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-COUNTER-MAPPING.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID 938363ee-98be-4ac1-9237-49dc1b85158e; inspecting harness sources and Gemini API usageMetadata",
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
+        },
+        {
+          "tag": "runbook-packaging-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "d217967f-2a66-4a61-8310-b7e395bb1a7b",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/runbook-packaging-review/",
+          "status": "running",
+          "started_at": "2026-10-04T07:34:05+02:00",
+          "task": "Independent review of RUNBOOK-COMPATIBILITY-PATCH.md against 592a8ee/b2df985, auditing exact lines, path boundaries, argv disclosure, and runner receipts under C1717.",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-RUNBOOK-COMPATIBILITY.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID d217967f-2a66-4a61-8310-b7e395bb1a7b; auditing RUNBOOK-COMPATIBILITY-PATCH.md against 592a8ee:README.md",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]
