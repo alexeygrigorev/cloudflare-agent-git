@@ -4049,3 +4049,32 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
 - Scratch usage: 36 KB for worker, 28 KB for reviewer ($\le 512$ MB limit). Net `/tmp` growth = 0. Cooperative memory $\le 1500$ MB.
 - Production binary `/home/alexey/.local/bin/aplexer` (version `0.1.9`) remains completely untouched and unmodified.
 
+---
+
+## 38. SDK Push-Batch Robust Retry & Idempotence Remediation (AB-SDK-PUSH-BATCH-ROBUST-RETRY)
+
+### 1. Defect Analysis & Epistemic Boundaries (Codex C1535 / C1658 / C1660)
+- **Target Repository & Branch:** `/home/alexey/git/agent-branches` on branch `feat/push-batch-robust-retry` (clean baseline `1a3c544`, 46/46 PASS in 9.837s).
+- **Audit Findings from `REV-SDK-PUSH-BATCH-7DE6836.md`:**
+  1. *Flaw 1 (Partial Failure Discard):* Uncoordinated client-side loop dispatches individual HTTP requests. If Event 1 succeeds but Event 2 fails, Event 1 remains permanently mutated in coordinator state, while `push_batch` raised an unhandled exception and discarded Event 1 receipts.
+  2. *Flaw 2 (Pre-Validation Blind Spot):* Pre-validation checked only list and hex SHA format, ignoring `task_id` / `agent_id` / auth tokens. Malformed subsequent events caused partial state mutations before failing fail-open.
+  3. *Flaw 3 (Idempotence Breakdown & Ring Rollback):* Both mock server and Node coordinator deduplicate pushes against a bounded ring (`seenPushes[agentId]`, cap 16). Replaying an entire batch after 16 intermediate pushes causes head regression, rolling back the agent's head SHA.
+  4. *Flaw 4 (Silent Metadata Dropping):* Deduplication keyed strictly on `${agentId}:${sha}` silently dropped test provenance and intent updates when SHA was unchanged.
+  5. *Flaw 5 (Transient Classification Defect):* Retried only `status_code >= 500`, failing immediately on HTTP 429 (Rate Limiting).
+- **Remediation Architecture (Client-Side Robustness Without Speculative Server Bloat):**
+  * **Structured Exception (`BatchExecutionError`):** Inherits from `AgentBranchesAPIError`. Exposes `succeeded` (receipts of completed pushes), `failed_index`, `original_error`, and `unattempted_events`.
+  * **Upfront Validation & Pre-Resolution:** Validates list structure, 40-character hex SHAs, and pre-resolves `agent_id` for every event *before* any mutating HTTP request is issued. An unresolvable task or credential failure fails closed immediately with `ValueError` prior to network dispatch.
+  * **Forward-Only Transient Retry Policy:** Retries only `AgentBranchesConnectionError`, HTTP 500/502/503/504, and HTTP 429 with exponential backoff on the individual failing event only. Already-succeeded events are NEVER re-sent, preventing head regression and ring eviction rollback.
+  * **Non-Transient Immediate Fail-Closed:** HTTP 400, 401, 403, 404, 409 fail immediately on attempt 0 without retrying.
+
+### 2. Task Registration & Scoped Delegation (C1660)
+- **Task ID:** `ab-sdk-push-batch-robust-retry` registered in `coordination/TASKS.json` under `flock .local/git.lock`.
+- **Ownership:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`).
+- **Scoped Executor:** `sdk-batch-retry-worker` (CID `4b81abc0-d6d8-400a-9d33-9960d7094c84`, mode `headless`, role `executor`).
+- **Target Files:**
+  - `agent_branches/client.py`
+  - `agent_branches/__init__.py`
+  - `tests/test_push_batch_retry.py`
+- **Invariants:** Strictly ZERO `cargo` or `rustc` compiler invocations under human hold; scratch $\le 512$ MB, net `/tmp` growth = 0, cooperative memory $\le 1500$ MB.
+
+

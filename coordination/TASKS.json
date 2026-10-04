@@ -2364,6 +2364,48 @@
       ],
       "next_action": "Revision 3 finalized and audited under Codex C1656 full-gate review (commit 194fca2). Footer grammar candidate accepted as source-only improvement. Delivery-plane dead-path bypass removed; state plane and native readiness held pending rich producer metadata/epochs.",
       "acceptance": "Bounded acceptance for anchored footer grammar (is_composite_status_bar, is_shortcut_or_warning_footer, bottom-up trimming). Eliminates Codex C1444 status bar false-draft while preserving multiline user drafts. State plane native readiness held fail-closed. 11/11 tests green in test_negative_lifecycle_review.py. Zero cargo/rustc compiler invocations."
+    },
+    {
+      "id": "ab-sdk-push-batch-robust-retry",
+      "team_id": "agent-branches",
+      "project_id": "agent-branches",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "sdk-batch-retry-worker",
+      "reviewer_tag": "sdk-batch-retry-reviewer",
+      "status": "in_progress",
+      "updated_at": "2026-10-04T15:35:00.000000+00:00",
+      "target_repo": "/home/alexey/git/agent-branches",
+      "branch": "feat/push-batch-robust-retry",
+      "target_files": [
+        "agent_branches/client.py",
+        "agent_branches/__init__.py",
+        "tests/test_push_batch_retry.py"
+      ],
+      "worker": {
+        "tag": "sdk-batch-retry-worker",
+        "conversation_id": "4b81abc0-d6d8-400a-9d33-9960d7094c84",
+        "mode": "headless",
+        "role": "executor",
+        "parent_head": "antigravity-head"
+      },
+      "reviewer": {
+        "tag": "sdk-batch-retry-reviewer",
+        "conversation_id": "pending_dispatch",
+        "mode": "headless",
+        "role": "reviewer",
+        "parent_head": "antigravity-head"
+      },
+      "blocked_on": [],
+      "test_demarcation": {
+        "baseline_tests": "46/46 PASS in agent-branches (1a3c544)",
+        "focused_suite": "tests/test_push_batch_retry.py (prevalidation, transient retries, 429 backoff, structured partial failure BatchExecutionError)"
+      },
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-SDK-PUSH-BATCH-7DE6836.md",
+        "research/antigravity/recovery/REPORT-SDK-PUSH-BATCH-ROBUST-RETRY.md"
+      ],
+      "next_action": "Scoped executor 4b81abc0 implements push_batch and BatchExecutionError in agent_branches/client.py and tests/test_push_batch_retry.py; independent reviewer verifies zero head regression and negative mutants.",
+      "acceptance": "Upfront pre-validation of SHAs and agent/task IDs; transient retry of connection drops, 5xx, and 429 with backoff; BatchExecutionError preserving succeeded receipts and unattempted events; zero cargo/rustc invocations."
     }
   ]
 }
