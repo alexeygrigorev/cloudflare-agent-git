@@ -838,6 +838,13 @@
         "coord-independent-review"
       ],
       "evidence_status": "Actualheadlaunched, implementation/revieweracceptedresults pending"
+    },
+    {
+      "path": "experiment/human-cloudflare-budget-20261004.txt",
+      "meaning": "USD5 TOTAL monthly all-cloud budget including existing plan; local/SSH default; cost report Oct5; no new paid/cloud agent deployment",
+      "task_ids": [
+        "cloud-total-budget-monitor"
+      ]
     }
   ],
   "legacy_task_ids": [
@@ -932,7 +939,8 @@
     "coord-desktop-hetzner-test",
     "coord-dashboard-launcher-hosts",
     "coord-private-backup-dogfood",
-    "coord-independent-review"
+    "coord-independent-review",
+    "cloud-total-budget-monitor"
   ],
   "source_policy": "Every preserved human heading indexed. Latest desktop three-project request recorded separately by root. Semantic task mapping requires owner review.",
   "semantic_reconciliation": "All48 preserved source sections classified and linked to concrete tasks/constraints/questions/supersession. Multi-ask source1 split across research, social, recovery and native team lifecycle. Missing original asks explicitly restored as four audit tasks."

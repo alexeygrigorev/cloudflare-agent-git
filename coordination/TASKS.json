@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T11:32:00.445175+00:00",
+  "updated_at": "2026-10-04T12:17:05.772764+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -475,7 +475,7 @@
         "research/codex/session-lifecycle-actions-20261004.md"
       ],
       "blocked_on": [],
-      "next_action": "Public sibling PocketShell-io/agent-bus65b3c27→06addf9→reviewf3295f9 started, actualhead81ACK/3delegateUUIDfirsttools read. Core616 durability/scopedcredential/lifecycle fix active; conditionalreview is REQUEST_CHANGES, real no-session modeltask/outcome dogfood pending, headowns nextcheckpoint. Principal12unneeded sessions archivedthenclosednative/poststatusverified; unrelateddetailsprivate, protecteddraft/services/pendingwork retained. Ant16closure ownerreport read but history/RAMscope challenged. Launcher6be4 ACKs core2release/QLCORE003repair, no unreviewed launchacceptance. Current total5USD cloudbudget forwarded4heads+publication, optionalcloudheld unknownusage, SSH/localworkcontinues. Nextreview realcorrectedcorepin+independentnegatives+actualbusconsumer task, notrootapproval.",
+      "next_action": "Public sibling PocketShell-io/agent-bus65b3c27\u219206addf9\u2192reviewf3295f9 started, actualhead81ACK/3delegateUUIDfirsttools read. Core616 durability/scopedcredential/lifecycle fix active; conditionalreview is REQUEST_CHANGES, real no-session modeltask/outcome dogfood pending, headowns nextcheckpoint. Principal12unneeded sessions archivedthenclosednative/poststatusverified; unrelateddetailsprivate, protecteddraft/services/pendingwork retained. Ant16closure ownerreport read but history/RAMscope challenged. Launcher6be4 ACKs core2release/QLCORE003repair, no unreviewed launchacceptance. Current total5USD cloudbudget forwarded4heads+publication, optionalcloudheld unknownusage, SSH/localworkcontinues. Nextreview realcorrectedcorepin+independentnegatives+actualbusconsumer task, notrootapproval.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
       "continuation_trigger": "Core616 completion/failure -> existing head81 scoped review and actual isolated sessionless bus-consumer task; adaptercd07 independently finishes scoped host evidence. Head event/action-required already observed after reviewf869 exit. Principal source/claim checks on actual artifact, meaningful milestones; lifecycle remainingretention questions -> Ant scoped release/reason."
@@ -765,7 +765,7 @@
       ],
       "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
       "model": "gemini-3.1-pro-high",
-      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 · PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
+      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 \u00b7 PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
     },
     {
       "id": "publication-release-verification",
@@ -1199,7 +1199,7 @@
       "assignment_ack": "Launched per Desktop Orchestrator 12:50 Berlin and Codex Principal C1818 directives. Independent technical audit of container-and-patch-workflows.md, examining production container/microVM paradigms (OpenHands, SWE-bench, Devin, Daytona, Modal, E2B), network/credential egress boundaries, single-synthesizer and worktree integration patterns, and unsteered buyer adoption guidance.",
       "next_action": "Independent review completed in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md (verdict: BOUNDED ACCEPTANCE). Deliverables landed on origin/main; findings ready for principal integration.",
       "acceptance": "Independent review deliverable in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md with clear verdict, rigorous technical verification across all 10 evaluation dimensions, and clean publication guard.",
-      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE — TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
+      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE \u2014 TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
     },
     {
       "id": "ab-safe-main-restore",
@@ -2054,6 +2054,35 @@
         "Actualhead/delegatefirstaction andaccepted implementation pending"
       ],
       "continuation_trigger": "Headcompletion/dependency/failure->nextusefulownedtask; genuineprincipal monitors; no routinedesktopapproval"
+    },
+    {
+      "id": "cloud-total-budget-monitor",
+      "project_id": "agent-coordination",
+      "team_id": "agent-coordination",
+      "owner_tag": "codex-principal",
+      "status": "running",
+      "updated_at": "2026-10-04T12:17:05.772764+00:00",
+      "acceptance": "All four heads/publication semantic budget ACK; combined all-cloud account evidence/unknown coverage in Oct5 report; optional cloud spending fail-closed; no billing/service mutation.",
+      "assignment_ack": "Direct new human budget enacted d26362d; principal monitoring owner receives root genuine reply. Per-head semantic ACK pending verification.",
+      "first_action": "Read exact budget, implemented read-only aggregate assessment and deny optional-cloud admission scripts/delivery/cloud_budget.py; private assessment records unknown current billing.",
+      "executor_ids": [
+        "81e8010c-89e4-478b-be3a-4ee6991607f3"
+      ],
+      "owned_paths": [
+        "scripts/delivery/cloud_budget.py",
+        "scripts/delivery/test_cloud_budget.py"
+      ],
+      "evidence_paths": [
+        "experiment/human-cloudflare-budget-20261004.txt",
+        "research/orchestrator/cloudflare-budget-20261004.md"
+      ],
+      "tests": "3 negative budget tests; combined overage, unknown, invalid/duplicate costs, deny despite complete5USD covered",
+      "next_action": "Principal obtain actual all-four-head/publication semantic ACKs and integrate admission check into launch/host contracts. Billing account read-only coverage remains unknown; report it honestly.",
+      "blocked_on": [
+        "Actual combined account billing evidence unavailable",
+        "Launcher/dashboard integration of assessment not yet verified"
+      ],
+      "continuation_trigger": "Known coverage/cost change -> assess and publish sanitized report; no new cloud route admitted without direct human revised budget."
     }
   ]
 }
