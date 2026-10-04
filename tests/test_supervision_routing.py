@@ -707,6 +707,116 @@ class SupervisionRoutingTests(unittest.TestCase):
         self.assertEqual(merged['workspace'], '/home/alexey/git/agent-dashboard', "Nonempty workspace from project must be preserved")
 
 
+    def test_16_conflicts_persistently_reported_on_no_send_cycles(self):
+        """Test 16 (C1647): Conflicting entities are diagnosed and reported degraded on every cycle, including when pending message or cooldown inhibits sending."""
+        with tempfile.TemporaryDirectory(dir=SCRATCH_BASE) as temp_dir:
+            temp_path = pathlib.Path(temp_dir)
+            root = temp_path / 'repo'
+            private = temp_path / 'private'
+            root.mkdir(parents=True, exist_ok=True)
+            private.mkdir(parents=True, exist_ok=True)
+            (root / 'coordination').mkdir(parents=True, exist_ok=True)
+            pinned = private / 'aplexer-pinned'
+            pinned.write_bytes(pathlib.Path(service.BINARY).read_bytes())
+
+            registry_content = {
+                'teams': [
+                    {
+                        'id': 'quota-launcher',
+                        'name': 'Old QL Team',
+                        'head_tag': 'old-ql-head',
+                        'workspace': '/home/alexey/git/cloudflare-agent-git',
+                        'principal_tags': ['claude-principal']
+                    }
+                ],
+                'projects': [
+                    {
+                        'id': 'agent-quota-launcher',  # Conflicting with quota-launcher!
+                        'name': 'New QL Project',
+                        'head_tag': 'quota-launcher-head',
+                        'workspace': '/home/alexey/git/agent-quota-launcher',
+                        'principal_tags': ['codex-principal']
+                    }
+                ]
+            }
+
+            tasks_content = {'tasks': []}
+            (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps(registry_content))
+            (root / 'coordination/TASKS.json').write_text(json.dumps(tasks_content))
+
+            # Simulate state with existing pending message and active cooldown (so send gate will NOT open)
+            initial_state = {
+                'codex-principal': {
+                    'sent_event': 'some-digest',
+                    'cooldown_until': 9999999999.0,
+                    'pending': {
+                        'id': 'pending-msg-1',
+                        'sender_id': 'sup-test-16',
+                        'event': 'some-digest',
+                        'delivery': 'inbox',
+                        'created_at': '2026-10-04T12:00:00Z'
+                    }
+                }
+            }
+            (private / 'state.json').write_text(json.dumps(initial_state))
+
+            cycles = [0]
+            def fake_cmd(args, timeout=20):
+                words = [a for a in args[1:] if not a.startswith('-')]
+                if words[:1] == ['whoami']:
+                    return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-test-16'})
+                if '--help' in args or 'help' in args:
+                    return '  --idempotency-key'
+                if words[:1] == ['list']:
+                    cycles[0] += 1
+                    if cycles[0] >= 2:
+                        (private / 'stop').write_text('stop')
+                    return json.dumps([{
+                        'workspace': str(root),
+                        'tag': 'codex-principal',
+                        'id': 'sess-codex-1',
+                        'reported_state': 'idle',
+                        'workload_pid': str(os.getpid())
+                    }])
+                if 'inbox' in args:
+                    return json.dumps({'messages': []})
+                if 'capture' in args:
+                    return "› Ask Codex to do anything\n  GPT-6.1 Context 50% left"
+                if args[0] == 'quse':
+                    return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 85}}}})
+                return '{}'
+
+            real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+            real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
+            real_defaults = service.recorded_send.__defaults__
+
+            try:
+                service.command = fake_cmd
+                service.recorded_send.__defaults__ = (fake_cmd,)
+                service.time = type('T', (), {
+                    'time': staticmethod(lambda: 2000.0),
+                    'sleep': staticmethod(lambda s: None)
+                })()
+                service.ROOT = root
+                service.PRIVATE = private
+                service.BINARY = str(pinned)
+
+                # Run two cycles with pending/cooldown preventing message sends
+                service.run()
+
+                status_path = private / 'status.json'
+                self.assertTrue(status_path.exists())
+                status_data = json.loads(status_path.read_text())
+                self.assertTrue(status_data.get('degraded'), "Even on no-send cycles, conflicting entities must trigger degraded=True")
+                self.assertIn('conflicting_entities', status_data)
+                self.assertIn('agent-quota-launcher', status_data['conflicting_entities'])
+                self.assertTrue(any('conflicting entity registrations' in err for err in status_data.get('errors', [])))
+            finally:
+                service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
+                service.recorded_send.__defaults__ = real_defaults
+                service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
+
+
 if __name__ == '__main__':
     unittest.main()
 

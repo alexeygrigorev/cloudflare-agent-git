@@ -893,18 +893,18 @@ def run():
                         report['actions'].append({'kind':'pending-reconciled-native-ack', 'principal':tag, 'message_id':pending['id']})
                         pending = None
 
+                # Determine authoritative and conflicting entities for this principal on every cycle (C1647)
+                principal_entities = [e for e in entities if tag in e.get('principal_tags', []) and not (e.get('conflict') and e['conflict'].get('detected'))]
+                conflicting_entities = [e for e in entities if tag in e.get('principal_tags', []) and e.get('conflict') and e['conflict'].get('detected')]
+                if conflicting_entities:
+                    report['conflicting_entities'] = [c['id'] for c in conflicting_entities]
+                    report['degraded'] = True
+                    report['errors'].append(f"principal {tag} has conflicting entity registrations: {', '.join(c['id'] for c in conflicting_entities)}")
+
                 # At most one envelope per task revision, sparse Claude min 30m; no hourly busywork.
                 cooldown = old.get('cooldown_until', 0)
                 if active and not pending and (old.get('sent_event') != event_key) and time.time() >= cooldown:
                     if item.get('alive'):
-                        # Filter unconflicted authoritative entities for this principal (C1636)
-                        principal_entities = [e for e in entities if tag in e.get('principal_tags', []) and not (e.get('conflict') and e['conflict'].get('detected'))]
-                        conflicting_entities = [e for e in entities if tag in e.get('principal_tags', []) and e.get('conflict') and e['conflict'].get('detected')]
-                        if conflicting_entities:
-                            report['conflicting_entities'] = [c['id'] for c in conflicting_entities]
-                            report['degraded'] = True
-                            report['errors'].append(f"principal {tag} has conflicting entity registrations: {', '.join(c['id'] for c in conflicting_entities)}")
-
                         selected = []
                         seen_selected = set()
                         for t in active:
