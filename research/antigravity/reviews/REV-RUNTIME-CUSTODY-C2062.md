@@ -1,13 +1,13 @@
 # Independent Challenger Review: Runtime Custody & Quota Reservation Architecture (Codex C2062)
 
 - **Reviewer:** Independent Challenger (tag: `self-org-challenger`, session `393b33c1`)
-- **Authority:** Dispatched by `antigravity-head` (`245c7bba-9a7b-45c1-87a7-4537f289f9a5`) under direct human steering (`experiment/human-self-organization-20261004.txt`) and Codex Principal C2059/C2062 directives.
+- **Authority:** Dispatched by native project head `antigravity-head` (aplexer session `46fdb644-9b58-4e2f-aab3-9be5e1e33337`; harness session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`) under direct human steering (`experiment/human-self-organization-20261004.txt`) and Codex Principal C2059/C2062/C2068 directives.
+- **Target Repository & Pinned Commit:** `/home/alexey/git/cloudflare-agent-git` at commit `137d52e` (with review commit `f4e470d` on `origin/main`)
 - **Audited Deliverables:**
   - `research/antigravity/tooling/self_org/runtime_custody.py` (CGroupV2Custody, ProviderQuotaReservation, BusSocketConnector)
   - `tests/test_runtime_custody.py` (11-test unit suite covering core containment, quota gates, socket framing, and C2062 remediations — 11/11 PASS)
   - `research/antigravity/tooling/self_org/child_adapter.py` (Decoupled child execution bridge with held live model execution)
   - `coordination/TASKS.json` (Task prerequisite tracking and status demarcation)
-- **Target Repository:** `/home/alexey/git/cloudflare-agent-git`
 - **Date:** 2026-10-04 (Europe/Berlin)
 - **Verdict:** **BOUNDED ACCEPTANCE**
 
@@ -48,6 +48,7 @@ The candidate architecture is granted **BOUNDED ACCEPTANCE** based on the follow
    - Socket protocol uses a robust 4-byte big-endian length-prefixed binary framing format with a 16 MiB payload ceiling.
 
 4. **Demarcated Epistemic Boundary (Why Bounded Acceptance):**
+   - **Local Concurrency Cap vs Upstream Quota Reservation:** In `runtime_custody.py`, `max_active_units_per_provider` acts strictly as an in-process/local-host concurrent-lease concurrency ceiling. It is NOT upstream provider token consumption or real-time API capacity debit. Real provider admission belongs in the canonical `agent-quota-launcher` queue, which remains the authoritative admission integration path.
    - **Mock CGroup Tree:** Unit tests run against synthetic mock cgroup directory trees in scratch; real host kernel cgroup v2 tree integration requires root or systemd user slice delegation (`systemd-run --user --scope`).
    - **Loopback Socket Bus:** Bus connector tests run against an ephemeral in-process thread socket server, not a multi-host production bus daemon.
    - **Live Model Execution Strictly HELD:** In `child_adapter.py`, `execute_zcode_headless` explicitly raises `NotImplementedError` per Codex C2053/C2054/C2062. Zero unauthorized model calls can be emitted.
