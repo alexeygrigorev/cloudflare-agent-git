@@ -317,5 +317,48 @@ class Safety(unittest.TestCase):
     service.recorded_send.__defaults__ = real_defaults
     service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
 
+  def test_check_pending_slo_direct(self):
+    """Test check_pending_slo calculation and precise blocking reasons."""
+    t_now = 1000.0
+    pending_fresh = {'id': 'm1', 'created_at': '1970-01-01T00:15:00+00:00'} # age = 100s
+    pending_old = {'id': 'm2', 'created_at': '1970-01-01T00:05:00+00:00'} # age = 700s
+    item = {'alive': True, 'composer': 'empty', 'reported_state': 'idle', 'reason': 'idle-empty'}
+
+    is_beyond, dur, slo, reason = service.check_pending_slo(pending_fresh, 'codex-principal', item, now_ts=t_now)
+    self.assertFalse(is_beyond)
+    self.assertEqual(dur, 100.0)
+    self.assertEqual(slo, 300)
+    self.assertIsNone(reason)
+
+    is_beyond, dur, slo, reason = service.check_pending_slo(pending_old, 'codex-principal', item, now_ts=t_now)
+    self.assertTrue(is_beyond)
+    self.assertEqual(dur, 700.0)
+    self.assertEqual(slo, 300)
+
+  def test_parse_and_validate_turn_hook_event(self):
+    """Test parsing and validation of authoritative turn-boundary hook events."""
+    valid_event = {
+        'type': 'turn_complete',
+        'state': 'idle-empty',
+        'prompt_seq': 42,
+        'session_id': '93cf28f2-2872-411c-a5da-179e1b83b59f',
+        'engine': 'zcodex',
+        'timestamp_ms': 1791118000000,
+        'workload_pid': 12345,
+        'active_children': 0,
+        'composer_state': 'empty'
+    }
+    parsed = service.parse_and_validate_turn_hook_event(valid_event)
+    self.assertTrue(parsed['syntax_valid'])
+    self.assertTrue(parsed['authenticated_channel_required'])
+    self.assertEqual(parsed['engine'], 'zcodex')
+    self.assertEqual(parsed['prompt_seq'], 42)
+
+    with self.assertRaises(ValueError):
+        service.parse_and_validate_turn_hook_event({**valid_event, 'engine': 'unauthorized_engine'})
+
+    with self.assertRaises(ValueError):
+        service.parse_and_validate_turn_hook_event({**valid_event, 'active_children': 2})
+
 if __name__=='__main__':unittest.main()
 

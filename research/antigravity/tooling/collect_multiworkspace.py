@@ -55,6 +55,26 @@ DEFAULT_PRODUCT_WORKSPACES = [
 ]
 PRODUCT_WORKSPACES = list(DEFAULT_PRODUCT_WORKSPACES)
 
+CANONICAL_GIT_ROOT = ROOT.parent.resolve()
+
+CANONICAL_PRODUCT_REPO_NAMES = {
+    'cloudflare-agent-git',
+    'agent-branches',
+    'agent-dashboard',
+    'agent-quota-launcher',
+    'agent-coordination',
+    'agent-bus',
+    'aplexer',
+    'cloudflare-aplexer-protocol',
+}
+
+CANONICAL_WORKTREE_PREFIXES = (
+    'agent-branches-',
+    'agent-dashboard-',
+    'agent-coordination-',
+    'quota-launcher-',
+)
+
 
 def get_product_workspaces(root=None, registry=None, catalog=None):
     """Resolve all active product workspaces including ROOT, configured defaults,
@@ -103,25 +123,6 @@ def get_product_workspaces(root=None, registry=None, catalog=None):
                 try: ws.add(str(pathlib.Path(a['workspace']).resolve()))
                 except Exception: ws.add(str(a['workspace']))
 
-    CANONICAL_GIT_ROOT = ROOT.parent.resolve()
-
-    CANONICAL_PRODUCT_REPO_NAMES = {
-        'cloudflare-agent-git',
-        'agent-branches',
-        'agent-dashboard',
-        'agent-quota-launcher',
-        'agent-coordination',
-        'agent-bus',
-        'aplexer',
-        'cloudflare-aplexer-protocol',
-    }
-
-    CANONICAL_WORKTREE_PREFIXES = (
-        'agent-branches-',
-        'agent-dashboard-',
-        'agent-coordination-',
-        'quota-launcher-',
-    )
 
     if isinstance(catalog, list):
         for s in catalog:
@@ -134,13 +135,64 @@ def get_product_workspaces(root=None, registry=None, catalog=None):
                     continue
                 # Path authorization boundary:
                 # Must be an authorized product workspace directly under CANONICAL_GIT_ROOT (/home/alexey/git/)
-                if sw_path.parent == CANONICAL_GIT_ROOT:
+                if sw_path.parent == CANONICAL_GIT_ROOT or sw_path == ROOT:
                     name = sw_path.name
                     if name in CANONICAL_PRODUCT_REPO_NAMES or any(name.startswith(pfx) for pfx in CANONICAL_WORKTREE_PREFIXES):
+                        # Worktree Provenance Gap fix (32b5 Review):
+                        # If sw_path exists on disk, enforce authentic Git provenance.
+                        # Reject non-git scratch directories or worktrees pointing to unauthorized repos.
+                        if sw_path.exists():
+                            if not verify_git_provenance(sw_path, CANONICAL_GIT_ROOT, CANONICAL_PRODUCT_REPO_NAMES):
+                                continue
                         ws.add(str(sw_path))
             except Exception:
                 pass
     return ws
+
+
+def verify_git_provenance(sw_path: pathlib.Path, canonical_root: pathlib.Path = CANONICAL_GIT_ROOT, canonical_repos: set = None) -> bool:
+    """Verify that sw_path has authentic Git provenance:
+    1. If it has a .git directory containing HEAD, it is an authentic standalone repo.
+       Its name must be in canonical_repos or sw_path == ROOT.
+    2. If it has a .git file (linked worktree):
+       - It must contain 'gitdir: <path>'.
+       - That gitdir must contain a 'commondir' file.
+       - That commondir must resolve to a .git directory of an authorized canonical repo.
+       - The parent repository must reside under canonical_root and have a name in canonical_repos.
+    Any non-git directory, corrupt pointer, or external gitdir is strictly rejected.
+    """
+    if canonical_repos is None:
+        canonical_repos = CANONICAL_PRODUCT_REPO_NAMES
+    try:
+        git_entry = sw_path / '.git'
+        if not git_entry.exists():
+            return False
+        if git_entry.is_dir():
+            return (git_entry / 'HEAD').is_file() and (sw_path.name in canonical_repos or sw_path == ROOT)
+        if git_entry.is_file():
+            raw = git_entry.read_text(encoding='utf-8', errors='replace').strip()
+            if not raw.startswith('gitdir:'):
+                return False
+            gitdir_str = raw[len('gitdir:'):].strip()
+            gitdir_path = (sw_path / gitdir_str).resolve()
+            if not gitdir_path.is_dir():
+                return False
+            commondir_file = gitdir_path / 'commondir'
+            if not commondir_file.is_file():
+                return False
+            commondir_str = commondir_file.read_text(encoding='utf-8', errors='replace').strip()
+            commondir_path = (gitdir_path / commondir_str).resolve()
+            if not (commondir_path / 'HEAD').is_file():
+                return False
+            parent_repo = commondir_path.parent.resolve()
+            if parent_repo.parent != canonical_root and parent_repo != ROOT:
+                return False
+            if parent_repo.name not in canonical_repos and parent_repo != ROOT:
+                return False
+            return True
+    except Exception:
+        return False
+    return False
 
 
 def read_json(p, default=None):

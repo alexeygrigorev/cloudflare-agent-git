@@ -2169,24 +2169,56 @@
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
       "status": "done",
-      "updated_at": "2026-10-04T13:03:00.000000+00:00",
-      "acceptance": "ACCEPTED (OFFLINE REPRO & EXTENSION CANDIDATE). 6/6 tests pass in tests/test_collect_multiworkspace.py. Discovers sessions across product workspaces (/home/alexey/git/{cloudflare-agent-git,agent-branches,agent-dashboard,agent-quota-launcher,agent-coordination,agent-bus}). Codex C1504 negative resolved: canonical repo name matching and worktree prefixes select agent-bus while strictly rejecting lookalike substring directories (unrelated-agent-dashboard-notes). Reconciles workspace+generation+role/CID/parent; unknown tokens remain null; caches not double counted; zero retroactive fake 24h data. Canonical STORE remains unmodified; candidate collector not invoked into live runtime.",
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C1444/C1448/C1454/C1504. Delegated to multiworkspace-collector-worker (c3556ba9-e36e-4ff5-873d-f71083da5e1d) in .local/scratch/multiworkspace-collector/.",
+      "updated_at": "2026-10-04T13:26:00.000000+00:00",
+      "acceptance": "ACCEPTED (MULTI-WORKSPACE COLLECTOR PROMOTED & VERIFIED). Discovers sessions across product workspaces (/home/alexey/git/{cloudflare-agent-git,agent-branches,agent-dashboard,agent-quota-launcher,agent-coordination,agent-bus}). Worktree provenance gap closed (verify_git_provenance checks .git/HEAD and linked worktree commondir pointers back to CANONICAL_GIT_ROOT). All 7 unit tests pass in tests/test_collect_multiworkspace.py. All 43 canonical metrics tests pass in scripts/metrics/. Canonical integration completed in scripts/metrics/collect.py under root lease release 01a1070c-6bbd and Codex C1533/C1534/C1711. >=2 post-reload ticks observed: Tick 1 (13:25:34) discovered 91 registered agents, 12 pid_live, 4 hook_working, 63 sessions in other product workspaces; Tick 2 (13:25:52) confirmed stable and clean (errors: []).",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1444/C1448/C1454/C1504/C1516/C1533/C1534. Delegated to multiworkspace-collector-worker (c3556ba9) and sm-candidate-reviewer (32b5c84d).",
       "first_action": "Subagent c3556ba9 launched; audits ROOT filter in scripts/metrics/collect.py; implements isolated candidate collect_multiworkspace.py.",
       "executor_ids": [
-        "c3556ba9-e36e-4ff5-873d-f71083da5e1d"
+        "c3556ba9-e36e-4ff5-873d-f71083da5e1d",
+        "32b5c84d-5f16-4bd9-9be6-764ddf9c02dc"
       ],
       "owned_paths": [
+        "scripts/metrics/collect.py",
         "research/antigravity/tooling/collect_multiworkspace.py",
         "tests/test_collect_multiworkspace.py"
       ],
       "evidence_paths": [
         "tests/test_collect_multiworkspace.py",
-        "research/antigravity/recovery/REPORT-MULTIWORKSPACE-COLLECTOR-EXTENSION.md"
+        "research/antigravity/recovery/REPORT-MULTIWORKSPACE-COLLECTOR-EXTENSION.md",
+        "research/antigravity/reviews/REV-SM-CANDIDATES-3569052.md"
       ],
-      "next_action": "Candidate tool and test suite completed. Collector remains an offline research tool until reviewed and formally scheduled for runtime service integration.",
+      "next_action": "Promoted to canonical scripts/metrics/collect.py. Verified >=2 post-reload ticks with multi-workspace discovery and zero errors.",
       "blocked_on": [],
-      "continuation_trigger": "Metrics service review -> safe durable integration without competing daemons."
+      "continuation_trigger": "Continuous metrics loop updates latest.json and daily snapshots."
+    },
+    {
+      "id": "supervision-slo-hook-candidate",
+      "project_id": "agent-branches",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-04T13:26:00.000000+00:00",
+      "acceptance": "ACCEPTED (CANONICAL INTEGRATION & VERIFIED). Candidate 1737 (research/antigravity/tooling/supervision/service_candidate.py), test suite (tests/test_supervision_slo_hook.py, 7/7 PASS), and provenance report (REPORT-SUPERVISION-SLO-HOOK-PROVENANCE.md) audited and independently reviewed by supervision-slo-hook-reviewer (REV-SUPERVISION-SLO-HOOK-CANDIDATE.md, VERDICT ACCEPT, 4/4 mutants killed). Root lease released under 01a1070c-6bbd and accepted under 01a1070d-4ccd. Canonical integration promoted to scripts/supervision/service.py and scripts/supervision/test_service.py. All 47 canonical supervision tests pass. Check pending SLO enforces truthful blocked_beyond_slo status and degraded=True on timeout; strictly refuses fake ACKs; preserves pending envelope; safely clears on exact_ack consumer cursor exceptions; preserves old durable state across missing/ambiguous principal sessions; demarcates turn-boundary hook event validation as syntax-only requiring authenticated transport. Zero cargo/rustc builds under hold.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1516/C1521/C1530/C1532/C1533/C1534. Delegated to supervision-slo-hook-worker (17370d16) and supervision-slo-hook-reviewer (32c71bd6).",
+      "first_action": "Subagent 17370d16 launched; audits pending NOTREADY and cursor retry; implements service_candidate.py and test_supervision_slo_hook.py.",
+      "executor_ids": [
+        "17370d16-a699-4515-9ddc-a60731630f51",
+        "32c71bd6-1ee3-4268-9068-963d2646cdda"
+      ],
+      "owned_paths": [
+        "scripts/supervision/service.py",
+        "scripts/supervision/test_service.py",
+        "research/antigravity/tooling/supervision/service_candidate.py",
+        "tests/test_supervision_slo_hook.py"
+      ],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-SUPERVISION-SLO-HOOK-PROVENANCE.md",
+        "research/antigravity/reviews/REV-SUPERVISION-SLO-HOOK-CANDIDATE.md",
+        "tests/test_supervision_slo_hook.py"
+      ],
+      "next_action": "Canonical integration complete and verified. Supervision watchdog actively ticking (status.json updated, pending tracking intact).",
+      "blocked_on": [],
+      "continuation_trigger": "Supervision watchdog continues operational loop; native hook protocol socket extension held pending human compiler hold release."
     },
     {
       "id": "dashboard-44-snapshot-review",

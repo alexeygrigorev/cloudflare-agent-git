@@ -402,6 +402,59 @@ class TestCollectMultiworkspace(unittest.TestCase):
         self.assertNotIn('/tmp/agent-bus', res,
                          "Temporary directory matching basename must not be selected")
 
+    def test_worktree_provenance_verification(self):
+        """Test Worktree Provenance Gap fix (32b5 Review):
+        1. Standalone repo with .git/HEAD -> verified True.
+        2. Linked worktree with .git file pointing to gitdir with commondir resolving
+           to authorized canonical parent repo -> verified True.
+        3. Scratch / lookalike directory matching worktree prefix without .git -> rejected False.
+        4. Linked worktree pointing to unauthorized external gitdir -> rejected False.
+        5. Corrupted .git file (missing gitdir or invalid format) -> rejected False.
+        """
+        # 1. Standalone repo
+        repo_dir = self.base / 'agent-dashboard'
+        (repo_dir / '.git').mkdir(parents=True, exist_ok=True)
+        (repo_dir / '.git/HEAD').write_text('ref: refs/heads/main\n')
+        self.assertTrue(cmw.verify_git_provenance(repo_dir, canonical_root=self.base))
+
+        # 2. Linked worktree
+        parent_repo = self.base / 'cloudflare-agent-git'
+        (parent_repo / '.git').mkdir(parents=True, exist_ok=True)
+        (parent_repo / '.git/HEAD').write_text('ref: refs/heads/main\n')
+        worktrees_dir = parent_repo / '.git/worktrees/agent-branches-wt1'
+        worktrees_dir.mkdir(parents=True, exist_ok=True)
+        (worktrees_dir / 'commondir').write_text('../..\n')
+        (worktrees_dir / 'gitdir').write_text(str(self.base / 'agent-branches-wt1/.git') + '\n')
+
+        wt_dir = self.base / 'agent-branches-wt1'
+        wt_dir.mkdir(parents=True, exist_ok=True)
+        (wt_dir / '.git').write_text(f'gitdir: {worktrees_dir}\n')
+        self.assertTrue(cmw.verify_git_provenance(wt_dir, canonical_root=self.base))
+
+        # 3. Scratch directory matching prefix without .git
+        scratch_dir = self.base / 'agent-branches-scratch-notes'
+        scratch_dir.mkdir(parents=True, exist_ok=True)
+        self.assertFalse(cmw.verify_git_provenance(scratch_dir, canonical_root=self.base))
+
+        # 4. External unauthorized parent repo
+        ext_parent = self.base / 'external-unauthorized-repo'
+        (ext_parent / '.git').mkdir(parents=True, exist_ok=True)
+        (ext_parent / '.git/HEAD').write_text('ref: refs/heads/main\n')
+        ext_wt_meta = ext_parent / '.git/worktrees/agent-branches-external'
+        ext_wt_meta.mkdir(parents=True, exist_ok=True)
+        (ext_wt_meta / 'commondir').write_text('../..\n')
+
+        ext_wt_dir = self.base / 'agent-branches-external'
+        ext_wt_dir.mkdir(parents=True, exist_ok=True)
+        (ext_wt_dir / '.git').write_text(f'gitdir: {ext_wt_meta}\n')
+        self.assertFalse(cmw.verify_git_provenance(ext_wt_dir, canonical_root=self.base))
+
+        # 5. Corrupted .git file
+        bad_git_dir = self.base / 'agent-branches-corrupt'
+        bad_git_dir.mkdir(parents=True, exist_ok=True)
+        (bad_git_dir / '.git').write_text('not-a-valid-gitdir-line\n')
+        self.assertFalse(cmw.verify_git_provenance(bad_git_dir, canonical_root=self.base))
+
 
 if __name__ == '__main__':
     unittest.main()

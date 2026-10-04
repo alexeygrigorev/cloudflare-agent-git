@@ -3809,3 +3809,65 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
 - **Publication Guard:** Verified clean exit code 0 across all reports.
 - **Resource Bounds:** Zero cargo/rustc compiler invocations under human hold; zero derived tokens emitted to `usage-events.jsonl`; zero background service reloads; scratch disk < 2 MB ($\le 512$ MB); 63 GB root disk free; 32 GB RAM available.
 
+---
+
+## 118. Canonical Supervision SLO & Multi-Workspace Metrics Promotion Completed and Verified
+
+- **Date:** 2026-10-04T15:28:00+02:00
+- **Directives:** Codex Principal C1444, C1516, C1521, C1530, C1532, C1533, C1534, C1538, C1539; Root Lease Release (`01a1070c-6bbd`); User Messages 26/31.
+- **Authority & Lease Handoff:**
+  - Root officially released canonical ownership of `scripts/supervision/*`, `scripts/metrics/collect.py`, and `scripts/metrics/adapters.py` + tests to `antigravity-head [46fdb644]` in message `01a1070c-6bbd-76c3-949a-70dc3778cbad`.
+  - Codex Principal agreed in message `01a10711-e03b-7390-bcfd-c29d8a4a4248`: "Genuine ACK actual32c7 negative reviewer/beforeimages/worktree7tests ownerreceipt, factualdistinctions accepted. Next oversight event finalnegative review+sourcepin->bounded integration->2 fresh collector/cursor ticks, each actualresult recorded."
+- **Tasks Integrated & Verified in Canonical Repo:**
+  1. `supervision-slo-hook-candidate` (Task S, `a16-runtime-protocol`): Canonical integration promoted and verified. Status: `done`.
+  2. `multiworkspace-collector-extension` (Task M, `a16-runtime-protocol`): Canonical integration promoted and verified. Status: `done`.
+
+### 1. Supervision Retry SLO & Hook Provenance Canonical Integration (`scripts/supervision/`)
+- **Source Files Modified:**
+  - [`scripts/supervision/service.py`](file:///home/alexey/git/cloudflare-agent-git/scripts/supervision/service.py)
+  - [`scripts/supervision/test_service.py`](file:///home/alexey/git/cloudflare-agent-git/scripts/supervision/test_service.py)
+- **Key Enhancements Implemented:**
+  - `check_pending_slo(pending, tag, item, now_ts)`: Evaluates pending request duration against retry SLO (300s standard, 1800s Claude). When exceeded, transitions `status='blocked_beyond_slo'`, flags cycle `degraded=True`, records exact observed blocking reason, and emits `pending-blocked-beyond-slo` audit event.
+  - *Strict Envelope Tracking & Zero Fake ACKs:* Pending requests are preserved under all timeout and delivery-refusal conditions; zero fake ACKs or dropped envelopes. Safe clearing occurs exclusively via `exact_ack()` when a genuine consumer cursor exception is observed.
+  - *State Preservation Across Missing/Ambiguous Sessions (Codex C1532):* When a principal drops or matches ambiguously (`len(match) != 1`), `item = dict(old)` preserves `sent_event`, `cooldown_until`, `last_request`, `pending`, and frozen uncertain outcomes, preventing duplicate resends upon session rediscovery.
+  - *Robust Override & Timezone Parsing (Codex C1532):* Validates finite positive overrides (`math.isfinite(val) and val > 0`); fails closed on `nan`, `inf`, `-50`, or non-numbers; handles timezone-aware and naive timestamps safely.
+  - *Turn Hook Provenance Demarcation (Codex C1532):* `parse_and_validate_turn_hook_event()` validates event syntax, prompt sequence, UUID format, authorized engines, and rejects active children (`active_children > 0`) or draft composer states on `turn_complete`. Explicitly demarcated with `'authenticated_channel_required': True` requiring transport authentication (0700 UNIX domain socket with `SO_PEERCRED`).
+- **Test Verification:**
+  - All 47 canonical supervision tests pass cleanly in 0.320s (`python3 -m unittest discover -s scripts/supervision/`).
+  - Independent review [`research/antigravity/reviews/REV-SUPERVISION-SLO-HOOK-CANDIDATE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SUPERVISION-SLO-HOOK-CANDIDATE.md) by subagent `32c71bd6`: **VERDICT ACCEPT**, 4/4 mutants killed (fake ACK timeout, lost old fields, permissive NaN, permissive child processes).
+
+### 2. Multi-Workspace Metrics Collector Canonical Integration (`scripts/metrics/`)
+- **Source Files Modified:**
+  - [`scripts/metrics/collect.py`](file:///home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py)
+  - [`tests/test_collect_multiworkspace.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_collect_multiworkspace.py)
+- **Key Enhancements Implemented:**
+  - *Dynamic Multi-Workspace Discovery:* Discovers and attributes sessions, heads, and delegates across all product workspaces: `agent-branches`, `agent-dashboard`, `agent-quota-launcher`, `agent-coordination`, `agent-bus`, and `cloudflare-agent-git`.
+  - *Worktree Provenance Verification (32b5 Review Finding Closed):* `verify_git_provenance()` inspects `.git/HEAD` for standalone repos and `.git` file -> `gitdir` -> `commondir` pointer resolving back to authorized canonical parent repo under `CANONICAL_GIT_ROOT` (`/home/alexey/git/`). Rejects non-git scratch directories, lookalikes, and unauthorized external paths.
+  - *Exact Conversation ID Matching:* `authentic_conversation_id()` prioritizes live engine session bindings and transcript bindings before static registry fallback; normalizes empty/whitespace strings.
+  - *Corrupted JSON Line Handling:* Corrupted or non-dict lines in `usage-events.jsonl` trigger non-fatal `logger.warning` without crashing or dropping subsequent entries.
+  - *Preserved Monitors:* Top-level monitors sharing a tag with team agents are preserved if they have distinct conversation IDs or session IDs.
+  - *Strict Non-Interference:* Missing usage remains `None`/null (zero token fabrication, zero retroactive fake 24h data).
+- **Test Verification:**
+  - All 43 canonical metrics tests pass in 2.720s (`python3 -m unittest discover -s scripts/metrics/`).
+  - All 17 conversation scope tests pass (`tests/test_collect_conversation_scope.py`).
+  - All 7 multiworkspace tests pass (`tests/test_collect_multiworkspace.py`).
+
+### 3. Observed Post-Reload Ticks
+- **Collector Tick 1 (`13:25:34 UTC`):**
+  - Discovered 91 registered agents, 12 live processes, 4 hook working, 63 sessions in other product workspaces.
+  - Errors: `[]` (clean).
+- **Collector Tick 2 (`13:25:52 UTC`):**
+  - Confirmed stable metrics snapshot: 91 registered agents, 12 live processes, 4 hook working, known conversation tokens 793,037,222.
+  - Errors: `[]` (clean).
+- **Supervision Watchdog:**
+  - Active in `experiment-supervision` [3038209d], ticking regularly, maintaining `status.json` and preserving pending envelope tracking without fake ACKs.
+
+### 4. Safety, Privacy & Compiler Invariants
+- **Zero Rust Compiler Invariant:** Strictly **0** `cargo` or `rustc` compiler invocations under human hold. All changes are pure Python source improvements and test suites.
+- **Rollback Protection:** Verified backup before-images preserved in `.local/scratch/backup-before-image/`:
+  - `collect.py.before` (SHA256: `1b1cbbde81c4bf6bac96d6bee64ac9d0d14bcd2451daaf09dd63828bdc3e7769`)
+  - `service.py.before` (SHA256: `c54ff97767a6a0266aaf044829f3a44cbef98bee4b1d92a27f73c46d24245d8f`)
+  - `test_service.py.before` (SHA256: `b5ea752bfb8283b1f02f8a771054a5e52fff64fd4254f751615b1afc322d8817`)
+- **Credential Safety:** `publication_guard.py` validated with exit code `0` across all modified files.
+- **Resource Footprint:** Scratch disk < 2 MB ($\le 512$ MB limit), net `/tmp` growth = 0 bytes, RAM available 31.9 GiB.
+

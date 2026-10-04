@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Principal event watchdog. Never implements work or fabricates session readiness."""
 import argparse, datetime, fcntl, hashlib, json, os, pathlib, re, subprocess, sys, time, uuid
+_sup_dir = str(pathlib.Path(__file__).resolve().parents[4] / 'scripts/supervision')
+if _sup_dir not in sys.path:
+    sys.path.insert(0, _sup_dir)
 from ack_reconciliation import exact_ack
 from retention import StorageFull, archive_operational, archive_verified, read_archived, storage_guard
 
@@ -223,9 +226,8 @@ def check_pending_slo(pending, tag, item, now_ts=None):
     except Exception:
         return False, 0.0, 0, None
 
-    if now_ts is not None:
-        current_ts = float(now_ts)
-    else:
+    current_ts = now_ts if now_ts is not None else time.time()
+    if not isinstance(current_ts, (int, float)) or not math.isfinite(current_ts) or current_ts <= 0:
         current_ts = time.time()
 
     pending_age = max(0.0, current_ts - created_ts)
@@ -264,8 +266,9 @@ def check_pending_slo(pending, tag, item, now_ts=None):
 
 def parse_and_validate_turn_hook_event(raw_event, expected_session_id=None):
     """
-    Parse and validate an authoritative turn-boundary hook event emitted by an engine.
-    Syntax & schema validation only. Requires authenticated transport channel
+    Parse and validate the syntax/structure of an authoritative turn-boundary hook event.
+    NOTE (C1532): Syntax validation alone does NOT authenticate the producer or authorize
+    untrusted socket injection. Producer provenance requires transport-level authentication
     (e.g. 0700 UNIX domain socket owned by the session workload UID/GID).
     - Validates event type ('turn_complete' or 'turn_start')
     - Enforces state ('idle-empty' for turn_complete, 'working' for turn_start)
