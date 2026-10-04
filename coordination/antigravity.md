@@ -3186,6 +3186,50 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
   - Standup file `experiment/standups/2026-10-04.md` preserved untouched.
 
+---
+
+## 102. Unfamiliar Adopter Comparative Evaluation Complete: Task T1 on `demo-target` (`REPORT-UNFAMILIAR-ADOPTER-T1.md`)
+
+- **Date:** 2026-10-04T09:23:45+02:00
+- **Steering & Directives:** Codex Principal C1818 (`01a105c5-fbf3`); Desktop Orchestrator 09:20 Berlin (`01a105cb-0dca`).
+- **Epistemic & Methodological Demarcations (Desktop Orchestrator 09:20):**
+  - **Scoped Workflow Comparison on Internal Task:** Task T1 is an authentic maintenance task on an internal demo codebase (`demo-target`), NOT externally observed market demand.
+  - **Execution Sequence & Solution Transfer:** The same actor executed Track 1 (ordinary Git) first, then applied the identical implementation to Track 2 (Agent Branches stack); sequential execution order and solution carry-over are transparently recorded. Dual-tool usage was mandated by experimental protocol, not organic voluntary adoption.
+- **Delivered Artifact:**
+  - Deliverable: [`research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md) (236 lines, clean publication guard).
+  - Executor: `unfamiliar-adopter-worker` (`37dbcbdc-d51d-4484-8f4c-eab1a6d8659d`).
+  - Scratch Workspace: `.local/scratch/unfamiliar-adopter/` (2.0 MB disk usage, mode `0700`, 0 net `/tmp` growth).
+- **Comparative Findings Matrix:**
+  1. **Tree Equivalence & Test Suite:**
+     - Both tracks achieved the exact same tree hash: `e09f8f748eaba7a08351b1250fa503f88f3f690d` (0-byte delta).
+     - Full test suite passed 16/16 tests (`node --test`) in both environments (117.1ms baseline vs 104.6ms fork).
+  2. **Latency & Complexity Overhead:**
+     - Track 1 (Ordinary Git): Finished in **0.200s** across 7 commands.
+     - Track 2 (Agent Branches): Finished in **1.143s** across 15 commands (+0.943s delta, 5.7x wall-clock ratio). Non-test orchestration latency rose from 0.083s to 1.039s (+0.956s), reflecting daemon startup, HTTP health checks, canonical setup, token minting, Smart HTTP network negotiation, and push registration.
+  3. **Resource Footprint:**
+     - Sidecar RSS: 59.8 MB initial / 63.3 MB final ($\le 100$ MB).
+     - Coordinator RSS: 62.6 MB initial / 79.0 MB final ($\le 100$ MB).
+     - Combined stack resident memory: **142.2 MB** (well within cooperative 1500 MB pool).
+     - Scratch disk: 2.0 MB ($\le 512$ MB). Zero net `/tmp` growth.
+  4. **Radar Warning Truthfulness:**
+     - Exactly **0 warnings** reported (`warnings: []`). Genuine and truthful: uncontested single-actor branch produced zero false alarms, but inherently did not exercise concurrent conflict detection.
+  5. **Developer Friction Points:**
+     - Naming divergence (`service.js` vs `shortlinks.js`) resolved via bridge modules.
+     - Git Smart HTTP authentication via `-c http.extraHeader` exposed tokens in process argv (`ps aux` / `/proc`), indicating need for private credential helper in production.
+     - Exact lease push on seed baseline requires a complex 3-step orchestration dance (`POST /setup` $\rightarrow$ mint write token $\rightarrow$ `--force-with-lease`).
+     - Push registration duality: required both `git push` over Smart HTTP and RPC `client.push(...)`.
+- **Unsteered Adoption Verdict:**
+  - **DECLINE for isolated single-actor workflows:** Ordinary `git worktree` is 5.7x faster (0.20s vs 1.14s), uses zero background daemons, requires zero tokens, and produces the exact same Git tree hash with 7 simple commands. Using Agent Branches for single-actor maintenance is pure ceremonial overhead.
+  - **CONDITIONAL ADOPT for concurrent multi-agent swarms:** Valid only when multiple agents concurrently contend for the same repository, contingent on: (1) automated provisioning harness, (2) private Git credential helper, (3) automated webhook push registration (`SIDECAR_NOTIFY_URL`), and (4) cgroup physical memory enforcement.
+- **Task & Team Registry Reconciliation:**
+  - `coordination/TASKS.json`: Updated `unfamiliar-adopter-t1` to `done`.
+  - `coordination/TEAM-REGISTRY.json`: Updated `unfamiliar-adopter-worker` (`37dbcbdc`) to `completed`.
+- **Invariants Strictly Preserved:**
+  - Human no-Rust-build hold enforced: zero cargo/rustc commands.
+  - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
+  - Standup file `experiment/standups/2026-10-04.md` preserved untouched.
+
+
 
 
 

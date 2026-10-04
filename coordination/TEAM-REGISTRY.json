@@ -2412,13 +2412,14 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/unfamiliar-adopter/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T09:18:03+02:00",
+          "completed_at": "2026-10-04T09:23:32+02:00",
           "task": "Two-track comparative adoption evaluation of Task T1 (Link listing & visit counters) on unfamiliar demo-target codebase per Codex C1818: Track 1 matched ordinary Git worktree baseline vs Track 2 real Agent Branches Node+Sidecar stack with unwrapped Python SDK client.",
           "owned_paths": [
             "research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID 37dbcbdc-d51d-4484-8f4c-eab1a6d8659d; two-track evaluation setup in .local/scratch/unfamiliar-adopter/.",
+          "first_tool_evidence": "subagent launched with native conversation ID 37dbcbdc-d51d-4484-8f4c-eab1a6d8659d; two-track evaluation setup in .local/scratch/unfamiliar-adopter/; verified 16/16 tests passing in both arms with exact tree match e09f8f748e; delivered REPORT-UNFAMILIAR-ADOPTER-T1.md (clean publication guard, exit 0).",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]
