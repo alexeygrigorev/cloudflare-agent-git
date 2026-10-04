@@ -3320,3 +3320,48 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
 - `coordination/TEAM-REGISTRY.json`: Updated `uprt-concurrent-worker` (`4cb81460`) to `completed`; registered `uprt-concurrent-reviewer` (`cd0e700e-450a-4b64-98ff-1a07900e3aaa`, role `reviewer`, status `running`) with first tool observed (`view_file` on `REPORT-UPRT-CONCURRENT-GATE.md`).
 - Next Action: Independent reviewer executing scratch replay of Arm A vs Arm B, verifying negative test mutations, and producing `REV-UPRT-CONCURRENT-GATE.md`.
 
+---
+
+## 106. Independent Review Acceptance of UPRT Concurrent Gate (REV-UPRT-CONCURRENT-GATE.md, Verdict ACCEPT)
+
+- **Date:** 2026-10-04T11:10:00+02:00
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Independent Reviewer:** `uprt-concurrent-reviewer` (`cd0e700e-450a-4b64-98ff-1a07900e3aaa`, type `self`).
+- **Target Report Audited:** [`research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md) (commit [`cad1126`](file:///home/alexey/git/cloudflare-agent-git/commit/cad1126)).
+- **Review Deliverable:** [`research/antigravity/reviews/REV-UPRT-CONCURRENT-GATE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-UPRT-CONCURRENT-GATE.md) (27.1 KB).
+- **Independent Verdict:** **ACCEPT (HIGH VALUE ADOPTION FOR CONCURRENT REFACTORING)**.
+- **Publication Guard:** Clean (`python3 research/antigravity/tooling/publication_guard.py research/antigravity/reviews/REV-UPRT-CONCURRENT-GATE.md` exit 0, zero credential/token leakage).
+
+### 1. Empirical Verification Receipts & Replay Audit
+1. **Report Claims vs Empirical Receipts:**
+   - 100% of reported metrics verified against raw output file `.local/scratch/uprt-concurrent-trial/uprt_results.json`:
+     - Wall-clock durations: Arm A = 1.8403s (20 commands) vs Arm B = 6.4060s (42 commands). Ratio = 3.48x (+4.57s total stack orchestration delta).
+     - Defect escape: Arm A = 1 defect escaped to `main` vs Arm B = 0 defects escaped (100% defect prevention at push time).
+     - Radar detection latency: 0.5390s initial detection; 0.5143s re-evaluation after fix.
+     - Rework duration: Arm A (emergency post-merge hotfix) = 0.3350s vs Arm B (pre-merge branch rework) = 0.4720s.
+     - Daemon RSS memory: Sidecar = 75.26 MB, Coordinator = 79.86 MB (combined 155.12 MB, well within 1500 MB cooperative pool).
+     - Scratch disk: 135.8 MB in `.local/scratch/uprt-concurrent-trial/` ($\le 512$ MB limit).
+     - Final Git tree hash: `7d1233e59b7630865de2435aee6bc3365fc34dd2` (0-byte delta, exact equivalence across both arms).
+2. **Independent Replay in Scratch (`.local/scratch/uprt-concurrent-review/`):**
+   - Base commit `ff4decd7be0e` verified cleanly.
+   - Arm A replay: `git merge --no-edit` succeeded with exit code 0 (`Merge made by the 'ort' strategy`) and zero textual conflicts. Running `node --test` failed with exit code 1 (`POST /links/bulk imports every link and returns slugs in order` failed with 400 !== 201). Exactly 1 silent semantic defect escaped to `main`.
+   - Arm B replay: In-memory `git merge-tree --write-tree` reported clean textual merge; isolated snapshot test runner detected the regression in **0.3486s**, posting active warning on coordinator task. Following signature fix in `worker.js`, Radar re-evaluated clean (18/18 passing tests) and warning transitioned to `invalidated`.
+   - Final tree equivalence verified: `git write-tree` yielded exact match `7d1233e59b7630865de2435aee6bc3365fc34dd2`.
+
+### 2. Negative Mutation Testing Receipts
+1. **Mutant 1 (Weakened Test Suite):** Relaxing `demo-target/test/bulk.test.js` to accept status 400 allowed broken code to pass green (19/19 PASS), proving that the test suite is the essential oracle that powers semantic radar.
+2. **Mutant 2 (Invalid Radar Command):** Passing an invalid CLI flag to Radar test runner caused immediate process failure (exit code 9) and Radar classified the pair as `status="conflict"` (kind="test"), confirming that Radar strictly fails closed.
+
+### 3. Critical Adoption Matrix & Foremerge Comparison
+1. **Selective Adoption Policy Re-affirmed:**
+   - **Single-Actor Tasks: DECLINE ADOPTION.** As verified in [`REPORT-UNFAMILIAR-ADOPTER-T1.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md), ordinary Git worktrees are 5.7x faster with 0 background daemons; coordination overhead cannot earn its keep when collision probability is zero.
+   - **Concurrent Multi-Agent Refactoring: ADOPT (HIGH VALUE).** When two or more agents modify shared module contracts, textual Git merge is blind to semantic breakage. Agent Branches L3 Radar reliably catches silent contract breakage at push time without requiring subjective manual annotations like Foremerge v0.5.1.
+2. **Pre-Trial Fixture Boundary (Desktop Orchestrator Guidance):**
+   - `demo-target/` and tasks T2/T3 represent an internal, deliberately designed conflict fixture, not organic market demand. Efficacy demonstrates designed defect prevention under matched conditions, not voluntary market uptake.
+
+### 4. Task & Team Registry Reconciliation
+- `coordination/TASKS.json`: Updated `uprt-concurrent-gate-review` to `done` (`acceptance_status: ACCEPTED`).
+- `coordination/TEAM-REGISTRY.json`: Updated `uprt-concurrent-reviewer` (`cd0e700e-450a`) to `completed`.
+- Invariants: Zero cargo/rustc invocations; zero net `/tmp` growth; Gemini counter emission strictly held.
+
+

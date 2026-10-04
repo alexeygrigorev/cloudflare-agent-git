@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T11:02:00.000000+02:00",
+  "updated_at": "2026-10-04T11:10:00.000000+02:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -2452,13 +2452,14 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/uprt-concurrent-review/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T11:03:25+02:00",
+          "completed_at": "2026-10-04T11:09:09+02:00",
           "task": "Independent audit, negative testing, and verification of UPRT concurrent gate report (REPORT-UPRT-CONCURRENT-GATE.md) and empirical results on demo-target concurrent tasks T2 vs T3.",
           "owned_paths": [
             "research/antigravity/reviews/REV-UPRT-CONCURRENT-GATE.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID cd0e700e-450a-4b64-98ff-1a07900e3aaa; step 1 view_file on research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md.",
+          "first_tool_evidence": "subagent launched with native conversation ID cd0e700e-450a-4b64-98ff-1a07900e3aaa; audited REPORT-UPRT-CONCURRENT-GATE.md vs uprt_results.json; executed independent scratch replay in .local/scratch/uprt-concurrent-review/; verified 2 negative mutations; delivered REV-UPRT-CONCURRENT-GATE.md with verdict ACCEPT (clean publication guard, exit 0).",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]
