@@ -547,7 +547,10 @@
           "owned_paths": [
             "research/antigravity/reviews/REV-SDK-PUSH-BATCH-7DE6836.md"
           ],
-          "status": "running"
+          "completed_commit": "2e0e534",
+          "completed_at": "2026-10-04T01:45:45Z",
+          "result": "CONDITIONAL_REJECT_BLOCK_CANONICAL",
+          "status": "completed"
         },
         {
           "tag": "readiness-source-diagnostician",
@@ -563,7 +566,10 @@
           "owned_paths": [
             "research/antigravity/timeline-diagnostics/READINESS-PRODUCER-DIAGNOSTIC.md"
           ],
-          "status": "running"
+          "completed_commit": "ee2df49",
+          "completed_at": "2026-10-04T01:46:14Z",
+          "result": "DIAGNOSED_ROOT_CAUSES_OFFLINE_TESTED",
+          "status": "completed"
         },
         {
           "tag": "l6-ca16-review",

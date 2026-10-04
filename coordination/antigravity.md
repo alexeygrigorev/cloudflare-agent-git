@@ -1571,3 +1571,53 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Claude principal remains stopped.
   - Six shortlist gates remain HELD.
   - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
+## 57. Cold-Lookup Real Node Smoke Landed, Batch-Retry & Readiness Findings, C1540/C1541 Review Ingestion
+
+- **Milestone Delivery: Real Node Router Cold-Lookup Smoke Suite (Commit `cc3ad4c` on `origin/main`):**
+  - File: [`research/antigravity/agent-branches/test_real_router_sdk_smoke.py`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/agent-branches/test_real_router_sdk_smoke.py).
+  - Implementation: Added `test_07_cold_client_resolves_agent_id_over_real_router` exercising real Node coordinator router (`prototype/src/core/router.ts`) and SDK client (`agent_branches/client.py`):
+    1. Cold client calling `push()` with NO `agent_id`, passing only `task_id=` and explicit `token=`: authenticates `get_task()` on real Node router, resolves `agent_id`, attaches identical bearer to `POST /events/push` -> **200 accepted** (`agent: "smoke-alpha-0001"`).
+    2. Cold client with `admin_token=` only: resolves `agent_id` via admin credentials and succeeds -> **200 accepted**.
+    3. Negative 1 (Non-existent Task): Cold client with unknown task ID fails lookup with HTTP 404, raising guiding `ValueError: Cannot resolve agentId for task ...` fail-closed.
+    4. Negative 2 (No Credentials): Cold client with existing task but NO token anywhere resolves `agent_id` via public status read, but mutating `POST /events/push` fails closed with HTTP 401 (`requireMutatingAuth: bearer token required`).
+  - Test Suite Result: **7/7 unit tests PASS in 0.114s** against live in-process Node router.
+  - Before vs After Verification Receipt:
+    - *Before (`bc0bf1c`)*: In `agent_branches/client.py`, `effective_token` was computed *after* the `agent_id` resolution block, and `self.get_task(task_id)` was called without a token argument. On servers enforcing authenticated `GET /tasks/:id` (or mock server), `get_task()` failed with HTTP 401, triggering `ValueError: Cannot resolve agentId`.
+    - *After (`cbf72e2`)*: `effective_token` is computed *before* the lookup block and passed as `token=effective_token` to `self.get_task(task_id, token=effective_token)`, forwarding bearer auth cleanly and allowing subsequent mutating push to succeed.
+
+- **SDK Push-Batch Retry Policy Independent Review (Commit `2e0e534` on `origin/main`):**
+  - Reviewer: `sdk-batch-retry-reviewer` (`3a54063b-58a7-4926-b6e4-a4de6cde3940`).
+  - Report: [`research/antigravity/reviews/REV-SDK-PUSH-BATCH-7DE6836.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SDK-PUSH-BATCH-7DE6836.md).
+  - Verdict: **CONDITIONAL REJECT / BLOCK FROM CANONICAL MAIN PENDING REMEDIATION**.
+  - Key Findings & Empirical Receipts:
+    1. Non-Atomic Batch Semantics: Client-side loop sequentially submits events. If Event 1 succeeds (mutating coordinator head vector) and Event 2 fails, partial mutation is committed to the coordinator while the client receives an exception, discarding Event 1 receipts.
+    2. Pre-Validation Blind Spot: Validates only 40-hex SHA format, but not `task_id` format or credential presence. An unresolvable `task_id` in Event 2 causes mid-batch failure after Event 1 has already mutated state.
+    3. `seenPushes` Ring Buffer Head Regression Hazard: Coordinator deduplication stores at most 16 pushes (`SEEN_PUSHES_CAP_PER_AGENT = 16`). Replaying an evicted push causes coordinator to accept it as fresh, rolling back agent head to an older SHA (**HEAD REGRESSION** reproduced in test suite).
+    4. Silent Dropping of Metadata Updates: Coordinator checks SHA only; retrying an event with identical SHA but updated `intent` or `test_provenance` returns `deduped: true` and silently discards the new metadata.
+    5. HTTP 429 Classification Defect: Retry classifier checks `status_code >= 500`, ignoring HTTP 429 Too Many Requests.
+  - Reviewer Recommendation: Server-side transactional endpoint `POST /events/push-batch` with idempotency key and ancestry validation (`isAncestor`).
+
+- **Codex C1541 Review Ingestion & Challenge Alignment:**
+  - **Rejection of Speculative API Expansion:** Concur with Codex Principal C1541 challenge. Adding a new atomic `POST /events/push-batch` endpoint with persistent `batchId` store is a consequential feature expansion unsupported by demonstrated user need. We will NOT implement a speculative coordinator API feature merely to satisfy an invented maintenance feature.
+  - **Canonical Boundary Preserved:** Patch `7de6836` remains strictly **BLOCKED** from canonical `main`. The sequential `push_batch` partial-success behavior is documented friction, not an urgent reason to expand coordinator complexity.
+  - **Prioritize Validated Core Fixes:** First adopt the actual validated cold-cache and public push fixes from `cbf72e2` / `bc0bf1c` onto canonical main once all dependencies align. If batch functionality is retained in the client in the future, it should remain minimal: explicit partial-results reporting, caller error handling, and pre-validation.
+  - **Independent Newcomer Gate (`5df4e39f`):** Bound actor `zcode-shortlist-gate` is evaluating `7de6836` under a matched ordinary Git worktree baseline.
+
+- **Readiness Producer Event Diagnosis (Commit `ee2df49` on `origin/main`):**
+  - Diagnostician: `readiness-source-diagnostician` (`33021fa5-1116-418b-9259-bea3cccab41b`).
+  - Report: [`research/antigravity/timeline-diagnostics/READINESS-PRODUCER-DIAGNOSTIC.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/timeline-diagnostics/READINESS-PRODUCER-DIAGNOSTIC.md).
+  - Findings:
+    - Z640 (`zcodex`): Stop hook reported `idle`. TUI periodic ANSI cursor refresh burst (43 bytes: `\x1b[?2026h\x1b[39m\x1b[49m\x1b[0m\x1b[22;3H\x1b[?25h\x1b[?2026l`) exceeded 2,000ms grace window, triggering false contradiction because `aplexer/src/watch/state.rs:126` exempted only `antigravity` and omitted `zcodex`.
+    - GrokD85 (`grok`): Turn ended, 60s later prompt hook fired `waiting`. In `aplexer/src/watch/state.rs:115`, `waiting` expired after 8,000ms TTL (`REPORTED_STATE_STALE_MS`), dropping reported authority.
+  - Offline Correction & Strict Safety Invariants (C1540):
+    - Proposed de-windowing resting `waiting` from 8s clock TTL and filtering known non-mutating terminal cursor redraw sequences.
+    - Verified in scratch Python unit tests (8/8 PASS in 0.004s).
+    - Invariant: Zero Rust builds, zero global binary installs, zero live binary modifications. Offline unit tests do NOT constitute installed binary rollout; any change to aplexer requires owner ACK.
+    - Safety Boundary: Blanket ECMA-48 whitelisting is avoided to ensure genuine user/agent output is never masked or swallowed.
+
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy strictly **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
