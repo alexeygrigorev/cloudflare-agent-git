@@ -3627,7 +3627,7 @@
   "projects": [
     {
       "id": "agent-branches",
-      "name": "AgentBranches",
+      "name": "Agent Branches",
       "head_tag": "antigravity-head",
       "head_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
       "integration_owner": "antigravity-head",
@@ -3655,7 +3655,7 @@
     },
     {
       "id": "quota-launcher",
-      "name": "Quota-aware Launcher",
+      "name": "Agent Quota Launcher",
       "head_tag": "quota-launcher-head",
       "head_session_id": "6be4c247-4410-4bdb-968e-7fc2d5844941",
       "integration_owner": "quota-launcher-head",
@@ -3666,6 +3666,48 @@
         "at": "2026-10-04T11:08:51Z",
         "tool": "aplexer whoami --json"
       }
+    }
+  ],
+  "delivery_executors": [
+    {
+      "session_id": "40ddf9b7-f7d8-4deb-8535-df3575e07182",
+      "tag": "ab-source-extractor",
+      "project_id": "agent-branches",
+      "parent_tag": "antigravity-head",
+      "mode": "headless",
+      "workspace": "/home/alexey/git/agent-branches",
+      "task_id": "ab-standalone-private-source-project",
+      "owned_paths": [
+        "/home/alexey/git/agent-branches/"
+      ],
+      "first_action": null,
+      "launch_verified": true,
+      "expected_checkpoint": "20min",
+      "quota_source": "project.local/extraction-quota.json"
+    },
+    {
+      "session_id": "82f06339-353c-4c21-84aa-01e57c7b040f",
+      "tag": "ad-backend-exec",
+      "project_id": "agent-dashboard",
+      "parent_tag": "agent-dashboard-head",
+      "mode": "interactive",
+      "workspace": "/home/alexey/git/agent-dashboard",
+      "first_action": {
+        "session_id": "82f06339-353c-4c21-84aa-01e57c7b040f",
+        "tag": "ad-backend-exec",
+        "engine": "grok",
+        "first_tool": "aplexer whoami --json",
+        "first_tool_at_utc": "2026-10-04T11:24:25Z"
+      }
+    },
+    {
+      "session_id": "fa49c91e-913a-46f4-b3c7-cdaef14eeb0f",
+      "tag": "ad-frontend-exec",
+      "project_id": "agent-dashboard",
+      "parent_tag": "agent-dashboard-head",
+      "workspace": "/home/alexey/git/agent-dashboard",
+      "first_action": null,
+      "launch_verified": true
     }
   ]
 }

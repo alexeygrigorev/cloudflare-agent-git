@@ -1631,15 +1631,19 @@
       "project_id": "agent-branches",
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
-      "status": "queued",
+      "status": "ready",
       "updated_at": "2026-10-04T11:19:14.808651+00:00",
-      "next_action": "Assign owned executor to extract existing prototype acceptedsource into separate default-private AgentBranches GitHubproject, maintain canonicalmainbackup and disposable restore.",
+      "next_action": "Executor pin/extract tracked integrationproduct source, create privateGitHub main, safe sync and remotecloneverify; Ant independent exactpin reviewer accepts.",
       "acceptance": "Actual private repo/sourceSHA/mainSHA/fallbackrestore tree match and secret scan; preserved existing work; no code-only unreviewed extraction claim.",
       "blocked_on": [
-        "Owner ACK/executor evidence pending"
+        "Worker firsttool/semanticACK and accepted extraction outcome pending"
       ],
-      "executor_ids": [],
-      "owned_paths": [],
+      "executor_ids": [
+        "40ddf9b7-f7d8-4deb-8535-df3575e07182"
+      ],
+      "owned_paths": [
+        "/home/alexey/git/agent-branches/"
+      ],
       "evidence_paths": [],
       "first_action": null,
       "commit": null,
@@ -1647,7 +1651,8 @@
       "tests": null,
       "reviewer": null,
       "accepted_at": null,
-      "continuation_trigger": "Owned safe checkpoint; independent tasks proceed meanwhile"
+      "continuation_trigger": "Owned safe checkpoint; independent tasks proceed meanwhile",
+      "assignment_ack": "Root explicitly scoped extraction; genuine nativeworker launched; semantic workerACK/firsttool pending."
     }
   ]
 }

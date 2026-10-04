@@ -248,3 +248,8 @@ Interpretation (claude-principal, flagged): from now on Claude Opus is used only
 ## 2026-10-03 20:19 CEST: user to claude-principal (verbatim)
 
 > for your own deliverables please delegate them to other principle just send a message saying hey this are the things that I need to finish please take over
+
+
+## Authoritative three-project delivery reset — 4 October 2026
+
+Read the [full verbatim latest human request](human-delivery-reset-20261004.txt) and the enacted three-project delivery contract in [OPERATING-MODEL](../coordination/OPERATING-MODEL.md). The active products are **Agent Branches**, **Agent Dashboard**, and **Agent Quota Launcher**. This is current delivery steering: concrete code, independently owned executors/reviewers, semantic task tracking, useful continuation, actual private GitHub main source backup/remote restore and Agent Branches dogfooding. Older research lanes remain preserved evidence rather than substitutes for product delivery. [DELIVERY-BACKLOG](../coordination/DELIVERY-BACKLOG.json) maps every earlier human source to tasks/constraints/questions/supersession; [TASKS](../coordination/TASKS.json) requires actual first action and independently accepted evidence, not running labels or passing scaffolds. Tomorrow October5 and each daily report require exact preceding24h hourly per-project utilization/usage/coverage/unknowns, accepted features and unfinished blockers plus launcher rules. Existing privacy/resource/quota/no-new-purchase/no-Rust-build/no-oldtree-deletion rules remain.

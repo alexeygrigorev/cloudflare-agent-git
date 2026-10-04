@@ -4,7 +4,7 @@
   "projects": [
     {
       "id": "agent-branches",
-      "name": "AgentBranches",
+      "name": "Agent Branches",
       "head_tag": "antigravity-head",
       "head_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
       "integration_owner": "antigravity-head",
@@ -20,7 +20,7 @@
     },
     {
       "id": "quota-launcher",
-      "name": "Quota-aware Launcher",
+      "name": "Agent Quota Launcher",
       "head_tag": "quota-launcher-head",
       "head_session_id": "6be4c247-4410-4bdb-968e-7fc2d5844941",
       "integration_owner": "quota-launcher-head",
