@@ -172,7 +172,7 @@ TOTAL WALL-CLOCK DURATION                                    : 1.1432 s
 
 ### 5.3 Truthfulness and Falsification Assessment
 - **Zero Warnings Observed**: The coordinator reported `warnings: []`. Because this task ran in isolation without concurrent peer branches editing the same repository, no merge conflicts or semantic overlaps existed.
-- **Falsification Guard**: The zero-warning count is genuine and truthful; it proves that the system does not generate phantom alarms on clean branches. However, as an uncontested single-actor experiment, it does not validate concurrent collision detection.
+- **Falsification Guard & Epistemic Limit**: The zero-warning count is genuine and truthful for this specific run; it demonstrates that an uncontested branch did not trigger false alarms in this isolated test. However, **zero warnings in ONE uncontested run does not prove the absence of phantom alarms generally** across diverse codebases, AST patterns, or multi-branch workflows. Furthermore, because no concurrent branches existed, this run provides zero empirical evidence regarding the effectiveness of concurrent collision detection.
 
 ---
 
@@ -207,28 +207,29 @@ Executing Task T1 under both tracks as an unfamiliar adopter surfaced four concr
 ### Did Agent Branches provide real utility for this task?
 **No.** For this single-actor maintenance task, Agent Branches introduced substantial ceremony and operational overhead without delivering tangible developer benefit:
 
-1. **Wall-Clock Latency**: Track 1 finished in 200 ms. Track 2 took 1,143 ms (+471% increase). Over 90% of Track 2 execution was spent waiting on daemon startup, health checks, HTTP handshakes, and token minting.
+1. **Command Orchestration Latency**: Timed command sequences measured 0.200s (7 commands) for ordinary Git vs 1.143s (15 commands, +471%) for Agent Branches. Note that this metric measures pure command and daemon negotiation execution latency, not total developer task time including cognitive planning, problem-solving, or manual environment setup. Over 90% of Track 2 non-test time (1.039s vs 0.083s) was spent waiting on daemon startup, health checks, HTTP handshakes, and token minting.
 2. **Operational Complexity**: Track 1 required only ordinary Git commands (`git clone`, `git worktree add`, `git commit`). Track 2 required spinning up two background Node daemons, opening two TCP ports, managing three distinct bearer tokens, and coordinating 15 distinct operations across Git and HTTP.
-3. **No Radar Payoff**: Because only one task was being developed, the core value proposition of Agent Branches—conflict detection, AST semantic overlap detection, and early warning—remained completely dormant (`0 warnings`).
+3. **No Radar Payoff & Unverified AST Advantage**: Because only one task was being developed, the radar warning mechanics remained completely dormant (`0 warnings`). Crucially, **AST semantic advantage is unverified in this stack**; the prototype performs text-based tree overlap checks (`git merge-tree`) and test suite verification, not language-specific AST conflict reasoning.
+4. **Experimental Protocol vs Voluntary Adoption**: This evaluation was an assigned dual-tool comparison executed in sequential order (ordinary Git first, Agent Branches second, with solution transfer disclosed); it represents an experimental benchmark, not unsteered voluntary market adoption.
 
-### When does Agent Branches become valuable?
-The stack's architecture is clearly designed for **concurrent, multi-agent swarms** where multiple independent workers modify overlapping files in parallel. In that specific setting, ordinary Git worktrees fail to provide coordination: they operate in complete isolation until merge time, when conflicts require costly human resolution or re-work. In contrast, Agent Branches gives a centralized coordinator real-time visibility into all active agent heads.
+### When does Agent Branches become valuable? (Design Thesis vs Measured Evidence)
+The stack's architecture is conceptualized around a **concurrency coordination thesis**: that when multiple independent agent workers modify overlapping files in parallel, ordinary Git worktrees operate in blind isolation until merge time, whereas a centralized coordinator could provide early visibility into diverging heads.
 
-However, for single-agent tasks, routine bug fixes, documentation updates, or isolated linear development, ordinary Git worktrees are vastly simpler, faster, and less error-prone.
+However, this concurrent-swarm advantage remains a **speculative, untested hypothesis**, not measured uptake or proven causal benefit. For single-agent tasks, routine bug fixes, documentation updates, or isolated linear development, ordinary Git worktrees are vastly simpler, faster, and less error-prone.
 
 ---
 
 ## 8. Unsteered Adoption Verdict
 
-### Verdict: **DECLINE for isolated single-actor workflows; CONDITIONAL for concurrent multi-agent coordination.**
+### Verdict: **DECLINE for isolated single-actor workflows; CONDITIONAL HYPOTHESIS (UNTESTED) for concurrent multi-agent coordination.**
 
 #### Evaluation Breakdown:
 
 - **Isolated Single-Actor Tasks (Maintenance, Bug Fixes, Linear Features)**: **DECLINE**
-  - Ordinary `git worktree` is 5.7x faster, uses zero background daemons, requires zero tokens, and produces the exact same Git tree hash with 7 simple commands. Using Agent Branches for single-actor work is pure ceremony.
+  - Ordinary `git worktree` is 5.7x faster in command orchestration (0.20s vs 1.14s), uses zero background daemons, requires zero tokens, and produces the exact same Git tree hash with 7 simple commands. Using Agent Branches for single-actor work is pure ceremony.
 
-- **Concurrent Multi-Agent Swarms (2+ agents modifying the same repo concurrently)**: **ADOPT (CONDITIONAL)**
-  - Adoption is recommended *only* if the following four conditions are met:
+- **Concurrent Multi-Agent Swarms (2+ agents modifying the same repo concurrently)**: **CONDITIONAL HYPOTHESIS (UNTESTED)**
+  - Any prospective concurrency advantage remains speculative and untested. Meaningful evaluation in concurrent settings is contingent on resolving four primary friction points:
     1. **Automated Provisioning Harness**: The multi-step orchestration (ports, daemon launch, `POST /setup`, seed lease push, token distribution) must be wrapped in a single robust launcher so agents and developers do not orchestrate it manually.
     2. **Private Credential Helper**: Replace command-line `-c http.extraHeader` with a temporary Git credential helper or environment configuration to eliminate token exposure in `ps` / `/proc`.
     3. **Automated Push Webhook**: Configure `SIDECAR_NOTIFY_URL` so that `git push` automatically registers the commit with the coordinator, eliminating the dual `git push` + `client.push` ergonomics gap.

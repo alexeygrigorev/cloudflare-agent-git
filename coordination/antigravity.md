@@ -3219,8 +3219,8 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
      - Exact lease push on seed baseline requires a complex 3-step orchestration dance (`POST /setup` $\rightarrow$ mint write token $\rightarrow$ `--force-with-lease`).
      - Push registration duality: required both `git push` over Smart HTTP and RPC `client.push(...)`.
 - **Unsteered Adoption Verdict:**
-  - **DECLINE for isolated single-actor workflows:** Ordinary `git worktree` is 5.7x faster (0.20s vs 1.14s), uses zero background daemons, requires zero tokens, and produces the exact same Git tree hash with 7 simple commands. Using Agent Branches for single-actor maintenance is pure ceremonial overhead.
-  - **CONDITIONAL ADOPT for concurrent multi-agent swarms:** Valid only when multiple agents concurrently contend for the same repository, contingent on: (1) automated provisioning harness, (2) private Git credential helper, (3) automated webhook push registration (`SIDECAR_NOTIFY_URL`), and (4) cgroup physical memory enforcement.
+  - **DECLINE for isolated single-actor workflows:** Ordinary `git worktree` is 5.7x faster in command orchestration latency (0.20s vs 1.14s), uses zero background daemons, requires zero tokens, and produces the exact same Git tree hash with 7 simple commands. Using Agent Branches for single-actor maintenance is pure ceremonial overhead.
+  - **CONDITIONAL HYPOTHESIS (UNTESTED) for concurrent multi-agent swarms:** Concurrency coordination advantage remains a speculative, untested hypothesis (design thesis), NOT measured uptake or causal benefit. Any prospective concurrent advantage is strictly contingent on: (1) automated provisioning harness, (2) private Git credential helper, (3) automated webhook push registration (`SIDECAR_NOTIFY_URL`), and (4) cgroup physical memory enforcement.
 - **Task & Team Registry Reconciliation:**
   - `coordination/TASKS.json`: Updated `unfamiliar-adopter-t1` to `done`.
   - `coordination/TEAM-REGISTRY.json`: Updated `unfamiliar-adopter-worker` (`37dbcbdc`) to `completed`.
@@ -3228,6 +3228,27 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Human no-Rust-build hold enforced: zero cargo/rustc commands.
   - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
   - Standup file `experiment/standups/2026-10-04.md` preserved untouched.
+
+---
+
+## 103. Desktop Orchestrator Periodic Interface ACK (09:50 Berlin) & Negative Evidence Refinements (01a105e9-13c1)
+
+- **Date:** 2026-10-04T09:58:30+02:00
+- **Steering & Directives:** Desktop Orchestrator periodic interface note `01a105e9-13c1-7a61-9008-e20281cb68ee` (acknowledged and replied).
+- **Epistemic Refinements Incorporated:**
+  1. **Negative Evidence Integrity on Single-Actor Adoption (`REPORT-UNFAMILIAR-ADOPTER-T1.md`):**
+     - **Phantom Alarm Limit:** Explicitly documented that zero radar warnings in ONE uncontested single-actor run does not prove the absence of phantom alarms generally across diverse repos or AST patterns.
+     - **Command Latency Scope:** Clarified that the 0.200s vs 1.143s (+471%) measurement captures pure command orchestration latency, not entire developer task duration including thought, problem-solving, or manual environment setup.
+     - **AST Semantic Demarcation:** Confirmed AST semantic advantage is unverified in this stack; the prototype performs text-based merge-tree overlap and test suite execution, not AST conflict analysis.
+     - **Protocol vs Market Adoption:** Assigned dual-tool comparison is an experimental evaluation protocol, not unsteered voluntary market adoption.
+     - **Speculative Concurrency:** Rescoped concurrent-swarm adoption to a speculative, untested design hypothesis rather than proven uptake or causal benefit.
+  2. **Registry Timestamp Hygiene:**
+     - Updated top-level `updated_at` timestamps in `coordination/TASKS.json` and `coordination/TEAM-REGISTRY.json` to reflect current state.
+- **Invariants Strictly Preserved:**
+  - Human no-Rust-build hold enforced: zero cargo/rustc commands.
+  - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
+  - Standup file `experiment/standups/2026-10-04.md` preserved untouched for Codex Principal single-writer integration.
+  - Resources healthy: Mem 31+ GiB available, disk 63 GiB free, scratch <= 2.0 MB, zero net `/tmp` growth.
 
 
 
