@@ -1,9 +1,29 @@
 #!/usr/bin/env python3
-"""Principal event watchdog. Never implements work or fabricates session readiness."""
-import argparse, datetime, fcntl, hashlib, json, os, pathlib, re, subprocess, sys, time, uuid
-_sup_dir = str(pathlib.Path(__file__).resolve().parents[4] / 'scripts/supervision')
-if _sup_dir not in sys.path:
-    sys.path.insert(0, _sup_dir)
+"""
+Principal event watchdog candidate with product-aware entity routing.
+Extends supervision to active products ('projects' in TEAM-REGISTRY.json)
+alongside legacy research 'teams', supporting project aliases, deterministic
+head completion tracking, and categorized ready vs running queues.
+(C1629 / C1630 / C1444)
+"""
+import argparse
+import datetime
+import fcntl
+import hashlib
+import json
+import os
+import pathlib
+import re
+import subprocess
+import sys
+import time
+import uuid
+
+# Ensure scripts/supervision modules (ack_reconciliation, retention) are importable
+_SUPERVISION_DIR = pathlib.Path(__file__).resolve().parents[4] / 'scripts/supervision'
+if str(_SUPERVISION_DIR) not in sys.path:
+    sys.path.insert(0, str(_SUPERVISION_DIR))
+
 from ack_reconciliation import exact_ack
 from retention import StorageFull, archive_operational, archive_verified, read_archived, storage_guard
 
@@ -13,10 +33,211 @@ BINARY = os.environ.get('SUPERVISION_APLEXER_BINARY', '/home/alexey/git/cloudfla
 ALL_KNOWN_PRINCIPALS = ('codex-principal', 'claude-principal')
 PRINCIPALS = ALL_KNOWN_PRINCIPALS  # backward-compatibility alias
 
+# Known project aliases for symmetric routing and normalization
+KNOWN_PROJECT_ALIASES = {
+    'agent-quota-launcher': 'quota-launcher',
+    'quota-launcher': 'quota-launcher',
+    'launcher': 'quota-launcher',
+    'agent-branches': 'agent-branches',
+    'branches': 'agent-branches',
+    'agent-dashboard': 'agent-dashboard',
+    'dashboard': 'agent-dashboard',
+    'agent-coordination': 'agent-coordination',
+    'coordination': 'agent-coordination',
+    'cross-computer-agent-coordination': 'agent-coordination',
+    'cross-computer-coordination': 'agent-coordination',
+}
+
+
+def normalize_project_id(pid):
+    """Normalize a project or team ID to its canonical product identifier."""
+    if not pid or not isinstance(pid, str):
+        return None
+    p = pid.strip().lower()
+    return KNOWN_PROJECT_ALIASES.get(p, p)
+
+
+def extract_supervision_entities(registry_full):
+    """
+    Extract and normalize BOTH teams and projects from TEAM-REGISTRY.json.
+    Ensures that active product projects (agent-branches, agent-dashboard,
+    quota-launcher, agent-coordination) are fully represented as supervision
+    entities with appropriate principal_tags, head_tag, and workspace.
+    """
+    entities = []
+    seen_ids = set()
+
+    if isinstance(registry_full, list):
+        raw_teams = registry_full
+        raw_projects = []
+    elif isinstance(registry_full, dict):
+        raw_teams = registry_full.get('teams', [])
+        raw_projects = registry_full.get('projects', [])
+    else:
+        raw_teams = []
+        raw_projects = []
+
+    # 1. Process teams
+    seen_entities = {}
+    for team in raw_teams:
+        tid = team.get('id')
+        if not tid:
+            continue
+        norm_tid = normalize_project_id(tid) or tid
+        aliases = {tid}
+        if norm_tid:
+            aliases.add(norm_tid)
+        for k, v in KNOWN_PROJECT_ALIASES.items():
+            if v == tid or v == norm_tid:
+                aliases.add(k)
+
+        team_entity = {
+            'id': tid,
+            'name': team.get('name', tid),
+            'kind': 'team',
+            'principal_tags': list(team.get('principal_tags', [])),
+            'head_tag': team.get('head_tag'),
+            'workspace': team.get('workspace'),
+            'agents': team.get('agents', []),
+            'aliases': sorted(aliases),
+            'raw': team,
+            'unowned': len(team.get('principal_tags', [])) == 0,
+            'conflict': None,
+        }
+        entities.append(team_entity)
+        seen_entities[norm_tid] = team_entity
+        seen_ids.add(tid)
+
+    # 2. Process projects
+    for project in raw_projects:
+        pid = project.get('id')
+        if not pid:
+            continue
+
+        # Determine principal tags without invented fallbacks:
+        # Respect explicitly defined principal_tags, principal_owner, or assignment_ack.
+        # If none present, preserve strictly empty ownership ([]). Never default to codex-principal.
+        principal_tags = project.get('principal_tags')
+        if not principal_tags:
+            owner = project.get('principal_owner')
+            if isinstance(owner, dict) and owner.get('tag'):
+                principal_tags = [owner['tag']]
+            elif isinstance(owner, str) and owner.strip():
+                principal_tags = [owner.strip()]
+            elif isinstance(project.get('assignment_ack', {}).get('principal_owner'), dict):
+                ack_owner = project['assignment_ack']['principal_owner'].get('tag')
+                principal_tags = [ack_owner] if ack_owner else []
+            else:
+                principal_tags = []
+
+        norm_pid = normalize_project_id(pid) or pid
+        aliases = {pid}
+        if norm_pid:
+            aliases.add(norm_pid)
+        for k, v in KNOWN_PROJECT_ALIASES.items():
+            if v == pid or v == norm_pid:
+                aliases.add(k)
+
+        # Check for conflicts or existing matching entity
+        conflict_info = None
+        if norm_pid in seen_entities:
+            existing = seen_entities[norm_pid]
+            # Detect conflicting head_tag, workspace, or principal_tags
+            head_mismatch = existing.get('head_tag') and project.get('head_tag') and existing.get('head_tag') != project.get('head_tag')
+            ws_mismatch = existing.get('workspace') and project.get('workspace') and existing.get('workspace') != project.get('workspace')
+            principal_mismatch = bool(existing.get('principal_tags') and principal_tags and set(existing['principal_tags']) != set(principal_tags))
+            
+            if head_mismatch or ws_mismatch or principal_mismatch:
+                reasons = []
+                if head_mismatch:
+                    reasons.append(f"head_tag ({existing.get('head_tag')} vs {project.get('head_tag')})")
+                if ws_mismatch:
+                    reasons.append(f"workspace ({existing.get('workspace')} vs {project.get('workspace')})")
+                if principal_mismatch:
+                    reasons.append(f"principal_tags ({existing.get('principal_tags')} vs {principal_tags})")
+                conflict_info = {
+                    'detected': True,
+                    'conflict_with': existing['id'],
+                    'reasons': reasons,
+                    'summary': f"Conflicting registration for {norm_pid}: " + "; ".join(reasons)
+                }
+            else:
+                # Compatible duplicate: merge aliases
+                merged_aliases = set(existing.get('aliases', [])) | aliases
+                existing['aliases'] = sorted(merged_aliases)
+                if not existing.get('principal_tags') and principal_tags:
+                    existing['principal_tags'] = list(principal_tags)
+                    existing['unowned'] = False
+                existing['kind'] = 'team_and_project'
+                continue
+
+        project_entity = {
+            'id': pid,
+            'name': project.get('name', pid),
+            'kind': 'project',
+            'principal_tags': list(principal_tags),
+            'head_tag': project.get('head_tag'),
+            'workspace': project.get('workspace'),
+            'agents': project.get('agents', []),
+            'aliases': sorted(aliases),
+            'raw': project,
+            'unowned': len(principal_tags) == 0,
+            'conflict': conflict_info,
+        }
+        entities.append(project_entity)
+        if not conflict_info:
+            seen_entities[norm_pid] = project_entity
+        seen_ids.add(pid)
+
+    return entities
+
+
+def task_matches_entity(t, entity):
+    """
+    Task matching per C1629/C1630:
+    A task matches an entity if:
+    t.get('team_id') == entity['id'] or
+    t.get('project_id') == entity['id'] or
+    normalize_project_id(t.get('team_id')) == entity['id'] or
+    normalize_project_id(t.get('project_id')) == entity['id']
+    Also checks normalized entity ID and entity aliases.
+    """
+    eid = entity.get('id')
+    if not eid:
+        return False
+
+    norm_eid = normalize_project_id(eid)
+    team_id = t.get('team_id')
+    proj_id = t.get('project_id')
+
+    # Direct match on entity id
+    if team_id == eid or proj_id == eid:
+        return True
+
+    norm_team = normalize_project_id(team_id) if team_id else None
+    norm_proj = normalize_project_id(proj_id) if proj_id else None
+
+    if norm_team and (norm_team == eid or norm_team == norm_eid):
+        return True
+    if norm_proj and (norm_proj == eid or norm_proj == norm_eid):
+        return True
+
+    aliases = entity.get('aliases', [])
+    if team_id in aliases or proj_id in aliases:
+        return True
+    if norm_team and norm_team in aliases:
+        return True
+    if norm_proj and norm_proj in aliases:
+        return True
+
+    return False
+
+
 def active_principals(teams_data=None, spool=None, registry_raw=None):
     """
     Dynamically determine active principals, honoring quiet/morning-only status,
     exclusion files, and environment overrides (C-1396).
+    Accepts either legacy teams list or normalized supervision entities list.
     """
     excluded = set()
     env_ex = os.environ.get('SUPERVISION_EXCLUDE_PRINCIPALS', '')
@@ -60,13 +281,16 @@ def active_principals(teams_data=None, spool=None, registry_raw=None):
 def now():
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
+
 def atomic(path, value):
     tmp = path.with_suffix(path.suffix + '.tmp')
     tmp.write_text(json.dumps(value, indent=2))
     tmp.replace(path)
 
+
 class MailboxBusy(Exception):
     """Aplexer workspace mailbox lock stayed busy through all bounded retries."""
+
 
 class MutationUncertain(Exception):
     """A mutating call hit a busy-like failure after exactly one invocation; outcome UNKNOWN."""
@@ -75,14 +299,18 @@ class MutationUncertain(Exception):
         self.stderr = stderr
         self.returncode = returncode
         super().__init__(f'{type(self).__name__}: single invocation, no retry, outcome UNKNOWN: {cmd[1:3]} rc={returncode}; stderr[:200]: {stderr[:200]}')
+
     def uncertain_record(self):
         return {'outcome': 'UNKNOWN', 'class': type(self).__name__, 'cmd': self.cmd, 'stderr': self.stderr[:200], 'returncode': self.returncode}
+
 
 class DeliveryUncertain(MutationUncertain):
     """send/reply/deliver busy-like failure; never retried, never re-sent with a new id."""
 
+
 class AckUncertain(MutationUncertain):
     """ack busy-like failure; acknowledgement state unknown, never retried."""
+
 
 MAILBOX_BUSY = re.compile(r'is busy, retry|Resource temporarily unavailable')
 BUSY_BACKOFF = (0.2, 0.4, 0.8, 1.6, 3.2)
@@ -98,6 +326,7 @@ UNCERTAIN_BY_VERB = {
     ('message', 'ack'): AckUncertain,
 }
 
+
 def aplexer_verb(args):
     """Leading positional subcommand words; binary name and options are skipped."""
     words = []
@@ -109,12 +338,14 @@ def aplexer_verb(args):
             break
     return tuple(words)
 
+
 def read_only(args):
     """Allowlist membership only: positional verb prefix (plus --help), never a substring guess."""
     if '--help' in args:
         return True
     words = aplexer_verb(args)
     return any(words[:len(entry)] == entry for entry in READ_ONLY_VERBS)
+
 
 def command(args, timeout=20):
     """Read-only aplexer observations retry on busy; every mutating call runs exactly once."""
@@ -135,6 +366,7 @@ def command(args, timeout=20):
         time.sleep(backoff[0])
         backoff = backoff[1:]
 
+
 def record_cycle_failure(report, exc):
     """Any failed cycle is degraded with an error-class observation, never a healthy all-clear."""
     report['errors'].append(str(exc))
@@ -142,6 +374,7 @@ def record_cycle_failure(report, exc):
     report['observation'] = f'incomplete-cycle: {type(exc).__name__}'
     if isinstance(exc, MutationUncertain):
         report['uncertain_outcome'] = exc.uncertain_record()
+
 
 def composer(screen, tag):
     """Last prompt, never transcript prompts; unknown and menus deny input."""
@@ -164,6 +397,7 @@ def composer(screen, tag):
         return 'busy'
     return 'empty'
 
+
 def quota_allowed(data):
     try:
         provider = data['codex']
@@ -175,20 +409,146 @@ def quota_allowed(data):
     except (KeyError, TypeError, ValueError):
         return False
 
+
+class ActiveTaskList(list):
+    """List of active tasks with structured attributes for completions and queues."""
+    def __init__(self, items=(), completed=None, ready=None, running=None, recent_completed=None):
+        super().__init__(items)
+        self.completed = completed or []
+        self.ready = ready or []
+        self.running = running or []
+        self.recent_completed = recent_completed or (completed or [])
+
+
+class TaskEventResult(tuple):
+    """
+    Subclass of tuple: (active, digest, counts).
+    Unpacks cleanly as (active, digest, counts) for 100% backward compatibility.
+    Provides attributes:
+    .active, .digest, .counts, .completed, .ready, .running, .recent_completed
+    """
+    def __new__(cls, active, digest, counts, completed=None, ready=None, running=None, recent_completed=None):
+        return super().__new__(cls, (active, digest, counts))
+
+    def __init__(self, active, digest, counts, completed=None, ready=None, running=None, recent_completed=None):
+        self.active = active
+        self.digest = digest
+        self.counts = counts
+        self.completed = completed or []
+        self.ready = ready or []
+        self.running = running or []
+        self.recent_completed = recent_completed or (completed or [])
+
+
 def task_event(tasks):
+    """
+    Extract active tasks, track recent completions deterministically,
+    and compute stable task event digest and queue counts (C1629/C1630).
+    """
     active = [t for t in tasks if t.get('status') not in ('completed', 'done', 'cancelled', 'rejected', 'parked', 'on_hold')]
-    meaningful = [{k:t.get(k) for k in ('id','team_id','owner_tag','status','blocked_on','next_action','evidence_paths')} for t in active]
-    digest = hashlib.sha256(json.dumps(meaningful, sort_keys=True).encode()).hexdigest()[:20]
+    completed = [t for t in tasks if t.get('status') in ('completed', 'done')]
+    # Stable sort completed by timestamp (newest first)
+    completed.sort(key=lambda t: t.get('completed_at') or t.get('updated_at') or '', reverse=True)
+
+    ready = [t for t in active if t.get('status') in ('ready', 'queued')]
+    running = [t for t in active if t.get('status') in ('running', 'in_progress', 'working')]
+
+    active_meaningful = sorted(
+        [{k: t.get(k) for k in ('id', 'team_id', 'project_id', 'owner_tag', 'status', 'blocked_on', 'next_action', 'evidence_paths')} for t in active],
+        key=lambda x: str(x.get('id', ''))
+    )
+    completed_meaningful = sorted(
+        [{k: t.get(k) for k in ('id', 'team_id', 'project_id', 'owner_tag', 'status')} for t in completed],
+        key=lambda x: str(x.get('id', ''))
+    )
+    digest_payload = {
+        'active': active_meaningful,
+        'completed': completed_meaningful,
+    }
+    digest = hashlib.sha256(json.dumps(digest_payload, sort_keys=True).encode()).hexdigest()[:20]
+
     counts = {}
     for task in active:
         state = task.get('status', 'unknown')
         counts[state] = counts.get(state, 0) + 1
-    return active, digest, counts
+    for task in completed:
+        state = task.get('status', 'completed')
+        counts[state] = counts.get(state, 0) + 1
+
+    active_list = ActiveTaskList(
+        active,
+        completed=completed,
+        ready=ready,
+        running=running,
+        recent_completed=completed[:10]
+    )
+
+    return TaskEventResult(
+        active_list,
+        digest,
+        counts,
+        completed=completed,
+        ready=ready,
+        running=running,
+        recent_completed=completed[:10]
+    )
+
+
+def format_supervision_body(event_key, selected_tasks, entities=None, recent_completions=None):
+    """
+    Format supervision envelope body per C1629/C1630.
+    Structures tasks clearly by project/team:
+    SUPERVISION-{event_key}: ... Tasks: [project] task (status, owner); [project2] task2 (status, owner); Recent completions: task3 (done)
+    """
+    prefix = (
+        f'SUPERVISION-{event_key}: User requests autonomous useful execution and clear roles. '
+        'Read coordination/TEAM-REGISTRY.json, TASKS.json and SUPERVISION.md. '
+        'As monitoring principal, inspect your teams, ask heads to claim ready owned work, '
+        'verify first actual tool/output, review completion and choose next useful step. '
+        'Diagnose blockers or arrange acknowledged repair and continue independent work. '
+        'Do not create implementation teams yourself, invent busywork, overwrite drafts or bypass quotas. '
+        'Reply with task IDs, accepted owners, first evidence, blocked reasons and next check; update TASKS.json with ownership. '
+        'Tasks: '
+    )
+
+    if entities is None:
+        entities = []
+    # If caller passed completed tasks list as 3rd positional argument (legacy / convenience):
+    if isinstance(entities, list) and entities and 'status' in entities[0] and 'id' in entities[0] and not any('principal_tags' in x or 'kind' in x for x in entities):
+        recent_completions = entities
+        entities = []
+
+    grouped = {}
+    for t in selected_tasks:
+        matched_eid = None
+        for e in entities:
+            if task_matches_entity(t, e):
+                matched_eid = e['id']
+                break
+        if not matched_eid:
+            matched_eid = normalize_project_id(t.get('project_id')) or normalize_project_id(t.get('team_id')) or t.get('project_id') or t.get('team_id') or 'unassigned'
+        grouped.setdefault(matched_eid, []).append(t)
+
+    group_strs = []
+    for eid, grp in grouped.items():
+        task_strs = [f"{t['id']} ({t.get('status', 'unknown')}, {t.get('owner_tag', 'unowned')})" for t in grp]
+        group_strs.append(f"[{eid}] " + ", ".join(task_strs))
+
+    tasks_part = "; ".join(group_strs)
+
+    completions_part = ""
+    if recent_completions:
+        comp_strs = [f"{t['id']} ({t.get('status', 'done')})" for t in recent_completions]
+        completions_part = "; Recent completions: " + ", ".join(comp_strs)
+
+    return prefix + tasks_part + completions_part
+
 
 def idle_episode(active, ready, old, timestamp):
     since = (old.get('idle_since') if old.get('idle_since') is not None else timestamp) if ready else None
     overdue = bool(active and since is not None and timestamp - since >= 300 and not old.get('pending'))
     return since, overdue
+
 
 def eligible(state, screen, tag, previous, quota=True):
     if not state.get('alive'):
@@ -203,9 +563,11 @@ def eligible(state, screen, tag, previous, quota=True):
     same = previous.get('session_id') == state.get('session_id')
     return (previous.get('ready_snapshot_count', 0) + 1 if same else 1), 'idle-empty'
 
+
 AUTHORIZED_HOOK_ENGINES = {
     'zcodex', 'codex', 'claude', 'opencode', 'grok', 'gemini', 'antigravity', 'shell'
 }
+
 
 def check_pending_slo(pending, tag, item, now_ts=None):
     """
@@ -226,8 +588,9 @@ def check_pending_slo(pending, tag, item, now_ts=None):
     except Exception:
         return False, 0.0, 0, None
 
-    current_ts = now_ts if now_ts is not None else time.time()
-    if not isinstance(current_ts, (int, float)) or not math.isfinite(current_ts) or current_ts <= 0:
+    if now_ts is not None:
+        current_ts = float(now_ts)
+    else:
         current_ts = time.time()
 
     pending_age = max(0.0, current_ts - created_ts)
@@ -264,18 +627,12 @@ def check_pending_slo(pending, tag, item, now_ts=None):
 
     return True, pending_age, slo_seconds, blocking_reason
 
+
 def parse_and_validate_turn_hook_event(raw_event, expected_session_id=None):
     """
-    Parse and validate the syntax/structure of an authoritative turn-boundary hook event.
-    NOTE (C1532): Syntax validation alone does NOT authenticate the producer or authorize
-    untrusted socket injection. Producer provenance requires transport-level authentication
+    Parse and validate an authoritative turn-boundary hook event emitted by an engine.
+    Syntax & schema validation only. Requires authenticated transport channel
     (e.g. 0700 UNIX domain socket owned by the session workload UID/GID).
-    - Validates event type ('turn_complete' or 'turn_start')
-    - Enforces state ('idle-empty' for turn_complete, 'working' for turn_start)
-    - Validates monotonic prompt_seq >= 0
-    - Enforces session UUID format and optional expected_session_id match
-    - Enforces engine in authorized set
-    - Rejects invalid resting states (e.g. active child processes or unsubmitted drafts)
     """
     if isinstance(raw_event, str):
         try:
@@ -355,9 +712,11 @@ def parse_and_validate_turn_hook_event(raw_event, expected_session_id=None):
         'authenticated_channel_required': True
     }
 
+
 def records(path, name):
     value = json.loads(path.read_text())
     return value if isinstance(value, list) else value[name]
+
 
 def recorded_send(binary, tag, key, body, spool, sender_id, supports_key, call=command):
     """Without native keys, a prewritten intent freezes ambiguous crashes rather than resending."""
@@ -384,8 +743,10 @@ def recorded_send(binary, tag, key, body, spool, sender_id, supports_key, call=c
     atomic(receiptpath, receipt)
     return receipt
 
+
 def may_deliver(pending, own_id):
     return bool(pending and pending.get('id') and pending.get('sender_id') == own_id and pending.get('delivery') in ('inbox','not-ready'))
+
 
 def run():
     os.chdir(ROOT)
@@ -405,6 +766,7 @@ def run():
     atomic(PRIVATE / 'binary-manifest.json', manifest)
     statepath = PRIVATE / 'state.json'
     memory = json.loads(statepath.read_text()) if statepath.exists() else {}
+
     def event(kind, **fields):
         if storage_guard(PRIVATE)['state'] == 'paused-hard-limit':
             raise StorageFull('storage hard limit reached; all evidence preserved')
@@ -416,8 +778,10 @@ def run():
             archive_verified(legacy,PRIVATE)
         with (PRIVATE / 'events.jsonl').open('a') as handle:
             handle.write(json.dumps({'timestamp': now(), 'kind': kind, **fields}) + '\n')
+
     if storage_guard(PRIVATE)['state'] != 'paused-hard-limit':
         event('service-started', session_id=identity['id'], binary_sha256=expected_hash)
+
     while not (PRIVATE / 'stop').exists():
         report = {'timestamp': now(), 'identity': identity['id'], 'principals': {}, 'errors': [], 'actions': [], 'degraded': False}
         try:
@@ -425,11 +789,11 @@ def run():
             if report['storage']['state'] == 'paused-hard-limit':
                 raise StorageFull('storage hard limit reached; native messages and ACKs paused; evidence preserved')
             registry_full = json.loads((ROOT / 'coordination/TEAM-REGISTRY.json').read_text())
-            teams = registry_full if isinstance(registry_full, list) else registry_full.get('teams', [])
+            entities = extract_supervision_entities(registry_full)
             tasks = records(ROOT / 'coordination/TASKS.json', 'tasks')
             active, digest, counts = task_event(tasks)
             report['task_counts'] = counts
-            active_tags = active_principals(teams, PRIVATE, registry_full)
+            active_tags = active_principals(entities, PRIVATE, registry_full)
             report['active_principals'] = active_tags
             sessions = json.loads(command(['aplexer', 'list', '--json']))
             sessions = [x for x in sessions if x.get('workspace') == str(ROOT)]
@@ -458,6 +822,7 @@ def run():
                 event('reply-received', message_id=mid, sender_id=sender.get('session_id'), sender_tag=sender.get('tag'), reply_to=reply_to,
                       classification='coordination-reply; inspect evidence before agreement', body_sha256=hashlib.sha256(body.encode()).hexdigest())
                 command([BINARY, 'message', 'ack', mid, '--json'])
+
             for tag in active_tags:
                 match = [x for x in sessions if x.get('tag') == tag]
                 old = memory.get(tag, {})
@@ -490,6 +855,7 @@ def run():
                     memory[tag] = item
                     report['principals'][tag] = item
                     continue
+
                 item = {'event_key': digest, 'ready_snapshot_count': 0}
                 session = match[0]
                 pid = session.get('workload_pid')
@@ -518,22 +884,37 @@ def run():
                         event('pending-reconciled-native-ack', principal=tag, **evidence)
                         report['actions'].append({'kind':'pending-reconciled-native-ack', 'principal':tag, 'message_id':pending['id']})
                         pending = None
+
                 # At most one envelope per task revision, sparse Claude min 30m; no hourly busywork.
                 cooldown = old.get('cooldown_until', 0)
                 if active and not pending and (old.get('sent_event') != event_key) and time.time() >= cooldown:
                     if item.get('alive'):
-                        selected = [t for t in active if any(tag in team.get('principal_tags', []) and team['id'] == t.get('team_id') for team in teams)]
+                        principal_entities = [e for e in entities if tag in e.get('principal_tags', [])]
+                        selected = []
+                        seen_selected = set()
+                        for t in active:
+                            tid = t.get('id')
+                            if tid not in seen_selected:
+                                if any(task_matches_entity(t, e) for e in principal_entities):
+                                    selected.append(t)
+                                    seen_selected.add(tid)
+
                         if selected:
-                            body = (f'SUPERVISION-{event_key}: User requests autonomous useful execution and clear roles. '
-                                    'Read coordination/TEAM-REGISTRY.json, TASKS.json and SUPERVISION.md. '
-                                    'As monitoring principal, inspect your teams, ask heads to claim ready owned work, '
-                                    'verify first actual tool/output, review completion and choose next useful step. '
-                                    'Diagnose blockers or arrange acknowledged repair and continue independent work. '
-                                    'Do not create implementation teams yourself, invent busywork, overwrite drafts or bypass quotas. '
-                                    'Reply with task IDs, accepted owners, first evidence, blocked reasons and next check; update TASKS.json with ownership. '
-                                    'Tasks: ' + ', '.join(f"{t['id']} ({t.get('status','unknown')}, {t.get('owner_tag','unowned')})" for t in selected))
+                            all_completed = getattr(active, 'completed', None)
+                            if all_completed is None:
+                                all_completed = [t for t in tasks if t.get('status') in ('completed', 'done')]
+                            completed_for_principal = [t for t in all_completed if any(task_matches_entity(t, e) for e in principal_entities)]
+                            completed_for_principal.sort(key=lambda t: t.get('completed_at') or t.get('updated_at') or '', reverse=True)
+                            recent_completions = completed_for_principal[:5] if completed_for_principal else None
+
+                            body = format_supervision_body(
+                                event_key=event_key,
+                                selected_tasks=selected,
+                                entities=principal_entities,
+                                recent_completions=recent_completions
+                            )
                             # Inbox first, then existing-ID delivery after independent fresh snapshots.
-                            receipt = recorded_send(BINARY,tag,f'{event_key}-{tag}',body,PRIVATE,identity['id'],supports_key)
+                            receipt = recorded_send(BINARY, tag, f'{event_key}-{tag}', body, PRIVATE, identity['id'], supports_key)
                             atomic(PRIVATE / f'receipt-{event_key}-{tag}.json', receipt)
                             if receipt.get('delivery') == 'send-uncertain':
                                 # Frozen ambiguity: retain UNKNOWN outcome in the report, degraded cycle.
@@ -551,7 +932,7 @@ def run():
 
                 if pending and pending.get('sender_id') != identity['id']:
                     item['pending_reason'] = 'original sender changed; original recipient ACK/reply required'
-                if may_deliver(pending,identity['id']) and count >= 2:
+                if may_deliver(pending, identity['id']) and count >= 2:
                     # Third immediate check closes most polling races; native command still enforces readiness.
                     fresh_screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
                     if composer(fresh_screen, tag) == 'empty':
@@ -565,7 +946,7 @@ def run():
                             outcome = json.loads(result.stdout)
                         except json.JSONDecodeError:
                             outcome = {'status': 'delivery-uncertain', 'returncode': result.returncode}
-                        # Fail-closed safety: no fallback to binaries lacking composer draft detection (sb-reviewer-sup B1 blocker).
+                        # Fail-closed safety: no fallback to binaries lacking composer draft detection.
                         # Refusal from reviewed binary is preserved verbatim in delivery audit evidence.
                         atomic(PRIVATE / f"delivery-{pending['id']}.json", outcome)
                         status = outcome.get('status', outcome.get('delivery', 'delivery-uncertain'))
@@ -576,6 +957,7 @@ def run():
                             pending = None
                         # Submitted stays pending until genuine reply/read ACK, not repeated on timer.
                         # Unknown/uncertain outcomes prohibit automatic retry.
+
                 if pending:
                     is_beyond, dur, slo_limit, block_reason = check_pending_slo(pending, tag, item, time.time())
                     if is_beyond:
@@ -598,11 +980,11 @@ def run():
             # Bounded operational receipts; retain every currently unresolved/uncertain request.
             protected = {x.get('pending', {}).get('id') for x in memory.values() if x.get('pending')}
             protected |= {x.get('pending', {}).get('event') for x in memory.values() if x.get('pending')}
-            archived_count = archive_operational(PRIVATE,protected)
+            archived_count = archive_operational(PRIVATE, protected)
             if archived_count:
                 event('operational-archive', archived_files=archived_count, retained_live_newest=2048, unresolved_preserved=True)
         except StorageFull as exc:
-            report['storage'] = {**storage_guard(PRIVATE),'state':'paused-hard-limit','reason':str(exc)}
+            report['storage'] = {**storage_guard(PRIVATE), 'state':'paused-hard-limit', 'reason':str(exc)}
             record_cycle_failure(report, exc)
             # Preserve evidence; only overwrite bounded current status, never trim old archives.
         except Exception as exc:
@@ -616,6 +998,7 @@ def run():
             if (PRIVATE / 'stop').exists():
                 return
             time.sleep(1)
+
 
 if __name__ == '__main__':
     run()
