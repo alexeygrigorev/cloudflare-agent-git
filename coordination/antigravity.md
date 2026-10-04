@@ -2418,10 +2418,47 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Six shortlist gates remain **HELD**.
    - Cooperative process memory convention <= 1500 MB; scratch <= 512 MB; zero `/tmp` growth.
 
+---
 
+### 82. Real Node+Sidecar Consumer Pilot Acceptance & Token Coverage Audit Delivery (C1691–C1699)
 
+1. **Real Node+Sidecar Consumer Pilot Delivery & Independent Review:**
+   - **Target Deliverables**:
+     - Adoption Report: [`research/antigravity/adoption/REPORT-REALNODE-SIDECAR-PILOT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/REPORT-REALNODE-SIDECAR-PILOT.md) (committed in [`9b05ae3`](file:///home/alexey/git/cloudflare-agent-git/commit/9b05ae3) and updated with C1696/C1699 corrections).
+     - Independent Review: [`research/antigravity/reviews/REV-REALNODE-SIDECAR-PILOT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-REALNODE-SIDECAR-PILOT.md) by `real-node-consumer-reviewer` (`6bf9e5f1-7b2c-47ce-a1e9-6bd73452fd15`). **Verdict: ACCEPT**.
+   - **Remote Branch Checkpoint**:
+     - Ref: `origin/proto/pilot-realnode-maintenance` verified via `git ls-remote`.
+     - Commit SHA: `592a8ee7f18e578d716439dfb5cb672c9423793f`
+     - Parent SHA: `b2df985d3eedfdf345fceb966b18bed415d1187f` (`proto/sdk-distribution-complete`)
+     - Tree SHA: `6287dac9f8f623f99c9fcc99f5e3c59f88584a02` (**exact match** to Track 1 ordinary Git baseline tree, 0-byte difference).
+     - Diff Purity: Touches **ONLY** `README.md` (+26 lines, 0 deletions) documenting real Node coordinator and Git sidecar runbook.
+   - **Test Integrity**: Client unit test suite (`tests/test_client.py`) passed **22/22 PASS (100%)** in 7.758s in detached scratch worktree. Note: tests verify client SDK contract against local server, not complete product test suite.
+   - **Pinned Runtime Artifacts**:
+     - Coordinator: `/home/alexey/git/agent-branches-integration/prototype/.build/node/src/local/main.js` (SHA256: `7747d511a4b8dfcf4d80dfcaf71015d8f5f42c783f2ade3be6590aaad5ffd14f`, Node v24.13.1)
+     - Sidecar: `/home/alexey/git/agent-branches-integration/prototype/local-artifacts/sidecar.mjs` (SHA256: `04a756286b0448734c051f88d1b330ed7b2356b71d1b170eca64db196a949a76`)
+     - SDK Base Commit: `b2df985d3eedfdf345fceb966b18bed415d1187f` on `proto/sdk-distribution-complete` (tree `792e342379d7d43f050b182e1858a741bece1669`).
 
+2. **C1695 / C1696 / C1699 Nuance Corrections Formally Ingested:**
+   - **Worker Identity**: `real-node-consumer` (`bfe48f0c-53b2-49b3-bee0-e709f54def79`) is a native harness subagent spawned via `invoke_subagent`, not an independently bound aplexer session. First tool: step 1 (`view_file` on `README.md`).
+   - **Memory Model**: Memory tracking reflects sampled `ps` RSS snapshots (Sidecar 59.70 MB init / 75.89 MB final; Coord 62.63 MB init / 76.88 MB final). Cooperative 1500 MB pool admission; host kernel `session-8309.scope` `memory.max` is `max` (not total kernel cgroup enforcement).
+   - **Git Transport Authentication**: Passing `-c http.extraHeader="Authorization: Bearer <token>"` resolves URL userinfo encoding bugs and keeps tokens out of HTTP server URL logs, but places tokens in process `argv` (visible to local `ps`/`/proc`). Production path recommends private Git credential helper or config includes.
+   - **Benchmark Duration Scope**: 9.395s reflects final scripted pipeline execution. Initial developer troubleshooting of setup sequencing and port binding took unmeasured time (UNKNOWN), which is not included in the scripted duration and should not be claimed as all-in developer adoption velocity.
+   - **V8 Wasm Memory Boundary & C1699 Falsification**: Flags `--disable-wasm-trap-handler --max-old-space-size=256` resolve the V8 WebAssembly trap handler 4GB virtual reservation. However, C1699 empirical worker probe (01a10558-ea84) confirmed that under strict virtual limits (`ulimit -v 1500000`, ~1.43 GB virtual), `db4` compiled coordinator crashes with silent `SIGABRT` on first request (8/8), while `ulimit -v 1530000` (~1.46 GB) succeeds (5/5). Physical resident memory stays ~77 MB. Thus, physical cgroup limits without strict virtual limits are required.
+   - **Single-Actor Reality**: 0 warnings is an uncontested single-actor outcome, not proof of concurrent collision detection or multi-actor production safety.
 
+3. **Bounded Token Coverage Audit Delivered (C1694):**
+   - **Deliverable**: [`research/antigravity/reviews/USAGE-COVERAGE-RECEIPT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/USAGE-COVERAGE-RECEIPT.md) by `usage-coverage-auditor` (`4e4d159d-fe2e-4f93-9f25-abbb35298043`). First tool: step 1 (`view_file` on `transcript.jsonl`).
+   - **Core Findings**:
+     - Strict separation between Tier 1 (session unique content footprint: instantaneous context $C_i = \text{input} + \text{cache\_read}$, net prompt delta, net output tokens) and Tier 2 (provider API processing volume).
+     - Multi-counting quantification: naively summing input tokens across turns causes 5x–16.5x inflation in subagents and 1,480x inflation in parent conversations (150.6M tokens vs 101.7k active context).
+     - Subagent isolation: 100% isolated in child transcripts; zero leakage to parent.
+     - ZCode rollouts: native token counters exist in 92.2% of historical rollouts and 100% of current cohort rollouts (10/10 on 2026-10-04); external proxy log scrapers are NOT required.
+     - Mathematical anti-double-counting aggregation rules established for `record_usage.py` and `collect.py`.
+     - Zero billing guesses; publication guard exit 0.
 
-
+4. **Invariants Maintained:**
+   - Claude principal remains **stopped**.
+   - Public Cloudflare deploy strictly **HELD**.
+   - Six shortlist gates remain **HELD**.
+   - Scratch usage strictly <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
 

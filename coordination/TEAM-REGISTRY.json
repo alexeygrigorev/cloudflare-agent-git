@@ -1926,14 +1926,61 @@
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/realnode-pilot/",
           "branch": "proto/pilot-realnode-maintenance",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T07:07:50+02:00",
+          "completed_at": "2026-10-04T07:16:10+02:00",
           "task": "Execute authentic Node+Sidecar consumer integration task under Codex Principal C1691 directives using compiled db4 localmain + b2 SDK (not demo substitute/fake artifacts): clean stray bootstrap snippet from SDK README.md on unique owned pilot branch proto/pilot-realnode-maintenance; matched ordinary Git baseline comparison; dynamic ports, private fresh credentials, physical cgroup memory cap <= 1500M; measure actual warnings (0 expected), actions, repair time, and unsteered ADOPT/DECLINE/CONDITIONAL verdict.",
           "owned_paths": [
             "research/antigravity/adoption/REPORT-REALNODE-SIDECAR-PILOT.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID bfe48f0c-53b2-49b3-bee0-e709f54def79; inspecting git log and preparing matched baseline and Node+Sidecar stack",
-          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+          "first_tool_evidence": "step 1 tool call view_file on b2df985 README.md; conversation bfe48f0c-53b2-49b3-bee0-e709f54def79",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max; sampled ps RSS: Sidecar 75.89 MB, Coord 76.88 MB)",
+          "remote_branch": "origin/proto/pilot-realnode-maintenance",
+          "commit_sha": "592a8ee7f18e578d716439dfb5cb672c9423793f",
+          "tree_sha": "6287dac9f8f623f99c9fcc99f5e3c59f88584a02",
+          "verdict": "ADOPT (CONDITIONAL)"
+        },
+        {
+          "tag": "usage-coverage-auditor",
+          "role": "auditor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "4e4d159d-fe2e-4f93-9f25-abbb35298043",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/usage-coverage-audit/",
+          "status": "completed",
+          "started_at": "2026-10-04T07:13:00+02:00",
+          "completed_at": "2026-10-04T07:18:11+02:00",
+          "task": "Bounded read-only token coverage audit analyzing native Gemini transcript usage and ZCode rollout usage telemetry under C1694: establish per-step semantics, cache-read vs fresh input multi-counting, parent vs subagent isolation, rollout telemetry coverage, and anti-double-counting aggregation rules.",
+          "owned_paths": [
+            "research/antigravity/reviews/USAGE-COVERAGE-RECEIPT.md"
+          ],
+          "first_tool_evidence": "step 1 tool call view_file on transcript.jsonl schema; conversation 4e4d159d-fe2e-4f93-9f25-abbb35298043",
+          "memory_cap": "1500M (cooperative convention; scratch 4.0 KB, zero /tmp growth)",
+          "verdict": "COMPLETE (Tier 1 vs Tier 2 accounting model formulated; 92.2% historical / 100% current ZCode rollout coverage confirmed; parent/child subagent tokens 100% isolated; publication guard exit 0)"
+        },
+        {
+          "tag": "real-node-consumer-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "6bf9e5f1-7b2c-47ce-a1e9-6bd73452fd15",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/realnode-pilot-review/",
+          "status": "completed",
+          "started_at": "2026-10-04T07:16:36+02:00",
+          "completed_at": "2026-10-04T07:19:17+02:00",
+          "task": "Independent verification and negative review of Real Node+Sidecar consumer pilot deliverable REPORT-REALNODE-SIDECAR-PILOT.md, remote branch proto/pilot-realnode-maintenance @ 592a8ee, tree equivalence 6287dac, 22/22 unit tests in detached scratch worktree, daemon metrics audit, and negative mutation testing under C1691/C1696.",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-REALNODE-SIDECAR-PILOT.md"
+          ],
+          "first_tool_evidence": "step 1 tool call run_command git ls-remote on origin/proto/pilot-realnode-maintenance; conversation 6bf9e5f1-7b2c-47ce-a1e9-6bd73452fd15",
+          "memory_cap": "1500M (cooperative convention; scratch 528 KB, zero /tmp growth)",
+          "verdict": "ACCEPT (exact tree hash 6287dac match, 22/22 tests PASS, daemon RSS <= 77 MB, mutant killed, publication guard exit 0)"
         }
       ]
     },
