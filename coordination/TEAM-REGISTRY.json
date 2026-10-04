@@ -985,9 +985,8 @@
             "tests/test_client.py"
           ],
           "first_tool_evidence": "aplexer work join / tests pass",
-          "memory_cap": "1500M",
-          "completed_commit": "b267dce",
-          "review_report": "research/antigravity/reviews/REV-SDK-CLIENT-B267DCE.md (ACCEPT, commit a8f4378)"
+          "completed_commit": "3bba5fe",
+          "review_report": "C1499 b267dce ACCEPT (a8f4378); C1509 3bba5fe under review by sdk-wire-c1509-reviewer"
         },
         {
           "tag": "sdk-wire-reviewer",
@@ -1006,6 +1005,24 @@
           "memory_cap": "1500M",
           "verdict": "ACCEPT",
           "completed_commit": "a8f4378"
+        },
+        {
+          "tag": "sdk-wire-c1509-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "22ba9456-e2e6-4c4f-9109-f1c0ff2e4b67",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/agent-branches-sdk-adoption",
+          "status": "running",
+          "started_at": "2026-10-04T02:32:00+02:00",
+          "task": "Independent review of SDK client wire shape and token normalization commit 3bba5fe (C1509)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-SDK-CLIENT-3BBA5FE.md"
+          ],
+          "first_tool_evidence": "subagent launched",
+          "memory_cap": "shared cgroup / process slice"
         },
         {
           "tag": "webhook-auth-reviewer",
