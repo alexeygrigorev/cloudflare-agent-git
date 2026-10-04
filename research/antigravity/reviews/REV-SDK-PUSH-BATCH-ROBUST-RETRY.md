@@ -1,60 +1,49 @@
-# Independent Verification & Security Review: Robust SDK Push-Batch Retry Policy & Two Generals Safety (Revision 2)
+# Independent Verification & Security Review: Robust SDK Push-Batch Retry Policy & Pure Fail-Closed Contract (Commit f4f6c3e)
 
 - **Reviewer:** Independent SDK Batch Retry Reviewer (tag: `sdk-batch-retry-reviewer`)
-- **Authority:** `antigravity-head` (`46fdb644`), dispatched under Codex Principal C1658 / C1660 / C1662 directives
+- **Authority:** `antigravity-head` (`46fdb644`), dispatched under Codex Principal C1658 / C1660 / C1662 / C1672 / C2028 directives
 - **Predecessor Reviews & Directives Addressed:**
   - `research/antigravity/reviews/REV-SDK-PUSH-BATCH-7DE6836.md` (initial review)
   - Codex Principal C1662 Directive: Two Generals problem and commit-then-timeout hazard
-- **Remediation Report Audited:** `research/antigravity/recovery/REPORT-SDK-PUSH-BATCH-ROBUST-RETRY.md` (Revision 2)
+  - Codex Principal C1672 / C2028 Directive: Pure fail-closed mutating push contract (removal of automatic 429 retries)
+- **Remediation Report Audited:** `research/antigravity/recovery/REPORT-SDK-PUSH-BATCH-ROBUST-RETRY.md`
 - **Target Repository:** `/home/alexey/git/agent-branches`
-- **Target Branch:** `feat/push-batch-robust-retry` (clean baseline: `1a3c544`)
+- **Target Branch:** `main`
+- **Exact Pinned Commit:** `f4f6c3eb417c05beb684fac4301faa1b6183f51a` ("fix(sdk): enforce pure fail-closed on mutating push (remove automatic 429 retry per C1672)")
 - **Target Files Audited:**
-  - `agent_branches/client.py` (Revision 2: safe rate-limit retry, fail-closed mutating push, `ambiguous_event`, structured `__str__`)
+  - `agent_branches/client.py` (lines 70–98, 405–543: pure fail-closed `push_batch`, `BatchExecutionError` with `ambiguous_event` and information-rich `__str__`, MCP alias `branches_push_batch`)
   - `agent_branches/__init__.py` (exported `BatchExecutionError`)
-  - `tests/test_push_batch_retry.py` (11 comprehensive end-to-end tests covering validation, fail-closed 503, rate-limit recovery, structured receipts, and Two Generals commit-then-timeout)
+  - `tests/test_push_batch_retry.py` (11 comprehensive end-to-end tests covering validation, fail-closed 503/429 safety, partial success preservation, and Two Generals commit-then-timeout)
 - **Scratch Verification Root:** `/home/alexey/git/cloudflare-agent-git/.local/scratch/sdk-batch-retry-review/` (mode 0700, 740 KB used, <= 512 MB policy compliant)
 - **Date of Review:** 2026-10-04 (Europe/Berlin)
-- **Verdict:** **ACCEPT / RECOMMENDED FOR CANONICAL INTEGRATION**
+- **Verdict:** **ACCEPT / CANONICAL INTEGRATION VERIFIED**
 
 ---
 
 ## 1. Executive Summary & Verdict Rationale
 
-This independent verification audit evaluates Revision 2 of the Agent Branches L2 SDK batch push mechanism on branch `feat/push-batch-robust-retry` in repository `/home/alexey/git/agent-branches`.
+This independent verification audit evaluates the final exact pin `f4f6c3eb417c05beb684fac4301faa1b6183f51a` on `agent-branches` `main` under Codex Principal C2028 direction.
 
-Revision 1 eliminated client-side result discard, pre-validation blind spots, duplicate SHA metadata confusion, and unhandled HTTP 429 rate limiting. However, following deep review under Codex Principal C1662, an essential distributed systems hazard was identified: **the Two Generals problem over mutating HTTP endpoints**.
+The batch push implementation evolved through three rigorous architectural phases:
+1. **Revision 1 (`bbb4432`)**: Eliminated caller result discard via `BatchExecutionError`, fixed pre-validation blind spots with Phase 1 eager agent resolution, enforced forward-only commit progression, and introduced retry backoff.
+2. **Revision 2 (`dd4eefc`)**: Enforced the Codex Principal C1662 Two Generals invariant: connection drops and HTTP 5xx fail closed immediately without blind retries to prevent head regression on ring eviction and duplicate push side-effects, while introducing `ambiguous_event`.
+3. **Revision 3 (`f4f6c3e`)**: Enforced the Codex Principal C1672 / C2028 **Pure Fail-Closed Mutating Push Contract**: In distributed HTTP architectures without server-side idempotency keys on `POST /events/push`, any failure during or after request dispatch (including HTTP 429 rate limiting) cannot be mathematically proven to precede state mutation across arbitrary backends. Therefore, all automatic retries on mutating push have been eliminated. Every failure halts immediately on attempt 0 with structured partial receipts and explicit identification of the unconfirmed `ambiguous_event`.
 
-### The Two Generals / Commit-Then-Timeout Hazard (C1662):
-Because `POST /events/push` does not possess distributed transaction coordinator semantics or server-side idempotency keys across arbitrary epochs:
-1. If the coordinator receives a `POST /events/push`, applies the commit to the git head vector, increments push counters, and evaluates radar conflicts, but the network connection drops or times out before the HTTP 200 response reaches the client:
-2. The client observes an `AgentBranchesConnectionError` (or a gateway 504 / 503).
-3. If the client automatically and blindly retries the push:
-   - On eviction from the coordinator's bounded `seenPushes` ring (cap 16), the coordinator treats the retry as a brand new push, causing **head regression** or duplicate increments.
-   - Even within the ring, replaying after intermediary pushes causes causality inversion.
+### Key Audit Findings:
+- **Zero Blind Retries on Mutating Push**: `push_batch` contains zero automatic retry loops on `push()`. Every failure (network connection reset, HTTP 5xx, HTTP 429, HTTP 4xx) fails closed immediately on attempt 0.
+- **Strict Two Generals Safety**: In commit-then-timeout scenarios (`test_11`), the coordinator state records **strictly 1 push**, with zero duplicate side effects.
+- **Information-Rich Receipts**: `BatchExecutionError` exposes `succeeded`, `completed`, `failed_index`, `unattempted_events`, and `ambiguous_event`. Its `__str__` format explicitly conveys `failed_at_index`, `ambiguous`, `succeeded` count, `unattempted` count, and underlying cause.
+- **Non-Replay Invariant**: Succeeded events are NEVER re-sent.
+- **Negative Mutation Score**: 100% mutation score across all evaluations in scratch testbeds.
+- **Test Suite Pass**: 11/11 dedicated push-batch tests pass; 57/57 full regression suite tests pass.
 
-### Revision 2 Architectural Remediation:
-1. **Clear Separation of Pre-Mutation Rejections vs. Post-Dispatch Ambiguity**:
-   - **HTTP 429 (Rate Limiting)** is a deterministic *pre-mutation rejection* at the gateway / rate-limiter before coordinator state is modified. It remains safe to retry with exponential backoff up to `max_retries`.
-   - **Connection Drops (`AgentBranchesConnectionError`) and HTTP 5xx**: Once a mutating push has been dispatched over the wire, a drop or server error is inherently ambiguous. The client **fails closed immediately** without automatic mutating retry, preventing duplicate mutations.
-2. **Exposing Ambiguity in Structured Receipts**:
-   - `BatchExecutionError` now carries `ambiguous_event: Optional[Dict[str, Any]]`, explicitly identifying the unconfirmed event whose commit status on the server cannot be confirmed.
-   - `BatchExecutionError.__str__` conveys `failed_at_index`, `ambiguous`, `succeeded` count, `unattempted` count, and underlying cause.
-   - `succeeded` preserves all accepted events, and `unattempted_events` isolates subsequent events.
-3. **Empirical Verification of Two Generals Invariant**:
-   - In `test_11_commit_then_timeout_fails_closed_without_blind_retry`, an abrupt socket termination immediately after server-side mutation causes `push_batch` to fail closed immediately, with server-side push count remaining **strictly 1** (zero duplicate side effects).
-4. **Test Suite & Negative Mutation Results**:
-   - All 11 dedicated tests pass in `test_push_batch_retry.py`.
-   - All 57 tests pass across the entire `agent-branches` test suite.
-   - Revision 2 negative mutation testing killed 100% of mutants (3/3 killed in isolated scratch testbed).
-
-**Verdict: ACCEPT.** The Revision 2 implementation decisively resolves the Two Generals hazard, satisfies Codex C1658 / C1660 / C1662 directives, and is fully recommended for canonical integration into `main`.
+**Verdict: ACCEPT.** Commit `f4f6c3eb417c05beb684fac4301faa1b6183f51a` represents the canonical, mathematically sound, fail-closed batch push contract.
 
 ---
 
-## 2. Deep Two Generals & Commit-Then-Timeout Analysis (C1662)
+## 2. Distributed Systems Rationale: Pure Fail-Closed Contract (C1662 / C1672 / C2028)
 
-### 2.1 The Distributed State Dilemma
-In distributed agent coordination, client-side retries over non-idempotent HTTP endpoints present a fundamental dilemma:
+In distributed systems, client-side retry policies over mutating HTTP endpoints are fraught with state-corruption risks:
 
 ```mermaid
 sequenceDiagram
@@ -64,38 +53,31 @@ sequenceDiagram
     participant Coord as L1 Coordinator Core
     participant State as Coordinator State (heads/pushes)
 
-    Note over Client, Coord: Phase 1: Pre-validation & pre-resolution succeeds
-    Client->>Gateway: POST /events/push (Event 0, SHA_0)
+    Note over Client, Coord: Phase 1: Pre-validation & pre-resolution succeeds fail-closed
+    Client->>Gateway: POST /events/push (Event k, SHA_k)
     Gateway->>Coord: Forward request
-    Coord->>State: Apply mutation: heads[agent] = SHA_0, pushes = 1
-    Note over Coord, Client: Sockets drop / Server crashes before HTTP 200 returned!
-    Coord--xClient: Connection dropped (AgentBranchesConnectionError)
-    
-    alt Blind Retrying (FLAWED - Revision 1)
-        Note over Client: attempt < max_retries -> Blindly re-sends Event 0
-        Client->>Coord: POST /events/push (Event 0, SHA_0)
-        Coord->>State: Duplicate side-effects, push count increment, or head regression!
-    else Fail-Closed with Ambiguous Event (ROBUST - Revision 2)
-        Note over Client: Connection drop is ambiguous post-dispatch
-        Client->>Client: Halt immediately! Raise BatchExecutionError(ambiguous_event=Event 0)
-        Note over State: Server state recorded strictly 1 push (no duplicate side effects)
-    end
+    Coord->>State: Mutate state (heads[agent]=SHA_k, pushes++)
+    Note over Coord, Client: Socket drops / Server crashes / Rate-limiter fires post-commit!
+    Coord--xClient: Failure encountered (Connection drop / 5xx / 429)
+
+    Note over Client: Pure Fail-Closed Contract (Commit f4f6c3e)
+    Client->>Client: Zero retries! Halt immediately on attempt 0!
+    Client->>Client: Raise BatchExecutionError(ambiguous_event=Event k)
+    Note over State: Server state preserved: exactly 1 push, zero duplicates, zero ring eviction
 ```
 
-### 2.2 Why HTTP 429 Is Safe to Retry
-HTTP 429 (Too Many Requests) is returned by edge rate-limiting middleware *before* the request payload reaches coordinator execution logic or state modification. Because zero mutations have occurred on the coordinator, retrying with exponential backoff (`retry_backoff * (2 ** (attempt - 1))`) is provably safe and cannot cause duplicate mutations or head regression.
+### Why Even HTTP 429 Must Fail Closed on Mutating Push (C1672):
+While HTTP 429 is traditionally assumed to be a gateway rejection preceding backend execution, in multi-tier serverless architectures (Cloudflare Workers, Durable Objects, rate-limiting sidecars), an HTTP 429 can be returned during stream flushing, downstream quota exhaustion after local commit, or by an intermediate proxy after the backend processed the request. Because `POST /events/push` has no backend transaction idempotency key, automatic client-side retrying on 429 risks duplicate pushes and ring eviction head regression.
 
-### 2.3 Why Connection Drops and HTTP 5xx Must Fail Closed
-In the absence of distributed two-phase commit or transactional server-side idempotency tokens on `POST /events/push`:
-- A connection timeout or socket reset could occur *before* the server receives the request, *while* the server is processing, or *after* the server has committed the state changes into memory and git store.
-- Because the client cannot distinguish between these three states over the network, automatic blind retries risk severe state corruption.
-- Failing closed immediately and providing `ambiguous_event` allows the calling orchestrator or agent to inspect task state via authenticated read (`GET /tasks/:id`) to confirm whether `head_sha` was applied before deciding whether to resume.
+The purest, safest contract is:
+- **Phase 1 (Pre-validation & Pre-resolution)**: Resolves all inputs fail-closed before any network mutation.
+- **Phase 2 (Forward-only Dispatch)**: Dispatches each mutating push once. On any failure, halts immediately on attempt 0, returning complete receipts of confirmed events, unattempted events, and the ambiguous event.
 
 ---
 
-## 3. Systematic Code & Contract Audit
+## 3. Systematic Code & Contract Audit (Commit f4f6c3e)
 
-### 3.1 `BatchExecutionError` Definition (`agent_branches/client.py`)
+### 3.1 `BatchExecutionError` Structure (`agent_branches/client.py`)
 ```python
 class BatchExecutionError(AgentBranchesAPIError):
     """Raised when one or more events in a push_batch fail.
@@ -133,12 +115,11 @@ class BatchExecutionError(AgentBranchesAPIError):
         )
 ```
 
-### 3.2 Two-Phase Safe Execution & Retry Classification
+### 3.2 Pure Fail-Closed `push_batch` Implementation
 ```python
-        # Phase 2: Forward-only sequential execution with safe rate-limit retry
+        # Phase 2: Forward-only execution with pure fail-closed mutation safety
         results: List[Dict[str, Any]] = []
         for idx, ev in enumerate(events):
-            attempt = 0
             resolved_agent = resolved_agents[idx]
             task_id = ev.get("task_id") or ev.get("taskId")
             sha = ev.get("head_sha") or ev.get("sha") or ""
@@ -149,55 +130,47 @@ class BatchExecutionError(AgentBranchesAPIError):
             ev_token = ev.get("token") or token
             ev_admin_token = ev.get("admin_token") or admin_token
 
-            while True:
-                try:
-                    res = self.push(
-                        task_id=task_id,
-                        head_sha=sha,
-                        base_sha=base_sha,
-                        files_changed=files_changed,
-                        intent=intent,
-                        test_provenance=test_provenance,
-                        agent_id=resolved_agent,
-                        token=ev_token,
-                        admin_token=ev_admin_token,
-                    )
-                    results.append(res)
-                    break
-                except Exception as err:
-                    # Codex Principal C1662 Two Generals safety:
-                    # Distinguish pre-mutation rejections from unconfirmed post-dispatch mutations:
-                    # - HTTP 429 (Rate Limiting) is a pre-mutation rejection: safe to retry with backoff.
-                    # - Connection drops (AgentBranchesConnectionError) and HTTP 5xx: POST /events/push
-                    #   lacks server-side idempotency keys. Fail closed immediately without automatic mutating retry!
-                    is_pre_mutation_rate_limited = (
-                        isinstance(err, AgentBranchesAPIError) and err.status_code == 429
-                    )
-                    if is_pre_mutation_rate_limited and attempt < max_retries:
-                        attempt += 1
-                        time.sleep(retry_backoff * (2 ** (attempt - 1)))
-                        continue
-
-                    unattempted = list(events[idx + 1:])
-                    raise BatchExecutionError(
-                        f"Batch execution failed at event index {idx}: {err}",
-                        succeeded=list(results),
-                        failed_index=idx,
-                        original_error=err,
-                        unattempted_events=unattempted,
-                        ambiguous_event=ev,
-                    ) from err
+            try:
+                res = self.push(
+                    task_id=task_id,
+                    head_sha=sha,
+                    base_sha=base_sha,
+                    files_changed=files_changed,
+                    intent=intent,
+                    test_provenance=test_provenance,
+                    agent_id=resolved_agent,
+                    token=ev_token,
+                    admin_token=ev_admin_token,
+                )
+                results.append(res)
+            except Exception as err:
+                # Codex Principal C1662 / C1672 Two Generals safety:
+                # In distributed HTTP systems without backend idempotency keys on POST /events/push,
+                # any network failure, socket timeout, HTTP 5xx, or HTTP 429 during/after dispatch
+                # cannot be proven to precede state mutation across arbitrary backends.
+                # To prevent duplicate mutations, head regression on ring eviction, or push counter
+                # corruption, the client fails closed immediately on ANY failure without automatic
+                # mutating retry! Callers receive BatchExecutionError with explicit ambiguous_event,
+                # succeeded receipts, and unattempted events for application-level handling.
+                unattempted = list(events[idx + 1:])
+                raise BatchExecutionError(
+                    f"Batch execution failed at event index {idx}: {err}",
+                    succeeded=list(results),
+                    failed_index=idx,
+                    original_error=err,
+                    unattempted_events=unattempted,
+                    ambiguous_event=ev,
+                ) from err
 
         return results
 ```
 
 ---
 
-## 4. Test Suite Execution Receipts
+## 4. Test Suite Execution Receipts (Commit f4f6c3e)
 
-### 4.1 Dedicated Push-Batch Retry Test Suite (`tests/test_push_batch_retry.py`)
+### 4.1 Dedicated Push-Batch Test Suite (`tests/test_push_batch_retry.py`)
 - **Command:** `python3 -m unittest -v tests.test_push_batch_retry`
-- **Working Directory:** `/home/alexey/git/agent-branches`
 - **Output:**
   ```text
   test_01_pre_validation_input_rejections (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_01_pre_validation_input_rejections)
@@ -208,10 +181,10 @@ class BatchExecutionError(AgentBranchesAPIError):
   Test 3: Happy-path batch execution. ... ok
   test_04_server_503_fails_closed_without_blind_retry (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_04_server_503_fails_closed_without_blind_retry)
   Test 4: Server 503 fail-closed safety (C1662 Two Generals). ... ok
-  test_05_transient_429_rate_limit_with_recovery (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_05_transient_429_rate_limit_with_recovery)
-  Test 5: Transient HTTP 429 Rate Limiting with recovery. ... ok
-  test_06_rate_limit_retry_exhaustion (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_06_rate_limit_retry_exhaustion)
-  Test 6: Rate limit (HTTP 429) retry exhaustion. ... ok
+  test_05_rate_limit_429_fails_closed_without_blind_retry (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_05_rate_limit_429_fails_closed_without_blind_retry)
+  Test 5: Rate limit (HTTP 429) fails closed without blind mutating retry (C1672). ... ok
+  test_06_rate_limit_429_preserves_partial_success_and_unattempted (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_06_rate_limit_429_preserves_partial_success_and_unattempted)
+  Test 6: Rate limit (HTTP 429) preserves partial success and unattempted events. ... ok
   test_07_non_transient_error_fails_immediately (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_07_non_transient_error_fails_immediately)
   Test 7: Non-transient errors (HTTP 401, 403, 404). ... ok
   test_08_partial_success_preservation (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_08_partial_success_preservation)
@@ -224,86 +197,88 @@ class BatchExecutionError(AgentBranchesAPIError):
   Test 11: Two Generals commit-then-timeout safety (C1662). ... ok
 
   ----------------------------------------------------------------------
-  Ran 11 tests in 8.557s
+  Ran 11 tests in 8.552s
 
   OK
   ```
 
 ### 4.2 Full Regression Suite (`tests/`)
 - **Command:** `python3 -m unittest discover -s tests/`
-- **Working Directory:** `/home/alexey/git/agent-branches`
 - **Output:**
   ```text
   .........................................................
   ----------------------------------------------------------------------
-  Ran 57 tests in 18.438s
+  Ran 57 tests in 18.500s
 
   OK
   ```
-  All 57 tests passed with zero failures and zero regressions across all admission, client, CLI, radar engine, and batch retry test modules.
+  All 57 tests passed with zero failures and zero regressions.
 
 ---
 
-## 5. Negative Mutation Testing Analysis (Revision 2 / C1662)
+## 5. Physical Resource & Environmental Accounting
 
-An automated mutation testing harness (`run_revision2_mutations.py`) evaluated 3 targeted mutations directly testing the C1662 Two Generals invariant in the isolated scratch testbed (`.local/scratch/sdk-batch-retry-review/testbed/`):
-
-### Mutation Matrix:
-
-| Mutant ID | Injected Mutation Description | Target Test | Expected Failure | Test Result | Status |
-|---|---|---|---|---|---|
-| **MUT-REV2-A** | Blind Retries on ConnectionError or 5xx: re-introduced automatic retries on connection drops and HTTP >= 500 | `test_11` | Server push count exceeds 1 (duplicate side effects) | `FAIL: AssertionError: 4 != 1` (Exit 1) | **KILLED** |
-| **MUT-REV2-B** | Omit ambiguous_event: set `ambiguous_event=None` on `BatchExecutionError` | `test_11` | Missing ambiguous event record | `FAIL: AssertionError: None != {'task_id': ...}` (Exit 1) | **KILLED** |
-| **MUT-REV2-C** | Re-sending Completed Events: re-dispatched succeeded events upon failure | `test_08` | Event 0 call count exceeds 1 | `FAIL: AssertionError: 2 != 1` (Exit 1) | **KILLED** |
-
-### Mutation Runner Receipt:
-```text
-==============================================================================
-Revision 2 Negative Mutation Testing Runner (Codex C1662 Invariant)
-Testbed: /home/alexey/git/cloudflare-agent-git/.local/scratch/sdk-batch-retry-review/testbed
-==============================================================================
-
-Evaluating Mutant [MUT-REV2-A]: Blind Retries on ConnectionError or 5xx (Violates Two Generals Invariant)...
-Description: Re-introduce automatic retries on AgentBranchesConnectionError and HTTP >= 500
-Target Test: tests.test_push_batch_retry.TestPushBatchRobustRetry.test_11_commit_then_timeout_fails_closed_without_blind_retry
---> Result: KILLED (Exit 1) - FAIL: test_11_commit_then_timeout_fails_closed_without_blind_retry (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_11_commit_then_timeout_fails_closed_without_blind_retry)
-
-Evaluating Mutant [MUT-REV2-B]: Omit or Clear ambiguous_event on BatchExecutionError...
-Description: Set ambiguous_event=None when raising BatchExecutionError
-Target Test: tests.test_push_batch_retry.TestPushBatchRobustRetry.test_11_commit_then_timeout_fails_closed_without_blind_retry
---> Result: KILLED (Exit 1) - FAIL: test_11_commit_then_timeout_fails_closed_without_blind_retry (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_11_commit_then_timeout_fails_closed_without_blind_retry)
-
-Evaluating Mutant [MUT-REV2-C]: Re-sending Completed Events on Error...
-Description: Re-dispatch previously succeeded events when an error occurs
-Target Test: tests.test_push_batch_retry.TestPushBatchRobustRetry.test_08_partial_success_preservation
---> Result: KILLED (Exit 1) - FAIL: test_08_partial_success_preservation (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_08_partial_success_preservation)
-
-==============================================================================
-Revision 2 Mutation Testing Summary:
-Total Mutants Evaluated: 3
-Mutants Killed:          3
-Mutants Survived:        0
-Mutation Score:          100.0%
-==============================================================================
-[MUT-REV2-A] Blind Retries on ConnectionError or 5xx (Violates Two Generals Invariant): KILLED
-[MUT-REV2-B] Omit or Clear ambiguous_event on BatchExecutionError: KILLED
-[MUT-REV2-C] Re-sending Completed Events on Error: KILLED
-
-All 3 Revision 2 mutants decisively killed. 100% mutation coverage achieved.
-```
-
----
-
-## 6. Physical Resource & Environmental Accounting
-
-All verification activities strictly adhered to resource constraints:
 - **Rust/Cargo Compiler Invocations:** Exactly zero compiler invocations under human hold.
 - **Scratch Directory:** `/home/alexey/git/cloudflare-agent-git/.local/scratch/sdk-batch-retry-review/`
   - Mode: `0700` (`drwx------`).
   - Total Disk Usage: `740 KB` (strictly below the `<= 512 MB` policy ceiling).
 - **Net `/tmp` Growth:** Exactly `0 bytes` net growth.
-- **Memory Consumption:** Peak test execution memory < 60 MB (well below 1500 MB cooperative pool).
+- **Memory Consumption:** Peak test execution memory < 60 MB (within 1500 MB cooperative pool).
 - **Credential Hygiene:** Zero raw secrets, passwords, or bearer tokens in code, test fixtures, or reports.
+
+---
+
+## 6. Revision 3 Final Pure Fail-Closed Audit on Commit f4f6c3e
+
+### 6.1 Audit of the Pure Fail-Closed Contract
+In accordance with Codex Principal C1672 and C2028:
+1. **Complete Removal of Mutating Push Retry Loop**:
+   - In `push_batch` (lines 489–534), the inner `while True:` loop has been completely removed.
+   - Any exception during `self.push(...)` immediately captures `unattempted = list(events[idx + 1:])` and raises `BatchExecutionError(...) from err`.
+   - Verified: Zero automatic retries occur on network timeout, connection drops, HTTP 5xx, HTTP 429, or HTTP 4xx.
+2. **Deterministic Isolation of `ambiguous_event` on HTTP 429**:
+   - `test_05_rate_limit_429_fails_closed_without_blind_retry` confirms that on receiving HTTP 429, `push_batch` fails closed on attempt 0 with `attempts == 1`, storing the rate-limited event in `err.ambiguous_event`.
+   - `test_06_rate_limit_429_preserves_partial_success_and_unattempted` confirms that when Event 0 succeeds and Event 1 receives 429, `len(err.succeeded) == 1`, `err.ambiguous_event == event1`, and `err.unattempted_events == [event2]`.
+3. **Commit-Then-Timeout Invariant**:
+   - `test_11_commit_then_timeout_fails_closed_without_blind_retry` confirms that when the server commits and drops the socket, the server records **strictly 1 push**, with zero duplicate pushes emitted by the client.
+
+### 6.2 Negative Mutation Testing on Commit f4f6c3e
+Automated mutation testing was conducted using `run_revision3_mutations.py` in the scratch testbed (`.local/scratch/sdk-batch-retry-review/testbed/`):
+
+| Mutant ID | Injected Mutation Description | Target Test | Expected Failure | Test Result | Status |
+|---|---|---|---|---|---|
+| **MUT-REV3-A** | Re-introduce 429 Retry Loop: added `while True` with backoff retry on HTTP 429 | `test_05` | `attempts` exceeds 1 (violates fail-closed contract) | `ERROR: test_05` (Exit 1) | **KILLED** |
+| **MUT-REV3-B** | Omit ambiguous_event: set `ambiguous_event=None` on `BatchExecutionError` | `test_05` | Missing ambiguous event record | `FAIL: AssertionError: None != {'task_id': ...}` (Exit 1) | **KILLED** |
+
+### Mutation Runner Receipt:
+```text
+================================================================================
+Revision 3 Negative Mutation Testing Runner (Codex C1672 / C2028 Contract)
+Testbed: /home/alexey/git/cloudflare-agent-git/.local/scratch/sdk-batch-retry-review/testbed
+================================================================================
+
+Evaluating Mutant [MUT-REV3-A]: Re-introduce 429 Retry Loop (Violates Pure Fail-Closed Contract)...
+Description: Re-introduce retry loop with backoff on HTTP 429 in push_batch
+Target Test: tests.test_push_batch_retry.TestPushBatchRobustRetry.test_05_rate_limit_429_fails_closed_without_blind_retry
+--> Result: KILLED (Exit 1) - ERROR: test_05_rate_limit_429_fails_closed_without_blind_retry (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_05_rate_limit_429_fails_closed_without_blind_retry)
+
+Evaluating Mutant [MUT-REV3-B]: Omit ambiguous_event on 429 or Error...
+Description: Set ambiguous_event=None when raising BatchExecutionError
+Target Test: tests.test_push_batch_retry.TestPushBatchRobustRetry.test_05_rate_limit_429_fails_closed_without_blind_retry
+--> Result: KILLED (Exit 1) - FAIL: test_05_rate_limit_429_fails_closed_without_blind_retry (tests.test_push_batch_retry.TestPushBatchRobustRetry.test_05_rate_limit_429_fails_closed_without_blind_retry)
+
+================================================================================
+Revision 3 Mutation Testing Summary:
+Total Mutants Evaluated: 2
+Mutants Killed:          2
+Mutants Survived:        0
+Mutation Score:          100.0%
+================================================================================
+[MUT-REV3-A] Re-introduce 429 Retry Loop (Violates Pure Fail-Closed Contract): KILLED
+[MUT-REV3-B] Omit ambiguous_event on 429 or Error: KILLED
+
+All Revision 3 mutants decisively killed. 100% mutation coverage achieved.
+```
 
 ---
 
@@ -318,27 +293,14 @@ python3 /home/alexey/git/cloudflare-agent-git/research/antigravity/tooling/publi
 
 ---
 
-## 8. Final Verdict & Integration Recommendation
+## 8. Final Verdict & Canonical Acceptance
 
 **Final Verdict: ACCEPT.**
 
-Revision 2 on branch `feat/push-batch-robust-retry` provides a mathematically sound, fail-closed solution to the Two Generals problem over mutating push endpoints. It satisfies all directives from Codex Principal C1535, C1658, C1660, and C1662.
+Commit `f4f6c3eb417c05beb684fac4301faa1b6183f51a` on `agent-branches` `main` enforces the pure fail-closed mutating push contract, strictly honoring:
+1. Codex Principal C1535 (elimination of blind mutating retries).
+2. Codex Principal C1658 / C1660 (structured receipts, pre-validation, no server-side bloat).
+3. Codex Principal C1662 (Two Generals commit-then-timeout safety with `ambiguous_event`).
+4. Codex Principal C1672 / C2028 (pure fail-closed on 429 and all mutating push errors).
 
-### Summary of Improvements Verified in Revision 2:
-1. HTTP 429 Rate Limiting is safely retried with exponential backoff as a deterministic pre-mutation rejection.
-2. Connection drops and HTTP 5xx fail closed immediately without blind mutating retries, preserving coordinator state from duplicate mutations.
-3. `BatchExecutionError` exposes `ambiguous_event` identifying unconfirmed mutations, alongside `succeeded` and `unattempted_events`.
-4. `BatchExecutionError.__str__` conveys `failed_at_index`, `ambiguous`, `succeeded` count, `unattempted` count, and cause.
-5. All 57 tests pass, including tests proving strictly 1 push on commit-then-timeout.
-6. 100% mutation score across all negative failure modes.
-
-### Recommended Integration Steps for Parent Head (`46fdb644`):
-1. Review git diff on branch `feat/push-batch-robust-retry` in `/home/alexey/git/agent-branches`:
-   - `agent_branches/__init__.py`
-   - `agent_branches/client.py`
-   - `tests/test_push_batch_retry.py`
-2. Stage and commit under `.local/git.lock`:
-   ```bash
-   flock -x .local/git.lock -c 'git commit -m "feat(sdk): robust push_batch pre-validation, Two Generals fail-closed safety, and structured receipts"'
-   ```
-3. Fast-forward / merge `feat/push-batch-robust-retry` to `main`.
+The code is committed to `main` at exact pin `f4f6c3e`, all 57 tests pass, 100% of negative mutants are killed, and the deliverable is verified.
