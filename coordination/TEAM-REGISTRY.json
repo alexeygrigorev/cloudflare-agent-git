@@ -2542,6 +2542,25 @@
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)",
           "completed_at": "2026-10-04T13:03:04+02:00"
         }
+      ],
+      "members": [
+        {
+          "tag": "ab-source-extractor",
+          "session_id": "40ddf9b7-f7d8-4deb-8535-df3575e07182",
+          "role": "AgentBranches Standalone Source Extractor",
+          "engine": "grok",
+          "provider": "xai",
+          "workspace": "/home/alexey/git/agent-branches",
+          "scratch": "/home/alexey/git/agent-branches/.local",
+          "status": "in_progress",
+          "started_at": "2026-10-04T13:24:00+02:00",
+          "task": "Standalone product source extraction to private GitHub alexeygrigorev/agent-branches per root direct authorization.",
+          "owned_paths": [
+            "/home/alexey/git/agent-branches/**"
+          ],
+          "first_tool_evidence": "Launched via aplexer with command timeout 60m grok -p; target workspace /home/alexey/git/agent-branches; PID 1812994; limits 1500M.",
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
+        }
       ]
     },
     {

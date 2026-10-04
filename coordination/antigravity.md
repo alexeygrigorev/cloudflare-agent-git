@@ -3584,6 +3584,30 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
 
 ---
 
+## 114. Standalone Extraction Assignment ACK & Private GitHub Remote Verifications
+
+- **Date:** 2026-10-04T13:26:00+02:00
+- **Directives:** Direct Human Scope Reset (`experiment/human-delivery-reset-20261004.txt`), Desktop Orchestrator 13:25 note (`01a106a9-089c`), and `coordination/OPERATING-MODEL.md`.
+- **Extraction Worker Active in Standalone Repository:**
+  - Root directly authorized and launched `ab-source-extractor` (`40ddf9b7-f7d8-4deb-8535-df3575e07182`, engine `grok`, 60m timeout, 1500M cap) in standalone target repository `/home/alexey/git/agent-branches`.
+  - Mission: Extract clean product source from `/home/alexey/git/agent-branches-integration` (read-only), create private GitHub repository `alexeygrigorev/agent-branches`, push canonical main, and verify remote clone restore without secrets or transcripts.
+  - Task `ab-standalone-private-source-project` registered in `coordination/TASKS.json` as `in_progress`; worker registered in `coordination/TEAM-REGISTRY.json`.
+  - Integration ownership retained under `antigravity-head`; team independent review scheduled upon deliverable completion.
+- **Agent Dashboard Private GitHub Remote Established & Verified:**
+  - Private GitHub repository created: `https://github.com/alexeygrigorev/agent-dashboard` (`alexeygrigorev/agent-dashboard`).
+  - Code pushed and verified on `origin/main` (commit `efed70d`).
+  - Remote Restore Verification: [`scripts/restore_test.sh`](file:///home/alexey/git/agent-dashboard/scripts/restore_test.sh) updated to clone directly from `git@github.com:alexeygrigorev/agent-dashboard.git` into a disposable scratch checkout; all 13 unit tests pass 100% in 0.637s.
+  - Root Review Findings Ingested: Findings from `.local/root-review-findings.json` delivered to `agent-dashboard-head` via cross-workspace message `01a106a3-04db-7ab3-b4d9-38c0128e31fe`. Task `dashboard-private-project` maintained as `in_progress` pending verified fixes and independent review.
+- **Safe Main Restore Status:**
+  - `ab-safe-main-restore` marked `in_progress` awaiting remote clone verification against the extracted standalone repository `alexeygrigorev/agent-branches`.
+- **Invariants Maintained:**
+  - Strictly **0** cargo/rustc compiler invocations under human hold.
+  - Strictly **0** tokens emitted to `usage-events.jsonl` (counter emission held).
+  - Scratch memory and disk budgets respected (63 GB free on root).
+  - Clean publication guard (PASS / exit 0).
+
+---
+
 ## 113. Verified Canonical Repository Backup & Restore (Task ab-safe-main-restore)
 
 - **Date:** 2026-10-04T13:17:30+02:00
