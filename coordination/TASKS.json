@@ -132,6 +132,38 @@
       "assignment_ack": "ACK: owned by antigravity-head under Codex C1771/C1774/C1780. Executed by primary-coordinator-smoke-worker (ca5cd4a4) in .local/scratch/primary-coordinator-smoke/."
     },
     {
+      "id": "metrics-collect-negative-repro",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "metrics-collect-repro-worker",
+      "status": "in_progress",
+      "updated_at": "2026-10-04T08:57:18.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Subagent cd27191e running in .local/scratch/metrics-collect-repro/. Reproduce conflicting-CID and legacy fallback failing negative tests in test_collect_conversation_scope.py and deliver narrow fix in collect.py. Independent review to follow.",
+      "acceptance": "Executable negative reproduction tests in test_collect_conversation_scope.py, empty string/corrupted line fixes in collect.py, 100% test pass, publication_guard exit 0.",
+      "evidence_paths": [
+        "scripts/metrics/collect.py",
+        "tests/test_collect_conversation_scope.py",
+        "research/antigravity/recovery/REPORT-METRICS-COLLECT-NEGATIVE-REPRO.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1793. Executing via metrics-collect-repro-worker (cd27191e) in .local/scratch/metrics-collect-repro/."
+    },
+    {
+      "id": "raw-sdk-integration-smoke",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "raw-sdk-smoke-worker",
+      "status": "in_progress",
+      "updated_at": "2026-10-04T08:57:18.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Subagent 63cbcb31 running in .local/scratch/raw-sdk-smoke/. Execute live integration smoke test using raw unwrapped AgentBranchesClient constructor/create_task(branch,admin_token)/push(head_sha)/get_task with meaningful baseline commit advance on canonical. Independent review to follow.",
+      "acceptance": "Live end-to-end integration smoke test exercising raw unwrapped AgentBranchesClient without adapter wrapper on ephemeral localhost sockets.",
+      "evidence_paths": [
+        "research/antigravity/recovery/RECEIPT-RAW-SDK-SMOKE.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1789/C1793. Executing via raw-sdk-smoke-worker (63cbcb31) in .local/scratch/raw-sdk-smoke/."
+    },
+    {
       "id": "sdk-ack-auth-review",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
@@ -380,7 +412,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T06:50:34.384904+00:00",
+      "updated_at": "2026-10-04T07:01:56.753602+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -389,10 +421,11 @@
         "research/codex/a07-source-check-2026-10-04.md",
         "research/codex/continuation-runtime-check-2026-10-04.md",
         "research/codex/readiness-hold-audit-2026-10-04.md",
-        "research/codex/metrics-conversation-scope-review-2026-10-04.md"
+        "research/codex/metrics-conversation-scope-review-2026-10-04.md",
+        "research/codex/sdk-smoke-wrapper-review-2026-10-04.md"
       ],
       "blocked_on": [],
-      "next_action": "Verify head-owned genuinely bound disjoint ZCode collect-only negative executor first tool/artifact (existing4abc actual native NOTREADY idle1791095534097 vsPTY1791096204632, original queued). Review ca5 SDK smoke outcome, additional metrics executable negatives/limited acceptance, readiness5bfa REQUEST_CHANGES under no-Cargo/source hold. Correct stale registry through owners; no inferred supersession ACK/continuous team progress. Event45s oversight, heads implement; Claude/final-six/deploy/emission/service reload held.",
+      "next_action": "Review actual cd27191e collector beforefailure/afterpass attribution negatives and63cbcb31 rawSDK meaningful-baseline smoke; original wrappedca5 positive scope corrected4cdb487, private script review/digests saved. Head C1793 verified fresh-idle native submit->ACK/tools renewed two workers. NewZ2f live/no reportedstate nativeNOTREADY, head task-at-start distinct review route/owner82 advice pending; no productiveZ claim/duplicatecollectwriter/inheritedhelperauthority. Next event45s artifacts and genuineZfirsttool, independent current-pin review; noCargo/sourcehold release/emission/reload/Claude/final6/deploy.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
