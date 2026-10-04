@@ -1378,5 +1378,43 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - `origin/proto/webhook-auth` = `1658d54` (ACCEPT, fakeclock 601s retention).
   - `origin/proto/sdk-get-task-auth` = `4144588` (ACCEPT, token plaintext + top-level wire ref).
   - `origin/main` = `f20ea45` (holding all accepted review reports).
-- **Next Step:**
-  - Implement and execute real router -> Python SDK integration smoke test running `handleRoute` over Node `serveCoordinator` on ephemeral localhost.
+- **Delivered Integration Smoke Suite (Commit `a245ce8`):**
+  - Implemented and executed real router -> Python SDK integration smoke test running `handleRoute` over Node `serveCoordinator` on ephemeral localhost (`test_real_router_sdk_smoke.py`). 6/6 PASS in 0.107s. Report: [`research/antigravity/agent-branches/SMOKE-REAL-ROUTER-SDK-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/agent-branches/SMOKE-REAL-ROUTER-SDK-REPORT.md).
+
+---
+
+## 52. Real Artifact First-Use Dogfood Run & Public SDK Auth Handoff (C1517-C1519)
+
+- **Date:** 2026-10-04T03:19:00+02:00
+- **Steering & Directives:** Codex Principal C1517 & C1518; User Messages 20, 21, 26, 31, 32.
+- **Quota & Host Resources:**
+  - `zai`: 71% 7d / 100% 5h (5 banked resets).
+  - `go`: 64% 7d / 100% 5h.
+  - `gemini`: 86.41% 7d / 96.27% 5h.
+  - `codex`: 70% 7d (2 banked resets).
+  - Host RAM: 32 GB available (>10 GB floor). Root disk: 63.7 GB free (>50 GB floor).
+- **Execution Slots & Landed Artifacts:**
+  1. **Slot 1 (Public SDK Push Authentication):**
+     - Tasked `zcode-sdk-adopt` (`3104eb21`, branch `proto/sdk-get-task-auth`) via durable message `01a10475-5bf8-7043-b01e-a8dec66ab155` to forward mutating bearer auth in public `client.push()` (auto-resolving `token` -> `self.task_tokens[task_id]` -> `admin_token` -> `$ADMIN_TOKEN`) with unauthenticated negative test. Active in progress.
+  2. **Slot 2 (Real Artifact-Backed First-Use Dogfood Run — 100% PASS across 7 Phases):**
+     - Executor: `real-artifact-firstuse-runner` (`7ced496b-5b67-4b04-b6b2-5b64fee8d1a4`).
+     - Report: [`research/antigravity/dogfood/REAL-ARTIFACT-FIRSTUSE-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/dogfood/REAL-ARTIFACT-FIRSTUSE-REPORT.md) (commit [`2b35f82`](file:///home/alexey/git/cloudflare-agent-git/commit/2b35f82)).
+     - Infrastructure: Real Git Smart HTTP Sidecar (`prototype/local-artifacts/sidecar.mjs`, PID 1988459, port 45313) + Real Coordinator Runtime (`prototype/src/local/main.ts` with `SidecarArtifacts`, PID 1988674, port 45685) connected over real localhost sockets in `.local/scratch/real-artifact-firstuse/` (mode 0700).
+     - Canonical Baseline Seeding: Created `agent-branches-canonical-prod`, cloned via Smart HTTP, seeded real math service (`src/math_service.py`) and executable unit tests (`tests/test_math_service.py`), pushed canonical baseline `c7b441deb48c5780bbcec2f0e5a004acb35f07ac` (2/2 tests pass).
+     - Task Creation & Fork: SDK `create_task()` called `POST /tasks`, received `CreateTaskResult` with top-level `ref: "refs/heads/main"`, `{ name, remote }` fork, and minted token object; cached plaintext in `task_tokens["task-0001"]`.
+     - Git Clone, Patch & Test: Cloned fork via Smart HTTP, patched `power()` function, unit tests PASS (3/3), committed change `b7ec4302fc80a8ee2f855a60070c3ae9197d5510` (Tree: `c3780569c1962c094b9ab843bfdae9ebaeb5bddb`).
+     - Git Push & Webhook Delivery: Pushed via Smart HTTP; post-receive webhook delivered `/hooks/push` -> `/events/push` to coordinator; coordinator updated agent head to `b7ec430...` in **131.7ms** roundtrip.
+     - Verification & Recovery: `GET /tasks/task-0001` with owner bearer token verified; `GET /status` reports `pushes: 1`; disposable recovery worktree clone verified byte-identical source and tree SHA (`c3780569...`), tests PASS (3/3).
+     - Developer Friction Resolved: Fixed percent-encoding of token query parameter in Basic Auth URLs, added `WWW-Authenticate: Basic` header on 401 challenges for Git Smart HTTP, and relaxed smart HTTP route regex in `prototype/local-artifacts/sidecar.mjs` (commit `d8ac3b5` in `agent-branches-webhook`, pushed to `origin/proto/webhook-auth`).
+     - Measured Metrics: Total runtime 1.38s, scratch disk 191.5 KB (well within <=512 MB budget), RSS: sidecar 66.8 MB, coordinator 79.5 MB.
+- **Ordinary Remote Checkpoints Verified:**
+  - `origin/proto/webhook-auth` = `d8ac3b5` (sidecar auth & challenge fixes).
+  - `origin/proto/sdk-get-task-auth` = `4144588` (C1515 ACCEPT).
+  - `origin/main` = `2b35f82` (dogfood report and registry updates).
+- **Invariants Strictly Preserved:**
+  - Public Cloudflare deploy remains **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB (63.7 GB free); available RAM >10 GB (32.0 GB available).
+  - Zero unmanaged `/tmp` growth.
+
