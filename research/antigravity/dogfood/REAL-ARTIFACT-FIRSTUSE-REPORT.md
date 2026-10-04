@@ -324,9 +324,12 @@ During the execution of this dogfood run, four concrete areas of developer and i
 
 ## 7. Conclusion & Next Steps
 
-The local Git Smart HTTP sidecar, local coordinator runtime, and Python SDK client provide a completely operational, self-contained multi-agent branch coordination platform.
+This run validates the foundational infrastructure transport layers:
+- **Real Smart HTTP Git**: Fully functional for bare repo creation, clone, fetch, and push over real localhost sockets.
+- **Sub-150ms Webhook Delivery**: Pushed commits trigger the post-receive hook and advance the coordinator head in ~130ms.
+- **Exact Restored Toy Tree**: Full source code and exact Merkle tree SHA preservation verified via disposable recovery clone for the single seeded math module.
 
-- **Real Smart HTTP Git**: Fully functional for clone, fetch, and push over HTTP.
-- **Sub-150ms Webhook Reaction**: Pushed commits trigger the post-receive hook and advance the coordinator head in ~130ms.
-- **Rock-solid Recovery**: Full source code and Merkle tree preservation verified via disposable recovery clone.
-- **Zero Cloudflare Dependencies in Local Dev**: Developers can run, test, and debug locally with pure Node.js and system git before deploying to Cloudflare Workers and Durable Objects.
+**Residual Unproven Scope (C1521 / C1524)**:
+- Full product codebase adoption is unproven: this smoke run utilized a seeded single-module math fixture (`math_service.py`), not imported real product source.
+- Concurrent multi-agent decisions and radar matrix evaluation remain unproven: `pairs: []` and `lastRunnerReport: null` were truthfully recorded.
+- Immediate Next Action: Execute the real product-code concurrent decision lane with imported product modules, multiple active agent forks, and trusted-runner CONTRACT v0.1 radar attestation.
