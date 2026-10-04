@@ -1689,3 +1689,36 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Six shortlist gates remain **HELD**.
   - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
 
+## 60. Independent Review of Auth Matrix Accepted (REV-AUTH-MATRIX-DB4F6A8), Cache Reset Narrative & C1550–C1553 Directives Ingestion
+
+- **Milestone Delivery: Independent Security & Verification Review Accepted (Commit `00829a4` on `origin/main`):**
+  - Reviewer: `auth-matrix-reviewer` (`e285b1cc-8138-433d-af86-f816e072a174`).
+  - Report: [`research/antigravity/reviews/REV-AUTH-MATRIX-DB4F6A8.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-AUTH-MATRIX-DB4F6A8.md).
+  - Target Commit: `db4f6a8c398d69f0e19072c41cb4b453b7dd1b71` on branch `proto/integration-auth-matrix` in `/home/alexey/git/agent-branches-integration`.
+  - **Verdict: ACCEPT**.
+  - Test Suite Coverage: **161/161 tests PASS** across Vitest (91/91), Node test runner (50/50), Node router (11/11), and Python client (20/20).
+  - Negative Boundary Verification in Scratch (`run-negative-tests.mjs`):
+    1. Webhook Nonce Replay: Duplicate delivery rejected with HTTP 409 Conflict (`MemoryReplayGuard`).
+    2. Webhook Signature Tampering: Tampered body/signature rejected with HTTP 401 Unauthorized before JSON parsing.
+    3. Expired Token Read: Negative TTL token on `GET /tasks/:id` rejected with HTTP 401 Unauthorized.
+    4. Foreign Token Read: Valid Agent B token on Agent A task rejected with HTTP 403 Forbidden.
+    5. Git 401 Challenge: Unauthenticated Git probe returns HTTP 401 with `WWW-Authenticate: Basic realm="git"`; percent-encoded token authenticates with HTTP 200.
+  - Mutation Testing: Mutants M1 (foreign-agent 403 removal), M2 (HMAC bypass), and M3 (effective_token revert) all decisively KILLED.
+  - Author Tree Hygiene: Zero author-tree mutations in `/home/alexey/git/agent-branches-integration`; working tree 100% clean. Scratch size 1.2 MB.
+
+- **Smoke Test Narrative Disclosure (Commit `560bd10` on `origin/main`):**
+  - Updated [`research/antigravity/agent-branches/INTEGRATION-AUTH-MATRIX-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/agent-branches/INTEGRATION-AUTH-MATRIX-REPORT.md) §4 (Test 4) to explicitly document the cache purge from `smoke_test.py:239-242` (`task_tokens.clear()`, `task_to_agent.clear()`, `known_tasks.clear()`).
+  - Confirms that `client_after.push()` executed an authentic un-cached lookup of `task_id` rather than benefiting from cache warming from the preceding direct read assertion.
+
+- **Codex C1550–C1553 Directives Ingestion & Operational Alignment:**
+  - **Single Implementer Enforcement & Stale Writer Cancellation:** Formally cancelled the writable integration assignment to `zcode-a14-gate` (`31436338`) via aplexer message `01a104b5-790b` and updated `coordination/TEAM-REGISTRY.json` (`CANCELLED_DUPLICATE_WRITER_PREVENTED`), guaranteeing that `auth-matrix-integration-runner` (`6012fdf0`) remains the sole author of commit `db4f6a8` and preventing duplicate writer collisions.
+  - **Continuation Gap Repair:** Acknowledged Codex C1551/C1552 continuation observations. To ensure seamless continuity across turn boundaries, task completions are immediately followed by concrete lane dispatch and active subagent replenishment before closing turns.
+  - **Next Execution Lane (C1553):** With the unified auth matrix integrated (`db4f6a8`) and independently accepted (`00829a4`), head is preparing the next major milestone: the real concurrent two-actor dogfood adoption lane on the integrated branch, deploying two genuine actors against the unified coordinator.
+
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy strictly **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
+

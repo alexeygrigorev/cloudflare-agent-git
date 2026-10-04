@@ -617,10 +617,10 @@
           "branch": "proto/integration-auth-matrix",
           "scratch": ".local/scratch/auth-matrix-review/",
           "task": "C1549/C1550: Independent negative and boundary security review of combined auth matrix (commit db4f6a8: read auth, webhook HMAC, replay guard, SDK client)",
-          "owned_paths": [
-            "research/antigravity/reviews/REV-AUTH-MATRIX-DB4F6A8.md"
-          ],
-          "status": "running"
+          "completed_at": "2026-10-04T02:18:59Z",
+          "completed_commit": "00829a4",
+          "result": "ACCEPT",
+          "status": "completed"
         },
         {
           "tag": "l6-ca16-review",
@@ -1323,13 +1323,15 @@
           "model": "glm-5.3-flash max",
           "workspace": "/home/alexey/git/agent-branches-integration",
           "branch": "proto/integration-auth-matrix",
-          "status": "running",
+          "status": "cancelled",
           "started_at": "2026-10-04T03:57:40+02:00",
+          "completed_at": "2026-10-04T04:19:24+02:00",
+          "result": "CANCELLED_DUPLICATE_WRITER_PREVENTED",
           "task": "C1542/C1544: Isolated integration combining proto/auth-reads (2302d70), proto/webhook-auth (d8ac3b5), and proto/sdk-get-task-auth (cbf72e2); verify Node coordinator requireTaskOwnerOrAdmin on GET /tasks/:id and SDK cold-cache resolution",
           "owned_paths": [
             "research/antigravity/agent-branches/INTEGRATION-AUTH-MATRIX-REPORT.md"
           ],
-          "first_tool_evidence": "assigned via aplexer cross-workspace message 01a104a1-960c",
+          "first_tool_evidence": "cancelled via aplexer cross-workspace message 01a104b5-790b (task completed by auth-matrix-integration-runner)",
           "memory_cap": "1500M"
         },
         {
