@@ -3747,6 +3747,16 @@
         "at": "2026-10-04T11:08:51Z",
         "tool": "aplexer whoami --json"
       }
+    },
+    {
+      "id": "agent-coordination",
+      "name": "Cross-computer Agent Coordination",
+      "head_tag": "agent-coordination-head",
+      "head_session_id": "81e8010c-89e4-478b-be3a-4ee6991607f3",
+      "workspace": "/home/alexey/git/agent-coordination",
+      "integration_owner": "agent-coordination-head",
+      "principal_owner": "codex-principal",
+      "ownership_state": "Actual genuineinteractivehead launched; semanticACK/firsttool verification pending"
     }
   ],
   "delivery_executors": [

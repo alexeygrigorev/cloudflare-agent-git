@@ -6,7 +6,7 @@ from pathlib import Path
 def audit(tasks,backlog,registry):
  rows=tasks['tasks'];ids=[t['id'] for t in rows];errors=[];warnings=[]
  if len(ids)!=len(set(ids)):errors.append('Duplicate task IDs')
- if {p['id'] for p in registry.get('projects',[])}!={'agent-branches','agent-dashboard','quota-launcher'}:errors.append('Three project registrations required')
+ if {p['id'] for p in registry.get('projects',[])}!={'agent-branches','agent-dashboard','quota-launcher','agent-coordination'}:errors.append('Four project registrations required')
  for source in backlog['human_sources']:
   missing=set(source.get('task_ids',[]))-set(ids)
   if missing:errors.append(source['id']+': missing linked tasks '+','.join(sorted(missing)))

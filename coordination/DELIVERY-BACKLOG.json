@@ -26,6 +26,16 @@
       "integration_owner": "quota-launcher-head",
       "ownership_state": "Genuine Grok head active in /home/alexey/git/agent-quota-launcher; owns launcher/, tests/, README, pyproject, examples",
       "workspace": "/home/alexey/git/agent-quota-launcher"
+    },
+    {
+      "id": "agent-coordination",
+      "name": "Cross-computer Agent Coordination",
+      "head_tag": "agent-coordination-head",
+      "head_session_id": "81e8010c-89e4-478b-be3a-4ee6991607f3",
+      "workspace": "/home/alexey/git/agent-coordination",
+      "integration_owner": "agent-coordination-head",
+      "principal_owner": "codex-principal",
+      "ownership_state": "Actual genuineinteractivehead launched; semanticACK/firsttool verification pending"
     }
   ],
   "human_sources": [
@@ -809,6 +819,25 @@
         "ab-standalone-private-source-project"
       ],
       "evidence_status": "Actual heads/scaffolds/firstaction partial; independently accepted implementation and all product integrations remain pending"
+    },
+    {
+      "id": "human-cross-computer-product-20261004",
+      "source": "experiment/human-cross-computer-product-20261004.txt",
+      "line": 1,
+      "sha256": "496ebf8120a9b6ece45f0d7241bd7d7c8f0b6eb614d2474c9ffb76831113071a",
+      "disposition": "Fourth separatelyownedproduct directhumansteering",
+      "owner_tag": "agent-coordination-head",
+      "requirement_summary": "Crosscomputeragentcoordination fordesktopHetznerandfuturedevices; explicitlyauthorizedaplexermessagebus/CLIadaptation andCloudflareorotherplatformchoice; actualnativeidentity/durabledeliveryvsACK/outcome/offlinerecovery/scopedaccess/integration/backups/dogfooding.",
+      "task_ids": [
+        "coord-native-ssh-mvp",
+        "coord-durable-retry-ack",
+        "coord-native-cli-source",
+        "coord-desktop-hetzner-test",
+        "coord-dashboard-launcher-hosts",
+        "coord-private-backup-dogfood",
+        "coord-independent-review"
+      ],
+      "evidence_status": "Actualheadlaunched, implementation/revieweracceptedresults pending"
     }
   ],
   "legacy_task_ids": [
@@ -896,7 +925,14 @@
     "native-cross-host-roundtrip",
     "prior-research-integration",
     "desktop-channel-crossworkspace",
-    "ab-standalone-private-source-project"
+    "ab-standalone-private-source-project",
+    "coord-native-ssh-mvp",
+    "coord-durable-retry-ack",
+    "coord-native-cli-source",
+    "coord-desktop-hetzner-test",
+    "coord-dashboard-launcher-hosts",
+    "coord-private-backup-dogfood",
+    "coord-independent-review"
   ],
   "source_policy": "Every preserved human heading indexed. Latest desktop three-project request recorded separately by root. Semantic task mapping requires owner review.",
   "semantic_reconciliation": "All48 preserved source sections classified and linked to concrete tasks/constraints/questions/supersession. Multi-ask source1 split across research, social, recovery and native team lifecycle. Missing original asks explicitly restored as four audit tasks."

@@ -1,7 +1,7 @@
 import unittest
 from validate_backlog import audit
 class ContractTests(unittest.TestCase):
- def records(self):return ({'tasks':[{'id':'t','project_id':'agent-branches','status':'queued','next_action':'implement'}]},{'human_sources':[{'id':'h','task_ids':['t'],'requirement_summary':'ask','disposition':'deliverable'}]},{'projects':[{'id':x} for x in ['agent-branches','agent-dashboard','quota-launcher']]})
+ def records(self):return ({'tasks':[{'id':'t','project_id':'agent-branches','status':'queued','next_action':'implement'}]},{'human_sources':[{'id':'h','task_ids':['t'],'requirement_summary':'ask','disposition':'deliverable'}]},{'projects':[{'id':x} for x in ['agent-branches','agent-dashboard','quota-launcher','agent-coordination']]})
  def test_dangling_ask_is_error(self):
   t,b,r=self.records();b['human_sources'][0]['task_ids']=['lost'];self.assertTrue(audit(t,b,r)['errors'])
  def test_false_done_rejected(self):
