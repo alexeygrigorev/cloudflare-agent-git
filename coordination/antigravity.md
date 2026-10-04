@@ -3960,5 +3960,57 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
 - Publication guard validated with exit code `0`.
 - Delivery communicated to `quota-launcher-head` for integration acceptance.
 
+---
+
+## 36. Supervision Routing Repair, Epistemic Demarcation & Controlled Service Reload (SUPERVISION-ROUTING-REPAIR)
+
+### 1. Architectural Defect & Epistemic Boundaries
+- **Root Cause:** `scripts/supervision/service.py` extracted supervision entities solely from `teams`, omitting active product projects (`projects` block in `coordination/TEAM-REGISTRY.json`). Tasks declared under product IDs (`agent-branches`, `agent-dashboard`, `quota-launcher`, `agent-coordination`) or aliases (e.g. `agent-quota-launcher`) were entirely excluded from principal selection.
+- **Truthful Ownership Semantics (C1634 / C1636):**
+  - Distinguishes explicit empty tags (`principal_tags: []`) from absent ownership metadata. Explicit empty tags are strictly respected (`unowned: True`), never silently defaulted to `codex-principal`.
+  - Canonical product projects carry explicit `principal_tags: ['codex-principal']` backed by Codex Principal C1637 ACK provenance.
+- **Mutual Conflict Detection & Exclusion (C1636 / C1640):**
+  - Normalizes IDs (`agent-quota-launcher` $\leftrightarrow$ `quota-launcher`). When existing entries collision-check with conflicting `head_tag`, `workspace`, or `principal_tags`, both entities are marked `conflict['detected'] = True`.
+  - Conflicting entities are strictly excluded from authoritative principal prompt envelope routing, and the cycle reports `degraded: True` with explicit conflict errors.
+- **Compatible Duplicate Merging (C1636):**
+  - Compatible duplicate records merge aliases and backfill missing `head_tag` or `workspace` without conflict.
+- **Deterministic Head Completion & Ready Partitioning:**
+  - Tasks partitioned into `ready` (`queued`, `ready`), `running` (`running`, `in_progress`), and `completed` (`done`, `completed`).
+  - Completions stably sorted by timestamp and included in digest calculation; recent completions (up to 5) formatted into the prompt envelope.
+- **Epistemic Notification Boundary:**
+  - The formatted prompt envelope (`SUPERVISION-<event_key>: Tasks: [quota-launcher] ...`) is strictly an informational watchdog reminder for the monitoring principal to engage with project heads, NOT an automatic execution hook or native queue dispatcher.
+
+### 2. Implementation, Test Suite & Negative Mutation Falsification
+- **Candidate Implementation:** [`research/antigravity/tooling/supervision/service_candidate.py`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/tooling/supervision/service_candidate.py) (SHA256: `63c6daa5f1f512dc65a0b2151924fa2d42ce583c3aa88c804ca0b8df271e031d`).
+- **Comprehensive Regression Suite:** [`tests/test_supervision_routing.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_supervision_routing.py) (SHA256: `363ba461ad88726961d8882a70ee79b99dc363bce48f9c31d651a43ee6a08829`):
+  - 15/15 tests PASS in 0.358s.
+  - Tests 7 and 13 execute full, authentic `service.run()` simulations with mocked TUI and aplexer sessions.
+- **Canonical Regression Suite:** All 47 canonical tests in `scripts/supervision/` PASS in 0.254s.
+- **Negative Mutation Matrix (100% Kill Rate):**
+  - *Mutant 1 (Alias drop):* Killed by `test_2_alias_project_id_agent_quota_launcher_matched`.
+  - *Mutant 2 (Unowned default):* Killed by `test_8_explicit_empty_ownership_not_defaulted_to_codex`.
+  - *Mutant 3 (Unsorted aliases):* Killed by `test_11_deterministic_alias_ordering`.
+  - *Mutant 4A (Filter bypass):* Killed by `test_13` (initial formulation).
+  - *Mutant 4B (Real production candidate line 901 mutation):* Killed by `test_13` authentic `service.run()` simulation (`AssertionError: 't-conflicted-ql' unexpectedly found in body`).
+
+### 3. FileBus Dogfooding Review & Correlation Receipts
+- **Dogfood Store:** `.local/scratch/filebus-dogfood/store` via `agent-coordination/coordination/bus_cli.py` (HEAD `bb8dcad0`).
+- **Task Dispatch:** `antigravity-head` (`9ce7419a`) sent task `aa04b1d2` and follow-up `29fe98bd` to `supervision-routing-reviewer` (`1c5acf17`).
+- **Review Deliverable:** [`research/antigravity/reviews/REV-SUPERVISION-ROUTING-REPAIR.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SUPERVISION-ROUTING-REPAIR.md) (SHA256: `c3e04a5ceba4413b18b77eefc15880814d6aa9789a271664622b887aa4b18e4b`).
+- **FileBus Correlated Receipts:** Read ACKs recorded; review replies `f23be7fc` and `ecec0bcc` delivered; final receipt `a7c41406` confirmed with verdict **ACCEPT**.
+- **Publication Guard:** Exit code 0 (clean).
+
+### 4. Canonical Promotion & Controlled Service Reload
+- **Promotion Commit:** Landed in commit [`86ad9df`](https://github.com/alexeygrigorev/cloudflare-agent-git/commit/86ad9df) and pushed to `origin/main`.
+- **Legacy Registry Reconcile:** Under Codex C1645 explicit coverage ACK, reconciled legacy `agent-dashboard` team `principal_tags` to `["codex-principal"]` in commit [`784c3b2`](https://github.com/alexeygrigorev/cloudflare-agent-git/commit/784c3b2), eliminating the stale conflict and unblocking all 4 active products.
+- **Controlled Reload:**
+  - Old session `3b37afe1` / PID `1641654` stopped cleanly via `.local/supervision/stop`.
+  - Fresh session `8f0f31b9-0bd6-4530-9e97-7f80fb6d8185` started with genuine `experiment-supervision` binding (PID `2963921`).
+  - Binary manifest SHA256 verified (`fd6fd0ce...`).
+  - Observed 4 consecutive service-timed ticks (`14:40:22`, `14:41:22`, `14:42:24`, `14:43:25`).
+  - Status transitions to `degraded: false`, `errors: []`, `status: "ok"`.
+  - Prompt envelope `receipt-504aff96f808341df314-codex-principal.json` and message `01a1075b-d799` authoritatively routed tasks across all product lanes.
+
+
 
 
