@@ -2898,10 +2898,68 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Zero new daemons or background scrapers.
    - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD** until independent negative review is complete.
 
-3. **Independent Negative Reviewer Dispatched:**
-   - Subagent `metrics-collect-reviewer` dispatched to audit negative edge cases (reused tags, cross-session binding rejection, fallback labeling, timestamp reconciliation).
+3. **Independent Review Completed (REV-METRICS-COLLECT-CONVERSATION-SCOPE.md: BOUNDED ACCEPTANCE):**
+   - Reviewer: `metrics-collect-reviewer` (`24e23518-3420-4953-b990-3f146ce42e5f`, registered in `coordination/TEAM-REGISTRY.json` as `completed`, verdict `BOUNDED_ACCEPTANCE`).
+   - Report: [`research/antigravity/reviews/REV-METRICS-COLLECT-CONVERSATION-SCOPE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-METRICS-COLLECT-CONVERSATION-SCOPE.md).
+   - **Verdict: `BOUNDED ACCEPTANCE`**.
+   - All 4 negative mutants in scratch killed (M1: CID mismatch leak, M2: tag collision overwrite, M3: fallback marker suppression, M4: reconciliation break).
+   - Negative edge cases and epistemic boundaries disclosed per Codex C1771/C1773/C1774:
+     - *Top-Level Tag Deduplication Masking:* `_collect()` skips top-level rows if their tag matches any team agent (`seen_team_tags`), masking independent top-level monitors sharing a tag.
+     - *CID Precedence Short-Circuit:* `authentic_conversation_id` returns first available CID in fixed order and does not detect contradictory newer native bindings.
+     - *No Partitioning by Model/Generation:* `match_usage_event` filters solely on `(tag, team_id, CID)`; latest timestamp takes precedence without model-level partitioning or summing.
+     - *Parent/Child Overlap:* Child output tokens returned to parent enter parent prompt context on subsequent turns; aggregation sums both conversation UUIDs.
+   - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` remains strictly **HELD**.
 
 4. **Invariants Strictly Preserved:**
+   - Publication guard verified clean (`publication_guard.py` exit code 0).
+   - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
+
+---
+
+### 95. Runbook Seed-Lease Current Pin Accepted (REV-RUNBOOK-SEED-LEASE-7AA20F1: ACCEPT), Metrics Scope Rescoped to BOUNDED ACCEPTANCE, and ZCode Primary Bootstrap Task Replenished
+
+- **As-of:** 2026-10-04, Europe/Berlin (06:44 UTC / 08:44 local)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Codex Principal C1771, C1773, C1774; Desktop Root.
+
+1. **Milestone Delivery: Runbook Seed-Lease Current Pin Review Accepted (REV-RUNBOOK-SEED-LEASE-7AA20F1: ACCEPT):**
+   - Report: [`research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-7AA20F1.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-7AA20F1.md).
+   - Reviewer: `runbook-seed-lease-7aa-reviewer` (`02261a65-4c9c-4064-b641-93e8075d77eb`, registered in `coordination/TEAM-REGISTRY.json` as `completed`, verdict `ACCEPT`).
+   - Target Commit Audited: [`7aa20f1384d386039903c52a2ad92b829f8c71f3`](file:///home/alexey/git/cloudflare-agent-git/commit/7aa20f1) on `origin/proto/runbook-seed-lease`.
+   - **Verdict: `ACCEPT`**.
+   - **Live Daemon Scratch Verification (Ephemeral Ports 9884/9885, Peak Scratch 1.7 MB, Zero `/tmp`):**
+     - *Flow A (Primary Coordinator-Managed Canonical Setup):* Coordinator `POST /setup` with `$ADMIN_TOKEN` $\rightarrow$ extracts `created: true`, canonical name, remote URL, `seedCommit`. Sidecar `POST /api/repos/<name>/tokens` (scope `write`, 3600s TTL) with `$SIDECAR_TOKEN` $\rightarrow$ extracts `.plaintext` write token. Header persisted in local `.git/config` (mode `0600`) via `http.$repo_url.extraHeader`. Exact seed lease push succeeds $\rightarrow$ **Exit code 0**, canonical remote ref updated.
+     - *Flow B (Fail-Closed on Repeated Setup):* Repeated `POST /setup` returns `created: false` and `seedCommit: null`. Runbook fail-closed check intercepts, prints refusal message to stderr, and halts $\rightarrow$ **Exit code 1**.
+     - *Flow C (Standalone Sidecar Sequence):* Standalone sidecar `POST /api/repos` creates bare repo with seed commit; exact seed lease push succeeds $\rightarrow$ **Exit code 0**.
+     - *Negative Test 1 (Wire 401 & Git Exit 128):* Pushing with control bearer `$SIDECAR_TOKEN` returns wire `HTTP/1.1 401 Unauthorized` and Git CLI fails closed with **exit code 128**. **PASS**.
+     - *Negative Test 2 (Stale Lease Rejection & Ref Preservation):* Pushing with stale seed lease after concurrent canonical commit is rejected non-fast-forward with **exit code 1** (`stale info`), preserving the advanced ref. **PASS**.
+   - Publication guard verified clean (`publication_guard.py` exit code 0).
+
+2. **Metrics Collect Independent Review Landed (REV-METRICS-COLLECT-CONVERSATION-SCOPE.md: BOUNDED ACCEPTANCE):**
+   - Report: [`research/antigravity/reviews/REV-METRICS-COLLECT-CONVERSATION-SCOPE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-METRICS-COLLECT-CONVERSATION-SCOPE.md).
+   - Reviewer: `metrics-collect-reviewer` (`24e23518-3420-4953-b990-3f146ce42e5f`, registered in `coordination/TEAM-REGISTRY.json` as `completed`, verdict `BOUNDED_ACCEPTANCE`).
+   - Target Commit Audited: [`6b02f2c98e3fd9f8bb6953f7d4330acd7c1391ad`](file:///home/alexey/git/cloudflare-agent-git/commit/6b02f2c) on `origin/main`.
+   - **Verdict: `BOUNDED ACCEPTANCE`**.
+   - All 4 negative mutants in scratch killed (M1: CID mismatch leak, M2: tag collision overwrite, M3: fallback marker suppression, M4: reconciliation break).
+   - Epistemic boundaries disclosed per Codex C1771/C1773/C1774:
+     - Top-level tag deduplication masking in `seen_team_tags`.
+     - First-match short-circuiting in `authentic_conversation_id`.
+     - Absence of provider/model/generation partitioning in `match_usage_event`.
+     - Parent/child prompt context overlap.
+   - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` remains strictly **HELD**.
+
+3. **Readiness Report Refinement (Prompt Readiness Epistemic Boundary):**
+   - Updated [`research/antigravity/recovery/READINESS-PRODUCER-REPAIR-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/READINESS-PRODUCER-REPAIR-REPORT.md) and Section 93:
+     - Clarified screen check as an active workload banner inspection (`• Working (` / `• Running `), explicitly noting that it does not inspect composer draft contents or guarantee an empty composer prompt across engines.
+     - Confirmed pre-hold step 76 cargo test invocation accounting (0.14s, 0 compiling lines; storage/artifact growth unmeasured), noting project-wide hold was already in force.
+     - Confirmed human operator is the sole release authority for the hold; proposed repair remains unimplemented, and native NOTREADY remains intact.
+   - Landed in [`af61ffa`](file:///home/alexey/git/cloudflare-agent-git/commit/af61ffa) and [`6fa7313`](file:///home/alexey/git/cloudflare-agent-git/commit/6fa7313).
+
+4. **ZCode Replenishment & Primary Bootstrap Workflow Smoke:**
+   - Assigned `zcode-recovery-test` (`4abc725c`) a disjoint task in `/home/alexey/git/agent-branches-recovery`: execute a live end-to-end integration smoke test of the primary coordinator bootstrap sequence through SDK `create_task` and push authorization.
+   - Message `01a105a6-240d-72f0-b0bf-114f483532b2` safely queued in recipient inbox.
+
+5. **Invariants Strictly Preserved:**
    - Publication guard verified clean (`publication_guard.py` exit code 0).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
 
