@@ -3415,5 +3415,11 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
    - Gemini counter emission strictly held.
    - Publication guard verified clean (exit 0) on all deliverables.
 
+### 3. Ingest of Desktop Orchestrator 11:50 Berlin Review & Content Refinements
+- Received and acknowledged Desktop Orchestrator note `01a10654-3c00-7382-80ac-248281d91afe`.
+- Refined active sections in `REV-UPRT-CONCURRENT-GATE.md`: Section 6 rewritten to conceptual specification vs local demo (withdrew "fatal flaws", "superiority", and "runtime AST" claims); Section 2 & 8 qualified `TMPDIR` isolation to state global `/tmp` growth is UNKNOWN without independent kernel metrics.
+- Refined Section 6 of `REPORT-UPRT-CONCURRENT-GATE.md`: clearly demarcated manual test harness invocation (`engine.evaluate_pair()` and manual forward to `POST /checks`) from an automatic push-triggered service; documented that L3 Radar delegates to `node --test` rather than parsing ASTs; documented that infrastructure failures are conflated with code conflicts.
+- Re-affirmed that the current integration policy is an optional engineering hypothesis, not a principal-approved product policy or shortlist selection. Evidence frozen on disk without rerun or deletion.
+
 
 

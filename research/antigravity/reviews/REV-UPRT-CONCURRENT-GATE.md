@@ -53,7 +53,7 @@ The UPRT Gate was preregistered in [`research/antigravity/demand/foremerge-first
 The audit was conducted strictly adhering to repository resource constraints and competition invariants:
 - **Scratch Workspace:** `/home/alexey/git/cloudflare-agent-git/.local/scratch/uprt-concurrent-review/` created with mode `0700` (`drwx------`).
 - **Disk Budget:** Peak scratch disk usage measured was **132 MB**, well within the 512 MB ceiling. Existing worktrees were preserved without deletion.
-- **Process & Temporary Isolation:** `TMPDIR` was strictly pointed to `.local/scratch/uprt-concurrent-review/tmp` (mode `0700`). Zero bytes were written to `/tmp`, maintaining net zero `/tmp` growth.
+- **Process & Temporary Isolation:** `TMPDIR` was pointed to `.local/scratch/uprt-concurrent-review/tmp` (mode `0700`). While no temporary files were written to `/tmp` by the reviewer script, redirecting environment variables does not structurally prove zero net `/tmp` growth without independent kernel/cgroup metrics (global growth status: UNKNOWN).
 - **Compiler Invariants:** **Strictly zero `cargo` or `rustc` compiler invocations** were executed under human hold. Daemons tested were existing pre-built JavaScript/Node runtimes (`prototype/local-artifacts/sidecar.mjs` and `prototype/.build/node/src/local/main.js`).
 - **Memory Invariant:** Combined daemon resident memory was verified at **155.12 MB** (Sidecar: 75.26 MB, Coordinator: 79.86 MB), well under the cooperative 1500 MB pool guideline.
 - **Credential Hygiene:** Zero raw secrets, minted bearer tokens (`art_v1_...`), or high-entropy credentials present in this review deliverable. Validated with `research/antigravity/tooling/publication_guard.py` (Rule check passed with exit code 0).
@@ -220,44 +220,30 @@ To audit the underlying mechanics and uncover any hidden assumptions, the review
 
 ---
 
-## 6. Critical Evaluation: Agent Branches L3 Radar vs. Foremerge v0.5.1
+## 6. Conceptual Architectural Comparison: Foremerge (Spec) vs. Agent Branches L3 Radar (Local Demo)
 
-Section 6 of the report contrasts Agent Branches L3 Radar with Foremerge v0.5.1. The reviewer conducted a deep evaluation of Foremerge's architectural premises against empirical realities:
+Section 6 of the report contrasts the concepts behind Agent Branches L3 Radar with Foremerge v0.5.1. The reviewer conducted a conceptual evaluation based on published specifications and practitioner reception:
 
 ```
 ====================================================================================================
-ARCHITECTURAL COMPARISON: FOREMERGE vs AGENT BRANCHES L3 RADAR
+ARCHITECTURAL COMPARISON: FOREMERGE (SPECIFICATION) vs AGENT BRANCHES L3 RADAR (LOCAL DEMO)
 ====================================================================================================
-Evaluation Dimension     Foremerge (v0.5.1)                  Agent Branches L3 Radar
+Evaluation Dimension     Foremerge (v0.5.1 Spec)             Agent Branches L3 Radar (Local Demo)
 ----------------------------------------------------------------------------------------------------
-Conflict Detection       Pre-code intent string matching     Post-push trial-merge test runner
-Developer Friction       HIGH: mandatory CLI annotations     ZERO: ordinary git commits & push
-Semantic Regressions     BLIND: zero code execution          CAUGHT: executes real test suites
-Vocabulary Sensitivity   FRAGILE: synonym / hierarchy gaps   IMMUNE: executes real runtime AST
-Storage & Concurrency    Local SQLite DB in .git/foremerge   Distributed DO / Sidecar Smart HTTP
-Swarm Topology           Single-machine worktrees only       Multi-agent, multi-cloud, distributed
-Fail-Safe Mechanism      Advisory strings only               Strict fail-closed execution bounds
+Conflict Detection       Pre-code intent string matching     In-memory trial merge + test runner
+Execution Mechanism      Declared CLI / MCP intents          Manual harness call to RadarEngine
+Detection Oracle         Lexical string matching             In-memory git merge-tree + node --test
+Vocabulary Sensitivity   Vulnerable to scope omissions       Bounded by test oracle (no AST analysis)
+Storage & Concurrency    Local SQLite DB in .git/foremerge   Local sidecar & coordinator processes
+Swarm Topology           Local workstation worktrees         Local testbed lanes (single host)
+Execution Status         Not executed in trial (spec only)   Measured locally on demo-target fixture
 ====================================================================================================
 ```
 
-### The Three Fatal Flaws of Foremerge:
-1. **The Scope Vocabulary Mismatch:**
-   - Foremerge requires agents to publish structured intent scopes before writing code:
-     `git foremerge intent --scope "symbol:ShortlinkService.create=modify"`.
-   - In real-world multi-agent swarms, agents phrase scopes at different granularities. If Worker 1 claims `symbol:ShortlinkService.create` and Worker 2 claims `endpoint:POST_/links/bulk`, Foremerge's deterministic string matcher compares the two strings, finds zero lexical intersection, and declares **NO CONFLICT**.
-   - The contract collision between the two agents slips completely undetected into the repository.
-2. **Zero Falsification Capability:**
-   - Foremerge is fundamentally an intent bulletin board. It does not inspect diffs, does not construct merge trees, and does not execute tests.
-   - It cannot detect when two clean edits combine into a broken runtime state.
-3. **Single-Host Confinement:**
-   - Foremerge relies on a SQLite database located in `<git-common-dir>/foremerge/state.sqlite3`.
-   - This architecture is physically incapable of coordinating distributed autonomous workers running across ephemeral cloud sandboxes (e.g. Cloudflare Workers, Hetzner nodes, remote CI runners).
-
-### Agent Branches Superiority:
-- Agent Branches L3 Radar bypasses subjective human or agent declarations entirely.
-- Agents write standard Git code and push commits.
-- Radar constructs an in-memory `git merge-tree --write-tree` in milliseconds, extracts a lightweight snapshot in `$TMPDIR`, and executes the project's native test runner.
-- It catches actual runtime contract breaks (e.g. positional vs. object argument mismatches) without requiring any prompt instructions or manual tagging.
+### Conceptual Limitations & Benchmark Boundaries:
+1. **Foremerge Conceptual Review**: Foremerge v0.5.1 was **NOT** executed locally in this benchmark (no Foremerge binary was compiled, installed, or executed). The comparison is strictly conceptual, based on Foremerge's published README, CLI syntax, and primary Hacker News practitioner comments (`ttoze`, `gavmor`). Claims of Foremerge "falsification" or "fatal flaws" vs Agent Branches "immunity" are unsupported by empirical cross-run execution and are withdrawn.
+2. **Scripted Controller vs Automatic Service**: In this benchmark, `run_uprt_trial.py` was a single scripted controller that sequentially applied patches across four fixture lanes, manually called `RadarEngine.evaluate_pair()`, and posted checks to `POST /checks`. An automatic background push-triggered service and voluntary agent consumption of advisory warnings were not demonstrated in this run; the pipeline was driven by the test harness controller.
+3. **Test Oracle Bound & Infrastructure Conflation**: The L3 Radar does not analyze semantic ASTs; it delegates conflict detection entirely to `git merge-tree` and the project test runner (`node --test`). If the test suite does not exercise the broken contract, Radar cannot detect it. Furthermore, infrastructure errors (such as invalid CLI flags) cause non-zero exits that are conflated with code conflicts, showing that infrastructure faults can be conflated with genuine code regressions.
 
 ---
 
@@ -300,6 +286,7 @@ The reviewer endorses the three preconditions identified in Section 7:
 - **Execution Invariants:**
   - Compiler invocations: Strictly 0 `cargo` or `rustc` executions under human hold.
   - Scratch storage: Strictly $\le 512$ MB (measured peak: 132 MB).
+  - Net `/tmp` growth: Process isolated within scratch tmp/; global /tmp growth UNKNOWN without kernel metrics.
   - Resident memory: Combined daemon RSS 155.12 MB point-in-time sample (cooperative 1500 MB pool).
   - Evidence preservation: Existing worktrees and test receipts frozen on disk without rerun or deletion.
 
@@ -316,4 +303,4 @@ The **Unsteered Parallel Refactoring Trial (UPRT) Gate** provides reproducible r
 **Final Verdict: BOUNDED ENGINEERING ACCEPTANCE.** Mechanical advisory demo verified; claims of product superiority, mandatory adoption, and universal 100% prevention withdrawn.
 
 ---
-*Report independently audited and authored by `uprt-concurrent-reviewer` under Codex Principal C1818 and User 26/32 directives, updated per Desktop Orchestrator 11:20 review.*
+*Report independently audited and authored by `uprt-concurrent-reviewer` under Codex Principal C1818 and User 26/32 directives, updated per Desktop Orchestrator 11:20 and 11:50 reviews.*

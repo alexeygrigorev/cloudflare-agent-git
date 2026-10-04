@@ -280,26 +280,26 @@ A conceptual objective of this trial was to contrast the mechanisms of **Agent B
 
 ```
 ====================================================================================================
-ARCHITECTURAL COMPARISON: FOREMERGE (CONCEPTUAL) vs AGENT BRANCHES L3 RADAR (OBSERVED)
+ARCHITECTURAL COMPARISON: FOREMERGE (CONCEPTUAL) vs AGENT BRANCHES L3 RADAR (LOCAL DEMO)
 ====================================================================================================
-Feature Dimension           Foremerge (v0.5.1 Spec)             Agent Branches L3 Radar (Observed)
+Feature Dimension           Foremerge (v0.5.1 Spec)             Agent Branches L3 Radar (Local Demo)
 ----------------------------------------------------------------------------------------------------
-Conflict Detection Method   Pre-code declared intent strings    Post-push pairwise trial merge
-Detection Timing            Before coding starts (advisory)     Immediately upon branch push
-Detection Mechanism         Lexical scope string matching       In-memory git merge-tree + tests
-Manual Annotation Overhead  Declared: --scope symbol:Foo=bar    Zero: unsteered git commits & tests
-Semantic Regressions        Vulnerable to scope omissions       Caught if covered by test oracle
-Vocabulary Sensitivity      Vulnerable to naming mismatches     Dependent on test suite coverage
-Storage Backend             Local SQLite DB in .git/foremerge   Distributed DO / Sidecar Smart HTTP
-Swarm Topology              Local workstation worktrees         Multi-agent, distributed Smart HTTP
-Execution Status            Not executed in trial (spec only)   Measured locally on demo-target
+Conflict Detection Method   Pre-code declared intent strings    In-memory trial merge + test runner
+Detection Execution         Manual CLI / MCP declarations       Manual test script call to RadarEngine
+Detection Mechanism         Lexical scope string matching       In-memory git merge-tree + node --test
+Manual Annotation Overhead  Declared: --scope symbol:Foo=bar    No symbol tags; requires test oracle
+Semantic Detection Bound    Vulnerable to scope omissions       Strictly bounded by test suite coverage
+Vocabulary Sensitivity      Vulnerable to naming mismatches     No AST analysis; delegates to test runner
+Storage Backend             Local SQLite DB in .git/foremerge   Local sidecar & coordinator processes
+Swarm Topology              Local workstation worktrees         Local testbed lanes (single host)
+Execution Status            Not executed in trial (spec only)   Locally measured on demo-target fixture
 ====================================================================================================
 ```
 
-### Conceptual Limitations of Pre-Code Intent Tagging:
-1. **The Scope Tagging Dilemma**: Foremerge's design relies on agents or developers pre-declaring intent scopes via CLI flags (`--scope "symbol:ShortlinkService.create=modify"`). If different agents tag overlapping concerns at different granularities (e.g. symbol-level vs endpoint-level), string matching will report zero lexical intersection.
-2. **Dependence on Test Oracle**: In contrast, Agent Branches L3 Radar requires zero prompt steering or manual annotations. However, its effectiveness is **strictly bound by the quality of the test oracle**: if the test suite does not exercise the broken contract, Radar will report `clean` despite the semantic break.
-3. **Infrastructure Conflation**: An infrastructure failure in the test command (e.g. an invalid Node CLI flag) causes the test runner to exit non-zero, which Radar classifies as a test conflict. This demonstrates that Radar fails closed, but it also means infrastructure errors can be conflated with genuine code conflicts.
+### Conceptual & Engineering Demarcations:
+1. **Conceptual Contrast**: Foremerge v0.5.1 explores pre-code intent declarations; the Agent Branches prototype explores post-push trial-merge test execution. Because Foremerge was not compiled or executed locally in this benchmark, its actual friction, latency, and real-world failure modes remain unmeasured; claims of Foremerge "falsification" are withdrawn.
+2. **Scripted Controller vs Automatic Service**: In this trial, `run_uprt_trial.py` manually fetched branch heads, invoked `RadarEngine.evaluate_pair()`, and posted the resulting status payload to `POST /checks`. An automatic, background push-triggered service and voluntary agent consumption of advisory warnings were not demonstrated in this run; the workflow was driven sequentially by the test controller.
+3. **Test Oracle Bound & Infrastructure Conflation**: The L3 Radar does not analyze semantic ASTs. It delegates conflict detection to `git merge-tree` and the project test runner (`node --test`). If the test suite does not exercise the broken contract, Radar reports clean. Furthermore, non-zero exit codes from infrastructure failures (e.g. invalid CLI flags) are classified as test conflicts, showing that infrastructure faults can be conflated with genuine code regressions.
 
 ---
 
