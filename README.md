@@ -144,9 +144,15 @@ export SIDECAR_ROOT=./.sidecar-root
 node "$INTEGRATION_DIR/prototype/local-artifacts/sidecar.mjs"
 
 # Terminal 2 — Launch the compiled Node coordinator daemon
-# Note: On Node 24+, --disable-wasm-trap-handler and --max-old-space-size=256
-# prevent virtual address space reservation exhaustion under process memory limits (C1682).
+# Bounded flags, stated as an observed empirical mitigation (Node 24):
+# --disable-wasm-trap-handler removes V8's large WASM trap-handler
+# address-space reservation, but on its own it is NOT a fix under a hard
+# cap — at `ulimit -v 1500000` the full coordinator still aborts on the
+# first served request. The verified working envelope pairs the flag with
+# an explicit heap cap and a slightly raised address-space limit
+# (`ulimit -v 1530000`; 5/5 heartbeats served, RSS 62–77 MB observed):
 set -a; . ./.env.local; set +a
+ulimit -v 1530000   # per-process virtual address space, not the shared physical budget
 export PORT=8787
 export HOST=127.0.0.1
 export LOCAL_ARTIFACTS_URL=http://127.0.0.1:$SIDECAR_PORT
@@ -158,6 +164,19 @@ node --disable-wasm-trap-handler --max-old-space-size=256 \
 
 `.env.local` is scratch-local: keep it out of Git and regenerate it per stack
 session instead of reusing stale tokens.
+
+#### Two tokens, two authorization planes
+
+Do not conflate the two credentials this stack uses:
+
+- `$SIDECAR_TOKEN` is the **shared sidecar control bearer**: it authorizes
+  sidecar control-plane calls (creating canonical repos via `POST /setup`)
+  and is what the coordinator presents as `LOCAL_ARTIFACTS_TOKEN`. It is not
+  the credential Git Smart HTTP accepts for push.
+- The **minted repo write token** returned in the `POST /setup` response
+  (`token` field; per-repo, short-lived) — or a task token minted for the
+  same repo — is what Git Smart HTTP push requires. It belongs to the repo or
+  task that requested it; keep it out of `.env.local`.
 
 #### Pushing work to a canonical repo: exact seed lease
 
@@ -171,16 +190,36 @@ non-fast-forward. Do **not** recover with an unconstrained `git push --force`
 an exact lease on the seed commit instead:
 
 ```bash
-seed_sha=<seedCommit from the createRepo response>
+# Create the canonical repo on the control plane; the JSON response carries
+# remote (canonical URL), seedCommit (seed SHA) and token (repo write token).
+setup_resp=$(curl -fsS -X POST "http://127.0.0.1:$SIDECAR_PORT/setup" \
+    -H "Authorization: Bearer $SIDECAR_TOKEN" \
+    -H 'Content-Type: application/json' \
+    -d '{"name":"my-task-repo"}')
+seed_sha=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["seedCommit"])')
+repo_url=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["remote"])')
+repo_tok=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["token"])')
+# jq equivalents: seed_sha=$(printf '%s' "$setup_resp" | jq -r .seedCommit), etc.
+
+# Push with the exact lease on the seed commit, authenticated as the minted
+# repo write token $repo_tok (0600 file-backed variant below — never argv
+# on multi-user hosts):
 git push --force-with-lease=refs/heads/main:"$seed_sha" \
-    <remote-url-from-createRepo> HEAD:refs/heads/main
+    "$repo_url" HEAD:refs/heads/main
 ```
 
 This succeeds only while canonical `main` still points at `seed_sha`. If
 another actor advanced it, git rejects the push (`stale info`) and the
 canonical ref is preserved untouched — the failure is closed, not a clobber.
-On rejection: fetch the canonical ref, inspect what landed, and re-run with a
-fresh expected SHA only after verifying it; never escalate to a blind force.
+
+On rejection, recover through ordinary Git integration — never by
+force-replacing arbitrary history: fetch the canonical ref, inspect what
+landed (`git log`, `git diff`), then rebase or cherry-pick your local work
+on top of the advanced canonical `main` and push the integrated result as a
+normal fast-forward, with no force flags at all. Re-leasing against a fresh
+SHA is only conceivable when you verifiably own the canonical history (e.g.
+a coordinated recovery to a known-good state), and the displaced commits
+must be preserved, never discarded.
 (Verified with git 2.43: lease-at-seed succeeds against a freshly seeded
 canonical repo; the same lease after the ref advanced is rejected and the
 advanced commit survives.)
@@ -194,9 +233,11 @@ process runs, via `ps aux` and `/proc/<pid>/cmdline`. This applies to
 this; on multi-user hosts prefer mode `0600` files over argv:
 
 ```bash
-# Git: persist the header in the repo config once (file-backed, not per-command argv)
+# Git: persist the header in the repo config once (file-backed, not per-command
+# argv). Use the minted repo write token here — the control bearer $SIDECAR_TOKEN
+# is not accepted by Git Smart HTTP push.
 umask 077
-git config --local http.<remote-url>.extraHeader "Authorization: Bearer $SIDECAR_TOKEN"
+git config --local http.<remote-url>.extraHeader "Authorization: Bearer $repo_tok"
 chmod 600 .git/config
 
 # curl: read options from a 0600 config file instead of -H
