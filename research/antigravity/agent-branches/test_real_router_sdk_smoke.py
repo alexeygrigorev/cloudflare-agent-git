@@ -162,8 +162,12 @@ class TestRealCoordinatorSDKSmoke(unittest.TestCase):
 
     def test_03_push_event_requires_mutating_auth(self):
         """Verify real router requireMutatingAuth: unauthenticated push returns 401."""
+        # A client without task_tokens cache and no $ADMIN_TOKEN env var
+        bare_client = AgentBranchesClient(server_url=self.server_url, timeout=5.0)
+
+        # 1. Negative: no token available anywhere -> fails closed with HTTP 401
         with self.assertRaises(AgentBranchesAPIError) as ctx:
-            self.client.push(
+            bare_client.push(
                 task_id="task-0001",
                 agent_id="smoke-alpha-0001",
                 head_sha="0000000000000000000000000000000000000001",
@@ -174,27 +178,76 @@ class TestRealCoordinatorSDKSmoke(unittest.TestCase):
         self.assertEqual(ctx.exception.status_code, 401)
         self.assertIn("bearer token required", ctx.exception.message)
 
+        # 2. Negative: invalid fake bearer token -> fails with HTTP 401
+        with self.assertRaises(AgentBranchesAPIError) as ctx:
+            bare_client.push(
+                task_id="task-0001",
+                agent_id="smoke-alpha-0001",
+                head_sha="0000000000000000000000000000000000000001",
+                base_sha="0000000000000000000000000000000000000001",
+                token="tok-invalid-bogus-token",
+                intent="invalid token push"
+            )
+        self.assertEqual(ctx.exception.status_code, 401)
+
     def test_04_authenticated_push_event_succeeds(self):
-        """Verify POST /events/push with agent bearer token succeeds on real router."""
+        """Verify POST /events/push via public client.push() forwards bearer auth on real router."""
         token = self.client.task_tokens["task-0001"]
-        payload = {
-            "agent": "smoke-alpha-0001",
-            "agentId": "smoke-alpha-0001",
-            "task_id": "task-0001",
-            "sha": "0000000000000000000000000000000000000001",
-            "head_sha": "0000000000000000000000000000000000000001",
-            "base_sha": "0000000000000000000000000000000000000001",
-            "files_changed": ["src/smoke.ts"],
-            "intent": "authenticated smoke push"
-        }
-        res = self.client._request(
-            "POST",
-            "/events/push",
-            payload,
-            headers={"Authorization": f"Bearer {token}"}
+
+        # 1. Primary C1518 path: public client.push() automatically resolves and
+        # forwards cached task token as Authorization: Bearer <plaintext> (ZERO _request bypass!)
+        res = self.client.push(
+            task_id="task-0001",
+            head_sha="0000000000000000000000000000000000000001",
+            base_sha="0000000000000000000000000000000000000001",
+            files_changed=["src/smoke.ts"],
+            intent="authenticated smoke push with auto-cached token"
         )
         self.assertTrue(res.get("accepted"))
         self.assertEqual(res.get("agent"), "smoke-alpha-0001")
+
+        # 2. Cold-cache path: a fresh client without cached tokens passes explicit token=
+        bare_client = AgentBranchesClient(server_url=self.server_url, timeout=5.0)
+        res_bare = bare_client.push(
+            task_id="task-0001",
+            agent_id="smoke-alpha-0001",
+            head_sha="0000000000000000000000000000000000000001",
+            base_sha="0000000000000000000000000000000000000001",
+            token=token,
+            intent="cold-cache explicit token push"
+        )
+        self.assertTrue(res_bare.get("accepted"))
+
+        # 3. Admin token path: client passes admin_token= parameter
+        res_admin = bare_client.push(
+            task_id="task-0001",
+            agent_id="smoke-alpha-0001",
+            head_sha="0000000000000000000000000000000000000001",
+            admin_token=self.admin_token,
+            intent="admin token push"
+        )
+        self.assertTrue(res_admin.get("accepted"))
+
+        # 4. Cross-agent negative check: create second task for smoke-beta, push to task-0001
+        # using smoke-beta's token -> asserts HTTP 403 (cross-agent push rejected)
+        beta_task = self.client.create_task(
+            repo="agent-branches-canonical-cafe1234",
+            base_sha="0000000000000000000000000000000000000001",
+            agent="smoke-beta",
+            intent="beta task",
+            branch="refs/heads/feat/smoke-beta",
+            admin_token=self.admin_token
+        )
+        beta_token = self.client.task_tokens[beta_task["taskId"]]
+        with self.assertRaises(AgentBranchesAPIError) as ctx:
+            bare_client.push(
+                task_id="task-0001",
+                agent_id="smoke-alpha-0001",
+                head_sha="0000000000000000000000000000000000000001",
+                token=beta_token,
+                intent="cross-agent push"
+            )
+        self.assertEqual(ctx.exception.status_code, 403)
 
     def test_05_status_with_runner_token(self):
         """Verify GET /status carries runner token and returns live heads and agents."""
@@ -210,9 +263,12 @@ class TestRealCoordinatorSDKSmoke(unittest.TestCase):
 
     def test_06_checks_submission_and_stale_detection(self):
         """Verify POST /checks: accepts fresh head vector, rejects stale vector with 409."""
-        current_vector = {"smoke-alpha-0001": "0000000000000000000000000000000000000001"}
+        status = self.client.get_status(runner_token=self.runner_token)
+        current_vector = dict(status.get("heads", {}))
+        self.assertTrue(len(current_vector) >= 1)
 
-        # CONTRACT v0.1 valid payload
+        # CONTRACT v0.1 valid payload using live head vector
+        primary_agent = "smoke-alpha-0001"
         checks_payload = {
             "contract": "0.1",
             "vector": current_vector,
@@ -225,9 +281,9 @@ class TestRealCoordinatorSDKSmoke(unittest.TestCase):
                 "tests_collected": 0
             },
             "results": [{
-                "pair": ["smoke-alpha-0001", "smoke-alpha-0001"],
+                "pair": [primary_agent, primary_agent],
                 "heads": {
-                    "smoke-alpha-0001": "0000000000000000000000000000000000000001"
+                    primary_agent: current_vector[primary_agent]
                 },
                 "status": "clean",
                 "kind": "textual"
