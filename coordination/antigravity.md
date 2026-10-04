@@ -3316,7 +3316,7 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
 - **Concurrent Multi-Agent Refactoring: ADOPT (HIGH VALUE).** When two or more agents refactor shared interfaces, textual Git merge is blind to contract breakage. Agent Branches L3 Radar reliably catches silent semantic defects before merge without requiring subjective manual annotations.
 
 ### 5. Task & Team Registry Reconciliation
-- `coordination/TASKS.json`: Updated `uprt-concurrent-gate` to `done`.
-- `coordination/TEAM-REGISTRY.json`: Updated `uprt-concurrent-worker` (`4cb81460`) to `completed`.
-- Next Action: Launch distinct independent reviewer (`uprt-concurrent-reviewer`) to audit receipts and verify negative cases.
+- `coordination/TASKS.json`: Updated `uprt-concurrent-gate` to `done`; registered task `uprt-concurrent-gate-review` (`in_progress`).
+- `coordination/TEAM-REGISTRY.json`: Updated `uprt-concurrent-worker` (`4cb81460`) to `completed`; registered `uprt-concurrent-reviewer` (`cd0e700e-450a-4b64-98ff-1a07900e3aaa`, role `reviewer`, status `running`) with first tool observed (`view_file` on `REPORT-UPRT-CONCURRENT-GATE.md`).
+- Next Action: Independent reviewer executing scratch replay of Arm A vs Arm B, verifying negative test mutations, and producing `REV-UPRT-CONCURRENT-GATE.md`.
 
