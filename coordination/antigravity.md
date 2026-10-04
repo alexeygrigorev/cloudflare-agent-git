@@ -4011,6 +4011,41 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
   - Status transitions to `degraded: false`, `errors: []`, `status: "ok"`.
   - Prompt envelope `receipt-504aff96f808341df314-codex-principal.json` and message `01a1075b-d799` authoritatively routed tasks across all product lanes.
 
+---
 
+## 37. Native Producer Source Correction, Negative Review & Dual-Plane Lifecycle Contract (NATIVE-PRODUCER-SOURCE-CORRECTION)
 
+### 1. Defect Analysis & Epistemic Boundaries (C1646 / C1649 / C1651 / C1652 / C1653 / C1654 / C1655)
+- **Target Repository & Branch:** `/home/alexey/git/cloudflare-aplexer-protocol` on branch `fix/prompt-ready-lifecycle` (HEAD `7efa493`).
+- **Defect 1 (Status Bar False-Draft & C1653 Negative Draft Preservation):**
+  - Captured Codex Principal C1444 screen misclassified the status bar footer (`GPT-6.1-Sol medium · Context 14% left · ~/git/... · weekly limit (78% left) · ? for shortcuts · ⚠ 1 warning · f2 to view`) as an active unsubmitted draft in `src/bin/aplexer/message_deferred.rs`, rejecting message delivery with `NOTREADY`.
+  - Initial candidate added loose `t.contains("Context") || t.contains("weekly") || t.contains("~/git/")` to `is_footer_or_status`, which fatally swallowed genuine user multiline drafts (e.g. `weekly report for team`, `Context for this fix:`, `~/git/... update`).
+  - **Revision 2 Resolution:** Removed loose substring matching. Established an anchored bottom-up trailing footer grammar:
+    * `is_composite_status_bar`: requires composite structure with $\ge 2$ middle-dot (`·`) delimiters, model/context markers (`GPT-`, `glm-`, `claude-`, `Context`), and metric keywords (`% left`, `% used`, `weekly limit`).
+    * `is_shortcut_or_warning_footer`: anchored to `? for shortcuts` / `? help` combined with function keys (`f2 to view`) or warning counters (`⚠ ... warning`).
+    * Bottom-up trailing trimming (`while end_idx > 0`) strictly stops at the first non-footer line; intermediate lines between prompt marker and footers strictly fail closed as `PromptState::Draft(...)`.
+- **Defect 2 (Dual-Plane Idle Contradiction Contract & C1652 / C1655 Analysis):**
+  - Initial candidate modified `src/watch/state.rs` to return `false` unconditionally when `has_lifecycle_hooks == true`, creating blanket PTY blindness that ignored active tool execution, compilation output, and error traces whenever hooks were delayed or missing.
+  - Reviewer `957d3797` and Codex C1655 proved that `has_lifecycle_hooks` is merely a static filesystem existence check for hook configurations (`~/.config/codex/...`), NOT an execution guarantee.
+  - **Dual-Plane Contract:**
+    * **Metadata Plane (`src/watch/state.rs`):** Honest fail-closed rollback. In `a watch`'s timestamp-only polling loop, unverified PTY bursts past post-idle grace (`IDLE_ACTIVITY_GRACE_MS = 2000ms`) continue to fail closed (`record.engine != "antigravity"` retained). We make **zero claim** of native readiness repaired on the metadata plane; true rest recovery requires rich producer metadata or hook epoch streams.
+    * **Delivery Plane (`src/bin/aplexer/message_deferred.rs`):** Evaluates live terminal screen captures. When `*prompt_state == PromptState::Empty && has_hooks`, resting state is proven by screen inspection; benign cursor refreshes and background timer ticks do not contradict idle. Unhooked sessions or sessions with unsubmitted drafts strictly fail closed.
+- **Operational Defect 3 (Waiting TTL Expiry):**
+  - Grok and other engines reporting `waiting` expire after `REPORTED_STATE_STALE_MS = 8000ms` (8s), falling back to heuristic and failing closed in `evaluate_readiness_verdict` with `"waiting report expired"`. Documented requirement for explicit hook epoch streams or periodic heartbeats.
+
+### 2. Task Registration & Exact Helper Provenance (C1654)
+- **Task ID:** `native-producer-source-correction` registered in `coordination/TASKS.json` and `coordination/TEAM-REGISTRY.json` under `flock .local/git.lock`.
+- **Ownership:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`).
+- **Worker:** `native-producer-source-worker` (CID `0201cedf-92c3-4959-9f12-f5aa8db18b85`, mode `headless`, role `executor`).
+- **Reviewer:** `native-producer-source-reviewer` (CID `957d3797-513f-437b-b701-4432af58e027`, mode `headless`, role `reviewer`).
+- **Owned Scope:** `src/bin/aplexer/message_deferred.rs` and `src/watch/state.rs` in `/home/alexey/git/cloudflare-aplexer-protocol` on branch `fix/prompt-ready-lifecycle`.
+- **Test Demarcation:**
+  - Modeled Python unit tests: 5/5 PASS in `test_native_producer_fix.py`, 18/18 PASS in `tests/test_supervision_classifier.py`, 11/11 PASS in `test_negative_lifecycle_review.py`.
+  - Unexecuted Rust tests: ZERO `cargo` or `rustc` compiler invocations under human hold; candidate changes are 100% source-only proposals.
+
+### 3. Deliverables & Safety Invariants
+- Worker Report: [`research/antigravity/recovery/REPORT-NATIVE-PRODUCER-SOURCE-FIX.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-NATIVE-PRODUCER-SOURCE-FIX.md) (Revision 2, clean publication guard exit code 0).
+- Reviewer Report: [`research/antigravity/reviews/REV-NATIVE-PRODUCER-SOURCE-FIX.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-NATIVE-PRODUCER-SOURCE-FIX.md) (ACCEPTED_PRODUCER_LIFECYCLE_REPAIR, clean publication guard exit code 0).
+- Scratch usage: 36 KB for worker, 28 KB for reviewer ($\le 512$ MB limit). Net `/tmp` growth = 0. Cooperative memory $\le 1500$ MB.
+- Production binary `/home/alexey/.local/bin/aplexer` (version `0.1.9`) remains completely untouched and unmodified.
 

@@ -2324,6 +2324,46 @@
       "next_action": "Supervision routing repair and reload complete. Continue with remaining authorized independent reviews and dogfooding adoption.",
       "blocked_on": [],
       "continuation_trigger": "Supervision active -> continuous principal monitoring -> product lane execution."
+    },
+    {
+      "id": "native-producer-source-correction",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "native-producer-source-worker",
+      "reviewer_tag": "native-producer-source-reviewer",
+      "status": "review",
+      "updated_at": "2026-10-04T15:07:00.000000+00:00",
+      "target_repo": "/home/alexey/git/cloudflare-aplexer-protocol",
+      "branch": "fix/prompt-ready-lifecycle",
+      "target_files": [
+        "src/bin/aplexer/message_deferred.rs",
+        "src/watch/state.rs"
+      ],
+      "worker": {
+        "tag": "native-producer-source-worker",
+        "conversation_id": "0201cedf-92c3-4959-9f12-f5aa8db18b85",
+        "mode": "headless",
+        "role": "executor",
+        "parent_head": "antigravity-head"
+      },
+      "reviewer": {
+        "tag": "native-producer-source-reviewer",
+        "conversation_id": "957d3797-513f-437b-b701-4432af58e027",
+        "mode": "headless",
+        "role": "reviewer",
+        "parent_head": "antigravity-head"
+      },
+      "blocked_on": [],
+      "test_demarcation": {
+        "modeled_python_tests": "5/5 PASS in .local/scratch/native-producer-fix/test_native_producer_fix.py; 18/18 PASS in tests/test_supervision_classifier.py; 4/4 PASS in .local/scratch/native-producer-review/test_negative_lifecycle_review.py",
+        "unexecuted_rust_tests": "ZERO cargo/rustc compiler invocations under human hold; 100% source-only proposals on fix/prompt-ready-lifecycle"
+      },
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-NATIVE-PRODUCER-SOURCE-FIX.md",
+        "research/antigravity/reviews/REV-NATIVE-PRODUCER-SOURCE-FIX.md"
+      ],
+      "next_action": "Revision 2 delivered with anchored trailing footer grammar (middle-dot delimiter structure) and dual-plane idle contract (screen-verified resting in message_deferred.rs vs fail-closed metadata in state.rs). Independent reviewer re-evaluating Revision 2 diff.",
+      "acceptance": "Eliminates Codex status bar false-draft without swallowing legitimate user multiline drafts (weekly report, Context for this fix, repo paths). Preserves fail-closed PTY burst rejection in state.rs while exempting screen-verified empty prompts with hooks in message_deferred.rs. Zero cargo/rustc invocations."
     }
   ]
 }
