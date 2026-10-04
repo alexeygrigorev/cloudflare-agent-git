@@ -1228,23 +1228,25 @@
       "project_id": "agent-branches",
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
-      "status": "queued",
+      "status": "done",
       "updated_at": "2026-10-04T11:07:39.139235+00:00",
       "executor_ids": [],
       "owned_paths": [],
-      "evidence_paths": [],
-      "blocked_on": [
-        "Semantic ownership ACK and first action unverified"
+      "evidence_paths": [
+        "research/antigravity/adoption/REPORT-AB-REAL-CONSUMER-WORK.md",
+        "research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md",
+        ".local/scratch/ab-dogfood/results.json"
       ],
+      "blocked_on": [],
       "assignment_ack": null,
       "next_action": "Delegate actual maintenance features, measure consumer friction and fix discovered defects.",
       "acceptance": "Real feature commit/tests/reviewer; matched Git fallback; fixture demonstrations are not adoption.",
-      "first_action": null,
-      "commit": null,
-      "pr_url": null,
-      "tests": null,
-      "accepted_at": null,
-      "reviewer": null,
+      "first_action": "time.perf_counter() benchmark run via .local/scratch/ab-dogfood/run_dogfood.py on Task T1 (0.44s Git worktree vs 0.99s Agent Branches, 14/14 tests pass, exact tree match b1a84dacc47f)",
+      "commit": "1a3dd96f46bbced53d2e51a3e8c26c06b27c348a",
+      "pr_url": "https://github.com/alexeygrigorev/agent-branches",
+      "tests": "node --test in demo-target/ (14/14 tests PASS), .local/scratch/ab-dogfood/run_dogfood.py (exact final tree match b1a84dacc47f79afafb327d9f7667fe41c565f71 in both arms)",
+      "accepted_at": "2026-10-04T12:01:38Z",
+      "reviewer": "consumer-dogfooding-reviewer (51d1a2b8-9343-431a-9437-d8b9db5fcf03), report research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md",
       "continuation_trigger": "Head handles completion/dependency/failure; next owned ready task within5min; daily owner handoff"
     },
     {

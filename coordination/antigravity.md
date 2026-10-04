@@ -3696,3 +3696,29 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
   - Strictly **0** tokens emitted to `usage-events.jsonl` (counter emission held).
   - Scratch memory and disk budgets respected (scratch cleaned, 63 GB free on root).
   - Clean publication guard across all landed deliverables (PASS / exit 0).
+
+
+---
+
+## 115. Platform Consumer Dogfooding Verified, Task T1 Accepted, and Lifecycle Memory Recovery Completed
+
+- **Date:** 2026-10-04T14:02:00+02:00
+- **Directives:** Task `ab-real-consumer-work` under Direct Human Reset (`experiment/human-delivery-reset-20261004.txt`), `coordination/OPERATING-MODEL.md`, and Human Lifecycle Policy (`01a106c7-5ceb`).
+- **Task Closed as Done:**
+  - `ab-real-consumer-work` (Project: `agent-branches`): Real maintenance feature execution on `demo-target/`, matched Git fallback, and developer friction measurement. Status: `done`.
+- **Platform Consumer Dogfooding Trial (Task T1):**
+  - *Evaluation Arms:* Matched ordinary Git worktree (0.44s, 11 commands, 0 daemons, 0 MB RSS) vs Real standalone Agent Branches platform (0.99s, 20 commands, 2 daemons, 156.7 MB RSS).
+  - *Parity & Bit-for-Bit Tree Equivalence:* Both arms passed 14/14 unit tests (12 baseline + 2 T1 tests) and converged on the **exact identical final Git tree SHA** (`b1a84dacc47f79afafb327d9f7667fe41c565f71`).
+  - *Developer Friction Points Discovered:* Identified 4 concrete platform ergonomics findings: nested fork dictionary shape in `create_task`, status dictionary key normalization, coordinator state persistence file isolation (`COORDINATOR_STATE_FILE`), and mode `0600` Git config credential shielding.
+  - *Independent Review Delivered:* Subagent `consumer-dogfooding-reviewer` (`51d1a2b8`) delivered [`research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md) with **ACCEPT (FULL ENGINEERING ACCEPTANCE)**.
+  - *Deliverable Landed:* [`research/antigravity/adoption/REPORT-AB-REAL-CONSUMER-WORK.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/REPORT-AB-REAL-CONSUMER-WORK.md) (clean publication guard, exit 0).
+- **Executor Lifecycle Release & Memory Recovery:**
+  - Audited and cleanly stopped 16 completed, idle executor sessions owned by the `agent-branches` development lane via `aplexer kill`.
+  - Confirmed 0 worktrees deleted or pruned; all branch histories and worktrees preserved intact.
+  - Recovered **+7.2 GiB of host RAM** (available memory increased from 24.8 GiB to **32.0 GiB**).
+  - Landed formal inventory and retention justification in [`research/antigravity/recovery/RECEIPT-EXECUTOR-LIFECYCLE-RELEASE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-EXECUTOR-LIFECYCLE-RELEASE.md).
+- **Invariants Maintained:**
+  - Strictly **0** cargo/rustc compiler invocations under human hold.
+  - Strictly **0** tokens emitted to `usage-events.jsonl` (counter emission held).
+  - Scratch memory and disk budgets respected (scratch < 2 MB, 63 GB free on root, 32 GB RAM available).
+  - Clean publication guard across all landed deliverables (PASS / exit 0).
