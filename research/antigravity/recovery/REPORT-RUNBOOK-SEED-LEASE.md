@@ -129,18 +129,20 @@ Under antigravity-head 01a10580 / codex C1740/C1743, `README.md` on
 
 1. **Executable JSON setup.** The schematic placeholder
    (`seed_sha=<seedCommit from the createRepo response>`) was replaced by an
-   executable control-plane call: `curl -fsS -X POST
-   "http://127.0.0.1:$SIDECAR_PORT/setup"` authenticated with
-   `$SIDECAR_TOKEN`, with `seedCommit`, `remote` and `token` extracted via
-   `python3 -c 'import sys, json; print(json.load(sys.stdin)[...])'` (jq
-   equivalents noted).
+   executable sidecar control-plane call (`POST /api/repos`, authenticated
+   with `$SIDECAR_TOKEN`), with `seedCommit`, `remote` and `token` extracted
+   via `python3 -c 'import sys, json; print(json.load(sys.stdin)[...])'`
+   (jq equivalents noted), plus the coordinator `POST /setup` alternative
+   (`$ADMIN_TOKEN`; response nests `canonical.remote`/`seedCommit`, `null`
+   when the canonical repo already exists, no write token in the response).
 2. **Token authorization demarcation.** New subsection "Two tokens, two
    authorization planes": `$SIDECAR_TOKEN` is the shared sidecar **control
-   bearer** (control-plane calls; the coordinator presents it as
+   bearer** (sidecar control-plane calls; the coordinator presents it as
    `LOCAL_ARTIFACTS_TOKEN`), while the **minted repo write token** from the
-   `POST /setup` response (or a task token for the same repo) is what Git
-   Smart HTTP push requires. The token-hygiene Git example now uses
-   `$repo_tok`, not `$SIDECAR_TOKEN`.
+   `POST /api/repos` response (or a task token for the same repo) is what
+   Git Smart HTTP push requires; the coordinator `POST /setup` route takes
+   `$ADMIN_TOKEN`. The token-hygiene Git example now uses `$repo_tok`, not
+   `$SIDECAR_TOKEN`.
 3. **Bounded flags.** `--disable-wasm-trap-handler` is documented as an
    **observed empirical mitigation, not an unconditional fix**: on its own at
    `ulimit -v 1500000` the full coordinator still aborts on the first served
@@ -168,3 +170,16 @@ illustrative blocks containing `<task-id>`/`<port>` angle-bracket placeholders
 are not `bash -n` clean (unchanged from before this task); all blocks written
 or edited in this task are. No new tests were run for this refinement
 (documentation-only change; the §2 lease-mechanics results are unaffected).
+
+Route/auth truthfulness note: a concurrent independent review
+(`REV-RUNBOOK-SEED-LEASE-4C6FDD5`, REQUEST_CHANGES) flagged route/auth
+ambiguity among its findings. Verified against source before finalizing:
+sidecar repo creation is `POST /api/repos` gated by the shared sidecar bearer
+(`sidecar.mjs` /api/* guard and route table), while the coordinator
+`POST /setup` route requires `ADMIN_TOKEN` (`core/router.js`) and its
+`setupNow` response carries `canonical.remote`/`seedCommit` only, `null` when
+the canonical repo already exists (`core/coordinator.js`). The README now
+documents both accurately. The review's other findings — token demarcation,
+executable extraction instead of schematic placeholders, bounded-flag
+framing with the verified envelope, and the vmem/cgroup plus cause-UNKNOWN
+epistemic corrections — are addressed by the refinements above.
