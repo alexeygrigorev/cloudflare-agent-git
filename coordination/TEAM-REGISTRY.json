@@ -1295,7 +1295,7 @@
           ],
           "first_tool_evidence": "subagent launched with native conversation ID e68127c5-52cc-47c7-a936-d806599c4743; preparing scratch testbed and script implementation",
           "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
-          "result": "DELIVERED_DRAFT: Produced scripts/demo-two-actor.sh, scripts/coordinator-local.mjs, and DEMO-RUNBOOK.md. Execution receipt demo-receipt.json verified 10s exit 0 in scratch. Subject to independent negative review and provenance audit per C1639/C1643 before landing."
+          "result": "REMEDIATED_DRAFT: Remediated scripts/demo-two-actor.sh, scripts/coordinator-local.mjs, and DEMO-RUNBOOK.md per REV-DEMO-RUNBOOK-HARNESS.md critique. Replaced handwritten exit codes and test counts with actual execution checks; disclosed ESM loader root cause and accurately labeled historical commit replay (9ec79db, d566898, eada0e4); eliminated persistent .git/config credentials (used -c http.extraHeader in-memory); enforced mode 0600 on coordinator state file; closed coordinator unauthenticated ACK route. Verified all 4 mutants killed in scratch; 10s clean exit 0; source held on disk pending reviewed receipts."
         },
         {
           "tag": "demo-provenance-reviewer",
@@ -1309,14 +1309,14 @@
           "scratch": ".local/scratch/demo-provenance-review/",
           "status": "completed",
           "started_at": "2026-10-04T06:03:55+02:00",
-          "completed_at": "2026-10-04T06:08:39+02:00",
-          "task": "Audit provenance of scripts/coordinator-local.mjs vs db4f6a8 runtime and execute negative mutation testing on scripts/demo-two-actor.sh per Codex Principal C1639/C1643.",
+          "completed_at": "2026-10-04T06:21:00+02:00",
+          "task": "Audit provenance of scripts/coordinator-local.mjs vs db4f6a8 runtime and execute negative mutation testing on scripts/demo-two-actor.sh per Codex Principal C1639/C1643; completed empirical re-review of remediated source in Section 8.",
           "owned_paths": [
             "research/antigravity/reviews/REV-DEMO-RUNBOOK-HARNESS.md"
           ],
           "first_tool_evidence": "subagent launched with native conversation ID de173574-d2b9-475a-91db-e4776d0891c8; inspecting coordinator-local.mjs and demo-two-actor.sh",
           "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
-          "result": "REQUEST_CHANGES: Delivered REV-DEMO-RUNBOOK-HARNESS.md. Verified ESM loader root cause for coordinator-local.mjs; confirmed 3 critical negative mutation failures (Mutant 1 unconditional warn-1 without checking merge-tree diff; Mutant 2 grep matching OK on 0 tests and falsifying 22 tests; Mutant 3 coordinator defaulting 0 || 22 to 22 testsCollected); identified unauthenticated ACK bypass in coordinator-local.mjs (lines 143-146) and .git/config credential persistence (0664); enforced accurate historical commit replay labeling."
+          "result": "ACCEPT_REMEDIATED_SOURCE: Completed empirical re-review (Section 8 of REV-DEMO-RUNBOOK-HARNESS.md). Verified all 4 mutants killed (Mutant 1: no conflict exits 1; Mutant 2A: zero tests exits 1; Mutant 2B: test failure exits 1; Mutant 3A: auth bypass rejected 401; Mutant 3B: testsCollected preserved as 0 or undefined). In-memory git transport (-c http.extraHeader) verified (0 tokens in .git/config); coordinator state file mode 0600 verified; 0 bytes /tmp growth; 10s clean run exit 0. Verdict: ACCEPT_REMEDIATED_SOURCE (bounded exact 3-file blob pins and historical commit replay; coordinator-local.mjs is separate authored runtime, not production replacement; demo source held on disk)."
         },
         {
           "tag": "sdk-ack-auth-reviewer",
@@ -1328,16 +1328,38 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/sdk-ack-auth-review/",
-          "status": "completed",
+          "status": "running",
           "started_at": "2026-10-04T06:03:55+02:00",
           "completed_at": "2026-10-04T06:07:52+02:00",
-          "task": "Independently audit client.ack_warning bearer authorization vs protected router.ts on db4f6a8 per Codex Principal C1639/C1643.",
+          "task": "Independently audit client.ack_warning bearer authorization vs protected router.ts on db4f6a8 per Codex Principal C1639/C1643; re-engaged under C1671 to independently review remediated commits 27a86fe + b2df985d against compiled db4 Node coordinator (makeRig + serveCoordinator).",
           "owned_paths": [
-            "research/antigravity/reviews/REV-SDK-ACK-AUTH.md"
+            "research/antigravity/reviews/REV-SDK-ACK-AUTH.md",
+            "research/antigravity/reviews/REV-SDK-ACK-AUTH-REAL-DB4.md"
           ],
           "first_tool_evidence": "subagent launched with native conversation ID 18d07577-9e17-4ab8-a68c-c811b8f4859c; inspecting ack_warning in client.py and router.ts",
           "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
-          "result": "DEFECT_CONFIRMED: Delivered REV-SDK-ACK-AUTH.md. Verified client.ack_warning in agent_branches/client.py (lines 371-385) omits Authorization header and body.agent entirely; real Node coordinator in prototype/src/core/router.ts enforces requireMutatingAuth (401) and body.agent (400); mock_l1_server lines 723-740 performed zero auth checks, masking the defect. Provided minimal remediation patch."
+          "result": "DEFECT_CONFIRMED & RE-ENGAGED: Initial audit confirmed defect (omitted Authorization header and body.agent; mock double masked). Re-engaged under C1671 to independently verify remediated commits 27a86fe and b2df985d against authentic compiled db4 Node coordinator."
+        },
+        {
+          "tag": "a05-baseline-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "55e1a893-fcb1-4683-ba6d-89f3058b581c",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/a05-baseline-review/",
+          "status": "completed",
+          "started_at": "2026-10-04T06:14:00+02:00",
+          "completed_at": "2026-10-04T06:22:30+02:00",
+          "task": "Independent challenge review of A05 baseline recovery per Codex Principal C1660 and C1670 directives: audit committed frozen inputs vs uncommitted working tree edits, validate_tasks.py returncode 2 handling, execution action rates vs adoption rates, SHA-256 content digests, and maintain provisional park without causal superiority claims.",
+          "owned_paths": [
+            "research/antigravity/reviews/A05-BASELINE-RECOVERY-REVIEW.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID 55e1a893-fcb1-4683-ba6d-89f3058b581c; read-only inspection of space-bunny artifacts",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "CHALLENGE_REVIEW_DELIVERED: Delivered A05-BASELINE-RECOVERY-REVIEW.md. Kept dirty files in research/space-bunny/ untouched; labeled inputs.sha256 as SHA-256 content digests; clarified tool activity rates (13 exec/min) vs adoption rates; confirmed log-reported tokens are not billed usage; maintained provisional park of A05 without causal superiority claims."
         },
         {
           "tag": "publication-guard-re-reviewer",
@@ -1456,14 +1478,17 @@
           "mode": "interactive",
           "engine": "zcodex",
           "workspace": "/home/alexey/git/agent-branches-recovery",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T04:54:35+02:00",
-          "task": "Independent review of proto/actor-warning-resolution (commit eada0e4) addressing C1579 critique: verify art_v1_ prefix check, calculate_jitter strict min(max_delay, round(delay + jitter, 4)) ceiling, test attempt >= 1024 overflow boundary, valid behavioral mutations, and report REV-WARNING-RESOLUTION-EADA0E4.md.",
+          "completed_at": "2026-10-04T06:26:00+02:00",
+          "task": "Product maintenance and SDK recovery on proto/sdk-distribution-complete: packaged first-use adoption run (REPORT-SDK-PACKAGED-FIRSTUSE.md) and SDK ACK-auth repair (REPORT-SDK-ACK-AUTH-REPAIR.md) per Codex Principal C1631/C1655/C1669.",
           "owned_paths": [
-            "research/antigravity/reviews/REV-WARNING-RESOLUTION-EADA0E4.md"
+            "research/antigravity/dogfood/REPORT-SDK-PACKAGED-FIRSTUSE.md",
+            "research/antigravity/recovery/REPORT-SDK-ACK-AUTH-REPAIR.md"
           ],
-          "first_tool_evidence": "aplexer message 01a104d5-ae78-7093-955e-6a891121b7f2 delivered with --pane to session 4abc725c",
-          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+          "first_tool_evidence": "aplexer message delivered to session 4abc725c; commits 9ddda2d, cc0d88a, 27a86fe, and b2df985 pushed to origin/proto/sdk-distribution-complete",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "DELIVERED_PASS: Delivered REPORT-SDK-PACKAGED-FIRSTUSE.md (commits 9ddda2d, cc0d88a; CONDITIONAL ADOPT under mock double execution) and REPORT-SDK-ACK-AUTH-REPAIR.md (commits 27a86fe and b2df985d3eedfdf345fceb966b18bed415d1187f on origin/proto/sdk-distribution-complete). Repaired agent_branches/client.py, cli.py, mock_l1_server.py, and test_client.py; all 22/22 unit tests pass in 7.68s."
         },
         {
           "tag": "muse-radar-bench",

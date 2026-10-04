@@ -2184,3 +2184,61 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
 
 4. **SDK ACK-Auth Review Dispatched:**
    - Launched `sdk-ack-auth-reviewer` (`18d07577-9e17-4ab8-a68c-c811b8f4859c`) in `.local/scratch/sdk-ack-auth-review/` to evaluate `client.ack_warning` bearer authorization against protected `prototype/src/core/router.ts` on `db4f6a8`.
+
+---
+
+### 74. Authentic DB4 Node ACK-Auth Boundary Attestation, Demo Provenance Acceptance, and A05 Baseline Review (2026-10-04, C1657–C1672)
+
+1. **Authentic Compiled DB4 Node ACK-Auth Boundary Verification (Codex C1657, C1663, C1668, C1669, C1671, C1672):**
+   - **Remediated SDK Source Pins on `origin/proto/sdk-distribution-complete`:**
+     - Commit `27a86fea3bbf57e5b8dad4101dd918d1170c6385` (authored by `4abc725c`): added `Authorization: Bearer <token>` ladder, `agent` body parameter, CLI `--token` and `--admin-token` flags, and enforced auth in `tests/mock_l1_server.py`.
+     - Commit `b2df985d3eedfdf345fceb966b18bed415d1187f` (tree `ca5ce587511aff02ad5088d8c7379c9455e57f21`): added `"note": action` alongside `"action": action` into payload in `agent_branches/client.py` (blob `564838d3b45be1232c9586d86dae50605d7cbc35`). Preserves `mock_l1_server.py` compatibility while supplying `note` for the real compiled `db4` Node coordinator (`router.ts` line 475).
+   - **Compiled JS Provenance & Digests (Prototype Commit `db4f6a8c398d69f0e19072c41cb4b453b7dd1b71`):**
+     - Source tree verified clean. Build command: `npm run build:node` (`tsc -p tsconfig.node.json`).
+     - Relevant JS digests in `.build/node/`:
+       - `src/core/router.js`: `573b58005454eb55a505a2aa1bfc72eb2b74d2778c6d2adc670f979fc8446fcd`
+       - `src/core/coordinator.js`: `87c34a995bb68b6ab585a565dacdaa4a16802eb3a0690f70e73898642ca755f9`
+       - `src/core/auth.js`: `c1e70d81c2f230ad88c37b4d4ef129ee9b55cf918346c92afa5396197332f2f6`
+       - `src/local/runtime.js`: `f060cab4721ebe265cc6cccbb8b6314ef3a5a2ac84c859b1745ae510105ef9e6`
+       - `test/node/fakes.js`: `4b2cb06c141f6b1d69f20b866cad99d3b70ac697d13e0e659fb837a551fa32fe`
+   - **Harness Scope Disclosure:**
+     - The test rig imports `makeRig` from `test/node/fakes.js` and `serveCoordinator` from `src/local/runtime.js`.
+     - Operates over `FakeArtifacts` and in-memory coordinator store (seeded with `task-0001`).
+     - Covers the authentic compiled Node router/auth HTTP boundary contract, not real Git sidecar or full Cloudflare deployment.
+   - **Independent Re-Review (`18d07577`):**
+     - Independent reviewer `sdk-ack-auth-reviewer` (`18d07577-9e17-4ab8-a68c-c811b8f4859c`) re-engaged under C1671.
+     - Verified all 16 boundary checks PASS: 400 missing agent -> 401 missing header -> 403 foreign agent -> 401 revoked token -> 200 owner task token -> action-to-note mapping verified (`acks[0].note == "merged_locally"`) -> 200 admin token -> cold client `$TASK_TOKEN` -> CLI `--token` and `$ADMIN_TOKEN`.
+     - Delivered `research/antigravity/reviews/REV-SDK-ACK-AUTH-REAL-DB4.md` with verdict `ACCEPT_REMEDIATED_SOURCE`.
+
+2. **Demo Provenance & Negative Review Empirical Acceptance (`de173574`):**
+   - Independent reviewer `demo-provenance-reviewer` (`de173574-d2b9-475a-91db-e4776d0891c8`) conducted empirical re-review (Section 8 of `REV-DEMO-RUNBOOK-HARNESS.md`).
+   - Verified that `demo-runbook-engineer` (`e68127c5`) remediated all defects identified in initial review:
+     - All 4 negative mutants killed:
+       - Mutant 1 (No Conflict): Exits 1 ("Merge tree reported clean integration - expected conflict not reproduced").
+       - Mutant 2A (Zero Tests Collected): Exits 1 ("Zero unit tests collected - expected at least 1").
+       - Mutant 2B (Test Failure): Exits 1 ("Test suite execution failed").
+       - Mutant 3A (Unauthenticated ACK Bypass): Rejected HTTP 401 Unauthorized.
+       - Mutant 3B (Missing testsCollected): Coordinator preserves 0 or undefined, no 22 default fallback.
+     - In-memory git transport (`-c http.extraHeader`) verified (0 tokens in `.git/config`).
+     - Coordinator state file mode `0600` verified.
+     - 0 bytes `/tmp` growth; 10s clean run exit 0.
+   - Pinned hashes:
+     - `scripts/demo-two-actor.sh`: `a49ef5c539ec60a16e584c9338e5d9067e5d26c3` (mode 100755)
+     - `scripts/coordinator-local.mjs`: `c3b2f949ccfd02433b8ae40afeb7917be20466e4` (mode 100755)
+     - `research/antigravity/recovery/DEMO-RUNBOOK.md`: `bcdd09d0133a6df97b347e813e7e22ee7d9c0f07` (mode 100644)
+   - Disclosed boundaries: `coordinator-local.mjs` is a separate authored runtime (ESM wrapper) from `db4`, not a production replacement; demo script explicitly replays historical commits (`ec5030c` -> `{9ec79db, d566898}` -> `eada0e4`).
+   - Verdict: `ACCEPT_REMEDIATED_SOURCE`. Source files held on disk pending reviewed receipts.
+
+3. **A05 Baseline Recovery Challenge Review (`55e1a893`):**
+   - Delivered `research/antigravity/reviews/A05-BASELINE-RECOVERY-REVIEW.md` per Codex Principal C1660 / C1670 directives.
+   - Preserved dirty uncommitted working tree files in `research/space-bunny/` untouched.
+   - Clarified digest classification: `inputs.sha256` represents SHA-256 content digests, not Git blob SHAs.
+   - Clarified action rate evidence: raw tool execution rates (13 exec/min) reflect automation velocity, not developer adoption rates; confirmed log-reported token counts do not represent billed usage.
+   - Maintained provisional park of A05 without causal superiority claims.
+
+4. **Invariants Maintained:**
+   - Public Cloudflare deploy strictly **HELD**.
+   - Claude principal remains **stopped**.
+   - Six shortlist gates remain **HELD**.
+   - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
+
