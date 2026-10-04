@@ -149,27 +149,35 @@ class CGroupV2Custody:
             )
 
     def _resolve_cgroup_path(self, cgroup_path: Union[str, Path]) -> Path:
-        """Resolves target cgroup directory relative to cgroup_root."""
+        """
+        Resolves target cgroup directory relative to cgroup_root and strictly enforces containment.
+        Rejects arbitrary outside-root paths (fail-closed).
+        """
         raw_path = Path(cgroup_path)
         if raw_path.is_absolute():
-            # If path is already rooted under cgroup_root, keep it
-            try:
-                raw_path.relative_to(self.cgroup_root)
-                return raw_path
-            except ValueError:
-                pass
-            # If cgroup_root is non-default (e.g. test mock), strip standard /sys/fs/cgroup prefix
+            resolved = raw_path.resolve()
+            # If cgroup_root is non-default (e.g. test mock), check relative to mock root
             if self.cgroup_root != DEFAULT_CGROUP_ROOT:
                 try:
-                    rel = raw_path.relative_to(DEFAULT_CGROUP_ROOT)
-                    return self.cgroup_root / rel
+                    rel = resolved.relative_to(DEFAULT_CGROUP_ROOT)
+                    resolved = (self.cgroup_root / rel).resolve()
                 except ValueError:
                     pass
-                # Otherwise treat absolute path as relative to mock root
-                rel = Path(*raw_path.parts[1:])
-                return self.cgroup_root / rel
-            return raw_path
-        return self.cgroup_root / raw_path
+            # Enforce that resolved path must be under cgroup_root
+            if self.cgroup_root not in resolved.parents and resolved != self.cgroup_root:
+                raise CGroupCustodyError(
+                    f"Arbitrary outside-root cgroup path rejected: '{raw_path}' "
+                    f"is outside cgroup hierarchy root '{self.cgroup_root}' (fail-closed)"
+                )
+            return resolved
+
+        resolved = (self.cgroup_root / raw_path).resolve()
+        if self.cgroup_root not in resolved.parents and resolved != self.cgroup_root:
+            raise CGroupCustodyError(
+                f"Arbitrary outside-root cgroup path rejected: '{resolved}' "
+                f"is outside cgroup hierarchy root '{self.cgroup_root}' (fail-closed)"
+            )
+        return resolved
 
     def get_memory_ceiling_bytes(self, cgroup_path: Union[str, Path]) -> int:
         """
@@ -221,11 +229,19 @@ class CGroupV2Custody:
         """
         Attaches process PID to the target cgroup by writing to cgroup.procs.
         Kernel migrates the process and all threads into the target cgroup.
+        Enforces bounded memory ceiling pre-check and post-kernel membership verification.
         """
         self.check_cgroup_v2_or_raise()
         cgroup_dir = self._resolve_cgroup_path(cgroup_path)
-        procs_file = cgroup_dir / "cgroup.procs"
 
+        # 1. Bounded-limit pre-check before writing PID to cgroup
+        ceiling = self.get_memory_ceiling_bytes(cgroup_path)
+        if ceiling > self.max_memory_limit_bytes:
+            raise MemoryLimitExceededError(
+                f"Cannot assign PID {pid}: cgroup memory ceiling {ceiling} exceeds limit {self.max_memory_limit_bytes}"
+            )
+
+        procs_file = cgroup_dir / "cgroup.procs"
         if not procs_file.is_file():
             raise CGroupCustodyError(f"CGroup procs file does not exist at {procs_file}")
 
@@ -237,10 +253,17 @@ class CGroupV2Custody:
                 f"Failed to assign PID {pid} to cgroup at {procs_file}: {exc}"
             ) from exc
 
+        # 2. Post-kernel membership verification
+        contained_pids = self.get_cgroup_pids(cgroup_path)
+        if int(pid) not in contained_pids:
+            raise CGroupCustodyError(
+                f"Post-assignment membership verification failed: PID {pid} not found in kernel cgroup.procs at {procs_file}"
+            )
+
     def get_cgroup_pids(self, cgroup_path: Union[str, Path]) -> List[int]:
         """
-        Returns all descendant process PIDs currently contained within the cgroup.
-        Processes cannot escape kernel cgroup tracking without migration by root/delegate.
+        Returns all descendant process PIDs currently contained within the cgroup hierarchy.
+        Recursively traverses nested sub-cgroups so processes in child cgroups cannot escape detection.
         """
         self.check_cgroup_v2_or_raise()
         cgroup_dir = self._resolve_cgroup_path(cgroup_path)
@@ -249,17 +272,29 @@ class CGroupV2Custody:
         if not procs_file.is_file():
             raise CGroupCustodyError(f"CGroup procs file does not exist at {procs_file}")
 
-        try:
-            content = procs_file.read_text(encoding="utf-8")
-        except OSError as exc:
-            raise CGroupCustodyError(f"Failed to read cgroup.procs at {procs_file}: {exc}") from exc
+        pids_set: Set[int] = set()
 
-        pids: List[int] = []
-        for line in content.splitlines():
-            line_str = line.strip()
-            if line_str and line_str.isdigit():
-                pids.append(int(line_str))
-        return pids
+        # Find all cgroup.procs files in target cgroup and all nested sub-cgroups
+        target_files = [procs_file]
+        try:
+            for child_procs in cgroup_dir.glob("**/cgroup.procs"):
+                if child_procs.is_file() and child_procs != procs_file:
+                    target_files.append(child_procs)
+        except OSError:
+            pass
+
+        for p_file in target_files:
+            try:
+                content = p_file.read_text(encoding="utf-8")
+            except OSError as exc:
+                raise CGroupCustodyError(f"Failed to read cgroup.procs at {p_file}: {exc}") from exc
+
+            for line in content.splitlines():
+                line_str = line.strip()
+                if line_str and line_str.isdigit():
+                    pids_set.add(int(line_str))
+
+        return sorted(pids_set)
 
 
 # ===========================================================================
@@ -360,12 +395,14 @@ class ProviderQuotaReservation:
         default_ttl_sec: float = 60.0,
         max_quota_age_sec: float = DEFAULT_MAX_QUOTA_AGE_SEC,
         codex_reserve_floor: float = CODEX_RESERVE_FLOOR_FRACTION,
+        max_active_units_per_provider: float = 2.0,
     ) -> None:
         self.reservation_file = Path(reservation_file).resolve() if reservation_file else None
         self.quota_file = Path(quota_file).resolve() if quota_file else None
         self.default_ttl_sec = float(default_ttl_sec)
         self.max_quota_age_sec = float(max_quota_age_sec)
         self.codex_reserve_floor = float(codex_reserve_floor)
+        self.max_active_units_per_provider = float(max_active_units_per_provider)
 
         if self.reservation_file:
             self.lock_file = self.reservation_file.with_name(self.reservation_file.name + ".lock")
@@ -403,7 +440,7 @@ class ProviderQuotaReservation:
         """
         Evaluates provider eligibility and telemetry against hard reservation criteria.
         Returns (is_eligible, reason, telemetry_dict).
-        Fails closed on un-whitelisted, stale, unknown, or reserve-violating quotas.
+        Fails closed on un-whitelisted, missing telemetry, stale, unknown, or reserve-violating quotas.
         """
         current_ts = now if now is not None else time.time()
         clean_provider = provider.strip().lower() if provider else ""
@@ -423,10 +460,11 @@ class ProviderQuotaReservation:
                     {"provider": clean_provider, "window_open": False},
                 )
 
-        # Quota Telemetry Evaluation
-        if self.quota_file is None or not self.quota_file.exists():
-            # If no quota file is provided, non-rate-limited providers can be reserved
-            return True, "Eligible (no telemetry file constraint)", {"provider": clean_provider}
+        # Quota Telemetry Evaluation: Fail-closed if quota telemetry file is None or missing
+        if self.quota_file is None:
+            return False, "Quota telemetry file path is None (fail-closed: cannot verify quota balance)", {}
+        if not self.quota_file.exists():
+            return False, f"Quota telemetry file does not exist at {self.quota_file} (fail-closed)", {}
 
         # Check telemetry file freshness
         try:
@@ -445,79 +483,83 @@ class ProviderQuotaReservation:
 
         # Provider specific records
         providers_dict = quota_data.get("providers", quota_data)
-        record = providers_dict.get(clean_provider)
+        if not isinstance(providers_dict, dict):
+            return False, "Malformed providers dictionary in quota telemetry (fail-closed)", {}
 
+        record = providers_dict.get(clean_provider)
         if record is None:
             return False, f"Provider '{clean_provider}' telemetry record is missing (fail-closed)", {}
 
-        if isinstance(record, dict):
-            # Check timestamp inside JSON if present
-            record_ts = record.get("timestamp") or record.get("updated_at")
-            if record_ts is not None:
-                try:
-                    if isinstance(record_ts, str):
-                        dt = datetime.datetime.fromisoformat(record_ts.replace("Z", "+00:00"))
-                        ts_val = dt.timestamp()
-                    else:
-                        ts_val = float(record_ts)
-                    rec_age = current_ts - ts_val
-                    if rec_age > self.max_quota_age_sec:
-                        return (
-                            False,
-                            f"Provider '{clean_provider}' telemetry timestamp is stale ({rec_age:.1f}s old)",
-                            record,
-                        )
-                except Exception:
-                    pass
+        if not isinstance(record, dict) or not record:
+            return False, f"Provider '{clean_provider}' telemetry record is empty or not a dict (fail-closed)", {}
 
-            # Check for unknown reading
-            status = str(record.get("status", "")).lower()
-            if status in ("unknown", "unrecorded", "unverified"):
-                return False, f"Provider '{clean_provider}' quota balance is unknown (fail-closed)", record
-
-            # Codex 15% reserve floor
-            if clean_provider == "codex":
-                remaining_frac = record.get("remaining_fraction")
-                remaining_pct = record.get("remaining_percent")
-
-                if remaining_frac is None and remaining_pct is None:
-                    # Look for raw balance/reserve
-                    if "balance" in record and record["balance"] == "unknown":
-                        return False, "Codex quota reading unknown (fail-closed)", record
-                    return False, "Codex remaining quota percentage not recorded (fail-closed)", record
-
-                frac_val = float(remaining_frac) if remaining_frac is not None else float(remaining_pct) / 100.0
-                if frac_val < self.codex_reserve_floor:
+        # Check timestamp inside JSON if present
+        record_ts = record.get("timestamp") or record.get("updated_at")
+        if record_ts is not None:
+            try:
+                if isinstance(record_ts, str):
+                    dt = datetime.datetime.fromisoformat(record_ts.replace("Z", "+00:00"))
+                    ts_val = dt.timestamp()
+                else:
+                    ts_val = float(record_ts)
+                rec_age = current_ts - ts_val
+                if rec_age > self.max_quota_age_sec:
                     return (
                         False,
-                        f"Codex remaining quota ({frac_val*100:.1f}%) violates mandatory 15% reserve floor",
+                        f"Provider '{clean_provider}' telemetry timestamp is stale ({rec_age:.1f}s old)",
                         record,
                     )
+            except Exception as exc:
+                return False, f"Malformed quota timestamp '{record_ts}' in telemetry record: {exc} (fail-closed)", record
 
-            # Grok rate-limit cooldown
-            if clean_provider == "grok":
-                cooldown_until = record.get("cooldown_until", 0.0)
-                if current_ts < float(cooldown_until):
-                    remaining_cool = float(cooldown_until) - current_ts
-                    return (
-                        False,
-                        f"Grok is in rate-limit cooldown ({remaining_cool:.1f}s remaining)",
-                        record,
-                    )
-                if record.get("remaining_requests", 1) <= 0:
-                    return False, "Grok hourly quota exhausted", record
+        # Check for unknown reading
+        status = str(record.get("status", "")).lower()
+        if status in ("unknown", "unrecorded", "unverified"):
+            return False, f"Provider '{clean_provider}' quota balance is unknown (fail-closed)", record
 
-            # General exhaustion check
-            if status in ("exhausted", "quota_exceeded"):
-                return False, f"Provider '{clean_provider}' balance exhausted", record
+        # Codex 15% reserve floor
+        if clean_provider == "codex":
+            remaining_frac = record.get("remaining_fraction")
+            remaining_pct = record.get("remaining_percent")
 
-            if record.get("exhausted", False):
-                return False, f"Provider '{clean_provider}' balance marked exhausted", record
+            if remaining_frac is None and remaining_pct is None:
+                # Look for raw balance/reserve
+                if "balance" in record and record["balance"] == "unknown":
+                    return False, "Codex quota reading unknown (fail-closed)", record
+                return False, "Codex remaining quota percentage not recorded (fail-closed)", record
 
-        return True, "Eligible", record if isinstance(record, dict) else {}
+            frac_val = float(remaining_frac) if remaining_frac is not None else float(remaining_pct) / 100.0
+            if frac_val < self.codex_reserve_floor:
+                return (
+                    False,
+                    f"Codex remaining quota ({frac_val*100:.1f}%) violates mandatory 15% reserve floor",
+                    record,
+                )
+
+        # Grok rate-limit cooldown
+        if clean_provider == "grok":
+            cooldown_until = record.get("cooldown_until", 0.0)
+            if current_ts < float(cooldown_until):
+                remaining_cool = float(cooldown_until) - current_ts
+                return (
+                    False,
+                    f"Grok is in rate-limit cooldown ({remaining_cool:.1f}s remaining)",
+                    record,
+                )
+            if record.get("remaining_requests", 1) <= 0:
+                return False, "Grok hourly quota exhausted", record
+
+        # General exhaustion check
+        if status in ("exhausted", "quota_exceeded"):
+            return False, f"Provider '{clean_provider}' balance exhausted", record
+
+        if record.get("exhausted", False):
+            return False, f"Provider '{clean_provider}' balance marked exhausted", record
+
+        return True, "Eligible", record
 
     def _load_reservations_locked(self) -> Tuple[Dict[str, QuotaReservation], Dict[str, int]]:
-        """Reads reservation state from disk under lock or returns in-memory state."""
+        """Reads reservation state from disk under lock or returns in-memory state. Fails closed on corruption."""
         if not self.reservation_file or not self.reservation_file.exists():
             return dict(self._in_memory_reservations), dict(self._in_memory_fences)
 
@@ -530,8 +572,11 @@ class ProviderQuotaReservation:
             fences = {k: int(v) for k, v in data.get("fence_sequences", {}).items()}
             return res_dict, fences
         except Exception as exc:
-            logger.warning("Failed to parse reservation file %s: %s", self.reservation_file, exc)
-            return dict(self._in_memory_reservations), dict(self._in_memory_fences)
+            # Fail-closed on corruption: do NOT reset empty, which would wipe existing active leases!
+            raise QuotaReservationError(
+                f"Reservation file at {self.reservation_file} is corrupt or unreadable: {exc} "
+                f"(fail-closed: refusing to reset empty and wipe active leases)"
+            ) from exc
 
     def _save_reservations_locked(
         self,
@@ -565,14 +610,17 @@ class ProviderQuotaReservation:
         metadata: Optional[Dict[str, Any]] = None,
     ) -> QuotaReservation:
         """
-        Atomically leases provider quota with a monotonic fencing token.
-        Evaluates provider quota eligibility and fails closed on violation.
+        Atomically leases provider quota with a monotonic fencing token and collision-proof ID.
+        Evaluates provider quota eligibility, checks active-units capacity limit, and fails closed on violation.
         """
+        import uuid
+
         current_ts = now if now is not None else time.time()
         ttl = float(ttl_sec) if ttl_sec is not None else self.default_ttl_sec
+        clean_provider = provider.strip().lower()
 
         # 1. Gate evaluation
-        is_ok, reason, details = self.evaluate_provider_quota(provider, now=current_ts)
+        is_ok, reason, details = self.evaluate_provider_quota(clean_provider, now=current_ts)
         if not is_ok:
             if "15% reserve floor" in reason:
                 raise ReserveFloorViolationError(reason)
@@ -591,15 +639,27 @@ class ProviderQuotaReservation:
         try:
             reservations, fences = self._load_reservations_locked()
 
+            # Active-units capacity accounting across concurrent leases
+            active_units = sum(
+                r.units for r in reservations.values()
+                if r.provider == clean_provider and r.status == "active" and not r.is_expired(current_ts)
+            )
+            if active_units + float(units) > self.max_active_units_per_provider:
+                raise QuotaExhaustedError(
+                    f"Provider '{clean_provider}' active-units capacity limit exceeded: "
+                    f"active={active_units:.1f}, requested={float(units):.1f}, max={self.max_active_units_per_provider:.1f}"
+                )
+
             # Monotonic fence token allocation per provider/task
-            fence_key = f"{provider}:{task_id}"
+            fence_key = f"{clean_provider}:{task_id}"
             next_fence = fences.get(fence_key, 0) + 1
             fences[fence_key] = next_fence
 
-            res_id = f"qres-{provider}-{int(current_ts*1000)}-{next_fence}"
+            # Collision-proof reservation ID: includes provider, task_id, fence, timestamp_ms, and random nonce
+            res_id = f"qres-{clean_provider}-{task_id}-{next_fence}-{int(current_ts*1000)}-{uuid.uuid4().hex[:8]}"
             res = QuotaReservation(
                 reservation_id=res_id,
-                provider=provider.strip().lower(),
+                provider=clean_provider,
                 task_id=task_id,
                 fence_token=next_fence,
                 units=float(units),

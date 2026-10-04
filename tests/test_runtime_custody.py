@@ -75,6 +75,12 @@ class TestRuntimeCustody(unittest.TestCase):
         # Quota reservation files
         self.quota_file = self.test_dir / "quota_telemetry.json"
         self.res_file = self.test_dir / "reservations.json"
+        self.quota_mgr = ProviderQuotaReservation(
+            reservation_file=self.res_file,
+            quota_file=self.quota_file,
+            default_ttl_sec=30.0,
+            codex_reserve_floor=0.15,
+        )
 
     def tearDown(self) -> None:
         if self.test_dir.exists():
@@ -175,6 +181,7 @@ class TestRuntimeCustody(unittest.TestCase):
         """
         leaf_cgroup = self.cgroup_root / "workers" / "active-task"
         leaf_cgroup.mkdir(parents=True, exist_ok=True)
+        (leaf_cgroup / "memory.max").write_text("536870912\n", encoding="utf-8")
         procs_file = leaf_cgroup / "cgroup.procs"
         procs_file.write_text("", encoding="utf-8")
 
@@ -523,6 +530,182 @@ class TestRuntimeCustody(unittest.TestCase):
         shutil.rmtree(socket_dir, ignore_errors=True)
         shutil.rmtree(insecure_sock_dir, ignore_errors=True)
 
+    # -----------------------------------------------------------------------
+    # Test 7: CGroup outside-root paths rejected (fail-closed)
+    # -----------------------------------------------------------------------
+    def test_07_cgroup_outside_root_paths_rejected(self) -> None:
+        """
+        Validates that arbitrary cgroup paths outside the recognized cgroup root
+        (traversal sequences '../..', absolute external paths) are strictly rejected.
+        """
+        # Relative traversal escaping root
+        with self.assertRaises(CGroupCustodyError) as cm:
+            self.custody.get_memory_ceiling_bytes("../../etc")
+        self.assertIn("Arbitrary outside-root cgroup path rejected", str(cm.exception))
+
+        # Absolute outside path
+        outside_path = self.scratch_base / "outside_cgroup"
+        outside_path.mkdir(parents=True, exist_ok=True)
+        with self.assertRaises(CGroupCustodyError) as cm:
+            self.custody.assign_process_to_cgroup(outside_path, pid=12345)
+        self.assertIn("Arbitrary outside-root cgroup path rejected", str(cm.exception))
+
+    # -----------------------------------------------------------------------
+    # Test 8: Quota missing, malformed, and empty records fail closed
+    # -----------------------------------------------------------------------
+    def test_08_quota_missing_malformed_and_empty_fail_closed(self) -> None:
+        """
+        Validates that missing quota files, non-dict records, empty records,
+        and malformed timestamps strictly fail closed and deny reservation.
+        """
+        # Case A: quota_file is None
+        mgr_none = ProviderQuotaReservation(
+            reservation_file=self.res_file,
+            quota_file=None,
+        )
+        is_ok, reason, _ = mgr_none.evaluate_provider_quota("codex")
+        self.assertFalse(is_ok)
+        self.assertIn("fail-closed", reason.lower())
+        with self.assertRaises(ProviderIneligibleError):
+            mgr_none.acquire_reservation("codex", "task-none")
+
+        # Case B: quota_file does not exist
+        missing_quota = self.scratch_base / "nonexistent_quota.json"
+        mgr_missing = ProviderQuotaReservation(
+            reservation_file=self.res_file,
+            quota_file=missing_quota,
+        )
+        is_ok, reason, _ = mgr_missing.evaluate_provider_quota("codex")
+        self.assertFalse(is_ok)
+        self.assertIn("does not exist", reason.lower())
+
+        # Case C: non-dict or empty provider record
+        self.quota_file.write_text(json.dumps({"providers": {"codex": []}}), encoding="utf-8")
+        is_ok, reason, _ = self.quota_mgr.evaluate_provider_quota("codex")
+        self.assertFalse(is_ok)
+        self.assertIn("empty or not a dict", reason.lower())
+
+        # Case D: malformed timestamp in provider record
+        malformed_ts = {
+            "providers": {
+                "codex": {
+                    "remaining_fraction": 0.50,
+                    "remaining_percent": 50.0,
+                    "status": "healthy",
+                    "timestamp": "not-a-valid-timestamp-at-all",
+                }
+            }
+        }
+        self.quota_file.write_text(json.dumps(malformed_ts), encoding="utf-8")
+        is_ok, reason, _ = self.quota_mgr.evaluate_provider_quota("codex")
+        self.assertFalse(is_ok)
+        self.assertIn("malformed quota timestamp", reason.lower())
+
+    # -----------------------------------------------------------------------
+    # Test 9: Corrupt reservation file fails closed without wipe
+    # -----------------------------------------------------------------------
+    def test_09_corrupt_reservation_file_fails_closed(self) -> None:
+        """
+        Validates that corrupt or unparseable reservation files fail closed with
+        QuotaReservationError rather than silently resetting empty and losing active leases.
+        """
+        # Write corrupted JSON
+        self.res_file.write_text("{{corrupt-json-truncated", encoding="utf-8")
+
+        telemetry_ok = {
+            "timestamp": time.time(),
+            "providers": {
+                "codex": {
+                    "remaining_fraction": 0.50,
+                    "remaining_percent": 50.0,
+                    "status": "healthy",
+                }
+            }
+        }
+        self.quota_file.write_text(json.dumps(telemetry_ok), encoding="utf-8")
+
+        with self.assertRaises(QuotaReservationError) as cm:
+            self.quota_mgr.acquire_reservation("codex", "task-corrupt")
+        self.assertIn("corrupt or unreadable", str(cm.exception).lower())
+        self.assertIn("refusing to reset empty", str(cm.exception).lower())
+
+    # -----------------------------------------------------------------------
+    # Test 10: Active-units capacity accounting enforces limits
+    # -----------------------------------------------------------------------
+    def test_10_active_units_capacity_limit_accounting(self) -> None:
+        """
+        Validates that concurrent reservations are tracked against max_active_units_per_provider
+        and reject requests that exceed allowed capacity.
+        """
+        mgr = ProviderQuotaReservation(
+            reservation_file=self.res_file,
+            quota_file=self.quota_file,
+            max_active_units_per_provider=2.0,
+            default_ttl_sec=30.0,
+        )
+
+        telemetry_ok = {
+            "timestamp": time.time(),
+            "providers": {
+                "codex": {
+                    "remaining_fraction": 0.50,
+                    "remaining_percent": 50.0,
+                    "status": "healthy",
+                }
+            }
+        }
+        self.quota_file.write_text(json.dumps(telemetry_ok), encoding="utf-8")
+
+        # Lease 1: 1.0 unit -> active = 1.0
+        r1 = mgr.acquire_reservation("codex", "task-cap-1", units=1.0)
+        self.assertEqual(r1.units, 1.0)
+
+        # Lease 2: 1.0 unit -> active = 2.0
+        r2 = mgr.acquire_reservation("codex", "task-cap-2", units=1.0)
+        self.assertEqual(r2.units, 1.0)
+
+        # Lease 3: 0.5 units -> exceeds max (2.0) -> QuotaExhaustedError
+        with self.assertRaises(QuotaExhaustedError) as cm:
+            mgr.acquire_reservation("codex", "task-cap-3", units=0.5)
+        self.assertIn("active-units capacity limit exceeded", str(cm.exception))
+
+        # Releasing Lease 1 frees up capacity
+        self.assertTrue(mgr.release_reservation(r1.reservation_id, r1.fence_token))
+        r3 = mgr.acquire_reservation("codex", "task-cap-3", units=0.5)
+        self.assertEqual(r3.units, 0.5)
+
+    # -----------------------------------------------------------------------
+    # Test 11: Collision-proof reservation IDs
+    # -----------------------------------------------------------------------
+    def test_11_collision_proof_reservation_ids(self) -> None:
+        """
+        Validates that reservation IDs are unique across fast successive calls,
+        contain provider, task_id, fence_token, and high-entropy suffix.
+        """
+        telemetry_ok = {
+            "timestamp": time.time(),
+            "providers": {
+                "gemini": {"status": "ok", "remaining_requests": 100}
+            }
+        }
+        self.quota_file.write_text(json.dumps(telemetry_ok), encoding="utf-8")
+
+        mgr = ProviderQuotaReservation(
+            reservation_file=self.res_file,
+            quota_file=self.quota_file,
+            max_active_units_per_provider=20.0,
+            default_ttl_sec=30.0,
+        )
+        res_ids = set()
+        for i in range(10):
+            res = mgr.acquire_reservation("gemini", f"task-batch-{i}")
+            self.assertIn("gemini", res.reservation_id)
+            self.assertIn(f"task-batch-{i}", res.reservation_id)
+            self.assertNotIn(res.reservation_id, res_ids)
+            res_ids.add(res.reservation_id)
+        self.assertEqual(len(res_ids), 10)
+
 
 if __name__ == "__main__":
     unittest.main()
+

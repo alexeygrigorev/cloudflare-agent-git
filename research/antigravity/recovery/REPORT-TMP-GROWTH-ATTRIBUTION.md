@@ -71,13 +71,14 @@ A 10-second empirical measurement was conducted on `/dev/nvme1n1`:
 - **Measurement Delta:**
   - Elapsed Time: `10.19 seconds`
   - Delta Used: `+3,678,208 bytes` (+3.68 MB)
-  - Rate: `~360.9 KB/s` (projected ~1.30 GiB/hr in this sampling window)
+  - Rate: `360,962.5 bytes/s` (`~360.9 KB/s`)
+  - Hourly Projection: `1,299,465,063 bytes/hr` = **`1.21 GiB/hr`** (binary $1,299,465,063 / 1024^3 = 1.2102\text{ GiB/hr}$; decimal projection 1.30 GB/hr corrected to binary GiB).
 
-This confirms active ongoing writes on `/dev/nvme1n1`.
+This confirms active ongoing disk consumption on `/dev/nvme1n1` during the sampling window.
 
 ---
 
-## 4. Attribution & Space Inventory of `/tmp`
+## 4. Bounded Space Inventory of `/tmp`
 
 ### 4.1 Entry Count Summary
 A non-intrusive scan of `/tmp` (`os.scandir('/tmp')`) revealed:
@@ -85,30 +86,32 @@ A non-intrusive scan of `/tmp` (`os.scandir('/tmp')`) revealed:
 - **Total directories:** 81,628
 - **Total regular files:** 19,515
 
-### 4.2 Top 20 Named Directories in `/tmp` (Measured via Bounded `du`)
+### 4.2 Top 20 Named Directories in `/tmp` (Sanitized Categories & Inferred Roles)
 
-| Rank | Directory Name | Size (MiB) | Size (GiB) | Primary Role / Description |
+*Note: Directory roles are inferred from naming conventions and directory structures; direct audit of contents is excluded under privacy and non-recurrence rules. Unrelated external names are sanitized below.*
+
+| Rank | Sanitized Identifier | Size (MiB) | Size (GiB) | Inferred Category / Role |
 |:---:|:---|---:|---:|:---|
-| 1 | `rds-export` | 8,111.8 MiB | 7.92 GiB | External database export staging |
-| 2 | `openscan-eval-host` | 3,598.1 MiB | 3.51 GiB | OpenScan evaluation environment |
-| 3 | `openscan-pyquad` | 1,711.5 MiB | 1.67 GiB | OpenScan Python / Quad test runner |
-| 4 | `node-compile-cache` | 1,627.6 MiB | 1.59 GiB | Node.js V8 code compilation cache |
-| 5 | `opencode` | 1,442.3 MiB | 1.41 GiB | OpenCode CLI runtime cache and stores |
-| 6 | `aplexer-verify-22-target` | 1,344.5 MiB | 1.31 GiB | Prior verification harness worktree |
-| 7 | `hwcheck` | 1,294.1 MiB | 1.26 GiB | Hardware / host test environment |
-| 8 | `family-r8` | 727.7 MiB | 0.71 GiB | External evaluation worktree |
-| 9 | `wt-review-1803.a` | 726.8 MiB | 0.71 GiB | Review worktree from earlier project |
-| 10 | `aisl-homework-1778` | 619.2 MiB | 0.60 GiB | AI Shipping Labs course worktree |
-| 11 | `i2812-mut-8dws` | 602.2 MiB | 0.59 GiB | External mutation run directory |
-| 12 | `dtc-homework-step-consumer-tests` | 563.0 MiB | 0.55 GiB | External test fixtures |
-| 13 | `aisl-ship-1782` | 546.7 MiB | 0.53 GiB | AI Shipping Labs deployment worktree |
-| 14 | `aisl-course-home-1782` | 507.4 MiB | 0.50 GiB | AI Shipping Labs course home |
-| 15 | `recrew76` | 484.9 MiB | 0.47 GiB | External test harness |
-| 16 | `wt-pristine-1813` | 481.4 MiB | 0.47 GiB | Pristine worktree from earlier run |
-| 17 | `aisl-301-homework-state-adoption` | 471.3 MiB | 0.46 GiB | AI Shipping Labs homework workspace |
-| 18 | `hw-repro-6` | 424.5 MiB | 0.41 GiB | Hardware reproduction test workspace |
-| 19 | `issue-2897-base-refresh-20260928` | 325.5 MiB | 0.32 GiB | Prior bug investigation worktree |
-| 20 | `aisl-transcribe` | 317.7 MiB | 0.31 GiB | Speech/transcription staging |
+| 1 | `[external-db-export-staging]` | 8,111.8 MiB | 7.92 GiB | Staged database export files |
+| 2 | `[eval-runner-workspace-1]` | 3,598.1 MiB | 3.51 GiB | External evaluation host environment |
+| 3 | `[eval-runner-workspace-2]` | 1,711.5 MiB | 1.67 GiB | External evaluation runner files |
+| 4 | `[v8-node-compile-cache]` | 1,627.6 MiB | 1.59 GiB | Node.js V8 code compilation cache |
+| 5 | `[opencode-runtime-cache]` | 1,442.3 MiB | 1.41 GiB | OpenCode CLI runtime cache and stores |
+| 6 | `[prior-verification-worktree]` | 1,344.5 MiB | 1.31 GiB | Prior verification harness worktree |
+| 7 | `[hardware-test-workspace]` | 1,294.1 MiB | 1.26 GiB | Hardware / host test environment |
+| 8 | `[external-worktree-1]` | 727.7 MiB | 0.71 GiB | External worktree |
+| 9 | `[external-worktree-2]` | 726.8 MiB | 0.71 GiB | Prior review worktree |
+| 10 | `[external-course-worktree-1]` | 619.2 MiB | 0.60 GiB | External course worktree |
+| 11 | `[mutation-test-worktree]` | 602.2 MiB | 0.59 GiB | Mutation testing directory |
+| 12 | `[external-test-fixtures]` | 563.0 MiB | 0.55 GiB | External test fixtures |
+| 13 | `[external-course-worktree-2]` | 546.7 MiB | 0.53 GiB | External deployment worktree |
+| 14 | `[external-course-worktree-3]` | 507.4 MiB | 0.50 GiB | External workspace home |
+| 15 | `[external-test-harness]` | 484.9 MiB | 0.47 GiB | External test harness |
+| 16 | `[external-worktree-3]` | 481.4 MiB | 0.47 GiB | Prior test worktree |
+| 17 | `[external-course-worktree-4]` | 471.3 MiB | 0.46 GiB | External homework workspace |
+| 18 | `[repro-workspace]` | 424.5 MiB | 0.41 GiB | Reproduction test workspace |
+| 19 | `[external-issue-worktree]` | 325.5 MiB | 0.32 GiB | Prior bug investigation worktree |
+| 20 | `[audio-transcribe-staging]` | 317.7 MiB | 0.31 GiB | Speech/transcription staging |
 | **Total** | **Top 20 Named Directories** | **25,688.0 MiB** | **25.09 GiB** | Top 20 named directories alone account for 25.1 GiB |
 
 ### 4.3 Pattern Test Directory Accumulation
@@ -121,29 +124,27 @@ Over 75,000 ephemeral test directories have accumulated in `/tmp` without automa
 
 ---
 
-## 5. Non-Intrusive Process Table Correlation
+## 5. Non-Intrusive Process Table Observation & Epistemic Boundaries
 
-Inspection of the host process table reveals the active producers generating writes on `/dev/nvme1n1`:
+Inspection of the host process table reveals active processes co-located on `/data`:
 
 1. **Active Python Worktrees on `/data`:**
-   - Processes `PID 652274` and `PID 652313` executing out of:
-     `/data/agents/ai-shipping-labs/worktrees/agent-1890-member-plan-leaves/.venv/bin/python`
-   - Actively generating logs, test fixtures, and artifacts directly inside `/data/`.
-
+   - Processes executing out of external virtual environments under `/data/`.
 2. **Active ZCode CLI Instances:**
-   - Multiple `zcode-cli` worker processes (`PID 3903539`, `PID 1891854`, `PID 1250992`, `PID 1651812`, `PID 3663364`, `PID 3629479`, `PID 1169145`, `PID 1806466`) active on the host.
-
+   - Multiple `zcode-cli` worker processes active on the host.
 3. **Docker Engine Running on `/data`:**
-   - Docker daemon (`PID 3039084` `/usr/bin/dockerd`) with root storage graph driver backed by `/data`.
-
+   - Docker daemon (`/usr/bin/dockerd`) with root storage graph driver backed by `/data`.
 4. **OpenCode & V8 Cache:**
-   - OpenCode instances (`PID 1803979`, `PID 929853`, `PID 3218174`) constantly reading and writing to `/tmp/node-compile-cache` and `/tmp/opencode`.
+   - OpenCode instances writing to cache directories under `/tmp`.
 
-*In accordance with C2060 directives, zero processes were killed and zero files or caches were deleted.*
+### 5.1 Epistemic Boundary on Attribution
+- **Process Presence != Write Attribution:** While these processes have open files or current directories on `/dev/nvme1n1`, observational presence alone does not establish which process is actively writing bytes without real-time per-process I/O accounting (e.g. `pidstat -d` or eBPF `vfs_write` probes).
+- Therefore, the specific root-cause producer remains **unproven and attributed only as global `/dev/nvme1n1` activity**.
+- In accordance with C2060 directives, zero processes were killed and zero files or caches were deleted.
 
 ---
 
-## 6. Audit of Our Tasks & Zero-Growth Containment
+## 6. Audit of Our Tasks & Containment Policy
 
 ### 6.1 Containment Policy Verification
 All tasks under `cloudflare-agent-git` (`agent-branches`, `antigravity-head`, and all child subagents) operate under strict containment:
@@ -152,7 +153,7 @@ All tasks under `cloudflare-agent-git` (`agent-branches`, `antigravity-head`, an
 2. **Underlying Filesystem:** This path resides on `/dev/nvme0n1p3`, which currently has **62 GiB free (86% utilization)** and is **completely independent of `/dev/nvme1n1`**.
 3. **Environment Isolation:** All subagent invocations explicitly set:
    `TMPDIR=/home/alexey/git/cloudflare-agent-git/.local/scratch/<task>/`
-4. **Net `/tmp` Growth:** Verified **0 net bytes written to `/tmp`** by any of our product workers or tooling extensions.
+4. **Epistemic Boundary on Zero Growth:** Subagent scratch directories were measured at 4.0 KB, verifying that our tasks operate within their designated scratch trees. However, asserting a 100% universal guarantee of zero writes across all background threads would require host-wide syscall interception; we state this as verified containment policy rather than an unproven absolute claim.
 
 ### 6.2 Preventive Rules for Future Subagents
 - Every worker launched MUST export `TMPDIR=$PWD/.local/scratch/<worker-tag>` before running sub-processes.
@@ -179,6 +180,8 @@ All scanned targets are clean (zero violations).
 
 ## 8. Summary of Findings
 
-1. **Root Cause of /tmp Decline:** `/tmp` is a bind mount of `/data/tmp` sharing `/dev/nvme1n1` with `/data` and `/home/alexey/git/pocketshell/build`. The 9 GiB/hr capacity decline reflects host-wide activity across `/data` (Docker, ai-shipping-labs worktrees, zcode workers, external compilation caches), not an isolated leak in `/tmp`.
-2. **Current /tmp Footprint:** `/tmp` holds 101,143 items; the top 20 named directories consume 25.1 GiB (led by `rds-export` at 7.92 GiB, `openscan-eval-host` at 3.51 GiB, and `openscan-pyquad` at 1.67 GiB). In addition, ~75,000 ephemeral test directories (`codex-core-tests*`, etc.) consume ~1.5 GiB.
-3. **Product Task Invariance:** Our repository tasks (`cloudflare-agent-git`, `agent-branches`, `antigravity-head`) are fully contained on `/dev/nvme0n1p3` (62 GiB available) with `TMPDIR` inside `.local/scratch/`, contributing 0 net bytes to `/tmp` or `/dev/nvme1n1`.
+1. **Topology Confirmed:** `/tmp` is a bind mount of `/data/tmp` on `/dev/nvme1n1` (469 GiB total, 22 GiB free, 96% utilization), shared with `/data` and `pocketshell/build`.
+2. **Consumption Rate:** Ongoing write consumption on `/dev/nvme1n1` was measured at **~1.21 GiB/hr** during the 10.19s sample window.
+3. **Producer Attribution Unknown:** Specific writing processes cannot be confirmed from static presence alone.
+4. **Repository Isolation:** `cloudflare-agent-git` is isolated on `/dev/nvme0n1p3` (62 GiB free).
+5. **Containment Invariant:** All subagents must strictly use `.local/scratch/` with zero reliance on `/tmp`.

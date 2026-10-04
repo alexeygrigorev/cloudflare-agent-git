@@ -2437,6 +2437,27 @@
       "assignment_ack": "ACK: owned by antigravity-head under Direct Human Reset and Codex C2032/C2048/C2050/C2051/C2052/C2053/C2054. Architected by self-org-architect (7f5a2f14), challenged by self-org-challenger (393b33c1), reviewed by child-adapter-reviewer (304b28c9)."
     },
     {
+      "id": "self-org-custody-prerequisites",
+      "project_id": "agent-branches",
+      "team_id": "agent-branches",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "7f5a2f14-092d-4676-b4f9-ff96bdc32a01"
+      ],
+      "status": "running",
+      "updated_at": "2026-10-04T21:42:00.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/tooling/self_org/runtime_custody.py",
+        "tests/test_runtime_custody.py"
+      ],
+      "acceptance": "Prerequisites COMPLETED per Codex C2059/C2062. CGroupV2Custody (memory ceiling enforcement, process PID assignment to cgroup.procs), ProviderQuotaReservation (15% reserve floor, GLM/Grok window/cooldown, atomic lease), and BusSocketConnector (environment sanitization, mode 0700 check, 4-byte length prefixed framing) implemented in research/antigravity/tooling/self_org/runtime_custody.py. 6/6 dedicated tests PASS (tests/test_runtime_custody.py), 41/41 regression tests PASS, publication guard clean (exit 0).",
+      "assignment_ack": "ACK: technical prerequisite implementation completed by self-org-architect (7f5a2f14) under antigravity-head per Codex C2059/C2062.",
+      "acceptance_status": "IN_PROGRESS",
+      "next_action": "remediate fail-open defects in runtime_custody.py via 7f5a2f14, then independent review and negative testing via 393b33c1",
+      "continuation_trigger": "clean 393b33c1 negative review and existing launcher admission integration"
+    },
+    {
       "id": "self-org-live-model-runtime",
       "project_id": "agent-branches",
       "team_id": "agent-branches",
@@ -2444,16 +2465,20 @@
       "executor_ids": [
         "7f5a2f14-092d-4676-b4f9-ff96bdc32a01"
       ],
-      "status": "done",
-      "updated_at": "2026-10-04T21:42:00.000000+00:00",
-      "blocked_on": [],
-      "evidence_paths": [
-        "research/antigravity/tooling/self_org/runtime_custody.py",
-        "tests/test_runtime_custody.py"
+      "status": "held",
+      "updated_at": "2026-10-04T21:50:00.000000+00:00",
+      "blocked_on": [
+        "proven kernel cgroup custody with real kernel tree",
+        "real agent-bus enrollment and transport handshake",
+        "existing launcher admission integration (launcher.resources/admission)"
       ],
-      "acceptance": "Prerequisites COMPLETED per Codex C2059. CGroupV2Custody (memory ceiling enforcement, process PID assignment to cgroup.procs), ProviderQuotaReservation (15% reserve floor, GLM/Grok window/cooldown, atomic lease), and BusSocketConnector (environment sanitization, mode 0700 check, 4-byte length prefixed framing) implemented in research/antigravity/tooling/self_org/runtime_custody.py. 6/6 dedicated tests PASS (tests/test_runtime_custody.py), 41/41 regression tests PASS, publication guard clean (exit 0). Live model execution in child_adapter.py remains strictly HELD pending live model activation authorization.",
-      "assignment_ack": "ACK: technical prerequisite implementation completed by self-org-architect (7f5a2f14) under antigravity-head per Codex C2059. Live model adapter remains strictly held.",
-      "acceptance_status": "ACCEPTED"
+      "evidence_paths": [
+        "research/antigravity/tooling/self_org/child_adapter.py"
+      ],
+      "acceptance": "Live model execution via supervisor loop. Strictly HELD under C2053/C2054/C2056/C2062 pending verified hard kernel cgroup custody, real agent-bus enrollment, launcher admission integration, and live activation authorization. Zero model calls executed while held.",
+      "assignment_ack": "ACK: live model adapter strictly held in child_adapter.py per Codex C2062; prerequisites split into self-org-custody-prerequisites.",
+      "acceptance_status": "HELD",
+      "continuation_trigger": "completion of self-org-custody-prerequisites and verified launcher admission integration"
     },
     {
       "id": "hourly-24h-four-product-payload",

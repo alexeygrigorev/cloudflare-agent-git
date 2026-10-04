@@ -65,40 +65,41 @@ Both artifacts were verified directly on disk using SHA256 checksums and stat fi
 
 ### 3.1 Four-Product Comparative Analysis: Rev1 vs. C2055
 
-The table below contrasts the rejected revision metrics against the remediated C2055 accounting across all four delivery products over the rolling 24-hour window (`2026-10-03T21:19:13Z` to `2026-10-04T21:19:13Z`):
+The table below contrasts the rejected revision metrics against the remediated C2055 accounting across all four delivery products over the rolling 24-hour window (`2026-10-03T21:19:13Z` to `2026-10-04T21:19:13Z`). Per Codex C2062 directives, hours are reported strictly as **observed hook hours** (requiring affirmative telemetry hooks), uninstrumented presence is labeled as a telemetry boundary (not proven physical rest), and metrics are reported per-product without an artificial fleet-wide sum that conflates disjoint roles or cross-project identities:
 
-| Product ID | Rev1 Agents | Rev1 Total Hours | C2055 Presence Actors | C2055 Presence Hours | C2055 Working Actors | C2055 Verified Working Hours | C2055 Resting / Menu Hours |
+| Product ID | Rev1 Declared Actors | Rev1 Total Hours | C2055 Presence Actors | C2055 Presence Hours | C2055 Hook-Instrumented Actors | C2055 Observed Hook Hours | C2055 Uninstrumented / Hook-Absent Hours |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **`agent-branches`** | 8 | 22.58 h | 3 | 21.11 h | 2 | **4.86 h** | 16.25 h |
 | **`agent-dashboard`** | 5 | 38.59 h | 4 | 39.24 h | 0 | **0.00 h** | 39.24 h |
 | **`quota-launcher`** | 6 | 31.91 h | 5 | 32.54 h | 0 | **0.00 h** | 32.54 h |
 | **`agent-coordination`** | 3 | 26.83 h | 1 | 5.88 h | 0 | **0.00 h** | 5.88 h |
-| **Fleet Totals** | **22** | **119.91 h** | **13** | **98.77 h** | **2** | **4.86 h** | **93.91 h** |
 
-### 3.2 Product-by-Product Verification
+*Note: In accordance with Codex C2062, fleet-wide totals summing cross-project identities are omitted. Each product's contributors and hours are reported independently to prevent identity aliasing and double-counting.*
+
+### 3.2 Product-by-Product Verification & Epistemic Boundaries
 
 #### 1. `agent-branches`:
-- **Presence:** 3 unique presence actors (`antigravity-head`, `codex-principal`, `muse-reviewer-auth-ui`) logging **21.11 presence hours**.
-- **Verified Work:** 2 unique working actors (`antigravity-head`, `codex-principal`) logging **4.86 verified working hours**.
-- **Resting:** **16.25 resting/menu hours** (time spent waiting for user feedback, reviewing PRs, and awaiting subagent task completions).
+- **Presence:** 3 declared presence actors (`antigravity-head`, `codex-principal`, `muse-reviewer-auth-ui`) logging **21.11 presence hours**.
+- **Observed Hook Work:** 2 hook-instrumented actors (`antigravity-head`, `codex-principal`) logging **4.86 observed hook hours**.
+- **Uninstrumented / Turn-Boundary Interval:** **16.25 hours** resident in interactive sessions between tool invocations.
 - **Task Evidence:** 10 accepted done tasks, 4 verified completed features (`ab-safe-main-restore`, `ab-real-consumer-work`, `delivery-intake-reconciliation`, `ab-standalone-private-source-project`).
 
 #### 2. `agent-dashboard`:
-- **Presence:** 4 unique presence actors (`ad-backend-exec`, `ad-frontend-exec`, `ad-independent-reviewer`, `agent-dashboard-head`) logging **39.24 presence hours**.
-- **Verified Work:** **0.00 verified working hours**. The sessions were resident in interactive terminal loops, awaiting integration commands or idling.
-- **Resting:** **39.24 resting hours**.
+- **Presence:** 4 declared presence actors (`ad-backend-exec`, `ad-frontend-exec`, `ad-independent-reviewer`, `agent-dashboard-head`) logging **39.24 presence hours**.
+- **Observed Hook Work:** **0.00 observed hook hours**. The sessions lacked affirmative tool execution hooks during this interval.
+- **Epistemic Boundary:** **39.24 uninstrumented presence hours**. This denotes a telemetry observation boundary (absence of affirmative hook emission), NOT empirical proof of physical CPU dormancy or user inactivity.
 - **Task Evidence:** 1 accepted task (`dashboard-44-snapshot-review`), 0 accepted features.
 
 #### 3. `quota-launcher`:
-- **Presence:** 5 unique presence actors (`desktop-orchestrator`, `quota-launcher-core-3`, `quota-launcher-head`, `quota-platform-coordinator`, `quota-platform-sidecar`) logging **32.54 presence hours**.
-- **Verified Work:** **0.00 verified working hours**. The launcher sessions were waiting at interactive user prompt loops (`press Enter to proceed`), polling status, or sitting in idle readiness.
-- **Resting / Menu:** **32.54 resting/menu hours**.
+- **Presence:** 5 declared presence actors (`desktop-orchestrator`, `quota-launcher-core-3`, `quota-launcher-head`, `quota-platform-coordinator`, `quota-platform-sidecar`) logging **32.54 presence hours**.
+- **Observed Hook Work:** **0.00 observed hook hours**. Sessions operated without affirmative hook event telemetry during this window.
+- **Epistemic Boundary:** **32.54 uninstrumented / menu presence hours**.
 - **Task Evidence:** 1 accepted task (`ql-4c2bfec-independent-review`), 0 accepted features.
 
 #### 4. `agent-coordination`:
-- **Presence:** 1 unique presence actor (`agent-coordination-head`) logging **5.88 presence hours** since commissioning at `11:40:49Z`.
-- **Verified Work:** **0.00 verified working hours**. Session was in initial planning, standing by for native SSH mesh connections.
-- **Resting:** **5.88 resting hours**.
+- **Presence:** 1 declared presence actor (`agent-coordination-head`) logging **5.88 presence hours** since commissioning at `11:40:49Z`.
+- **Observed Hook Work:** **0.00 observed hook hours**.
+- **Epistemic Boundary:** **5.88 uninstrumented presence hours**.
 - **Task Evidence:** 0 accepted tasks, 0 accepted features.
 
 ---
