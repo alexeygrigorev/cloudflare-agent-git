@@ -107,6 +107,32 @@ c.push(task_id=task["taskId"], files_changed=["README.md"],
 Note: the mock coordinator simulates the L1 HTTP routes and the admin/runner/
 per-task bearer ladders; it does not simulate the deployment sidecar.
 
+### Production-parity local run (compiled Node coordinator + Git sidecar)
+
+For full local development with real bare Git repositories and Smart HTTP
+cloning and pushing (instead of the offline mock double), run the compiled Node
+coordinator alongside the Git sidecar:
+
+```bash
+# Terminal 1 — Launch the real Git Smart HTTP sidecar daemon
+export SIDECAR_PORT=8790
+export SIDECAR_ROOT=./.sidecar-root
+export SIDECAR_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+node prototype/local-artifacts/sidecar.mjs
+
+# Terminal 2 — Launch the compiled Node coordinator daemon
+# Note: On Node 24+, --disable-wasm-trap-handler and --max-old-space-size=256
+# prevent virtual address space reservation exhaustion under process memory limits (C1682).
+export PORT=8787
+export HOST=127.0.0.1
+export LOCAL_ARTIFACTS_URL=http://127.0.0.1:$SIDECAR_PORT
+export LOCAL_ARTIFACTS_TOKEN=$SIDECAR_TOKEN
+export ADMIN_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+export RUNNER_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+export COORDINATOR_STATE_FILE=./coordinator-state.json
+node --disable-wasm-trap-handler --max-old-space-size=256 prototype/.build/node/src/local/main.js
+```
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
