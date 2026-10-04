@@ -1593,7 +1593,9 @@ class TestAgentBranchesClient(unittest.TestCase):
 
     def test_18_create_task_token_wire_normalization(self):
         """C1509: the real coordinator CreateTaskResult mints the token as an
-        object {scope, expiresAt, plaintext} and fork as {name, remote, ref}.
+        object {scope, expiresAt, plaintext}), fork as {name, remote}, and
+        ref at the TOP LEVEL of the result (C1515 — a nested fork.ref was a
+        mock artifact).
         The client must cache the plaintext STRING (never the dict) so
         get_task sends exactly 'Bearer <plaintext>' on the wire, flatten the
         fork object into fork_remote/fork_ref, and keep legacy coordinators
@@ -1630,9 +1632,12 @@ class TestAgentBranchesClient(unittest.TestCase):
             self.assertEqual(rec["taskId"], task["taskId"])
             self.assertEqual(auth_state.last_authorization, f"Bearer {plaintext}")
 
-            # Fork wire object is flattened into plain keys.
-            self.assertEqual(task["fork_remote"], task["fork"]["remote"])
+            # C1515: ref is TOP LEVEL on the real CreateTaskResult wire, not
+            # nested inside fork; the client resolves fork_ref from top level.
+            self.assertEqual(task["ref"], "refs/heads/feat/wire-token")
+            self.assertNotIn("ref", task["fork"])
             self.assertEqual(task["fork_ref"], task["ref"])
+            self.assertEqual(task["fork_remote"], task["fork"]["remote"])
 
             # Legacy compatibility: a coordinator answering with the flat
             # plaintext string still caches and authenticates owner reads.

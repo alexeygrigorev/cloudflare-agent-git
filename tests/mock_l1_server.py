@@ -568,18 +568,17 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
                 return
             created = self.state.create_task(body)
             if self.state.token_wire_object and isinstance(created.get("token"), str):
-                # C1509: real coordinator CreateTaskResult wire shape
+                # C1509/C1515: real coordinator CreateTaskResult wire shape
                 # (prototype/src/core/coordinator.ts) — the minted token is
-                # an object and fork carries remote/ref; the stored record
-                # keeps the plaintext string for bearer comparisons.
+                # an object and ref stays TOP LEVEL (fork is {name, remote});
+                # the stored record keeps the plaintext string for bearer
+                # comparisons.
                 created = dict(created)
                 created["token"] = {
                     "scope": f"task:{created.get('taskId')}",
                     "expiresAt": int(time.time()) + 3600,
                     "plaintext": created["token"],
                 }
-                created["fork"] = dict(created.get("fork") or {})
-                created["fork"].setdefault("ref", created.get("ref"))
             self._send_json(201, created)
             return
 

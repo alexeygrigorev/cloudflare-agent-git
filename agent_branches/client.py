@@ -202,10 +202,19 @@ class AgentBranchesClient:
             self.task_tokens[task_id] = raw_token
 
         # Flatten the fork wire object into plain keys for CLI consumers.
+        # C1515: on the real CreateTaskResult (prototype/src/core/coordinator.ts)
+        # ref is TOP LEVEL and fork is {name, remote} only — a nested fork.ref
+        # was a mock artifact. fork_ref resolves nested (legacy) first, then
+        # top-level ref, then the branch; fork_remote from the fork object or
+        # legacy flat keys.
         raw_fork = res.get("fork")
-        if isinstance(raw_fork, dict):
-            res["fork_remote"] = raw_fork.get("remote")
-            res["fork_ref"] = raw_fork.get("ref")
+        nested_ref = raw_fork.get("ref") if isinstance(raw_fork, dict) and raw_fork.get("ref") else None
+        res["fork_ref"] = nested_ref or res.get("ref") or res.get("branch")
+        res["fork_remote"] = (
+            (raw_fork.get("remote") if isinstance(raw_fork, dict) else None)
+            or res.get("forkRemote")
+            or res.get("remote")
+        )
 
         return res
 
