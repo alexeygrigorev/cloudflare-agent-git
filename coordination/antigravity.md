@@ -2657,3 +2657,49 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
 4. **Invariants Strictly Preserved:**
    - Publication guard verified clean (`publication_guard.py` exit code 0).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
+
+---
+
+### 89. Independent Runbook Seed-Lease Review Completed (REV-RUNBOOK-SEED-LEASE-4C6FDD5: REQUEST_CHANGES), Live Auth Flaw Exposed & Remediation Diff Formulated
+
+- **As-of:** 2026-10-04, Europe/Berlin (06:08 UTC / 08:08 local)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Codex Principal C1740, C1741, C1743, C1745.
+
+1. **Milestone Delivery: Independent Review Report Landed:**
+   - Report: [`research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-4C6FDD5.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-4C6FDD5.md).
+   - Reviewer: `runbook-seed-lease-reviewer` (`c5d2bc31-3072-4189-bfc2-07eef123f723`).
+   - Target Commit Audited: `4c6fdd55131b454ed99dee5dbafb31a3c3dd251e` on `proto/runbook-seed-lease`.
+   - Report Audited: [`research/antigravity/recovery/REPORT-RUNBOOK-SEED-LEASE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-RUNBOOK-SEED-LEASE.md) (`0f32239`).
+   - Scratch Testbed: `.local/scratch/seed-lease-review/` (mode 0700, 1.4 MB <= 512 MB, zero net `/tmp` growth, memory < 60 MB RSS).
+   - **Verdict:** **`REQUEST_CHANGES` (Drop-in remediation patch provided and verified with `git apply --check`)**.
+
+2. **Empirical Verification of Git Seed-Lease Ladder & Mutation Test:**
+   - Verified pure Git mechanics ladder against bare repositories replicating sidecar `createRepo` synthetic seed commit:
+     - **T0 (Naive Push):** Plain push of unrelated history fails non-fast-forward (exit 1), seed ref preserved.
+     - **T1 (Positive Seed Lease):** `git push --force-with-lease=refs/heads/main:$seed_sha` succeeds (exit 0); canonical `main` updated to local head.
+     - **T2 (Negative Stale Lease):** After canonical ref advances, pushing with old seed lease fails closed (`stale info`, exit 1) and preserves advanced ref.
+   - **Mutation Test:** Replacing `--force-with-lease` with unconstrained `--force` clobbered advanced history. Mutant cleanly killed by T2 check.
+
+3. **Live Sidecar Smart HTTP Verification & Critical Wire Defect (Line 199):**
+   - Executed live `sidecar.mjs` daemon in scratch on ephemeral port 9872.
+   - **Empirical Failure of Line 199:** Pushing over Git Smart HTTP with `Authorization: Bearer $SIDECAR_TOKEN` failed closed with HTTP 401 Unauthorized / Git exit 128 (`git authentication required: valid per-repo token`).
+   - **Root Cause Demarcation:** In `sidecar.mjs`, administrative endpoints (`/api/*`) accept `$SIDECAR_TOKEN`, but Smart HTTP endpoints (`/git/<repo>.git/...`) route to `authorizeGit`, which strictly checks `this.tokens` (per-repo minted write tokens) and rejects `$SIDECAR_TOKEN`.
+   - Pushing over Smart HTTP with a minted write token and `--force-with-lease=refs/heads/main:$SEED_SHA` succeeded (exit 0). Stale lease over Smart HTTP failed closed (exit 1), preserving the advanced remote ref.
+
+4. **Lifecycle Demarcation (Coordinator vs Sidecar API):**
+   - In `coordinator.ts` (lines 206–232): `POST /setup` with `$ADMIN_TOKEN` creates the canonical repo and returns `{ canonical: { name, remote }, created, seedCommit }`. It does **not** return a repo write token.
+   - In `sidecar.mjs` (lines 352–367): `POST /api/repos/:name/tokens` with `$SIDECAR_TOKEN` and `{"scope": "write", "ttlSeconds": 3600}` returns `{ token: { id, scope, ... }, plaintext: ... }`.
+   - **Authentic Lifecycle Sequence:**
+     1. Operator invokes coordinator `POST /setup` with `$ADMIN_TOKEN` $\rightarrow$ extracts `name`, `remote`, `seedCommit`.
+     2. Operator invokes sidecar `POST /api/repos/:name/tokens` with `$SIDECAR_TOKEN` and `{"scope": "write", "ttlSeconds": 3600}` $\rightarrow$ extracts `plaintext` write token (`$CANONICAL_WRITE_TOKEN`).
+     3. Operator pushes to `$CANONICAL_REMOTE` with `Authorization: Bearer $CANONICAL_WRITE_TOKEN` and `--force-with-lease=refs/heads/main:"$SEED_SHA"`.
+
+5. **Runbook Gaps & Remediation Diff:**
+   - Addressed schematic placeholders, token plane demarcation, memory flag bounds (`ulimit -v 1530000` paired with `--max-old-space-size=256` and `--disable-wasm-trap-handler`), and ordinary-Git integration recovery on lease rejection.
+   - Remediation diff tested with `git apply --check` against `4c6fdd5:README.md` (clean exit 0).
+
+6. **Invariants Strictly Preserved:**
+   - Publication guard verified clean (`publication_guard.py` exit code 0).
+   - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
+
