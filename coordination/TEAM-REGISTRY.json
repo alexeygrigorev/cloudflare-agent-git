@@ -1522,13 +1522,35 @@
           "engine": "zcodex",
           "workspace": "/home/alexey/git/agent-branches-recovery",
           "branch": "proto/cli-push-token",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T06:33:25+02:00",
+          "completed_at": "2026-10-04T07:39:00+02:00",
           "task": "Narrow CLI push --token/--admin-token wiring & boundary testing on branch proto/cli-push-token per Codex Principal C1673; resolves Condition 1 from REPORT-SDK-PACKAGED-FIRSTUSE.md against authentic db4 HTTP coordinator.",
           "owned_paths": [
             "research/antigravity/recovery/REPORT-CLI-PUSH-TOKEN.md"
           ],
           "first_tool_evidence": "aplexer message 01a10530-39c6-7820-aa8d-418d043efe8f delivered to session 4abc725c",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "DELIVERED_PASS: Delivered commit 862d17f on proto/cli-push-token and REPORT-CLI-PUSH-TOKEN.md; reviewed and bounded accepted in REV-CLI-PUSH-TOKEN-862D17F.md"
+        },
+        {
+          "tag": "zcode-recovery-test-c1728",
+          "role": "worker",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "4abc725c-b6ef-4ae6-af9c-978c31cdf151",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "workspace": "/home/alexey/git/agent-branches-recovery",
+          "branch": "proto/runbook-seed-lease",
+          "status": "running",
+          "started_at": "2026-10-04T07:51:00+02:00",
+          "task": "Safe runbook seed lease implementation (C1728/C1725): parameterize INTEGRATION_DIR, document mode 0600 .env.local, argv exposure disclosure, and --force-with-lease=refs/heads/main:<seed_sha> replacing synthetic seed commit with fresh seed positive test and unexpectedly advanced negative fail-closed test",
+          "owned_paths": [
+            "README.md",
+            "research/antigravity/recovery/REPORT-RUNBOOK-SEED-LEASE.md"
+          ],
+          "first_tool_evidence": "aplexer scope declaration task 'safe runbook seed lease implementation (C1728/C1725)'; branch proto/runbook-seed-lease checked out from 592a8ee",
           "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
         },
         {
