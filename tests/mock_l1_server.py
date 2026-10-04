@@ -729,6 +729,22 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
             except ValueError as exc:
                 self._send_json(400, {"error": str(exc)})
                 return
+            # C1655: mirror proto router.ts /warnings/:id/ack — body.agent is
+            # validated before auth (400 when missing/empty), then mutating
+            # auth with agent narrowing (the ack is attestational, so like
+            # proto the sidecar bearer is not accepted; this double does not
+            # simulate one at all).
+            agent = body.get("agent")
+            if not isinstance(agent, str) or not agent:
+                self._send_json(400, {"error": "agent is a required string"})
+                return
+            if self.state.expected_admin_token is not None:
+                err = self.state.check_mutating_auth(
+                    self.headers.get("Authorization", ""), agent
+                )
+                if err:
+                    self._send_json(err[0], err[1])
+                    return
             task_id = body.get("task_id")
             action = body.get("action", "acknowledged")
             try:

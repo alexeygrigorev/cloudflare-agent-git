@@ -220,7 +220,8 @@ class TestAgentBranchesClient(unittest.TestCase):
             self.assertEqual(data["agentId"], agent_id)
             self.assertEqual(data["intent"], "Updated middleware")
 
-        # 5. POST /warnings/<id>/ack
+        # 5. POST /warnings/<id>/ack — proto requires a non-empty body.agent
+        # (C1655: the mock mirrors router.ts and answers 400 without one).
         with self.state.lock:
             warn_id = "warn-direct-001"
             self.state.warnings[warn_id] = {
@@ -231,7 +232,7 @@ class TestAgentBranchesClient(unittest.TestCase):
                 "kind": "textual",
             }
 
-        ack_payload = {"task_id": task_id, "action": "rebased_locally"}
+        ack_payload = {"task_id": task_id, "action": "rebased_locally", "agent": agent_id}
         req = urllib.request.Request(
             f"{self.server_url}/warnings/{warn_id}/ack",
             data=json.dumps(ack_payload).encode("utf-8"),

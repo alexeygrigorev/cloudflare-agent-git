@@ -373,15 +373,73 @@ class AgentBranchesClient:
         warning_id: str,
         task_id: Optional[str] = None,
         action: str = "acknowledged",
+        agent: Optional[str] = None,
+        token: Optional[str] = None,
+        admin_token: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Acknowledge a radar warning (POST /warnings/:id/ack)."""
+        """Acknowledge a radar warning (POST /warnings/:id/ack).
+
+        Real coordinators guard this route with mutating auth and require a
+        non-empty ``agent`` in the body (C1655, REV-SDK-ACK-AUTH 2960b89):
+        without a bearer the route answers 401, without ``agent`` 400. The
+        ack is attestational — the acking agent presents its own task token
+        or ADMIN_TOKEN. The bearer is resolved as: explicit ``token`` -> the
+        per-task token cached by ``create_task`` -> explicit ``admin_token``
+        -> $TASK_TOKEN -> $ADMIN_TOKEN; with none available the request goes
+        out unauthenticated and fails closed with 401. The agent resolves
+        from the explicit ``agent`` argument or the task record (same
+        resolution as ``push``), and the call fails fast with ValueError
+        when neither can produce one.
+        """
         encoded_id = urllib.parse.quote(warning_id, safe="")
-        payload: Dict[str, Any] = {"action": action}
+        effective_token = (
+            token
+            or (self.task_tokens.get(task_id) if task_id else None)
+            or admin_token
+            or os.environ.get("TASK_TOKEN")
+            or os.environ.get("ADMIN_TOKEN")
+        )
+
+        # Proto validates body.agent before auth (router.ts answers
+        # 400 "agent is a required string"), so resolve it up front and fail
+        # fast client-side instead of provoking the coordinator's 400.
+        effective_agent = agent
+        if not effective_agent and task_id:
+            if task_id in self.task_to_agent:
+                effective_agent = self.task_to_agent[task_id]
+            else:
+                try:
+                    task_rec = self.get_task(task_id, token=effective_token)
+                    effective_agent = (
+                        task_rec.get("agentId")
+                        or task_rec.get("agent_id")
+                        or task_rec.get("agent")
+                    )
+                except Exception as exc:
+                    raise ValueError(
+                        f"Cannot resolve agent for task '{task_id}'. "
+                        f"Task lookup failed: {exc}. "
+                        "Specify agent explicitly."
+                    ) from exc
+
+        if not effective_agent:
+            raise ValueError(
+                f"Cannot resolve agent for warning '{warning_id}'. "
+                "Task lookup failed or task record is missing agentId. "
+                "Specify agent explicitly."
+            )
+
+        payload: Dict[str, Any] = {"action": action, "agent": effective_agent}
         if task_id:
             payload["task_id"] = task_id
             payload["taskId"] = task_id
 
-        return self._request("POST", f"/warnings/{encoded_id}/ack", payload)
+        req_headers: Optional[Dict[str, str]] = None
+        if effective_token:
+            req_headers = {"Authorization": f"Bearer {effective_token}"}
+        return self._request(
+            "POST", f"/warnings/{encoded_id}/ack", payload, headers=req_headers
+        )
 
     def send_checks(
         self,
@@ -669,9 +727,22 @@ class AgentBranchesClient:
         return self.get_status()
 
     def branches_ack_warning(
-        self, task_id: str, warning_id: str, action: str = "rebased_locally"
+        self,
+        task_id: str,
+        warning_id: str,
+        action: str = "rebased_locally",
+        agent: Optional[str] = None,
+        token: Optional[str] = None,
+        admin_token: Optional[str] = None,
     ) -> Dict[str, Any]:
-        return self.ack_warning(warning_id=warning_id, task_id=task_id, action=action)
+        return self.ack_warning(
+            warning_id=warning_id,
+            task_id=task_id,
+            action=action,
+            agent=agent,
+            token=token,
+            admin_token=admin_token,
+        )
 
     def inspect_token_metadata(self, token: str) -> Dict[str, Any]:
         """Inspect basic token format without exposing secret bytes."""

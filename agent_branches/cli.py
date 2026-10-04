@@ -312,6 +312,18 @@ def build_parser() -> argparse.ArgumentParser:
         default="rebased_locally",
         help="Action taken to address warning (e.g. 'rebased_locally', 'manual_merge')",
     )
+    ack_parser.add_argument(
+        "--agent",
+        help="Explicit agent identifier (resolved from the task record when omitted)",
+    )
+    ack_parser.add_argument(
+        "--token",
+        help="Bearer token of the acking agent (per-task task token)",
+    )
+    ack_parser.add_argument(
+        "--admin-token",
+        help="Admin bearer token fallback (prefer --token or $TASK_TOKEN/$ADMIN_TOKEN)",
+    )
     ack_parser.add_argument("--server", help="Coordinator URL")
     ack_parser.add_argument("--json", action="store_true", help="Output raw JSON")
 
@@ -427,6 +439,9 @@ def handle_ack(args: argparse.Namespace, client: AgentBranchesClient, as_json: b
         warning_id=args.warning_id,
         task_id=args.task_id,
         action=args.action,
+        agent=getattr(args, "agent", None),
+        token=getattr(args, "token", None),
+        admin_token=getattr(args, "admin_token", None),
     )
     if as_json:
         print(json.dumps(res, indent=2))
