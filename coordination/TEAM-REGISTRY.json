@@ -600,10 +600,10 @@
           "workspace": "/home/alexey/git/agent-branches-integration",
           "scratch": ".local/scratch/auth-matrix-integration/",
           "task": "C1542/C1544: Isolated integration combining proto/auth-reads (2302d70), proto/webhook-auth (d8ac3b5), and proto/sdk-get-task-auth (cbf72e2); verify Node coordinator requireTaskOwnerOrAdmin on GET /tasks/:id and SDK cold-cache resolution",
-          "owned_paths": [
-            "research/antigravity/agent-branches/INTEGRATION-AUTH-MATRIX-REPORT.md"
-          ],
-          "status": "running"
+          "completed_at": "2026-10-04T02:03:51Z",
+          "completed_commit": "59f575d",
+          "result": "SUCCESS_INTEGRATED_VERIFIED",
+          "status": "completed"
         },
         {
           "tag": "l6-ca16-review",

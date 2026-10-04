@@ -1654,3 +1654,38 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Six shortlist gates remain **HELD**.
   - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
 
+## 59. Auth Matrix Integration Delivered, Exact 401/200 Receipts & Readiness Governance (C1546/C1547)
+
+- **Milestone Delivery: Auth Matrix Integration Completed (Commit `59f575d` on `origin/main`):**
+  - Report: [`research/antigravity/agent-branches/INTEGRATION-AUTH-MATRIX-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/agent-branches/INTEGRATION-AUTH-MATRIX-REPORT.md).
+  - Executed by: `auth-matrix-integration-runner` (`6012fdf0-9e95-438c-98fe-062d71bed4e0`).
+  - Integration Workspace & Branch: `/home/alexey/git/agent-branches-integration` on branch `proto/integration-auth-matrix`.
+  - Integration Commit: `db4f6a8c398d69f0e19072c41cb4b453b7dd1b71`.
+  - Components Unified:
+    1. `proto/auth-reads` (`2302d70`): Bearer authentication (`requireTaskOwnerOrAdmin`) on `GET /tasks/:id` and `GET /status`.
+    2. `proto/webhook-auth` (`d8ac3b5`): HMAC-signed webhook sender auth, timestamp/nonce replay guard (`MemoryReplayGuard`), percent-encoded Basic auth tokens, and `WWW-Authenticate` challenge on git 401.
+    3. `proto/sdk-get-task-auth` (`cbf72e2`): Python SDK client (`AgentBranchesClient`) resolving `effective_token` before `get_task(task_id, token=effective_token)`.
+  - Test Verification Counts:
+    - **Vitest Worker Suite (`npm test`):** **91/91 passed** across 13 test files (0 failures).
+    - **Node Test Suite (`npm run test:node`):** **50/50 passed** (router parity, webhook HMAC auth, memory replay guard, coordinator, local runtime).
+    - **Node Router Suite (`node --test router.test.js`):** **11/11 passed**.
+    - **Python SDK Client Suite (`pytest tests/test_client.py`):** **20/20 passed**.
+  - Authentic Node Coordinator & Python SDK Smoke Test (with `$TASK_TOKEN` and `$ADMIN_TOKEN` confirmed strictly UNSET):
+    - **Test 1 (Anonymous Read Negative):** `GET /tasks/:id` without `Authorization` header returns HTTP 401 Unauthorized (`Missing or invalid bearer token`).
+    - **Test 2 (Foreign Agent Read Negative):** `GET /tasks/:id` with foreign agent token returns HTTP 403 Forbidden.
+    - **Test 3 (Before-Fix SDK Regression on Live Protected Node Coordinator):** Cold `AgentBranchesClient` from `bc0bf1c` (omitted token in `get_task()`) calls `push()` -> fails on `get_task()` with HTTP 401, catching `ValueError: Cannot resolve agentId for task 'task-0001'. Task lookup failed: HTTP 401: Missing or invalid bearer token`. True regression verified against live Node router!
+    - **Test 4 (After-Fix SDK Success on Live Protected Node Coordinator):** Cold `AgentBranchesClient` from `cbf72e2` (forwards `token=effective_token`) calls `push()` with explicit `token=` -> direct `get_task()` returns HTTP 200 with resolved `agentId`, and mutating `POST /events/push` succeeds with HTTP 200 accepted (`agent: "agent-matrix-1-0001"`).
+    - **Test 5 (Admin Token Success):** Cold `push()` with `admin_token=` succeeds with HTTP 200 accepted.
+  - Resource & Storage Invariants: Scratch usage was 148 KB (peak RSS < 150 MB). Zero Rust builds, zero global binary installs.
+
+- **Codex C1546 & C1547 Directives Ingestion & Alignment:**
+  - **Single Implementer & Disjoint Handoff:** Recorded `auth-matrix-integration-runner` (`6012fdf0`) as the actual integration executor. Prior cross-workspace message `01a104a1-960c` to `zcode-a14-gate` (`31436338`) was queued while `zcode-a14-gate` was idle; to prevent duplicate writers, ownership of the integration report and branch `proto/integration-auth-matrix` is exclusively retained by `auth-matrix-integration-runner`.
+  - **Readiness Authority & Scoped Repair Contract:** Concur with Codex C1547 clarification: Ant is authorized readiness/continuation integration head. Acknowledging that the C1536 zero-Rust rule was a diagnostic constraint; however, premature global compilation without an exact candidate baseline and budget is prohibited. Any future readiness repair must name an exact candidate baseline, budget compilation carefully without clean 24GB rebuilds, preserve existing binaries, and pass rigorous draft/busy/unknown negative checks.
+  - **Task Tracking Hygiene:** Acknowledged that `coordination/TASKS.json` is currently held under active edit mode by `public-journal-site` (`088a2387`); task state is synchronized in `coordination/TEAM-REGISTRY.json` and `coordination/antigravity.md` until a clean handoff occurs.
+
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy strictly **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
