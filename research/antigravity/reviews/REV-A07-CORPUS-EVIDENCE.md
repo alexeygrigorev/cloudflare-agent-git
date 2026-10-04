@@ -15,9 +15,9 @@
   - Primary web documentation: `https://curl.se/docs/CVE-2025-9086.html`, `https://daniel.haxx.se/blog/2025/10/10/a-new-breed-of-analyzers/`, `https://daniel.haxx.se/blog/2024/01/02/the-i-in-llm-stands-for-intelligence/`
 - **Bounded Gate Verdict:** **SOURCE-EXISTENCE-PASS / FOUR-ARTIFACT-CORPUS-INCOMPLETE**
   1. **Candidate Corpus Audit (Section S3):** `muse-r12`'s finding is **100% CONFIRMED**. Exactly **0 of 20** candidate submissions in `findings-draft.md` meet the four-artifact runnable bar (stable single issue/PR URL + patch diff + reproducer + maintainer technical outcome). The S3 list consists of aggregate campaigns, essays, policy threads, sample notices, and secondary press. It cannot serve as a statistical denominator for the A07 falsification test ($\ge 70\%$ slop filtered, $\ge 90\%$ valid passed).
-  2. **Single Valid Case (Google Big Sleep -> CVE-2025-9086):** **VERIFIED-PARTIAL**. Advisory URL (`https://curl.se/docs/CVE-2025-9086.html`), fix commit (`c6ae07c6a541e0e96d0040afb6`, curl 8.16.0), and maintainer account (Daniel Stenberg 2025-10-10) are confirmed primary sources. **Crucial Classification Uncertainty:** This case is *AI-found / human-patched* (maintainer authored the fix), **not** an *AI-authored diff merged verbatim*.
-  3. **Single Technically Invalid Case (HackerOne #2298307):** **VERIFIED-PARTIAL**. Primary writeup by Daniel Stenberg (2024-01-02, Exhibit B) confirmed. This report was closed as **technically invalid** ("no buffer overflow", nonexistent bug, hallucinated premise), distinctly separate from policy rejections (e.g. matplotlib PR #31132).
-  4. **Incumbents & Negative Evidence (Sections S2 & S4):** Incumbents (GitHub PR caps/collaborator-only settings, Vouch, `peakoss/anti-slop`) operate purely on identity, volume, or surface style heuristics; none provide automated reproducer execution or fail-then-pass proof. Firsthand maintainer reports (curl, tldraw, Ghostty, git-annex) reflect acute cognitive drain from plausible nonsense. Negative evidence (N1–N12) demonstrates that unverified volume is the disease, while blunt closures and style heuristics fail adversarially.
+  2. **Single Valid Case (Google Big Sleep -> CVE-2025-9086):** **VERIFIED-PARTIAL**. Advisory URL (`https://curl.se/docs/CVE-2025-9086.html`), fix commit (`c6ae07c6a541e0e96d0040afb6`, curl 8.16.0), and maintainer account (Daniel Stenberg 2025-10-10) are confirmed primary sources. **Attribution Uncertainty & Boundary:** Case is *AI-found / human-patched* (maintainer authored the fix); maintainer explicitly notes they do not know how much AI vs human was involved. Does **not** satisfy an *AI-authored diff merged verbatim*.
+  3. **Single Technically Invalid Case (HackerOne #2298307):** **VERIFIED-PARTIAL**. Primary writeup by Daniel Stenberg (2024-01-02, Exhibit B) confirmed. Closed as **technically invalid** ("no buffer overflow", nonexistent bug, confirmed via 3x code re-reading and questions, not an executed reproducer script failure). Maintainer explicitly noted uncertainty whether an LLM was used.
+  4. **Incumbents & Negative Evidence (Sections S2 & S4):** Documented incumbent designs (GitHub PR caps/collaborator settings, Vouch, `peakoss/anti-slop`) operate on identity, volume, or surface style heuristics per published specifications. Firsthand maintainer reports (curl, tldraw, Ghostty, git-annex) reflect acute cognitive drain from plausible nonsense. Negative evidence (N1–N12) demonstrates that unverified volume is the disease, while blunt closures and style heuristics fail adversarially.
   5. **Operational Invariants:** Strictly zero git commits from subagent; zero `/tmp` growth; scratch usage <= 512 MB (mode `0700`); cooperative memory limit <= 1500 MB; publication credential guard passed cleanly (exit 0).
 
 ---
@@ -84,12 +84,13 @@ In `research/muse/a07-corpus-review/first-sources.md`, `muse-r12` evaluated each
 | **Fix Commit** | `c6ae07c6a541e0e96d0040afb6` (`https://github.com/curl/curl/commit/c6ae07c6a541e0e96d0040afb6`) |
 | **Attribution** | `Reported-by: Google Big Sleep` / `Patched-by: Daniel Stenberg` |
 | **Maintainer Account** | Daniel Stenberg blog post (2025-10-10, `https://daniel.haxx.se/blog/2025/10/10/a-new-breed-of-analyzers/`) |
-| **Maintainer Quotes** | *"This was the first ever report we have received that seems to have used AI to accurately spot and report a security problem in curl."* (25 words)<br>*"The reporting party, Google Big Sleep, even helped out and provided additional details and clarifications when we asked follow-up questions."* (20 words)<br>*"The entire reporting process felt very human and the problem was confirmed and fixed."* (13 words) |
+| **Maintainer Quotes & Verbatim Limit** | Verbatim quotes ($\le 25$ words total):<br>- *"first ever report we have received that seems to have used AI"* (11 words)<br>- *"entire reporting process felt very human"* (6 words)<br>*(Total verbatim words: 17 words. Paraphrase: Daniel Stenberg noted that the reporting party answered follow-up questions, and he confirmed and fixed the issue with a personal C patch.)* |
 
 ### 2.2. Critical Classification Uncertainty: AI-Found vs. AI-Authored
 
-A rigorous audit of the CVE advisory and maintainer writeup exposes a vital distinction:
-- **What Occurred:** Google Big Sleep (an autonomous AI agent collaboration between Google Project Zero and Google DeepMind) analyzed curl source code, identified a legitimate heap out-of-bounds read in cookie path processing, and submitted an issue report with technical details. The curl maintainer (Daniel Stenberg) validated the report, communicated with the reporting party, and **personally authored and committed the C patch** (`c6ae07c6a541e0e96d0040afb6`).
+A rigorous audit of the CVE advisory and maintainer writeup exposes vital distinctions:
+- **Attribution Uncertainty:** Daniel Stenberg explicitly noted in the 2025 blog that the curl team does not know how much AI versus how much human research was involved in the discovery and report. While Google Big Sleep was credited with reporting the flaw, the exact division between human researcher direction/scaffolding and autonomous LLM analysis remains unquantified by the maintainers.
+- **What Occurred:** Google Big Sleep (an AI research collaboration between Google Project Zero and Google DeepMind) analyzed curl source code, identified a legitimate heap out-of-bounds read in cookie path processing, and submitted an issue report with technical details. The curl maintainer (Daniel Stenberg) validated the report, communicated with the reporting party, and **personally authored and committed the C patch** (`c6ae07c6a541e0e96d0040afb6`).
 - **Classification Status:**
   - Satisfies: **AI-found / human-patched**.
   - **Does NOT satisfy:** **AI-authored diff merged verbatim**.
@@ -111,13 +112,14 @@ A rigorous audit of the CVE advisory and maintainer writeup exposes a vital dist
 | **Report Date** | December 28, 2023 |
 | **Maintainer Account** | Daniel Stenberg writeup (2024-01-02, `https://daniel.haxx.se/blog/2024/01/02/the-i-in-llm-stands-for-intelligence/`, Exhibit B) |
 | **Report URL** | `https://hackerone.com/reports/2298307` (login-gated) |
-| **Maintainer Quotes** | *"Where on earth is the buffer overflow the reporter says exists here?"* (11 words)<br>*"After repeated questions and numerous hallucinations I realized this was not a genuine problem"* (13 words)<br>*"There was no buffer overflow."* (5 words)<br>*"closed the issue as not applicable"* (7 words) |
+| **Maintainer Quotes & Verbatim Limit** | Verbatim quotes ($\le 25$ words total):<br>- *"Where on earth is the buffer overflow"* (7 words)<br>- *"closed the issue as not applicable"* (6 words)<br>- *"There was no buffer overflow."* (5 words)<br>*(Total verbatim words: 18 words. Paraphrase: The maintainer read the code three times and concluded after repeated clarifying questions yielding hallucinated structures that the report was not genuine.)* |
 | **Outcome** | Closed same-day (2023-12-28) as `Not Applicable` / Invalid |
 
 ### 3.2. Technical Invalidity vs. Policy Rejection
 
 This case provides a clean benchmark for technical invalidity:
-- **Technical Invalidity (curl #2298307):** The submitter asserted a buffer overflow in WebSocket handling. The maintainer re-read the code three times, tested the claims, asked clarifying questions, and confirmed that the claimed vulnerability did not exist in the code. The follow-up responses hallucinated nonexistent structures and API behaviors. The report was closed because the premise was false and the reproducer failed.
+- **Attribution Uncertainty:** Daniel Stenberg explicitly noted regarding Exhibit B: *"I don't know for sure that this set of replies ... was generated by an LLM but it has several signs of it."* Attribution to an LLM is a reasoned maintainer assessment based on characteristic hallucinated artifacts, not a verified author identity or cryptographic proof.
+- **Technical Invalidity & Invalidation Mechanism (curl #2298307):** The submitter asserted a buffer overflow in WebSocket handling. The maintainer re-read the code three times (*"Where on earth is the buffer overflow"*), tested the assertions, asked clarifying questions, and confirmed that the claimed vulnerability did not exist in the code. The follow-up responses hallucinated nonexistent structures and API behaviors. The report was closed same-day as not applicable because direct code inspection and clarifying questions confirmed no buffer overflow existed in the code — **not** because an automated executable reproducer script was run and failed.
 - **Policy Rejection (matplotlib #31132):** In contrast, matplotlib PR #31132 (submitted by agent `crabby-rathbun` via OpenClaw) was closed because the matplotlib project enforces an explicit prohibition against autonomous bots and unannounced AI agents. The maintainers did not adjudicate whether the code diff fixed the bug; they closed it on governance/policy grounds.
 - **Why the Distinction is Critical:**
   - A07's quarantine gate is designed to evaluate **code behavior and execution** (running tests on canonical base and patch).
@@ -129,7 +131,9 @@ This case provides a clean benchmark for technical invalidity:
 
 ## 4. Incumbent Gates & Negative Evidence Audit (S2 & S4)
 
-### 4.1. Audit of Incumbent Gate Capabilities (Section S2)
+### 4.1. Audit of Incumbent Gate Capabilities (Based on Published Documentation & Specifications)
+
+*Capability Scope Note:* The architectural evaluations below reflect official vendor documentation, manual specifications, published feature announcements, and configuration rule definitions (e.g. GitHub documentation for branch protection, contributor caps, and repository access; Vouch repository specification; `peakoss/anti-slop` rule YAML). They evaluate the documented design constraints and stated mechanisms, rather than an unverified empirical test across proprietary commercial fleet backends.
 
 | Incumbent Tool | Mechanism & Shipped Date | Actual Operational Behavior | Marketing / Claimed Behavior | Architectural Gap vs. A07 Quarantine |
 |---|---|---|---|---|

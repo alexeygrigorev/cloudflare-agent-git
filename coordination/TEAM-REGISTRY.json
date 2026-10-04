@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T05:16:30.000000+02:00",
+  "updated_at": "2026-10-04T06:47:00.000000+02:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -1359,7 +1359,7 @@
           ],
           "first_tool_evidence": "subagent launched with native conversation ID 55e1a893-fcb1-4683-ba6d-89f3058b581c; reading first-sources.md and findings-draft.md",
           "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
-          "result": "SOURCE-EXISTENCE-PASS / FOUR-ARTIFACT-CORPUS-INCOMPLETE: Delivered REV-A07-CORPUS-EVIDENCE.md. Confirmed muse-r12 finding that exactly 0 of 20 entries in findings-draft.md meet the four-artifact runnable bar (stable PR/issue URL + patch diff + reproducer + maintainer technical outcome); S3 list cannot supply denominator for >=70% slop / >=90% valid gate. Verified single valid case (Google Big Sleep -> CVE-2025-9086 curl out-of-bounds read; AI-found/human-patched by Daniel Stenberg, not AI-authored diff). Verified single technically invalid case (HackerOne #2298307; closed same-day as Not Applicable for nonexistent buffer overflow; strictly technical, not policy rejection). Audited incumbents (identity/volume/style only, zero reproducer execution). Publication guard exit 0, scratch 8 KB, zero /tmp writes."
+          "result": "SOURCE-EXISTENCE-PASS / FOUR-ARTIFACT-CORPUS-INCOMPLETE: Delivered REV-A07-CORPUS-EVIDENCE.md. C1677 head-owned corrections applied: verbatim quotes strictly <=25 words total per blog (2025 blog: 17 words verbatim total; 2024 blog Exhibit B: 18 words verbatim total); removed unsupported quote fragments; explicit attribution uncertainty recorded (maintainer does not know how much AI/human involved in 2025; maintainer does not know for sure LLM used in 2024); invalidation mechanism clarified as 3x code re-reading and questions confirming no buffer overflow in code (not a failed automated reproducer script); incumbent gates qualified based on published documentation and specifications rather than unverified empirical fleet runtime claims. Publication guard exit 0, scratch 8 KB, zero /tmp writes."
         },
         {
           "tag": "a05-baseline-reviewer",
