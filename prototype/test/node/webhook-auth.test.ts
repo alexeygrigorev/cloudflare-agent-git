@@ -8,7 +8,12 @@
  *
  *   x-webhook-timestamp: unix seconds
  *   x-webhook-nonce:     fresh opaque string per DELIVERY ATTEMPT
- *   x-webhook-signature: "sha256=" + hex(HMAC-SHA256(secret, ts + "." + rawBody))
+ *   x-webhook-signature: "sha256=" + hex(HMAC-SHA256(secret,
+ *                        ts + "." + nonce + "." + rawBody))
+ *
+ * The nonce is bound into the signature (REV-WEBHOOK-AUTH-F3F06D2): a
+ * captured signature fails under ANY other nonce, so the only replay that
+ * reaches the guard is byte-identical — rejected 409 Conflict.
  *
  * Non-vacuous discipline (cf. C-1437): every negative case below is
  * preceded by a positive acceptance through the SAME request builder, so
@@ -104,7 +109,7 @@ async function signedWebhook(
     opts.signature === null
       ? null
       : (opts.signature ??
-        `sha256=${await hmacHex(opts.signingSecret ?? SECRET, `${timestamp}.${opts.raw}`)}`);
+        `sha256=${await hmacHex(opts.signingSecret ?? SECRET, `${timestamp}.${nonce}.${opts.raw}`)}`);
   const headers: Record<string, string> = {};
   if (timestamp !== null) {
     headers["x-webhook-timestamp"] = timestamp;
@@ -153,7 +158,7 @@ test("webhook auth: tampered body fails HMAC though it parses to a valid push", 
   // parsed object, different wire bytes — the signature must not match.
   const delivered = JSON.stringify({ sha, ref: "refs/heads/main", fork: task.fork.name });
   ok(delivered !== signedRaw);
-  const signature = `sha256=${await hmacHex(SECRET, `${Math.floor(NOW_MS / 1000)}.${signedRaw}`)}`;
+  const signature = `sha256=${await hmacHex(SECRET, `${Math.floor(NOW_MS / 1000)}.n-1.${signedRaw}`)}`;
   const res = await signedWebhook(h.rig.services, { raw: delivered, signature });
   strictEqual(res.status, 401);
   strictEqual(errorOf(res), "webhook signature mismatch");
@@ -208,7 +213,7 @@ test("webhook auth: timestamp tolerance boundary — ±300s accepted, ±301s rej
   match(errorOf(fromFuture), /outside tolerance window/);
 });
 
-test("webhook auth: duplicate nonce rejected as replay even with a fresh valid signature", async () => {
+test("webhook auth: duplicate nonce rejected as 409 CONFLICT even with a fresh valid signature", async () => {
   const h = webhookRig();
   const task = await createTask(h.rig, "replay");
   const base = h.nowSeconds();
@@ -222,20 +227,61 @@ test("webhook auth: duplicate nonce rejected as replay even with a fresh valid s
   const sha1 = await commitRaw(h.rig, task.fork.name, "wip 1");
   strictEqual((await deliver(sha1, "nonce-dupe", String(base))).status, 200);
 
-  // Same nonce, DIFFERENT fresh in-window delivery: still a replay.
+  // Same nonce, DIFFERENT fresh in-window delivery: still a replay — and
+  // per REV-WEBHOOK-AUTH-F3F06D2 a CONFLICT (authenticated duplicate),
+  // not an authorization failure.
   const sha2 = await commitRaw(h.rig, task.fork.name, "wip 2");
   const replay = await deliver(sha2, "nonce-dupe", String(base + 5));
-  strictEqual(replay.status, 401);
-  match(errorOf(replay), /replay detected: nonce already used/);
+  strictEqual(replay.status, 409);
+  deepStrictEqual(replay.body, { error: "conflict", message: "webhook replay detected: nonce already used" });
 
-  // Byte-for-byte captured redelivery of the first delivery: also 401
+  // Byte-for-byte captured redelivery of the first delivery: also 409
   // (HMAC valid — the nonce is what catches it).
   const captured = await deliver(sha1, "nonce-dupe", String(base));
-  strictEqual(captured.status, 401);
+  strictEqual(captured.status, 409);
+  deepStrictEqual(captured.body, { error: "conflict", message: "webhook replay detected: nonce already used" });
 
   // A distinct nonce is a distinct delivery and is accepted.
   const sha3 = await commitRaw(h.rig, task.fork.name, "wip 3");
   strictEqual((await deliver(sha3, "nonce-fresh", String(base))).status, 200);
+});
+
+test("webhook auth: nonce SUBSTITUTION fails the HMAC (stolen signature cannot be replayed under a fresh nonce)", async () => {
+  const h = webhookRig();
+  const task = await createTask(h.rig, "substitute");
+  const base = h.nowSeconds();
+
+  // Sender legitimately signs nonce "nonce-orig" over commit 1.
+  const sha1 = await commitRaw(h.rig, task.fork.name, "wip 1");
+  strictEqual(
+    (await signedWebhook(h.rig.services, {
+      raw: JSON.stringify({ fork: task.fork.name, sha: sha1 }),
+      nonce: "nonce-orig",
+    })).status,
+    200,
+  );
+
+  // Attacker captures that signature and replays it with a FRESH synthetic
+  // nonce (fresh nonces always pass the replay guard — only the signature
+  // binds them). The recomputed HMAC over the attacker's nonce mismatches.
+  const sha2 = await commitRaw(h.rig, task.fork.name, "wip 2");
+  const stolen = `sha256=${await hmacHex(SECRET, `${base}.nonce-orig.${JSON.stringify({ fork: task.fork.name, sha: sha2 })}`)}`;
+  const substituted = await signedWebhook(h.rig.services, {
+    raw: JSON.stringify({ fork: task.fork.name, sha: sha2 }),
+    signature: stolen,
+    nonce: "attacker-fresh-nonce",
+  });
+  strictEqual(substituted.status, 401);
+  strictEqual(errorOf(substituted), "webhook signature mismatch");
+
+  // The matching nonce replays as 409: the signature is VALID, but that
+  // nonce was already consumed by the first delivery.
+  const replayed = await signedWebhook(h.rig.services, {
+    raw: JSON.stringify({ fork: task.fork.name, sha: sha2 }),
+    signature: stolen,
+    nonce: "nonce-orig",
+  });
+  strictEqual(replayed.status, 409);
 });
 
 test("webhook auth: nonce is required and bounded", async () => {
@@ -291,8 +337,8 @@ test("webhook auth: malformed JSON with a VALID signature is 400; the nonce was 
     raw: JSON.stringify({ fork: task.fork.name, sha }),
     nonce: "nonce-mal",
   });
-  strictEqual(sameNonce.status, 401);
-  match(errorOf(sameNonce), /replay detected/);
+  strictEqual(sameNonce.status, 409); // authenticated delivery, duplicate nonce → conflict
+  deepStrictEqual(sameNonce.body, { error: "conflict", message: "webhook replay detected: nonce already used" });
 
   const freshNonce = await signedWebhook(h.rig.services, {
     raw: JSON.stringify({ fork: task.fork.name, sha }),
@@ -399,7 +445,7 @@ test("webhook auth: signed envelope accepted on /events/artifacts; wrong secret 
 
 test("webhook auth: a signature on a non-webhook route does not substitute for its bearer", async () => {
   const h = webhookRig();
-  const signature = `sha256=${await hmacHex(SECRET, `${Math.floor(NOW_MS / 1000)}.${JSON.stringify({ agent: "x" })}`)}`;
+  const signature = `sha256=${await hmacHex(SECRET, `${Math.floor(NOW_MS / 1000)}.n-1.${JSON.stringify({ agent: "x" })}`)}`;
   const res = await signedWebhook(h.rig.services, {
     path: "/tasks",
     raw: JSON.stringify({ agent: "x" }),

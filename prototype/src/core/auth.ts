@@ -110,3 +110,99 @@ export async function decideMutatingAuth(
   }
   return { ok: false, status: 401, error: "unauthorized: ADMIN_TOKEN, the agent's task token or the sidecar bearer required" };
 }
+
+/**
+ * C1462 Task 3 / REV-WEBHOOK-AUTH-F3F06D2 — webhook sender crypto
+ * primitives, relocated from router.ts so every authentication primitive
+ * lives in this module. router.ts imports and re-exports them.
+ */
+
+/** Allowed |now − timestamp| skew, both directions, in seconds. */
+export const WEBHOOK_TOLERANCE_SECONDS = 300;
+
+/** Bounded seen-nonce store behind the replay gate. */
+export interface WebhookReplayGuard {
+  /** True when the nonce was not seen within the TTL; records it. */
+  admit(nonce: string): boolean;
+}
+
+/**
+ * In-memory TTL+capacity nonce store. Entries expire after ttlMs (default
+ * 2× the tolerance window, so it covers everything the timestamp check
+ * lets through); when capacity is reached the OLDEST entries are evicted,
+ * bounding memory at the cost of allowing a nonce reuse older than the
+ * surviving window — the timestamp check still bounds those to ±tolerance
+ * seconds. Single-threaded runtimes (node, workerd) make admit() atomic.
+ */
+export class MemoryReplayGuard implements WebhookReplayGuard {
+  private readonly seen = new Map<string, number>();
+  private readonly ttlMs: number;
+  private readonly maxEntries: number;
+  private readonly nowMs: () => number;
+
+  constructor(
+    opts: { ttlMs?: number; maxEntries?: number; nowMs?: () => number } = {},
+  ) {
+    this.ttlMs = opts.ttlMs ?? 2 * WEBHOOK_TOLERANCE_SECONDS * 1000;
+    this.maxEntries = opts.maxEntries ?? 10_000;
+    this.nowMs = opts.nowMs ?? Date.now;
+  }
+
+  /** Resident nonces (monitoring/tests). */
+  get size(): number {
+    return this.seen.size;
+  }
+
+  admit(nonce: string): boolean {
+    const now = this.nowMs();
+    for (const [key, expiresAt] of this.seen) {
+      if (expiresAt <= now) {
+        this.seen.delete(key);
+      }
+    }
+    if (this.seen.has(nonce)) {
+      return false;
+    }
+    this.seen.set(nonce, now + this.ttlMs);
+    while (this.seen.size > this.maxEntries) {
+      const oldest = this.seen.keys().next().value;
+      if (oldest === undefined) {
+        break;
+      }
+      this.seen.delete(oldest);
+    }
+    return true;
+  }
+}
+
+/**
+ * Minimal HMAC surface of WebCrypto. The workspace crypto shim
+ * (types/node-web.d.ts) declares only `digest`, so the HMAC calls go
+ * through this local structural type; both workerd and Node provide the
+ * real methods at runtime.
+ */
+interface HmacSubtle {
+  importKey(
+    format: "raw",
+    keyData: Uint8Array,
+    algorithm: { name: "HMAC"; hash: "SHA-256" },
+    extractable: false,
+    usages: ["sign"],
+  ): Promise<unknown>;
+  sign(algorithm: { name: "HMAC" }, key: unknown, data: Uint8Array): Promise<ArrayBuffer>;
+}
+
+/** Lowercase hex of HMAC-SHA256(secret, payload) over UTF-8 bytes. */
+export async function hmacSha256Hex(secret: string, payload: string): Promise<string> {
+  const encoded = new TextEncoder();
+  const subtle = crypto.subtle as unknown as HmacSubtle;
+  const key = await subtle.importKey(
+    "raw",
+    encoded.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const mac = await subtle.sign({ name: "HMAC" }, key, encoded.encode(payload));
+  return [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}

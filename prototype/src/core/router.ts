@@ -15,11 +15,24 @@ import {
   bearerFrom,
   decideBearer,
   decideMutatingAuth,
+  hmacSha256Hex,
   timingSafeEqual,
+  WEBHOOK_TOLERANCE_SECONDS,
   type AuthDecision,
   type AuthTokens,
+  type WebhookReplayGuard,
 } from "./auth.js";
 import type { CoordinatorAccess } from "./coordinator.js";
+
+// REV-WEBHOOK-AUTH-F3F06D2: the webhook crypto primitives live in auth.ts
+// next to every other authentication primitive; re-exported here so route
+// callers and tests keep a single import surface.
+export {
+  hmacSha256Hex,
+  MemoryReplayGuard,
+  WEBHOOK_TOLERANCE_SECONDS,
+  type WebhookReplayGuard,
+} from "./auth.js";
 
 /** Runtime-agnostic request view (adapters translate to/from this). */
 export interface HttpRequest {
@@ -85,7 +98,13 @@ export interface RouterServices {
  *   nonce     = fresh opaque string per DELIVERY ATTEMPT (a retry that
  *               reuses a nonce is indistinguishable from a replay and is
  *               rejected — regenerate per attempt)
- *   signature = "sha256=" + hex(HMAC-SHA256(secret, timestamp + "." + rawBody))
+ *   signature = "sha256=" + hex(HMAC-SHA256(secret,
+ *               timestamp + "." + nonce + "." + rawBody))
+ *
+ * The nonce is bound INTO the signature (REV-WEBHOOK-AUTH-F3F06D2): a
+ * captured signature cannot be replayed under a fresh synthetic nonce,
+ * because the recomputed HMAC over a different nonce will not match.
+ * Replay of a byte-identical delivery (same nonce) is rejected 409.
  *
  *   POST /events/push
  *   x-webhook-timestamp: <timestamp>
@@ -101,64 +120,6 @@ export interface RouterServices {
  * path predates this task and has no replay binding).
  */
 
-/** Allowed |now − timestamp| skew, both directions, in seconds. */
-export const WEBHOOK_TOLERANCE_SECONDS = 300;
-
-/** Bounded seen-nonce store behind the replay gate. */
-export interface WebhookReplayGuard {
-  /** True when the nonce was not seen within the TTL; records it. */
-  admit(nonce: string): boolean;
-}
-
-/**
- * In-memory TTL+capacity nonce store. Entries expire after ttlMs (default
- * 2× the tolerance window, so it covers everything the timestamp check
- * lets through); when capacity is reached the OLDEST entries are evicted,
- * bounding memory at the cost of allowing a nonce reuse older than the
- * surviving window — the timestamp check still bounds those to ±tolerance
- * seconds. Single-threaded runtimes (node, workerd) make admit() atomic.
- */
-export class MemoryReplayGuard implements WebhookReplayGuard {
-  private readonly seen = new Map<string, number>();
-  private readonly ttlMs: number;
-  private readonly maxEntries: number;
-  private readonly nowMs: () => number;
-
-  constructor(
-    opts: { ttlMs?: number; maxEntries?: number; nowMs?: () => number } = {},
-  ) {
-    this.ttlMs = opts.ttlMs ?? 2 * WEBHOOK_TOLERANCE_SECONDS * 1000;
-    this.maxEntries = opts.maxEntries ?? 10_000;
-    this.nowMs = opts.nowMs ?? Date.now;
-  }
-
-  /** Resident nonces (monitoring/tests). */
-  get size(): number {
-    return this.seen.size;
-  }
-
-  admit(nonce: string): boolean {
-    const now = this.nowMs();
-    for (const [key, expiresAt] of this.seen) {
-      if (expiresAt <= now) {
-        this.seen.delete(key);
-      }
-    }
-    if (this.seen.has(nonce)) {
-      return false;
-    }
-    this.seen.set(nonce, now + this.ttlMs);
-    while (this.seen.size > this.maxEntries) {
-      const oldest = this.seen.keys().next().value;
-      if (oldest === undefined) {
-        break;
-      }
-      this.seen.delete(oldest);
-    }
-    return true;
-  }
-}
-
 /** Configuration for signed webhook verification (all optional). */
 export interface WebhookAuthConfig {
   /** Shared HMAC secret (WEBHOOK_SECRET). Signed webhooks fail closed
@@ -172,55 +133,37 @@ export interface WebhookAuthConfig {
   toleranceSeconds?: number;
 }
 
+/**
+ * Verification outcome. Denials carry the exact response BODY, not just a
+ * message: 401/503 are `{error}`, a detected replay is 409 Conflict with
+ * `{error: "conflict", message}` (REV-WEBHOOK-AUTH-F3F06D2) — the request
+ * was fully authenticated and only rejected as a duplicate, which is a
+ * conflict, not an authorization failure.
+ */
 export type WebhookSignatureDecision =
   | { ok: true; rawBody: string }
-  | { ok: false; status: 401 | 503; error: string };
-
-/**
- * Minimal HMAC surface of WebCrypto. The workspace crypto shim
- * (types/node-web.d.ts) declares only `digest`, so the HMAC calls go
- * through this local structural type; both workerd and Node provide the
- * real methods at runtime.
- */
-interface HmacSubtle {
-  importKey(
-    format: "raw",
-    keyData: Uint8Array,
-    algorithm: { name: "HMAC"; hash: "SHA-256" },
-    extractable: false,
-    usages: ["sign"],
-  ): Promise<unknown>;
-  sign(algorithm: { name: "HMAC" }, key: unknown, data: Uint8Array): Promise<ArrayBuffer>;
-}
-
-/** Lowercase hex of HMAC-SHA256(secret, payload) over UTF-8 bytes. */
-async function hmacSha256Hex(secret: string, payload: string): Promise<string> {
-  const encoded = new TextEncoder();
-  const subtle = crypto.subtle as unknown as HmacSubtle;
-  const key = await subtle.importKey(
-    "raw",
-    encoded.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const mac = await subtle.sign({ name: "HMAC" }, key, encoded.encode(payload));
-  return [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+  | { ok: false; status: 401 | 409 | 503; body: Record<string, string> };
 
 /**
  * Verify one signed webhook against the sender contract above. Every
  * failure is fail closed and caller-safe: error bodies never contain the
- * secret, the presented signature or the nonce. Order: cheap shape checks,
- * freshness, replay guard availability, THEN the HMAC (the last store
- * mutation is the nonce admit, so unauthenticated garbage cannot fill the
- * guard), and only a fully verified delivery consumes its nonce.
+ * secret, the presented signature or the nonce. Order: cheap shape checks
+ * (a missing nonce is rejected BEFORE any HMAC work), freshness, replay
+ * guard availability, THEN the HMAC — which binds timestamp, nonce AND
+ * rawBody, so a stolen signature cannot be replayed under a substituted
+ * nonce (REV-WEBHOOK-AUTH-F3F06D2). The last store mutation is the nonce
+ * admit: only a fully verified delivery consumes its nonce, and only then
+ * does a duplicate come back as 409 Conflict.
  */
 export async function verifyWebhookSignature(
   request: HttpRequest,
   config: WebhookAuthConfig | undefined,
 ): Promise<WebhookSignatureDecision> {
-  const deny = (status: 401 | 503, error: string): WebhookSignatureDecision => ({ ok: false, status, error });
+  const deny = (status: 401 | 409 | 503, error: string, message?: string): WebhookSignatureDecision => ({
+    ok: false,
+    status,
+    body: message === undefined ? { error } : { error, message },
+  });
   if (!config?.secret) {
     return deny(503, "WEBHOOK_SECRET is not configured; refusing signed webhook (fail closed)");
   }
@@ -251,13 +194,13 @@ export async function verifyWebhookSignature(
   if (!match) {
     return deny(401, "webhook signature must be sha256=<64 hex chars>");
   }
-  const expected = await hmacSha256Hex(config.secret, `${timestamp}.${rawBody}`);
+  const expected = await hmacSha256Hex(config.secret, `${timestamp}.${nonce}.${rawBody}`);
   if (!timingSafeEqual(expected, match[1])) {
     return deny(401, "webhook signature mismatch");
   }
 
   if (!config.replayGuard.admit(nonce)) {
-    return deny(401, "webhook replay detected: nonce already used");
+    return deny(409, "conflict", "webhook replay detected: nonce already used");
   }
   return { ok: true, rawBody };
 }
@@ -384,7 +327,7 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
       if (request.header("x-webhook-signature") !== null) {
         const verdict = await verifyWebhookSignature(request, services.webhookAuth);
         if (!verdict.ok) {
-          return json({ error: verdict.error }, verdict.status);
+          return json(verdict.body, verdict.status);
         }
         const parsed = parseJsonBody(verdict.rawBody);
         if (!parsed.ok) {
@@ -432,7 +375,7 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
       if (request.header("x-webhook-signature") !== null) {
         const verdict = await verifyWebhookSignature(request, services.webhookAuth);
         if (!verdict.ok) {
-          return json({ error: verdict.error }, verdict.status);
+          return json(verdict.body, verdict.status);
         }
         const parsed = parseJsonBody(verdict.rawBody);
         if (!parsed.ok) {
