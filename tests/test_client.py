@@ -1782,6 +1782,81 @@ class TestAgentBranchesClient(unittest.TestCase):
             srv.server_close()
 
 
+    def test_20_push_cold_client_agent_id_resolution(self):
+        """C1532: cold-cache push() resolves agent_id with the effective token.
+
+        A fresh client with no task_to_agent mapping and no cached token can
+        still push with only task_id= + token=: the effective bearer is
+        resolved BEFORE the get_task() agent_id lookup and forwarded to it, so
+        the read is authenticated (200) and the push is accepted riding the
+        same bearer. admin_token= works the same way. With no token anywhere
+        the agent_id lookup fails closed with the guiding ValueError (401
+        underneath) instead of an unauthenticated read.
+        """
+        saved_admin = os.environ.get("ADMIN_TOKEN")
+        os.environ.pop("ADMIN_TOKEN", None)
+        srv, _t, url, state = start_mock_l1_server(
+            host="127.0.0.1",
+            port=0,
+            expected_admin_token="adm-cold-token",
+            expected_runner_token="run-cold-token",
+        )
+        try:
+            owner = AgentBranchesClient(server_url=url)
+            task = owner.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="Cold push",
+                branch="feat/cold-push",
+                agent="cold-alpha",
+                admin_token="adm-cold-token",
+            )
+            task_id = task["taskId"]
+            plaintext = task["token"]["plaintext"]
+
+            # 1. Cold client, explicit token=, NO agent_id: the bearer is
+            #    forwarded to the get_task() lookup, which returns 200 and
+            #    yields agentId; the push itself rides the same bearer.
+            cold = AgentBranchesClient(server_url=url)
+            self.assertNotIn(task_id, cold.task_to_agent)
+            res = cold.push(
+                task_id=task_id,
+                head_sha="1111111111111111111111111111111111111111",
+                token=plaintext,
+            )
+            self.assertTrue(res["accepted"])
+            self.assertEqual(state.last_authorization, f"Bearer {plaintext}")
+
+            # 2. Cold client, admin_token= only: admin authenticates both the
+            #    agent_id lookup and the mutating push (decideMutatingAuth).
+            cold_admin = AgentBranchesClient(server_url=url)
+            res = cold_admin.push(
+                task_id=task_id,
+                head_sha="2222222222222222222222222222222222222222",
+                admin_token="adm-cold-token",
+            )
+            self.assertTrue(res["accepted"])
+            self.assertEqual(state.last_authorization, "Bearer adm-cold-token")
+
+            # 3. NEGATIVE regression: cold client, no token anywhere -> the
+            #    unauthenticated agent_id lookup is 401 and push() raises the
+            #    guiding ValueError instead of sending headerless.
+            cold_bare = AgentBranchesClient(server_url=url)
+            with self.assertRaises(ValueError) as ctx:
+                cold_bare.push(
+                    task_id=task_id,
+                    head_sha="3333333333333333333333333333333333333333",
+                )
+            self.assertIn("Cannot resolve agentId", str(ctx.exception))
+        finally:
+            if saved_admin is None:
+                os.environ.pop("ADMIN_TOKEN", None)
+            else:
+                os.environ["ADMIN_TOKEN"] = saved_admin
+            srv.shutdown()
+            srv.server_close()
+
+
 if __name__ == "__main__":
     unittest.main()
 

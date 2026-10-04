@@ -271,7 +271,9 @@ class AgentBranchesClient:
         Sends agentId (required by L1 coordinator), head_sha, base_sha, files_changed, intent, test_provenance.
         If agent_id is not passed, resolves it via task_id mapping or an
         authenticated get_task(task_id) lookup (C1499: the per-task token
-        cached by create_task authenticates the read as the owning agent).
+        cached by create_task authenticates the read as the owning agent;
+        C1532: an explicit ``token``/``admin_token`` is applied to that
+        lookup first, so cold clients resolve agentId without a 401).
 
         C1518: POST /events/push is a privileged mutation (muse-r46 AUTH):
         the real coordinator answers 401 unless the bearer is the pushing
@@ -280,6 +282,17 @@ class AgentBranchesClient:
         -> explicit ``admin_token`` -> $ADMIN_TOKEN. With none available
         the request goes out unauthenticated and fails closed with 401.
         """
+        # C1532: resolve the mutating bearer BEFORE the agent_id lookup — a
+        # cold client (no cached token) holding only an explicit token= or
+        # admin_token= must authenticate its get_task() resolution too, and
+        # the same bearer is attached to the POST below (C1518).
+        effective_token = (
+            token
+            or (self.task_tokens.get(task_id) if task_id else None)
+            or admin_token
+            or os.environ.get("ADMIN_TOKEN")
+        )
+
         # Resolve agent_id if not explicitly provided
         effective_agent_id = agent_id
         if not effective_agent_id and task_id:
@@ -287,7 +300,7 @@ class AgentBranchesClient:
                 effective_agent_id = self.task_to_agent[task_id]
             else:
                 try:
-                    task_rec = self.get_task(task_id)
+                    task_rec = self.get_task(task_id, token=effective_token)
                     effective_agent_id = (
                         task_rec.get("agentId")
                         or task_rec.get("agent_id")
@@ -337,12 +350,6 @@ class AgentBranchesClient:
 
         # C1518: attach the mutating bearer (pushing agent's task token or
         # admin); a bare POST would be rejected by requireMutatingAuth.
-        effective_token = (
-            token
-            or (self.task_tokens.get(task_id) if task_id else None)
-            or admin_token
-            or os.environ.get("ADMIN_TOKEN")
-        )
         req_headers: Dict[str, str] = {}
         if effective_token:
             req_headers["Authorization"] = f"Bearer {effective_token}"
