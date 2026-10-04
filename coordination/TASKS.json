@@ -2445,17 +2445,18 @@
         "7f5a2f14-092d-4676-b4f9-ff96bdc32a01"
       ],
       "status": "running",
-      "updated_at": "2026-10-04T21:42:00.000000+00:00",
+      "updated_at": "2026-10-04T22:00:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/tooling/self_org/runtime_custody.py",
-        "tests/test_runtime_custody.py"
+        "tests/test_runtime_custody.py",
+        "research/antigravity/reviews/REV-RUNTIME-CUSTODY-C2062.md"
       ],
-      "acceptance": "Prerequisites COMPLETED per Codex C2059/C2062. CGroupV2Custody (memory ceiling enforcement, process PID assignment to cgroup.procs), ProviderQuotaReservation (15% reserve floor, GLM/Grok window/cooldown, atomic lease), and BusSocketConnector (environment sanitization, mode 0700 check, 4-byte length prefixed framing) implemented in research/antigravity/tooling/self_org/runtime_custody.py. 6/6 dedicated tests PASS (tests/test_runtime_custody.py), 41/41 regression tests PASS, publication guard clean (exit 0).",
+      "acceptance": "Prerequisites verified under Codex C2059/C2062/C2068/C2070. CGroupV2Custody (memory ceiling enforcement, process PID assignment to cgroup.procs, outside path rejection, bounded precheck, recursive PID scan), ProviderQuotaReservation (15% reserve floor, GLM/Grok window/cooldown, atomic lease, active-units concurrency cap, collision-proof ID, corrupt-file fail-closed without wipe), and BusSocketConnector (environment sanitization, mode 0700 check, 4-byte length prefixed framing) implemented and verified. 11/11 dedicated tests PASS (tests/test_runtime_custody.py), 41/41 regression tests PASS (52/52 cumulative), independent challenger review REV-RUNTIME-CUSTODY-C2062.md (BOUNDED ACCEPTANCE, 4/4 mutants killed). Next action: connect child_adapter/supervisor to real agent-quota-launcher (Store/admission) and agent-coordination (FileBus) without redundant stores/daemons.",
       "assignment_ack": "ACK: technical prerequisite implementation completed by self-org-architect (7f5a2f14) under antigravity-head per Codex C2059/C2062.",
       "acceptance_status": "IN_PROGRESS",
-      "next_action": "remediate fail-open defects in runtime_custody.py via 7f5a2f14, then independent review and negative testing via 393b33c1",
-      "continuation_trigger": "clean 393b33c1 negative review and existing launcher admission integration"
+      "next_action": "Engineer 7f5a2f14 implementing launcher_bus_bridge.py connecting child execution to real agent-quota-launcher (Store, check_admission) and agent-coordination (FileBus), followed by independent review via 393b33c1.",
+      "continuation_trigger": "Completion of launcher_bus_bridge.py and independent review."
     },
     {
       "id": "self-org-live-model-runtime",
@@ -2522,6 +2523,44 @@
       "acceptance": "COMPLETED per Codex C2060. Bounded read-only attribution report research/antigravity/recovery/REPORT-TMP-GROWTH-ATTRIBUTION.md delivered. Discovered that /tmp is a bind mount of /data/tmp on /dev/nvme1n1 (469G total, 424G used, 22G free, 96% use), shared with /data and pocketshell/build. Observed decline reflects host-wide /dev/nvme1n1 writes, not an isolated /tmp leak. Top directories inventoried (rds-export 7.92G, openscan-eval-host 3.51G, etc.). Enforced zero net /tmp growth from our tasks (isolated in .local/scratch/ on /dev/nvme0n1p3 with 62G free). Publication guard clean (exit 0).",
       "assignment_ack": "ACK: owned by antigravity-head, executed by c3556ba9 per Codex C2060.",
       "acceptance_status": "ACCEPTED"
+    },
+    {
+      "id": "ql-first-action-bypass-review",
+      "project_id": "agent-quota-launcher",
+      "team_id": "quota-launcher",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "082dae3f-ba47-4fd2-8dc6-74f78e78c3eb"
+      ],
+      "status": "done",
+      "updated_at": "2026-10-04T22:00:00.000000+00:00",
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-QL-FIRST-ACTION-BYPASS.md"
+      ],
+      "acceptance": "ACCEPTED (INDEPENDENT REVIEW COMPLETE). Delivered research/antigravity/reviews/REV-QL-FIRST-ACTION-BYPASS.md. Verdict: REQUEST CHANGES (CRITICAL DEFECT CONFIRMED). Offline negative reproduction proved that adding an arbitrary marker/dummy key bypasses laundered copy rejection in launcher/launch.py validate_first_action. Codex C2069 review steering incorporated: schema whitelist forgery demonstrated (cases 6-9 in scratch) and schema whitelist formally withdrawn as execution proof. Strict boundary established between static artifact identity / integration smoke on disk and authentic child tool event provenance under trusted lifecycle (captured directly from process stdout/exit code or authenticated daemon hooks). Canonical repo untouched.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2067/C2068/C2069. Delegated to ql-reviewer (082dae3f-ba47-4fd2-8dc6-74f78e78c3eb).",
+      "next_action": "Review delivered to quota-launcher-head for acceptance and lifecycle integration.",
+      "blocked_on": [],
+      "continuation_trigger": "quota-launcher-head acceptance."
+    },
+    {
+      "id": "bus-exactpin-review",
+      "project_id": "agent-coordination",
+      "team_id": "agent-coordination",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "935148e3-fd25-4ddf-a916-1a88c087501a"
+      ],
+      "status": "done",
+      "updated_at": "2026-10-04T22:00:00.000000+00:00",
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-BUS-EXACTPIN-BB8DCAD.md"
+      ],
+      "acceptance": "ACCEPTED (INDEPENDENT REVIEW COMPLETE). Delivered research/antigravity/reviews/REV-BUS-EXACTPIN-BB8DCAD.md. Verdict: ACCEPT. Target workspace /home/alexey/git/agent-coordination verified at commit bb8dcad. 24/24 core unit tests PASS (1.21s), 7/7 adapter tests PASS (0.04s). 4/4 negative mutants killed in isolated scratch testbed (device registry allowlist bypass, cursor payload conflict, guards busy pane bypass, transport state conflation). Core modules hashed. Epistemic boundary: local workspace clone review confirms copy parity, not public remote pin acceptance. Target workspace kept strictly read-only.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2068/C2069/C2070. Delegated to bus-reviewer (935148e3-fd25-4ddf-a916-1a88c087501a).",
+      "next_action": "Review delivered to agent-coordination-head; bridge implementation in progress.",
+      "blocked_on": [],
+      "continuation_trigger": "agent-coordination-head acceptance and bridge integration."
     }
   ]
 }
