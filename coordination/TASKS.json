@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T12:23:31.363175+00:00",
+  "updated_at": "2026-10-04T13:00:30.707506+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -457,7 +457,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T12:11:48.234917+00:00",
+      "updated_at": "2026-10-04T13:00:30.707506+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -472,13 +472,14 @@
         "research/codex/demand-refresh-2026-10-04.md",
         "research/codex/aplexer-repeated-operations.md",
         "research/codex/maintainer-intake-agent-bus-20261004.md",
-        "research/codex/session-lifecycle-actions-20261004.md"
+        "research/codex/session-lifecycle-actions-20261004.md",
+        "research/codex/monitoring-continuation-20261004-1240.md"
       ],
       "blocked_on": [],
-      "next_action": "Public sibling PocketShell-io/agent-bus65b3c27\u219206addf9\u2192reviewf3295f9 started, actualhead81ACK/3delegateUUIDfirsttools read. Core616 durability/scopedcredential/lifecycle fix active; conditionalreview is REQUEST_CHANGES, real no-session modeltask/outcome dogfood pending, headowns nextcheckpoint. Principal12unneeded sessions archivedthenclosednative/poststatusverified; unrelateddetailsprivate, protecteddraft/services/pendingwork retained. Ant16closure ownerreport read but history/RAMscope challenged. Launcher6be4 ACKs core2release/QLCORE003repair, no unreviewed launchacceptance. Current total5USD cloudbudget forwarded4heads+publication, optionalcloudheld unknownusage, SSH/localworkcontinues. Nextreview realcorrectedcorepin+independentnegatives+actualbusconsumer task, notrootapproval.",
+      "next_action": "Review head-owned S corrected draft negatives/M actual multiworkspace coverage/D bounded SHA review then owner integration; QL fd5d provenance+UTC24h correction; bus successor exactpin/typedSSH review then actual model sessionless task. S candidate activation rejected by independently reproduced draft suppression. All native NOTREADY preserved, no root scheduler dependency.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
-      "continuation_trigger": "Core616 completion/failure -> existing head81 scoped review and actual isolated sessionless bus-consumer task; adaptercd07 independently finishes scoped host evidence. Head event/action-required already observed after reviewf869 exit. Principal source/claim checks on actual artifact, meaningful milestones; lifecycle remainingretention questions -> Ant scoped release/reason."
+      "continuation_trigger": "Ant S/M/D completion or first corrected artifact -> principal independent check and next head queue. QL existing writer result -> head pinned independent review. Bus head priority correction queued under expired native waiting -> genuine readiness repair; no draft/busy injection. Exact ACK/reply supervisor cursor ticks verified, automatic wake unproven."
     },
     {
       "id": "a09-incumbent-check",
