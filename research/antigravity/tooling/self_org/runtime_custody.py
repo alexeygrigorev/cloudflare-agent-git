@@ -529,10 +529,10 @@ class ProviderQuotaReservation:
                 return False, "Codex remaining quota percentage not recorded (fail-closed)", record
 
             frac_val = float(remaining_frac) if remaining_frac is not None else float(remaining_pct) / 100.0
-            if frac_val < self.codex_reserve_floor:
+            if frac_val <= self.codex_reserve_floor:
                 return (
                     False,
-                    f"Codex remaining quota ({frac_val*100:.1f}%) violates mandatory 15% reserve floor",
+                    f"Codex remaining quota ({frac_val*100:.1f}%) violates mandatory 15% reserve floor (must be strictly > 15%)",
                     record,
                 )
 

@@ -153,7 +153,7 @@ All tasks under `cloudflare-agent-git` (`agent-branches`, `antigravity-head`, an
 2. **Underlying Filesystem:** This path resides on `/dev/nvme0n1p3`, which currently has **62 GiB free (86% utilization)** and is **completely independent of `/dev/nvme1n1`**.
 3. **Environment Isolation:** All subagent invocations explicitly set:
    `TMPDIR=/home/alexey/git/cloudflare-agent-git/.local/scratch/<task>/`
-4. **Epistemic Boundary on Zero Growth:** Subagent scratch directories were measured at 4.0 KB, verifying that our tasks operate within their designated scratch trees. However, asserting a 100% universal guarantee of zero writes across all background threads would require host-wide syscall interception; we state this as verified containment policy rather than an unproven absolute claim.
+4. **Configured Policy vs Observed Telemetry:** Subagent invocations configure `TMPDIR` inside their designated repository scratch tree. A 4.0 KB directory entry in a point-in-time sample reflects local scratch creation, not an exhaustive per-worker trace of every background thread or C library temporary write. Zero /tmp growth is an enforced configuration policy for our tasks on this host, not an empirically proven host-wide absence of writes across uninstrumented workers.
 
 ### 6.2 Preventive Rules for Future Subagents
 - Every worker launched MUST export `TMPDIR=$PWD/.local/scratch/<worker-tag>` before running sub-processes.

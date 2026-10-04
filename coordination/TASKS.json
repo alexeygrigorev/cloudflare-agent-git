@@ -2533,11 +2533,11 @@
         "082dae3f-ba47-4fd2-8dc6-74f78e78c3eb"
       ],
       "status": "done",
-      "updated_at": "2026-10-04T22:00:00.000000+00:00",
+      "updated_at": "2026-10-04T22:05:00.000000+00:00",
       "evidence_paths": [
         "research/antigravity/reviews/REV-QL-FIRST-ACTION-BYPASS.md"
       ],
-      "acceptance": "ACCEPTED (INDEPENDENT REVIEW COMPLETE). Delivered research/antigravity/reviews/REV-QL-FIRST-ACTION-BYPASS.md. Verdict: REQUEST CHANGES (CRITICAL DEFECT CONFIRMED). Offline negative reproduction proved that adding an arbitrary marker/dummy key bypasses laundered copy rejection in launcher/launch.py validate_first_action. Codex C2069 review steering incorporated: schema whitelist forgery demonstrated (cases 6-9 in scratch) and schema whitelist formally withdrawn as execution proof. Strict boundary established between static artifact identity / integration smoke on disk and authentic child tool event provenance under trusted lifecycle (captured directly from process stdout/exit code or authenticated daemon hooks). Canonical repo untouched.",
+      "acceptance": "ACCEPTED (INDEPENDENT REVIEW COMPLETE). Delivered research/antigravity/reviews/REV-QL-FIRST-ACTION-BYPASS.md. Verdict: REQUEST CHANGES (CRITICAL DEFECT CONFIRMED). Offline negative reproduction proved that adding an arbitrary marker/dummy key bypasses laundered copy rejection in launcher/launch.py validate_first_action. Codex C2069/C2071 review steering incorporated: schema whitelist forgery demonstrated (cases 6-9 in scratch) and schema whitelist formally withdrawn as execution proof. Cryptographic over-engineering rejected. Operational phase labels delineated: first-action artifact smoke observed (static file check) vs child tool execution captured (direct supervisor process group capture). Canonical repo untouched.",
       "assignment_ack": "ACK: owned by antigravity-head under Codex C2067/C2068/C2069. Delegated to ql-reviewer (082dae3f-ba47-4fd2-8dc6-74f78e78c3eb).",
       "next_action": "Review delivered to quota-launcher-head for acceptance and lifecycle integration.",
       "blocked_on": [],
@@ -2552,11 +2552,11 @@
         "935148e3-fd25-4ddf-a916-1a88c087501a"
       ],
       "status": "done",
-      "updated_at": "2026-10-04T22:00:00.000000+00:00",
+      "updated_at": "2026-10-04T22:05:00.000000+00:00",
       "evidence_paths": [
         "research/antigravity/reviews/REV-BUS-EXACTPIN-BB8DCAD.md"
       ],
-      "acceptance": "ACCEPTED (INDEPENDENT REVIEW COMPLETE). Delivered research/antigravity/reviews/REV-BUS-EXACTPIN-BB8DCAD.md. Verdict: ACCEPT. Target workspace /home/alexey/git/agent-coordination verified at commit bb8dcad. 24/24 core unit tests PASS (1.21s), 7/7 adapter tests PASS (0.04s). 4/4 negative mutants killed in isolated scratch testbed (device registry allowlist bypass, cursor payload conflict, guards busy pane bypass, transport state conflation). Core modules hashed. Epistemic boundary: local workspace clone review confirms copy parity, not public remote pin acceptance. Target workspace kept strictly read-only.",
+      "acceptance": "ACCEPTED (INDEPENDENT REVIEW COMPLETE). Delivered research/antigravity/reviews/REV-BUS-EXACTPIN-BB8DCAD.md. Verdict: REQUEST CHANGES / BOUNDED AUDIT OF LEGACY PIN. Target workspace /home/alexey/git/agent-coordination audited at commit bb8dcad. 24/24 core unit tests PASS (1.21s), 7/7 adapter tests PASS (0.04s). C2071/C2072 durability flaws confirmed in scratch testbed (test_durability_flaws.py): short-write vulnerability (single os.write without loop), missing parent directory fsync (directory entry lost on hard crash), and non-transactional credential tearing (two separate disk writes for identities and tokens). Noted that bb8dcad is on legacy core without successor 207a93f9 durability fixes, and public agent-bus HEAD remains f3295f99. 3 pending unverified items cataloged: genuine two-host network transport, Windows execution on actual Windows host, real-model dogfooding. Target workspace kept strictly read-only.",
       "assignment_ack": "ACK: owned by antigravity-head under Codex C2068/C2069/C2070. Delegated to bus-reviewer (935148e3-fd25-4ddf-a916-1a88c087501a).",
       "next_action": "Review delivered to agent-coordination-head; bridge implementation in progress.",
       "blocked_on": [],

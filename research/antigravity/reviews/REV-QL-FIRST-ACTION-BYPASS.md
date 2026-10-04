@@ -1,29 +1,34 @@
-# REV-QL-FIRST-ACTION-BYPASS — Independent Audit & Negative Reproduction: Arbitrary Marker Bypass and the Limits of Static Schema Whitelisting (C2067 / C2069)
+# REV-QL-FIRST-ACTION-BYPASS — Independent Audit & Negative Reproduction: Arbitrary Marker Bypass and Operational Evidence Delineation (C2067 / C2069 / C2071)
 
 - **Review Target:** `/home/alexey/git/agent-quota-launcher` (STRICTLY READ-ONLY AUDIT)
 - **Reviewer:** Independent Quota Launcher Reviewer (tag: `ql-marker-bypass-reviewer`)
-- **Dispatched By:** `antigravity-head` (`46fdb644`), under Codex Principal directives C2067 & C2069 and User 26/32 directives
-- **As-of:** 2026-10-04 23:59 CEST (21:59 UTC)
+- **Dispatched By:** `antigravity-head` (`46fdb644`), under Codex Principal directives C2067, C2069, C2071 and User 26/32 directives
+- **As-of:** 2026-10-05 00:05 CEST (2026-10-04 22:05 UTC)
 - **Review Workspace:** `/home/alexey/git/cloudflare-agent-git`
 - **Output Deliverable:** [`research/antigravity/reviews/REV-QL-FIRST-ACTION-BYPASS.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-QL-FIRST-ACTION-BYPASS.md)
 - **Scratch Workspace:** `/home/alexey/git/cloudflare-agent-git/.local/scratch/ql-marker-bypass-review/` (mode `0700`, measured disk: 56 KB $\le$ 512 MB, `TMPDIR` strictly within scratch root)
 - **Target Commit:** [`4c2bfec794fe2f3f7ba2b725871888c468800313`](file:///home/alexey/git/agent-quota-launcher) on branch `main`
 - **Target Working Tree State:** Clean on `main`; pre-existing untracked files preserved untouched
 - **Integration Ownership:** Strictly reserved to `agent-quota-launcher-head`; **zero competitor writes or edits** made to `/home/alexey/git/agent-quota-launcher`
-- **Verdict:** **CRITICAL DEFECT CONFIRMED (ARBITRARY MARKER BYPASS); SCHEMA WHITELISTING REJECTED (C2069); TRUSTED LIFECYCLE CAPTURE MANDATORY**
+- **Verdict:** **CRITICAL DEFECT CONFIRMED (ARBITRARY MARKER BYPASS); REJECT SCHEMA WHITELISTING & CRYPTOGRAPHIC OVER-ENGINEERING; DELINEATE SMOKE VS SUPERVISOR EXECUTION LABELS**
 
 ---
 
 ## 1. Executive Summary & Epistemic Verdict
 
-Under Codex Principal directives C2067 and C2069, User messages 26/32, and the Autonomous Work Management contract, this independent review provides an updated, rigorous audit and offline negative reproduction of first-action validation in `agent-quota-launcher` (`launcher/launch.py`, lines 119–131).
+Under Codex Principal directives C2067, C2069, and C2071, User messages 26/32, and the Autonomous Work Management contract, this independent review provides a rigorous, grounded audit and offline negative reproduction of first-action validation in `agent-quota-launcher` (`launcher/launch.py`, lines 119–131).
 
-### Key Findings & C2069 Steering Integration:
+### Key Findings & C2071 Steering Calibration:
+
 1. **Arbitrary Marker / Synthetic Key Bypass Confirmed:** Commit `4c2bfec` relies on negative key-subset checks (`added <= {"timestamp"}`). If a supervisor wrapper injects **any single arbitrary key** (e.g. `{"marker": "wrapper_marker"}` or `{"dummy": 123}`), the anti-laundering checks are completely bypassed. The file is validated as genuine, and the launcher logs `reason="genuine first action validated"` without any child tool execution having occurred.
-2. **Schema Whitelisting Rejected as a Pseudo-Fix (C2069):** The previously hypothesized remediation—requiring native-looking keys such as `{"worker_pid", "reported_state"}`—is **formally withdrawn and rejected**. An adversary or wrapper with write capability to the workspace filesystem can trivially fabricate native-looking fields (e.g. `{"worker_pid": 99999}`, `{"reported_state": "idle"}`) or supply empty/null/wrong-typed values that satisfy simple key-presence checks.
-3. **The Architectural Boundary (Identity Smoke vs. Execution Provenance):**
-   - **Static File Inspection = Integration Smoke Only:** Inspecting `.local/first-action-<id>.json` on disk merely verifies that an artifact matches session identity namespace (`id`, `tag`, `workspace`). A static file in a world-writable directory can **never** attest to authentic child tool execution.
-   - **Authentic Execution Provenance = Trusted Lifecycle Capture:** Genuine child execution attestation requires out-of-band lifecycle capture: supervisor process-group stdout/pipe streaming or authenticated daemon lifecycle hooks (`aplexer status` or signed daemon audit logs), completely separated from unauthenticated workspace disk files.
+2. **Schema Whitelisting Rejected as a Pseudo-Fix (C2069):** Attempting to remediate this by requiring static native-looking keys (`worker_pid`, `reported_state`, etc.) in the file on disk is fundamentally ineffective. In a same-user host environment, any wrapper with write access to the workspace can trivially synthesize native-looking keys (e.g. `{"worker_pid": 99999}`, `{"reported_state": "idle"}`) or provide null/wrong-typed values that satisfy key-presence checks.
+3. **Operational Reality vs. Cryptographic Over-Engineering (C2071):**
+   - **No Cryptographic Over-Engineering:** Complex digital signatures, signed logs, or treating same-user processes as adversarial cryptographic tenants is unnecessary, out of scope, and an over-engineered distraction.
+   - **Daemon Status is Liveness Only:** Querying `aplexer status` proves daemon and containment liveness, but does **not** prove that a specific child tool action took place.
+   - **Static Disk File = Integration Smoke Only:** Inspecting `.local/first-action-<id>.json` on disk merely confirms that a file matching the session namespace exists and conforms to basic syntax. It cannot attest to child tool execution.
+4. **Honest Operational Phase Delineation:**
+   - **`"first-action artifact smoke observed"`:** Accurately labels the static filesystem check (`validate_first_action`). It affirms that an artifact matching `id`, `tag`, and `workspace` was written in the expected location.
+   - **`"child tool execution captured"`:** Accurately labels true operational execution evidence. This requires direct supervisor/adapter process group capture: the supervisor executing the child process group directly captures stdout/stderr, command argv, and process exit codes.
 
 ---
 
@@ -64,7 +69,7 @@ All audit procedures and negative testbed executions complied strictly with the 
 ```
 
 ### 3.2 The Logic Flaw
-Both laundering branches require:
+Both anti-laundering branches require:
 $$\text{added} \subseteq \{\text{"timestamp"}\}$$
 
 If an external wrapper writes a file that copies `start_json`, provides a valid ISO timestamp, and adds an arbitrary marker:
@@ -87,7 +92,7 @@ Evaluation:
 - `set(data) - set(start_json)` is `{"marker", "timestamp"}`.
 - `{"marker", "timestamp"} <= {"timestamp"}` is **`False`**.
 - Neither Branch 1 nor Branch 2 triggers.
-- Identity checks on lines 132–140 (`id`, `tag`, `workspace`) match verbatim.
+- Identity checks on lines 132–140 (`id`, `tag`, `workspace`, `parent_session`) match verbatim.
 - Time evidence on line 141 evaluates `timestamp="2026-10-04T12:29:00Z"`, which is within the valid launch window and timezone-aware.
 - `validate_first_action` returns **`True`**.
 - The launcher transitions the task state to `running` with reason `"genuine first action validated"`.
@@ -96,7 +101,7 @@ Evaluation:
 
 ## 4. Offline Negative Reproduction in Scratch
 
-Two reproduction scripts were executed in the isolated scratch workspace (`.local/scratch/ql-marker-bypass-review/`).
+Two reproduction scripts were executed in the isolated scratch workspace ([`.local/scratch/ql-marker-bypass-review/`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/ql-marker-bypass-review/)).
 
 ### 4.1 Script 1: Proving the Marker Bypass (`reproduce_bypass.py`)
 
@@ -132,9 +137,9 @@ despite ZERO child tool executions and purely wrapper-synthesized marker data!
 
 ---
 
-### 4.2 Script 2: Proving the Fallacy of Schema Whitelisting (`reproduce_whitelist_forgery.py`)
+### 4.2 Script 2: Proving the Inefficacy of Schema Whitelisting (`reproduce_whitelist_forgery.py`)
 
-Per Codex Principal directive C2069, we implemented an offline testbed to evaluate whether requiring specific "native-looking" keys (`worker_pid`, `reported_state`, `socket_path`, etc.) provides an effective execution gate.
+Per Codex Principal directive C2069, we evaluated whether requiring static "native-looking" keys (`worker_pid`, `reported_state`, etc.) in the file on disk could serve as an execution proof.
 
 Executing `reproduce_whitelist_forgery.py`:
 
@@ -156,82 +161,86 @@ Payload: {..., "socket_path": 12345}
 Passed Whitelist? True (FORGERY SUCCEEDS: Wrong type satisfies key presence)
 ```
 
-**Key Takeaway:** Any schema whitelist checking static keys in a file on disk is just as easily bypassed as the negative subset check. A wrapper can forge `{"worker_pid": 99999}` or `{"reported_state": "working"}` with the exact same ease as `{"marker": "wrapper_marker"}`.
+**Epistemic Finding:** Static key presence in a file on disk cannot prove execution. A wrapper with write capability to the workspace directory can write any JSON keys it desires.
 
 ---
 
-## 5. Architectural & Epistemic Boundary Analysis
+## 5. Architectural & Operational Evidence Delineation (C2071)
 
-### 5.1 The Fundamental Flaw: Filesystem-Based Provenance
+### 5.1 Pragmatic Host Reality vs. Cryptographic Over-Engineering
 
-Why do both key-subset filtering and schema whitelisting fail?
+In an agent operating model on a shared Linux host:
+- Agents, launchers, and wrappers run under the same user identity (`alexey`).
+- Files created in workspace directories (`cwd/.local/`) are subject to ordinary filesystem writes.
+- Demanding public-key signatures, kernel attestation, or cryptographic proofs for internal file drops is an over-engineered antipattern that misunderstands the threat model.
+- Furthermore, daemon status (`aplexer status`) queries session liveness and cgroup containment; it demonstrates that the session is alive, but does **not** prove that a child tool action occurred.
 
-Because the candidate first-action artifact is a file located at:
-$$\text{Path: } \quad \text{cwd} / \text{.local} / \text{first-action-}\{\text{task\_id}\}\text{.json}$$
+### 5.2 The Two Operational Evidence Layers
 
-In this threat and operating model:
-1. The supervisor/wrapper process has write access to `cwd/.local/`.
-2. The supervisor/wrapper process knows all identity fields (`id`, `tag`, `workspace`, `parent_session`).
-3. The supervisor/wrapper process can write **any arbitrary JSON payload** at any point in time.
-
-Attempting to infer **who wrote the file** or **whether a child tool executed** by inspecting the keys inside that file is fundamentally an epistemic impossibility. The file format contains no cryptographic signature, no unforgeable kernel provenance token, and no authenticated binding to the child container.
-
-### 5.2 The Two Disjoint Architectural Layers
-
-Codex Principal C2069 establishes the clear boundary between two separate concepts that were previously conflated:
+Under C2071, we clearly delineate the two distinct operational layers:
 
 ```mermaid
 flowchart TD
-    subgraph Layer1["Layer 1: Artifact Identity & Integration Smoke (Static Disk)"]
+    subgraph Layer1["Layer 1: Filesystem Smoke Verification"]
         F[".local/first-action-<id>.json on disk"]
-        F --> S1["Valid JSON syntax check"]
-        F --> S2["Identity match: id, tag, workspace"]
-        F --> S3["Time sanity: not stale, not far future"]
-        S1 & S2 & S3 --> R1["Conclusion: File conforms to task namespace"]
-        R1 -.-> NO["CANNOT attest that child tool executed!"]
+        F --> S1["Valid JSON syntax"]
+        F --> S2["Namespace match: id, tag, workspace"]
+        F --> S3["Time window sanity"]
+        S1 & S2 & S3 --> L1["Operational Label: 'first-action artifact smoke observed'"]
+        L1 -.-> N1["Proves namespace conformity only; NOT child tool execution!"]
     end
 
-    subgraph Layer2["Layer 2: True Tool Event Provenance (Trusted Lifecycle Capture)"]
-        P["Child Process Group / Daemon Boundary"]
-        P --> T1["Direct stdout/stderr pipe streaming captured by supervisor"]
-        P --> T2["Authenticated aplexer daemon lifecycle hooks / socket audit"]
-        P --> T3["Confirmed process tree creation / cgroup accounting"]
-        T1 & T2 & T3 --> R2["Conclusion: Child tool genuinely executed"]
+    subgraph Layer2["Layer 2: Direct Supervisor Process Telemetry"]
+        P["Supervisor Process Group / Child Execution"]
+        P --> E1["Direct stdout / stderr stream capture"]
+        P --> E2["Command argv invocation binding"]
+        P --> E3["Monitored process exit code"]
+        E1 & E2 & E3 --> L2["Operational Label: 'child tool execution captured'"]
+        L2 -.-> N2["Proves genuine child process execution!"]
     end
 ```
 
-#### Layer 1: Artifact Identity / Integration Smoke (What `validate_first_action` actually does)
-- Verifies that an artifact exists on disk.
-- Verifies that its contents match the expected task namespace (`id`, `tag`, `workspace`).
-- Verifies that its timestamp is sane.
-- *Epistemic Limit:* It is an **integration smoke check**. It confirms that a file exists and has the expected shape. It must **never** be logged or claimed as proof of "genuine child tool execution".
+#### Layer 1: Artifact Identity & Integration Smoke (`first-action artifact smoke observed`)
+- **Mechanism:** Inspects `.local/first-action-<id>.json` on disk.
+- **What it verifies:**
+  1. File exists and contains valid JSON.
+  2. Identity fields (`id`, `tag`, `workspace`) match the launched session namespace.
+  3. Timestamp is timezone-aware and bounded within the launch window.
+- **Truthful Epistemic Claim:** **Smoke observation only.** It verifies that the task drop was created in the expected location. It does **not** prove tool execution.
 
-#### Layer 2: Actual Captured Child Tool Event Provenance (What is required for execution proof)
-- True execution proof can only be obtained through a trusted capture channel:
-  1. **Supervisor Process Group Capture:** The supervisor process invokes the adapter/agent, maintaining direct control over stdout/stderr file descriptors, and reads the child's tool output directly from the pipe—without writing to or reading from an unauthenticated shared filesystem file.
-  2. **Authenticated Daemon Event Stream:** The session manager (`aplexer`) records tool execution directly via its control socket (`control.sock`) and exposes an authenticated event log or lifecycle status (`aplexer status <tag> --json`) confirming that the child executed a command within its cgroup containment.
+#### Layer 2: Direct Process Supervisor Telemetry (`child tool execution captured`)
+- **Mechanism:** Direct execution capture by the process supervisor or adapter invoking the child process group.
+- **What it verifies:**
+  1. The supervisor invokes the child process group with explicit arguments (`command argv`).
+  2. The supervisor directly captures `stdout` and `stderr` streams via process pipes (without reading from an unauthenticated file on disk).
+  3. The supervisor captures the process return code upon tool termination.
+- **Truthful Epistemic Claim:** **Genuine child tool execution captured.** This provides direct operational evidence of child execution.
 
 ---
 
-## 6. Remediation & Operational Guidance
+## 6. Practical Remediation & Phase Labeling
 
-### 6.1 Immediate Corrections for `agent-quota-launcher`
+### 6.1 Delineate Operational Labels in `agent-quota-launcher`
 
-1. **Withdraw Schema Whitelist Proposal:** Do not attempt to fix `validate_first_action` by adding `NATIVE_RUNTIME_PROVENANCE_KEYS` or checking for `worker_pid` presence in the JSON file. It is trivially forgeable.
-2. **Re-label the First-Action Transition Reason:**
-   In `launcher/launch.py` (line 363), change:
+1. **Re-label the First-Action Transition Reason:**
+   In `launcher/launch.py` (line 363), update the transition reason to reflect honest operational reality:
    ```python
-   # BEFORE (Misleading epistemic claim):
+   # CURRENT (False epistemic claim):
    store.transition_task(task_id, "running", ("starting",),
                          reason="genuine first action validated")
 
-   # AFTER (Truthful epistemic description):
+   # RECOMMENDED (Honest operational evidence):
    store.transition_task(task_id, "running", ("starting",),
                          reason="first-action artifact smoke observed")
    ```
-3. **Decouple Task State Progression from Disk File Magic:**
-   - The launcher should rely on process liveness (`aplexer status` or process group exit codes) rather than treating a file on disk as an unforgeable attestation of agent progress.
-   - If genuine tool attestation is required before declaring a task `running`, the launcher must capture stdout directly from the child process or query the `aplexer` session history binary (`history_path`), which is managed exclusively by the daemon in `/run/user/1000/`.
+
+2. **Differentiate Smoke vs. Tool Execution in Task Reporting:**
+   In reporting and state transitions:
+   - Mark task state as `running` based on **integration smoke observed** (artifact on disk) combined with **native liveness confirmed** (`aplexer status` returns `alive`).
+   - Reserve the label **`"child tool execution captured"`** for when the adapter or supervisor directly streams and logs tool execution stdout.
+
+3. **Retain Simple Anti-Laundering as Basic Smoke Guard:**
+   Keep the existing checks in `validate_first_action` as basic hygiene against accidental self-echo, but document explicitly in `README.md` and `WORKLOG.md` that filesystem artifact validation is an integration smoke test, not an unforgeable tool execution attestation.
 
 ---
 
@@ -249,6 +258,6 @@ flowchart TD
 
 ## 8. Final Conclusion
 
-Commit `4c2bfec`'s anti-laundering check (`added <= {"timestamp"}`) is vulnerable to an arbitrary marker bypass. However, the solution is **not** to introduce a key whitelist (`worker_pid`, `reported_state`), because any static JSON file on disk can be trivially forged by the wrapper.
-
-The true resolution is architectural: static JSON inspection must be recognized as an **integration smoke check**, while authentic tool execution provenance must be captured out-of-band via process pipes or authenticated daemon lifecycle hooks.
+The arbitrary marker bypass demonstrates that static JSON filtering on disk cannot differentiate an authentic agent action from a wrapper drop. Rather than pursuing cryptographic over-engineering or forgeable schema whitelists, the practical engineering solution is to adopt **honest operational phase labeling**:
+1. Treat filesystem artifact validation as **`"first-action artifact smoke observed"`**.
+2. Reserve **`"child tool execution captured"`** for direct supervisor process telemetry.

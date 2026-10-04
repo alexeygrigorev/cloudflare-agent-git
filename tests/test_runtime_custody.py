@@ -263,6 +263,22 @@ class TestRuntimeCustody(unittest.TestCase):
             mgr.acquire_reservation(provider="codex", task_id="task-codex-fail")
         self.assertIn("15% reserve floor", str(cm.exception))
 
+        # Case B2: Codex at exactly 15.0% remaining -> Fails closed (must be strictly > 15%)
+        telemetry_exact = {
+            "timestamp": time.time(),
+            "providers": {
+                "codex": {
+                    "remaining_fraction": 0.15,
+                    "remaining_percent": 15.0,
+                    "status": "warning",
+                }
+            }
+        }
+        self.quota_file.write_text(json.dumps(telemetry_exact), encoding="utf-8")
+        with self.assertRaises(ReserveFloorViolationError) as cm:
+            mgr.acquire_reservation(provider="codex", task_id="task-codex-exact15")
+        self.assertIn("15% reserve floor", str(cm.exception))
+
         # 3. Case C: Codex missing remaining percentage record -> Fails closed
         telemetry_unknown = {
             "timestamp": time.time(),
