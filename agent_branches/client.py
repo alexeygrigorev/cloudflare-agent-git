@@ -672,3 +672,11 @@ class AgentBranchesClient:
         self, task_id: str, warning_id: str, action: str = "rebased_locally"
     ) -> Dict[str, Any]:
         return self.ack_warning(warning_id=warning_id, task_id=task_id, action=action)
+
+    def inspect_token_metadata(self, token: str) -> Dict[str, Any]:
+        """Inspect basic token format without exposing secret bytes."""
+        if not token or not isinstance(token, str):
+            raise ValueError("Token must be a non-empty string")
+        parts = token.replace("_", "-").split("-")
+        return {"valid_prefix": token.startswith("tok_") or token.startswith("task-") or token.startswith("sidecar-"), "segments": len(parts), "length": len(token)}
+

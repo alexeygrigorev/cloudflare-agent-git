@@ -1856,8 +1856,17 @@ class TestAgentBranchesClient(unittest.TestCase):
             srv.shutdown()
             srv.server_close()
 
+    def test_21_inspect_token_metadata(self):
+        client = AgentBranchesClient()
+        meta = client.inspect_token_metadata("tok_alpha_12345")
+        self.assertTrue(meta["valid_prefix"])
+        self.assertEqual(meta["segments"], 3)
+        with self.assertRaises(ValueError):
+            client.inspect_token_metadata("")
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 
