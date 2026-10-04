@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T04:25:00.000000+00:00",
+  "updated_at": "2026-10-04T05:21:00.000000+02:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -35,6 +35,84 @@
       "assignment_ack": "Integrated on proto/integration-auth-matrix at commit db4f6a8; report at 59f575d; independent review by auth-matrix-reviewer at 00829a4 (ACCEPT).",
       "model": "gemini-3.1-pro-high",
       "acceptance_status": "ACCEPTED (PASS) for integration commit db4f6a8. 177/177 tests green across unified auth matrix."
+    },
+    {
+      "id": "publication-credential-guard",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "publication-guard-builder",
+      "status": "running",
+      "updated_at": "2026-10-04T05:16:00.000000+02:00",
+      "blocked_on": [],
+      "next_action": "publication-guard-builder (69e600e5) implementing credential guard script (research/antigravity/tooling/publication_guard.py) and stdlib tests (tests/test_publication_guard.py); negative review to follow.",
+      "acceptance": "Detects full minted task bearers, credential-bearing URLs, and local secret literals without printing values; non-zero exit blocks publish; fail-closed on unreadable inputs.",
+      "evidence_paths": [
+        "research/antigravity/tooling/publication_guard.py",
+        "tests/test_publication_guard.py"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1601/C1603 directives. Executed by publication-guard-builder (69e600e5) in .local/scratch/publication-guard/."
+    },
+    {
+      "id": "private-lineage-audit",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "lineage-auditor",
+      "status": "running",
+      "updated_at": "2026-10-04T05:16:00.000000+02:00",
+      "blocked_on": [],
+      "next_action": "lineage-auditor (772bf420) inspecting scratch worktree lifecycles and git commit lineages targeting research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md; strictly zero contact with Z4abc active files.",
+      "acceptance": "Read-only audit tracing scratch worktrees, toolcall timestamps, and provenance across experimental iterations; zero raw secrets.",
+      "evidence_paths": [
+        "research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1598/C1601/C1603 directives. Executed by lineage-auditor (772bf420) in .local/scratch/private-lineage-audit/."
+    },
+    {
+      "id": "distribution-runbook-check",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "distribution-runbook-checker",
+      "status": "done",
+      "updated_at": "2026-10-04T05:15:08.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Delivered. Inventoried 8 concrete distribution gaps across pins acddfa7, eada0e4, db4f6a8; narrow packaging/runbook repair to be scheduled.",
+      "acceptance": "Read-only audit of current source pins for root CLI entrypoint, stdlib dependencies, local fallback runbook, and 5-10 min demo prerequisites.",
+      "evidence_paths": [
+        "research/antigravity/recovery/CHECK-DISTRIBUTION-RUNBOOK-PINS.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1595/C1604 directives. Executed by distribution-runbook-checker (93d164a5) in .local/scratch/distribution-runbook-check/."
+    },
+    {
+      "id": "a06-advisory-consumer-adoption",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "a06-advisory-consumer",
+      "status": "done",
+      "updated_at": "2026-10-04T05:11:00.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Delivered. Consumer verdict CONDITIONAL ADOPTION with 4 concrete preconditions; comparison contract independently audited by a06-comparison-reviewer (b91b8ed5) in REV-A06-COMPARISON-CONTRACT.md.",
+      "acceptance": "Matched ordinary Git worktree baseline comparison with same committed heads and check commands; unforced operational choice with disclosed friction and zero raw secrets.",
+      "evidence_paths": [
+        "research/antigravity/adoption/A06-ADVISORY-ADOPTION-DECISION.md",
+        "research/antigravity/reviews/REV-A06-COMPARISON-CONTRACT.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1592/C1595/C1600 directives. Executed by a06-advisory-consumer (75393f31) in .local/scratch/a06-advisory-adoption/."
+    },
+    {
+      "id": "warning-lifecycle-transition",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "warning-lifecycle-transitioner",
+      "status": "done",
+      "updated_at": "2026-10-04T05:03:09.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Delivered. Push of eada0e4 to sidecar Smart HTTP invalidated warn-1; dynamic radar check clean (22/22 pass); warning ACK recorded. Scoped review by ZCode 4abc accepted at e7dcd36.",
+      "acceptance": "Authentic warning transition with original actor identities; dynamic vs static ancestor tradeoff documented; C1590 token reuse gap truthfully disclosed.",
+      "evidence_paths": [
+        "research/antigravity/dogfood/WARNING-LIFECYCLE-TRANSITION-REPORT.md",
+        "research/antigravity/reviews/REV-WARNING-RESOLUTION-EADA0E4.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1579/C1588/C1590 directives. Executed by warning-lifecycle-transitioner (6467bcbd) in .local/scratch/concurrent-warning-transition/."
     },
     {
       "id": "zcodex-retry-design",
