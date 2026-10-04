@@ -1317,30 +1317,34 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
      - Report: [`research/antigravity/reviews/REV-SDK-CLIENT-B267DCE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SDK-CLIENT-B267DCE.md) (commit `a8f4378`).
      - Verdict: **ACCEPT**.
      - Verification: 17/17 tests PASS in 5.81s. `self.task_tokens` cache in `create_task()` provides seamless bearer auth forwarding. Mock L1 server enforces read auth ladder adhering to prototype `decideReadAuth`: owner/admin -> 200, narrowed runner read -> 401, foreign agent -> 403. Both targeted mutants M1 and M2 killed.
-  2. **Webhook HMAC Sender Authentication & Nonce Replay Gate (`98ce83d` on `proto/webhook-auth`):**
-     - Independent Reviewer: `webhook-auth-reviewer` (subagent `3d59755c`).
+  2. **Webhook HMAC Sender Authentication & Nonce Replay Gate (`98ce83d` & `1658d54` on `proto/webhook-auth`):**
+     - Independent Reviewer for `98ce83d`: `webhook-auth-reviewer` (subagent `3d59755c`).
      - Report: [`research/antigravity/reviews/REV-WEBHOOK-AUTH-98CE83D.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-WEBHOOK-AUTH-98CE83D.md) (commit `858503c`).
      - Verdict: **ACCEPT**.
      - Verification: HMAC signature cryptographically binds nonce: `${timestamp}.${nonce}.${rawBody}`. Missing nonce rejected with 401 prior to WebCrypto HMAC calculation. Replay of used nonce returns HTTP 409 Conflict. Nonce substitution attack verified failing HMAC with 401 Unauthorized. 155/155 tests green (48 Node, 16 sidecar, 91 Vitest).
+     - **C1506 Follow-up (commit `1658d54`):** Author `zcode-webhook-auth` (`bfa644c6`) landed `WEBHOOK_RETENTION_MS` (2x tolerance + 1s strict margin) and fakeclock regression tests (Node 49/49, sidecar 16/16, Vitest 91/91).
+     - **Independent Review:** `webhook-c1506-reviewer` (subagent `c1a32248`) launched to verify `1658d54`.
   3. **Fork Adoption Live Run Remediation (`0be6c3e` & `0468fb7` on `proto/ab-adoption`):**
      - Addressed Space Bunny `sb-reviewer-adoption` review (`REV-FORK-ADOPTION-FCD7985.md`).
      - Scratch cleanly migrated to `.local/scratch/zcode-fork-adoption/` (0700).
      - Verdict rescoped to **WORKFLOW TRANSPORT CONFIRMED** with full disclosure of CI runner self-attestation limits and partial-vector 409 stale-gate test case added.
-- **Active Research Gates Dispatched (C1507/C1508):**
+- **Active Research Gates & Reviews (C1507-C1511):**
   1. **`zcode-a14-gate` (`31436338`, zcodex, `glm-5.3-flash max`):**
-     - Task: Independent read-only verification of A14 fold-or-reopen gate (`TASKS` row `label-binding-residual-repair`).
+     - Task: Independent read-only verification of A05 label-binding re-review (`TASKS` row `label-binding-residual-repair`, commit `4937506`).
+     - Note per Codex Principal C1511: Conflation with A14 retracted. Task is strictly an A05 label-binding harness re-review evaluating exit code 2 and missing-case behavior.
      - Workspace: `/home/alexey/git/agent-branches-adopt`, declared review on `research/zcode/a14-gate-review/**`.
-     - Inspecting Space Bunny A14 evidence (`research/space-bunny/repro/`), commit `4937506`, exit codes, return code 2 / missing cases, and `REPLAY_GUARDS_OFF=1` behavior.
-     - Deliverable: `research/zcode/a14-gate-review/A14-FOLD-OR-REOPEN-REPORT.md`.
   2. **`zcode-shortlist-gate` (`5df4e39f`, zcodex, `glm-5.3-flash max`):**
      - Task: Independent evidence checker for same-version shortlist gates across the 20 candidate product approaches.
-     - Workspace: `/home/alexey/git/agent-branches-adopt`, declared review on `research/zcode/shortlist-gate/**`.
-     - Inspecting 6 required gates: non-overlap, practitioner pain URLs, concurrent-agent demo, permissive source, local run instructions, 5-10 min video plan. Strictly citing `UNKNOWN` for unverified criteria without inventing Claude consensus.
-     - Deliverable: `research/zcode/shortlist-gate/SHORTLIST-GATE-REPORT.md`.
+     - **Status:** **COMPLETED** (commit `e6a18a9`).
+     - **Report:** [`research/zcode/shortlist-gate/SHORTLIST-GATE-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/zcode/shortlist-gate/SHORTLIST-GATE-REPORT.md).
+     - **Findings:** 0/6 named candidates pass all six gates today; universal passes for MIT LICENSE and plausible 5-10min video plans; gate c (real concurrent-agent Workers/Artifacts demo) unmet across all candidates; exactly-6 approved consensus does NOT exist; slot 6 open; UNKNOWN cited strictly throughout.
+  3. **`zcode-sdk-adopt` (`3104eb21`, zcodex, `glm-5.3-flash max`):**
+     - Task: Address Codex Principal C1509 review finding on `CreateTaskResult` token normalization (extracting `token.plaintext` while retaining legacy string compatibility) and fork wire fields (`fork.remote`/`ref`) with realwire-shaped negative test. Actively executing in `/home/alexey/git/agent-branches-sdk-adoption`.
 - **Invariants Strictly Maintained:**
   - Public Cloudflare deploy remains **HELD**.
   - Claude principal remains **stopped**.
   - Root disk >50 GB (current: 64 GB); available RAM >10 GB (current: 31 GB).
   - Zero unmanaged `/tmp` growth; all scratch in `.local/scratch/`.
-  - Memory capped at 1500M per worker.
+  - Resource accounting: Memory limits governed by shared environment/process slice (actual cap method), not isolated individual 1500M cgroups.
+
 

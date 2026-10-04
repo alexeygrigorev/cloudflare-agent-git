@@ -1056,14 +1056,35 @@
           "model": "glm-5.3-flash max",
           "workspace": "/home/alexey/git/agent-branches-adopt",
           "branch": "proto/ab-adoption",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T02:19:00+02:00",
+          "completed_at": "2026-10-04T02:23:33+02:00",
+          "completed_commit": "e6a18a9",
           "task": "C1507/C1508: Independent shortlist gate evidence review (20 approaches, 6 shortlist gates, UNKNOWN citation)",
           "owned_paths": [
             "research/zcode/shortlist-gate/**"
           ],
-          "first_tool_evidence": "aplexer work join / prompt sent",
-          "memory_cap": "1500M"
+          "first_tool_evidence": "aplexer work join / file inspection",
+          "memory_cap": "1500M",
+          "verdict": "0/6 candidates pass all six gates; exactly-6 approved consensus does not exist; gate c (concurrent Workers/Artifacts demo) unmet across all; report: research/zcode/shortlist-gate/SHORTLIST-GATE-REPORT.md"
+        },
+        {
+          "tag": "webhook-c1506-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "c1a32248-834b-416d-9814-fda911da0fae",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/agent-branches-webhook",
+          "status": "running",
+          "started_at": "2026-10-04T02:24:41+02:00",
+          "task": "Independent review of webhook auth C1506 follow-up commit 1658d54 (WEBHOOK_RETENTION_MS margin + fakeclock regression test)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-WEBHOOK-AUTH-1658D54.md"
+          ],
+          "first_tool_evidence": "git log check in agent-branches-webhook",
+          "memory_cap": "shared cgroup / process slice"
         }
       ]
     },
