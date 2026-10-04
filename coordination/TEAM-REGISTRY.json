@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T10:00:00.000000+02:00",
+  "updated_at": "2026-10-04T10:52:00.000000+02:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -2420,6 +2420,25 @@
             "research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md"
           ],
           "first_tool_evidence": "subagent launched with native conversation ID 37dbcbdc-d51d-4484-8f4c-eab1a6d8659d; two-track evaluation setup in .local/scratch/unfamiliar-adopter/; verified 16/16 tests passing in both arms with exact tree match e09f8f748e; delivered REPORT-UNFAMILIAR-ADOPTER-T1.md (clean publication guard, exit 0).",
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
+        },
+        {
+          "tag": "uprt-concurrent-worker",
+          "role": "adopter",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "4cb81460-e27d-4579-92cc-660362b38842",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/uprt-concurrent-trial/",
+          "status": "running",
+          "started_at": "2026-10-04T10:51:13+02:00",
+          "task": "Unsteered Parallel Refactoring Trial (UPRT) Gate on concurrent maintenance tasks T2 (breaking create options refactor) and T3 (bulk import endpoint) on demo-target codebase: Arm A matched ordinary Git worktree baseline vs Arm B real Agent Branches Node+Sidecar stack with L3 Advisory Radar pairwise trial-merge.",
+          "owned_paths": [
+            "research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID 4cb81460-e27d-4579-92cc-660362b38842; inspecting demo-target BASE commit, reference patches t2.patch and t3.patch, verify-overlap.sh facts, daemon entrypoints, and radar engine.",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]

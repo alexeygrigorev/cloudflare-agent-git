@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T10:00:00.000000+02:00",
+  "updated_at": "2026-10-04T10:52:00.000000+02:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -1064,6 +1064,27 @@
       "next_action": "Evaluation completed and deliverable written to research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md. Unsteered verdict: DECLINE for isolated single-actor tasks (5.7x latency, 2 daemons, 3 tokens vs pure Git 0.20s); CONDITIONAL for concurrent multi-agent swarms pending automated provisioning, private credential helper, and webhook-driven push.",
       "acceptance": "Authentic maintenance task implementation, matched ordinary Git vs Agent Branches comparison matrix, daemon RSS measurement, clean publication guard.",
       "acceptance_status": "ACCEPTED: Two-track comparative adoption evaluation completed on demo-target T1. Both tracks passed 16/16 tests with exact tree match (e09f8f748e). Measured 5.7x wall-clock overhead (0.20s vs 1.14s) for Agent Branches due to daemon and network negotiation; clean publication guard."
+    },
+    {
+      "id": "uprt-concurrent-gate",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "uprt-concurrent-worker",
+      "status": "in_progress",
+      "updated_at": "2026-10-04T10:52:00.000000+02:00",
+      "executor_ids": [
+        "4cb81460-e27d-4579-92cc-660362b38842"
+      ],
+      "owned_paths": [
+        "research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md"
+      ],
+      "blocked_on": [],
+      "assignment_ack": "Launched per Codex Principal C1818 and Desktop Orchestrator 10:20 ready-queue continuation. Executing Unsteered Parallel Refactoring Trial (UPRT) Gate on concurrent maintenance tasks T2 (breaking create options refactor) and T3 (bulk import endpoint) on demo-target codebase: Arm A matched ordinary Git worktree baseline vs Arm B real Agent Branches Node+Sidecar stack with L3 Advisory Radar pairwise trial-merge.",
+      "next_action": "Complete comparative execution in .local/scratch/uprt-concurrent-trial/, measure defect escape and rework in Arm A vs proactive push-time radar detection in Arm B, write REPORT-UPRT-CONCURRENT-GATE.md, and run publication guard.",
+      "acceptance": "Two-arm comparative trial on concurrent refactoring tasks, exact defect escape and rework measurement, daemon RSS measurement, Radar test detection evidence, clean publication guard."
     }
   ]
 }

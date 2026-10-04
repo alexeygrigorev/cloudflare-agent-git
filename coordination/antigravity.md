@@ -3247,14 +3247,25 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
 - **Invariants Strictly Preserved:**
   - Human no-Rust-build hold enforced: zero cargo/rustc commands.
   - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
-  - Standup file `experiment/standups/2026-10-04.md` preserved untouched for Codex Principal single-writer integration.
-  - Resources healthy: Mem 31+ GiB available, disk 63 GiB free, scratch <= 2.0 MB, zero net `/tmp` growth.
+---
 
+## 104. Autonomous Ready-Queue Execution: Unsteered Parallel Refactoring Trial (UPRT) Gate on Concurrent Maintenance Tasks (T2 vs T3)
 
-
-
-
-
-
-
-
+- **Date:** 2026-10-04T10:52:00+02:00
+- **Context & Steering:** Autonomous ready-queue continuation per Desktop Orchestrator 10:20 interface note (`01a10603-d188` / `01a10606-89e1`: "owner keep useful readyqueue/independent continuation rather than readyforrootdirection").
+- **Objective:** Execute the **Unsteered Parallel Refactoring Trial (UPRT) Gate** formulated in [`research/antigravity/demand/foremerge-firsthand-verification.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/foremerge-firsthand-verification.md) Section 5 against genuine, non-synthetic maintenance backlog tasks on `demo-target/` (`/home/alexey/git/agent-branches-integration/demo-target/`).
+- **Concurrent Task Scope:**
+  - **Task T2 (Breaking Object-form Create with TTL Expiry):** Refactors `ShortlinkService.create(slug, url)` positional arguments to single options object `create({ slug, url, ttlSeconds })`. Removes positional call form outright (no backward compatibility shim). Adds optional `ttlSeconds` validation, stores `expiresAt`, expires in `resolve()`.
+  - **Task T3 (Bulk Import Endpoint):** Adds `POST /links/bulk` importing links sequentially through `ShortlinkService.create(item.slug, item.url)` using positional arguments from the shared base commit.
+- **Two Matched Experimental Arms:**
+  - **Arm A (Ordinary Git Worktrees Baseline):** Two isolated git worktrees implementing T2 and T3. Merged to `main` via `git merge --no-edit`. Evaluates whether textual Git merge detects the semantic contract breakage, measures merge-time defect escape, and measures manual developer rework time.
+  - **Arm B (Agent Branches Stack with L3 Advisory Radar):** Two tasks running on isolated forks via `AgentBranchesClient.create_task()` against live Coordinator and Sidecar daemons. Continuous L3 Radar evaluates pairwise in-memory `git merge-tree --write-tree` + budgeted test runner execution (`node --test`). Evaluates whether push-time advisory warning detects the semantic failure proactively *before* landing to canonical `main`.
+- **Executor & Containment:**
+  - Executor: `uprt-concurrent-worker` (`4cb81460-e27d-4579-92cc-660362b38842`, native harness subagent).
+  - Scratch: `.local/scratch/uprt-concurrent-trial/` (mode `0700`, $\le 512$ MB, `TMPDIR` in scratch, zero net `/tmp` growth).
+  - Deliverable: `research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md`.
+- **Invariants Strictly Preserved:**
+  - Strict human no-Rust-build hold enforced: zero cargo/rustc invocations.
+  - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
+  - Standup file `experiment/standups/2026-10-04.md` preserved untouched.
+  - Memory within cooperative 1500 MB pool, scratch $\le 512$ MB, clean publication guard.
