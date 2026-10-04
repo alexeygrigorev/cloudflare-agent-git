@@ -3452,11 +3452,22 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
    - Formulate clear adoption boundaries: Single-actor (STRICT DECLINE); Standard GitHub teams (DECLINE / REDUNDANT); High-velocity swarms (>10 agents continuously pushing) (CONDITIONAL ADOPTION).
    - Propose exactly one unsteered empirical falsification gate for real buyer adoption.
 
-### 4. Safety & Operating Invariants
-- Strictly zero cargo/rustc compiler invocations under human hold.
-- Strictly zero derived Gemini counter emission to `.local/metrics/usage-events.jsonl` (held).
-- Memory governed by cooperative 1500 MB pool; scratch $\le 512$ MB; zero net `/tmp` growth.
-- Independent reviewer scheduled upon deliverable completion before landing on canonical main.
+### 4. Deliverable Completion & Key Research Findings
+- **Deliverable Landed on Disk:** [`research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md) (587 lines, 51.0 KB, publication guard: PASS / exit 0).
+- **Core Empirical Findings:**
+  1. *The Identical Test Oracle Invariant:* Standard pre-merge CI (GitHub PR CI on `refs/pull/*/merge`, GitHub merge queues, GitLab merge trains, or local pre-merge worktree scripts) provides the exact identical test oracle as Agent Branches L3 Radar. In the UPRT trial, Arm A allowed contract breakage because it modeled a post-merge CI policy, not an intrinsic Git limitation.
+  2. *Genuine Differentiator:* Continuous push-time advisory warning vs PR/merge-queue boundary, and early branch pruning for long-horizon autonomous swarms.
+  3. *The Quadratic Compute Paradox:* Pairwise radar scales as $O(N^2)$ ($N(N-1)/2$ combinations). At 20 active branches, evaluating 190 pairs with test execution causes massive compute saturation unless filtered by syntactic file overlap diffs.
+  4. *Buyer Persona Friction:* DevOps leads reject custom Node daemons and bearer token exposure when GitHub Actions native merge queues already provide 100% trunk protection; swarm operators warn that in-turn push warnings on incomplete draft code cause agent distraction and context thrashing.
+  5. *Three-Tier Adoption Policy:* Single-actor (STRICTLY DECLINE, 5.7x slower); Standard GitHub teams (DECLINE / REDUNDANT); High-velocity swarms ($>10$ agents) (CONDITIONAL ADOPTION).
+  6. *Empirical Falsification Gate (SBET):* Defined Swarm Branch-Pruning Efficiency Trial with mathematical thresholds: $\frac{C_{\text{token}}(\text{Arm B})}{C_{\text{token}}(\text{Arm A})} \ge 0.90$ (fails if token savings $<10\%$), $T_{\text{wall}}$ increase, $E_{\text{compute}} > 3.0\times$, or $N_{\text{thrash}} > 0.20\times N_{\text{turns}}$.
+
+### 5. Independent Review Allocation
+- **Task Registered:** `incumbent-premerge-review` in `coordination/TASKS.json`.
+- **Reviewer Subagent Launched:** `incumbent-premerge-reviewer` (`fb862142-9a0f-4420-a8ae-d2b4777a1b3d`) in `coordination/TEAM-REGISTRY.json`.
+- **Target Deliverable:** [`research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-INCUMBENT-PREMERGE-AND-BUYER-WORKFLOW.md).
+- **Scratch Workspace:** `.local/scratch/incumbent-premerge-review/` (mode 0700, strictly $\le 512$ MB, zero net `/tmp` growth).
+- **Invariants Maintained:** Strictly zero cargo/rustc compiler invocations under human hold; zero derived Gemini counter emission; cooperative 1500 MB memory slice.
 
 
 
