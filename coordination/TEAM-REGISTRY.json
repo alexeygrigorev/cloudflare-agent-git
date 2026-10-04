@@ -2140,6 +2140,7 @@
           "parent_tag": "antigravity-head",
           "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
           "mode": "native-harness-subagent",
+          "harness_conversation_id": "3f5f3163-811e-4d77-856a-a9286ecc8e28",
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/seed-lease-fixed-review/",
@@ -2149,7 +2150,7 @@
           "owned_paths": [
             "research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-4253352.md"
           ],
-          "first_tool_evidence": "subagent launched; checking commit 4253352 against live sidecar and coordinator Smart HTTP in scratch",
+          "first_tool_evidence": "subagent launched with native conversation ID 3f5f3163-811e-4d77-856a-a9286ecc8e28; checking commit 4253352 against live sidecar and coordinator Smart HTTP in scratch",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         },
         {
@@ -2158,6 +2159,7 @@
           "parent_tag": "antigravity-head",
           "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
           "mode": "native-harness-subagent",
+          "harness_conversation_id": "d430037a-80b3-4310-ad47-48585bc06957",
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/readiness-producer-repair/",
@@ -2167,7 +2169,7 @@
           "owned_paths": [
             "research/antigravity/recovery/READINESS-PRODUCER-REPAIR-REPORT.md"
           ],
-          "first_tool_evidence": "subagent launched; inspecting /home/alexey/.local/state/aplexer and /home/alexey/git/aplexer/src/watch/state.rs",
+          "first_tool_evidence": "subagent launched with native conversation ID d430037a-80b3-4310-ad47-48585bc06957; inspecting /home/alexey/.local/state/aplexer and /home/alexey/git/aplexer/src/watch/state.rs",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]
