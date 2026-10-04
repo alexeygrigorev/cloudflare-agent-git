@@ -1,65 +1,48 @@
-# REV-HOURLY-PAYLOAD-F918 — Independent Audit: Preceding 24h Four-Product Analytical Payload & Reconciliation (C2120 / C2124 Machine-Readable Contract)
+# REV-HOURLY-PAYLOAD-F918 — Independent Audit: Final Preceding 24h Four-Product Analytical Payload & Reconciliation (C2128 Final Pin)
 
 - **Audit Target Payload:** [`.local/metrics/hourly_24h_payload.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_payload.json)
-  * Schema Version: `2.2.0-c2120`
+  * Schema Version: `2.2.1-c2124`
   * File Mode: `0600` (strictly restricted)
-  * File Size: 68,345 bytes
-  * SHA256 Checksum: `82994d5f47d87ab605a491ef1d63f3e76b66caf9c240ee787443bdccb2800251`
-- **Audit Target Report:** [`research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md) (SHA256: `83c88d3c...`)
+  * File Size: 68,436 bytes
+  * SHA256 Checksum: `0545d2bf7be91cee8764133ceb89415e1398700ac245a09372ee21347a2d2d69`
+- **Audit Target Report:** [`research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md)
+  * SHA256 Checksum: `a07cc908cc330ae4db63544836a0a29e1260715e8488c4ad00b1d92ce28adc87`
 - **Reviewer:** Independent Four-Product Analytical Payload Reviewer (tag: `hourly-payload-reviewer`)
-- **Directives:** Codex Principal C2116, C2120, C2124; User messages 26, 31, 32; Delivery Reset (2026-10-04)
+- **Directives:** Codex Principal C2116, C2120, C2124, C2128; User messages 26, 31, 32; Delivery Reset (2026-10-04)
 - **Measured Instant:** `2026-10-04T22:56:35Z` (measured instant; zero future projection)
 - **Audit Window Analyzed:** `[2026-10-03T22:56:35Z, 2026-10-04T22:56:35Z)` (24 half-open UTC hourly buckets)
 - **Normalized Calendar Window Analyzed:** `[2026-10-03T22:00:00Z, 2026-10-04T22:00:00Z)` (`2026-10-04 00:00` to `2026-10-05 00:00` CEST)
 - **Output Deliverable:** [`research/antigravity/reviews/REV-HOURLY-PAYLOAD-F918.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-HOURLY-PAYLOAD-F918.md)
 - **Scratch Workspace:** `.local/scratch/dashboard-consumer-review-cycle2/payload-audit/` (mode `0700`, measured disk: 876 KB $\le$ 512 MB, zero net `/tmp` growth)
 - **Compiler Hold:** Zero `cargo` / `rustc` invocations under human hold
-- **Verdict:** **BOUNDED ACCEPTANCE (SCHEMA 2.2.0-C2120 VERIFIED; ADVERSARIAL NEGATIVE AUDIT DOCUMENTS THREE MISATTRIBUTED CONTRIBUTOR RECEIPTS; SINGLE ACCEPTED FEATURE ab-real-consumer-work BOUNDED TO FIXTURE SCOPE)**
+- **Verdict:** **BOUNDED ACCEPTANCE (PINNED TO FINAL PAYLOAD 0545d2bf... & SCHEMA 2.2.1-C2124; C2124 ACTOR-ARTIFACT DISAGGREGATION CONFIRMED; SINGLE ACCEPTED FEATURE ab-real-consumer-work BOUNDED TO FIXTURE SCOPE)**
 
 ---
 
 ## 1. Executive Summary & Review Verdict
 
-Under Codex Principal directives C2116, C2120, and C2124, this independent audit conducts an adversarial, multi-dimensional verification of the updated preceding 24-hour analytical payload [`.local/metrics/hourly_24h_payload.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_payload.json) (SHA256: `82994d5f47d87ab605a491ef1d63f3e76b66caf9c240ee787443bdccb2800251`, schema `2.2.0-c2120`) and its accompanying report [`research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md).
+Under Codex Principal directives C2116, C2120, C2124, and C2128, this independent audit conducts the narrow, exact final delta review of the reconciled preceding 24-hour analytical payload [`.local/metrics/hourly_24h_payload.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_payload.json) (final SHA256: `0545d2bf7be91cee8764133ceb89415e1398700ac245a09372ee21347a2d2d69`, schema `2.2.1-c2124`) and its companion report [`research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md) (SHA256: `a07cc908cc330ae4db63544836a0a29e1260715e8488c4ad00b1d92ce28adc87`).
 
-### 1.1 Key Achievements of Schema 2.2.0-c2120
-The updated payload successfully resolves the prose-only caveats from earlier iterations by embedding mathematical and semantic disambiguation directly into the machine-readable schema:
-1. **Denominator & Concurrency Transparency:** Explicitly separates observed post-commissioning concurrency (`average_concurrent_presence_observed_window`) from the full competition window normalized contribution (`observed_presence_contribution_24h_lower_bound`). Emits `observed_window_hours` and `observed_window_coverage_ratio` per product.
-2. **Deprecation of Physical Resting Claims:** `resting_or_menu_hours` is set to `null` across all products, and `resting_hours_unmeasured_note` documents that physical CPU dormancy is unmeasured and not asserted (non-hook presence represents an uninstrumented telemetry boundary only).
-3. **Structured Contributor Receipt Mapping:** `artifact_backed_contributors` transitions from an unverified tag list to a structured dictionary mapping canonical actor tags to physical on-disk receipts (`receipt_type`, `receipt_path_or_sha`, `verified_outcome`).
-4. **Independent Feature Acceptance Gate:** Eliminates the self-declared `done + commit + tests` proxy. Strictly reports **1 accepted feature** for `agent-branches` (`ab-real-consumer-work`, verified by [`REV-AB-REAL-CONSUMER-WORK.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md)), segregates unreviewed candidate tasks into `candidates_pending_independent_review`, and correctly reports **0 accepted features** for all other products.
-5. **Exact Measured Instant:** All computations are synchronized at the exact measured instant `2026-10-04T22:56:35Z`.
+### 1.1 Resolution of C2124 Negative Audit Deficiencies
+The final payload release (`0545d2bf...`, schema `2.2.1-c2124`) successfully resolves the attribution defects identified in the C2124 adversarial negative audit:
+1. **Sample A Resolved (`ab-cli-batch-worker`):** Erroneous mapping to offline supervision tests has been removed. The actor is now correctly mapped to commit `71dade6` (`Agent Branches CLI push-batch subcommand and Two Generals batch failure receipts (REPORT-AB-CLI-BATCH.md)`).
+2. **Sample B Resolved (`sdk-batch-retry-reviewer`):** Erroneous link to `REV-SM-CANDIDATES-3569052.md` has been replaced with its authentic review deliverable: [`research/antigravity/reviews/REV-SDK-PUSH-BATCH-ROBUST-RETRY.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SDK-PUSH-BATCH-ROBUST-RETRY.md) verifying pure fail-closed mutating push on commit `f4f6c3e`.
+3. **Sample C Resolved (`self-org-architect` Session Disaggregation):** Generic role collapsing has been eliminated. The payload now explicitly tracks:
+   - `self-org-architect-7f5a`: [`research/antigravity/recovery/REPORT-LAUNCHER-BUS-INTEGRATION.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-LAUNCHER-BUS-INTEGRATION.md) (initial launcher bus bridge integration and CGroupV2 custody implementation, Tests 1–18).
+   - `self-org-architect-06ec`: [`research/antigravity/recovery/REPORT-LAUNCHER-BUS-BRIDGE-C2106.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-LAUNCHER-BUS-BRIDGE-C2106.md) (kernel custody hardening, descendant cgroup scan, and test suite expansion, 32/32 PASS).
 
-### 1.2 Adversarial Negative Audit Findings (Codex C2124 Samples)
-Despite significant structural improvements, an adversarial sampling of the `artifact_backed_contributors` dictionary reveals three concrete attribution defects:
-- **Defect Sample A (Task Cross-Wiring):** `ab-cli-batch-worker` is mapped to `tests/test_supervision_slo_hook.py` (a supervision harness task) instead of its actual CLI batch worker commit `71dade6` (`agent-branches/src/branches/cli.py` & `tests/test_cli_batch.py`).
-- **Defect Sample B (Review Target Mismatch):** `sdk-batch-retry-reviewer` is mapped to [`REV-SM-CANDIDATES-3569052.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SM-CANDIDATES-3569052.md), which is an audit of Supervision Classifier Task S and Multi-Workspace Collector Task M by `sm-candidate-reviewer` (`32b5c84d`), entirely unrelated to SDK Batch Retry.
-- **Defect Sample C (Successor Session Identity Collapse):** The generic role tag `self-org-architect` collapses two distinct sequential successor sessions: `7f5a2f14-092d-4676-b4f9-ff96bdc32a01` (earlier C2032/C2048/C2059 session) and `06ecf158-e51f-411c-89b8-083fc9fb3dd6` (distinct successor session under C2106/C2108 in `.local/scratch/self-org-arch/`).
+### 1.2 Single Feature Acceptance Gate (C2120 / C2124)
+- **`agent-branches`:** Exactly **1 accepted feature** (`ab-real-consumer-work`, verified by independent review [`research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md) with `ACCEPT`). Three unreviewed proxy candidates (`ab-safe-main-restore`, `delivery-intake-reconciliation`, `ab-standalone-private-source-project`) are strictly segregated under `candidates_pending_independent_review`.
+- **`agent-dashboard`, `quota-launcher`, `agent-coordination`, `unattributed`:** Exactly **0 accepted features** (candidates remain operational reviews, staged evaluations, or pending reviews).
 
 ### 1.3 Review Verdict
-**BOUNDED ACCEPTANCE.** The analytical payload `82994d5f...` is accepted for internal operational tracking under the documented bounds: (1) consumers must observe the lower-bound qualification for 24h contributions, (2) the three misattributed contributor receipts must be corrected in downstream reporting, and (3) feature `ab-real-consumer-work` remains bounded to single-actor fixture evaluation.
+**BOUNDED ACCEPTANCE (PINNED).** The analytical payload [`.local/metrics/hourly_24h_payload.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_payload.json) (SHA256: `0545d2bf7be91cee8764133ceb89415e1398700ac245a09372ee21347a2d2d69`) is certified as the authoritative, cryptographically verified preceding 24-hour fleet operational baseline.
 
 ---
 
-## 2. Machine-Readable Schema 2.2.0-c2120 Mathematical Verification
+## 2. Machine-Readable Schema 2.2.1-c2124 Mathematical Matrix
 
-### 2.1 Formal Metric Definitions
-For each product $p$ with total presence hours $T_p$, total verified working hours $W_p$, and post-commissioning observed window $H_p \le 24.0\text{ h}$:
-
-1. **Observed Window Coverage Ratio:**
-   $$\text{cov\_ratio}_p = \frac{H_p}{24.0}$$
-2. **Average Concurrent Presence (Observed Window):**
-   $$A_{\text{presence, obs}} = \frac{T_p}{H_p}$$
-3. **Observed Presence Contribution (24h Lower Bound):**
-   $$C_{\text{presence, 24h LB}} = \frac{T_p}{24.0}$$
-4. **Average Concurrent Working (Observed Window):**
-   $$A_{\text{working, obs}} = \frac{W_p}{H_p}$$
-5. **Observed Working Contribution (24h Lower Bound):**
-   $$C_{\text{working, 24h LB}} = \frac{W_p}{24.0}$$
-
-### 2.2 Mathematical Verification Matrix
-
-Direct recomputation across all fields in `.local/metrics/hourly_24h_payload.json` yields bit-for-bit mathematical parity:
+### 2.1 Concurrency & Utilization Recomputation
 
 | Product ID | Status | Observed Window ($H_p$) | Coverage Ratio | Total Presence ($T_p$) | Observed Window Avg Presence ($A_{\text{p, obs}}$) | 24h Presence Lower Bound ($C_{\text{p, 24h}}$) | Total Verified Work ($W_p$) | Observed Window Avg Work ($A_{\text{w, obs}}$) | 24h Work Lower Bound ($C_{\text{w, 24h}}$) | Hook-Absent Presence (h) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -69,103 +52,124 @@ Direct recomputation across all fields in `.local/metrics/hourly_24h_payload.jso
 | **`agent-coordination`** | Observed | 11.2628 h | 0.4693 | **5.8817** | **0.5222** | **0.2451** | **0.0000** | **0.0000** | **0.0000** | 5.8817 |
 | **`unattributed`** | Observed | 24.0000 h | 1.0000 | **371.3570** | **15.4732** | **15.4732** | **15.0199** | **0.6258** | **0.6258** | 356.3371 |
 
-### 2.3 Epistemic Distinction: Active Window vs. 24h Lower Bound
-- **`A_presence, obs`:** Accurately reflects operational scale during the commissioned period (e.g. `agent-branches` ran an effective average of **2.06 concurrent presence agents** while active).
-- **`C_presence, 24h LB`:** Reflects the normalized lower-bound contribution across the 24-hour competition day (**1.01 presence agent-hours/hour**). It is strictly labeled a **lower bound** because hours prior to commissioning are unobserved (`null`), not proven zero.
+### 2.2 Mathematical Parity Proofs:
+- **`coverage_ratio`:** $11.8028\text{ h} / 24.0\text{ h} = 0.491782$ (verified exact).
+- **`average_concurrent_presence_observed_window`:** $24.3543\text{ h} / 11.8028\text{ h} = 2.0634$ (verified exact).
+- **`observed_presence_contribution_24h_lower_bound`:** $24.3543\text{ h} / 24.0\text{ h} = 1.0148$ (verified exact).
+- **`average_concurrent_working_observed_window`:** $6.3644\text{ h} / 11.8028\text{ h} = 0.5392$ (verified exact).
+- **`observed_working_contribution_24h_lower_bound`:** $6.3644\text{ h} / 24.0\text{ h} = 0.2652$ (verified exact).
 
 ---
 
-## 3. Truthful Telemetry Disclosure & Deprecation of Physical Rest
+## 3. Truthful Telemetry Disclosure & Physical Rest Deprecation
 
-### 3.1 Pre-Commissioning Bucket Nullability (120 Buckets Audited)
-A programmatic scan of all 24 buckets across the 5 products confirmed strict adherence to truthful missing data:
-- **Buckets 00 through 11 (22:56:35Z to 10:56:35Z UTC):**
-  * `agent-branches`, `agent-dashboard`, `quota-launcher`, and `agent-coordination` all report `observation_status = "unobserved"`.
-  * `presence_hours = None` (`null` in JSON)
-  * `verified_working_hours = None` (`null` in JSON)
-  * Zero synthetic zeros or fake 100% ratios are present.
-- **Bucket 12 (10:56:35Z to 11:56:35Z UTC):**
-  * Reports `observation_status = "partial"`, capturing hours strictly from the commissioning timestamps (`11:08:25Z` / `11:40:49Z`) to `11:56:35Z`.
-- **Buckets 13 through 23 (11:56:35Z to 22:56:35Z UTC):**
-  * All four delivery products report `observation_status = "observed"`.
-- **`unattributed` (all 24 buckets):**
-  * Reports `observation_status = "observed"` continuously.
-
-### 3.2 Formal Deprecation of Physical Resting Claims
-Under Codex C2120:
-- The misleading legacy field `resting_or_menu_hours` has been set to `null` across all five products in `summary_by_product`.
-- The payload embeds the mandatory epistemic disclaimer:
-  ```json
-  "resting_hours_unmeasured_note": "Physical CPU dormancy is unmeasured and not asserted; non-hook presence represents uninstrumented telemetry boundary only."
-  ```
-- Non-hook presence is represented strictly by `hook_absent_presence_hours`, designating time where a process PID was resident but no affirmative tool execution hook was emitted.
+1. **Pre-Commissioning Bucket Nullability (120 Buckets):**
+   - Buckets 00 through 11 for all four delivery products strictly report `observation_status = "unobserved"`, `presence_hours = null`, and `verified_working_hours = null`.
+   - Bucket 12 is strictly `observation_status = "partial"`.
+   - Buckets 13 through 23 are `observation_status = "observed"`.
+   - Zero synthetic zeros or fake coverage values exist.
+2. **Deprecation of Physical Resting Claims:**
+   - `resting_or_menu_hours` is set to `null` across all products in `summary_by_product`.
+   - Embedded invariant note: `"resting_hours_unmeasured_note": "Physical CPU dormancy is unmeasured and not asserted; non-hook presence represents uninstrumented telemetry boundary only."`
+   - Non-hook presence is represented strictly as `hook_absent_presence_hours`.
 
 ---
 
-## 4. Adversarial Negative Audit of Contributor Receipt Ledger (Codex C2124)
+## 4. Final Disaggregated Contributor Receipt Ledger (C2124 / C2128)
 
-Under Codex directive C2124, an adversarial audit inspected the physical on-disk artifacts mapped in `artifact_backed_contributors` for `agent-branches`.
+Under Codex C2124 and C2128, the final payload maps every contributor to an authentic physical receipt on disk:
 
-### 4.1 Audit of C2124 Target Samples
-
+### 4.1 `agent-branches` Contributor Receipts
+```json
+{
+  "antigravity-head": {
+    "receipt_type": "commit",
+    "receipt_path_or_sha": "1a3dd96f46bbced53d2e51a3e8c26c06b27c348a",
+    "verified_outcome": "Platform consumer dogfooding implementation on demo-target service"
+  },
+  "consumer-dogfooding-reviewer": {
+    "receipt_type": "review_artifact",
+    "receipt_path_or_sha": "research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md",
+    "verified_outcome": "Full engineering acceptance of platform consumer dogfooding trial"
+  },
+  "muse-reviewer-auth-ui": {
+    "receipt_type": "review_artifact",
+    "receipt_path_or_sha": "research/antigravity/reviews/REV-AUTH-READS-UI-INTEGRATION.md",
+    "verified_outcome": "Verified auth reads UI integration and session token boundaries"
+  },
+  "self-org-architect-7f5a": {
+    "receipt_type": "architecture_report",
+    "receipt_path_or_sha": "research/antigravity/recovery/REPORT-LAUNCHER-BUS-INTEGRATION.md",
+    "verified_outcome": "Initial launcher bus bridge integration and CGroupV2 custody implementation (Tests 1-18)"
+  },
+  "self-org-architect-06ec": {
+    "receipt_type": "test_suite",
+    "receipt_path_or_sha": "research/antigravity/recovery/REPORT-LAUNCHER-BUS-BRIDGE-C2106.md",
+    "verified_outcome": "C2106/C2114/C2118 kernel custody hardening, descendant cgroup scan, and test suite expansion (32/32 PASS)"
+  },
+  "self-org-challenger": {
+    "receipt_type": "review_artifact",
+    "receipt_path_or_sha": "research/antigravity/reviews/REV-LAUNCHER-BUS-BRIDGE-C2075.md",
+    "verified_outcome": "Challenger audit of launcher bus bridge integration"
+  },
+  "ab-source-extractor": {
+    "receipt_type": "commit",
+    "receipt_path_or_sha": "1a3c5448506b682e208b31fd398b0b0d45203b0a",
+    "verified_outcome": "Standalone source extraction to /home/alexey/git/agent-branches"
+  },
+  "ab-cli-batch-worker": {
+    "receipt_type": "commit",
+    "receipt_path_or_sha": "71dade6",
+    "verified_outcome": "Agent Branches CLI push-batch subcommand and Two Generals batch failure receipts (REPORT-AB-CLI-BATCH.md)"
+  },
+  "sdk-batch-retry-reviewer": {
+    "receipt_type": "review_artifact",
+    "receipt_path_or_sha": "research/antigravity/reviews/REV-SDK-PUSH-BATCH-ROBUST-RETRY.md",
+    "verified_outcome": "Independent verification of pure fail-closed mutating push contract on commit f4f6c3e"
+  }
+}
 ```
-========================================================================================================================
-Sample / Actor              Payload Declared Receipt                 Actual Artifact on Disk & Audit Finding
-========================================================================================================================
-Sample A:                   test_suite:                              DEFECT: tests/test_supervision_slo_hook.py is an
-ab-cli-batch-worker         tests/test_supervision_slo_hook.py       offline supervision test. The actual deliverable was
-                                                                     CLI batch receipts in agent-branches commit 71dade6
-                                                                     (src/branches/cli.py & tests/test_cli_batch.py).
 
-Sample B:                   review_artifact:                         DEFECT: REV-SM-CANDIDATES-3569052.md is an audit of
-sdk-batch-retry-reviewer    research/antigravity/reviews/            Supervision Classifier Task S and Multi-Workspace
-                            REV-SM-CANDIDATES-3569052.md             Collector Task M by sm-candidate-reviewer (32b5c84d).
-                                                                     It has zero relation to SDK Batch Retry.
-
-Sample C:                   test_suite:                              DEFECT: Generic role tag "self-org-architect"
-self-org-architect          tests/test_runtime_custody.py            collapses two distinct sequential sessions:
-                                                                     7f5a2f14-092d (earlier C2032/C2048/C2059 session)
-                                                                     and 06ecf158-e51f (successor session in
-                                                                     .local/scratch/self-org-arch/ under C2106/C2108).
-========================================================================================================================
-```
-
-### 4.2 Required Remediation for Contributor Receipts
-To maintain strict cryptographic provenance:
-1. `ab-cli-batch-worker` must point to `commit: 71dade6` (`feat(cli): push-batch subcommand with structured receipts`).
-2. `sdk-batch-retry-reviewer` must point to its actual SDK review artifact (or be excluded / marked `unknown`).
-3. Successor sessions must be attributed by native conversation ID (`7f5a2f14` vs `06ecf158`), rather than collapsed under generic role tags.
+### 4.2 Other Product Contributor Receipts
+- **`agent-dashboard` (4 contributors):**
+  * `agent-dashboard-head`: commit `efed70d...` (base scaffold restore)
+  * `ad-independent-reviewer`: review `REV-DASHBOARD-44-TEST-SNAPSHOT.md` (bounded acceptance)
+  * `dashboard-patch-worker`: patch `dashboard-alias-and-fourth-project-minimal.patch` (minimal backend delta `007a6ef3`)
+  * `dashboard-consumer-reviewer`: review `REV-DASHBOARD-STAGED-CONSUMER.md` (staged consumer acceptance)
+- **`quota-launcher` (2 contributors):**
+  * `quota-launcher-head`: commit `4c2bfec` (core store & admission)
+  * `quota-launcher-reviewer`: review `REV-QL-4c2bfec.md` (bounded review)
+- **`agent-coordination` (2 contributors):**
+  * `agent-coordination-head`: commit `bb8dcad` (socket connector & framing)
+  * `bus-exactpin-reviewer`: review `REV-BUS-EXACTPIN-BB8DCAD.md` (socket contracts)
+- **`unattributed` (3 contributors):**
+  * `codex-principal`: review `research/codex/four-project-oversight-20261004-2026.md`
+  * `public-journal-site`: review `REV-PUBLICATION-GUARD.md`
+  * `zcode-independent`: test suite `tests/test_supervision_classifier.py` (18/18 PASS)
 
 ---
 
-## 5. Audit of Single Bounded Feature `ab-real-consumer-work`
+## 5. Bounded Accepted Feature Verification (`ab-real-consumer-work`)
 
-Under Codex C2120 and C2124, feature acceptance requires an affirmative independent review sign-off.
-
-### 5.1 Verification of Feature `ab-real-consumer-work`
-- **Review Artifact:** [`research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md) (SHA256: `18207 B`)
-- **Review Verdict:** `ACCEPT (FULL ENGINEERING ACCEPTANCE)`
-- **Commit SHA:** `1a3dd96f46bbced53d2e51a3e8c26c06b27c348a`
-- **Test Evidence:** 14/14 unit tests PASS in `demo-target/` (node `--test`); final Git tree SHA `b1a84dacc47f...` verified.
-
-### 5.2 Explicit Operational Boundaries & Caveats
-The independent review explicitly document the boundaries of this feature:
-1. **Fixture Scope:** The trial evaluated Task T1 ("Link listing & visit counters") against `demo-target/`, a zero-dependency Cloudflare Worker fixture shortlink service.
-2. **Single-Actor Inefficiency:** The dogfood trial proved that for single-actor workflows, ordinary Git worktrees are **2.25x faster** ($0.44\text{s}$ vs $0.99\text{s}$) with 0 background daemons. Agent Branches single-actor usage introduces unnecessary complexity.
-3. **Multi-Agent Benefit Unproven:** Concurrent multi-agent fleet collaboration and buyer-facing benefits remain **unproven on single-actor fixtures** and require multi-party development evaluation.
-4. **Daemon Memory Overhead:** The standalone platform stack consumed $156.66\text{ MB}$ RSS across two background daemons (`sidecar.mjs` and compiled coordinator `main.js`).
-5. **Segregation of Unreviewed Candidates:** Candidate features `ab-safe-main-restore`, `delivery-intake-reconciliation`, and `ab-standalone-private-source-project` have code commits and tests but await independent sign-off reviews, and are correctly isolated in `candidates_pending_independent_review`.
+1. **Independent Review Receipt:** Verified [`REV-AB-REAL-CONSUMER-WORK.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md) (verdict: `ACCEPT`), backing feature `ab-real-consumer-work` on commit `1a3dd96f46bbced53d2e51a3e8c26c06b27c348a`.
+2. **Operational Boundaries:**
+   - Evaluated on Task T1 against fixture service `demo-target/`.
+   - Single-actor workflow proved Git worktree is **2.25x faster** ($0.44\text{s}$ vs $0.99\text{s}$).
+   - Concurrent multi-agent buyer fleet benefits remain **unproven on single-actor fixtures**.
+   - Daemon RSS memory: $156.66\text{ MB}$ across background processes.
+3. **Candidate Segregation:** Tasks `ab-safe-main-restore`, `delivery-intake-reconciliation`, and `ab-standalone-private-source-project` await standalone independent review sign-offs and are strictly segregated under `candidates_pending_independent_review`.
 
 ---
 
-## 6. Cryptographic Provenance & Security Compliance
+## 6. Cryptographic Provenance & Compliance
 
-### 6.1 Artifact Checksums & Permissions
+### 6.1 Artifact Pinning Summary
 
-| Artifact | Filesystem Path | Size | Permissions | SHA256 Checksum |
+| Artifact Description | Location | Size (Bytes) | Mode | Pinned SHA256 Checksum |
 | :--- | :--- | :---: | :---: | :--- |
-| **Analytical Payload** | [`.local/metrics/hourly_24h_payload.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_payload.json) | 68,345 B | `0600` | `82994d5f47d87ab605a491ef1d63f3e76b66caf9c240ee787443bdccb2800251` |
-| **Reconciliation Report** | [`research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md) | 18,861 B | `0644` | `83c88d3ceb0c314d20a7381ab3350e18a4e3f13dd3a2ca5de0ec6cec845c3310` |
+| **Final Analytical Payload** | [`.local/metrics/hourly_24h_payload.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_payload.json) | 68,436 | `0600` | `0545d2bf7be91cee8764133ceb89415e1398700ac245a09372ee21347a2d2d69` |
+| **Reconciliation Report** | [`research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md) | 20,842 | `0644` | `a07cc908cc330ae4db63544836a0a29e1260715e8488c4ad00b1d92ce28adc87` |
+| **Review Deliverable** | [`research/antigravity/reviews/REV-HOURLY-PAYLOAD-F918.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-HOURLY-PAYLOAD-F918.md) | ~17 KB | `0644` | *Self-contained review deliverable* |
 
 ### 6.2 Security & Guard Compliance
 - **Publication Credential Guard:**
@@ -174,39 +178,38 @@ The independent review explicitly document the boundaries of this feature:
   ```
   Result: **CLEAN (0 violations, Exit Code 0)**.
 - **Compiler Hold Compliance:** Exactly **0 cargo or rustc invocations**.
-- **Filesystem Confinement:** Scratch directory disk usage: 876 KB ($\le 512$ MB limit); net `/tmp` growth is exactly 0 bytes.
+- **Filesystem Confinement:** Scratch disk usage: 876 KB ($\le 512$ MB limit); net `/tmp` growth is exactly 0 bytes.
 
 ---
 
 ## 7. Epistemic Bounds & Conditions for Acceptance
 
-The analytical payload [`.local/metrics/hourly_24h_payload.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_payload.json) (SHA256: `82994d5f...`) is granted **BOUNDED ACCEPTANCE** under the following strict conditions:
+The final analytical payload [`.local/metrics/hourly_24h_payload.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_payload.json) (SHA256: `0545d2bf...`) is granted **BOUNDED ACCEPTANCE** under the following strict conditions:
 
-1. **24h Lower-Bound Citation Requirement:**
-   Public reports and executive dashboards quoting 24-hour fleet metrics must cite `observed_presence_contribution_24h_lower_bound` (e.g. `1.0148` for branches), explicitly labeled as a lower-bound observed contribution, rather than `average_concurrent_presence_observed_window` (e.g. `2.0634`), which applies only to the active 11.80h window.
+1. **24h Lower-Bound Citation:**
+   Consumers reporting 24-hour fleet metrics must cite `observed_presence_contribution_24h_lower_bound` (e.g. `1.0148` for branches), explicitly designated as a lower-bound observed contribution, rather than `average_concurrent_presence_observed_window` (e.g. `2.0634`), which applies strictly to the active post-commissioning window.
 2. **Deprecation of Physical Rest:**
-   All consumers must honor `resting_or_menu_hours = null` and not interpret non-hook presence as physical host CPU dormancy.
-3. **Remediation of Contributor Receipts:**
-   Downstream releases must correct the three misattributions identified in Section 4 (`ab-cli-batch-worker`, `sdk-batch-retry-reviewer`, and `self-org-architect` session splitting).
-4. **Single-Feature Scope Limitation:**
+   All consumers must observe `resting_or_menu_hours = null` and treat non-hook presence strictly as an uninstrumented telemetry observation boundary.
+3. **Single Bounded Feature Recognition:**
    Feature `ab-real-consumer-work` must be recognized as an accepted single-actor dogfooding trial on a fixture service, with multi-agent concurrency benefits acknowledged as unproven.
 
 ---
 
-## 8. Final Audit Sign-Off Table
+## 8. Final Audit Sign-Off Table (C2128 Final Pin)
 
 | Audit Checklist Item | Standard / Directive | Status | Notes |
 | :--- | :--- | :---: | :--- |
-| **Window Boundary Integrity** | Exact 24 half-open UTC hourly buckets | **PASS** | `[2026-10-03T22:56:35Z, 2026-10-04T22:56:35Z)` |
-| **Dual Concurrency Schema** | Observed window vs 24h lower bound | **PASS** | Both fields declared & mathematically verified |
+| **Final Payload SHA256 Pin** | Matches `0545d2bf7be91cee...` (mode `0600`) | **PASS** | Verified bit-for-bit on disk |
+| **Reconciliation Report Pin**| Matches `a07cc908cc330ae4...` | **PASS** | Verified bit-for-bit on disk |
+| **Window Boundary Integrity**| Exact 24 half-open UTC hourly buckets | **PASS** | `[2026-10-03T22:56:35Z, 2026-10-04T22:56:35Z)` |
+| **Dual Concurrency Metrics** | Observed window vs 24h lower bound | **PASS** | Both metrics declared & mathematically verified |
 | **Truthful Missing Telemetry** | Pre-commissioning buckets emit `null` | **PASS** | 12 `unobserved` buckets with `null` hours per product |
 | **Physical Rest Deprecation** | `resting_or_menu_hours` is `null` | **PASS** | Disclaimed in `resting_hours_unmeasured_note` |
-| **Adversarial Contributor Audit**| Verification of on-disk receipts | **DEFECTS IDENTIFIED** | 3 misattributions documented in Section 4 |
-| **Feature Acceptance Gate** | Independent review sign-off required | **PASS** | Exactly 1 accepted feature for branches; 0 for others |
+| **C2124 Receipt Disaggregation**| CIDs and commits verified on disk | **PASS** | `7f5a` vs `06ec` split; commit `71dade6` mapped; SDK review verified |
+| **Single Feature Acceptance Gate**| Independent review sign-off required | **PASS** | Exactly 1 accepted feature for branches; 0 for others |
 | **Feature Scope Caveats** | Bounded evaluation of `ab-real-consumer-work` | **PASS** | Fixture scope and single-actor bounds documented |
-| **Cryptographic Provenance** | Matches SHA256 `82994d5f...` (mode `0600`) | **PASS** | Verified on filesystem |
 | **Scratch & Resource Limits** | Measured 876 KB $\le$ 512 MB, zero net `/tmp` | **PASS** | Strict host resource containment |
 | **Compiler Hold Invariant** | Zero cargo/rustc invocations | **PASS** | Strictly enforced |
 | **Publication Guard** | Exit code 0 | **PASS** | Zero unredacted credentials or tokens |
 
-**Verdict:** **BOUNDED ACCEPTANCE.** The analytical payload `82994d5f...` is approved for operational coordination under the documented epistemic bounds and contributor receipt corrections.
+**Verdict:** **BOUNDED ACCEPTANCE (PINNED).** The analytical payload `0545d2bf...` (schema `2.2.1-c2124`) is certified and approved for operational coordination.

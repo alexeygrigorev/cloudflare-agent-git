@@ -1,15 +1,15 @@
-# Independent Challenger Review: Launcher Bus Bridge Hardening (Codex C2106 / C2114 / C2118)
+# Independent Challenger Review: Launcher Bus Bridge Hardening (Codex C2106 / C2114 / C2118 / C2126 / C2128)
 
 - **Reviewer**: Independent Self-Organization Challenger (tag: `self-org-challenger`, conversation: `37aa1067-8bda-4dde-95b8-7b5bb927bd1f`)
-- **Authority**: Dispatched by `antigravity-head` (`46fdb644`, id: `245c7bba-9a7b-45c1-87a7-4537f289f9a5`) under Codex Principal C2106, C2108, C2114, and C2118 directives and existing human authority (`experiment/human-self-organization-20261004.txt`).
+- **Authority**: Dispatched by `antigravity-head` (`46fdb644`, id: `245c7bba-9a7b-45c1-87a7-4537f289f9a5`) under Codex Principal C2106, C2108, C2114, C2118, C2126, and C2128 directives and existing human authority (`experiment/human-self-organization-20261004.txt`).
 - **Target Audited Codebase**: `research/antigravity/tooling/self_org/launcher_bus_bridge.py`
-  - SHA256: `cd11a68d404f40e06d62be5e9cfa9f5e75f24c91332502d52739fd077e17eb1a`
+  - SHA256: `c4644fa33d85d2ac4d43c5a18a89329f427096d3a83e57adf2ae052a0f885044`
 - **Target Test Suite**: `tests/test_launcher_bus_bridge.py` (32 unit & integration tests)
-  - SHA256: `f6a20721fb3a1c634413614d49463136488508517f809b4c6f021eca23d97d18`
+  - SHA256: `03b53f4a65c9ff899a0892234ba591cec84caead2751e0ff3dc03479bfff1c18`
 - **Target Architecture Report**: `research/antigravity/recovery/REPORT-LAUNCHER-BUS-BRIDGE-C2106.md`
-  - SHA256: `f2e7bfc75cc20c43b9fd4c63f8dd5a852cd4fe53ba27960a3499ac469a3008b3`
+  - SHA256: `c9e39b36cab6b5f4db6571a8ec12a79298278904396eea140d1cab9cc4e53dd1`
 - **Scratch Testbed**: `/home/alexey/git/cloudflare-agent-git/.local/scratch/self-org-challenge/` (mode `0700`, strictly <= 512 MB, zero net `/tmp` growth)
-- **Date**: 2026-10-05T01:05:00+02:00 (Europe/Berlin)
+- **Date**: 2026-10-05T01:16:00+02:00 (Europe/Berlin)
 - **Verdict**: **BOUNDED ACCEPTANCE**
   *(Local kernel custody probe verified; Model execution route strictly HELD pending proven bridge)*
 
@@ -17,20 +17,21 @@
 
 ## 1. Executive Summary & Epistemic Demarcation
 
-Under Codex Principal Directives C2106, C2108, C2114, and C2118:
+Under Codex Principal Directives C2106, C2108, C2114, C2118, C2126, and C2128:
 > *"cleanup scans root cgroup.procs only; missing invocation accepted; fallback missing ControlGroup returns true. Prelude metadata does not check own kernel membership. Provider allowlist does not bind arbitrary command argv; read-bounded logs still grow unbounded on disk; missing output raises before cleanup. Head existing393/7f owns actual-module negatives/narrow corrections, not principal implementation. Fixture18 tests do not close actual lifecycle gate."*
 > *"Please challenger37 tests actual provider-mismatched wrapper/default unknown and actual model/CLI argv/backend mapping, architect06 narrow binding with existing launcher route recipe, fail closed unknown. Keep bounded kernel-only probe separate from real model execution; no model claim from generic allowed binaries. No new mandatory crypto/signing policy."*
 
-An exhaustive, adversarial, independent challenge was conducted across all 8 architectural vulnerability vectors plus C2114 route isolation and C2118 recipe enforcement. The evaluation established:
-1. **Full Integration Test Suite**: 32/32 tests PASS in `tests/test_launcher_bus_bridge.py` in ~9.5s.
-2. **Negative Comparative Testbed Matrix**: 10 distinct negative evaluations verified in scratch testbed, demonstrating fail-closed enforcement across arbitrary interpreters, foreign CLIs, uncontained probes, and lingering cgroup descendants.
-3. **Live Systemd Kernel Custody Probe**: Real `systemd-run --user --scope` execution inside `test_12`, verifying physical cgroup creation, `MemoryMax=1500M`, receipt generation, and cgroup dissolution.
-4. **Model Execution Demarcation**: Strict separation between local kernel custody probes (`is_local_probe=True`, zero model quota claim) and real model routes. Real model execution is strictly guarded by launcher route recipes (`zcodex exec --model glm-5.3-flash`, `grok -p --model grok-4.6`, `agy --model gemini-3.1-pro-high`) and held pending proven live model bridge execution.
-5. **Resource & Guard Invariants**: Zero cargo/rustc invocations, memory within cooperative 1500 MB limit, scratch root mode `0700` (< 100 KiB used against 512 MB ceiling), zero net `/tmp` growth, and credential publication guard exit 0.
+An exhaustive, adversarial, independent challenge was conducted across all 8 architectural vulnerability vectors plus C2114 route isolation, C2118 recipe enforcement, and C2126/C2128 canonical executable binding. The evaluation established:
+1. **Full Integration Test Suite**: 32/32 tests PASS in `tests/test_launcher_bus_bridge.py` in ~9.2s.
+2. **C2128 Canonical Installed Executable Enforcement**: Verified that `validate_route_to_command` strictly enforces `prefix == expected_prefix` against canonical `ADAPTERS` argv without basename lookalike fallback. Lookalike paths (`/tmp/fake/zcodex`) and short binary names (`zcodex`) fail closed with `ResourceAdmissionError` in `test_28`.
+3. **Negative Comparative Testbed Matrix**: 10 distinct negative evaluations verified in scratch testbed, demonstrating fail-closed enforcement across arbitrary interpreters, foreign CLIs, uncontained probes, and lingering cgroup descendants.
+4. **Live Systemd Kernel Custody Probe**: Real `systemd-run --user --scope` execution inside `test_12`, verifying physical cgroup creation, `MemoryMax=1500M`, receipt generation, and cgroup dissolution.
+5. **Model Execution Demarcation**: Strict separation between local kernel custody probes (`is_local_probe=True`, zero model quota claim) and real model routes. Real model execution is strictly guarded by canonical launcher route recipes (`zcodex exec --model glm-5.3-flash`, `grok -p --model grok-4.6`, `agy --model gemini-3.1-pro-high`) and held pending proven live model bridge execution.
+6. **Resource & Guard Invariants**: Zero cargo/rustc invocations, memory within cooperative 1500 MB limit, scratch root mode `0700` (< 100 KiB used against 512 MB ceiling), zero net `/tmp` growth, and credential publication guard exit 0.
 
 ---
 
-## 2. Adversarial Audit of All 8 Vulnerability Vectors + C2114/C2118 Hardening
+## 2. Adversarial Audit of All Vulnerability Vectors & Hardening Deltas
 
 ### 2.1 Flaw 1: Descendant Cgroups & Authoritative Population Flag (C2106)
 - **Vulnerability**: Cleanup previously inspected only the root `cg_fs_path / "cgroup.procs"`. Forked descendant processes in sub-slices escaped detection, and the kernel `cgroup.events` populated flag was ignored.
@@ -95,6 +96,27 @@ An exhaustive, adversarial, independent challenge was conducted across all 8 arc
   - On failure: issues `systemctl kill --kill-who=all --signal=SIGKILL`, stops unit, evaluates `verify_unit_cleanup`.
   - If cleanup is unproven: transitions task to `launch-uncertain` (holding 1500 MB Store reservation). If clean: transitions task to `failed`. Re-raises the exception.
 - **Negative Verification**: Popen raising `OSError` with unproven cleanup resulted in `launch-uncertain` transition holding 1500 MB in Store.
+
+### 2.9 Narrow Exact Final Delta Review (Codex C2126 / C2128 Hardening)
+- **Vulnerability**: Permitting basename-only fallback for binary paths allowed potential execution of unauthorized lookalike executables in PATH or user directories (e.g. `/tmp/fake/zcodex` or short `zcodex` without canonical path resolution).
+- **Hardening Implementation (C2128)**:
+  - In `validate_route_to_command`:
+    ```python
+    expected_prefix = list(ADAPTERS[effective_provider]["argv"])
+    prefix = list(command_argv[:len(expected_prefix)])
+    if len(command_argv) != len(expected_prefix) + 1 or prefix != expected_prefix:
+        raise ResourceAdmissionError(
+            f"Route recipe violation for provider '{provider}': command does not strictly match canonical adapter argv {expected_prefix} + [<goal>] (C2126/C2128)"
+        )
+    ```
+  - **No Basename Fallback**: Removed `Path(command_argv[0]).name == Path(expected_prefix[0]).name` fallback. The binary path must match canonical installed path from `build_adapter_argv` exactly (e.g. `/home/alexey/.local/bin/zcodex`).
+  - **Structured Option Alignment**: Exact match on all adapter options (e.g. `--dangerously-bypass-approvals-and-sandbox`, `--model`, `glm-5.3-flash`).
+  - **Benign Goal Opacity (C2126)**: Trailing argument `command_argv[-1]` is treated as opaque data, avoiding false-positive keyword rejections while strictly guarding the executable prefix.
+- **Negative Verification (Test 28)**:
+  - Lookalike binary path (`/tmp/fake/zcodex`): Fails closed with `ResourceAdmissionError`.
+  - Short binary name (`zcodex` without canonical path): Fails closed with `ResourceAdmissionError`.
+  - Duplicate/injected options (`--model other`): Fails closed with `ResourceAdmissionError`.
+  - Benign goal mentioning foreign CLIs ("Fix codex coordination issue"): Passes cleanly as opaque data.
 
 ---
 
@@ -180,14 +202,14 @@ test_24_c2106_bounded_disk_logging_during_execution (tests.test_launcher_bus_bri
 test_25_c2106_missing_output_cleans_up_and_fails_task (tests.test_launcher_bus_bridge.TestLauncherBusBridge.test_25_c2106_missing_output_cleans_up_and_fails_task) ... ok
 test_26_c2106_popen_failure_uncertainty_handling (tests.test_launcher_bus_bridge.TestLauncherBusBridge.test_26_c2106_popen_failure_uncertainty_handling) ... ok
 test_27_c2114_unknown_provider_fails_closed (tests.test_launcher_bus_bridge.TestLauncherBusBridge.test_27_c2114_unknown_provider_fails_closed) ... ok
-test_28_c2114_foreign_cli_smuggling_fails_closed (tests.test_launcher_bus_bridge.TestLauncherBusBridge.test_28_c2114_foreign_cli_smuggling_fails_closed) ... ok
+test_28_c2126_structured_launcher_recipe_and_benign_goal (tests.test_launcher_bus_bridge.TestLauncherBusBridge.test_28_c2126_structured_launcher_recipe_and_benign_goal) ... ok
 test_29_c2114_local_probe_typing_and_zero_model_quota_claim (tests.test_launcher_bus_bridge.TestLauncherBusBridge.test_29_c2114_local_probe_typing_and_zero_model_quota_claim) ... ok
 test_30_c2118_model_route_rejects_arbitrary_python_and_shell_interpreters (tests.test_launcher_bus_bridge.TestLauncherBusBridge.test_30_c2118_model_route_rejects_arbitrary_python_and_shell_interpreters) ... ok
 test_31_c2118_model_route_recipes_enforce_mandatory_argv (tests.test_launcher_bus_bridge.TestLauncherBusBridge.test_31_c2118_model_route_recipes_enforce_mandatory_argv) ... ok
 test_32_c2118_local_probe_zero_quota_and_store_recording (tests.test_launcher_bus_bridge.TestLauncherBusBridge.test_32_c2118_local_probe_zero_quota_and_store_recording) ... ok
 
 ----------------------------------------------------------------------
-Ran 32 tests in 9.555s
+Ran 32 tests in 9.221s
 
 OK
 ```
@@ -196,13 +218,14 @@ OK
 
 ## 6. Architectural Report Parity Audit
 
-The technical recovery report `research/antigravity/recovery/REPORT-LAUNCHER-BUS-BRIDGE-C2106.md` (SHA256: `f2e7bfc7...`) was compared against `research/antigravity/tooling/self_org/launcher_bus_bridge.py`:
+The technical recovery report `research/antigravity/recovery/REPORT-LAUNCHER-BUS-BRIDGE-C2106.md` (SHA256: `6be489c4cd2711985c22f4e17f83e96c42a3b72cfd5600c22d3dbcea394d72d9`) was compared against `research/antigravity/tooling/self_org/launcher_bus_bridge.py`:
 1. **Kernel Cgroup Recursion**: Accurately documents recursive descent across all sub-cgroup `cgroup.events` and `cgroup.procs`.
 2. **Fail-Closed InvocationID & ControlGroup**: Accurately reflects strict non-empty matching and rejection of missing control groups.
 3. **Dual Prelude Assertions**: Documents exits 96 and 97 verifying kernel cgroup membership directly from `/proc/self/cgroup` and `/sys/fs/cgroup`.
 4. **Route Recipes & Provider Isolation**: Matches canonical launcher recipes (`zcodex exec --model glm-5.3-flash`, `grok -p`, `agy`), foreign CLI smuggling prevention, and prohibition of arbitrary python/shell interpreters under model routes.
-5. **Bounded Disk Logging**: Accurately details the 64 KiB pipe pump thread mechanics and buffer drain.
-6. **Output & Teardown Sequencing**: Accurately details pre-output unit teardown and `launch-uncertain` preservation on Popen failure.
+5. **C2128 Canonical Installed Executable Enforcement**: Correctly documents strict prefix matching without basename-only lookalike fallbacks.
+6. **Bounded Disk Logging**: Accurately details the 64 KiB pipe pump thread mechanics and buffer drain.
+7. **Output & Teardown Sequencing**: Accurately details pre-output unit teardown and `launch-uncertain` preservation on Popen failure.
 
 ---
 
@@ -233,5 +256,5 @@ The technical recovery report `research/antigravity/recovery/REPORT-LAUNCHER-BUS
    - Dual prelude kernel membership assertions (exits 96/97) and recursive descendant cgroup dissolution checks are proven.
    - Local probes (`is_local_probe=True`, `provider="local"`, `model="none"`, zero quota claim) are strictly demarcated and functional.
 2. **Model Execution Route (HELD PENDING PROVEN BRIDGE)**:
-   - Real model routes (`zai`, `zcode`, `grok`, `antigravity`, `gemini`, `opencode`, `codex`) strictly forbid arbitrary python or shell interpreters and enforce canonical launcher recipes.
+   - Real model routes (`zai`, `zcode`, `grok`, `antigravity`, `gemini`, `opencode`, `codex`) strictly forbid arbitrary python or shell interpreters and enforce canonical installed executable recipes without lookalike fallbacks (C2128).
    - Real external model execution remains held pending production verification of live backend provider bridge execution.

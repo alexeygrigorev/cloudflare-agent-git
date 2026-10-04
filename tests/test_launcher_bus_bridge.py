@@ -1630,14 +1630,26 @@ class TestLauncherBusBridge(unittest.TestCase):
             validate_route_to_command("zai", dup_model_cmd)
         self.assertIn("Route recipe violation", str(cm.exception))
 
-        # Also fails with short binary name
+        # Also fails with short binary name or lookalike executable (C2128)
         dup_short = [
             "zcodex", "exec", "--model", "glm-5.3-flash",
+            "--dangerously-bypass-approvals-and-sandbox",
             "-c", "check_for_update_on_startup=false", "--json",
-            "--model", "other", "goal",
+            "goal",
         ]
         with self.assertRaises(ResourceAdmissionError) as cm:
             validate_route_to_command("zai", dup_short)
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        # Lookalike binary path fails closed (C2128)
+        lookalike = [
+            "/tmp/fake/zcodex", "exec", "--model", "glm-5.3-flash",
+            "--dangerously-bypass-approvals-and-sandbox",
+            "-c", "check_for_update_on_startup=false", "--json",
+            "goal",
+        ]
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("zai", lookalike)
         self.assertIn("Route recipe violation", str(cm.exception))
 
         # Case 2: Env wrong command with agy in trailing arg

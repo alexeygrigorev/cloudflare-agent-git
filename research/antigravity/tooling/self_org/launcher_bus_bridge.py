@@ -992,17 +992,11 @@ def validate_route_to_command(
     # 4. Structured prefix match against canonical ADAPTERS recipe
     expected_prefix = list(ADAPTERS[effective_provider]["argv"])
     prefix = list(command_argv[:len(expected_prefix)])
-    prefix_matches = (
-        prefix == expected_prefix
-        or (
-            len(prefix) == len(expected_prefix)
-            and Path(prefix[0]).name == Path(expected_prefix[0]).name
-            and prefix[1:] == expected_prefix[1:]
-        )
-    )
-    if len(command_argv) != len(expected_prefix) + 1 or not prefix_matches:
+    # Model routes must strictly match canonical installed executable and prefix from build_adapter_argv (C2126 / C2128)
+    # Basename-only lookalike fallbacks are strictly forbidden.
+    if len(command_argv) != len(expected_prefix) + 1 or prefix != expected_prefix:
         raise ResourceAdmissionError(
-            f"Route recipe violation for provider '{provider}': command does not strictly match canonical adapter argv {expected_prefix} + [<goal>] (C2126)"
+            f"Route recipe violation for provider '{provider}': command does not strictly match canonical adapter argv {expected_prefix} + [<goal>] (C2126/C2128)"
         )
 
 

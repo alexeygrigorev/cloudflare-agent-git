@@ -126,7 +126,7 @@ The test suite in `tests/test_launcher_bus_bridge.py` was extended through Test 
 | **Test 25** | `test_25_c2106_missing_output_cleans_up_and_fails_task` | Exit 0 with missing artifact verifies unit cleanup, transitions task to `failed`, and releases Store resources. | **PASS** |
 | **Test 26** | `test_26_c2106_popen_failure_uncertainty_handling` | Popen raising OSError kills unit; unproven cleanup transitions to `launch-uncertain` holding 1500 MB in Store. | **PASS** |
 | **Test 27** | `test_27_c2114_unknown_provider_fails_closed` | Asserts that unregistered or unknown provider names fail closed before command dispatch. | **PASS** |
-| **Test 28** | `test_28_c2126_structured_launcher_recipe_and_benign_goal` | Asserts duplicate model overrides and env injection fail closed, while benign goals mentioning `codex`/`opencode` pass cleanly. | **PASS** |
+| **Test 28** | `test_28_c2126_structured_launcher_recipe_and_benign_goal` | Asserts duplicate model overrides, env injection, short binary names, and lookalike binary paths fail closed (C2126/C2128), while benign goals mentioning `codex`/`opencode` pass cleanly. | **PASS** |
 | **Test 29** | `test_29_c2114_local_probe_typing_and_zero_model_quota_claim` | Validates `is_local_probe=True` allows standard diagnostics (`echo`), rejects model CLIs, and incurs zero quota. | **PASS** |
 | **Test 30** | `test_30_c2118_model_route_rejects_arbitrary_python_and_shell_interpreters` | Asserts that `python3`, `python`, `bash`, `sh` are strictly rejected under all model routes. | **PASS** |
 | **Test 31** | `test_31_c2118_model_route_recipes_enforce_mandatory_argv` | Validates exact launcher recipe syntax for `zai`/`zcode`, `grok`, and `antigravity`, rejecting arbitrary `-c` scripts. | **PASS** |
