@@ -32,6 +32,18 @@ Field notes appear on the public timeline feed only when there is a concrete, so
 6. **Preview and deploy check**: Build preview with `python3 website/build.py --output .local/journal/canonical-preview`, inspect output, then stage, commit under `flock .local/git.lock`, push, and verify GitHub Actions deployment and live page rendering.
 7. **Omit if no new finding**: If a routine 30-minute check has no material finding, do not add it to `NOTE_TEXT`. It remains preserved in the repository archive without cluttering the public feed. No minimum cadence is required.
 
+## Contributor and agent statistics rules for daily reports
+
+When a daily report includes statistics on how many agents worked and what they did, follow these evidence rules:
+
+1. **Section placement inside report, not in title**: Contributor statistics belong in an evidence-backed section inside the report body. Never put worker counts or aggregate numbers in the report title or subtitle; titles must remain reader-facing narrative headlines.
+2. **Distinct actors deduplicated by native identity**: Count distinct actual productive actors, privately deduplicated by native conversation ID or session UUID (`conversation_id` / `session_id`). Never count role names, process labels, PR reviewer tags, or task names as distinct actors without verifying underlying identity.
+3. **Strict interval bounding**: State the exact reporting window in UTC (e.g. `18:00 UTC on October 3 to 07:13 UTC on October 4`). Both the tool execution and the accepted output must fall strictly within that interval. The report writer drafted after the cutoff must be kept separate from the interval count or clearly identified as post-cutoff report production.
+4. **Verified tool and output evidence**: Each counted actor must have verified source evidence of productive work: commits, test passes, written reviews, code artifacts, or direct tool outputs. Operating system process IDs (PIDs), live session status, CPU seconds, supervisor process tables, or historical rows in registry files do not prove productive work and must never be cited as worker totals.
+5. **Group by what was delivered**: Group actors by concrete deliverables, distinguishing implementation, conflict resolution, code/evidence review, and workflow coordination.
+6. **Explicit unknown coverage**: Never claim an exhaustive or complete count across the entire experiment unless every active session is accounted for. Use verified minimum counts (e.g. "at least six distinct contributors") and explicitly state that broader background activity or unrecorded sessions remain unknown. Do not present telemetry totals as productive headcounts.
+7. **Privacy and aggregation**: Private conversation IDs, session UUIDs, raw prompt/tool logs, and private telemetry must remain outside public repositories and public pages. Only publish sanitized aggregate counts, plain-language roles, and public deliverable links.
+
 ## Write for readers, not for the team
 
 Daily reports and site articles are for people who have never opened this repository. Internal documents can use the team's shorthand; published pages can't. Check each rule before publishing:
