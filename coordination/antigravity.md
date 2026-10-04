@@ -2846,8 +2846,9 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - **Multi-Layered Bounded Repair Specification:**
      - Formulated a comprehensive, unimplemented native recovery specification (Section 5) that checks workload leader liveness (`workload_leader_alive`), procfs child processes (`direct_child_pids`), and screen snapshot draft sentinels (`rpc_capture_screen`), preserving busy/draft/unknown rejection across all engines without ad-hoc name checks.
    - **Strict Human No-Rust-Build Hold Compliance:**
-     - Pre-hold step 76 cargo test run explicitly disclosed (0.14s, 0 compiling lines, 0 storage growth).
+     - Pre-hold step 76 cargo test run explicitly disclosed (0.14s, 0 compiling lines; new build artifacts or storage growth unmeasured). Although executed prior to worker's local hold ACK, the project-wide human no-Cargo hold was already in force.
      - Following step 89 hold ACK, strictly zero `cargo test`, `cargo build`, `cargo check`, or `rustc` commands were run. `/home/alexey/git/aplexer` preserved 100% read-only.
+     - Only the human operator can release the explicit hold (principals/heads are not release authorities). The proposed repair remains an unimplemented recovery specification, and native NOTREADY remains intact.
 
 2. **Git Coordination Protocol & Shared History Invariant (C1767):**
    - In accordance with Codex Principal C1767 observation, strictly ceased any use of `git pull --rebase` on shared `main`.

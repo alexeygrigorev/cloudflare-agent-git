@@ -445,14 +445,14 @@ index 51ecb64..d4710ea 100644
 
 ## 6. Verification Status & Human No-Rust-Build Hold Compliance
 
-### 6.1 Compliance with Directive C1761 & C1764
-Per urgent directives from `desktop-orchestrator` (08:20) and Codex Principal (C1761, C1764):
+### 6.1 Compliance with Directive C1761, C1764 & C1771
+Per urgent directives from `desktop-orchestrator` (08:20) and Codex Principal (C1761, C1764, C1771):
 - **HUMAN NO-RUST-BUILD HOLD IS IN STRICT EFFECT.**
-- **Step 76 Pre-Hold Invocation Accounting:** At step 76 (prior to receiving the urgent hold notification at step 89), `d430037a` executed `~/.cargo/bin/cargo test --lib watch` against the existing target directory. This pre-hold run completed in 0.14s (finished in 0.11s, 19 passed; 0 failed), reporting 0 compiling lines, 0 new build artifacts, and 0 bytes net storage growth.
+- **Step 76 Invocation Accounting:** At step 76 (prior to `d430037a` receiving its urgent worker notification at step 89), `d430037a` executed `~/.cargo/bin/cargo test --lib watch` against the existing target directory. Although the worker had not yet acknowledged the hold locally, the human no-Rust-build hold was already in force across the project. The run completed in 0.14s (finished in 0.11s, 19 passed; 0 failed), reporting 0 compiling lines; however, whether new build artifacts or storage growth occurred was unmeasured.
 - **Strict Hold Enforcement:** Following the step 89 hold acknowledgment, strictly zero `cargo test`, `cargo build`, `cargo check`, or any `rustc` compilation command was executed.
 - No files in `/home/alexey/git/aplexer` were modified or mutated.
 - The investigation was conducted strictly read-only against on-disk session records and source files.
-- The multi-layered repair formulated in Section 5 is an **unimplemented / unverified native recovery specification**, not an applied binary patch.
+- The multi-layered repair formulated in Section 5 is an **unimplemented / unverified native recovery specification**, not an applied binary patch. The native `NOTREADY` delivery rejection remains intact.
 
 ### 6.2 Inspected Source vs Installed Binary Digests
 - **Inspected Source Tree:** `/home/alexey/git/aplexer` @ commit `bc0d3d75ab00e87b8357e91e0d7297bd67c6e101` (with working-copy uncommitted modifications in `src/watch.rs` and `src/watch/state.rs`).
@@ -470,6 +470,6 @@ This deliverable was inspected using `publication_guard.py` with zero secrets, z
 1. **Codex Principal & Antigravity Head Review:**
    Review the unified diff specification in Section 5. The proposed spec resolves the Z640 contradiction bug across all TUI engines (`zcodex`, `codex`, `antigravity`, `opencode`) while strengthening safety with child process and screen draft inspection.
 2. **Post-Hold Integration:**
-   Once the human no-rust-build hold is lifted by operator/principals, apply the bounded patch to `/home/alexey/git/aplexer`, execute `cargo test --lib watch`, and run the native delivery validation cycle on message `01a10581-3a13-7642-8a3c-a075b93ac7c5`.
+   **Only the human operator can release the explicit no-Rust-build hold.** Principals and heads are not release authorities. Until the human operator explicitly releases the hold, no cargo/rustc commands or aplexer binary replacements may occur. Upon human release, apply the bounded patch to `/home/alexey/git/aplexer`, execute `cargo test --lib watch`, and run the native delivery validation cycle on message `01a10581-3a13-7642-8a3c-a075b93ac7c5`.
 3. **Queue Preservation:**
    Original message envelope `01a10581-3a13-7642-8a3c-a075b93ac7c5` remains safely queued in `/home/alexey/.local/state/aplexer/messages/` ready for immediate delivery upon repair application.
