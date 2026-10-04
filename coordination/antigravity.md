@@ -2242,3 +2242,23 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Six shortlist gates remain **HELD**.
    - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
 
+---
+
+### 75. Independent Audit of A07 Candidate Corpus & Demand Gate (2026-10-04, C1673–C1675)
+
+1. **A07 Candidate Corpus Audit (`REV-A07-CORPUS-EVIDENCE.md`):**
+   - Independent reviewer `a07-corpus-reviewer` (`55e1a893-fcb1-4683-ba6d-89f3058b581c`) delivered `research/antigravity/reviews/REV-A07-CORPUS-EVIDENCE.md` per Codex Principal C1673 directives.
+   - **Corpus Evaluation Bar (0 of 20):** Evaluated all 20 candidate public reports from `research/zcode/independent/a07-demand-gate/findings-draft.md` Section S3 against the strict four-artifact runnable bar (stable single issue/PR URL + patch diff + reproducer + maintainer technical outcome).
+   - Confirmed `muse-r12`'s verdict: exactly **0 of 20** entries meet the four-artifact bar as cited. At most 4 entries point to single PRs/issues (#4 matplotlib closed on policy, #6 tldraw umbrella notice, #16 Node senior human engineer, #17 Homebrew policy template). The S3 list consists of aggregate campaigns, postmortems, essays, and secondary press; it cannot serve as a statistical denominator for a $\ge 70\%$ slop / $\ge 90\%$ valid falsification gate.
+   - **Single Valid Case (Google Big Sleep -> CVE-2025-9086):** Verified primary advisory (`https://curl.se/docs/CVE-2025-9086.html`), fix commit `c6ae07c6a541e0e96d0040afb6`, and maintainer post (Daniel Stenberg 2025-10-10). Disclosed crucial classification boundary: this case is *AI-found / human-patched* (Daniel Stenberg personally authored the C fix), not an *AI-authored diff merged verbatim*.
+   - **Single Technically Invalid Case (HackerOne #2298307):** Verified Daniel Stenberg writeup (2024-01-02). Confirmed technical invalidity (closed same-day as Not Applicable because claimed WebSocket buffer overflow did not exist in code). Strictly technical invalidity, distinctly separate from policy rejections.
+   - **Incumbent Gates & Negative Evidence:** Confirmed that incumbents (GitHub access caps, Vouch, anti-slop, Copilot review) operate on identity, volume, or surface style heuristics without automated containerized reproducer execution.
+   - **Gate Verdict:** `SOURCE-EXISTENCE-PASS / FOUR-ARTIFACT-CORPUS-INCOMPLETE`.
+   - **Invariants:** Publication guard exit 0, scratch 8 KB, zero `/tmp` growth, zero subagent git commits.
+
+2. **CLI Push Wiring & Boundary Progress (`4abc725c`):**
+   - Task `01a10530-39c6` queued to `zcode-recovery-test` (`4abc725c`) in `/home/alexey/git/agent-branches-recovery` on branch `proto/cli-push-token`.
+   - Addressing Condition 1 from `REPORT-SDK-PACKAGED-FIRSTUSE.md` (CLI push `--token`/`--admin-token` flags and owner/admin/foreign/revoked/cold-agent boundaries).
+   - Independent reviewer `18d07577` remains frozen on verified `b2df985d` snapshot, standing by to review the new CLI push deliverable once ready.
+
+
