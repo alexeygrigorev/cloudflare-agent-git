@@ -208,13 +208,13 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T02:54:17.559240+00:00",
+      "updated_at": "2026-10-04T03:17:50.238736+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md"
       ],
       "blocked_on": [],
-      "next_action": "C1579 actorreview ab30df8 scoped source/test evidence accepted but capholds/safeintegrate verdict challenged; resolver eada0e4 22tests/report not live warninglifecycle: exactpins/actorIDs/updatedcoordinatorvector+warnclear/independentreview required. Head owns replenished ZCode review, consumer transition and disjoint seed completeness/source repair with fresh quotas/reservations. Observe workerACK/firsttool and next actual timer/event <=5min. Redaction/private600/service stop verified, history persists. Claude stopped/allfinalgatesheld.",
+      "next_action": "C1601/C1602 head ACK publication credential guard and private invocation-lineage audit after real repeatleak/unknown scratch interference: verify actual workerUUID/firsttool/negative tests and independentreview. A06 actual conditional decision4d34199/63af redaction; b91comparison qualitativeexposed only (packagingasymmetry/priortrace vs newbaseline, no controlledactionrate/unbiased claim). 93d runbook source gaps and trackedmainTS->absentJS sourcechallenge C1604, scope SDK/fulldistribution and exactcommands. Z4abc actual eada review privateprobes ongoing, causeunknown/no A01 reopen. Next <=5min/event worker artifacts/timer32996 actual firing/freshquota/reservations, no ownimplementationteam; Claude stopped/final6/deployheld.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
