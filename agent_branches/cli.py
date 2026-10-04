@@ -12,6 +12,8 @@ from agent_branches.client import (
     AgentBranchesConnectionError,
     AgentBranchesError,
     StaleVectorError,
+    TokenExpiredError,
+    TokenRevokedError,
 )
 
 from agent_branches.git_utils import (
@@ -477,6 +479,22 @@ def handle_checks(args: argparse.Namespace, client: AgentBranchesClient, as_json
             if exc.payload:
                 print(f"Details: {exc.payload}", file=sys.stderr)
         return 1
+    except TokenExpiredError as exc:
+        print(
+            f"Authentication Error ({exc.status_code}): Bearer token expired - "
+            f"credentials reported expired by coordinator. Halting (no retry). "
+            f"Refresh the token and try again. Details: {exc.message}",
+            file=sys.stderr,
+        )
+        return 1
+    except TokenRevokedError as exc:
+        print(
+            f"Authentication Error ({exc.status_code}): Bearer token revoked - "
+            f"failing closed, retrying cannot succeed. "
+            f"Issuer a new token. Details: {exc.message}",
+            file=sys.stderr,
+        )
+        return 1
     except (ValueError, AgentBranchesAPIError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
@@ -524,6 +542,22 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 2
     except StaleVectorError as exc:
         print(f"Conflict Error (409): Stale vector - {exc.message}", file=sys.stderr)
+        return 1
+    except TokenExpiredError as exc:
+        print(
+            f"Authentication Error ({exc.status_code}): Bearer token expired - "
+            f"credentials reported expired by coordinator. Halting (no retry). "
+            f"Refresh the token and try again. Details: {exc.message}",
+            file=sys.stderr,
+        )
+        return 1
+    except TokenRevokedError as exc:
+        print(
+            f"Authentication Error ({exc.status_code}): Bearer token revoked - "
+            f"failing closed, retrying cannot succeed. "
+            f"Issuer a new token. Details: {exc.message}",
+            file=sys.stderr,
+        )
         return 1
     except AgentBranchesAPIError as exc:
         print(f"API Error ({exc.status_code}): {exc.message}", file=sys.stderr)

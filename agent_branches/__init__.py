@@ -6,6 +6,8 @@ from agent_branches.client import (
     AgentBranchesConnectionError,
     AgentBranchesAPIError,
     StaleVectorError,
+    TokenExpiredError,
+    TokenRevokedError,
 )
 
 __all__ = [
@@ -14,4 +16,6 @@ __all__ = [
     "AgentBranchesConnectionError",
     "AgentBranchesAPIError",
     "StaleVectorError",
+    "TokenExpiredError",
+    "TokenRevokedError",
 ]

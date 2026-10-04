@@ -6,6 +6,29 @@ Implements the exact HTTP routes:
 - GET /status
 - GET /tasks/<id>
 - POST /warnings/<id>/ack
+- POST /checks (CONTRACT v0.1)
+
+Bearer-token simulation:
+- expected_admin_token guards POST /tasks; expected_runner_token guards POST /checks.
+- When expected_admin_token is configured, POST /events/push enforces the
+  proto mutating ladder (C1518, muse-r46 AUTH, decideMutatingAuth narrowed
+  to the pushing agent): admin or the pushing agent's own task token ->
+  200, valid token of a DIFFERENT agent -> 403, anonymous/malformed/
+  runner/revoked/unknown -> 401. No sidecar bearer is simulated.
+- When expected_admin_token is configured, GET /tasks/<id> enforces the
+  proto/auth-reads owner-or-admin read ladder (C1462/C1499, matching
+  prototype/src/core/auth.ts decideReadAuth narrowed to the task owner):
+  admin or owning agent task token -> 200, valid foreign agent token -> 403,
+  everything else (anonymous/malformed, runner, revoked, unknown) -> 401
+  shared body. RUNNER_TOKEN is a read credential on unnarrowed reads only
+  (/status), so on a narrowed task read it is 401. The default
+  unconfigured mock keeps legacy open reads for existing fixtures.
+- admin_token_expires_at / runner_token_expires_at (epoch seconds) simulate token
+  expiry: a correct token past its expiry is rejected with HTTP 401 and an
+  {"error": "token_expired", "expires_at": ...} payload.
+- revoke_token(token) simulates revocation: subsequent requests presenting that
+  token are rejected with HTTP 403 and an {"error": "token_revoked",
+  "revoked_at": ...} payload (revocation is checked before expiry).
 """
 
 import argparse
@@ -33,8 +56,20 @@ class MockCoordinatorState:
         self,
         expected_admin_token: Optional[str] = None,
         expected_runner_token: Optional[str] = None,
+        admin_token_expires_at: Optional[float] = None,
+        runner_token_expires_at: Optional[float] = None,
+        token_wire_object: bool = True,
     ):
         self.lock = threading.Lock()
+        # C1509: True = POST /tasks answers with the real coordinator wire
+        # shape (token {scope, expiresAt, plaintext}); False = legacy flat
+        # plaintext string. The stored record always keeps the plaintext
+        # string so bearer checks compare strings.
+        self.token_wire_object = token_wire_object
+        # Authorization header as last presented on an authed route
+        # (test observability: lets tests assert the exact bearer header
+        # sent, on GET /tasks/<id> and POST /events/push alike).
+        self.last_authorization: Optional[str] = None
         self.seq = 0
         self.tasks: Dict[str, Dict[str, Any]] = {}
         self.agents: Dict[str, Dict[str, Any]] = {}
@@ -45,7 +80,180 @@ class MockCoordinatorState:
         self.canonical_remote = "https://git.cloudflare.local/canonical.git"
         self.expected_admin_token = expected_admin_token
         self.expected_runner_token = expected_runner_token
+        # Token expiry as epoch seconds (None = never expires). A correct token
+        # presented at or after its expiry is rejected with 401 token_expired.
+        self.admin_token_expires_at = admin_token_expires_at
+        self.runner_token_expires_at = runner_token_expires_at
+        # token -> revoked_at ISO timestamp; revoked tokens are rejected with 403.
+        self.revoked_tokens: Dict[str, str] = {}
 
+    def revoke_token(self, token: str, revoked_at: Optional[str] = None) -> str:
+        """Mark a bearer token as revoked; returns the revocation timestamp."""
+        ts = revoked_at or datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with self.lock:
+            self.revoked_tokens[token] = ts
+        return ts
+
+    def check_bearer_token(
+        self,
+        auth_header: str,
+        expected_token: str,
+        expires_at: Optional[float],
+        kind: str,
+    ) -> Optional[Tuple[int, Dict[str, Any]]]:
+        """Validate a presented bearer token.
+
+        Returns (http_status, error_payload) when the request must be rejected
+        (revocation, missing/invalid token, expiry — in that order), else None.
+        """
+        with self.lock:
+            match = re.match(r"^Bearer\s+(\S+)$", (auth_header or "").strip())
+            presented = match.group(1) if match else None
+
+            if presented is not None and presented in self.revoked_tokens:
+                revoked_at = self.revoked_tokens[presented]
+                return 403, {
+                    "error": "token_revoked",
+                    "message": f"{kind} bearer token revoked at {revoked_at}",
+                    "revoked_at": revoked_at,
+                }
+
+            if presented is None or presented != expected_token:
+                return 401, {
+                    "error": "unauthorized: missing or invalid bearer token",
+                }
+
+            if expires_at is not None and time.time() >= expires_at:
+                expires_iso = datetime.datetime.fromtimestamp(
+                    expires_at, datetime.timezone.utc
+                ).isoformat()
+                return 401, {
+                    "error": "token_expired",
+                    "message": f"{kind} bearer token expired at {expires_iso}",
+                    "expires_at": expires_iso,
+                }
+
+        return None
+
+    def check_task_read_auth(
+        self, auth_header: str, task_id: str
+    ) -> Optional[Tuple[int, Dict[str, Any]]]:
+        """Auth ladder for GET /tasks/<id> (C1462/C1499), mirroring proto
+        prototype/src/core/auth.ts decideReadAuth with ownership narrowing:
+        admin or the owning agent's per-task token is accepted; a valid token
+        belonging to a DIFFERENT agent is 403; anonymous/malformed headers,
+        runner tokens (narrowed reads are not runner credentials), revoked and
+        unknown tokens all get the shared 401 body. Auth resolves before
+        existence: a valid agent credential on an unknown task still reaches
+        the 404 (unknown tasks narrow nothing).
+
+        Returns (http_status, error_payload) when the request must be
+        rejected, else None.
+        """
+        with self.lock:
+            unauthorized = (
+                401,
+                {"error": "unauthorized", "message": "Missing or invalid bearer token"},
+            )
+            match = re.match(r"^Bearer\s+(\S+)$", (auth_header or "").strip())
+            presented = match.group(1) if match else None
+            if presented is None:
+                return unauthorized
+            if self.expected_admin_token and presented == self.expected_admin_token:
+                return None
+            if self.expected_runner_token and presented == self.expected_runner_token:
+                # RUNNER_TOKEN is accepted on unnarrowed reads (/status) only.
+                return unauthorized
+            if presented in self.revoked_tokens:
+                # proto: credentialAgent denies revoked tokens on reads -> 401.
+                return unauthorized
+            owner = None
+            for rec in self.tasks.values():
+                if rec.get("token") == presented:
+                    owner = rec
+                    break
+            if owner is None:
+                return unauthorized
+            target = self.tasks.get(task_id) or self.agents.get(task_id)
+            if target is None or target.get("agent_id") == owner.get("agent_id"):
+                return None
+            return (
+                403,
+                {
+                    "error": (
+                        f"forbidden: this token belongs to {owner.get('agent_id')}, "
+                        f"not {target.get('agent_id')}"
+                    )
+                },
+            )
+
+    def fork_owner(self, fork: Optional[str]) -> Optional[str]:
+        """Resolve the owning agent of a fork name or URL (proto
+        coordinator.forkOwner); None when the fork is unknown."""
+        if not fork:
+            return None
+        with self.lock:
+            for rec in self.tasks.values():
+                if rec.get("forkUrl") == fork or (rec.get("fork") or {}).get("name") == fork:
+                    return rec.get("agent_id")
+        return None
+
+    def check_mutating_auth(
+        self, auth_header: str, required_agent: Optional[str]
+    ) -> Optional[Tuple[int, Dict[str, Any]]]:
+        """Auth ladder for POST /events/push (C1518), mirroring proto
+        decideMutatingAuth with agent narrowing: ADMIN_TOKEN or the pushing
+        agent's own task token is accepted; a valid token for a DIFFERENT
+        agent is 403; anonymous/malformed headers, runner, revoked and
+        unknown tokens get 401. The sidecar webhook bearer is not simulated
+        by this mock.
+
+        Returns (http_status, error_payload) when the request must be
+        rejected, else None.
+        """
+        with self.lock:
+            match = re.match(r"^Bearer\s+(\S+)$", (auth_header or "").strip())
+            presented = match.group(1) if match else None
+            if presented is None:
+                return (
+                    401,
+                    {"error": "unauthorized: bearer token required"},
+                )
+            if self.expected_admin_token and presented == self.expected_admin_token:
+                return None
+            missing_credential = (
+                401,
+                {
+                    "error": (
+                        "unauthorized: ADMIN_TOKEN, the agent's task token "
+                        "or the sidecar bearer required"
+                    )
+                },
+            )
+            if self.expected_runner_token and presented == self.expected_runner_token:
+                # RUNNER_TOKEN is a /checks credential, not a push credential.
+                return missing_credential
+            if presented in self.revoked_tokens:
+                # proto: credentialAgent denies revoked tokens -> falls to 401.
+                return missing_credential
+            owner = None
+            for rec in self.tasks.values():
+                if rec.get("token") == presented:
+                    owner = rec
+                    break
+            if owner is None:
+                return missing_credential
+            if required_agent is None or owner.get("agent_id") == required_agent:
+                return None
+            return (
+                403,
+                {
+                    "error": (
+                        f"forbidden: this token belongs to {owner.get('agent_id')}, "
+                        f"not {required_agent}"
+                    )
+                },
+            )
 
     def create_task(self, data: Dict[str, Any]) -> Dict[str, Any]:
         with self.lock:
@@ -226,15 +434,33 @@ class MockCoordinatorState:
     def get_status(self) -> Dict[str, Any]:
         with self.lock:
             active_warnings = [w for w in self.warnings.values() if w.get("status") == "active"]
+            agents_list = []
+            heads_dict = {}
+            for t in self.tasks.values():
+                t_id = t["task_id"]
+                a_id = t.get("agent_id") or t_id
+                sha = t.get("head_sha")
+                if sha:
+                    heads_dict[a_id] = sha
+                    heads_dict[t_id] = sha
+                agents_list.append({
+                    "agentId": a_id,
+                    "taskId": t_id,
+                    "intent": t.get("intent"),
+                    "baseSha": t.get("base_sha"),
+                    "head": sha,
+                })
             return {
                 "canonical": {
                     "name": self.canonical_name,
                     "remote": self.canonical_remote,
                 },
                 "tasks": list(self.tasks.values()),
-                "heads": {t["task_id"]: t["head_sha"] for t in self.tasks.values() if t.get("head_sha")},
+                "agents": agents_list,
+                "heads": heads_dict,
                 "warnings": active_warnings,
                 "radar_log": self.radar_log[-20:],
+                "unprocessedPushes": [],
             }
 
     def get_task(self, task_id: str) -> Dict[str, Any]:
@@ -397,12 +623,16 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
 
         # POST /tasks
         if path == "/tasks":
-            # Admin token auth check if configured
+            # Admin token auth check if configured (revocation, validity, expiry)
             if self.state.expected_admin_token is not None:
-                auth_header = self.headers.get("Authorization", "")
-                expected = f"Bearer {self.state.expected_admin_token}"
-                if auth_header != expected:
-                    self._send_json(401, {"error": "unauthorized: missing or invalid bearer token"})
+                err = self.state.check_bearer_token(
+                    self.headers.get("Authorization", ""),
+                    self.state.expected_admin_token,
+                    self.state.admin_token_expires_at,
+                    "admin",
+                )
+                if err:
+                    self._send_json(err[0], err[1])
                     return
 
             try:
@@ -411,6 +641,18 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
                 self._send_json(400, {"error": str(exc)})
                 return
             created = self.state.create_task(body)
+            if self.state.token_wire_object and isinstance(created.get("token"), str):
+                # C1509/C1515: real coordinator CreateTaskResult wire shape
+                # (prototype/src/core/coordinator.ts) — the minted token is
+                # an object and ref stays TOP LEVEL (fork is {name, remote});
+                # the stored record keeps the plaintext string for bearer
+                # comparisons.
+                created = dict(created)
+                created["token"] = {
+                    "scope": f"task:{created.get('taskId')}",
+                    "expiresAt": int(time.time()) + 3600,
+                    "plaintext": created["token"],
+                }
             self._send_json(201, created)
             return
 
@@ -421,6 +663,23 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
             except ValueError as exc:
                 self._send_json(400, {"error": str(exc)})
                 return
+            self.state.last_authorization = self.headers.get("Authorization")
+            # C1518: pushes are privileged (muse-r46 AUTH / proto
+            # decideMutatingAuth) when the mock runs with a configured admin
+            # token — admin or the pushing agent's own task token; the
+            # unconfigured default stays open for legacy fixtures. Like the
+            # proto router, the required agent resolves from the body (agent
+            # or fork owner) before auth.
+            if self.state.expected_admin_token is not None:
+                required_agent = body.get("agentId") or body.get("agent")
+                if not required_agent:
+                    required_agent = self.state.fork_owner(body.get("fork"))
+                err = self.state.check_mutating_auth(
+                    self.headers.get("Authorization", ""), required_agent
+                )
+                if err:
+                    self._send_json(err[0], err[1])
+                    return
             try:
                 res = self.state.record_push(body)
                 self._send_json(200, res)
@@ -433,10 +692,14 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
         # POST /checks (CONTRACT v0.1)
         if path == "/checks":
             if self.state.expected_runner_token is not None:
-                auth_header = self.headers.get("Authorization", "")
-                expected = f"Bearer {self.state.expected_runner_token}"
-                if auth_header != expected:
-                    self._send_json(401, {"error": "unauthorized: missing or invalid bearer token (RUNNER_TOKEN)"})
+                err = self.state.check_bearer_token(
+                    self.headers.get("Authorization", ""),
+                    self.state.expected_runner_token,
+                    self.state.runner_token_expires_at,
+                    "runner",
+                )
+                if err:
+                    self._send_json(err[0], err[1])
                     return
 
             try:
@@ -489,6 +752,17 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
         task_match = re.match(r"^/tasks/([^/]+)$", path)
         if task_match:
             task_id = urllib.parse.unquote(task_match.group(1))
+            self.state.last_authorization = self.headers.get("Authorization")
+            # C1462/C1499: owner-or-admin read auth when the mock runs with a
+            # configured admin token (same conditional pattern as POST /tasks);
+            # the unconfigured default stays an open read for legacy fixtures.
+            if self.state.expected_admin_token is not None:
+                err = self.state.check_task_read_auth(
+                    self.headers.get("Authorization", ""), task_id
+                )
+                if err:
+                    self._send_json(err[0], err[1])
+                    return
             try:
                 res = self.state.get_task(task_id)
                 self._send_json(200, res)
@@ -515,8 +789,16 @@ def start_mock_l1_server(
     port: int = 0,
     expected_admin_token: Optional[str] = None,
     expected_runner_token: Optional[str] = None,
+    admin_token_expires_at: Optional[float] = None,
+    runner_token_expires_at: Optional[float] = None,
+    token_wire_object: bool = True,
 ) -> Tuple[MockL1Server, threading.Thread, str, MockCoordinatorState]:
     """Start mock L1 coordinator on host and ephemeral or specified port.
+
+    Token expiry timestamps are epoch seconds: a correct token presented at or
+    after its expiry is rejected with 401 {"error": "token_expired"}. Tokens can
+    be revoked at runtime via ``state.revoke_token(token)`` which makes later
+    requests fail with 403 {"error": "token_revoked"}.
 
     Returns:
         (server, thread, server_url, state)
@@ -524,6 +806,9 @@ def start_mock_l1_server(
     state = MockCoordinatorState(
         expected_admin_token=expected_admin_token,
         expected_runner_token=expected_runner_token,
+        admin_token_expires_at=admin_token_expires_at,
+        runner_token_expires_at=runner_token_expires_at,
+        token_wire_object=token_wire_object,
     )
     server = MockL1Server((host, port), state=state)
     actual_port = server.server_address[1]
