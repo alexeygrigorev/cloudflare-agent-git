@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T21:08:00.000000+00:00",
+  "updated_at": "2026-10-04T22:36:00.000000+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -2611,19 +2611,42 @@
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
       "executor_ids": [
-        "7f5a2f14-092d-4676-b4f9-ff96bdc32a01"
+        "7f5a2f14-092d-4676-b4f9-ff96bdc32a01",
+        "393b33c1-f66c-4f2b-9154-30559ca1fbf9"
       ],
-      "status": "running",
-      "updated_at": "2026-10-04T22:12:00.000000+00:00",
+      "status": "done",
+      "updated_at": "2026-10-04T22:36:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/tooling/self_org/launcher_bus_bridge.py",
-        "tests/test_launcher_bus_bridge.py"
+        "tests/test_launcher_bus_bridge.py",
+        "research/antigravity/reviews/REV-SYSTEMD-SCOPE-CONTAINMENT-C2087.md"
       ],
-      "acceptance": "Implement minimal canonical launch.py integration invoking atomic reservation and dispatch via launcher.launch.do_run with genuine isolated agent-bus identity per Codex C2079. Verify fresh quse and host admission, no blind retry, no unknown kills/fallback/Rust. Single useful task execution.",
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C2079/C2081, delegated to self-org-live-runtime-engineer (7f5a2f14).",
-      "next_action": "Implement ChildModelRuntimeAdapter integration with launch.py and test in scratch.",
-      "continuation_trigger": "Successful execution and verification of canonical launch path."
+      "acceptance": "ACCEPTED (INDEPENDENT REVIEW COMPLETE). Delivered research/antigravity/reviews/REV-SYSTEMD-SCOPE-CONTAINMENT-C2087.md by self-org-challenger (393b33c1). Thin, positively verified unit lifecycle adapter (ChildModelRuntimeAdapter) implemented under shared launch_lock with contained TMPDIR (rejecting /tmp), clean environment (XDG_RUNTIME_DIR/DBUS_SESSION_BUS_ADDRESS preserved, APLEXER_* scrubbed), prelude kernel containment verification, and uniform verify_unit_cleanup across all exit paths (prelude fail, timeout, nonzero rc, zero rc). Authoritatively verifies kernel /sys/fs/cgroup/{cg}/cgroup.procs dissolution and rejects blind [not set] query absence (C2100). All 18/18 tests in tests/test_launcher_bus_bridge.py PASS (7.34s). 64/64 self-org regression tests pass. Publication guard exit 0.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2079/C2081/C2087/C2091/C2095/C2097/C2100. Implemented by self-org-live-runtime-engineer (7f5a2f14) and challenged by self-org-challenger (393b33c1).",
+      "acceptance_status": "ACCEPTED",
+      "next_action": "Execute thin direct systemd scope probe on real host and conduct parallel FileBus dashboard consumer review.",
+      "continuation_trigger": "Delivery of REV-DASHBOARD-STAGED-CONSUMER.md via FileBus."
+    },
+    {
+      "id": "dashboard-staged-consumer-review",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "ab1e10b9-f777-4fe0-af7f-262577b966c4"
+      ],
+      "status": "running",
+      "updated_at": "2026-10-04T22:36:00.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-DASHBOARD-STAGED-CONSUMER.md"
+      ],
+      "acceptance": "Independent consumer review of staged dashboard patch (research/antigravity/recovery/dashboard-alias-and-fourth-project.patch) consumed and replied via private FileBus store (.local/scratch/dashboard-bus-dogfood/store). Verifies minimal alias (agent-quota-launcher -> quota-launcher) and fourth product (agent-coordination) rendered UI and served endpoint contracts in isolated scratch testbed. 0 writes to canonical agent-dashboard, 0 new dependencies. Publication guard exit 0.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2099/C2101 directives. Dispatched to dashboard-consumer-reviewer (ab1e10b9) over FileBus.",
+      "acceptance_status": "PENDING_REVIEW",
+      "next_action": "Reviewer ab1e10b9 produces review report and returns verdict reply over FileBus.",
+      "continuation_trigger": "Receipt of FileBus reply from dashboard-consumer-reviewer."
     }
   ]
 }

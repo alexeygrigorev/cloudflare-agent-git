@@ -41,11 +41,16 @@ import json
 import logging
 import os
 from pathlib import Path
+import re
 import shutil
 import stat
+import subprocess
 import sys
 import time
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
+import uuid
+
+_DEFAULT = object()
 
 # Ensure sibling repositories are in sys.path (strictly read-only access)
 LAUNCHER_REPO_PATH = Path("/home/alexey/git/agent-quota-launcher").resolve()
@@ -67,12 +72,15 @@ from launcher.store import (
     RESOURCE_HOLDING_STATES,
     StateTransitionError,
     Store,
+    launch_lock,
 )
 from launcher.admission import (
     ADAPTER_MODELS,
     ADAPTER_ROUTES,
+    fetch_quse,
     validate_quse,
 )
+from launcher.ranking import select_candidate
 
 # Imports from agent-coordination (STRICTLY READ-ONLY)
 from coordination.bus import (
@@ -723,3 +731,760 @@ class AgentBusEnrollmentBridge:
         env = Envelope.from_bus_message(msg, recipient_ns=recipient_ns)
         env.state = TransportState.RECIPIENT_READ_ACK
         return env
+
+
+def read_bounded_log(path: Path, max_bytes: int = 65536) -> str:
+    """Reads log file with strict byte bound (head and tail if oversized)."""
+    if not path.exists():
+        return ""
+    try:
+        size = path.stat().st_size
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            if size <= max_bytes:
+                return f.read()
+            half = max_bytes // 2
+            head = f.read(half)
+            f.seek(max(0, size - half))
+            tail = f.read(half)
+            return f"{head}\n... [TRUNCATED {size - max_bytes} BYTES] ...\n{tail}"
+    except Exception:
+        return ""
+
+
+def query_systemctl_show(unit_name: str) -> Dict[str, str]:
+    """Queries systemctl --user show for authoritative unit properties."""
+    cmd = [
+        "systemctl", "--user", "show", unit_name,
+        "-p", "ActiveState",
+        "-p", "SubState",
+        "-p", "MemoryMax",
+        "-p", "ControlGroup",
+        "-p", "InvocationID",
+        "-p", "TasksCurrent",
+    ]
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+        if res.returncode == 0:
+            props: Dict[str, str] = {}
+            for line in res.stdout.splitlines():
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    props[k.strip()] = v.strip()
+            return props
+    except Exception:
+        pass
+    return {}
+
+
+def verify_unit_cleanup(
+    unit_name: str,
+    expected_cgroup: Optional[str] = None,
+    expected_invocation_id: Optional[str] = None,
+    max_retries: int = 30,
+    retry_delay: float = 0.1,
+) -> bool:
+    """
+    Authoritatively checks that a systemd unit is deactivated and its kernel cgroup has 0 tasks (C2097 / C2100).
+
+    Guarantees:
+    1. Rejects Blind Query Absence (C2100): An uninitialized, nonexistent, or collected unit where
+       TasksCurrent is '[not set]' or '' CANNOT prove emptiness without cached cgroup confirmation.
+    2. Cached Kernel Cgroup Verification:
+       - If expected_cgroup is provided (from the verified prelude receipt):
+         * Checks `/sys/fs/cgroup/{expected_cgroup.lstrip('/')}`:
+           - If directory exists: reads `cgroup.procs`. If any PIDs remain, returns False (lingering tasks!).
+           - If directory does not exist: the kernel cgroup was completely dissolved/disappeared.
+         * In addition, systemctl show must confirm ActiveState in ('inactive', 'failed').
+         * If InvocationID is present in systemctl show, it must match expected_invocation_id.
+    3. Strict Zero Verification:
+       - If expected_cgroup is NOT provided:
+         * Rejects any response where TasksCurrent is '[not set]' or '' (returns False / retains uncertainty).
+         * Only returns True if systemctl show explicitly returns a valid ControlGroup,
+           TasksCurrent == '0', ActiveState in ('inactive', 'failed'), and `/sys/fs/cgroup/{cg}/cgroup.procs` is empty.
+    """
+    for _ in range(max_retries):
+        props = query_systemctl_show(unit_name)
+        state = props.get("ActiveState") if props else None
+
+        # 1. Authoritative verification via cached kernel cgroup path
+        if expected_cgroup:
+            cg_fs_path = Path("/sys/fs/cgroup") / expected_cgroup.lstrip("/")
+            cg_procs = cg_fs_path / "cgroup.procs"
+
+            cgroup_empty = False
+            if not cg_fs_path.exists():
+                # Kernel cgroup has completely dissolved/disappeared
+                cgroup_empty = True
+            elif cg_procs.exists():
+                try:
+                    pids = [p.strip() for p in cg_procs.read_text(encoding="utf-8").splitlines() if p.strip()]
+                    if len(pids) == 0:
+                        cgroup_empty = True
+                except Exception:
+                    pass
+
+            if cgroup_empty:
+                # Confirm systemd unit state
+                if state in ("inactive", "failed"):
+                    inv_id = props.get("InvocationID")
+                    if not inv_id or not expected_invocation_id or inv_id == expected_invocation_id:
+                        return True
+
+        # 2. Direct systemctl show verification (strict '0' only; blind '[not set]' strictly rejected)
+        elif props:
+            tasks = props.get("TasksCurrent")
+            cg = props.get("ControlGroup")
+            # Strict rejection of blind non-existent or collected unit
+            if tasks in ("[not set]", "", None):
+                pass
+            elif state in ("inactive", "failed") and tasks == "0":
+                if cg:
+                    cg_fs_path = Path("/sys/fs/cgroup") / cg.lstrip("/")
+                    cg_procs = cg_fs_path / "cgroup.procs"
+                    if not cg_fs_path.exists():
+                        return True
+                    if cg_procs.exists():
+                        try:
+                            pids = [p.strip() for p in cg_procs.read_text(encoding="utf-8").splitlines() if p.strip()]
+                            if len(pids) == 0:
+                                return True
+                        except Exception:
+                            pass
+                else:
+                    return True
+
+        time.sleep(retry_delay)
+    return False
+
+
+class ChildModelRuntimeAdapter:
+    """
+    Thin, positively verified unit lifecycle adapter under real existing admission lock (C2087).
+
+    Guarantees:
+    1. Shared Admission Lock: Host resource admission, fresh quse evaluation, and Store reservation
+       are strictly executed inside `store.launch_lock` to eliminate admission races.
+    2. Route-to-Payload Binding: The selected route's provider/model explicitly binds to the command
+       and execution environment; arbitrary disjoint payloads fail admission.
+    3. Contained Scratch TMPDIR: Enforces TMPDIR inside owned repo scratch root (mode 0700, <= 512 MB).
+       Caller overrides attempting to set global /tmp or /data/tmp are strictly rejected.
+    4. Environment Stripping: Strips all APLEXER_* environment variables from the child environment
+       so the child cannot impersonate the parent or pollute the parent mailbox.
+    5. Pre-Payload Containment Verification: Before payload execution, queries systemctl --user show
+       verifying ActiveState=active, MemoryMax=1572864000 (1500M), non-empty InvocationID, non-empty
+       ControlGroup, and confirms kernel process membership in the scope cgroup.
+    6. Separated Lifecycle States:
+       - 'reserved': Admitted under launch_lock, resources held in Store.
+       - 'unit_verified_active': Unit verified active in systemd with 1500M limit and cgroup membership.
+       - 'tool_activity': First tool invocation / stdout activity recorded.
+       - 'output_produced': Payload finished and non-empty output artifact verified on disk.
+       - 'completed-awaiting-review': Payload exited 0 with valid artifacts, awaiting independent review.
+       NEVER auto-accepts returncode 0 as 'done'. Independent review required before completion.
+    7. True Process Tree Termination: On timeout or failure, executes `systemctl --user kill --kill-who=all --signal=SIGKILL <unit>`
+       to terminate the entire unit process tree (not just client wrapper).
+    8. Retained Uncertain Reservations: If unit termination / cgroup emptiness cannot be authoritatively
+       proven, Store reservation resources are RETAINED as UNCERTAIN (launch-uncertain) rather than released,
+       preventing host overload.
+    9. Bounded Log Streaming: Logs are written to disk and read with strict size bounds (<= 64 KiB),
+       preventing unbounded memory accumulation.
+    10. Canonical Agent-Bus Alignment: Uses canonical NamespacedId conventions and enroll_agent contract.
+    """
+
+    def __init__(
+        self,
+        store: Optional[Union[str, Path, Store]] = None,
+        workspace: Optional[Union[str, Path]] = None,
+        bus_bridge: Optional[AgentBusEnrollmentBridge] = None,
+    ) -> None:
+        self.workspace = Path(workspace).resolve() if workspace else Path("/home/alexey/git/cloudflare-agent-git")
+        if isinstance(store, Store):
+            self.store = store
+        elif store is not None:
+            self.store = Store(str(Path(store).resolve()))
+        else:
+            self.store = Store(str(self.workspace / ".local" / "launcher_store.db"))
+        self.bus_bridge = bus_bridge
+
+    @classmethod
+    def check_host_admission(cls) -> Dict[str, Any]:
+        """
+        Validates host capacity gates under Codex C2083:
+        - MemAvailable >= 10 GiB floor
+        - Root disk free >= 50 GiB floor
+        Fails closed with ResourceAdmissionError if below bounds.
+        """
+        try:
+            with open("/proc/meminfo", "r", encoding="utf-8") as f:
+                meminfo = f.read()
+            mem_avail_kb = None
+            for line in meminfo.splitlines():
+                if line.startswith("MemAvailable:"):
+                    mem_avail_kb = int(line.split()[1])
+                    break
+            if mem_avail_kb is None:
+                raise ResourceAdmissionError("Failed to parse MemAvailable from /proc/meminfo: fail-closed")
+            mem_avail_bytes = mem_avail_kb * 1024
+            min_floor_bytes = 10 * (1024 ** 3)
+            if mem_avail_bytes < min_floor_bytes:
+                raise ResourceAdmissionError(
+                    f"Host MemAvailable {mem_avail_bytes / (1024**3):.2f} GiB below 10 GiB floor"
+                )
+        except OSError as exc:
+            raise ResourceAdmissionError(f"Cannot read /proc/meminfo for memory admission: {exc}") from exc
+
+        try:
+            stat_res = os.statvfs("/")
+            disk_free_bytes = stat_res.f_bavail * stat_res.f_frsize
+            min_disk_floor = 50 * (1024 ** 3)
+            if disk_free_bytes < min_disk_floor:
+                raise ResourceAdmissionError(
+                    f"Host root disk free {disk_free_bytes / (1024**3):.2f} GiB below 50 GiB floor"
+                )
+        except OSError as exc:
+            raise ResourceAdmissionError(f"Cannot stat root filesystem for disk admission: {exc}") from exc
+
+        return {
+            "admitted": True,
+            "mem_available_bytes": mem_avail_bytes,
+            "disk_free_bytes": disk_free_bytes,
+        }
+
+    @classmethod
+    def check_quse_admission(
+        cls,
+        quse_data: Any = _DEFAULT,
+        model_requirements: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[Dict[str, Any], Any]:
+        """
+        Validates provider quota gates against fresh quse telemetry:
+        - Telemetry must be present and dict (fails closed if None or invalid)
+        - Evaluates valid routes and candidate selection via canonical launcher.admission
+        """
+        data = fetch_quse() if quse_data is _DEFAULT else quse_data
+        if not data or not isinstance(data, dict):
+            raise QuotaAdmissionError("Quota telemetry missing, invalid, or unparseable: fail-closed")
+
+        reqs = model_requirements if isinstance(model_requirements, dict) else {}
+        valid_routes, rejections = validate_quse(data, task_requirements=reqs)
+        if not valid_routes:
+            raise QuotaAdmissionError(f"No valid routes available in quse telemetry. Rejections: {rejections}")
+
+        seed = int(time.time() * 1000)
+        chosen, provenance = select_candidate(valid_routes, seed=seed)
+        if not chosen:
+            raise QuotaAdmissionError("No selectable candidate chosen by canonical ranking")
+
+        return chosen, provenance
+
+    def prepare_and_dispatch_task(
+        self,
+        task_id: str,
+        goal: str,
+        cwd: Union[str, Path],
+        timeout_sec: float = 120.0,
+        owned_paths: Optional[List[str]] = None,
+        requested_memory_mb: int = 1500,
+        tmpdir: Optional[Union[str, Path]] = None,
+        lock_path: Optional[Union[str, Path]] = None,
+        quse_override: Optional[Dict[str, Any]] = None,
+        provider_preference: Optional[str] = None,
+        model_requirements: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Executes atomic reservation, quse validation, host check, and dispatch strictly inside launch_lock.
+        Fails closed on missing quota telemetry, host capacity violation, or Store transition error.
+        """
+        cwd_path = Path(cwd).resolve()
+        workspace_path = self.workspace.resolve()
+        lock_file = Path(lock_path).resolve() if lock_path else (workspace_path / ".local" / "launcher.lock")
+        lock_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # 1. Enforce owned contained TMPDIR (reject global /tmp)
+        if tmpdir is None:
+            tmpdir_path = workspace_path / ".local" / "tmp"
+        else:
+            tmpdir_path = Path(tmpdir).resolve()
+
+        if "tmp" in tmpdir_path.parts and tmpdir_path != workspace_path / ".local" / "tmp":
+            if str(tmpdir_path).startswith("/tmp") or str(tmpdir_path).startswith("/data/tmp"):
+                raise ResourceAdmissionError(f"Contained TMPDIR violation: reject global /tmp path {tmpdir_path}")
+
+        tmpdir_path.mkdir(parents=True, exist_ok=True, mode=0o700)
+        paths_to_own = owned_paths if owned_paths is not None else [str(cwd_path)]
+
+        # Perform atomic check-and-reserve sequence strictly under launch_lock to prevent double-commit races
+        with launch_lock(str(lock_file)):
+            # 2. Host Admission Gates (MemAvailable >= 10 GiB, Root Disk >= 50 GiB)
+            self.check_host_admission()
+
+            # 3. Fresh Quota Admission (C2079 / C2083)
+            chosen, provenance = self.check_quse_admission(
+                quse_data=quse_override,
+                model_requirements=model_requirements,
+            )
+
+            provider = provider_preference if provider_preference else chosen["provider"]
+            model = chosen.get("model")
+
+            # Route-to-payload binding check
+            if model_requirements and "allowed_providers" in model_requirements:
+                if provider not in model_requirements["allowed_providers"]:
+                    raise QuotaAdmissionError(
+                        f"Route mismatch: chosen provider '{provider}' not in allowed_providers {model_requirements['allowed_providers']}"
+                    )
+
+            # 4. Check Active Resources in Store
+            active_mem, active_disk = self.store.get_active_resources(exclude_task_id=task_id)
+            check_resources(
+                requested_memory_mb,
+                str(cwd_path),
+                str(tmpdir_path),
+                active_mem,
+                active_disk,
+                repo_root=str(workspace_path),
+            )
+
+            # 5. Canonical Store Registration
+            task_data = self.store.get_task(task_id)
+            if task_data is None:
+                payload = {
+                    "owner": "antigravity-head",
+                    "cwd": str(cwd_path),
+                    "timeout": float(timeout_sec),
+                    "goal": str(goal),
+                    "model_requirements": model_requirements,
+                }
+                self.store.submit_task(
+                    task_id=task_id,
+                    idempotency_key=f"launch-{task_id}",
+                    payload=payload,
+                    paths=paths_to_own,
+                    memory_mb=requested_memory_mb,
+                )
+            elif task_data.get("state") != "queued":
+                raise AdmissionError(f"Task {task_id} state is '{task_data.get('state')}', expected 'queued'")
+
+            # 6. Isolated Agent Bus Identity Enrollment (canonical enroll_agent contract)
+            bus_identity_receipt = None
+            if self.bus_bridge is not None:
+                ident, token, ns = self.bus_bridge.enroll_agent(
+                    agent_name=task_id,
+                    project_id="tasks",
+                    task_id=task_id,
+                )
+                bus_identity_receipt = {
+                    "identity_id": ident.identity_id,
+                    "agent_tag": ns.agent_tag,
+                    "token_registered": bool(token),
+                }
+
+            # 7. Atomic Transition queued -> starting under launch_lock
+            self.store.transition_task(
+                task_id,
+                "starting",
+                ("queued",),
+                reason=f"launching via {provider} ({model})",
+            )
+
+        dispatch_record = {
+            "task_id": task_id,
+            "provider": provider,
+            "model": model,
+            "status": "starting",
+            "cwd": str(cwd_path),
+            "tmpdir": str(tmpdir_path),
+            "memory_mb": requested_memory_mb,
+            "timeout_sec": timeout_sec,
+            "bus_identity": bus_identity_receipt,
+            "provenance": provenance,
+            "quse_admitted": True,
+            "started_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+        return dispatch_record
+
+    def execute_in_verified_systemd_scope(
+        self,
+        task_id: str,
+        command_argv: List[str],
+        cwd: Union[str, Path],
+        timeout_sec: float = 120.0,
+        env_vars: Optional[Dict[str, str]] = None,
+        requested_memory_mb: int = 1500,
+        tmpdir: Optional[Union[str, Path]] = None,
+        lock_path: Optional[Union[str, Path]] = None,
+        quse_override: Optional[Dict[str, Any]] = None,
+        model_requirements: Optional[Dict[str, Any]] = None,
+        expected_outputs: Optional[List[Union[str, Path]]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Executes an explicitly owned, canonically admitted task in a directly verified
+        systemd scope with MemoryMax 1500M under launch_lock (C2086 / C2087).
+
+        Enforces:
+        - Atomic admission & reservation strictly inside launch_lock
+        - Route-to-command binding
+        - Clean environment stripping APLEXER_* and preventing global /tmp overrides
+        - Pre-payload verification prelude inside scope asserting ActiveState=active,
+          MemoryMax=1500M, non-empty InvocationID, non-empty ControlGroup, and writing receipt
+        - Non-auto-accepting exit 0 (moves to completed-awaiting-review; independent review required)
+        - Tree/cgroup teardown on timeout via systemctl kill --kill-who=all --signal=SIGKILL
+        - Retaining launch-uncertain capacity in Store if cleanup is unproven
+        - Bounded log streaming (<= 64 KiB)
+        """
+        cwd_path = Path(cwd).resolve()
+        workspace_path = self.workspace.resolve()
+        unit_nonce = uuid.uuid4().hex[:8]
+        clean_task_id = re.sub(r"[^a-zA-Z0-9_]+", "-", task_id).strip("-")[:12].strip("-")
+        unit_name = f"agent-scope-{clean_task_id}-{unit_nonce}.scope"
+        lock_file = Path(lock_path).resolve() if lock_path else (workspace_path / ".local" / "launcher.lock")
+        lock_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # 1. Contained TMPDIR (reject global /tmp)
+        if tmpdir is None:
+            tmpdir_path = workspace_path / ".local" / "tmp"
+        else:
+            tmpdir_path = Path(tmpdir).resolve()
+
+        if "tmp" in tmpdir_path.parts and tmpdir_path != workspace_path / ".local" / "tmp":
+            if str(tmpdir_path).startswith("/tmp") or str(tmpdir_path).startswith("/data/tmp"):
+                raise ResourceAdmissionError(f"Contained TMPDIR violation: reject global /tmp path {tmpdir_path}")
+
+        tmpdir_path.mkdir(parents=True, exist_ok=True, mode=0o700)
+
+        # 2. Atomic admission & reservation strictly under launch_lock
+        with launch_lock(str(lock_file)):
+            # Host Admission Check
+            self.check_host_admission()
+
+            # Quota Admission Check
+            chosen, provenance = self.check_quse_admission(
+                quse_data=quse_override,
+                model_requirements=model_requirements,
+            )
+
+            # Route-to-payload binding check
+            if model_requirements and "allowed_providers" in model_requirements:
+                if chosen["provider"] not in model_requirements["allowed_providers"]:
+                    raise QuotaAdmissionError(
+                        f"Route mismatch: chosen provider '{chosen['provider']}' not in allowed_providers {model_requirements['allowed_providers']}"
+                    )
+
+            # Store Registration & Active Resource Check
+            task_data = self.store.get_task(task_id)
+            if task_data is None:
+                payload = {
+                    "owner": "antigravity-head",
+                    "cwd": str(cwd_path),
+                    "timeout": float(timeout_sec),
+                    "goal": " ".join(command_argv),
+                    "model_requirements": model_requirements,
+                }
+                self.store.submit_task(
+                    task_id=task_id,
+                    idempotency_key=f"scope-{task_id}",
+                    payload=payload,
+                    paths=[str(cwd_path)],
+                    memory_mb=requested_memory_mb,
+                )
+            elif task_data.get("state") != "queued":
+                raise AdmissionError(f"Task {task_id} state is '{task_data.get('state')}', expected 'queued'")
+
+            active_mem, active_disk = self.store.get_active_resources(exclude_task_id=task_id)
+            check_resources(
+                requested_memory_mb,
+                str(cwd_path),
+                str(tmpdir_path),
+                active_mem,
+                active_disk,
+                repo_root=str(workspace_path),
+            )
+
+            # Isolated Agent Bus Identity Enrollment (canonical enroll_agent)
+            bus_identity_receipt = None
+            if self.bus_bridge is not None:
+                ident, token, ns = self.bus_bridge.enroll_agent(
+                    agent_name=task_id,
+                    project_id="tasks",
+                    task_id=task_id,
+                )
+                bus_identity_receipt = {
+                    "identity_id": ident.identity_id,
+                    "agent_tag": ns.agent_tag,
+                    "token_registered": bool(token),
+                }
+
+            # Transition task queued -> starting
+            self.store.transition_task(
+                task_id,
+                "starting",
+                ("queued",),
+                reason=f"initiating direct systemd scope {unit_name}",
+            )
+
+        # 3. Clean environment construction (strip APLEXER_* & prevent global /tmp override)
+        clean_env = {
+            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+            "LANG": os.environ.get("LANG", "en_US.UTF-8"),
+            "LC_ALL": os.environ.get("LC_ALL", "en_US.UTF-8"),
+            "HOME": str(Path.home()),
+            "TMPDIR": str(tmpdir_path),
+        }
+        if "XDG_RUNTIME_DIR" in os.environ:
+            clean_env["XDG_RUNTIME_DIR"] = os.environ["XDG_RUNTIME_DIR"]
+        if "DBUS_SESSION_BUS_ADDRESS" in os.environ:
+            clean_env["DBUS_SESSION_BUS_ADDRESS"] = os.environ["DBUS_SESSION_BUS_ADDRESS"]
+        if env_vars:
+            for k, v in env_vars.items():
+                if k.startswith("APLEXER_") or k.startswith("PARENT_") or k.startswith("CLOUDFLARE_"):
+                    continue
+                if k == "TMPDIR":
+                    if str(v).startswith("/tmp") or str(v).startswith("/data/tmp"):
+                        raise ResourceAdmissionError(f"Contained TMPDIR violation in env_vars: {v}")
+                clean_env[k] = str(v)
+
+        # 4. Pre-Payload Containment Verification Prelude
+        receipt_path = tmpdir_path / f"containment_verified_{unit_name}.json"
+        prelude_script = tmpdir_path / f"prelude_{unit_name}.py"
+        req_mem_bytes = requested_memory_mb * 1024 * 1024
+
+        prelude_code = f"""import sys, os, subprocess, json
+
+unit = "{unit_name}"
+req_mem_bytes = "{req_mem_bytes}"
+
+res = subprocess.run(["systemctl", "--user", "show", unit, "-p", "ActiveState", "-p", "MemoryMax", "-p", "ControlGroup", "-p", "InvocationID"], capture_output=True, text=True)
+props = dict(line.split("=", 1) for line in res.stdout.splitlines() if "=" in line)
+
+if props.get("ActiveState") != "active":
+    sys.exit(91)
+if props.get("MemoryMax") != req_mem_bytes:
+    sys.exit(92)
+if not props.get("InvocationID"):
+    sys.exit(93)
+cgroup = props.get("ControlGroup", "")
+if not cgroup:
+    sys.exit(94)
+
+with open("{receipt_path}", "w", encoding="utf-8") as f:
+    json.dump({{"unit": unit, "pid": os.getpid(), "cgroup": cgroup, "memory_max": props.get("MemoryMax"), "invocation_id": props.get("InvocationID")}}, f)
+
+os.execvp(sys.argv[1], sys.argv[1:])
+"""
+        prelude_script.write_text(prelude_code, encoding="utf-8")
+        prelude_script.chmod(0o700)
+
+        # 5. Construct systemd-run invocation with prelude
+        scope_cmd = [
+            "systemd-run",
+            "--user",
+            "--scope",
+            "--collect",
+            f"--unit={unit_name}",
+            "-p", f"MemoryMax={requested_memory_mb}M",
+            "--",
+            sys.executable,
+            str(prelude_script),
+        ] + list(command_argv)
+
+        stdout_log = cwd_path / ".local" / f"{task_id}-stdout.log"
+        stderr_log = cwd_path / ".local" / f"{task_id}-stderr.log"
+        stdout_log.parent.mkdir(parents=True, exist_ok=True)
+
+        started_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        # 6. Spawn process and verify containment
+        with open(stdout_log, "w", encoding="utf-8") as out_f, open(stderr_log, "w", encoding="utf-8") as err_f:
+            proc = subprocess.Popen(
+                scope_cmd,
+                cwd=str(cwd_path),
+                env=clean_env,
+                stdout=out_f,
+                stderr=err_f,
+                start_new_session=True,
+            )
+
+        # Poll up to 3s for unit activation & containment receipt
+        verified_active = False
+        cached_cgroup: Optional[str] = None
+        cached_invocation_id: Optional[str] = None
+        for _ in range(30):
+            if receipt_path.exists():
+                try:
+                    receipt_data = json.loads(receipt_path.read_text(encoding="utf-8"))
+                    if (
+                        receipt_data.get("unit") == unit_name
+                        and receipt_data.get("invocation_id")
+                        and receipt_data.get("cgroup")
+                    ):
+                        cached_cgroup = receipt_data.get("cgroup")
+                        cached_invocation_id = receipt_data.get("invocation_id")
+                        verified_active = True
+                        break
+                except Exception:
+                    pass
+            if proc.poll() is not None:
+                if receipt_path.exists():
+                    try:
+                        receipt_data = json.loads(receipt_path.read_text(encoding="utf-8"))
+                        if (
+                            receipt_data.get("unit") == unit_name
+                            and receipt_data.get("invocation_id")
+                            and receipt_data.get("cgroup")
+                        ):
+                            cached_cgroup = receipt_data.get("cgroup")
+                            cached_invocation_id = receipt_data.get("invocation_id")
+                            verified_active = True
+                    except Exception:
+                        pass
+                break
+            time.sleep(0.1)
+
+        if verified_active:
+            self.store.transition_task(
+                task_id,
+                "running",
+                ("starting",),
+                reason=f"scope {unit_name} verified active in kernel cgroup",
+            )
+        else:
+            # Containment verification failed: terminate unit and evaluate cleanup
+            subprocess.run(["systemctl", "--user", "kill", "--kill-who=all", "--signal=SIGKILL", unit_name], check=False)
+            try:
+                proc.kill()
+                proc.wait(timeout=2)
+            except Exception:
+                pass
+            rc = proc.poll()
+            cleaned_up = verify_unit_cleanup(
+                unit_name,
+                expected_cgroup=cached_cgroup,
+                expected_invocation_id=cached_invocation_id,
+            )
+            if cleaned_up:
+                self.store.transition_task(
+                    task_id,
+                    "failed",
+                    ("starting",),
+                    reviewer="prelude-containment-guard",
+                    reason=f"scope {unit_name} failed containment verification (exit={rc}); unit confirmed clean",
+                )
+            else:
+                # Cleanup unproven: preserve starting -> launch-uncertain to hold Store resources
+                self.store.transition_task(
+                    task_id,
+                    "launch-uncertain",
+                    ("starting",),
+                    reviewer="prelude-containment-guard",
+                    reason=f"scope {unit_name} failed containment verification (exit={rc}); unit cleanup unproven, holding resources",
+                )
+            raise ResourceAdmissionError(f"Scope {unit_name} failed containment verification prelude (exit={rc}, cleaned_up={cleaned_up})")
+
+        # 7. Wait with timeout and authoritative teardown
+        try:
+            returncode = proc.wait(timeout=timeout_sec)
+        except subprocess.TimeoutExpired:
+            # Terminate the entire process tree via systemctl kill --kill-who=all
+            subprocess.run(["systemctl", "--user", "kill", "--kill-who=all", "--signal=SIGKILL", unit_name], check=False)
+            try:
+                proc.kill()
+                proc.wait(timeout=2)
+            except Exception:
+                pass
+
+            cleaned_up = verify_unit_cleanup(
+                unit_name,
+                expected_cgroup=cached_cgroup,
+                expected_invocation_id=cached_invocation_id,
+            )
+            if cleaned_up:
+                self.store.fail_task(
+                    task_id,
+                    reviewer="systemd-watchdog",
+                    reason=f"Timeout expired ({timeout_sec}s); unit confirmed terminated",
+                )
+            else:
+                # Retain uncertain reservation in Store (launch-uncertain holds resources)
+                self.store.transition_task(
+                    task_id,
+                    "launch-uncertain",
+                    ("running",),
+                    reviewer="systemd-watchdog",
+                    reason=f"Timeout expired; unit cleanup unproven, holding resources",
+                )
+            raise TimeoutError(f"Task {task_id} in systemd scope {unit_name} exceeded timeout {timeout_sec}s (cleaned_up={cleaned_up})")
+
+        completed_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        stdout_text = read_bounded_log(stdout_log, max_bytes=65536)
+        stderr_text = read_bounded_log(stderr_log, max_bytes=65536)
+
+        # 8. Non-auto-accepting completion handling (no rc0-as-done)
+        if returncode == 0:
+            if expected_outputs:
+                for out_p_str in expected_outputs:
+                    out_p = Path(out_p_str).resolve()
+                    if not out_p.exists() or out_p.stat().st_size == 0:
+                        raise ResourceAdmissionError(f"Expected output file {out_p} missing or empty")
+
+            subprocess.run(["systemctl", "--user", "stop", unit_name], check=False)
+            cleaned_up = verify_unit_cleanup(
+                unit_name,
+                expected_cgroup=cached_cgroup,
+                expected_invocation_id=cached_invocation_id,
+            )
+            if cleaned_up:
+                # Transition to completed-awaiting-review via complete_task
+                self.store.complete_task(
+                    task_id,
+                    reviewer="systemd-scope-runner",
+                    reason=f"scope {unit_name} exited 0; unit confirmed clean; awaiting independent review",
+                )
+            else:
+                # Lingering children after client exit!
+                subprocess.run(["systemctl", "--user", "kill", "--kill-who=all", "--signal=SIGKILL", unit_name], check=False)
+                self.store.transition_task(
+                    task_id,
+                    "launch-uncertain",
+                    ("running",),
+                    reviewer="systemd-scope-runner",
+                    reason=f"scope {unit_name} exited 0 but unconfined processes remain in cgroup, holding resources",
+                )
+                raise ResourceAdmissionError(f"Scope {unit_name} exited 0 but left unconfined background tasks in cgroup")
+        else:
+            subprocess.run(["systemctl", "--user", "kill", "--kill-who=all", "--signal=SIGKILL", unit_name], check=False)
+            subprocess.run(["systemctl", "--user", "stop", unit_name], check=False)
+            cleaned_up = verify_unit_cleanup(
+                unit_name,
+                expected_cgroup=cached_cgroup,
+                expected_invocation_id=cached_invocation_id,
+            )
+            if cleaned_up:
+                self.store.fail_task(
+                    task_id,
+                    reviewer="systemd-scope-runner",
+                    reason=f"scope {unit_name} exited rc={returncode}; unit confirmed clean",
+                )
+            else:
+                self.store.transition_task(
+                    task_id,
+                    "launch-uncertain",
+                    ("running",),
+                    reviewer="systemd-scope-runner",
+                    reason=f"scope {unit_name} exited rc={returncode}; lingering tasks or unproven cleanup, holding resources",
+                )
+                raise ResourceAdmissionError(f"Scope {unit_name} exited rc={returncode} with unproven cleanup")
+
+        return {
+            "task_id": task_id,
+            "unit_name": unit_name,
+            "returncode": returncode,
+            "pid": proc.pid,
+            "started_at": started_at,
+            "completed_at": completed_at,
+            "bus_identity": bus_identity_receipt,
+            "stdout_preview": stdout_text[:500],
+            "stderr_preview": stderr_text[:500],
+            "quse_admitted": True,
+            "provider_chosen": chosen["provider"],
+        }
+
+

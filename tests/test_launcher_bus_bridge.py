@@ -29,10 +29,11 @@ import os
 from pathlib import Path
 import shutil
 import stat
+import subprocess
 import tempfile
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from research.antigravity.tooling.self_org.launcher_bus_bridge import (
     AdmissionError,
@@ -45,12 +46,15 @@ from research.antigravity.tooling.self_org.launcher_bus_bridge import (
     QuotaAdmissionError,
     ResourceAdmissionError,
     durable_atomic_write,
+    ChildModelRuntimeAdapter,
+    query_systemctl_show,
+    verify_unit_cleanup,
 )
 from research.antigravity.tooling.self_org.child_adapter import ChildAdapter
 from research.antigravity.tooling.self_org.lease_manager import LeaseManager
 import launcher.resources
 import coordination.envelope
-from launcher.store import Store
+from launcher.store import Store, RESOURCE_HOLDING_STATES
 from coordination.envelope import TransportState
 
 
@@ -552,6 +556,543 @@ class TestLauncherBusBridge(unittest.TestCase):
             )
         self.assertIn("strictly HELD", str(cm.exception))
 
+    # -----------------------------------------------------------------------
+    # Test 8: ChildModelRuntimeAdapter host capacity admission gates
+    # -----------------------------------------------------------------------
+    def test_08_child_model_runtime_host_admission(self) -> None:
+        """
+        Validates ChildModelRuntimeAdapter.check_host_admission enforcing
+        MemAvailable >= 10 GiB floor and Root Disk >= 50 GiB floor (C2083).
+        """
+        admission = ChildModelRuntimeAdapter.check_host_admission()
+        self.assertTrue(admission["admitted"])
+        self.assertGreaterEqual(admission["mem_available_bytes"], 10 * (1024 ** 3))
+        self.assertGreaterEqual(admission["disk_free_bytes"], 50 * (1024 ** 3))
+
+    # -----------------------------------------------------------------------
+    # -----------------------------------------------------------------------
+    # Test 9: ChildModelRuntimeAdapter quse admission & candidate ranking
+    # -----------------------------------------------------------------------
+    def test_09_child_model_runtime_quse_admission_and_ranking(self) -> None:
+        """
+        Validates check_quse_admission with valid telemetry and fail-closed rejections.
+        """
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+            "gemini": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 70.0, "rolling": False, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 80.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        chosen, provenance = ChildModelRuntimeAdapter.check_quse_admission(quse_data=valid_telemetry)
+        self.assertIn(chosen["provider"], ("zai", "antigravity"))
+        self.assertIsNotNone(provenance)
+
+        # Quota telemetry None strictly fails closed
+        with self.assertRaises(QuotaAdmissionError):
+            ChildModelRuntimeAdapter.check_quse_admission(quse_data=None)
+
+        # Quota exhausted strictly fails closed
+        exhausted_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 0.0, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 0.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+        with self.assertRaises(QuotaAdmissionError):
+            ChildModelRuntimeAdapter.check_quse_admission(quse_data=exhausted_telemetry)
+
+    # -----------------------------------------------------------------------
+    # Test 10: ChildModelRuntimeAdapter prepare and dispatch under launch lock
+    # -----------------------------------------------------------------------
+    def test_10_child_model_runtime_prepare_and_dispatch(self) -> None:
+        """
+        Validates prepare_and_dispatch_task submitting to Store, checking active resources,
+        enrolling isolated agent-bus identity, and transitioning to starting under lock.
+        """
+        bus_bridge = AgentBusEnrollmentBridge(bus_dir=self.bus_dir)
+        runtime = ChildModelRuntimeAdapter(
+            store=self.store,
+            workspace=self.workspace,
+            bus_bridge=bus_bridge,
+        )
+
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        dispatch = runtime.prepare_and_dispatch_task(
+            task_id="task-model-dispatch-1",
+            goal="Test model goal",
+            cwd=self.workspace,
+            timeout_sec=120.0,
+            requested_memory_mb=1500,
+            tmpdir=self.owned_tmp,
+            lock_path=self.workspace / ".local" / "test.lock",
+            quse_override=valid_telemetry,
+        )
+
+        self.assertEqual(dispatch["task_id"], "task-model-dispatch-1")
+        self.assertEqual(dispatch["status"], "starting")
+        self.assertTrue(dispatch["quse_admitted"])
+        self.assertIsNotNone(dispatch["bus_identity"])
+        self.assertEqual(dispatch["bus_identity"]["agent_tag"], "task-model-dispatch-1")
+        self.assertTrue(dispatch["bus_identity"]["token_registered"])
+
+        # Verify task is in starting state in Store
+        task_record = self.store.get_task("task-model-dispatch-1")
+        self.assertIsNotNone(task_record)
+        self.assertEqual(task_record["state"], "starting")
+
+    # -----------------------------------------------------------------------
+    # Test 11: ChildModelRuntimeAdapter rejects global /tmp
+    # -----------------------------------------------------------------------
+    def test_11_child_model_runtime_rejects_global_tmp(self) -> None:
+        """
+        Validates that passing /tmp or /data/tmp raises ResourceAdmissionError.
+        """
+        runtime = ChildModelRuntimeAdapter(
+            store=self.store,
+            workspace=self.workspace,
+        )
+
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            runtime.prepare_and_dispatch_task(
+                task_id="task-tmp-reject",
+                goal="Goal with bad tmp",
+                cwd=self.workspace,
+                tmpdir="/tmp/uncontained_dir",
+            )
+        self.assertIn("Contained TMPDIR violation", str(cm.exception))
+
+    # -----------------------------------------------------------------------
+    # Test 12: Direct Verified Systemd Scope Execution (C2086 / C2087)
+    # -----------------------------------------------------------------------
+    def test_12_child_model_runtime_direct_systemd_scope_probe(self) -> None:
+        """
+        Validates execute_in_verified_systemd_scope directly executing inside
+        systemd-run --user --scope with MemoryMax=1500M under launch_lock (C2086 / C2087).
+        """
+        bus_bridge = AgentBusEnrollmentBridge(bus_dir=self.bus_dir)
+        runtime = ChildModelRuntimeAdapter(
+            store=self.store,
+            workspace=self.workspace,
+            bus_bridge=bus_bridge,
+        )
+
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        test_cmd = ["python3", "-c", "import sys; print('probe-success'); sys.exit(0)"]
+
+        result = runtime.execute_in_verified_systemd_scope(
+            task_id="t-scope-probe-1",
+            command_argv=test_cmd,
+            cwd=self.workspace,
+            timeout_sec=30.0,
+            requested_memory_mb=1500,
+            tmpdir=self.owned_tmp,
+            lock_path=self.workspace / ".local" / "test.lock",
+            quse_override=valid_telemetry,
+        )
+
+        self.assertEqual(result["task_id"], "t-scope-probe-1")
+        self.assertEqual(result["returncode"], 0)
+        self.assertTrue(result["unit_name"].startswith("agent-scope-t-sc"))
+        self.assertIn("probe-success", result["stdout_preview"])
+
+        # Verify task transitioned to completed-awaiting-review in Store (NOT done!)
+        task_record = self.store.get_task("t-scope-probe-1")
+        self.assertEqual(task_record["state"], "completed-awaiting-review")
+
+    # -----------------------------------------------------------------------
+    # Test 13: Missing/empty unit info during cleanup fails closed (C2097)
+    # -----------------------------------------------------------------------
+    def test_13_c2097_missing_empty_unit_info_fails_cleanup(self) -> None:
+        """
+        Verify missing/empty systemctl show output causes verify_unit_cleanup -> False,
+        and execute_in_verified_systemd_scope preserves starting -> launch-uncertain,
+        holding Store reservations (C2097).
+        """
+        with patch("research.antigravity.tooling.self_org.launcher_bus_bridge.query_systemctl_show") as mock_show:
+            mock_show.return_value = {}
+            self.assertFalse(verify_unit_cleanup("dummy.scope", max_retries=1, retry_delay=0.001))
+            mock_show.return_value = {"ActiveState": "inactive"}
+            self.assertFalse(verify_unit_cleanup("dummy.scope", max_retries=1, retry_delay=0.001))
+            mock_show.return_value = {"ActiveState": "active", "TasksCurrent": "0"}
+            self.assertFalse(verify_unit_cleanup("dummy.scope", max_retries=1, retry_delay=0.001))
+            mock_show.return_value = {"ActiveState": "inactive", "TasksCurrent": "0"}
+            self.assertTrue(verify_unit_cleanup("dummy.scope", max_retries=1, retry_delay=0.001))
+
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        task_dir = self.workspace / "t13_dir"
+        task_dir.mkdir(parents=True, exist_ok=True)
+        with patch("research.antigravity.tooling.self_org.launcher_bus_bridge.verify_unit_cleanup", return_value=False), \
+             patch("subprocess.run") as mock_run, \
+             patch("subprocess.Popen") as mock_popen:
+            mock_run.return_value = MagicMock(returncode=0)
+            proc = MagicMock()
+            proc.pid = 99913
+            proc.poll.return_value = 91
+            proc.wait.return_value = 91
+            proc.communicate.return_value = ("", "")
+            mock_popen.return_value = proc
+
+            task_id = "t-c2097-missing-info-13"
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=task_id,
+                    command_argv=["echo", "unreachable"],
+                    cwd=task_dir,
+                    timeout_sec=10.0,
+                    requested_memory_mb=1500,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    quse_override=valid_telemetry,
+                )
+            self.assertIn("failed containment verification prelude", str(cm.exception))
+
+            task = self.store.get_task(task_id)
+            self.assertEqual(task["state"], "launch-uncertain")
+            active_mem, _ = self.store.get_active_resources()
+            self.assertEqual(active_mem, 1500)
+
+    # -----------------------------------------------------------------------
+    # Test 14: Unknown/missing ControlGroup in prelude fails closed (C2097)
+    # -----------------------------------------------------------------------
+    def test_14_c2097_unknown_missing_controlgroup_in_prelude(self) -> None:
+        """
+        Verify missing ControlGroup (exit 94) in prelude fails closed and transitions
+        starting -> launch-uncertain if cleanup is unproven, or starting -> failed if cleanup is proven.
+        """
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        # Case A: Cleanup unproven -> launch-uncertain
+        task_dir_a = self.workspace / "t14_dir_a"
+        task_dir_a.mkdir(parents=True, exist_ok=True)
+        with patch("research.antigravity.tooling.self_org.launcher_bus_bridge.verify_unit_cleanup", return_value=False), \
+             patch("subprocess.run") as mock_run, \
+             patch("subprocess.Popen") as mock_popen:
+            mock_run.return_value = MagicMock(returncode=0)
+            proc = MagicMock()
+            proc.pid = 99914
+            proc.poll.return_value = 94
+            proc.wait.return_value = 94
+            proc.communicate.return_value = ("", "")
+            mock_popen.return_value = proc
+
+            task_id_a = "t-c2097-missing-cg-a"
+            with self.assertRaises(ResourceAdmissionError):
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=task_id_a,
+                    command_argv=["echo", "unreachable"],
+                    cwd=task_dir_a,
+                    timeout_sec=10.0,
+                    requested_memory_mb=1500,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    quse_override=valid_telemetry,
+                )
+            task = self.store.get_task(task_id_a)
+            self.assertEqual(task["state"], "launch-uncertain")
+            mem_a, _ = self.store.get_active_resources()
+            self.assertEqual(mem_a, 1500)
+
+        # Case B: Cleanup proven -> failed
+        task_dir_b = self.workspace / "t14_dir_b"
+        task_dir_b.mkdir(parents=True, exist_ok=True)
+        with patch("research.antigravity.tooling.self_org.launcher_bus_bridge.verify_unit_cleanup", return_value=True), \
+             patch("subprocess.run") as mock_run, \
+             patch("subprocess.Popen") as mock_popen:
+            mock_run.return_value = MagicMock(returncode=0)
+            proc = MagicMock()
+            proc.pid = 99915
+            proc.poll.return_value = 94
+            proc.wait.return_value = 94
+            proc.communicate.return_value = ("", "")
+            mock_popen.return_value = proc
+
+            task_id_b = "t-c2097-missing-cg-b"
+            with self.assertRaises(ResourceAdmissionError):
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=task_id_b,
+                    command_argv=["echo", "unreachable"],
+                    cwd=task_dir_b,
+                    timeout_sec=10.0,
+                    requested_memory_mb=1200,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    quse_override=valid_telemetry,
+                )
+            task_b = self.store.get_task(task_id_b)
+            self.assertEqual(task_b["state"], "failed")
+            mem_total, _ = self.store.get_active_resources()
+            self.assertEqual(mem_total, 1500)
+
+    # -----------------------------------------------------------------------
+    # Test 15: Lingering background children after rc=0 client exit (C2097)
+    # -----------------------------------------------------------------------
+    def test_15_c2097_children_after_client_exit(self) -> None:
+        """
+        Verify that if main process exits 0 but background descendants linger in unit cgroup,
+        verify_unit_cleanup returns False, execute_in_verified_systemd_scope issues SIGKILL,
+        transitions to launch-uncertain, and raises ResourceAdmissionError.
+        """
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        task_id = "t-c2097-lingering-15"
+        task_dir = self.workspace / "t15_dir"
+        task_dir.mkdir(parents=True, exist_ok=True)
+
+        def fake_popen(cmd, **kwargs):
+            unit_name = None
+            for arg in cmd:
+                if arg.startswith("--unit="):
+                    unit_name = arg.split("=", 1)[1]
+                    break
+            if unit_name:
+                receipt_path = self.owned_tmp / f"containment_verified_{unit_name}.json"
+                receipt_path.write_text(
+                    json.dumps({
+                        "unit": unit_name,
+                        "pid": 99916,
+                        "cgroup": f"/user.slice/{unit_name}",
+                        "memory_max": "1572864000",
+                        "invocation_id": "inv-lingering-15",
+                    }),
+                    encoding="utf-8",
+                )
+            proc = MagicMock()
+            proc.pid = 99916
+            proc.poll.return_value = 0
+            proc.wait.return_value = 0
+            proc.communicate.return_value = ("", "")
+            return proc
+
+        with patch("subprocess.Popen", side_effect=fake_popen), \
+             patch("research.antigravity.tooling.self_org.launcher_bus_bridge.verify_unit_cleanup", return_value=False), \
+             patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=task_id,
+                    command_argv=["python3", "-c", "import os; os.fork()"],
+                    cwd=task_dir,
+                    timeout_sec=10.0,
+                    requested_memory_mb=1500,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    quse_override=valid_telemetry,
+                )
+            self.assertIn("left unconfined background tasks in cgroup", str(cm.exception))
+
+            task = self.store.get_task(task_id)
+            self.assertEqual(task["state"], "launch-uncertain")
+
+    # -----------------------------------------------------------------------
+    # Test 16: 'launch-uncertain' strictly holds Store capacity (C2097)
+    # -----------------------------------------------------------------------
+    def test_16_c2097_state_still_resource_holding(self) -> None:
+        """
+        Verify that Store.get_active_resources() confirms 'launch-uncertain' holds memory/disk
+        reservations, while 'failed' releases them (C2097).
+        """
+        self.assertIn("launch-uncertain", RESOURCE_HOLDING_STATES)
+
+        task_id = "t-c2097-res-holder-16"
+        task_dir = self.workspace / "t16_dir"
+        task_dir.mkdir(parents=True, exist_ok=True)
+        self.store.submit_task(
+            task_id=task_id,
+            idempotency_key="idem-holder-16",
+            payload={"owner": "test", "cwd": str(task_dir), "timeout": 60},
+            paths=[str(task_dir / "p1")],
+            memory_mb=1500,
+            disk_mb=512,
+        )
+
+        self.store.transition_task(task_id, "starting", ("queued",))
+        self.store.transition_task(task_id, "launch-uncertain", ("starting",))
+        mem, disk = self.store.get_active_resources(exclude_task_id="other")
+        self.assertGreaterEqual(mem, 1500)
+
+        self.store.transition_task(task_id, "failed", ("launch-uncertain",))
+        task_res = self.store.get_task(task_id)
+        self.assertEqual(task_res["state"], "failed")
+
+    # -----------------------------------------------------------------------
+    # Test 17: All-exit-paths uniform cleanup helper enforcement (C2097)
+    # -----------------------------------------------------------------------
+    def test_17_c2097_all_exit_paths_uniform_cleanup_helper(self) -> None:
+        """
+        Verify that verify_unit_cleanup is enforced uniformly across:
+        prelude failure, timeout, non-zero rc, and zero rc.
+        """
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        exit_scenarios = [
+            ("prelude_fail", None, False, ResourceAdmissionError),
+            ("timeout", subprocess.TimeoutExpired(cmd="scope", timeout=5), False, TimeoutError),
+            ("nonzero_rc", 2, False, ResourceAdmissionError),
+            ("zero_rc_lingering", 0, False, ResourceAdmissionError),
+        ]
+
+        for name, outcome, cleanup_ok, expected_err in exit_scenarios:
+            task_id = f"t17-exit-{name}"
+            scenario_cwd = self.workspace / f"cwd_{name}"
+            scenario_cwd.mkdir(parents=True, exist_ok=True)
+
+            def make_fake_popen(outcome_val, current_task_id):
+                def fake_popen_inner(cmd, **kwargs):
+                    unit_name = None
+                    for arg in cmd:
+                        if arg.startswith("--unit="):
+                            unit_name = arg.split("=", 1)[1]
+                            break
+                    if outcome_val is not None and unit_name:
+                        receipt_path = self.owned_tmp / f"containment_verified_{unit_name}.json"
+                        receipt_path.write_text(
+                            json.dumps({
+                                "unit": unit_name,
+                                "pid": 99917,
+                                "cgroup": f"/user.slice/{unit_name}",
+                                "memory_max": "1572864000",
+                                "invocation_id": "inv-exit-17",
+                            }),
+                            encoding="utf-8",
+                        )
+                    proc = MagicMock()
+                    proc.pid = 99917
+                    proc.communicate.return_value = ("", "")
+                    if isinstance(outcome_val, Exception):
+                        proc.poll.return_value = None
+                        proc.wait.side_effect = outcome_val
+                    else:
+                        proc.poll.return_value = outcome_val
+                        proc.wait.return_value = outcome_val
+                    return proc
+                return fake_popen_inner
+
+            with patch("subprocess.Popen", side_effect=make_fake_popen(outcome, task_id)), \
+                 patch("research.antigravity.tooling.self_org.launcher_bus_bridge.verify_unit_cleanup", return_value=cleanup_ok), \
+                 patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0)
+
+                with self.assertRaises(expected_err):
+                    runtime.execute_in_verified_systemd_scope(
+                        task_id=task_id,
+                        command_argv=["echo", "test"],
+                        cwd=scenario_cwd,
+                        timeout_sec=5.0,
+                        requested_memory_mb=1500,
+                        tmpdir=self.owned_tmp,
+                        lock_path=self.workspace / ".local" / "test.lock",
+                        quse_override=valid_telemetry,
+                    )
+
+                task = self.store.get_task(task_id)
+                self.assertEqual(task["state"], "launch-uncertain")
+
+    # -----------------------------------------------------------------------
+    # Test 18: Blind query absence without cached cgroup fails closed (C2100)
+    # -----------------------------------------------------------------------
+    def test_18_c2100_blind_query_absence_rejected(self) -> None:
+        """
+        Verify that when query_systemctl_show returns TasksCurrent in ('[not set]', '')
+        without expected_cgroup, verify_unit_cleanup returns False (C2100).
+        Also verify that with expected_cgroup, it authoritatively checks cgroup.procs.
+        """
+        unit = "agent-scope-fake-blind.scope"
+
+        # Case 1: Blind nonexistent unit (TasksCurrent='[not set]', no expected_cgroup) -> False
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.query_systemctl_show",
+            return_value={"ActiveState": "inactive", "TasksCurrent": "[not set]", "ControlGroup": ""},
+        ):
+            res = verify_unit_cleanup(unit, expected_cgroup=None, max_retries=1)
+            self.assertFalse(res, "Blind '[not set]' query without cached cgroup must return False")
+
+        # Case 2: Blind empty tasks string without expected_cgroup -> False
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.query_systemctl_show",
+            return_value={"ActiveState": "inactive", "TasksCurrent": "", "ControlGroup": ""},
+        ):
+            res = verify_unit_cleanup(unit, expected_cgroup=None, max_retries=1)
+            self.assertFalse(res, "Blind empty tasks query without cached cgroup must return False")
+
+        # Case 3: Cached cgroup directory does not exist (dissolved) -> True
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.query_systemctl_show",
+            return_value={"ActiveState": "inactive", "TasksCurrent": "[not set]", "InvocationID": "inv-1"},
+        ):
+            res = verify_unit_cleanup(unit, expected_cgroup="dissolved/cgroup/path", expected_invocation_id="inv-1", max_retries=1)
+            self.assertTrue(res, "Dissolved cgroup path with matching InvocationID must return True")
+
 
 if __name__ == "__main__":
     unittest.main()
+
