@@ -1,136 +1,181 @@
-# REV-PUBLICATION-GUARD — Independent Security & Edge-Case Review of Publication Credential Guard
+# REV-PUBLICATION-GUARD — Independent Security Re-Review of Publication Credential Guard
 
-- **Reviewer Tag:** `publication-guard-reviewer`
-- **Session ID:** `3d67979e-2323-4c9a-8733-c5aa306e3058`
-- **Parent Session:** `antigravity-head` (`245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
-- **Directives:** Codex Principal C1601 / C1603 / C1612 / C1614 / C1618
+- **Reviewer Tag:** `publication-guard-re-reviewer`
+- **Session ID:** `c571d108-b056-477a-a5a7-e2fb0e4429aa`
+- **Parent Session:** `antigravity-head` (`46fdb644`, conversation ID `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives:** Codex Principal C1621 / C1622 / C1625
 - **Review Date / As-of:** 2026-10-04, Europe/Berlin
 - **Target Files under Review (Pinned Hashes):**
-  - `research/antigravity/tooling/publication_guard.py` (blob `05fc18e2f682b30fe7b7762d059a770712f633eb`)
-  - `tests/test_publication_guard.py` (blob `c6590cd3c761dfbe5568aea2db2a26085bec1bac`)
-- **Verdict: ACCEPT (ALL DEFECTS REMEDIATED & VERIFIED)**
-  - All four previously identified defects (D1, D2, D3, D4) have been fully remediated and verified through dedicated regression tests.
-  - Per Codex C1618, `tests/test_publication_guard.py` was frozen at blob `c6590cd3c761dfbe5568aea2db2a26085bec1bac` with dynamic token concatenation to avoid false self-violations; the test file itself passes `publication_guard.py` with exit code 0.
-  - The unit test suite executes 26/26 tests cleanly in 1.611s with zero failures, zero errors, and zero warnings.
-  - All 6 public research deliverables in the repository pass publication credential guard verification with exit code 0.
-  - Operational invariants strictly maintained: scratch disk usage 144 KB (budget <= 512 MB), zero `/tmp` growth, memory <= 1500 MB cooperative slice, and zero raw secrets emitted to output.
+  - `research/antigravity/tooling/publication_guard.py` (blob `0f4cdbfbaf58f5b8e45da6629ba2bcbc8c54530c`)
+  - `tests/test_publication_guard.py` (blob `e3b235d0c2f60b3a49a70a6041582f09979bec0f`)
+- **Bounded Verdict:** **ACCEPT_REMEDIATED_SOURCE (ALL FIVE FINDINGS REMEDIATED & VERIFIED)**
+  - All three live bypasses uncovered by Codex Principal C1621 and both predicted edge-case failures have been fully remediated and verified through dedicated tests and independent scratch execution.
+  - Previous overbroad claim of "complete against all evasions" is explicitly withdrawn and superseded by a bounded verification record.
+  - **Operating Status:** Publication coordinator remains on **DRAFT guard**; the tool is verified as a mandatory pre-commit tripwire and automated filter, but must not be treated as a sole, infallible privacy gate.
+  - Pinned test suite executes **32/32 tests cleanly in 2.164s** with zero failures and zero errors.
+  - Test suite self-verification passes with exit code 0 (zero self-referential false positives).
+  - All 7 repository public research deliverables pass publication guard verification with exit code 0.
+  - Operational invariants strictly observed: scratch disk usage 312 KB (budget <= 512 MB, mode `0700`), zero `/tmp` growth, memory within cooperative limit (<= 1500 MB), and strictly zero raw secrets printed.
 
 ---
 
-## 1. Executive Summary & Verification Matrix
+## 1. Context & Disclosure of Codex Principal C1621 / C1622 Findings
 
-| Evaluation Category | Target Specification | Measured Status | Verification Receipt | Result |
-|---|---|---|---|---|
-| **Minted Bearer Detection (`art_v1_`)** | Catch tokens >= 20 chars, query strings, percent-encoding; allow redaction brackets & ellipsis | Detected unredacted hex & query variants; allowed `art_v1_[REDACTED]`, `art_v1_...`, syntax lists | `TestMintedTokenDetection` (2/2 pass) | **PASS** |
-| **High-Entropy Tokens (`tok_`)** | Catch tokens >= 16 chars; allow documented fixture `tok_alpha_12345` & exact redactions | Detected 24-char tokens; permitted `tok_alpha_12345` and bracketed forms | `TestHighEntropyBearerAndHeaders` (3/3 pass) | **PASS** |
-| **Authorization Bearer Headers (D2 Fix)** | Catch raw, double-quoted, single-quoted, and JSON headers; allow `<token>`, `[REDACTED]` | Verified detection of `"Authorization": "Bearer ..."` and quoted tokens | `test_quoted_and_json_authorization_bearer_headers` (pass) | **REMEDIATED & PASS** |
-| **Credential-Bearing URLs** | Catch `user:pass@host`, `user@host` (unredacted user), and query tokens; allow redactions | Caught passwords, hex tokens, percent-encoded params; allowed bracketed & composite redactions | `TestCredentialBearingUrls` (3/3 pass) | **PASS** |
-| **Local Secret Literals (D3 Fix)** | Catch `admin-secret-<hex>`, `webhook-secret-<hex>`, etc.; allow documented exact fixtures | Caught unredacted local secrets; pinned to exact fixtures (`token_12345`, `secret_12345`, `dummy_12345`) | `TestLocalSecretLiterals` (2/2 pass) | **REMEDIATED & PASS** |
-| **Confidentiality / Value Suppression** | Zero matched secrets printed to stdout or stderr across all rules | Verified across all 12 detection branches; only `***` emitted | Live canary suppression audit (12/12 suppressed) | **PASS** |
-| **Fail-Closed Exit Codes** | 0 = clean; 1 = violations; 2 = missing target, unreadable file, binary input, or bad CLI flags | Clean files exit 0; violations exit 1; missing / unreadable / binary targets exit 2 | `TestCliFlagsAndEdgeCases` (8/8 pass) | **PASS** |
-| **Staged Binary Handling (D1 Fix)** | Staged binary blobs in index skip cleanly without `UnicodeDecodeError` | Staged binary asset with invalid UTF-8 bytes returned exit code 0 | `test_staged_binary_file_skips_cleanly` (pass) | **REMEDIATED & PASS** |
-| **Staged Scratch Rejection (D4 Fix)** | Staged secrets anywhere in git index (including `scratch/`) fail closed with exit 1 | Staged secret in `scratch/private_test.md` blocked with exit 1 | `test_staged_flag_in_isolated_git_repo` (pass) | **REMEDIATED & PASS** |
-| **Staged Explicit Path Filter (C1614)** | Passing explicit targets with `--staged` inspects only requested subset | Only requested staged files scanned; unrequested staged dirty file skipped | `test_staged_explicit_paths_filtering` (pass) | **PASS** |
-| **Path Error Sanitization** | Paths in stderr output do not leak raw credentials | Raw bearer token in path string masked to `art_v1_***` in stderr | `test_sanitized_path_in_error` (pass) | **PASS** |
-| **Test Suite Self-Verification (C1618)** | Test file itself passes guard without triggering false positive self-violations | `publication_guard.py tests/test_publication_guard.py` exits 0 clean | Direct scan of `c6590cd3` blob | **PASS** |
-| **Public Deliverables Self-Verification** | All public research reports in repository pass guard verification clean | All 6 canonical deliverables scanned with exit code 0 | `TestPublicReportsSelfVerification` (pass) | **PASS** |
-| **Unit Test Suite Coverage** | Pure Python unittest suite with zero external dependencies | 26/26 tests pass in 1.611s | `python3 -m unittest -v tests/test_publication_guard.py` | **PASS** |
-| **Mutation Testing (Scratch)** | Mutant 1 (URL creds), Mutant 2 (`art_v1_`), Mutant 3 (missing exit code) | All 3 mutants killed by targeted tests | Isolated worktree mutation harness | **PASS (3/3 KILLED)** |
+In commit `2eacf83` (`research/codex/publication-guard-review-2026-10-04.md`), Codex Principal conducted an in-memory audit of the previously committed blob `05fc18e2` and test blob `c6590cd3`. The principal demonstrated that despite 26 passing unit tests and 3 killed mutants, the source retained prefix matching and overly broad bracket exemptions that permitted three live bypasses where `scan_content()` returned 0 violations:
+
+1. **`tok_` Fixture Prefix Bypass:** `tok_alpha_12345` was matched with `.startswith()`, allowing arbitrary secret payloads appended to the documented test fixture (e.g. `tok_` + `alpha_12345` + `_arbitrary_extra_secret`) to bypass detection undetected.
+2. **Local Secret Prefix Bypass:** Local secret suffix matching used loose prefix/substring checks, allowing appended payloads (e.g. `admin-secret-` + `token_12345` + `_arbitrary_extra_secret`) to bypass detection.
+3. **Arbitrary Bracketed URL Password Bypass:** URL password redaction accepted arbitrary bracketed/angled strings (e.g. `[some_raw_secret]` or `<some_raw_secret>`), creating a bypass vector for raw credentials formatted inside brackets.
+
+Furthermore, two operational fail-closed defects were predicted and confirmed:
+4. **Staged Corrupted/NUL Text Files:** Staged text deliverables containing NUL bytes were silently skipped as binary blobs rather than failing closed with operational error (exit code 2).
+5. **Unmatched Explicit Staged Targets:** Explicit file targets passed to `--staged <path>` that did not match any file in the git index returned exit code 0 rather than failing closed with operational error (exit code 2).
+
+Under C1622 and C1625, the previous review's unqualified claim of being "complete against all evasions" was rejected. The implementation was revised to blob `0f4cdbfbaf58f5b8e45da6629ba2bcbc8c54530c` and test suite to blob `e3b235d0c2f60b3a49a70a6041582f09979bec0f`. This re-review independently inspects function bodies, executes the 32-test suite, runs 6 scratch negative tests, and bounds the certification.
 
 ---
 
-## 2. Remediated Defects & Verification Receipts
+## 2. Deep Function Body Inspection
 
-### Defect D1 (CRITICAL): Staged Binary Asset Decoding Crash
-- **Initial Flaw:** In `c40fcc1`, `read_staged_content()` called `subprocess.run(text=True)`, triggering an unhandled `UnicodeDecodeError` on binary files in the git index and aborting the commit hook.
-- **Remediation:** `read_staged_content()` was updated to capture raw subprocess bytes (`stdout` without `text=True`), inspect with `is_binary_content()`, and return `""` immediately for binary blobs without attempting text decoding.
-- **Verification Receipt:**
-  - Automated unit test: `test_staged_binary_file_skips_cleanly` creates an isolated git repository inside scratch containing staged non-UTF8 binary bytes (`b"\x00\x80\xFF\xFE\x01\x02"`).
-  - Command: `publication_guard.py --staged`
-  - Output: Exit code `0`, clean stdout, zero errors.
+Inspection of the exact function bodies in `research/antigravity/tooling/publication_guard.py` (blob `0f4cdbfb`):
 
-### Defect D2 (HIGH): Quoted & JSON-Formatted Authorization Bearer Header Evasion
-- **Initial Flaw:** `AUTH_BEARER_RE` matched `(?i:\bAuthorization:\s*Bearer)\s+([^\s"\'`]+)`. Quoted tokens (`Authorization: Bearer "[REDACTED_TOKEN]"`) or JSON headers (`"Authorization": "Bearer [REDACTED_TOKEN]"`) failed to match because quotes were excluded by the token character set and `\bAuthorization:` expected an unquoted key.
-- **Remediation:** Patterns in `publication_guard.py` were hardened to allow optional quotes surrounding the header key, bearer keyword, and token payload:
-  ```python
-  AUTH_BEARER_RE = re.compile(
-      r'(?i:\b"?Authorization"?:\s*"?Bearer"?)\s+["\'`]?([^\s"\'`]+)["\'`]?'
-  )
-  BEARER_SOLO_RE = re.compile(
-      r'^\s*"?Bearer"?\s+["\'`]?([^\s"\'`]+)["\'`]?', re.IGNORECASE
-  )
-  ```
-- **Verification Receipt:**
-  - Automated unit test: `test_quoted_and_json_authorization_bearer_headers` tests raw tokens, double-quoted tokens, single-quoted tokens, JSON headers, and quoted solo bearer tokens.
-  - Output: All 5 variants reliably detected with violation rule `[AUTHORIZATION_BEARER_HEADER]` and exit code `1`.
-  - False positive protection confirmed: Legitimate redactions (`Authorization: Bearer [REDACTED_TOKEN]` and `Authorization: Bearer <task_token>`) continue to pass cleanly with exit code `0`.
+### 2.1. Strict `tok_` Fixture Equality (`is_safe_tok`)
+```python
+def is_safe_tok(tok_val: str) -> bool:
+    """
+    Check if tok_ payload is strictly an allowed documented synthetic fixture or known marker.
+    Per C1621 / C1622: Strict equality ONLY. No startswith or prefix matching.
+    """
+    t = tok_val.strip().strip('"\'`')
+    if t == "alpha_12345":
+        return True
+    if t in KNOWN_REDACTION_MARKERS:
+        return True
+    return False
+```
+- **Verification:** Replaced `.startswith("alpha_12345")` with strict equality `t == "alpha_12345"`. Any appended arbitrary payload evaluates to `False`, triggering `[HIGH_ENTROPY_BEARER_TOKEN]` (exit code 1).
 
-### Defect D3 (MEDIUM): Broad `endswith('12345')` Local Secret Exemption
-- **Initial Flaw:** Baseline `is_safe_local_secret()` used `suffix.endswith('12345')`, potentially permitting randomly generated secrets that happened to terminate with `12345`.
-- **Remediation:** Replaced loose substring checking with exact set matching:
-  ```python
-  if s in ('token_12345', 'secret_12345', 'dummy_12345'):
-      return True
-  ```
-- **Verification Receipt:**
-  - Random hex keys terminating with `12345` (e.g. `admin_secret_[HEX_ENDING_IN_12345]`) are caught and flagged with violation `[LOCAL_SECRET_LITERAL]`.
-  - Documented non-sensitive identifiers (`sidecar_secret_token_12345`, `admin_secret_token_12345`) continue to pass cleanly.
+### 2.2. Strict Local Secret Equality (`is_safe_local_secret`)
+```python
+EXACT_SAFE_LOCAL_SECRET_FIXTURES = {
+    "token_12345",
+    "secret_12345",
+    "dummy_12345",
+}
 
-### Defect D4 (HIGH): Staged Scratch Secret Rejection Incoherence
-- **Initial Flaw:** `get_staged_files()` was intentionally updated under C1612 to inspect all staged files regardless of directory (enforcing that secrets staged in `scratch/` are blocked before commit), but `test_staged_flag_in_isolated_git_repo` in `tests/test_publication_guard.py` still asserted that staged scratch files should pass with exit `0`.
-- **Remediation:** Test step 3 in `test_staged_flag_in_isolated_git_repo` was aligned with C1612 policy:
-  ```python
-  res = self.run_guard(["--staged"], cwd=str(git_dir))
-  self.assertEqual(res.returncode, 1, f"Expected staged secret in scratch to be BLOCKED, got: {res.stdout}")
-  self.assertIn("scratch/private_test.md:1: [MINTED_TOKEN_ART_V1]", res.stdout)
-  ```
-- **Verification Receipt:**
-  - `test_staged_flag_in_isolated_git_repo` passes cleanly; staging an unredacted credential anywhere in git index produces exit code `1`.
+EXACT_SAFE_LOCAL_SECRET_REDACTIONS = {
+    "[REDACTED]",
+    "[REDACTED_SECRET]",
+    "[REDACTED_TOKEN]",
+    "<secret>",
+    "<token>",
+    "***",
+    "...",
+}
+
+def is_safe_local_secret(suffix: str, filepath: str) -> bool:
+    """
+    Check if local secret suffix is safely redacted or standard documented fixture.
+    Per C1621 / C1622: Strict equality ONLY. No startswith or prefix matching.
+    """
+    s = suffix.strip().strip('"\'`')
+    if s in EXACT_SAFE_LOCAL_SECRET_REDACTIONS:
+        return True
+    if s in EXACT_SAFE_LOCAL_SECRET_FIXTURES:
+        return True
+    is_test_file = 'test_' in filepath or '/tests/' in filepath or filepath.startswith('tests/')
+    if is_test_file and s.lower() in ('dummy', 'test', 'sample', 'example', 'mock'):
+        return True
+    return False
+```
+- **Verification:** Suffix matching strictly enforces membership in `EXACT_SAFE_LOCAL_SECRET_FIXTURES` or `EXACT_SAFE_LOCAL_SECRET_REDACTIONS`. No `startswith` or prefix allowance exists. Appended payloads fail closed (exit code 1).
+
+### 2.3. Strict Redacted Token & URL Password Allowlist (`is_safe_redacted_token` & `is_safe_redacted_url_password`)
+```python
+def is_safe_redacted_url_password(pw: str) -> bool:
+    """
+    Check if URL password component is safely redacted.
+    Per C1621 / C1622: Strict known marker allowlist ONLY.
+    Arbitrary bracketed strings like [raw_secret] or <raw_secret> without known marker are REJECTED.
+    """
+    p = pw.strip().strip('"\'`')
+    p_lower = p.lower()
+    if p_lower in KNOWN_REDACTION_MARKERS or p in KNOWN_REDACTION_MARKERS:
+        return True
+    if re.match(r'^<[a-z0-9_]*token[a-z0-9_]*>$', p_lower):
+        return True
+    if re.match(r'^\[redacted(_[a-z0-9_]+)?\]$', p_lower):
+        return True
+    # Allow composite URL query redactions:
+    # e.g. art_v1_[REDACTED_HASH]%3Fexpires%3D[REDACTED_EXPIRY]
+    if p_lower.startswith('art_v1_[redacted_hash]') and (
+        p_lower.endswith('%3fexpires%3d[redacted_expiry]') or p_lower.endswith('?expires=[redacted_expiry]')
+    ):
+        return True
+    if p_lower in ('art_v1_[redacted]', 'art_v1_...'):
+        return True
+    return False
+```
+- **Verification:** Arbitrary bracketed strings (such as `[some_raw_secret]` or `<some_raw_secret>`) do NOT match the explicit known redaction markers or the strict pattern `^\[redacted(_[a-z0-9_]+)?\]$`. They are rejected and flagged as `[CREDENTIAL_BEARING_URL]` (exit code 1).
+
+### 2.4. Fail-Closed Handling for Staged Text with NUL Bytes (`read_staged_content`)
+```python
+def read_staged_content(filepath: str) -> str:
+    """
+    Read staged blob directly from git index as raw bytes.
+    Per C1621 / C1622: Staged text deliverables containing NUL bytes fail closed with exit 2.
+    Only recognized binary file extensions (.png, .jpg, .tar, .bin, etc.) can skip without error.
+    """
+    ...
+    if is_binary_content(raw_bytes):
+        ext = os.path.splitext(filepath)[1].lower()
+        if ext in KNOWN_BINARY_EXTENSIONS:
+            return ""
+        # Staged text file containing NUL bytes -> fail closed!
+        sys.stderr.write(
+            f"publication_guard: error: binary content or NUL byte detected in staged text file: {sanitize_path_for_display(filepath)}\n"
+        )
+        sys.exit(2)
+
+    return raw_bytes.decode("utf-8", errors="replace")
+```
+- **Verification:** Staged text files (e.g. `.md`, `.py`, `.json`, `.txt`) containing NUL bytes now trigger an operational error (`exit 2`) with an explicit stderr diagnostic, preventing silent evasion by inserting NUL bytes into public text files. Only recognized binary extensions (`KNOWN_BINARY_EXTENSIONS`) skip cleanly.
+
+### 2.5. Fail-Closed Handling for Unmatched Explicit Staged Targets (`get_staged_files`)
+```python
+def get_staged_files(explicit_paths: Optional[Sequence[str]] = None) -> List[str]:
+    ...
+    if explicit_paths:
+        ...
+        # Check if any explicit path was unmatched
+        unmatched = [p for p in explicit_paths if not normalized_targets.get(os.path.normpath(p), False)]
+        if unmatched:
+            for up in unmatched:
+                sys.stderr.write(
+                    f"publication_guard: error: explicit target not staged in git index: {sanitize_path_for_display(up)}\n"
+                )
+            sys.exit(2)
+
+        return filtered
+
+    return files
+```
+- **Verification:** If explicit paths are passed to `--staged <path>`, every specified path must match at least one staged entry in the git index. Any missing or unmatched path immediately exits with code 2.
 
 ---
 
-## 3. Test Suite Self-Verification & C1618 Hash Pinning
+## 3. Independent Verification Suite Execution
 
-Per Codex C1618, test fixtures containing dummy tokens and URLs were audited to ensure they do not produce self-referential false positives when the test file itself is scanned.
-- Dummy credentials inside `tests/test_publication_guard.py` are dynamically assembled using string concatenation (e.g. `"dummysecret_" + "xyz123"`, `"tok_" + "9f8a3c2e..."`) so that no static raw credentials exist in the test source.
-- Direct invocation:
-  ```bash
-  python3 research/antigravity/tooling/publication_guard.py tests/test_publication_guard.py
-  ```
-  - **Return Code:** `0`
-  - **Stdout:** (empty)
-  - **Stderr:** (empty)
-- **Pinned Git Object Hash:**
-  `git hash-object tests/test_publication_guard.py` &rarr; `c6590cd3c761dfbe5568aea2db2a26085bec1bac`
-
----
-
-## 4. Public Deliverables Self-Verification (6/6 Reports PASS)
-
-All 6 public research deliverables were scanned directly using the hardened publication credential guard:
+### 3.1. Unit Test Suite (32/32 PASS)
+Executed pure Python unittest suite in isolated scratch environment:
 ```bash
-python3 research/antigravity/tooling/publication_guard.py \
-  research/antigravity/recovery/CHECK-DISTRIBUTION-RUNBOOK-PINS.md \
-  research/antigravity/reviews/REV-A06-COMPARISON-CONTRACT.md \
-  research/antigravity/dogfood/WARNING-LIFECYCLE-TRANSITION-REPORT.md \
-  research/antigravity/adoption/A06-ADVISORY-ADOPTION-DECISION.md \
-  research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md \
-  research/antigravity/reviews/REV-PUBLICATION-GUARD.md
+TMPDIR=.local/scratch/publication-guard-re-review python3 -m unittest -v tests/test_publication_guard.py
 ```
-
-- **Return Code:** `0`
-- **Stdout:** (empty)
-- **Stderr:** (empty)
-- **Status:** **ALL 6 REPORTS PASS CLEAN (ZERO VIOLATIONS)**
-
----
-
-## 5. Full Unit Test Suite Execution
-
-Executed full test suite against the canonical workspace:
-`TMPDIR=.local/scratch/publication-guard-review python3 -m unittest -v tests/test_publication_guard.py`
-
-```
+```text
+test_arbitrary_bracketed_url_password_detected (tests.test_publication_guard.TestC1621StrictAllowlistNegativeCases.test_arbitrary_bracketed_url_password_detected) ... ok
+test_caller_exit_code_propagation (tests.test_publication_guard.TestC1621StrictAllowlistNegativeCases.test_caller_exit_code_propagation) ... ok
+test_local_secret_prefix_with_extra_payload_detected (tests.test_publication_guard.TestC1621StrictAllowlistNegativeCases.test_local_secret_prefix_with_extra_payload_detected) ... ok
+test_tok_prefix_with_extra_payload_detected (tests.test_publication_guard.TestC1621StrictAllowlistNegativeCases.test_tok_prefix_with_extra_payload_detected) ... ok
 test_clean_markdown_report (tests.test_publication_guard.TestCleanDocuments.test_clean_markdown_report) ... ok
 test_clean_python_code (tests.test_publication_guard.TestCleanDocuments.test_clean_python_code) ... ok
 test_explicit_binary_file_exits_2 (tests.test_publication_guard.TestCliFlagsAndEdgeCases.test_explicit_binary_file_exits_2) ... ok
@@ -140,6 +185,8 @@ test_sanitized_path_in_error (tests.test_publication_guard.TestCliFlagsAndEdgeCa
 test_staged_binary_file_skips_cleanly (tests.test_publication_guard.TestCliFlagsAndEdgeCases.test_staged_binary_file_skips_cleanly) ... ok
 test_staged_explicit_paths_filtering (tests.test_publication_guard.TestCliFlagsAndEdgeCases.test_staged_explicit_paths_filtering) ... ok
 test_staged_flag_in_isolated_git_repo (tests.test_publication_guard.TestCliFlagsAndEdgeCases.test_staged_flag_in_isolated_git_repo) ... ok
+test_staged_text_file_with_nul_byte_fails_closed (tests.test_publication_guard.TestCliFlagsAndEdgeCases.test_staged_text_file_with_nul_byte_fails_closed) ... ok
+test_staged_unmatched_explicit_target_fails_closed (tests.test_publication_guard.TestCliFlagsAndEdgeCases.test_staged_unmatched_explicit_target_fails_closed) ... ok
 test_stdin_flag_clean (tests.test_publication_guard.TestCliFlagsAndEdgeCases.test_stdin_flag_clean) ... ok
 test_stdin_flag_violation (tests.test_publication_guard.TestCliFlagsAndEdgeCases.test_stdin_flag_violation) ... ok
 test_credential_url_with_dummy_secret (tests.test_publication_guard.TestCredentialBearingUrls.test_credential_url_with_dummy_secret) ... ok
@@ -159,44 +206,79 @@ test_allowed_url_placeholders (tests.test_publication_guard.TestPublicRedactionP
 test_all_public_reports_pass (tests.test_publication_guard.TestPublicReportsSelfVerification.test_all_public_reports_pass) ... ok
 
 ----------------------------------------------------------------------
-Ran 26 tests in 1.611s
+Ran 32 tests in 2.164s
 
 OK
 ```
 
+### 3.2. Test Suite Self-Verification
+Executing the guard against `tests/test_publication_guard.py` (blob `e3b235d0`):
+```bash
+python3 research/antigravity/tooling/publication_guard.py tests/test_publication_guard.py
+```
+- **Return Code:** `0`
+- **Stdout:** (empty)
+- **Stderr:** (empty)
+- **Result:** Pinned test file does not trigger self-referential false positives.
+
+### 3.3. Public Deliverables Self-Verification
+Scanned all 7 public research deliverables:
+```bash
+python3 research/antigravity/tooling/publication_guard.py \
+  research/antigravity/recovery/CHECK-DISTRIBUTION-RUNBOOK-PINS.md \
+  research/antigravity/reviews/REV-A06-COMPARISON-CONTRACT.md \
+  research/antigravity/dogfood/WARNING-LIFECYCLE-TRANSITION-REPORT.md \
+  research/antigravity/adoption/A06-ADVISORY-ADOPTION-DECISION.md \
+  research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md \
+  research/antigravity/reviews/REV-PUBLICATION-GUARD.md \
+  research/antigravity/reviews/REV-SDK-DISTRIBUTION-7692650.md
+```
+- **Return Code:** `0`
+- **Result:** All 7 repository public reports pass with zero violations.
+
 ---
 
-## 6. Mutation Testing Verification Ledger
+## 4. Negative Test Verification Receipts (Executed in Scratch)
 
-All 3 mandatory mutants were verified in an isolated scratch worktree:
+To independently confirm detection, exit codes, and secret value suppression without test harness mediation, all 6 negative cases were executed directly against `/home/alexey/git/cloudflare-agent-git/.local/scratch/publication-guard-re-review/neg_tests`:
 
-| Mutant ID | Behavioral Mutation Description | Target Test Case | Observed Failure | Mutation Status |
-|---|---|---|---|---|
-| **M1** | Disabled URL pattern loop in `scan_lines` (`for m in []:`) | `test_credential_url_with_dummy_secret` | `AssertionError: 0 != 1` | **KILLED** |
-| **M2** | Weakened `art_v1_` regex to require non-hex chars (`[g-zG-Z_-]`) | `test_minted_art_v1_dummy_hex` | `AssertionError: 0 != 1` | **KILLED** |
-| **M3** | Changed missing file return code from `2` to `0` in `main()` | `test_missing_explicit_file_exit_2` | `AssertionError: 0 != 2` | **KILLED** |
+| Case | Test Description & Synthetic Payload | Expected Exit | Measured Exit | Violations / Output Verification | Secret Suppression |
+|---|---|---|---|---|---|
+| **Case 1** | Documented `tok_` fixture prefix with appended arbitrary payload (`tok_` + `alpha_12345` + `_arbitrary_extra_secret`) | `1` | `1` | `case1.md:1: [HIGH_ENTROPY_BEARER_TOKEN] High-entropy bearer token detected (pattern: tok_***)` | **PASS:** Appended payload string NOT present in stdout or stderr |
+| **Case 2** | Documented local-secret fixture prefix with appended arbitrary payload (`admin-secret-` + `token_12345` + `_arbitrary_extra_secret`) | `1` | `1` | `case2.md:1: [LOCAL_SECRET_LITERAL] Unredacted local secret literal detected (key: ***)` | **PASS:** Appended payload string NOT present in stdout or stderr |
+| **Case 3** | Credential URL with arbitrary bracketed password lacking redaction marker (`http://token:` + `[some_raw_secret]` + `@localhost:8080/repo.git`) | `1` | `1` | `case3.md:1: [CREDENTIAL_BEARING_URL] Credential-bearing URL detected with unredacted credentials (URL: ***)` | **PASS:** Raw password string NOT present in stdout or stderr |
+| **Case 4** | Staged Markdown file in temporary git index containing NUL byte (`\x00`) executed via `--staged` | `2` | `2` | `publication_guard: error: binary content or NUL byte detected in staged text file: bad_text.md` | **PASS:** Operational fail-closed; error emitted to stderr |
+| **Case 5** | Passing unmatched explicit target to `--staged non_existent_target.md` | `2` | `2` | `publication_guard: error: explicit target not staged in git index: non_existent_target.md` | **PASS:** Operational fail-closed; error emitted to stderr |
+| **Case 6** | Shell caller exit code propagation (`$?`) across clean target, violation target, and missing target | `0`, `1`, `2` | `0`, `1`, `2` | `clean.md` &rarr; `rc=0`<br>`dirty.md` &rarr; `rc=1`<br>`missing.md` &rarr; `rc=2` | **PASS:** Nonzero exit codes reliably propagate to calling shell/scripts |
 
 ---
 
-## 7. Operational Invariants
+## 5. Operational Invariants & Resource Accounting
 
-- **Scratch Space Confinement:**
-  - Active scratch directory: `/home/alexey/git/cloudflare-agent-git/.local/scratch/publication-guard-review/`
-  - Scratch mode: `0700` (`drwx------`)
-  - Measured scratch utilization: `144 KB` (Budget: strictly `<= 512 MB`).
+- **Scratch Space Bounds:**
+  - Scratch Root: `/home/alexey/git/cloudflare-agent-git/.local/scratch/publication-guard-re-review/`
+  - Permissions: Mode `0700` (`drwx------`)
+  - Measured Disk Usage: `312 KB` (strictly `<= 512 MB` budget).
 - **`/tmp` Directory Isolation:**
-  - `TMPDIR` environment variable pointed directly to scratch root.
-  - Zero growth or writes observed in `/tmp`.
-- **Memory Cooperative Bounds:**
-  - All test and verification processes executed within cooperative limit (`<= 1500 MB`).
-- **Secret Value Sanitation:**
-  - Strictly zero raw tokens, secret keys, or live credentials appear in this report.
-- **Repository Integrity:**
-  - Canonical working tree preserved; zero author-tree mutations outside this review deliverable.
+  - `TMPDIR` variable strictly pointed into scratch root during test execution.
+  - Zero bytes written to `/tmp`.
+- **Memory Cooperative Slice:**
+  - Python test runner and subprocesses executed well within the `<= 1500 MB` slice.
+- **Value Suppression Assurance:**
+  - Verification confirmed across all rules: stdout only reports rule IDs and descriptive markers (`***`), never the raw token or password value.
+- **Working Tree Non-Destruction:**
+  - Zero unowned files touched; test repositories created and cleaned up entirely inside the scratch boundary.
 
 ---
 
-## 8. Final Verdict
+## 6. Bounded Verdict & Operating Recommendation
 
-- **Verdict:** **ACCEPT (ALL DEFECTS REMEDIATED & VERIFIED)**
-- **Conclusion:** `research/antigravity/tooling/publication_guard.py` at commit blob `05fc18e2` and its test suite `tests/test_publication_guard.py` at blob `c6590cd3` are robust, fail-closed, complete against evasions, and fully certified for active publication pre-commit and pipeline gating.
+- **Verdict:** **ACCEPT_REMEDIATED_SOURCE**
+  - Git blob `0f4cdbfbaf58f5b8e45da6629ba2bcbc8c54530c` (`research/antigravity/tooling/publication_guard.py`)
+  - Git blob `e3b235d0c2f60b3a49a70a6041582f09979bec0f` (`tests/test_publication_guard.py`)
+- **Bounded Certification Notice:**
+  - The tool is certified for its documented pattern rules: `art_v1_` minted bearer tokens, `tok_` high-entropy tokens, quoted and unquoted `Authorization: Bearer` headers, credential-bearing URLs (passwords, usernames, and query tokens), and `admin/runner/sidecar/webhook` local secret literals.
+  - In accordance with Codex C1622 and C1625 directives, claims of "complete against all evasions" are explicitly avoided. Heuristic pattern matching cannot guarantee prevention of arbitrary obfuscation, novel encodings, or unpatterned private material.
+- **Publication Coordinator Operating Mode:**
+  - The publication coordinator MUST remain on **DRAFT guard**.
+  - `publication_guard.py` serves as a mandatory pre-commit tripwire and automated filter, but does not substitute for explicit author verification, private scratch isolation, or independent lineage audits.
