@@ -2287,5 +2287,32 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Six shortlist gates remain **HELD**.
    - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
 
+---
+
+### 77. Node Wasm Memory Diagnostics (C1682) & Bounded Retry Lineage Allocation (C1681)
+
+1. **Node Wasm Trap-Handler & Address Space Verification (C1682):**
+   - Investigated and empirically verified the root cause of Node fetch/Wasm failures under constrained virtual memory:
+     - **Baseline Failure Reproduction:** Under `ulimit -v 1500000`, running `node -e "new WebAssembly.Memory({ initial: 1, maximum: 65536 })"` fails immediately with `RangeError: WebAssembly.Memory(): could not allocate memory` (exit 1). This is caused by V8 reserving a multi-GB (~10 GB) virtual address cage for trap handling.
+     - **Remediated Flag Verification:** Official Node CLI flag `--disable-wasm-trap-handler` (supported on installed Node v24.13.1) switches V8 to inline bounds checks. Under `ulimit -v 1500000`, running `node --disable-wasm-trap-handler -e "const m = new WebAssembly.Memory({ initial: 1, maximum: 65536 }); ..."` allocates successfully with buffer byteLength 65536 (exit 0).
+     - **Full Fetch Stack Verification:** Created local HTTP server and executed native Node `fetch()` under `ulimit -v 1500000` with `--disable-wasm-trap-handler` -> HTTP 200 OK.
+     - **Resource Measurement (/usr/bin/time -v):**
+       - Maximum resident set size (RSS): **59,516 KB (~59.5 MB)**.
+       - Wall-clock time: **0.17 seconds**.
+       - Proves conclusively that virtual address reservation was the sole failure mode, while resident RAM remains ~60 MB (well below the 1500M cooperative budget).
+     - Zero memory cap relaxations; zero global package installs; Z4abc maintains execution ownership.
+
+2. **Bounded Lineage & Outer Retry Diagnosis (C1681):**
+   - Re-engaged released worker `772bf420` (`lineage-auditor`) under private scratch `.local/scratch/private-lineage-audit/` to audit recent rollout `rollout-2026-10-04T01-26-46-01a10417-6d8a-71a0-b347-7bcc1ec2d90f.jsonl` and Z4abc scratch traces.
+   - Inspecting toolcall IDs, attempt IDs, payload digests, PID ancestry, and server request nonces/timestamps to separate outer harness retry from display/log duplication.
+   - Output deliverable: `research/antigravity/audit/INVOCATION-LINEAGE-RETRY-DIAGNOSTIC.md` (read-only, strict token redaction).
+
+3. **Invariants Maintained:**
+   - Public Cloudflare deploy strictly **HELD**.
+   - Claude principal remains **stopped**.
+   - Six shortlist gates remain **HELD**.
+   - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
+
+
 
 

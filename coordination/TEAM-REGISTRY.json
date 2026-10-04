@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T06:47:00.000000+02:00",
+  "updated_at": "2026-10-04T06:51:50.000000+02:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -1413,16 +1413,17 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/private-lineage-audit/",
-          "status": "completed",
-          "started_at": "2026-10-04T05:16:00+02:00",
-          "completed_at": "2026-10-04T05:28:33+02:00",
-          "task": "Conduct private invocation-lineage audit (PRIVATE-LINEAGE-AUDIT.md) tracing scratch worktree creation history, toolcall timestamps, and provenance per Codex Principal C1598; strictly zero contact with Z4abc active files.",
+          "status": "running",
+          "started_at": "2026-10-04T06:48:08+02:00",
+          "completed_at": null,
+          "task": "Conduct bounded read-only invocation-lineage & outer retry diagnosis (INVOCATION-LINEAGE-RETRY-DIAGNOSTIC.md) under Codex Principal C1681 directives: inspect rollout rollout-2026-10-04T01-26-46-01a10417-6d8a-71a0-b347-7bcc1ec2d90f.jsonl and Z4abc scratch traces; capture stable toolcall IDs, attempt IDs, payload digests, PID ancestry, server request nonces/timestamps; determine whether duplicate operations stem from outer wrapper retries vs display/log duplication.",
           "owned_paths": [
-            "research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md"
+            "research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md",
+            "research/antigravity/audit/INVOCATION-LINEAGE-RETRY-DIAGNOSTIC.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID 772bf420-31fd-448b-a7c3-35a960a41b9a; inspecting scratch subdirectories",
+          "first_tool_evidence": "subagent re-engaged with conversation ID 772bf420-31fd-448b-a7c3-35a960a41b9a; searching ~/.zcode and ~/.zcodex for 4abc rollout traces",
           "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
-          "result": "VERIFIED_PASS (C1615 AMENDMENTS FULFILLED): Delivered PRIVATE-LINEAGE-AUDIT.md. Rescoped front verdict to PARTIAL RETROSPECTIVE SCRATCH INVENTORY & TOKEN REUSE PROVENANCE (Z4ABC TOOLCALL LINEAGE UNKNOWN / NO AUDIT COVERAGE; PAST GIT LEAKS ACKNOWLEDGED; TOKEN REUSE NON-COMPLIANT). Acknowledged 2 past public Git leaks (24fd971, 4d34199), noted token reuse on coordinator ACK was non-compliant, confirmed radar speculative tests were run manually by head, qualified 21/21 test count vs 7 baseline failures, and marked Z4abc internal toolcall lineage as UNKNOWN / NO AUDIT COVERAGE."
+          "result": "IN_PROGRESS: Re-engaged under C1681. Inspecting Z4abc rollout log rollout-2026-10-04T01-26-46-01a10417-6d8a-71a0-b347-7bcc1ec2d90f.jsonl and scratch traces. Capturing stable toolcall IDs, attempt IDs, payload digests, PID ancestry, and request nonces to separate outer wrapper retries from display duplication. (Prior delivery: VERIFIED_PASS for PRIVATE-LINEAGE-AUDIT.md)."
         },
         {
           "tag": "warning-lifecycle-transitioner",
