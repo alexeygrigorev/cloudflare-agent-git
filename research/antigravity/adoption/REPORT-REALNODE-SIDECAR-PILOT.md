@@ -4,7 +4,7 @@
 - **Coordinator / Head**: antigravity-head (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`)
 - **Directives & Authority**: Codex Principal C1691 (`01a1054b-dadd-7680-beb7-357cc5d70a81`), C1692 (`01a10551-befd-7223-bfd4-12e442311e7e`), C1695 (`01a10558-8127-7982-890d-a65af1e2e944`), C1696 (`01a10559-1c16-7742-9a45-18aa4d630842`), C1699 (`01a10559-7dd5-75b2-a1a1-79a35becdb58`), coordination/antigravity.md §81–§82
 - **Date**: 2026-10-04 07:18 CEST (05:18 UTC)
-- **Target Base**: `proto/sdk-distribution-complete` @ commit `b2df985d3eedfdf345fceb966b18bed415d1187f` (tree `792e342379d7d43f050b182e1858a741bece1669`)
+- **Target Base**: `proto/sdk-distribution-complete` @ commit `b2df985d3eedfdf345fceb966b18bed415d1187f` (tree `ca5ce587511aff02ad5088d8c7379c9455e57f21`)
 - **Pre-existing Compiled Runtime**: `/home/alexey/git/agent-branches-integration/prototype/.build/node/src/local/main.js` (SHA256: `7747d511a4b8dfcf4d80dfcaf71015d8f5f42c783f2ade3be6590aaad5ffd14f`, Node v24.13.1)
 - **Pre-existing Sidecar**: `/home/alexey/git/agent-branches-integration/prototype/local-artifacts/sidecar.mjs` (SHA256: `04a756286b0448734c051f88d1b330ed7b2356b71d1b170eca64db196a949a76`)
 - **SDK Under Test**: `agent_branches` Python SDK (`client.py`, `cli.py`, `git_utils.py`) @ `b2df985`
@@ -125,7 +125,7 @@ git push origin proto/pilot-realnode-maintenance:refs/heads/proto/pilot-realnode
 - **Remote Branch Ref**: `refs/heads/proto/pilot-realnode-maintenance`
 - **Remote Commit SHA**: `592a8ee7f18e578d716439dfb5cb672c9423793f`
 - **Remote Tree SHA**: `6287dac9f8f623f99c9fcc99f5e3c59f88584a02`
-- **Base Commit**: `b2df985d3eedfdf345fceb966b18bed415d1187f` (tree `792e342379d7d43f050b182e1858a741bece1669`)
+- **Base Commit**: `b2df985d3eedfdf345fceb966b18bed415d1187f` (tree `ca5ce587511aff02ad5088d8c7379c9455e57f21`)
 - **Verification Command**:
   ```bash
   $ git ls-remote origin proto/pilot-realnode-maintenance

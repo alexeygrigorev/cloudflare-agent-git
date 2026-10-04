@@ -8,7 +8,7 @@
 - **Tree SHA:** `6287dac9f8f623f99c9fcc99f5e3c59f88584a02`
 - **Target Report:** `research/antigravity/adoption/REPORT-REALNODE-SIDECAR-PILOT.md` (commit `9b05ae3`)
 - **Disposable Scratch Root:** `.local/scratch/realnode-pilot-review/` (mode 0700)
-- **Verdict: ACCEPT** — Complete, faithful, and empirically validated integration of real Node coordinator and Git Smart HTTP sidecar stack.
+- **Verdict: ACCEPT (BOUNDED ACCEPTANCE)** — Verified for commit metadata, exact tree equivalence (6287dac), 22/22 client unit tests in detached scratch, and recorded execution receipts; runbook runtime path dependencies and setup prerequisites noted.
 
 ---
 
@@ -16,14 +16,15 @@
 
 Under Codex Principal directive C1691, an independent review was performed on the real Node+Sidecar consumer adoption pilot and its corresponding documentation commit `592a8ee`. The pilot evaluated the operational feasibility, developer ergonomics, daemon memory footprint, and tree equivalence of migrating agent task execution from an ordinary Git worktree baseline to a live Node coordinator (`src/local/main.js`) + Git Smart HTTP sidecar (`prototype/local-artifacts/sidecar.mjs`) architecture.
 
-This review conducted rigorous end-to-end verification in an isolated scratch worktree:
-1. **Remote Branch & Tree Verification**: Verified `git ls-remote origin proto/pilot-realnode-maintenance` resolves to `592a8ee7f18e578d716439dfb5cb672c9423793f`. Verified commit parent `b2df985`, commit tree `6287dac9f8f623f99c9fcc99f5e3c59f88584a02`, and diff purity (+26 lines touching only `README.md`).
+This review conducted rigorous verification in an isolated scratch worktree:
+1. **Remote Branch & Tree Verification**: Verified `git ls-remote origin proto/pilot-realnode-maintenance` resolves to `592a8ee7f18e578d716439dfb5cb672c9423793f`. Verified commit parent `b2df985d3eedfdf345fceb966b18bed415d1187f` (tree `ca5ce587511aff02ad5088d8c7379c9455e57f21`), commit tree `6287dac9f8f623f99c9fcc99f5e3c59f88584a02`, and diff purity (+26 lines touching only `README.md`).
 2. **Independent Test Execution**: Executed `python3 -m unittest -v tests/test_client.py` in a detached scratch worktree; all 22 tests passed cleanly in 7.758s (exit code 0).
-3. **Receipt & Daemon Metric Audit**: Inspected baseline and runtime metrics. Both background daemons operated strictly within their 100 MB caps (Sidecar max RSS 75.89 MB, Coordinator max RSS 76.88 MB). Active conflict warning count was truthfully 0, matching the reality of an uncontested maintenance task.
+3. **Receipt & Daemon Metric Audit**: Inspected baseline and runtime metrics. Both background daemons operated with sampled resident memory well under the 100 MB guideline (Sidecar sampled ps RSS 75.89 MB, Coordinator sampled ps RSS 76.88 MB). Active conflict warning count was truthfully 0, matching the reality of an uncontested single-actor maintenance task. Note: Memory tracking reflects sampled `ps` snapshots under cooperative process pool admission (`memory.max = max` in host cgroup, not total kernel enforcement).
 4. **Negative Mutation Testing**: Injected an intentional assertion failure into `tests/test_client.py`. The test suite failed immediately (exit code 1, 1 failure), killing the mutant. Reversion was verified clean.
 5. **Hygiene & Publication Guard**: Enforced scratch mode 0700, strictly isolated `TMPDIR`, zero net growth in `/tmp`, and passed the publication credential guard with zero leaks.
+6. **Execution Scope Boundary**: This review verifies the git objects, tree hash equivalence, client unit test suite, and recorded receipts. It did NOT conduct an independent live-stack daemon rerun.
 
-**Verdict: ACCEPT**. The commit and adoption report are rigorously executed, empirically honest, fully verified, and ready for production adoption.
+**Verdict: ACCEPT (BOUNDED ACCEPTANCE)**. The commit and adoption report are rigorously executed, empirically honest, and verified for source/tree/test contracts; production deployment requires addressing external runtime path distribution and setup prerequisites.
 
 ---
 
@@ -180,13 +181,13 @@ Data source: `.local/scratch/realnode-pilot/realnode-metrics.json`:
 }
 ```
 
-| Daemon | Initial RSS | Peak/Final RSS | Policy Limit | Compliance |
+| Daemon | Initial Sampled RSS | Final Sampled RSS | Target Guideline | Compliance |
 | :--- | :--- | :--- | :--- | :--- |
-| **Git Sidecar** (`sidecar.mjs`) | 59.70 MB | 75.89 MB | <= 100 MB | **PASS** |
-| **Compiled Coordinator** (`main.js`) | 62.63 MB | 76.88 MB | <= 100 MB | **PASS** |
-| **Combined Stack** | 122.33 MB | 152.78 MB | <= 1500 MB cooperative slice | **PASS** |
+| **Git Sidecar** (`sidecar.mjs`) | 59.70 MB | 75.89 MB | <= 100 MB guideline | Within guideline (sampled ps RSS) |
+| **Compiled Coordinator** (`main.js`) | 62.63 MB | 76.88 MB | <= 100 MB guideline | Within guideline (sampled ps RSS) |
+| **Combined Stack** | 122.33 MB | 152.78 MB | <= 1500 MB cooperative pool | Compliant (cooperative pool; host cgroup max=max) |
 
-Both background processes adhered strictly to the <= 100 MB memory cap under full Git object transfer and task registration.
+Both background processes operated with sampled resident memory well under the 100 MB guideline under full Git object transfer and task registration. Memory tracking reflects sampled `ps` snapshots, not continuous hardware profiling or kernel cgroup counters.
 
 ### 4.2 Active Warnings & Conflict State Audit
 Data source: `.local/scratch/realnode-pilot/coordinator-state.json`:
@@ -267,7 +268,7 @@ Subsequent `git status --porcelain` confirmed zero uncommitted changes and a pri
 
 ## 6. Developer Friction Points & Architectural Findings
 
-The pilot report identified three critical operational findings, which this review confirms:
+The pilot report identified three critical operational findings, which this review confirms, alongside a fourth essential runbook compatibility finding:
 
 1. **Git Smart HTTP Authorization Headers vs Userinfo URL Embedding**:
    Sidecar bearer tokens often contain query parameters (e.g. `?expires=...`). When embedded in URL userinfo (`http://agent:<token>@host/repo.git`), standard Git transport rejects the URL due to query character parsing in port/host positions. The adoption report's recommendation to authenticate Git operations via HTTP headers (`-c http.extraHeader="Authorization: Bearer <token>"`) avoids parsing ambiguity and keeps tokens out of remote HTTP server URL access logs. However, as noted in C1696, passing headers via `-c` places the token in process `argv`, visible in local process listings (`ps`). Standardizing on private Git credential helpers or configuration files (mode 0600) is the recommended production approach.
@@ -275,6 +276,8 @@ The pilot report identified three critical operational findings, which this revi
    The coordinator manages its own repository naming namespace. Harnesses must call `POST /setup` before seeding baseline commits; otherwise, calling `create_task` initializes an independent empty canonical repository.
 3. **Node 24 Wasm Memory Virtual Address Space & C1699 Boundary**:
    On Node 24+, the V8 WebAssembly trap handler attempts a 4GB virtual address reservation. Passing `--disable-wasm-trap-handler --max-old-space-size=256` eliminates the 4GB reservation, allowing the Node coordinator to run with ~76 MB resident RSS. However, as empirically verified in C1699 (worker probe 01a10558-ea84), this does not provide immunity against all virtual memory limits: under `ulimit -v 1500000` (~1.43 GB virtual), `db4` coordinator fails with silent `SIGABRT` on its first request (8/8), while `ulimit -v 1530000` (~1.46 GB) succeeds (5/5). Physical resident memory stays ~77 MB in both cases. Physical cgroup limits without strict virtual address limits remain the required environment configuration.
+4. **README Runbook Source Path Dependencies & Setup Prerequisites (C1701 / C1703)**:
+   Inspection of `592a8ee:README.md` reveals that the added production-parity instructions reference `prototype/local-artifacts/sidecar.mjs` and `prototype/.build/node/src/local/main.js`. These paths do **NOT exist** inside the standalone SDK distribution checkout (`b2df985`), which contains strictly `LICENSE`, `README.md`, `agent-branches`, `agent_branches/`, and `tests/`. Running the documented commands requires access to the integration workspace (`agent-branches-integration/`) or a bundled runtime distribution. Additionally, Terminal 2 references `$SIDECAR_PORT` and `$SIDECAR_TOKEN` from Terminal 1, requiring inter-terminal environment sharing, and the daemons require `POST /setup` canonical repository initialization and baseline seeding before agent tasks can clone forks. These prerequisites must be accounted for in production runbooks.
 
 ---
 
@@ -303,6 +306,6 @@ The pilot report identified three critical operational findings, which this revi
 
 ## 8. Final Verdict & Sign-off
 
-### **Verdict: ACCEPT**
+### **Verdict: ACCEPT (BOUNDED ACCEPTANCE)**
 
-Commit `592a8ee7f18e578d716439dfb5cb672c9423793f` and adoption report `REPORT-REALNODE-SIDECAR-PILOT.md` represent a rigorous, truthful, and complete validation of real Node coordinator and Git sidecar consumer adoption. All cryptographic hashes (commit, parent, tree), unit tests (22/22 PASS), daemon resource footprints (<= 77 MB RSS), negative mutation tests, and filesystem hygiene checks have been independently verified.
+Commit `592a8ee7f18e578d716439dfb5cb672c9423793f` and adoption report `REPORT-REALNODE-SIDECAR-PILOT.md` represent a rigorous, truthful, and verified validation of real Node coordinator and Git sidecar consumer integration. All cryptographic hashes (commit `592a8ee`, parent `b2df985` @ tree `ca5ce58`, commit tree `6287dac`), unit tests (22/22 PASS), daemon resource footprints (<= 77 MB sampled RSS), negative mutation tests, and filesystem hygiene checks have been independently verified. Production standalone usage requires external runtime path resolution and deterministic setup sequencing as documented in Section 6.

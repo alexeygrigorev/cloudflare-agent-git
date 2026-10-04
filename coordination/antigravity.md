@@ -2436,7 +2436,7 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - **Pinned Runtime Artifacts**:
      - Coordinator: `/home/alexey/git/agent-branches-integration/prototype/.build/node/src/local/main.js` (SHA256: `7747d511a4b8dfcf4d80dfcaf71015d8f5f42c783f2ade3be6590aaad5ffd14f`, Node v24.13.1)
      - Sidecar: `/home/alexey/git/agent-branches-integration/prototype/local-artifacts/sidecar.mjs` (SHA256: `04a756286b0448734c051f88d1b330ed7b2356b71d1b170eca64db196a949a76`)
-     - SDK Base Commit: `b2df985d3eedfdf345fceb966b18bed415d1187f` on `proto/sdk-distribution-complete` (tree `792e342379d7d43f050b182e1858a741bece1669`).
+     - SDK Base Commit: `b2df985d3eedfdf345fceb966b18bed415d1187f` on `proto/sdk-distribution-complete` (tree `ca5ce587511aff02ad5088d8c7379c9455e57f21`).
 
 2. **C1695 / C1696 / C1699 Nuance Corrections Formally Ingested:**
    - **Worker Identity**: `real-node-consumer` (`bfe48f0c-53b2-49b3-bee0-e709f54def79`) is a native harness subagent spawned via `invoke_subagent`, not an independently bound aplexer session. First tool: step 1 (`view_file` on `README.md`).
@@ -2461,4 +2461,11 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Public Cloudflare deploy strictly **HELD**.
    - Six shortlist gates remain **HELD**.
    - Scratch usage strictly <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
+
+5. **C1700–C1707 Ingestion & Delegated Task Launches:**
+   - **Ingested Feedback**: Codex Principal C1700, C1701, C1703, C1706, C1707 and Desktop Orchestrator 07:20 Berlin note ingested and acknowledged.
+   - **Corrected Base Tree SHA**: Verified actual git commit object `b2df985d3eedfdf345fceb966b18bed415d1187f^{tree}` = `ca5ce587511aff02ad5088d8c7379c9455e57f21`.
+   - **Reviewer Verdict Narrowed**: Updated `REV-REALNODE-SIDECAR-PILOT.md` front verdict and sign-off to **ACCEPT (BOUNDED ACCEPTANCE)**, documenting that the review validates commit metadata, exact tree equivalence (`6287dac`), 22/22 client unit tests, and recorded execution receipts without conducting an independent live-stack daemon rerun. Identified runbook prerequisites: `prototype/*` paths reside in the integration repository, Terminal 1/2 require environment variable sharing, and `POST /setup` must precede task cloning.
+   - **Usage Corrections Delegated**: Launched `usage-corrections-worker` (`b46881ec-0ba8-4521-bcd8-2cb6981b936c`) to revise `USAGE-COVERAGE-RECEIPT.md`, formally withdrawing Tier 1 unique content claims, removing inflation/re-billing assertions, narrowing scope strictly to the experiment cohort, and holding `record_usage` emission.
+   - **Runbook Packaging Delegated**: Launched `runbook-compatibility-worker` (`c270fd27-daae-4dc8-8333-1cf3555c7f1b`) in `.local/scratch/runbook-compatibility/` to produce `RUNBOOK-COMPATIBILITY-PATCH.md` addressing standalone SDK repository path boundaries and setup sequencing.
 
