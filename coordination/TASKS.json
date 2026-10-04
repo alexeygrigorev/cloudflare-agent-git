@@ -2573,16 +2573,17 @@
       "executor_ids": [
         "393b33c1-f66c-4f2b-9154-30559ca1fbf9"
       ],
-      "status": "running",
-      "updated_at": "2026-10-04T22:06:00.000000+00:00",
+      "status": "done",
+      "updated_at": "2026-10-04T22:12:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/reviews/REV-LAUNCHER-BUS-BRIDGE-C2075.md"
       ],
-      "acceptance": "Independent challenger review of launcher_bus_bridge.py under Codex C2075. Audits read-only eligibility pre-check vs transactional dispatch boundary, fail-closed quota handling, file descriptor leaks, write loops, and mutation testing in scratch. Model activation remains held.",
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C2075, delegated to self-org-challenger (393b33c1-f66c-4f2b-9154-30559ca1fbf9).",
-      "next_action": "Audit launcher_bus_bridge.py, run scratch mutation tests, deliver REV-LAUNCHER-BUS-BRIDGE-C2075.md.",
-      "continuation_trigger": "Delivery of REV-LAUNCHER-BUS-BRIDGE-C2075.md and publication guard validation."
+      "acceptance": "ACCEPTED (INDEPENDENT REVIEW COMPLETE). Delivered research/antigravity/reviews/REV-LAUNCHER-BUS-BRIDGE-C2075.md by self-org-challenger (393b33c1). Verdict: BOUNDED ACCEPTANCE. 59/59 selected self-org / containment control plane regression tests PASS (7.04s). 4/4 adversarial negative mutants killed in scratch testbed. Full Source-Report Parity verified under Codex C2080: check_dispatch_admission confirmed as read-only pre-flight eligibility check (transactional_dispatch: False, phase: 'admission_eligibility_verified'); 207a93f9 identified as successor actor session ID; model runtime held pending canonical launch.py integration; 59 tests confirmed as selected self-org / containment suite. Publication guard exit 0.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2075/C2080, delegated to self-org-challenger (393b33c1-f66c-4f2b-9154-30559ca1fbf9).",
+      "acceptance_status": "ACCEPTED",
+      "next_action": "Implement canonical launch.py atomic reservation and dispatch in ChildModelRuntimeAdapter per Codex C2079.",
+      "continuation_trigger": "Execution of canonical-launcher-model-runtime task."
     },
     {
       "id": "agent-bus-dirty-source-audit",
@@ -2592,16 +2593,37 @@
       "executor_ids": [
         "935148e3-fd25-4ddf-a916-1a88c087501a"
       ],
-      "status": "running",
-      "updated_at": "2026-10-04T22:06:00.000000+00:00",
+      "status": "done",
+      "updated_at": "2026-10-04T22:12:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/reviews/REV-AGENT-BUS-DIRTY-SOURCE.md"
       ],
-      "acceptance": "Read-only independent audit of dirty and untracked files in /home/alexey/git/agent-bus against git base f3295f9 per Codex C2077. Zero edits or commits in /home/alexey/git/agent-bus. Verifies coordination/durable.py, modified bus.py, cursors.py, and untracked crash/concurrent tests in isolated scratch testbed. Receipts and SHA256 hashes recorded.",
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C2077, delegated to bus-reviewer (935148e3-fd25-4ddf-a916-1a88c087501a).",
-      "next_action": "Run read-only audit and scratch tests, deliver REV-AGENT-BUS-DIRTY-SOURCE.md.",
-      "continuation_trigger": "Delivery of REV-AGENT-BUS-DIRTY-SOURCE.md and publication guard validation."
+      "acceptance": "ACCEPTED (INDEPENDENT REVIEW COMPLETE). Delivered research/antigravity/reviews/REV-AGENT-BUS-DIRTY-SOURCE.md by bus-reviewer (935148e3). Verdict: BOUNDED ACCEPTANCE. Target workspace /home/alexey/git/agent-bus audited strictly read-only against git base f3295f9. Zero writes/commits to agent-bus. Confirmed 207a93f9 is successor actor session ID (207a93f9-83ae-4157-9272-01c384039146). Verified all 12 file SHA256 hashes against working tree (independently verified by Codex C2081). Replayed test suite in isolated scratch testbed: 24/24 unit tests PASS (6.78s). Durability defect triad verified resolved in scratch: write_all full retry loop eliminates short writes, fsync_dir eliminates parent directory persistence hazards, and journal.json two-phase registration with startup reconciliation eliminates credential tearing hazards.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2077/C2081, delegated to bus-reviewer (935148e3-fd25-4ddf-a916-1a88c087501a).",
+      "acceptance_status": "ACCEPTED",
+      "next_action": "Coordinate with bushead81 for canonical commit of dirty source.",
+      "continuation_trigger": "bushead81 canonical commit."
+    },
+    {
+      "id": "canonical-launcher-model-runtime",
+      "project_id": "agent-branches",
+      "team_id": "agent-branches",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "7f5a2f14-092d-4676-b4f9-ff96bdc32a01"
+      ],
+      "status": "running",
+      "updated_at": "2026-10-04T22:12:00.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/tooling/self_org/launcher_bus_bridge.py",
+        "tests/test_launcher_bus_bridge.py"
+      ],
+      "acceptance": "Implement minimal canonical launch.py integration invoking atomic reservation and dispatch via launcher.launch.do_run with genuine isolated agent-bus identity per Codex C2079. Verify fresh quse and host admission, no blind retry, no unknown kills/fallback/Rust. Single useful task execution.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2079/C2081, delegated to self-org-live-runtime-engineer (7f5a2f14).",
+      "next_action": "Implement ChildModelRuntimeAdapter integration with launch.py and test in scratch.",
+      "continuation_trigger": "Successful execution and verification of canonical launch path."
     }
   ]
 }

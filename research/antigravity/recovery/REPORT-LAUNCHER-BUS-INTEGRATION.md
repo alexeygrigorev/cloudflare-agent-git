@@ -13,7 +13,7 @@
   - `research/antigravity/tooling/self_org/supervisor_loop.py` (Updated with admission & bus parameters)
   - `tests/test_launcher_bus_bridge.py` (Comprehensive 7-test verification suite)
 - **Date:** 2026-10-05 (Europe/Berlin)
-- **Verdict:** **ALL 7 INTEGRATION TESTS PASSING (59/59 FULL REPO REGRESSION TESTS PASSING). PUBLICATION GUARD EXIT CODE 0. CANONICAL REPOSITORIES 100% UNTOUCHED.**
+- **Verdict:** **ALL 7 INTEGRATION TESTS PASSING (59/59 SELECTED SELF-ORG / CONTAINMENT CONTROL PLANE TESTS PASSING). PUBLICATION GUARD EXIT CODE 0. CANONICAL REPOSITORIES 100% UNTOUCHED.**
 
 ---
 
@@ -31,12 +31,12 @@ Under Codex Principal C2070, C2072, and C2074 directives, the self-organizing co
    - Quota admission explicitly rejects `quota_telemetry is None` with `QuotaAdmissionError` (refusing fail-open bypass).
    - Tasks must be in valid `queued` state; completed, running, or invalid tasks fail closed.
    - Store read/query failures fail closed immediately (never assuming 0 active reservations on error).
-   - Naming is separated truthfully: `check_resource_eligibility` (read-only pre-check) vs `check_dispatch_admission` (full transactional admission).
+   - Naming and semantics are separated truthfully: `check_resource_eligibility` (read-only host sanity pre-check) and `check_dispatch_admission` (read-only pre-flight eligibility verification returning `transactional_dispatch: False` and `phase: "admission_eligibility_verified"`). Neither claims transactional state locking or double-dispatch mutex ownership.
 4. **Defensive Durability Boundaries (C2072):**
-   - The pin provenance of `agent-coordination` at `bb8dcad` is formally disclosed as a legacy core pin (successor `207a93f9` durability fixes were not backported; public agent-bus HEAD is `f3295f99`).
+   - The pin provenance of `agent-coordination` at `bb8dcad` is formally disclosed as a legacy core pin (successor actor session `207a93f9-83ae-4157-9272-01c384039146` uncommitted durability fixes in `/home/alexey/git/agent-bus` were not backported; public `agent-bus` HEAD is `f3295f99`).
    - The bridge implements `durable_atomic_write` with full-write retry loops, `fsync(fd)`, and parent directory `fsync(dir_fd)` (raising on error).
    - The bridge implements `verify_credential_consistency` to detect asymmetric credential tearing in legacy `FileBus` stores (`identities.json` vs `tokens.json`) and fails closed with `BusStoreInconsistentError`.
-5. **Live Model Execution Boundary:** Live model execution in `child_adapter.py` remains strictly HELD (`NotImplementedError`) pending authorized live keys.
+5. **Live Model Execution Boundary:** Live model execution in `child_adapter.py` remains strictly HELD (`NotImplementedError`) pending implementation of canonical `launch.py` integration (per C2079). No human key gate is required.
 
 ---
 
@@ -121,7 +121,7 @@ Ran 7 tests in 1.406s
 OK
 ```
 
-### 4.2 Full Repository Regression Test Suite
+### 4.2 Selected Self-Org / Containment Control Plane Regression Suite
 Execution command:
 ```bash
 python3 -m unittest -v \
