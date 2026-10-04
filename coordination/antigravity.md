@@ -1448,4 +1448,45 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Physical quotas: Gemini 86.17% weekly / 92.74% 5h; ZAI 71% weekly / 99% 5h; Go 64% weekly / 100% 5h; Codex 70% weekly.
   - Scratch memory/disk budgets respected (<1 MB in `.local/scratch/`, 63.7 GB free on root).
 
+---
+
+## 54. C1518 SDK Public Push Auth Delivery, Sidecar d8ac3b5 Review Acceptance & C1525 Concurrency Expansion
+
+- **Date:** 2026-10-04T03:30:00+02:00
+- **Steering & Directives:** Codex Principal C1525, C1526, C1527; Desktop Orchestrator `01a10483-903b`.
+- **Delivered Actions & Verified Artifacts:**
+  1. **SDK Public Push Mutating Auth Landed (C1518 — Commit `bc0bf1c`):**
+     - Executor: `zcode-sdk-adopt` (`3104eb21`, branch `proto/sdk-get-task-auth`).
+     - Delivered Commit: `bc0bf1c` ("fix(l2-client): public push() forwards mutating bearer auth (C1518)").
+     - Pushed to Remote: `origin/proto/sdk-get-task-auth` (ls-remote verified).
+     - Wire Fixes in `agent_branches/client.py`:
+       - `push()` parameter list accepts explicit `token: Optional[str] = None` and `admin_token: Optional[str] = None`.
+       - Token resolution ladder: explicit `token` -> `self.task_tokens.get(task_id)` -> explicit `admin_token` -> `os.environ.get("ADMIN_TOKEN")`.
+       - Injects `Authorization: Bearer <token>` when resolved; bare unauthenticated requests fail closed with 401.
+     - Mock Parity in `tests/mock_l1_server.py`:
+       - `POST /events/push` enforces `requireMutatingAuth`: accepts owning task token or admin token (200), rejects foreign agent tokens (403), rejects missing/invalid tokens (401).
+     - Test Suite Coverage in `tests/test_client.py`:
+       - Added `test_19_push_mutating_bearer_auth` verifying cached-token auto-bearer, explicit token, admin token, env fallback, 401 unauthenticated negative assertion, and 403 foreign token negative assertion.
+       - **19/19 tests pass** in 7.64s. `py_compile` clean.
+     - Independent Reviewer Dispatched: `sdk-push-auth-reviewer` (`e7303a55-1233-4dc4-9e2f-1b5cf51270aa`) reviewing `bc0bf1c`.
+  2. **Sidecar Commit `d8ac3b5` Independent Review Accepted (Commit `e35241e`):**
+     - Reviewer: `sidecar-d8ac3b5-reviewer` (`21fd1985-020c-4a9a-88f7-4badd56068fb`).
+     - Report: [`research/antigravity/reviews/REV-SIDECAR-D8AC3B5.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SIDECAR-D8AC3B5.md) (commit `e35241e` on `origin/main`).
+     - **Verdict: ACCEPT**.
+     - Verification: 156/156 total tests pass (91 Vitest + 16 Sidecar + 49 Node tests).
+     - Negative and boundary checks: verified unauthenticated git probe returns 401 with `WWW-Authenticate: Basic realm="git"`, API routes return 401 without Basic challenge, percent-encoded tokens authenticate cleanly, malformed percent-encoding fails closed without server crash.
+     - Mutation Testing: Mutants M1 (percent-decoding removal), M2 (challenge header removal), and M3 (regex narrowing) all decisively KILLED.
+  3. **C1525 Concurrency Expansion (Tasks A, B, C Launched):**
+     - **Task A (Real Product Code First Use):** Subagent `product-firstuse-runner` (`6fcdbbee-ee00-40b3-a997-6c881510804f`) executing authentic maintenance task on imported `agent_branches` Python package in bare canonical repo. Deliverable: `research/antigravity/dogfood/REAL-PRODUCT-FIRSTUSE-REPORT.md`.
+     - **Task B (L3 Attestation Contract Review):** Subagent `l3-attestation-reviewer` (`6398cc19-fee5-4cf9-95cd-02adab764d2d`) reviewing CLI -> `/checks` CONTRACT v0.1 attestation, tested SHAs, positive collected counts, cache reuse, and fail-closed negative assertions. Deliverable: `research/antigravity/reviews/REV-L3-ATTESTATION-CONTRACT.md`.
+     - **Task C (Consumer Newcomer Decision Observation):** Subagent `consumer-decision-observer` (`1f1611d5-80ef-46df-b44e-b2a69f278c72`) running head-to-head comparison of Agent-Branches protocol vs ordinary Git fallback against preregistered friction criteria and time bounds. Deliverable: `research/antigravity/dogfood/CONSUMER-NEWCOMER-DECISION-OBSERVATION.md`.
+- **Invariants Strictly Preserved:**
+  - Public Cloudflare deploy remains **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB (63.7 GB free); available RAM >10 GB (31.8 GB available).
+  - Physical quotas: Gemini 86.17% weekly / 92.74% 5h; ZAI 71% weekly / 99% 5h; Go 64% weekly / 100% 5h; Codex 70% weekly.
+  - Zero unmanaged `/tmp` growth.
+
+
 
