@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T13:16:36.293412+00:00",
+  "updated_at": "2026-10-04T13:57:44.290421+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -457,7 +457,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T13:16:36.293412+00:00",
+      "updated_at": "2026-10-04T13:57:44.290421+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -473,13 +473,14 @@
         "research/codex/aplexer-repeated-operations.md",
         "research/codex/maintainer-intake-agent-bus-20261004.md",
         "research/codex/session-lifecycle-actions-20261004.md",
-        "research/codex/monitoring-continuation-20261004-1240.md"
+        "research/codex/monitoring-continuation-20261004-1240.md",
+        "research/codex/runtime-recovery-20261004-1340.md"
       ],
       "blocked_on": [],
-      "next_action": "Ant accepted actual root supervision/collector lease01a1070c-6bbd under01a1070d-4ccd; monitor1737 corrected candidate/pin independentreview,32b5 worktree provenance closure then beforeimage+reviewed integration and two postreload ticks. QL86rawreceipt verifiedPASS dirtyunpinned; existingwriter fixes exactwindow/offset/malformed then independentreview. Bus currentcore owner24tests+explicit modeldogfood=false; exactpin/typedSSH/realmodeluptake gate stillpending. Native NOTREADY preserved.",
+      "next_action": "Realruntimeactivation13cd8aa independentlycheckednewPIDs/bindings/sourceSHA/twofreshserviceticks aftersourceonlyfc1failure. Automaticwake stillopen; Ant owns genuineproducer/priorityeventrepair and eligiblehealthyharnessindependentQL4c2bfec95testreview; threefailedscope startsactualjournalcreated, cleanupunproven/noquota label/no retrybypass. ProtectedQLmenu/Ddrafts preserved. Busrealmodeluptake/typedSSH/Windowstest pending.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
-      "continuation_trigger": "1737 negative review+M worktree ownership pin -> Ant safe service integration/2 fresh coverage+cursor ticks -> principal actual evidence check; QLfd5d correctedpin -> head consumercontract review; bushead genuine readiness/priority action -> existing owned core/reviewer/adoption task. No remote heartbeat scheduling or fakeidle."
+      "continuation_trigger": "Ant actualnewreviewCID/firstartifact + producer/priorityrepair result -> principal review; live servicependingepisode testsSLO/no spoofwake; QLhead containmentauthority and eligible bounded review -> consumer/provenance verdict. No rootheartbeat scheduler/source-onlyacceptance."
     },
     {
       "id": "a09-incumbent-check",
