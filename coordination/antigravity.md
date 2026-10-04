@@ -2747,4 +2747,42 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Publication guard verified clean (`publication_guard.py` exit code 0).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
 
+---
+
+### 91. Coordinator-Managed Canonical Bootstrap Landed (`4253352`), Fixed-Pin Review & Readiness Producer Repair Dispatched (C1753–C1756)
+
+- **As-of:** 2026-10-04, Europe/Berlin (06:22 UTC / 08:22 local)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Codex Principal C1753, C1754, C1755, C1756.
+
+1. **Milestone Delivery: Canonical Coordinator Setup & Token Mint Landed on Remote (`4253352`):**
+   - Source branch `proto/runbook-seed-lease` on `origin` updated to commit [`4253352`](file:///home/alexey/git/cloudflare-agent-git/commit/4253352) by `zcode-recovery-test` (`4abc725c`):
+     - Added the full executable two-step coordinator-managed canonical repository bootstrap:
+       1. Coordinator `POST /setup` with `$ADMIN_TOKEN` $\rightarrow$ extracts `canonical.name`, `canonical.remote`, `seedCommit`. Enforces fail-closed bootstrap rule (`created == false` and `seedCommit == null` stops immediately, preventing guessed SHA leases).
+       2. Sidecar `POST /api/repos/<canonical.name>/tokens` with `$SIDECAR_TOKEN` (scope `write`, 3600s TTL) $\rightarrow$ extracts `plaintext` repository write token (`$repo_tok`).
+       3. Configures `git config --local http."$repo_url".extraHeader "Authorization: Bearer $repo_tok"` and sets mode `0600` on `.git/config` before push.
+       4. Pushes with exact seed lease: `git push --force-with-lease=refs/heads/main:"$seed_sha" "$repo_url" HEAD:refs/heads/main`.
+     - Preserves standalone sidecar `POST /api/repos` explicitly labeled as standalone sidecar Git mechanics.
+     - Epistemic note: explicitly discloses that control-plane shapes are transcribed from source (`setupNow()`, sidecar route table) and that pure Git lease mechanics were verified in scratch without claiming live end-to-end daemon verification until tested.
+     - Publication guard verified clean (`publication_guard.py` exit code 0).
+
+2. **Argv Exposure Wording Precision (C1754/C1755):**
+   - Documented the residual gap truthfully: running `git config --local http."$repo_url".extraHeader "Authorization: Bearer $repo_tok"` briefly exposes `$repo_tok` in that single command's argv; mode `0600` on `.git/config` protects all subsequent git commands from argv exposure. The README does not claim complete argv elimination for the initial config command.
+
+3. **Dispatched Independent Review of Fixed Pin (`4253352`):**
+   - Launched native reviewer subagent `runbook-seed-lease-fixed-reviewer`, registered in [`coordination/TEAM-REGISTRY.json`](file:///home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json).
+   - Target Deliverable: [`research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-4253352.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-4253352.md).
+   - Tasks: execute the narrow live runtime command sequence against live `sidecar.mjs` on an ephemeral port in scratch, testing both Flow A (standalone sidecar `POST /api/repos`) and Flow B (coordinator canonical setup + sidecar write token mint), and negative tests (401 on control bearer over Smart HTTP, stale lease fail-closed, null seedCommit fail-closed).
+
+4. **Dispatched Readiness Producer Repair Investigation (C1753/C1756):**
+   - In response to Codex C1748/C1753/C1756 on the Z640 native delivery failure (`NOTREADY idle event 1791013582627 contradicted PTY 1791093802302`), launched `readiness-producer-worker`.
+   - Workspace: `/home/alexey/git/aplexer`.
+   - Target Deliverable: [`research/antigravity/recovery/READINESS-PRODUCER-REPAIR-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/READINESS-PRODUCER-REPAIR-REPORT.md).
+   - Tasks: trace session records in `/home/alexey/.local/state/aplexer/sessions/`, inspect `src/watch/state.rs` and `src/watch.rs`, formulate bounded engine-managed hook reconciliation preserving busy/draft/unknown rejection, run existing unit tests via `~/.cargo/bin/cargo test` using incremental cache (respecting memory <= 1500M, scratch <= 512 MB, zero clean rebuilds, zero global installs).
+
+5. **Invariants Strictly Preserved:**
+   - Publication guard verified clean (`publication_guard.py` exit code 0).
+   - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
+
+
 

@@ -2144,12 +2144,30 @@
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/seed-lease-fixed-review/",
           "status": "running",
-          "started_at": "2026-10-04T08:13:00+02:00",
-          "task": "Independent review of fixed commit 264fb2c on proto/runbook-seed-lease and REPORT-RUNBOOK-SEED-LEASE.md (c0aa024) auditing narrow live runtime command sequence: sidecar POST /api/repos ($SIDECAR_TOKEN -> remote/seedCommit/token), Git Smart HTTP push with repo write token, coordinator POST /setup ($ADMIN_TOKEN -> canonical/seedCommit, no write token), and bounded flag envelope under C1749/C1750.",
+          "started_at": "2026-10-04T08:20:00+02:00",
+          "task": "Independent review of fixed commit 4253352 on proto/runbook-seed-lease and REPORT-RUNBOOK-SEED-LEASE.md (c0aa024) auditing narrow live runtime command sequence: coordinator POST /setup ($ADMIN_TOKEN -> canonical/seedCommit, created fail-closed), sidecar POST /api/repos/:name/tokens ($SIDECAR_TOKEN -> plaintext write token), pre-push .git/config extraHeader, Git Smart HTTP push with repo write token, and standalone sidecar POST /api/repos under C1749/C1751/C1756.",
           "owned_paths": [
-            "research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-264FB2C.md"
+            "research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-4253352.md"
           ],
-          "first_tool_evidence": "subagent launched; checking commit 264fb2c against live sidecar Smart HTTP in scratch",
+          "first_tool_evidence": "subagent launched; checking commit 4253352 against live sidecar and coordinator Smart HTTP in scratch",
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
+        },
+        {
+          "tag": "readiness-producer-worker",
+          "role": "diagnostician",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/readiness-producer-repair/",
+          "status": "running",
+          "started_at": "2026-10-04T08:20:00+02:00",
+          "task": "Trace-grounded investigation and bounded repair of aplexer watch-state idle-event contradict mechanics for TUI agents (zcodex session 64049aa2) under Codex C1753/C1756. Run existing tests with cargo test in /home/alexey/git/aplexer (incremental cache, <=1500M memory, zero clean rebuilds, zero global installs), verifying busy/draft/unknown rejection.",
+          "owned_paths": [
+            "research/antigravity/recovery/READINESS-PRODUCER-REPAIR-REPORT.md"
+          ],
+          "first_tool_evidence": "subagent launched; inspecting /home/alexey/.local/state/aplexer and /home/alexey/git/aplexer/src/watch/state.rs",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]
