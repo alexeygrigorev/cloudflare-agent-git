@@ -1108,6 +1108,27 @@
       "next_action": "Independent review completed and deliverable updated per Desktop Orchestrator 11:20 review in research/antigravity/reviews/REV-UPRT-CONCURRENT-GATE.md. Verdict: BOUNDED ENGINEERING ACCEPTANCE. Corrected single-actor timing citation to 0.200s vs 1.143s, clarified Mutation 2 conflation of infrastructure failure with code conflict, noted Foremerge conceptual-only analysis, and withdrew product superiority/mandatory adoption claims.",
       "acceptance": "Independent review report with clear verdict, scratch replay verification, negative mutation testing receipts, clean publication guard.",
       "acceptance_status": "BOUNDED ENGINEERING ACCEPTANCE: Independent review completed by uprt-concurrent-reviewer (cd0e700e). Verdict: BOUNDED ENGINEERING ACCEPTANCE (MECHANICAL ADVISORY DEMO VERIFIED, PRODUCT SUPERIORITY CLAIMS WITHDRAWN). Verified 100% of reported metrics against uprt_results.json. Verified independent replay in scratch (Arm A 1 escape under uncoordinated merge vs Arm B 0 escapes under pre-merge radar, 0.35s Radar latency, exact tree match 7d1233e5). Clarified Mutation 2 shows infrastructure failure conflated with code conflict; corrected single-actor timing citation (0.200s vs 1.143s); confirmed standard Git pre-merge CI provides identical test oracle. Clean publication guard (exit 0)."
+    },
+    {
+      "id": "incumbent-premerge-and-buyer-workflow",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "incumbent-premerge-researcher",
+      "status": "in_progress",
+      "updated_at": "2026-10-04T11:55:30.000000+02:00",
+      "executor_ids": [
+        "efef2052-8a9b-4716-bdc2-fa08ae157af0"
+      ],
+      "owned_paths": [
+        "research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md"
+      ],
+      "blocked_on": [],
+      "assignment_ack": "Launched per Desktop Orchestrator 11:50 Berlin ready-queue directives ('Broaden genuine first-hand consumers/incumbentpremergechecks and buyerworkflow instead unchangedfixtureloops or manufacturedhardercases'). Investigating incumbent pre-merge checks (GitHub merge queue, GitLab merge trains, Bors-ng, Zuul, PR virtual merge refs) and authentic multi-agent practitioner buyer workflows to rigorously assess where Agent Branches push-time radar earns its keep vs where incumbent pre-merge CI provides the identical test oracle.",
+      "next_action": "Worker efef2052 researching ecosystem, buyer personas, auth/infrastructure friction, and comparative trade-offs; deliverable in research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md followed by independent review.",
+      "acceptance": "Comprehensive analysis of incumbent pre-merge check architectures, explicit disclosure of identical pre-merge test oracle reality, buyer persona and TCO analysis, comparative decision matrix, unsteered adoption policy, and clean publication guard."
     }
   ]
 }

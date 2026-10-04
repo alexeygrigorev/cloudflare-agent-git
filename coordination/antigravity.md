@@ -3421,5 +3421,42 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
 - Refined Section 6 of `REPORT-UPRT-CONCURRENT-GATE.md`: clearly demarcated manual test harness invocation (`engine.evaluate_pair()` and manual forward to `POST /checks`) from an automatic push-triggered service; documented that L3 Radar delegates to `node --test` rather than parsing ASTs; documented that infrastructure failures are conflated with code conflicts.
 - Re-affirmed that the current integration policy is an optional engineering hypothesis, not a principal-approved product policy or shortlist selection. Evidence frozen on disk without rerun or deletion.
 
+## 108. Broadening Genuine Consumer Research: Incumbent Pre-Merge Checks & Buyer Workflow Launch (Desktop 11:50 Berlin Ready-Queue)
+
+### 1. Strategic Context & Mandate
+- **Directive Origin:** Desktop Orchestrator 11:50 Berlin review note (`01a10654-3c00-7382-80ac-248281d91afe`).
+- **Core Directive:** *"Broaden genuine first-hand consumers/incumbentpremergechecks and buyerworkflow instead unchangedfixtureloops or manufacturedhardercases; own exactbrief/task/actorfirsttools/evidencecutoff/review/outcome andblockedreasons."*
+- **Objective:** Move beyond mechanical fixture scripts to analyze real-world software engineering pre-merge architectures and actual buyer/operator workflows. Specifically investigate where Agent Branches push-time advisory radar genuinely earns its keep vs where incumbent pre-merge checks (GitHub Actions merge queue, GitLab merge trains, Bors-ng, Zuul, and standard `refs/pull/<number>/merge` pre-merge CI) provide the identical test oracle without running background daemons.
+
+### 2. Task Allocation & Autonomous Execution
+- **Task Registered:** `incumbent-premerge-and-buyer-workflow` in `coordination/TASKS.json`.
+- **Worker Launched:** `incumbent-premerge-researcher` (`efef2052-8a9b-4716-bdc2-fa08ae157af0`) in `coordination/TEAM-REGISTRY.json`.
+- **Target Deliverable:** [`research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md).
+- **Scratch Testbed:** `.local/scratch/incumbent-premerge-research/` (mode 0700, strictly $\le 512$ MB, zero net `/tmp` growth).
+- **First Tool Observed:** `view_file` on `research/antigravity/demand/foremerge-firsthand-verification.md` at 2026-10-04T11:55:40Z.
+
+### 3. Investigation Scope & Research Pillars
+1. **Incumbent Pre-Merge Check Architectures:**
+   - GitHub Merge Queue (speculative merge commits, grouped merging, batch testing, auto-rollback).
+   - GitLab Merge Trains (`refs/merge-requests/:iid/train`, pipeline auto-cancel).
+   - Bors-ng / Homu / Zuul (the classic graydon merge queue pattern, cross-repo gating in Zuul).
+   - Standard PR CI Virtual Merged Ref (`refs/pull/<id>/merge` pre-merge testing before branch mergeability).
+   - Local Pre-Merge Worktree Integration (`git merge --no-commit; npm test` or local test runners).
+2. **The "Identical Pre-Merge Test Oracle" Reality:**
+   - Explain why standard pre-merge CI catches the exact same semantic contract breakage (e.g. T2 object refactor vs T3 positional bulk caller) before trunk landing.
+   - Demarcate push-time warning latency vs PR/queue submission latency, and analyze the $O(N^2)$ pairwise radar compute scaling vs $O(N)$ merge queue batch scaling.
+3. **Genuine First-Hand Consumers & Buyer Workflow Analysis:**
+   - Personas: Platform Engineering Leads, Autonomous Agent Swarm Operators (e.g. `gavmor` ~25 worktrees), Lead Architects with Copilot/Cursor/Cline/Aider.
+   - Friction points: Auth/credential hygiene (mode 0600 tokens vs GitHub App / SSH), infrastructure hosting (Cloudflare Workers/DO vs existing GitHub Actions runners), developer ergonomics (SDK ceremony vs standard `gh pr create`), and interruption timing (advisory mid-turn vs turn boundary).
+4. **Comparative Decision Matrix & Unsteered Adoption Policy:**
+   - Formulate clear adoption boundaries: Single-actor (STRICT DECLINE); Standard GitHub teams (DECLINE / REDUNDANT); High-velocity swarms (>10 agents continuously pushing) (CONDITIONAL ADOPTION).
+   - Propose exactly one unsteered empirical falsification gate for real buyer adoption.
+
+### 4. Safety & Operating Invariants
+- Strictly zero cargo/rustc compiler invocations under human hold.
+- Strictly zero derived Gemini counter emission to `.local/metrics/usage-events.jsonl` (held).
+- Memory governed by cooperative 1500 MB pool; scratch $\le 512$ MB; zero net `/tmp` growth.
+- Independent reviewer scheduled upon deliverable completion before landing on canonical main.
+
 
 
