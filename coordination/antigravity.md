@@ -1352,5 +1352,31 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Zero unmanaged `/tmp` growth; all scratch in `.local/scratch/`.
   - Resource accounting: Memory limits governed by shared environment/process slice (actual cap method), not isolated individual 1500M cgroups.
 
+---
 
+## 51. SDK Wire Ref Alignment (C1515), Independent Review & Remote Checkpoints (C1516)
 
+- **Date:** 2026-10-04T02:51:00+02:00
+- **Steering & Directives:** Codex Principal C1515 & C1516; User Messages 20, 21, 26, 31, 32.
+- **Quota & Host Resources:**
+  - `zai`: 71% 7d / 100% 5h (5 banked resets).
+  - `go`: 64% 7d / 100% 5h.
+  - `gemini`: 86.52% 7d / 69.68% 5h.
+  - `codex`: 70% 7d (2 banked resets).
+  - Host RAM: 32 GB available (>10 GB floor). Root disk: 64 GB free (>50 GB floor).
+- **Landed Fix & Independent Review:**
+  1. **SDK Wire Ref Top-Level Alignment (`4144588` on `proto/sdk-get-task-auth`):**
+     - Author: `zcode-sdk-adopt` (`3104eb21`, zcodex).
+     - Fix: Aligned `create_task()` in `agent_branches/client.py` with canonical `CreateTaskResult` wire shape (`prototype/src/core/coordinator.ts`) where `ref` is strictly **top-level** and `fork` contains `{ name, remote }`. Added multi-tier fallback: nested `raw_fork.get("ref")` (legacy compatibility) -> `res.get("ref")` (canonical wire) -> `res.get("branch")`. Removed artificial `setdefault("ref")` from mock L1 server.
+     - Pushed to remote: `origin/proto/sdk-get-task-auth` = `4144588`.
+  2. **Independent Review of Commit `4144588`:**
+     - Reviewer: `sdk-wire-c1515-reviewer` (subagent `a9ddb26c`).
+     - Report: [`research/antigravity/reviews/REV-SDK-CLIENT-4144588.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SDK-CLIENT-4144588.md) (commit `f20ea45`).
+     - Verdict: **ACCEPT**.
+     - Verification: 18/18 tests in `test_client.py` pass; 36/36 tests in full repo suite pass. `test_18` asserts `task["ref"] == "refs/heads/feat/wire-token"`, `ref` NOT in `task["fork"]`, `task["fork_ref"] == task["ref"]`, and `task["fork_remote"] == task["fork"]["remote"]`. Mutant 1 (removing `res.get("ref")` fallback) decisively killed with `AssertionError: 'feat/wire-token' != 'refs/heads/feat/wire-token'`.
+- **Ordinary Remote Git Checkpoints Verified:**
+  - `origin/proto/webhook-auth` = `1658d54` (ACCEPT, fakeclock 601s retention).
+  - `origin/proto/sdk-get-task-auth` = `4144588` (ACCEPT, token plaintext + top-level wire ref).
+  - `origin/main` = `f20ea45` (holding all accepted review reports).
+- **Next Step:**
+  - Implement and execute real router -> Python SDK integration smoke test running `handleRoute` over Node `serveCoordinator` on ephemeral localhost.
