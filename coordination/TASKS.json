@@ -2143,10 +2143,10 @@
       "project_id": "agent-branches",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-04T12:55:00.000000+00:00",
-      "acceptance": "Offline reproduction of Codex footer false-draft and dashboard idle contradicted by later PTY redraws, candidate Python classifier and Rust diff, real draft fail-closed protection preserved; zero Rust builds under hold.",
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C1444/C1448/C1454. Delegated to supervision-classifier-repro-worker (74cf74d1-08ba-4e9c-b8d9-adb680b48895) in .local/scratch/supervision-classifier-repro/.",
+      "status": "done",
+      "updated_at": "2026-10-04T13:03:00.000000+00:00",
+      "acceptance": "ACCEPTED (OFFLINE REPRO & SPEC REPAIR). 18/18 tests pass in tests/test_supervision_classifier.py. Baseline failures reproduced (Codex status bar false-draft, dashboard idle contradicted by later PTY redraw). Candidate repairs verified: anchored status bar geometry preserves authentic multiline user drafts mentioning agents, Context, and paths (Codex C1500/C1508 verified SHA 1944a763c4); bottom dialogue scoping ignores scrollback keywords. Codex C1510 note recorded: dashboard-head engine is zcodex, cosmetic engine whitelist rejected, authoritative turn-boundary hook provenance required. Zero cargo/rustc builds under hold; zero service reloads.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1444/C1448/C1454/C1500/C1508/C1510. Delegated to supervision-classifier-repro-worker (74cf74d1-08ba-4e9c-b8d9-adb680b48895) in .local/scratch/supervision-classifier-repro/.",
       "first_action": "Subagent 74cf74d1 launched; inspects classify_composer_prompt() and service.py composer() regex; creates tests/test_supervision_classifier.py.",
       "executor_ids": [
         "74cf74d1-08ba-4e9c-b8d9-adb680b48895"
@@ -2159,19 +2159,19 @@
         "tests/test_supervision_classifier.py",
         "research/antigravity/reviews/REV-SUPERVISION-CLASSIFIER-REPAIR.md"
       ],
-      "next_action": "Complete test suite in tests/test_supervision_classifier.py and review report REV-SUPERVISION-CLASSIFIER-REPAIR.md; notify parent.",
+      "next_action": "Deliverables verified and accepted. Future native binary implementation held under human compiler hold until authoritative turn-boundary hook provenance is specified.",
       "blocked_on": [],
-      "continuation_trigger": "Subagent completion -> independent review and verification; no service reload until reviewed."
+      "continuation_trigger": "Human hold release -> formal protocol review and native cargo build."
     },
     {
       "id": "multiworkspace-collector-extension",
       "project_id": "agent-branches",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-04T12:55:00.000000+00:00",
-      "acceptance": "Extend metrics collection beyond single-workspace ROOT filter to discover sessions across all product workspaces (/home/alexey/git/{cloudflare-agent-git,agent-branches,agent-dashboard,agent-quota-launcher,agent-coordination}); reconcile workspace+generation+role/CID/parent; unknown usage null; caches not double counted; zero retroactive fake 24h data.",
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C1444/C1448/C1454. Delegated to multiworkspace-collector-worker (c3556ba9-e36e-4ff5-873d-f71083da5e1d) in .local/scratch/multiworkspace-collector/.",
+      "status": "done",
+      "updated_at": "2026-10-04T13:03:00.000000+00:00",
+      "acceptance": "ACCEPTED (OFFLINE REPRO & EXTENSION CANDIDATE). 6/6 tests pass in tests/test_collect_multiworkspace.py. Discovers sessions across product workspaces (/home/alexey/git/{cloudflare-agent-git,agent-branches,agent-dashboard,agent-quota-launcher,agent-coordination,agent-bus}). Codex C1504 negative resolved: canonical repo name matching and worktree prefixes select agent-bus while strictly rejecting lookalike substring directories (unrelated-agent-dashboard-notes). Reconciles workspace+generation+role/CID/parent; unknown tokens remain null; caches not double counted; zero retroactive fake 24h data. Canonical STORE remains unmodified; candidate collector not invoked into live runtime.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1444/C1448/C1454/C1504. Delegated to multiworkspace-collector-worker (c3556ba9-e36e-4ff5-873d-f71083da5e1d) in .local/scratch/multiworkspace-collector/.",
       "first_action": "Subagent c3556ba9 launched; audits ROOT filter in scripts/metrics/collect.py; implements isolated candidate collect_multiworkspace.py.",
       "executor_ids": [
         "c3556ba9-e36e-4ff5-873d-f71083da5e1d"
@@ -2184,19 +2184,19 @@
         "tests/test_collect_multiworkspace.py",
         "research/antigravity/recovery/REPORT-MULTIWORKSPACE-COLLECTOR-EXTENSION.md"
       ],
-      "next_action": "Complete multi-workspace test suite and report deliverable; notify parent.",
+      "next_action": "Candidate tool and test suite completed. Collector remains an offline research tool until reviewed and formally scheduled for runtime service integration.",
       "blocked_on": [],
-      "continuation_trigger": "Subagent completion -> independent review and integration."
+      "continuation_trigger": "Metrics service review -> safe durable integration without competing daemons."
     },
     {
       "id": "dashboard-44-snapshot-review",
       "project_id": "agent-dashboard",
       "team_id": "agent-dashboard",
       "owner_tag": "antigravity-head",
-      "status": "running",
-      "updated_at": "2026-10-04T12:55:00.000000+00:00",
-      "acceptance": "Read-only audit of /home/alexey/git/agent-dashboard; exact per-file SHA256 manifest; independent verification of 44 tests across backend/UI; zero writes to dashboard backend; deliverable under leased review path.",
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C1448/C1454. Delegated to dashboard-44-snapshot-reviewer (c6ee2909-a281-43f2-8c1c-fe50bebaf264) in .local/scratch/dashboard-44-review/.",
+      "status": "done",
+      "updated_at": "2026-10-04T13:03:00.000000+00:00",
+      "acceptance": "BOUNDED ENGINEERING ACCEPTANCE. 44/44 unit tests pass in 0.68s (pytest) and 0.092s (unittest). Per-file SHA256 manifest computed for all 18 repository files. Strict read-only audit of /home/alexey/git/agent-dashboard. Codex C1500 calibration applied: verdict bounded to source and unit test verification; fourth product ('Cross-computer Agent Coordination') and live fleet collector integration remain explicitly bounded/unintegrated. As-of timestamp calibrated to 12:57 UTC. Zero competitor writes made; integration ownership reserved to agent-dashboard-head.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1448/C1454/C1500. Delegated to dashboard-44-snapshot-reviewer (c6ee2909-a281-43f2-8c1c-fe50bebaf264) in .local/scratch/dashboard-44-review/.",
       "first_action": "Subagent c6ee2909 launched; aplexer work join agent-dashboard --mode review; computes per-file SHAs and verifies 44 tests.",
       "executor_ids": [
         "c6ee2909-a281-43f2-8c1c-fe50bebaf264"
@@ -2207,9 +2207,9 @@
       "evidence_paths": [
         "research/antigravity/reviews/REV-DASHBOARD-44-TEST-SNAPSHOT.md"
       ],
-      "next_action": "Deliver REV-DASHBOARD-44-TEST-SNAPSHOT.md with exact file SHAs and test pass count.",
+      "next_action": "Review complete. Target repo left in pristine unmutated state. agent-dashboard-head holds integration ownership to commit and push efed70d.",
       "blocked_on": [],
-      "continuation_trigger": "Subagent completion -> formal review record."
+      "continuation_trigger": "agent-dashboard-head integration commit -> live dashboard preview startup."
     }
   ]
 }

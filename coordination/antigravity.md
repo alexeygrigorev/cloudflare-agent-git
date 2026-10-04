@@ -3757,3 +3757,55 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
   - Strictly **0** tokens emitted to `usage-events.jsonl` (counter emission held).
   - Zero writes to peer-owned dashboard files.
   - Scratch memory and disk budgets respected (<2 MB in scratch, 63 GB free on root, 32 GB RAM available).
+
+---
+
+## 117. Tasks S, M, and D Completed, Codex C1500/C1504/C1508/C1510 Reviews Ingested & Verified
+
+- **Date:** 2026-10-04T15:05:00+02:00
+- **Directives:** Codex Principal C1444, C1448, C1454, C1500, C1504, C1508, C1510 dispatches; Direct Human Delivery Reset (`experiment/human-delivery-reset-20261004.txt`); User Messages 26/31.
+- **Tasks Closed as Done in `coordination/TASKS.json`:**
+  1. `supervision-classifier-offline-repro` (Task S, `a16-runtime-protocol`): Bounded offline candidate reproduction & repair. Status: `done`.
+  2. `multiworkspace-collector-extension` (Task M, `a16-runtime-protocol`): Isolated candidate multi-workspace collector & test suite. Status: `done`.
+  3. `dashboard-44-snapshot-review` (Task D, `agent-dashboard`): Read-only audit & 44-test snapshot verification. Status: `done`.
+
+### 1. Task (S) — Supervision Classifier Offline Reproduction & Anchored Geometry Fix
+- **Deliverables:**
+  - Unit & Repro Tests: [`tests/test_supervision_classifier.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_supervision_classifier.py) (**18/18 PASS in 0.003s**).
+  - Candidate Classifier: [`research/antigravity/tooling/classifier_candidate.py`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/tooling/classifier_candidate.py) (SHA `1944a763c4` verified by Codex C1508).
+  - Review & Candidate Rust Diff: [`research/antigravity/reviews/REV-SUPERVISION-CLASSIFIER-REPAIR.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SUPERVISION-CLASSIFIER-REPAIR.md).
+- **Core Defect Reproductions & Fixes:**
+  - *Baseline Defect 1 (Codex Footer False-Draft):* Captured screen with placeholder prompt `› Ask Codex to do anything` followed by `GPT-6.1-Sol medium · Context 14% left · weekly limit (78% left)` and `? for shortcuts ⚠ 1 warning · f2 to view` was misclassified as `PromptState::Draft` by baseline `is_footer_or_status()`.
+  - *Codex C1500 Negative Invalidation:* A preliminary repair using loose substring matching (`FOOTER_SUBSTRINGS`) stripped genuine drafts mentioning `"agents"`, `"Context"`, and repo paths (`"~/git/"`), while a full-screen regex search for `"Select"` tripped false choice modals on historical scrollback (`Earlier report: Select approach 6`).
+  - *Anchored Geometry Resolution:* Ported candidate to geometrically anchored status bar regexes (middle dot `·`, model name `GPT-`/`glm-`, shortcuts `? for shortcuts`, `⚠ warning`, `└ Tip: Use /`), and scoped choice dialogue checks to bottom terminal lines. Validated with 4 explicit C1500 negative tests (`test_15` to `test_18`), all passing.
+  - *Baseline Defect 2 & Codex C1510 Invalidation:* `agent-dashboard-head` session `c7a75` is natively running engine `zcodex`, NOT `"dashboard"`. Therefore, a cosmetic engine whitelist (`engine != "dashboard"`) in `watch/state.rs` is fundamentally invalid and does not repair `c7a75`. Documented that screenshot classification alone cannot renew native aplexer daemon state; durable continuation repair requires authoritative producer turn-boundary hook events and priority watch subscriptions.
+  - *Human Hold Invariant:* Zero cargo/rustc build commands run; zero service daemons reloaded or modified.
+
+### 2. Task (M) — Multi-Workspace Metrics Collector Extension & C1504 Negative Fix
+- **Deliverables:**
+  - Tooling: [`research/antigravity/tooling/collect_multiworkspace.py`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/tooling/collect_multiworkspace.py).
+  - Test Suite: [`tests/test_collect_multiworkspace.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_collect_multiworkspace.py) (**6/6 PASS in 0.023s**).
+  - Report: [`research/antigravity/recovery/REPORT-MULTIWORKSPACE-COLLECTOR-EXTENSION.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-MULTIWORKSPACE-COLLECTOR-EXTENSION.md).
+- **Defect Repairs & Architectural Enhancements:**
+  - *Multi-Workspace Scoping:* Overcame the hardcoded single-workspace `ROOT` filter in `scripts/metrics/collect.py` (lines 277, 294, 301, 346), extending coverage across product workspaces (`cloudflare-agent-git`, `agent-branches`, `agent-dashboard`, `agent-quota-launcher`, `agent-coordination`, `agent-bus`).
+  - *Codex C1504 Negative Invalidation & Resolution:* A preliminary implementation using loose substring matching omitted `agent-bus` and admitted lookalike directories (`unrelated-agent-dashboard-notes`). Repaired via `CANONICAL_PRODUCT_REPO_NAMES` and `CANONICAL_WORKTREE_PREFIXES`, ensuring `/home/alexey/git/agent-bus` is selected while lookalikes and personal workspaces (`pocketshell`, `dapier`, `relay`, `oc-yolo`) are strictly rejected. Verified via `test_c1504_pure_function_get_product_workspaces_negative`.
+  - *Registry & Delegate Intake:* Merges `registry.projects` and `registry.delivery_executors` so teams like `quota-launcher` and `agent-coordination` are recognized even with empty or sparse `agents` arrays; discovers live child sessions whose `parent_session` is a team head (e.g. `quota-launcher-core-3` attributed as delegate of Grok head `6be4c247`).
+  - *Evidence Coverage Scoping:* Resolves evidence paths relative to the agent's declared workspace rather than `ROOT`, eliminating false `out_of_scope_paths` on legitimate product deliverables (e.g. `agent-dashboard-head` now observes 3/3 files, 0 out-of-scope, status: `observed`).
+  - *Strict Non-Interference:* Canonical `STORE` (`.local/metrics/`) remains unmutated; candidate collector is NOT invoked into live runtime. Unknown usage remains `None`/null; zero retroactive fake 24h data.
+
+### 3. Task (D) — Agent Dashboard 44-Test Snapshot Read-Only Audit & C1500 Calibration
+- **Deliverables:**
+  - Review Report: [`research/antigravity/reviews/REV-DASHBOARD-44-TEST-SNAPSHOT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-DASHBOARD-44-TEST-SNAPSHOT.md).
+- **Audit Findings & Calibrations:**
+  - *Strict Read-Only Inspection:* Audited `/home/alexey/git/agent-dashboard` at HEAD `efed70d` with zero writes, zero file creations, and zero mutations. Bytecode generation suppressed (`PYTHONDONTWRITEBYTECODE=1`); test caches isolated to scratch.
+  - *Full 44-Test Suite Verified:* `pytest -v` (**44/44 passed in 0.68s**) and `python3 -m unittest discover -s tests -v` (**44/44 passed in 0.092s**). 18 hourly tests, 11 accounting tests, 6 features tests, 9 server tests.
+  - *Exact Per-File SHA256 Manifest:* Generated SHA256 hashes for all 18 repository files across backend (`src/dashboard/`), frontend (`static/`), tests (`tests/`), scripts, and configs.
+  - *Codex C1500 Epistemic Calibration:* Calibrated verdict from unconditional acceptance to **BOUNDED ENGINEERING ACCEPTANCE** (source and 44 unit tests passing; fourth product 'Cross-computer Agent Coordination' and live collector fleet integration bounded/unintegrated). Corrected as-of timestamp to actual execution time `12:57 UTC`. Marked host `/tmp` and peak daemon memory as unmeasured global.
+  - *Ownership:* Integration ownership reserved strictly to `agent-dashboard-head`.
+
+### 4. Overall Invariants & Test Status
+- **Regression Suite:** 51/51 tests passing in 0.134s (`tests/test_supervision_classifier.py`, `tests/test_collect_multiworkspace.py`, `tests/test_collect_conversation_scope.py`, `scripts/metrics/test_metrics.py`).
+- **Supervision Service Tests:** 47/47 tests passing in 0.283s (`scripts/supervision/test_service.py`).
+- **Publication Guard:** Verified clean exit code 0 across all reports.
+- **Resource Bounds:** Zero cargo/rustc compiler invocations under human hold; zero derived tokens emitted to `usage-events.jsonl`; zero background service reloads; scratch disk < 2 MB ($\le 512$ MB); 63 GB root disk free; 32 GB RAM available.
+
