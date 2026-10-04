@@ -36,7 +36,7 @@ Commit `7aa20f1` remedies these architectural and operational nuances:
    ```
    This prevents operators and scripts from ever attempting a blind or guessed lease push against an existing canonical repository.
 3. **Multi-Plane Token Minting:** Step 2 correctly invokes the sidecar control plane (`POST /api/repos/$canonical_name/tokens` with `$SIDECAR_TOKEN`) to mint a scoped write token (`repo_tok`), extracting the `plaintext` secret from the response.
-4. **Pre-Push Credential Persistence (Mode 0600):** Step 3 resolves the earlier `<remote-url>` placeholder to `$repo_url`, configuring `http.$repo_url.extraHeader` in `.git/config` with permissions `0600` before the push occurs, eliminating per-command argv token leakage.
+4. **Pre-Push Credential Persistence (Mode 0600):** Step 3 resolves the earlier `<remote-url>` placeholder to `$repo_url`, configuring `http.$repo_url.extraHeader` in `.git/config` with permissions `0600` before the push occurs. *(Security Nuance per C1780: The `git config --local` command necessarily carries the token in that single command's argv, but the resulting mode `0600` `.git/config` file protects all subsequent `git push` and network operations from per-command argv leakage).*
 5. **Exact Seed Lease Push:** Step 4 executes `git push --force-with-lease=refs/heads/main:"$seed_sha" "$repo_url" HEAD:refs/heads/main`.
 6. **Demarcation of Standalone Sidecar Mechanics:** The standalone sidecar creation flow (`POST /api/repos`) is preserved below the product sequence, explicitly labeled as standalone sidecar Git mechanics for unit/isolated testing, not the coordinator-managed canonical repository required by the SDK.
 
@@ -48,7 +48,7 @@ In this review pass, all documented command sequences and failure paths were exe
 - **Negative Test 1 (Wire 401 & Git Exit 128):** Presented `$SIDECAR_TOKEN` (the control bearer) to Git Smart HTTP push; wire request returned HTTP 401 Unauthorized; Git CLI terminated with exit 128 (`fatal: could not read Username... terminal prompts disabled`).
 - **Negative Test 2 (Stale Seed Lease & Ref Preservation):** After advancing canonical `main` with an external commit, pushing with the original seed lease was rejected (`stale info`, exit 1); the advanced ref remained untouched and unclobbered.
 
-**Verdict: ACCEPT.** The documentation at commit `7aa20f1` is fully verified against live runtimes, cryptographically and operationally sound, and strictly adheres to project security and architectural standards.
+**Verdict: ACCEPT.** The documentation at commit `7aa20f1` is fully verified against live runtimes across the tested Flows A, B, C, Neg 1, and Neg 2. *(Operational Boundary per C1780: This verification covers the documented runbook seed lease mechanics; it does not substitute for the full end-to-end SDK `create_task` and push authorization workflow, which remains a distinct pending integration task).*
 
 ---
 
@@ -58,7 +58,10 @@ The review was executed strictly within an isolated scratch environment adhering
 - **Scratch Workspace:** `/home/alexey/git/cloudflare-agent-git/.local/scratch/seed-lease-7aa-review/` initialized with mode `0700` (`drwx------`).
 - **Disk Budget Compliance:** Measured peak scratch disk usage was **1.7 MB**, well within the 512 MB ceiling. No host repositories, worktrees, or parent files were altered.
 - **Temporary Directory Isolation:** `TMPDIR` was redirected to `.local/scratch/seed-lease-7aa-review/tmp`. Inspection of `/tmp` verified zero bytes and zero files added by the review harness.
-- **V8 Process & Memory Configuration:** The coordinator was launched under `ulimit -v 1530000` (virtual address cap) with `--disable-wasm-trap-handler --max-old-space-size=256`. The daemon remained stable across all requests without V8 trap panics; RSS remained below 75 MB.
+- **V8 Process & Memory Configuration:** The coordinator was launched under `ulimit -v 1530000` (virtual address limit, not physical cgroup quota) with `--disable-wasm-trap-handler --max-old-space-size=256`. The 1500M ceiling is a cooperative process convention. RSS remained below 75 MB.
+- **Prebuilt Daemon Digests:**
+  - Sidecar (`prototype/local-artifacts/sidecar.mjs`): SHA256 `04a756286b0448734c051f88d1b330ed7b2356b71d1b170eca64db196a949a76`
+  - Coordinator (`prototype/.build/node/src/local/main.js`): SHA256 `7747d511a4b8dfcf4d80dfcaf71015d8f5f42c783f2ade3be6590aaad5ffd14f`
 - **Ephemeral Port Allocation:** Sidecar bound `127.0.0.1:9884` and coordinator `127.0.0.1:9885`. Ports were confirmed free before launch and cleanly released upon exit.
 - **Process Teardown:** A shell trap guaranteed that all background child processes (sidecar PID 2639480, coordinator PID 2639599) were stopped via SIGTERM/SIGKILL upon completion.
 - **Credential Hygiene:** In-memory secrets (`ADMIN_TOKEN`, `SIDECAR_TOKEN`, `RUNNER_TOKEN`) were generated via `openssl rand -hex 24` and never emitted in plain text to logs or console output.
