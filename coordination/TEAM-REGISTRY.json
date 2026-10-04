@@ -606,6 +606,23 @@
           "status": "completed"
         },
         {
+          "tag": "auth-matrix-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "e285b1cc-8138-433d-af86-f816e072a174",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/agent-branches-integration",
+          "branch": "proto/integration-auth-matrix",
+          "scratch": ".local/scratch/auth-matrix-review/",
+          "task": "C1549/C1550: Independent negative and boundary security review of combined auth matrix (commit db4f6a8: read auth, webhook HMAC, replay guard, SDK client)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-AUTH-MATRIX-DB4F6A8.md"
+          ],
+          "status": "running"
+        },
+        {
           "tag": "l6-ca16-review",
           "role": "executor",
           "parent_tag": "antigravity-head",
