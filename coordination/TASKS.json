@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T12:17:05.772764+00:00",
+  "updated_at": "2026-10-04T12:23:31.363175+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -1809,99 +1809,30 @@
       "owner_tag": "agent-coordination-head",
       "principal_owner": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T11:40:20.360542+00:00",
-      "next_action": "ImplementstdlibSSHtransport/nativeaplexeradapter with currentdevice/catalog/identity/scopedaccess and exactdurableIDs.",
+      "updated_at": "2026-10-04T12:23:31.363175+00:00",
+      "next_action": "Head pin safe core+adapter after repairing semantic replay/auth/quoting, launch new independently owned exact-pin reviewer, then actual no-session task consumer and Windows twohost/offline tests.",
       "acceptance": "Actual source/tests/negative identity/device/path injection/transport failures; no secretcopy/unauthenticated endpoint.",
-      "executor_ids": [],
+      "executor_ids": [
+        "6168aae7-0f3d-44b1-a749-6e195235b079",
+        "cd07e46a-b698-4e3c-a98c-9d91b913594b"
+      ],
       "owned_paths": [],
       "evidence_paths": [
         "/home/alexey/git/agent-coordination/.local/head-first-action.json",
         "/home/alexey/git/agent-coordination/.local/head-ack.json",
         "/home/alexey/git/agent-coordination/coordination/__init__.py"
       ],
-      "assignment_ack": {
-        "schema_version": 1,
-        "token": "C1341",
-        "status": "ACK",
-        "recorded_at_utc": "2026-10-04T11:41:38Z",
-        "ack_written_at_utc": "2026-10-04T11:46:00Z",
-        "head": {
-          "id": "81e8010c-89e4-478b-be3a-4ee6991607f3",
-          "tag": "agent-coordination-head",
-          "workspace": "/home/alexey/git/agent-coordination",
-          "engine": "shell"
-        },
-        "role": "interactive product head; owns decomposition, real delegates, integration, recovery, completion-next-tasks",
-        "principal_owner": {
-          "id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
-          "tag": "codex-principal",
-          "workspace": "/home/alexey/git/cloudflare-agent-git",
-          "owns": "monitoring"
-        },
-        "owns": [
-          "/home/alexey/git/agent-coordination",
-          "/home/alexey/git/agent-coordination/coordination",
-          "/home/alexey/git/agent-coordination/tests",
-          "/home/alexey/git/agent-coordination/adapters",
-          "/home/alexey/git/agent-coordination/docs",
-          "/home/alexey/git/agent-coordination/reviews",
-          "/home/alexey/git/agent-coordination/scripts",
-          "/home/alexey/git/agent-coordination/.local"
-        ],
-        "will_not_modify_until_ack": [
-          "/home/alexey/git/cloudflare-aplexer-protocol",
-          "/home/alexey/git/aplexer",
-          "/home/alexey/.local/bin/aplexer",
-          "/home/alexey/git/agent-quota-launcher",
-          "/home/alexey/git/agent-dashboard",
-          "/home/alexey/git/cloudflare-agent-git/coordination/TASKS.json",
-          "/home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json"
-        ],
-        "integration_owner": {
-          "tag": "agent-coordination-head",
-          "id": "81e8010c-89e4-478b-be3a-4ee6991607f3"
-        },
-        "native_cli_source_owner": {
-          "tag": "antigravity-head",
-          "id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
-          "checkout": "/home/alexey/git/cloudflare-aplexer-protocol",
-          "status": "read-only until explicit owned handoff ACK"
-        },
-        "environment": {
-          "windows_local_aplexer": false,
-          "windows_ssh_client": true,
-          "inbound_windows_ssh": false,
-          "transport": "Windows-initiated authenticated SSH typed RPC/poll/response; bridge identity != originating agent"
-        },
-        "baseline_not_acceptance": "scripts/orchestrator-channel.py and SSH remote mailbox wrappers remain baseline, not native cross-host acceptance",
-        "next_checkpoint": "stdlib SSH relay tests green; executor first-actions; private GitHub main restore; desktop test contract nominated (not yet executed)"
-      },
-      "first_action": {
-        "schema_version": 1,
-        "recorded_at_utc": "2026-10-04T11:41:38Z",
-        "tool": "aplexer whoami --json",
-        "selected": {
-          "id": "81e8010c-89e4-478b-be3a-4ee6991607f3",
-          "tag": "agent-coordination-head",
-          "workspace": "/home/alexey/git/agent-coordination",
-          "engine": "shell",
-          "reported_state": "working",
-          "phase": "running",
-          "worker_pid": 2292031,
-          "workload_pid": 2292033
-        },
-        "project_id": "agent-coordination",
-        "human_source": "experiment/human-cross-computer-product-20261004.txt",
-        "principal_handoff_id": "01a106b7-a74b-7b11-bce8-69e6a281782c",
-        "environment_correction_id": "01a106bb-0ab2-77f3-8c09-bd4441b053d2"
-      },
+      "assignment_ack": "Head C1341 matching native81e8010c; actual delegate firsttools/ownership, head12:19 checkpoint owns repair/review/next useful tasks.",
+      "first_action": "Matching native delegate whoami; reviewer actual f3295f9 review pinned06addf9, adapter matching whoami12:02:40Z; core first timestamp unknown.",
       "commit": null,
       "pr_url": null,
-      "tests": null,
+      "tests": "Independent current working-tree21bus tests PASS; original6-test reviewer conditional local only; semantic replay negative STILL accepted, no crosshost acceptance.",
       "reviewer": null,
       "accepted_at": null,
       "blocked_on": [
-        "Native delegated executors/reviewer and accepted SSH/native implementation/two-host tests pending"
+        "Changed kind/reply_to under reused id still accepted in independent live negative",
+        "Adapter raw remote argv and unbound native identity remain unsafe",
+        "No actual Windows two-computer acceptance yet"
       ],
       "continuation_trigger": "Headcompletion/dependency/failure->nextusefulownedtask; genuineprincipal monitors; no routinedesktopapproval"
     },
@@ -1911,22 +1842,27 @@
       "team_id": "agent-coordination",
       "owner_tag": "agent-coordination-head",
       "principal_owner": "codex-principal",
-      "status": "queued",
-      "updated_at": "2026-10-04T11:40:20.360542+00:00",
-      "next_action": "Implementpersistedretry/idempotency/readACK/semanticoutcome/cursor reconciliation and offline reconnect.",
+      "status": "running",
+      "updated_at": "2026-10-04T12:23:31.363175+00:00",
+      "next_action": "Head pin safe core+adapter after repairing semantic replay/auth/quoting, launch new independently owned exact-pin reviewer, then actual no-session task consumer and Windows twohost/offline tests.",
       "acceptance": "Duplicate/outoforder/restart/crash/conflictingACK tests; exactsame messageID preserved; no fakeagreement.",
-      "executor_ids": [],
+      "executor_ids": [
+        "6168aae7-0f3d-44b1-a749-6e195235b079",
+        "cd07e46a-b698-4e3c-a98c-9d91b913594b"
+      ],
       "owned_paths": [],
       "evidence_paths": [],
-      "assignment_ack": null,
-      "first_action": null,
+      "assignment_ack": "Head C1341 matching native81e8010c; actual delegate firsttools/ownership, head12:19 checkpoint owns repair/review/next useful tasks.",
+      "first_action": "Matching native delegate whoami; reviewer actual f3295f9 review pinned06addf9, adapter matching whoami12:02:40Z; core first timestamp unknown.",
       "commit": null,
       "pr_url": null,
-      "tests": null,
+      "tests": "Independent current working-tree21bus tests PASS; original6-test reviewer conditional local only; semantic replay negative STILL accepted, no crosshost acceptance.",
       "reviewer": null,
       "accepted_at": null,
       "blocked_on": [
-        "Actualhead/delegatefirstaction andaccepted implementation pending"
+        "Changed kind/reply_to under reused id still accepted in independent live negative",
+        "Adapter raw remote argv and unbound native identity remain unsafe",
+        "No actual Windows two-computer acceptance yet"
       ],
       "continuation_trigger": "Headcompletion/dependency/failure->nextusefulownedtask; genuineprincipal monitors; no routinedesktopapproval"
     },
@@ -2036,22 +1972,26 @@
       "team_id": "agent-coordination",
       "owner_tag": "agent-coordination-head",
       "principal_owner": "codex-principal",
-      "status": "queued",
-      "updated_at": "2026-10-04T11:40:20.360542+00:00",
-      "next_action": "Launchindependentreviewer on exactpinnedrelay/CLI/protocol changes and topology/security claims.",
+      "status": "running",
+      "updated_at": "2026-10-04T12:23:31.363175+00:00",
+      "next_action": "Head pin safe core+adapter after repairing semantic replay/auth/quoting, launch new independently owned exact-pin reviewer, then actual no-session task consumer and Windows twohost/offline tests.",
       "acceptance": "Actualreviewerfirsttool/negative tests/revision/verdict; Cloudflare option tradeoff primarysources vs actualdeployment clearly separated.",
-      "executor_ids": [],
+      "executor_ids": [
+        "f869e27c-6cfc-483b-bb08-2ca25e09e9d3"
+      ],
       "owned_paths": [],
       "evidence_paths": [],
-      "assignment_ack": null,
-      "first_action": null,
+      "assignment_ack": "Head C1341 matching native81e8010c; actual delegate firsttools/ownership, head12:19 checkpoint owns repair/review/next useful tasks.",
+      "first_action": "Matching native delegate whoami; reviewer actual f3295f9 review pinned06addf9, adapter matching whoami12:02:40Z; core first timestamp unknown.",
       "commit": null,
       "pr_url": null,
-      "tests": null,
+      "tests": "Independent current working-tree21bus tests PASS; original6-test reviewer conditional local only; semantic replay negative STILL accepted, no crosshost acceptance.",
       "reviewer": null,
       "accepted_at": null,
       "blocked_on": [
-        "Actualhead/delegatefirstaction andaccepted implementation pending"
+        "Changed kind/reply_to under reused id still accepted in independent live negative",
+        "Adapter raw remote argv and unbound native identity remain unsafe",
+        "No actual Windows two-computer acceptance yet"
       ],
       "continuation_trigger": "Headcompletion/dependency/failure->nextusefulownedtask; genuineprincipal monitors; no routinedesktopapproval"
     },
@@ -2063,7 +2003,7 @@
       "status": "running",
       "updated_at": "2026-10-04T12:17:05.772764+00:00",
       "acceptance": "All four heads/publication semantic budget ACK; combined all-cloud account evidence/unknown coverage in Oct5 report; optional cloud spending fail-closed; no billing/service mutation.",
-      "assignment_ack": "Direct new human budget enacted d26362d; principal monitoring owner receives root genuine reply. Per-head semantic ACK pending verification.",
+      "assignment_ack": "Direct human d26362d; principal monitoring owner. Fourth head genuine12:19:18Z head-status semanticACK5total/includesbase/zeroheadroom/unknownusage/failclosed. Other heads/publication ACK coverage pending.",
       "first_action": "Read exact budget, implemented read-only aggregate assessment and deny optional-cloud admission scripts/delivery/cloud_budget.py; private assessment records unknown current billing.",
       "executor_ids": [
         "81e8010c-89e4-478b-be3a-4ee6991607f3"
