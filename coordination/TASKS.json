@@ -457,7 +457,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T07:01:56.753602+00:00",
+      "updated_at": "2026-10-04T07:09:25.554172+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -467,10 +467,11 @@
         "research/codex/continuation-runtime-check-2026-10-04.md",
         "research/codex/readiness-hold-audit-2026-10-04.md",
         "research/codex/metrics-conversation-scope-review-2026-10-04.md",
-        "research/codex/sdk-smoke-wrapper-review-2026-10-04.md"
+        "research/codex/sdk-smoke-wrapper-review-2026-10-04.md",
+        "experiment/standups/2026-10-04.md"
       ],
       "blocked_on": [],
-      "next_action": "Review actual cd27191e collector beforefailure/afterpass attribution negatives and63cbcb31 rawSDK meaningful-baseline smoke; original wrappedca5 positive scope corrected4cdb487, private script review/digests saved. Head C1793 verified fresh-idle native submit->ACK/tools renewed two workers. NewZ2f live/no reportedstate nativeNOTREADY, head task-at-start distinct review route/owner82 advice pending; no productiveZ claim/duplicatecollectwriter/inheritedhelperauthority. Next event45s artifacts and genuineZfirsttool, independent current-pin review; noCargo/sourcehold release/emission/reload/Claude/final6/deploy.",
+      "next_action": "Canonical daily standup owned/published by Codex after Ant explicit draft handoff, private export/checksum/partialOpenCode coverage preserved. Verify current metrics cd beforefail/afterpass fix through distinct reviewer and63 rawSDK meaningfulbaseline smoke review, actualZ bound independenttaskfirsttool after startupNOTREADY. Event45s oversight/current head mutualcheck, no rootwait, noCargo/sourcehold release/emission/reload/Claude/final6/deploy; oldalivePID/stale rows notproductive.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
