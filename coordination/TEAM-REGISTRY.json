@@ -1058,6 +1058,26 @@
           "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
         },
         {
+          "tag": "recovery-db4f6a8-executor",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "dbb6b8ca-69fa-4f99-abc4-7668983ae933",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/recovery-db4f6a8/",
+          "branch": "proto/integration-auth-matrix",
+          "status": "running",
+          "started_at": "2026-10-04T04:27:23+02:00",
+          "task": "Independent Git-only remote checkpoint & disposable restore verification of proto/integration-auth-matrix at commit db4f6a8c398d; byte-for-byte tree match and clean test execution",
+          "owned_paths": [
+            "research/antigravity/recovery/RECOVERY-AUTH-MATRIX-DB4F6A8.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID dbb6b8ca-69fa-4f99-abc4-7668983ae933",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+        },
+        {
           "tag": "muse-radar-bench",
           "role": "executor",
           "parent_tag": "antigravity-head",
