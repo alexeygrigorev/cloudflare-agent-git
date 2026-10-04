@@ -2532,3 +2532,31 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Registry updated: `runbook-packaging-reviewer` marked completed (`BOUNDED ACCEPTANCE`).
    - Active reviewers progressing in parallel: `counter-mapping-reviewer` (`938363ee`) and `cli-push-token-reviewer` (`f8cfa6e2`).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
+### 85. CLI Push Token Review Completed & Safe Runbook Seed Lease Assignment (C1719, C1724, C1725, C1727)
+
+- **As-of:** 2026-10-04, Europe/Berlin (05:50 UTC)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Codex Principal C1719, C1724, C1725, C1727.
+
+1. **Independent CLI Push Token Review Completed (C1719, C1724):**
+   - **Deliverable**: [`research/antigravity/reviews/REV-CLI-PUSH-TOKEN-862D17F.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-CLI-PUSH-TOKEN-862D17F.md) by `cli-push-token-reviewer` (`f8cfa6e2-11ae-4e09-964f-b6d0f8181fd3`).
+   - **Verdict**: **BOUNDED ACCEPTANCE**.
+   - **Key Review Findings**:
+     - **Diff Audit**: Verified 3 modified files (+153 / -2) on commit `862d17f` (tree `f19e859...`). `--token` and `--admin-token` added to CLI push parser; `$TASK_TOKEN` inserted into client bearer precedence ladder (`token -> cached task token -> admin_token -> $TASK_TOKEN -> $ADMIN_TOKEN`).
+     - **Test Suite Verification**: 23/23 unit tests pass in 8.334s; dedicated `test_23` passes in 1.504s.
+     - **Negative Mutation Testing**: Mutant 1 (dropping `--token` from CLI) killed by pre-flight task lookup 401; Mutant 2 (dropping `$TASK_TOKEN` from client ladder) killed by push-route 401. Both mutants cleanly killed.
+     - **Wire vs State Epistemic Demarcation**: Wire receipts (stdout JSON, stderr error strings, exit codes 0 vs 1) confirmed as primary interface proof. State counts (`seenPushes`) confirmed as secondary corroboration that cannot alone prove wire response bodies or absence of caller retries. Early lost responses properly classified as observed response absence without platform speculation; runs 1–3 preserved as INCONCLUSIVE.
+     - **Mock vs Live Scope**: Clarified that `test_23` in mock double validates Python argument parsing and error propagation, while compiled Node db4 coordinator validates real TypeScript router and auth boundaries.
+
+2. **Safe Runbook Seed Lease Implementation Task Formulated (C1725, C1727):**
+   - **Background**: Codex Principal C1725 identified that `sidecar.mjs` lines 243–260 commits an initial synthetic seed commit (`chore: seed canonical baseline`) upon bare repository creation. Pushing an unrelated base commit (`b2df985`) is non-fast-forward.
+   - **Task Assigned to `zcode-recovery-test` (`4abc725c`)**:
+     - Branch: `proto/runbook-seed-lease` (branched from `592a8ee`).
+     - Owned Files: `README.md` in that branch + report `research/antigravity/recovery/REPORT-RUNBOOK-SEED-LEASE.md`.
+     - Requirements: Portable `INTEGRATION_DIR`, mode `0600` `.env.local`, process list argv token exposure disclosure (`/proc/<pid>/cmdline`, `ps aux`), and explicit `--force-with-lease=refs/heads/main:<seed_commit>` targeting the freshly-created isolated canonical repository.
+     - Tests: Narrow fresh seed positive test + unexpectedly advanced head negative test (must fail closed and preserve advanced ref without unconstrained force).
+
+3. **Invariants & Publication Guard:**
+   - Deliverable verified clean by `publication_guard.py` (exit code 0).
+   - Team registry updated: `cli-push-token-reviewer` marked completed (`BOUNDED ACCEPTANCE`).
+   - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
