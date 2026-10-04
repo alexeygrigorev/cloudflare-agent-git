@@ -1632,7 +1632,7 @@
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
       "status": "running",
-      "updated_at": "2026-10-04T11:19:14.808651+00:00",
+      "updated_at": "2026-10-04T13:26:26+02:00",
       "next_action": "Executor pin/extract tracked integrationproduct source, create privateGitHub main, safe sync and remotecloneverify; Ant independent exactpin reviewer accepts.",
       "acceptance": "Actual private repo/sourceSHA/mainSHA/fallbackrestore tree match and secret scan; preserved existing work; no code-only unreviewed extraction claim.",
       "blocked_on": [
@@ -1645,56 +1645,7 @@
         "/home/alexey/git/agent-branches/"
       ],
       "evidence_paths": [],
-      "first_action": {
-        "schema_version": 1,
-        "recorded_at_utc": "2026-10-04T11:26:26Z",
-        "tool": "aplexer whoami --json",
-        "selected": {
-          "id": "40ddf9b7-f7d8-4deb-8535-df3575e07182",
-          "tag": "ab-source-extractor",
-          "workspace": "/home/alexey/git/agent-branches",
-          "engine": "shell",
-          "agent": "grok",
-          "reported_state": "working",
-          "phase": "running",
-          "worker_pid": 1812941,
-          "workload_pid": 1812994
-        },
-        "task_id": "ab-standalone-private-source-project",
-        "semantic_ack": {
-          "token": "EX-ACK-40ddf9b7",
-          "status": "ACK",
-          "owns": [
-            "/home/alexey/git/agent-branches",
-            "/home/alexey/git/agent-branches/.local",
-            "/home/alexey/git/agent-branches/.local/tmp",
-            "/home/alexey/git/agent-branches/.local/raw",
-            "/home/alexey/git/agent-branches/.local/restore",
-            "/home/alexey/git/agent-branches/code",
-            "/home/alexey/git/agent-branches/docs",
-            "/home/alexey/git/agent-branches/scripts",
-            "/home/alexey/git/agent-branches/tests"
-          ],
-          "readonly_source": "/home/alexey/git/agent-branches-integration",
-          "will_not_modify": [
-            "/home/alexey/git/agent-branches-integration",
-            "Ant peer paths outside owned extraction workspace"
-          ],
-          "head": {
-            "tag": "antigravity-head",
-            "id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
-            "workspace": "/home/alexey/git/cloudflare-agent-git"
-          },
-          "orchestrator": {
-            "tag": "desktop-orchestrator",
-            "id": "79ffb8c7-3f32-46ee-bd60-423a255ebbae",
-            "workspace": "/home/alexey/git/cloudflare-agent-git"
-          },
-          "no_duplicate_extractor": true,
-          "no_spoofing": true,
-          "next_action": "Pin source HEAD/tree, extract product paths, create private GitHub alexeygrigorev/agent-branches if absent, push main without force, verify remote clone restore."
-        }
-      },
+      "first_action": "aplexer whoami --json at 2026-10-04T11:26:26Z; receipt at /home/alexey/git/agent-branches/.local/extraction-first-action.json; owns extraction workspace /home/alexey/git/agent-branches; integration product source read-only.",
       "commit": null,
       "pr_url": null,
       "tests": null,
