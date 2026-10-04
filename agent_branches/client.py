@@ -279,8 +279,11 @@ class AgentBranchesClient:
         the real coordinator answers 401 unless the bearer is the pushing
         agent's own task token or ADMIN_TOKEN. The token is resolved as:
         explicit ``token`` -> the per-task token cached by ``create_task``
-        -> explicit ``admin_token`` -> $ADMIN_TOKEN. With none available
-        the request goes out unauthenticated and fails closed with 401.
+        -> explicit ``admin_token`` -> $TASK_TOKEN -> $ADMIN_TOKEN (C1673:
+        the $TASK_TOKEN step mirrors ack_warning/get_task so a cold CLI
+        client with only the environment set authenticates). With none
+        available the request goes out unauthenticated and fails closed
+        with 401.
         """
         # C1532: resolve the mutating bearer BEFORE the agent_id lookup — a
         # cold client (no cached token) holding only an explicit token= or
@@ -290,6 +293,7 @@ class AgentBranchesClient:
             token
             or (self.task_tokens.get(task_id) if task_id else None)
             or admin_token
+            or os.environ.get("TASK_TOKEN")
             or os.environ.get("ADMIN_TOKEN")
         )
 

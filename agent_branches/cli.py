@@ -288,6 +288,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--test-provenance",
         help="Test execution provenance evidence (e.g. 'vitest: 14 passed')",
     )
+    push_parser.add_argument(
+        "--token",
+        help="Bearer token of the pushing agent (per-task task token)",
+    )
+    push_parser.add_argument(
+        "--admin-token",
+        help="Admin bearer token fallback (prefer --token or $TASK_TOKEN/$ADMIN_TOKEN)",
+    )
     push_parser.add_argument("--server", help="Coordinator URL")
     push_parser.add_argument("--json", action="store_true", help="Output raw JSON")
 
@@ -405,6 +413,8 @@ def handle_push(args: argparse.Namespace, client: AgentBranchesClient, as_json: 
             files_changed=files_changed,
             intent=args.intent_update,
             test_provenance=args.test_provenance,
+            token=getattr(args, "token", None),
+            admin_token=getattr(args, "admin_token", None),
         )
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)

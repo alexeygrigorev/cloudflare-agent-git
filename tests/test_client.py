@@ -1888,6 +1888,143 @@ class TestAgentBranchesClient(unittest.TestCase):
         with self.assertRaises(ValueError):
             client.calculate_jitter(-1)
 
+    def test_23_cli_push_token_flags(self):
+        """C1673: `push --token/--admin-token` CLI wiring and boundary ladder.
+
+        Against a token-configured mock mirroring the real coordinator's
+        requireMutatingAuth on POST /events/push (C1518): owner task token
+        via --token -> accepted (200), admin via --admin-token -> accepted,
+        a valid FOREIGN agent token -> 403, a REVOKED task token -> 401
+        (proto's credentialAgent denies revoked before narrowing), and a
+        cold CLI process (fresh subprocess: no cache, no flags) falls back
+        to $TASK_TOKEN. Foreign/revoked cases pass --agent-id explicitly so
+        the push route's own ladder is exercised rather than the
+        authenticated get_task() resolution, which would fail first with
+        the same wrong bearer (C1532).
+        """
+        saved_task_token = os.environ.get("TASK_TOKEN")
+        saved_admin_token = os.environ.get("ADMIN_TOKEN")
+        os.environ.pop("TASK_TOKEN", None)
+        os.environ.pop("ADMIN_TOKEN", None)
+        srv, _t, url, state = start_mock_l1_server(
+            host="127.0.0.1",
+            port=0,
+            expected_admin_token="adm-cli-push-token",
+        )
+        try:
+            admin_client = AgentBranchesClient(server_url=url, timeout=10.0)
+            owner = admin_client.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="CLI push token ladder",
+                branch="feat/cli-push-token",
+                agent="cli-push-alpha",
+                admin_token="adm-cli-push-token",
+            )
+            task_id = owner["taskId"]
+            agent_id = owner["agentId"]
+            owner_token = owner["token"]["plaintext"]
+
+            foreign = admin_client.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="Foreign CLI pusher",
+                branch="feat/cli-push-foreign",
+                agent="cli-push-beta",
+                admin_token="adm-cli-push-token",
+            )
+            foreign_token = foreign["token"]["plaintext"]
+            # Reserved for the env-fallback case: minted (and still valid)
+            # BEFORE owner_token gets revoked below.
+            env_task = admin_client.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="Env fallback pusher",
+                branch="feat/cli-push-env",
+                agent="cli-push-gamma",
+                admin_token="adm-cli-push-token",
+            )
+            env_token = env_task["token"]["plaintext"]
+
+            # 1. --token with the owner's task token: accepted, and the cold
+            #    CLI process resolves agentId through the same bearer.
+            res = self.run_cli([
+                "push",
+                "--task-id", task_id,
+                "--head-sha", "1111111111111111111111111111111111111111",
+                "--token", owner_token,
+                "--server", url,
+                "--json",
+            ])
+            data = json.loads(res.stdout)
+            self.assertTrue(data["accepted"])
+            self.assertEqual(data["agentId"], agent_id)
+
+            # 2. --admin-token: admin is a push credential (decideMutatingAuth).
+            res = self.run_cli([
+                "push",
+                "--task-id", task_id,
+                "--head-sha", "2222222222222222222222222222222222222222",
+                "--admin-token", "adm-cli-push-token",
+                "--server", url,
+                "--json",
+            ])
+            data = json.loads(res.stdout)
+            self.assertTrue(data["accepted"])
+
+            # 3. NEGATIVE: valid token belonging to a DIFFERENT agent -> the
+            #    push route rejects with 403, CLI exits non-zero.
+            res = self.run_cli([
+                "push",
+                "--agent-id", agent_id,
+                "--head-sha", "3333333333333333333333333333333333333333",
+                "--token", foreign_token,
+                "--server", url,
+                "--json",
+            ], check=False)
+            self.assertNotEqual(res.returncode, 0)
+            self.assertIn("403", res.stderr)
+            self.assertIn("forbidden", res.stderr.lower())
+
+            # 4. NEGATIVE: revoked task token -> 401 (revocation is denied
+            #    before owner narrowing), CLI exits non-zero.
+            state.revoke_token(owner_token)
+            res = self.run_cli([
+                "push",
+                "--agent-id", agent_id,
+                "--head-sha", "4444444444444444444444444444444444444444",
+                "--token", owner_token,
+                "--server", url,
+                "--json",
+            ], check=False)
+            self.assertNotEqual(res.returncode, 0)
+            self.assertIn("401", res.stderr)
+
+            # 5. Cold CLI process with NO token flags: $TASK_TOKEN env
+            #    fallback authenticates both the agentId resolution and the
+            #    push itself (C1673 client chain, mirrors ack_warning).
+            res = self.run_cli([
+                "push",
+                "--task-id", env_task["taskId"],
+                "--head-sha", "5555555555555555555555555555555555555555",
+                "--server", url,
+                "--json",
+            ], env_vars={"TASK_TOKEN": env_token})
+            data = json.loads(res.stdout)
+            self.assertTrue(data["accepted"])
+            self.assertEqual(data["agentId"], env_task["agentId"])
+        finally:
+            if saved_task_token is None:
+                os.environ.pop("TASK_TOKEN", None)
+            else:
+                os.environ["TASK_TOKEN"] = saved_task_token
+            if saved_admin_token is None:
+                os.environ.pop("ADMIN_TOKEN", None)
+            else:
+                os.environ["ADMIN_TOKEN"] = saved_admin_token
+            srv.shutdown()
+            srv.server_close()
+
 
 if __name__ == "__main__":
     unittest.main()
