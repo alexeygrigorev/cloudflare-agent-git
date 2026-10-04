@@ -2624,3 +2624,36 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Publication guard verified clean (`publication_guard.py` exit code 0).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
    - Physical host resources: root disk 64 GiB free, `/tmp` clean, cooperative memory budget <= 1500 MB.
+
+---
+
+### 88. Runbook Seed Lease Delivery & Independent Review Launch (C1740, C1741, C1742)
+
+- **As-of:** 2026-10-04, Europe/Berlin (06:12 UTC / 08:00 local)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Codex Principal C1740, C1741, C1742.
+
+1. **Ingestion of Delivered Artifacts (`zcode-recovery-test` @ `4abc725c`):**
+   - **Source Branch Landed on Remote**: Branch `proto/runbook-seed-lease` pushed to origin at commit [`4c6fdd55131b454ed99dee5dbafb31a3c3dd251e`](file:///home/alexey/git/cloudflare-agent-git/commit/4c6fdd5) (+83/-7 in `README.md`).
+   - **Report Landed on Main**: Delivered [`research/antigravity/recovery/REPORT-RUNBOOK-SEED-LEASE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-RUNBOOK-SEED-LEASE.md) (commit `0f32239` on `origin/main`).
+   - **Test Results Ingested**:
+     - T0 (Naive Push): plain `git push` of unrelated history onto seeded canonical bare repo rejected as non-fast-forward (exit 1).
+     - T1 (Positive Seed Lease): `git push --force-with-lease=refs/heads/main:<seed_sha>` succeeds (exit 0); canonical `main` updated to local head.
+     - T2 (Negative Stale Lease): after concurrent actor advanced canonical `main`, pushing with stale seed lease fails closed (`stale info`, exit 1) and preserves the advanced commit.
+
+2. **Epistemic & Technical Demarcation (C1740 / C1741 Resolution):**
+   - **Pure Git vs. Daemon Scope**: Acknowledged that tests in `REPORT-RUNBOOK-SEED-LEASE.md` verified pure Git `--force-with-lease` mechanics against bare repositories in scratch; full live Node coordinator + Git Smart HTTP sidecar integration was not re-executed in this lane.
+   - **Runbook Gaps Identified for Review**:
+     - *Schematic Placeholders*: `4c6fdd5:README.md` uses `seed_sha=<seedCommit from response>` and `<remote-url>` without executable JSON extraction (`jq -r .seedCommit` or Python json) or clear lifecycle mapping from `POST /setup` / `POST /api/repos`.
+     - *Token Authorization Demarcation*: The gitconfig example references `$SIDECAR_TOKEN` (shared sidecar control bearer), but Git Smart HTTP push authorization requires a minted repository write token or task token. Distinguish control bearer from repository write bearer.
+     - *Flag Generalization*: README line 95 generalizes `--disable-wasm-trap-handler` as a universal memory exhaustion fix, whereas empirical testing demonstrated it is an observed mitigation working with `--max-old-space-size=256` and `ulimit -v 1530000`, not an unconditional fix at `-v 1500000`.
+   - **Platform Causality & Memory Labeling**: Disclosed that intermediate scratch collisions and "reference already exists" on branch push are observed execution interleavings without proven platform root cause (labeled UNKNOWN); `ulimit -v` is a virtual memory limit, distinct from shared physical cgroup enforcement (1500 MB).
+
+3. **Commissioned Independent Current-Pin Review:**
+   - Launched native reviewer subagent `runbook-seed-lease-reviewer` (`c5d2bc31-3072-4189-bfc2-07eef123f723`), registered in [`coordination/TEAM-REGISTRY.json`](file:///home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json) (commit [`d3c2df3`](file:///home/alexey/git/cloudflare-agent-git/commit/d3c2df3)).
+   - Target Deliverable: [`research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-4C6FDD5.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-4C6FDD5.md).
+   - Review tasks: audit commit `4c6fdd5` and report `0f32239`, execute independent scratch verification of Git seed-lease ladder and mutant kill, evaluate runbook gaps, and formulate a tested drop-in remediated unified diff against `README.md`.
+
+4. **Invariants Strictly Preserved:**
+   - Publication guard verified clean (`publication_guard.py` exit code 0).
+   - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
