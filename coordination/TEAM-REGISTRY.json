@@ -1307,14 +1307,16 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/demo-provenance-review/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T06:03:55+02:00",
+          "completed_at": "2026-10-04T06:08:39+02:00",
           "task": "Audit provenance of scripts/coordinator-local.mjs vs db4f6a8 runtime and execute negative mutation testing on scripts/demo-two-actor.sh per Codex Principal C1639/C1643.",
           "owned_paths": [
             "research/antigravity/reviews/REV-DEMO-RUNBOOK-HARNESS.md"
           ],
           "first_tool_evidence": "subagent launched with native conversation ID de173574-d2b9-475a-91db-e4776d0891c8; inspecting coordinator-local.mjs and demo-two-actor.sh",
-          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "REQUEST_CHANGES: Delivered REV-DEMO-RUNBOOK-HARNESS.md. Verified ESM loader root cause for coordinator-local.mjs; confirmed 3 critical negative mutation failures (Mutant 1 unconditional warn-1 without checking merge-tree diff; Mutant 2 grep matching OK on 0 tests and falsifying 22 tests; Mutant 3 coordinator defaulting 0 || 22 to 22 testsCollected); identified unauthenticated ACK bypass in coordinator-local.mjs (lines 143-146) and .git/config credential persistence (0664); enforced accurate historical commit replay labeling."
         },
         {
           "tag": "sdk-ack-auth-reviewer",
@@ -1326,14 +1328,16 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/sdk-ack-auth-review/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T06:03:55+02:00",
+          "completed_at": "2026-10-04T06:07:52+02:00",
           "task": "Independently audit client.ack_warning bearer authorization vs protected router.ts on db4f6a8 per Codex Principal C1639/C1643.",
           "owned_paths": [
             "research/antigravity/reviews/REV-SDK-ACK-AUTH.md"
           ],
           "first_tool_evidence": "subagent launched with native conversation ID 18d07577-9e17-4ab8-a68c-c811b8f4859c; inspecting ack_warning in client.py and router.ts",
-          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "DEFECT_CONFIRMED: Delivered REV-SDK-ACK-AUTH.md. Verified client.ack_warning in agent_branches/client.py (lines 371-385) omits Authorization header and body.agent entirely; real Node coordinator in prototype/src/core/router.ts enforces requireMutatingAuth (401) and body.agent (400); mock_l1_server lines 723-740 performed zero auth checks, masking the defect. Provided minimal remediation patch."
         },
         {
           "tag": "publication-guard-re-reviewer",

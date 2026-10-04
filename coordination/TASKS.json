@@ -41,31 +41,62 @@
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
       "executor_tag": "publication-guard-builder",
-      "status": "running",
-      "updated_at": "2026-10-04T05:16:00.000000+02:00",
+      "status": "done",
+      "updated_at": "2026-10-04T05:50:03.000000+02:00",
       "blocked_on": [],
-      "next_action": "publication-guard-builder (69e600e5) implementing credential guard script (research/antigravity/tooling/publication_guard.py) and stdlib tests (tests/test_publication_guard.py); negative review to follow.",
+      "next_action": "Bounded acceptance confirmed by Codex Principal C1637 for committed db69e553 / e3b235d0 (commit 817700e). Tool verified as public-report tripwire alongside manual review; publication coordinator remains on DRAFT guard.",
       "acceptance": "Detects full minted task bearers, credential-bearing URLs, and local secret literals without printing values; non-zero exit blocks publish; fail-closed on unreadable inputs.",
       "evidence_paths": [
         "research/antigravity/tooling/publication_guard.py",
-        "tests/test_publication_guard.py"
+        "tests/test_publication_guard.py",
+        "research/antigravity/reviews/REV-PUBLICATION-GUARD.md"
       ],
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C1601/C1603 directives. Executed by publication-guard-builder (69e600e5) in .local/scratch/publication-guard/."
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1601/C1603/C1625/C1637 directives. Pinned source db69e553 / e3b235d0 verified by independent re-review (c571d108) in REV-PUBLICATION-GUARD.md."
     },
     {
       "id": "private-lineage-audit",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
       "executor_tag": "lineage-auditor",
-      "status": "running",
-      "updated_at": "2026-10-04T05:16:00.000000+02:00",
+      "status": "done",
+      "updated_at": "2026-10-04T05:28:33.000000+02:00",
       "blocked_on": [],
-      "next_action": "lineage-auditor (772bf420) inspecting scratch worktree lifecycles and git commit lineages targeting research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md; strictly zero contact with Z4abc active files.",
+      "next_action": "Delivered PRIVATE-LINEAGE-AUDIT.md. Individual duplicate-cause claims withdrawn per C1620 / C1644; creator labeled UNKNOWN.",
       "acceptance": "Read-only audit tracing scratch worktrees, toolcall timestamps, and provenance across experimental iterations; zero raw secrets.",
       "evidence_paths": [
         "research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md"
       ],
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C1598/C1601/C1603 directives. Executed by lineage-auditor (772bf420) in .local/scratch/private-lineage-audit/."
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1598/C1601/C1603/C1615/C1620 directives. Executed by lineage-auditor (772bf420) in .local/scratch/private-lineage-audit/."
+    },
+    {
+      "id": "sdk-ack-auth-review",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "sdk-ack-auth-reviewer",
+      "status": "done",
+      "updated_at": "2026-10-04T06:07:52.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Delivered REV-SDK-ACK-AUTH.md (DEFECT_CONFIRMED). client.ack_warning omits Authorization header and body.agent against real router.ts on db4f6a8; mock_l1_server masked client defect. Narrow defect repair queued for released ZCode worker.",
+      "acceptance": "Independent audit of client.ack_warning bearer authorization against real router.ts on db4f6a8; reproduction of 401 fail-closed on protected router.",
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-SDK-ACK-AUTH.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1639/C1643/C1650/C1651 directives. Executed by sdk-ack-auth-reviewer (18d07577) in .local/scratch/sdk-ack-auth-review/."
+    },
+    {
+      "id": "demo-provenance-review",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_tag": "demo-provenance-reviewer",
+      "status": "done",
+      "updated_at": "2026-10-04T06:08:39.000000+02:00",
+      "blocked_on": [],
+      "next_action": "Delivered REV-DEMO-RUNBOOK-HARNESS.md (REQUEST_CHANGES). Identified ESM loader root cause, confirmed 3 negative mutation failures (unconditional warn-1, grep matching OK on 0 tests, coordinator defaulting 0 to 22), unauthenticated ACK bypass in coordinator-local.mjs (lines 143-146), and .git/config credential persistence (0664). Script and coordinator held uncommitted pending remediation.",
+      "acceptance": "Narrow negative mutation testing and provenance audit of demo runbook script and runtime; no predetermined conflict or clean assumptions.",
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-DEMO-RUNBOOK-HARNESS.md"
+      ],
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1639/C1643/C1650 directives. Executed by demo-provenance-reviewer (de173574) in .local/scratch/demo-provenance-review/."
     },
     {
       "id": "distribution-runbook-check",
