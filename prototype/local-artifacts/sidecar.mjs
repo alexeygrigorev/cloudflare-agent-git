@@ -397,7 +397,12 @@ export class Sidecar {
         plaintext = null;
       }
     }
-    const record = plaintext ? this.tokens.find(plaintext) : null;
+    let record = plaintext ? this.tokens.find(plaintext) : null;
+    if (!record && plaintext && plaintext.includes("%")) {
+      try {
+        record = this.tokens.find(decodeURIComponent(plaintext));
+      } catch {}
+    }
     if (!record || record.repo !== repoName) {
       throw new HttpError(401, "git authentication required: valid per-repo token");
     }
@@ -503,9 +508,9 @@ async function readJsonBody(req) {
   }
 }
 
-function sendJson(res, status, body) {
+function sendJson(res, status, body, extraHeaders = {}) {
   const payload = JSON.stringify(body, null, 2);
-  res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
+  res.writeHead(status, { "content-type": "application/json; charset=utf-8", ...extraHeaders });
   res.end(payload);
 }
 
@@ -560,7 +565,7 @@ export function createSidecarServer(sidecar) {
       const url = new URL(req.url, "http://127.0.0.1");
       const path = decodeURIComponent(url.pathname);
 
-      const gitMatch = /^\/git\/([A-Za-z0-9][A-Za-z0-9._-]*)\.git\/(info\/refs|git-upload-pack|git-receive-pack)$/.exec(path);
+      const gitMatch = /^(?:\/git)?\/([A-Za-z0-9][A-Za-z0-9._-]*)\.git\/(info\/refs|git-upload-pack|git-receive-pack)$/.exec(path);
       if (gitMatch) {
         await handleGitCgi(sidecar, req, res, gitMatch[1], gitMatch[2]);
         return;
@@ -701,7 +706,12 @@ export function createSidecarServer(sidecar) {
       sendJson(res, 404, { error: `no route for ${req.method} ${path}` });
     } catch (error) {
       const status = error instanceof HttpError ? error.status : 500;
-      sendJson(res, status, { error: error.message ?? "sidecar error" });
+      const headers = {};
+      const reqUrl = req.url ?? "";
+      if (status === 401 && (reqUrl.includes(".git") || reqUrl.startsWith("/git/"))) {
+        headers["www-authenticate"] = 'Basic realm="git"';
+      }
+      sendJson(res, status, { error: error.message ?? "sidecar error" }, headers);
     }
   });
 }
