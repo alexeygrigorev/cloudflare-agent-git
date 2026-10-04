@@ -3,14 +3,15 @@
 - **Reviewer Tag:** `publication-guard-reviewer`
 - **Session ID:** `3d67979e-2323-4c9a-8733-c5aa306e3058`
 - **Parent Session:** `antigravity-head` (`245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
-- **Directives:** Codex Principal C1601 / C1603 / C1612 / C1614
+- **Directives:** Codex Principal C1601 / C1603 / C1612 / C1614 / C1618
 - **Review Date / As-of:** 2026-10-04, Europe/Berlin
-- **Target Files under Review:**
+- **Target Files under Review (Pinned Hashes):**
   - `research/antigravity/tooling/publication_guard.py` (blob `05fc18e2f682b30fe7b7762d059a770712f633eb`)
-  - `tests/test_publication_guard.py` (blob `c54f1ef344fac9faf525ada476848e3a499762f9`)
+  - `tests/test_publication_guard.py` (blob `c6590cd3c761dfbe5568aea2db2a26085bec1bac`)
 - **Verdict: ACCEPT (ALL DEFECTS REMEDIATED & VERIFIED)**
   - All four previously identified defects (D1, D2, D3, D4) have been fully remediated and verified through dedicated regression tests.
-  - The test suite executes 26/26 tests cleanly in 1.559s with zero failures, zero errors, and zero warnings.
+  - Per Codex C1618, `tests/test_publication_guard.py` was frozen at blob `c6590cd3c761dfbe5568aea2db2a26085bec1bac` with dynamic token concatenation to avoid false self-violations; the test file itself passes `publication_guard.py` with exit code 0.
+  - The unit test suite executes 26/26 tests cleanly in 1.611s with zero failures, zero errors, and zero warnings.
   - All 6 public research deliverables in the repository pass publication credential guard verification with exit code 0.
   - Operational invariants strictly maintained: scratch disk usage 144 KB (budget <= 512 MB), zero `/tmp` growth, memory <= 1500 MB cooperative slice, and zero raw secrets emitted to output.
 
@@ -31,8 +32,9 @@
 | **Staged Scratch Rejection (D4 Fix)** | Staged secrets anywhere in git index (including `scratch/`) fail closed with exit 1 | Staged secret in `scratch/private_test.md` blocked with exit 1 | `test_staged_flag_in_isolated_git_repo` (pass) | **REMEDIATED & PASS** |
 | **Staged Explicit Path Filter (C1614)** | Passing explicit targets with `--staged` inspects only requested subset | Only requested staged files scanned; unrequested staged dirty file skipped | `test_staged_explicit_paths_filtering` (pass) | **PASS** |
 | **Path Error Sanitization** | Paths in stderr output do not leak raw credentials | Raw bearer token in path string masked to `art_v1_***` in stderr | `test_sanitized_path_in_error` (pass) | **PASS** |
+| **Test Suite Self-Verification (C1618)** | Test file itself passes guard without triggering false positive self-violations | `publication_guard.py tests/test_publication_guard.py` exits 0 clean | Direct scan of `c6590cd3` blob | **PASS** |
 | **Public Deliverables Self-Verification** | All public research reports in repository pass guard verification clean | All 6 canonical deliverables scanned with exit code 0 | `TestPublicReportsSelfVerification` (pass) | **PASS** |
-| **Unit Test Suite Coverage** | Pure Python unittest suite with zero external dependencies | 26/26 tests pass in 1.559s | `python3 -m unittest -v tests/test_publication_guard.py` | **PASS** |
+| **Unit Test Suite Coverage** | Pure Python unittest suite with zero external dependencies | 26/26 tests pass in 1.611s | `python3 -m unittest -v tests/test_publication_guard.py` | **PASS** |
 | **Mutation Testing (Scratch)** | Mutant 1 (URL creds), Mutant 2 (`art_v1_`), Mutant 3 (missing exit code) | All 3 mutants killed by targeted tests | Isolated worktree mutation harness | **PASS (3/3 KILLED)** |
 
 ---
@@ -87,7 +89,23 @@
 
 ---
 
-## 3. Public Deliverables Self-Verification (6/6 Reports PASS)
+## 3. Test Suite Self-Verification & C1618 Hash Pinning
+
+Per Codex C1618, test fixtures containing dummy tokens and URLs were audited to ensure they do not produce self-referential false positives when the test file itself is scanned.
+- Dummy credentials inside `tests/test_publication_guard.py` are dynamically assembled using string concatenation (e.g. `"dummysecret_" + "xyz123"`, `"tok_" + "9f8a3c2e..."`) so that no static raw credentials exist in the test source.
+- Direct invocation:
+  ```bash
+  python3 research/antigravity/tooling/publication_guard.py tests/test_publication_guard.py
+  ```
+  - **Return Code:** `0`
+  - **Stdout:** (empty)
+  - **Stderr:** (empty)
+- **Pinned Git Object Hash:**
+  `git hash-object tests/test_publication_guard.py` &rarr; `c6590cd3c761dfbe5568aea2db2a26085bec1bac`
+
+---
+
+## 4. Public Deliverables Self-Verification (6/6 Reports PASS)
 
 All 6 public research deliverables were scanned directly using the hardened publication credential guard:
 ```bash
@@ -107,7 +125,7 @@ python3 research/antigravity/tooling/publication_guard.py \
 
 ---
 
-## 4. Full Unit Test Suite Execution
+## 5. Full Unit Test Suite Execution
 
 Executed full test suite against the canonical workspace:
 `TMPDIR=.local/scratch/publication-guard-review python3 -m unittest -v tests/test_publication_guard.py`
@@ -141,14 +159,14 @@ test_allowed_url_placeholders (tests.test_publication_guard.TestPublicRedactionP
 test_all_public_reports_pass (tests.test_publication_guard.TestPublicReportsSelfVerification.test_all_public_reports_pass) ... ok
 
 ----------------------------------------------------------------------
-Ran 26 tests in 1.559s
+Ran 26 tests in 1.611s
 
 OK
 ```
 
 ---
 
-## 5. Mutation Testing Verification Ledger
+## 6. Mutation Testing Verification Ledger
 
 All 3 mandatory mutants were verified in an isolated scratch worktree:
 
@@ -160,7 +178,7 @@ All 3 mandatory mutants were verified in an isolated scratch worktree:
 
 ---
 
-## 6. Operational Invariants
+## 7. Operational Invariants
 
 - **Scratch Space Confinement:**
   - Active scratch directory: `/home/alexey/git/cloudflare-agent-git/.local/scratch/publication-guard-review/`
@@ -178,7 +196,7 @@ All 3 mandatory mutants were verified in an isolated scratch worktree:
 
 ---
 
-## 7. Final Verdict
+## 8. Final Verdict
 
 - **Verdict:** **ACCEPT (ALL DEFECTS REMEDIATED & VERIFIED)**
-- **Conclusion:** `research/antigravity/tooling/publication_guard.py` at commit blob `05fc18e2` and its test suite `tests/test_publication_guard.py` at blob `c54f1ef3` are robust, fail-closed, complete against evasions, and fully certified for active publication pre-commit and pipeline gating.
+- **Conclusion:** `research/antigravity/tooling/publication_guard.py` at commit blob `05fc18e2` and its test suite `tests/test_publication_guard.py` at blob `c6590cd3` are robust, fail-closed, complete against evasions, and fully certified for active publication pre-commit and pipeline gating.
