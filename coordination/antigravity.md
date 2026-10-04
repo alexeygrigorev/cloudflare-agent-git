@@ -1331,8 +1331,10 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
 - **Active Research Gates & Reviews (C1507-C1511):**
   1. **`zcode-a14-gate` (`31436338`, zcodex, `glm-5.3-flash max`):**
      - Task: Independent read-only verification of A05 label-binding re-review (`TASKS` row `label-binding-residual-repair`, commit `4937506`).
-     - Note per Codex Principal C1511: Conflation with A14 retracted. Task is strictly an A05 label-binding harness re-review evaluating exit code 2 and missing-case behavior.
-     - Workspace: `/home/alexey/git/agent-branches-adopt`, declared review on `research/zcode/a14-gate-review/**`.
+     - **Status:** **COMPLETED** (commit `f6e5c22`).
+     - **Report:** [`research/zcode/a14-gate-review/A14-FOLD-OR-REOPEN-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/zcode/a14-gate-review/A14-FOLD-OR-REOPEN-REPORT.md).
+     - **Verdict:** **FOLD** (close row as delivered and independently verified).
+     - **Findings:** Verified acceptance criteria met at pinned commit `4937506`; return code 2 / missing cases defect is fixed and structurally pinned (`rc=0; run_case ... || rc=$?`, nonzero exit sets `setup_err=1`, post-run structure check requires exactly 8 recorded rows); missing overlay dir -> exit 3, missing oracle -> exit 3; label->overlay binding verified non-vacuous via mutation kill (forcing binding off yields exit 0); `REPLAY_GUARDS_OFF=1` measured honestly with loud banner; full observed matrix 8/8 PASS replay and 14/14 negatives pass; naming collision with shortlist approach A14 explicitly disambiguated.
   2. **`zcode-shortlist-gate` (`5df4e39f`, zcodex, `glm-5.3-flash max`):**
      - Task: Independent evidence checker for same-version shortlist gates across the 20 candidate product approaches.
      - **Status:** **COMPLETED** (commit `e6a18a9`).

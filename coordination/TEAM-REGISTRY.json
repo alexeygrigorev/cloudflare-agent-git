@@ -1036,14 +1036,17 @@
           "model": "glm-5.3-flash max",
           "workspace": "/home/alexey/git/agent-branches-adopt",
           "branch": "proto/ab-adoption",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T02:16:00+02:00",
-          "task": "C1507: Independent A14 fold-or-reopen gate review (Space Bunny A14 evidence & source)",
+          "completed_at": "2026-10-04T02:27:00+02:00",
+          "completed_commit": "f6e5c22",
+          "task": "C1507: Independent A14 fold-or-reopen gate review (TASKS row label-binding-residual-repair at 4937506)",
           "owned_paths": [
             "research/zcode/a14-gate-review/**"
           ],
           "first_tool_evidence": "aplexer work join / inspecting TASKS.json and repro",
-          "memory_cap": "1500M"
+          "memory_cap": "1500M",
+          "verdict": "FOLD (close row as delivered and independently verified; 14/14 negatives pass; missing-case exit=3 confirmed; swapped-label negative verified; naming collision with shortlist A14 disambiguated; report: research/zcode/a14-gate-review/A14-FOLD-OR-REOPEN-REPORT.md)"
         },
         {
           "tag": "zcode-shortlist-gate",
