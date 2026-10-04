@@ -170,10 +170,12 @@ session instead of reusing stale tokens.
 Do not conflate the two credentials this stack uses:
 
 - `$SIDECAR_TOKEN` is the **shared sidecar control bearer**: it authorizes
-  sidecar control-plane calls (creating canonical repos via `POST /setup`)
-  and is what the coordinator presents as `LOCAL_ARTIFACTS_TOKEN`. It is not
-  the credential Git Smart HTTP accepts for push.
-- The **minted repo write token** returned in the `POST /setup` response
+  sidecar control-plane calls (e.g. creating canonical repos via
+  `POST /api/repos`) and is what the coordinator presents as
+  `LOCAL_ARTIFACTS_TOKEN`. It is not the credential Git Smart HTTP accepts
+  for push. (The coordinator's own `POST /setup` route takes `$ADMIN_TOKEN`
+  instead — two control planes, two different bearers.)
+- The **minted repo write token** returned in the `POST /api/repos` response
   (`token` field; per-repo, short-lived) — or a task token minted for the
   same repo — is what Git Smart HTTP push requires. It belongs to the repo or
   task that requested it; keep it out of `.env.local`.
@@ -190,10 +192,11 @@ non-fast-forward. Do **not** recover with an unconstrained `git push --force`
 an exact lease on the seed commit instead:
 
 ```bash
-# Create the canonical repo on the control plane; the JSON response carries
-# remote (canonical URL), seedCommit (seed SHA) and token (repo write token).
+# Create the canonical repo on the sidecar control plane; the JSON response
+# carries remote (canonical URL), seedCommit (seed SHA) and token (repo
+# write token).
 sidecar_bearer="Bearer $SIDECAR_TOKEN"   # scheme + control credential, composed once
-setup_resp=$(curl -fsS -X POST "http://127.0.0.1:$SIDECAR_PORT/setup" \
+setup_resp=$(curl -fsS -X POST "http://127.0.0.1:$SIDECAR_PORT/api/repos" \
     -H "Authorization: $sidecar_bearer" \
     -H 'Content-Type: application/json' \
     -d '{"name":"my-task-repo"}')
@@ -201,6 +204,12 @@ seed_sha=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.
 repo_url=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["remote"])')
 repo_tok=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["token"])')
 # jq equivalents: seed_sha=$(printf '%s' "$setup_resp" | jq -r .seedCommit), etc.
+
+# Alternative control plane: the coordinator's `POST /setup` (authenticated
+# with `$ADMIN_TOKEN`, not $SIDECAR_TOKEN) creates the canonical repo too;
+# its response nests the URL and seed as `canonical.remote` / `seedCommit`
+# (`null` if the canonical repo already exists) and carries no write token —
+# task tokens then come from the task-creation flow.
 
 # Push with the exact lease on the seed commit, authenticated as the minted
 # repo write token $repo_tok (0600 file-backed variant below — never argv
