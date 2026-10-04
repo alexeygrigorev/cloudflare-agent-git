@@ -1,0 +1,15 @@
+# Repeated aplexer operations — human feature steering, 4 October 2026
+
+Human requests watching repeated aplexer work and turning it into features. This is a feature intake ledger, not deployed capability or an accepted implementation. Antigravity owns integration; Grok capacity-recovery08fee investigates hooks and prepares an offline candidate. Preserve existing services; do not add competing collectors/schedulers.
+
+| Repeated operation observed | Native feature candidate | Required safety and acceptance |
+| --- | --- | --- |
+| Native whoami before coordination and inside new executors; helper mailbox inheritance has previously been wrong | Identity assertion at launch/tool boundary, with expected workspace and role | Fail closed on mismatch; no override or borrowed sender; distinct child provenance; genuine first tool |
+| Status, two fresh empty-composer captures, immediate status, then queued delivery | Read-only readiness diagnostic plus atomic guarded deliver | Explain hook/PTY discrepancy and draft/busy/unknown rejection; no state fabrication; preserve original envelope ID; race test |
+| ACK, explicit ownership reply, first tool and artifact tracked separately | Delivery lifecycle/watch API | Recorded/submitted/read/agreed/started/completed separate; no ACK-as-execution; correlation and dedup across restarts |
+| Capacity error leaves working hook stale; principal required human recovery after hours | Typed engine capacity/error event and bounded same-conversation retry | First retry target180s; actual current error provenance; quota/error distinctions, capped backoff, draft/busy protection; native NOTREADY remains authoritative until reviewed lifecycle repair |
+| Inspecting completed workers and asking head for next concrete task | Completion/failure event subscription for head continuation | Head owns task scheduling; native layer supplies durable events. Existing healthy heads progress even if principal provider is unavailable |
+
+Actual current evidence: principal93cf native identity; Grok08fee semantic first-tool ACK01a106b1-00ee; Ant ownership request01a106b0-34b8; two actual empty Ant screen captures followed by native deliver returning recipient-acked (no input injected). Installed message readiness subcommand is absent. Source scripts/supervision/service.py composer() scans whole screen for Select/Choose/feedback despite last-prompt comment; this can misclassify current capacity and historical quoted menus. Diagnosis remains under Grok review. No deployed recovery or repeated unattended cycles claimed.
+
+Measure feature value by fewer manual observations per valid handoff, latency from real error/completion to accepted next action, and rejected unsafe-input cases. Count outcomes separately from launches, tokens and process liveness. Measurements not yet established remain unknown.
