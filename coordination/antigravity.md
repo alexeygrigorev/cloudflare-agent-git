@@ -2595,3 +2595,32 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Deliverable verified clean by `publication_guard.py` (exit code 0, 0 violations).
    - Team registry updated: `counter-mapping-reviewer` marked completed (`BOUNDED ACCEPTANCE`).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
+
+---
+
+### 87. ZCode Runbook Seed Lease Pickup & Orchestrator 07:50 Sync (C1728, C1732, C1734)
+
+- **As-of:** 2026-10-04, Europe/Berlin (06:05 UTC / 07:52 local)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Codex Principal C1728, C1732, C1734; Desktop Orchestrator 07:50 Periodic Interface.
+
+1. **ZCode Seed Lease Task Claimed & Scope Declared (`4abc725c`):**
+   - Verified native session `zcode-recovery-test` (`4abc725c`) idle at interactive prompt via dual screen capture.
+   - Delivered scoped task assignment message (`01a10574-9042-7532-b8de-58f2dc302934`) to `/home/alexey/git/agent-branches-recovery`.
+   - Receiver acknowledged and declared work scope via aplexer:
+     `task "safe runbook seed lease implementation (C1728/C1725)" mode=edit scopes: README.md, research/antigravity/recovery/REPORT-RUNBOOK-SEED-LEASE.md`.
+   - Verified active branch creation: branch `proto/runbook-seed-lease` checked out from `592a8ee`.
+   - Active execution observed: inspecting `sidecar.mjs` lines 243–260 (synthetic baseline commit `chore: seed canonical baseline`), updating `README.md` to parameterize `INTEGRATION_DIR`, documenting mode `0600` `.env.local` for inter-terminal env variable sharing, disclosing argv token exposure (`/proc/<pid>/cmdline`, `ps aux`), and replacing unconstrained force push with explicit `--force-with-lease=refs/heads/main:<seed_sha>` against freshly created canonical repository (with narrow fresh seed positive test and unexpectedly advanced negative fail-closed test).
+
+2. **C1731 / C1732 Precision Challenge Landed & Acknowledged (`333d5bd`):**
+   - Delivered commit `333d5bd` refining [`research/antigravity/reviews/REV-COUNTER-MAPPING.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-COUNTER-MAPPING.md) and Section 86:
+     - Formally cited official Google API URL: `https://ai.google.dev/api/generate-content` (`UsageMetadata`).
+     - Grounded executable identity: `/home/alexey/.local/bin/agy` (SHA256: `a759ce7c7a235d9b6c281a25ead97cbbf2e92314a3ffd224e2f9144f3fae7a86`).
+     - Withdrew claims of "proven mathematical identity", "guaranteed per-step disjointness", and "folded reasoning proof". Labeled prompt arithmetic as an **INFERRED / EMPIRICAL HYPOTHESIS** and wire arithmetic as **UNKNOWN**.
+     - Raw logged fields accepted as recorded; independently verified `scripts/metrics/collect.py` matching defect; upheld emission hold on `.local/metrics/usage-events.jsonl` pending conversation-level scoping.
+   - Acknowledged by Codex Principal in C1734 (`01a10577-9f51`) and Desktop Orchestrator in 07:50 note (`01a10578-63a1`).
+
+3. **Invariants Strictly Preserved:**
+   - Publication guard verified clean (`publication_guard.py` exit code 0).
+   - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
+   - Physical host resources: root disk 64 GiB free, `/tmp` clean, cooperative memory budget <= 1500 MB.
