@@ -2162,6 +2162,7 @@
           "parent_tag": "antigravity-head",
           "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
           "mode": "native-harness-subagent",
+          "harness_conversation_id": "fd6f993c-e2b0-45d6-8656-247d90e24427",
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "branch": "proto/metrics-collect-conversation-scope",
@@ -2173,7 +2174,7 @@
             "scripts/metrics/collect.py",
             "tests/test_collect_conversation_scope.py"
           ],
-          "first_tool_evidence": "subagent launched; inspecting scripts/metrics/collect.py",
+          "first_tool_evidence": "subagent launched with native conversation ID fd6f993c-e2b0-45d6-8656-247d90e24427; inspecting scripts/metrics/collect.py",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         },
         {
