@@ -103,6 +103,8 @@ def get_product_workspaces(root=None, registry=None, catalog=None):
                 try: ws.add(str(pathlib.Path(a['workspace']).resolve()))
                 except Exception: ws.add(str(a['workspace']))
 
+    CANONICAL_GIT_ROOT = ROOT.parent.resolve()
+
     CANONICAL_PRODUCT_REPO_NAMES = {
         'cloudflare-agent-git',
         'agent-branches',
@@ -128,10 +130,14 @@ def get_product_workspaces(root=None, registry=None, catalog=None):
                 continue
             try:
                 sw_path = pathlib.Path(sw).resolve()
-                name = sw_path.name
-                # Exact canonical repo match or known product worktree prefix
-                if name in CANONICAL_PRODUCT_REPO_NAMES or any(name.startswith(pfx) for pfx in CANONICAL_WORKTREE_PREFIXES):
-                    ws.add(str(sw_path))
+                if str(sw_path) in ws:
+                    continue
+                # Path authorization boundary:
+                # Must be an authorized product workspace directly under CANONICAL_GIT_ROOT (/home/alexey/git/)
+                if sw_path.parent == CANONICAL_GIT_ROOT:
+                    name = sw_path.name
+                    if name in CANONICAL_PRODUCT_REPO_NAMES or any(name.startswith(pfx) for pfx in CANONICAL_WORKTREE_PREFIXES):
+                        ws.add(str(sw_path))
             except Exception:
                 pass
     return ws

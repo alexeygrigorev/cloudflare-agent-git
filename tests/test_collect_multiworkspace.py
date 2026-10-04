@@ -361,19 +361,23 @@ class TestCollectMultiworkspace(unittest.TestCase):
         self.assertTrue(child['counted_as_agent'])
         self.assertIn('discovered delegate of head', child['resolution'])
 
-    def test_c1504_pure_function_get_product_workspaces_negative(self):
-        """Codex C1504 negative test:
+    def test_c1504_c1512_pure_function_get_product_workspaces_negative(self):
+        """Codex C1504 and C1512 negative tests:
         Verifies that get_product_workspaces(registry={}, catalog=[...]):
-        1. Correctly selects 'agent-bus' (the public core coordination repo).
-        2. Correctly rejects lookalike 'unrelated-agent-dashboard-notes' (substring lookalike).
-        3. Never uses loose substring matching to expand unrelated directories.
+        1. Correctly selects authorized sibling repos directly under /home/alexey/git (e.g. agent-bus, agent-dashboard, agent-branches-l6-stack).
+        2. Correctly rejects lookalike substring directories (e.g. /home/alexey/git/unrelated-agent-dashboard-notes).
+        3. Correctly rejects unauthorized external directories matching name/prefix (e.g. /unrelated/customer/agent-bus, /unrelated/customer/agent-branches-not-ours, /tmp/agent-bus).
+        4. Never uses loose substring matching or unanchored basenames to expand arbitrary global paths.
         """
         catalog = [
             {'id': 's1', 'workspace': '/home/alexey/git/agent-bus'},
             {'id': 's2', 'workspace': '/home/alexey/git/unrelated-agent-dashboard-notes'},
             {'id': 's3', 'workspace': '/home/alexey/git/agent-dashboard'},
             {'id': 's4', 'workspace': '/home/alexey/git/pocketshell'},
-            {'id': 's5', 'workspace': '/home/alexey/git/agent-branches-l6-stack'}
+            {'id': 's5', 'workspace': '/home/alexey/git/agent-branches-l6-stack'},
+            {'id': 's6', 'workspace': '/unrelated/customer/agent-bus'},
+            {'id': 's7', 'workspace': '/unrelated/customer/agent-branches-not-ours'},
+            {'id': 's8', 'workspace': '/tmp/agent-bus'}
         ]
         res = cmw.get_product_workspaces(registry={}, catalog=catalog)
 
@@ -384,11 +388,19 @@ class TestCollectMultiworkspace(unittest.TestCase):
         # /home/alexey/git/agent-branches-l6-stack MUST be selected
         self.assertIn('/home/alexey/git/agent-branches-l6-stack', res)
 
-        # /home/alexey/git/unrelated-agent-dashboard-notes MUST NOT be selected
+        # Lookalike substring directory MUST NOT be selected
         self.assertNotIn('/home/alexey/git/unrelated-agent-dashboard-notes', res,
                          "Lookalike substring directory must not be selected as product workspace")
-        # /home/alexey/git/pocketshell MUST NOT be selected
+        # Personal workspaces MUST NOT be selected
         self.assertNotIn('/home/alexey/git/pocketshell', res)
+
+        # Codex C1512 negative tests: Arbitrary external directories matching basename/prefix MUST NOT be selected
+        self.assertNotIn('/unrelated/customer/agent-bus', res,
+                         "External customer directory matching basename must not be selected")
+        self.assertNotIn('/unrelated/customer/agent-branches-not-ours', res,
+                         "External customer directory matching prefix must not be selected")
+        self.assertNotIn('/tmp/agent-bus', res,
+                         "Temporary directory matching basename must not be selected")
 
 
 if __name__ == '__main__':
