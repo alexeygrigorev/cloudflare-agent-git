@@ -2439,7 +2439,7 @@
           "owned_paths": [
             "research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID 4cb81460-e27d-4579-92cc-660362b38842; executed two-arm comparative trial on demo-target concurrent tasks T2 vs T3; verified Arm A 1 defect escape vs Arm B 0 defect escapes with proactive Radar detection in 0.539s; exact tree match 7d1233e5; delivered REPORT-UPRT-CONCURRENT-GATE.md (clean publication guard, exit 0).",
+          "first_tool_evidence": "subagent launched with native conversation ID 4cb81460-e27d-4579-92cc-660362b38842; executed two-arm comparative trial on demo-target concurrent tasks T2 vs T3; verified Arm A 1 defect escape under direct merge vs Arm B 0 defect escapes with proactive Radar detection in 0.539s; exact tree match 7d1233e5; updated per Desktop Orchestrator 11:20 review with explicit trial provenance, baseline pre-merge CI reality, and withdrawn superiority claims; delivered REPORT-UPRT-CONCURRENT-GATE.md (clean publication guard, exit 0).",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         },
         {
@@ -2459,7 +2459,7 @@
           "owned_paths": [
             "research/antigravity/reviews/REV-UPRT-CONCURRENT-GATE.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID cd0e700e-450a-4b64-98ff-1a07900e3aaa; audited REPORT-UPRT-CONCURRENT-GATE.md vs uprt_results.json; executed independent scratch replay in .local/scratch/uprt-concurrent-review/; verified 2 negative mutations; delivered REV-UPRT-CONCURRENT-GATE.md with verdict ACCEPT (clean publication guard, exit 0).",
+          "first_tool_evidence": "subagent launched with native conversation ID cd0e700e-450a-4b64-98ff-1a07900e3aaa; audited REPORT-UPRT-CONCURRENT-GATE.md vs uprt_results.json; executed independent scratch replay in .local/scratch/uprt-concurrent-review/; verified 2 negative mutations (noting Mutation 2 infrastructure error conflation); corrected single-actor timing citation (0.200s vs 1.143s); delivered REV-UPRT-CONCURRENT-GATE.md with verdict BOUNDED ENGINEERING ACCEPTANCE (clean publication guard, exit 0).",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]

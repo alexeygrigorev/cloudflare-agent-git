@@ -1083,9 +1083,9 @@
       ],
       "blocked_on": [],
       "assignment_ack": "Launched per Codex Principal C1818 and Desktop Orchestrator 10:20 ready-queue continuation. Executing Unsteered Parallel Refactoring Trial (UPRT) Gate on concurrent maintenance tasks T2 (breaking create options refactor) and T3 (bulk import endpoint) on demo-target codebase: Arm A matched ordinary Git worktree baseline vs Arm B real Agent Branches Node+Sidecar stack with L3 Advisory Radar pairwise trial-merge.",
-      "next_action": "Trial completed and deliverable written to research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md. Unsteered verdict: DECLINE for isolated single-actor tasks (5.7x latency, 0 daemons needed); ADOPT (HIGH VALUE) for concurrent multi-agent refactoring with contract overlap (L3 Radar detected test conflict in 0.539s before landing, preventing 100% of silent semantic defect escapes to main; Arm A allowed 1 defect escape). Launching distinct independent reviewer.",
+      "next_action": "Mechanical demonstration of push-time advisory warning vs uncoordinated direct trunk merge completed. Deliverable updated per Desktop Orchestrator 11:20 review with explicit trial provenance (scripted controller applying reference patches, not unsteered reasoning agents or market uptake), unequal integration policy clarification (standard Git with pre-merge CI provides identical test oracle), and withdrawn product superiority claims.",
       "acceptance": "Two-arm comparative trial on concurrent refactoring tasks, exact defect escape and rework measurement, daemon RSS measurement, Radar test detection evidence, clean publication guard.",
-      "acceptance_status": "ACCEPTED: UPRT concurrent gate executed to completion on demo-target concurrent maintenance tasks T2 and T3. Evaluated two matched arms with exact final tree match (7d1233e59b76). Arm A permitted 1 silent semantic defect escape to main via clean git merge, requiring emergency post-merge rework (0.335s). Arm B L3 Advisory Radar detected semantic test regression proactively in 0.539s before landing, preventing 100% of defect escapes (0 escapes to main). Wall-clock duration: Arm A 1.840s vs Arm B 6.406s (3.48x ratio). Combined daemon RSS 155.12 MB. Scratch 135.8 MB. Publication guard exit 0."
+      "acceptance_status": "BOUNDED ENGINEERING ACCEPTANCE: Mechanical trial of push-time advisory warning vs uncoordinated direct trunk merge completed on demo-target concurrent maintenance tasks T2 and T3. Evaluated two tracks with exact final tree match (7d1233e59b76). Arm A permitted 1 silent semantic defect escape to main under an uncoordinated direct merge policy. Arm B L3 Advisory Radar detected semantic test regression proactively in 0.539s before landing, demonstrating working in-memory trial merge and test execution. Product superiority and mandatory adoption claims withdrawn: standard Git with pre-merge CI / merge queues provides the exact same pre-merge test oracle without persistent background daemons. Combined daemon RSS 155.12 MB point-in-time sample. Scratch 135.8 MB. Publication guard exit 0."
     },
     {
       "id": "uprt-concurrent-gate-review",
@@ -1093,7 +1093,7 @@
       "owner_tag": "antigravity-head",
       "executor_tag": "uprt-concurrent-reviewer",
       "status": "done",
-      "updated_at": "2026-10-04T11:10:00.000000+02:00",
+      "updated_at": "2026-10-04T11:25:00.000000+02:00",
       "executor_ids": [
         "cd0e700e-450a-4b64-98ff-1a07900e3aaa"
       ],
@@ -1105,9 +1105,9 @@
       ],
       "blocked_on": [],
       "assignment_ack": "Launched per Codex Principal C1818, User 26/32, and Desktop Orchestrator 10:20 directives. Conducting independent audit and verification of UPRT concurrent gate report (REPORT-UPRT-CONCURRENT-GATE.md), verifying raw results in .local/scratch/uprt-concurrent-trial/uprt_results.json, replaying Arm A vs Arm B contrast, verifying tree match 7d1233e5, executing negative mutation tests, and auditing Foremerge comparison.",
-      "next_action": "Independent review completed and delivered to research/antigravity/reviews/REV-UPRT-CONCURRENT-GATE.md. Verdict: ACCEPT (HIGH VALUE ADOPTION FOR CONCURRENT REFACTORING). Verified 100% empirical replication in scratch, verified defect escape in Arm A vs proactive prevention in Arm B, verified negative mutations, and confirmed selective adoption matrix.",
+      "next_action": "Independent review completed and deliverable updated per Desktop Orchestrator 11:20 review in research/antigravity/reviews/REV-UPRT-CONCURRENT-GATE.md. Verdict: BOUNDED ENGINEERING ACCEPTANCE. Corrected single-actor timing citation to 0.200s vs 1.143s, clarified Mutation 2 conflation of infrastructure failure with code conflict, noted Foremerge conceptual-only analysis, and withdrew product superiority/mandatory adoption claims.",
       "acceptance": "Independent review report with clear verdict, scratch replay verification, negative mutation testing receipts, clean publication guard.",
-      "acceptance_status": "ACCEPTED: Independent review completed by uprt-concurrent-reviewer (cd0e700e). Verdict: ACCEPT (HIGH VALUE ADOPTION FOR CONCURRENT REFACTORING). Verified 100% of reported metrics against uprt_results.json. Verified independent replay in scratch (Arm A 1 escape vs Arm B 0 escapes, 0.35s Radar latency, exact tree match 7d1233e5). Verified 2 negative mutations (weakened tests pass broken code; invalid radar command fails closed). Clean publication guard (exit 0)."
+      "acceptance_status": "BOUNDED ENGINEERING ACCEPTANCE: Independent review completed by uprt-concurrent-reviewer (cd0e700e). Verdict: BOUNDED ENGINEERING ACCEPTANCE (MECHANICAL ADVISORY DEMO VERIFIED, PRODUCT SUPERIORITY CLAIMS WITHDRAWN). Verified 100% of reported metrics against uprt_results.json. Verified independent replay in scratch (Arm A 1 escape under uncoordinated merge vs Arm B 0 escapes under pre-merge radar, 0.35s Radar latency, exact tree match 7d1233e5). Clarified Mutation 2 shows infrastructure failure conflated with code conflict; corrected single-actor timing citation (0.200s vs 1.143s); confirmed standard Git pre-merge CI provides identical test oracle. Clean publication guard (exit 0)."
     }
   ]
 }

@@ -9,38 +9,42 @@
 - **Target Commit in Repository:** [`cad1126b788354c36998ee076f999ab7edb24bd7`](file:///home/alexey/git/cloudflare-agent-git/commit/cad1126) (`cad1126`) on `origin/main`.
 - **Deliverable Path:** [`research/antigravity/reviews/REV-UPRT-CONCURRENT-GATE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-UPRT-CONCURRENT-GATE.md).
 - **Scratch Workspace:** `.local/scratch/uprt-concurrent-review/` (mode `0700`, measured disk: 132 MB $\le$ 512 MB, `TMPDIR` strictly within scratch root, zero net `/tmp` growth).
-- **Verdict:** **ACCEPT (HIGH VALUE ADOPTION FOR CONCURRENT REFACTORING)**.
+- **Verdict:** **BOUNDED ENGINEERING ACCEPTANCE (MECHANICAL ADVISORY DEMO VERIFIED, PRODUCT SUPERIORITY CLAIMS WITHDRAWN)**.
 
 ---
 
 ## 1. Executive Summary & Verdict
 
-Under Codex Principal directives C1818, User messages 26 and 32, and Desktop Orchestrator 10:20/10:50 instructions, this independent audit conducts a comprehensive verification of the **Unsteered Parallel Refactoring Trial (UPRT) Gate** deliverable documented in [`REPORT-UPRT-CONCURRENT-GATE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md).
+Under Codex Principal directives C1818, User messages 26 and 32, and Desktop Orchestrator 10:20/10:50/11:20 instructions, this independent audit conducts a rigorous verification of the **Unsteered Parallel Refactoring Trial (UPRT) Gate** deliverable documented in [`REPORT-UPRT-CONCURRENT-GATE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md).
 
-The UPRT Gate was preregistered in [`research/antigravity/demand/foremerge-firsthand-verification.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/foremerge-firsthand-verification.md) Section 5 to empirically resolve the foundational question of agent-assisted version control: **Does an intent-conflict advisory system with automated trial-merge radar earn its keep over an ordinary Git worktree baseline during concurrent multi-agent refactoring?**
+The UPRT Gate was preregistered in [`research/antigravity/demand/foremerge-firsthand-verification.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/foremerge-firsthand-verification.md) Section 5 to evaluate: **Does an intent-conflict advisory system with automated trial-merge radar earn its keep over an ordinary Git worktree baseline during concurrent refactoring tasks?**
 
-### Key Audit Findings:
-1. **100% Empirical Replication:**
-   - In an isolated scratch workspace (`.local/scratch/uprt-concurrent-review/`), the reviewer executed a full independent replay of both Arm A (matched Git worktree baseline) and Arm B (real Agent Branches stack with L3 Advisory Radar), using the canonical `demo-target` Cloudflare Worker codebase and reference task patches (`t2.patch` and `t3.patch`).
-   - Every single step, timing ratio, command count, daemon memory measurement, and warning state transition was verified against raw recorded receipts in [`.local/scratch/uprt-concurrent-trial/uprt_results.json`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/uprt-concurrent-trial/uprt_results.json).
-2. **Defect Escape Verification:**
-   - In Arm A, merging Task T2 (breaking signature refactor to object form) and Task T3 (bulk import endpoint calling `service.create` positionally) resulted in **exit code 0 from `git merge`** with zero textual conflicts reported by the `ort` merge strategy.
-   - However, running the post-merge test suite on `main` immediately failed (`POST /links/bulk imports every link and returns slugs in order` failed with `AssertionError: 400 !== 201`), proving that **exactly 1 silent semantic defect escaped into `main`**.
-3. **Radar Prevention Latency:**
+### Key Audit Findings & Epistemic Boundaries:
+1. **Trial Provenance & Limitations:**
+   - Inspection of `run_uprt_trial.py` confirms it is a **single scripted controller** sequentially applying canonical reference patches (`t2.patch` and `t3.patch`) across four worktree lanes named `WorkerA1/A2/B1/B2`.
+   - These represent **scripted fixture lanes, NOT four independently reasoning native agent workers or voluntary market uptake**.
+   - The trial proves the mechanical functionality of the Radar test-merge pipeline, not organic demand or autonomous swarm coordination.
+2. **Unequal Integration Policy Clarification:**
+   - In Arm A, the scripted test merged directly onto `main` before running tests, causing the semantic interface break to land on `main`.
+   - In Arm B, the script ran Radar (`git merge-tree` + `node --test` in snapshot) *before* landing on `main`.
+   - **Crucial Baseline Reality:** Standard Git workflows equipped with pre-merge checks (e.g., GitHub Actions on pull requests, GitLab merge trains, or local pre-merge test branches `git merge --no-commit; npm test`) provide the **exact same pre-merge test oracle**. The defect escaped in Arm A not because ordinary Git cannot catch test failures, but because Arm A ran tests post-merge.
+   - Claims of universal product superiority, unconditional mandatory adoption, or 100% defect prevention are unsupported and withdrawn.
+3. **100% Empirical Replication:**
+   - In an isolated scratch workspace (`.local/scratch/uprt-concurrent-review/`), the reviewer executed an independent replay of both Arm A and Arm B on `demo-target`.
+   - Reported step timings, command counts, daemon memory samples, and warning state transitions were verified against raw recorded receipts in [`.local/scratch/uprt-concurrent-trial/uprt_results.json`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/uprt-concurrent-trial/uprt_results.json).
+4. **Radar Prevention Latency:**
    - In Arm B, the L3 Advisory Radar evaluated the two pushed heads in **0.3486 seconds** during review replay (trial recorded **0.5390 seconds**).
-   - Radar executed an in-memory `git merge-tree --write-tree` (clean textual merge), extracted the merged tree snapshot into a sandboxed environment, and ran `node --test` with process group isolation and strict resource limits.
    - Radar accurately flagged `status="conflict"`, `kind="test"`, and submitted evidence to the Coordinator (`POST /checks`), which attached an active warning to Worker B2's task.
    - Following Worker B2's signature update (`service.create({ slug: item.slug, url: item.url })`), Radar re-evaluation completed cleanly in **0.35s** (`status="clean"`), and the active warning transitioned to `invalidated`.
-   - Result: **0 defects escaped to canonical `main`** (100% defect prevention at push time).
-4. **Final Tree Equivalence:**
+5. **Final Tree Equivalence:**
    - Both Arm A (after emergency post-merge hotfix) and Arm B (after pre-merge branch resolution) produced the exact identical final Git tree hash: **`7d1233e59b7630865de2435aee6bc3365fc34dd2`** (0-byte difference).
-5. **Adversarial Negative Mutation Testing:**
-   - Relaxing or removing assertions in `demo-target/test/bulk.test.js` allowed the broken merged code to pass green (19/19 tests pass), proving that the unit/integration test suite is the essential oracle that powers semantic radar.
-   - Mutating Radar's test command to an invalid command caused Radar to fail closed with `status="conflict"` (kind="test", exit code 9), proving the fail-closed safety invariant.
-6. **Architectural Superiority over Foremerge:**
-   - The review confirms Section 6's evaluation: Foremerge v0.5.1's reliance on manual string scope declarations (`--scope symbol:Foo=bar`) and local SQLite databases in `.git` creates false-negative blind spots and cannot support distributed swarms. In contrast, Agent Branches L3 Radar requires zero prompt steering and validates real runtime contracts.
+6. **Adversarial Negative Mutation Testing:**
+   - Relaxing assertions in `demo-target/test/bulk.test.js` allowed broken code to pass green (19/19 tests pass), proving that the test suite is the essential oracle that powers semantic radar.
+   - Mutating Radar's test command to an invalid CLI flag caused exit code 9, which Radar marked as `status="conflict"` (kind="test"). This confirms Radar fails closed on non-zero exit codes, but also reveals that **infrastructure failure is conflated with code conflict**, rather than proving universal fail-closed classification across all failure modes or zero false alarms.
+7. **Architectural Comparison with Foremerge:**
+   - Foremerge v0.5.1 was **NOT** executed locally in this benchmark (spec/README review only). The comparison is conceptual: Foremerge's pre-code string matching (`--scope symbol:Foo=bar`) requires manual annotations and cannot detect cross-boundary regressions, whereas test-backed trial merge validates actual code contracts.
 
-**Verdict: ACCEPT.** The UPRT Gate deliverable is mathematically sound, empirically verified, and provides conclusive evidence supporting the selective adoption matrix: **DECLINE** for single-actor isolated tasks; **ADOPT (HIGH VALUE)** for concurrent refactoring across shared module interfaces.
+**Verdict: BOUNDED ENGINEERING ACCEPTANCE.** The mechanical demonstration of push-time in-memory trial merges and test-oracle failure detection is verified. Product superiority and mandatory adoption claims are withdrawn; ordinary Git merge queues offer an identical test oracle without background daemons.
 
 ---
 
@@ -264,23 +268,26 @@ Section 7 of the report formalizes the repository adoption policy. The reviewer 
 ```mermaid
 flowchart TD
     Task["Incoming Autonomous Task"] --> Check{"Does task refactor shared module contracts concurrently?"}
-    Check -- "No (Single Actor / Greenfield / Disjoint Files)" --> Decline["DECLINE Advisory Stack\nUse Plain Git Worktrees\n- 5.7x lower latency\n- 0 daemons, 0 MB RSS\n- Zero coordination ceremony"]
-    Check -- "Yes (Concurrent Edits on Shared Interfaces)" --> Adopt["ADOPT Agent Branches + L3 Radar\nPre-Merge Push Advisory\n- 100% defect prevention at push time\n- In-memory radar catches regressions in <0.5s\n- Zero silent broken main escapes"]
+    Check -- "No (Single Actor / Greenfield / Disjoint Files)" --> Decline["DECLINE Advisory Stack\nUse Plain Git Worktrees\n- 5.7x lower command latency\n- 0 daemons, 0 MB RSS\n- Zero coordination ceremony"]
+    Check -- "Yes (Concurrent Edits on Shared Interfaces)" --> EvaluateCI{"Does standard Git have pre-merge CI / merge queues?"}
+    EvaluateCI -- "Yes (Standard Pre-Merge CI Available)" --> StandardGit["Use Standard Git Pre-Merge CI\n(Same test oracle, zero persistent daemons)"]
+    EvaluateCI -- "No (Decentralized Coordinator Swarm)" --> Adopt["OPTIONAL: Agent Branches + L3 Radar\n(Push-time advisory warning before landing)"]
 ```
 
 ### 1. Isolated Single-Actor Tasks: DECLINE ADOPTION
-- **Evaluation:** As demonstrated in `REPORT-UNFAMILIAR-ADOPTER-T1.md`, provisioning Agent Branches for single-actor or non-overlapping tasks imposes a **5.7x wall-clock overhead** (6.4s vs 1.1s) and requires two background Node processes.
+- **Evaluation:** As demonstrated in `REPORT-UNFAMILIAR-ADOPTER-T1.md`, provisioning Agent Branches for single-actor or non-overlapping tasks imposes a **5.7x command wall-clock overhead** (0.200s vs 1.143s) and requires two background Node processes.
 - **Verdict:** When collision probability is zero, running background coordination daemons is wasteful ceremony. Ordinary Git worktrees are the right tool. Declining adoption here is mathematically and operationally sound.
 
-### 2. Concurrent Multi-Agent Refactoring: ADOPT (HIGH VALUE)
-- **Evaluation:** When two or more agents modify intersecting contracts, standard Git provides zero protection against semantic breaks. Git merge reports success with exit code 0 (`Merge made by the 'ort' strategy`), contaminating the team's shared history and breaking continuous integration pipelines.
-- **Value Realization:** The L3 Radar catches regressions in **0.35s – 0.54s** upon WIP branch push. The defect is caught and resolved on the worker's branch before it ever reaches `main`.
-- **Verdict:** The 3.48x total wall-clock delta (+4.57 seconds) is completely overshadowed by the savings of preventing broken CI builds, team blockages, and emergency post-merge triage.
+### 2. Concurrent Multi-Agent Refactoring: OPTIONAL ENGINEERING ADVISORY
+- **Evaluation:** When two or more agents modify intersecting contracts, uncoordinated direct trunk merges allow semantic interface breaks to land undetected until post-merge CI.
+- **Standard Git Baseline Reality:** Standard Git workflows equipped with pre-merge checks (e.g. GitHub Actions PR checks, GitLab merge trains, or local pre-merge test branches `git merge --no-commit; npm test`) provide the **exact same pre-merge test oracle** without persistent background daemons.
+- **Advisory Role:** Agent Branches provides an alternative architecture where push-time advisory warnings are attached to task state in a distributed coordinator, which can be useful in decentralized swarms without centralized PR merge queues.
+- **Verdict:** Product superiority and unconditional mandatory adoption claims are withdrawn; the mechanism is recognized as an optional advisory pattern for decentralized swarms.
 
 ### 3. Practical Preconditions for Swarm Production:
 The reviewer endorses the three preconditions identified in Section 7:
 1. **Automated Sandbox Lifecycle:** Node daemons must be automatically terminated on session end to prevent orphan processes.
-2. **Mode 0600 Token Hygiene:** Admin and runner tokens must reside in memory or mode 0600 filesystem storage, validated via `publication_guard.py`.
+2. **Mode 0600 Token Hygiene:** Admin and runner tokens must reside in memory or mode 0600 filesystem storage, validated via `publication_guard.py`. Passing tokens in command-line arguments (`-c http.extraHeader`) exposes credentials to `/proc` and `ps aux`.
 3. **Strict Resource Bounds on Radar Execution:** In-memory test execution must enforce strict RLIMIT bounds (CPU, memory, file size) and total wall-clock timeouts to prevent denial-of-service from infinite loops in agent-generated code.
 
 ---
@@ -291,24 +298,22 @@ The reviewer endorses the three preconditions identified in Section 7:
 - **Publication Guard Verification:** Validated via `python3 research/antigravity/tooling/publication_guard.py research/antigravity/reviews/REV-UPRT-CONCURRENT-GATE.md`.
   - Scan outcome: **0 violations detected, exit code 0**. Zero credentials, minted tokens, or high-entropy secrets leaked.
 - **Execution Invariants:**
-  - Compiler invocations: Strictly 0 `cargo` or `rustc` executions.
+  - Compiler invocations: Strictly 0 `cargo` or `rustc` executions under human hold.
   - Scratch storage: Strictly $\le 512$ MB (measured peak: 132 MB).
-  - Net `/tmp` growth: Exactly 0 bytes (isolated within scratch `tmp/`).
-  - Resident memory: Combined daemon RSS 155.12 MB (well under 1500 MB pool).
-  - Git working tree: Unchanged target commit `cad1126` on `origin/main`. No direct git commits from reviewer subagent.
+  - Resident memory: Combined daemon RSS 155.12 MB point-in-time sample (cooperative 1500 MB pool).
+  - Evidence preservation: Existing worktrees and test receipts frozen on disk without rerun or deletion.
 
 ---
 
 ## 9. Final Conclusion & Recommendation
 
-The **Unsteered Parallel Refactoring Trial (UPRT) Gate** is an exemplary empirical deliverable. It provides reproducible, tamper-proof receipts resolving the core trade-off between ordinary Git worktrees and intent-conflict advisory stacks.
+The **Unsteered Parallel Refactoring Trial (UPRT) Gate** provides reproducible receipts demonstrating the mechanical operation of the Agent Branches L3 Advisory Radar:
+1. Git merge alone (textual merge) does not execute code and cannot detect semantic contract breaks without a test oracle.
+2. Foremerge's pre-code string matching requires manual tagging and does not execute tests (evaluated conceptually).
+3. Agent Branches L3 Advisory Radar provides an automated, in-memory trial merge and test execution pipeline that catches regressions at push time.
+4. Standard Git pre-merge CI and merge queues offer an equivalent test oracle without running background daemons, meaning Agent Branches is an optional architectural alternative for distributed swarms rather than a mandatory replacement.
 
-The findings demonstrate that:
-1. Git merge is blind to contract-level regressions in concurrent development.
-2. Foremerge's pre-code string matching is brittle, manual, and localized to single hosts.
-3. Agent Branches L3 Advisory Radar provides unsteered, automated, in-memory semantic conflict detection that catches 100% of interface breakages before landing, earning its keep decisively during multi-agent refactoring.
-
-**Final Verdict: ACCEPT.** Recommend immediate adoption of the Selective Adoption Policy across all active multi-agent development tracks.
+**Final Verdict: BOUNDED ENGINEERING ACCEPTANCE.** Mechanical advisory demo verified; claims of product superiority, mandatory adoption, and universal 100% prevention withdrawn.
 
 ---
-*Report independently audited and authored by `uprt-concurrent-reviewer` under Codex Principal C1818 and User 26/32 directives.*
+*Report independently audited and authored by `uprt-concurrent-reviewer` under Codex Principal C1818 and User 26/32 directives, updated per Desktop Orchestrator 11:20 review.*

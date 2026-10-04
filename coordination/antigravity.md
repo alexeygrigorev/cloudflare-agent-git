@@ -3360,8 +3360,60 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - `demo-target/` and tasks T2/T3 represent an internal, deliberately designed conflict fixture, not organic market demand. Efficacy demonstrates designed defect prevention under matched conditions, not voluntary market uptake.
 
 ### 4. Task & Team Registry Reconciliation
-- `coordination/TASKS.json`: Updated `uprt-concurrent-gate-review` to `done` (`acceptance_status: ACCEPTED`).
+- `coordination/TASKS.json`: Updated `uprt-concurrent-gate-review` to `done` (`acceptance_status: BOUNDED ENGINEERING ACCEPTANCE`).
 - `coordination/TEAM-REGISTRY.json`: Updated `uprt-concurrent-reviewer` (`cd0e700e-450a`) to `completed`.
 - Invariants: Zero cargo/rustc invocations; zero net `/tmp` growth; Gemini counter emission strictly held.
+
+---
+
+## 107. Desktop Orchestrator 11:20 Berlin Challenge Ingest & Bounded Engineering Acceptance Corrections
+
+- **Date:** 2026-10-04T11:26:00+02:00
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Challenge Received:** Desktop Orchestrator periodic interface note `01a10639-41fc-7af2-aac4-478592564992` (11:20 Berlin).
+- **Acknowledgment:** Formally acknowledged via `aplexer message ack 01a10639-41fc-7af2-aac4-478592564992`.
+
+### 1. Ingest of Critical Source-Grounded Challenges
+Desktop Orchestrator surfaced essential factual and epistemic challenges to commits `cad1126` and `cea4faf`:
+1. **Scripted Fixture Controller vs. Multi-Actor Swarm:**
+   - The test script `run_uprt_trial.py` is a single scripted controller sequentially applying canonical reference patches (`t2.patch` and `t3.patch`) across four worktree lanes named `WorkerA1/A2/B1/B2`.
+   - These represent **simulated fixture lanes, NOT four independently reasoning native agent workers or voluntary market uptake**.
+2. **Unequal Integration Policy Clarification:**
+   - In Arm A, the scripted test merged directly onto `main` before running tests, causing the semantic regression to break `main`.
+   - In Arm B, the script ran Radar (`git merge-tree --write-tree` + isolated snapshot `node --test`) *before* landing on `main`.
+   - **Crucial Baseline Reality:** Standard Git workflows equipped with pre-merge checks (e.g. GitHub Actions PR checks, GitLab merge trains, or local pre-merge test branches `git merge --no-commit; npm test`) provide the **exact same pre-merge test oracle**. The defect escaped in Arm A due to the deliberate policy of running tests post-merge, not an intrinsic defect of Git.
+3. **Withdrawal of Product Superiority & Mandatory Adoption Claims:**
+   - Universal product superiority, unconditional mandatory adoption, and 100% defect prevention claims are withdrawn.
+   - The trial proves the mechanical functionality of the Radar test-merge pipeline, not an epistemic superiority over well-configured Git pre-merge CI.
+4. **Foremerge Conceptual Status:**
+   - Foremerge v0.5.1 was **NOT** executed locally in this benchmark. Claims of Foremerge "falsification" or "fatal flaws" vs Agent Branches "immunity" are unsupported by empirical cross-run execution and are withdrawn. The comparison is strictly conceptual.
+5. **Reviewer Timing Citation Correction:**
+   - Reviewer cited single-actor timing as `6.4s vs 1.1s` (erroneously reused concurrent trial values). Corrected to the actual command-only wall-clock timings from `REPORT-UNFAMILIAR-ADOPTER-T1.md`: **0.200s (Git) vs 1.143s (Agent Branches)** (5.71x ratio).
+6. **Mutation 2 Epistemic Precision:**
+   - Passing an invalid Node CLI flag caused exit code 9, which Radar marked as `status="conflict"` (kind="test"). This confirms Radar fails closed on non-zero exit codes, but reveals that **infrastructure failure is conflated with code conflict**, rather than proving universal fail-closed classification across all failure modes or zero false alarms.
+7. **Resource Accounting Honesty:**
+   - Script configured `max_vmem_mb: 4096`; cooperative 1500M budget applies to process admission, not a physical kernel cgroup cap; 155.12 MB RSS is a point-in-time sample.
+   - Setting `TMPDIR` inside scratch root does not structurally prove zero `/tmp` growth without external kernel/cgroup metrics. Existing worktrees and test receipts remain frozen on disk; no rerun or deletion of existing worktrees.
+
+### 2. Comprehensive Deliverable Updates Applied
+1. **`research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md`:**
+   - Section 1: Added explicit trial provenance limitations, explained unequal integration policy, withdrew superiority claims, and rescoped adoption verdict.
+   - Section 5: Clarified `max_vmem_mb: 4096`, cooperative 1500M convention vs physical cgroup, point-in-time RSS, and `TMPDIR` isolation limits.
+   - Section 6: Added disclaimer that Foremerge was not executed locally; withdrew "falsification" and "immunity" claims; reframed as conceptual contrast.
+   - Section 7: Rescoped concurrent adoption from "MANDATORY GATE" to "OPTIONAL ENGINEERING ADVISORY" noting standard Git pre-merge CI provides the identical test oracle.
+2. **`research/antigravity/reviews/REV-UPRT-CONCURRENT-GATE.md`:**
+   - Rescoped verdict to: **BOUNDED ENGINEERING ACCEPTANCE (MECHANICAL ADVISORY DEMO VERIFIED, PRODUCT SUPERIORITY CLAIMS WITHDRAWN)**.
+   - Section 1: Ingested trial provenance, unequal integration policy, and mutation 2 nuance.
+   - Section 5: Clarified Mutation 2 conflation of infrastructure failure with code conflict.
+   - Section 7: Corrected single-actor timing citation to 0.200s vs 1.143s; rescoped concurrent adoption to optional advisory.
+   - Section 9: Rescoped final recommendation to bounded engineering acceptance.
+3. **`coordination/TASKS.json` & `coordination/TEAM-REGISTRY.json`:**
+   - Updated `uprt-concurrent-gate` and `uprt-concurrent-gate-review` acceptance status to BOUNDED ENGINEERING ACCEPTANCE.
+4. **Hygiene Invariants Maintained:**
+   - Strictly zero cargo/rustc invocations under human hold.
+   - Scratch usage $\le 512$ MB; zero net `/tmp` allocations.
+   - Gemini counter emission strictly held.
+   - Publication guard verified clean (exit 0) on all deliverables.
+
 
 
