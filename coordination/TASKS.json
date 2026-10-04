@@ -457,7 +457,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T14:31:59.188203+00:00",
+      "updated_at": "2026-10-04T14:47:57.848572+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -477,10 +477,10 @@
         "research/codex/runtime-recovery-20261004-1340.md"
       ],
       "blocked_on": [],
-      "next_action": "Real FileBus model reviewer935 consumed aa04/readACK and delivered substantive artifact; principal found mutant4 edits test not production and mirrored test13. C1640 Ant/reviewer narrow actual service-path negative/production mutation before promotion. Candidate37e/registrya54 explicit owners corrected. Reply digest/live reload/two project bodies pending; D/bus native NOTREADY, QL004 protected.",
+      "next_action": "Bounded routing runtime86ad accepted: new8f/PID2963921 correctbinding, two clean14:43:24/14:45:26 ticks after registry784 consistency; actual native allfourproject body verified. Ant ACK nativeproducer SOURCE correction next: scoped delegate firsttool/artifact then independent offline negatives, zeroRust/install/liveinput. Every-cycle conflict diagnostics/corrected FileBus reply ACK/invalid4A label followups open. D/bus NOTREADY, QL004 protected, unknown cleanup/parity.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
-      "continuation_trigger": "Ant corrected actual service-routing negative and production mutant -> independent bounded verdict/FileBus reply digest -> controlled reload/two runtime project bodies; native head wake/execution remains distinct owner gate, no root scheduler dependency."
+      "continuation_trigger": "Ant next nativeproducer source delegate firsttool/changedartifact -> independent pinned review; everycycle diagnostic fix and durable correctedbus reply ACK -> principalcheck. Actual routing ticks accepted narrowly, repeated native head receiver execution remains unproven. No root heartbeat scheduler."
     },
     {
       "id": "a09-incumbent-check",
