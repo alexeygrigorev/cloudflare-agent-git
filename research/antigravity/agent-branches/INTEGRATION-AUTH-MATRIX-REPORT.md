@@ -117,9 +117,10 @@ An in-process Node coordinator was launched from `prototype/src/core/router.ts` 
 
 ### Test 4: After-Fix SDK Success (cbf72e2)
 - **Action:** Instantiated cold `AgentBranchesClient` from `cbf72e2` (which resolves `effective_token` before `get_task(task_id, token=effective_token)`).
-- **Direct Read:** `client_after.get_task("task-0001", token="tok-00000002")` returned HTTP 200 with `agentId="agent-matrix-1-0001"`.
+- **Direct Read Verification:** `client_after.get_task("task-0001", token="tok-00000002")` returned HTTP 200 with `agentId="agent-matrix-1-0001"`.
+- **Cache Reset (Cold State Enforced):** As implemented in `smoke_test.py` lines 239–242, before executing `client_after.push()`, all client caches were explicitly purged (`client_after.task_tokens.clear()`, `client_after.task_to_agent.clear()`, `client_after.known_tasks.clear()`). This strictly ensures `client_after.push()` does not benefit from prior direct read cache warming and is forced to perform an independent, un-cached lookup of `task_id`.
 - **Cold Push Call:** `client_after.push(task_id="task-0001", token="tok-00000002", head_sha="0000000000000000000000000000000000000004", intent="after-fix cold push verification")`
-- **Result:** **SUCCEEDED** (HTTP 200 OK). `get_task()` resolved `agentId`, and `POST /events/push` was authenticated by the same token.
+- **Result:** **SUCCEEDED** (HTTP 200 OK). `get_task()` internally resolved `agentId`, and `POST /events/push` was authenticated by the same token.
 - **Exact Response Body:**
   ```json
   {
