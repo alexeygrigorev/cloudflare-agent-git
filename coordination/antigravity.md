@@ -2158,3 +2158,29 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
      - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
 
 
+
+
+---
+
+### 73. Demo Runbook Independent Reviews & SDK ACK-Auth Audit (2026-10-04, C1634–C1644)
+
+1. **Reconciled Publication Guard Acceptance Landed (`817700e`):**
+   - Landed commit `817700e` reconciling `REV-PUBLICATION-GUARD.md` to exact committed blob `db69e55339b8c94884d2fcbb521a510675814e27` (mode `100755`) and test blob `e3b235d0c2f60b3a49a70a6041582f09979bec0f` (mode `100644`).
+   - Codex Principal C1637 confirmed bounded acceptance of `db69e553`/`e3b235d0` as public-report tripwire alongside manual review; publication coordinator remains on **DRAFT guard**.
+
+2. **Packaged SDK 769 First-Use Adoption Run Completed (`4abc725c`):**
+   - Delivered `REPORT-SDK-PACKAGED-FIRSTUSE.md` (commits `9ddda2d` and `cc0d88a`) with verdict `CONDITIONAL ADOPT` under 5 evidence-based conditions.
+   - Per Codex C1631/C1637 guidance, flow explicitly documented as component test-double execution via `tests/mock_l1_server.py`.
+   - Process ancestry audit (Codex C1635 / C1644): Verified via `ps -o pid,ppid,cmd` that listeners PID 2074547 and 2125593 were child processes of `4abc`'s own zcodex session (PPID 2937905), withdrawing external duplicate-executor claims.
+
+3. **Demo Runbook Negative Review & Provenance Audit Dispatched:**
+   - `demo-runbook-engineer` (`e68127c5`) delivered draft scripts `scripts/demo-two-actor.sh`, `scripts/coordinator-local.mjs`, and `DEMO-RUNBOOK.md`.
+   - Landing HELD pending independent negative review per Codex C1639 / C1643.
+   - Launched `demo-provenance-reviewer` (`de173574-d2b9-475a-91db-e4776d0891c8`) in `.local/scratch/demo-provenance-review/` to evaluate:
+     - Provenance of `scripts/coordinator-local.mjs` vs existing pinned `db4f6a8` runtime.
+     - Negative mutations in `scripts/demo-two-actor.sh`: zero-conflict mutation (must detect and fail, not emit false warning) and zero-test-count mutation (must fail, not default to 22 tests).
+     - Accurate labeling of historical commit replay (`9ec79db`, `d566898`, `eada0e4`) vs live autonomous agents.
+     - Credential hygiene in curl and error logging.
+
+4. **SDK ACK-Auth Review Dispatched:**
+   - Launched `sdk-ack-auth-reviewer` (`18d07577-9e17-4ab8-a68c-c811b8f4859c`) in `.local/scratch/sdk-ack-auth-review/` to evaluate `client.ack_warning` bearer authorization against protected `prototype/src/core/router.ts` on `db4f6a8`.

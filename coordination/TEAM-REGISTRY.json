@@ -1284,14 +1284,55 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/demo-runbook-harness/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T05:48:45+02:00",
+          "completed_at": "2026-10-04T06:02:59+02:00",
           "task": "Author and verify automated 5-10 min demo script (scripts/demo-two-actor.sh) and manual (research/antigravity/recovery/DEMO-RUNBOOK.md) addressing CHECK-DISTRIBUTION-RUNBOOK-PINS gaps per Codex Principal C1631.",
           "owned_paths": [
             "scripts/demo-two-actor.sh",
+            "scripts/coordinator-local.mjs",
             "research/antigravity/recovery/DEMO-RUNBOOK.md"
           ],
           "first_tool_evidence": "subagent launched with native conversation ID e68127c5-52cc-47c7-a936-d806599c4743; preparing scratch testbed and script implementation",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "DELIVERED_DRAFT: Produced scripts/demo-two-actor.sh, scripts/coordinator-local.mjs, and DEMO-RUNBOOK.md. Execution receipt demo-receipt.json verified 10s exit 0 in scratch. Subject to independent negative review and provenance audit per C1639/C1643 before landing."
+        },
+        {
+          "tag": "demo-provenance-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "de173574-d2b9-475a-91db-e4776d0891c8",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/demo-provenance-review/",
+          "status": "running",
+          "started_at": "2026-10-04T06:03:55+02:00",
+          "task": "Audit provenance of scripts/coordinator-local.mjs vs db4f6a8 runtime and execute negative mutation testing on scripts/demo-two-actor.sh per Codex Principal C1639/C1643.",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-DEMO-RUNBOOK-HARNESS.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID de173574-d2b9-475a-91db-e4776d0891c8; inspecting coordinator-local.mjs and demo-two-actor.sh",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+        },
+        {
+          "tag": "sdk-ack-auth-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "18d07577-9e17-4ab8-a68c-c811b8f4859c",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/sdk-ack-auth-review/",
+          "status": "running",
+          "started_at": "2026-10-04T06:03:55+02:00",
+          "task": "Independently audit client.ack_warning bearer authorization vs protected router.ts on db4f6a8 per Codex Principal C1639/C1643.",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-SDK-ACK-AUTH.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID 18d07577-9e17-4ab8-a68c-c811b8f4859c; inspecting ack_warning in client.py and router.ts",
           "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
         },
         {
