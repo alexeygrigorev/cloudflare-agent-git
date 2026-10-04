@@ -3154,6 +3154,39 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
   - Standup file `experiment/standups/2026-10-04.md` preserved untouched for Codex Principal single-writer integration.
 
+---
+
+## 101. Foremerge Demand & Practitioner-Signal Verification Complete (`foremerge-firsthand-verification.md`)
+
+- **Date:** 2026-10-04T09:21:00+02:00
+- **Steering & Directives:** Codex Principal C1818 (`01a105c5-fbf3`).
+- **Delivered Artifact:**
+  - Deliverable: [`research/antigravity/demand/foremerge-firsthand-verification.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/demand/foremerge-firsthand-verification.md) (273 lines, clean publication guard).
+  - Executor: `foremerge-demand-verifier` (`446af413-bb93-4093-bc1f-9fcee51d0b4b`).
+  - Scratch: `.local/scratch/foremerge-demand/` (32 KB, mode `0700`, 0 net `/tmp` growth).
+- **Key Evidence & Findings:**
+  1. **Primary Source Integrity:** Independently verified HN story `49789356` (*Show HN: Foremerge* by `naw103`, 2026-09-21T16:22:06Z), comments `49797952` (`ttoze`, 2026-09-22T07:59:42Z), `49811149` (`gavmor`, 2026-09-23T03:04:07Z), and followup `49820059` (`gavmor`, 2026-09-23T18:01:25Z), alongside `naw103/foremerge` README v0.5.1 (597 lines). Zero full quotes; precise short excerpts with exact attribution.
+  2. **Persona & Workaround Extraction:**
+     - `naw103` (Vendor): Promotional claims ("tested up to 98 parallel agents", "30s install"), but candidly admits MVP bounds (advisory leases only, no distributed consensus, blind spots in scope matching, zero published benchmarks).
+     - `ttoze` (Enterprise Architect): Directly refutes the premise that agents diminish code ownership; asserts ownership importance increases. Implements team-managed agent harnesses, independent remits, adversarial negotiation across boundaries, queues/messaging, and human escalation. Observes concurrency conflicts were rarer than expected when ownership boundaries exist.
+     - `gavmor` (Fleet Operator): Runs up to ~25 sessions using `aoe` for session spawning and worktree isolation. Tested `weave` and ad hoc blackboard patterns, but explicitly reports they have not "earned their keep". Relies on a parent coordinator session that selectively intrudes on worker sessions.
+  3. **Three-Way Architecture Comparison:**
+     - Compared: (A) Ordinary Git + Single Coordinator, (B) Foremerge v0.5.1 (Local SQLite + MCP Intent Layer), and (C) Agent Branches / Cloudflare Runtime Protocol.
+     - Deconstructed novelty/demand claims: Foremerge relies on deterministic string comparisons on self-declared scopes (`symbol:X=replace` vs `extend`), vulnerable to naming granularity mismatches (e.g. class vs method). Foremerge README explicitly confirms multi-machine coordination is out of scope and published benchmarks do not exist.
+     - Foremerge risks shifting conflict resolution to upfront coordination chat without eliminating the underlying friction.
+     - In contrast, Agent Branches coordinates distributed multi-cloud agents, and verifies real code outputs via fast in-memory `git merge-tree --write-tree` (~5ms) and budgeted test execution.
+  4. **Unsteered Falsification Gate Proposed:**
+     - Specified the **Unsteered Parallel Refactoring Trial (UPRT) Gate**: assigns an unfamiliar actor real pending maintenance tasks with equal, neutral access to Ordinary Git worktrees vs Advisory Intent Tooling (no leading prompts, no seeded conflicts, no tie credit).
+     - Falsification condition: if advisory tooling increases total time by >20% or token burn by >25% without reducing post-merge defects, the tool is falsified as failing to "earn its keep".
+- **Task & Team Registry Reconciliation:**
+  - `coordination/TASKS.json`: Updated `foremerge-demand-verification` to `done`.
+  - `coordination/TEAM-REGISTRY.json`: Updated `foremerge-demand-verifier` (`446af413`) to `completed`.
+- **Invariants Strictly Preserved:**
+  - Human no-Rust-build hold enforced: zero cargo/rustc commands.
+  - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
+  - Standup file `experiment/standups/2026-10-04.md` preserved untouched.
+
+
 
 
 
