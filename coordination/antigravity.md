@@ -1849,6 +1849,55 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Six shortlist gates remain **HELD**.
   - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
 
+## 64. Warning Consumer Resolution Milestone (`warn-1`), Independent Review Ingestion (`REV-ACTOR-COMMITS-9EC-D56`), and C1576 Seed Repair Task
+
+- **Warning Consumer & Conflict Resolution Milestone (`warn-1` Ingestion to Clean Radar Attestation):**
+  - Executed by: `warning-consumer-resolver` (Native Context ID: `d0b87f7e-722b-45b2-a386-10219a1c4451`).
+  - Scratch Root: `.local/scratch/concurrent-warning-resolution/worktree/` (mode 0700, 9.0 MB disk consumption).
+  - Deliverables:
+    - Report: [`research/antigravity/dogfood/WARNING-CONSUMER-RESOLUTION-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/dogfood/WARNING-CONSUMER-RESOLUTION-REPORT.md).
+    - Receipt: `.local/scratch/concurrent-warning-resolution/resolution-receipt.json`.
+  - Ingestion of Collision:
+    - Active warning `warn-1` emitted by coordinator L1 between Actor Alpha (`actor-alpha-0002`, `9ec79db`) and Actor Beta (`actor-beta-0001`, `d566898`).
+    - Merged `origin/proto/actor-beta-maintenance` into `proto/actor-alpha-maintenance`, encountering expected content conflict at the class footers of `agent_branches/client.py` and `tests/test_client.py`.
+  - Authentic C1571 Defect Repairs (Empirical, Zero Cosmetic Hacks):
+    1. *Token Prefix Whitelist:* Added `art_v1_` prefix check in `inspect_token_metadata` alongside `tok_`, `task-`, `sidecar-`, preventing false-negative invalidation of real coordinator tokens.
+    2. *Jitter Ceiling Invariant:* Re-bounded backoff calculation to `min(max_delay, round(delay + jitter, 4))`, strictly guaranteeing that attempt jitter cannot breach `max_delay` (e.g. attempt=8).
+    3. *Sandbox Extraction Detachment:* Hardened `test_04_git_utils_robustness` to initialize minimal transient git metadata in detached tarball extracts, and added fallback in `run_cli` to invoke `python3 -m agent_branches.cli` when standalone wrapper script is absent in detached archive trees.
+  - Test Suite Result:
+    - `python3 -m unittest -v tests/test_client.py` $\rightarrow$ **22/22 unit tests PASS in 7.99s** (0 failures, 0 errors).
+    - `python3 -m py_compile agent_branches/client.py tests/test_client.py` $\rightarrow$ clean exit 0.
+  - Commit Deliverables:
+    - Resolved Commit SHA: `eada0e44194359f5a9eb39d0d9b97724e5690aa7`
+    - Resolved Merkle Tree SHA: `3f24dabadba1231b9e6dd97f8b5e3c26d8dff10f`
+  - Dual-Mode L3 Advisory Radar Attestation:
+    1. *Dynamic Natural Common Ancestor:* `radar.engine` evaluated on `resolved=HEAD` vs `beta=d566898`. In-memory trial merge clean; 22 tests collected, 22 passed cleanly (exit code 0, peak RSS 25.95 MB). Status: **`clean`** (`kind: null`). Evaluated against `alpha=9ec79db`: also **`clean`** (22 tests collected, exit code 0).
+    2. *Forced Pre-Fork Base (`--base ec5030c`):* Status is `conflict` (`kind: textual`). Conclusively proves that forcing a historical pre-fork base on post-merge heads induces an artificial 3-way merge collision, whereas dynamic common ancestor resolution accurately reflects repository topology.
+  - Final Verdict: **`WARNING_LIFECYCLE_RESOLUTION_VERIFIED_PASS`**.
+
+- **Independent Review Ingestion: Concurrent Actor Commits (Commit `ab30df8` on `origin/main`):**
+  - Reviewer: `zcode-recovery-test` (`4abc725c` in `/home/alexey/git/agent-branches-recovery`).
+  - Report: [`research/antigravity/reviews/REV-ACTOR-COMMITS-9EC-D56.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-ACTOR-COMMITS-9EC-D56.md).
+  - Verdict: **PASS WITH FINDINGS**.
+  - Key Findings & Empirical Receipts:
+    1. *Scope & Purity:* Base `ec5030c`, Alpha `9ec79db` (adds 8 lines to `client.py`, 9 to `test_client.py`), Beta `d566898` (adds 9 lines to `client.py`, 9 to `test_client.py`). Verified exact remote pins on `origin`.
+    2. *Mutation Verification:* M1 (Alpha empty token) caught; M2 (Beta negative attempt) caught. Probe P1 (jitter removed) survived in `test_22` (revealing a test sensitivity blind spot). Probe P2 (prefix check bypassed) survived in `test_21` (revealing negative prefix test gap). Both gaps addressed during warning resolution.
+    3. *F2 Guaranteed Merge Conflict:* Confirmed content conflict in `agent_branches/client.py` and `tests/test_client.py` (conflict tree `7cb2195813a0`).
+    4. *F3 Overflow Risk:* Identified that `attempt >= 1024` triggers `OverflowError` from `base_delay * 2**attempt`.
+    5. *Root Cause of Baseline 7 Failures:* Confirmed root cause across base, alpha, and beta: missing root `agent-branches` CLI launcher script in the committed tree (`[Errno 2] No such file or directory: .../agent-branches`), confirming pre-existing source packaging omission rather than an environment defect.
+
+- **Ingestion of Codex Principal C1576 & Seed Repair Task Assignment:**
+  - Ingestion: C1576 notes that source completeness of the seed repo is a third independent executor task.
+  - Allocation: Bounded seed CLI completeness and actual 20-suite provenance repair delegated to an independent executor from the released healthy preferred pool (`zcode-recovery-test` / `4abc725c` or OpenCode delegate) with its OWN dedicated seed-repair branch/worktree, preserving source pins.
+  - Head role: antigravity-head coordinates, reviews, and integrates the repair without acting as the sole implementation worker.
+
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy strictly **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
+
 
 
 
