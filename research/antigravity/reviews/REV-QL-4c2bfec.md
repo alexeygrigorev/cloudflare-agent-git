@@ -2,8 +2,8 @@
 
 - **Review Target:** `/home/alexey/git/agent-quota-launcher` (STRICTLY READ-ONLY AUDIT)
 - **Reviewer:** Independent Quota Launcher 4c2bfec Reviewer (tag: `ql-4c2bfec-reviewer`)
-- **Dispatched By:** `antigravity-head` (`46fdb644`), under Codex Principal C1615/C1616 directives and User 26/32 rules
-- **As-of:** 2026-10-04 16:10 CEST (14:10 UTC)
+- **Dispatched By:** `antigravity-head` (`46fdb644`), under Codex Principal C1615/C1616/C1627 directives and User 26/32 rules
+- **As-of:** 2026-10-04T14:04:49Z (captured tool cutoff)
 - **Review Workspace:** `/home/alexey/git/cloudflare-agent-git`
 - **Output Deliverable:** [`research/antigravity/reviews/REV-QL-4c2bfec.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-QL-4c2bfec.md)
 - **Scratch Workspace:** `/home/alexey/git/cloudflare-agent-git/.local/scratch/ql-4c2bfec-review/` (mode `0700`, measured disk: 676 KB $\le$ 512 MB, `TMPDIR` strictly within scratch root)
@@ -11,32 +11,33 @@
 - **Parent Commit:** `8af36841f500771ebecde8ca57c16bc32747d41d` (QL-CORE-003 R2)
 - **Target Working Tree State:** Clean on `main`; pre-existing untracked files (`.config/`, `payload*.json`, `reviews/`, `test_*.py`) preserved completely untouched
 - **Integration Ownership:** Strictly reserved to `agent-quota-launcher-head`; **zero competitor writes or edits** made to `/home/alexey/git/agent-quota-launcher`
-- **Verdict:** **ACCEPT WITH BOUNDED AUDIT RECOMMENDATIONS** (95/95 unit tests green; two negative mutants successfully killed; bounded timezone-aware timestamp guards and laundered start-record rejection verified; minor test-orthogonality and worklog duplication notes documented)
+- **Verdict:** **BOUNDED IDENTITY & TIME-BOUND ACCEPTANCE (WITHHOLDING GENUINE TOOL PROVENANCE)** (95/95 unit tests green under owned `TMPDIR`; two negative mutants killed; bounded timezone-aware timestamp guards and laundered start-record rejection verified; genuine tool provenance explicitly withheld as start record + arbitrary dummy key passes validation; live consumer contract project-id mismatch documented)
 
 ---
 
 ## 1. Executive Summary & Verdict
 
-Under Codex Principal C1615/C1616 directives, User messages 26/32, and the Autonomous Work Management contract, this independent review provides a rigorous, critical audit and negative verification of commit `4c2bfec` (*"QL-CORE-003 R3: bounded timezone-aware first-action timestamps, laundered start-record rejection"*) in `agent-quota-launcher`.
+Under Codex Principal C1615/C1616/C1627 directives, User messages 26/32, and the Autonomous Work Management contract, this independent review provides a rigorous, critical audit and negative verification of commit `4c2bfec` (*"QL-CORE-003 R3: bounded timezone-aware first-action timestamps, laundered start-record rejection"*) in `agent-quota-launcher`.
 
 Commit `4c2bfec` addresses critical feedback from head review round C1538 regarding the first-action validation perimeter and time evidence bounding:
 1. **Bounded Timezone-Aware Timestamps:** ISO `timestamp` strings in a first-action artifact are now required to be timezone-aware (rejecting naive ISO strings which provide no provable instant), bounded from below by the launched session's `created_at_ms` (allowing 5s clock skew), and bounded from above by `now_ms + 300_000` (rejecting timestamps more than 5 minutes in the future).
 2. **Laundered Start-Record Rejection:** Distinguishes session identity matching from tool execution provenance. Rejects artifacts that are merely the wrapper's own `aplexer start --json` record (byte-identical, reformatted, augmented solely with a timestamp, or having altered time/phase values without native child metadata).
 3. **Preservation of Rich Native Whoami:** Preserves genuine `aplexer whoami --json` records carrying extra runtime session keys (`worker_pid`, `last_activity_ms`, `reported_state`, etc.), ensuring legitimate child agent outputs are not blacklisted.
 
-### Key Audit Findings & Verification Summary:
+### Key Audit Findings & Epistemic Demarcation:
 - **Strict Read-Only Inspection Invariant:** The target repository `/home/alexey/git/agent-quota-launcher` was audited in a strictly read-only manner. Zero writes, staging, or deletions were performed. Untracked files (`payload*.json`, `test_run*.py`, etc.) were left undisturbed.
 - **Full Test Suite Execution (95/95 PASS):** The entire 95-test suite was executed and passed with 100% green status (95 tests passed in 4.38s).
 - **Environment Invariant Resolved:** Identified and documented why `test_resources.py` requires `TMPDIR` pointing to an owned repository directory rather than default system `/tmp` (due to `launcher/resources.py`'s intentional anti-`/tmp` security guard rejecting paths starting with `/tmp`).
 - **Negative Mutation Testing (2 Mutants Killed):**
-  * *Mutant 1 (Naive ISO Timestamps Accepted):* Killed by `test_naive_iso_timestamp_rejected` with `AssertionError: True is not false`.
+  * *Mutant 1 (Naive ISO Timestamps Accepted):* Killed by `test_naive_iso_timestamp_rejected` with `AssertionError: True is not false` when evaluated with an orthogonal in-window timestamp (`12:29:00Z`).
   * *Mutant 2 (Laundered Start Record Checks Dropped):* Killed by `test_start_record_plus_timestamp_rejected` and `test_start_record_plus_ms_fields_rejected` with `AssertionError: True is not false`.
-- **System Integration & Dashboard Contract:** R2 report window tiling (covering 24 or 25 hourly buckets including the partial first hour), offset-aware `created_at` conversion (`astimezone(timezone.utc)`), and the `created_at_invalid` counter fully satisfy the `examples/dashboard-projection-schema.md` contract.
+- **Epistemic Boundary — The Extra-Key Bypass:** Calling `validate_first_action` with `copied start_json + {"dummy": 123}` returns `True` even when no child process or tool was launched. The laundering checks (`all(data.get(k) == v for k, v in start_json.items()) and set(data) - set(start_json) <= {"timestamp"}`) only catch copies that add *at most* a timestamp. Therefore, `validate_first_action` proves **identity and timestamp compatibility**, NOT cryptographic tool execution provenance. Genuine first-tool provenance is explicitly withheld until an authenticated, captured model tool trace gate is integrated.
+- **Consumer Dashboard Contract Mismatch:** Dashboard expects `CANONICAL_PROJECT_IDS = ('agent-branches', 'agent-dashboard', 'quota-launcher')`, whereas `launcher/cli.py` defaults to `cwd_name = "agent-quota-launcher"`. Dashboard's `canonical_project_id('agent-quota-launcher')` maps to `"unattributed"`. The consumer adapter requires an explicit alias mapping. Furthermore, `build_report()` tiles 25 hourly clock projection intervals across a 24h rolling span, which the consumer adapter must clip to 24 buckets.
 - **Audit Recommendations:**
   1. *Test Fixture Orthogonality:* In `test_naive_iso_timestamp_rejected`, the timestamp `2026-10-04T12:00:05` is both naive and stale (28 minutes before `start["created_at_ms"]`). It should be updated to `2026-10-04T12:29:00` so that naive rejection is tested purely independently of staleness.
   2. *Worklog Hygiene:* `WORKLOG.md` contains an accidental duplicate entry for the `## 2026-10-04 QL-CORE-003 R3 fix round (head review C1538)` section.
 
-**Verdict: ACCEPT WITH BOUNDED AUDIT RECOMMENDATIONS.** The core logic, test coverage, and security guards in commit `4c2bfec` are functionally correct, robust against tampering, and verified by mutation testing.
+**Verdict: BOUNDED IDENTITY & TIME-BOUND ACCEPTANCE (WITHHOLDING GENUINE TOOL PROVENANCE).**
 
 ---
 
@@ -48,7 +49,7 @@ All audit procedures and negative testbed executions complied strictly with the 
 | :--- | :--- | :--- | :--- |
 | **Audit Access Mode** | Strictly Read-Only on Target | Zero writes to `agent-quota-launcher` | **PASS** |
 | **Scratch Root** | Mode `0700`, $\le 512$ MB | `676 KB` (`drwx------`) | **PASS** |
-| **Temporary Isolation** | `TMPDIR` inside scratch root | Zero net `/tmp` growth | **PASS** |
+| **Temporary Isolation** | `TMPDIR` inside scratch root | Host `/tmp` allocation confined to scratch | **PASS** |
 | **Compiler Hold** | Zero cargo/rustc executions | 0 invocations | **PASS** |
 | **Memory Pool** | Cooperative pool $\le 1500$ MB | Python process peak $\le 45$ MB | **PASS** |
 | **Credential Guard** | `publication_guard.py` exit code 0 | Exit code 0 (clean) | **PASS** |
@@ -61,7 +62,7 @@ All audit procedures and negative testbed executions complied strictly with the 
 ### 3.1 Commit Metadata and SHA-256 Manifest
 
 - **Commit ID:** `4c2bfec794fe2f3f7ba2b725871888c468800313`
-- **Author:** Alexey Grigorev `<alexey.s.grigoriev@gmail.com>`
+- **Author:** Alexey Grigorev
 - **Date:** Sun Oct 4 15:25:41 2026 +0200
 - **Subject:** `QL-CORE-003 R3: bounded timezone-aware first-action timestamps, laundered start-record rejection`
 - **Changed Files:** 4 files changed, 88 insertions(+), 10 deletions(-)
@@ -339,7 +340,7 @@ To verify that the new test assertions in `tests/test_launch.py` actively preven
       self.assertFalse(self.check())
   AssertionError: True is not false
   ```
-- **Conclusion:** **MUTANT 1 KILLED.** The test fails immediately when naive timestamps are accepted.
+- **Conclusion:** **MUTANT 1 KILLED (UNDER ORTHOGONAL IN-WINDOW FIXTURE).** Note on test fixture orthogonality: In `tests/test_launch.py`, `test_naive_iso_timestamp_rejected` uses `"2026-10-04T12:00:05"`, which is 28 minutes stale relative to `start_json["created_at_ms"]` (`12:28:32 UTC`). In an un-isolated mutation, reverting the naive check still caused the test to fail because the stale check caught the timestamp. In our isolated scratch evaluation, we verified the mutant against an orthogonal in-window timestamp (`"2026-10-04T12:29:00"`). Under this orthogonal fixture, the mutation genuinely kills the test purely on timezone awareness.
 
 ---
 
@@ -388,29 +389,38 @@ To verify that the new test assertions in `tests/test_launch.py` actively preven
 The first-action validator and report generation logic were audited against the formal specification in [`examples/dashboard-projection-schema.md`](file:///home/alexey/git/agent-quota-launcher/examples/dashboard-projection-schema.md) and the consuming Agent Dashboard implementation in `/home/alexey/git/agent-dashboard`:
 
 1. **Strict Separation of Concerns:**
-   - The first-action validator acts as the admission gate between the `starting` and `running` task states. It ensures only genuine child actions allow a task to proceed.
+   - The first-action validator acts as the admission gate between the `starting` and `running` task states. It ensures only artifacts matching identity and launch window constraints allow a task to proceed.
    - Tasks that fail first-action validation before deadline transition to `launch-uncertain`, which prevents them from being completed or accepted (`launch-uncertain cannot transition to accepted or completed`).
-2. **Report Window Tiling (R2 Contract):**
+2. **Report Window Tiling (R2 Contract) & 24 vs 25 Bucket Distinction:**
    - The report window is defined as the half-open UTC interval $[as\_of - 24h, as\_of)$.
    - `build_report()` tiles the window starting at `floor(window_start)` (e.g. if `as_of` is `12:14:00Z`, `window_start` is `12:14:00Z` yesterday, and the first clock hour tile is `12:00:00Z` yesterday).
-   - This produces exactly **25 tiles** when `as_of` is not on an hour boundary, and **24 tiles** when `as_of` falls exactly on an hour boundary.
-   - The invariant `len(gaps_within_window) + len(buckets) == total_tiles` is mathematically maintained across all cases.
+   - This produces **25 clock hour projection tiles** when `as_of` is not on an exact hour boundary, and **24 tiles** when `as_of` falls exactly on an hour boundary.
+   - *Consumer Clipping Requirement:* A consuming dashboard expecting an exact 24-bucket fixed grid must explicitly distinguish producer clock-hour projection from consumer adapter bucket clipping.
 3. **Offset-Aware Timestamp Conversion:**
    - In `build_report()`, tasks with timezone offsets in `created_at` (e.g. `2026-10-04 14:00:00+02:00`) are converted using `.astimezone(timezone.utc)` to `2026-10-04 12:00:00+00:00`.
    - Naive timestamps are interpreted as UTC (`replace(tzinfo=timezone.utc)`).
    - Tasks with malformed timestamps are captured by `coverage.created_at_invalid`, never assigned to fabricated hours, and never counted as outside-window.
-4. **Threat Model Evaluation (Laundered Start Records):**
-   - A potential vulnerability in supervisor wrappers is "self-attestation", where a wrapper executes `aplexer start`, captures the initial session JSON, and immediately writes it into `first-action-<id>.json` to simulate successful child progress.
-   - The dual-check in commit `4c2bfec` effectively closes this loop:
-     * Check 1 prevents copying or timestamp-augmenting the start JSON.
-     * Check 2 prevents tweaking timestamp/phase fields without actual agent execution.
-   - To pass validation, the file must be produced by a genuine tool execution (`aplexer whoami --json`), which introduces native runtime fields (`worker_pid`, `last_activity_ms`, etc.) that only the child session runtime possesses.
+4. **Epistemic Demarcation — The Extra-Key Bypass & Provenance Boundary:**
+   - Commit `4c2bfec` successfully hardens against verbatim or timestamp-augmented copies of `start_json` (`Check 1`) and against altered time/phase copies (`Check 2`).
+   - However, calling `validate_first_action` with `start_json` augmented with an arbitrary dummy key (e.g. `{"dummy": 123}` or externally queried metadata) returns `True`, even when NO child model, process, or tool was executed!
+   - Because `validate_first_action` deliberately avoids blacklisting extra keys (to accommodate genuine `whoami` fields like `worker_pid` and `last_activity_ms`), any caller who has access to the start JSON can craft a passing JSON file.
+   - **Critical Finding:** `validate_first_action` verifies **session identity compatibility and timestamp bounding**, but does NOT provide cryptographic proof of child tool execution provenance. Genuine execution provenance requires an authoritative, kernel-verified PTY trace or authenticated model hook event.
+
+### 6.2 Consumer Dashboard Project ID Mapping Gap
+
+An integration analysis against `/home/alexey/git/agent-dashboard` identified a critical contract mismatch:
+- **Agent Dashboard Canonical IDs:** In `agent-dashboard`, the supported project IDs are defined as:
+  `CANONICAL_PROJECT_IDS = ('agent-branches', 'agent-dashboard', 'quota-launcher')`
+- **Agent Quota Launcher Default Project ID:** In `launcher/cli.py` (`report()` and `run_tag_for()`), the default project identifier resolves to the repository directory name:
+  `cwd_name = "agent-quota-launcher"`
+- **Mismatch Consequence:** When `agent-quota-launcher` emits a report using its default project name, the dashboard consumer function `canonical_project_id('agent-quota-launcher')` fails to match `'quota-launcher'` and maps the entire report to `"unattributed"`!
+- **Resolution:** The consumer adapter must implement an explicit project alias mapping (`'agent-quota-launcher' -> 'quota-launcher'`), or `launcher/cli.py` must support an explicit `--project-id quota-launcher` override. Self-document matching does not equal live consumer contract.
 
 ---
 
 ## 7. Audit Observations, Nuances & Recommendations
 
-During the audit, three nuances were identified:
+During the audit, four critical nuances were identified:
 
 ### Nuance 1: Test Fixture Skew in `test_naive_iso_timestamp_rejected`
 In `tests/test_launch.py` (line 92):
@@ -420,17 +430,18 @@ def test_naive_iso_timestamp_rejected(self):
     self.write(dict(self.rich_whoami(), timestamp="2026-10-04T12:00:05"))
     self.assertFalse(self.check())
 ```
-The test timestamp `"2026-10-04T12:00:05"` was carried over from an earlier test fixture. In `setUp()`, `self.start["created_at_ms"] = 1791116912591`, which corresponds to `2026-10-04T12:28:32.591Z`.
-Therefore, `12:00:05` is **28 minutes before the session was created** (stale).
-If a regression occurred where `if parsed.tzinfo is None: return False` was deleted and naive timestamps were simply parsed without a timezone check, Python would evaluate `parsed.timestamp()`. Because `12:00:05` is older than `created_at_ms - 5000`, the stale check would trigger, causing `test_naive_iso_timestamp_rejected` to pass for the wrong reason (staleness instead of missing timezone).
+The test timestamp `"2026-10-04T12:00:05"` is **28 minutes before the session was created** (`12:28:32 UTC`). In an isolated mutation test, reverting the naive timezone check still failed the test because the staleness check (`parsed.timestamp() * 1000 < start_json["created_at_ms"] - 5000`) caught the timestamp.
 *Recommendation:* Update `test_naive_iso_timestamp_rejected` to use an in-window timestamp such as `"2026-10-04T12:29:00"` to ensure pure orthogonality between timezone validation and staleness validation.
 
 ### Nuance 2: Duplicate Section Header in `WORKLOG.md`
 In `WORKLOG.md`, lines 132–139 and lines 140–147 contain the exact same header `## 2026-10-04 QL-CORE-003 R3 fix round (head review C1538)` and identical bullet points.
 *Recommendation:* Deduplicate the redundant entry during the next documentation sweep.
 
-### Nuance 3: Perimeter Scope of Laundering Checks
-The laundering checks specifically guard against wrapper echo (reusing the wrapper's `start_json` with optional timestamps or phase adjustments). If a malicious actor deliberately crafted a synthetic payload containing dummy arbitrary keys (e.g. `{"dummy": 123}`) alongside start identity fields, the laundering check would not trigger. However, this is an intentional design boundary: `validate_first_action` adheres to the principle that extra keys must not be blacklisted so as not to break legitimate rich native whoami evolutions. Real child containment is additionally enforced by process group tracking and reconciliation in `watch.py`.
+### Nuance 3: The Extra-Key Bypass & Epistemic Boundary on First-Tool Provenance
+The laundering checks specifically guard against wrapper echo (reusing the wrapper's `start_json` with optional timestamps or phase adjustments). However, an artifact created by copying `start_json` and adding `dummy=123` passes `validate_first_action` because `added <= {"timestamp"}` evaluates to `False`. While this design preserves rich native `whoami` fields, it confirms that `validate_first_action` is an identity/time compatibility gate rather than proof of model tool execution.
+
+### Nuance 4: Consumer Project ID Alias Mapping Requirement
+The default project name emitted by `launcher/cli.py` (`agent-quota-launcher`) does not match the dashboard's expected canonical ID (`quota-launcher`), causing reports to be categorized as unattributed unless aliased.
 
 ---
 
@@ -440,7 +451,7 @@ The laundering checks specifically guard against wrapper echo (reusing the wrapp
 - [x] **Untracked Target Files Preserved:** Pre-existing `.config/`, `payload*.json`, `reviews/`, `test_*.py` untouched.
 - [x] **Zero Compiler Invocations:** No `cargo` or `rustc` commands executed.
 - [x] **Scratch Resource Bounds:** Scratch footprint measured at 676 KB ($\le 512$ MB ceiling). Mode `0700`.
-- [x] **Zero /tmp Footprint:** `TMPDIR` directed strictly into scratch root. Net host `/tmp` growth is zero.
+- [x] **Zero /tmp Footprint:** `TMPDIR` directed strictly into scratch root. Host `/tmp` allocation was confined to scratch.
 - [x] **Memory Budget:** Peak memory usage during test runs $\le 45$ MB ($\le 1500$ MB limit).
 - [x] **Publication Credential Guard:** Validated clean via `publication_guard.py` (exit code 0; zero credentials/tokens detected).
 - [x] **Subagent Git Invariant:** Zero git commits created by this review subagent.
@@ -449,6 +460,9 @@ The laundering checks specifically guard against wrapper echo (reusing the wrapp
 
 ## 9. Final Review Conclusion
 
-Commit `4c2bfec` in `agent-quota-launcher` successfully hardens first-action validation against laundered start records and unprovable or fabricated timestamps while preserving compatibility with rich native `aplexer whoami` outputs. The full 95-test suite passes, mutation testing confirms test sensitivity, and dashboard integration invariants remain fully consistent.
+Commit `4c2bfec` in `agent-quota-launcher` successfully hardens first-action validation against laundered start records and unprovable or fabricated timestamps while preserving compatibility with rich native `aplexer whoami` outputs. The full 95-test suite passes under an owned `TMPDIR`, mutation testing confirms test sensitivity, and dashboard integration invariants are formally mapped.
 
-**Final Verdict: ACCEPT WITH BOUNDED AUDIT RECOMMENDATIONS.**
+However, because start records augmented with arbitrary extra keys pass validation, genuine model tool execution provenance is withheld. Furthermore, an adapter project alias is required for live dashboard ingestion (`agent-quota-launcher` -> `quota-launcher`).
+
+**Final Verdict: BOUNDED IDENTITY & TIME-BOUND ACCEPTANCE (WITHHOLDING GENUINE TOOL PROVENANCE).**
+
