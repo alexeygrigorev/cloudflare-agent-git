@@ -1148,6 +1148,25 @@
           "result": "VERIFIED_PASS: Resolved merge conflict into commit eada0e44194359f5a9eb39d0d9b97724e5690aa7 (tree 3f24dabadba1231b9e6dd97f8b5e3c26d8dff10f). 22/22 unit tests pass. L3 radar reports status clean (22 tests collected, exit code 0). Comparative test against forced pre-fork base ec5030c verified textual conflict. Pushed to remote branch proto/actor-warning-resolution."
         },
         {
+          "tag": "a06-advisory-consumer",
+          "role": "consumer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "75393f31-f035-46b6-a924-0b87ec4278cb",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/a06-advisory-adoption/",
+          "status": "running",
+          "started_at": "2026-10-04T05:06:07+02:00",
+          "task": "Real A06 advisory adoption decision comparing ordinary Git worktree baseline with Agent-Branches advisory protocol on current maintenance commits (9ec79db inspect_token_metadata vs d566898 calculate_jitter, eada0e4 resolution): unforced consumer decision (adopt/decline/conditional) with concrete friction analysis, exposed task brief, and deliverables in research/antigravity/adoption/.",
+          "owned_paths": [
+            "research/antigravity/adoption/A06-ADVISORY-ADOPTION-DECISION.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID 75393f31-f035-46b6-a924-0b87ec4278cb",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+        },
+        {
           "tag": "warning-lifecycle-transitioner",
           "role": "executor",
           "parent_tag": "antigravity-head",
