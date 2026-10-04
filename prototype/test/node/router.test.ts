@@ -8,6 +8,7 @@
 import { test } from "node:test";
 import { deepStrictEqual, ok, strictEqual } from "node:assert";
 import { handleRoute } from "../../src/core/router.js";
+import { serveCoordinator } from "../../src/local/runtime.js";
 import { makeRig, neutralRequest, rejectionMessage, type TestRig } from "./fakes.js";
 
 async function call(rig: TestRig, method: string, path: string, body?: unknown, token?: string) {
@@ -352,4 +353,54 @@ test("invalid-bearer counting: 403/503 outcomes are not counted (C-1441)", async
 
   const stillOk = await call(rig, "POST", "/tasks", { agent: "after-flood" }, "admin-t");
   strictEqual(stillOk.status, 201, "valid admin auth unaffected throughout");
+});
+
+test("adapter trust boundary: the node clientKey ignores client-supplied forwarding headers (C-1441 B1, REV-LIMITER M9)", async () => {
+  const rig = makeRig();
+  const server = serveCoordinator(rig.services);
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  ok(address, "server must report its address after listen");
+  try {
+    // All six requests arrive over the SAME loopback socket, so the adapter
+    // derives one client key from the peer address. Rotating X-Forwarded-For
+    // (and the Worker-style cf-connecting-ip) per attempt must not spread
+    // the failures across buckets: a mutant keying on either header would
+    // answer 401 forever and never block.
+    const statuses: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      const response = await fetch(`http://127.0.0.1:${address.port}/setup`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-forwarded-for": `203.0.113.${10 + i}`,
+          "cf-connecting-ip": `198.51.100.${10 + i}`,
+          authorization: "Bearer not-the-admin",
+        },
+        body: "{}",
+      });
+      statuses.push(response.status);
+    }
+    deepStrictEqual(
+      statuses,
+      [401, 401, 401, 401, 401, 429],
+      "one socket, one bucket: spoofed forwarding headers cannot bypass the limiter",
+    );
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+});
+
+test("latent seam: services.rateLimiter omitted is an explicit fail-open pass-through (C-1441 D3, REV-LIMITER)", async () => {
+  // RouterServices.rateLimiter is deliberately optional so minimal rigs
+  // stay valid. Absence must be a pure pass-through: 401s keep their
+  // correct status but nothing is counted, so 429 can never happen. This
+  // test documents the seam loudly — a rig or future adapter that forgets
+  // the limiter loses the whole control silently, and this is the canary.
+  const rig = makeRig();
+  const services = { ...rig.services, rateLimiter: undefined };
+  for (let i = 0; i < 50; i++) {
+    const response = await handleRoute(services, neutralRequest("POST", "/setup", {}, "not-the-admin"));
+    strictEqual(response.status, 401, `invalid bearer ${i + 1} stays an un-counted 401 without a limiter`);
+  }
 });

@@ -459,22 +459,55 @@ test("BearerRateLimiter: 5-failure threshold arms the block on the 6th (C-1441)"
 });
 
 test("BearerRateLimiter: failures outside the 60s window restart the count (C-1441)", () => {
-  let now = 10_000_000;
+  // The window is measured from the FIRST failure. These failures land at
+  // t0 + 0s..40s (the clock advances after each record), so all six stay
+  // inside one window and the 6th still arms.
+  const t0 = 10_000_000;
+  let now = t0;
   const spread = new BearerRateLimiter({ now: () => now });
   for (let i = 0; i < 5; i++) {
-    strictEqual(spread.recordFailure("c"), false, "sub-threshold within any single window");
-    now += 15_000;
+    strictEqual(spread.recordFailure("c"), false, "sub-threshold within a single window");
+    now += 10_000;
   }
-  // The 5th failure landed exactly at the window edge: fresh count, never armed.
-  strictEqual(spread.recordFailure("c"), false, "window expiry re-arms 401s");
+  strictEqual(spread.recordFailure("c"), true, "6th consecutive failure inside the window arms");
+  // One millisecond past firstFailureAt + windowMs the count restarts:
+  // 401s resume and a full fresh window is needed to arm again.
+  now = t0 + 60_001;
+  strictEqual(spread.recordFailure("c"), false, "past the window the count restarts (401)");
+  for (let i = 0; i < 4; i++) {
+    strictEqual(spread.recordFailure("c"), false, "the fresh count must re-accumulate");
+  }
+  strictEqual(spread.recordFailure("c"), true, "the fresh window arms on its own 6th failure");
+});
 
-  const tight = new BearerRateLimiter({ now: () => now });
+test("BearerRateLimiter: the window edge is exact — windowMs-1 arms, windowMs restarts (C-1441, REV-LIMITER B2)", () => {
+  const t0 = 10_000_000;
+  const windowMs = 60_000;
+
+  // One millisecond BEFORE the edge the failures still share the first
+  // window, so the 6th consecutive one arms the block.
+  let now = t0;
+  const inside = new BearerRateLimiter({ now: () => now, windowMs });
   for (let i = 0; i < 5; i++) {
-    tight.recordFailure("c");
+    inside.recordFailure("c");
   }
-  strictEqual(tight.recordFailure("c"), true, "a tight burst arms on the 6th");
-  now += 60_001;
-  strictEqual(tight.recordFailure("c"), false, "after the window passes, 401s resume");
+  now = t0 + windowMs - 1;
+  strictEqual(inside.recordFailure("c"), true, "windowMs - 1 is inside the window: 6th failure arms");
+
+  // Exactly AT the edge (firstFailureAt + windowMs) the window has expired:
+  // the failure starts a FRESH count, so it is answered with 401 and the
+  // block re-arms only after five more. Pins >= (not >) at the boundary.
+  now = t0;
+  const atEdge = new BearerRateLimiter({ now: () => now, windowMs });
+  for (let i = 0; i < 5; i++) {
+    atEdge.recordFailure("c");
+  }
+  now = t0 + windowMs;
+  strictEqual(atEdge.recordFailure("c"), false, "exactly windowMs after the first failure the count restarts (401)");
+  for (let i = 0; i < 4; i++) {
+    strictEqual(atEdge.recordFailure("c"), false, "the fresh count must re-accumulate");
+  }
+  strictEqual(atEdge.recordFailure("c"), true, "the fresh window arms on its own 6th failure");
 });
 
 test("BearerRateLimiter: successful authentication clears the failure count (C-1441)", () => {
