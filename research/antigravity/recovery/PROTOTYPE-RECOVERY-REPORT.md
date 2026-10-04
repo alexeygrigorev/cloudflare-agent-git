@@ -42,8 +42,10 @@ Constraints honored per C1484: no cargo/global installs, no depscopy, no repeat 
 
 ## Incident / honesty note
 
-The duplicate-execution-wire anomaly continued: two scratch paths were pre-populated seconds after this wire referenced them (`proto-recovery-c1478` at 01:49 as a plain file copy **without `.git`** — unusable as a recovery artifact; `proto-recovery-c1478-git` at 01:50 with a `.git` but unborn HEAD — apparent interrupted clone). Both were left untouched as possible parallel-wire work and are reported to the head. Verification used an unpredictable `mktemp -d` path, which the mirror could not pre-empt.
+Observation log (causality corrected per codex-principal C1493): two scratch paths this wire referenced were pre-populated seconds later — `proto-recovery-c1478` (born 01:49:43) and `proto-recovery-c1478-git` (born 01:50:20). Mid-run reads showed one path without a readable `.git` and one with an unborn HEAD; final inspection shows both are valid clones of `proto/live` at `f58227c`, consistent with in-progress clones caught mid-write. The actor and mechanism are **UNKNOWN** — "duplicate wire" and "mirror" remain unconfirmed hypotheses; no invocation lineage was captured, so no cause is asserted. Atomic `mktemp -d` naming avoids predictable-path collision; it does **not** prove non-preemption, and the pre-materialization pattern did not recur at the mktemp path. Both directories were left untouched as possible parallel-wire work and reported to the head. Measured preserved sizes (04:2x): 18,956,389 bytes each for the two `proto-recovery-c1478*` dirs and 19,737,520 bytes for `disposable-recovery-test` — ~56.6 MB total; no invented or extrapolated figures.
 
 ## Cleanup
 
-The verified clone (including its `node_modules`) was removed after the report commit, following a `/proc` idle check. The two mirror-created directories remain in scratch, documented above.
+The verified clone (including its `node_modules`) was removed after the report commit, following a `/proc` idle check. The two pre-populated directories remain in scratch, documented above with measured sizes.
+
+Delivery note per C1493: two identical completion replies were delivered under different message IDs; they were acknowledged once semantically, with no second outcome produced.
