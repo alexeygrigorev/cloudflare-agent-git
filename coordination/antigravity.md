@@ -1897,6 +1897,51 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Six shortlist gates remain **HELD**.
   - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
 
+## 65. Seed Repository Source Packaging & CLI Completeness Repair (`proto/seed-cli-completeness`), Reviewer `4abc` C1571 Amendment, and Warning Transition Status
+
+- **Seed Repository Source Packaging & CLI Completeness Repair (Commit `acddfa7` on `proto/seed-cli-completeness`):**
+  - Executed by: `seed-repair-worker` (Native Context ID: `2eee0136-27a3-4f13-9516-a6047201f6bb`).
+  - Scratch Root: `.local/scratch/seed-cli-repair/worktree/` (mode 0700, 820 KB disk consumption, 0 bytes `/tmp`).
+  - Deliverables:
+    - Report: [`research/antigravity/recovery/REPAIR-SEED-CLI-COMPLETENESS.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPAIR-SEED-CLI-COMPLETENESS.md).
+    - Repair Commit SHA: `acddfa77909fc368644b4f2ca4ca5321879c1230`.
+    - Tree SHA: `76f11d7d67a1058c714a07afe4a7cc4b476fff3e`.
+    - Remote Ref: `refs/heads/proto/seed-cli-completeness` pushed to `origin`.
+  - Root Cause Analysis & Empirical Reproduction:
+    - In clean checkouts of base `ec5030c` (and derived actor branches `9ec79db` and `d566898`), 7 unit tests in `tests/test_client.py` (`test_02`, `03`, `05`, `06`, `10`, `12`, `13`) failed systematically with `[Errno 2] No such file or directory: .../agent-branches`.
+    - The initial seed commit `ec5030c` created the minimal seed repository by copying `agent_branches/` and `tests/` from integrated branch `db4f6a8`, but omitted the root executable launcher script `agent-branches`.
+    - Following Codex Principal C1579 steering, test-suite fallback hacks (e.g. falling back to `python3 -m agent_branches.cli`) were rejected as masking the underlying packaging defect. Source completeness requires the authentic executable launcher at repository root.
+  - Restoration & Packaging Repair:
+    - Restored canonical executable launcher directly from git object database:
+      `git cat-file -p b7efa8be78c9f3cc0cbe2ed00be64873e91dbe44 > agent-branches && chmod 0755 agent-branches`.
+    - Restored blob SHA: `b7efa8be78c9f3cc0cbe2ed00be64873e91dbe44`, mode `100755` (`-rwxr-xr-x`, 374 bytes).
+    - Verified `tests/test_client.py` has NO fallback hacks in `run_cli`: directly executes `self.cli_path` (`agent-branches`).
+  - Local & Disposable Clone Verification:
+    - Direct CLI Check: `./agent-branches --help` exited with code 0 (clean usage help).
+    - Unit Test Suite: `python3 -m unittest -v tests/test_client.py` $\rightarrow$ **20/20 unit tests PASS in 7.730s** (OK, 0 failures, 0 errors).
+    - Disposable Fresh GitHub Clone: Cloned over SSH to `.local/scratch/seed-cli-repair/disposable-clone/`. Verified `git fsck --full` exit 0, mode `100755`, and 20/20 tests passing.
+  - Final Verdict: **`SEED_CLI_COMPLETENESS_VERIFIED_PASS`**.
+
+- **Ingestion of Reviewer `4abc725c` C1571 Negative Challenge Amendment (Commit `b79bad5` on `origin/main`):**
+  - Reviewer: `zcode-recovery-test` (`4abc725c` in `/home/alexey/git/agent-branches-recovery`).
+  - Report Amendment: [`research/antigravity/reviews/REV-ACTOR-COMMITS-9EC-D56.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-ACTOR-COMMITS-9EC-D56.md) (§8 amendment).
+  - Findings Verified:
+    1. *F4 Prefix Defect Confirmed:* `inspect_token_metadata("art_v1_da4f4519")` returns `valid_prefix: False` at commit `9ec79db`, proving prefix whitelist predated real coordinator tokens.
+    2. *F5 Jitter Ceiling Defect Confirmed:* `calculate_jitter(8)` defaults to `2.02 > max_delay 2.0`, proving attempt jitter was added after the `min(max_delay, delay)` calculation. Additional negative probes documented negative cap and NaN propagation behaviors.
+    3. *Mutation Kill Log:* M1/M2 caught; P1/P2/K1/K2 uncaught. Acknowledged test-suite sensitivity gap.
+  - Both challenges confirmed and documented truthfully.
+
+- **Active Warning Lifecycle Transition Lane (`6467bcbd`):**
+  - Subagent `warning-lifecycle-transitioner` (`6467bcbd-1920-4cbe-9cc4-7b705d8f8c60`) in `.local/scratch/concurrent-warning-transition/`.
+  - Executing runtime transition preserving original actor IDs `actor-alpha-0002` and `actor-beta-0001`, rotating credentials via runtime API, pushing `eada0e4`, evaluating dynamic vs forced base radar attestation, and executing `POST /checks` and `POST /warnings/warn-1/ack`.
+
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy strictly **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
+
 
 
 

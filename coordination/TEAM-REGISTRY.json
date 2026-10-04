@@ -1178,14 +1178,16 @@
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/seed-cli-repair/worktree/",
           "branch": "proto/seed-cli-completeness",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T04:54:46+02:00",
+          "completed_at": "2026-10-04T04:58:26+02:00",
           "task": "Resolve root cause of baseline 7 test failures across seed repository: restore authentic root agent-branches CLI launcher (blob b7efa8be, mode 100755), verify 20 baseline unit tests pass on clean tree without fallback, push proto/seed-cli-completeness.",
           "owned_paths": [
             "research/antigravity/recovery/REPAIR-SEED-CLI-COMPLETENESS.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID 2eee0136-27a3-4f13-9516-a6047201f6bb",
-          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+          "first_tool_evidence": "subagent launched with native conversation ID 2eee0136-27a3-4f13-9516-a6047201f6bb; worktree setup and blob extraction verified",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "VERIFIED_PASS: Restored canonical executable launcher agent-branches (blob b7efa8be78c9f3cc0cbe2ed00be64873e91dbe44, mode 100755, 374 bytes) in isolated worktree branched from ec5030c. Direct CLI check exit 0. All 20/20 baseline unit tests PASS in 7.730s without test fallbacks. Pushed commit acddfa77909fc368644b4f2ca4ca5321879c1230 (tree 76f11d7d67a1058c714a07afe4a7cc4b476fff3e) to origin/proto/seed-cli-completeness. Verified via fresh disposable GitHub clone (fsck full clean, 20/20 pass). 820 KB scratch, 0 bytes /tmp. Deliverable: research/antigravity/recovery/REPAIR-SEED-CLI-COMPLETENESS.md."
         },
         {
           "tag": "zcode-recovery-test-c1580",
