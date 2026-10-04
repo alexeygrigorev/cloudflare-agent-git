@@ -238,27 +238,32 @@ LATEST = DAILY[0] if DAILY else None
 LATEST_CUTOFF = parse_utc(LATEST.get('source_cutoff')) if LATEST else None
 LATEST_NOTE = note_stamp(REPORTS[0]) if REPORTS else None
 
-# Field-note headlines and summaries. Four come from the design reference; the newer three
-# are written from the notes themselves. Every other note uses its own section headings.
+# Field-note headlines and summaries. Only source-backed decisions, failures,
+# and concrete milestones are admitted to the public timeline feed. Routine
+# check-ins are excluded from the feed while remaining archived in the repository.
 NOTE_TEXT = {
-    '20261003T0541': ('Task handoff idea parked after plain Git recovery worked; a misreading is withdrawn', 'Both principals provisionally parked A10 in draft 9 after ordinary Git and file recovery succeeded in two actual tasks. Root withdrew its 05:11 reading of restored Bunny output as new execution.', 'decision'),
-    '20261003T0511': ('A new shortlist draft parks the disk-saving idea; a monitoring fix is verified', 'Draft 8 retains A01, A05, A06 and A10, parks A16 and leaves two product places open. A scoped supervisor repair passed 35 tests, rerun by root.', 'decision'),
-    '20261003T0441': ('Disk-saving idea parked; a change story left the review verdict unchanged', 'A16 was parked after three failed D1 gates. A06\u2019s first real review kept the same APPROVE verdict with and without the story card. Exactly-once task execution remains unproved.', 'decision'),
-    '20261003T0224': ('A repair test failed; free disk dropped 16 GiB', 'Expected one outer side effect, observed zero. Root free disk 132 \u2192 116 GiB; shared Rust target measured at 39.65 GiB. Nothing killed or deleted; compilation held.', 'failed'),
-    '20261002T2124': ('The conflict-warning idea loses its lead', 'Equal-policy actual pair shows null separation. Claude proposes retain-conditional, lose-primary; Codex accepts the correction.', 'decision'),
-    '20261002T2024': ('The coordinating agent corrects the disk number', 'The ~80% dependency share mixed a per-directory sum with a physical union. Corrected to 62.1%.', 'decision'),
-    '20261002T1950': ('Private test site idea folded into the collision radar; sixth place reopens', 'Codex draft 4 folds runtime verification into A01 after Bunny\u2019s selection challenge.', 'decision'),
+    '20261004T1440': ('Review caught a test that failed on its own instead of testing the product', 'An initial mutation test was found to fail on its own rather than detecting a genuine fault. The team withdrew the invalid finding and verified a replacement mutation directly against the product routing, while broader supervision and cross-host acceptance remain open.', 'decision'),
+    '20261004T0820': ('Single-actor trial showed no conflict warning benefit over plain Git', 'A single-actor trial comparing the prototype against plain Git produced identical code and passed all 16 tests, but the prototype required extra background services while offering no warning benefit in an uncontested run.', 'decision'),
+    '20261003T0541': ('Dedicated task handoff idea parked after standard recovery succeeded in two tasks', 'The team parked the dedicated agent handoff direction after standard Git checkout and file restoration succeeded in two actual tasks (a review recovery and an interrupted source recovery), showing no separate product advantage.', 'decision'),
+    '20261003T0511': ('Shortlist draft parked shared workspace idea; supervisor repair verified', 'A new shortlist draft parked the shared workspace direction leaving two product places open, while an independent fix to the background agent supervisor passed its 35-test verification suite.', 'decision'),
+    '20261003T0441': ('Storage-aware workspaces idea parked; change context card showed no review difference', 'The storage-aware workspaces direction was parked after failing feasibility criteria against existing package managers, while adding a narrative change card to a pull request produced an identical approval decision.', 'decision'),
+    '20261003T0224': ('Runtime test recorded zero effects; compiler target measured at 39.65 GiB', 'A runtime test failed with zero observed side effects, while a disk scan measured the shared compiler target directory at approximately 39.65 GiB as available root disk fell from 132 to 116 GiB.', 'failed'),
+    '20261002T2024': ('Dependency and build share on host disk corrected from ~80% to 62.1%', 'A scan of 472 linked worktrees showed dependencies and builds accounted for 69.4 GiB of a 111.7 GiB physical union (62.1%), correcting an earlier ~80% calculation that had mixed per-directory sums with union accounting.', 'decision'),
 }
 
 def note_info(path):
     key = path.stem.removeprefix('heartbeat-')
-    if key in NOTE_TEXT:
-        title, summary, kind = NOTE_TEXT[key]
-        return title, summary, kind
-    heads = [tidy(h).strip() for h in re.findall(r'^##\s+(.+)$', path.read_text(), re.MULTILINE)]
-    title = heads[0] if heads else 'Orchestrator check-in'
-    summary = ' \u00b7 '.join(heads[1:]) if len(heads) > 1 else 'Read the full note for the details.'
-    return title, summary, 'routine'
+    if key not in NOTE_TEXT:
+        return None
+    title, summary, kind = NOTE_TEXT[key]
+    # Enforce admission gates: reject generic placeholders, heading-lists, or boilerplate
+    if not title or title == 'Orchestrator check-in' or title.startswith('Remote check'):
+        return None
+    if not summary or 'Read the full note for the details' in summary or ' · ' in summary:
+        return None
+    if kind not in ('decision', 'failed', 'milestone', 'result'):
+        return None
+    return title, summary, kind
 
 def note_time(path):
     return note_stamp(path).strftime('%H:%M UTC')
@@ -479,12 +484,16 @@ def library_page():
 
 def notes_page():
     entries = []
-    for i, rp in enumerate(REPORTS):
-        title, summary, kind = note_info(rp)
+    for rp in REPORTS:
+        info = note_info(rp)
+        if not info:
+            continue
+        title, summary, kind = info
+        i = len(entries)
         entries.append('<li class="tl-item tl-'+kind+('' if i else ' is-first')+'"><span class="tl-rail" aria-hidden="true"><span class="tl-top"></span><span class="tl-dot"></span><span class="tl-line"></span></span>'
-                       '<a class="tl-body" href="'+BASE+'/reports/'+rp.stem+'/"><span class="tl-title">'+E(title)+'</span><span class="tl-when">'+E(note_stamp(rp).strftime('%a %-d %b, %H:%M UTC'))+'</span><span class="tl-summary">'+E(summary)+'</span><span class="tl-path">'+E(str(rp.relative_to(ROOT)))+'</span></a></li>')
-    legend = '<p class="tl-legend"><span class="tl-key"><span class="tl-dot k-failed"></span>Failure</span><span class="tl-key"><span class="tl-dot k-decision"></span>Decision or correction</span><span class="tl-key"><span class="tl-dot k-routine"></span>Routine check</span></p>'
-    return '<div class="narrow">'+intro('Field notes, with receipts', 'Dated remote check-ins, including failures and corrections. Older reports describe what was known then; read later updates before reusing a claim.')+legend+'<ol class="timeline">'+''.join(entries)+'</ol></div>'
+                       '<a class="tl-body" href="'+BASE+'/reports/'+rp.stem+'/"><span class="tl-title">'+E(title)+'</span><span class="tl-when">'+E(note_stamp(rp).strftime('%a %-d %b, %H:%M UTC'))+'</span><span class="tl-summary">'+E(summary)+'</span><span class="tl-path">Read full field note'+ARROW+'</span></a></li>')
+    legend = '<p class="tl-legend"><span class="tl-key"><span class="tl-dot k-milestone"></span>Milestone or result</span><span class="tl-key"><span class="tl-dot k-decision"></span>Decision or correction</span><span class="tl-key"><span class="tl-dot k-failed"></span>Failure</span></p>'
+    return '<div class="narrow">'+intro('Field notes, with receipts', 'Concrete milestones, decisions, and failures from the experiment. Routine 30-minute check-ins are excluded from this feed and preserved in the repository.')+legend+'<ol class="timeline">'+''.join(entries)+'</ol></div>'
 
 def article_head(title, deck, byline_rows):
     return '<header class="article-head"><h1>'+E(title)+'</h1>'+('<p class="article-deck">'+E(deck)+'</p>' if deck else '')+byline_rows+'</header>'
@@ -532,10 +541,16 @@ def daily_page(d):
             '<div class="article-sources">'+'<h2 class="sources-h">Sources for this report</h2>'+sources+'<p class="source-line">Writing assistance: Claude Opus. Original Markdown: <a href="'+public_source(d['path'].relative_to(ROOT))+'">read in the repository'+EXT+'</a>. Illustrations are conceptual artwork.</p></div></article>')
 
 def note_page(rp):
-    title, summary, kind = note_info(rp)
+    info = note_info(rp)
+    if info:
+        title, summary, kind = info
+        deck = title+'. '+summary
+    else:
+        deck = 'Archived check-in from the public research records.'
+        kind = 'routine'
     spans = ['<span class="ink">EVIDENCE UP TO '+note_stamp(rp).strftime('%Y-%m-%d %H:%M')+' UTC</span>', '<span>'+E(readable_cutoff(note_stamp(rp).isoformat()).split(' / ')[1].upper())+'</span>', '<span>HISTORICAL SNAPSHOT, NOT CURRENT PRODUCT VALIDATION</span>']
     person = '<span class="byline-name">Field note</span><span class="muted">'+E(note_stamp(rp).strftime('%A %-d %B %Y, %H:%M UTC'))+'</span><a href="'+public_source(rp.relative_to(ROOT))+'">Original report and version history'+EXT+'</a>'
-    return ('<article class="article field-note">'+article_head(report_title(rp), title+'. '+summary if kind != 'routine' else '', byline_block(person, spans))
+    return ('<article class="article field-note">'+article_head(report_title(rp), deck, byline_block(person, spans))
             +'<div class="prose">'+markdown(re.sub(r'^#\s+[^\n]+\n?', '', rp.read_text(), count=1), rp)+'</div>'
             '<p class="back-link"><a href="'+BASE+'/reports/">'+BACK+'All field notes</a></p></article>')
 
@@ -557,10 +572,11 @@ def home_page():
     stats = ''.join('<div class="pain-stat"><span class="pain-n">'+E(n)+'</span><span class="pain-l">'+E(l)+'</span></div>' for n, l in PAIN_STATS)
     pain = ('<section class="pain" aria-labelledby="pain-title"><div class="pain-copy">'+'<h2 id="pain-title">Most of the worktree pile isn\u2019t Git. It\u2019s dependencies.</h2><p>The pain is real and measured. Whether anyone would adopt a product for it is unknown. Package managers that already keep one shared copy of dependencies for many folders may solve it without a new product.</p><a class="read-more-sm" href="'+BASE+'/projects/storage-aware-workspaces/">Read the storage-aware workspaces idea'+ARROW+'</a></div>'
             '<div class="pain-data"><div class="pain-stats">'+stats+'</div><div class="pain-chart"><div class="pain-bar" role="img" aria-label="62.1% of the disk space is dependencies and build output"><span class="pain-fill"></span></div><div class="pain-caps"><span>Dependencies and build output: 69.4 GiB (62.1%)</span><span class="muted">Source code and everything else: about 42 GiB</span></div><div class="status-line pain-unknown">'+smark('unknown')+'<span>Whether this needs a new product: unknown</span></div></div></div></section>')
-    fields = ''.join('<a class="row-link field-row" href="'+BASE+'/reports/'+rp.stem+'/"><span class="field-time">'+note_time(rp)+'</span><span class="field-title">'+E(note_info(rp)[0])+'</span></a>' for rp in REPORTS[:4])
+    admitted = [rp for rp in REPORTS if note_info(rp) is not None]
+    fields = ''.join('<a class="row-link field-row" href="'+BASE+'/reports/'+rp.stem+'/"><span class="field-time">'+note_time(rp)+'</span><span class="field-title">'+E(note_info(rp)[0])+'</span></a>' for rp in admitted[:4])
     libs = [('Shortlist draft (unsigned)', 'research/shortlist-6.md'), ('Worktree disk on the real host', 'research/claude/u7-real-worktree-measurement.md'), ('Consensus record \u2014 pending', 'research/consensus.md'), ('All 20 approaches', 'research/approaches-20.md')]
     lib_rows = ''.join('<a class="row-link lib-row" href="'+public_source(rel)+'"><span class="lib-title">'+E(t)+'</span><span class="lib-path">'+E(rel)+'</span></a>' for t, rel in libs)
-    bottom = ('<section class="home-bottom"><div class="home-col"><div class="col-head"><h2>Field notes</h2><a class="read-more-sm" href="'+BASE+'/reports/">Archive'+ARROW+'</a></div><p class="col-sub">Checks by the coordinating agent, dated. Times in UTC.</p>'+fields+'</div>'
+    bottom = ('<section class="home-bottom"><div class="home-col"><div class="col-head"><h2>Field notes</h2><a class="read-more-sm" href="'+BASE+'/reports/">Archive'+ARROW+'</a></div><p class="col-sub">Tested findings, decisions, and failures from the experiment. Times in UTC.</p>'+fields+'</div>'
               '<div class="home-col"><div class="col-head"><h2>Research library</h2><a class="read-more-sm" href="'+BASE+'/research/">All sources'+ARROW+'</a></div><p class="col-sub">Everything links to a file in the public repo.</p>'+lib_rows+'</div></section>')
     return hero+hyp+pain+bottom
 

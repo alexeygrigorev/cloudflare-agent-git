@@ -43,6 +43,23 @@ Unresolved visual blockers hold **design changes** in preview. Keep the present 
 
 The coordinator accepts the complete packet and releases through the existing Pages pipeline; root approval is not required. Verify successful deployment and the same source SHA in the page's `<meta name="build-commit">` tag (also kept in an HTML comment in the footer); the hash is never visible text. A lane-owned verifier checks representative actual desktop/mobile rendered pages against the accepted preview, plus changed functionality. Record deployment ID/URL and any mismatch. Roll back only the scoped website release through a new revert commit or redeploy a known accepted artifact; preserve peer commits and ordinary Git recovery. No reset of shared branches or private data publication.
 
+## Field notes timeline admission rules
+
+Per human steering, only publish field notes to the public timeline feed when there is something concrete and meaningful to share. Boring, generic, or routine status entries must be rewritten to highlight specific findings or omitted from the timeline feed altogether.
+
+### Admission criteria
+
+Every admitted timeline card must satisfy all of the following requirements:
+1. **Concrete finding and project consequence**: The entry must document an actual test result, technical failure, architecture decision, or verified product milestone. Routine check-ins, monitoring restarts without product defects, and administrative status updates are excluded from the public feed.
+2. **Plain-language specific title**: The title must state what actually happened or what was decided in plain language understandable to a cold reader. Generic titles (e.g. "Orchestrator check-in", "Remote check — ...") are strictly rejected.
+3. **Actionable summary without boilerplate**: The summary must describe the specific technical finding and its consequence. Boilerplate summaries ("Read the full note for the details"), bullet-separated raw heading lists (` · `), and unexplained internal jargon (e.g. A01, A10, D1 gates, draft numbers, runner session codes) are strictly prohibited.
+4. **Admitted categories**: Every admitted entry must be categorized as `decision`, `failed`, `milestone`, or `result`.
+5. **Human-readable source links**: The visible link text must be descriptive (e.g. "Read full field note →") rather than exposing raw repository file paths, while preserving the direct permalink URL.
+
+### Preservation of durable research
+
+Unadmitted routine check-in reports remain permanently preserved in `research/orchestrator/` in the repository and are navigable via their individual HTML archive URLs. Omission from the public timeline feed preserves high signal for readers without deleting or rewriting durable research records.
+
 ## Regression and continuation
 
 Template/CSS/navigation/diagram changes require the five-page desktop/mobile comparison. Isolated article factual text changes require editorial review plus affected-page rendering and layout invariants; metadata-only fieldnotes require source/cutoff/link checks. Signup changes require independent privacy/function checks and affected visual checks. After every failed gate the coordinator records owner, next action and bounded checkpoint, and delegates repair while reviewers continue independent useful work. Principals inspect the missing-evidence/review queue, not every page themselves.

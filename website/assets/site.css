@@ -200,6 +200,7 @@ a.hyp-card:hover{background:var(--hover);color:var(--ink)}
 .tl-dot{width:14px;height:14px;border-radius:50%;border:3px solid var(--ink);background:var(--paper);flex:none;display:inline-block}
 .tl-failed .tl-dot,.tl-dot.k-failed{background:var(--orange)}
 .tl-decision .tl-dot,.tl-dot.k-decision{background:var(--blue)}
+.tl-milestone .tl-dot,.tl-result .tl-dot,.tl-dot.k-milestone,.tl-dot.k-result{background:var(--ink)}
 .tl-body{display:flex;flex-direction:column;gap:4px;padding:10px 0 22px;color:var(--ink);text-decoration:none;min-width:0}
 .tl-body:hover .tl-title{color:var(--blue)}
 .tl-when{font-size:13px;line-height:1.4;color:var(--muted)}
