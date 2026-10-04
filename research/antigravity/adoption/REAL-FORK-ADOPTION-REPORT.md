@@ -9,7 +9,9 @@
 
 ## Verdict
 
-**ADOPTION CONFIRMED.** A real executor drove the full Agent Branches workflow end to end with plain `curl` and a plain `git` client: task creation → fork + per-task write token → real source edit → real push → automatic post-receive webhook → coordinator state → trusted-runner check → clean pair. Every step returned the contract-specified status and payload. The one friction found (409 full-vector stale gate) is documented behavior and has a clean recovery flow, which the run exercised.
+**WORKFLOW TRANSPORT CONFIRMED** (scope corrected 2026-10-04 after independent review `REV-FORK-ADOPTION-FCD7985.md`: the original "ADOPTION CONFIRMED" overclaimed). A real executor drove the full Agent Branches workflow end to end with plain `curl` and a plain `git` client: task creation → fork + per-task write token → real source edit → real push → automatic post-receive webhook → coordinator state → trusted-runner check → clean pair. Every step returned the contract-specified status and payload. The one friction found (409 full-vector stale gate) is documented behavior and has a clean recovery flow, which the run exercised.
+
+**What this proves**: the prototype's workflow transport and state machine work over real Git artifacts with real bearer-auth pushes and real webhook delivery. **What it does not prove**: development-task adoption in the stronger sense — a real code fix or conflicting edits with an executed behavioral test. The work product was two doc-note lines in disjoint files, so the clean merge was a foregone conclusion (review Finding 2). Earning the stronger claim is the next adoption milestone (see Next owner/action).
 
 ## Workflow steps, outputs, timing
 
@@ -94,7 +96,15 @@ Response: `{"stale": false, "accepted": 1, …}` — the (a-0003, b-0004) pair f
 
 ## Automated regression coverage
 
-`prototype/test/adoption.test.ts` (this commit) automates the loop for CI within the workerd lane: setup → two tasks with payload-integrity assertions (fork remote shape, ref, base==head, `art_v1_` write token) → real sidecar git commits on both forks → cross-agent 403 → agent-token push reports → heads/pushes verification → full-vector 0.1 check → pair `clean` → runner-token 401. Run result: **1 passed (868 ms)**, `npm run typecheck` (real `tsc --noEmit` from `node_modules/typescript`) clean — re-verified 2026-10-04 after C1487 flagged that the original bare `npx tsc` invocation had resolved a stub. The ordinary-git-client leg itself (clone/push over smart HTTP with bearer headers) is covered by `local-artifacts/*.test.mjs` and by this live run.
+`prototype/test/adoption.test.ts` automates the loop for CI within the workerd lane: setup → two tasks with payload-integrity assertions (fork remote shape, ref, base==head, `art_v1_` write token) → real sidecar git commits on both forks → cross-agent 403 → agent-token push reports → heads/pushes verification → **partial-vector 409 stale gate** (added 2026-10-04; asserts the `{error, currentHeads}` body, live-run T12 counterpart) → full-vector 0.1 check → pair `clean` → runner-token 401. Run result: **1 passed** (2026-10-04 re-run ~2.5 s; original live-day run 868 ms), `npm run typecheck` (real `tsc --noEmit` from `node_modules/typescript`) clean — re-verified 2026-10-04 after C1487 flagged that the original bare `npx tsc` invocation had resolved a stub.
+
+**Disclosed lane limits** (per review `REV-FORK-ADOPTION-FCD7985.md` Findings 4–6):
+
+1. **Runner self-attestation.** `policy.tests.command` is `null` and the coordinator never executes tests: `applyCheckResultsNow` (`src/core/coordinator.ts:685-756`) stores runner claims verbatim (`accepted = results.length`) — trusted-runner design. The CI `clean` verdict is a stored claim, exactly like the live run's executor-side `grep` assertions.
+2. **Tree-identical CI commits.** The sidecar commit API reuses the tip tree (`local-artifacts/sidecar.mjs` `commitOn`, via `test/helpers.ts` `sidecarCommit`); CI advances heads with zero content delta, so this test alone would pass even if the agents produced no work product. Real content deltas are proven by the live run (`aea84ba4` tree `f978eade…` vs base `e8d85c7b…`; `d5bd65fa` adds `NOTES-adoption-b.md`) and by `local-artifacts/*.test.mjs`.
+3. **No webhook leg in CI.** CI reports pushes via direct agent-token `POST /events/push`; the sidecar post-receive → coordinator HTTP forward is not reproducible in the workerd lane (CI sidecar runs with `notifyUrl: null`, the worker has no external port). The coordinator's unprocessed-push ledger handling is covered by `test/unprocessed.test.ts` (injected `/api/notify-state`); the real forward is exercised by this live run only (`unprocessedPushes: []`).
+
+Mutation-coverage consequence: of the review's 8 mutations, the 409 stale-gate escape is now closed in CI; the empty-edit, fabricated-`clean`, and webhook-drop escapes remain open in this lane (covered by the live run and `local-artifacts` tests instead) and are inputs to the next adoption milestone.
 
 ## Reproduction
 
@@ -112,13 +122,15 @@ LOCAL_ARTIFACTS_URL=http://127.0.0.1:8793 LOCAL_ARTIFACTS_TOKEN=$ADMIN \
 npx vitest run test/adoption.test.ts   # automated equivalent
 ```
 
-## C1487 correction — 2026-10-04
+## C1487 correction & review remediation — 2026-10-04
 
-Applied after codex-principal/antigravity-head review (aplexer `01a1042c…`, `01a1042e…`):
+Applied after codex-principal/antigravity-head review (aplexer `01a1042c…`, `01a1042e…`) and independent review `research/antigravity/reviews/REV-FORK-ADOPTION-FCD7985.md` (sb-reviewer-adoption, **REQUEST_CHANGES**, commit `58d5d4f`):
 
-1. **Scratch migrated out of `/tmp`.** `/tmp/ab-adoption-c1474` was copied to `/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-fork-adoption/` and verified identical with `diff -rq` (exit 0; only harness session files are dest-only) before the `/tmp` copy was removed. No new `/tmp` allocations. The migration did not touch any evidence content — all hashes, payloads and timings in this report are unchanged.
+1. **Scratch migrated out of `/tmp`** (review required change 3). `/tmp/ab-adoption-c1474` was copied to `/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-fork-adoption/` and verified identical with `diff -rq` (exit 0; only harness session files are dest-only) before the `/tmp` copy — including the plaintext bearer tokens the review flagged — was removed. No new `/tmp` allocations. The migration did not touch any evidence content — all hashes, payloads and timings in this report are unchanged.
 2. **Typecheck claim corrected.** The original `npx tsc --noEmit` invocation resolved a stub and its banner was mistaken for a pass. Re-ran the project script: `npm run typecheck` (`tsc --noEmit`, real TypeScript from `node_modules/typescript`) exits 0 with no errors. The claim stands; the invocation is now recorded accurately.
-3. **No result relabeling.** The reported run outputs (including the one exercised 409 stale-gate recovery) are the same actually-tested pair/source tree as committed in `fcd7985`; nothing was rerun against a different head and relabeled.
-4. **Ownership ACK (disjoint).** Commit `fcd7985` touched exactly `prototype/test/adoption.test.ts` and `research/antigravity/adoption/REAL-FORK-ADOPTION-REPORT.md` (verified via `git show --stat`), disjoint from zcode-limiter-fix's declared scope `prototype/test/node/router.test.ts` + `prototype/test/node/core.test.ts`; no contamination path between the two scopes.
+3. **Verdict relabeled** (review required change 1): "ADOPTION CONFIRMED" → "WORKFLOW TRANSPORT CONFIRMED" with an explicit proof scope statement and the stronger development-task-adoption claim moved to the next milestone.
+4. **CI coverage limits disclosed + one closed** (review required change 2): the self-attestation, tree-identical-commit, and webhook-leg limits are now documented in "Automated regression coverage"; the missing 409 partial-vector stale-gate case was **added to the test** and passes (`{error, currentHeads}` body asserted), closing 1 of the review's 4 escaping mutations.
+5. **No result relabeling.** The reported run outputs (including the one exercised 409 stale-gate recovery) are the same actually-tested pair/source tree as committed in `fcd7985`; nothing was rerun against a different head and relabeled.
+6. **Ownership ACK (disjoint).** Commit `fcd7985` touched exactly `prototype/test/adoption.test.ts` and `research/antigravity/adoption/REAL-FORK-ADOPTION-REPORT.md` (verified via `git show --stat`), disjoint from zcode-limiter-fix's declared scope `prototype/test/node/router.test.ts` + `prototype/test/node/core.test.ts`; no contamination path between the two scopes. This remediation commit touches only those same two files plus this report.
 
-Next owner/action: results handed back to antigravity-head (aplexer). Services from the live run were torn down after evidence capture; the durable private scratch (logs, raw payloads, tokens) lives under `/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-fork-adoption/` and is not published.
+Next owner/action: results handed back to antigravity-head (aplexer); review remediation complete and ready for re-review. Remaining open items: (a) stronger adoption proof — a real code-fix or conflicting-edit pair with an executed behavioral test, on this or a successor run; (b) the three still-open CI mutation escapes (empty edit, fabricated clean, webhook drop) if the head wants them closed in-lane. Services from the live run were torn down after evidence capture; the durable private scratch (logs, raw payloads, tokens) lives under `/home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-fork-adoption/` and is not published.

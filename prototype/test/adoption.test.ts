@@ -12,7 +12,12 @@ import { ADMIN_TOKEN, RUNNER_TOKEN, sidecarCommit } from "./helpers.js";
  * canonical 0.1 check -> pair goes clean. Within the workerd lane the
  * "ordinary git push" leg is the sidecar's real-git commit API plus the
  * agent-token push report; ordinary-git-client behavior itself is proven
- * by local-artifacts/*.test.mjs and by the live report.
+ * by local-artifacts/*.test.mjs and by the live report. Known CI lane
+ * limits (disclosed in the report's coverage section): commits are
+ * tree-identical (sidecar commit API has no content input), the
+ * sidecar->coordinator webhook forward is replaced by direct agent push
+ * reports, and policy.tests.command is runner-self-attested by design —
+ * the coordinator stores claims, it does not execute tests.
  */
 
 interface CreatedTask {
@@ -107,9 +112,41 @@ describe("C1474 real fork adoption loop", () => {
     expect(detailB.status).toBe(200);
     expect(((await detailB.json()) as { pushes: number }).pushes).toBe(1);
 
-    // 6. Trusted runner: re-fetch /status, submit the FULL vector with a
-    // canonical 0.1 result for the pair (the stale gate demands the full
-    // vector — a partial one is 409, as observed in the live run).
+    // 6. Trusted runner: first submit with a PARTIAL top-level vector
+    // (only agent A's head) — the stale gate demands the entire heads
+    // map, so this is 409 with currentHeads for recovery (live run T12);
+    // per-result heads still cover the pair (wire shape requirement) —
+    // then re-fetch and submit the FULL vector, which is accepted.
+    const pairHeads = { [taskA.agentId]: shaA, [taskB.agentId]: shaB };
+    const staleChecks = await post(
+      "/checks",
+      {
+        contract: "0.1",
+        vector: { [taskA.agentId]: shaA },
+        policy: { merge: "git-merge-tree", tests: { command: null, budget_s: 15.0 } },
+        coverage: { pairs_checked: 1, tests_collected: 2 },
+        results: [
+          {
+            pair: [taskA.agentId, taskB.agentId],
+            heads: pairHeads,
+            status: "clean",
+            kind: "test",
+            evidence: { summary: "partial vector must be rejected by the full-map stale gate" },
+          },
+        ],
+      },
+      RUNNER_TOKEN,
+    );
+    expect(staleChecks.status).toBe(409);
+    const staleBody = (await staleChecks.json()) as {
+      error?: string;
+      currentHeads?: Record<string, string>;
+    };
+    expect(staleBody.error).toMatch(/stale vector/);
+    expect(staleBody.currentHeads?.[taskA.agentId]).toBe(shaA);
+    expect(staleBody.currentHeads?.[taskB.agentId]).toBe(shaB);
+
+    const freshStatus = (await (await get("/status")).json()) as { heads: Record<string, string> };
     const runnerChecks = await post(
       "/checks",
       {
