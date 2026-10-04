@@ -3926,4 +3926,39 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
   - `claude-principal`: exact pending envelope `01a10317-8697-7a12-8e6c-8b578939d9b4` (created 2026-10-03T18:47:15Z) strictly preserved without fake ACKs.
   - `codex-principal`: exact reply `01a10728-3482-76d2-b280-dab82c5f6774` acknowledged at 13:44:33 UTC, clearing pending safely via consumer cursor exception.
 
+---
+
+## 35. Independent Review: Agent Quota Launcher Commit 4c2bfec (REV-QL-4c2bfec)
+
+### 1. Review Provenance & Deliverable
+- **Reviewer:** `ql-4c2bfec-reviewer` (CID: `082dae3f-ba47-4fd2-8dc6-74f78e78c3eb`), native harness subagent.
+- **Directives:** Codex Principal C1615 / C1616 / C1620, User Messages 26/32.
+- **Target Workspace:** `/home/alexey/git/agent-quota-launcher` (strictly read-only, zero competitor writes, untracked files preserved).
+- **Target Commit:** `4c2bfec794fe2f3f7ba2b725871888c468800313` on branch `main`.
+- **Deliverable:** [`research/antigravity/reviews/REV-QL-4c2bfec.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-QL-4c2bfec.md).
+- **Verdict:** **ACCEPT WITH BOUNDED AUDIT RECOMMENDATIONS**.
+
+### 2. Core Audit Findings & Verification
+- **Full Test Suite:** 95/95 tests pass in 4.38s under owned `TMPDIR`.
+- **Environment Invariant Discovered:**
+  - Running under default system `/tmp` triggers `launcher/resources.py`'s intentional anti-`/tmp` security guard (`tmp_path.parts[:2] == ('/', 'tmp')`), failing 4 tests in `test_resources.py` with `ValueError: reject /tmp`.
+  - Setting `TMPDIR` to an owned repository path resolves the issue and achieves 100% green (95/95).
+- **First-Action Validator Hardening:**
+  - `_has_time_evidence`: Enforces timezone-awareness (rejects naive timestamps), staleness lower bound (`created_at_ms - 5s`), and future ceiling (`now_ms + 300_000`).
+  - `validate_first_action`: Distinguishes identity matching from tool execution provenance. Rejects laundered wrapper start JSON (byte-identical, reformatted, or augmented solely with timestamp/time/phase fields). Preserves genuine rich native `whoami` records carrying extra session keys (`worker_pid`, `last_activity_ms`, `reported_state`).
+- **Negative Mutation Testing:**
+  - Mutant 1 (naive ISO timestamps accepted): killed by `test_naive_iso_timestamp_rejected`.
+  - Mutant 2 (laundered start record check dropped): killed by `test_start_record_plus_timestamp_rejected` and `test_start_record_plus_ms_fields_rejected`.
+- **System Integration:** R2 report tiling ([as_of-24h, as_of) with partial first hour), offset-aware UTC conversion, and `created_at_invalid` counter verified compliant with `examples/dashboard-projection-schema.md`.
+- **Audit Recommendations:**
+  1. Update `test_naive_iso_timestamp_rejected` fixture timestamp to `12:29:00` for pure timezone orthogonality.
+  2. Clean up harmless cosmetic duplicate header/bullet block in `WORKLOG.md`.
+
+### 3. Safety & Resource Bounds
+- Zero cargo/rustc invocations.
+- Scratch disk 676 KB ($\le 512$ MB). Zero net `/tmp` growth. Memory $\le 45$ MB.
+- Publication guard validated with exit code `0`.
+- Delivery communicated to `quota-launcher-head` for integration acceptance.
+
+
 
