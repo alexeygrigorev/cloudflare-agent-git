@@ -16,7 +16,7 @@
       "head_tag": "agent-dashboard-head",
       "head_session_id": "c7a75f76-1f51-4f14-873e-7a60569838c3",
       "integration_owner": "agent-dashboard-head",
-      "ownership_state": "Genuine interactive head launched; standalone repo /home/alexey/git/agent-dashboard; initial modules and test suite (13/13 PASS) landed; backup/restore test verified"
+      "ownership_state": "Actual head and backend/frontend/reviewer delegates;13scaffoldtests passed; independent backend negatives remain blocking; private GitHub exists, remote restore ownerreported not independent here."
     },
     {
       "id": "quota-launcher",
@@ -35,7 +35,7 @@
       "workspace": "/home/alexey/git/agent-coordination",
       "integration_owner": "agent-coordination-head",
       "principal_owner": "codex-principal",
-      "ownership_state": "Actual genuineinteractivehead launched; semanticACK/firsttool verification pending"
+      "ownership_state": "Actual head matching whoami11:41:38Z/C1341 semanticACK; actual core6168/adaptercd07/reviewerf869 firsttools. Reviewer conditional f3295f9; protocol/adapter fixes and real Windows roundtrip pending."
     }
   ],
   "human_sources": [
@@ -840,11 +840,15 @@
       "evidence_status": "Actualheadlaunched, implementation/revieweracceptedresults pending"
     },
     {
-      "path": "experiment/human-cloudflare-budget-20261004.txt",
-      "meaning": "USD5 TOTAL monthly all-cloud budget including existing plan; local/SSH default; cost report Oct5; no new paid/cloud agent deployment",
       "task_ids": [
         "cloud-total-budget-monitor"
-      ]
+      ],
+      "id": "human-cloud-total-budget-20261004",
+      "source": "experiment/human-cloudflare-budget-20261004.txt",
+      "disposition": "ongoing",
+      "owner_tag": "codex-principal",
+      "requirement_summary": "USD5 TOTAL monthly all-cloud budget including existing plan; local/SSH default; cost report Oct5; no new paid/cloud agent deployment",
+      "next_action": "Four-head/publication semantic ACK and combined cost unknowns in Oct5 report; wire optional-cloud failclosed check."
     }
   ],
   "legacy_task_ids": [
