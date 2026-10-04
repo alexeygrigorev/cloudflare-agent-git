@@ -3584,6 +3584,28 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
 
 ---
 
+## 113. Verified Canonical Repository Backup & Restore (Task ab-safe-main-restore)
+
+- **Date:** 2026-10-04T13:17:30+02:00
+- **Directives:** Direct Human Delivery Reset (`experiment/human-delivery-reset-20261004.txt`), `coordination/OPERATING-MODEL.md`, and Desktop Orchestrator notes.
+- **Task ID:** `ab-safe-main-restore` (Project: `agent-branches`). Status: `done`.
+- **Deliverable Landed:** [`research/antigravity/recovery/RECEIPT-SAFE-MAIN-RESTORE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-SAFE-MAIN-RESTORE.md) (clean publication guard, exit 0).
+- **Verification Evidence:**
+  1. *Source Checkpoint:* Canonical `origin/main` commit `b0251daa46ecdbf2430730127496d2bcc949307d`, tree SHA `57ea66d7df06b9270792e4f5bf16436823a63b32`.
+  2. *Disposable Clone Verification:* Cloned into `.local/scratch/safe-main-restore/checkout`; confirmed exact match of HEAD commit and tree SHA.
+  3. *Privacy & Credential Audit:* Scanned 661 tracked files. Confirmed exactly 0 `.env`, 0 `id_rsa`, 0 `transcript.jsonl`, and 0 `usage-events.jsonl`.
+  4. *Test Suite Execution:* Full unit test suite (68 tests across conversation scope, telemetry dedup, and metrics collection) ran and passed 100% in 2.585s in the disposable clone.
+  5. *Delivery Backlog Validation:* `python3 scripts/delivery/validate_backlog.py` validated with 0 errors.
+- **Coordination Registers Synchronized:**
+  - [`coordination/TASKS.json`](file:///home/alexey/git/cloudflare-agent-git/coordination/TASKS.json): Task `ab-safe-main-restore` marked `done` with formal acceptance receipt.
+- **Invariants Maintained:**
+  - Strictly **0** cargo/rustc compiler invocations under human hold.
+  - Strictly **0** tokens emitted to `usage-events.jsonl` (counter emission held).
+  - Scratch memory and disk budgets respected (scratch cleaned, 63 GB free on root).
+  - Clean publication guard (PASS / exit 0).
+
+---
+
 ## 112. Three-Project Delivery Contract Formal ACK, Agent Dashboard Launch, and Intake Reconciliation
 
 - **Date:** 2026-10-04T13:15:00+02:00

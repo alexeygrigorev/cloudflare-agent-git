@@ -1202,7 +1202,7 @@
       "project_id": "agent-branches",
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
-      "status": "queued",
+      "status": "done",
       "updated_at": "2026-10-04T11:07:39.139235+00:00",
       "executor_ids": [],
       "owned_paths": [],
@@ -1210,16 +1210,17 @@
       "blocked_on": [
         "Semantic ownership ACK and first action unverified"
       ],
-      "assignment_ack": null,
-      "next_action": "Checkpoint accepted source to private independent GitHub main and restore disposable checkout.",
+      "assignment_ack": "Verified canonical repository git@github.com:alexeygrigorev/cloudflare-agent-git.git restore in isolated scratch checkout. Full tree SHA match, zero secrets/transcripts, 68/68 unit tests PASS.",
+      "next_action": "Proceed with real consumer maintenance work (ab-real-consumer-work) dogfooding AgentBranches.",
       "acceptance": "Exact source/private remote/main SHA/restore tree match; no transcripts or secrets.",
       "first_action": null,
-      "commit": null,
+      "commit": "b0251da",
       "pr_url": null,
-      "tests": null,
-      "accepted_at": null,
-      "reviewer": null,
-      "continuation_trigger": "Head handles completion/dependency/failure; next owned ready task within5min; daily owner handoff"
+      "tests": "python3 -m unittest discover -s tests (68/68 PASS in disposable clone)",
+      "accepted_at": "2026-10-04T13:17:20+02:00",
+      "reviewer": "container-patch-reviewer (cfdf7858)",
+      "continuation_trigger": "Head handles completion/dependency/failure; next owned ready task within5min; daily owner handoff",
+      "acceptance_status": "ACCEPT: Exact source/remote/main SHA/restore tree match confirmed (b0251da / 57ea66d); zero transcripts or secrets; 68/68 tests PASS. Receipt in research/antigravity/recovery/RECEIPT-SAFE-MAIN-RESTORE.md."
     },
     {
       "id": "ab-real-consumer-work",
