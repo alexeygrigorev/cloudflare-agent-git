@@ -1669,6 +1669,118 @@ class TestAgentBranchesClient(unittest.TestCase):
             auth_srv.shutdown()
             auth_srv.server_close()
 
+    def test_19_push_mutating_bearer_auth(self):
+        """C1518: public push() forwards mutating bearer auth (C1517 finding).
+
+        Against a token-configured mock mirroring the real coordinator's
+        requireMutatingAuth on POST /events/push: the cached per-task token
+        rides as exactly 'Bearer <plaintext>' on the wire (header captured by
+        the mock), explicit token= and admin_token= authenticate a cache-less
+        client, and with no token available anywhere (no args, no cache, no
+        $ADMIN_TOKEN) the bare POST is rejected 401. A valid foreign agent
+        token is 403.
+        """
+        saved_admin = os.environ.get("ADMIN_TOKEN")
+        os.environ.pop("ADMIN_TOKEN", None)
+        srv, _t, url, state = start_mock_l1_server(
+            host="127.0.0.1",
+            port=0,
+            expected_admin_token="adm-push-token",
+            expected_runner_token="run-push-token",
+        )
+        try:
+            owner = AgentBranchesClient(server_url=url)
+            task = owner.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="Push auth",
+                branch="feat/push-auth",
+                agent="push-alpha",
+                admin_token="adm-push-token",
+            )
+            task_id = task["taskId"]
+            plaintext = task["token"]["plaintext"]
+            agent = task["agentId"]
+
+            # 1. Cached-token path: public push() with no explicit token sends
+            #    exactly 'Bearer <plaintext>' and is accepted.
+            res = owner.push(task_id=task_id, head_sha="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+            self.assertTrue(res["accepted"])
+            self.assertEqual(state.last_authorization, f"Bearer {plaintext}")
+
+            # 2. Explicit token= on a cache-less client authenticates.
+            bare = AgentBranchesClient(server_url=url)
+            res = bare.push(
+                task_id=task_id,
+                agent_id=agent,
+                head_sha="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                token=plaintext,
+            )
+            self.assertTrue(res["accepted"])
+            self.assertEqual(state.last_authorization, f"Bearer {plaintext}")
+
+            # 3. admin_token= parameter authenticates (admin is a push
+            #    credential per decideMutatingAuth).
+            res = bare.push(
+                task_id=task_id,
+                agent_id=agent,
+                head_sha="cccccccccccccccccccccccccccccccccccccccc",
+                admin_token="adm-push-token",
+            )
+            self.assertTrue(res["accepted"])
+            self.assertEqual(state.last_authorization, "Bearer adm-push-token")
+
+            # 4. $ADMIN_TOKEN env fallback authenticates a cache-less client.
+            os.environ["ADMIN_TOKEN"] = "adm-push-token"
+            try:
+                res = bare.push(
+                    task_id=task_id,
+                    agent_id=agent,
+                    head_sha="dddddddddddddddddddddddddddddddddddddddd",
+                )
+                self.assertTrue(res["accepted"])
+                self.assertEqual(state.last_authorization, "Bearer adm-push-token")
+            finally:
+                os.environ.pop("ADMIN_TOKEN", None)
+
+            # 5. NEGATIVE: no token available anywhere -> the POST goes out
+            #    headerless and the coordinator rejects it with 401
+            #    requireMutatingAuth (the C1517 regression, now asserted).
+            with self.assertRaises(AgentBranchesAPIError) as ctx:
+                bare.push(
+                    task_id=task_id,
+                    agent_id=agent,
+                    head_sha="eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                )
+            self.assertEqual(ctx.exception.status_code, 401)
+            self.assertIsNone(state.last_authorization)
+
+            # 6. A valid token for a DIFFERENT agent is 403 (cross-agent
+            #    push rejected), matching decideMutatingAuth narrowing.
+            foreign = owner.create_task(
+                repo="https://github.com/cf/repo.git",
+                base_sha="0000000000000000000000000000000000000000",
+                intent="Foreign pusher",
+                branch="feat/push-foreign",
+                agent="push-beta",
+                admin_token="adm-push-token",
+            )
+            with self.assertRaises(AgentBranchesAPIError) as ctx:
+                bare.push(
+                    task_id=task_id,
+                    agent_id=agent,
+                    head_sha="ffffffffffffffffffffffffffffffffffffffff",
+                    token=foreign["token"]["plaintext"],
+                )
+            self.assertEqual(ctx.exception.status_code, 403)
+        finally:
+            if saved_admin is None:
+                os.environ.pop("ADMIN_TOKEN", None)
+            else:
+                os.environ["ADMIN_TOKEN"] = saved_admin
+            srv.shutdown()
+            srv.server_close()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -263,6 +263,8 @@ class AgentBranchesClient:
         intent: Optional[str] = None,
         test_provenance: Optional[str] = None,
         agent_id: Optional[str] = None,
+        token: Optional[str] = None,
+        admin_token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Register a WIP commit push (POST /events/push).
 
@@ -270,6 +272,13 @@ class AgentBranchesClient:
         If agent_id is not passed, resolves it via task_id mapping or an
         authenticated get_task(task_id) lookup (C1499: the per-task token
         cached by create_task authenticates the read as the owning agent).
+
+        C1518: POST /events/push is a privileged mutation (muse-r46 AUTH):
+        the real coordinator answers 401 unless the bearer is the pushing
+        agent's own task token or ADMIN_TOKEN. The token is resolved as:
+        explicit ``token`` -> the per-task token cached by ``create_task``
+        -> explicit ``admin_token`` -> $ADMIN_TOKEN. With none available
+        the request goes out unauthenticated and fails closed with 401.
         """
         # Resolve agent_id if not explicitly provided
         effective_agent_id = agent_id
@@ -326,7 +335,19 @@ class AgentBranchesClient:
         if test_provenance:
             payload["test_provenance"] = test_provenance
 
-        return self._request("POST", "/events/push", payload)
+        # C1518: attach the mutating bearer (pushing agent's task token or
+        # admin); a bare POST would be rejected by requireMutatingAuth.
+        effective_token = (
+            token
+            or (self.task_tokens.get(task_id) if task_id else None)
+            or admin_token
+            or os.environ.get("ADMIN_TOKEN")
+        )
+        req_headers: Dict[str, str] = {}
+        if effective_token:
+            req_headers["Authorization"] = f"Bearer {effective_token}"
+
+        return self._request("POST", "/events/push", payload, headers=req_headers)
 
     def get_status(self, runner_token: Optional[str] = None) -> Dict[str, Any]:
         """Fetch current global coordinator and radar status (GET /status).

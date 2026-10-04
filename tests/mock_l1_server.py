@@ -10,6 +10,11 @@ Implements the exact HTTP routes:
 
 Bearer-token simulation:
 - expected_admin_token guards POST /tasks; expected_runner_token guards POST /checks.
+- When expected_admin_token is configured, POST /events/push enforces the
+  proto mutating ladder (C1518, muse-r46 AUTH, decideMutatingAuth narrowed
+  to the pushing agent): admin or the pushing agent's own task token ->
+  200, valid token of a DIFFERENT agent -> 403, anonymous/malformed/
+  runner/revoked/unknown -> 401. No sidecar bearer is simulated.
 - When expected_admin_token is configured, GET /tasks/<id> enforces the
   proto/auth-reads owner-or-admin read ladder (C1462/C1499, matching
   prototype/src/core/auth.ts decideReadAuth narrowed to the task owner):
@@ -61,8 +66,9 @@ class MockCoordinatorState:
         # plaintext string. The stored record always keeps the plaintext
         # string so bearer checks compare strings.
         self.token_wire_object = token_wire_object
-        # Authorization header as last presented on GET /tasks/<id> (test
-        # observability: lets tests assert the exact bearer header sent).
+        # Authorization header as last presented on an authed route
+        # (test observability: lets tests assert the exact bearer header
+        # sent, on GET /tasks/<id> and POST /events/push alike).
         self.last_authorization: Optional[str] = None
         self.seq = 0
         self.tasks: Dict[str, Dict[str, Any]] = {}
@@ -177,6 +183,74 @@ class MockCoordinatorState:
                     "error": (
                         f"forbidden: this token belongs to {owner.get('agent_id')}, "
                         f"not {target.get('agent_id')}"
+                    )
+                },
+            )
+
+    def fork_owner(self, fork: Optional[str]) -> Optional[str]:
+        """Resolve the owning agent of a fork name or URL (proto
+        coordinator.forkOwner); None when the fork is unknown."""
+        if not fork:
+            return None
+        with self.lock:
+            for rec in self.tasks.values():
+                if rec.get("forkUrl") == fork or (rec.get("fork") or {}).get("name") == fork:
+                    return rec.get("agent_id")
+        return None
+
+    def check_mutating_auth(
+        self, auth_header: str, required_agent: Optional[str]
+    ) -> Optional[Tuple[int, Dict[str, Any]]]:
+        """Auth ladder for POST /events/push (C1518), mirroring proto
+        decideMutatingAuth with agent narrowing: ADMIN_TOKEN or the pushing
+        agent's own task token is accepted; a valid token for a DIFFERENT
+        agent is 403; anonymous/malformed headers, runner, revoked and
+        unknown tokens get 401. The sidecar webhook bearer is not simulated
+        by this mock.
+
+        Returns (http_status, error_payload) when the request must be
+        rejected, else None.
+        """
+        with self.lock:
+            match = re.match(r"^Bearer\s+(\S+)$", (auth_header or "").strip())
+            presented = match.group(1) if match else None
+            if presented is None:
+                return (
+                    401,
+                    {"error": "unauthorized: bearer token required"},
+                )
+            if self.expected_admin_token and presented == self.expected_admin_token:
+                return None
+            missing_credential = (
+                401,
+                {
+                    "error": (
+                        "unauthorized: ADMIN_TOKEN, the agent's task token "
+                        "or the sidecar bearer required"
+                    )
+                },
+            )
+            if self.expected_runner_token and presented == self.expected_runner_token:
+                # RUNNER_TOKEN is a /checks credential, not a push credential.
+                return missing_credential
+            if presented in self.revoked_tokens:
+                # proto: credentialAgent denies revoked tokens -> falls to 401.
+                return missing_credential
+            owner = None
+            for rec in self.tasks.values():
+                if rec.get("token") == presented:
+                    owner = rec
+                    break
+            if owner is None:
+                return missing_credential
+            if required_agent is None or owner.get("agent_id") == required_agent:
+                return None
+            return (
+                403,
+                {
+                    "error": (
+                        f"forbidden: this token belongs to {owner.get('agent_id')}, "
+                        f"not {required_agent}"
                     )
                 },
             )
@@ -589,6 +663,23 @@ class MockL1Handler(http.server.BaseHTTPRequestHandler):
             except ValueError as exc:
                 self._send_json(400, {"error": str(exc)})
                 return
+            self.state.last_authorization = self.headers.get("Authorization")
+            # C1518: pushes are privileged (muse-r46 AUTH / proto
+            # decideMutatingAuth) when the mock runs with a configured admin
+            # token — admin or the pushing agent's own task token; the
+            # unconfigured default stays open for legacy fixtures. Like the
+            # proto router, the required agent resolves from the body (agent
+            # or fork owner) before auth.
+            if self.state.expected_admin_token is not None:
+                required_agent = body.get("agentId") or body.get("agent")
+                if not required_agent:
+                    required_agent = self.state.fork_owner(body.get("fork"))
+                err = self.state.check_mutating_auth(
+                    self.headers.get("Authorization", ""), required_agent
+                )
+                if err:
+                    self._send_json(err[0], err[1])
+                    return
             try:
                 res = self.state.record_push(body)
                 self._send_json(200, res)
