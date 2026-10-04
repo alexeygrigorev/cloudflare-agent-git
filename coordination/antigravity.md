@@ -1298,3 +1298,49 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Claude principal remains **stopped**.
   - Zero Cargo/Rust compiles (`noRustbuild`).
   - TMPDIR confined to `.local/scratch/` (zero `/tmp` allocations). MemoryMax=1500M per executor.
+
+---
+
+## 50. Multi-Lane Autonomous Execution, Independent Reviews & Research Gates (C1494-C1508)
+
+- **Date:** 2026-10-04T02:18:00+02:00
+- **Steering & Directives:** Codex Principal C1494-C1508; User Messages 20, 21, 26, 31, 32.
+- **Quota & Host Resources:**
+  - `zai`: 71% 7d / 100% 5h (5 banked resets, limit reached: false).
+  - `go`: 64% 7d / 100% 5h.
+  - `gemini`: 86.69% 7d / 69.68% 5h.
+  - `codex`: 70% 7d (2 banked resets).
+  - Host RAM: 31 GB available (>10 GB floor). Root disk: 64 GB free (>50 GB floor).
+- **Accepted Independent Reviews & Landed Commits:**
+  1. **SDK Client Authenticated Detail Reads (`b267dce` on `proto/sdk-get-task-auth`):**
+     - Independent Reviewer: `sdk-wire-reviewer` (subagent `9b9ab76a`).
+     - Report: [`research/antigravity/reviews/REV-SDK-CLIENT-B267DCE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SDK-CLIENT-B267DCE.md) (commit `a8f4378`).
+     - Verdict: **ACCEPT**.
+     - Verification: 17/17 tests PASS in 5.81s. `self.task_tokens` cache in `create_task()` provides seamless bearer auth forwarding. Mock L1 server enforces read auth ladder adhering to prototype `decideReadAuth`: owner/admin -> 200, narrowed runner read -> 401, foreign agent -> 403. Both targeted mutants M1 and M2 killed.
+  2. **Webhook HMAC Sender Authentication & Nonce Replay Gate (`98ce83d` on `proto/webhook-auth`):**
+     - Independent Reviewer: `webhook-auth-reviewer` (subagent `3d59755c`).
+     - Report: [`research/antigravity/reviews/REV-WEBHOOK-AUTH-98CE83D.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-WEBHOOK-AUTH-98CE83D.md) (commit `858503c`).
+     - Verdict: **ACCEPT**.
+     - Verification: HMAC signature cryptographically binds nonce: `${timestamp}.${nonce}.${rawBody}`. Missing nonce rejected with 401 prior to WebCrypto HMAC calculation. Replay of used nonce returns HTTP 409 Conflict. Nonce substitution attack verified failing HMAC with 401 Unauthorized. 155/155 tests green (48 Node, 16 sidecar, 91 Vitest).
+  3. **Fork Adoption Live Run Remediation (`0be6c3e` & `0468fb7` on `proto/ab-adoption`):**
+     - Addressed Space Bunny `sb-reviewer-adoption` review (`REV-FORK-ADOPTION-FCD7985.md`).
+     - Scratch cleanly migrated to `.local/scratch/zcode-fork-adoption/` (0700).
+     - Verdict rescoped to **WORKFLOW TRANSPORT CONFIRMED** with full disclosure of CI runner self-attestation limits and partial-vector 409 stale-gate test case added.
+- **Active Research Gates Dispatched (C1507/C1508):**
+  1. **`zcode-a14-gate` (`31436338`, zcodex, `glm-5.3-flash max`):**
+     - Task: Independent read-only verification of A14 fold-or-reopen gate (`TASKS` row `label-binding-residual-repair`).
+     - Workspace: `/home/alexey/git/agent-branches-adopt`, declared review on `research/zcode/a14-gate-review/**`.
+     - Inspecting Space Bunny A14 evidence (`research/space-bunny/repro/`), commit `4937506`, exit codes, return code 2 / missing cases, and `REPLAY_GUARDS_OFF=1` behavior.
+     - Deliverable: `research/zcode/a14-gate-review/A14-FOLD-OR-REOPEN-REPORT.md`.
+  2. **`zcode-shortlist-gate` (`5df4e39f`, zcodex, `glm-5.3-flash max`):**
+     - Task: Independent evidence checker for same-version shortlist gates across the 20 candidate product approaches.
+     - Workspace: `/home/alexey/git/agent-branches-adopt`, declared review on `research/zcode/shortlist-gate/**`.
+     - Inspecting 6 required gates: non-overlap, practitioner pain URLs, concurrent-agent demo, permissive source, local run instructions, 5-10 min video plan. Strictly citing `UNKNOWN` for unverified criteria without inventing Claude consensus.
+     - Deliverable: `research/zcode/shortlist-gate/SHORTLIST-GATE-REPORT.md`.
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy remains **HELD**.
+  - Claude principal remains **stopped**.
+  - Root disk >50 GB (current: 64 GB); available RAM >10 GB (current: 31 GB).
+  - Zero unmanaged `/tmp` growth; all scratch in `.local/scratch/`.
+  - Memory capped at 1500M per worker.
+

@@ -964,6 +964,106 @@
           ],
           "first_tool_evidence": "a work join / a message inbox",
           "memory_cap": "1500M"
+        },
+        {
+          "tag": "zcode-sdk-adopt",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "3104eb21-6fc5-420f-85fb-0148fd58878f",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-sdk-adoption",
+          "branch": "proto/sdk-get-task-auth",
+          "status": "completed",
+          "started_at": "2026-10-04T02:00:00+02:00",
+          "task": "C1499: Implement authenticated GET /tasks/:id and per-task token caching in Python SDK client",
+          "owned_paths": [
+            "agent_branches/client.py",
+            "tests/mock_l1_server.py",
+            "tests/test_client.py"
+          ],
+          "first_tool_evidence": "aplexer work join / tests pass",
+          "memory_cap": "1500M",
+          "completed_commit": "b267dce",
+          "review_report": "research/antigravity/reviews/REV-SDK-CLIENT-B267DCE.md (ACCEPT, commit a8f4378)"
+        },
+        {
+          "tag": "sdk-wire-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "9b9ab76a-7051-4239-ac04-8b3fcf58e475",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/agent-branches-l2-client",
+          "status": "completed",
+          "task": "Independent review of SDK client authenticated task reads commit b267dce",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-SDK-CLIENT-B267DCE.md"
+          ],
+          "memory_cap": "1500M",
+          "verdict": "ACCEPT",
+          "completed_commit": "a8f4378"
+        },
+        {
+          "tag": "webhook-auth-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "3d59755c-ec42-445c-8f96-adf5b52d11a4",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/agent-branches-webhook",
+          "status": "completed",
+          "task": "Independent review of webhook auth remediation commit 98ce83d (HMAC nonce binding, 409 replay gate)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-WEBHOOK-AUTH-98CE83D.md"
+          ],
+          "memory_cap": "1500M",
+          "verdict": "ACCEPT",
+          "completed_commit": "858503c"
+        },
+        {
+          "tag": "zcode-a14-gate",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "31436338-ef83-4187-9593-a50cb7d46d45",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-adopt",
+          "branch": "proto/ab-adoption",
+          "status": "running",
+          "started_at": "2026-10-04T02:16:00+02:00",
+          "task": "C1507: Independent A14 fold-or-reopen gate review (Space Bunny A14 evidence & source)",
+          "owned_paths": [
+            "research/zcode/a14-gate-review/**"
+          ],
+          "first_tool_evidence": "aplexer work join / inspecting TASKS.json and repro",
+          "memory_cap": "1500M"
+        },
+        {
+          "tag": "zcode-shortlist-gate",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "5df4e39f-f173-4fe1-890e-2e43e903b159",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-adopt",
+          "branch": "proto/ab-adoption",
+          "status": "running",
+          "started_at": "2026-10-04T02:19:00+02:00",
+          "task": "C1507/C1508: Independent shortlist gate evidence review (20 approaches, 6 shortlist gates, UNKNOWN citation)",
+          "owned_paths": [
+            "research/zcode/shortlist-gate/**"
+          ],
+          "first_tool_evidence": "aplexer work join / prompt sent",
+          "memory_cap": "1500M"
         }
       ]
     },
