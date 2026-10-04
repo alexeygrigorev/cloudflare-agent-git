@@ -376,6 +376,41 @@
           ],
           "usage": "UNKNOWN",
           "launched_by": "antigravity-head",
+          "status": "completed"
+        },
+        {
+          "tag": "sdk-wire-c1515-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "a9ddb26c-25bd-467d-93a9-4c3a03b67f64",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/agent-branches-sdk-adoption",
+          "branch": "proto/sdk-get-task-auth",
+          "task": "Independent negative review of commit 4144588 (CreateTaskResult top-level ref wire shape and client fallback)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-SDK-CLIENT-4144588.md"
+          ],
+          "completed_commit": "f20ea45",
+          "completed_at": "2026-10-04T02:51:00Z",
+          "result": "ACCEPT",
+          "status": "completed"
+        },
+        {
+          "tag": "real-artifact-firstuse-runner",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "7ced496b-5b67-4b04-b6b2-5b64fee8d1a4",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/real-artifact-firstuse/",
+          "task": "C1517 real Artifact-backed first-use dogfood run connecting smart HTTP sidecar, coordinator, and Python SDK",
+          "owned_paths": [
+            "research/antigravity/dogfood/REAL-ARTIFACT-FIRSTUSE-REPORT.md"
+          ],
           "status": "running"
         },
         {
