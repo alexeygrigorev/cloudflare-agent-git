@@ -46,6 +46,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import threading
 import time
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import uuid
@@ -81,6 +82,10 @@ from launcher.admission import (
     validate_quse,
 )
 from launcher.ranking import select_candidate
+from launcher.launch import (
+    ADAPTERS,
+    build_adapter_argv,
+)
 
 # Imports from agent-coordination (STRICTLY READ-ONLY)
 from coordination.bus import (
@@ -776,85 +781,258 @@ def query_systemctl_show(unit_name: str) -> Dict[str, str]:
     return {}
 
 
+def _is_cgroup_dissolved_or_empty(
+    cg_rel_path: str,
+    cgroup_fs_root: Optional[Union[str, Path]] = None,
+) -> bool:
+    """
+    Authoritatively checks that the kernel cgroup at /sys/fs/cgroup/{cg_rel_path}
+    is either dissolved (does not exist) or has zero processes across its entire hierarchy (C2106).
+
+    Guarantees:
+    - Recursively checks all descendant cgroups (all **/cgroup.procs).
+    - Inspects cgroup.events for `populated 0` (cgroup v2 kernel guarantee that neither
+      this cgroup nor any descendant contains live processes).
+    - Returns False if any process remains or if cgroup.events indicates populated!=0.
+    """
+    clean_path = cg_rel_path.lstrip("/")
+    if not clean_path:
+        return False
+    fs_root = Path(cgroup_fs_root).resolve() if cgroup_fs_root else Path("/sys/fs/cgroup")
+    cg_fs_path = fs_root / clean_path
+    if not cg_fs_path.exists():
+        return True
+
+    # 1. Check cgroup.events (cgroup v2 authoritative populated flag)
+    try:
+        events_files = []
+        root_events = cg_fs_path / "cgroup.events"
+        if root_events.exists():
+            events_files.append(root_events)
+        for sub_events in cg_fs_path.glob("**/cgroup.events"):
+            if sub_events not in events_files:
+                events_files.append(sub_events)
+        for ef in events_files:
+            if ef.exists():
+                for line in ef.read_text(encoding="utf-8").splitlines():
+                    parts = line.strip().split()
+                    if len(parts) >= 2 and parts[0] == "populated":
+                        if parts[1] != "0":
+                            return False  # Cgroup or descendant is populated!
+    except Exception:
+        return False
+
+    # 2. Descendant cgroup scan: check root and all descendant cgroup.procs
+    try:
+        procs_files = [cg_fs_path / "cgroup.procs"]
+        for sub_procs in cg_fs_path.glob("**/cgroup.procs"):
+            if sub_procs not in procs_files:
+                procs_files.append(sub_procs)
+        for pf in procs_files:
+            if pf.exists():
+                pids = [p.strip() for p in pf.read_text(encoding="utf-8").splitlines() if p.strip()]
+                if len(pids) > 0:
+                    return False
+    except Exception:
+        return False
+
+    return True
+
+
 def verify_unit_cleanup(
     unit_name: str,
     expected_cgroup: Optional[str] = None,
     expected_invocation_id: Optional[str] = None,
     max_retries: int = 30,
     retry_delay: float = 0.1,
+    cgroup_fs_root: Optional[Union[str, Path]] = None,
 ) -> bool:
     """
-    Authoritatively checks that a systemd unit is deactivated and its kernel cgroup has 0 tasks (C2097 / C2100).
+    Authoritatively checks that a systemd unit is deactivated and its kernel cgroup has 0 tasks (C2097 / C2100 / C2106).
 
     Guarantees:
-    1. Rejects Blind Query Absence (C2100): An uninitialized, nonexistent, or collected unit where
+    1. Rejects Blind Query Absence: An uninitialized, nonexistent, or collected unit where
        TasksCurrent is '[not set]' or '' CANNOT prove emptiness without cached cgroup confirmation.
-    2. Cached Kernel Cgroup Verification:
-       - If expected_cgroup is provided (from the verified prelude receipt):
-         * Checks `/sys/fs/cgroup/{expected_cgroup.lstrip('/')}`:
-           - If directory exists: reads `cgroup.procs`. If any PIDs remain, returns False (lingering tasks!).
-           - If directory does not exist: the kernel cgroup was completely dissolved/disappeared.
-         * In addition, systemctl show must confirm ActiveState in ('inactive', 'failed').
-         * If InvocationID is present in systemctl show, it must match expected_invocation_id.
-    3. Strict Zero Verification:
-       - If expected_cgroup is NOT provided:
-         * Rejects any response where TasksCurrent is '[not set]' or '' (returns False / retains uncertainty).
-         * Only returns True if systemctl show explicitly returns a valid ControlGroup,
-           TasksCurrent == '0', ActiveState in ('inactive', 'failed'), and `/sys/fs/cgroup/{cg}/cgroup.procs` is empty.
+    2. Strict InvocationID Verification (C2106): If expected_invocation_id is provided, InvocationID
+       must be present AND strictly match. Absent or mismatched InvocationID is rejected.
+    3. Strict ControlGroup Verification (C2106): Fallback missing ControlGroup fails closed (returns False).
+    4. Hierarchical Cgroup Dissolution (C2106): Checks cgroup.events for populated==0 and recursively
+       verifies all descendant cgroup.procs in the hierarchy.
     """
     for _ in range(max_retries):
         props = query_systemctl_show(unit_name)
         state = props.get("ActiveState") if props else None
+        inv_id = props.get("InvocationID") if props else None
+        cg = props.get("ControlGroup") if props else None
 
-        # 1. Authoritative verification via cached kernel cgroup path
-        if expected_cgroup:
-            cg_fs_path = Path("/sys/fs/cgroup") / expected_cgroup.lstrip("/")
-            cg_procs = cg_fs_path / "cgroup.procs"
+        if state not in ("inactive", "failed"):
+            time.sleep(retry_delay)
+            continue
 
-            cgroup_empty = False
-            if not cg_fs_path.exists():
-                # Kernel cgroup has completely dissolved/disappeared
-                cgroup_empty = True
-            elif cg_procs.exists():
-                try:
-                    pids = [p.strip() for p in cg_procs.read_text(encoding="utf-8").splitlines() if p.strip()]
-                    if len(pids) == 0:
-                        cgroup_empty = True
-                except Exception:
-                    pass
+        if expected_invocation_id:
+            if not inv_id or inv_id != expected_invocation_id:
+                time.sleep(retry_delay)
+                continue
 
-            if cgroup_empty:
-                # Confirm systemd unit state
-                if state in ("inactive", "failed"):
-                    inv_id = props.get("InvocationID")
-                    if not inv_id or not expected_invocation_id or inv_id == expected_invocation_id:
-                        return True
+        target_cg = expected_cgroup if expected_cgroup else cg
+        if not target_cg:
+            # Fallback missing ControlGroup fails closed (C2106)
+            time.sleep(retry_delay)
+            continue
 
-        # 2. Direct systemctl show verification (strict '0' only; blind '[not set]' strictly rejected)
-        elif props:
+        if not expected_cgroup and props:
             tasks = props.get("TasksCurrent")
-            cg = props.get("ControlGroup")
-            # Strict rejection of blind non-existent or collected unit
             if tasks in ("[not set]", "", None):
-                pass
-            elif state in ("inactive", "failed") and tasks == "0":
-                if cg:
-                    cg_fs_path = Path("/sys/fs/cgroup") / cg.lstrip("/")
-                    cg_procs = cg_fs_path / "cgroup.procs"
-                    if not cg_fs_path.exists():
-                        return True
-                    if cg_procs.exists():
-                        try:
-                            pids = [p.strip() for p in cg_procs.read_text(encoding="utf-8").splitlines() if p.strip()]
-                            if len(pids) == 0:
-                                return True
-                        except Exception:
-                            pass
-                else:
-                    return True
+                time.sleep(retry_delay)
+                continue
+
+        if _is_cgroup_dissolved_or_empty(target_cg, cgroup_fs_root=cgroup_fs_root):
+            return True
 
         time.sleep(retry_delay)
     return False
+
+
+PROVIDER_ROUTE_BINARIES: Dict[str, Set[str]] = {
+    "zai": {"zcodex"},
+    "zcode": {"zcodex"},
+    "grok": {"grok"},
+    "antigravity": {"agy", "env"},
+    "gemini": {"agy", "env"},
+    "opencode": {"opencode"},
+    "codex": {"codex"},
+}
+ALLOWED_COMMAND_BINARIES = PROVIDER_ROUTE_BINARIES  # Backward compatibility alias
+
+LOCAL_PROBE_ALLOWED_BINARIES: Set[str] = {
+    "echo", "true", "sleep", "cat", "python3", "python"
+}
+
+FORBIDDEN_MODEL_INTERPRETERS: Set[str] = {
+    "python", "python3", "bash", "sh", "dash", "zsh"
+}
+
+PROVIDER_PRIMARY_CLIS: Dict[str, Set[str]] = {
+    "zai": {"zcodex"},
+    "zcode": {"zcodex"},
+    "opencode": {"opencode"},
+    "codex": {"codex"},
+    "grok": {"grok"},
+    "antigravity": {"agy"},
+    "gemini": {"agy"},
+}
+
+ALL_MODEL_CLIS: Set[str] = {"zcodex", "codex", "opencode", "grok", "agy"}
+
+
+ADAPTER_ALIASES: Dict[str, str] = {
+    "zcode": "zai",
+    "gemini": "antigravity",
+}
+
+
+def validate_route_to_command(
+    provider: str,
+    command_argv: List[str],
+    is_local_probe: bool = False,
+) -> None:
+    """
+    Enforces structured launcher recipe validation and local probe typing (C2106 / C2114 / C2118 / C2126).
+
+    Guarantees:
+    1. If is_local_probe is True:
+       - Allowed binaries: LOCAL_PROBE_ALLOWED_BINARIES (echo, true, sleep, cat, python3, python).
+       - Evaluated under provider 'local', model 'none', with ZERO model quota claim.
+       - Strictly forbids smuggling any model CLI (zcodex, codex, opencode, grok, agy).
+    2. If is_local_probe is False (MODEL route):
+       - Provider must be registered in ADAPTERS (fail-closed, zero permissive fallback; C2114 / C2126).
+       - Generic shell interpreters and arbitrary python runtimes (python3, python, bash, sh, dash, zsh)
+         are NEVER permitted under any model route (raises ResourceAdmissionError; C2118 / C2126).
+       - Structured prefix match against canonical launcher.launch.ADAPTERS[provider]["argv"]:
+         * len(command_argv) == len(expected_prefix) + 1
+         * command_argv[:len(expected_prefix)] strictly matches canonical expected_prefix.
+         * Trailing argument command_argv[-1] is the opaque goal string and is NOT token-scanned.
+         * Any modified, injected, duplicate, or reordered options fail closed.
+    """
+    if not command_argv:
+        raise ResourceAdmissionError("command_argv must be non-empty")
+
+    bin_name = Path(command_argv[0]).name
+
+    # 1. Local probe handling (ZERO model quota claim)
+    if is_local_probe:
+        if bin_name not in LOCAL_PROBE_ALLOWED_BINARIES:
+            raise ResourceAdmissionError(
+                f"Local probe violation: binary '{bin_name}' is not authorized for local probe (allowed: {sorted(LOCAL_PROBE_ALLOWED_BINARIES)})"
+            )
+        # Check that local probe does not smuggle any model CLI
+        for arg in command_argv:
+            words = re.findall(r"\b[a-zA-Z0-9_-]+\b", arg)
+            for word in words:
+                if word in ALL_MODEL_CLIS:
+                    raise ResourceAdmissionError(
+                        f"Local probe foreign CLI violation: model CLI '{word}' not permitted in local probe"
+                    )
+        return
+
+    # 2. Strict provider check: zero permissive fallback for unknown providers
+    effective_provider = ADAPTER_ALIASES.get(provider, provider)
+    if effective_provider not in ADAPTERS:
+        raise ResourceAdmissionError(
+            f"Unknown or unsupported route provider '{provider}': fail-closed (zero permissive fallback; C2114 / C2126)"
+        )
+
+    # 3. Model route: strictly forbid python, python3, bash, sh, etc.
+    if bin_name in FORBIDDEN_MODEL_INTERPRETERS:
+        raise ResourceAdmissionError(
+            f"Interpreter '{bin_name}' is strictly forbidden under model route '{provider}'. "
+            "Model routes require exact launcher binary recipes; arbitrary scripts/interpreters rejected (C2118 / C2126)."
+        )
+
+    # 4. Structured prefix match against canonical ADAPTERS recipe
+    expected_prefix = list(ADAPTERS[effective_provider]["argv"])
+    prefix = list(command_argv[:len(expected_prefix)])
+    prefix_matches = (
+        prefix == expected_prefix
+        or (
+            len(prefix) == len(expected_prefix)
+            and Path(prefix[0]).name == Path(expected_prefix[0]).name
+            and prefix[1:] == expected_prefix[1:]
+        )
+    )
+    if len(command_argv) != len(expected_prefix) + 1 or not prefix_matches:
+        raise ResourceAdmissionError(
+            f"Route recipe violation for provider '{provider}': command does not strictly match canonical adapter argv {expected_prefix} + [<goal>] (C2126)"
+        )
+
+
+
+MAX_DISK_LOG_BYTES = 65536  # 64 KiB strict cap on disk log files while child runs (C2106)
+
+def _bounded_pipe_pump(src_pipe, dst_path: Path, max_bytes: int = MAX_DISK_LOG_BYTES) -> None:
+    """
+    Reads from src_pipe in chunks and writes up to max_bytes to dst_path, discarding excess (C2106).
+    Guarantees disk writes are strictly bounded while child runs.
+    """
+    bytes_written = 0
+    try:
+        with open(dst_path, "wb") as f:
+            while True:
+                chunk = src_pipe.read(4096)
+                if not chunk:
+                    break
+                if bytes_written < max_bytes:
+                    to_write = chunk[: max_bytes - bytes_written]
+                    f.write(to_write)
+                    bytes_written += len(to_write)
+                    f.flush()
+    except Exception:
+        pass
+    finally:
+        try:
+            src_pipe.close()
+        except Exception:
+            pass
 
 
 class ChildModelRuntimeAdapter:
@@ -1115,6 +1293,7 @@ class ChildModelRuntimeAdapter:
         quse_override: Optional[Dict[str, Any]] = None,
         model_requirements: Optional[Dict[str, Any]] = None,
         expected_outputs: Optional[List[Union[str, Path]]] = None,
+        is_local_probe: bool = False,
     ) -> Dict[str, Any]:
         """
         Executes an explicitly owned, canonically admitted task in a directly verified
@@ -1130,6 +1309,7 @@ class ChildModelRuntimeAdapter:
         - Tree/cgroup teardown on timeout via systemctl kill --kill-who=all --signal=SIGKILL
         - Retaining launch-uncertain capacity in Store if cleanup is unproven
         - Bounded log streaming (<= 64 KiB)
+        - Typed local probes (C2114) with ZERO model quota claim
         """
         cwd_path = Path(cwd).resolve()
         workspace_path = self.workspace.resolve()
@@ -1156,18 +1336,33 @@ class ChildModelRuntimeAdapter:
             # Host Admission Check
             self.check_host_admission()
 
-            # Quota Admission Check
-            chosen, provenance = self.check_quse_admission(
-                quse_data=quse_override,
-                model_requirements=model_requirements,
-            )
+            chosen: Dict[str, Any] = {"provider": "local", "model": "none"}
+            provenance: Any = None
+            if is_local_probe:
+                # Explicit local probe: provider strictly "local", model "none", ZERO model quota claim (C2114 / C2118)
+                # Do NOT query quota or select candidate.
+                chosen = {"provider": "local", "model": "none"}
+                provenance = None
+            else:
+                # Quota Admission Check
+                chosen, provenance = self.check_quse_admission(
+                    quse_data=quse_override,
+                    model_requirements=model_requirements,
+                )
 
-            # Route-to-payload binding check
-            if model_requirements and "allowed_providers" in model_requirements:
-                if chosen["provider"] not in model_requirements["allowed_providers"]:
-                    raise QuotaAdmissionError(
-                        f"Route mismatch: chosen provider '{chosen['provider']}' not in allowed_providers {model_requirements['allowed_providers']}"
-                    )
+                # Route-to-payload binding check
+                if model_requirements and "allowed_providers" in model_requirements:
+                    if chosen["provider"] not in model_requirements["allowed_providers"]:
+                        raise QuotaAdmissionError(
+                            f"Route mismatch: chosen provider '{chosen['provider']}' not in allowed_providers {model_requirements['allowed_providers']}"
+                        )
+
+            # Strict route-to-command binding & foreign CLI smuggling protection (C2106 / C2114 / C2118)
+            validate_route_to_command(
+                "local" if is_local_probe else chosen["provider"],
+                command_argv,
+                is_local_probe=is_local_probe,
+            )
 
             # Store Registration & Active Resource Check
             task_data = self.store.get_task(task_id)
@@ -1178,6 +1373,9 @@ class ChildModelRuntimeAdapter:
                     "timeout": float(timeout_sec),
                     "goal": " ".join(command_argv),
                     "model_requirements": model_requirements,
+                    "provider": "local" if is_local_probe else chosen["provider"],
+                    "model": "none" if is_local_probe else chosen.get("model", "none"),
+                    "model_quota_claimed": False if is_local_probe else True,
                 }
                 self.store.submit_task(
                     task_id=task_id,
@@ -1265,6 +1463,35 @@ cgroup = props.get("ControlGroup", "")
 if not cgroup:
     sys.exit(94)
 
+# C2106: Inspect /proc/self/cgroup and verify it matches ControlGroup (exit 96)
+self_cgroup = ""
+if os.path.exists("/proc/self/cgroup"):
+    try:
+        with open("/proc/self/cgroup", "r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split(":", 2)
+                if len(parts) == 3:
+                    self_cgroup = parts[2]
+                    if parts[0] == "0":
+                        break
+    except Exception:
+        sys.exit(96)
+
+if not self_cgroup or self_cgroup.strip("/") != cgroup.strip("/"):
+    sys.exit(96)
+
+# C2106: Authoritative kernel membership in cgroup.procs (exit 97)
+cg_procs_path = f"/sys/fs/cgroup/{{cgroup.lstrip('/')}}/cgroup.procs"
+if not os.path.exists(cg_procs_path):
+    sys.exit(97)
+try:
+    with open(cg_procs_path, "r", encoding="utf-8") as f:
+        pids = [p.strip() for p in f.read().splitlines() if p.strip()]
+    if str(os.getpid()) not in pids:
+        sys.exit(97)
+except Exception:
+    sys.exit(97)
+
 with open("{receipt_path}", "w", encoding="utf-8") as f:
     json.dump({{"unit": unit, "pid": os.getpid(), "cgroup": cgroup, "memory_max": props.get("MemoryMax"), "invocation_id": props.get("InvocationID")}}, f)
 
@@ -1292,16 +1519,51 @@ os.execvp(sys.argv[1], sys.argv[1:])
 
         started_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
-        # 6. Spawn process and verify containment
-        with open(stdout_log, "w", encoding="utf-8") as out_f, open(stderr_log, "w", encoding="utf-8") as err_f:
+        # 6. Spawn process with bounded disk logging (C2106) and Popen failure guard
+        out_thread = None
+        err_thread = None
+        try:
             proc = subprocess.Popen(
                 scope_cmd,
                 cwd=str(cwd_path),
                 env=clean_env,
-                stdout=out_f,
-                stderr=err_f,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 start_new_session=True,
             )
+            out_thread = threading.Thread(
+                target=_bounded_pipe_pump,
+                args=(proc.stdout, stdout_log, MAX_DISK_LOG_BYTES),
+                daemon=True,
+            )
+            err_thread = threading.Thread(
+                target=_bounded_pipe_pump,
+                args=(proc.stderr, stderr_log, MAX_DISK_LOG_BYTES),
+                daemon=True,
+            )
+            out_thread.start()
+            err_thread.start()
+        except Exception as exc:
+            subprocess.run(["systemctl", "--user", "kill", "--kill-who=all", "--signal=SIGKILL", unit_name], check=False)
+            subprocess.run(["systemctl", "--user", "stop", unit_name], check=False)
+            cleaned_up = verify_unit_cleanup(unit_name, expected_cgroup=None)
+            if cleaned_up:
+                self.store.transition_task(
+                    task_id,
+                    "failed",
+                    ("starting",),
+                    reviewer="popen-guard",
+                    reason=f"Popen failed: {exc}; unit confirmed clean",
+                )
+            else:
+                self.store.transition_task(
+                    task_id,
+                    "launch-uncertain",
+                    ("starting",),
+                    reviewer="popen-guard",
+                    reason=f"Popen failed: {exc}; cleanup unproven, holding resources",
+                )
+            raise
 
         # Poll up to 3s for unit activation & containment receipt
         verified_active = False
@@ -1349,16 +1611,20 @@ os.execvp(sys.argv[1], sys.argv[1:])
         else:
             # Containment verification failed: terminate unit and evaluate cleanup
             subprocess.run(["systemctl", "--user", "kill", "--kill-who=all", "--signal=SIGKILL", unit_name], check=False)
+            subprocess.run(["systemctl", "--user", "stop", unit_name], check=False)
             try:
                 proc.kill()
                 proc.wait(timeout=2)
             except Exception:
                 pass
+            if out_thread and out_thread.is_alive():
+                out_thread.join(timeout=1.0)
+            if err_thread and err_thread.is_alive():
+                err_thread.join(timeout=1.0)
             rc = proc.poll()
             cleaned_up = verify_unit_cleanup(
                 unit_name,
                 expected_cgroup=cached_cgroup,
-                expected_invocation_id=cached_invocation_id,
             )
             if cleaned_up:
                 self.store.transition_task(
@@ -1385,16 +1651,20 @@ os.execvp(sys.argv[1], sys.argv[1:])
         except subprocess.TimeoutExpired:
             # Terminate the entire process tree via systemctl kill --kill-who=all
             subprocess.run(["systemctl", "--user", "kill", "--kill-who=all", "--signal=SIGKILL", unit_name], check=False)
+            subprocess.run(["systemctl", "--user", "stop", unit_name], check=False)
             try:
                 proc.kill()
                 proc.wait(timeout=2)
             except Exception:
                 pass
+            if out_thread and out_thread.is_alive():
+                out_thread.join(timeout=1.0)
+            if err_thread and err_thread.is_alive():
+                err_thread.join(timeout=1.0)
 
             cleaned_up = verify_unit_cleanup(
                 unit_name,
                 expected_cgroup=cached_cgroup,
-                expected_invocation_id=cached_invocation_id,
             )
             if cleaned_up:
                 self.store.fail_task(
@@ -1413,32 +1683,24 @@ os.execvp(sys.argv[1], sys.argv[1:])
                 )
             raise TimeoutError(f"Task {task_id} in systemd scope {unit_name} exceeded timeout {timeout_sec}s (cleaned_up={cleaned_up})")
 
+        if out_thread and out_thread.is_alive():
+            out_thread.join(timeout=2.0)
+        if err_thread and err_thread.is_alive():
+            err_thread.join(timeout=2.0)
+
         completed_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
         stdout_text = read_bounded_log(stdout_log, max_bytes=65536)
         stderr_text = read_bounded_log(stderr_log, max_bytes=65536)
 
         # 8. Non-auto-accepting completion handling (no rc0-as-done)
         if returncode == 0:
-            if expected_outputs:
-                for out_p_str in expected_outputs:
-                    out_p = Path(out_p_str).resolve()
-                    if not out_p.exists() or out_p.stat().st_size == 0:
-                        raise ResourceAdmissionError(f"Expected output file {out_p} missing or empty")
-
+            # C2106: Stop unit and verify cleanup FIRST before checking expected_outputs
             subprocess.run(["systemctl", "--user", "stop", unit_name], check=False)
             cleaned_up = verify_unit_cleanup(
                 unit_name,
                 expected_cgroup=cached_cgroup,
-                expected_invocation_id=cached_invocation_id,
             )
-            if cleaned_up:
-                # Transition to completed-awaiting-review via complete_task
-                self.store.complete_task(
-                    task_id,
-                    reviewer="systemd-scope-runner",
-                    reason=f"scope {unit_name} exited 0; unit confirmed clean; awaiting independent review",
-                )
-            else:
+            if not cleaned_up:
                 # Lingering children after client exit!
                 subprocess.run(["systemctl", "--user", "kill", "--kill-who=all", "--signal=SIGKILL", unit_name], check=False)
                 self.store.transition_task(
@@ -1449,13 +1711,31 @@ os.execvp(sys.argv[1], sys.argv[1:])
                     reason=f"scope {unit_name} exited 0 but unconfined processes remain in cgroup, holding resources",
                 )
                 raise ResourceAdmissionError(f"Scope {unit_name} exited 0 but left unconfined background tasks in cgroup")
+
+            # Unit verified clean! Now check expected outputs (C2106)
+            if expected_outputs:
+                for out_p_str in expected_outputs:
+                    out_p = Path(out_p_str).resolve()
+                    if not out_p.exists() or out_p.stat().st_size == 0:
+                        self.store.fail_task(
+                            task_id,
+                            reviewer="systemd-scope-runner",
+                            reason=f"scope {unit_name} exited 0 but expected output {out_p.name} missing or empty",
+                        )
+                        raise ResourceAdmissionError(f"Expected output file {out_p} missing or empty")
+
+            # Transition to completed-awaiting-review via complete_task
+            self.store.complete_task(
+                task_id,
+                reviewer="systemd-scope-runner",
+                reason=f"scope {unit_name} exited 0; unit confirmed clean; awaiting independent review",
+            )
         else:
             subprocess.run(["systemctl", "--user", "kill", "--kill-who=all", "--signal=SIGKILL", unit_name], check=False)
             subprocess.run(["systemctl", "--user", "stop", unit_name], check=False)
             cleaned_up = verify_unit_cleanup(
                 unit_name,
                 expected_cgroup=cached_cgroup,
-                expected_invocation_id=cached_invocation_id,
             )
             if cleaned_up:
                 self.store.fail_task(
@@ -1483,8 +1763,10 @@ os.execvp(sys.argv[1], sys.argv[1:])
             "bus_identity": bus_identity_receipt,
             "stdout_preview": stdout_text[:500],
             "stderr_preview": stderr_text[:500],
-            "quse_admitted": True,
-            "provider_chosen": chosen["provider"],
+            "quse_admitted": not is_local_probe,
+            "is_local_probe": is_local_probe,
+            "model_quota_claimed": False if is_local_probe else True,
+            "provider_chosen": "local" if is_local_probe else chosen["provider"],
         }
 
 

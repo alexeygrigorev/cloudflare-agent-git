@@ -2568,6 +2568,58 @@
           "owned_files": [
             "research/antigravity/reviews/REV-NATIVE-PRODUCER-SOURCE-FIX.md"
           ]
+        },
+        {
+          "tag": "dashboard-consumer-reviewer-2",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "conversation_id": "259526a9-5deb-47ce-810c-ca5f2da56b68",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "task": "Dashboard Minimal Staged & Rendered Consumer Review (Cycle 2) over FileBus",
+          "first_tool": "check backend patch 007a6ef3 and static patch f2e29142",
+          "status": "completed",
+          "delivered_artifact": "research/antigravity/reviews/REV-DASHBOARD-STAGED-CONSUMER.md"
+        },
+        {
+          "tag": "self-org-architect-2",
+          "role": "architect",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "conversation_id": "06ecf158-e51f-411c-89b8-083fc9fb3dd6",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "task": "C2106 launcher_bus_bridge.py hardening and test suite expansion (Tests 19-32)",
+          "first_tool": "view_file launcher_bus_bridge.py",
+          "status": "completed",
+          "delivered_artifact": "research/antigravity/recovery/REPORT-LAUNCHER-BUS-BRIDGE-C2106.md"
+        },
+        {
+          "tag": "self-org-challenger-2",
+          "role": "challenger",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "conversation_id": "37aa1067-8bda-4dde-95b8-7b5bb927bd1f",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "task": "C2106 independent negative and mutation verification",
+          "first_tool": "setting up .local/scratch/self-org-challenge/ testbed",
+          "status": "completed",
+          "delivered_artifact": "research/antigravity/reviews/REV-LAUNCHER-BUS-BRIDGE-C2106.md"
+        },
+        {
+          "tag": "hourly-payload-reconciler-2",
+          "role": "reconciler",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "conversation_id": "d6988df9-09a1-44f0-b7bd-7b28018f69a8",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "task": "Reconciliation of preceding 24h 4-product payload in .local/metrics/hourly_24h_payload.json",
+          "first_tool": "initializing .local/scratch/hourly-payload-reconcile/",
+          "status": "completed",
+          "delivered_artifact": "research/antigravity/recovery/REPORT-HOURLY-24H-RECONCILIATION.md"
         }
       ],
       "members": [

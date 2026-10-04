@@ -49,12 +49,17 @@ from research.antigravity.tooling.self_org.launcher_bus_bridge import (
     ChildModelRuntimeAdapter,
     query_systemctl_show,
     verify_unit_cleanup,
+    _is_cgroup_dissolved_or_empty,
+    _bounded_pipe_pump,
+    validate_route_to_command,
+    MAX_DISK_LOG_BYTES,
 )
 from research.antigravity.tooling.self_org.child_adapter import ChildAdapter
 from research.antigravity.tooling.self_org.lease_manager import LeaseManager
 import launcher.resources
 import coordination.envelope
 from launcher.store import Store, RESOURCE_HOLDING_STATES
+from launcher.launch import build_adapter_argv, ADAPTERS
 from coordination.envelope import TransportState
 
 
@@ -720,6 +725,7 @@ class TestLauncherBusBridge(unittest.TestCase):
             tmpdir=self.owned_tmp,
             lock_path=self.workspace / ".local" / "test.lock",
             quse_override=valid_telemetry,
+            is_local_probe=True,
         )
 
         self.assertEqual(result["task_id"], "t-scope-probe-1")
@@ -730,6 +736,26 @@ class TestLauncherBusBridge(unittest.TestCase):
         # Verify task transitioned to completed-awaiting-review in Store (NOT done!)
         task_record = self.store.get_task("t-scope-probe-1")
         self.assertEqual(task_record["state"], "completed-awaiting-review")
+        task_data = task_record["payload"]
+        self.assertEqual(task_data["provider"], "local")
+        self.assertEqual(task_data["model"], "none")
+        self.assertFalse(task_data["model_quota_claimed"])
+
+        # Assert local probe return properties and zero model quota claim
+        self.assertTrue(result["is_local_probe"])
+        self.assertFalse(result["model_quota_claimed"])
+        self.assertEqual(result["provider_chosen"], "local")
+        self.assertFalse(result["quse_admitted"])
+
+        # Record and assert receipt of local kernel custody probe
+        receipt_path = self.owned_tmp / f"containment_verified_{result['unit_name']}.json"
+        self.assertTrue(receipt_path.exists())
+        receipt_data = json.loads(receipt_path.read_text(encoding="utf-8"))
+        self.assertEqual(receipt_data["unit"], result["unit_name"])
+        self.assertEqual(receipt_data["memory_max"], "1572864000")
+        self.assertIn("cgroup", receipt_data)
+        self.assertIn("pid", receipt_data)
+        self.assertIn("invocation_id", receipt_data)
 
     # -----------------------------------------------------------------------
     # Test 13: Missing/empty unit info during cleanup fails closed (C2097)
@@ -747,7 +773,7 @@ class TestLauncherBusBridge(unittest.TestCase):
             self.assertFalse(verify_unit_cleanup("dummy.scope", max_retries=1, retry_delay=0.001))
             mock_show.return_value = {"ActiveState": "active", "TasksCurrent": "0"}
             self.assertFalse(verify_unit_cleanup("dummy.scope", max_retries=1, retry_delay=0.001))
-            mock_show.return_value = {"ActiveState": "inactive", "TasksCurrent": "0"}
+            mock_show.return_value = {"ActiveState": "inactive", "TasksCurrent": "0", "ControlGroup": "/user.slice/dummy.scope"}
             self.assertTrue(verify_unit_cleanup("dummy.scope", max_retries=1, retry_delay=0.001))
 
         runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
@@ -785,6 +811,7 @@ class TestLauncherBusBridge(unittest.TestCase):
                     tmpdir=self.owned_tmp,
                     lock_path=self.workspace / ".local" / "test.lock",
                     quse_override=valid_telemetry,
+                    is_local_probe=True,
                 )
             self.assertIn("failed containment verification prelude", str(cm.exception))
 
@@ -837,6 +864,7 @@ class TestLauncherBusBridge(unittest.TestCase):
                     tmpdir=self.owned_tmp,
                     lock_path=self.workspace / ".local" / "test.lock",
                     quse_override=valid_telemetry,
+                    is_local_probe=True,
                 )
             task = self.store.get_task(task_id_a)
             self.assertEqual(task["state"], "launch-uncertain")
@@ -868,6 +896,7 @@ class TestLauncherBusBridge(unittest.TestCase):
                     tmpdir=self.owned_tmp,
                     lock_path=self.workspace / ".local" / "test.lock",
                     quse_override=valid_telemetry,
+                    is_local_probe=True,
                 )
             task_b = self.store.get_task(task_id_b)
             self.assertEqual(task_b["state"], "failed")
@@ -938,6 +967,7 @@ class TestLauncherBusBridge(unittest.TestCase):
                     tmpdir=self.owned_tmp,
                     lock_path=self.workspace / ".local" / "test.lock",
                     quse_override=valid_telemetry,
+                    is_local_probe=True,
                 )
             self.assertIn("left unconfined background tasks in cgroup", str(cm.exception))
 
@@ -1052,6 +1082,7 @@ class TestLauncherBusBridge(unittest.TestCase):
                         tmpdir=self.owned_tmp,
                         lock_path=self.workspace / ".local" / "test.lock",
                         quse_override=valid_telemetry,
+                        is_local_probe=True,
                     )
 
                 task = self.store.get_task(task_id)
@@ -1092,7 +1123,760 @@ class TestLauncherBusBridge(unittest.TestCase):
             res = verify_unit_cleanup(unit, expected_cgroup="dissolved/cgroup/path", expected_invocation_id="inv-1", max_retries=1)
             self.assertTrue(res, "Dissolved cgroup path with matching InvocationID must return True")
 
+    # -----------------------------------------------------------------------
+    # Test 19: Descendant cgroup scan & cgroup.events populated flag (C2106)
+    # -----------------------------------------------------------------------
+    def test_19_c2106_descendant_cgroup_lingering_pids_fails_cleanup(self) -> None:
+        """
+        Verify that _is_cgroup_dissolved_or_empty and verify_unit_cleanup fail closed
+        when cgroup.events has populated!=0 or when descendant cgroup.procs contains PIDs (C2106).
+        """
+        # Scenario A: Root cgroup.events has populated 1 -> False
+        cg_dir_a = self.scratch_tmp / "mock_cg_19a"
+        cg_dir_a.mkdir(parents=True, exist_ok=True)
+        events_a = cg_dir_a / "cgroup.events"
+        events_a.write_text("populated 1\nfrozen 0\n", encoding="utf-8")
+        procs_a = cg_dir_a / "cgroup.procs"
+        procs_a.write_text("", encoding="utf-8")
+
+        self.assertFalse(
+            _is_cgroup_dissolved_or_empty("mock_cg_19a", cgroup_fs_root=self.scratch_tmp),
+            "populated==1 in cgroup.events must fail cleanup",
+        )
+
+        # Scenario B: Root cgroup.events has populated 0, but descendant sub/cgroup.procs has live PID -> False
+        cg_dir_b = self.scratch_tmp / "mock_cg_19b"
+        sub_cg = cg_dir_b / "leaf_child"
+        sub_cg.mkdir(parents=True, exist_ok=True)
+        events_b = cg_dir_b / "cgroup.events"
+        events_b.write_text("populated 0\n", encoding="utf-8")
+        (cg_dir_b / "cgroup.procs").write_text("", encoding="utf-8")
+        (sub_cg / "cgroup.procs").write_text("44556\n", encoding="utf-8")
+
+        self.assertFalse(
+            _is_cgroup_dissolved_or_empty("mock_cg_19b", cgroup_fs_root=self.scratch_tmp),
+            "Non-empty descendant cgroup.procs must fail cleanup even if root events populated==0",
+        )
+
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.query_systemctl_show",
+            return_value={"ActiveState": "inactive", "ControlGroup": "/mock_cg_19b"},
+        ):
+            res = verify_unit_cleanup(
+                "agent-scope-dummy.scope",
+                expected_cgroup="mock_cg_19b",
+                cgroup_fs_root=self.scratch_tmp,
+                max_retries=1,
+            )
+            self.assertFalse(res, "verify_unit_cleanup must fail when descendant cgroup.procs has PIDs")
+
+        # Scenario C: Clean empty hierarchy -> True
+        (sub_cg / "cgroup.procs").write_text("", encoding="utf-8")
+        self.assertTrue(
+            _is_cgroup_dissolved_or_empty("mock_cg_19b", cgroup_fs_root=self.scratch_tmp),
+            "Empty cgroup hierarchy with populated==0 must pass cleanup",
+        )
+
+    # -----------------------------------------------------------------------
+    # Test 20: Strict InvocationID verification (C2106)
+    # -----------------------------------------------------------------------
+    def test_20_c2106_absent_or_mismatched_invocation_id_fails_cleanup(self) -> None:
+        """
+        Verify that when expected_invocation_id is provided, InvocationID must be present
+        and strictly match expected_invocation_id; absent or mismatched InvocationID fails closed (C2106).
+        """
+        unit = "agent-scope-inv-test.scope"
+        expected_id = "inv-correct-2026"
+
+        # Case 1: Absent InvocationID in props -> False
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.query_systemctl_show",
+            return_value={"ActiveState": "inactive", "ControlGroup": "/dummy/cgroup", "InvocationID": ""},
+        ):
+            res = verify_unit_cleanup(unit, expected_invocation_id=expected_id, max_retries=1, retry_delay=0.001)
+            self.assertFalse(res, "Absent InvocationID must fail closed")
+
+        # Case 2: Missing InvocationID key in props -> False
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.query_systemctl_show",
+            return_value={"ActiveState": "inactive", "ControlGroup": "/dummy/cgroup"},
+        ):
+            res = verify_unit_cleanup(unit, expected_invocation_id=expected_id, max_retries=1, retry_delay=0.001)
+            self.assertFalse(res, "Missing InvocationID key must fail closed")
+
+        # Case 3: Mismatched InvocationID in props -> False
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.query_systemctl_show",
+            return_value={"ActiveState": "inactive", "ControlGroup": "/dummy/cgroup", "InvocationID": "inv-wrong-9999"},
+        ):
+            res = verify_unit_cleanup(unit, expected_invocation_id=expected_id, max_retries=1, retry_delay=0.001)
+            self.assertFalse(res, "Mismatched InvocationID must fail closed")
+
+        # Case 4: Strictly matching InvocationID -> True (with dissolved cgroup)
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.query_systemctl_show",
+            return_value={"ActiveState": "inactive", "ControlGroup": "/dissolved/cg", "TasksCurrent": "0", "InvocationID": expected_id},
+        ):
+            res = verify_unit_cleanup(unit, expected_invocation_id=expected_id, max_retries=1, retry_delay=0.001)
+            self.assertTrue(res, "Strictly matching InvocationID must succeed")
+
+    # -----------------------------------------------------------------------
+    # Test 21: Strict ControlGroup verification (C2106)
+    # -----------------------------------------------------------------------
+    def test_21_c2106_missing_controlgroup_fails_closed(self) -> None:
+        """
+        Verify that if neither expected_cgroup nor ControlGroup in props is present,
+        verify_unit_cleanup fails closed and returns False without fallback to True (C2106).
+        """
+        unit = "agent-scope-no-cg.scope"
+
+        # Case 1: Missing ControlGroup key
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.query_systemctl_show",
+            return_value={"ActiveState": "inactive", "TasksCurrent": "0"},
+        ):
+            res = verify_unit_cleanup(unit, expected_cgroup=None, max_retries=1, retry_delay=0.001)
+            self.assertFalse(res, "Missing ControlGroup key with no expected_cgroup must fail closed")
+
+        # Case 2: Empty string ControlGroup
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.query_systemctl_show",
+            return_value={"ActiveState": "inactive", "TasksCurrent": "0", "ControlGroup": ""},
+        ):
+            res = verify_unit_cleanup(unit, expected_cgroup=None, max_retries=1, retry_delay=0.001)
+            self.assertFalse(res, "Empty string ControlGroup with no expected_cgroup must fail closed")
+
+    # -----------------------------------------------------------------------
+    # Test 22: Prelude verifies /proc/self/cgroup and PID membership (C2106)
+    # -----------------------------------------------------------------------
+    def test_22_c2106_prelude_verifies_proc_self_cgroup_and_membership(self) -> None:
+        """
+        Verify prelude exits with 96 if /proc/self/cgroup does not match ControlGroup,
+        or 97 if own os.getpid() is not in /sys/fs/cgroup/{cgroup}/cgroup.procs (C2106).
+        """
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        # Subcase A: Prelude exit 96 (/proc/self/cgroup mismatch)
+        task_id_96 = "t-c2106-prelude-96"
+        task_dir_96 = self.workspace / "t22_dir_96"
+        task_dir_96.mkdir(parents=True, exist_ok=True)
+
+        with patch("research.antigravity.tooling.self_org.launcher_bus_bridge.verify_unit_cleanup", return_value=True), \
+             patch("subprocess.run") as mock_run, \
+             patch("subprocess.Popen") as mock_popen:
+            mock_run.return_value = MagicMock(returncode=0)
+            proc_96 = MagicMock()
+            proc_96.pid = 99922
+            proc_96.poll.return_value = 96
+            proc_96.wait.return_value = 96
+            proc_96.communicate.return_value = ("", "")
+            mock_popen.return_value = proc_96
+
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=task_id_96,
+                    command_argv=["python3", "-c", "pass"],
+                    cwd=task_dir_96,
+                    timeout_sec=10.0,
+                    requested_memory_mb=1500,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    quse_override=valid_telemetry,
+                    is_local_probe=True,
+                )
+            self.assertIn("failed containment verification prelude", str(cm.exception))
+            task_rec_96 = self.store.get_task(task_id_96)
+            self.assertEqual(task_rec_96["state"], "failed")
+
+        # Subcase B: Prelude exit 97 (PID membership mismatch in cgroup.procs)
+        task_id_97 = "t-c2106-prelude-97"
+        task_dir_97 = self.workspace / "t22_dir_97"
+        task_dir_97.mkdir(parents=True, exist_ok=True)
+
+        with patch("research.antigravity.tooling.self_org.launcher_bus_bridge.verify_unit_cleanup", return_value=False), \
+             patch("subprocess.run") as mock_run, \
+             patch("subprocess.Popen") as mock_popen:
+            mock_run.return_value = MagicMock(returncode=0)
+            proc_97 = MagicMock()
+            proc_97.pid = 99923
+            proc_97.poll.return_value = 97
+            proc_97.wait.return_value = 97
+            proc_97.communicate.return_value = ("", "")
+            mock_popen.return_value = proc_97
+
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=task_id_97,
+                    command_argv=["python3", "-c", "pass"],
+                    cwd=task_dir_97,
+                    timeout_sec=10.0,
+                    requested_memory_mb=1500,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    quse_override=valid_telemetry,
+                    is_local_probe=True,
+                )
+            self.assertIn("failed containment verification prelude", str(cm.exception))
+            task_rec_97 = self.store.get_task(task_id_97)
+            self.assertEqual(task_rec_97["state"], "launch-uncertain")
+
+    # -----------------------------------------------------------------------
+    # Test 23: Strict Route-to-Command Binding (C2106)
+    # -----------------------------------------------------------------------
+    def test_23_c2106_route_to_command_binding_rejects_unauthorized_binary(self) -> None:
+        """
+        Verify validate_route_to_command and execute_in_verified_systemd_scope enforce strict
+        route-to-command binding, rejecting arbitrary binaries like 'rm' or 'unauthorized' for 'zcode' (C2106).
+        """
+        # Direct validation function checks
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("zcode", ["rm", "-rf", "/tmp"])
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("zcode", ["unauthorized_cli", "run"])
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        # Authorized canonical recipe succeeds without exception
+        validate_route_to_command("zcode", build_adapter_argv("zai", "canonical goal"))
+
+        # Arbitrary python interpreter strictly forbidden under model route
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("zcode", ["python3", "main.py"])
+        self.assertIn("strictly forbidden under model route", str(cm.exception))
+
+        # Integration in execute_in_verified_systemd_scope
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        task_dir = self.workspace / "t23_dir"
+        task_dir.mkdir(parents=True, exist_ok=True)
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            runtime.execute_in_verified_systemd_scope(
+                task_id="t-c2106-unauth-cmd",
+                command_argv=["rm", "-f", "some_file"],
+                cwd=task_dir,
+                timeout_sec=10.0,
+                requested_memory_mb=1500,
+                tmpdir=self.owned_tmp,
+                lock_path=self.workspace / ".local" / "test.lock",
+                quse_override=valid_telemetry,
+            )
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+    # -----------------------------------------------------------------------
+    # Test 24: Bounded Disk Logging During Execution (C2106)
+    # -----------------------------------------------------------------------
+    def test_24_c2106_bounded_disk_logging_during_execution(self) -> None:
+        """
+        Verify that _bounded_pipe_pump caps disk log output at MAX_DISK_LOG_BYTES (64 KiB),
+        discarding excess bytes even if child emits 200 KiB (C2106).
+        """
+        import io
+
+        # 1. Direct pipe pump verification with 200 KiB payload
+        payload_200k = b"A" * (200 * 1024)  # 204,800 bytes
+        src_stream = io.BytesIO(payload_200k)
+        dst_log = self.scratch_tmp / "pump_test.log"
+
+        _bounded_pipe_pump(src_stream, dst_log, max_bytes=MAX_DISK_LOG_BYTES)
+        self.assertTrue(dst_log.exists())
+        self.assertEqual(dst_log.stat().st_size, MAX_DISK_LOG_BYTES)
+        self.assertLessEqual(dst_log.stat().st_size, 65536)
+
+        # 2. Integration with direct systemd scope probe emitting 200 KiB
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        task_id = "t-c2106-bounded-log"
+        big_cmd = ["python3", "-c", "import sys; sys.stdout.write('B' * 204800); sys.stdout.flush()"]
+
+        result = runtime.execute_in_verified_systemd_scope(
+            task_id=task_id,
+            command_argv=big_cmd,
+            cwd=self.workspace,
+            timeout_sec=30.0,
+            requested_memory_mb=1500,
+            tmpdir=self.owned_tmp,
+            lock_path=self.workspace / ".local" / "test.lock",
+            quse_override=valid_telemetry,
+            is_local_probe=True,
+        )
+        self.assertEqual(result["returncode"], 0)
+        stdout_path = self.workspace / ".local" / f"{task_id}-stdout.log"
+        self.assertTrue(stdout_path.exists())
+        self.assertEqual(stdout_path.stat().st_size, MAX_DISK_LOG_BYTES)
+
+    # -----------------------------------------------------------------------
+    # Test 25: Cleanup before Missing Output Raise (C2106)
+    # -----------------------------------------------------------------------
+    def test_25_c2106_missing_output_cleans_up_and_fails_task(self) -> None:
+        """
+        Verify that on exit 0 with missing/empty expected_outputs, the unit is stopped and
+        cleanup verified FIRST, and task is transitioned to 'failed' (releasing Store resources)
+        before raising ResourceAdmissionError (C2106).
+        """
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        task_id = "t-c2106-missing-out-25"
+        missing_artifact = self.workspace / "missing_deliverable.json"
+        cmd = ["python3", "-c", "import sys; sys.exit(0)"]
+
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            runtime.execute_in_verified_systemd_scope(
+                task_id=task_id,
+                command_argv=cmd,
+                cwd=self.workspace,
+                timeout_sec=30.0,
+                requested_memory_mb=1500,
+                tmpdir=self.owned_tmp,
+                lock_path=self.workspace / ".local" / "test.lock",
+                quse_override=valid_telemetry,
+                expected_outputs=[missing_artifact],
+                is_local_probe=True,
+            )
+        self.assertIn("missing or empty", str(cm.exception))
+
+        task = self.store.get_task(task_id)
+        self.assertEqual(task["state"], "failed", "Task must transition to 'failed' on missing output")
+
+        # Active resources must be 0 (cleanly released)
+        mem, _ = self.store.get_active_resources(exclude_task_id="none")
+        self.assertEqual(mem, 0, "Resources must be released when task is failed")
+
+    # -----------------------------------------------------------------------
+    # Test 26: Launch-uncertain on Popen/Start Failure (C2106)
+    # -----------------------------------------------------------------------
+    def test_26_c2106_popen_failure_uncertainty_handling(self) -> None:
+        """
+        Verify that if subprocess.Popen fails with OSError, the unit is killed, cleanup is
+        evaluated, and if cleanup is unproven, task transitions to 'launch-uncertain'
+        holding Store resources, and OSError is propagated (C2106).
+        """
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        # Case A: Cleanup unproven -> launch-uncertain holds resources
+        task_id_a = "t-c2106-popen-fail-a"
+        task_dir_a = self.workspace / "t26_dir_a"
+        task_dir_a.mkdir(parents=True, exist_ok=True)
+
+        with patch("subprocess.Popen", side_effect=OSError("Exec error simulated")), \
+             patch("research.antigravity.tooling.self_org.launcher_bus_bridge.verify_unit_cleanup", return_value=False), \
+             patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+
+            with self.assertRaises(OSError) as cm:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=task_id_a,
+                    command_argv=["python3", "-c", "pass"],
+                    cwd=task_dir_a,
+                    timeout_sec=10.0,
+                    requested_memory_mb=1500,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    quse_override=valid_telemetry,
+                    is_local_probe=True,
+                )
+            self.assertIn("Exec error simulated", str(cm.exception))
+
+            # Verify systemctl kill was issued
+            kill_called = any(
+                len(call_item.args) > 0 and isinstance(call_item.args[0], (list, tuple)) and "kill" in call_item.args[0]
+                for call_item in mock_run.call_args_list
+            )
+            self.assertTrue(kill_called, "systemctl kill must be invoked on Popen failure")
+
+            task_a = self.store.get_task(task_id_a)
+            self.assertEqual(task_a["state"], "launch-uncertain")
+            mem_a, _ = self.store.get_active_resources(exclude_task_id="none")
+            self.assertEqual(mem_a, 1500, "launch-uncertain must hold 1500 MB in Store")
+
+        # Case B: Cleanup proven -> failed releases resources
+        task_id_b = "t-c2106-popen-fail-b"
+        task_dir_b = self.workspace / "t26_dir_b"
+        task_dir_b.mkdir(parents=True, exist_ok=True)
+
+        with patch("subprocess.Popen", side_effect=OSError("Exec error simulated")), \
+             patch("research.antigravity.tooling.self_org.launcher_bus_bridge.verify_unit_cleanup", return_value=True), \
+             patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+
+            with self.assertRaises(OSError):
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=task_id_b,
+                    command_argv=["python3", "-c", "pass"],
+                    cwd=task_dir_b,
+                    timeout_sec=10.0,
+                    requested_memory_mb=1200,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    quse_override=valid_telemetry,
+                    is_local_probe=True,
+                )
+            task_b = self.store.get_task(task_id_b)
+            self.assertEqual(task_b["state"], "failed")
+            # Only task A's 1500MB remains held
+            mem_b, _ = self.store.get_active_resources(exclude_task_id="none")
+            self.assertEqual(mem_b, 1500)
+
+    # -----------------------------------------------------------------------
+    # Test 27: Unknown Provider Fails Closed with Zero Fallback (C2114)
+    # -----------------------------------------------------------------------
+    def test_27_c2114_unknown_provider_fails_closed(self) -> None:
+        """
+        Verify that an unknown or unsupported provider strictly fails closed
+        with ResourceAdmissionError without permissive fallback (C2114).
+        """
+        # Direct validation call with unknown provider
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("unknown_provider_xyz", build_adapter_argv("zai", "goal"))
+        self.assertIn("Unknown or unsupported route provider", str(cm.exception))
+        self.assertIn("zero permissive fallback", str(cm.exception))
+
+        # Direct validation with empty provider
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("", build_adapter_argv("zai", "goal"))
+        self.assertIn("Unknown or unsupported route provider", str(cm.exception))
+
+        # Scope execution with unknown provider in telemetry
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        bogus_telemetry = {
+            "unsupported_ai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 80.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        task_dir = self.workspace / "t27_dir"
+        task_dir.mkdir(parents=True, exist_ok=True)
+        with patch.object(runtime, "check_quse_admission", return_value=({"provider": "unsupported_ai", "model": "m"}, None)):
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id="t-c2114-unknown-prov",
+                    command_argv=build_adapter_argv("zai", "goal"),
+                    cwd=task_dir,
+                    timeout_sec=10.0,
+                    requested_memory_mb=1500,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    quse_override=bogus_telemetry,
+                )
+            self.assertIn("Unknown or unsupported route provider", str(cm.exception))
+
+    # -----------------------------------------------------------------------
+    # Test 28: Structured Recipe Validation & Benign Goal Defense (C2114 / C2126)
+    # -----------------------------------------------------------------------
+    def test_28_c2126_structured_launcher_recipe_and_benign_goal(self) -> None:
+        """
+        Verify Codex C2126 structured launcher recipe validation:
+        1. Duplicate model override fails closed.
+        2. Env wrong command with agy in trailing arg fails closed.
+        3. Benign goal mentioning foreign model names (e.g. 'codex', 'opencode') passes as opaque data.
+        """
+        # Case 1: Duplicate model override
+        dup_model_cmd = [
+            "/home/alexey/.local/bin/zcodex", "exec", "--model", "glm-5.3-flash",
+            "--dangerously-bypass-approvals-and-sandbox",
+            "-c", "check_for_update_on_startup=false", "--json",
+            "--model", "other", "goal",
+        ]
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("zai", dup_model_cmd)
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        # Also fails with short binary name
+        dup_short = [
+            "zcodex", "exec", "--model", "glm-5.3-flash",
+            "-c", "check_for_update_on_startup=false", "--json",
+            "--model", "other", "goal",
+        ]
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("zai", dup_short)
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        # Case 2: Env wrong command with agy in trailing arg
+        env_wrong_cmd = ["env", "bash", "agy", "goal"]
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("antigravity", env_wrong_cmd)
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        # Case 3: Benign goal mentioning foreign names succeeds as opaque data (C2126)
+        benign_goal_zai = build_adapter_argv("zai", "Fix codex coordination issue")
+        validate_route_to_command("zai", benign_goal_zai)
+
+        benign_goal_grok = build_adapter_argv("grok", "Compare with opencode and codex")
+        validate_route_to_command("grok", benign_goal_grok)
+
+        benign_goal_agy = build_adapter_argv("antigravity", "Refactor codex adapter bridge")
+        validate_route_to_command("antigravity", benign_goal_agy)
+
+    # -----------------------------------------------------------------------
+    # Test 29: Local Probe Typing & Zero Model Quota Claim (C2114)
+    # -----------------------------------------------------------------------
+    def test_29_c2114_local_probe_typing_and_zero_model_quota_claim(self) -> None:
+        """
+        Verify local probes must be explicitly typed with is_local_probe=True, allow echo/sleep/cat,
+        forbid smuggling model CLIs, and make ZERO model quota claim (C2114).
+        """
+        # Case 1: Untyped echo under provider zai is strictly rejected
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("zai", ["echo", "test"], is_local_probe=False)
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        # Case 2: Explicitly typed local probe allows echo, sleep, cat, true
+        validate_route_to_command("zai", ["echo", "kernel-probe-ok"], is_local_probe=True)
+        validate_route_to_command("local", ["sleep", "0.1"], is_local_probe=True)
+        validate_route_to_command("local", ["cat", "/proc/version"], is_local_probe=True)
+        validate_route_to_command("local", ["true"], is_local_probe=True)
+
+        # Case 3: Local probe attempting to smuggle model CLI is rejected
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("local", ["echo", "codex", "run"], is_local_probe=True)
+        self.assertIn("Local probe foreign CLI violation", str(cm.exception))
+
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("local", ["echo", "zcodex"], is_local_probe=True)
+        self.assertIn("Local probe foreign CLI violation", str(cm.exception))
+
+        # Case 4: Scope execution with is_local_probe=True executes without model quota claim
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        task_id = "t-c2114-probe-typed-29"
+        probe_cmd = ["python3", "-c", "import sys; print('local-probe-passed'); sys.exit(0)"]
+
+        result = runtime.execute_in_verified_systemd_scope(
+            task_id=task_id,
+            command_argv=probe_cmd,
+            cwd=self.workspace,
+            timeout_sec=30.0,
+            requested_memory_mb=1500,
+            tmpdir=self.owned_tmp,
+            lock_path=self.workspace / ".local" / "test.lock",
+            is_local_probe=True,
+        )
+        self.assertEqual(result["returncode"], 0)
+        self.assertTrue(result["is_local_probe"])
+        self.assertFalse(result["model_quota_claimed"], "Local probe must have zero model quota claim")
+        self.assertEqual(result["provider_chosen"], "local")
+        self.assertIn("local-probe-passed", result["stdout_preview"])
+
+        # Check Store task payload
+        task_rec = self.store.get_task(task_id)
+        self.assertEqual(task_rec["payload"]["provider"], "local")
+        self.assertEqual(task_rec["payload"]["model"], "none")
+        self.assertFalse(task_rec["payload"]["model_quota_claimed"])
+
+    # -----------------------------------------------------------------------
+    # Test 30: Model Route Rejects Arbitrary Python & Shell Interpreters (C2118)
+    # -----------------------------------------------------------------------
+    def test_30_c2118_model_route_rejects_arbitrary_python_and_shell_interpreters(self) -> None:
+        """
+        Verify that arbitrary python and shell interpreters (python3, python, bash, sh)
+        are strictly rejected for all model routes (raising ResourceAdmissionError; C2118).
+        """
+        model_providers = ["zai", "zcode", "grok", "antigravity"]
+        forbidden_cmds = [
+            ["python3", "-c", "print('arbitrary code')"],
+            ["python", "script.py"],
+            ["bash", "-c", "echo arbitrary shell"],
+            ["sh", "-c", "echo arbitrary shell"],
+        ]
+
+        for prov in model_providers:
+            for cmd in forbidden_cmds:
+                with self.assertRaises(ResourceAdmissionError) as cm:
+                    validate_route_to_command(prov, cmd, is_local_probe=False)
+                self.assertIn("strictly forbidden under model route", str(cm.exception))
+
+        # Integration in execute_in_verified_systemd_scope: running python3 without is_local_probe=True fails
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+        task_dir = self.workspace / "t30_dir"
+        task_dir.mkdir(parents=True, exist_ok=True)
+
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            runtime.execute_in_verified_systemd_scope(
+                task_id="t-c2118-model-py-reject",
+                command_argv=["python3", "-c", "print('unadmitted')"],
+                cwd=task_dir,
+                timeout_sec=10.0,
+                requested_memory_mb=1500,
+                tmpdir=self.owned_tmp,
+                lock_path=self.workspace / ".local" / "test.lock",
+                quse_override=valid_telemetry,
+                is_local_probe=False,  # NOT a local probe!
+            )
+        self.assertIn("strictly forbidden under model route", str(cm.exception))
+
+    # -----------------------------------------------------------------------
+    # Test 31: Strict Model Route Recipes Enforce Mandatory Argv (C2118)
+    # -----------------------------------------------------------------------
+    def test_31_c2118_model_route_recipes_enforce_mandatory_argv(self) -> None:
+        """
+        Verify exact launcher route recipe enforcement (reference agent-quota-launcher/launcher/launch.py):
+        - zai/zcode: resolved zcodex, exec, --model glm-5.3-flash
+        - grok: grok, -p, --model grok-4.6
+        - antigravity: agy (or env ... agy), --model gemini-3.1-pro-high
+        - rejects arbitrary -c scripts
+        """
+        # zai / zcode
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("zai", ["zcodex", "--model", "glm-5.3-flash"])
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("zai", ["zcodex", "exec"])
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("zai", ["zcodex", "exec", "--model", "wrong-model"])
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("zai", ["zcodex", "exec", "--model", "glm-5.3-flash", "-c", "import os; os.system('ls')"])
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        # Valid canonical zai launcher recipe passes
+        validate_route_to_command(
+            "zai",
+            build_adapter_argv("zai", "my_goal"),
+        )
+
+        # grok
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("grok", ["grok", "--model", "grok-4.6", "my_goal"])
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("grok", ["grok", "-p", "my_goal"])
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        # Valid grok recipe passes
+        validate_route_to_command(
+            "grok",
+            build_adapter_argv("grok", "my_goal"),
+        )
+
+        # antigravity / gemini
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("antigravity", ["agy", "my_goal"])
+        self.assertIn("Route recipe violation", str(cm.exception))
+
+        # Valid antigravity recipe passes
+        validate_route_to_command(
+            "antigravity",
+            build_adapter_argv("antigravity", "my_goal"),
+        )
+
+    # -----------------------------------------------------------------------
+    # Test 32: Local Probe Zero Quota Guarantees and Store Recording (C2118)
+    # -----------------------------------------------------------------------
+    def test_32_c2118_local_probe_zero_quota_and_store_recording(self) -> None:
+        """
+        Verify that explicit local probe is_local_probe=True:
+        1. Emits provider 'local', model 'none', model_quota_claimed=False, quse_admitted=False.
+        2. Never evaluates or consumes model quota even if valid telemetry is present.
+        3. Correctly records provider='local', model='none', model_quota_claimed=False in Store task payload.
+        """
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        task_id = "t-c2118-zero-quota-32"
+
+        promo_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 99.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        probe_cmd = ["python3", "-c", "import sys; print('zero-quota-verified'); sys.exit(0)"]
+
+        result = runtime.execute_in_verified_systemd_scope(
+            task_id=task_id,
+            command_argv=probe_cmd,
+            cwd=self.workspace,
+            timeout_sec=30.0,
+            requested_memory_mb=1500,
+            tmpdir=self.owned_tmp,
+            lock_path=self.workspace / ".local" / "test.lock",
+            quse_override=promo_telemetry,
+            is_local_probe=True,
+        )
+
+        self.assertEqual(result["returncode"], 0)
+        self.assertTrue(result["is_local_probe"])
+        self.assertFalse(result["model_quota_claimed"])
+        self.assertEqual(result["provider_chosen"], "local")
+        self.assertFalse(result["quse_admitted"])
+        self.assertIn("zero-quota-verified", result["stdout_preview"])
+
+        # Check Store task record
+        task_rec = self.store.get_task(task_id)
+        self.assertIsNotNone(task_rec)
+        self.assertEqual(task_rec["state"], "completed-awaiting-review")
+        payload = task_rec["payload"]
+        self.assertEqual(payload["provider"], "local")
+        self.assertEqual(payload["model"], "none")
+        self.assertFalse(payload["model_quota_claimed"])
+
 
 if __name__ == "__main__":
     unittest.main()
+
+
 
