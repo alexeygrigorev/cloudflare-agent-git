@@ -30,6 +30,7 @@ import type { CoordinatorAccess } from "./coordinator.js";
 export {
   hmacSha256Hex,
   MemoryReplayGuard,
+  WEBHOOK_RETENTION_MS,
   WEBHOOK_TOLERANCE_SECONDS,
   type WebhookReplayGuard,
 } from "./auth.js";

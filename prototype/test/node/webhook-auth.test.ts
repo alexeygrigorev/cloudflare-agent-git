@@ -25,6 +25,7 @@ import { deepStrictEqual, match, ok, strictEqual } from "node:assert";
 import {
   handleRoute,
   MemoryReplayGuard,
+  WEBHOOK_RETENTION_MS,
   WEBHOOK_TOLERANCE_SECONDS,
   type HttpResponse,
   type RouterServices,
@@ -63,6 +64,8 @@ interface WebhookRig {
   rig: TestRig;
   guard: MemoryReplayGuard;
   nowSeconds(): number;
+  /** Move the fake clock forward (guard and verify config share it). */
+  advance(ms: number): void;
 }
 
 /** Rig with the webhook auth config wired (injectable clock + guard). */
@@ -71,7 +74,14 @@ function webhookRig(): WebhookRig {
   let nowMs = NOW_MS;
   const guard = new MemoryReplayGuard({ nowMs: () => nowMs });
   rig.services.webhookAuth = { secret: SECRET, nowMs: () => nowMs, replayGuard: guard };
-  return { rig, guard, nowSeconds: () => Math.floor(nowMs / 1000) };
+  return {
+    rig,
+    guard,
+    nowSeconds: () => Math.floor(nowMs / 1000),
+    advance: (ms) => {
+      nowMs += ms;
+    },
+  };
 }
 
 async function createTask(rig: TestRig, agent: string): Promise<{ agentId: string; fork: { name: string } }> {
@@ -244,6 +254,39 @@ test("webhook auth: duplicate nonce rejected as 409 CONFLICT even with a fresh v
   // A distinct nonce is a distinct delivery and is accepted.
   const sha3 = await commitRaw(h.rig, task.fork.name, "wip 3");
   strictEqual((await deliver(sha3, "nonce-fresh", String(base))).status, 200);
+});
+
+test("webhook auth: nonce retention strictly outlives a max-future envelope (C1506 replay hypothesis)", async () => {
+  const h = webhookRig();
+  const task = await createTask(h.rig, "retention");
+  const base = h.nowSeconds();
+  const deliver = (sha: string, nonce: string, ts: string) =>
+    signedWebhook(h.rig.services, {
+      raw: JSON.stringify({ fork: task.fork.name, sha }),
+      nonce,
+      timestampHeader: ts,
+    });
+
+  // Non-vacuous positive: envelope stamped at the maximum future skew the
+  // timestamp check accepts is accepted here.
+  const sha = await commitRaw(h.rig, task.fork.name, "wip future-stamped");
+  const futureTs = String(base + WEBHOOK_TOLERANCE_SECONDS);
+  strictEqual((await deliver(sha, "nonce-future-edge", futureTs)).status, 200);
+
+  // At first-seen + 2×tolerance the envelope is STILL signature-valid, so
+  // the captured delivery must still be a 409 replay: retention may not
+  // expire the nonce at the same instant the signature remains acceptable
+  // (codex-principal C1506 source-derived hypothesis).
+  h.advance(2 * WEBHOOK_TOLERANCE_SECONDS * 1000);
+  strictEqual((await deliver(sha, "nonce-future-edge", futureTs)).status, 409);
+
+  // Once retention lapses the nonce is forgotten — but the same envelope
+  // now fails the timestamp check first, so reuse stays unreachable
+  // through the verify path.
+  h.advance(WEBHOOK_RETENTION_MS - 2 * WEBHOOK_TOLERANCE_SECONDS * 1000);
+  const lapsed = await deliver(sha, "nonce-future-edge", futureTs);
+  strictEqual(lapsed.status, 401);
+  match(errorOf(lapsed), /outside tolerance window/);
 });
 
 test("webhook auth: nonce SUBSTITUTION fails the HMAC (stolen signature cannot be replayed under a fresh nonce)", async () => {
@@ -499,14 +542,18 @@ test("error redaction: auth failures never echo the presented bearer token", asy
   ok(!JSON.stringify(res.body).includes(presented));
 });
 
-test("MemoryReplayGuard: duplicate rejection, TTL expiry, bounded capacity with oldest eviction", () => {
+test("MemoryReplayGuard: duplicate rejection, retention past the validity horizon, bounded capacity with oldest eviction", () => {
   let now = 1_000_000;
   const guard = new MemoryReplayGuard({ nowMs: () => now });
   strictEqual(guard.admit("a"), true);
   strictEqual(guard.admit("a"), false);
   strictEqual(guard.size, 1);
-  now += 2 * WEBHOOK_TOLERANCE_SECONDS * 1000 + 1;
-  strictEqual(guard.admit("a"), true); // TTL expired → re-admitted, no unbounded growth
+  // Retention is strictly beyond 2×tolerance (C1506): at exactly the end
+  // of a max-future envelope's validity the nonce must still be held.
+  now += 2 * WEBHOOK_TOLERANCE_SECONDS * 1000;
+  strictEqual(guard.admit("a"), false);
+  now += WEBHOOK_RETENTION_MS - 2 * WEBHOOK_TOLERANCE_SECONDS * 1000;
+  strictEqual(guard.admit("a"), true); // retention lapsed → re-admitted, no unbounded growth
 
   const tiny = new MemoryReplayGuard({ nowMs: () => now, maxEntries: 2 });
   strictEqual(tiny.admit("x"), true);

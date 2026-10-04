@@ -120,6 +120,16 @@ export async function decideMutatingAuth(
 /** Allowed |now − timestamp| skew, both directions, in seconds. */
 export const WEBHOOK_TOLERANCE_SECONDS = 300;
 
+/**
+ * Nonce retention. An envelope stamped at the maximum future skew (now +
+ * tolerance) stays signature-valid through now + 2×tolerance INCLUSIVE, and
+ * admit() evicts entries once `expiresAt <= now`, so retention of exactly
+ * 2×tolerance would let the expiry instant coincide with the envelope's
+ * last valid instant (C1506). The 1s margin keeps retention strictly
+ * beyond everything the timestamp check can still accept.
+ */
+export const WEBHOOK_RETENTION_MS = 2 * WEBHOOK_TOLERANCE_SECONDS * 1000 + 1_000;
+
 /** Bounded seen-nonce store behind the replay gate. */
 export interface WebhookReplayGuard {
   /** True when the nonce was not seen within the TTL; records it. */
@@ -128,11 +138,12 @@ export interface WebhookReplayGuard {
 
 /**
  * In-memory TTL+capacity nonce store. Entries expire after ttlMs (default
- * 2× the tolerance window, so it covers everything the timestamp check
- * lets through); when capacity is reached the OLDEST entries are evicted,
- * bounding memory at the cost of allowing a nonce reuse older than the
- * surviving window — the timestamp check still bounds those to ±tolerance
- * seconds. Single-threaded runtimes (node, workerd) make admit() atomic.
+ * WEBHOOK_RETENTION_MS, strictly beyond the 2×tolerance validity horizon of
+ * even a max-future-stamped envelope); when capacity is reached the OLDEST
+ * entries are evicted, bounding memory at the cost of allowing a nonce
+ * reuse older than the surviving window — the timestamp check still bounds
+ * those to ±tolerance seconds. Single-threaded runtimes (node, workerd)
+ * make admit() atomic.
  */
 export class MemoryReplayGuard implements WebhookReplayGuard {
   private readonly seen = new Map<string, number>();
@@ -143,7 +154,7 @@ export class MemoryReplayGuard implements WebhookReplayGuard {
   constructor(
     opts: { ttlMs?: number; maxEntries?: number; nowMs?: () => number } = {},
   ) {
-    this.ttlMs = opts.ttlMs ?? 2 * WEBHOOK_TOLERANCE_SECONDS * 1000;
+    this.ttlMs = opts.ttlMs ?? WEBHOOK_RETENTION_MS;
     this.maxEntries = opts.maxEntries ?? 10_000;
     this.nowMs = opts.nowMs ?? Date.now;
   }
