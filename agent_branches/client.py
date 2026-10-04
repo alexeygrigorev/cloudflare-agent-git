@@ -429,7 +429,11 @@ class AgentBranchesClient:
                 "Specify agent explicitly."
             )
 
-        payload: Dict[str, Any] = {"action": action, "agent": effective_agent}
+        payload: Dict[str, Any] = {
+            "action": action,
+            "note": action,
+            "agent": effective_agent,
+        }
         if task_id:
             payload["task_id"] = task_id
             payload["taskId"] = task_id
