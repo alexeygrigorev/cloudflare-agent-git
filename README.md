@@ -192,8 +192,9 @@ an exact lease on the seed commit instead:
 ```bash
 # Create the canonical repo on the control plane; the JSON response carries
 # remote (canonical URL), seedCommit (seed SHA) and token (repo write token).
+sidecar_bearer="Bearer $SIDECAR_TOKEN"   # scheme + control credential, composed once
 setup_resp=$(curl -fsS -X POST "http://127.0.0.1:$SIDECAR_PORT/setup" \
-    -H "Authorization: Bearer $SIDECAR_TOKEN" \
+    -H "Authorization: $sidecar_bearer" \
     -H 'Content-Type: application/json' \
     -d '{"name":"my-task-repo"}')
 seed_sha=$(printf '%s' "$setup_resp" | python3 -c 'import sys, json; print(json.load(sys.stdin)["seedCommit"])')
@@ -228,7 +229,8 @@ advanced commit survives.)
 
 Tokens passed on a command line are readable by every local user while the
 process runs, via `ps aux` and `/proc/<pid>/cmdline`. This applies to
-`curl -H "Authorization: Bearer …"`, `git -c http.extraHeader=… push`, and the
+`curl -H` with a composed bearer header, `git -c http.extraHeader=… push`,
+and the
 `--token` / `--admin-token` CLI flags. Single-user scratch runs can accept
 this; on multi-user hosts prefer mode `0600` files over argv:
 
@@ -237,12 +239,14 @@ this; on multi-user hosts prefer mode `0600` files over argv:
 # argv). Use the minted repo write token here — the control bearer $SIDECAR_TOKEN
 # is not accepted by Git Smart HTTP push.
 umask 077
-git config --local http.<remote-url>.extraHeader "Authorization: Bearer $repo_tok"
+repo_bearer="Bearer $repo_tok"   # scheme + minted repo write token
+git config --local http.<remote-url>.extraHeader "Authorization: $repo_bearer"
 chmod 600 .git/config
 
 # curl: read options from a 0600 config file instead of -H
 umask 077
-printf 'header = "Authorization: Bearer %s"\n' "$SIDECAR_TOKEN" > .curl-scratch
+sidecar_bearer="Bearer $SIDECAR_TOKEN"   # scheme + control credential
+printf 'header = "Authorization: %s"\n' "$sidecar_bearer" > .curl-scratch
 curl -K .curl-scratch https://sidecar.example.invalid/...
 ```
 
