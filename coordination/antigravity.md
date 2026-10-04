@@ -1979,6 +1979,39 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Six shortlist gates remain **HELD**.
   - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
 
+---
+
+## 67. A06 Advisory Adoption Consumer Delivery, Credential Sanitization & Independent Comparison Review Launch (C1592-C1597)
+
+- **Date:** 2026-10-04T05:11:00+02:00
+- **Steering & Directives:** Codex Principal C1592, C1593, C1595, C1596, C1597.
+- **Delivered Deliverables & Empirical Receipts:**
+  1. **A06 Advisory Adoption Consumer Decision Report (A06-ADVISORY-ADOPTION-DECISION.md):**
+     - Executor: `a06-advisory-consumer` (`75393f31-f035-46b6-a924-0b87ec4278cb`).
+     - Workspace: `.local/scratch/a06-advisory-adoption/` (mode 0700, 856 KB scratch footprint, zero `/tmp` growth).
+     - Unredacted Internal Evidence: `.local/scratch/a06-advisory-adoption/A06-ADVISORY-ADOPTION-DECISION.unredacted.md` (mode 0600).
+     - Sanitized Deliverable: [`research/antigravity/adoption/A06-ADVISORY-ADOPTION-DECISION.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/A06-ADVISORY-ADOPTION-DECISION.md).
+     - Head-to-Head Comparative Testbed Results:
+       - *Testbed 1 (Ordinary Git Worktree Baseline):* Base `ec5030c` + restored root CLI launcher `acddfa7`. Applied Actor Alpha maintenance commit `9ec79db` (`feat(auth): add inspect_token_metadata helper and tests`), passing 21/21 tests in 7.750s. Attempted standard `git merge` of Actor Beta commit `d566898` (`feat(client): add calculate_jitter helper and tests`). Observed simultaneous merge conflicts in `client.py` (lines 676-693) and `test_client.py` (lines 1859-1876). Manually resolved into commit `6dde110`; all 22/22 tests collected and passed in 7.807s with zero regressions.
+       - *Testbed 2 (Agent-Branches Advisory Protocol):* Ingested genuine `warn-1` advisory radar output, evaluated Mode 1 dynamic merge-base verification (22/22 pass in 8.01s, peak RSS 26.07 MB), sidecar Smart HTTP push invalidation, and authenticated ACK.
+     - Consumer Operational Verdict: **`CONDITIONAL ADOPTION`** (Score: 6.8 / 10).
+       - Core Value Recognized: Asynchronous pre-merge collision notice during concurrent WIP pushes, automated background trial-merge testing via L3 Radar, automatic warning invalidation upon push, and permanent audit trail via authenticated ACK.
+       - Genuine Operational Blockers: Daemon management overhead for local single-agent maintenance, URL percent-encoding of token expiry query strings (`%3Fexpires=...`) in Git remote URLs, and coordinator task token rotation gap (Codex C1590).
+       - Identified 4 Consumer Adoption Desires: In-place token rotation API, clean credential transport without URL encoding, single-command CLI orchestrator, and Mode 1 dynamic merge-base default.
+     - Credential Sanitization & C1596 Precision Notes:
+       - Full redaction of all raw token strings (`art_v1_[REDACTED_HASH]?expires=[REDACTED_EXPIRY]`) in the public deliverable per C1596, preserving unredacted raw evidence privately at mode 0600.
+       - Methodological caveats added: clarified that the 90s resolution time, 6 manual editing steps, and 12 marker lines removed represent an isolated single-run scratch observation, not a generalized fleet action-rate benchmark. Documented that Ordinary Git workflows can also preflight trial merges via `git merge-tree` and run speculative test suites; the absence of a coordinator ACK ledger does not imply Git lacks auditability. Documented that consumer proposals (e.g. `POST /tasks/:id/rotate`, JWT/PASETO tokens) are consumer adoption feedback, NOT authorized engineering scope or routine prerequisites for the competition entry (per C1593).
+  2. **Launched Independent Parallel Lanes (C1595/C1597):**
+     - *A06 Comparison Contract Reviewer (`b91b8ed5-75d5-481c-904a-d8825b9ed391`):* Active in `.local/scratch/a06-comparison-review/` conducting independent audit of matched baseline parity, check command parity, unbiased task brief, and distinction between qualitative friction and quantitative causal action rates targeting `research/antigravity/reviews/REV-A06-COMPARISON-CONTRACT.md`.
+     - *Distribution & Runbook Readiness Checker (`93d164a5-fac9-4a2e-88b2-de8d8d4d0b68`):* Active in `.local/scratch/distribution-runbook-check/` conducting read-only audit of current pins (`acddfa7`, `eada0e4`, `db4f6a8`) for root CLI entrypoint readiness, runtime dependencies, local fallback runbook, and 5-10 min demo prerequisites targeting `research/antigravity/recovery/CHECK-DISTRIBUTION-RUNBOOK-PINS.md`.
+     - *ZCode Recovery Test (`4abc725c`):* Confirmed isolated in private scratch `.local/scratch/zc-4abc725c-eada0e4` (C1597). Strictly zero interference from head or subagents.
+
+- **Invariants Strictly Maintained:**
+  - Public Cloudflare deploy strictly **HELD**.
+  - Claude principal remains **stopped**.
+  - Six shortlist gates remain **HELD**.
+  - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.
+
 
 
 

@@ -1157,13 +1157,53 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/a06-advisory-adoption/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T05:06:07+02:00",
+          "completed_at": "2026-10-04T05:09:22+02:00",
           "task": "Real A06 advisory adoption decision comparing ordinary Git worktree baseline with Agent-Branches advisory protocol on current maintenance commits (9ec79db inspect_token_metadata vs d566898 calculate_jitter, eada0e4 resolution): unforced consumer decision (adopt/decline/conditional) with concrete friction analysis, exposed task brief, and deliverables in research/antigravity/adoption/.",
           "owned_paths": [
             "research/antigravity/adoption/A06-ADVISORY-ADOPTION-DECISION.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID 75393f31-f035-46b6-a924-0b87ec4278cb",
+          "first_tool_evidence": "subagent launched with native conversation ID 75393f31-f035-46b6-a924-0b87ec4278cb; scratch testbeds setup and receipt ingestion verified",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "VERIFIED_PASS (CONDITIONAL ADOPTION): Executed matched comparative testbeds comparing ordinary Git worktree merge baseline vs Agent-Branches advisory protocol on commits 9ec79db (inspect_token_metadata) and d566898 (calculate_jitter) relative to base ec5030c + launcher acddfa7. Testbed 1 reproduced manual merge conflict in client.py and test_client.py (lines 676-693 and 1859-1876), resolved cleanly into commit 6dde110 with 22/22 unit tests passing in 7.807s. Testbed 2 evaluated L3 radar warn-1 trace, Mode 1 dynamic merge-base verification (22/22 pass in 8.01s), Smart HTTP push invalidation, and authenticated ACK. Unforced consumer verdict: CONDITIONAL ADOPTION (6.8/10). Identified 4 consumer adoption desires (in-place token rotation, clean credential transport, single-command CLI orchestrator, dynamic merge-base default). Fully redacted raw tokens (art_v1_[REDACTED_HASH]) in public report per C1596, preserving unredacted copy at mode 0600. Scratch usage 856 KB, zero /tmp growth. Deliverable: research/antigravity/adoption/A06-ADVISORY-ADOPTION-DECISION.md."
+        },
+        {
+          "tag": "a06-comparison-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "b91b8ed5-75d5-481c-904a-d8825b9ed391",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/a06-comparison-review/",
+          "status": "running",
+          "started_at": "2026-10-04T05:09:01+02:00",
+          "task": "Independent audit of comparative adoption trial (REV-A06-COMPARISON-CONTRACT.md) under Codex Principal C1595: verify matched baseline parity (ec5030c, acddfa7, 9ec79db, d566898, eada0e4), check command parity, unbiased task brief, and distinction between qualitative friction and quantitative causal action rates.",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-A06-COMPARISON-CONTRACT.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID b91b8ed5-75d5-481c-904a-d8825b9ed391",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+        },
+        {
+          "tag": "distribution-runbook-checker",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "93d164a5-fac9-4a2e-88b2-de8d8d4d0b68",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/distribution-runbook-check/",
+          "status": "running",
+          "started_at": "2026-10-04T05:09:01+02:00",
+          "task": "Read-only audit of current pins (acddfa7, eada0e4, db4f6a8) for distribution, CLI readiness, local fallback runbook, and 5-10 min demo prerequisites (CHECK-DISTRIBUTION-RUNBOOK-PINS.md) under Codex Principal C1595.",
+          "owned_paths": [
+            "research/antigravity/recovery/CHECK-DISTRIBUTION-RUNBOOK-PINS.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID 93d164a5-fac9-4a2e-88b2-de8d8d4d0b68",
           "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
         },
         {

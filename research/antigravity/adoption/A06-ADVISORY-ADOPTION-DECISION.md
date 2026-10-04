@@ -172,10 +172,10 @@ While the core state machine works, the operational friction for an everyday dev
 
 #### Friction 2: URL Percent-Encoding of Token Parameters
 - Sidecar bearer credentials format write tokens with embedded expiration query parameters:
-  `art_v1_bd1072b3e0a78ad994e94b7dc7605ddcc3c2ef6c?expires=1791086365`.
+  `art_v1_[REDACTED_HASH]?expires=[REDACTED_EXPIRY]`.
 - In Git remote URLs, the `?` and `=` characters must be percent-encoded:
   ```text
-  http://token:art_v1_bd1072b3e0a78ad994e94b7dc7605ddcc3c2ef6c%3Fexpires%3D1791086365@127.0.0.1:59721/git/...
+  http://token:art_v1_[REDACTED_HASH]%3Fexpires%3D[REDACTED_EXPIRY]@127.0.0.1:<sidecar_port>/git/...
   ```
 - This creates multiple ergonomic hazards:
   1. Plaintext secret persistence: Git stores the full userinfo string (including the raw token) in `.git/config` on disk.
@@ -200,30 +200,31 @@ While the core state machine works, the operational friction for an everyday dev
 | :--- | :--- | :--- | :--- |
 | **Setup Overhead** | **None** (instant checkout/clone) | **High** (requires Node.js, 2 daemons, port allocation, webhook wiring) | **Git Baseline Wins** |
 | **Collision Detection Timing** | **Late** (detected only at `git merge` or PR) | **Early / Real-time** (detected asynchronously during concurrent WIP pushes) | **A06 Advisory Protocol Wins** |
-| **Collision Resolution Effort** | ~90s manual resolution, 6 editing steps, 12 marker lines removed | Same ~90s code edit, plus git push, radar check, and ACK API call | **Tie on code edit; Git simpler on workflow** |
-| **Speculative Test Attestation** | Manual (`python3 -m unittest`) | Automated background runner (`radar.engine` Mode 1: 22/22 in 8.01s) | **A06 Advisory Protocol Wins** |
-| **State Machine & Audit Trail** | Git commit history only; no formal acknowledgment ledger | First-class warning lifecycle (`active` $\rightarrow$ `invalidated` $\rightarrow$ `acked`) | **A06 Advisory Protocol Wins** |
+| **Collision Resolution Effort** | ~90s manual resolution, 6 editing steps, 12 marker lines removed *(isolated single-run observation in scratch; not a generalized fleet action-rate benchmark)* | Same ~90s code edit, plus git push, radar check, and ACK API call | **Tie on code edit; Git simpler on workflow** |
+| **Speculative Test Attestation** | Manual (`python3 -m unittest`) or scripted (`git merge-tree` + test) | Automated background runner (`radar.engine` Mode 1: 22/22 in 8.01s) | **A06 Advisory Protocol Wins** |
+| **State Machine & Audit Trail** | Git commit history, reflogs, and commit SHAs; no formal coordinator ACK ledger | First-class warning lifecycle (`active` $\rightarrow$ `invalidated` $\rightarrow$ `acked`) | **A06 Advisory Protocol Wins on warning lifecycle** |
 | **Credential Security & Hygiene** | Standard SSH keys / credential helpers | Embedded tokens in remote URLs, plaintext in `.git/config`, C1590 rotation gap | **Git Baseline Wins** |
-| **Operational Reliability** | 100% deterministic (local filesystem) | Dependent on sidecar uptime, coordinator persistence, and webhook delivery | **Git Baseline Wins** |
+| **Operational Reliability** | High deterministic stability (local filesystem) | Dependent on sidecar uptime, coordinator persistence, and webhook delivery | **Git Baseline Wins** |
 | **Fit for Human / Single Agent** | **Optimal** | Unnecessary overhead | **Git Baseline Wins** |
 | **Fit for Multi-Agent Fleets** | Prone to merge conflicts and lock contention | **High value** (prevents wasted agent compute on diverging branches) | **A06 Advisory Protocol Wins** |
 
-### 4.2 The 4 Mandatory Preconditions for Production Adoption
+*Methodological Note (Codex C1596):*
+1. **Isolated Scratch Observation vs Fleet Benchmark:** The measured ~90s wall-clock time, 6 discrete editing steps, and 12 marker lines removed are specific to this single manual resolution testbed in scratch. They illustrate the manual steps required to resolve these two specific methods, rather than an empirical multi-agent fleet action rate or productivity benchmark.
+2. **Ordinary Git Preflight Capabilities:** Ordinary Git workflows can also achieve speculative trial merges without touching the working tree via `git merge-tree <base> <head1> <head2>` and can execute preflight test suites in detached worktrees. The absence of a coordinator HTTP ACK ledger does not imply Git lacks auditability; commit DAGs, cryptographic tree SHAs, and reflogs provide durable auditability.
 
-Before the A06 Advisory Protocol can be approved for general engineering adoption, the following four technical preconditions must be satisfied:
+### 4.2 Consumer Preconditions vs Authorized Engineering Scope
 
-1. **Precondition 1: In-Place Token Rotation API (Fix Codex C1590)**
-   - The coordinator router (`prototype/src/core/router.ts`) must implement `POST /tasks/:id/rotate`.
-   - The endpoint must accept an authenticated task or admin bearer token, generate a fresh secure token for the existing `taskId` and `agentId`, invalidate the old token, and return the fresh token without altering task continuity.
-2. **Precondition 2: Clean Credential Transport & Elimination of URL Percent-Encoding**
-   - Sidecar authentication must support standard HTTP `Authorization: Bearer <token>` headers via `git -c http.extraHeader="..."` or a custom Git credential helper.
-   - Remove embedded query parameters (`?expires=...`) from the token string itself, encoding expiry and metadata into a signed, self-contained bearer token (e.g. JWT or PASETO) to eliminate `%3F` percent-encoding bugs.
-3. **Precondition 3: Single-Command Daemon Orchestration**
-   - Provide a unified CLI command (e.g. `agent-branches dev` or `agent-branches up`) that starts the sidecar and coordinator on automatically assigned ephemeral ports, handles mutual token configuration, writes a local `.agent-branches.env` or `.git/agent-branches.json`, and shuts down cleanly on SIGINT/SIGTERM.
-   - In production Cloudflare environments, this complexity is handled by Cloudflare Workers and Durable Objects, but local developer/agent tooling requires equivalent zero-friction orchestration.
-4. **Precondition 4: Dynamic Merge-Base as Default Radar Policy**
-   - Configure `radar.engine` to use Mode 1 (dynamic common ancestor via `git merge-base`) as the default merge evaluation strategy for all pairwise checks.
-   - Restrict Mode 2 (static base) strictly to initial fork verification before any cross-branch integration occurs.
+The following four technical preconditions represent consumer adoption desires identified during this evaluation. In accordance with Codex Principal directives C1593 and C1596, these proposals are **consumer evaluation feedback**, NOT mandatory engineering scope or authorized API expansions for the immediate competition entry:
+
+1. **Consumer Precondition 1: In-Place Token Rotation API**
+   - Consumer Desideratum: The coordinator router implementing `POST /tasks/:id/rotate` to mint fresh bearer credentials for existing `taskId`/`agentId` pairs without breaking task continuity.
+   - *Governance Note (Codex C1593/C1596):* Expanding coordinator APIs simply to rescue an old trial is not authorized. Future isolated replays should use standard `POST /tasks` with fresh task IDs and actual source pins rather than expanding routes.
+2. **Consumer Precondition 2: Clean Credential Transport & Elimination of URL Percent-Encoding**
+   - Consumer Desideratum: Sidecar authentication supporting standard HTTP `Authorization: Bearer <token>` headers via Git credential helpers or configuration, avoiding token query strings (`?expires=...`) in Git remote URLs.
+3. **Consumer Precondition 3: Single-Command Daemon Orchestration**
+   - Consumer Desideratum: A unified CLI command (e.g. `agent-branches dev`) managing sidecar and coordinator daemon lifecycles transparently for local testing.
+4. **Consumer Precondition 4: Dynamic Merge-Base as Default Radar Policy**
+   - Consumer Desideratum: Standardizing on Mode 1 dynamic common ancestor (`git merge-base`) in L3 Radar to eliminate false-positive collision alerts on integrated branches.
 
 ---
 
