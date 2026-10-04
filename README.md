@@ -70,6 +70,43 @@ These research tests are intentionally left in place and are **not** part of
 the SDK client suite; they are not deleted or masked to make discovery look
 green.
 
+## Run against a local coordinator
+
+The package ships an offline mock coordinator (`tests/mock_l1_server.py`) for
+smoke tests and trying the CLI without any infrastructure:
+
+```bash
+# Terminal 1 — coordinator on an ephemeral port, gated by a fresh admin token
+ADMIN_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+python3 tests/mock_l1_server.py --port 0 --admin-token "$ADMIN_TOKEN"
+# prints: Mock L1 Coordinator Server listening at http://127.0.0.1:<port>
+
+# Terminal 2 — point the SDK at it and create a task
+export ADMIN_TOKEN
+export AGENT_BRANCHES_SERVER=http://127.0.0.1:<port>   # or pass --server per call
+./agent-branches task create --intent "My change" --json
+```
+
+`task create` fills `repo`, `base-sha` and `branch` from the local git state.
+The response carries a per-task token (`token.plaintext`); the Python client
+caches it for later `push()` calls. The CLI is process-per-invocation and
+cannot keep that cache, so for a coordinator that enforces bearer auth either
+export `ADMIN_TOKEN` (admin bearer) or drive pushes through
+`AgentBranchesClient`, which resolves the token automatically:
+
+```python
+from agent_branches.client import AgentBranchesClient
+
+c = AgentBranchesClient(server="http://127.0.0.1:<port>")
+task = c.create_task(repo="...", base_sha="...", intent="...", branch="...",
+                     admin_token=os.environ["ADMIN_TOKEN"])
+c.push(task_id=task["taskId"], files_changed=["README.md"],
+       test_provenance="python3 -m unittest: 22 passed")  # token from cache
+```
+
+Note: the mock coordinator simulates the L1 HTTP routes and the admin/runner/
+per-task bearer ladders; it does not simulate the deployment sidecar.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
