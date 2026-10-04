@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T10:52:00.000000+02:00",
+  "updated_at": "2026-10-04T11:02:00.000000+02:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -2432,13 +2432,14 @@
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/uprt-concurrent-trial/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T10:51:13+02:00",
+          "completed_at": "2026-10-04T11:01:07+02:00",
           "task": "Unsteered Parallel Refactoring Trial (UPRT) Gate on concurrent maintenance tasks T2 (breaking create options refactor) and T3 (bulk import endpoint) on demo-target codebase: Arm A matched ordinary Git worktree baseline vs Arm B real Agent Branches Node+Sidecar stack with L3 Advisory Radar pairwise trial-merge.",
           "owned_paths": [
             "research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md"
           ],
-          "first_tool_evidence": "subagent launched with native conversation ID 4cb81460-e27d-4579-92cc-660362b38842; inspecting demo-target BASE commit, reference patches t2.patch and t3.patch, verify-overlap.sh facts, daemon entrypoints, and radar engine.",
+          "first_tool_evidence": "subagent launched with native conversation ID 4cb81460-e27d-4579-92cc-660362b38842; executed two-arm comparative trial on demo-target concurrent tasks T2 vs T3; verified Arm A 1 defect escape vs Arm B 0 defect escapes with proactive Radar detection in 0.539s; exact tree match 7d1233e5; delivered REPORT-UPRT-CONCURRENT-GATE.md (clean publication guard, exit 0).",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]

@@ -3269,3 +3269,54 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
   - Standup file `experiment/standups/2026-10-04.md` preserved untouched.
   - Memory within cooperative 1500 MB pool, scratch $\le 512$ MB, clean publication guard.
+
+---
+
+## 105. Empirical Unsteered Parallel Refactoring Trial (UPRT) Gate Delivery & Unsteered Adoption Verdict
+
+- **Date:** 2026-10-04T11:02:00+02:00
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives & Authority:** Codex Principal C1818 directives, human message 31/32, protocol defined in `research/antigravity/demand/foremerge-firsthand-verification.md` Section 5.
+- **Trial Output Deliverable:** [`research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md).
+- **Publication Guard:** Validated via `publication_guard.py` (exit 0, zero credential/token leakage).
+- **Empirical Results JSON:** `.local/scratch/uprt-concurrent-trial/uprt_results.json`.
+
+### 1. Comparative Outcomes Summary
+- **Baseline Seed Commit:** `ff4decd7be0e848b5319ce47fedec2ab0421262e` on `demo-target/`.
+- **Target Tasks:**
+  - Task T2: Breaking refactor of `ShortlinkService.create` to object form `{ slug, url, ttlSeconds }` (`t2.patch`).
+  - Task T3: Bulk import endpoint `POST /links/bulk` calling `create` positionally (`t3.patch`).
+- **Defect Escape Rate (The Crucial Empirical Difference):**
+  - **Arm A (Matched Ordinary Git Baseline):** **1 defect escaped to `main`**. Standard `git merge --no-edit` between A1 and A2 completed with **exit code 0** (`Merge made by the 'ort' strategy`) and reported zero textual conflicts. The semantic interface regression was only discovered post-merge when CI broke on `main` (`POST /links/bulk` returned HTTP 400 !== 201). Required emergency post-merge hotfix on broken `main` (`80ac006b`).
+  - **Arm B (Agent Branches Stack with L3 Advisory Radar):** **0 defects escaped to `main`**. The L3 Advisory Radar evaluated the pairwise vector at push time via in-memory `git merge-tree --write-tree` and isolated `node --test` snapshot execution. In **0.5390 seconds**, it detected `status="conflict"`, `kind="test"` and posted an active warning to Coordinator (`warn-1`). Worker B2 resolved the signature mismatch on branch, verified 19/19 passing tests, cleared the warning (transitioned to `invalidated`), and landed cleanly to canonical `main` (`30af5b71`).
+- **Tree Equivalence & Test Suite:**
+  - Both arms converged on the **exact same final tree hash**: `7d1233e59b7630865de2435aee6bc3365fc34dd2` (0-byte delta, 19/19 tests passing).
+
+### 2. Execution Overhead & Resource Footprint
+- **Total Wall-Clock Time:**
+  - Arm A: 1.8403 s across 20 commands.
+  - Arm B: 6.4060 s across 42 commands (3.48x ratio; +4.57s absolute delta for full distributed stack).
+- **Rework Duration:**
+  - Arm A (post-merge hotfix): 0.3350 s.
+  - Arm B (pre-merge branch rework): 0.4720 s.
+- **Radar Latency:** 0.5390 s initial detection; 0.5143 s re-evaluation after fix.
+- **Resident Memory:**
+  - Sidecar (`sidecar.mjs`): 59.45 MB initial -> 75.26 MB final (guideline: <= 100 MB).
+  - Coordinator (`main.js`): 62.52 MB initial -> 79.86 MB final (guideline: <= 100 MB).
+  - Combined Stack RSS: 155.12 MB (well under 1500 MB cooperative allocation).
+- **Scratch Disk Usage:** 135.8 MB total in `.local/scratch/uprt-concurrent-trial/` (strictly <= 512 MB ceiling).
+- **Hygiene Invariants:** Strictly 0 cargo/rustc invocations; zero net `/tmp` growth; zero unredacted secrets.
+
+### 3. Deep Comparison: Agent Branches L3 Radar vs Foremerge v0.5.1
+- **Foremerge Flaw:** Requires manual CLI scope annotations (`--scope symbol:Foo=bar`), which creates friction, misses unannotated contract collisions, and relies on single-machine local SQLite in `.git`.
+- **Agent Branches Advantage:** Requires **zero manual annotations**. Unsteered standard Git commits and pushes trigger automated in-memory trial merges and test runs, catching real contract breakage objectively with distributed DO/Smart HTTP architecture.
+
+### 4. Unsteered Adoption Verdict
+- **Single-Actor Tasks: DECLINE ADOPTION.** Ordinary Git worktree is 5.7x faster with 0 background daemons; advisory tooling cannot earn its keep when collision probability is zero.
+- **Concurrent Multi-Agent Refactoring: ADOPT (HIGH VALUE).** When two or more agents refactor shared interfaces, textual Git merge is blind to contract breakage. Agent Branches L3 Radar reliably catches silent semantic defects before merge without requiring subjective manual annotations.
+
+### 5. Task & Team Registry Reconciliation
+- `coordination/TASKS.json`: Updated `uprt-concurrent-gate` to `done`.
+- `coordination/TEAM-REGISTRY.json`: Updated `uprt-concurrent-worker` (`4cb81460`) to `completed`.
+- Next Action: Launch distinct independent reviewer (`uprt-concurrent-reviewer`) to audit receipts and verify negative cases.
+
