@@ -2823,6 +2823,50 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Publication guard verified clean (`publication_guard.py` exit code 0).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
 
+---
+
+### 93. Readiness Producer Diagnosis & Bounded Repair Spec Delivered, Ground-Truth Hold Enforcement, and Seed-Lease Canonical Coordination (C1767–C1769)
+
+- **As-of:** 2026-10-04, Europe/Berlin (06:34 UTC / 08:34 local)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Codex Principal C1767, C1768, C1769; Desktop Orchestrator 08:20 interface note.
+
+1. **Milestone Delivery: Readiness Producer Diagnosis & Bounded Spec (READINESS-PRODUCER-REPAIR-REPORT.md):**
+   - Report: [`research/antigravity/recovery/READINESS-PRODUCER-REPAIR-REPORT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/READINESS-PRODUCER-REPAIR-REPORT.md).
+   - Diagnostician: `readiness-producer-worker` (`d430037a-80b3-4310-ad47-48585bc06957`, registered in `coordination/TEAM-REGISTRY.json` as `completed`, verdict `DIAGNOSIS_AND_BOUNDED_SPEC_COMPLETE`).
+   - **Forensic Diagnosis of Z640 Contradiction:**
+     - Session `64049aa2` (`zcode-independent`) completed its turn at `1791013582627` (09:46:22 CEST on 2026-10-03), and its `Stop` hook correctly stamped `reported_state: "idle"` in `session.json`.
+     - Over the subsequent ~22.28 hours of resting at the composer prompt (`› Ask Codex to do anything`), the `zcodex` TUI (Ratatui/Crossterm) periodically flushed 43–44 byte ANSI cursor positioning and synchronized update sequences (`\x1b[?2026h...\x1b[22;3H\x1b[?25h\x1b[?2026l`).
+     - Aplexer's worker PTY reader continuously updated `last_activity_ms` to `1791093802302`.
+     - When delivery of queued message `01a10581-3a13-7642-8a3c-a075b93ac7c5` was attempted at `08:03:22 CEST`, `idle_was_contradicted` failed closed (`1791093802302 > 1791013582627 + 2000`), rejecting delivery with exact error: `NOTREADY: idle event 1791013582627 contradicted PTY 1791093802302`.
+   - **Source vs Installed Binary Demarcation:**
+     - Inspected source tree: `/home/alexey/git/aplexer` @ commit `bc0d3d75ab00e87b8357e91e0d7297bd67c6e101` (with working-copy uncommitted edits in `src/watch.rs` and `src/watch/state.rs`).
+     - Installed binary digest: `/home/alexey/.local/bin/aplexer` / `/home/alexey/.local/bin/a` SHA256: `8d49a216d43c70843bc07705f4c11eb13f3eb51646d5c6fc204ce0796ce618c4`.
+     - Critiqued working-tree `if record.engine == "antigravity"` exemption as an uncommitted source-level edit, parochial (ignoring `zcodex`/`codex` which share identical hook lifecycles), and an unsafe blanket bypass.
+   - **Multi-Layered Bounded Repair Specification:**
+     - Formulated a comprehensive, unimplemented native recovery specification (Section 5) that checks workload leader liveness (`workload_leader_alive`), procfs child processes (`direct_child_pids`), and screen snapshot draft sentinels (`rpc_capture_screen`), preserving busy/draft/unknown rejection across all engines without ad-hoc name checks.
+   - **Strict Human No-Rust-Build Hold Compliance:**
+     - Pre-hold step 76 cargo test run explicitly disclosed (0.14s, 0 compiling lines, 0 storage growth).
+     - Following step 89 hold ACK, strictly zero `cargo test`, `cargo build`, `cargo check`, or `rustc` commands were run. `/home/alexey/git/aplexer` preserved 100% read-only.
+
+2. **Git Coordination Protocol & Shared History Invariant (C1767):**
+   - In accordance with Codex Principal C1767 observation, strictly ceased any use of `git pull --rebase` on shared `main`.
+   - Preserved current `origin/main` without resets or rebases.
+   - All commits serialized with `flock .local/git.lock` using explicit staged paths and ordinary non-rewriting integration.
+
+3. **Runbook Seed-Lease Canonical Sequence Coordination (7aa20f1 / 6498994):**
+   - Ingested `zcode-recovery-test` (`4abc725c`) restructuring of `proto/runbook-seed-lease` @ `7aa20f1` and report addendum at `6498994`.
+   - Establishes coordinator `POST /setup` (`ADMIN_TOKEN`) as primary product flow with `created: true && seedCommit != null` fail-closed guard, sidecar write token minting, and local git config file-backed bearer (`.git/config` mode 0600) before exact seed-lease push. Current-pin review prepared.
+
+4. **Active Subagents & Next Actions:**
+   - `metrics-collect-worker` (`fd6f993c-e2b0-45d6-8656-247d90e24427`) executing conversation-aware scoping in `scripts/metrics/collect.py`.
+   - Independent negative review to follow upon deliverable completion.
+   - Continuous 120s timer scheduled.
+
+5. **Invariants Strictly Preserved:**
+   - Publication guard verified clean (`publication_guard.py` exit code 0).
+   - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
+
 
 
 
