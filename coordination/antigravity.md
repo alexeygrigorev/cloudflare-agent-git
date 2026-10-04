@@ -3554,5 +3554,33 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
 - **Target Deliverable:** [`research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md).
 - **Invariants Maintained:** Zero cargo/rustc invocations, zero derived counter emissions, cooperative 1500 MB memory slice, no manufactured scale-up tests.
 
+---
+
+## 111. Landed Independent Review REV-CONTAINER-AND-PATCH-WORKFLOWS (Verdict: Bounded Acceptance)
+
+- **Date:** 2026-10-04T13:05:00+02:00
+- **Directives:** Desktop Orchestrator 12:50 Berlin directives, Codex Principal C1818, and User messages 26, 31, 32.
+- **Reviewer:** `container-patch-reviewer` (`cfdf7858-c984-411a-a354-3c05e68f3b30`).
+- **Deliverable Landed:** [`research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md) (355 lines, 37.7 KB, publication guard: PASS / exit 0).
+- **Verdict:** **BOUNDED ACCEPTANCE — TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED**.
+- **Audit Findings:**
+  1. *Production Paradigm Confirmed:* Sourced primary technical reality across OpenHands, SWE-bench, Devin, Modal Labs, E2B, and Daytona verified without exception. Exactly zero production agent systems utilize continuous remote Git Smart HTTP push with leased bearer tokens.
+  2. *Enterprise Security & Credential Isolation Validated:* Enterprise InfoSec egress lockdowns (SOC2/ISO27001/HIPAA) block outbound edge HTTPS traffic; zero-trust patch synthesis eliminates repository write tokens from untrusted LLM environments, using out-of-band secret scanning (Secretlint/Semgrep) on trusted hosts.
+  3. *Multi-Agent Swarm Realities Verified:* Fleets coordinate via Single-Synthesizers or local Git worktree plumbing (`git merge-tree`), avoiding remote HTTP daemons and noisy trial-merges on intermediate draft commits.
+  4. *Addressable Market Bounded:* The viable niche for Agent Branches is strictly bounded to distributed heterogeneous workers with cheap tests and permissive InfoSec. Standard enterprise recommendation remains Model A (ephemeral sandboxes + patch export + PR merge queues).
+  5. *Architectural Bounds Formalized:*
+     - Bound 1: Patch format must use git-extended headers (`git diff --binary`, `git apply --3way`) to preserve file modes, binary assets, and 3-way ancestor merge fallback.
+     - Bound 2: Trajectory auditing should be separated from Git commit graphs using out-of-band JSONL event streams.
+     - Bound 3: Monorepos with massive dependency trees require warm snapshot pools or copy-on-write volume overlays to avoid cold-start penalties.
+     - Bound 4: Local worktree swarms are bounded by host resource limits; horizontal scaling to >50 agents requires cloud microVM pools.
+- **Coordination Registers Synchronized:**
+  - `coordination/TASKS.json`: Marked `container-and-patch-review` as `done`.
+  - `coordination/TEAM-REGISTRY.json`: Marked `container-patch-reviewer` as `completed`.
+- **Invariants Maintained:**
+  - Strictly **0** cargo/rustc compiler invocations under human hold.
+  - Strictly **0** tokens emitted to `usage-events.jsonl` (counter emission held).
+  - Scratch memory and disk budgets respected (<1 MB in scratch, 63 GB free on root).
+  - Clean publication guard (PASS / exit 0).
+
 
 
