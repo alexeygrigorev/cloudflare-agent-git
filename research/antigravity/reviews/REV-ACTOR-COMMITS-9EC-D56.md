@@ -67,3 +67,23 @@ Applied in disposable worktrees, each restored to byte-identical state afterward
 - **No secrets:** helpers were exercised with synthetic tokens only; report contains hashes, paths, and measured numbers only.
 - **Workspace:** verification ran in disposable worktrees `.local/scratch/zcode-rev-9ec-d56/{base,alpha,beta}` (detached HEADs at the exact commits); sources restored byte-identical after every mutation; scratch to be removed after publication.
 - **Reproduction:** `git fetch origin proto/actor-alpha-maintenance proto/actor-beta-maintenance`, then per-commit `python3 -m unittest -v tests/test_client.py`; mutation diffs are single-line `sed` substitutions as described in §5.
+
+## 8. Amendment (2026-10-04, C1571 challenge) — both challenges CONFIRMED
+
+Antigravity-head challenged the review (aplexer 01a104d0). Both challenges reproduce empirically; the original review under-tested both helpers (synthetic prefixes only, no cap-bound assertion). Verdict remains PASS WITH FINDINGS, now with two confirmed defects added (F4, F5).
+
+**F4 (alpha, real-token false negative — CONFIRMED).** `inspect_token_metadata("art_v1_da4f4519")` → `{'valid_prefix': False, 'segments': 3, 'length': 15}` at 9ec79db. `art_v1_` is a genuine coordinator-minted token prefix (documented across `research/antigravity/adoption/REAL-FORK-ADOPTION-REPORT.md`, `research/antigravity/dogfood/WARNING-CONSUMER-RESOLUTION-REPORT.md` on origin/main, which records this exact defect and its fix in a later lane). `git grep art_v1_ 9ec79db` finds no occurrence in these commit trees — the prefix whitelist predates knowledge of real tokens. Impact: real coordinator tokens are flagged invalid by a helper whose result key reads as a validity verdict. Mitigant (unchanged from §2): the helper is formatting-only and nothing in these commits feeds it an authorization decision.
+
+**F5 (beta, cap and input-validation gaps — CONFIRMED).**
+- Cap violation: `calculate_jitter(8)` at defaults = **2.02 > max_delay 2.0** — jitter (0.01·(attempt%3)) is added *after* the `min(max_delay, …)` cap, so the documented bound does not hold for the returned delay.
+- `base_delay=-1` → returns `-1.0`; `max_delay=-5` (attempt 3) → returns `-5.0` (`min` selects the negative cap). Negative delays are returned without any validation.
+- Non-finite: `max_delay=nan` → returns `nan` (propagates); `base_delay=nan` → silently returns `max_delay`+jitter (`min` drops NaN comparisons). No finite-input guard.
+
+**Kill log — suite does not guard either defect (worktrees restored byte-identical after each):**
+
+| Check | Mutation | Result |
+|---|---|---|
+| K1 (alpha) | add `art_v1_` to the prefix whitelist | `test_21` **still OK** — suite does not pin the prefix list; neither the defect nor its fix is detected |
+| K2 (beta) | fold jitter under the cap: `min(max_delay, base·2**attempt + jitter)` | `test_22` **still OK** — cap semantics unpinned; post-restore sanity re-measured 2.02 |
+
+Receipts for the C1571-1 probe and all F5 cases are the literal outputs quoted above, run in `.local/scratch/zcode-rev-9ec-d56/{alpha,beta}` at the exact commit hashes. Combined with §5 this completes the mutation kill log: caught M1, M2; uncaught P1, P2, K1, K2.
