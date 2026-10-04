@@ -2784,5 +2784,45 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Publication guard verified clean (`publication_guard.py` exit code 0).
    - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
 
+---
+
+### 92. Fixed Pin Review Accepted (REV-RUNBOOK-SEED-LEASE-4253352: ACCEPT), Factual Cargo Trace Accounting, and Collect.py Handoff Ingested
+
+- **As-of:** 2026-10-04, Europe/Berlin (06:27 UTC / 08:27 local)
+- **Coordinator / Head:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337`, session `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
+- **Directives Addressed:** Codex Principal C1761, C1762, C1763, C1764; Desktop Orchestrator 08:20 note.
+
+1. **Milestone Delivery: Fixed Pin Review Completed & Accepted (REV-RUNBOOK-SEED-LEASE-4253352: ACCEPT):**
+   - Report: [`research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-4253352.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-RUNBOOK-SEED-LEASE-4253352.md).
+   - Reviewer: `runbook-seed-lease-fixed-reviewer` (`3f5f3163-811e-4d77-856a-a9286ecc8e28`).
+   - Target Commit Audited: [`425335274b0a819ab11aed6252b568fc741233a2`](file:///home/alexey/git/cloudflare-agent-git/commit/4253352) on `origin/proto/runbook-seed-lease`.
+   - **Verdict: `ACCEPT`**.
+   - **Live Daemon Scratch Verification (Ephemeral Ports 9874/9875, Peak Scratch 1.5 MB, Zero `/tmp`):**
+     - *Flow A (Standalone Sidecar Creation):* `POST /api/repos` with `$SIDECAR_TOKEN` $\rightarrow$ extracts `remote`, `seedCommit` (`8165afc...`), `token.plaintext`. Git Smart HTTP push with exact seed lease succeeds $\rightarrow$ **Exit code 0**, remote ref updated.
+     - *Flow B (Coordinator Setup + Sidecar Write Token Mint):* Coordinator `POST /setup` with `$ADMIN_TOKEN` $\rightarrow$ extracts `canonical.name`, `canonical.remote`, `seedCommit` (`eafdeac...`), `created: true`. Sidecar `POST /api/repos/$canonical_name/tokens` (scope `write`, 3600s TTL) $\rightarrow$ extracts `.plaintext` write token (`$repo_tok`). Header persisted in local `.git/config` (mode `0600`). Exact seed push to canonical remote $\rightarrow$ **Exit code 0**, canonical ref updated.
+     - *Negative Test 1 (Wire 401 & Git Exit 128):* Pushing to Git Smart HTTP with control bearer `$SIDECAR_TOKEN` returns wire `HTTP/1.1 401 Unauthorized` (`valid per-repo token required`) and Git CLI fails closed with **exit code 128** (`terminal prompts disabled`). **PASS**.
+     - *Negative Test 2 (Stale Lease Rejection & Ref Preservation):* After canonical ref advances externally to `8094268...`, pushing with original seed lease is rejected non-fast-forward with **exit code 1** (`stale info`), preserving the advanced ref. **PASS**.
+     - *Negative Test 3 (Fail-Closed Bootstrap):* Repeated `POST /setup` returns `created: false` and `seedCommit: null`. Runbook correctly halts without leasing against unknown commits. **PASS**.
+   - Publication guard verified clean (`publication_guard.py` exit code 0).
+
+2. **Truthful Factual Disclosure of Past Cargo Execution (C1764):**
+   - In accordance with truthful accounting and Codex Principal C1764 observation:
+     - `readiness-producer-worker` (`d430037a`) executed `~/.cargo/bin/cargo test --lib watch` once at 06:23:46Z (step 76), completing in 0.14s (19 passed, 465 filtered) by reusing a pre-existing test binary profile, with zero compilation (`Compiling` lines: 0) and zero storage growth.
+     - Following urgent hold corrections from root (08:20) and Codex C1761, binding instructions were delivered at 06:24:04Z.
+     - Subagent delivered explicit ACK at 06:24:08Z confirming 100% read-only inspection without cargo compilation, tests, or file mutations in `/home/alexey/git/aplexer`.
+     - Host inspection verified zero cargo/rustc compiler processes running. Strict future read-only trace analysis enforced; any proposed repair will remain a conceptual diff in `READINESS-PRODUCER-REPAIR-REPORT.md`.
+
+3. **Ownership Handoff: `scripts/metrics/collect.py` Conversation-Aware Scope:**
+   - Ingested desktop root ownership release of `scripts/metrics/collect.py`.
+   - Clean status of `collect.py` on `origin/main` confirmed.
+   - Registered `metrics-collect-worker` in [`coordination/TEAM-REGISTRY.json`](file:///home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json) on isolated branch `proto/metrics-collect-conversation-scope`.
+   - Scope: incorporate `conversation_id` into event registration and fallback deduplication so distinct sessions are not conflated by `(tag, team_id)`, with comprehensive unit tests and independent negative review.
+   - Preserves OpenCode per-message integration and zero derived Gemini counter emission before verified dedup. `record_usage.py` remains untouched.
+
+4. **Invariants Strictly Preserved:**
+   - Publication guard verified clean (`publication_guard.py` exit code 0).
+   - Claude principal remains **stopped**; Cloudflare deploy strictly **HELD**; six shortlist gates remain **HELD**.
+
+
 
 
