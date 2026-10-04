@@ -361,11 +361,40 @@ class AgentBranchesClient:
         """Fetch the coordinator's current head vector (CONTRACT v0.1 resync source).
 
         Returns a mapping containing both ``agentId -> head_sha`` and
-        ``taskId -> head_sha`` entries for every task known to the coordinator,
+        ``taskId -> head_sha`` entries for every task/agent known to the coordinator,
         suitable for re-evaluating a stale ``vector`` after HTTP 409.
+
+        Compatible with the real coordinator wire format (which returns ``heads: Record<string, string>``
+        and ``agents: AgentRecord[]``) as well as mock servers returning ``tasks: TaskRecord[]``.
         """
         status = self.get_status(runner_token=runner_token)
         heads: Dict[str, str] = {}
+
+        # 1. Real coordinator wire format: top-level 'heads' mapping {agentId: sha}
+        raw_heads = status.get("heads")
+        if isinstance(raw_heads, dict):
+            for k, v in raw_heads.items():
+                if k and v:
+                    heads[str(k)] = str(v)
+
+        # 2. Map task IDs <-> agent IDs from 'agents' list in real StatusResult
+        for agent_rec in status.get("agents") or []:
+            if not isinstance(agent_rec, dict):
+                continue
+            a_id = agent_rec.get("agentId") or agent_rec.get("agent_id") or agent_rec.get("id")
+            t_id = agent_rec.get("taskId") or agent_rec.get("task_id")
+            sha = agent_rec.get("head_sha") or agent_rec.get("head")
+            if a_id and a_id in heads and t_id:
+                heads[str(t_id)] = heads[a_id]
+            elif t_id and t_id in heads and a_id:
+                heads[str(a_id)] = heads[t_id]
+            elif sha:
+                if a_id:
+                    heads[str(a_id)] = str(sha)
+                if t_id:
+                    heads[str(t_id)] = str(sha)
+
+        # 3. Fallback for mock/test servers returning top-level 'tasks'
         for rec in status.get("tasks") or []:
             if not isinstance(rec, dict):
                 continue
@@ -378,6 +407,7 @@ class AgentBranchesClient:
             ):
                 if key:
                     heads[str(key)] = str(sha)
+
         return heads
 
     @staticmethod
@@ -392,6 +422,10 @@ class AgentBranchesClient:
         participant must still be present, pinned to the FRESH head sha (a
         recomputed payload still carrying stale shas is rejected), results must
         be a list, and every result pair must reference known participants.
+
+        Note (C1494): The client enforces structural schema and participant head
+        freshness. Semantic validity of trial merges and conflict evaluations
+        remains guarded by the server-side coordinator 409 gate.
         """
         if not isinstance(recomputed, dict):
             return None

@@ -292,15 +292,33 @@ class MockCoordinatorState:
     def get_status(self) -> Dict[str, Any]:
         with self.lock:
             active_warnings = [w for w in self.warnings.values() if w.get("status") == "active"]
+            agents_list = []
+            heads_dict = {}
+            for t in self.tasks.values():
+                t_id = t["task_id"]
+                a_id = t.get("agent_id") or t_id
+                sha = t.get("head_sha")
+                if sha:
+                    heads_dict[a_id] = sha
+                    heads_dict[t_id] = sha
+                agents_list.append({
+                    "agentId": a_id,
+                    "taskId": t_id,
+                    "intent": t.get("intent"),
+                    "baseSha": t.get("base_sha"),
+                    "head": sha,
+                })
             return {
                 "canonical": {
                     "name": self.canonical_name,
                     "remote": self.canonical_remote,
                 },
                 "tasks": list(self.tasks.values()),
-                "heads": {t["task_id"]: t["head_sha"] for t in self.tasks.values() if t.get("head_sha")},
+                "agents": agents_list,
+                "heads": heads_dict,
                 "warnings": active_warnings,
                 "radar_log": self.radar_log[-20:],
+                "unprocessedPushes": [],
             }
 
     def get_task(self, task_id: str) -> Dict[str, Any]:

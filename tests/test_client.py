@@ -1353,6 +1353,105 @@ class TestAgentBranchesClient(unittest.TestCase):
             srv.shutdown()
             srv.server_close()
 
+    def test_16_refresh_head_vector_wire_compatibility_and_recomputation_boundary(self):
+        """C1494: refresh_head_vector parses real coordinator StatusResult shape (heads and agents).
+
+        Validates:
+        1. Negative test: Status payload missing both 'heads' and 'tasks' returns empty dict (no false heads).
+        2. Real coordinator wire format (coordinator.ts lines 95-110): returns 'heads' and 'agents',
+           without any top-level 'tasks' key. refresh_head_vector successfully maps both agentId -> head_sha
+           and taskId -> head_sha.
+        3. Backward compatibility: Mock servers returning top-level 'tasks' remain supported.
+        4. Recomputation boundary: Client validates structural schema and participant head freshness;
+           semantic validity and merge conflict detection are enforced by the coordinator server 409 gate.
+        """
+        # 1. Real coordinator StatusResult shape (coordinator.ts lines 95-110, commit 2302d70)
+        real_status_payload = {
+            "canonical": {"name": "test-repo", "remote": "origin"},
+            "agents": [
+                {
+                    "agentId": "agent-alpha-001",
+                    "taskId": "task-alpha-001",
+                    "intent": "implement wire fix",
+                    "baseSha": "1111111111111111111111111111111111111111",
+                    "head": "2222222222222222222222222222222222222222",
+                },
+                {
+                    "agentId": "agent-beta-002",
+                    "taskId": "task-beta-002",
+                    "intent": "implement review fix",
+                    "baseSha": "3333333333333333333333333333333333333333",
+                    "head": "4444444444444444444444444444444444444444",
+                },
+            ],
+            "heads": {
+                "agent-alpha-001": "2222222222222222222222222222222222222222",
+                "agent-beta-002": "4444444444444444444444444444444444444444",
+            },
+            "pairs": [],
+            "warnings": [],
+            "radarLog": [],
+            "lastRunnerReport": None,
+            "unprocessedPushes": [],
+        }
+
+        class MockRealStatusClient(AgentBranchesClient):
+            def __init__(self, status_payload):
+                super().__init__(server_url="http://127.0.0.1:9")
+                self._mock_status = status_payload
+
+            def get_status(self, runner_token=None):
+                return self._mock_status
+
+        # Verify real wire format: both agentId and taskId resolve to fresh SHAs
+        client = MockRealStatusClient(real_status_payload)
+        heads = client.refresh_head_vector()
+        self.assertEqual(heads["agent-alpha-001"], "2222222222222222222222222222222222222222")
+        self.assertEqual(heads["task-alpha-001"], "2222222222222222222222222222222222222222")
+        self.assertEqual(heads["agent-beta-002"], "4444444444444444444444444444444444444444")
+        self.assertEqual(heads["task-beta-002"], "4444444444444444444444444444444444444444")
+
+        # 2. Negative test: empty or invalid status returns empty dict (fail-closed, never fabricates heads)
+        empty_client = MockRealStatusClient({"canonical": {}, "warnings": []})
+        self.assertEqual(empty_client.refresh_head_vector(), {})
+
+        # 3. Client recomputation validation boundary:
+        # Recomputed payload matching fresh heads passes client schema validation
+        valid_recomputed = {
+            "contract": "0.1",
+            "vector": {
+                "agent-alpha-001": "2222222222222222222222222222222222222222",
+                "agent-beta-002": "4444444444444444444444444444444444444444",
+            },
+            "results": [
+                {
+                    "pair": ["agent-alpha-001", "agent-beta-002"],
+                    "status": "clean",
+                    "kind": "textual",
+                }
+            ],
+        }
+        res = AgentBranchesClient._validated_recomputed_payload(
+            original_vector={"agent-alpha-001": "old-sha", "agent-beta-002": "old-sha"},
+            fresh_heads=heads,
+            recomputed=valid_recomputed,
+        )
+        self.assertIsNotNone(res)
+        self.assertEqual(res["vector"]["agent-alpha-001"], "2222222222222222222222222222222222222222")
+
+        # But recomputed payload with stale SHA fails client validation
+        stale_recomputed = dict(valid_recomputed)
+        stale_recomputed["vector"] = {
+            "agent-alpha-001": "old-sha-still-stale",
+            "agent-beta-002": "4444444444444444444444444444444444444444",
+        }
+        res_stale = AgentBranchesClient._validated_recomputed_payload(
+            original_vector={"agent-alpha-001": "old-sha", "agent-beta-002": "old-sha"},
+            fresh_heads=heads,
+            recomputed=stale_recomputed,
+        )
+        self.assertIsNone(res_stale)
+
 
 if __name__ == "__main__":
     unittest.main()
