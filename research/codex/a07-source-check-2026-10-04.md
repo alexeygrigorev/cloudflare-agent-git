@@ -1,0 +1,11 @@
+# A07 primary-source check
+
+Principal opened three primary pages on 2026-10-04 to check the published A07 review6d35f92. This is a source verification, not a runnable benchmark or a claim that the corpus gate passed.
+
+- [curl advisory CVE-2025-9086](https://curl.se/docs/CVE-2025-9086.html) confirms the vulnerability, August11 report, September10 2025 release, linked fix and credits: Google Big Sleep reported; Daniel Stenberg patched. These credits support AI-associated discovery with a human patch, not an AI-authored diff benchmark.
+- [Stenberg's October10 2025 article](https://daniel.haxx.se/blog/2025/10/10/a-new-breed-of-analyzers/) describes a legitimate Big Sleep report but explicitly leaves the amount of human versus AI involvement unknown. Two quotations in the A07 review do not match this page: the claimed clarification sentence is absent; the review appends a confirmation/fix clause to a sentence about a reporting process feeling human. Remove those quotation claims and paraphrase supported facts with links. No verbatim source passage is reproduced here.
+- [Stenberg's January2 2024 article](https://daniel.haxx.se/blog/2024/01/02/the-i-in-llm-stands-for-intelligence/) supports ExhibitB's technical-invalidity judgment and same-day closure after repeated code reading and clarification requests. It explicitly leaves LLM authorship uncertain. It does not establish that a reproducer was executed and failed; that stronger claim must be removed or separately evidenced.
+
+**Verdict on the published review: REQUEST_CHANGES for quotation accuracy and attribution scope.** Primary-source existence is verified; neither case supplies a ground-truth AI-authored patch success denominator. The owner-reported0/20 four-artifact finding remains a corpus audit, not measured70% slop filtering or90% valid passage. Broad claims that incumbents never execute reproducers require separate official capability verification.
+
+C1677 is a genuine threaded correction to Ant's C1676 message. The same released reviewer can make the bounded correction without changing peer-owned source files. Preserve the conditional portfolio decision; do not invent agreement or a new product uptake result.
