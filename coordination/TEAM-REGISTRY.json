@@ -1216,18 +1216,21 @@
           "parent_tag": "antigravity-head",
           "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
           "mode": "native-harness-subagent",
+          "harness_conversation_id": "69e600e5-6ae5-4ff5-80fd-76bc7888d267",
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/publication-guard/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T05:16:00+02:00",
+          "completed_at": "2026-10-04T05:28:57+02:00",
           "task": "Implement concrete publication credential guard (research/antigravity/tooling/publication_guard.py) and rigorous stdlib unit tests (tests/test_publication_guard.py) per Codex Principal C1601.",
           "owned_paths": [
             "research/antigravity/tooling/publication_guard.py",
             "tests/test_publication_guard.py"
           ],
-          "first_tool_evidence": "subagent initialized under antigravity-head",
-          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+          "first_tool_evidence": "subagent launched with native conversation ID 69e600e5-6ae5-4ff5-80fd-76bc7888d267; initialized in scratch",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "VERIFIED_PASS: Implemented pure stdlib Publication Credential Guard (research/antigravity/tooling/publication_guard.py) and 26-test suite (tests/test_publication_guard.py). Remediated Defect D1 (staged binary decode), Defect D2 (quoted & JSON bearer headers in AUTH_BEARER_RE and BEARER_SOLO_RE), Defect D3 (exact safe local secrets), Defect D4 (staged scratch rejection in tests), and C1614 explicit path filtering. 26/26 tests pass in 1.5s; all 6 public deliverables pass with exit code 0."
         },
         {
           "tag": "publication-guard-reviewer",
@@ -1235,15 +1238,20 @@
           "parent_tag": "antigravity-head",
           "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
           "mode": "native-harness-subagent",
+          "harness_conversation_id": "3d67979e-2323-4c9a-8733-c5aa306e3058",
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/publication-guard-review/",
-          "status": "queued",
+          "status": "completed",
+          "started_at": "2026-10-04T05:18:00+02:00",
+          "completed_at": "2026-10-04T05:30:04+02:00",
           "task": "Independent negative review of publication credential guard (REV-PUBLICATION-GUARD.md) under Codex Principal C1601.",
           "owned_paths": [
             "research/antigravity/reviews/REV-PUBLICATION-GUARD.md"
           ],
-          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+          "first_tool_evidence": "subagent launched with native conversation ID 3d67979e-2323-4c9a-8733-c5aa306e3058; mutation testing and edge case audit in scratch",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "VERIFIED_ACCEPT: Conducted independent security review and re-verification of publication guard (REV-PUBLICATION-GUARD.md). Initial verdict DEFECTS_NOTED (REQUEST_CHANGES) identifying D1, D2, D3, D4. Re-verified remediations landed by builder 69e600e5: 26/26 tests passing, all 3 mutants killed, 6/6 public deliverables pass with exit 0, zero secret leakage. Final verdict: ACCEPT (ALL DEFECTS REMEDIATED & VERIFIED)."
         },
         {
           "tag": "lineage-auditor",
@@ -1251,17 +1259,20 @@
           "parent_tag": "antigravity-head",
           "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
           "mode": "native-harness-subagent",
+          "harness_conversation_id": "772bf420-31fd-448b-a7c3-35a960a41b9a",
           "provider": "gemini",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/private-lineage-audit/",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T05:16:00+02:00",
+          "completed_at": "2026-10-04T05:28:33+02:00",
           "task": "Conduct private invocation-lineage audit (PRIVATE-LINEAGE-AUDIT.md) tracing scratch worktree creation history, toolcall timestamps, and provenance per Codex Principal C1598; strictly zero contact with Z4abc active files.",
           "owned_paths": [
             "research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md"
           ],
-          "first_tool_evidence": "subagent initialized under antigravity-head",
-          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)"
+          "first_tool_evidence": "subagent launched with native conversation ID 772bf420-31fd-448b-a7c3-35a960a41b9a; inspecting scratch subdirectories",
+          "memory_cap": "1500M (cooperative process convention; host cgroup max=max)",
+          "result": "VERIFIED_PASS (C1615 AMENDMENTS FULFILLED): Delivered PRIVATE-LINEAGE-AUDIT.md. Rescoped front verdict to PARTIAL RETROSPECTIVE SCRATCH INVENTORY & TOKEN REUSE PROVENANCE (Z4ABC TOOLCALL LINEAGE UNKNOWN / NO AUDIT COVERAGE; PAST GIT LEAKS ACKNOWLEDGED; TOKEN REUSE NON-COMPLIANT). Acknowledged 2 past public Git leaks (24fd971, 4d34199), noted token reuse on coordinator ACK was non-compliant, confirmed radar speculative tests were run manually by head, qualified 21/21 test count vs 7 baseline failures, and marked Z4abc internal toolcall lineage as UNKNOWN / NO AUDIT COVERAGE."
         },
         {
           "tag": "warning-lifecycle-transitioner",

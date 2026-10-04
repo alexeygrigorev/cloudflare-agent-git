@@ -2056,3 +2056,34 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
 
 
 
+
+## 69. Publication Credential Guard Landed & Independently Accepted (REV-PUBLICATION-GUARD.md), Private Lineage Audit Amending Historical Scope (PRIVATE-LINEAGE-AUDIT.md), and SDK Distribution Packaging on Origin (C1609-C1616)
+
+- **Date:** 2026-10-04T05:32:00+02:00
+- **Steering & Directives:** Codex Principal C1609, C1610, C1612, C1614, C1615, C1616.
+- **Delivered Deliverables & Empirical Receipts:**
+  1. **Publication Credential Guard (`research/antigravity/tooling/publication_guard.py` & `tests/test_publication_guard.py`):**
+     - Builder: `publication-guard-builder` (`69e600e5-6ae5-4ff5-80fd-76bc7888d267`).
+     - Tooling Blob: `05fc18e2f682b30fe7b7762d059a770712f633eb` (mode `100755`, pure stdlib, zero pip deps).
+     - Test Blob: `c54f1ef344fac9faf525ada476848e3a499762f9` (26 unit tests).
+     - Remediated Defect D1 (staged binary blobs skip cleanly without `UnicodeDecodeError`), Defect D2 (quoted and JSON bearer headers in `AUTH_BEARER_RE` and `BEARER_SOLO_RE`), Defect D3 (exact safe local secret fixtures `token_12345`, `secret_12345`, `dummy_12345`), Defect D4 (staged scratch rejection in tests under C1612), and C1614 explicit path filtering (`--staged <paths>` filters strictly to requested targets).
+     - Execution Receipt: `python3 -m unittest -v tests/test_publication_guard.py` ran 26 tests in 1.57s $\rightarrow$ **100% PASS**.
+  2. **Independent Review of Publication Guard (`research/antigravity/reviews/REV-PUBLICATION-GUARD.md`):**
+     - Reviewer: `publication-guard-reviewer` (`3d67979e-2323-4c9a-8733-c5aa306e3058`).
+     - Deliverable: [`research/antigravity/reviews/REV-PUBLICATION-GUARD.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-PUBLICATION-GUARD.md).
+     - Final Verdict: **ACCEPT (ALL DEFECTS REMEDIATED & VERIFIED)**.
+     - Confirmed all 3 mandatory mutants killed, all 4 defects remediated, all 6 public deliverables pass guard verification with exit code 0. Zero raw secrets.
+  3. **Private Lineage Audit Updated (`research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md`):**
+     - Auditor: `lineage-auditor` (`772bf420-31fd-448b-a7c3-35a960a41b9a`).
+     - Deliverable: [`research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md).
+     - Rescoped Verdict: **PARTIAL RETROSPECTIVE SCRATCH INVENTORY & TOKEN REUSE PROVENANCE (Z4ABC TOOLCALL LINEAGE UNKNOWN / NO AUDIT COVERAGE; PAST GIT LEAKS ACKNOWLEDGED; TOKEN REUSE NON-COMPLIANT)**.
+     - Addressed all C1615 points: acknowledged past public git leaks in commits `24fd971` and `4d34199`, qualified token reuse as non-compliant with proper security isolation, clarified that radar checks were executed manually by the head, qualified 21/21 tests vs 7 baseline failures, and marked Z4abc internal toolcall lineage as UNKNOWN / NO AUDIT COVERAGE.
+  4. **Minimal SDK Distribution Packaging on Origin:**
+     - Worker: `zcode-recovery-test` (`4abc725c`).
+     - Target branch: `proto/sdk-distribution-complete` at commit `7692650578d275758615e28dd3e7de436de0b6db`.
+     - Restored root launcher `./agent-branches` (mode 100755, blob `b7efa8be...`), added MIT LICENSE (`f7531fe0...`), updated README test contract (22/22 client suite; honest 4-error discovery note).
+  5. **Invariants Strictly Maintained:**
+     - Public Cloudflare deploy strictly **HELD**.
+     - Claude principal remains **stopped**.
+     - Six shortlist gates remain **HELD**.
+     - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
