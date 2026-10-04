@@ -1037,6 +1037,26 @@
           "result": "VERDICT PASS. End-to-end ordinary Git recovery verified from fresh disposable clone in scratch directory. Clean build produced 35 pages in 0.211s. All 19 unit tests PASS in network-isolated namespace (unshare -rn, lo DOWN). 100% independent of canonical dirty state. Committed at 8ca77b3 (research/antigravity/recovery/DISPOSABLE-RECOVERY-REPORT.md)."
         },
         {
+          "tag": "zcode-recovery-test-c1554",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "4abc725c-b6ef-4ae6-af9c-978c31cdf151",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-recovery",
+          "branch": "proto/recovery-test",
+          "status": "running",
+          "started_at": "2026-10-04T04:20:44+02:00",
+          "task": "C1554: Independent Git-only remote checkpoint & disposable restore verification of proto/integration-auth-matrix at commit db4f6a8c398d; byte-for-byte tree match and clean test execution",
+          "owned_paths": [
+            "research/antigravity/recovery/RECOVERY-AUTH-MATRIX-DB4F6A8.md"
+          ],
+          "first_tool_evidence": "dispatched via aplexer cross-workspace message 01a104b6-b082",
+          "memory_cap": "1500M"
+        },
+        {
           "tag": "muse-radar-bench",
           "role": "executor",
           "parent_tag": "antigravity-head",
@@ -1378,6 +1398,26 @@
           ],
           "first_tool_evidence": "aplexer work join / fault injection",
           "verdict": "REQUEST_CHANGES: partial-receipt loss on permanent failure, 16-entry dedup cliff, untested failure paths. Patch 7de6836 blocked from canonical main. Under matched ordinary Git worktree baseline, ordinary Git push is single atomic ref update with CAS and receipt preservation."
+        },
+        {
+          "tag": "zcode-shortlist-gate-c1553",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "session_id": "5df4e39f-f173-4fe1-890e-2e43e903b159",
+          "mode": "interactive",
+          "engine": "zcodex",
+          "model": "glm-5.3-flash max",
+          "workspace": "/home/alexey/git/agent-branches-integration",
+          "branch": "proto/integration-auth-matrix",
+          "status": "running",
+          "started_at": "2026-10-04T04:20:12+02:00",
+          "task": "C1553: Authentic concurrent two-actor adoption run on unified coordinator (proto/integration-auth-matrix at db4f6a8); concurrent tasks, isolated forks, Smart HTTP pushes, pairwise radar check, and cross-agent read authorization",
+          "owned_paths": [
+            "research/antigravity/dogfood/CONCURRENT-TWO-ACTOR-ADOPTION-REPORT.md"
+          ],
+          "first_tool_evidence": "dispatched via aplexer cross-workspace message 01a104b6-3439",
+          "memory_cap": "1500M"
         },
         {
           "tag": "webhook-c1506-reviewer",
