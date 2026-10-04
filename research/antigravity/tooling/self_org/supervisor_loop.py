@@ -524,6 +524,8 @@ class SupervisorLoop:
         max_backoff_seconds: float = 300.0,
         max_task_retries: int = 3,
         auto_discover_aplexer: bool = False,
+        admission_bridge: Optional[Any] = None,
+        bus_bridge: Optional[Any] = None,
     ) -> None:
         # Default tasks file is isolated staging store, NEVER canonical TASKS.json!
         if tasks_file is None:
@@ -561,6 +563,8 @@ class SupervisorLoop:
         self.base_backoff_seconds = float(base_backoff_seconds)
         self.max_backoff_seconds = float(max_backoff_seconds)
         self.max_task_retries = int(max_task_retries)
+        self.admission_bridge = admission_bridge
+        self.bus_bridge = bus_bridge
 
         self._tasks: Dict[str, Task] = {}
         self._workers: Dict[str, Worker] = {}

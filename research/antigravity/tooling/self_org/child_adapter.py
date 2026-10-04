@@ -167,6 +167,8 @@ class ChildAdapter:
         lease_ttl_sec: float = 30.0,
         scratch_dir: Optional[Union[str, Path]] = None,
         requested_memory_mb: int = 1500,
+        admission_bridge: Optional[Any] = None,
+        bus_bridge: Optional[Any] = None,
     ) -> None:
         self.task_id = str(task_id)
         self.executor_tag = str(executor_tag)
@@ -178,6 +180,8 @@ class ChildAdapter:
         self.scratch_dir = Path(scratch_dir).resolve() if scratch_dir else Path("/home/alexey/git/cloudflare-agent-git/.local/scratch/child_adapter").resolve()
         self.scratch_dir.mkdir(parents=True, exist_ok=True)
         self.requested_memory_mb = int(requested_memory_mb)
+        self.admission_bridge = admission_bridge
+        self.bus_bridge = bus_bridge
 
         self._stop_heartbeat = threading.Event()
         self._heartbeat_thread: Optional[threading.Thread] = None
@@ -281,17 +285,40 @@ class ChildAdapter:
         art_path.parent.mkdir(parents=True, exist_ok=True)
         root_path = Path(repo_root).resolve() if repo_root else Path("/home/alexey/git/cloudflare-agent-git").resolve()
 
-        # Enforce owned TMPDIR
-        tmp_dir = self.scratch_dir / "tmp"
-        tmp_dir.mkdir(parents=True, exist_ok=True)
+        # Enforce owned TMPDIR under repo_root / .local / tmp
+        tmp_dir = root_path / ".local" / "tmp"
+        tmp_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
 
-        # 1. Admission Check (C2053)
-        check_child_admission(
-            requested_memory_mb=self.requested_memory_mb,
-            cwd_path=cwd_path,
-            tmp_path=tmp_dir,
-            repo_root=root_path,
-        )
+        # 1. Admission Check (C2053 & C2070 Canonical Launcher Delegation)
+        if self.admission_bridge is not None:
+            self.admission_bridge.check_resource_eligibility(
+                workspace=cwd_path,
+                timeout=timeout_sec,
+                requested_memory_mb=self.requested_memory_mb,
+                requested_tmpdir=tmp_dir,
+                repo_root=root_path,
+            )
+        else:
+            check_child_admission(
+                requested_memory_mb=self.requested_memory_mb,
+                cwd_path=cwd_path,
+                tmp_path=tmp_dir,
+                repo_root=root_path,
+            )
+
+        # Notify bus bridge of dispatch initiation if enrolled
+        if self.bus_bridge is not None:
+            try:
+                if hasattr(self.bus_bridge, "send_envelope") and self.executor_tag in getattr(self.bus_bridge, "_enrolled_identities", {}):
+                    self.bus_bridge.send_envelope(
+                        sender_name=self.executor_tag,
+                        recipient_id=self.task_id,
+                        body=f"Task {self.task_id} dispatch initiated",
+                        data={"task_id": self.task_id, "fence_token": self.fence_token, "phase": "dispatch"},
+                        kind="dispatch",
+                    )
+            except Exception as b_exc:
+                logger.debug("Bus bridge dispatch notification skipped: %s", b_exc)
 
         # 2. Build Isolated Environment (Strip parent APLEXER_* identity)
         eff_env = dict(os.environ)
@@ -394,6 +421,26 @@ class ChildAdapter:
             if log_file_path.is_file():
                 with open(log_file_path, "r", encoding="utf-8", errors="replace") as f:
                     preview = f.read(500)
+
+            # Notify bus bridge of completion if enrolled
+            if self.bus_bridge is not None:
+                try:
+                    if hasattr(self.bus_bridge, "send_envelope") and self.executor_tag in getattr(self.bus_bridge, "_enrolled_identities", {}):
+                        self.bus_bridge.send_envelope(
+                            sender_name=self.executor_tag,
+                            recipient_id=self.task_id,
+                            body=f"Task {self.task_id} execution completed (rc={proc.returncode})",
+                            data={
+                                "task_id": self.task_id,
+                                "fence_token": self.fence_token,
+                                "returncode": proc.returncode,
+                                "artifact_path": str(art_path),
+                                "output_digest": digest,
+                            },
+                            kind="completion",
+                        )
+                except Exception as b_exc:
+                    logger.debug("Bus bridge completion notification skipped: %s", b_exc)
 
             return {
                 "task_id": self.task_id,
