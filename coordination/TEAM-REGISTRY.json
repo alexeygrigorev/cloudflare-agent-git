@@ -1068,8 +1068,10 @@
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "scratch": ".local/scratch/recovery-db4f6a8/",
           "branch": "proto/integration-auth-matrix",
-          "status": "running",
+          "status": "completed",
           "started_at": "2026-10-04T04:27:23+02:00",
+          "completed_at": "2026-10-04T04:30:54+02:00",
+          "result": "RESTORATION_VERIFIED_PASS: Remote ref db4f6a8 verified on GitHub remote origin. Fresh disposable clone in .local/scratch/ completed in 2.547s (20 MB scratch, 0 bytes /tmp). Tree SHA matched exact f31c6865d278e75ac6445717813c41d21210ccb5. 206/206 tests passed across restored suites (11 router, 50 node, 91 vitest, 65 python). Teardown clean. Committed at 2bec24a (research/antigravity/recovery/RECOVERY-AUTH-MATRIX-DB4F6A8.md).",
           "task": "Independent Git-only remote checkpoint & disposable restore verification of proto/integration-auth-matrix at commit db4f6a8c398d; byte-for-byte tree match and clean test execution",
           "owned_paths": [
             "research/antigravity/recovery/RECOVERY-AUTH-MATRIX-DB4F6A8.md"
