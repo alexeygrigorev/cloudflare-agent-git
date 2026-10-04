@@ -2,23 +2,25 @@
 
 Genuine first-use evaluation of the packaged SDK (`proto/sdk-distribution-complete`) on real development work.
 
+**Scope label (C1631, Codex Principal guidance):** the executed flow is **component mock double execution** — the coordinator was `tests/mock_l1_server.py`, a component test double, not the real L1 coordinator or deployment sidecar. The git work, code edits, and client/CLI behavior are real; coordinator responses come from the double. Mock-double limitations are recorded as double limitations and are **not** scored as real protocol adoption failures or sidecar packaging defects: an SDK legitimately requires an external service, and this report documents those external service/sidecar requirements honestly rather than penalizing their absence from the package.
+
 - **Executor:** zcode-recovery-test (4abc725c), delegated by antigravity-head (46fdb644)
 - **Date:** 2026-10-04 (Europe/Berlin), 05:43–06:00
 - **Worktree:** /home/alexey/git/agent-branches-recovery on `proto/sdk-distribution-complete`, start pin **7692650578d275758615e28dd3e7de436de0b6db**
-- **Infrastructure:** packaged offline coordinator `tests/mock_l1_server.py` on ephemeral port 59925 (127.0.0.1), admin/runner credentials generated fresh via `secrets.token_urlsafe`, stored mode 600 in `.local/scratch/zc-4abc725c-fu-141a75/`, never printed; `TMPDIR` pointed into scratch; every process under `ulimit -v 1500000`; zero /tmp growth; scratch ≈ 64 KB « 512 MB.
+- **Infrastructure:** component test double `tests/mock_l1_server.py` on ephemeral port 59925 (127.0.0.1), admin/runner credentials generated fresh via `secrets.token_urlsafe`, stored mode 600 in `.local/scratch/zc-4abc725c-fu-141a75/`, never printed; `TMPDIR` pointed into scratch; every process under `ulimit -v 1500000`; zero /tmp growth; scratch ≈ 64 KB « 512 MB.
 
 ## Decision: CONDITIONAL ADOPT
 
-The **Python client is production-usable today** for the create → push → status loop with correct credentials: the create-time per-task token cache makes subsequent `push()` calls authenticate automatically, and the radar raised genuine conflict warnings from real overlapping work. The **CLI is excellent against open/dev coordinators but not yet sufficient against a bearer-enforcing L1**: it cannot present a per-task token, so scripted multi-agent operation silently degrades to acting as admin via `$ADMIN_TOKEN`. Adoption is recommended for library-driven automation now; CLI-only hardened workflows and any ack-dependent flow should wait for the conditions below.
+The **Python client is production-usable today** for the create → push → status loop with correct credentials: the create-time per-task token cache makes subsequent `push()` calls authenticate automatically, and the double's radar raised genuine conflict warnings from real overlapping work. The **CLI is excellent against open/dev coordinators but not yet sufficient against a bearer-enforcing L1** (as implemented by the double's documented ladder): it cannot present a per-task token, so scripted multi-agent operation silently degrades to acting as admin via `$ADMIN_TOKEN`. Adoption is recommended for library-driven automation now; CLI-only hardened workflows and any ack-dependent flow should wait for the conditions below.
 
 **Conditions (all small, all discovered in real use):**
 1. Expose a per-task token credential on `push`/`status` (`--token` or a documented token-file/`AGENT_BRANCHES_TOKEN` convention) so CLI agents can act as themselves instead of admin.
 2. Align naming: library kwarg `server_url`, CLI flag `--server`, env vars `AGENT_BRANCHES_SERVER` **and** `COORDINATOR_URL`. This exact inconsistency made this reviewer's own C1610 README example wrong (`server=` TypeError on first call) — fixed in commit 2623601.
-3. Resolve the ack auth story: `ack_warning` sends no bearer and the mock's `POST /warnings/<id>/ack` accepts unauthenticated requests even when admin is configured. If proto L1 mirrors proto auth on ack, every CLI ack would 401 in production. Verify against proto and add the header.
-4. Ship deployment guidance: the package includes no sidecar; the mock docstring explicitly simulates none, yet error strings reference a sidecar bearer. A consumer cannot assemble the documented auth model from the package alone.
-5. Minor: mock `main()` exposes `--admin-token` only — a runner-token-gated `/checks` cannot be started from the CLI.
+3. Verify ack auth against proto: `ack_warning` sends no bearer header — a client-side fact observed regardless of double. The double's unauthenticated `POST /warnings/<id>/ack` route is a double limitation and is not evidence about proto; if proto enforces auth on ack, CLI acks would 401 in production. Verify against proto and add the header if required.
+4. Document external service/sidecar requirements explicitly (honesty item, not a defect): an SDK legitimately requires an external L1 service and sidecar; the package should state these dependencies and the expected bearer ladder in its docs (error strings already reference a sidecar bearer). This records what a consumer must supply — it is not scored as an adoption failure.
+5. Mock-double limitation (not an SDK finding): the double's `main()` exposes `--admin-token` only, so a runner-token-gated `/checks` cannot be exercised from the double's CLI. Affects test-harness reach, not the SDK's protocol behavior.
 
-## What actually happened (authentic flow, real code)
+## What actually happened (component mock double execution on real code)
 
 | Step | Command (packaged surface) | Result |
 | --- | --- | --- |
@@ -45,4 +47,4 @@ The same duplicate-executor pattern observed on C1580/C1588/C1610 ran this task 
 
 ## Verdict basis
 
-No verdict was forced: ADOPT was reachable (the library loop is genuinely smooth) and DECLINE was reachable (the CLI credential gap is real for hardened use). CONDITIONAL reflects the measured split: library strong, CLI one small feature short, ack/sidecar stories unproven against proto. Falsification test for this verdict: run a two-agent flow on proto L1 with per-task tokens, CLI-only — if push/ack work without admin credentials, conditions 1 and 3 are obsolete and this should upgrade to ADOPT.
+No verdict was forced: ADOPT was reachable (the library loop is genuinely smooth against the double) and DECLINE was reachable (the CLI per-task-token gap is real for hardened use). CONDITIONAL reflects the measured split from component mock double execution: library strong, CLI one small feature short; ack-auth and sidecar behavior remain unproven against proto and are carried as verification items, not findings. Per C1631 the caller decision stays open. Falsification test for this verdict: run a two-agent flow on proto L1 with per-task tokens, CLI-only — if push/ack work without admin credentials, conditions 1 and 3 are obsolete and this should upgrade to ADOPT.
