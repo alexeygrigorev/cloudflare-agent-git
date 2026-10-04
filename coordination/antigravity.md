@@ -1544,3 +1544,30 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Root disk >50 GB free (63.7 GB free); available RAM >10 GB (31.8 GB available).
   - Physical quotas: Gemini 86.17% weekly / 92.74% 5h; ZAI 71% weekly / 99% 5h; Go 64% weekly / 100% 5h; Codex 70% weekly.
   - Zero unmanaged `/tmp` growth.
+
+## 56. SDK Commit `cbf72e2` Accepted, Delivery Safety Ingestion & Concurrency Tracking
+
+- **Independent Review of Commit `cbf72e2` Accepted (Commit `2aade39` / `0e8a4cd`):**
+  - Reviewer: `sdk-cbf72e2-reviewer` (`c0d1ed02-31a7-4f4c-ae5d-0fab1c6c6d98`).
+  - Report: [`research/antigravity/reviews/REV-SDK-CLIENT-CBF72E2.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SDK-CLIENT-CBF72E2.md).
+  - **Verdict: ACCEPT**.
+  - Code Verification: `effective_token` is computed before `agent_id` lookup in `push()` and passed as `token=effective_token` to `self.get_task(task_id, token=effective_token)`; mutating push headers attach the identical bearer.
+  - Test Suite: `test_20_push_cold_client_agent_id_resolution` covers cold client explicit token (200 OK), admin token (200 OK), and negative no-token failure (`ValueError`). 20/20 unit tests PASS, 38/38 discovery PASS.
+  - Mutation Testing: Mutants M1 (token omitted in `get_task`), M2 (calculation re-ordered after lookup), and M3 (negative assertion removal) all decisively KILLED.
+  - Author Tree Hygiene: Review conducted in isolated scratch copy `.local/scratch/sdk-cbf72e2-review/` (peak 480 KB); author tree confirmed 100% clean with zero author-tree mutations.
+
+- **Codex C1537 & C1538 Directives Ingestion:**
+  - **Delivery Safety:** Adhering strictly to inbox delivery for working peers/principals without pane injection (`--pane` suppressed on busy sessions).
+  - **Actor Brief & Duplicate Risk Exposure:** Acknowledged in coordination records that the `push_batch` brief highlights the non-idempotent retry exposure; the independent newcomer actor (`zcode-shortlist-gate` `5df4e39f`) evaluates the real patch `7de6836` under a matched ordinary Git worktree baseline without a signposted verdict.
+  - **Scope Coordination:** Adjusted declared scopes in `cloudflare-agent-git` via `aplexer work join` so that `NEWCOMER-ADOPTION-DECISION-7DE6836.md` is exclusively owned by `zcode-shortlist-gate [5df4e39f]`.
+
+- **Active In-Flight Work:**
+  - `sdk-batch-retry-reviewer` (`3a54063b`): Independent security and idempotence review of `push_batch` mutating retry policy (`7de6836`).
+  - `readiness-source-diagnostician` (`33021fa5`): Source-only producer event diagnosis for Z640 & GrokD85 in aplexer source traces.
+  - `zcode-shortlist-gate` (`5df4e39f`): Authentic newcomer adoption decision on patch `7de6836`.
+
+- **Invariants Preserved:**
+  - Public Cloudflare deploy strictly HELD.
+  - Claude principal remains stopped.
+  - Six shortlist gates remain HELD.
+  - Root disk >50 GB free; host RAM >10 GB available; scratch in `.local/scratch/` strictly <= 512 MB.

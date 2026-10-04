@@ -514,6 +514,58 @@
           "status": "completed"
         },
         {
+          "tag": "sdk-cbf72e2-reviewer",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "c0d1ed02-31a7-4f4c-ae5d-0fab1c6c6d98",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/agent-branches-sdk-adoption",
+          "branch": "proto/sdk-get-task-auth",
+          "scratch": ".local/scratch/sdk-cbf72e2-review/",
+          "task": "Independent negative review of commit cbf72e2 (cold-cache push resolves agent_id via effective bearer token)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-SDK-CLIENT-CBF72E2.md"
+          ],
+          "completed_commit": "2aade39",
+          "completed_at": "2026-10-04T01:44:00Z",
+          "result": "ACCEPT",
+          "status": "completed"
+        },
+        {
+          "tag": "sdk-batch-retry-reviewer",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "3a54063b-58a7-4926-b6e4-a4de6cde3940",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/sdk-batch-retry-review/",
+          "task": "C1535: Independent security and idempotence review of push_batch mutating retry policy (commit 7de6836)",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-SDK-PUSH-BATCH-7DE6836.md"
+          ],
+          "status": "running"
+        },
+        {
+          "tag": "readiness-source-diagnostician",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "33021fa5-1116-418b-9259-bea3cccab41b",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/readiness-producer-diagnostic/",
+          "task": "C1536: Narrow source-only producer event diagnosis for Z640 and Grokd85 (genuine event provenance, offline minimal correction test)",
+          "owned_paths": [
+            "research/antigravity/timeline-diagnostics/READINESS-PRODUCER-DIAGNOSTIC.md"
+          ],
+          "status": "running"
+        },
+        {
           "tag": "l6-ca16-review",
           "role": "executor",
           "parent_tag": "antigravity-head",
