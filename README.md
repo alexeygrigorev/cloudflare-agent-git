@@ -111,27 +111,103 @@ per-task bearer ladders; it does not simulate the deployment sidecar.
 
 For full local development with real bare Git repositories and Smart HTTP
 cloning and pushing (instead of the offline mock double), run the compiled Node
-coordinator alongside the Git sidecar:
+coordinator alongside the Git sidecar. The daemons are not part of this SDK
+repository; they live in an external integration checkout or a packaged
+runtime, located through `INTEGRATION_DIR` (default: the sibling
+`agent-branches-integration` clone, i.e. `/home/alexey/git/agent-branches-integration`
+on the dev host; packaged runtimes point `INTEGRATION_DIR` at the unpacked
+runtime directory).
+
+Write the shared stack environment once to `.env.local` with `umask 077`, so
+the file is created mode `0600` (owner read/write only), then source it in
+every terminal that drives the stack — exported variables do not cross
+terminals, and retyping tokens by hand leaks them to scrollback and shell
+history:
+
+```bash
+# Once — generate fresh tokens and the shared env file (mode 0600)
+umask 077
+cat > .env.local <<EOF
+INTEGRATION_DIR=${INTEGRATION_DIR:-../agent-branches-integration}
+SIDECAR_PORT=8790
+SIDECAR_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+ADMIN_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+RUNNER_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+EOF
+chmod 600 .env.local   # belt-and-braces; umask 077 already produced 0600
+```
 
 ```bash
 # Terminal 1 — Launch the real Git Smart HTTP sidecar daemon
-export SIDECAR_PORT=8790
+set -a; . ./.env.local; set +a
 export SIDECAR_ROOT=./.sidecar-root
-export SIDECAR_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
-node prototype/local-artifacts/sidecar.mjs
+node "$INTEGRATION_DIR/prototype/local-artifacts/sidecar.mjs"
 
 # Terminal 2 — Launch the compiled Node coordinator daemon
 # Note: On Node 24+, --disable-wasm-trap-handler and --max-old-space-size=256
 # prevent virtual address space reservation exhaustion under process memory limits (C1682).
+set -a; . ./.env.local; set +a
 export PORT=8787
 export HOST=127.0.0.1
 export LOCAL_ARTIFACTS_URL=http://127.0.0.1:$SIDECAR_PORT
 export LOCAL_ARTIFACTS_TOKEN=$SIDECAR_TOKEN
-export ADMIN_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
-export RUNNER_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
 export COORDINATOR_STATE_FILE=./coordinator-state.json
-node --disable-wasm-trap-handler --max-old-space-size=256 prototype/.build/node/src/local/main.js
+node --disable-wasm-trap-handler --max-old-space-size=256 \
+    "$INTEGRATION_DIR/prototype/.build/node/src/local/main.js"
 ```
+
+`.env.local` is scratch-local: keep it out of Git and regenerate it per stack
+session instead of reusing stale tokens.
+
+#### Pushing work to a canonical repo: exact seed lease
+
+The sidecar's `createRepo()` initializes every canonical bare repo with a
+synthetic seed commit (`chore: seed canonical baseline` on `main`) and returns
+its SHA as `seedCommit` next to the remote URL and a minted write token. A
+freshly created canonical repo is therefore **not** empty: pushing your
+unrelated local history (e.g. a branch based on `b2df985`) is a
+non-fast-forward. Do **not** recover with an unconstrained `git push --force`
+— that silently clobbers anything any other actor lands on `main`. Push with
+an exact lease on the seed commit instead:
+
+```bash
+seed_sha=<seedCommit from the createRepo response>
+git push --force-with-lease=refs/heads/main:"$seed_sha" \
+    <remote-url-from-createRepo> HEAD:refs/heads/main
+```
+
+This succeeds only while canonical `main` still points at `seed_sha`. If
+another actor advanced it, git rejects the push (`stale info`) and the
+canonical ref is preserved untouched — the failure is closed, not a clobber.
+On rejection: fetch the canonical ref, inspect what landed, and re-run with a
+fresh expected SHA only after verifying it; never escalate to a blind force.
+(Verified with git 2.43: lease-at-seed succeeds against a freshly seeded
+canonical repo; the same lease after the ref advanced is rejected and the
+advanced commit survives.)
+
+#### Token hygiene: argv exposure on multi-user hosts
+
+Tokens passed on a command line are readable by every local user while the
+process runs, via `ps aux` and `/proc/<pid>/cmdline`. This applies to
+`curl -H "Authorization: Bearer …"`, `git -c http.extraHeader=… push`, and the
+`--token` / `--admin-token` CLI flags. Single-user scratch runs can accept
+this; on multi-user hosts prefer mode `0600` files over argv:
+
+```bash
+# Git: persist the header in the repo config once (file-backed, not per-command argv)
+umask 077
+git config --local http.<remote-url>.extraHeader "Authorization: Bearer $SIDECAR_TOKEN"
+chmod 600 .git/config
+
+# curl: read options from a 0600 config file instead of -H
+umask 077
+printf 'header = "Authorization: Bearer %s"\n' "$SIDECAR_TOKEN" > .curl-scratch
+curl -K .curl-scratch https://sidecar.example.invalid/...
+```
+
+Residual gap, stated honestly: the single `git config` / `printf` invocation
+itself carries the token in argv for its brief runtime. For strict zero-argv
+setups, write the config file in an editor instead.
 
 ## License
 
