@@ -3756,7 +3756,83 @@
       "workspace": "/home/alexey/git/agent-coordination",
       "integration_owner": "agent-coordination-head",
       "principal_owner": "codex-principal",
-      "ownership_state": "Actual genuineinteractivehead launched; semanticACK/firsttool verification pending"
+      "ownership_state": "Actual ownwhoami11:41:38Z and semantic C1341 ACK written11:46Z verified; first starter source present; actual delegate/reviewer receipts pending",
+      "first_action": {
+        "schema_version": 1,
+        "recorded_at_utc": "2026-10-04T11:41:38Z",
+        "tool": "aplexer whoami --json",
+        "selected": {
+          "id": "81e8010c-89e4-478b-be3a-4ee6991607f3",
+          "tag": "agent-coordination-head",
+          "workspace": "/home/alexey/git/agent-coordination",
+          "engine": "shell",
+          "reported_state": "working",
+          "phase": "running",
+          "worker_pid": 2292031,
+          "workload_pid": 2292033
+        },
+        "project_id": "agent-coordination",
+        "human_source": "experiment/human-cross-computer-product-20261004.txt",
+        "principal_handoff_id": "01a106b7-a74b-7b11-bce8-69e6a281782c",
+        "environment_correction_id": "01a106bb-0ab2-77f3-8c09-bd4441b053d2"
+      },
+      "assignment_ack": {
+        "schema_version": 1,
+        "token": "C1341",
+        "status": "ACK",
+        "recorded_at_utc": "2026-10-04T11:41:38Z",
+        "ack_written_at_utc": "2026-10-04T11:46:00Z",
+        "head": {
+          "id": "81e8010c-89e4-478b-be3a-4ee6991607f3",
+          "tag": "agent-coordination-head",
+          "workspace": "/home/alexey/git/agent-coordination",
+          "engine": "shell"
+        },
+        "role": "interactive product head; owns decomposition, real delegates, integration, recovery, completion-next-tasks",
+        "principal_owner": {
+          "id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
+          "tag": "codex-principal",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "owns": "monitoring"
+        },
+        "owns": [
+          "/home/alexey/git/agent-coordination",
+          "/home/alexey/git/agent-coordination/coordination",
+          "/home/alexey/git/agent-coordination/tests",
+          "/home/alexey/git/agent-coordination/adapters",
+          "/home/alexey/git/agent-coordination/docs",
+          "/home/alexey/git/agent-coordination/reviews",
+          "/home/alexey/git/agent-coordination/scripts",
+          "/home/alexey/git/agent-coordination/.local"
+        ],
+        "will_not_modify_until_ack": [
+          "/home/alexey/git/cloudflare-aplexer-protocol",
+          "/home/alexey/git/aplexer",
+          "/home/alexey/.local/bin/aplexer",
+          "/home/alexey/git/agent-quota-launcher",
+          "/home/alexey/git/agent-dashboard",
+          "/home/alexey/git/cloudflare-agent-git/coordination/TASKS.json",
+          "/home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json"
+        ],
+        "integration_owner": {
+          "tag": "agent-coordination-head",
+          "id": "81e8010c-89e4-478b-be3a-4ee6991607f3"
+        },
+        "native_cli_source_owner": {
+          "tag": "antigravity-head",
+          "id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "checkout": "/home/alexey/git/cloudflare-aplexer-protocol",
+          "status": "read-only until explicit owned handoff ACK"
+        },
+        "environment": {
+          "windows_local_aplexer": false,
+          "windows_ssh_client": true,
+          "inbound_windows_ssh": false,
+          "transport": "Windows-initiated authenticated SSH typed RPC/poll/response; bridge identity != originating agent"
+        },
+        "baseline_not_acceptance": "scripts/orchestrator-channel.py and SSH remote mailbox wrappers remain baseline, not native cross-host acceptance",
+        "next_checkpoint": "stdlib SSH relay tests green; executor first-actions; private GitHub main restore; desktop test contract nominated (not yet executed)"
+      }
     }
   ],
   "delivery_executors": [
