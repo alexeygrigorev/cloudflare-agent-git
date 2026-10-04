@@ -2381,6 +2381,44 @@
           ],
           "first_tool_evidence": "subagent launched with native conversation ID b2a44172-943c-4333-9eb7-aabb2a61b67b; reproduced authentic failures in scratch for all C1796 counterexamples; verified 17/17, 43/43, and 68/68 test passes; killed 3 mutants; delivered REV-METRICS-COLLECT-NEGATIVE-REPRO.md (ACCEPT, clean publication guard).",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
+        },
+        {
+          "tag": "foremerge-demand-verifier",
+          "role": "verifier",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "446af413-bb93-4093-bc1f-9fcee51d0b4b",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/foremerge-demand/",
+          "status": "running",
+          "started_at": "2026-10-04T09:18:03+02:00",
+          "task": "Practitioner demand verification of Foremerge HN thread 49789356, primary comments (ttoze 49797952, gavmor 49811149, gavmor 49820059), and naw103/foremerge README 0.5.1 per Codex C1818. Extract firsthand persona, workarounds, adoption friction, and comparative architecture vs Agent Branches and ordinary Git; propose unsteered adoption gate.",
+          "owned_paths": [
+            "research/antigravity/demand/foremerge-firsthand-verification.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID 446af413-bb93-4093-bc1f-9fcee51d0b4b; read-only source analysis in .local/scratch/foremerge-demand/.",
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
+        },
+        {
+          "tag": "unfamiliar-adopter-worker",
+          "role": "adopter",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "37dbcbdc-d51d-4484-8f4c-eab1a6d8659d",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/unfamiliar-adopter/",
+          "status": "running",
+          "started_at": "2026-10-04T09:18:03+02:00",
+          "task": "Two-track comparative adoption evaluation of Task T1 (Link listing & visit counters) on unfamiliar demo-target codebase per Codex C1818: Track 1 matched ordinary Git worktree baseline vs Track 2 real Agent Branches Node+Sidecar stack with unwrapped Python SDK client.",
+          "owned_paths": [
+            "research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID 37dbcbdc-d51d-4484-8f4c-eab1a6d8659d; two-track evaluation setup in .local/scratch/unfamiliar-adopter/.",
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]
     },

@@ -3121,6 +3121,40 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Staged paths must remain strictly within declared ownership scopes.
   - Standup file `experiment/standups/2026-10-04.md` remains strictly untouched for Codex Principal single-writer integration.
 
+---
+
+## 100. C1818 Task Launch: Foremerge Demand Verification & Unfamiliar Adopter T1 Implementation
+
+- **Date:** 2026-10-04T09:18:30+02:00
+- **Steering & Directives:** Codex Principal C1816 (`01a105c4-06ed`), C1818 (`01a105c5-fbf3`).
+- **Parallel Subagent Tasks Dispatched:**
+  1. **Foremerge Practitioner Demand Verification (`foremerge-demand-verifier`):**
+     - Subagent: `foremerge-demand-verifier` (`446af413-bb93-4093-bc1f-9fcee51d0b4b`).
+     - Deliverable: `research/antigravity/demand/foremerge-firsthand-verification.md`.
+     - Scratch: `.local/scratch/foremerge-demand/` (mode `0700`, $\le 512$ MB, zero `/tmp` growth).
+     - Target Sources: HN Thread `49789356` (*Show HN: Foremerge* by `naw103`, 2026-09-21T16:22:06Z), primary comments `ttoze` (`49797952`), `gavmor` (`49811149`, `49820059`), and `naw103/foremerge` README 0.5.1.
+     - Mission: Independent, critical extraction of practitioner personas, real architectural conflict symptoms, existing workarounds (`weave`, blackboard skills, parent coordinator sessions, `aoe` worktree spawning, code ownership partitions), and adoption friction. Architecture comparison matrix (Ordinary Git vs Foremerge vs Agent Branches). Propose one unsteered adoption gate.
+     - Invariants: 100% read-only analysis; strictly zero cargo/rustc build invocations; no full copyrighted quotes; zero token emission.
+  2. **Real Unfamiliar Adopter Comparative Task (`unfamiliar-adopter-worker`):**
+     - Subagent: `unfamiliar-adopter-worker` (`37dbcbdc-d51d-4484-8f4c-eab1a6d8659d`).
+     - Deliverable: `research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md`.
+     - Scratch: `.local/scratch/unfamiliar-adopter/` (mode `0700`, $\le 512$ MB, zero `/tmp` growth).
+     - Target Codebase: `/home/alexey/git/agent-branches-integration/demo-target/` (Cloudflare-Worker-style shortlinks service).
+     - Target Task: Task T1 from `demo-target/TASKS.md` ("Link listing & visit counters").
+     - Mission: Authentic two-track comparative implementation:
+       - **Track 1:** Matched ordinary Git worktree baseline (`git worktree add`, implement `GET /links` and visit increment on `GET /:slug`, run `node --test`, commit).
+       - **Track 2:** Real Agent Branches Node+Sidecar stack integration (`create_task` with real coordinator, clone fork via Smart HTTP, implement T1, run `node --test`, Smart HTTP push, `client.push`, `client.get_task`).
+       - Comparative evaluation matrix: duration, command count, daemon RSS memory, steps, developer friction. Unsteered verdict (ADOPT, DECLINE, or CONDITIONAL).
+     - Invariants: Zero cargo/rustc commands; cooperative memory $\le 1500$ MB; zero `/tmp` growth; publication guard clean.
+- **Task & Team Registry Reconciliation:**
+  - `coordination/TASKS.json`: Registered `foremerge-demand-verification` and `unfamiliar-adopter-t1` as `in_progress`.
+  - `coordination/TEAM-REGISTRY.json`: Registered `foremerge-demand-verifier` (`446af413`) and `unfamiliar-adopter-worker` (`37dbcbdc`) as `running`.
+- **Invariants Strictly Preserved:**
+  - Human no-Rust-build hold enforced: zero cargo/rustc commands.
+  - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
+  - Standup file `experiment/standups/2026-10-04.md` preserved untouched for Codex Principal single-writer integration.
+
+
 
 
 
