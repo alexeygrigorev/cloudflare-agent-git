@@ -1,13 +1,14 @@
 {
   "title": "Agent Branches workflow",
   "description": "Each coding agent works on its own repository fork with short-lived tokens, while a coordinator tracks tasks and a background checker tests combined branches.",
+  "style": "editorial",
   "canvas": {"width": 1080, "height": 420},
   "layout": {"type": "manual", "card_width": 220, "card_height": 100},
   "nodes": [
     {
       "id": "agent_alpha",
       "title": "Agent Alpha",
-      "subtitle": "Fork with short-lived token",
+      "subtitle": "Own repository fork",
       "icon": "robot",
       "color": "blue",
       "x": 40,
@@ -16,7 +17,7 @@
     {
       "id": "agent_beta",
       "title": "Agent Beta",
-      "subtitle": "Fork with short-lived token",
+      "subtitle": "Own repository fork",
       "icon": "robot",
       "color": "blue",
       "x": 40,
@@ -25,16 +26,16 @@
     {
       "id": "coordinator",
       "title": "Coordinator",
-      "subtitle": "Tracks tasks and push vectors",
+      "subtitle": "Tracks branches and tasks",
       "icon": "api",
-      "color": "purple",
+      "color": "blue",
       "x": 430,
       "y": 150
     },
     {
       "id": "checker",
       "title": "Conflict checker",
-      "subtitle": "Trial merges and runs tests",
+      "subtitle": "Test-merges and runs tests",
       "icon": "workflow",
       "color": "amber",
       "x": 820,
@@ -42,10 +43,10 @@
     },
     {
       "id": "review_ui",
-      "title": "Review interface",
-      "subtitle": "Shows warnings and branch status",
+      "title": "Review page",
+      "subtitle": "Shows warnings and status",
       "icon": "browser",
-      "color": "green",
+      "color": "gray",
       "x": 820,
       "y": 240
     }
@@ -55,18 +56,20 @@
       "from": "agent_alpha",
       "to": "coordinator",
       "label": "Push",
-      "route": "orthogonal"
+      "route": "orthogonal",
+      "color": "gray"
     },
     {
       "from": "agent_beta",
       "to": "coordinator",
       "label": "Push",
-      "route": "orthogonal"
+      "route": "orthogonal",
+      "color": "gray"
     },
     {
       "from": "coordinator",
       "to": "checker",
-      "label": "Trial merge",
+      "label": "Test merge",
       "route": "orthogonal",
       "color": "amber"
     },
@@ -75,14 +78,15 @@
       "to": "coordinator",
       "label": "Warnings",
       "dashed": true,
-      "route": "orthogonal"
+      "route": "orthogonal",
+      "color": "amber"
     },
     {
       "from": "coordinator",
       "to": "review_ui",
       "label": "Status",
       "route": "orthogonal",
-      "color": "green"
+      "color": "gray"
     }
   ]
 }

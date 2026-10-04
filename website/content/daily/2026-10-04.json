@@ -52,7 +52,7 @@
   "editorial_review": "Evidence, privacy, full stylint and asset checks by publication coordinator; dated illustration supplied by desktop imagegen channel",
   "article_sha256": "bd329bb9332186a260a30e19e4434d6edd251ff4ba5ac15e029c7093610c8d13",
   "published_at": "2026-10-04T07:26:32.475551+00:00",
-  "corrected_at": "2026-10-04T07:44:00+00:00",
+  "corrected_at": "2026-10-04T15:25:00+00:00",
   "corrections": [
     {
       "at": "2026-10-04T07:44:00+00:00",
@@ -61,6 +61,16 @@
       "details": "Replaced generic day-one assets with dated 2026-10-04 illustration and Agent Branches workflow diagram; updated diagram caption; corrected editorial review attribution to publication coordinator.",
       "sources": [
         "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/website/assets/2026-10-04.png",
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/website/assets/2026-10-04-agent-branches-workflow.svg"
+      ]
+    },
+    {
+      "at": "2026-10-04T15:25:00+00:00",
+      "editor": "publication coordinator (public-journal-site)",
+      "reason": "Visual review: palette and reader-facing label repair",
+      "details": "Adapted workflow diagram to exact approved VISUALS.md flat editorial palette (#fcfcf8, #1c2027, #2455ed, #ef7134), eliminating template colors; replaced unexplained jargon with reader-facing labels (isolated forks, tracks branches and tasks, test-merges, review page).",
+      "sources": [
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/website/editorial/VISUALS.md",
         "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/website/assets/2026-10-04-agent-branches-workflow.svg"
       ]
     }
