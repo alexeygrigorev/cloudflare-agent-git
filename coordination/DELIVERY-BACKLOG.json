@@ -780,6 +780,35 @@
       "next_action": "Classify every concrete ask/constraint/question; link tasks or exact superseding human source; historical status alone is not completion.",
       "requirement_summary": "Quiet Claude deliverables explicitly handed to other principal; current Codex capacity problem requires genuine alternative coverage.",
       "evidence_status": "Legacy task statuses preserved; fresh owner acceptance audit required, not assumed done."
+    },
+    {
+      "id": "human-delivery-reset-20261004",
+      "source": "experiment/human-delivery-reset-20261004.txt",
+      "line": 1,
+      "sha256": "f706be55a86ac7879f83c43912243bffda66720bf87c550eb3450e38ca58c8ad",
+      "disposition": "latest delivery steering",
+      "owner_tag": "antigravity-head",
+      "requirement_summary": "Clear roles/teams and independently delegated executors; three actual useful projects; dashboard exact24h hourly perprojectagents/tokens/features; semantic tasktracker no earlierasks lost; quota-aware launcher with fresh quotas/reset urgency/taskfit/timeeligible promotion and independent challenger; separate private GitHub source backups and verifiedmainrestore; development through AgentBranches; useful continuous24/7 work, tomorrowOct5 daily progress per project. Heru ideas only, no code; existing quse/aplexer reuse; scarceCodex/Claude/Copilotavoid.",
+      "task_ids": [
+        "ab-safe-main-restore",
+        "ab-real-consumer-work",
+        "dashboard-hourly24h",
+        "dashboard-usage-accounting",
+        "dashboard-completed-features",
+        "dashboard-private-project",
+        "launcher-quota-resource-gates",
+        "launcher-native-lifecycle",
+        "delivery-intake-reconciliation",
+        "daily-project-progress-20261005",
+        "independent-project-challenge",
+        "research-selection-gates",
+        "cross-machine-social-research",
+        "native-cross-host-roundtrip",
+        "prior-research-integration",
+        "desktop-channel-crossworkspace",
+        "ab-standalone-private-source-project"
+      ],
+      "evidence_status": "Actual heads/scaffolds/firstaction partial; independently accepted implementation and all product integrations remain pending"
     }
   ],
   "legacy_task_ids": [
@@ -865,7 +894,9 @@
     "research-selection-gates",
     "cross-machine-social-research",
     "native-cross-host-roundtrip",
-    "prior-research-integration"
+    "prior-research-integration",
+    "desktop-channel-crossworkspace",
+    "ab-standalone-private-source-project"
   ],
   "source_policy": "Every preserved human heading indexed. Latest desktop three-project request recorded separately by root. Semantic task mapping requires owner review.",
   "semantic_reconciliation": "All48 preserved source sections classified and linked to concrete tasks/constraints/questions/supersession. Multi-ask source1 split across research, social, recovery and native team lifecycle. Missing original asks explicitly restored as four audit tasks."

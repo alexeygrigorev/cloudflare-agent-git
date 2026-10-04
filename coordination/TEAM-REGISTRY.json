@@ -3620,8 +3620,19 @@
       "head_tag": "agent-dashboard-head",
       "head_session_id": "c7a75f76-1f51-4f14-873e-7a60569838c3",
       "integration_owner": "agent-dashboard-head",
-      "ownership_state": "Genuine interactive head launched; standalone repo /home/alexey/git/agent-dashboard; initial modules and test suite (13/13 PASS) landed; backup/restore test verified",
-      "workspace": "/home/alexey/git/agent-dashboard"
+      "ownership_state": "Actual semantic head ACK and firstwhoami11:17:49Z verified; renderedscreen working on precise executor briefs despite catalogidle",
+      "workspace": "/home/alexey/git/agent-dashboard",
+      "first_action": {
+        "schema_version": 1,
+        "session_id": "c7a75f76-1f51-4f14-873e-7a60569838c3",
+        "tag": "agent-dashboard-head",
+        "engine": "zcodex",
+        "workspace": "/home/alexey/git/agent-dashboard",
+        "parent_session": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+        "first_tool": "aplexer whoami --json",
+        "first_tool_at_utc": "2026-10-04T11:17:49Z",
+        "receipt_written_at_utc": "2026-10-04T11:17:49Z"
+      }
     },
     {
       "id": "quota-launcher",
@@ -3630,7 +3641,12 @@
       "head_session_id": "6be4c247-4410-4bdb-968e-7fc2d5844941",
       "integration_owner": "quota-launcher-head",
       "ownership_state": "Genuine Grok head active in /home/alexey/git/agent-quota-launcher; owns launcher/, tests/, README, pyproject, examples",
-      "workspace": "/home/alexey/git/agent-quota-launcher"
+      "workspace": "/home/alexey/git/agent-quota-launcher",
+      "first_action": {
+        "path": "/home/alexey/git/agent-quota-launcher/.local/head-first-action.json",
+        "at": "2026-10-04T11:08:51Z",
+        "tool": "aplexer whoami --json"
+      }
     }
   ]
 }

@@ -1202,25 +1202,26 @@
       "project_id": "agent-branches",
       "team_id": "agent-branches",
       "owner_tag": "antigravity-head",
-      "status": "done",
+      "status": "review",
       "updated_at": "2026-10-04T11:07:39.139235+00:00",
       "executor_ids": [],
       "owned_paths": [],
       "evidence_paths": [],
       "blocked_on": [
-        "Semantic ownership ACK and first action unverified"
+        "Separate private product source repository and remote restore not verified"
       ],
       "assignment_ack": "Verified canonical repository git@github.com:alexeygrigorev/cloudflare-agent-git.git restore in isolated scratch checkout. Full tree SHA match, zero secrets/transcripts, 68/68 unit tests PASS.",
-      "next_action": "Proceed with real consumer maintenance work (ab-real-consumer-work) dogfooding AgentBranches.",
+      "next_action": "Assign real product backup/extraction executor; verify separate private AgentBranches source GitHub main SHA then independent remote restore/tree match; preserve localtest credit.",
       "acceptance": "Exact source/private remote/main SHA/restore tree match; no transcripts or secrets.",
       "first_action": null,
       "commit": "b0251da",
       "pr_url": null,
       "tests": "python3 -m unittest discover -s tests (68/68 PASS in disposable clone)",
-      "accepted_at": "2026-10-04T13:17:20+02:00",
+      "accepted_at": null,
       "reviewer": "container-patch-reviewer (cfdf7858)",
       "continuation_trigger": "Head handles completion/dependency/failure; next owned ready task within5min; daily owner handoff",
-      "acceptance_status": "ACCEPT: Exact source/remote/main SHA/restore tree match confirmed (b0251da / 57ea66d); zero transcripts or secrets; 68/68 tests PASS. Receipt in research/antigravity/recovery/RECEIPT-SAFE-MAIN-RESTORE.md."
+      "acceptance_status": "REQUEST_CHANGES: root inspected receipt; true private separate product GitHub main backup/remote disposable restore unverified.",
+      "bounded_previous_credit": "Local file:// restore of existing public experimentlog is bounded recovery check, not separate product GitHub source remote restore."
     },
     {
       "id": "ab-real-consumer-work",
@@ -1323,7 +1324,7 @@
       "project_id": "agent-dashboard",
       "team_id": "agent-dashboard",
       "owner_tag": "agent-dashboard-head",
-      "status": "in_progress",
+      "status": "running",
       "updated_at": "2026-10-04T11:07:39.139235+00:00",
       "executor_ids": [
         "c7a75f76-1f51-4f14-873e-7a60569838c3"
@@ -1331,12 +1332,56 @@
       "owned_paths": [],
       "evidence_paths": [],
       "blocked_on": [
-        "Semantic ownership ACK and first action unverified"
+        "Root accounting/hourly/features REQUEST_CHANGES; actual private GitHub backup/remote restore and platform dogfooding pending"
       ],
-      "assignment_ack": "Standalone private repository created at /home/alexey/git/agent-dashboard. Interactive head agent-dashboard-head (c7a75f76-1f51-4f14-873e-7a60569838c3) launched.",
+      "assignment_ack": {
+        "schema_version": 1,
+        "session_id": "c7a75f76-1f51-4f14-873e-7a60569838c3",
+        "tag": "agent-dashboard-head",
+        "ack": "I am the interactive Agent Dashboard project head and user-authorized product lead for /home/alexey/git/agent-dashboard.",
+        "ownership": {
+          "project_root": "/home/alexey/git/agent-dashboard",
+          "owns": [
+            "src/dashboard/ backend via delegated executor",
+            "tests/ via delegated executor",
+            "static/ or templates/ frontend via delegated executor",
+            "integration and delivery decomposition",
+            "reviews/ is owned by independent reviewer only"
+          ],
+          "does_not_own": [
+            "cloudflare-agent-git peer files",
+            "agent-quota-launcher peer files",
+            "quse/aplexer dirty state",
+            "TASKS/TEAM-REGISTRY services (register only, no relaunch)"
+          ]
+        },
+        "boundaries": [
+          "no purchases",
+          "no Copilot",
+          "no Rust builds/installs",
+          "no secrets in Git",
+          "no worktree deletion",
+          "no busy-pane injection",
+          "fresh quse before every external launch",
+          "aplexer --memory 1500M max per worker",
+          "TMPDIR under .local/tmp",
+          "private data localhost only"
+        ],
+        "ack_at_utc": "2026-10-04T11:17:49Z"
+      },
       "next_action": "agent-dashboard-head address root-review-findings.json (ceil shift, span union, strict accounting nullability, 24h filter), implement live history adapters, and route independent review.",
       "acceptance": "Real repo/head/executor first action; reviewed source; private GitHub main and verified restore.",
-      "first_action": null,
+      "first_action": {
+        "schema_version": 1,
+        "session_id": "c7a75f76-1f51-4f14-873e-7a60569838c3",
+        "tag": "agent-dashboard-head",
+        "engine": "zcodex",
+        "workspace": "/home/alexey/git/agent-dashboard",
+        "parent_session": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+        "first_tool": "aplexer whoami --json",
+        "first_tool_at_utc": "2026-10-04T11:17:49Z",
+        "receipt_written_at_utc": "2026-10-04T11:17:49Z"
+      },
       "commit": "1876434",
       "pr_url": null,
       "tests": "PYTHONPATH=src python3 -m unittest discover -s tests (13/13 PASS); scripts/restore_test.sh (PASS)",
@@ -1557,6 +1602,52 @@
       "tests": null,
       "accepted_at": null,
       "continuation_trigger": "Head owns reconciliation and next action; no lost earlier ask"
+    },
+    {
+      "id": "desktop-channel-crossworkspace",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "owner_tag": "desktop-orchestrator",
+      "status": "queued",
+      "updated_at": "2026-10-04T11:19:14.808651+00:00",
+      "next_action": "At safe owned service checkpoint add optional request.workspace to native --workspace routing, preserving bound sender; meanwhile Ant handles crossproject handoffs.",
+      "acceptance": "Genuine bound desktop crossworkspace send/reply receipts, dedup and failure tests; no identity/env spoof or blind interruption.",
+      "blocked_on": [
+        "Owner ACK/executor evidence pending"
+      ],
+      "executor_ids": [],
+      "owned_paths": [],
+      "evidence_paths": [],
+      "first_action": null,
+      "commit": null,
+      "pr_url": null,
+      "tests": null,
+      "reviewer": null,
+      "accepted_at": null,
+      "continuation_trigger": "Owned safe checkpoint; independent tasks proceed meanwhile"
+    },
+    {
+      "id": "ab-standalone-private-source-project",
+      "project_id": "agent-branches",
+      "team_id": "agent-branches",
+      "owner_tag": "antigravity-head",
+      "status": "queued",
+      "updated_at": "2026-10-04T11:19:14.808651+00:00",
+      "next_action": "Assign owned executor to extract existing prototype acceptedsource into separate default-private AgentBranches GitHubproject, maintain canonicalmainbackup and disposable restore.",
+      "acceptance": "Actual private repo/sourceSHA/mainSHA/fallbackrestore tree match and secret scan; preserved existing work; no code-only unreviewed extraction claim.",
+      "blocked_on": [
+        "Owner ACK/executor evidence pending"
+      ],
+      "executor_ids": [],
+      "owned_paths": [],
+      "evidence_paths": [],
+      "first_action": null,
+      "commit": null,
+      "pr_url": null,
+      "tests": null,
+      "reviewer": null,
+      "accepted_at": null,
+      "continuation_trigger": "Owned safe checkpoint; independent tasks proceed meanwhile"
     }
   ]
 }
