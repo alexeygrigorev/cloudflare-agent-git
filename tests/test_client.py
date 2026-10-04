@@ -1856,6 +1856,15 @@ class TestAgentBranchesClient(unittest.TestCase):
             srv.shutdown()
             srv.server_close()
 
+    def test_22_calculate_jitter(self):
+        client = AgentBranchesClient()
+        j0 = client.calculate_jitter(0, base_delay=0.1)
+        self.assertGreaterEqual(j0, 0.1)
+        j1 = client.calculate_jitter(1, base_delay=0.1)
+        self.assertGreater(j1, j0)
+        with self.assertRaises(ValueError):
+            client.calculate_jitter(-1)
+
 
 if __name__ == "__main__":
     unittest.main()

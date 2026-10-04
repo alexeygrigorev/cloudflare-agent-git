@@ -672,3 +672,12 @@ class AgentBranchesClient:
         self, task_id: str, warning_id: str, action: str = "rebased_locally"
     ) -> Dict[str, Any]:
         return self.ack_warning(warning_id=warning_id, task_id=task_id, action=action)
+
+    def calculate_jitter(self, attempt: int, base_delay: float = 0.05, max_delay: float = 2.0) -> float:
+        """Calculate exponential backoff with bounded deterministic jitter."""
+        if attempt < 0:
+            raise ValueError("Attempt must be non-negative")
+        delay = min(max_delay, base_delay * (2 ** attempt))
+        # deterministic pseudo-jitter using attempt parity
+        jitter = 0.01 * (attempt % 3)
+        return round(delay + jitter, 4)
