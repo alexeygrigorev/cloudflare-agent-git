@@ -590,6 +590,22 @@
           "status": "completed"
         },
         {
+          "tag": "auth-matrix-integration-runner",
+          "role": "executor",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "6012fdf0-9e95-438c-98fe-062d71bed4e0",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/agent-branches-integration",
+          "scratch": ".local/scratch/auth-matrix-integration/",
+          "task": "C1542/C1544: Isolated integration combining proto/auth-reads (2302d70), proto/webhook-auth (d8ac3b5), and proto/sdk-get-task-auth (cbf72e2); verify Node coordinator requireTaskOwnerOrAdmin on GET /tasks/:id and SDK cold-cache resolution",
+          "owned_paths": [
+            "research/antigravity/agent-branches/INTEGRATION-AUTH-MATRIX-REPORT.md"
+          ],
+          "status": "running"
+        },
+        {
           "tag": "l6-ca16-review",
           "role": "executor",
           "parent_tag": "antigravity-head",
