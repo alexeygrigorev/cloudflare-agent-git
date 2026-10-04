@@ -118,16 +118,18 @@ Verified in `agent_branches/client.py`:
 - `send_checks_with_resync(self, payload, runner_token=None, ...)` forwards `runner_token` to both `send_checks` and `refresh_head_vector(runner_token=runner_token)`.
 - Verified in `test_15`: bearer token authenticated GET `/status` requests pass 401 gate, and environment variable `$RUNNER_TOKEN` acts as expected fallback.
 
-### 3.3 Client/Server Validation Boundary
-Commit `7868334` clarifies and enforces the boundary in `_validated_recomputed_payload`:
+### 3.3 Client/Server Validation and Execution Boundaries (C1500 Correction)
+Commit `7868334` documents and scopes the boundary in `_validated_recomputed_payload`:
 - **Client Responsibilities**:
   1. Structural validation: payload is a JSON dict with required keys `"contract"`, `"vector"`, `"results"`.
   2. Completeness: all participants from `original_vector` must be present in the recomputed vector.
   3. Head Freshness: `str(vector[key]) == fresh_heads.get(key)` ensures the recomputed payload cannot relabel stale evidence as fresh.
   4. Pair Reference Integrity: every pair in `results` references declared participants in `vector`.
-- **Server Responsibilities**:
-  Semantic evaluation of trial merges, AST/textual conflict detection, policy evaluation, and authoritative serialization (returning 409 if a concurrent push occurred during client recomputation).
-- Explicitly documented in `_validated_recomputed_payload` docstring (lines 426–428).
+  *Note on Callback Evaluation*: The client validates participant head SHA matching, but cannot prove that the callback actually executed fresh behavioral tests or trial merges.
+- **Server Coordinator Responsibilities**:
+  The coordinator acts as an authoritative, serialized ledger for trusted-runner check results. It validates schema and gates freshness (rejecting with HTTP 409 `StaleVectorError` if a concurrent push occurred). The coordinator does **not** execute git trial merges or test commands itself; actual trial merges, AST/textual conflict evaluations, and semantic test execution are performed by the external runner (L3 Radar Engine).
+- **Scope of Acceptance**:
+  This review certifies wire compatibility against the real `StatusResult` schema, unit test suite execution (16/16 tests pass), and mutation kill gates (M1/M2). It does not certify the whole end-to-end runtime workflow, which depends on live coordinator and runner integration. Mutations M1 and M2 were applied in the head-declared work window and reverted cleanly with zero residual changes.
 
 ---
 
