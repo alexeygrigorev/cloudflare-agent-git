@@ -35,7 +35,32 @@ def temporal(store,observations,tasks,at):
         item=state['conversations'].setdefault(key,{'first_at':at,'first_cumulative_tokens':current,'latest_cumulative_tokens':current,'source':u['source'],'conversation_id':u['conversation_id']})
         item['latest_cumulative_tokens']=max(current,item['latest_cumulative_tokens']);item['tokens_since_observer']=item['latest_cumulative_tokens']-item['first_cumulative_tokens']
     for r in observations:
-        identity=r.get('id') or 'missing:'+str(r.get('tag')); agent=state['agents'].setdefault(identity,{'tag':r.get('tag'),'team_id':r.get('team_id'),'first_seen_at':at,'pid_live_seconds':0,'hook_working_seconds':0,'hook_idle_seconds':0,'cpu_observed_delta_seconds':0,'previous_cpu':None,'previous_start':None,'idle_since_unix':None})
+        identity=r.get('id') or r.get('harness_conversation_id') or ('missing:'+str(r.get('tag')))
+        agent=state['agents'].setdefault(identity,{
+            'tag':r.get('tag'),
+            'team_id':r.get('team_id'),
+            'parent_session':r.get('parent_session'),
+            'parent_tag':r.get('parent_tag'),
+            'harness_conversation_id':r.get('harness_conversation_id'),
+            'role':r.get('role'),
+            'responsibility':r.get('responsibility'),
+            'first_seen_at':at,
+            'pid_live_seconds':0,
+            'hook_working_seconds':0,
+            'hook_idle_seconds':0,
+            'cpu_observed_delta_seconds':0,
+            'previous_cpu':None,
+            'previous_start':None,
+            'idle_since_unix':None
+        })
+        if r.get('parent_session') and not agent.get('parent_session'):
+            agent['parent_session']=r.get('parent_session')
+        if r.get('parent_tag') and not agent.get('parent_tag'):
+            agent['parent_tag']=r.get('parent_tag')
+        if r.get('harness_conversation_id') and not agent.get('harness_conversation_id'):
+            agent['harness_conversation_id']=r.get('harness_conversation_id')
+        if r.get('responsibility') and not agent.get('responsibility'):
+            agent['responsibility']=r.get('responsibility')
         if r['pid_live']:agent['pid_live_seconds']+=elapsed
         state_now=r.get('reported_state')
         if r['pid_live'] and not r['stale_hook']:

@@ -837,16 +837,23 @@ def _collect():
             ('partial' if coverage['missing_paths'] or coverage['unsupported_directory_paths'] or coverage['out_of_scope_paths'] else 'observed')
         )
 
+        harness_cid = item.get('harness_conversation_id') or item.get('conversation_id')
+        effective_id = s.get('id') or item.get('session_id') or harness_cid
+        effective_parent = s.get('parent_session') or item.get('parent_session_id')
         observations.append({
-            'id': s.get('id'),
+            'id': effective_id,
             'tag': item.get('tag'),
             'team_id': team_id,
             'role': role,
+            'responsibility': item.get('responsibility'),
             'workspace': agent_ws_str,
             'counted_as_agent': role in COUNT_ROLES,
             'unregistered': team_id == 'unregistered',
             'resolution': resolution,
-            'parent_session': s.get('parent_session'),
+            'parent_session': effective_parent,
+            'parent_tag': item.get('parent_tag'),
+            'harness_conversation_id': harness_cid,
+            'mode': item.get('mode'),
             'engine': s.get('engine'),
             'pid_live': ps['alive'],
             'phase': s.get('phase'),

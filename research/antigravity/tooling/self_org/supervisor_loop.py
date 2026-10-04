@@ -613,7 +613,7 @@ class SupervisorLoop:
                                 tag=head_tag,
                                 project_id=pid,
                                 mode="interactive",
-                                status="ready",
+                                status="unverified",
                                 metadata={"workspace": p.get("workspace"), "role": "head"},
                             )
                     # Teams
@@ -625,7 +625,7 @@ class SupervisorLoop:
                                 tag=head_tag,
                                 project_id=tid,
                                 mode="interactive",
-                                status="ready",
+                                status="unverified",
                                 metadata={"role": "team_head"},
                             )
                     # Agents
@@ -636,7 +636,7 @@ class SupervisorLoop:
                                 tag=atag,
                                 project_id=a.get("team") or "unknown",
                                 mode="headless" if a.get("role") != "head" else "interactive",
-                                status="ready",
+                                status="unverified",
                                 metadata={"role": a.get("role")},
                             )
                     # Delivery executors if present
@@ -647,7 +647,7 @@ class SupervisorLoop:
                             project_id=ex.get("project_id", "unknown"),
                             mode=ex.get("mode", "headless"),
                             provider=ex.get("provider", "gemini"),
-                            status="ready",
+                            status="unverified",
                         )
             except Exception as exc:
                 logger.warning("Could not load registry from %s: %s", self.registry_file, exc)
@@ -681,14 +681,14 @@ class SupervisorLoop:
                         continue
 
                     is_notready = (reported_state == "NOTREADY" or phase in ("stalled", "stopped", "exited", "dead"))
-                    is_busy = (reported_state == "busy")
+                    is_busy = (reported_state in ("busy", "working"))
                     is_draft = (reported_state == "draft")
 
                     if is_notready:
                         status = "NOTREADY"
                     elif is_busy:
                         status = "busy"
-                    elif phase == "running" and reported_state in ("idle", "ready", "working"):
+                    elif phase == "running" and reported_state in ("idle", "ready"):
                         status = "ready"
                     else:
                         status = "busy"
@@ -723,17 +723,48 @@ class SupervisorLoop:
             return
 
         self.tasks_file.parent.mkdir(parents=True, exist_ok=True)
-        task_list = [t.to_dict() for t in self._tasks.values()]
-        payload = {
-            "schema_version": 1,
-            "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "tasks": task_list,
-        }
-
         lock_path = self.tasks_file.with_name(self.tasks_file.name + ".lock")
         lock_fd = os.open(str(lock_path), os.O_RDWR | os.O_CREAT, 0o600)
         try:
             fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            # Reread-merge from disk to prevent concurrent tick overwrites
+            if self.tasks_file.exists():
+                try:
+                    with open(self.tasks_file, "r", encoding="utf-8") as f:
+                        disk_data = json.load(f)
+                        raw_disk_tasks = disk_data.get("tasks", []) if isinstance(disk_data, dict) else disk_data
+                        for rdt in raw_disk_tasks:
+                            dt = Task.from_dict(rdt)
+                            if dt.id not in self._tasks:
+                                self._tasks[dt.id] = dt
+                            else:
+                                local_t = self._tasks[dt.id]
+                                disk_receipt = dt.metadata.get("receipt_path") or dt.raw_fields.get("receipt_path")
+                                if disk_receipt and not (local_t.metadata.get("receipt_path") or local_t.raw_fields.get("receipt_path")):
+                                    local_t.metadata["receipt_path"] = disk_receipt
+                                    local_t.raw_fields["receipt_path"] = disk_receipt
+                                # Preserve any external metadata/raw_fields added on disk
+                                for k, v in dt.metadata.items():
+                                    if k not in local_t.metadata or dt.updated_at >= local_t.updated_at:
+                                        local_t.metadata[k] = v
+                                for k, v in dt.raw_fields.items():
+                                    if k not in local_t.raw_fields or dt.updated_at >= local_t.updated_at:
+                                        local_t.raw_fields[k] = v
+                                if dt.updated_at >= local_t.updated_at:
+                                    if dt.status in ("done", "review", "awaiting-review") and local_t.status in ("running", "awaiting-review"):
+                                        local_t.status = dt.status
+                                    local_t.metadata.update(dt.metadata)
+                                    local_t.raw_fields.update(dt.raw_fields)
+                                    local_t.updated_at = dt.updated_at
+                except Exception as exc:
+                    logger.warning("Could not reread tasks from %s for merge: %s", self.tasks_file, exc)
+
+            task_list = [t.to_dict() for t in self._tasks.values()]
+            payload = {
+                "schema_version": 1,
+                "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "tasks": task_list,
+            }
             with tempfile.NamedTemporaryFile("w", dir=str(self.tasks_file.parent), delete=False, encoding="utf-8") as tf:
                 json.dump(payload, tf, indent=2)
                 tf.flush()
@@ -862,7 +893,7 @@ class SupervisorLoop:
            - Anti-junk: If JSON, must not be empty object {} or empty list [].
            - Computes and verifies non-empty SHA256 artifact digest.
         """
-        if task.status in ("done", "review"):
+        if task.status == "done":
             return True
 
         # Check explicit receipt path if specified
@@ -893,12 +924,27 @@ class SupervisorLoop:
                 logger.warning("Receipt %s task_id mismatch (%s != %s)", rp, rdata.get("task_id"), task.id)
                 return False
 
-            # 2. Assert fence_token matches active lease
+            # 2. Assert active lease matches fence_token, holder, and unexpired
             active_lease = self.lease_manager.get_lease(task.id)
-            if not active_lease or rdata.get("fence_token") != active_lease.fence_token:
+            if not active_lease or active_lease.status != "active":
+                logger.warning("Receipt %s: no active lease for task %s", rp, task.id)
+                return False
+            if active_lease.is_expired(now):
+                logger.warning("Receipt %s: active lease for task %s is expired", rp, task.id)
+                return False
+            if active_lease.lease_holder != task.executor_tag:
+                logger.warning("Receipt %s: lease holder mismatch (%s != %s)", rp, active_lease.lease_holder, task.executor_tag)
+                return False
+            if rdata.get("fence_token") != active_lease.fence_token:
                 logger.warning(
                     "Receipt %s fence_token mismatch (receipt=%s, active=%s)",
                     rp, rdata.get("fence_token"), getattr(active_lease, "fence_token", None)
+                )
+                return False
+            if rdata.get("executor_tag") != active_lease.lease_holder:
+                logger.warning(
+                    "Receipt %s executor_tag mismatch (receipt=%s, active=%s)",
+                    rp, rdata.get("executor_tag"), active_lease.lease_holder
                 )
                 return False
 
@@ -925,10 +971,17 @@ class SupervisorLoop:
                 logger.warning("Receipt %s status '%s' not accepted", rp, status)
                 return False
 
-            # 6. Assert independent_reviewer is non-empty string
+            # 6. Assert independent_reviewer is non-empty string and distinct from executor_tag
             reviewer = rdata.get("independent_reviewer")
             if not reviewer or not isinstance(reviewer, str) or not reviewer.strip():
                 logger.warning("Receipt %s missing or empty independent_reviewer", rp)
+                return False
+            clean_reviewer = reviewer.strip()
+            if clean_reviewer == (task.executor_tag or "").strip() or clean_reviewer == (rdata.get("executor_tag") or "").strip():
+                logger.warning(
+                    "Receipt %s independent_reviewer matches executor_tag (%s == %s); distinct reviewer required!",
+                    rp, clean_reviewer, task.executor_tag
+                )
                 return False
 
             # 7. Assert output_digest == artifact_sha256
@@ -1010,7 +1063,12 @@ class SupervisorLoop:
             if all_evidence_valid:
                 task.metadata["evidence_hashes"] = hashes
                 task.metadata["verified_at"] = now
-                return True
+                if task.status == "running":
+                    task.status = "awaiting-review"
+                    task.updated_at = now
+                    logger.info("Task %s evidence verified; advanced to awaiting-review (awaiting independent review receipt)", task.id)
+                # NEVER return True on evidence alone without verified receipt!
+                return False
 
         return False
 
@@ -1137,11 +1195,11 @@ class SupervisorLoop:
         project_tasks = [t for t in self._tasks.values() if t.project_id == project_id]
 
         # -------------------------------------------------------------------
-        # Phase 1: Check running tasks for completion or lease expiry
+        # Phase 1: Check running and awaiting-review tasks for completion or lease expiry
         # -------------------------------------------------------------------
         for task in list(project_tasks):
-            if task.status == "running":
-                # Check for strict completion (rejecting stale files)
+            if task.status in ("running", "awaiting-review", "review"):
+                # Check for strict completion (requires verified receipt for done/release)
                 if self._check_task_completion(task, now=now):
                     task.status = "done"
                     task.updated_at = now
@@ -1166,6 +1224,10 @@ class SupervisorLoop:
                         "project_id": project_id,
                         "timestamp": now,
                     })
+                    continue
+
+                if task.status == "awaiting-review":
+                    proj_data.setdefault("awaiting_review_tasks", []).append(task.id)
                     continue
 
                 # Check for lease expiration (dead or stalled worker)
@@ -1243,10 +1305,10 @@ class SupervisorLoop:
             proj_data["status"] = "throttled_host_sanity"
             return
 
-        # Check concurrency (at most 1 running task per project queue in baseline)
-        current_running = [t for t in self._tasks.values() if t.project_id == project_id and t.status == "running"]
+        # Check concurrency (at most 1 running/awaiting-review task per project queue in baseline)
+        current_running = [t for t in self._tasks.values() if t.project_id == project_id and t.status in ("running", "awaiting-review")]
         if current_running:
-            return  # Already actively executing
+            return  # Already actively executing or awaiting review receipt
 
         for task in ready_tasks:
             # Check restart backoff

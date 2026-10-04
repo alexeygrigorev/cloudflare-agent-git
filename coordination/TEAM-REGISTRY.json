@@ -3729,6 +3729,164 @@
       "expected_checkpoint": "task completion event or bounded20min no-output check; no PID-only acceptance",
       "usage_coverage": "Completed outer native rollout only; warm child usage coverage unknown; not billed experiment expenditure",
       "status": "completed-awaiting-review"
+    },
+    {
+      "tag": "self-org-architect",
+      "team_id": "agent-branches",
+      "project_id": "agent-branches",
+      "parent_tag": "antigravity-head",
+      "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+      "mode": "native-harness-subagent",
+      "role": "subagent",
+      "responsibility": "architect",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "self-org-architecture-remediation",
+      "status": "running",
+      "harness_conversation_id": "7f5a2f14-092d-4676-b4f9-ff96bdc32a01",
+      "owned_paths": [
+        "research/antigravity/tooling/self_org/",
+        "tests/test_self_org_loop.py"
+      ],
+      "usage": null,
+      "first_action": {
+        "engine": "antigravity",
+        "first_tool": "view_file",
+        "first_tool_at_utc": "2026-10-04T20:20:00Z",
+        "timestamp_verification": "unverified_owner_metadata"
+      }
+    },
+    {
+      "tag": "self-org-challenger",
+      "team_id": "agent-branches",
+      "project_id": "agent-branches",
+      "parent_tag": "antigravity-head",
+      "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+      "mode": "native-harness-subagent",
+      "role": "subagent",
+      "responsibility": "challenger",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "self-org-adversarial-review",
+      "status": "done",
+      "harness_conversation_id": "393b33c1-f66c-4f2b-9154-30559ca1fbf9",
+      "owned_paths": [
+        "research/antigravity/reviews/REV-AUTONOMOUS-SELF-ORGANIZATION.md"
+      ],
+      "usage": null,
+      "first_action": {
+        "engine": "antigravity",
+        "first_tool": "view_file",
+        "first_tool_at_utc": "2026-10-04T20:20:00Z",
+        "timestamp_verification": "unverified_owner_metadata"
+      }
+    },
+    {
+      "tag": "ab-cli-batch-worker",
+      "team_id": "agent-branches",
+      "project_id": "agent-branches",
+      "parent_tag": "antigravity-head",
+      "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+      "mode": "native-harness-subagent",
+      "role": "subagent",
+      "responsibility": "executor",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/agent-branches",
+      "task_id": "ab-cli-batch-receipts",
+      "status": "done",
+      "harness_conversation_id": "4f83793d-cf6a-44da-9073-96ac388b3cc0",
+      "owned_paths": [
+        "/home/alexey/git/agent-branches/agent_branches/cli.py",
+        "/home/alexey/git/agent-branches/tests/test_cli_batch.py",
+        "research/antigravity/recovery/REPORT-AB-CLI-BATCH.md"
+      ],
+      "usage": null,
+      "first_action": {
+        "engine": "antigravity",
+        "first_tool": "view_file",
+        "first_tool_at_utc": "2026-10-04T20:30:00Z",
+        "timestamp_verification": "unverified_owner_metadata"
+      }
+    },
+    {
+      "tag": "sdk-batch-retry-reviewer",
+      "team_id": "agent-branches",
+      "project_id": "agent-branches",
+      "parent_tag": "antigravity-head",
+      "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+      "mode": "native-harness-subagent",
+      "role": "subagent",
+      "responsibility": "reviewer",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/agent-branches",
+      "task_id": "sdk-push-batch-and-cli-review",
+      "status": "done",
+      "harness_conversation_id": "390d9b50-70a4-4551-a7fd-943f8c184864",
+      "owned_paths": [
+        "research/antigravity/reviews/REV-SDK-PUSH-BATCH-ROBUST-RETRY.md",
+        "research/antigravity/reviews/REV-AB-CLI-BATCH.md"
+      ],
+      "usage": null,
+      "first_action": {
+        "engine": "antigravity",
+        "first_tool": "view_file",
+        "first_tool_at_utc": "2026-10-04T20:10:00Z",
+        "timestamp_verification": "unverified_owner_metadata"
+      }
+    },
+    {
+      "tag": "dashboard-patch-worker",
+      "team_id": "agent-dashboard",
+      "project_id": "agent-dashboard",
+      "parent_tag": "antigravity-head",
+      "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+      "mode": "native-harness-subagent",
+      "role": "subagent",
+      "responsibility": "executor",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "dashboard-staged-patch-alias-and-static",
+      "status": "done",
+      "harness_conversation_id": "437865be-e09a-40be-a7d4-1e370602b0a4",
+      "owned_paths": [
+        "research/antigravity/recovery/dashboard-alias-and-fourth-project-minimal.patch",
+        "research/antigravity/recovery/dashboard-static-fourth-project-minimal.patch",
+        "research/antigravity/recovery/REPORT-DASHBOARD-STAGED-PATCH.md",
+        "research/antigravity/recovery/REPORT-DASHBOARD-STATIC-PATCH.md"
+      ],
+      "usage": null,
+      "first_action": {
+        "engine": "antigravity",
+        "first_tool": "run_command",
+        "first_tool_at_utc": "2026-10-04T20:30:00Z",
+        "timestamp_verification": "unverified_owner_metadata"
+      }
+    },
+    {
+      "tag": "dashboard-adr2-reviewer",
+      "team_id": "agent-dashboard",
+      "project_id": "agent-dashboard",
+      "parent_tag": "antigravity-head",
+      "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+      "mode": "native-harness-subagent",
+      "role": "subagent",
+      "responsibility": "reviewer",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "dashboard-adr2-and-minimal-patch-review",
+      "status": "done",
+      "harness_conversation_id": "ab1e10b9-f777-4fe0-af7f-262577b966c4",
+      "owned_paths": [
+        "research/antigravity/reviews/REV-DASHBOARD-AD-R2.md",
+        "research/antigravity/reviews/REV-DASHBOARD-ALIAS-AND-FOURTH-PROJECT.md"
+      ],
+      "usage": null,
+      "first_action": {
+        "engine": "antigravity",
+        "first_tool": "run_command",
+        "first_tool_at_utc": "2026-10-04T20:10:00Z",
+        "timestamp_verification": "unverified_owner_metadata"
+      }
     }
   ],
   "projects": [
@@ -4026,17 +4184,19 @@
       }
     },
     {
-      "session_id": "7f5a2f14-092d-4676-b4f9-ff96bdc32a01",
       "tag": "self-org-architect",
+      "team_id": "agent-branches",
       "project_id": "agent-branches",
       "parent_tag": "antigravity-head",
       "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
       "mode": "native-harness-subagent",
-      "role": "architect",
+      "role": "subagent",
+      "responsibility": "architect",
       "provider": "gemini",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "task_id": "self-org-architecture-remediation",
       "status": "running",
+      "harness_conversation_id": "7f5a2f14-092d-4676-b4f9-ff96bdc32a01",
       "owned_paths": [
         "research/antigravity/tooling/self_org/",
         "tests/test_self_org_loop.py"
@@ -4045,21 +4205,24 @@
       "first_action": {
         "engine": "antigravity",
         "first_tool": "view_file",
-        "first_tool_at_utc": "2026-10-04T20:20:00Z"
+        "first_tool_at_utc": "2026-10-04T20:20:00Z",
+        "timestamp_verification": "unverified_owner_metadata"
       }
     },
     {
-      "session_id": "393b33c1-f66c-4f2b-9154-30559ca1fbf9",
       "tag": "self-org-challenger",
+      "team_id": "agent-branches",
       "project_id": "agent-branches",
       "parent_tag": "antigravity-head",
       "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
       "mode": "native-harness-subagent",
-      "role": "challenger",
+      "role": "subagent",
+      "responsibility": "challenger",
       "provider": "gemini",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "task_id": "self-org-adversarial-review",
       "status": "done",
+      "harness_conversation_id": "393b33c1-f66c-4f2b-9154-30559ca1fbf9",
       "owned_paths": [
         "research/antigravity/reviews/REV-AUTONOMOUS-SELF-ORGANIZATION.md"
       ],
@@ -4067,21 +4230,24 @@
       "first_action": {
         "engine": "antigravity",
         "first_tool": "view_file",
-        "first_tool_at_utc": "2026-10-04T20:20:00Z"
+        "first_tool_at_utc": "2026-10-04T20:20:00Z",
+        "timestamp_verification": "unverified_owner_metadata"
       }
     },
     {
-      "session_id": "4f83793d-cf6a-44da-9073-96ac388b3cc0",
       "tag": "ab-cli-batch-worker",
+      "team_id": "agent-branches",
       "project_id": "agent-branches",
       "parent_tag": "antigravity-head",
       "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
       "mode": "native-harness-subagent",
-      "role": "executor",
+      "role": "subagent",
+      "responsibility": "executor",
       "provider": "gemini",
       "workspace": "/home/alexey/git/agent-branches",
       "task_id": "ab-cli-batch-receipts",
       "status": "done",
+      "harness_conversation_id": "4f83793d-cf6a-44da-9073-96ac388b3cc0",
       "owned_paths": [
         "/home/alexey/git/agent-branches/agent_branches/cli.py",
         "/home/alexey/git/agent-branches/tests/test_cli_batch.py",
@@ -4091,21 +4257,24 @@
       "first_action": {
         "engine": "antigravity",
         "first_tool": "view_file",
-        "first_tool_at_utc": "2026-10-04T20:30:00Z"
+        "first_tool_at_utc": "2026-10-04T20:30:00Z",
+        "timestamp_verification": "unverified_owner_metadata"
       }
     },
     {
-      "session_id": "390d9b50-70a4-4551-a7fd-943f8c184864",
       "tag": "sdk-batch-retry-reviewer",
+      "team_id": "agent-branches",
       "project_id": "agent-branches",
       "parent_tag": "antigravity-head",
       "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
       "mode": "native-harness-subagent",
-      "role": "reviewer",
+      "role": "subagent",
+      "responsibility": "reviewer",
       "provider": "gemini",
       "workspace": "/home/alexey/git/agent-branches",
       "task_id": "sdk-push-batch-and-cli-review",
       "status": "done",
+      "harness_conversation_id": "390d9b50-70a4-4551-a7fd-943f8c184864",
       "owned_paths": [
         "research/antigravity/reviews/REV-SDK-PUSH-BATCH-ROBUST-RETRY.md",
         "research/antigravity/reviews/REV-AB-CLI-BATCH.md"
@@ -4114,21 +4283,24 @@
       "first_action": {
         "engine": "antigravity",
         "first_tool": "view_file",
-        "first_tool_at_utc": "2026-10-04T20:10:00Z"
+        "first_tool_at_utc": "2026-10-04T20:10:00Z",
+        "timestamp_verification": "unverified_owner_metadata"
       }
     },
     {
-      "session_id": "437865be-e09a-40be-a7d4-1e370602b0a4",
       "tag": "dashboard-patch-worker",
+      "team_id": "agent-dashboard",
       "project_id": "agent-dashboard",
       "parent_tag": "antigravity-head",
       "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
       "mode": "native-harness-subagent",
-      "role": "executor",
+      "role": "subagent",
+      "responsibility": "executor",
       "provider": "gemini",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "task_id": "dashboard-staged-patch-alias-and-static",
       "status": "done",
+      "harness_conversation_id": "437865be-e09a-40be-a7d4-1e370602b0a4",
       "owned_paths": [
         "research/antigravity/recovery/dashboard-alias-and-fourth-project-minimal.patch",
         "research/antigravity/recovery/dashboard-static-fourth-project-minimal.patch",
@@ -4139,21 +4311,24 @@
       "first_action": {
         "engine": "antigravity",
         "first_tool": "run_command",
-        "first_tool_at_utc": "2026-10-04T20:30:00Z"
+        "first_tool_at_utc": "2026-10-04T20:30:00Z",
+        "timestamp_verification": "unverified_owner_metadata"
       }
     },
     {
-      "session_id": "ab1e10b9-f777-4fe0-af7f-262577b966c4",
       "tag": "dashboard-adr2-reviewer",
+      "team_id": "agent-dashboard",
       "project_id": "agent-dashboard",
       "parent_tag": "antigravity-head",
       "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
       "mode": "native-harness-subagent",
-      "role": "reviewer",
+      "role": "subagent",
+      "responsibility": "reviewer",
       "provider": "gemini",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "task_id": "dashboard-adr2-and-minimal-patch-review",
       "status": "done",
+      "harness_conversation_id": "ab1e10b9-f777-4fe0-af7f-262577b966c4",
       "owned_paths": [
         "research/antigravity/reviews/REV-DASHBOARD-AD-R2.md",
         "research/antigravity/reviews/REV-DASHBOARD-ALIAS-AND-FOURTH-PROJECT.md"
@@ -4162,7 +4337,8 @@
       "first_action": {
         "engine": "antigravity",
         "first_tool": "run_command",
-        "first_tool_at_utc": "2026-10-04T20:10:00Z"
+        "first_tool_at_utc": "2026-10-04T20:10:00Z",
+        "timestamp_verification": "unverified_owner_metadata"
       }
     }
   ]

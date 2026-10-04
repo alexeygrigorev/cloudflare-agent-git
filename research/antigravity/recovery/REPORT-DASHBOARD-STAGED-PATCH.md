@@ -365,10 +365,61 @@ If `agent-dashboard-head` prefers to keep existing uncommitted modifications in 
 
 ---
 
-## 7. Conclusion & Next Action
+---
 
-- **Deliverables:**
-  - Patch: [`research/antigravity/recovery/dashboard-alias-and-fourth-project.patch`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/dashboard-alias-and-fourth-project.patch)
-  - Report: [`research/antigravity/recovery/REPORT-DASHBOARD-STAGED-PATCH.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-DASHBOARD-STAGED-PATCH.md)
-- **Status:** Staged patch is fully verified, tested against both `unittest` and `pytest`, verified on fresh disposable clone, and checked against credential leakage via `publication_guard.py`.
-- **Handoff:** Integration ownership is preserved for `agent-dashboard-head` to commit and push to `origin/main` in `/home/alexey/git/agent-dashboard`. Subagent creates zero git commits and notifies `antigravity-head`.
+## 8. C2055 Remediation: 24h Four-Product Analytical Payload (`.local/metrics/hourly_24h_payload.json`)
+
+Under Codex Principal directive C2055, this worker remediated the 24-hour analytical utilization payload to address critical epistemic deficiencies in prior measurements:
+1. **Actor Deduplication:** Previous scripts treated `owner_tag` and native session IDs (CIDs) as separate entities, causing artificial actor inflation. The remediated generator constructs a canonical actor map uniting 774 aliases and session IDs to unique agents.
+2. **Epistemic Separation of Occupancy vs. Verified Work:** A running process (`pid_live == True`) indicates session presence, not verified productive engineering. Waiting loops (e.g., Quota Launcher interactive confirmation prompt, Dashboard idle loops, absent message bus models) and declared-but-stale tasks are strictly excluded from verified working hours (yielding 0.0 h). Only verified active tool execution hooks contribute to `verified_working_hours`.
+3. **Truthful Missing Telemetry:** Pre-commissioning hourly buckets (prior to 2026-10-04T11:08:25Z for branches/dashboard/launcher, and 2026-10-04T11:40:49Z for coordination) report `observation_status: "unobserved"` with `null` hours, completely preventing synthetic zeros or fabricated history.
+
+### 8.1 Payload File Specifications
+- **Target Path:** [`.local/metrics/hourly_24h_payload.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_payload.json)
+- **Permissions:** Mode `0600` (`-rw-------`) via atomic tmpfile replacement
+- **File Size:** 38,899 bytes (38.0 KB)
+- **SHA256:** `f7ccc40d33c0351cb49ac80728e7ddbb3f2ca72abf0873bb9b28434d280aebe2`
+- **Generator Script:** [`.local/scratch/hourly-24h-payload/generate_payload.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/hourly-24h-payload/generate_payload.py)
+- **Window:** `2026-10-03T21:19:13Z` to `2026-10-04T21:19:13Z` (24 hourly buckets, as-of `2026-10-04T21:19:13Z`)
+- **Ingested Telemetry Sources:** `observation-state.json`, `task-transitions.jsonl`, `coordination/TASKS.json`, `coordination/TEAM-REGISTRY.json`, `latest.json`, and 254 archive files (`snapshots-2026-10-*.jsonl*`).
+
+### 8.2 Four-Product 24h Accounting Summary
+
+| Product ID | Commissioned (UTC) | Presence Actors | Presence Hours | Verified Working Actors | Verified Working Hours | Resting / Menu Hours | Accepted Tasks | Accepted Features (Commit + Tests) |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **`agent-branches`** | 2026-10-04 11:08:25Z | 3 | 21.11 h | 2 | **4.86 h** | 16.25 h | 10 | **4** |
+| **`agent-dashboard`** | 2026-10-04 11:08:25Z | 4 | 39.24 h | 0 | **0.00 h** | 39.24 h | 1 | **0** |
+| **`quota-launcher`** | 2026-10-04 11:08:25Z | 5 | 32.54 h | 0 | **0.00 h** | 32.54 h | 1 | **0** |
+| **`agent-coordination`** | 2026-10-04 11:40:49Z | 1 | 5.88 h | 0 | **0.00 h** | 5.88 h | 0 | **0** |
+
+#### Verified Feature Breakdown (`agent-branches`):
+1. `ab-safe-main-restore`: Safe main branch restore and recovery verification.
+2. `ab-real-consumer-work`: Real consumer workflow execution on isolated branches.
+3. `delivery-intake-reconciliation`: Canonical backlog and steering intake reconciliation.
+4. `ab-standalone-private-source-project`: Independent private source repository scaffolding.
+
+### 8.3 Before vs. After Remediation Contrast
+- **Before C2055:** Unfiltered metrics conflated process PID presence with active engineering, recording ~4.0 agent-hours per bucket per product even while agents sat blocked on interactive approval menus or idle loops. Actor counts were double-counted across aliases and session IDs.
+- **After C2055:** Clear epistemic boundary between session occupancy (`presence_hours`) and verified productive output (`verified_working_hours`). Idle processes correctly yield 0.0 h verified work. Real feature completions require explicit commit hashes and verification test evidence. Pre-commissioning buckets are strictly labeled `unobserved` (`null`), never falsified.
+
+---
+
+## 9. Conclusion & Deliverables Summary
+
+1. **Backend Patch (C2037):**
+   - Patch: [`research/antigravity/recovery/dashboard-alias-and-fourth-project.patch`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/dashboard-alias-and-fourth-project.patch)
+   - SHA256: `dcf4e01952fda78b28198f3f5ec800ab4b2aba226ec4dba7c6153bee0b72918a` (119 KB, 2,990 lines)
+   - Status: 48/48 unit tests pass green (`unittest` 0.10s, `pytest` 0.63s). Clean apply on `efed70d`.
+2. **Minimal Static Frontend Patch (C2043):**
+   - Patch: [`research/antigravity/recovery/dashboard-static-fourth-project-minimal.patch`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/dashboard-static-fourth-project-minimal.patch)
+   - SHA256: `f2e291427c27871d64076593a8c01971207c095ebb93e2a232a1d4f7f2b46fe0` (2,183 bytes)
+   - Report: [`research/antigravity/recovery/REPORT-DASHBOARD-STATIC-PATCH.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-DASHBOARD-STATIC-PATCH.md)
+   - Status: Verified minimal 2-file delta (`static/index.html` card + `static/dashboard.js` `PROJECT_IDS`). Verified drift refusal on modified base.
+3. **C2055 24h Analytical Payload:**
+   - Payload: [`.local/metrics/hourly_24h_payload.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_payload.json)
+   - SHA256: `f7ccc40d33c0351cb49ac80728e7ddbb3f2ca72abf0873bb9b28434d280aebe2` (38,899 bytes, mode `0600`)
+   - Status: Full actor deduplication, presence vs. verified work separation, and truthful unobserved telemetry implemented.
+4. **Target Repository Isolation:**
+   - Canonical repo `/home/alexey/git/agent-dashboard` remains completely untouched (zero writes, zero commits). Integration ownership remains with `agent-dashboard-head`.
+5. **Credential & Publication Guard:**
+   - `publication_guard.py` ran with exit code 0 across all patches, scripts, and reports.

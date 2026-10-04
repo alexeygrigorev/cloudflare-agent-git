@@ -1,17 +1,18 @@
-# Independent Verification & Security Review: Agent Branches CLI Batch Receipts (Commit d6d43e9)
+# Independent Verification & Security Review: Agent Branches CLI Batch Receipts (Commit 71dade6)
 
 - **Reviewer:** Independent SDK & CLI Reviewer (tag: `sdk-batch-retry-reviewer` / `ab-cli-batch-reviewer`)
-- **Authority:** `antigravity-head` (`46fdb644`), dispatched under Codex Principal C2037 / C2041 directives
+- **Authority:** `antigravity-head` (`46fdb644`), dispatched under Codex Principal C2037 / C2041 / C2046 / C2048 directives
 - **Target Repository:** `/home/alexey/git/agent-branches`
-- **Target Branch:** `feat/cli-batch-receipts`
-- **Target Commit:** `d6d43e9963e5e5ed18c878f5f239ea20151eac2f` ("feat(cli): add push-batch subcommand with structured BatchExecutionError receipts (C2037)")
-- **Files Audited:**
-  - `agent_branches/cli.py` (SHA256: `ca9ce857712a33cbe807edf403311c5e276a37b47e2ede2c116a1745b17e5007` baseline; clarified invocation guarantee)
-  - `tests/test_cli_batch.py` (SHA256: `b103174cb4774a49a0db19a61c1d60d8da82951f64fe83b062260a2a08258328` baseline; verified 4/4 passing)
+- **Target Branch:** `main` (fast-forward merged from `feat/cli-batch-receipts`)
+- **Target Commit:** `71dade6e7d824c3de631f43b3ea70e04c82ee8ad` ("docs(cli): clarify push-batch max-retries and retry-backoff as compatibility parameters (C2046)")
+- **Predecessor Commit:** `d6d43e9963e5e5ed18c878f5f239ea20151eac2f`
+- **Final Pinned File Hashes (Commit 71dade6):**
+  - `agent_branches/cli.py` (SHA256: `92bb9686be7a90e9c57a29cdf457946fa254bc55f2630fde2a3537da0c5d6624`)
+  - `tests/test_cli_batch.py` (SHA256: `aa5114de459f4d9f50e4798a8ad929fdbc3985dc2359da2f94951df0f139fc86`)
 - **Worker Report Audited:** `/home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-AB-CLI-BATCH.md`
 - **Scratch Verification Root:** `/home/alexey/git/cloudflare-agent-git/.local/scratch/ab-cli-batch-review/` (mode `0700`, 712 KB used, <= 512 MB policy ceiling, `TMPDIR` inside scratch, zero net `/tmp` growth)
 - **Date of Review:** 2026-10-04 (Europe/Berlin)
-- **Verdict:** **ACCEPT / RECOMMENDED FOR CANONICAL MERGE**
+- **Verdict:** **ACCEPT / MERGED TO CANONICAL MAIN**
 
 ---
 
@@ -323,3 +324,25 @@ Commit `d6d43e9963e5e5ed18c878f5f239ea20151eac2f` on branch `feat/cli-batch-rece
 5. All 61 tests pass and 100% of negative mutants are killed.
 
 The branch is ready for canonical merge into `main`.
+
+---
+
+## 9. Delta Verification Audit: Commit 71dade6 (C2046 / C2048)
+
+Following initial review of commit `d6d43e9`, Codex Principal C2046 and C2048 requested clarification of operator boundaries:
+1. **Invocation Demarcation Clarification:**
+   - The phrase `"Guarantee: Succeeded events are clearly demarcated as committed and NEVER replayed."` was refined to:
+     `"Invocation Guarantee: Succeeded events in this batch invocation were committed and not replayed. To resume without duplicate mutation, operator must dispatch only unattempted_events."`
+   - Explicitly prevents operators from incorrectly assuming an ambient distributed exactly-once guarantee across arbitrary subsequent executions.
+2. **Compatibility Parameter Demarcation:**
+   - `--max-retries` and `--retry-backoff` argument help strings were updated to explicitly state:
+     `"Compatibility parameter; push-batch operates pure fail-closed on mutating events without automatic retries"`
+   - Documents that client-side mutating pushes deliberately fail closed on the first exception without blind connection replays.
+3. **Commit & Hash Verification:**
+   - Delta commit `71dade6e7d824c3de631f43b3ea70e04c82ee8ad` merged cleanly into `main` via fast-forward.
+   - Pinned hashes:
+     * `agent_branches/cli.py`: `92bb9686be7a90e9c57a29cdf457946fa254bc55f2630fde2a3537da0c5d6624`
+     * `tests/test_cli_batch.py`: `aa5114de459f4d9f50e4798a8ad929fdbc3985dc2359da2f94951df0f139fc86`
+   - All 4 CLI batch tests and all 61 full suite tests pass 100% on `main`.
+4. **Final Acceptance:** Fully certified and merged into canonical `main`.
+

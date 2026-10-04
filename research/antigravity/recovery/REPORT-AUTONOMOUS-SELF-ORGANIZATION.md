@@ -9,9 +9,9 @@
   - `research/antigravity/tooling/self_org/supervisor_loop.py` (Decentralized scheduler, multi-queue continuation, frozen TUI bypass, 10 GiB memory floor, fresh quota gating <= 300s, provider whitelist fail-closed, anti-junk evidence verification, strict receipt validation, staging isolation)
   - `research/antigravity/tooling/self_org/systemd/agent-self-org.service` (Reference template service unit, staging-isolated, uninstalled)
   - `research/antigravity/tooling/self_org/systemd/agent-self-org.timer` (Reference template timer unit, 30s cadence, uninstalled)
-  - `tests/test_self_org_loop.py` (Comprehensive 24-test verification suite covering core invariants, C2035/C2038, and C2040 remediations)
+  - `tests/test_self_org_loop.py` (Comprehensive 28-test verification suite covering core invariants, C2035/C2038, C2040, and C2048/C2050/C2051 remediations)
 - **Date:** 2026-10-04 (Europe/Berlin)
-- **Verdict:** **FIXTURE & SOURCE BOOKKEEPING (PROTOTYPE CONTROLLER) — ACTIVATION STRICTLY HELD. 24/24 VERIFICATION TESTS PASSING, STRICT STAGING ISOLATION VERIFIED, PUBLICATION GUARD EXIT 0**
+- **Verdict:** **FIXTURE & SOURCE BOOKKEEPING (PROTOTYPE CONTROLLER) — ACTIVATION STRICTLY HELD. 28/28 VERIFICATION TESTS PASSING, STRICT STAGING ISOLATION VERIFIED, PUBLICATION GUARD EXIT 0**
 
 ---
 
@@ -33,7 +33,7 @@ Per Codex Principal C2038 and C2040 findings, this report and implementation are
 
 ---
 
-## 2. Architecture & Remediation Matrix (C2035 / C2038 / C2040)
+## 2. Architecture & Remediation Matrix (C2035 / C2038 / C2040 / C2048 / C2050 / C2051)
 
 | Defect / Requirement | Failure Mode Addressed | Technical Remediation | Verified in Test Suite |
 |---|---|---|---|
@@ -43,6 +43,12 @@ Per Codex Principal C2038 and C2040 findings, this report and implementation are
 | **Stale Evidence Rejection** | Accepting pre-existing files from earlier runs as completion proof without verified work. | Completion requires regular file existence, size > 0, fresh mtime (`st_mtime >= task.started_at`), and computes valid SHA256 artifact digests. Stale files are rejected. | `test_11_stale_evidence_file_rejected_as_completion` |
 | **Artifact Anti-Junk Verification** | Accepting empty JSON (`{}`, `[]`) or placeholder files (< 16 bytes) as completed task work. | `_check_task_completion` enforces size >= 16 bytes and verifies JSON files do not parse to empty `{}` or `[]`. | `test_23_fresh_junk_artifact_rejected` |
 | **Strict Receipt Verification** | Blindly accepting arbitrary PASS/done receipts with missing task IDs, mismatched tokens, or unverified outputs. | Receipt validation asserts matching `task_id`, `fence_token` matching active lease, `attempt == task.failure_count + 1`, `executor_tag`, accepted `status`, non-empty `independent_reviewer`, and `output_digest == artifact_sha256`. | `test_19_receipt_missing_task_id_rejected`, `test_20_receipt_mismatched_fence_token_rejected`, `test_21_receipt_missing_reviewer_rejected`, `test_22_receipt_mismatched_output_digest_rejected` |
+| **Two-Stage Completion (Evidence Alone != Done)** | Evidence files alone marking tasks `done` and prematurely releasing lease without independent peer review. | Evidence files alone advance `running` -> `awaiting-review` without releasing the lease. Marking `done` and lease release strictly require a verified independent review receipt. | `test_25_evidence_alone_advances_to_awaiting_review_without_done_or_lease_release` |
+| **Distinct Independent Reviewer Enforcement** | Self-review where worker generates its own completion receipt (`independent_reviewer == executor_tag`). | Receipt validation rejects self-reviews (`independent_reviewer == executor_tag`). Distinct independent reviewer is strictly enforced. | `test_26_receipt_with_self_reviewer_rejected` |
+| **Active Lease & Holder Validation** | Accepting receipts when lease has expired or when receipt executor does not match active lease holder. | `_check_task_completion` validates active lease unexpired status and matches `executor_tag` against active lease holder. Stale or mismatched receipts rejected. | `test_27_receipt_with_expired_lease_or_mismatched_holder_rejected` |
+| **Concurrent Task Merge Under Flock** | In-memory task writes overwriting concurrent disk updates by external agents. | `_persist_tasks_file` reread-merges on-disk state under `fcntl.flock` on `.local/self_org/tasks.json.lock`, preserving external updates and metadata. | `test_28_concurrent_task_merge_under_flock_preserves_external_disk_updates` |
+| **Aplexer Working State Classification** | Treating busy/working sessions as ready, causing task collisions and race conditions. | `_discover_aplexer_sessions` maps `working` and `busy` to `is_busy=True`. Only `phase == "running"` with `reported_state in ("idle", "ready")` marks `status="ready"`. | `test_04_multi_project_queue_independence`, `test_06_notready_and_frozen_tui_bypass` |
+| **Static Worker Unverified Default** | Static workers loaded from registry file dispatched without live verification. | Static workers loaded from registry file default to `status="unverified"`, preventing blind dispatch before live check/heartbeat. | `test_04_multi_project_queue_independence` |
 | **Fail-Closed Lease Storage** | Corrupted `leases.json` silently resets fence sequence counter to 0, causing split-brain duplicate writers. | Invalid or corrupted JSON raises `LeaseStorageCorruptedError` (fail-closed), preserving sequence integrity and blocking duplicate writers. | `test_12_corrupted_lease_file_fails_closed_without_sequence_reset` |
 | **Atomic Fence Execution** | Race conditions between fence verification and state mutation across concurrent subagents. | Added `LeaseManager.atomic_fence_execute` executing caller action strictly under `fcntl.flock(LOCK_EX)`. | `test_15_atomic_fence_execute_under_flock` |
 | **Expired Worker Mutation Rejection** | Stale/zombie workers whose leases expired or were reclaimed clobbering peer task state. | `atomic_fence_execute` asserts active unexpired lease and raises `LeaseExpiredError` or `FencingTokenMismatchError`, rejecting zombie mutations. | `test_24_expired_but_alive_worker_mutation_rejected` |
@@ -233,9 +239,17 @@ test_23_fresh_junk_artifact_rejected (tests.test_self_org_loop.SelfOrgLoopTests.
 Fresh artifact files that are junk (size < 16 bytes, or empty JSON {} / []) ... ok
 test_24_expired_but_alive_worker_mutation_rejected (tests.test_self_org_loop.SelfOrgLoopTests.test_24_expired_but_alive_worker_mutation_rejected)
 An expired worker attempting atomic mutation via atomic_fence_execute ... ok
+test_25_evidence_alone_advances_to_awaiting_review_without_done_or_lease_release (tests.test_self_org_loop.SelfOrgLoopTests.test_25_evidence_alone_advances_to_awaiting_review_without_done_or_lease_release)
+Evidence files alone advance running -> awaiting-review without marking ... ok
+test_26_receipt_with_self_reviewer_rejected (tests.test_self_org_loop.SelfOrgLoopTests.test_26_receipt_with_self_reviewer_rejected)
+Receipt where independent_reviewer matches executor_tag is rejected. ... ok
+test_27_receipt_with_expired_lease_or_mismatched_holder_rejected (tests.test_self_org_loop.SelfOrgLoopTests.test_27_receipt_with_expired_lease_or_mismatched_holder_rejected)
+Receipt submitted when lease has expired or when holder does not match ... ok
+test_28_concurrent_task_merge_under_flock_preserves_external_disk_updates (tests.test_self_org_loop.SelfOrgLoopTests.test_28_concurrent_task_merge_under_flock_preserves_external_disk_updates)
+Concurrent task merge under flock in _persist_tasks_file preserves external disk updates ... ok
 
 ----------------------------------------------------------------------
-Ran 24 tests in 3.141s
+Ran 28 tests in 3.176s
 
 OK
 ```
@@ -263,3 +277,6 @@ python3 research/antigravity/tooling/publication_guard.py \
 5. **Anti-Junk & Receipt Integrity:** Tasks require non-junk evidence (size >= 16 bytes, non-empty JSON) and strict receipt validation (`task_id`, `fence_token`, `attempt`, `executor_tag`, `status`, `independent_reviewer`, `output_digest == artifact_sha256`).
 6. **Host & Quota Bounds:** Enforces 10 GiB host memory floor (with cooperative 1500 MB worker budget), quota freshness <= 300s, and authorized provider whitelist fail-closed.
 7. **Demarcation Honesty:** Tool receipts explicitly label `dispatch_intent` with child execution demarcated as `external_adapter_pending`.
+8. **Two-Stage Task Completion:** Fresh evidence files advance `running` -> `awaiting-review` without releasing leases or marking `done`. Complete task state progression to `done` strictly requires an independent review receipt.
+9. **Independent Review Verification:** Receipts strictly require distinct `independent_reviewer != executor_tag`, active unexpired lease matching fence token and lease holder, and artifact SHA256 digest match.
+10. **Safe Concurrent Persistence:** Task file persistence reread-merges on-disk state under `fcntl.flock` on `.local/self_org/tasks.json.lock`, ensuring external updates and peer attributes are never clobbered.

@@ -105,6 +105,20 @@ class SelfOrgLoopTests(unittest.TestCase):
         worker = Worker(tag="ab-worker-1", project_id="agent-branches", mode="headless", status="ready")
         supervisor.add_worker(worker)
 
+        # Create verified completion receipt for Task 1
+        receipt_1 = self.test_path / "task1_receipt.json"
+        art_hash = hashlib.sha256(evidence_file.read_bytes()).hexdigest()
+        receipt_1.write_text(json.dumps({
+            "task_id": "task-ab-01",
+            "fence_token": 1,
+            "attempt": 1,
+            "executor_tag": "ab-worker-1",
+            "status": "ACCEPT",
+            "independent_reviewer": "codex-principal",
+            "artifact_path": str(evidence_file),
+            "output_digest": art_hash,
+        }), encoding="utf-8")
+
         # Task 1 is running (started in past so evidence file is fresh)
         t1 = Task(
             id="task-ab-01",
@@ -113,6 +127,7 @@ class SelfOrgLoopTests(unittest.TestCase):
             executor_tag="ab-worker-1",
             evidence_paths=[str(evidence_file)],
             started_at=time.time() - 5.0,
+            metadata={"receipt_path": str(receipt_1)},
         )
         t2 = Task(
             id="task-ab-02",
@@ -345,8 +360,20 @@ class SelfOrgLoopTests(unittest.TestCase):
         self.assertIn("pipe-01", sum1.dispatched_tasks)
         self.assertEqual(supervisor.get_task("pipe-01").status, "running")
 
-        # Worker produces fresh evidence after task started
+        # Worker produces fresh evidence and verified receipt after task started
         ev1.write_text(json.dumps({"stage": 1, "status": "ok"}), encoding="utf-8")
+        rec1 = self.test_path / "rec1.json"
+        rec1.write_text(json.dumps({
+            "task_id": "pipe-01",
+            "fence_token": 1,
+            "attempt": 1,
+            "executor_tag": "pipeline-worker",
+            "status": "ACCEPT",
+            "independent_reviewer": "codex-principal",
+            "artifact_path": str(ev1),
+            "output_digest": hashlib.sha256(ev1.read_bytes()).hexdigest(),
+        }), encoding="utf-8")
+        supervisor.get_task("pipe-01").metadata["receipt_path"] = str(rec1)
 
         # Tick 2: pipe-01 complete -> pipe-02 unblocked & dispatched
         sum2 = supervisor.tick()
@@ -355,8 +382,20 @@ class SelfOrgLoopTests(unittest.TestCase):
         self.assertEqual(supervisor.get_task("pipe-01").status, "done")
         self.assertEqual(supervisor.get_task("pipe-02").status, "running")
 
-        # Worker produces fresh evidence for pipe-02
+        # Worker produces fresh evidence and verified receipt for pipe-02
         ev2.write_text(json.dumps({"stage": 2, "status": "ok"}), encoding="utf-8")
+        rec2 = self.test_path / "rec2.json"
+        rec2.write_text(json.dumps({
+            "task_id": "pipe-02",
+            "fence_token": 1,
+            "attempt": 1,
+            "executor_tag": "pipeline-worker",
+            "status": "ACCEPT",
+            "independent_reviewer": "codex-principal",
+            "artifact_path": str(ev2),
+            "output_digest": hashlib.sha256(ev2.read_bytes()).hexdigest(),
+        }), encoding="utf-8")
+        supervisor.get_task("pipe-02").metadata["receipt_path"] = str(rec2)
 
         # Tick 3: pipe-02 complete -> pipe-03 unblocked & dispatched
         sum3 = supervisor.tick()
@@ -365,8 +404,20 @@ class SelfOrgLoopTests(unittest.TestCase):
         self.assertEqual(supervisor.get_task("pipe-02").status, "done")
         self.assertEqual(supervisor.get_task("pipe-03").status, "running")
 
-        # Worker produces fresh evidence for pipe-03
+        # Worker produces fresh evidence and verified receipt for pipe-03
         ev3.write_text(json.dumps({"stage": 3, "status": "ok"}), encoding="utf-8")
+        rec3 = self.test_path / "rec3.json"
+        rec3.write_text(json.dumps({
+            "task_id": "pipe-03",
+            "fence_token": 1,
+            "attempt": 1,
+            "executor_tag": "pipeline-worker",
+            "status": "ACCEPT",
+            "independent_reviewer": "codex-principal",
+            "artifact_path": str(ev3),
+            "output_digest": hashlib.sha256(ev3.read_bytes()).hexdigest(),
+        }), encoding="utf-8")
+        supervisor.get_task("pipe-03").metadata["receipt_path"] = str(rec3)
 
         # Tick 4: pipe-03 complete
         sum4 = supervisor.tick()
@@ -456,14 +507,28 @@ class SelfOrgLoopTests(unittest.TestCase):
 
         evidence = self.test_path / "done.txt"
         evidence.write_text("done: valid task evidence output\n", encoding="utf-8")
+        rec = self.test_path / "running_t_rec.json"
+        rec.write_text(json.dumps({
+            "task_id": "running-t",
+            "fence_token": 1,
+            "attempt": 1,
+            "executor_tag": "w1",
+            "status": "ACCEPT",
+            "independent_reviewer": "codex-principal",
+            "artifact_path": str(evidence),
+            "output_digest": hashlib.sha256(evidence.read_bytes()).hexdigest(),
+        }), encoding="utf-8")
 
         supervisor.add_task(Task(
             id="running-t",
             project_id="agent-branches",
             status="running",
+            executor_tag="w1",
             evidence_paths=[str(evidence)],
             started_at=time.time() - 5.0,
+            metadata={"receipt_path": str(rec)},
         ))
+        lease_mgr.acquire_lease("running-t", "w1", ttl_seconds=30.0)
         supervisor.add_task(Task(id="waiting-t", project_id="agent-branches", status="ready"))
 
         summary = supervisor.tick()
@@ -621,11 +686,30 @@ class SelfOrgLoopTests(unittest.TestCase):
         now_time = time.time()
         os.utime(str(evidence_file), (now_time, now_time))
 
-        # Tick: now fresh evidence is accepted!
+        # Tick 2: fresh evidence advances running -> awaiting-review (evidence alone does NOT complete without receipt)
         sum2 = supervisor.tick()
-        self.assertIn("task-stale-check", sum2.completed_tasks)
-        self.assertEqual(supervisor.get_task("task-stale-check").status, "done")
+        self.assertNotIn("task-stale-check", sum2.completed_tasks)
+        self.assertEqual(supervisor.get_task("task-stale-check").status, "awaiting-review")
         self.assertIn(str(evidence_file), supervisor.get_task("task-stale-check").metadata.get("evidence_hashes", {}))
+
+        # Attach verified review receipt from independent reviewer
+        rec_file = self.test_path / "rec_stale_check.json"
+        rec_file.write_text(json.dumps({
+            "task_id": "task-stale-check",
+            "fence_token": 1,
+            "attempt": 1,
+            "executor_tag": "w-stale",
+            "status": "ACCEPT",
+            "independent_reviewer": "codex-principal",
+            "artifact_path": str(evidence_file),
+            "output_digest": hashlib.sha256(evidence_file.read_bytes()).hexdigest(),
+        }), encoding="utf-8")
+        supervisor.get_task("task-stale-check").metadata["receipt_path"] = str(rec_file)
+
+        # Tick 3: with verified receipt, task completes to done
+        sum3 = supervisor.tick()
+        self.assertIn("task-stale-check", sum3.completed_tasks)
+        self.assertEqual(supervisor.get_task("task-stale-check").status, "done")
 
     # -----------------------------------------------------------------------
     # Test 12: Corrupted Lease Storage Fails Closed (C2035 Remediation)
@@ -1140,6 +1224,270 @@ class SelfOrgLoopTests(unittest.TestCase):
         self.assertEqual(current_lease.lease_holder, "worker-b")
         self.assertEqual(current_lease.fence_token, 2)
         self.assertNotIn("corrupted", current_lease.metadata)
+
+    # -----------------------------------------------------------------------
+    # Test 25: Evidence Alone Advances to Awaiting-Review (C2048/C2050 Remediation)
+    # -----------------------------------------------------------------------
+    def test_25_evidence_alone_advances_to_awaiting_review_without_done_or_lease_release(self) -> None:
+        """
+        Evidence files alone advance running -> awaiting-review without marking
+        done or releasing the lease. The queue remains occupied and does not dispatch new tasks.
+        """
+        lease_mgr = LeaseManager(lease_file=self.lease_file, default_ttl=30.0)
+        supervisor = SupervisorLoop(
+            tasks_file=self.tasks_file,
+            receipts_dir=self.receipts_dir,
+            lease_manager=lease_mgr,
+            resource_checker=self.res_checker,
+            state_file=self.state_file,
+            product_ids=["agent-branches"],
+            default_lease_ttl=30.0,
+        )
+
+        worker = Worker(tag="ab-w1", project_id="agent-branches", mode="headless", status="ready")
+        supervisor.add_worker(worker)
+
+        now = time.time()
+        ev_file = self.test_path / "deliverable.md"
+        ev_file.write_text("# Deliverable for Independent Review\nSufficient content.\n", encoding="utf-8")
+
+        task1 = Task(
+            id="task-evidence-only",
+            project_id="agent-branches",
+            status="running",
+            executor_tag="ab-w1",
+            started_at=now - 5.0,
+            evidence_paths=[str(ev_file)],
+        )
+        task2 = Task(
+            id="task-subsequent",
+            project_id="agent-branches",
+            status="ready",
+        )
+        supervisor.add_task(task1)
+        supervisor.add_task(task2)
+        lease_mgr.acquire_lease("task-evidence-only", "ab-w1", ttl_seconds=30.0, now=now - 5.0)
+
+        summary = supervisor.tick(now=now)
+
+        # 1. Task 1 is NOT done, but awaiting-review
+        self.assertNotIn("task-evidence-only", summary.completed_tasks)
+        updated_t1 = supervisor.get_task("task-evidence-only")
+        self.assertEqual(updated_t1.status, "awaiting-review")
+
+        # 2. Lease is NOT released (still active)
+        lease1 = lease_mgr.get_lease("task-evidence-only")
+        self.assertIsNotNone(lease1)
+        self.assertEqual(lease1.status, "active")
+
+        # 3. Subsequent ready task is NOT dispatched because queue has active awaiting-review task
+        self.assertNotIn("task-subsequent", summary.dispatched_tasks)
+        self.assertEqual(supervisor.get_task("task-subsequent").status, "ready")
+
+    # -----------------------------------------------------------------------
+    # Test 26: Receipt With Self-Reviewer Rejected (C2048/C2050 Remediation)
+    # -----------------------------------------------------------------------
+    def test_26_receipt_with_self_reviewer_rejected(self) -> None:
+        """
+        Receipt where independent_reviewer matches executor_tag is rejected.
+        Self-review is strictly disallowed.
+        """
+        lease_mgr = LeaseManager(lease_file=self.lease_file, default_ttl=30.0)
+        supervisor = SupervisorLoop(
+            tasks_file=self.tasks_file,
+            receipts_dir=self.receipts_dir,
+            lease_manager=lease_mgr,
+            resource_checker=self.res_checker,
+            state_file=self.state_file,
+            product_ids=["agent-branches"],
+            default_lease_ttl=30.0,
+        )
+
+        worker = Worker(tag="ab-executor-1", project_id="agent-branches", mode="headless", status="ready")
+        supervisor.add_worker(worker)
+
+        now = time.time()
+        artifact = self.test_path / "art_self.txt"
+        artifact.write_text("Valid artifact output content for review.\n", encoding="utf-8")
+        art_hash = hashlib.sha256(artifact.read_bytes()).hexdigest()
+
+        # Receipt where independent_reviewer == executor_tag!
+        self_review_receipt = self.test_path / "self_review_receipt.json"
+        self_review_receipt.write_text(json.dumps({
+            "task_id": "t-self-review",
+            "fence_token": 1,
+            "attempt": 1,
+            "executor_tag": "ab-executor-1",
+            "status": "ACCEPT",
+            "independent_reviewer": "ab-executor-1",
+            "artifact_path": str(artifact),
+            "output_digest": art_hash,
+        }), encoding="utf-8")
+
+        task = Task(
+            id="t-self-review",
+            project_id="agent-branches",
+            status="running",
+            executor_tag="ab-executor-1",
+            started_at=now - 5.0,
+            metadata={"receipt_path": str(self_review_receipt)},
+        )
+        supervisor.add_task(task)
+        lease_mgr.acquire_lease("t-self-review", "ab-executor-1", ttl_seconds=30.0, now=now - 5.0)
+
+        # Completion check must reject self-review
+        self.assertFalse(supervisor._check_task_completion(task, now=now))
+
+        summary = supervisor.tick(now=now)
+        self.assertNotIn("t-self-review", summary.completed_tasks)
+        self.assertNotEqual(supervisor.get_task("t-self-review").status, "done")
+
+    # -----------------------------------------------------------------------
+    # Test 27: Receipt With Expired Lease or Mismatched Holder Rejected (C2048/C2050 Remediation)
+    # -----------------------------------------------------------------------
+    def test_27_receipt_with_expired_lease_or_mismatched_holder_rejected(self) -> None:
+        """
+        Receipt submitted when lease has expired or when holder does not match
+        active lease is rejected.
+        """
+        lease_mgr = LeaseManager(lease_file=self.lease_file, default_ttl=0.2)
+        supervisor = SupervisorLoop(
+            tasks_file=self.tasks_file,
+            receipts_dir=self.receipts_dir,
+            lease_manager=lease_mgr,
+            resource_checker=self.res_checker,
+            state_file=self.state_file,
+            product_ids=["agent-branches"],
+            default_lease_ttl=0.2,
+        )
+
+        now = time.time()
+        artifact = self.test_path / "art_lease_check.txt"
+        artifact.write_text("Valid artifact output content for review.\n", encoding="utf-8")
+        art_hash = hashlib.sha256(artifact.read_bytes()).hexdigest()
+
+        # Case 1: Lease expired before receipt verification
+        lease_mgr.acquire_lease("t-lease-exp", "worker-a", ttl_seconds=0.2, now=now - 5.0)
+        rec_exp = self.test_path / "rec_exp.json"
+        rec_exp.write_text(json.dumps({
+            "task_id": "t-lease-exp",
+            "fence_token": 1,
+            "attempt": 1,
+            "executor_tag": "worker-a",
+            "status": "ACCEPT",
+            "independent_reviewer": "codex-principal",
+            "artifact_path": str(artifact),
+            "output_digest": art_hash,
+        }), encoding="utf-8")
+
+        task_exp = Task(
+            id="t-lease-exp",
+            project_id="agent-branches",
+            status="running",
+            executor_tag="worker-a",
+            started_at=now - 5.0,
+            metadata={"receipt_path": str(rec_exp)},
+        )
+        supervisor.add_task(task_exp)
+        # Check completion at current time (now > now - 5.0 + 0.2, so lease is expired)
+        self.assertFalse(supervisor._check_task_completion(task_exp, now=now))
+
+        # Case 2: Mismatched holder in receipt vs active lease
+        lease_mgr.acquire_lease("t-holder-mismatch", "worker-real", ttl_seconds=30.0, now=now)
+        rec_mismatch = self.test_path / "rec_mismatch.json"
+        rec_mismatch.write_text(json.dumps({
+            "task_id": "t-holder-mismatch",
+            "fence_token": 1,
+            "attempt": 1,
+            "executor_tag": "worker-impostor",
+            "status": "ACCEPT",
+            "independent_reviewer": "codex-principal",
+            "artifact_path": str(artifact),
+            "output_digest": art_hash,
+        }), encoding="utf-8")
+
+        task_mismatch = Task(
+            id="t-holder-mismatch",
+            project_id="agent-branches",
+            status="running",
+            executor_tag="worker-real",
+            started_at=now - 1.0,
+            metadata={"receipt_path": str(rec_mismatch)},
+        )
+        supervisor.add_task(task_mismatch)
+        self.assertFalse(supervisor._check_task_completion(task_mismatch, now=now))
+
+    # -----------------------------------------------------------------------
+    # Test 28: Concurrent Task Merge Under Flock Preserves External Updates (C2048/C2050 Remediation)
+    # -----------------------------------------------------------------------
+    def test_28_concurrent_task_merge_under_flock_preserves_external_disk_updates(self) -> None:
+        """
+        Concurrent task merge under flock in _persist_tasks_file preserves external disk updates
+        (both new tasks added directly to disk and metadata/status updates to existing tasks).
+        """
+        supervisor = SupervisorLoop(
+            tasks_file=self.tasks_file,
+            receipts_dir=self.receipts_dir,
+            state_file=self.state_file,
+            product_ids=["agent-branches"],
+        )
+
+        # In-memory supervisor has task-local
+        t_local = Task(
+            id="task-local",
+            project_id="agent-branches",
+            status="running",
+            metadata={"in_memory_key": "local_value"},
+        )
+        supervisor.add_task(t_local)
+
+        # Initial write to disk
+        supervisor._persist_tasks_file()
+
+        # Simulate external process updating tasks_file directly on disk
+        lock_path = self.tasks_file.with_name(self.tasks_file.name + ".lock")
+        import fcntl
+        lock_fd = os.open(str(lock_path), os.O_RDWR | os.O_CREAT, 0o600)
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            with open(self.tasks_file, "r", encoding="utf-8") as f:
+                disk_data = json.load(f)
+
+            # 1. Update task-local with an external field and newer timestamp
+            disk_tasks = disk_data["tasks"]
+            disk_tasks[0]["metadata"]["external_flag"] = "written_by_peer"
+            disk_tasks[0]["updated_at"] = time.time() + 10.0
+
+            # 2. Add an entirely new external task
+            external_task = {
+                "id": "task-external-peer",
+                "project_id": "agent-branches",
+                "status": "ready",
+                "metadata": {"origin": "peer_agent"},
+                "created_at": time.time(),
+                "updated_at": time.time(),
+            }
+            disk_tasks.append(external_task)
+
+            with open(self.tasks_file, "w", encoding="utf-8") as f:
+                json.dump(disk_data, f, indent=2)
+        finally:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            os.close(lock_fd)
+
+        # Supervisor writes out its state (must merge with disk under flock)
+        supervisor._persist_tasks_file()
+
+        # Verify disk content has BOTH local state and external updates
+        with open(self.tasks_file, "r", encoding="utf-8") as f:
+            final_data = json.load(f)
+            final_task_map = {t["id"]: t for t in final_data["tasks"]}
+
+        self.assertIn("task-local", final_task_map)
+        self.assertIn("task-external-peer", final_task_map)
+        self.assertEqual(final_task_map["task-local"]["metadata"]["external_flag"], "written_by_peer")
+        self.assertEqual(final_task_map["task-local"]["metadata"]["in_memory_key"], "local_value")
+        self.assertEqual(final_task_map["task-external-peer"]["metadata"]["origin"], "peer_agent")
 
 
 if __name__ == "__main__":
