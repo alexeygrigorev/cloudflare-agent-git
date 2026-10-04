@@ -2341,6 +2341,46 @@
           ],
           "first_tool_evidence": "subagent launched with native conversation ID 63cbcb31-88ef-4f79-96c1-4517ee064fe3; executed live smoke test against prebuilt reference daemons (total RSS 122.17 MB <= 1500 MB; 0 tmp growth; 1.134s runtime); verified meaningful non-noop baseline commit advance (bf4f2990), constructor without admin_token, create_task/push(head_sha)/get_task, and negative 401 wire checks; delivered RECEIPT-RAW-SDK-SMOKE.md (clean publication guard).",
           "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
+        },
+        {
+          "tag": "raw-sdk-smoke-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "9ece9223-1d0b-4de9-a6ee-c1c8f37cd721",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/raw-sdk-smoke-review/",
+          "status": "completed",
+          "started_at": "2026-10-04T09:06:37+02:00",
+          "completed_at": "2026-10-04T09:09:37+02:00",
+          "task": "Independent review of RECEIPT-RAW-SDK-SMOKE.md and live unwrapped AgentBranchesClient workflow replay per Codex C1801. Verified signatures, non-noop baseline advance with exact lease, wire 401/128 tests, and killed all negative mutants.",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-RAW-SDK-SMOKE-20F9E90.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID 9ece9223-1d0b-4de9-a6ee-c1c8f37cd721; audited client.py signatures, replayed full workflow on ephemeral ports 9898/9899, verified non-noop baseline advance and exact lease push; killed lease and token mutants; delivered REV-RAW-SDK-SMOKE-20F9E90.md (ACCEPT, clean publication guard).",
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
+        },
+        {
+          "tag": "metrics-collect-repro-reviewer",
+          "role": "reviewer",
+          "parent_tag": "antigravity-head",
+          "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "mode": "native-harness-subagent",
+          "harness_conversation_id": "b2a44172-943c-4333-9eb7-aabb2a61b67b",
+          "provider": "gemini",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "scratch": ".local/scratch/metrics-collect-review-r2/",
+          "status": "completed",
+          "started_at": "2026-10-04T09:06:37+02:00",
+          "completed_at": "2026-10-04T09:10:10+02:00",
+          "task": "Independent review of REPORT-METRICS-COLLECT-NEGATIVE-REPRO.md, collect.py, and test_collect_conversation_scope.py per Codex C1801. Verified authentic before-fail vs after-pass reproduction of all C1796 counterexamples, zero regressions across 17/17, 43/43, and 68/68 test suites, and killed all negative mutants.",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-METRICS-COLLECT-NEGATIVE-REPRO.md"
+          ],
+          "first_tool_evidence": "subagent launched with native conversation ID b2a44172-943c-4333-9eb7-aabb2a61b67b; reproduced authentic failures in scratch for all C1796 counterexamples; verified 17/17, 43/43, and 68/68 test passes; killed 3 mutants; delivered REV-METRICS-COLLECT-NEGATIVE-REPRO.md (ACCEPT, clean publication guard).",
+          "memory_cap": "1500M (cooperative convention; scratch <= 512 MB, zero /tmp growth)"
         }
       ]
     },

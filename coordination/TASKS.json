@@ -183,30 +183,30 @@
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
       "executor_tag": "raw-sdk-smoke-reviewer",
-      "status": "ready",
-      "updated_at": "2026-10-04T09:04:40.000000+02:00",
+      "status": "done",
+      "updated_at": "2026-10-04T09:10:20.000000+02:00",
       "blocked_on": [],
-      "next_action": "Dispatch distinct independent review of RECEIPT-RAW-SDK-SMOKE.md and run_raw_sdk_smoke.py. Verify unwrapped SDK calls, baseline commit advance, and negative wire checks.",
+      "next_action": "Delivered REV-RAW-SDK-SMOKE-20F9E90.md (ACCEPT). Verified raw unwrapped AgentBranchesClient signatures, live scratch replay with non-noop baseline advance and exact lease push, negative wire 401/128 tests, and killed all negative mutants. 0 cargo/rustc invocations, 0 /tmp growth, memory <= 122.18 MB total RSS.",
       "acceptance": "Independent review with reproducible execution, negative mutation tests, and clear verdict.",
       "evidence_paths": [
-        "research/antigravity/reviews/REV-RAW-SDK-SMOKE.md"
+        "research/antigravity/reviews/REV-RAW-SDK-SMOKE-20F9E90.md"
       ],
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C1801. Ready for independent reviewer dispatch."
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1801. Executed by raw-sdk-smoke-reviewer (9ece9223)."
     },
     {
       "id": "metrics-collect-repro-review",
       "team_id": "a16-runtime-protocol",
       "owner_tag": "antigravity-head",
       "executor_tag": "metrics-collect-repro-reviewer",
-      "status": "ready",
-      "updated_at": "2026-10-04T09:04:40.000000+02:00",
+      "status": "done",
+      "updated_at": "2026-10-04T09:10:20.000000+02:00",
       "blocked_on": [],
-      "next_action": "Dispatch distinct independent review of REPORT-METRICS-COLLECT-NEGATIVE-REPRO.md, test_collect_conversation_scope.py, and scripts/metrics/collect.py. Verify conflict cases before-fail/after-pass and safe corrupted line handling.",
+      "next_action": "Delivered REV-METRICS-COLLECT-NEGATIVE-REPRO.md (ACCEPT). Verified authentic before-fail vs after-pass reproduction of all C1796 counterexamples, zero regressions across 17/17, 43/43, and 68/68 test suites, and killed all negative mutants. 0 cargo/rustc invocations, 0 /tmp growth, 508 KB scratch.",
       "acceptance": "Independent review with negative mutation tests, full metrics suite verification, and clear verdict.",
       "evidence_paths": [
         "research/antigravity/reviews/REV-METRICS-COLLECT-NEGATIVE-REPRO.md"
       ],
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C1801. Ready for independent reviewer dispatch."
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C1801. Executed by metrics-collect-repro-reviewer (b2a44172)."
     },
     {
       "id": "sdk-ack-auth-review",

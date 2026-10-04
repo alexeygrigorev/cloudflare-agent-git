@@ -3063,6 +3063,45 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
   - Public Cloudflare deploy gate strictly **HELD**; Claude principal remains **stopped**; shortlist gates remain **HELD**.
 
+---
+
+## 98. C1801 Independent Review Complete: Raw SDK Smoke (ACCEPT) & Metrics Negative Repro (ACCEPT)
+
+- **Date:** 2026-10-04T09:10:00+02:00
+- **Steering & Directives:** Codex Principal C1801, C1804, C1806; Desktop Orchestrator 09:04 Berlin (`01a105bb-370b`).
+- **Delivered Actions & Verified Artifacts:**
+  1. **Independent Review: Raw SDK Live Integration Smoke (`REV-RAW-SDK-SMOKE-20F9E90.md` — ACCEPT):**
+     - Reviewer: `raw-sdk-smoke-reviewer` (`9ece9223-1d0b-4de9-a6ee-c1c8f37cd721`), native harness subagent in `.local/scratch/raw-sdk-smoke-review/` (0.14 MB scratch, mode 0700).
+     - Deliverable: [`research/antigravity/reviews/REV-RAW-SDK-SMOKE-20F9E90.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-RAW-SDK-SMOKE-20F9E90.md).
+     - **Verdict: ACCEPT**.
+     - Pinned Source & Signature Audit: Confirmed `AgentBranchesClient.__init__(self, server_url=None, timeout=10.0)` accepts no `admin_token`; `create_task()` uses `branch`, explicit `admin_token`, and requires `base_sha`; `push()` uses `task_id` and `head_sha`; `get_task()` exists. Confirmed fail-fast `TypeError` on unexpected kwargs (`task=...`).
+     - Live Replay in Scratch: Ephemeral ports 9898/9899. Replayed full workflow: `POST /setup` $\rightarrow$ sidecar token mint $\rightarrow$ meaningful non-noop baseline specification advance (`85153aaec7...`) pushed with exact lease `--force-with-lease=refs/heads/main:<seedCommit>` $\rightarrow$ raw `client.create_task()` $\rightarrow$ fork clone $\rightarrow$ fork commit $\rightarrow$ fork Smart HTTP push $\rightarrow$ raw `client.push()` $\rightarrow$ raw `client.get_task()`.
+     - Negative Authorization Tests: Cold unauthenticated push raised HTTP 401; Smart HTTP push with invalid bearer failed closed with wire HTTP 401 challenge and Git exit code 128.
+     - Negative Mutation Testing: Mutant 1 (stale/invalid lease SHA) rejected with Git exit 1 (`stale info`), remote ref preserved intact (mutant killed); Mutant 2 (wrong task token in `client.push`) rejected with HTTP 401 (mutant killed).
+     - Environmental Hygiene: Zero cargo/rustc invocations, zero `/tmp` growth, sidecar RSS 59.51 MB, coordinator RSS 62.68 MB (total 122.18 MB $\le 1500$ MB limit). Publication guard clean (exit code 0).
+  2. **Independent Review: Metrics Negative Repro & Fix (`REV-METRICS-COLLECT-NEGATIVE-REPRO.md` — ACCEPT):**
+     - Reviewer: `metrics-collect-repro-reviewer` (`b2a44172-943c-4333-9eb7-aabb2a61b67b`), native harness subagent in `.local/scratch/metrics-collect-review-r2/` (508 KB scratch, mode 0700).
+     - Deliverable: [`research/antigravity/reviews/REV-METRICS-COLLECT-NEGATIVE-REPRO.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-METRICS-COLLECT-NEGATIVE-REPRO.md).
+     - **Verdict: ACCEPT**.
+     - Source Audit: Confirmed `authentic_conversation_id()` prioritizes live engine session bindings and disk transcript bindings before static registry items; string stripping normalizes `""` and `"   "` safely to `None`; `match_usage_event()` catches `json.JSONDecodeError` / `ValueError` with warnings, skipping corrupted lines safely without swallowing valid subsequent lines; `_collect()` tracks `seen_team_cids` and `seen_team_sids` alongside `seen_team_tags`, preserving distinct top-level monitors and services.
+     - Authentic Scratch Reproduction Matrix: Reverting each repair reproduced exact authentic failures:
+       - Revert 1 (Stale registry vs fresh engine session ID) $\rightarrow$ FAILED with `AssertionError: 'H1-stale-registry' != 'E2-fresh-engine'`. Patched: PASS.
+       - Revert 2 (Top-level tag deduplication) $\rightarrow$ FAILED with `AssertionError: 'oversight' not found`. Patched: PASS.
+       - Revert 3 (Empty string CID normalization) $\rightarrow$ FAILED with `AssertionError: '' is not None`. Patched: PASS.
+       - Revert 4 (Corrupted line warnings) $\rightarrow$ FAILED with `AssertionError: 0 not greater than 0`. Patched: PASS.
+     - Mutation Testing: Mutant 1 (bypass CID equality) killed by `test_01`; Mutant 2 (drop fallback scope label) killed by `test_03`; Mutant 3 (reverse timestamp reconciliation sort) killed by `test_04`.
+     - Test Suite Passes: `tests/test_collect_conversation_scope.py` 17/17 PASS (0.036s); `scripts/metrics/` 43/43 PASS (3.028s); `tests/` 68/68 PASS (2.419s).
+     - Environmental Hygiene: Zero cargo/rustc invocations, `scripts/metrics/record_usage.py` untouched, zero Gemini emissions to `usage-events.jsonl` (3641 B unchanged), zero `/tmp` growth, peak RSS < 85 MB. Publication guard clean (exit code 0).
+  3. **Task & Registry Reconciliation:**
+     - `coordination/TASKS.json`: Updated `raw-sdk-smoke-review` and `metrics-collect-repro-review` to `done` (ACCEPT).
+     - `coordination/TEAM-REGISTRY.json`: Marked `raw-sdk-smoke-reviewer` (`9ece9223`) and `metrics-collect-repro-reviewer` (`b2a44172`) as `completed`.
+- **Invariants Strictly Preserved:**
+  - Strict human no-Rust-build hold enforced: zero cargo/rustc invocations.
+  - Native NOTREADY rejection preserved; zero state spoofing or out-of-band PTY injection.
+  - Derived Gemini counter emission to `.local/metrics/usage-events.jsonl` strictly **HELD**.
+  - Public Cloudflare deploy gate strictly **HELD**; Claude principal remains **stopped**; shortlist gates remain **HELD**.
+
+
 
 
 
