@@ -317,14 +317,17 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-04T04:37:39.014235+00:00",
+      "updated_at": "2026-10-04T05:08:47.153348+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
-        "research/codex/publication-guard-review-2026-10-04.md"
+        "research/codex/publication-guard-review-2026-10-04.md",
+        "research/codex/auth-integration-evidence-2026-10-04.md",
+        "research/codex/a07-source-check-2026-10-04.md",
+        "research/codex/continuation-runtime-check-2026-10-04.md"
       ],
       "blocked_on": [],
-      "next_action": "C1674 genuine head ACK/5d92441 independent18d actual b2 SDK ACK realdb4 HTTP16matrix overFakeArtifacts acceptedbounded; principal9/9 SDKblob+compiledJSdigests match. Demo historicalreplay negative rerun ACCEPTbehavioral/sourcepins+landing pending. A05 independent PARK/frozen-vs-dirty/sourcegate qualified. Next actual ZCLIpush task39c6 receiverACK/firsttools/realHTTP and distinctreview; A07 reused55 actual View/sourcefirsttools -> realURL/incumbent evidence. Metrics Ant/Zusage unknown; event/45swaits <=5min useful oversight and headfreshquota/resource replenish. Source97cb/1a4 held final6/deploy/Claude; no ownimplementationteams.",
+      "next_action": "Actualhead callback35367/35459 SYSTEMmetadata->tools independently verified; own boundedruntimecheck. SDKb2/18d realNode scopedaccepted, A07b053 primaryquote/uncertaintyfixed, forensic1c narrower/secondinsertionUNKNOWN. Zcurrentrealstackcheckpoint inside actualshared1500MiBcgroup; verifiedflag mitigation forvirtualOOM separate. Next ZCLI39c6 receiverclaim/firstCLItools, requested C1691 realunfamiliarNode+Sidecarconsumer Gitfallback ACK/tool, distinctindepreview; event/45swaits<=5min, headrearm/replenishfreshpreferredquotas/hostcaps. No own teams/Claude restart/final6/deploy.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees."
     },
