@@ -19,19 +19,21 @@ Under Codex Principal directive C1681, this forensic investigation examined the 
 3. Coordinator setup failing with `[int-err] fetch failed` (HTTP 500) during outbound calls to the local Sidecar.
 4. The agent's resulting hypothesis (rollout line 1918): *"Root cause found: every request through this environment's network layer is delivered twice... That explains the 409-on-create: first execution creates, duplicate 409s, and curl is handed the second response."*
 
-### Core Verdict: The "Network Delivers Every Request Twice" Hypothesis is REFUTED
+### Core Verdict: The "Network Delivers Every Request Twice" Hypothesis is REFUTED for Inspected Probes
 
-Forensic analysis of the 4.07 MB rollout log, process execution traces, filesystem inode metadata, and Node.js runtime internals demonstrates that **no duplicate network delivery, curl retry, or harness double-send occurred**. 
+Forensic analysis of the 4.07 MB rollout log, process execution traces, filesystem inode metadata, and Node.js runtime internals demonstrates that for the specific captured incidents (the dual-trace health probe, repository creation, and coordinator outbound fetch), **no duplicate network delivery, curl retry, or network double-send occurred**. 
+
+*Boundary & Scope Limitation:* This audit refutes the specific hypothesis that the sandbox network layer delivered every request twice. It is bounded to the specific inspected probes and source/log evidence; it does not constitute a blanket denial of unrecorded outer harness retries or unrecorded foreign activity, and broader outer retry behavior (e.g. R11) remains evaluated separately.
 
 The observed phenomena stem from four distinct, fully reproducible mechanisms:
 
-| Phenomenon | Z4abc Inferred Cause | Actual Root Cause | Forensic Evidence |
+| Phenomenon | Z4abc Inferred Cause | Actual Root Cause | Forensic Evidence & Scope Bounds |
 | :--- | :--- | :--- | :--- |
-| **Identical Millisecond Traces (`04:45:13.163Z` twice)** | Network layer delivering HTTP packets twice | **Self-inflicted instrumentation bug**: A non-idempotent Python substitution script in line 1897 inserted duplicate `console.error` logging calls into `sidecar.mjs` lines 567–568. | File `prototype/local-artifacts/sidecar.mjs` lines 567–568 contains two consecutive identical logging statements. Single HTTP GET executes both lines synchronously in one tick. |
-| **409 Conflict on Repository Creation** | Duplicate request hitting Sidecar and getting 409 | **Model perception / reasoning hallucination**: Sidecar returned `HTTP 200` and `HTTP 201` creating the repositories. The model misread the stdout and hallucinated 409s. | Rollout lines 1864 and 1874 stdout show clean `HTTP 200` and `HTTP 201` creation payloads with seed commits. No 409 occurred on create. |
+| **Identical Millisecond Traces (`04:45:13.163Z` twice)** | Network layer delivering HTTP packets twice | **Self-inflicted instrumentation bug**: Non-idempotent substitution script in line 1897 (`fc_01a1053a-6744-7f41-bb0a-814d4586d6fe`). Exact second insertion callID: **UNKNOWN** (occurred during uncaptured retry/re-entry). | File `sidecar.mjs` lines 567–568 contains two consecutive identical logging statements. Single HTTP GET executes both lines synchronously in one tick. |
+| **409 Conflict on Repository Creation** | Duplicate request hitting Sidecar and getting 409 | **Model perception / reasoning hallucination on captured probes**: Sidecar returned `HTTP 200` and `HTTP 201`. The model misread stdout and hallucinated 409s. | Rollout lines 1864 and 1874 stdout show clean `HTTP 200` and `HTTP 201` creation payloads with seed commits. No 409 occurred on these creates. |
 | **Coordinator Outbound `fetch failed` (HTTP 500)** | Network transmission drops or socket exhaustion | **WebAssembly virtual memory exhaustion**: Node.js 24's global `fetch` (undici) initializes WebAssembly, requiring multi-GB virtual address space reservations. | Rollout line 1955 underlying cause: `WebAssembly.Instance(): Out of memory: Cannot allocate Wasm memory for new instance`. Triggered by `ulimit -v 1500000`. |
 | **Protocol 409 on `/checks`** | Duplicate execution hitting stale gate | **Protocol contract specification**: `POST /checks` validates submitted head vectors against current coordinator state. | Defined in `prototype/CONTRACT.md` (lines 273, 373). `bootstrap.py` submitted moved heads; coordinator returned 409 Conflict as specified. |
-| **Process / Lineage Multi-Wire Belief** | External phantom executor operating concurrently | **Single-parent process ancestry with confirmation bias**: Primed by line 175 when the agent mistook its own `git clone` success output for an external actor. | All listeners had PPID 2937905 (zcodex runner), executed inside cgroup `aplexer-workload-4abc725c`. Zero foreign actors. |
+| **Process / Lineage Multi-Wire Belief** | External phantom executor operating concurrently | **Single-parent process ancestry with confirmation bias**: Primed by line 175 when the agent mistook its own `git clone` success output for an external actor. | All listeners had PPID 2937905 (zcodex runner), executed inside cgroup `aplexer-workload-4abc725c`. Zero foreign actors in inspected cgroup. |
 
 ---
 
@@ -95,6 +97,8 @@ print("instrumented")
 4. Therefore, on any subsequent execution or re-entry of the script, `src.count(old)` **still evaluates to 1**.
 5. When `src.replace(old, new)` runs against a file that already has the instrumentation, it finds the single instance of `old` (which immediately precedes the existing `console.error`) and replaces it with `old + console.error`.
 6. This injects a **second** identical `console.error` directly below the first one.
+
+*Note on Invocation Lineage:* While the non-idempotent substitution algorithm explains the physical insertion mechanism, the exact second toolcall ID or payload digest is **UNKNOWN** in the captured rollout (it was either an uncaptured shell re-entry, an interrupted execution retry, or an unrecorded sub-step). The finding is strictly bounded to the physical source code on disk and the resulting synchronous execution trace.
 
 ### 2.4 Synchronous Execution Proof
 

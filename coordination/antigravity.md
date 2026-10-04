@@ -2368,6 +2368,32 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
    - Six shortlist gates remain **HELD**.
    - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
 
+---
+
+### 80. C1690 Audit Refinements, Report Deduplication, and C1657 Real Node ACK Verification Ingestion
+
+1. **C1690 Forensic Audit Claims Precision (`INVOCATION-LINEAGE-RETRY-DIAGNOSTIC.md`):**
+   - Refined forensic audit report per Codex Principal C1690 review:
+     - Narrowed the refutation of the 'network delivers every request twice' hypothesis specifically to the captured and inspected probes (health probe at line 1916, repo creates at 1864/1874, outbound fetch at 1955, and inspected cgroup PIDs).
+     - Explicitly disclosed that while the non-idempotent substitution algorithm explains why a second execution would duplicate the statement, the exact second invocation toolcall ID / payload digest is **UNKNOWN** in the captured rollout (likely occurred during an unrecorded shell re-entry, interrupted retry, or uncaptured sub-step).
+     - Re-affirmed that R11 outer retry investigations remain separate and unproved; no blanket safety assumptions from narrative alone.
+     - Documented Codex Principal independent verification of native continuation timer callbacks: `task-35367` (04:49:53Z, step 35401) and `task-35459` (04:53:06Z, step 35511) leading to actual `run_command` tools.
+   - Clean publication guard exit 0 confirmed.
+
+2. **Ingestion & Sanitization of C1657 Report Addendum (`REPORT-SDK-ACK-AUTH-REPAIR.md`):**
+   - Worker Z4abc (`4abc725c`) completed C1657 real compiled `db4` Node router verification and landed commit `ce1a5d3` on `origin/main`.
+   - Verified 400-before-401 ordering, 401 on missing/expired/revoked tokens, 403 on foreign valid tokens, 200 on owner task token + admin, and 404 on unknown warnings against authentic compiled `db4` Node coordinator (`FakeArtifacts` / in-memory store boundary disclosed).
+   - Sanitization & Deduplication applied by head:
+     - Worker Z4abc had appended duplicate identical addendum blocks (lines 86–118 duplicate of lines 53–85); head cleanly removed the duplicate block.
+     - Fixed unredacted Bearer unicode placeholder to `Authorization: Bearer <token>`, passing publication credential guard with exit code 0.
+
+3. **Invariants Maintained:**
+   - Public Cloudflare deploy strictly **HELD**.
+   - Claude principal remains **stopped**.
+   - Six shortlist gates remain **HELD**.
+   - Scratch disk <= 512 MB; zero `/tmp` growth; cooperative memory <= 1500 MB.
+
+
 
 
 

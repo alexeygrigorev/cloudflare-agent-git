@@ -12,7 +12,7 @@ Narrow repair of the SDK ack-auth defect confirmed by REV-SDK-ACK-AUTH.md (commi
 
 ## Repair (4 files, +110/−7)
 
-1. **`agent_branches/client.py`** — `ack_warning()` / `branches_ack_warning()` accept optional `token`, `admin_token`, `agent`. Bearer ladder: explicit `token` → per-task token cached by `create_task` → explicit `admin_token` → `$TASK_TOKEN` → `$ADMIN_TOKEN`; token-less requests still go out unauthenticated so enforcing coordinators fail closed (401) rather than the client guessing. Agent resolves from the explicit argument, else the `task_to_agent` cache, else an authenticated `get_task` (same pattern as `push`), else fail-fast `ValueError` before any HTTP call (mirrors proto's 400 without a network round trip). Body now carries `agent` (plus existing `task_id`/`taskId`/`action`); bearer attached as `Authorization: Bearer …` only when a token resolves.
+1. **`agent_branches/client.py`** — `ack_warning()` / `branches_ack_warning()` accept optional `token`, `admin_token`, `agent`. Bearer ladder: explicit `token` → per-task token cached by `create_task` → explicit `admin_token` → `$TASK_TOKEN` → `$ADMIN_TOKEN`; token-less requests still go out unauthenticated so enforcing coordinators fail closed (401) rather than the client guessing. Agent resolves from the explicit argument, else the `task_to_agent` cache, else an authenticated `get_task` (same pattern as `push`), else fail-fast `ValueError` before any HTTP call (mirrors proto's 400 without a network round trip). Body now carries `agent` (plus existing `task_id`/`taskId`/`action`); bearer attached as `Authorization: Bearer <token>` only when a token resolves.
 2. **`agent_branches/cli.py`** — `ack` gains `--agent`, `--token`, `--admin-token`, wired through `handle_ack`. (CLI `push` per-task-token remains dogfood condition 1 — explicitly out of scope here.)
 3. **`tests/mock_l1_server.py`** — `/warnings/<id>/ack` now validates `body.agent` first (400 `agent is a required string`, mirroring router.ts order before auth), then enforces `check_mutating_auth` with agent narrowing when an admin token is configured (401 missing/runner/revoked/unknown → shared proto bodies; 403 foreign agent). Open-mode (no admin token) keeps validating `agent` but stays unauthenticated, consistent with the mock's other routes.
 4. **`tests/test_client.py`** — one payload update: test_01's raw-urllib ack now sends `agent` (the old payload asserted the defective agent-less contract; disclosed scope widening beyond the three named files, declared via work join before editing).
@@ -81,37 +81,6 @@ The warning itself was created through the real runner flow (RUNNER_TOKEN `POST 
 2. Duplicate request delivery: the sandbox network layer intermittently delivered requests twice with mismatched response bodies (sidecar request traces show two handler runs at identical milliseconds). All conclusions therefore anchored in persisted state (`GET /tasks/:id` ack lists); single-response statuses are labeled "seen by client" where quoted.
 3. The workerd/Cloudflare adapter was not run; the local `node:http` runtime serves the same core router (`src/local/main.js` docstring states the parity intent).
 
-Scope: report file only; SDK code untouched by this addendum (client state remains `27a86fe` + `b2df985` on `proto/sdk-distribution-complete`).
-
-## Addendum (C1657/C1664): verification against the actual compiled db4f6a8 Node router — 2026-10-04
-
-The router-provenance note above is now closed. The boundary matrix was re-run against the **real compiled db4f6a8 router** — no substitute, no mock double.
-
-**Source/process pin (private receipt: `.local/receipts/c1657-realnode-ack-verify-2026-10-04.md`, mode 600):**
-commit `db4f6a8c398d69f0e19072c41cb4b453b7dd1b71`, tree `f31c6865d278e75ac6445717813c41d21210ccb5` (matches the C1554/C1559 pin), router blob `4c296c8a472c4ee6b90308f8a2c70747a25844e8`. Pristine `git archive db4f6a8 prototype` extraction; compiled with the pre-existing typescript from an existing node_modules tree (symlinked read-only — **zero installs, zero network**); served by `src/local/main.js` (node v24.13.1) with the real git sidecar (`local-artifacts/sidecar.mjs`); ephemeral ports, ephemeral openssl tokens (mode 600, destroyed with the scratch); the repaired SDK client (b2df985) drove the flow.
-
-**Boundary matrix (every conclusion anchored in persisted coordinator state, not single response bodies):**
-
-| Case | Result |
-| --- | --- |
-| missing `agent` with NO auth header → **400** `agent is a required string` | PASS — 400-before-401 ordering proven on the compiled router |
-| missing / empty-string `agent` with valid admin auth → 400 | PASS |
-| no bearer / garbage bearer → 401 | PASS |
-| expired task token → 401 | PASS |
-| revoked (cold) task token after admin revoke → 401 | PASS |
-| sidecar bearer on ack → 401 (attestational, not accepted) | PASS |
-| foreign **valid** agent token → 403 `forbidden: this token belongs to verify-delta-0023, not verify-gamma-0022` | PASS |
-| owner task token → 200 (ack persisted in task view) | PASS |
-| ADMIN_TOKEN → 200 | PASS |
-| unknown warning id → 404 `unknown warning: nonexistent-warn` | PASS |
-
-The warning itself was created through the real runner flow (RUNNER_TOKEN `POST /checks`, contract 0.0 → `warn-2`, pair of two live forked agents). **Zero acks persisted by any rejected credential** (state-verified negative evidence across sidecar/expired/garbage/foreign/revoked probes).
-
-**C1669 action→note mapping (b2df985) verified on the same router:** the SDK client's ack (payload `note = action`) persisted ack note `verified-boundary`, visible on `GET /tasks/:id`; raw action-only requests (no `note` field) persist acks with **no** note — confirming the mapping is load-bearing, not cosmetic.
-
-**Environment deviations (honest record; details in the private receipt):**
-1. `ulimit -v 1500000` is infeasible for any Node 24 process using `fetch`: undici's WASM component needs a multi-GB *address-space reservation* (uncommitted). The sidecar (no fetch) ran under the cap; the coordinator ran heap-capped instead (`--max-old-space-size=256`), measured RSS 86.7 MB — cooperative intent (actual memory ≤ 1500 MB) met ~17× over. One-shot tsc build leg: `-v 3000000`, exit 0.
-2. Duplicate request delivery: the sandbox network layer intermittently delivered requests twice with mismatched response bodies (sidecar request traces show two handler runs at identical milliseconds). All conclusions therefore anchored in persisted state (`GET /tasks/:id` ack lists); single-response statuses are labeled "seen by client" where quoted.
-3. The workerd/Cloudflare adapter was not run; the local `node:http` runtime serves the same core router (`src/local/main.js` docstring states the parity intent).
 
 Scope: report file only; SDK code untouched by this addendum (client state remains `27a86fe` + `b2df985` on `proto/sdk-distribution-complete`).
+
