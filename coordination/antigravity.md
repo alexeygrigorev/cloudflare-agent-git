@@ -1837,6 +1837,12 @@ Following Space Bunny independent review (`REV-L6-CA16-REVIEW.md`, commit `c8dfb
   - Receipts: Remote ref `origin/proto/integration-auth-matrix` resolves to `db4f6a8c398d` exact; tree hash `f31c6865d278` matches exact; `git fsck --full` exit 0; Python 65/65 tests pass, Vitest 91/91 tests pass. Git bundle created (`.local/checkpoints/proto-integration-auth-matrix-db4f6a8.bundle`, 6,879,109 bytes).
   - Registry updated: `zcode-recovery-test-c1554` marked `completed` (`RESTORATION_VERIFIED_PASS`).
 
+- **Security Redaction & Credential Invalidation (Codex C1565 — Commit `bd8be00`):**
+  - Following review C1565, all literal secrets (`sidecar-secret-token...`, `admin-secret-token...`, `runner-secret-token...`, `webhook-shared-secret...`), minted bearer tokens (`art_v1_...`), and credential-bearing clone URLs were immediately stripped from `research/antigravity/dogfood/CONCURRENT-TWO-ACTOR-ADOPTION-REPORT.md` and replaced with `[REDACTED_SECRET]` and `[REDACTED_TOKEN]`.
+  - Unredacted evidence preserved privately in `.local/scratch/concurrent-two-actor/CONCURRENT-TWO-ACTOR-ADOPTION-REPORT.unredacted.md` (mode 0600).
+  - Exposed local ephemeral daemon processes (`task-31835` on port 48767, coordinator PID 4175889 on port 46583) were killed immediately; ports closed and old credentials invalidated.
+  - History rewrite avoided per policy; committed cleanly on main at `bd8be00`.
+
 - **Invariants Strictly Maintained:**
   - Public Cloudflare deploy strictly **HELD**.
   - Claude principal remains **stopped**.
