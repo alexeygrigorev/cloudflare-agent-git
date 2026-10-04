@@ -3229,8 +3229,7 @@
       "name": "Agent Dashboard product delivery",
       "head_tag": "agent-dashboard-head",
       "principal_tags": [
-        "codex-principal",
-        "claude-principal"
+        "codex-principal"
       ],
       "agents": [
         {
