@@ -2373,7 +2373,7 @@
       "executor_tag": "sdk-batch-retry-worker",
       "reviewer_tag": "sdk-batch-retry-reviewer",
       "status": "in_progress",
-      "updated_at": "2026-10-04T15:35:00.000000+00:00",
+      "updated_at": "2026-10-04T15:44:00.000000+00:00",
       "target_repo": "/home/alexey/git/agent-branches",
       "branch": "feat/push-batch-robust-retry",
       "target_files": [
@@ -2399,14 +2399,16 @@
       "test_demarcation": {
         "baseline_tests": "46/46 PASS in agent-branches (1a3c544)",
         "focused_suite": "tests/test_push_batch_retry.py (10/10 PASS in 7.560s)",
-        "full_suite": "56/56 PASS in agent-branches in 17.455s"
+        "full_suite": "56/56 PASS in agent-branches in 17.365s",
+        "mutation_score": "5/5 mutants killed (100% mutation score in scratch runner)"
       },
       "evidence_paths": [
         "research/antigravity/reviews/REV-SDK-PUSH-BATCH-7DE6836.md",
-        "research/antigravity/recovery/REPORT-SDK-PUSH-BATCH-ROBUST-RETRY.md"
+        "research/antigravity/recovery/REPORT-SDK-PUSH-BATCH-ROBUST-RETRY.md",
+        "research/antigravity/reviews/REV-SDK-PUSH-BATCH-ROBUST-RETRY.md"
       ],
-      "next_action": "Executor 4b81abc0 delivered REPORT-SDK-PUSH-BATCH-ROBUST-RETRY.md and 10/10 tests green (56/56 total suite green). Reviewer 390d9b50 executing independent audit and negative mutation testing in scratch.",
-      "acceptance": "Upfront pre-validation of SHAs and agent/task IDs; transient retry of connection drops, 5xx, and 429 with backoff; BatchExecutionError preserving succeeded receipts and unattempted events; zero cargo/rustc invocations."
+      "next_action": "Reopened per Codex C1662 review feedback: addressing the commit-then-timeout hazard on mutating pushes. Adding commit-then-timeout negative test case in test_push_batch_retry.py; failing closed on unconfirmed mutating failures with explicit ambiguous_event / failed_index without blind mutating retries, while retrying safe pre-mutation 429. Worker 4b81abc0 actively implementing; reviewer 390d9b50 will re-review upon delivery.",
+      "acceptance": "Upfront pre-validation of SHAs and routing IDs; forward-only execution preventing ring rollback; transient retry of safe pre-mutation 429 with backoff; fail-closed on unconfirmed mutating failures (commit-then-timeout) with explicit ambiguous_event and no blind mutating retry; BatchExecutionError preserving succeeded receipts and unattempted events; zero cargo/rustc invocations."
     }
   ]
 }

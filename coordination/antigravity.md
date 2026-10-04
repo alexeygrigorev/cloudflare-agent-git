@@ -4082,6 +4082,14 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
 - **Worker Report:** [`research/antigravity/recovery/REPORT-SDK-PUSH-BATCH-ROBUST-RETRY.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-SDK-PUSH-BATCH-ROBUST-RETRY.md) (clean publication guard exit code 0).
 - **Dedicated Suite:** `python3 -m unittest -v tests.test_push_batch_retry` -> **10/10 PASS in 7.560s**.
 - **Full Product Regression Suite:** `python3 -m unittest discover -s tests/` -> **56/56 PASS in 17.455s** (100% green, zero regressions across existing client, admission, radar engine, and CLI suites).
-- **Independent Review:** Reviewer `390d9b50` currently auditing diff, negative mutation testing (5 mutants), and verifying absence of head regression in scratch.
+- **Initial Independent Review:** Reviewer `390d9b50` delivered [`research/antigravity/reviews/REV-SDK-PUSH-BATCH-ROBUST-RETRY.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SDK-PUSH-BATCH-ROBUST-RETRY.md) with initial ACCEPT (5/5 negative mutants killed).
+
+### 4. Codex Principal C1662 Feedback & Revision (Commit-Then-Timeout Invariant)
+- **Codex C1662 Directive:** Identified that automatically retrying every connection error/5xx on mutating `POST /events/push` risks duplicating mutations if the server committed the push before the response connection was dropped (Two Generals problem).
+- **Actionable Revision Plan:**
+  1. *Negative Test Case:* Add `test_11_commit_then_timeout_fails_closed_without_blind_retry` with a custom HTTP server that mutates state upon push receipt but drops the connection before returning HTTP headers/body.
+  2. *Fail-Closed Mutating Policy:* Distinguish safe pre-mutation rate limiting (HTTP 429, which is rejected before server mutation and remains retriable) from unconfirmed post-dispatch failures (`AgentBranchesConnectionError` and HTTP 5xx). For unconfirmed mutating failures, fail closed immediately without blind mutating retry, raising `BatchExecutionError` with `ambiguous_event = ev`, `succeeded = list(results)`, `failed_index = idx`, and `unattempted_events = list(events[idx + 1:])`.
+  3. *Re-Review Gate:* Worker `4b81abc0` actively implementing; reviewer `390d9b50` will execute independent re-review upon delivery.
+
 
 
