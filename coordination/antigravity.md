@@ -4091,5 +4091,33 @@ Desktop Orchestrator surfaced essential factual and epistemic challenges to comm
   2. *Fail-Closed Mutating Policy:* Distinguish safe pre-mutation rate limiting (HTTP 429, which is rejected before server mutation and remains retriable) from unconfirmed post-dispatch failures (`AgentBranchesConnectionError` and HTTP 5xx). For unconfirmed mutating failures, fail closed immediately without blind mutating retry, raising `BatchExecutionError` with `ambiguous_event = ev`, `succeeded = list(results)`, `failed_index = idx`, and `unattempted_events = list(events[idx + 1:])`.
   3. *Re-Review Gate:* Worker `4b81abc0` actively implementing; reviewer `390d9b50` will execute independent re-review upon delivery.
 
+### 5. Revision 2 Delivery, Verification Receipts & Canonical Integration
+- **Worker Delivery:** [`research/antigravity/recovery/REPORT-SDK-PUSH-BATCH-ROBUST-RETRY.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-SDK-PUSH-BATCH-ROBUST-RETRY.md) updated with complete Two Generals commit-then-timeout analysis and empirical receipts.
+- **Independent Review Acceptance:** [`research/antigravity/reviews/REV-SDK-PUSH-BATCH-ROBUST-RETRY.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-SDK-PUSH-BATCH-ROBUST-RETRY.md) updated by `sdk-batch-retry-reviewer` (`390d9b50`). **Verdict: ACCEPT**.
+- **Empirical Test Verification:**
+  * Dedicated Suite: `python3 -m unittest -v tests.test_push_batch_retry` -> **11/11 PASS in 8.564s**:
+    - `test_04_server_503_fails_closed_without_blind_retry`: PASS (single dispatch, fails closed immediately).
+    - `test_05_transient_429_rate_limit_with_recovery`: PASS (retries with exponential backoff and succeeds).
+    - `test_06_rate_limit_retry_exhaustion`: PASS (exhausts cleanly to `BatchExecutionError`).
+    - `test_08_partial_success_preservation`: PASS (preserves event 0, isolates ambiguous event 1, leaves event 2 unattempted).
+    - `test_11_commit_then_timeout_fails_closed_without_blind_retry`: PASS (socket drops after server mutation; fails closed immediately; coordinator push count remains strictly 1, not 2).
+  * Product Regression Suite: `python3 -m unittest discover -s tests/` -> **57/57 PASS in 18.691s** (100% green).
+  * Scratch Negative Mutation Testing (3/3 killed = 100% mutation score):
+    - `MUT-REV2-A` (blind retries on connection drop/5xx) -> **KILLED** (`test_11` fails with `AssertionError: 4 != 1`).
+    - `MUT-REV2-B` (omitted `ambiguous_event`) -> **KILLED** (`test_11` fails with `AssertionError: None != {...}`).
+    - `MUT-REV2-C` (re-sending completed events on error) -> **KILLED** (`test_08` fails with `AssertionError: 2 != 1`).
+- **Canonical Product Integration & Remote Push:**
+  * Committed Revision 2 in `/home/alexey/git/agent-branches` on branch `feat/push-batch-robust-retry`: commit `dd4eefc` (`fix(sdk): fail closed without blind retries on mutating push (Two Generals invariant)`).
+  * Merged `--ff-only` into `main` (`dd4eefcb66afc08496323a8c4a97c749a8ce4a56`).
+  * Secret scan clean: `python3 scripts/secret-scan.py` -> `SECRET_SCAN_PASS tracked_files=144`.
+  * Synchronized with remote GitHub via `bash scripts/sync-main.sh`: pushed `dd4eefc` to `origin/main` at `git@github.com:alexeygrigorev/agent-branches.git`.
+  * Remote Restore Clone Verification: in `/home/alexey/git/agent-branches/.local/restore/clone`, executed fast-forward pull from GitHub and ran `python3 -m unittest discover -s tests/` -> **57/57 PASS in 18.569s** (100% clean remote restore).
+  * Released work declaration: `aplexer work leave /home/alexey/git/agent-branches`.
+- **Invariants Strictly Preserved:**
+  * Strictly **ZERO** `cargo` or `rustc` compiler invocations under human hold.
+  * Zero server-side API bloat: 100% client-side resilience and Two Generals fail-closed safety.
+  * Scratch usage $\le 512$ MB, zero net `/tmp` growth, cooperative memory $\le 1500$ MB.
+
+
 
 

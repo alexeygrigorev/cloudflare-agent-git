@@ -2373,10 +2373,10 @@
       "owner_tag": "antigravity-head",
       "executor_tag": "sdk-batch-retry-worker",
       "reviewer_tag": "sdk-batch-retry-reviewer",
-      "status": "in_progress",
-      "updated_at": "2026-10-04T15:44:00.000000+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-04T15:53:00.000000+00:00",
       "target_repo": "/home/alexey/git/agent-branches",
-      "branch": "feat/push-batch-robust-retry",
+      "branch": "main",
       "target_files": [
         "agent_branches/client.py",
         "agent_branches/__init__.py",
@@ -2399,17 +2399,17 @@
       "blocked_on": [],
       "test_demarcation": {
         "baseline_tests": "46/46 PASS in agent-branches (1a3c544)",
-        "focused_suite": "tests/test_push_batch_retry.py (10/10 PASS in 7.560s)",
-        "full_suite": "56/56 PASS in agent-branches in 17.365s",
-        "mutation_score": "5/5 mutants killed (100% mutation score in scratch runner)"
+        "focused_suite": "tests/test_push_batch_retry.py (11/11 PASS in 8.564s, including test_11_commit_then_timeout_fails_closed_without_blind_retry)",
+        "full_suite": "57/57 PASS in agent-branches (main @ dd4eefc) in 18.691s; 57/57 PASS in remote restore clone (.local/restore/clone) in 18.569s",
+        "mutation_score": "3/3 Revision 2 mutants killed (100% mutation score in scratch runner: blind retries killed, ambiguous_event omission killed, replay leak killed)"
       },
       "evidence_paths": [
         "research/antigravity/reviews/REV-SDK-PUSH-BATCH-7DE6836.md",
         "research/antigravity/recovery/REPORT-SDK-PUSH-BATCH-ROBUST-RETRY.md",
         "research/antigravity/reviews/REV-SDK-PUSH-BATCH-ROBUST-RETRY.md"
       ],
-      "next_action": "Reopened per Codex C1662 review feedback: addressing the commit-then-timeout hazard on mutating pushes. Adding commit-then-timeout negative test case in test_push_batch_retry.py; failing closed on unconfirmed mutating failures with explicit ambiguous_event / failed_index without blind mutating retries, while retrying safe pre-mutation 429. Worker 4b81abc0 actively implementing; reviewer 390d9b50 will re-review upon delivery.",
-      "acceptance": "Upfront pre-validation of SHAs and routing IDs; forward-only execution preventing ring rollback; transient retry of safe pre-mutation 429 with backoff; fail-closed on unconfirmed mutating failures (commit-then-timeout) with explicit ambiguous_event and no blind mutating retry; BatchExecutionError preserving succeeded receipts and unattempted events; zero cargo/rustc invocations."
+      "next_action": "Completed and canonically merged into agent-branches main (commit dd4eefc). Pushed to remote origin/main (github.com:alexeygrigorev/agent-branches.git). Verified via clean fast-forward pull and 57/57 test PASS in isolated restore clone (.local/restore/clone). Next owned task: coordinate radar integration or next product maintenance milestone.",
+      "acceptance": "Landed in agent-branches main (dd4eefc). Two Generals commit-then-timeout invariant strictly enforced: HTTP 429 pre-mutation retries preserved; connection drops and HTTP 5xx fail closed immediately without blind mutating retry; BatchExecutionError exposes ambiguous_event, succeeded, and unattempted_events; 11/11 dedicated PASS; 57/57 full suite PASS; 3/3 mutants killed; remote clone restore verified; zero cargo/rustc invocations."
     }
   ]
 }
