@@ -67,8 +67,8 @@
     {
       "at": "2026-10-04T15:25:00+00:00",
       "editor": "publication coordinator (public-journal-site)",
-      "reason": "Visual review: palette and reader-facing label repair",
-      "details": "Adapted workflow diagram to exact approved VISUALS.md flat editorial palette (#fcfcf8, #1c2027, #2455ed, #ef7134), eliminating template colors; replaced unexplained jargon with reader-facing labels (isolated forks, tracks branches and tasks, test-merges, review page).",
+      "reason": "Visual review: palette, reader-facing labels, and edge route separation",
+      "details": "Adapted workflow diagram to exact approved VISUALS.md flat editorial palette (#fcfcf8, #1c2027, #2455ed, #ef7134), eliminating template colors; replaced unexplained jargon with reader-facing labels; separated opposed edge routes between coordinator and checker to eliminate label overlap between Test merge and Warnings.",
       "sources": [
         "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/website/editorial/VISUALS.md",
         "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/website/assets/2026-10-04-agent-branches-workflow.svg"

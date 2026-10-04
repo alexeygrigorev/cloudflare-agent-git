@@ -71,6 +71,8 @@
       "to": "checker",
       "label": "Test merge",
       "route": "orthogonal",
+      "from_anchor": "top",
+      "to_anchor": "left_top",
       "color": "amber"
     },
     {
@@ -79,6 +81,8 @@
       "label": "Warnings",
       "dashed": true,
       "route": "orthogonal",
+      "from_anchor": "left_bottom",
+      "to_anchor": "right",
       "color": "amber"
     },
     {

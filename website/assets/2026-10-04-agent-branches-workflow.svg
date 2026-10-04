@@ -71,13 +71,13 @@
     <rect x="-31.21" y="-16" width="62.41" height="32" rx="16.0" fill="#fcfcf8" stroke="#1c2027"/>
     <text fill="#1c2027">Push</text>
   </g>
-  <path class="edge" d="M650 200H735V110H820" stroke="#ef7134" marker-end="url(#arrow-amber)"/>
-  <g class="edge-label" transform="translate(735 155)">
+  <path class="edge" d="M540 150L540 93.33L820 93.33" stroke="#ef7134" marker-end="url(#arrow-amber)"/>
+  <g class="edge-label" transform="translate(540 93.33)">
     <rect x="-56.82" y="-16" width="113.65" height="32" rx="16.0" fill="#fcfcf8" stroke="#ef7134"/>
     <text fill="#ef7134">Test merge</text>
   </g>
-  <path class="edge" d="M820 110H735V200H650" stroke="#ef7134" stroke-dasharray="8 8" marker-end="url(#arrow-amber)"/>
-  <g class="edge-label" transform="translate(735 155)">
+  <path class="edge" d="M820 126.67H735V200H650" stroke="#ef7134" stroke-dasharray="8 8" marker-end="url(#arrow-amber)"/>
+  <g class="edge-label" transform="translate(735 163.33)">
     <rect x="-49.45" y="-16" width="98.9" height="32" rx="16.0" fill="#fcfcf8" stroke="#ef7134"/>
     <text fill="#ef7134">Warnings</text>
   </g>
