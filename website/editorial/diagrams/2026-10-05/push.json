@@ -1,0 +1,19 @@
+{
+  "title": "Failed pushes: before and now",
+  "description": "A push that timed out used to be sent again and could land twice. Now the tool stops and reports what went through.",
+  "canvas": {"width": 1020, "height": 400},
+  "layout": {"type": "grid", "card_width": 260, "card_height": 100, "column_gap": 80, "row_gap": 80},
+  "nodes": [
+    {"id": "t1", "eyebrow": "BEFORE", "title": "Push times out", "icon": "warning", "color": "amber", "row": 0, "column": 0},
+    {"id": "r1", "title": "Send it again", "icon": "workflow", "color": "gray", "row": 0, "column": 1},
+    {"id": "d1", "title": "Written twice", "icon": "close", "color": "red", "row": 0, "column": 2},
+    {"id": "t2", "eyebrow": "NOW", "title": "Push times out", "icon": "warning", "color": "amber", "row": 1, "column": 0},
+    {"id": "r2", "title": "Stop", "icon": "shield", "color": "purple", "row": 1, "column": 1},
+    {"id": "d2", "title": "Report", "subtitle": "Sent, not sent, unclear", "icon": "check", "color": "green", "row": 1, "column": 2}
+  ],
+  "edges": [
+    {"from": "t1", "to": "r1"}, {"from": "r1", "to": "d1"},
+    {"from": "t2", "to": "r2"}, {"from": "r2", "to": "d2", "color": "green"}
+  ],
+  "dividers": [{"after_row": 0}]
+}

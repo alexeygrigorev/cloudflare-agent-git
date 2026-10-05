@@ -1,0 +1,52 @@
+{
+  "title": "Desktop and server messaging",
+  "description": "The Windows desktop dials out to the Linux server over SSH, picks up tasks from a queue on disk and sends replies back.",
+  "canvas": {
+    "width": 960,
+    "height": 280
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 260,
+    "card_height": 120
+  },
+  "nodes": [
+    {
+      "id": "server",
+      "eyebrow": "RENTED",
+      "title": "Linux server",
+      "subtitle": "Queue on disk",
+      "icon": "queue",
+      "color": "green",
+      "x": 40,
+      "y": 80
+    },
+    {
+      "id": "desktop",
+      "eyebrow": "AT HOME",
+      "title": "Windows desktop",
+      "subtitle": "No open ports",
+      "icon": "terminal",
+      "color": "blue",
+      "x": 660,
+      "y": 80
+    }
+  ],
+  "edges": [
+    {
+      "from": "server",
+      "to": "desktop",
+      "from_anchor": "right_top",
+      "to_anchor": "left_top",
+      "label": "Task"
+    },
+    {
+      "from": "desktop",
+      "to": "server",
+      "from_anchor": "left_bottom",
+      "to_anchor": "right_bottom",
+      "label": "Reply",
+      "color": "green"
+    }
+  ]
+}

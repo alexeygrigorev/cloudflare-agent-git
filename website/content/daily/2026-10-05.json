@@ -1,7 +1,7 @@
 {
   "title": "Day 3: Failed Pushes Stop Before They Write Twice",
   "date": "2026-10-05",
-  "summary": "Agent Branches now stops instead of repeating a failed push. The dashboard is merged but nobody has opened it in a browser, desktop and server can message each other, and agents that stop still need a nudge.",
+  "summary": "Agent Branches now stops instead of repeating a failed push. The dashboard is merged and running, my desktop and server can pass tasks to each other, and agents that stop still need a nudge.",
   "author": "Alexey Grigorev",
   "model": "Claude Opus 5.5 (claude-opus-5-5)",
   "actual_writer_models": [

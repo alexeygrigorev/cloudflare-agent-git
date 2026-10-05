@@ -602,10 +602,9 @@ def daily_page(d):
     person = '<span class="byline-name">'+E(d.get('author', 'Alexey Grigorev'))+'</span><span class="muted">'+writer_badge+'</span><span class="muted">'+E(long_date(d['date']))+'</span>'
     titles = d.get('source_titles', {})
     sources = ''.join('<a class="src" href="'+E(u, quote=True)+'">'+E(source_title(u, titles))+'</a>' for u in d.get('sources', []))
-    writer_note = 'Writing assistance: Claude Opus.' if is_opus else 'Draft provenance: early technical recovery snapshot (writer unverified, not Claude Opus).'
     return ('<article class="article">'+article_head(d['title'], d.get('summary', ''), byline_block(person, spans))
             +'<div class="prose">'+prose+'</div>'
-            '<div class="article-sources">'+'<h2 class="sources-h">Sources for this report</h2>'+sources+'<p class="source-line">'+writer_note+' Original Markdown: <a href="'+public_source(d['path'].relative_to(ROOT))+'">read in the repository'+EXT+'</a>. Illustrations are conceptual artwork.</p></div></article>')
+            '<div class="article-sources"><details class="sources-more"><summary class="sources-h">Sources ('+str(len(d.get('sources', [])))+')</summary>'+sources+'</details></div></article>')
 
 def note_page(rp):
     info = note_info(rp)

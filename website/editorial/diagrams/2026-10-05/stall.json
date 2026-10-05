@@ -1,0 +1,62 @@
+{
+  "title": "Why stopped agents look busy",
+  "description": "When the model provider is at capacity the agent quits, but its status still says working, so the wake-up service leaves it alone.",
+  "canvas": {
+    "width": 1300,
+    "height": 280
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 260,
+    "card_height": 120
+  },
+  "nodes": [
+    {
+      "id": "cap",
+      "title": "Provider at capacity",
+      "icon": "alert",
+      "color": "red",
+      "x": 40,
+      "y": 80
+    },
+    {
+      "id": "quit",
+      "title": "Agent quits",
+      "icon": "robot",
+      "color": "gray",
+      "x": 360,
+      "y": 80
+    },
+    {
+      "id": "status",
+      "title": "Status: \"working\"",
+      "icon": "warning",
+      "color": "amber",
+      "x": 680,
+      "y": 80
+    },
+    {
+      "id": "wake",
+      "title": "Wake-up service",
+      "subtitle": "Sees nothing to do",
+      "icon": "settings",
+      "color": "purple",
+      "x": 1000,
+      "y": 80
+    }
+  ],
+  "edges": [
+    {
+      "from": "cap",
+      "to": "quit"
+    },
+    {
+      "from": "quit",
+      "to": "status"
+    },
+    {
+      "from": "status",
+      "to": "wake"
+    }
+  ]
+}

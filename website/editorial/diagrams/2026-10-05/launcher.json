@@ -1,0 +1,67 @@
+{
+  "title": "How the launcher decides",
+  "description": "Before each launch the launcher reads fresh quota. A known, healthy reading starts the agent; an unknown or low reading means no launch.",
+  "canvas": {
+    "width": 1060,
+    "height": 380
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 260,
+    "card_height": 100
+  },
+  "nodes": [
+    {
+      "id": "task",
+      "title": "Task waiting",
+      "icon": "issue",
+      "color": "blue",
+      "x": 40,
+      "y": 140
+    },
+    {
+      "id": "check",
+      "title": "Read quota",
+      "subtitle": "Plus memory and disk",
+      "icon": "observability",
+      "color": "amber",
+      "x": 360,
+      "y": 140
+    },
+    {
+      "id": "go",
+      "title": "Start the agent",
+      "icon": "robot",
+      "color": "green",
+      "x": 760,
+      "y": 40,
+      "subtitle": "Quota known and enough"
+    },
+    {
+      "id": "hold",
+      "title": "Don't launch",
+      "icon": "close",
+      "color": "gray",
+      "x": 760,
+      "y": 240,
+      "subtitle": "Quota unknown or low"
+    }
+  ],
+  "edges": [
+    {
+      "from": "task",
+      "to": "check"
+    },
+    {
+      "from": "check",
+      "to": "go",
+      "route": "step",
+      "color": "green"
+    },
+    {
+      "from": "check",
+      "to": "hold",
+      "route": "step"
+    }
+  ]
+}
