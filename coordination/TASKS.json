@@ -326,9 +326,9 @@
     {
       "id": "safe-autonomous-continuation",
       "team_id": "a16-runtime-protocol",
-      "owner_tag": "antigravity-head",
+      "owner_tag": "antigravity-head-gemini-recovery",
       "status": "blocked",
-      "updated_at": "2026-10-03T13:11:30.758172+00:00",
+      "updated_at": "2026-10-05T15:15:11.896191+00:00",
       "evidence_paths": [
         "research/antigravity/r12-scoped-ca1-pilot-verification.md",
         "research/antigravity/r17-after-idle-safety-fix.md",
@@ -338,11 +338,12 @@
         ".local/continuation-trial/**"
       ],
       "blocked_on": [
-        "joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md)"
+        "root-disk-below-50GiB"
       ],
-      "next_action": "frozen by joint refocus 2026-10-03 (research/claude/refocus-2026-10-03.md); resume only if Agent Branches needs it",
+      "next_action": "Resumed custody under recovered head 5e1abcdb; bounded in-session repairs completed; worker launches held while root disk is below 50 GiB.",
       "acceptance": "Source/negative draft-busy tests and actual repeated continuation cycles; no invented all-engine recovery.",
-      "assignment_ack": "ACK: owned by antigravity-head. Pinned commit 7a9b46d on fix/continuation-readiness-pane-race in cloudflare-aplexer-protocol (PromptState enum Empty/Draft/Unknown, real OpenCode/Grok/Codex/Shell fixtures, verify_pane_delivery correlated working transition, --next continuation queue; 212 unit + 31 integration pass, 0B net compile growth). Change-story card published at research/antigravity/change-story-card-pane-continuation.md (commit 6214dec)."
+      "assignment_ack": "ACK: resumed custody under antigravity-head-gemini-recovery (session 5e1abcdb-44d3-44c9-ba20-eb21f6235672).",
+      "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672"
     },
     {
       "id": "prospective-review-task",
@@ -5172,35 +5173,42 @@
       "owner_tag": "agent-coordination-head-gemini",
       "status": "blocked",
       "assignment_ack": "01a10c5b-8461-7fd3-9209-06af1a3f155e",
-      "updated_at": "2026-10-05T14:11:26.525699+00:00",
+      "updated_at": "2026-10-05T15:13:00Z",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Head retains accepted ownership; resource diagnosis/recovery and safe continuation delegate ACK required, then resume scoped reviewer/startup/runtime delivery. Source milestones preserved, not continuous execution.",
+      "next_action": "Storage floor currently 47.6 GiB (<50 GiB); worker launch held per policy. QL task-unit adapter implemented at coordination/ql_task_unit_adapter.py ready to submit upon floor recovery.",
       "blocked_on": [
-        "root-disk-below-50GiB",
-        "current-head-turn-ended-native-safe-continuation-unacknowledged"
+        "root-disk-below-50GiB-floor",
+        "waiting-storage-floor-restoration"
       ],
       "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ],
-      "owner_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab"
+      "owner_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
+      "implementer": "coordination/ql_task_unit_adapter.py (maintained QL task-unit route via wt-refill-runtime)",
+      "reviewer": "antigravity-head-gemini-recovery (5e1abcdb) / nominated independent reviewer",
+      "first_tool": "coordination/ql_task_unit_adapter.py check_storage_floor + format_ql_payload",
+      "first_output": "coordination/ql_task_unit_adapter.py"
     },
     {
       "id": "REMOTE-AUTONOMY-SUPERVISOR-1830",
       "team_id": "remote-autonomous-continuation",
       "owner_tag": "antigravity-head-gemini-recovery",
-      "status": "blocked",
+      "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T14:11:26.525699+00:00",
+      "updated_at": "2026-10-05T15:15:11.896191+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Head retains accepted ownership; resource diagnosis/recovery and safe continuation delegate ACK required, then resume scoped reviewer/startup/runtime delivery. Source milestones preserved, not continuous execution.",
+      "next_action": "Bounded supervisor integration with maintained task-unit launcher state.db completed (commit 6e995c9) and independently accepted (REV-SUPERVISION-TERMINAL-LAUNCHER-6E995C9.md). Preserving PID 3265459, locks, cursors, and logs. Worker launch held on root statvfs 47.58 GiB < 50 GiB.",
       "blocked_on": [
-        "root-disk-below-50GiB",
-        "current-head-turn-ended-native-safe-continuation-unacknowledged"
+        "root-disk-below-50GiB"
       ],
       "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
-        "research/codex/remote-autonomy-1830-plan-20261005.md"
+        "research/codex/remote-autonomy-1830-plan-20261005.md",
+        "research/antigravity/remote-autonomy-supervisor-contract-20261005.md",
+        "research/antigravity/reviews/REV-SUPERVISION-TERMINAL-LAUNCHER-6E995C9.md",
+        "scripts/supervision/terminal_consumer.py",
+        "scripts/supervision/test_terminal_consumer.py"
       ],
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672"
     },
@@ -5332,19 +5340,26 @@
       "owner_tag": "agent-coordination-head-gemini",
       "offered_to_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
       "status": "blocked",
-      "assignment_ack": "AgentBus-specific ownership offered via01a10c73-bad4; explicit ACK pending. Existing coordination role ACK does not prove this new assignment.",
-      "updated_at": "2026-10-05T14:26:07.300948+00:00",
+      "assignment_ack": "01a10c73-bad4-74e1-a299-60b7b186a8dd-ACKED",
+      "updated_at": "2026-10-05T15:13:00Z",
       "handoff_id": "01a10c73-bad4-74e1-a299-60b7b186a8dd",
-      "next_action": "Existing head ACKs AgentBus product custody, maps existing messaging parity gaps, launches disjoint useful zcy lanes and independent review after fresh admission; actual sessionless model-worker task/result/ACK adoption first.",
+      "next_action": "Product custody acknowledged; standalone core pinned at 5ee5207e; worker launches held until root filesystem free space >= 50 GiB.",
       "blocked_on": [
-        "Native safe delivery NOTREADY; genuine continuation repair owned through launcher/Ant heads",
-        "Root free49.48GiB below50 floor; no new growing model work"
+        "root-disk-below-50GiB-floor",
+        "waiting-storage-floor-restoration"
       ],
       "acceptance": "Head-owned exact source pins and independent reviewer receipts; useful two independently enrolled sessionless model actors exchange task/result/ACK without aplexer UI session; restart/replay negatives; sanitized GitHub sync and runnable CLI. Cross-host acceptance separate.",
       "evidence_paths": [
         "research/codex/principal-delegation-playbook-20261005.md",
         "experiment/human-principal-dispatch-agentbus-20261005.txt"
-      ]
+      ],
+      "owner_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
+      "pinned_repo": "https://github.com/PocketShell-io/agent-bus",
+      "remote_main_pin": "5ee5207e8c540b712f7bc862af8f3bf29dc6df69",
+      "implementer": "coordination/ql_task_unit_adapter.py (maintained QL task-unit route via wt-refill-runtime)",
+      "reviewer": "antigravity-head-gemini-recovery (5e1abcdb)",
+      "first_tool": "coordination/ql_task_unit_adapter.py",
+      "first_output": "coordination/ql_task_unit_adapter.py"
     },
     {
       "id": "AGENTS-FIX-VERIFY-RESUME-20261005",
