@@ -1,0 +1,33 @@
+{
+  "title": "October 5 Product Report",
+  "date": "2026-10-05",
+  "summary": "Delivery work across four active products: Agent Branches audited a fail-closed mutating push, Agent Bus added default reply idempotency after duplicate deliveries, Agent Dashboard verified staged metrics in a mock testbed, and Quota Launcher hardened temporary directory containment.",
+  "author": "Alexey Grigorev",
+  "model": "Claude Opus 5.5 (claude-opus-5-5)",
+  "source_cutoff": "2026-10-05T00:06:45Z",
+  "sources": [
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-HOURLY-PAYLOAD-34137.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-SDK-CLI-TIMEOUT-ZCODE.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/recovery/bus-default-idempotency-and-semantic-replay.patch",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-DEFAULT-IDEMPOTENCY.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-TYPED-SSH-PORTABILITY.md"
+  ],
+  "source_titles": {
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-HOURLY-PAYLOAD-34137.md": "Independent review of the 24-hour analytical payload",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-SDK-CLI-TIMEOUT-ZCODE.md": "Review of fail-closed push behavior in the Python client library",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md": "Review of the single accepted consumer feature in Agent Branches",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/recovery/bus-default-idempotency-and-semantic-replay.patch": "Isolated 68-line patch adding reply idempotency keys",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-DEFAULT-IDEMPOTENCY.md": "Review of default idempotency keys and duplicate prevention",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-TYPED-SSH-PORTABILITY.md": "Portability review identifying transport module gaps and Windows locking issues"
+  },
+  "image": "../../assets/agent-git-illustration.png",
+  "image_alt": "Conceptual illustration for the agent Git experiment; not measurement evidence",
+  "published": true,
+  "actual_writer_models": [
+    "claude-opus-5-5"
+  ],
+  "editorial_review": "Evidence, privacy, relative links and factual checks by publication coordinator; independent factual verification under REV-OCT5-PRODUCT-REPORT",
+  "article_sha256": "3845d3e1df96706328ca57116a09fea0cc098f8833f45a756ae90a5e464c83c7",
+  "published_at": "2026-10-05T00:25:00.000000+00:00"
+}
