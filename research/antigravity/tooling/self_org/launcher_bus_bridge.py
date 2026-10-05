@@ -1321,7 +1321,17 @@ class ChildModelRuntimeAdapter:
             raise QuotaAdmissionError("Quota telemetry missing, invalid, or unparseable: fail-closed")
 
         reqs = model_requirements if isinstance(model_requirements, dict) else {}
+        allowed = reqs.get("allowed_providers") or reqs.get("providers")
+        if allowed and "providers" not in reqs:
+            reqs = dict(reqs)
+            reqs["providers"] = list(allowed)
         valid_routes, rejections = validate_quse(data, task_requirements=reqs)
+        if allowed:
+            valid_routes = [r for r in valid_routes if r.get("provider") in allowed]
+            if not valid_routes:
+                raise QuotaAdmissionError(
+                    f"No valid routes match allowed_providers {allowed}. Rejections: {rejections}"
+                )
         if not valid_routes:
             raise QuotaAdmissionError(f"No valid routes available in quse telemetry. Rejections: {rejections}")
 
@@ -1699,6 +1709,29 @@ class ChildModelRuntimeAdapter:
 
             # Store Registration & Active Resource Check
             task_data = self.store.get_task(task_id)
+            active_mem, active_disk = self.store.get_active_resources(exclude_task_id=task_id)
+            check_resources(
+                requested_memory_mb,
+                str(cwd_path),
+                str(tmpdir_path),
+                active_mem,
+                active_disk,
+                repo_root=str(workspace_path),
+            )
+
+            # Pre-flight environment validation before submitting task to Store
+            if env_vars:
+                for k, v in env_vars.items():
+                    if k in ("PATH", "HOME", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS"):
+                        raise ResourceAdmissionError(f"Forbidden environment variable override in env_vars: {k}")
+                    if k in ("TMPDIR", "TMP", "TEMP"):
+                        if Path(v).resolve() != tmpdir_path.resolve():
+                            raise ResourceAdmissionError(
+                                f"Divergent temporary directory in env_vars '{k}={v}' does not match checked tmpdir '{tmpdir_path}' (C2284)"
+                            )
+                        if str(v).startswith("/tmp") or str(v).startswith("/data/tmp"):
+                            raise ResourceAdmissionError(f"Contained TMPDIR violation in env_vars: {v}")
+
             if task_data is None:
                 payload = {
                     "owner": "antigravity-head",
@@ -1719,16 +1752,6 @@ class ChildModelRuntimeAdapter:
                 )
             elif task_data.get("state") != "queued":
                 raise AdmissionError(f"Task {task_id} state is '{task_data.get('state')}', expected 'queued'")
-
-            active_mem, active_disk = self.store.get_active_resources(exclude_task_id=task_id)
-            check_resources(
-                requested_memory_mb,
-                str(cwd_path),
-                str(tmpdir_path),
-                active_mem,
-                active_disk,
-                repo_root=str(workspace_path),
-            )
 
             # Isolated Agent Bus Identity Enrollment (canonical enroll_agent)
             bus_identity_receipt = None
@@ -1753,11 +1776,29 @@ class ChildModelRuntimeAdapter:
             )
 
         # 3. Clean environment construction (strip APLEXER_* & prevent global /tmp override)
+        # Directive C2371: Child workers must use FileBus (AgentBus registered creds),
+        # not inherited helper/parent aplexer mailbox authority.
+        # Place fail-closed shims for 'aplexer' and 'a' in child_bin_dir to prevent
+        # child processes from resolving to ambient parent workspace sessions.
+        child_bin_dir = tmpdir_path / "bin"
+        child_bin_dir.mkdir(parents=True, exist_ok=True)
+        for shim_name in ("aplexer", "a"):
+            shim_path = child_bin_dir / shim_name
+            shim_path.write_text(
+                "#!/bin/sh\n"
+                "echo 'Error: aplexer CLI is forbidden in isolated child worker scope (Directive C2371). "
+                "Workers must use AgentBus registered task/recipient creds, not native aplexer CLI.' >&2\n"
+                "exit 127\n"
+            )
+            shim_path.chmod(0o755)
+
         clean_env = {
-            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+            "PATH": f"{child_bin_dir}:{os.environ.get('PATH', '/usr/bin:/bin')}",
             "LANG": os.environ.get("LANG", "en_US.UTF-8"),
             "LC_ALL": os.environ.get("LC_ALL", "en_US.UTF-8"),
             "HOME": str(Path.home()),
+            "APLEXER_SESSION_ID": "isolated-child-worker-no-aplexer",
+            "APLEXER_TAG": "isolated-child-worker",
         }
         if "XDG_RUNTIME_DIR" in os.environ:
             clean_env["XDG_RUNTIME_DIR"] = os.environ["XDG_RUNTIME_DIR"]
@@ -1765,6 +1806,8 @@ class ChildModelRuntimeAdapter:
             clean_env["DBUS_SESSION_BUS_ADDRESS"] = os.environ["DBUS_SESSION_BUS_ADDRESS"]
         if env_vars:
             for k, v in env_vars.items():
+                if k in ("PATH", "HOME", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS"):
+                    raise ResourceAdmissionError(f"Forbidden environment variable override in env_vars: {k}")
                 if k.startswith("APLEXER_") or k.startswith("PARENT_") or k.startswith("CLOUDFLARE_"):
                     continue
                 if k in ("TMPDIR", "TMP", "TEMP"):

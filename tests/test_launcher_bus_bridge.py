@@ -2838,6 +2838,70 @@ class TestLauncherBusBridge(unittest.TestCase):
             )
         self.assertIn("Conflicting tmpdir and tmpdir_path arguments", str(cm_tmp.exception))
 
+    # -----------------------------------------------------------------------
+    # Test 49: Directive C2371 Child Worker Aplexer CLI Forbidden & Fails Closed
+    # -----------------------------------------------------------------------
+    def test_49_c2371_child_worker_aplexer_cli_forbidden_and_fails_closed(self) -> None:
+        """
+        Verify Directive C2371 child worker isolation from ambient aplexer authority:
+        1. child_bin_dir contains fail-closed shims for 'aplexer' and 'a'.
+        2. Clean_env PATH prepends child_bin_dir so attempts to invoke aplexer or a
+           fail with exit code 127 and descriptive stderr message.
+        3. Clean_env isolates XDG_RUNTIME_DIR and APLEXER_SESSION_ID.
+        """
+        runtime = ChildModelRuntimeAdapter(
+            store=self.store,
+            workspace=self.workspace,
+            lock_path=self.workspace / ".local" / "test.lock",
+            is_test_fixture=True,
+        )
+        task_id = "t49-aplexer-isolation"
+        res = runtime.execute_in_verified_systemd_scope(
+            task_id=task_id,
+            command_argv=[
+                "python3",
+                "-c",
+                "import subprocess, sys; res = subprocess.run(['aplexer', 'whoami'], capture_output=True, text=True); sys.stderr.write(res.stderr); sys.exit(res.returncode)",
+            ],
+            cwd=self.workspace,
+            tmpdir=self.owned_tmp,
+            lock_path=self.workspace / ".local" / "test.lock",
+            is_local_probe=True,
+        )
+        self.assertEqual(res["returncode"], 127)
+        self.assertIn("aplexer CLI is forbidden in isolated child worker scope (Directive C2371)", res["stderr_preview"])
+        self.assertIn("Workers must use AgentBus registered task/recipient creds", res["stderr_preview"])
+
+        # Also verify 'a' alias fails closed
+        res_a = runtime.execute_in_verified_systemd_scope(
+            task_id="t49-a-alias-isolation",
+            command_argv=[
+                "python3",
+                "-c",
+                "import subprocess, sys; res = subprocess.run(['a', 'whoami'], capture_output=True, text=True); sys.stderr.write(res.stderr); sys.exit(res.returncode)",
+            ],
+            cwd=self.workspace,
+            tmpdir=self.owned_tmp,
+            lock_path=self.workspace / ".local" / "test.lock",
+            is_local_probe=True,
+        )
+        self.assertEqual(res_a["returncode"], 127)
+        self.assertIn("aplexer CLI is forbidden in isolated child worker scope (Directive C2371)", res_a["stderr_preview"])
+
+        # 4. Verify env_vars cannot override PATH, HOME, or XDG_RUNTIME_DIR (fail closed)
+        for forbidden_key in ("PATH", "HOME", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS"):
+            with self.assertRaises(ResourceAdmissionError) as cm_forbid:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=f"t49-forbid-{forbidden_key.lower()}",
+                    command_argv=["echo", "probe"],
+                    cwd=self.workspace,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    env_vars={forbidden_key: "/custom/escape"},
+                    is_local_probe=True,
+                )
+            self.assertIn(f"Forbidden environment variable override in env_vars: {forbidden_key}", str(cm_forbid.exception))
+
 
 if __name__ == "__main__":
     unittest.main()
