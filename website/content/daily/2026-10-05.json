@@ -1,15 +1,32 @@
 {
-  "title": "Day 3: Four Product Teams, and Plain Git Held Its Ground",
+  "title": "Day 3: Failed Pushes Stop Before They Write Twice",
   "date": "2026-10-05",
-  "summary": "The AI agents split into four product teams: Agent Branches, a usage dashboard, a quota-aware launcher and cross-computer messaging. In a single-agent test, plain Git was faster than Agent Branches. A trial that favoured the tool had tested the two setups differently. The message bus ran across two physical machines over SSH. Token use per product is unobserved, and 24-hour metrics remain held pending review.",
+  "summary": "This corrected edition explains what the AI agents built for agents that share one repository. Agent Branches now stops instead of repeating a failed push. The team merged the dashboard but nobody tried it in a browser, and stopped agents still need a nudge. Token counts cover two sessions, and hourly numbers only sample reported status.",
   "author": "Alexey Grigorev",
   "model": "Claude Opus 5.5 (claude-opus-5-5)",
   "actual_writer_models": [
     "claude-opus-5-5"
   ],
-  "source_cutoff": "2026-10-05T07:05:27Z",
-  "source_cutoff_note": "Canonical morning standup at 2026-10-05 09:00 Europe/Berlin (07:00 UTC); latest heartbeat read is 06:56 UTC October 5.",
+  "source_cutoff": "2026-10-05T08:43:00Z",
+  "source_cutoff_note": "Opus fact packet cutoff 08:31:27 UTC; final checked numeric fields and native messaging supplement through 08:43 UTC. Measurement window remains exactly October 4 07:00 to October 5 07:00 UTC.",
+  "measurement_window": {
+    "start": "2026-10-04T07:00:00Z",
+    "end": "2026-10-05T07:00:00Z",
+    "label": "Europe/Berlin 09:00 to 09:00"
+  },
   "sources": [
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/4754c8e/research/antigravity/reviews/REV-SDK-CLI-TIMEOUT-ZCODE.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/cbd9cde/research/antigravity/adoption/REPORT-AB-REAL-CONSUMER-WORK.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/cbd9cde/research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/ce8ab1c/research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/ed49984/research/antigravity/reviews/REV-DASHBOARD-249D086-ADOPTION.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1288137/coordination/OPERATING-MODEL.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/b05df29/research/antigravity/recovery/REPORT-TWOHOST-DESKTOP-HETZNER-RPC.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/e58e179/experiment/human-self-organization-20261004.txt",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/86ad9df/research/antigravity/reviews/REV-SUPERVISION-ROUTING-REPAIR.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/e69a716/research/antigravity/reviews/REV-CAPACITY-CONTINUATION-GROK.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/eb8cb9c/experiment/standups/2026-10-05.md",
+    "https://developers.cloudflare.com/durable-objects/platform/pricing/",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/experiment/standups/2026-10-05.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/orchestrator/heartbeat-20261005T0656.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/experiment/human-delivery-reset-20261004.txt",
@@ -47,21 +64,53 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/orchestrator/cloudflare-budget-20261004.md": "The agents' Cloudflare cost calculation",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/orchestrator/heartbeat-20261004T2026.md": "Laptop check: lead agent idle for four hours",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/experiment/human-self-organization-20261004.txt": "My request to remove the single point of failure, word for word",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/orchestrator/heartbeat-20261004T2156.md": "Laptop check: temporary disk space falling"
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/orchestrator/heartbeat-20261004T2156.md": "Laptop check: temporary disk space falling",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/4754c8e/research/antigravity/reviews/REV-SDK-CLI-TIMEOUT-ZCODE.md": "Review of stopping instead of repeating failed pushes",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/cbd9cde/research/antigravity/adoption/REPORT-AB-REAL-CONSUMER-WORK.md": "One feature built with plain Git and with Agent Branches",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/cbd9cde/research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md": "Independent replay of the one-feature trial",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/ce8ab1c/research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md": "The corrected trial of two conflicting changes",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/ed49984/research/antigravity/reviews/REV-DASHBOARD-249D086-ADOPTION.md": "Review of merging the dashboard",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1288137/coordination/OPERATING-MODEL.md": "The agents\u2019 written launch rules",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/b05df29/research/antigravity/recovery/REPORT-TWOHOST-DESKTOP-HETZNER-RPC.md": "Messages between a Windows desktop and a Linux server",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/e58e179/experiment/human-self-organization-20261004.txt": "My request to keep work going when a lead agent stops, word for word",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/86ad9df/research/antigravity/reviews/REV-SUPERVISION-ROUTING-REPAIR.md": "Review of the repair to how the wake-up service finds projects",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/e69a716/research/antigravity/reviews/REV-CAPACITY-CONTINUATION-GROK.md": "Study of agents that stop when the model is at capacity",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/eb8cb9c/experiment/standups/2026-10-05.md": "Morning standup for October 5, with the corrected cost figure",
+    "https://developers.cloudflare.com/durable-objects/platform/pricing/": "Cloudflare Durable Objects pricing, checked October 5"
   },
   "image": "../../assets/2026-10-05.png",
   "image_alt": "Conceptual illustration of four agent shapes coordinating between a laptop and server, with an envelope in transit and an unfinished return path circled in orange",
   "image_sha256": "f8014b1039ef16d9f2b90a2ca9a173a5ba8cd1d300ef05482606716540534565",
   "diagram": "../../assets/2026-10-05-four-products-plain-workflow.png",
   "diagram_svg": "../../assets/2026-10-05-four-products-plain-workflow.svg",
-  "diagram_alt": "Four product teams and delivery status: A review task runs between team lead and independent reviewer over messages, while four product lanes maintain distinct delivery statuses",
+  "diagram_alt": "Four product teams and their delivery status. A review task passes between a team lead and an independent reviewer as messages, and each product keeps its own status.",
   "published": true,
-  "article_sha256": "45f9f58dd1ce458bc404e73e8a4e6cc8652293ce8885a7237b56e929487b47b2",
   "published_at": "2026-10-05T07:19:04.000000+00:00",
-  "updated_at": "2026-10-05T07:49:32.000000+00:00",
+  "revised_at": "2026-10-05T09:00:42.486633+00:00",
+  "revised_at_note": "Set by the final publisher to the actual publication time of this correction.",
+  "correction": {
+    "token": "correction-20261005",
+    "drafted_at": "2026-10-05T08:40:40+00:00",
+    "note": "The first edition, published at 09:19 Berlin time, leaned on speed and held back all numbers. This edition explains each product, the reviews and failures, scoped token counts and the sampled hourly numbers, and fixes details from the first correction draft. Earlier editions remain in git history.",
+    "previous_edition": {
+      "title": "Day 3: Four Product Teams, and Plain Git Held Its Ground",
+      "summary": "The AI agents split into four product teams: Agent Branches, a usage dashboard, a quota-aware launcher and cross-computer messaging. In a single-agent test, plain Git was faster than Agent Branches. A trial that favoured the tool had tested the two setups differently. The message bus ran across two physical machines over SSH. Token use per product is unobserved, and 24-hour metrics remain held pending review.",
+      "source_cutoff": "2026-10-05T07:05:27Z",
+      "source_cutoff_note": "Canonical morning standup at 2026-10-05 09:00 Europe/Berlin (07:00 UTC); latest heartbeat read is 06:56 UTC October 5.",
+      "article_sha256": "45f9f58dd1ce458bc404e73e8a4e6cc8652293ce8885a7237b56e929487b47b2",
+      "published_at": "2026-10-05T07:19:04.000000+00:00",
+      "updated_at": "2026-10-05T07:49:32.000000+00:00",
+      "editorial_review": "Evidence, privacy, full stylint and asset checks by publication coordinator (public-journal-site)"
+    }
+  },
   "replaces_early_update": {
     "note": "Replaces the interim technical snapshot ('Day 3: The Message Bus Delivered the Same Review Twice') with the comprehensive morning report following the 09:00 Europe/Berlin daily standup. The interim technical update remains preserved in git history (commits ec1fd1c, 433a6b2, 086a747, 1d39c34, and 7da0834).",
     "early_title": "Day 3: The Message Bus Delivered the Same Review Twice"
   },
-  "editorial_review": "Evidence, privacy, full stylint and asset checks by publication coordinator (public-journal-site)"
+  "article_sha256": "08c26ff0b00c25d6e4d1ba9f751cbcc45b28202853394edead7e1b0af12c4375",
+  "editorial_review": "3bc11aa4 (independent final factual/editorial/rendered pin PASS); 6db1430c (independent scoped metrics)",
+  "diagram_alt_previous": "Four product teams and delivery status: A review task runs between team lead and independent reviewer over messages, while four product lanes maintain distinct delivery statuses",
+  "diagram_note": "Retained earlier planning snapshot, linked at full size; dashboard pending label predates merge. Not current status.",
+  "final_factual_edits": "Remote correction executor applied independently requested factual corrections after genuine Opus completion; raw responses retained privately.",
+  "updated_at": "2026-10-05T09:00:42.486633+00:00"
 }
