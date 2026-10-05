@@ -1,6 +1,6 @@
 # REPORT: Authoritative Technical Audit & Diagnostic of Sessionless Executor Routes & Admission Gates
 
-**Directives**: Codex Principal Directive C2229  
+**Directives**: Codex Principal Directives C2229, C2238, C2239  
 **Author / Role**: Self-Organization Architect (tag: `architect06`)  
 **Parent**: `antigravity-head` (`46fdb644`, id: `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)  
 **Workspace**: `/home/alexey/git/cloudflare-agent-git`  
@@ -12,16 +12,16 @@
 
 ## 1. Executive Summary
 
-Under Codex Principal Directive C2229, an authoritative technical audit and diagnostic of all sessionless alternative executor routes and admission gates was conducted for `agent-quota-launcher` and the self-organization subsystem.
+Under Codex Principal Directives C2229, C2238, and C2239, an authoritative technical audit and diagnostic of all sessionless alternative executor routes and admission gates was conducted for `agent-quota-launcher` and the self-organization subsystem.
 
 ### 1.1 Key Diagnostic Findings & Route Summary
 
 | Route / Provider | Target Model | Binary Path | Quota Status | Admission Gate Status | Execution Verdict |
 |---|---|---|---|---|---|
-| **Route 1: `zai`** | `glm-5.3-flash` | `/home/alexey/.local/bin/zcodex` | 99% (5h), 67% (7d) | **HELD** | Inactive outside 17:00–03:00 Berlin campaign window (~03:44); unconfined `/tmp` file creation risk. |
-| **Route 2: `grok`** | `grok-4.6` | `/home/alexey/.local/bin/grok` | 68% (7d) | **FAILING / BLOCKED** | Syntax error in launcher recipe: passes `grok -p --model...` instead of `grok -p <PROMPT>`, causing exit code 2 argument error. |
-| **Route 3: `antigravity`** | `gemini-3.1-pro-high` | `/home/alexey/.local/bin/agy` | 95.8% (5h), 70.8% (7d) | **ADMITTED & HEALTHY** | Fully verified; clean Go binary within 1500M kernel limit; respects `$TMPDIR` containment. |
-| **Route 4: `opencode`** | `space-bunny-free`, `muse-spark-1.3` | `/home/alexey/.nvm/.../bin/opencode` | 100% (5h), 100% (7d) | **FAIL-CLOSED / BLOCKED** | Completely absent from `launcher/admission.py` (`ADAPTER_ROUTES`) and `launcher/launch.py` (`ADAPTERS`); fails with `Unsupported provider`. |
+| **Route 1: `zai`** | `glm-5.3-flash` | `/home/alexey/.local/bin/zcodex` | 99% (5h), 67% (7d) | **HELD** | Outside 17:00–03:00 Berlin promotional campaign window (~03:44; uses verified ordinary allowance per policy), but held on unconfined `/tmp` containment risk; nested CJS execution unverified without runtime receipt. |
+| **Route 2: `grok`** | `grok-4.6` | `/home/alexey/.local/bin/grok` | 68% (7d) | **FAILING / BLOCKED** | Syntax error in launcher recipe: passes `grok -p --model...` instead of `grok -p <PROMPT>`, causing exit code 2 argument error. Fix: place `-p` at end of argv. |
+| **Route 3: `antigravity`** | `gemini-3.1-pro-high` | `/home/alexey/.local/bin/agy` | 95.8% (5h), 70.8% (7d) | **CANDIDATE / SOURCE-COMPATIBLE** | Syntax & OAuth unsetting verified; live execution under systemd scope with active cgroup MemoryMax/PID/TMP audit and model response remains pending contained trial. Prefer Flash models per resource policy. |
+| **Route 4: `opencode`** | `space-bunny-free`, `muse-spark-1.3` | `/home/alexey/.nvm/.../bin/opencode` | 100% (5h), 100% (7d) on `go` | **FAIL-CLOSED / BLOCKED** | Completely absent from `launcher/admission.py` (`ADAPTER_ROUTES`) and `launcher/launch.py` (`ADAPTERS`); `models` listing proves discovery only, not runtime execution. |
 
 ---
 
@@ -91,17 +91,18 @@ An audit reading was captured directly via `quse --json` on 2026-10-05T01:43:58Z
 
 ### 3.1 Route 1: `zai` (GLM-5.3-Flash via `zcodex`)
 
-1. **Binary Verification**:
+1. **Binary & Wrapper Verification**:
    - Location: `/home/alexey/.local/bin/zcodex` (mode `0755`).
-   - Type: POSIX shell wrapper invoking `/home/alexey/.local/lib/zcodex/zcodex "$@"`.
-2. **Root TMPDIR Containment Audit**:
-   - Invariant: Host `/tmp` must experience zero net growth. All temporary files must be strictly confined to `.local/scratch/`.
-   - Finding: `zcodex` executes against `/opt/ZCode/resources/glm/zcode.cjs`. Without nested isolated directory jail verification, native node/NAPI bindings within `zcode.cjs` risk spawning temporary IPC files and caches directly in `/tmp`. `zcodex` model invocation remains held until proof of nested temporary file confinement is established.
-3. **Time-Aware Routing Audit (Human34 Directive)**:
-   - Directive Rule: The free promotional GLM-5.3-Flash campaign window is strictly **17:00–03:00 Europe/Berlin**.
+   - Implementation: Bourne-Again shell wrapper script invoking `/home/alexey/.local/lib/zcodex/zcodex "$@"`.
+   - Execution Mapping: The underlying binary maps to `/opt/ZCode/resources/glm/zcode.cjs`. This nested CJS execution mapping remains unverified in this audit without a live, contained runtime execution receipt.
+2. **Quota Policy & Time Window Clarification (Human34 Directive)**:
    - Time of Audit: `Mon Oct 5 03:44:08 CEST 2026` (~03:44 Berlin).
-   - Evaluation: The current time is outside the promotional window. Executing `zai` now incurs full paid allowance consumption rather than the authorized promotional campaign route.
-4. **Verdict**: **HELD** (Time window closed; `/tmp` containment unproven).
+   - Campaign Window: The promotional zero-consumption campaign for GLM-5.3-Flash operates strictly between **17:00–03:00 Europe/Berlin**.
+   - Allowance Status: Per `coordination/RESOURCE-POLICY.md` (lines 50–58), execution outside the 17:00–03:00 Berlin window is authorized to use verified ordinary paid allowance (not unauthorized spend). However, during this window, free zero-consumption routing does not apply.
+3. **Root TMPDIR Containment Constraint (Primary Hold)**:
+   - Invariant: Host `/tmp` must experience zero net growth; all temporary files must reside strictly within isolated scratch storage.
+   - Finding: Invoking `zcodex` risks unconfined `/tmp` file creation by the Node.js/NAPI/CJS runtime unless strictly wrapped with verifiable nested temp jail isolation.
+4. **Verdict**: **HELD** (Held specifically on the root `TMPDIR` containment constraint; nested CJS execution mapping unverified without runtime receipt).
 
 ---
 
@@ -110,7 +111,7 @@ An audit reading was captured directly via `quse --json` on 2026-10-05T01:43:58Z
 1. **Binary Verification**:
    - Location: `/home/alexey/.local/bin/grok` -> `/home/alexey/.grok/bin/grok`.
    - Tool Version: Grok Build TUI v0.1.0-alpha.
-2. **Launcher Adapter Recipe Audit**:
+2. **Launcher Adapter Recipe Defect**:
    - In `/home/alexey/git/agent-quota-launcher/launcher/launch.py`:
      ```python
      ADAPTERS["grok"] = {
@@ -131,11 +132,14 @@ An audit reading was captured directly via `quse --json` on 2026-10-05T01:43:58Z
 
      For more information, try '--help'.
      ```
-4. **Root Cause Analysis**:
-   - In `grok --help`, the definition of `-p` is `-p, --single <PROMPT>`: Single-turn prompt that takes a positional value immediately.
-   - Because clap/rust treats tokens starting with `-` as options, `--model` cannot be consumed as the value for `--single`.
-   - Consequently, `grok` aborts with exit code 2 before communicating with the model or initializing the session.
-5. **Verdict**: **FAILING / BLOCKED** (Launcher adapter recipe syntax error).
+4. **Root Cause Analysis & Concrete Candidate Fix**:
+   - In `grok --help`, the definition of `-p` is `-p, --single <PROMPT>`: A single-turn prompt flag that expects `<PROMPT>` immediately following `-p`.
+   - Because clap/rust treats tokens starting with `-` as option flags rather than argument values, `--model` is rejected as a prompt value for `--single`.
+   - **Candidate Fix**: Place `-p` at the end of the argument vector so that the appended `<goal>` becomes the immediate value for `-p`:
+     ```python
+     "argv": ["grok", "--model", "grok-4.6", "--effort", "high", "--permission-mode", "auto", "-p"]
+     ```
+5. **Verdict**: **FAILING / BLOCKED** (Launcher adapter recipe syntax error; fix identified).
 
 ---
 
@@ -158,20 +162,22 @@ An audit reading was captured directly via `quse --json` on 2026-10-05T01:43:58Z
      }
      ```
    - Invocation: Stripping ambient `GEMINI_API_KEY` and `GOOGLE_API_KEY` forces OAuth authentication against local credentials, avoiding unauthorized API billing.
-3. **Kernel Resource Limits & Containment Evaluation**:
-   - **Systemd Scope & Cgroups**: `aplexer` spawns sessions with `--memory 1500M` and `--pids 100`. `agy` runs as a compact Go process with steady-state RSS between 80 MiB and 250 MiB, never triggering cgroup OOM.
-   - **Root TMPDIR Containment**: `aplexer` injects `--env TMPDIR=<scratch_tmp>` into the child environment. `agy` conforms to `$TMPDIR` for socket, lock, and temporary transcript files, ensuring zero writes to host `/tmp`.
-4. **Verdict**: **ADMITTED & HEALTHY** (Currently the primary viable sessionless alternative route).
+3. **Status Demarcation & Model Preference**:
+   - **CLI Compatibility**: The CLI flag syntax, OAuth environment unsetting, and argument positioning are verified source-compatible.
+   - **Pending Trial**: Live execution under an `aplexer` systemd scope with active cgroup `MemoryMax=1500M`, `TasksMax=100`, `$TMPDIR` containment audit, and verified model response generation remains pending a dedicated contained trial before full production admission.
+   - **Model Policy Alignment**: Per current resource policy, model routing should prefer eligible Flash models (e.g. Gemini 2.5 Flash / Flash-Lite) where supported, matching exact model tier quotas and preserving Pro quotas for high-complexity architectural reasoning.
+4. **Verdict**: **CANDIDATE / SOURCE-COMPATIBLE (CONTAINED MODEL TRIAL PENDING ADMISSION RECEIPT)**.
 
 ---
 
 ### 3.4 Route 4: `opencode` (Space Bunny / Muse Spark 1.3)
 
-1. **Binary Verification**:
+1. **Binary Verification & CLI Discovery Boundary**:
    - Location: `/home/alexey/.nvm/versions/node/v24.13.1/bin/opencode` (v1.18.31).
-2. **Model Availability**:
-   - `opencode models` confirms `opencode/space-bunny-free` and `opencode/muse-spark-1.3-contributor-free` are installed and operational.
-   - `quse --json` confirms `go` has 100% 5h, 100% 7d, and 81% monthly quota remaining.
+   - Discovery vs. Proven Execution: `opencode models` confirms that `opencode/space-bunny-free` and `opencode/muse-spark-1.3-contributor-free` appear in model discovery. However, CLI discovery does NOT demonstrate proven runtime execution or successful model invocation under batch constraints.
+2. **Quota Demarcation (`opencode-go` vs. Free Routes)**:
+   - In `quse --json`, the `go` provider entry reflects **opencode-go** commercial allowance (100% 5h, 100% 7d, 81% monthly).
+   - This `opencode-go` quota is distinct from the third-party contributor/free routes (`opencode/space-bunny-free`, `opencode/muse-spark-1.3-contributor-free`).
 3. **Launcher Admission & Dispatch Defect**:
    - In `launcher/admission.py`:
      ```python
@@ -183,30 +189,26 @@ An audit reading was captured directly via `quse --json` on 2026-10-05T01:43:58Z
      ```
    - In `launcher/launch.py`:
      `ADAPTERS` does not define `"opencode"`. Calling `build_adapter_argv("opencode", goal)` raises `ValueError("Unsupported provider: opencode")`.
-4. **Verdict**: **FAIL-CLOSED / BLOCKED** (Missing from launcher adapter and admission tables).
+4. **Verdict**: **FAIL-CLOSED / BLOCKED** (Missing from launcher adapter and admission tables; discovery proven, runtime unproven).
 
 ---
 
 ## 4. Remediation Recommendations for Self-Organization
 
-To restore full four-provider multi-model execution pool capacity:
+To restore multi-provider execution capacity under strict containment:
 
 1. **Fix Grok Launcher Recipe**:
-   Change `ADAPTERS["grok"]["argv"]` in `launcher/launch.py` to place `--model grok-4.6 --effort high --permission-mode auto` before `-p`, or pass `-p` immediately before the goal:
+   Update `ADAPTERS["grok"]["argv"]` in `launcher/launch.py` to place `-p` at the end:
    ```python
    "argv": ["grok", "--model", "grok-4.6", "--effort", "high", "--permission-mode", "auto", "-p"]
    ```
-2. **Add OpenCode Route to Launcher**:
+2. **Conduct Contained Antigravity Trial**:
+   Execute a single-turn contained smoke trial of `agy` within a dedicated scratch cgroup/TMPDIR to verify MemoryMax, PID bounds, and clean stdout text emission before full admission. Align default model selection with Flash where appropriate.
+3. **Add OpenCode Route to Launcher**:
    - Add `"opencode"` to `ADAPTER_ROUTES` and `ADAPTER_MODELS` in `launcher/admission.py`.
-   - Add `"opencode"` to `ADAPTERS` in `launcher/launch.py`:
-     ```python
-     "opencode": {
-         "argv": ["opencode", "run", "--model", "opencode/space-bunny-free"],
-         "env": {},
-     }
-     ```
-3. **Confine ZCode / zcodex Temporary Storage**:
-   Wrap `zcodex` execution with verified `TMPDIR` redirection and isolated directory sandboxing before scheduling within the 17:00–03:00 Berlin window.
+   - Add `"opencode"` to `ADAPTERS` in `launcher/launch.py` with verified free model targets (`space-bunny-free` / `muse-spark-1.3-contributor-free`).
+4. **Verify ZCode Runtime Jailing**:
+   Implement and prove isolated `TMPDIR` redirection for `zcodex` before enabling ordinary allowance execution outside 17:00–03:00 Berlin or promotional execution inside the window.
 
 ---
 
