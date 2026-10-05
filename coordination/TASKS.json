@@ -5191,9 +5191,9 @@
       "owner_tag": "quota-launcher-head-gemini",
       "status": "ready",
       "assignment_ack": "01a10c4d-0922-71d0-a079-611bfd473e8e",
-      "updated_at": "2026-10-05T16:45:00.000000+00:00",
-      "deadline": "2026-10-05T16:45:00Z",
-      "due_checkpoint": "2026-10-05T18:45:00+02:00",
+      "updated_at": "2026-10-05T16:55:00.000000+00:00",
+      "deadline": "2026-10-05T17:00:00Z",
+      "due_checkpoint": "2026-10-05T19:00:00+02:00",
       "active_worker_count": 0,
       "census": {
         "accepted_ready_count": 18,
@@ -5203,26 +5203,31 @@
         "machine_id": "hetzner-bare-metal-main",
         "mem_total_kib": 65765232,
         "mem_total_gib": 62.72,
-        "mem_available_kib": 37928720,
-        "mem_available_gib": 36.17,
+        "mem_available_kib": 37945724,
+        "mem_available_gib": 36.18,
         "swap_total_kib": 33554428,
-        "root_free_bytes": 54240849920,
-        "root_free_gib": 50.516,
+        "root_free_bytes": 54210473984,
+        "root_free_gib": 50.487,
+        "required_floor_plus_spike_bytes": 54223962112,
+        "spike_margin_bytes": -13488128,
+        "spike_margin_mib": -12.86,
         "laptop_status": "non-durable; no extra cloud spend authorized",
-        "measured_single_host_feasible_cap": "At 768M MemoryMax per worker, 10 workers require 7.68 GiB RAM (preserving 28.5 GiB MemAvailable), 15 workers require 11.52 GiB (preserving 24.65 GiB MemAvailable), 20 workers require 15.36 GiB (preserving 20.8 GiB MemAvailable >= 10 GiB floor). 50 workers at 768M require 38.4 GiB RAM which exceeds 36.17 GiB MemAvailable. Reaching 50 concurrency requires either: (a) lower verified worker footprints (e.g. 512M MemoryMax requires 25.6 GiB RAM, fitting within MemAvailable with 10.57 GiB margin above 10 GiB floor, but requiring measured CLI profile verification); or (b) additional authorized host capacity (at least 1 additional bare-metal host with >=32 GiB RAM and >=50 GiB NVMe)."
+        "measured_single_host_feasible_cap": "At 768M MemoryMax per worker, 10 workers require 7.68 GiB RAM (preserving 28.5 GiB MemAvailable), 15 workers require 11.52 GiB (preserving 24.66 GiB MemAvailable), 20 workers require 15.36 GiB (preserving 20.82 GiB MemAvailable >= 10 GiB floor). 50 workers at 768M require 38.4 GiB RAM which exceeds 36.18 GiB MemAvailable. Concurrency 50 cannot be claimed on single host without verified lower profiles (e.g. 512M) or additional authorized bare-metal host hardware.",
+        "launch_gate_status": "LAUNCHES HELD: root free is 50.487 GiB, which is -12.86 MiB below the mandatory 50.0 GiB + 512 MiB spike threshold (50.500 GiB). Zero launches permitted until disk passes floor + spike."
       },
-      "next_action": "QL commit 8486acf delivers contained task-local TMPDIR derivation and review-gated refill (183/183 tests pass); scale50-17 accepted (review 5c4d244/d904f66, SHA256 4e2a8844..., first-tool telemetry unknown due to text output); scale50-20 ready for retry under fresh 50 GiB + 512 MiB gate.",
+      "next_action": "QL commit a916090 delivers structured stream-json invocation and tool telemetry capture in task-units (187/187 tests pass); commit 8486acf accepted by Coord (8aa6505); commit a916090 submitted to Coord for distinct review. scale50-20 retry held until Coord code acceptance and root disk margin >= 50.5 GiB.",
       "blocked_on": [],
       "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
-        "agent-quota-launcher commit 8486acf (launcher/watch.py, launcher/cli.py, tests/test_watch.py)",
+        "agent-quota-launcher commit a916090 (launcher/launch.py, launcher/task_units.py, tests/test_telemetry.py)",
+        "agent-quota-launcher commit 8486acf (accepted by Coord in REV-QL-8486ACF-TMPDIR-REFILL-REVIEW.md)",
         "research/antigravity/reviews/REV-SCALE50-17-VOCABULARY-FIDELITY.md",
         ".local/scale50/ROOT-STORAGE-ATTRIBUTION.md",
         ".local/scale50/REMOTE-AUTONOMY-LAUNCHER-1830.md",
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ],
       "owner_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
-      "first_action": "In-session launcher recovery executed: unmocked 2-cycle useful LLM pipeline (scale50-07 opencode audit -> review -> refill -> scale50-08 agy audit -> review) verified exit 0, PIDs/invocations recorded in REMOTE-AUTONOMY-LAUNCHER-1830.md. Critical bug in launcher/launch.py:44 (-p placement) diagnosed and verified. Pinned runtime change committed and pushed: QL commit 181b522 (reviewer review-scale50-refill ACCEPT, 176/176 tests pass); AB branches sync git commit 1fa3ab9 (reviewer review-branches-sync-v2 ACCEPT, 72/72 tests pass); AgentBus adapter commit 48ab4fb reviewed (ACCEPT). Contained task-local TMPDIR derivation and review-gated refill implemented and tested in QL commit 8486acf (183/183 tests pass). Storage capacity verified >=50.51 GiB root free."
+      "first_action": "In-session launcher recovery executed: unmocked 2-cycle useful LLM pipeline (scale50-07 opencode audit -> review -> refill -> scale50-08 agy audit -> review) verified exit 0, PIDs/invocations recorded in REMOTE-AUTONOMY-LAUNCHER-1830.md. Critical bug in launcher/launch.py:44 (-p placement) diagnosed and verified. Pinned runtime change committed and pushed: QL commit 181b522 (reviewer review-scale50-refill ACCEPT, 176/176 tests pass); AB branches sync git commit 1fa3ab9 (reviewer review-branches-sync-v2 ACCEPT, 72/72 tests pass); AgentBus adapter commit 48ab4fb reviewed (ACCEPT). Contained task-local TMPDIR derivation and review-gated refill implemented in QL commit 8486acf (accepted by Coord 8aa6505). Structured invocation/tool telemetry capture implemented in QL commit a916090 (187/187 tests pass). Launch gate strictly held at 50.487 GiB root free."
     },
     {
       "id": "REMOTE-AUTONOMY-BUS-1830",
