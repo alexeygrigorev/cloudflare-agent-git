@@ -53,10 +53,12 @@ from research.antigravity.tooling.self_org.launcher_bus_bridge import (
     _bounded_pipe_pump,
     validate_route_to_command,
     MAX_DISK_LOG_BYTES,
+    get_canonical_launcher_paths,
 )
 from research.antigravity.tooling.self_org.child_adapter import ChildAdapter
 from research.antigravity.tooling.self_org.lease_manager import LeaseManager
 import launcher.resources
+from launcher.resources import check_resources
 import coordination.envelope
 from launcher.store import Store, RESOURCE_HOLDING_STATES
 from launcher.launch import build_adapter_argv, ADAPTERS
@@ -87,7 +89,7 @@ class TestLauncherBusBridge(unittest.TestCase):
         self.owned_tmp.mkdir(parents=True, exist_ok=True, mode=0o700)
 
         # Launcher Store DB
-        self.store_db = self.test_dir / "launcher_store.db"
+        self.store_db = self.owned_local / "launcher_store.db"
         self.store = Store(str(self.store_db))
 
         # Coordination Bus directory (mode 0700)
@@ -629,32 +631,39 @@ class TestLauncherBusBridge(unittest.TestCase):
         enrolling isolated agent-bus identity, and transitioning to starting under lock.
         """
         bus_bridge = AgentBusEnrollmentBridge(bus_dir=self.bus_dir)
-        runtime = ChildModelRuntimeAdapter(
-            store=self.store,
-            workspace=self.workspace,
-            bus_bridge=bus_bridge,
-        )
+        canonical_store = self.store_db
+        canonical_lock = self.workspace / ".local" / "test.lock"
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.get_canonical_launcher_paths",
+            return_value=(canonical_store, canonical_lock),
+        ):
+            runtime = ChildModelRuntimeAdapter(
+                store=self.store,
+                workspace=self.workspace,
+                bus_bridge=bus_bridge,
+                lock_path=canonical_lock,
+            )
 
-        valid_telemetry = {
-            "zai": {
-                "status": "ok",
-                "windows": {
-                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
-                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+            valid_telemetry = {
+                "zai": {
+                    "status": "ok",
+                    "windows": {
+                        "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                        "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                    },
                 },
-            },
-        }
+            }
 
-        dispatch = runtime.prepare_and_dispatch_task(
-            task_id="task-model-dispatch-1",
-            goal="Test model goal",
-            cwd=self.workspace,
-            timeout_sec=120.0,
-            requested_memory_mb=1500,
-            tmpdir=self.owned_tmp,
-            lock_path=self.workspace / ".local" / "test.lock",
-            quse_override=valid_telemetry,
-        )
+            dispatch = runtime.prepare_and_dispatch_task(
+                task_id="task-model-dispatch-1",
+                goal="Test model goal",
+                cwd=self.workspace,
+                timeout_sec=120.0,
+                requested_memory_mb=1500,
+                tmpdir=self.owned_tmp,
+                lock_path=canonical_lock,
+                quse_override=valid_telemetry,
+            )
 
         self.assertEqual(dispatch["task_id"], "task-model-dispatch-1")
         self.assertEqual(dispatch["status"], "starting")
@@ -1665,7 +1674,12 @@ class TestLauncherBusBridge(unittest.TestCase):
         benign_goal_grok = build_adapter_argv("grok", "Compare with opencode and codex")
         validate_route_to_command("grok", benign_goal_grok)
 
-        benign_goal_agy = build_adapter_argv("antigravity", "Refactor codex adapter bridge")
+        benign_goal_agy = [
+            "env", "-u", "GEMINI_API_KEY", "-u", "GOOGLE_API_KEY",
+            "agy", "--model", "gemini-3.7-flash-medium", "--effort", "medium",
+            "--dangerously-skip-permissions", "--print-timeout", "0",
+            "--output-format", "text", "-p", "Refactor codex adapter bridge",
+        ]
         validate_route_to_command("antigravity", benign_goal_agy)
 
     # -----------------------------------------------------------------------
@@ -1827,11 +1841,14 @@ class TestLauncherBusBridge(unittest.TestCase):
             validate_route_to_command("antigravity", ["agy", "my_goal"])
         self.assertIn("Route recipe violation", str(cm.exception))
 
-        # Valid antigravity recipe passes
-        validate_route_to_command(
-            "antigravity",
-            build_adapter_argv("antigravity", "my_goal"),
-        )
+        # Valid antigravity recipe passes (C2261 Flash model route with -p adjacent to goal)
+        valid_agy_cmd = [
+            "env", "-u", "GEMINI_API_KEY", "-u", "GOOGLE_API_KEY",
+            "agy", "--model", "gemini-3.7-flash-medium", "--effort", "medium",
+            "--dangerously-skip-permissions", "--print-timeout", "0",
+            "--output-format", "text", "-p", "my_goal",
+        ]
+        validate_route_to_command("antigravity", valid_agy_cmd)
 
     # -----------------------------------------------------------------------
     # Test 32: Local Probe Zero Quota Guarantees and Store Recording (C2118)
@@ -1969,6 +1986,396 @@ class TestLauncherBusBridge(unittest.TestCase):
         with open(containment_receipt, "r", encoding="utf-8") as f:
             c_receipt = json.load(f)
         self.assertEqual(c_receipt["unit"], result["unit_name"])
+
+    # -----------------------------------------------------------------------
+    # Test 34: Canonical Launcher Paths Default Resolution (C2261)
+    # -----------------------------------------------------------------------
+    def test_34_c2261_default_resolves_to_canonical_launcher_paths(self) -> None:
+        """
+        Verify get_canonical_launcher_paths resolution:
+        1. Defaults to ~/.config/agent-quota-launcher/(state.db, launch.lock) when env is unset.
+        2. Respects AGENT_QUOTA_LAUNCHER_CONFIG_DIR when set.
+        3. Respects explicit config_dir parameter.
+        4. ChildModelRuntimeAdapter() with no arguments defaults to canonical store and lock paths
+           with is_test_fixture=False.
+        """
+        # 1. Default resolution (no env var, no arg)
+        old_env = os.environ.pop("AGENT_QUOTA_LAUNCHER_CONFIG_DIR", None)
+        try:
+            db_path, lock_path = get_canonical_launcher_paths(None)
+            expected_cfg = Path("~/.config/agent-quota-launcher").expanduser().resolve()
+            self.assertEqual(db_path, expected_cfg / "state.db")
+            self.assertEqual(lock_path, expected_cfg / "launch.lock")
+
+            # 2. Env var is strictly IGNORED (C2268 matches canonical launcher.cli.config_dir_for)
+            custom_env_dir = self.workspace / ".local" / "env_config_dir"
+            os.environ["AGENT_QUOTA_LAUNCHER_CONFIG_DIR"] = str(custom_env_dir)
+            db_env, lock_env = get_canonical_launcher_paths(None)
+            self.assertEqual(db_env, expected_cfg / "state.db")
+            self.assertEqual(lock_env, expected_cfg / "launch.lock")
+
+            # 3. Explicit config_dir argument returns configured directory
+            override_dir = self.workspace / ".local" / "override_cfg"
+            db_over, lock_over = get_canonical_launcher_paths(override_dir)
+            self.assertEqual(db_over, override_dir.resolve() / "state.db")
+            self.assertEqual(lock_over, override_dir.resolve() / "launch.lock")
+        finally:
+            if old_env is not None:
+                os.environ["AGENT_QUOTA_LAUNCHER_CONFIG_DIR"] = old_env
+            else:
+                os.environ.pop("AGENT_QUOTA_LAUNCHER_CONFIG_DIR", None)
+
+        # 4. Default ChildModelRuntimeAdapter resolution
+        default_runtime = ChildModelRuntimeAdapter(workspace=self.workspace)
+        expected_db, expected_lock = get_canonical_launcher_paths(None)
+        self.assertEqual(Path(default_runtime.store.db_path).resolve(), expected_db)
+        self.assertEqual(default_runtime.lock_path, expected_lock)
+        self.assertFalse(default_runtime.is_test_fixture)
+
+    # -----------------------------------------------------------------------
+    # Test 35: Disjoint Store and Lock Paths Fails Before Launch (C2261)
+    # -----------------------------------------------------------------------
+    def test_35_c2261_disjoint_store_and_lock_fails_before_launch(self) -> None:
+        """
+        Verify that if store.db_path and lock_path are in disjoint directories,
+        pre-launch negative gate 1 immediately raises ResourceAdmissionError
+        before attempting launch, quse, or systemd scope.
+        """
+        dir_a = self.workspace / ".local" / "dir_a"
+        dir_b = self.workspace / ".local" / "dir_b"
+        dir_a.mkdir(parents=True, exist_ok=True)
+        dir_b.mkdir(parents=True, exist_ok=True)
+
+        store_a = Store(str(dir_a / "state.db"))
+        disjoint_lock = dir_b / "launch.lock"
+
+        runtime = ChildModelRuntimeAdapter(
+            store=store_a,
+            workspace=self.workspace,
+            lock_path=disjoint_lock,
+            is_test_fixture=True,
+        )
+
+        # Verify prepare_and_dispatch_task rejects disjoint paths
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            runtime.prepare_and_dispatch_task(
+                task_id="t-disjoint-1",
+                goal="test goal",
+                cwd=self.workspace,
+                lock_path=disjoint_lock,
+            )
+        self.assertIn("Disjoint store and lock paths", str(cm.exception))
+        self.assertIn("Shared admission requires co-located canonical store and lock", str(cm.exception))
+
+        # Verify execute_in_verified_systemd_scope rejects disjoint paths
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            runtime.execute_in_verified_systemd_scope(
+                task_id="t-disjoint-2",
+                command_argv=["echo", "test"],
+                cwd=self.workspace,
+                lock_path=disjoint_lock,
+                is_local_probe=True,
+            )
+        self.assertIn("Disjoint store and lock paths", str(cm.exception))
+
+    # -----------------------------------------------------------------------
+    # Test 36: Alternative Store Rejected for Real Model Route (C2261)
+    # -----------------------------------------------------------------------
+    def test_36_c2261_alternative_store_rejected_for_real_model_route(self) -> None:
+        """
+        Verify pre-launch negative gate 2:
+        Non-canonical fixture stores are strictly non-runtime test fixtures.
+        Dispatching a real model route (is_local_probe=False) against a fixture store
+        strictly raises ResourceAdmissionError.
+        """
+        fixture_dir = self.workspace / ".local" / "fixture_dir"
+        fixture_dir.mkdir(parents=True, exist_ok=True)
+        fixture_store = Store(str(fixture_dir / "state.db"))
+        fixture_lock = fixture_dir / "launch.lock"
+
+        runtime = ChildModelRuntimeAdapter(
+            store=fixture_store,
+            workspace=self.workspace,
+            lock_path=fixture_lock,
+            is_test_fixture=True,
+        )
+
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        # 1. prepare_and_dispatch_under_launch_lock rejects real model route on fixture store
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            runtime.prepare_and_dispatch_under_launch_lock(
+                task_id="t-c2261-fixture-reject-1",
+                goal="Real model goal",
+                cwd=self.workspace,
+                lock_path=fixture_lock,
+                quse_override=valid_telemetry,
+                is_local_probe=False,
+            )
+        self.assertIn("Real model route requires exact canonical shared store", str(cm.exception))
+
+        # 2. execute_in_verified_systemd_scope rejects real model route on fixture store
+        model_cmd = build_adapter_argv("zai", "real model task")
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            runtime.execute_in_verified_systemd_scope(
+                task_id="t-c2261-fixture-reject-2",
+                command_argv=model_cmd,
+                cwd=self.workspace,
+                lock_path=fixture_lock,
+                quse_override=valid_telemetry,
+                is_local_probe=False,
+            )
+        self.assertIn("Real model route requires exact canonical shared store", str(cm.exception))
+
+        # 3. Local probe (is_local_probe=True) on fixture store is allowed
+        probe_res = runtime.execute_in_verified_systemd_scope(
+            task_id="t-c2261-probe-allowed",
+            command_argv=["echo", "probe-ok"],
+            cwd=self.workspace,
+            lock_path=fixture_lock,
+            is_local_probe=True,
+        )
+        self.assertEqual(probe_res["returncode"], 0)
+        self.assertEqual(runtime.store.get_task("t-c2261-probe-allowed")["state"], "completed-awaiting-review")
+
+    # -----------------------------------------------------------------------
+    # Test 37: Flash Model Route Validates Model and Argv Ordering (C2261)
+    # -----------------------------------------------------------------------
+    def test_37_c2261_flash_model_route_validates_model_and_argv_ordering(self) -> None:
+        """
+        Verify exact Flash model route and argv binding under validate_route_to_command:
+        1. Authorized models: gemini-3.7-flash-medium and gemini-3.1-pro-high.
+        2. Unauthorized models rejected with ResourceAdmissionError.
+        3. -p must be preceded by --print-timeout and --output-format, and immediately followed by prompt.
+        4. Option-like strings or flags after -p raise ResourceAdmissionError.
+        """
+        # 1. Valid flash model recipe
+        valid_flash = [
+            "env", "-u", "GEMINI_API_KEY", "-u", "GOOGLE_API_KEY",
+            "agy", "--model", "gemini-3.7-flash-medium", "--effort", "medium",
+            "--dangerously-skip-permissions", "--print-timeout", "0",
+            "--output-format", "text", "-p", "valid prompt",
+        ]
+        validate_route_to_command("antigravity", valid_flash)
+        validate_route_to_command("gemini", valid_flash)
+
+        # 2. Valid pro model recipe with corrected ordering
+        valid_pro = [
+            "env", "-u", "GEMINI_API_KEY", "-u", "GOOGLE_API_KEY",
+            "agy", "--model", "gemini-3.1-pro-high", "--effort", "high",
+            "--dangerously-skip-permissions", "--print-timeout", "0",
+            "--output-format", "text", "-p", "valid prompt",
+        ]
+        validate_route_to_command("antigravity", valid_pro)
+
+        # 3. Unauthorized model
+        unauth_model = list(valid_flash)
+        unauth_model[unauth_model.index("--model") + 1] = "unauthorized-custom-model"
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("antigravity", unauth_model)
+        self.assertIn("Unauthorized antigravity model 'unauthorized-custom-model'", str(cm.exception))
+
+        # 4. Misordered -p before --print-timeout
+        misordered_p = [
+            "env", "-u", "GEMINI_API_KEY", "-u", "GOOGLE_API_KEY",
+            "agy", "--model", "gemini-3.7-flash-medium", "--effort", "medium",
+            "--dangerously-skip-permissions", "-p", "--print-timeout", "0",
+            "--output-format", "text", "prompt",
+        ]
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("antigravity", misordered_p)
+        self.assertIn("Malformed agy argv: -p must be followed by prompt string, not options", str(cm.exception))
+
+        # 5. -p followed by another flag instead of prompt
+        flag_after_p = [
+            "env", "-u", "GEMINI_API_KEY", "-u", "GOOGLE_API_KEY",
+            "agy", "--model", "gemini-3.7-flash-medium", "--effort", "medium",
+            "--dangerously-skip-permissions", "--print-timeout", "0",
+            "--output-format", "text", "-p", "--model",
+        ]
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("antigravity", flag_after_p)
+        self.assertIn("Malformed agy argv: -p must be followed by prompt string, not options", str(cm.exception))
+
+    # -----------------------------------------------------------------------
+    # Test 38: Shared Resource Accounting Honors Stalled Reservations (C2261)
+    # -----------------------------------------------------------------------
+    def test_38_c2261_shared_resource_accounting_honors_stalled_reservations(self) -> None:
+        """
+        Verify that canonical Store.get_active_resources() and check_resources
+        honor stalled reservations:
+        1. RESOURCE_HOLDING_STATES includes 'stalled'.
+        2. Tasks in 'stalled' state retain active memory and disk reservations.
+        3. Store transition to terminal state ('failed') releases reservations.
+        """
+        self.assertIn("stalled", RESOURCE_HOLDING_STATES)
+
+        test_dir = self.workspace / ".local" / "t38_store"
+        test_dir.mkdir(parents=True, exist_ok=True)
+        store = Store(str(test_dir / "state.db"))
+
+        # Submit task with 600 MB memory, 1000 MB disk
+        store.submit_task(
+            task_id="t38-task-1",
+            idempotency_key="key-t38-1",
+            payload={"owner": "antigravity-head", "cwd": str(self.workspace), "timeout": 120.0, "goal": "stalled test task"},
+            paths=[str(test_dir)],
+            memory_mb=600,
+            disk_mb=1000,
+        )
+
+        # Transition queued -> starting -> stalled
+        store.transition_task("t38-task-1", "starting", ("queued",), reason="starting")
+        store.transition_task("t38-task-1", "stalled", ("starting",), reason="heartbeat missing")
+
+        active_mem, active_disk = store.get_active_resources()
+        self.assertEqual(active_mem, 600)
+        self.assertEqual(active_disk, 1000)
+
+        # Verify check_resources accounts for the active stalled reservation
+        res_ok = check_resources(
+            requested_memory_mb=500,
+            requested_cwd=str(self.workspace),
+            requested_tmpdir=str(self.owned_tmp),
+            active_mem_mb=active_mem,
+            active_disk_mb=active_disk,
+            repo_root=str(self.workspace),
+        )
+        self.assertTrue(res_ok)
+
+        # If active stalled reservation pushes memory below host threshold, check_resources fails
+        with patch("launcher.resources.get_mem_available", return_value=10 * 1024 * 1024 * 1024 + 500 * 1024 * 1024):
+            with self.assertRaises(ValueError) as cm:
+                check_resources(
+                    requested_memory_mb=500,
+                    requested_cwd=str(self.workspace),
+                    requested_tmpdir=str(self.owned_tmp),
+                    active_mem_mb=active_mem,
+                    active_disk_mb=active_disk,
+                    repo_root=str(self.workspace),
+                )
+            self.assertIn("host MemAvailable < 10GiB", str(cm.exception))
+
+        # Transition stalled -> failed releases resources
+        store.transition_task("t38-task-1", "failed", ("stalled",), reason="terminal failure")
+        released_mem, released_disk = store.get_active_resources()
+        self.assertEqual(released_mem, 0)
+        self.assertEqual(released_disk, 0)
+
+    # -----------------------------------------------------------------------
+    # Test 39: Exact Canonical Lock Matching and Explicit Canonical Construction (C2268)
+    # -----------------------------------------------------------------------
+    def test_39_c2268_exact_canonical_matching_and_explicit_construction(self) -> None:
+        """
+        Verify Directive C2268 exact canonical matching and explicit construction:
+        1. Same-folder different-lock (co-located in canonical dir, but non-canonical lock file)
+           fails closed on real model route with ResourceAdmissionError.
+        2. Explicitly passed canonical pair (store=Store(canonical_store), lock_path=canonical_lock)
+           is recognized as legitimate canonical runtime (is_test_fixture=False) and admitted
+           for real model route.
+        """
+        canonical_dir = self.workspace / ".local" / "canonical_sim"
+        canonical_dir.mkdir(parents=True, exist_ok=True)
+        canonical_store = canonical_dir / "state.db"
+        canonical_lock = canonical_dir / "launch.lock"
+        other_lock = canonical_dir / "other.lock"
+
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.get_canonical_launcher_paths",
+            return_value=(canonical_store, canonical_lock),
+        ):
+            # 1. Negative: Same-folder different-lock fails closed on real model route
+            runtime_diff_lock = ChildModelRuntimeAdapter(
+                store=Store(str(canonical_store)),
+                workspace=self.workspace,
+                lock_path=other_lock,
+            )
+            self.assertTrue(runtime_diff_lock.is_test_fixture)
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                runtime_diff_lock.prepare_and_dispatch_under_launch_lock(
+                    task_id="t-c2268-diff-lock",
+                    goal="Real model goal",
+                    cwd=self.workspace,
+                    lock_path=other_lock,
+                    quse_override=valid_telemetry,
+                    is_local_probe=False,
+                )
+            self.assertIn("Real model route requires exact canonical shared store", str(cm.exception))
+            self.assertIn("other.lock", str(cm.exception))
+
+            # 2. Positive: Explicitly passed canonical pair is recognized as legitimate canonical
+            runtime_canon = ChildModelRuntimeAdapter(
+                store=Store(str(canonical_store)),
+                workspace=self.workspace,
+                lock_path=canonical_lock,
+            )
+            self.assertFalse(runtime_canon.is_test_fixture)
+            dispatch = runtime_canon.prepare_and_dispatch_under_launch_lock(
+                task_id="t-c2268-canon-ok",
+                goal="Real model goal",
+                cwd=self.workspace,
+                lock_path=canonical_lock,
+                quse_override=valid_telemetry,
+                is_local_probe=False,
+            )
+            self.assertEqual(dispatch["task_id"], "t-c2268-canon-ok")
+            self.assertEqual(dispatch["status"], "starting")
+            self.assertTrue(dispatch["quse_admitted"])
+
+    # -----------------------------------------------------------------------
+    # Test 40: Exact Binding Between Admitted Model and Command Recipe (C2271)
+    # -----------------------------------------------------------------------
+    def test_40_c2271_exact_model_binding_rejects_quota_smuggling(self) -> None:
+        """
+        Verify Directive C2271 exact model binding:
+        1. validate_route_to_command rejects command recipe model mismatching expected_model.
+        2. execute_in_verified_systemd_scope fails closed when admitted model != recipe model.
+        3. Matching model recipe succeeds.
+        """
+        flash_cmd = [
+            "env", "-u", "GEMINI_API_KEY", "-u", "GOOGLE_API_KEY",
+            "agy", "--model", "gemini-3.7-flash-medium", "--effort", "medium",
+            "--dangerously-skip-permissions", "--print-timeout", "0",
+            "--output-format", "text", "-p", "valid prompt",
+        ]
+        pro_cmd = [
+            "env", "-u", "GEMINI_API_KEY", "-u", "GOOGLE_API_KEY",
+            "agy", "--model", "gemini-3.1-pro-high", "--effort", "high",
+            "--dangerously-skip-permissions", "--print-timeout", "0",
+            "--output-format", "text", "-p", "valid prompt",
+        ]
+
+        # 1. Matching model succeeds
+        validate_route_to_command("antigravity", flash_cmd, expected_model="gemini-3.7-flash-medium")
+        validate_route_to_command("antigravity", pro_cmd, expected_model="gemini-3.1-pro-high")
+
+        # 2. Mismatched model fails closed (Flash admitted but Pro command)
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("antigravity", pro_cmd, expected_model="gemini-3.7-flash-medium")
+        self.assertIn("Model binding mismatch: command recipe model 'gemini-3.1-pro-high' does not match admitted/reserved model 'gemini-3.7-flash-medium' (C2271)", str(cm.exception))
+
+        # 3. Mismatched model fails closed (Pro admitted but Flash command)
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            validate_route_to_command("antigravity", flash_cmd, expected_model="gemini-3.1-pro-high")
+        self.assertIn("Model binding mismatch: command recipe model 'gemini-3.7-flash-medium' does not match admitted/reserved model 'gemini-3.1-pro-high' (C2271)", str(cm.exception))
 
 
 if __name__ == "__main__":

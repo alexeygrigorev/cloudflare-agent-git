@@ -935,9 +935,10 @@ def validate_route_to_command(
     provider: str,
     command_argv: List[str],
     is_local_probe: bool = False,
+    expected_model: Optional[str] = None,
 ) -> None:
     """
-    Enforces structured launcher recipe validation and local probe typing (C2106 / C2114 / C2118 / C2126).
+    Enforces structured launcher recipe validation and local probe typing (C2106 / C2114 / C2118 / C2126 / C2271).
 
     Guarantees:
     1. If is_local_probe is True:
@@ -953,6 +954,8 @@ def validate_route_to_command(
          * command_argv[:len(expected_prefix)] strictly matches canonical expected_prefix.
          * Trailing argument command_argv[-1] is the opaque goal string and is NOT token-scanned.
          * Any modified, injected, duplicate, or reordered options fail closed.
+       - Exact model binding (C2271): If command_argv specifies --model <model_name>, that model_name
+         MUST strictly match expected_model when expected_model is provided (and not "none").
     """
     if not command_argv:
         raise ResourceAdmissionError("command_argv must be non-empty")
@@ -982,12 +985,91 @@ def validate_route_to_command(
             f"Unknown or unsupported route provider '{provider}': fail-closed (zero permissive fallback; C2114 / C2126)"
         )
 
+    # Directive C2271: Exact model binding between admitted/reserved model and command recipe
+    if "--model" in command_argv:
+        m_idx = command_argv.index("--model")
+        if m_idx + 1 < len(command_argv):
+            model_name = command_argv[m_idx + 1]
+            if expected_model and expected_model != "none" and model_name != expected_model:
+                raise ResourceAdmissionError(
+                    f"Model binding mismatch: command recipe model '{model_name}' does not match admitted/reserved model '{expected_model}' (C2271)"
+                )
+
     # 3. Model route: strictly forbid python, python3, bash, sh, etc.
     if bin_name in FORBIDDEN_MODEL_INTERPRETERS:
         raise ResourceAdmissionError(
             f"Interpreter '{bin_name}' is strictly forbidden under model route '{provider}'. "
             "Model routes require exact launcher binary recipes; arbitrary scripts/interpreters rejected (C2118 / C2126)."
         )
+
+    # Specific exact recipe validation for antigravity / gemini (C2261)
+    if effective_provider == "antigravity":
+        if len(command_argv) < 3:
+            raise ResourceAdmissionError(
+                f"Route recipe violation for provider '{provider}': command argv too short"
+            )
+
+        if "--model" in command_argv:
+            m_idx = command_argv.index("--model")
+            if m_idx + 1 < len(command_argv):
+                model_name = command_argv[m_idx + 1]
+                if model_name not in ("gemini-3.7-flash-medium", "gemini-3.1-pro-high"):
+                    raise ResourceAdmissionError(
+                        f"Unauthorized antigravity model '{model_name}': must be gemini-3.7-flash-medium (or gemini-3.1-pro-high)"
+                    )
+                if expected_model and expected_model != "none" and model_name != expected_model:
+                    raise ResourceAdmissionError(
+                        f"Model binding mismatch: command recipe model '{model_name}' does not match admitted/reserved model '{expected_model}' (C2271)"
+                    )
+            else:
+                raise ResourceAdmissionError(
+                    f"Route recipe violation for provider '{provider}': --model missing argument"
+                )
+        else:
+            raise ResourceAdmissionError(
+                f"Route recipe violation for provider '{provider}': missing --model"
+            )
+
+        if "-p" in command_argv:
+            p_idx = command_argv.index("-p")
+            for flag in ("--print-timeout", "--output-format", "--dangerously-skip-permissions", "--effort", "--model"):
+                if flag in command_argv:
+                    flag_idx = command_argv.index(flag)
+                    if flag_idx > p_idx:
+                        raise ResourceAdmissionError("Malformed agy argv: -p must be followed by prompt string, not options")
+            if p_idx >= len(command_argv) - 1:
+                raise ResourceAdmissionError("Malformed agy argv: -p must be followed by prompt string, not options")
+            prompt_str = command_argv[p_idx + 1]
+            if prompt_str.startswith("-") and prompt_str not in ("-", "--"):
+                raise ResourceAdmissionError("Malformed agy argv: -p must be followed by prompt string, not options")
+            if p_idx != len(command_argv) - 2:
+                raise ResourceAdmissionError("Malformed agy argv: -p must be followed by prompt string, not options")
+        else:
+            raise ResourceAdmissionError(
+                f"Route recipe violation for provider '{provider}': missing -p print mode flag"
+            )
+
+        allowed_antigravity_prefixes = [
+            ["env", "-u", "GEMINI_API_KEY", "-u", "GOOGLE_API_KEY", "agy", "--model", "gemini-3.7-flash-medium", "--effort", "medium", "--dangerously-skip-permissions", "--print-timeout", "0", "--output-format", "text", "-p"],
+            ["env", "-u", "GEMINI_API_KEY", "-u", "GOOGLE_API_KEY", "agy", "--model", "gemini-3.1-pro-high", "--effort", "high", "--dangerously-skip-permissions", "--print-timeout", "0", "--output-format", "text", "-p"],
+        ]
+        cmd_prefix = command_argv[:-1]
+        if cmd_prefix not in allowed_antigravity_prefixes:
+            raise ResourceAdmissionError(
+                f"Route recipe violation for provider '{provider}': command does not strictly match authorized adapter argv"
+            )
+        return
+
+    # Specific exact recipe validation for grok
+    if effective_provider == "grok":
+        prefix = list(command_argv[:-1])
+        patched_grok_prefix = ["grok", "--model", "grok-4.6", "--effort", "high", "--permission-mode", "auto", "-p"]
+        canonical_grok_prefix = list(ADAPTERS["grok"]["argv"])
+        if prefix not in (patched_grok_prefix, canonical_grok_prefix) or len(command_argv) != len(prefix) + 1:
+            raise ResourceAdmissionError(
+                f"Route recipe violation for provider 'grok': command does not strictly match adapter argv"
+            )
+        return
 
     # 4. Structured prefix match against canonical ADAPTERS recipe
     expected_prefix = list(ADAPTERS[effective_provider]["argv"])
@@ -1029,6 +1111,22 @@ def _bounded_pipe_pump(src_pipe, dst_path: Path, max_bytes: int = MAX_DISK_LOG_B
             pass
 
 
+def get_canonical_launcher_paths(
+    config_dir: Optional[Union[str, Path]] = None,
+) -> Tuple[Path, Path]:
+    """
+    Resolves canonical launcher store and lock paths matching canonical launcher.cli.config_dir_for (C2268).
+    If config_dir is None: defaults strictly to ~/.config/agent-quota-launcher.
+    Do NOT read AGENT_QUOTA_LAUNCHER_CONFIG_DIR from environment.
+    Returns (cfg / "state.db", cfg / "launch.lock").
+    """
+    if config_dir is not None:
+        cfg = Path(config_dir).expanduser().resolve()
+    else:
+        cfg = Path(os.path.expanduser("~/.config/agent-quota-launcher")).resolve()
+    return cfg / "state.db", cfg / "launch.lock"
+
+
 class ChildModelRuntimeAdapter:
     """
     Thin, positively verified unit lifecycle adapter under real existing admission lock (C2087).
@@ -1067,14 +1165,44 @@ class ChildModelRuntimeAdapter:
         store: Optional[Union[str, Path, Store]] = None,
         workspace: Optional[Union[str, Path]] = None,
         bus_bridge: Optional[AgentBusEnrollmentBridge] = None,
+        config_dir: Optional[Union[str, Path]] = None,
+        lock_path: Optional[Union[str, Path]] = None,
+        is_test_fixture: Optional[bool] = None,
     ) -> None:
         self.workspace = Path(workspace).resolve() if workspace else Path("/home/alexey/git/cloudflare-agent-git")
-        if isinstance(store, Store):
-            self.store = store
-        elif store is not None:
-            self.store = Store(str(Path(store).resolve()))
+        canonical_store_path, canonical_lock_path = get_canonical_launcher_paths(None)
+
+        if store is not None:
+            if isinstance(store, Store):
+                self.store = store
+            else:
+                self.store = Store(str(Path(store).resolve()))
+        elif config_dir is not None:
+            cfg_path = Path(config_dir).expanduser().resolve()
+            self.store = Store(str(cfg_path / "state.db"))
         else:
-            self.store = Store(str(self.workspace / ".local" / "launcher_store.db"))
+            self.store = Store(str(canonical_store_path))
+
+        if lock_path is not None:
+            self.lock_path = Path(lock_path).resolve()
+        elif config_dir is not None:
+            cfg_path = Path(config_dir).expanduser().resolve()
+            self.lock_path = (cfg_path / "launch.lock").resolve()
+        else:
+            self.lock_path = (Path(self.store.db_path).parent / "launch.lock").resolve()
+
+        resolved_store = Path(self.store.db_path).resolve()
+        resolved_lock = self.lock_path.resolve()
+        is_exact_canonical = (
+            resolved_store == canonical_store_path.resolve()
+            and resolved_lock == canonical_lock_path.resolve()
+        )
+
+        if is_test_fixture is not None:
+            self.is_test_fixture = bool(is_test_fixture)
+        else:
+            self.is_test_fixture = not is_exact_canonical
+
         self.bus_bridge = bus_bridge
 
     @classmethod
@@ -1161,6 +1289,7 @@ class ChildModelRuntimeAdapter:
         quse_override: Optional[Dict[str, Any]] = None,
         provider_preference: Optional[str] = None,
         model_requirements: Optional[Dict[str, Any]] = None,
+        is_local_probe: bool = False,
     ) -> Dict[str, Any]:
         """
         Executes atomic reservation, quse validation, host check, and dispatch strictly inside launch_lock.
@@ -1168,8 +1297,16 @@ class ChildModelRuntimeAdapter:
         """
         cwd_path = Path(cwd).resolve()
         workspace_path = self.workspace.resolve()
-        lock_file = Path(lock_path).resolve() if lock_path else (workspace_path / ".local" / "launcher.lock")
+        lock_file = Path(lock_path).resolve() if lock_path else self.lock_path
         lock_file.parent.mkdir(parents=True, exist_ok=True)
+        canonical_store_path, canonical_lock_path = get_canonical_launcher_paths(None)
+
+        # Pre-launch negative gate 1 (Disjoint Store/Lock, C2261/C2268):
+        if lock_file.parent.resolve() != Path(self.store.db_path).parent.resolve():
+            raise ResourceAdmissionError(
+                f"Disjoint store and lock paths: store in {Path(self.store.db_path).parent.resolve()} but lock in {lock_file.parent.resolve()}. "
+                "Shared admission requires co-located canonical store and lock."
+            )
 
         # 1. Enforce owned contained TMPDIR (reject global /tmp)
         if tmpdir is None:
@@ -1180,6 +1317,18 @@ class ChildModelRuntimeAdapter:
         if "tmp" in tmpdir_path.parts and tmpdir_path != workspace_path / ".local" / "tmp":
             if str(tmpdir_path).startswith("/tmp") or str(tmpdir_path).startswith("/data/tmp"):
                 raise ResourceAdmissionError(f"Contained TMPDIR violation: reject global /tmp path {tmpdir_path}")
+
+        # Pre-launch negative gate 2 (Alternative Store/Lock under Real Model Route, C2261/C2268):
+        if not is_local_probe:
+            if (
+                self.is_test_fixture
+                or Path(self.store.db_path).resolve() != canonical_store_path.resolve()
+                or lock_file.resolve() != canonical_lock_path.resolve()
+            ):
+                raise ResourceAdmissionError(
+                    f"Real model route requires exact canonical shared store '{canonical_store_path}' and lock '{canonical_lock_path}'; got store '{self.store.db_path}' and lock '{lock_file}'. "
+                    "Alternative stores/locks are strictly non-runtime test fixtures."
+                )
 
         tmpdir_path.mkdir(parents=True, exist_ok=True, mode=0o700)
         paths_to_own = owned_paths if owned_paths is not None else [str(cwd_path)]
@@ -1274,6 +1423,62 @@ class ChildModelRuntimeAdapter:
         }
         return dispatch_record
 
+    def prepare_and_dispatch_under_launch_lock(
+        self,
+        task_id: str,
+        goal: str,
+        cwd: Union[str, Path],
+        timeout_sec: float = 120.0,
+        owned_paths: Optional[List[str]] = None,
+        requested_memory_mb: int = 1500,
+        tmpdir: Optional[Union[str, Path]] = None,
+        lock_path: Optional[Union[str, Path]] = None,
+        quse_override: Optional[Dict[str, Any]] = None,
+        provider_preference: Optional[str] = None,
+        model_requirements: Optional[Dict[str, Any]] = None,
+        is_local_probe: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Canonical entry point for preparing and dispatching task under launch_lock (C2261 / C2268).
+        Enforces pre-launch negative gates (disjoint store/lock and non-canonical fixture store on real model routes).
+        """
+        canonical_store_path, canonical_lock_path = get_canonical_launcher_paths(None)
+        lock_file = Path(lock_path).resolve() if lock_path else self.lock_path
+
+        # Pre-launch negative gate 1 (Disjoint Store/Lock, C2261/C2268):
+        if lock_file.parent.resolve() != Path(self.store.db_path).parent.resolve():
+            raise ResourceAdmissionError(
+                f"Disjoint store and lock paths: store in {Path(self.store.db_path).parent.resolve()} but lock in {lock_file.parent.resolve()}. "
+                "Shared admission requires co-located canonical store and lock."
+            )
+
+        # Pre-launch negative gate 2 (Alternative Store/Lock under Real Model Route, C2261/C2268):
+        if not is_local_probe:
+            if (
+                self.is_test_fixture
+                or Path(self.store.db_path).resolve() != canonical_store_path.resolve()
+                or lock_file.resolve() != canonical_lock_path.resolve()
+            ):
+                raise ResourceAdmissionError(
+                    f"Real model route requires exact canonical shared store '{canonical_store_path}' and lock '{canonical_lock_path}'; got store '{self.store.db_path}' and lock '{lock_file}'. "
+                    "Alternative stores/locks are strictly non-runtime test fixtures."
+                )
+
+        return self.prepare_and_dispatch_task(
+            task_id=task_id,
+            goal=goal,
+            cwd=cwd,
+            timeout_sec=timeout_sec,
+            owned_paths=owned_paths,
+            requested_memory_mb=requested_memory_mb,
+            tmpdir=tmpdir,
+            lock_path=lock_path,
+            quse_override=quse_override,
+            provider_preference=provider_preference,
+            model_requirements=model_requirements,
+            is_local_probe=is_local_probe,
+        )
+
     def execute_in_verified_systemd_scope(
         self,
         task_id: str,
@@ -1310,8 +1515,16 @@ class ChildModelRuntimeAdapter:
         unit_nonce = uuid.uuid4().hex[:8]
         clean_task_id = re.sub(r"[^a-zA-Z0-9_]+", "-", task_id).strip("-")[:12].strip("-")
         unit_name = f"agent-scope-{clean_task_id}-{unit_nonce}.scope"
-        lock_file = Path(lock_path).resolve() if lock_path else (workspace_path / ".local" / "launcher.lock")
+        canonical_store_path, canonical_lock_path = get_canonical_launcher_paths(None)
+        lock_file = Path(lock_path).resolve() if lock_path else self.lock_path
         lock_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Pre-launch negative gate 1 (Disjoint Store/Lock, C2261/C2268):
+        if lock_file.parent.resolve() != Path(self.store.db_path).parent.resolve():
+            raise ResourceAdmissionError(
+                f"Disjoint store and lock paths: store in {Path(self.store.db_path).parent.resolve()} but lock in {lock_file.parent.resolve()}. "
+                "Shared admission requires co-located canonical store and lock."
+            )
 
         # 1. Contained TMPDIR (reject global /tmp)
         if tmpdir is None:
@@ -1351,12 +1564,25 @@ class ChildModelRuntimeAdapter:
                             f"Route mismatch: chosen provider '{chosen['provider']}' not in allowed_providers {model_requirements['allowed_providers']}"
                         )
 
-            # Strict route-to-command binding & foreign CLI smuggling protection (C2106 / C2114 / C2118)
+            # Strict route-to-command binding & foreign CLI smuggling protection (C2106 / C2114 / C2118 / C2261 / C2271)
             validate_route_to_command(
                 "local" if is_local_probe else chosen["provider"],
                 command_argv,
                 is_local_probe=is_local_probe,
+                expected_model=None if is_local_probe else chosen.get("model"),
             )
+
+            # Pre-launch negative gate 2 (Alternative Store/Lock under Real Model Route, C2261/C2268):
+            if not is_local_probe:
+                if (
+                    self.is_test_fixture
+                    or Path(self.store.db_path).resolve() != canonical_store_path.resolve()
+                    or lock_file.resolve() != canonical_lock_path.resolve()
+                ):
+                    raise ResourceAdmissionError(
+                        f"Real model route requires exact canonical shared store '{canonical_store_path}' and lock '{canonical_lock_path}'; got store '{self.store.db_path}' and lock '{lock_file}'. "
+                        "Alternative stores/locks are strictly non-runtime test fixtures."
+                    )
 
             # Store Registration & Active Resource Check
             task_data = self.store.get_task(task_id)
