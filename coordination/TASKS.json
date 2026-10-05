@@ -5958,6 +5958,48 @@
       "review_evidence_path": "research/antigravity/reviews/REV-QL-BELOW30G-CLEANUP-INTEGRATION-20261005.md",
       "acceptance_evidence": "Commit 4fb1758 in agent-quota-launcher: check_disk_pressure samples cwd and tmpdir; warning zone (20-30GiB) maintains eligible task execution and enqueues exactly 1 bounded cleanup task per episode (disk-pressure-cleanup-<id>); rearm enabled >= 30GiB; hard floor rejects < 20GiB; full pytest passes 206/206; independently reviewed and accepted by 114d41f8 in REV-QL-BELOW30G-CLEANUP-INTEGRATION-20261005.md.",
       "blocked_on": []
+    },
+    {
+      "id": "TASK-ALL4-REPOS-SANITIZATION-AUDIT-C2696",
+      "team_id": "remote-autonomous-continuation",
+      "project_id": "portfolio-sanitization",
+      "owner_tag": "ant-head-continuation-resume-20261005",
+      "owner_session_id": "36751672-c403-4ea8-9f53-9a0466434a37",
+      "executor_tag": "sanitization-auditor-2a56bf1b",
+      "executor_ids": [
+        "2a56bf1b-20d2-4068-b1c9-f12d9a173290"
+      ],
+      "status": "in_progress",
+      "created_at": "2026-10-05T22:33:39.000000+00:00",
+      "updated_at": "2026-10-05T22:34:00.000000+00:00",
+      "scope": "Exhaustive all-ref secret and private-operational sanitization audit across all 4 tool repos (agent-branches, agent-quota-launcher, agent-coordination, agent-dashboard) for authorized public GitHub visibility per human request.",
+      "first_tool_evidence": {
+        "tool_name": "run_command",
+        "target": "git log --oneline across 4 repos"
+      },
+      "resource_bounds": "Read-only git history and working-tree regex scan. MemoryMax <= 512M under app.slice. Zero secrets emitted in logs.",
+      "blocked_on": []
+    },
+    {
+      "id": "TASK-AGENTBUS-SESSIONLESS-WORKER-RESTART-C2696",
+      "team_id": "remote-autonomous-continuation",
+      "project_id": "agent-coordination",
+      "owner_tag": "ant-head-continuation-resume-20261005",
+      "owner_session_id": "36751672-c403-4ea8-9f53-9a0466434a37",
+      "executor_tag": "agentbus-implementer-30b432b1",
+      "executor_ids": [
+        "30b432b1-ba49-468d-a38a-cbfdfb141846"
+      ],
+      "status": "in_progress",
+      "created_at": "2026-10-05T22:33:39.000000+00:00",
+      "updated_at": "2026-10-05T22:34:00.000000+00:00",
+      "scope": "AgentBus independent sessionless real worker send/receive/ACK + durable restart semantics in agent-coordination without forged aplexer identity.",
+      "first_tool_evidence": {
+        "tool_name": "run_command",
+        "target": "pytest in agent-coordination"
+      },
+      "resource_bounds": "Transient sibling unit under app.slice. MemoryMax <= 768M. Exact invocation ID check and durable cursor reload.",
+      "blocked_on": []
     }
   ]
 }
