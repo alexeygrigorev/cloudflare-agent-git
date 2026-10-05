@@ -1,0 +1,30 @@
+[Unit]
+Description=Cloudflare Agent Git - Autonomous Supervision Service
+Documentation=file:///home/alexey/git/cloudflare-agent-git/scripts/supervision/SYSTEMD-MIGRATION-RUNBOOK.md
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/alexey/git/cloudflare-agent-git
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/home/alexey/git/cloudflare-agent-git
+Environment=PATH=/home/alexey/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=APLEXER_TAG=experiment-supervision
+Environment=APLEXER_WORKSPACE=/home/alexey/git/cloudflare-agent-git
+Environment=APLEXER_SESSION_ID=4914b3d1-b577-484b-ae0a-5f47dab74d87
+Environment=APLEXER_CONFIG=/home/alexey/.config/aplexer/config.toml
+Environment=APLEXER_RUNTIME_DIR=/run/user/1000/aplexer
+Environment=APLEXER_STATE_DIR=/home/alexey/.local/state/aplexer
+
+ExecStart=/usr/bin/python3 scripts/supervision/service.py
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=15s
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+LockPersonality=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target
