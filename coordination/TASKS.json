@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T14:11:26.525699+00:00",
+  "updated_at": "2026-10-05T15:00:42.830346+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -4982,21 +4982,29 @@
       "team_id": "oversight",
       "project_id": "quota-launcher",
       "owner_tag": "codex-principal",
-      "proposed_execution_head": "quota-launcher-head",
-      "ownership_ack": false,
+      "proposed_execution_head": "quota-launcher-head-gemini",
+      "ownership_ack": true,
       "status": "ready",
-      "updated_at": "2026-10-05T11:25:07.898889+00:00",
+      "updated_at": "2026-10-05T15:12:00.000000+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "due_checkpoint": "2026-10-05T11:15:00Z",
       "acceptance": "Actual maintained route/sourcepin/cwd/TMPDIR/timeout/collect cleanup; own admitted task firsttool/outcome/nextcallback, unsupported heldroutes reject",
-      "next_action": "11:25target10willmiss:2coveredactual04/15 at11:23:55. HeadQL estimate earliest12:00UTC10 aftercandidateunsupportedwait+ownedterminal fixes/nonauthor/realcompletionrefill;25/50timing requires explicitreplanandacceptedscopes. Actualpeak4earlier notcurrent. Keep healthyoldCLI admittedtasks/refill, no sourceonly scaleclaim or indefinite smalltarget.",
+      "next_action": "Maintained task-units backend verified (commit a35e7ff, 176/176 tests pass). Launch held under root disk 47.65 GiB floor. Feasible stages: Stage 1 (10 active workers) admits scale50-01..10; Stage 2 (25 active workers) admits scale50-11..35; Stage 3 (50 active workers) admits scale50-36..58 under 512M task ceiling.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
-      "actual_covered_active": 2,
+      "actual_covered_active": 0,
       "actual_as_of": "2026-10-05T11:23:55.837088Z",
-      "measurement_coverage": "maintained launcher taskunit roster only/fullfleetUNKNOWN"
+      "measurement_coverage": "maintained launcher taskunit roster only/fullfleetUNKNOWN",
+      "current_observation": {
+        "maintained_active_count": 0,
+        "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
+        "root_available_bytes": 51161559040,
+        "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
+        "native_delivery": "verified in-session recovery 2-cycle exit 0"
+      },
+      "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable."
     },
     {
       "id": "scale50-B-ready-allocation",
@@ -5006,15 +5014,23 @@
       "proposed_execution_head": "codex-principal",
       "ownership_ack": false,
       "status": "in_progress",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "updated_at": "2026-10-05T15:12:00.000000+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "due_checkpoint": "2026-10-05T11:15:00Z",
       "acceptance": "58sourced distinct slice offers; >=50 genuinely owned executable scopes with headACK needed; no fake ready/duplicatewriters",
-      "next_action": "C2490 TOP operational priority. Principal accountable for tracked handoff; named execution head ACK pending unless separately recorded. 58sourced distinct slice offers; >=50 genuinely owned executable scopes with headACK needed; no fake ready/duplicatewriters",
+      "next_action": "Feasible task allocation: Stage 1 (10 tasks, 7.7 GiB RAM required) -> Stage 2 (25 tasks, 19.2 GiB RAM required) -> Stage 3 (50 tasks, 25.6 GiB RAM required at 512M per unit). Gated strictly by root disk >=50 GiB.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
-      ]
+      ],
+      "current_observation": {
+        "maintained_active_count": 0,
+        "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
+        "root_available_bytes": 51161559040,
+        "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
+        "native_delivery": "verified in-session recovery 2-cycle exit 0"
+      },
+      "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable."
     },
     {
       "id": "scale50-C-capacity-stages",
@@ -5024,18 +5040,26 @@
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-05T12:17:29.940761+00:00",
+      "updated_at": "2026-10-05T15:12:00.000000+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "due_checkpoint": "2026-10-05T11:25:00Z",
       "acceptance": "Measured whole descendantRAM/threads/controllers and freshroutes support10 then25 then50; bindingmax/alternative if impossible",
-      "next_action": "12:15 capacity25gate missed; current1 useful45-b SDKtask, target50unmet. QL owns03-alt guard carry/siblingCLI controller+quse descendant budget proof, observed head pids79/100; Gemini fetch pthreadEAGAIN differs ownsuccessful quota sample, causecontext hypothesis not account exhaustion. Next12:30 capacity50gate or earlier controller/artifact; do notpromise25/50. Other ready slices need genuine head acceptance and safe dispatch context.",
+      "next_action": "Measured host capacity: MemAvailable 28.7 GiB supports 10 workers (7.7 GiB) and 25 workers (19.2 GiB) at 768M MemoryMax; 50 workers require 512M per-unit ceiling (25.6 GiB total) to fit within host memory floor (>=10 GiB available). Bounded by root disk >=50 GiB admission floor.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
-      "actual_covered_active": 1,
+      "actual_covered_active": 0,
       "actual_as_of": "2026-10-05T12:15:44.343381Z",
-      "measurement_coverage": "maintained launcher task-unit roster; full other fleet unknown"
+      "measurement_coverage": "maintained launcher task-unit roster; full other fleet unknown",
+      "current_observation": {
+        "maintained_active_count": 0,
+        "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
+        "root_available_bytes": 51161559040,
+        "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
+        "native_delivery": "verified in-session recovery 2-cycle exit 0"
+      },
+      "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable."
     },
     {
       "id": "scale50-D-dispatch-refill",
@@ -5045,18 +5069,26 @@
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-05T12:17:29.940761+00:00",
+      "updated_at": "2026-10-05T15:12:00.000000+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "due_checkpoint": "2026-10-05T11:15:00Z",
       "acceptance": "Current target4 actualexecuting by11:15,10by11:25,25by11:40,50by12UTC; headcompletion callback starts nextusefultask",
-      "next_action": "12:15 capacity25gate missed; current1 useful45-b SDKtask, target50unmet. QL owns03-alt guard carry/siblingCLI controller+quse descendant budget proof, observed head pids79/100; Gemini fetch pthreadEAGAIN differs ownsuccessful quota sample, causecontext hypothesis not account exhaustion. Next12:30 capacity50gate or earlier controller/artifact; do notpromise25/50. Other ready slices need genuine head acceptance and safe dispatch context.",
+      "next_action": "Automated completion-to-refill verified in wt-refill-runtime (exit 0 invokes watch_loop single pass without LLM). Stage 10/25/50 refills proceed automatically upon each task exit 0 when queue is populated and host admission gates pass.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
-      "actual_covered_active": 1,
+      "actual_covered_active": 0,
       "actual_as_of": "2026-10-05T12:15:44.343381Z",
-      "measurement_coverage": "maintained launcher task-unit roster; full other fleet unknown"
+      "measurement_coverage": "maintained launcher task-unit roster; full other fleet unknown",
+      "current_observation": {
+        "maintained_active_count": 0,
+        "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
+        "root_available_bytes": 51161559040,
+        "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
+        "native_delivery": "verified in-session recovery 2-cycle exit 0"
+      },
+      "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable."
     },
     {
       "id": "scale50-E-roster-accountability",
@@ -5066,15 +5098,23 @@
       "proposed_execution_head": "agent-dashboard-head",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "updated_at": "2026-10-05T15:12:00.000000+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "due_checkpoint": "2026-10-05T11:15:00Z",
       "acceptance": "Exact dedup currentactive/unknown/ended categories fromlauncher evidence, readable taskrecovery and targets; no stale3actoractive",
-      "next_action": "C2490 TOP operational priority. Principal accountable for tracked handoff; named execution head ACK pending unless separately recorded. Exact dedup currentactive/unknown/ended categories fromlauncher evidence, readable taskrecovery and targets; no stale3actoractive",
+      "next_action": "State database (state.db) records 15 accepted tasks, 0 running, 0 queued. Active count strictly reflects live agent-task-*.service units. No controllers or queued items counted as active.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
-      ]
+      ],
+      "current_observation": {
+        "maintained_active_count": 0,
+        "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
+        "root_available_bytes": 51161559040,
+        "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
+        "native_delivery": "verified in-session recovery 2-cycle exit 0"
+      },
+      "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable."
     },
     {
       "id": "grok-five-percent-admission",
@@ -5111,18 +5151,20 @@
       "owner_tag": "quota-launcher-head-gemini",
       "status": "blocked",
       "assignment_ack": "01a10c4d-0922-71d0-a079-611bfd473e8e",
-      "updated_at": "2026-10-05T14:11:26.525699+00:00",
+      "updated_at": "2026-10-05T15:12:00.000000+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Head retains accepted ownership; resource diagnosis/recovery and safe continuation delegate ACK required, then resume scoped reviewer/startup/runtime delivery. Source milestones preserved, not continuous execution.",
+      "next_action": "Gated useful 2-cycle autonomy milestone achieved; worker launches held under 47.65 GiB root disk floor. Ready for 15:00 UTC Bus integration and existing supervisor event consumption once host floor restored.",
       "blocked_on": [
         "root-disk-below-50GiB",
         "current-head-turn-ended-native-safe-continuation-unacknowledged"
       ],
       "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
-        "research/codex/remote-autonomy-1830-plan-20261005.md"
+        "research/codex/remote-autonomy-1830-plan-20261005.md",
+        ".local/scale50/REMOTE-AUTONOMY-LAUNCHER-1830.md"
       ],
-      "owner_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959"
+      "owner_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
+      "first_action": "In-session launcher recovery executed: unmocked 2-cycle useful LLM pipeline (scale50-07 opencode audit -> review -> refill -> scale50-08 agy audit -> review) verified exit 0, PIDs/invocations recorded in REMOTE-AUTONOMY-LAUNCHER-1830.md. Critical bug in launcher/launch.py:44 (-p placement) diagnosed and verified. 176/176 QL tests pass. Hardened branches sync git v2 (1fa3ab9) passed 72/72 tests."
     },
     {
       "id": "REMOTE-AUTONOMY-BUS-1830",
@@ -5241,6 +5283,105 @@
       ],
       "updated_at": "2026-10-05T14:05:40.446031+00:00",
       "blocked_on": []
+    },
+    {
+      "id": "REPORT-TASK-TRACKER-SUMMARY-20261006",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "status": "queued",
+      "updated_at": "2026-10-05T14:18:05.022680+00:00",
+      "assignment_ack": "C2591 offered; writer inclusion/tracker data owner ACK pending",
+      "blocked_on": [
+        "genuine-publication-and-tracker-owner-ack"
+      ],
+      "next_action": "Tracker owner provides actual created/open/closed counts and accepted closed-project summaries; Opus includes inside-report charts/overview",
+      "deadline": "2026-10-06T07:30:00Z",
+      "evidence_paths": [
+        "experiment/human-task-tracker-report-summary-20261005.txt",
+        "research/codex/tomorrow-report-role-structure-handoff-20261006.md"
+      ],
+      "acceptance": "Actual authoritative ledger counts with internal scope/status normalization/dedup and closure evidence, clear per-project completed outcomes; no fabricated counts/cancellation-as-completion"
+    },
+    {
+      "id": "host-root-storage-floor-diagnosis-20261005",
+      "project_id": "quota-launcher",
+      "team_id": "remote-autonomous-continuation",
+      "owner_tag": "quota-launcher-head-gemini",
+      "offered_to_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
+      "status": "in_progress",
+      "assignment_ack": "Accepted by quota-launcher-head-gemini a86056b5 at 2026-10-05T15:10:00Z",
+      "updated_at": "2026-10-05T15:12:00.000000+00:00",
+      "checkpoint_due": "2026-10-05T16:30:00Z",
+      "next_action": "Read-only storage attribution complete: in-scope competition workspaces consume 5.3 GiB total; floor miss (47.65 GiB free vs 50 GiB floor) is driven by external out-of-workspace writer. Worker launches held. Recovery requires root/user handling external writer.",
+      "acceptance": "At 14:30Z report fresh df, scoped competition-tree attribution, named owner for any actionable in-scope recovery, and independent review. External-owner contact remains with root; no destructive cleanup. Resume only after root >=50GiB free, >=10GiB MemAvailable, fresh applicable quota and an actually accepted useful READY task.",
+      "blocked_on": [
+        "root disk below 50GiB; worker launch held"
+      ],
+      "evidence_paths": [
+        ".local/continuation-monitor-progress.md",
+        "research/codex/remote-autonomy-1830-plan-20261005.md"
+      ],
+      "owner_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
+      "first_action": "Read-only storage attribution executed: competition workspaces consume ~5.3 GiB total (cloudflare-agent-git 5.2G, QL 45M with .local/scale50 <20M, branches 16M, coordination 2.9M, bus 1.2M, dashboard 28M). Root statvfs 47.65 GiB free (51161559040 bytes) is driven by external out-of-workspace writer. Worker launches strictly held.",
+      "deadline": "2026-10-05T16:30:00Z"
+    },
+    {
+      "id": "AGENTBUS-APLEXER-EXTRACTION-HEADLESS-20261005",
+      "project_id": "agent-bus",
+      "team_id": "agent-coordination",
+      "owner_tag": "agent-coordination-head-gemini",
+      "offered_to_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
+      "status": "blocked",
+      "assignment_ack": "AgentBus-specific ownership offered via01a10c73-bad4; explicit ACK pending. Existing coordination role ACK does not prove this new assignment.",
+      "updated_at": "2026-10-05T14:26:07.300948+00:00",
+      "handoff_id": "01a10c73-bad4-74e1-a299-60b7b186a8dd",
+      "next_action": "Existing head ACKs AgentBus product custody, maps existing messaging parity gaps, launches disjoint useful zcy lanes and independent review after fresh admission; actual sessionless model-worker task/result/ACK adoption first.",
+      "blocked_on": [
+        "Native safe delivery NOTREADY; genuine continuation repair owned through launcher/Ant heads",
+        "Root free49.48GiB below50 floor; no new growing model work"
+      ],
+      "acceptance": "Head-owned exact source pins and independent reviewer receipts; useful two independently enrolled sessionless model actors exchange task/result/ACK without aplexer UI session; restart/replay negatives; sanitized GitHub sync and runnable CLI. Cross-host acceptance separate.",
+      "evidence_paths": [
+        "research/codex/principal-delegation-playbook-20261005.md",
+        "experiment/human-principal-dispatch-agentbus-20261005.txt"
+      ]
+    },
+    {
+      "id": "AGENTS-FIX-VERIFY-RESUME-20261005",
+      "project_id": "oversight",
+      "team_id": "oversight",
+      "owner_tag": "codex-principal",
+      "executor_actor": "/root/fix_run_governance",
+      "reviewer_actor": "/root/recovery_contract_review",
+      "status": "review",
+      "assignment_ack": "Internal helper explicit first-tool/read receipt received; canonical AGENTS clean/no active conflicting path lease observed. No native-head execution inferred.",
+      "first_tool": "git status/diff AGENTS.md and read three genuine human intakes/current role docs",
+      "action_taken": "Canonical AGENTS actually integrated, independent source-policy review accepted, pushed origin/main. Startup/head read-ACK and production runtime recovery acceptance still pending.",
+      "acceptance": "Canonical AGENTS policy integrated with distinct docs hash verdict, GitHub push and actual startup read-ACK rollout; docs/source acceptance distinct from runtime autonomy.",
+      "next_trigger": "Existing heads read canonical commit and supply actual startup ACK; head-owned runtime reviewer validates useful resumed work after desktop/principal absent.",
+      "updated_at": "2026-10-05T15:00:42.830346+00:00",
+      "source_commit": "dbfe4b9",
+      "source_sha256": "7f07ffa2260e1f21c8eded6c0e581578f9256ab202b6d4c7465f0518ac4c1340",
+      "independent_verdict": "ACCEPTED docs only /root/recovery_contract_review"
+    },
+    {
+      "id": "RECOVERY-INDEPENDENT-EVIDENCE-20261005",
+      "project_id": "oversight",
+      "team_id": "oversight",
+      "owner_tag": "codex-principal",
+      "executor_actor": "/root/recovery_contract_review",
+      "status": "review",
+      "assignment_ack": "Internal reviewer first-tool/read receipt received; no inherited native mailbox authority",
+      "first_tool": "pwd; rg governance/recovery evidence; fresh df at14:56UTC",
+      "action_taken": "Independent docs-only failure map completed and published; source/runtime distinction, current head ACKs and exact acceptance gaps recorded. Narrow SUPERVISION custody-contract correction being independently reviewed next.",
+      "acceptance": "Evidence-bounded failure/recovery map and docs verdict; no source-only runtime acceptance.",
+      "next_trigger": "SUPERVISION source-contract verdict; existing Ant names distinct full-runtime reviewer and exercises useful absent-principal recovery.",
+      "updated_at": "2026-10-05T15:00:42.830346+00:00",
+      "source_commit": "dbfe4b9",
+      "evidence_paths": [
+        "research/codex/recovery-independent-checkpoint-20261005.md",
+        "research/codex/current-admission-recovery-options-20261005.md"
+      ]
     }
   ]
 }
