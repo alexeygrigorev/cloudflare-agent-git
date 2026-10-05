@@ -72,3 +72,18 @@ Writer/restorer `/root/fix_run_governance`; distinct reviewer `/root/recovery_co
 Earlier tool receipts recorded these accepted hashes, but the later canonical policy/checkpoint disappearance has unknown cause; no overwrite actor or transport fault is attributed. This re-read verifies restored current source only. No deployed admission override, startup rollout,25/50observed actors, worker first-tool coverage, capture candidate correctness or autonomous continuation is accepted. Product runtime/capture review remains head-owned.
 
 Reverification UTC: 2026-10-05T17:07:19.400639+00:00
+
+## Roster truthfulness and task-specific disk allowance review
+
+**ACCEPTED, docs/source contract only:** independently inspected complete narrow7-line AGENTS/RESOURCE diff and preserved earlier corrective-count invariant. Writer `/root/fix_run_governance`; distinct reviewer `/root/recovery_contract_review`. Candidate exact SHA256:
+
+- `AGENTS.md`: `c7405cb8f07ec44f22107f4726312bda1afd27bbdf9d9c1598e6ab3f7fcfd0d9`.
+- `coordination/RESOURCE-POLICY.md`: `b3f63b3c78e3f8096baee93a4fd7e5e87e21190f11b335154dd5b2dffe5e636f`.
+
+Authority supplied by parent: genuine desktop correction `01a10d12-0bb0`. Reviewer did not access native mailbox or independently authenticate that envelope; this is parent-relayed source, accurately separated from direct evidence.
+
+Negative misleading-count check, organizational logic only: a25 header with fewer current deduplicated ACTIVE entries violates this text; completed/awaiting-review/finished/idle/failed actors are excluded; local clock labeledZ/futureUTC violates it; each head must attest own exact child IDs/states/first tools; historical launch sums cannot establish concurrency without real overlap receipts. The text makes these failures explicit without inventing a real roster or claiming25achieved.
+
+Disk clarification correctly treats512MiB as the maximum scratch/spike allowance rather than mandatory reservation for every tiny job. Task-specific bounded budget and before/after growth are required, while aggregate retained scratch cap and hard50GiB root floor stay intact. No quota, privacy, process containment, provider, financial, ownership or recovery exemption is introduced.
+
+This accepts policy wording only. Admission implementation, actual bounded runtime spike behavior, live actor census/UTC accuracy, independent worker first-tools, overlapping peak receipts and unattended continuation still require head-owned execution and independent runtime review. This organizational child is not a claimed active product worker or runtime reviewer.
