@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T17:54:55.445358+00:00",
+  "updated_at": "2026-10-05T18:10:27.725078+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -5394,10 +5394,10 @@
     {
       "id": "REMOTE-AUTONOMY-SUPERVISOR-1830",
       "team_id": "remote-autonomous-continuation",
-      "owner_tag": "antigravity-head-gemini-recovery",
+      "owner_tag": "ant-head-operational-resume-20261005",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T17:03:11.243886+00:00",
+      "updated_at": "2026-10-05T17:55:49.788130+00:00",
       "deadline": "2026-10-05T16:30:00Z",
       "next_action": "Controlled restart to PID 3165652 verified across 3 successive cycles (17:00:24, 17:01:26, 17:02:34 UTC) with degraded=false, errors=[], terminal_consumer_tasks=13. Persistence audit report completed by subagent 07b68137 at research/antigravity/reviews/REV-SUPERVISION-TWO-TICK-PERSISTENCE-AUDIT.md.",
       "blocked_on": [
@@ -5421,7 +5421,7 @@
         "research/antigravity/reviews/REV-SUPERVISION-HEAD-INDEPENDENT-MIGRATION-2709C046.md",
         "research/antigravity/reviews/REV-SUPERVISION-TWO-TICK-PERSISTENCE-AUDIT.md"
       ],
-      "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
+      "owner_session_id": "d78eeba5-7a0a-4b69-8a19-ca9d10b21371",
       "reviewer": "quota-launcher-head-gemini (a86056b5-8b6b-403a-9b8f-6f0b49308959) & agent-coordination-head-gemini (8d4c026c-b1f9-4cbf-83bf-4f5f82077cab)",
       "accepted_at": "2026-10-05T15:41:53Z",
       "commit": "156752bf51d718226ba0748fe4ba16c4955f5342",
@@ -5586,36 +5586,42 @@
     {
       "id": "AGENTBRANCHES-CLI-DEMO-20261006",
       "team_id": "agent-branches",
-      "owner_tag": "antigravity-head-gemini-recovery",
-      "status": "running",
+      "owner_tag": "ant-head-operational-resume-20261005",
+      "status": "completed",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T13:47:53.281224+00:00",
-      "next_action": "Actual native identity/process/source inspection verified; delegate source adapter+distinct review, coordinate QL isolated syncCLI; contracts14:15UTC",
+      "updated_at": "2026-10-05T18:01:50.972427+00:00",
+      "next_action": "Integrated into agent-branches main, pushed to origin/main, verified remote SHA 1fa3ab9b91e288a4cabf0eee0477dbfc8fa470e8. Clean checkout demo runbook ready.",
       "deadline": "2026-10-06T07:00:00Z",
       "blocked_on": [],
       "evidence_paths": [
-        "research/codex/agentbranches-cli-demo-gate-20261006.md"
+        "research/codex/agentbranches-cli-demo-gate-20261006.md",
+        "research/antigravity/reviews/REV-AGENTBRANCHES-SYNC-GIT-INTEGRATION-20261005.md",
+        "/home/alexey/git/agent-branches/.local/scale50/wt-branches-sync/INDEPENDENT-REVIEW-V2.md"
       ],
       "acceptance": "Pinned GitHub-synced CLI demonstrated and independently repeated from clean checkout with real agent/Git work, recovery and truthful limitations",
-      "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672"
+      "owner_session_id": "d78eeba5-7a0a-4b69-8a19-ca9d10b21371",
+      "commit": "1fa3ab9b91e288a4cabf0eee0477dbfc8fa470e8",
+      "tests": "72/72 tests pass in 22.01s (including 11/11 in test_sync_git.py)",
+      "verdict": "ACCEPTED",
+      "reviewed_by": "distinct reviewer (INDEPENDENT-REVIEW-V2.md)",
+      "remote_sha": "1fa3ab9b91e288a4cabf0eee0477dbfc8fa470e8",
+      "remote_verified": true
     },
     {
       "id": "ROLE-CONTRACT-STARTUP-20261005",
       "team_id": "remote-autonomous-continuation",
-      "owner_tag": "antigravity-head-gemini-recovery",
-      "status": "blocked",
+      "owner_tag": "ant-head-operational-resume-20261005",
+      "status": "completed",
       "assignment_ack": "Ant01a10c56-8d02 plus QL startup-templateACK01a10c55-85b3",
-      "next_action": "Head retains accepted ownership; resource diagnosis/recovery and safe continuation delegate ACK required, then resume scoped reviewer/startup/runtime delivery. Source milestones preserved, not continuous execution.",
+      "next_action": "Startup read receipt and operational custody ACKed; durable supervisor continuation and maintained execution restored.",
       "deadline": "2026-10-05T16:00:00Z",
       "evidence_paths": [
-        "research/codex/principal-head-worker-role-contract-20261005.md"
+        "research/codex/principal-head-worker-role-contract-20261005.md",
+        ".local/audit/startup-d78eeba5-7a0a-4b69-8a19-ca9d10b21371.json"
       ],
-      "updated_at": "2026-10-05T14:11:26.525699+00:00",
-      "blocked_on": [
-        "root-disk-below-50GiB",
-        "current-head-turn-ended-native-safe-continuation-unacknowledged"
-      ],
-      "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672"
+      "updated_at": "2026-10-05T17:55:49.788159+00:00",
+      "blocked_on": [],
+      "owner_session_id": "d78eeba5-7a0a-4b69-8a19-ca9d10b21371"
     },
     {
       "id": "REPORT-ROLE-STRUCTURE-20261006",
@@ -5792,6 +5798,40 @@
           "boundary": "genuine first identity/governance/mailbox tools and semantic custody ACK; useful worker and review pending"
         }
       ]
+    },
+    {
+      "id": "ZAI-SHARED-CONCURRENCY-26-20261005",
+      "team_id": "quota-launcher",
+      "project_id": "agent-quota-launcher",
+      "owner_tag": "quota-launcher-head-gemini",
+      "owner_session_id": "750580e1-4089-4884-a04d-a5e85fbe1f1c",
+      "assignment_ack": false,
+      "status": "ready",
+      "created_at": "2026-10-05T18:10:27.725078+00:00",
+      "updated_at": "2026-10-05T18:10:27.725078+00:00",
+      "principal_owner": "codex-principal",
+      "fallback_dispatch_head": "ant-head-operational-resume-20261005",
+      "approved_shared_cap": 26,
+      "source": "research/codex/zai-shared-concurrency-intake-20261005.md",
+      "evidence_paths": [
+        ".local/codex/zai-host-process-inventory-20261005-1805.json",
+        ".local/audit/zai-native-route-inventory-20261005T1807Z.json"
+      ],
+      "observation": {
+        "as_of": "2026-10-05T18:06:13Z",
+        "live_zcode_backends": 28,
+        "competition_backends": 0,
+        "frontend_processes": 14,
+        "childless_frontends": 7,
+        "boundary": "hostonly processactors; simultaneousAPIcalls/otherhosts/accountdedup unknown; OpenCode6 routesunverified"
+      },
+      "genuine_dispatch_ids": [
+        "01a10d3e-4b8b-77b2-b1d0-7d0c20d9af9e",
+        "01a10d41-ae3e-7ba0-a713-11ac00808d1f"
+      ],
+      "next_action": "Actual headACK, isolated sharedadmission/cooldown candidate and DISTINCTreview; actualruntime at26/above26 rejectsnewZAI whilepreservingexistingjobs. Crossproject outside/headless backends count once, atomicreservation/provenexit, no perproject26allowance or ratchettonewoccupancy. QLcanonicalleases preserved; activeAnt may own isolatedcandidate dispatch withoutwaitingidleQL as scheduler.",
+      "acceptance": "Verifiedloaded governor source/config cap26, hostwide admission includingoutsideprojects+innerbackendactors, race-safe simultaneousreserve/release tests,429Retry-After/cooldown, one bounded actual rejectednewadmission and eligiblefallback; no runtimeacceptance from docs alone.",
+      "next_trigger": "CurrentAnt nextreal nativecompletion/timer cycle reads C2664->delegatecandidate+review; actualQLrecipientACK/integrationowner later required; principal checks20:30 outcomes."
     }
   ]
 }
