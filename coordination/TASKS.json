@@ -5213,9 +5213,9 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T15:39:06.202897+00:00",
+      "updated_at": "2026-10-05T15:42:00.000000+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Anti-spoofing and genuine native evidence extraction delivered: no synthetic evidence fabrication, genuine file SHA verification, separate imported DB acceptance events ineligible for runtime autonomy; 79/79 tests pass. Routing pin to QL for distinct review. Root disk free: 50320437248 bytes (46.8646 GiB); launches held under 50 GiB floor.",
+      "next_action": "Distinct review of commit 02ac777 resulted in REQUEST_CHANGES due to synthetic evidence in ingest_launcher_db. Followup commit 156752b eliminated all 4 synthetic fields, enforced real task_paths file byte SHA-256 verification, and segregated imported DB tasks (autonomy_acceptance_eligible=False). Verified 79/79 tests pass. Distinct review verdict ACCEPT issued (message 01a10cba-86f3). Launches held under 50-GiB floor.",
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
@@ -5233,17 +5233,19 @@
       "reviewer": "quota-launcher-head-gemini (a86056b5-8b6b-403a-9b8f-6f0b49308959)",
       "accepted_at": "2026-10-05T15:20:20Z",
       "commit": "530c10c",
-      "tests": "79/79 supervision tests pass in 0.96s (scripts/supervision/test_failure_recovery.py, test_terminal_consumer.py, test_service.py). Anti-spoofing and imported DB acceptance gates verified."
+      "tests": "79/79 supervision tests pass in 0.92s (scripts/supervision/test_failure_recovery.py, test_terminal_consumer.py, test_service.py)",
+      "reviewed_commit": "156752bf51d718226ba0748fe4ba16c4955f5342",
+      "verdict": "ACCEPTED"
     },
     {
       "id": "REMOTE-AUTONOMY-REVIEW-1830",
       "team_id": "remote-autonomous-continuation",
-      "owner_tag": null,
-      "status": "blocked",
-      "assignment_ack": "Offered; genuine owner ACK pending, not accepted",
-      "updated_at": "2026-10-05T15:39:06.202897+00:00",
+      "owner_tag": "quota-launcher-head-gemini",
+      "status": "in_progress",
+      "assignment_ack": "Accepted by quota-launcher-head-gemini a86056b5 at 2026-10-05T15:40:00Z",
+      "updated_at": "2026-10-05T15:42:00.000000+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Supervisor component review accepted by QL head (a86056b5, message 01a10ca6-ce9b). Full-runtime A->B autonomous trial review held pending host root disk restoration >= 50 GiB (measured free: 50320437248 bytes / 46.8646 GiB).",
+      "next_action": "Distinct code review of supervisor hardening completed: commit 02ac777 reviewed (REQUEST_CHANGES sent via 01a10cb9-923a); commit 156752b verified and ACCEPTED (01a10cba-86f3). Next runtime trial review held pending root storage >= 50 GiB.",
       "blocked_on": [
         "root-disk-below-50GiB",
         "end-to-end-model-dispatch-held"
@@ -5251,7 +5253,11 @@
       "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md"
-      ]
+      ],
+      "owner_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
+      "reviewed_commit": "156752bf51d718226ba0748fe4ba16c4955f5342",
+      "verdict": "ACCEPTED",
+      "tests": "79/79 supervision tests pass"
     },
     {
       "id": "REMOTE-AUTONOMY-PRINCIPAL-1830",
