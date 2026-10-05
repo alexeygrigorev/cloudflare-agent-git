@@ -35,7 +35,7 @@
   "early_update": true,
   "actual_writer_models": [],
   "editorial_review": "Interim technical status update; factual checks under REV-OCT5-PRODUCT-REPORT; writer provenance unverified (not Claude Opus); comprehensive 09:30 Europe/Berlin reader report scheduled after morning standup",
-  "article_sha256": "e037cd335394f3706a0565f54fc15ddae45bd8fc33756b34c366fab7dccb5baa",
+  "article_sha256": "eb9be467f8ad18a3c2e9b1349ddd851b33ccac8a764f7d715e37d01a960fcac1",
   "published_at": "2026-10-05T00:25:00.000000+00:00",
   "corrected_at": "2026-10-05T02:40:00.000000+00:00",
   "corrections": [
@@ -70,8 +70,8 @@
     {
       "at": "2026-10-05T02:40:00.000000+00:00",
       "editor": "publication coordinator (public-journal-site)",
-      "reason": "Role deduplication, analytical interval separation, and wording precision refinement per C2282",
-      "details": "Deduplicated bounded overnight role counts to six distinct roles (two heads, one principal, three delegates spanning two reviewers and one engineer) without double-counting; explicitly separated the closed 00:06:45 UTC 24-hour analytical window from later overnight evidence up to 02:40 UTC; updated summary to reflect source gates repaired with live runtime execution held; updated earlier note to clarify no measured speed/adoption comparison.",
+      "reason": "Role deduplication, analytical interval separation, and wording precision refinement per C2282 and C2286",
+      "details": "Qualified the bounded six-role observation to the early morning review cohort without double-counting reviewers or inferring a whole-night count; explicitly separated the closed 00:06:45 UTC 24-hour analytical window from later overnight evidence up to 02:40 UTC; updated summary to reflect source gates repaired with live runtime execution held; updated earlier note to clarify no measured speed/adoption comparison.",
       "sources": [
         "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/recovery/REPORT-TWOHOST-DESKTOP-HETZNER-RPC.md",
         "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-LAUNCHER-CANONICAL-ADMISSION-REPAIR.md"
