@@ -69,3 +69,10 @@ Examples from the October 3 rewrite:
 ## Quality ownership and release gates
 
 [QUALITY.md](QUALITY.md) is the canonical design/reference, editorial, functional/privacy/accessibility and release contract. Publication coordinator forms distinct execution/review roles and accepts the release packet; principals monitor that work. Desktop root supplies the user–Hetzner interface, periodic pings and requested browser interactions, without routine page QA or release approval. Existing factual fieldnote/daily publication continues within the template; design departures remain in preview until independently reviewed. The approved design governs implementation; do not change the reference to excuse implementation drift. Preserve actual Opus/full-stylint provenance and dated corrections.
+
+## Routine daily report preparation ownership — human directive 5 October 2026
+
+The human explicitly assigned routine daily article preparation to remote Codex execution using the project-local reusable skill `.agents/skills/prepare-daily-journal/**`. Remote Codex owns daily journal preparation: gathering factual standup evidence, running the dedicated Claude Opus writer session with stylint, verifying supporting diagrams and illustrations, and coordinating with independent reviewers.
+
+The publication coordinator (`public-journal-site`) remains the publication head and independent release collaborator, responsible for independent editorial/visual quality checks, publication script gate validation (`website/publish_daily.py`), timeline admission tests, and live deployment verification. Remote preparation logs and receipts reside in `.local/journal/remote-preparation-handoff/**`.
+

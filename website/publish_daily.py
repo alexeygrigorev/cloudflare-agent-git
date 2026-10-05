@@ -2,7 +2,7 @@
 """Validate an Opus draft; reviewed publication is an explicit separate step."""
 import argparse,datetime,hashlib,json,pathlib,re,subprocess
 ROOT=pathlib.Path(__file__).resolve().parent.parent
-p=argparse.ArgumentParser();p.add_argument('date');p.add_argument('--response');p.add_argument('--publish',action='store_true');a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('date');p.add_argument('--response');p.add_argument('--reviewer',default=None);p.add_argument('--publish',action='store_true');a=p.parse_args()
 day=datetime.date.fromisoformat(a.date).isoformat();folder=ROOT/'website/content/daily'
 article=folder/f'{day}.md';metadata=folder/f'{day}.json';text=article.read_text();m=json.loads(metadata.read_text())
 response=pathlib.Path(a.response) if a.response else ROOT/'.local/journal'/day/'response.json'
@@ -20,6 +20,9 @@ for image in images:
 subprocess.run(['stylint',str(article)],cwd=ROOT,timeout=60,check=True)
 share=folder/f'{day}.sharetext.txt';assert len(share.read_text().strip())<=350
 if a.publish:
- m.update(published=True,actual_writer_models=models,editorial_review='Evidence, privacy, full stylint and asset checks by desktop orchestrator',article_sha256=hashlib.sha256(article.read_bytes()).hexdigest(),published_at=datetime.datetime.now(datetime.timezone.utc).isoformat())
+ pub_at=m.get('published_at') or datetime.datetime.now(datetime.timezone.utc).isoformat()
+ upd_at=datetime.datetime.now(datetime.timezone.utc).isoformat()
+ reviewer=a.reviewer or m.get('editorial_review') or 'Evidence, privacy, full stylint and asset checks by publication coordinator (public-journal-site)'
+ m.update(published=True,actual_writer_models=models,editorial_review=reviewer,article_sha256=hashlib.sha256(article.read_bytes()).hexdigest(),published_at=pub_at,updated_at=upd_at)
  temporary=metadata.with_suffix('.json.tmp');temporary.write_text(json.dumps(m,indent=2)+'\n');temporary.replace(metadata)
 print(json.dumps({'date':day,'checks':'passed','published':bool(m.get('published')),'actual_writer_models':models}))
