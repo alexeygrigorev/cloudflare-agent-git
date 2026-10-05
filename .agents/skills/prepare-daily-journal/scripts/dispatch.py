@@ -48,6 +48,11 @@ if not a.worker:
         (private/'launch.json').write_text(json.dumps(record, indent=2)+'\n')
         print(json.dumps(record)); raise SystemExit(0)
 
+# Hold the execution fence for the complete model lifetime, including internal retries.
+worker_lock = (private/'worker.lock').open('a')
+fcntl.flock(worker_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+if (private/'receipt.json').exists():
+    raise SystemExit('terminal receipt exists; preserve it and ask the head for recovery')
 identity = json.loads(subprocess.check_output(['a','whoami','--json'], cwd=ROOT, text=True, timeout=15))
 assert identity['tag'] == tag and identity['workspace'] == str(ROOT), 'wrong native binding'
 assert 0 < identity.get('limits', {}).get('memory_bytes', 0) <= 1500 * 1024**2, 'missing/oversized cgroup cap'
