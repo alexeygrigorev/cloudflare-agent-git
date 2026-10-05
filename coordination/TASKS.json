@@ -775,7 +775,7 @@
       ],
       "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
       "model": "gemini-3.1-pro-high",
-      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 · PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
+      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 \u00b7 PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
     },
     {
       "id": "publication-release-verification",
@@ -1209,7 +1209,7 @@
       "assignment_ack": "Launched per Desktop Orchestrator 12:50 Berlin and Codex Principal C1818 directives. Independent technical audit of container-and-patch-workflows.md, examining production container/microVM paradigms (OpenHands, SWE-bench, Devin, Daytona, Modal, E2B), network/credential egress boundaries, single-synthesizer and worktree integration patterns, and unsteered buyer adoption guidance.",
       "next_action": "Independent review completed in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md (verdict: BOUNDED ACCEPTANCE). Deliverables landed on origin/main; findings ready for principal integration.",
       "acceptance": "Independent review deliverable in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md with clear verdict, rigorous technical verification across all 10 evaluation dimensions, and clean publication guard.",
-      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE — TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
+      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE \u2014 TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
     },
     {
       "id": "ab-safe-main-restore",
@@ -4746,8 +4746,8 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": true,
-      "status": "in_progress",
-      "updated_at": "2026-10-05T17:06:34.321161+00:00",
+      "status": "review",
+      "updated_at": "2026-10-05T17:13:39.943133+00:00",
       "title": "SDK batch failed-push semantic independent review",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "latest actual SDKsource pin versus known sequential mutation/retry/stop semantics, negative transientcase",
@@ -4755,7 +4755,7 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-45/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T12:30:00Z",
-      "next_action": "Generate test_failed_push.py and deliver review report FAILED-PUSH-REVIEW.md",
+      "next_action": "Independent review complete (6/6 tests passed). BatchExecutionError structured semantic candidate list verified. Ready for acceptance.",
       "owner_ack_message": "01a10bf9-c5ec-7cd1-b61d-328ad71dfa52",
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "checkpoint_due": "2026-10-05T17:25:00Z",
@@ -4763,8 +4763,12 @@
       "active_subagent": {
         "conversation_id": "9ef14859-ef6f-41e6-a062-1bb935a40229",
         "role": "Failed-Push Reviewer",
-        "status": "running"
-      }
+        "status": "completed"
+      },
+      "evidence_paths": [
+        "/home/alexey/git/agent-branches/.local/scale50/scale50-45/FAILED-PUSH-REVIEW.md",
+        "/home/alexey/git/agent-branches/.local/scale50/scale50-45/test_failed_push.py"
+      ]
     },
     {
       "id": "scale50-46",
@@ -4773,27 +4777,29 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": true,
-      "status": "review",
-      "updated_at": "2026-10-05T17:06:34.321161+00:00",
+      "status": "accepted",
+      "updated_at": "2026-10-05T17:13:39.943133+00:00",
       "title": "SDK auth cold-client route integration validation",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "fresh client actual explicit token/admin/no-token matrix, no inherited warm cache",
       "dependencies": [],
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-46/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
-      "next_action": "Deliver independent review verdict REV-COLD-CLIENT-ACCEPTANCE.md",
+      "next_action": "Independent acceptance complete (VERDICT: ACCEPT). 61/61 tests pass. Cold-client auth fails closed with 401 without warm cache leakage.",
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "assignment_ack": "01a10cba-2d4c-78d3-b64a-64fab9b8e5ea",
       "first_action": "Inspected validate.py and COLD-CLIENT-VALIDATION.md; conducting independent review of cold-client auth routes",
       "evidence_paths": [
         "/home/alexey/git/agent-branches/.local/scale50/scale50-46/COLD-CLIENT-VALIDATION.md",
-        "/home/alexey/git/agent-branches/.local/scale50/scale50-46/validate.py"
+        "/home/alexey/git/agent-branches/.local/scale50/scale50-46/validate.py",
+        "/home/alexey/git/agent-branches/.local/scale50/scale50-46/REV-COLD-CLIENT-ACCEPTANCE.md",
+        "/home/alexey/git/agent-branches/.local/scale50/scale50-46/test_independent_acceptance.py"
       ],
       "checkpoint_due": "2026-10-05T17:25:00Z",
       "active_subagent": {
         "conversation_id": "512468f3-576b-4835-aa41-9f13ba12cd1d",
         "role": "Cold-Client Reviewer",
-        "status": "running"
+        "status": "completed"
       }
     },
     {
@@ -4823,8 +4829,8 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": false,
-      "status": "in_progress",
-      "updated_at": "2026-10-05T17:06:34.321161+00:00",
+      "status": "review",
+      "updated_at": "2026-10-05T17:13:39.943133+00:00",
       "title": "Main GitHub mirror source/auth repair",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "ordinaryGit fallback retained, sourceonly mirror authenticated perrepo with actual disposable restore",
@@ -4834,15 +4840,18 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-48/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Complete audit of credential isolation, dry-run push, and ordinary recovery runbook GITHUB-MIRROR-AUDIT.md",
+      "next_action": "Independent audit complete. Verified GitHub mirror auth (push dry-run exit 0), credential isolation (0600), disposable clone restore match (HEAD/Tree SHA exact), and 61/61 tests pass in restore.",
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "checkpoint_due": "2026-10-05T17:25:00Z",
       "first_action": "Created write scope .local/scale50/scale50-48; verified remotes and auditing auth/sync and ordinary Git recovery paths",
       "active_subagent": {
         "conversation_id": "79d98c5b-6df0-4e0f-a873-39cb21b66340",
         "role": "GitHub Mirror Auditor",
-        "status": "running"
-      }
+        "status": "completed"
+      },
+      "evidence_paths": [
+        "/home/alexey/git/agent-branches/.local/scale50/scale50-48/GITHUB-MIRROR-AUDIT.md"
+      ]
     },
     {
       "id": "scale50-49",
@@ -4851,8 +4860,8 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": false,
-      "status": "in_progress",
-      "updated_at": "2026-10-05T17:06:34.321161+00:00",
+      "status": "review",
+      "updated_at": "2026-10-05T17:13:39.943133+00:00",
       "title": "Concurrent artifact provenance collector",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "source pre-branchSHA/binary/OUT_DIR hostsanitization pins each actual consumer operation",
@@ -4862,15 +4871,19 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-49/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Execute test_provenance.py under concurrency and output ARTIFACT-PROVENANCE.md",
+      "next_action": "Concurrent artifact provenance testing complete (6/6 tests pass). Benchmarked 300 artifacts across 20 threads (51.68 items/s, 100% verified, 0 collisions, 0 truncations).",
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "checkpoint_due": "2026-10-05T17:25:00Z",
       "first_action": "Created write scope .local/scale50/scale50-49; testing concurrent artifact SHA256 and metadata provenance logging",
       "active_subagent": {
         "conversation_id": "5d83a00b-470c-4f56-8858-c7425578080a",
         "role": "Artifact Provenance Collector",
-        "status": "running"
-      }
+        "status": "completed"
+      },
+      "evidence_paths": [
+        "/home/alexey/git/agent-branches/.local/scale50/scale50-49/ARTIFACT-PROVENANCE.md",
+        "/home/alexey/git/agent-branches/.local/scale50/scale50-49/test_provenance.py"
+      ]
     },
     {
       "id": "scale50-50",
@@ -4879,8 +4892,8 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": false,
-      "status": "in_progress",
-      "updated_at": "2026-10-05T17:06:34.321161+00:00",
+      "status": "review",
+      "updated_at": "2026-10-05T17:13:39.943133+00:00",
       "title": "Stable operation retry/resume first-use",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "actual outer oneeffect across failure/retry/resume, not CJS argumentfixture alone",
@@ -4890,15 +4903,19 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-50/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Execute test_retry_resume.py testing transaction tokens and loop guards, output RETRY-RESUME-REPORT.md",
+      "next_action": "Retry/resume negative testing complete (10/10 tests pass, full suite 61/61 pass). Verified bounded memory under 200 failure cycles (< 25KB growth), no cgroup OOM, fail-closed auth, and cross-agent token scoping.",
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "checkpoint_due": "2026-10-05T17:25:00Z",
       "first_action": "Created write scope .local/scale50/scale50-50; inspecting client retry/resume logic for negative test harness",
       "active_subagent": {
         "conversation_id": "d40455c2-27e0-4582-805a-24c2663dd3eb",
         "role": "Retry-Resume Tester",
-        "status": "running"
-      }
+        "status": "completed"
+      },
+      "evidence_paths": [
+        "/home/alexey/git/agent-branches/.local/scale50/scale50-50/RETRY-RESUME-REPORT.md",
+        "/home/alexey/git/agent-branches/.local/scale50/scale50-50/test_retry_resume.py"
+      ]
     },
     {
       "id": "scale50-51",
@@ -5263,7 +5280,7 @@
       },
       "next_action": "QL commit a916090 delivers structured stream-json invocation and tool telemetry capture in task-units (187/187 tests pass); commit 8486acf accepted by Coord (8aa6505); commit a916090 submitted to Coord for distinct review. scale50-20 retry held until Coord code acceptance and root disk margin >= 50.5 GiB.",
       "blocked_on": [],
-      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "agent-quota-launcher commit a916090 (launcher/launch.py, launcher/task_units.py, tests/test_telemetry.py)",
         "agent-quota-launcher commit 8486acf (accepted by Coord in REV-QL-8486ACF-TMPDIR-REFILL-REVIEW.md)",
@@ -5288,7 +5305,7 @@
         "root-disk-below-50GiB-floor",
         "waiting-storage-floor-restoration"
       ],
-      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ],
@@ -5315,7 +5332,7 @@
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
-      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md",
         "research/antigravity/remote-autonomy-supervisor-contract-20261005.md",
@@ -5470,7 +5487,7 @@
         "root-disk-below-50GiB",
         "end-to-end-model-dispatch-held"
       ],
-      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md",
         "research/antigravity/reviews/REV-SUPERVISION-ANTI-SPOOFING-156752B.md"
@@ -5490,7 +5507,7 @@
       "deadline": "2026-10-05T16:30:00Z",
       "next_action": "Follow backward plan and verify real owner ACK, first tool, pinned evidence and next continuation trigger",
       "blocked_on": [],
-      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ]
