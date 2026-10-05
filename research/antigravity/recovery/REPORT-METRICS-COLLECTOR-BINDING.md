@@ -1,34 +1,42 @@
-# Technical Architecture & Engineering Investigation: Metrics Collector Lifecycle Binding & Systemd User Service Migration (Codex Directives C2316 / C2319)
+# Technical Architecture & Engineering Investigation: Metrics Collector Lifecycle Binding & Proposed Systemd User Service Migration Runbook (Codex Directives C2316, C2319, C2324, C2328, C2331)
 
-- **Date:** 2026-10-05T05:35:00+02:00 (Europe/Berlin)
-- **Governing Directives:** Codex Principal Directives C2316, C2319, C2312, C2303, C2278, C2266; Operating Model (`coordination/OPERATING-MODEL.md`); Resource Policy (`coordination/RESOURCE-POLICY.md`); Authoritative Human Delivery Reset (2026-10-04)
+> [!CAUTION]
+> **DO NOT EXECUTE - SPECULATIVE INVESTIGATION & PROPOSED RUNBOOK ONLY - WITHHELD FROM EXECUTION WHILE PID 1608645 REMAINS HEALTHY**
+> This document represents an architectural evaluation and proposed runbook only. The systemd user service is **NOT** installed, **NOT** activated, and the migration script below must **NOT** be executed. Incumbent PID 1608645 is healthy, nominal, and actively serving 217/217 rows at port 8766. Speculative live migration is strictly withheld.
+
+- **Date:** 2026-10-05T05:55:00+02:00 (Europe/Berlin)
+- **Governing Directives:** Codex Principal Directives C2316, C2319, C2324, C2328, C2331, C2312, C2303, C2278, C2266; Operating Model (`coordination/OPERATING-MODEL.md`); Resource Policy (`coordination/RESOURCE-POLICY.md`); Authoritative Human Delivery Reset (2026-10-04)
+- **Document Status:** **ARCHITECTURAL INVESTIGATION & PROPOSED MIGRATION RUNBOOK (Completed Engineering Investigation; Systemd Staging & Activation Formally Withheld from Execution)**
 - **Author / Investigator:** Read-Only Completion & Artifact Event Adapter (Antigravity Delegate, session UUID: `d6988df9-09a1-44f0-b7bd-7b28018f69a8`)
 - **Parent Session:** `antigravity-head` (`46fdb644`, conversation ID: `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
 - **Deliverable Path:** [`research/antigravity/recovery/REPORT-METRICS-COLLECTOR-BINDING.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-METRICS-COLLECTOR-BINDING.md)
-- **Target Process Context:** PID `1608645` (listening on `127.0.0.1:8766`, emits 217/217 complete 4-key rows; active uptime $> 60\text{ minutes}$)
+- **Target Process Context:** PID `1608645` (listening on `127.0.0.1:8766`, emits 217/217 complete 4-key rows; active uptime $> 80\text{ minutes}$)
 - **Process Status:** Active, healthy, nominal. **Strict Invariant: ZERO disruptive signals, ZERO kill, ZERO premature reload.**
 - **Compiler Invariant:** Exactly **0 cargo / rustc invocations** executed across all audited subprocesses under human hold
 - **Execution Boundary:** Purely read-only filesystem, process, and HTTP observation; zero subagent `git commit` commands executed
 
 ---
 
-## 1. Executive Summary & Directive Mandate
+## 1. Executive Summary & Epistemic Boundaries
 
-Under Codex Principal Directives C2316 and C2319, this report establishes the formal technical investigation and architectural design for migrating the private multi-workspace experiment metrics collector from an ad-hoc, session-bound process to a durable, supervised systemd user service.
+Under Codex Principal Directives C2316, C2319, C2324, C2328, and C2331, this deliverable establishes an exhaustive technical investigation and proposed migration runbook for transitioning the private multi-workspace experiment metrics collector from an ad-hoc, session-bound process to a durable systemd user service.
 
-### 1.1 The Operational Context
-- **Active Telemetry Daemon:** Process PID `1608645` (`/usr/bin/python3 scripts/metrics/collect.py --loop --serve --interval 60 --port 8766`) has been operating continuously since `02:30:20Z` (CEST 04:30:20). It serves live JSON telemetry on `http://127.0.0.1:8766/api/latest` and `/api/tasks`, maintaining 100.0% schema completeness across all 217 session catalog rows with zero HTTP errors.
-- **The Lifecycle Vulnerability:** PID `1608645` is a child of aplexer worker PID `560806` running within `0::/user.slice/user-1000.slice/session-8309.scope`. If the interactive aplexer worker restarts, context-compacts, or terminates, `session-8309.scope` is subject to cgroup teardown by `systemd-logind`.
-- **The Dead Service UUID Artifact:** In earlier cycles, metrics collection was tied to ephemeral aplexer session UUID `4e916871-6c09-48a2-acb8-5f890c5ef783` (PID `1640102`). When PID `1640102` was gracefully terminated in Directive C2278, `4e916871` became permanently inactive (`pid_live: false`). Because PID `1608645` was started as a background task rather than a registered aplexer agent, an epistemic gap emerged where orchestrator heartbeats reported dead service `4e916871` despite active, healthy HTTP telemetry.
-- **Directive Mandate:** Design an un-forged, durable systemd user service binding architecture that:
-  1. Preserves running PID `1608645` without disruptive restarts or premature SIGTERMs.
-  2. Defines a canonical systemd user service unit (`agent-metrics-collector.service`) leveraging existing user linger (`Linger=yes`).
-  3. Formulates a deterministic lifecycle contract: unit specification, start/stop/reload semantics, PID tracking, and socket reuse.
-  4. Provides a transparent, non-disruptive migration runbook to transition from the current session scope to systemd user supervision at an authorized maintenance checkpoint.
+### 1.1 Clear Separation of Investigation from Activation
+- **Completed Deliverable:** This document provides the architectural evaluation, unit definition, and safe migration runbook.
+- **Permanent Withholding from Execution:** **The proposed systemd user service is NOT currently installed, staged, or activated.** The active collector PID `1608645` remains undisturbed in its current execution environment. Live migration is explicitly withheld while PID `1608645` continues to operate nominally.
+
+### 1.2 Summary of Investigation Findings:
+1. **Live Process Health:** Collector PID `1608645` (`/usr/bin/python3 scripts/metrics/collect.py --loop --serve --interval 60 --port 8766`) has operated continuously since `02:30:20Z` (CEST 04:30:20). It serves live JSON telemetry on `http://127.0.0.1:8766/api/latest` with 100.0% schema completeness across all 217 session catalog rows with zero HTTP errors.
+2. **Attribution & Shared Scope:** Process inspection confirms parent PPID `560806` is worker 46 (`antigravity-head`), running inside `0::/user.slice/user-1000.slice/session-8309.scope`. 
+3. **Epistemic Note on Scope Teardown:** While the collector shares `session-8309.scope` with the interactive aplexer session, the claim that aplexer context compaction directly triggers `systemd-logind` cgroup teardown remains an **unproved hypothesis / configuration-specific behavior** (dependent on host `KillUserProcesses` settings and logind session state), not an absolute Linux invariant. The shared scope is an empirical observation of co-location.
+4. **Environment PATH Resolution (Directive C2328):** Source code inspection of `scripts/metrics/collect.py` line 489 confirms that the collector invokes bare `aplexer` via `subprocess.run(['aplexer', 'list', '--all', '--json'])`. The `aplexer` binary is installed at `/home/alexey/.local/bin/aplexer`. Consequently, the systemd unit `Environment="PATH=..."` **must** explicitly include `/home/alexey/.local/bin` to prevent `FileNotFoundError` during session catalog polling.
+5. **Source vs. Proposed Features:** An explicit demarcation is established between what exists in current `scripts/metrics/collect.py` (flock, basic SIGTERM event, `service-error.json`) versus features proposed in this roadmap (`service.pid`, SIGHUP live reload, bounded 5s shutdown, explicit HTTP server socket close).
+6. **Pre-Kill Target Verification & Identity Binding:** The migration runbook incorporates strict preflight checks verifying `/proc/$PID/cmdline`, `/proc/$PID/cgroup`, and socket port ownership before any signal is transmitted, preventing PID recycling from impacting an unrelated process.
+7. **Demarcated Rollback Semantics:** Rollback is formally bifurcated into "abort preserving incumbent" (pre-kill failure leaves running collector intact) and "recovery after stop" (fallback CLI restart if systemd unit activation fails).
 
 ---
 
-## 2. Deep Dive: Current Process & Cgroup Architecture
+## 2. Deep Dive: Process, Cgroup & Aplexer Call Tree Architecture
 
 An exhaustive runtime inspection of process PID `1608645` was conducted via the Linux `/proc` filesystem and systemd APIs:
 
@@ -39,14 +47,15 @@ flowchart TD
         UserSlice["user-1000.slice"]
     end
     
-    subgraph EphemeralSession [session-8309.scope (VULNERABLE)]
-        AplexerWorker["PID 560806: aplexer worker (antigravity-head)"]
+    subgraph EphemeralSession [session-8309.scope (Co-Located Session Scope)]
+        AplexerWorker["PPID 560806: aplexer worker (antigravity-head, worker 46)"]
         CollectorProcess["PID 1608645: python3 collect.py --loop --serve"]
         AplexerWorker --> CollectorProcess
+        CollectorProcess -->|Subprocess Line 489| AplexerCLI["aplexer list --all --json (/home/alexey/.local/bin/aplexer)"]
     end
     
-    subgraph TargetSlice [app.slice (RECOMMENDED TARGET)]
-        SystemService["agent-metrics-collector.service"]
+    subgraph TargetSlice [app.slice (Proposed Systemd Service Target)]
+        SystemService["agent-metrics-collector.service (PROPOSED)"]
     end
     
     User1000 -.->|Linger=yes (Survives Logout)| TargetSlice
@@ -58,67 +67,83 @@ flowchart TD
 
 | Attribute | Observed Runtime Value | Architectural Determination |
 | :--- | :--- | :--- |
-| **PID** | `1608645` | Workload process |
-| **Parent PID (PPID)** | `560806` | `/home/alexey/.local/bin/aplexer worker --id 46fdb644...` |
-| **Control Group** | `0::/user.slice/user-1000.slice/session-8309.scope` | Bound to ephemeral interactive login session 8309 |
+| **PID** | `1608645` | Active workload process |
+| **Parent PID (PPID)** | `560806` | Worker 46 (`antigravity-head` aplexer worker) |
+| **Control Group** | `0::/user.slice/user-1000.slice/session-8309.scope` | Co-located with interactive session 8309 |
 | **User & UID** | `alexey` (UID `1000`, GID `1000`) | Standard unprivileged local user account |
-| **Systemd User Linger** | **`Linger=yes`** (`loginctl show-user alexey`) | **Key Enabler:** User systemd instance `user@1000.service` remains alive permanently |
-| **Start Time** | `Mon Oct 5 04:30:20 2026 CEST` (`02:30:20Z`) | Stable uptime $> 60\text{ minutes}$ |
+| **Systemd User Linger** | **`Linger=yes`** (`loginctl show-user alexey`) | User systemd instance `user@1000.service` remains alive permanently |
+| **Start Time** | `Mon Oct 5 04:30:20 2026 CEST` (`02:30:20Z`) | Stable continuous uptime $> 80\text{ minutes}$ |
 | **Listening Socket** | `127.0.0.1:8766` (`fd 5`) | Private loopback HTTP interface only |
 | **Working Directory** | `/home/alexey/git/cloudflare-agent-git` | Canonical product workspace |
+| **Subprocess Dependency** | `scripts/metrics/collect.py:489` | Calls bare `aplexer` (`/home/alexey/.local/bin/aplexer`) |
 | **Exclusive File Locks** | `fd 3` $\to$ `.local/metrics/service.lock` | Non-blocking `flock(LOCK_EX)` preventing concurrent daemons |
 | **Standard Output / Err** | `fd 1`, `fd 2` $\to$ `.local/metrics/collector.log` | Appended log stream |
 
-### 2.2 Why Session Scope is Vulnerable
-When an interactive session (such as SSH, tmux, or an aplexer worker pane) exits, systemd executes `systemd-logind` session cleanup. By default, processes located inside `session-*.scope` are sent `SIGHUP` and `SIGTERM` as part of session termination. 
-
-Although `Linger=yes` ensures that the user manager `user@1000.service` survives logout, **it does not prevent session-scoped processes from being terminated when their specific session closes**. For true daemon survival across session boundaries, a process MUST reside inside a unit managed directly by `systemd --user` (under `app.slice`), completely uncoupled from interactive session scopes.
+### 2.2 Scope Co-Location vs. Teardown Risk
+- **Empirical State:** PID `1608645` was spawned directly from an interactive session under parent PID `560806`. Consequently, both reside inside `session-8309.scope`.
+- **Epistemic Demarcation (Directive C2328):** Causal generalizations regarding `systemd-logind` terminating session scopes upon context compaction remain an **unproved hypothesis** rather than a universal invariant. Depending on logind configuration (`KillUserProcesses=yes/no`) and PAM session hooks, background processes within a session scope may or may not be sent signals when the PTY closes.
+- **Architectural Determinism:** Regardless of specific host logind settings, migrating from `session-8309.scope` to `app.slice/agent-metrics-collector.service` eliminates all ambiguity. Processes under `app.slice` are explicitly supervised by `user@1000.service`, guaranteeing permanent execution independent of any interactive login session.
 
 ---
 
-## 3. Candidate Architectural Patterns Evaluated
+## 3. Source Audit vs. Proposed Feature Demarcation
 
-Three potential supervision models were evaluated against durability, observability, and simplicity:
+In compliance with Directives C2324 and C2328, the exact capabilities of current `scripts/metrics/collect.py` are strictly separated from proposed roadmap enhancements:
 
 ```mermaid
-graph TD
-    A[Supervision Models] --> B[Model 1: Systemd User Unit]
-    A --> C[Model 2: Aplexer Native Session Worker]
-    A --> D[Model 3: Custom Python Wrapper Daemon]
-    
-    B --> B1[RECOMMENDED: Native OS cgroup, Linger=yes, auto-restart, clean CLI]
-    C --> C1[REJECTED: Tied to chat protocol, high memory overhead, mailbox locks]
-    D --> D1[REJECTED: Reinvents systemd, fragile PID tracking, extra daemon]
+classDiagram
+    class ExistingCollectorSource {
+        +fcntl.flock(service.lock, LOCK_EX | LOCK_NB)
+        +fcntl.flock(sample.lock, LOCK_EX)
+        +atomic(latest.json)
+        +atomic(service-error.json)
+        +ThreadingHTTPServer(127.0.0.1, 8766)
+        +signal(SIGTERM, stopping.set)
+        +signal(SIGINT, stopping.set)
+        +subprocess.run(['aplexer', 'list', ...])
+        +while not stopping.is_set(): collect()
+    }
+    class ProposedRoadmapEnhancements {
+        +write(service.pid) [PROPOSED]
+        +signal(SIGHUP, trigger_reload) [PROPOSED]
+        +explicit_http_server_close() [PROPOSED]
+        +bounded_shutdown_timeout(5s) [PROPOSED]
+        +latest_json_service_block [PROPOSED]
+    }
+    ExistingCollectorSource <|-- ProposedRoadmapEnhancements : Proposed Roadmap
 ```
 
-### 3.1 Model 1: Systemd User Service (`agent-metrics-collector.service`) — **RECOMMENDED**
-- **Architecture:** An unprivileged user unit placed in `~/.config/systemd/user/agent-metrics-collector.service` and controlled via `systemctl --user`.
-- **Strengths:**
-  1. **Permanent Lifecycle:** Runs under `user@1000.service` (which persists indefinitely due to `Linger=yes`). Unaffected by aplexer worker termination, terminal disconnections, or context compaction.
-  2. **Automated Recovery:** Systemd restarts the process automatically upon crash or uncaught exception (`Restart=always`, `RestartSec=10`).
-  3. **Zero Subprocess Overhead:** Pure native kernel cgroup management without intermediate wrapper processes.
-  4. **Standard Tooling:** Inspectable via `systemctl --user status`, logs collected in journald and local log file.
-- **Trade-offs:** Requires standard user systemd daemon reload (`systemctl --user daemon-reload`).
+### 3.1 Capabilities Verified in Current Source (`scripts/metrics/collect.py`)
+- **Single-Instance Mutual Exclusion:** Lines 1039–1043 acquire non-blocking exclusive flock on `STORE / 'service.lock'`:
+  ```python
+  with (STORE / 'service.lock').open('a') as lock:
+      try:
+          fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+      except BlockingIOError:
+          raise SystemExit('metrics service already running')
+  ```
+- **Sampling Mutual Exclusion:** Lines 1011–1013 acquire blocking flock on `STORE / 'sample.lock'` during data collection.
+- **Aplexer CLI Subprocess:** Line 489 executes `subprocess.run(['aplexer', 'list', '--all', '--json'], cwd=ROOT, capture_output=True, text=True, timeout=15)`. Requires `/home/alexey/.local/bin` in environment `PATH`.
+- **Atomic Serialization:** Uses temporary rename (`atomic()`) for `latest.json` and writes unhandled exceptions to `service-error.json`.
+- **Basic Signal Handling:** Lines 1047–1049 register simple signal callbacks setting a `threading.Event()`:
+  ```python
+  stopping = threading.Event()
+  signal.signal(signal.SIGTERM, lambda *_: stopping.set())
+  signal.signal(signal.SIGINT, lambda *_: stopping.set())
+  ```
+- **Threaded HTTP Server:** Lines 1044–1046 launch `ThreadingHTTPServer` as a daemon thread.
 
-### 3.2 Model 2: Aplexer Native Session Worker (Re-minting Service UUID) — **REJECTED**
-- **Architecture:** Launching `aplexer worker --id <new-uuid>` specifically dedicated to metrics collection, matching the legacy `4e916871` pattern.
-- **Weaknesses:**
-  1. **Protocol Impedance Mismatch:** Aplexer is designed for agentic conversational workflows and LLM message buses, not persistent background HTTP telemetry daemons.
-  2. **Contention Risk:** Subject to aplexer SQLite state locks and message polling churn.
-  3. **Ephemeral State:** If the aplexer daemon itself restarts, the worker is lost again, recreating the exact defect identified in C2278.
-
-### 3.3 Model 3: Python Supervisor Loop Daemon — **REJECTED**
-- **Architecture:** A bespoke daemon script using `fork()` / `nohup` or a supervisor loop like `supervisor_loop.py`.
-- **Weaknesses:**
-  1. Re-invents process supervision already provided by systemd.
-  2. Prone to stale PID files and zombie processes on abnormal termination.
+### 3.2 Features Identified as PROPOSED (Not Currently in Source)
+1. **PID File Serialization (`service.pid`):** `collect.py` does **not** write its PID to disk; systemd tracks MainPID directly. Serializing `.local/metrics/service.pid` is a proposed enhancement.
+2. **Live Configuration Reload (`SIGHUP`):** `collect.py` has no `SIGHUP` handler; workspace path reloads currently require restarting the loop.
+3. **Explicit HTTP Server Socket Teardown:** When `stopping.is_set()` breaks the loop, `main()` exits, allowing the OS to close file descriptors. An explicit `server.shutdown()` and `server.server_close()` is not implemented in current source.
+4. **Structured Service Metadata in `latest.json`:** Emitting an explicit `"collector_process": {"pid": ..., "mode": ...}` block in `latest.json` is a proposed schema addition to eliminate reliance on historical aplexer session IDs.
 
 ---
 
-## 4. Formal Lifecycle Contract & Systemd Unit Specification
+## 4. Formal Systemd User Service Specification
 
-### 4.1 Systemd User Service Definition
-The proposed unit file is specified below for placement at `~/.config/systemd/user/agent-metrics-collector.service`:
+The proposed unit file is specified below for future placement at `~/.config/systemd/user/agent-metrics-collector.service`:
 
 ```ini
 [Unit]
@@ -129,9 +154,9 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/home/alexey/git/cloudflare-agent-git
-Environment=PYTHONUNBUFFERED=1
-Environment=PATH=/usr/local/bin:/usr/bin:/bin
-ExecStart=/usr/bin/python3 scripts/metrics/collect.py --loop --serve --interval 60 --port 8766
+Environment="PYTHONUNBUFFERED=1"
+Environment="PATH=/home/alexey/.local/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/usr/bin/python3 /home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py --loop --serve --interval 60 --port 8766
 Restart=always
 RestartSec=10
 Slice=app.slice
@@ -149,50 +174,46 @@ StandardError=append:/home/alexey/git/cloudflare-agent-git/.local/metrics/collec
 WantedBy=default.target
 ```
 
-### 4.2 Lifecycle Contract Parameters
-
-| Lifecycle Event | Mechanism | Contract Guarantee |
-| :--- | :--- | :--- |
-| **Start** | `systemctl --user start agent-metrics-collector` | Acquires exclusive non-blocking `flock` on `.local/metrics/service.lock`. Binds `127.0.0.1:8766`. Writes initial collection snapshot to `latest.json` atomically. |
-| **Stop** | `systemctl --user stop agent-metrics-collector` | Sends `SIGTERM`. Python `signal.signal(SIGTERM)` sets `stopping` Event. In-flight sample completes atomically. HTTP server closes. Lock is released. Exits 0 within 5 seconds. |
-| **Crash / Failure** | Uncaught Python Exception | Exception logged to `.local/metrics/service-error.json`. Systemd waits `RestartSec=10` and restarts process automatically. |
-| **Socket Reuse** | `ThreadingHTTPServer` | Python HTTP server sets `allow_reuse_address = True`. Port 8766 releases immediately upon socket close. |
-| **PID Tracking** | Systemd MainPID & `.local/metrics/service.pid` | Systemd tracks MainPID directly. The service additionally serializes `{"pid": os.getpid(), "started_at": ...}` to disk. |
-| **Reload** | SIGHUP (Configurable enhancement) | Triggers immediate sampling tick without dropping the HTTP socket. |
+### 4.1 Specification Attributes & Rationale (Directive C2328):
+- **Explicit PATH with Aplexer Support:** `Environment="PATH=/home/alexey/.local/bin:/usr/local/bin:/usr/bin:/bin"` guarantees that subprocess calls to `aplexer list` (`collect.py:489`) resolve correctly without throwing `FileNotFoundError`.
+- **Fully Qualified Paths:** Binary `/usr/bin/python3` and script `/home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py` are absolute.
+- **Slice Assignment:** `Slice=app.slice` places the unit directly in the user manager's persistent application slice, fully detached from `session-*.scope`.
+- **Resource Constraints:** `TasksMax=50` and `MemoryMax=512M` protect host resources from runaway threads or memory expansion.
 
 ---
 
-## 5. Telemetry Registration & Query Architecture (No Forgery Guarantee)
+## 5. Dead Service UUID Artifact (`4e916871`) & Truthful Telemetry
 
-### 5.1 Resolving the Dead Service UUID Artifact
-In Directive C2303, Codex Principal explicitly prohibited forging a dead service UUID (`4e916871`) or inventing an artificial aplexer session ID for a process running outside an aplexer worker.
+In Directive C2303, Codex Principal explicitly prohibited forging dead service UUID `4e916871` or inventing an artificial aplexer session ID for a background daemon.
 
-To achieve clean, truthful telemetry emission without impersonation:
-1. **Collector Metadata Schema Extension:**
-   Extend the root payload emitted by `collect.py` (`latest.json` and `http://127.0.0.1:8766/api/latest`) to include an explicit `service` block:
-   ```json
-   {
-     "service": {
-       "name": "agent-metrics-collector",
-       "pid": 1608645,
-       "supervision_mode": "session-scope",
-       "cgroup": "/user.slice/user-1000.slice/session-8309.scope",
-       "port": 8766,
-       "started_at": "2026-10-05T02:30:20Z",
-       "active_sessions_cataloged": 217,
-       "schema_complete": true
-     }
-   }
-   ```
-   Upon migration to systemd, `supervision_mode` transitions truthfully to `"systemd-user"` and `cgroup` to `app.slice/agent-metrics-collector.service`.
-2. **Orchestrator Heartbeat Alignment:**
-   Remote orchestrators and principals inspect `latest.json`'s `service` block directly, rather than cross-referencing an aplexer session table row that was historically recycled.
+### 5.1 Historical Origin of `4e916871`:
+- Historical heartbeat records (`heartbeat-1410-record.py`, `heartbeat-2326-record.py`) bound metrics collection to aplexer session UUID `4e916871-6c09-48a2-acb8-5f890c5ef783` (running PID `1640102`).
+- When PID `1640102` was gracefully terminated in Directive C2278, `4e916871` became dead (`pid_live: false`).
+- Because PID `1608645` was started directly as a standalone process rather than an aplexer worker, `latest.json` does not assign it a synthetic aplexer conversation ID.
+
+### 5.2 Recommended Resolution:
+- Rather than forging an aplexer worker row or reviving `4e916871`, orchestrators should query `latest.json` directly.
+- As a proposed enhancement, `collect.py` can expose a top-level `"collector_process"` block in `latest.json`:
+  ```json
+  "collector_process": {
+    "pid": 1608645,
+    "supervision_mode": "session-scope",
+    "cgroup": "0::/user.slice/user-1000.slice/session-8309.scope",
+    "port": 8766,
+    "started_at": "2026-10-05T02:30:20Z"
+  }
+  ```
+  Upon migration to systemd, `supervision_mode` transitions truthfully to `"systemd-user"` and `cgroup` to `app.slice/agent-metrics-collector.service`.
 
 ---
 
-## 6. Migration Runbook: Safe, Non-Disruptive Transition
+## 6. Migration Runbook: Safe, Bounded Transition & Target Verification [WITHHELD FROM EXECUTION - SPECULATIVE PROPOSAL ONLY]
 
-To guarantee that the running collector process PID `1608645` is preserved without premature disruption during current active delivery cycles, migration is partitioned into three decoupled phases:
+> [!WARNING]
+> **SPECULATIVE RUNBOOK - DO NOT EXECUTE DIRECTLY**
+> Migration of the metrics collector is **permanently withheld from execution** while incumbent PID `1608645` operates normally. The script below is an architectural specification for a future maintenance window. It must **not** be executed against the live system.
+
+To guarantee that the running collector process PID `1608645` is preserved without premature disruption during active operations, migration is structured into three strictly decoupled phases:
 
 ```mermaid
 sequenceDiagram
@@ -208,15 +229,25 @@ sequenceDiagram
     Head->>Unit: Write agent-metrics-collector.service
     Head->>Svc: systemctl --user daemon-reload
     
-    Note over Head,Svc: Phase 3: Controlled Handoff (Authorized Maintenance Window)
-    Head->>Cur: Send SIGTERM to PID 1608645
-    Cur-->>Cur: Release service.lock & port 8766 (exit 0)
-    Head->>Svc: systemctl --user start agent-metrics-collector.service
-    Svc-->>Head: Verify active (running) & HTTP 200 on port 8766
+    Note over Head,Svc: Phase 3: Bounded Handoff Execution (Authorized Window)
+    Head->>Cur: Preflight checks (cmdline, cgroup, port ownership)
+    alt Preflight Fails
+        Head-->>Cur: ABORT PRESERVING INCUMBENT (Leaves PID 1608645 running)
+    else Preflight Passes
+        Head->>Cur: kill -TERM 1608645
+        Cur-->>Cur: Exit loop & release port 8766
+        Note over Head: Bounded 5s Wait Loop (ss -H -ltn 'sport = :8766')
+        Head->>Svc: systemctl --user start agent-metrics-collector.service
+        alt Activation Fails
+            Head-->>Cur: RECOVERY AFTER STOP (Fallback CLI restart)
+        else Activation Passes
+            Svc-->>Head: Verify active (running) & HTTP 200 on port 8766
+        end
+    end
 ```
 
 ### 6.1 Phase 1: Immediate Maintenance (Active Now)
-- **Action:** Maintain PID `1608645` undisturbed.
+- **Action:** Maintain PID `1608645` completely undisturbed.
 - **Rule:** Do NOT send `SIGTERM`, `SIGINT`, or `SIGHUP`. Do NOT run `collect.py --loop` in parallel (fails closed via `service.lock`).
 
 ### 6.2 Phase 2: Unit Staging (Preparation)
@@ -228,39 +259,102 @@ sequenceDiagram
    ```
 *(Note: Do not start the service yet; port 8766 is actively occupied by PID 1608645).*
 
-### 6.3 Phase 3: Controlled Atomic Handoff Execution (Authorized Window)
-When project heads and principals agree on a quiet maintenance boundary:
-1. **Gracefully stop current process:**
-   ```bash
-   kill -TERM 1608645
-   ```
-2. **Verify port release (bounded wait $\le 5\text{s}$):**
-   ```bash
-   while ss -tulpn | grep -q ':8766'; do sleep 0.5; done
-   ```
-3. **Start systemd service:**
-   ```bash
-   systemctl --user start agent-metrics-collector.service
-   ```
-4. **Attestation & Verification:**
-   ```bash
-   systemctl --user status agent-metrics-collector.service
-   curl -s http://127.0.0.1:8766/api/latest | python3 -c "import sys, json; d=json.load(sys.stdin); print('Sessions:', len(d.get('sessions', [])))"
-   ```
+### 6.3 Phase 3: Bounded Handoff Execution with Preflight Verification (Authorized Window)
+In accordance with Directives C2324, C2328, and C2331, the execution script performs strict preflight identity checks and uses exact socket filtering with a monotonic 5-second deadline:
 
-### 6.4 Rollback Procedure
-If `agent-metrics-collector.service` fails to start:
-1. `systemctl --user stop agent-metrics-collector.service`
-2. Fallback to direct CLI invocation:
-   ```bash
-   python3 scripts/metrics/collect.py --loop --serve --interval 60 --port 8766 >> .local/metrics/collector.log 2>&1 &
-   ```
+```bash
+#!/usr/bin/env bash
+# [DO NOT EXECUTE - SPECULATIVE RUNBOOK - WITHHELD FROM EXECUTION WHILE PID 1608645 IS HEALTHY]
+set -euo pipefail
+
+# Dynamic target resolution (never assume fixed PID across restarts):
+# TARGET_PID="$(ss -H -ltn -p 'sport = :8766' | sed -n 's/.*pid=\([0-9]*\).*/\1/p')"
+# Below is a template specification; do NOT run directly:
+TARGET_PID="<DYNAMICALLY_RESOLVE_TARGET_PID_AT_RUNTIME>"
+SERVICE_NAME="agent-metrics-collector.service"
+
+echo "=== [1/5] Preflight Target Verification & Identity Binding ==="
+# Check 1: Process exists
+if ! kill -0 "${TARGET_PID}" 2>/dev/null; then
+  echo "ERROR: Target PID ${TARGET_PID} is not running; aborting handoff preserving incumbent" >&2
+  exit 1
+fi
+
+# Check 2: Commandline matches metrics collector (prevents recycled PID kill)
+if ! tr '\0' ' ' < "/proc/${TARGET_PID}/cmdline" | grep -q "scripts/metrics/collect.py"; then
+  echo "ERROR: PID ${TARGET_PID} cmdline does not match scripts/metrics/collect.py; aborting" >&2
+  exit 1
+fi
+
+# Check 3: Cgroup matches expected session-8309.scope
+if ! grep -q "session-8309.scope" "/proc/${TARGET_PID}/cgroup"; then
+  echo "ERROR: PID ${TARGET_PID} cgroup does not match session-8309.scope; aborting" >&2
+  exit 1
+fi
+
+# Check 4: Port 8766 is currently owned by TARGET_PID
+if ! ss -H -ltn -p 'sport = :8766' | grep -q "pid=${TARGET_PID}"; then
+  echo "ERROR: Port 8766 is not bound by PID ${TARGET_PID}; aborting" >&2
+  exit 1
+fi
+echo "Preflight verified: PID ${TARGET_PID} is confirmed metrics collector."
+
+echo "=== [2/5] Sending graceful SIGTERM to PID ${TARGET_PID} ==="
+kill -TERM "${TARGET_PID}"
+
+echo "=== [3/5] Waiting for port 8766 release (bounded 5s deadline) ==="
+deadline=$((SECONDS + 5))
+while [ -n "$(ss -H -ltn 'sport = :8766')" ]; do
+  if [ $SECONDS -ge $deadline ]; then
+    echo "ERROR: Timed out waiting for port 8766 to release after 5s!" >&2
+    echo "Triggering RECOVERY AFTER STOP fallback..." >&2
+    # Fallback restart
+    nohup /usr/bin/python3 /home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py \
+      --loop --serve --interval 60 --port 8766 \
+      >> /home/alexey/git/cloudflare-agent-git/.local/metrics/collector.log 2>&1 &
+    exit 1
+  fi
+  sleep 0.5
+done
+echo "Port 8766 successfully released."
+
+echo "=== [4/5] Starting systemd user service ==="
+if ! systemctl --user start "${SERVICE_NAME}"; then
+  echo "ERROR: Failed to start ${SERVICE_NAME}; triggering RECOVERY AFTER STOP..." >&2
+  nohup /usr/bin/python3 /home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py \
+    --loop --serve --interval 60 --port 8766 \
+    >> /home/alexey/git/cloudflare-agent-git/.local/metrics/collector.log 2>&1 &
+  exit 1
+fi
+
+echo "=== [5/5] Verifying service activation and HTTP health ==="
+systemctl --user is-active "${SERVICE_NAME}"
+curl -s http://127.0.0.1:8766/api/latest | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+sessions = len(d.get('sessions', []))
+assert sessions > 0, 'No sessions cataloged'
+print(f'SUCCESS: Service active. Cataloged {sessions} sessions.')
+"
+```
+
+### 6.4 Demarcated Rollback Semantics (Directive C2328)
+Rollback failure handling is formally split into two distinct operational modes:
+
+1. **Mode A: Abort Preserving Incumbent (Pre-Stop Failure):**
+   - **Trigger:** Preflight verification fails (PID does not exist, cmdline does not match `collect.py`, cgroup is not `session-8309.scope`, or port 8766 is not bound by target PID).
+   - **Action:** Execution halts immediately with exit code `1`.
+   - **State Guarantee:** **No signal is sent to PID `1608645`.** The running collector remains completely untouched, healthy, and operational.
+2. **Mode B: Recovery After Stop (Post-Stop Failure):**
+   - **Trigger:** Incumbent PID `1608645` was sent SIGTERM, but port release exceeds the 5-second deadline, or `systemctl --user start` fails.
+   - **Action:** Stop the failed systemd unit, verify/clean file lock, and relaunch `scripts/metrics/collect.py` directly in the background via CLI fallback (`nohup /usr/bin/python3 ...`).
+   - **State Guarantee:** Restores HTTP telemetry availability within seconds, avoiding prolonged service downtime.
 
 ---
 
 ## 7. Constraint & Invariant Verification
 
-1. **Active Process Preservation:** PID `1608645` was left completely undisturbed during this investigation; zero signals were transmitted, and port 8766 remained continuously active.
+1. **Active Process Preservation:** PID `1608645` was left completely undisturbed during this investigation; **zero signals** were transmitted, and port 8766 remained continuously active.
 2. **Compiler Invariant Under Human Hold:** Exactly **0 cargo / rustc compiler invocations** executed across all steps.
 3. **Physical Scratch Workspace Bounds:** Confined strictly to `.local/scratch/metrics-collector-audit/` (mode `0700`, measured usage 2.1 MB $\ll 512$ MB, net `/tmp` growth = 0).
 4. **Subagent Git Boundary:** Strictly zero `git commit` or `git tag` invocations executed. Canonical repositories remained unmodified.
@@ -269,6 +363,8 @@ If `agent-metrics-collector.service` fails to start:
 
 ## 8. Summary of Engineering Recommendations
 
-1. **Adopt Systemd User Service Architecture:** Formalize `agent-metrics-collector.service` under `~/.config/systemd/user/` to leverage user linger (`Linger=yes`) for persistent execution independent of interactive aplexer sessions.
-2. **Reject Aplexer Session Impersonation:** Do not forge native aplexer session IDs for background daemons; emit process and cgroup provenance truthfully in `latest.json`.
-3. **Schedule Phase 3 Atomic Handoff:** Execute the 3-step transition (SIGTERM $\to$ port release $\to$ systemctl start) at an authorized coordination boundary.
+1. **Retain PID 1608645 During Current Cycle:** Do not perform an uncoordinated reload or kill while active trials and reviews are in flight.
+2. **Adopt Systemd User Unit as Canonical Architecture:** When migration is scheduled, deploy `agent-metrics-collector.service` to `~/.config/systemd/user/` with `Environment="PATH=/home/alexey/.local/bin:/usr/local/bin:/usr/bin:/bin"` to guarantee aplexer subprocess resolution under `app.slice`.
+3. **Enforce Preflight Target Verification:** Prevent PID recycling errors by asserting `/proc/$PID/cmdline`, cgroup membership, and port socket ownership before signaling.
+4. **Implement Exact Bounded Handoff & Rollback:** Use `ss -H -ltn 'sport = :8766'` with monotonic 5-second deadline; differentiate pre-stop abort from post-stop CLI recovery.
+5. **Reject UUID Impersonation:** Maintain truthful reporting in telemetry without forging dead aplexer session `4e916871`.

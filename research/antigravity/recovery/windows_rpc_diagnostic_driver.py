@@ -57,23 +57,280 @@ def sanitize_text(text: str) -> str:
     return t
 
 
-class SanitizingTextIO:
-    """Wraps a TextIO stream (e.g. sys.stderr) to pass all written output through sanitize_text()."""
+PARTIAL_HEADER_ONLY_PATTERN = re.compile(
+    r"(?i)(?:"
+    r"\b(?:bearer|token)\s*[:=]?\s*$"
+    r"|\"(?:token|parent_token|password|secret)\"\s*:\s*\"?\s*$"
+    r")"
+)
 
-    def __init__(self, target: Any) -> None:
-        self._target = target
+# Mid-token patterns at tail of buffer with partial values (to be redacted on flush) (C2327)
+BEARER_MID_TOKEN_PATTERN = re.compile(r'(?i)(\bbearer\s+)([a-zA-Z0-9_\-\.\+\/\=]+)$')
+QUERY_MID_TOKEN_PATTERN = re.compile(r'(token=)([a-zA-Z0-9_\-\.\+\/\=]+)$')
+UNCLOSED_JSON_VAL_PATTERN = re.compile(r'("(?:token|parent_token|password|secret)"\s*:\s*")((?:\\.|[^"\\])+)$')
+
+TOKEN_CHARS = re.compile(r'^[a-zA-Z0-9_\-\.\+\/\=]+')
+
+
+def consume_json_string(s: str, in_escape: bool = False) -> tuple[int, bool, bool]:
+    """
+    Consumes characters of an unclosed JSON string until terminating unescaped quote (C2327).
+    Returns (consumed_count, finished, in_escape).
+    """
+    i = 0
+    n = len(s)
+    if in_escape and n > 0:
+        i += 1
+        in_escape = False
+    while i < n:
+        if s[i] == "\\":
+            if i + 1 < n:
+                i += 2
+            else:
+                return n, False, True
+        elif s[i] == '"':
+            return i + 1, True, False
+        else:
+            i += 1
+    return n, False, in_escape
+
+
+class _BinaryWriterAdapter:
+    """Adapts a binary target stream to accept text writes by encoding back to bytes."""
+
+    def __init__(self, binary_target: Any, encoding: str = "utf-8") -> None:
+        self._binary_target = binary_target
+        self._encoding = encoding or "utf-8"
 
     def write(self, s: str) -> int:
-        sanitized = sanitize_text(s)
-        return self._target.write(sanitized)
+        if self._binary_target is None:
+            return len(s)
+        encoded = s.encode(self._encoding, errors="replace")
+        self._binary_target.write(encoded)
+        return len(s)
+
+    def flush(self) -> None:
+        if self._binary_target and hasattr(self._binary_target, "flush"):
+            self._binary_target.flush()
+
+    def close(self) -> None:
+        if self._binary_target and hasattr(self._binary_target, "close"):
+            self._binary_target.close()
+
+    def isatty(self) -> bool:
+        if self._binary_target and hasattr(self._binary_target, "isatty"):
+            return self._binary_target.isatty()
+        return False
+
+
+class SanitizingBinaryIO:
+    """
+    Wraps a binary stream (e.g. sys.stderr.buffer) to decode, buffer, and sanitize
+    all written bytes through sanitize_text(), preventing raw buffer bypass (C2323 / C2327).
+
+    Guarantees & Supported Boundaries (C2327):
+    - Supported: Python-level sys.stderr.buffer.write(), writelines(), and flush().
+    - Unsupported / Outside Guarantee: Direct OS-level file descriptor writes (os.write(2, ...)),
+      C-extension writes directly to stdout/stderr file descriptors, and libc write(2, ...).
+    """
+
+    def __init__(self, target_buffer: Any, encoding: str = "utf-8") -> None:
+        self._target = target_buffer
+        self._encoding = encoding or "utf-8"
+        self._adapter = _BinaryWriterAdapter(target_buffer, self._encoding)
+        self._text_wrapper = SanitizingTextIO(self._adapter)
+
+    def write(self, b: bytes | bytearray | memoryview) -> int:
+        data_bytes = bytes(b)
+        text = data_bytes.decode(self._encoding, errors="replace")
+        self._text_wrapper.write(text)
+        return len(data_bytes)
 
     def writelines(self, lines: Any) -> None:
         for line in lines:
             self.write(line)
 
     def flush(self) -> None:
+        self._text_wrapper.flush()
+
+    def close(self) -> None:
+        self._text_wrapper.close()
+
+    def isatty(self) -> bool:
+        if self._target and hasattr(self._target, "isatty"):
+            return self._target.isatty()
+        return False
+
+    def __getattr__(self, name: str) -> Any:
+        if name in ("raw", "_target", "buffer"):
+            raise AttributeError(f"Direct access to '{name}' is restricted for privacy protection (C2323)")
+        if self._target is not None:
+            return getattr(self._target, name)
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+
+
+class SanitizingTextIO:
+    """
+    Wraps a TextIO stream (e.g. sys.stderr) with line and partial-token buffering
+    to prevent split-write token leakage and raw buffer bypass (C2323 / C2327).
+
+    Guarantees & Supported Boundaries (C2327):
+    - Supported: Standard Python sys.stderr.write(), sys.stderr.writelines(), and
+      sys.stderr.buffer.write() via SanitizingBinaryIO.
+    - Unsupported / Outside Guarantee: Direct low-level OS file descriptor writes (os.write(2, ...)),
+      C-extension direct stdout/stderr writes, and libc write(2, ...).
+      The diagnostic driver ensures safety against this boundary by never issuing low-level
+      fd 2 writes, trapping all exceptions, and returning structured sanitized JSON to stdout.
+    """
+
+    def __init__(self, target: Any) -> None:
+        self._target = target
+        self._buffer: str = ""
+        self._binary_wrapper: SanitizingBinaryIO | None = None
+        self._in_bearer_token: bool = False
+        self._in_query_token: bool = False
+        self._in_json_token: bool = False
+        self._in_json_escape: bool = False
+
+    @property
+    def buffer(self) -> SanitizingBinaryIO:
+        """Returns a SanitizingBinaryIO wrapping the underlying binary buffer (C2323)."""
+        if self._binary_wrapper is None:
+            target_buf = getattr(self._target, "buffer", None)
+            encoding = getattr(self._target, "encoding", "utf-8") or "utf-8"
+            self._binary_wrapper = SanitizingBinaryIO(target_buf, encoding=encoding)
+        return self._binary_wrapper
+
+    def write(self, s: str) -> int:
+        if not s:
+            return 0
+
+        # Handle in-flight bearer token continuation (C2327)
+        if self._in_bearer_token:
+            m = TOKEN_CHARS.match(s)
+            if m:
+                consumed = m.end()
+                if consumed < len(s):
+                    # Next character is not a token character: token ends
+                    self._in_bearer_token = False
+                    s = s[consumed:]
+                else:
+                    # Entire chunk was token characters: swallow completely
+                    return len(s)
+            else:
+                self._in_bearer_token = False
+
+        # Handle in-flight query token continuation (C2327)
+        if self._in_query_token:
+            m = TOKEN_CHARS.match(s)
+            if m:
+                consumed = m.end()
+                if consumed < len(s):
+                    self._in_query_token = False
+                    s = s[consumed:]
+                else:
+                    return len(s)
+            else:
+                self._in_query_token = False
+
+        # Handle in-flight JSON token string continuation (C2327)
+        if self._in_json_token:
+            consumed, finished, in_escape = consume_json_string(s, self._in_json_escape)
+            self._in_json_escape = in_escape
+            if finished:
+                self._in_json_token = False
+                s = s[consumed:]
+            else:
+                return len(s)
+
+        self._buffer += s
+        if "\n" in self._buffer:
+            lines = self._buffer.split("\n")
+            for line in lines[:-1]:
+                sanitized_line = sanitize_text(line)
+                self._target.write(sanitized_line + "\n")
+            self._buffer = lines[-1]
+        elif len(self._buffer) > 65536:
+            prefix = self._buffer[:-1024]
+            self._target.write(sanitize_text(prefix))
+            self._buffer = self._buffer[-1024:]
+        return len(s)
+
+    def writelines(self, lines: Any) -> None:
+        for line in lines:
+            self.write(line)
+
+    def flush(self) -> None:
+        if self._buffer:
+            # 1. Check if buffer ends with a header-only pattern (no token characters yet) (C2323)
+            m_header = PARTIAL_HEADER_ONLY_PATTERN.search(self._buffer)
+            if m_header is not None:
+                # Retain header in buffer across flush
+                prefix = self._buffer[: m_header.start()]
+                if prefix:
+                    self._target.write(sanitize_text(prefix))
+                self._buffer = self._buffer[m_header.start() :]
+                if hasattr(self._target, "flush"):
+                    self._target.flush()
+                return
+
+            # 2. Check if buffer ends with mid-token Bearer (C2327)
+            m_bearer = BEARER_MID_TOKEN_PATTERN.search(self._buffer)
+            if m_bearer is not None:
+                prefix = self._buffer[: m_bearer.start()]
+                if prefix:
+                    self._target.write(sanitize_text(prefix))
+                self._target.write(m_bearer.group(1) + "[REDACTED]")
+                self._buffer = ""
+                self._in_bearer_token = True
+                if hasattr(self._target, "flush"):
+                    self._target.flush()
+                return
+
+            # 3. Check if buffer ends with mid-token Query parameter (C2327)
+            m_query = QUERY_MID_TOKEN_PATTERN.search(self._buffer)
+            if m_query is not None:
+                prefix = self._buffer[: m_query.start()]
+                if prefix:
+                    self._target.write(sanitize_text(prefix))
+                self._target.write(m_query.group(1) + "[REDACTED]")
+                self._buffer = ""
+                self._in_query_token = True
+                if hasattr(self._target, "flush"):
+                    self._target.flush()
+                return
+
+            # 4. Check if buffer ends with unclosed JSON token value (C2327)
+            m_json = UNCLOSED_JSON_VAL_PATTERN.search(self._buffer)
+            if m_json is not None:
+                prefix = self._buffer[: m_json.start()]
+                if prefix:
+                    self._target.write(sanitize_text(prefix))
+                self._target.write(m_json.group(1) + '[REDACTED]"')
+                self._buffer = ""
+                self._in_json_token = True
+                self._in_json_escape = False
+                if hasattr(self._target, "flush"):
+                    self._target.flush()
+                return
+
+            # Normal buffer flush
+            self._target.write(sanitize_text(self._buffer))
+            self._buffer = ""
+
         if hasattr(self._target, "flush"):
             self._target.flush()
+
+    def close(self) -> None:
+        if self._buffer:
+            self._target.write(sanitize_text(self._buffer))
+            self._buffer = ""
+        self._in_bearer_token = False
+        self._in_query_token = False
+        self._in_json_token = False
+        self._in_json_escape = False
+        if hasattr(self._target, "close"):
+            self._target.close()
 
     def isatty(self) -> bool:
         if hasattr(self._target, "isatty"):
@@ -81,6 +338,10 @@ class SanitizingTextIO:
         return False
 
     def __getattr__(self, name: str) -> Any:
+        if name == "buffer":
+            return self.buffer
+        if name == "raw":
+            raise AttributeError("Direct access to raw binary stream is restricted for privacy protection (C2323)")
         return getattr(self._target, name)
 
 

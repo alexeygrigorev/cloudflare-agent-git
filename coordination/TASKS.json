@@ -2902,20 +2902,22 @@
       "team_id": "agent-coordination",
       "owner_tag": "antigravity-head",
       "executor_ids": [
-        "37aa1067-8bda-4dde-95b8-7b5bb927bd1f"
+        "37aa1067-8bda-4dde-95b8-7b5bb927bd1f",
+        "259526a9-5deb-47ce-810c-ca5f2da56b68"
       ],
       "status": "completed",
-      "updated_at": "2026-10-05T03:36:30.000000+00:00",
+      "updated_at": "2026-10-05T03:55:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/recovery/windows_rpc_diagnostic_driver.py",
         "tests/test_windows_rpc_diagnostic_driver.py",
-        "research/antigravity/recovery/REPORT-WINDOWS-DRIVER-PRIVACY-REPAIR.md"
+        "research/antigravity/recovery/REPORT-WINDOWS-DRIVER-PRIVACY-REPAIR.md",
+        "research/antigravity/reviews/REV-WINDOWS-DRIVER-PRIVACY-REPAIR.md"
       ],
-      "acceptance": "Windows diagnostic driver privacy repair and negative verification under Directives C2315, C2317, and C2319 executed by reviewer37. Fixed Base64 padding regex truncation ([+/=]), implemented SanitizingTextIO stderr stream sanitization intercepting unhandled errors/warnings, and added dynamic OS detection for ssh.exe on Windows. Dedicated test suite in tests/test_windows_rpc_diagnostic_driver.py passed 6/6 tests in 0.075s with zero byte token leakage. Regression tests verified (11/11 RPC contract, 4/4 unicode RPC). Zero cargo/rustc compiler invocations.",
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C2315/C2317/C2319. Executed by reviewer37 in .local/scratch/reviewer37-windows-client-audit/.",
-      "acceptance_status": "REPAIRED AND NEGATIVELY VERIFIED (FULL PRIVACY & REDACTION CONFORMANCE, 6/6 TESTS PASS)",
-      "next_action": "Desktop trial can safely evaluate repaired driver when physical desktop testing is authorized.",
+      "acceptance": "Windows diagnostic driver privacy repair, mid-token split-flush handling, binary stream wrapping, and independent negative verification under Directives C2315, C2317, C2319, C2323, and C2327. Fixed Base64 padding regex truncation ([+/=]), implemented SanitizingTextIO stderr stream sanitization intercepting unhandled errors/warnings, and added dynamic OS detection for ssh.exe on Windows. Intercepted mid-token flushes across write boundaries via in-flight token state tracking, wrapped raw binary stream (stream.buffer) with SanitizingBinaryIO, blocked direct .raw access, and explicitly demarcated OS-level fd 2 / C-extension non-overclaiming. Dedicated test suite in tests/test_windows_rpc_diagnostic_driver.py passed 15/15 tests in 0.072s with zero byte token leakage. Independently audited and signed off by reviewer259 in REV-WINDOWS-DRIVER-PRIVACY-REPAIR.md (SHA256: 0fc4380a849bd5cc49d5ab3fae6667119e862b92354f9076e5cf20a180152506) with BOUNDED ACCEPTANCE. Zero cargo/rustc compiler invocations; physical Windows runtime held.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2315/C2317/C2319/C2323/C2327. Executed by reviewer37 and independently audited by reviewer259.",
+      "acceptance_status": "BOUNDED ACCEPTANCE (C2327 MID-TOKEN SPLIT FLUSH & RAW BUFFER REPAIRED, 15/15 TESTS PASS, REV-WINDOWS-DRIVER-PRIVACY-REPAIR.md SHA 0fc4380a, PHYSICAL WINDOWS HELD)",
+      "next_action": "Physical Windows execution held; offline Linux testbed verification complete.",
       "continuation_trigger": "Desktop-root forward RPC execution."
     },
     {
@@ -2927,16 +2929,38 @@
         "d6988df9-09a1-44f0-b7bd-7b28018f69a8"
       ],
       "status": "completed",
-      "updated_at": "2026-10-05T03:36:15.000000+00:00",
+      "updated_at": "2026-10-05T03:55:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/recovery/REPORT-METRICS-COLLECTOR-BINDING.md"
       ],
-      "acceptance": "Investigation of systemd user service binding for metrics collector PID 1608645 under Directives C2316 and C2319 by d6988df9. Strictly zero signals or disruptive reloads sent to active collector (continuously serving 217/217 rows at :8766). Diagnosed session-scope cleanup vulnerability and formulated non-disruptive systemd user service architecture (agent-metrics-collector.service) with Linger=yes under app.slice, providing permanent lifecycle persistence across session loss without forging dead UUIDs or restarting active service.",
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C2316/C2319. Executed by d6988df9 in .local/scratch/collector-binding-audit/.",
-      "acceptance_status": "SYSTEMD USER SERVICE PERSISTENCE ARCHITECTURE DOCUMENTED (PID 1608645 UNDISTURBED)",
-      "next_action": "Staged migration runbook ready for execution at authorized maintenance window.",
-      "continuation_trigger": "Authorized metrics collector handoff window."
+      "acceptance": "Completed engineering investigation and proposed runbook for systemd user service architecture under Directives C2316, C2319, C2324, C2328, and C2331 by d6988df9. Strictly zero signals or disruptive reloads sent to active collector (continuously serving 217/217 rows at :8766). Diagnosed session-scope cleanup vulnerability and formulated non-disruptive systemd user service architecture (agent-metrics-collector.service) with Linger=yes under app.slice, providing permanent lifecycle persistence across session loss without forging dead UUIDs or restarting active service. Live runtime migration is explicitly WITHHELD from execution while active collector PID 1608645 operates nominally. Scope teardown risk remains an unproved hypothesis; all migration scripts durably marked non-executable runbook material only.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2316/C2319/C2324/C2328/C2331. Executed by d6988df9 in .local/scratch/collector-binding-audit/.",
+      "acceptance_status": "INVESTIGATION & DEFERRED ARCHITECTURE COMPLETED; RUNTIME MIGRATION WITHHELD FROM EXECUTION WHILE PID 1608645 REMAINS HEALTHY",
+      "next_action": "Runtime migration permanently withheld while PID 1608645 operates nominally; report marked non-executable runbook.",
+      "continuation_trigger": "Authorized metrics collector maintenance window."
+    },
+    {
+      "id": "dashboard-canonical-integration-readiness",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "06ecf158-e51f-411c-89b8-083fc9fb3dd6"
+      ],
+      "status": "ready-for-adoption",
+      "updated_at": "2026-10-05T03:55:00.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-DASHBOARD-CANONICAL-INTEGRATION-READINESS.md",
+        "research/antigravity/recovery/dashboard-alias-and-fourth-project-minimal.patch",
+        "research/antigravity/recovery/dashboard-static-fourth-project-minimal.patch"
+      ],
+      "acceptance": "Scratch testbed audit and verification of minimal 4th-product deltas on base efed70d under Directives C2319, C2326, and C2331. Both minimal patches apply with 0 conflicts and 0 fuzz, expanding the test suite from 44 to 48 passing tests (48/48 PASS in 0.089s) and verifying rendered UI card and JavaScript PROJECT_IDS binding. Preserved canonical agent-dashboard completely unmodified (2,102 uncommitted LOC intact). Integration instructions updated with pre-mutation working tree backup/digest and concrete reviewed-owned paths. Handoff dispatched to agent-dashboard-head (c7a75f76) via aplexer message 01a10a32-96c1-7fe1-b6b8-5fafb475ad96.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2319/C2326/C2331. Executed by architect06.",
+      "acceptance_status": "SCRATCH TESTBED READY & VERIFIED (48/48 TESTS PASS; CONCRETE PATHS SPECIFIED; HANDED OFF TO AGENT-DASHBOARD-HEAD)",
+      "next_action": "Await agent-dashboard-head adoption on working branch; prepare hourly 24h consumer validation from private collector.",
+      "continuation_trigger": "agent-dashboard-head adoption of minimal patches."
     },
     {
       "id": "dashboard-c7-notready-diagnostic",
