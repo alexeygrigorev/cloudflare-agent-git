@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T01:31:00.000000+00:00",
+  "updated_at": "2026-10-05T02:35:00.000000+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -2822,16 +2822,16 @@
         "163fa1fb-38ac-47ba-a73c-afe0778fec7d"
       ],
       "status": "done",
-      "updated_at": "2026-10-05T02:06:00.000000+00:00",
+      "updated_at": "2026-10-05T02:35:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/recovery/REPORT-TWOHOST-DESKTOP-HETZNER-RPC.md",
         "research/antigravity/recovery/REPORT-TYPED-SSH-FILEBUS-RPC.md",
         "research/antigravity/recovery/DEMO-RUNBOOK.md"
       ],
-      "acceptance": "Authentic physical two-host cross-computer FileBus RPC cycle executed and verified across Windows 11 Desktop (client) and Hetzner Linux (server/rendezvous at 135.181.114.209) under Codex C2224/C2226/C2258/C2260 and Desktop Orchestrator / Root directives in REPORT-TWOHOST-DESKTOP-HETZNER-RPC.md (SHA256: 02e6c5153d1e5b1e0fc8e705733b6c77bb8e65b9668d3ae085cb12386f39820b). Full 4-stage message cycle verified: 1) Desktop Root enrollment (01ace831-6d23-4c05-a6df-1a58099aca67) at 01:31:05Z (1,415 ms via PowerShell stdin JSON streaming over native Windows OpenSSH ssh.exe with DPAPI user token storage); 2) Antigravity Head enrollment (91d2a63b-fe47-4b53-bee8-2ada24259439) into same store; 3) Task message 4497403a-70a5-4adc-9398-bbcb85b45415 dispatched by head at 01:39:10Z; 4) Desktop Root read ACK issued at 01:57:32Z (975 ms); 5) Desktop Root free reply b448cc83-3fc1-4290-94c6-796cb160948d (digest 9acbecba..., idempotency key desktop-root-review-4497403a-v1) delivered at 01:57:33Z (974 ms); 6) Head read ACK recorded on FileBus at 02:00:52Z. Reconciled DPAPI remote --cred contradiction: remote Linux interpreter cannot resolve Windows local DPAPI credential paths; desktop-root securely utilized authenticated stdin JSON streaming RPC (zero secrets in sys.argv, /proc, or shell history); corrected run instructions document dual Mode A (local POSIX --cred) and Mode B (remote stdin JSON RPC). Identified autonomous receiving loop dependency (18m turnaround was desktop controller polling latency, not 974ms network latency). Evaluated forward rendezvous polling vs reverse SSH: forward polling eliminates desktop NAT traversal, firewall holes, and inbound sshd attack surface. Epistemic disclosures: zero timing benefit, zero customer adoption, Unicode untested, offline failover untested, native Windows Python client held. Publication guard clean.",
+      "acceptance": "Authentic physical two-host cross-computer FileBus RPC cycle executed and verified across Windows Desktop (client) and Hetzner Linux (server/rendezvous at 135.181.114.209) under Codex C2224/C2226/C2258/C2260 and Desktop Orchestrator / Root directives in REPORT-TWOHOST-DESKTOP-HETZNER-RPC.md (SHA256: a86cc5c83c2f59face5bdea9a693b720efe3a7288ffafc01c6a0e2ba26a78411). Full 4-stage message cycle verified: 1) Desktop Root enrollment (01ace831-6d23-4c05-a6df-1a58099aca67) at 01:31:05Z (1,415 ms via PowerShell stdin JSON streaming over native Windows OpenSSH ssh.exe with DPAPI user token storage); 2) Antigravity Head enrollment (91d2a63b-fe47-4b53-bee8-2ada24259439) into same store; 3) Task message 4497403a-70a5-4adc-9398-bbcb85b45415 dispatched by head at 01:39:10Z; 4) Desktop Root read ACK issued at 01:57:32Z (975 ms); 5) Desktop Root free reply b448cc83-3fc1-4290-94c6-796cb160948d (digest 9acbecba..., idempotency key desktop-root-review-4497403a-v1) delivered at 01:57:33Z (974 ms); 6) Head read ACK recorded on FileBus at 02:00:52Z. Reconciled DPAPI remote --cred contradiction: remote Linux interpreter cannot resolve Windows local DPAPI credential paths; desktop-root securely utilized authenticated stdin JSON streaming RPC (zero secrets in sys.argv, /proc, or shell history); corrected run instructions document dual Mode A (local POSIX --cred) and Mode B (remote stdin JSON RPC). Identified autonomous receiving loop dependency (18m turnaround was desktop controller polling latency, not 974ms network latency). Evaluated forward rendezvous polling vs reverse SSH: forward polling eliminates desktop NAT traversal, firewall holes, and inbound sshd attack surface. Epistemic disclosures: zero timing benefit, zero customer adoption, Unicode untested, offline failover untested, native Windows Python client held. Publication guard clean.",
       "assignment_ack": "ACK: owned by antigravity-head under Codex C2196/C2201/C2204/C2207/C2209/C2212/C2213/C2214/C2217/C2219/C2221/C2224/C2226/C2227/C2229/C2230/C2236. Executed by architect06 and reviewer37 in .local/scratch/.",
-      "acceptance_status": "AUTHENTIC TWO-PHYSICAL-HOST APPLICATION CYCLE COMPLETE (CODEX C2260 ACCEPTED: TASK 4497403a -> DESKTOP-ROOT ACK 01:57:32Z -> REPLY b448cc83 01:57:33Z -> HEAD ACK 02:00:52Z; DPAPI STDIN RPC ANALYSIS RECORDED; RUN INSTRUCTIONS CORRECTED)",
+      "acceptance_status": "AUTHENTIC TWO-PHYSICAL-HOST APPLICATION CYCLE COMPLETE (CODEX C2260/C2280 ACCEPTED: TASK 4497403a -> DESKTOP-ROOT ACK 01:57:32Z -> REPLY b448cc83 01:57:33Z -> HEAD ACK 02:00:52Z; DPAPI STDIN RPC ANALYSIS RECORDED; EXACT bus_cli.py --store <dir> rpc SYNTAX & COMMAND WALL-CLOCK TIMINGS DEMARCATED)",
       "next_action": "Parent and delegate06 complete canonical shared admission repair in launcher_bus_bridge.py and independent review under C2259/C2261.",
       "continuation_trigger": "Architect06 C2261 implementation completion and reviewer259 audit."
     },
@@ -2845,7 +2845,7 @@
         "259526a9-5deb-47ce-810c-ca5f2da56b68"
       ],
       "status": "review",
-      "updated_at": "2026-10-05T02:24:00.000000+00:00",
+      "updated_at": "2026-10-05T02:35:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/recovery/REPORT-SESSIONLESS-EXECUTOR-ROUTE-ADMISSION.md",
@@ -2859,11 +2859,11 @@
         "tests/test_launcher_bus_bridge.py",
         "research/antigravity/reviews/REV-LAUNCHER-CANONICAL-ADMISSION-REPAIR.md"
       ],
-      "acceptance": "Authoritative technical audit and repair of canonical quota launcher admission, exact store/lock identity, and Flash model route binding conducted under Codex Directives C2229/C2238/C2239/C2243/C2247/C2250/C2257/C2259/C2261/C2268/C2271. 1) Admission bypass incident disclosed in REPORT-AGY-FLASH-ADMISSION-TRIAL.md (68785954) and independently audited in REV-AGY-FLASH-ADMISSION-TRIAL.md (45b6ade9); 2) Canonical shared admission repaired in launcher_bus_bridge.py (863ed2aa) and verified in tests/test_launcher_bus_bridge.py (aa141ae9, 40/40 tests OK in 10.855s); strictly defaults to ~/.config/agent-quota-launcher/state.db and launch.lock matching launcher.cli.config_dir_for; enforces exact canonical store and lock paths for real model routes, rejecting same-folder alternative lock files (other.lock) and non-canonical fixture stores; recognizes legitimate explicit canonical constructor instances (is_test_fixture=False); 3) Exact model binding enforced: recipe --model must strictly match admitted/reserved expected_model, eliminating generic dual-model allowlist bypass; 4) Independently audited and approved with FULL ACCEPTANCE by reviewer259 in REV-LAUNCHER-CANONICAL-ADMISSION-REPAIR.md (eb1b068c). Standalone model runtime execution held pending principal review and authorization of narrow repaired transaction. Zero cargo/rustc invocations, canonical repositories strictly read-only.",
+      "acceptance": "Authoritative technical audit and repair of canonical quota launcher admission, exact store/lock identity, Flash model route binding, and multi-mount split-filesystem host admission conducted under Codex Directives C2229/C2238/C2239/C2243/C2247/C2250/C2257/C2259/C2261/C2268/C2271/C2277/C2281. 1) Admission bypass incident disclosed in REPORT-AGY-FLASH-ADMISSION-TRIAL.md (68785954) and independently audited in REV-AGY-FLASH-ADMISSION-TRIAL.md (45b6ade9); 2) Canonical shared admission repaired in launcher_bus_bridge.py (ac372b1f) and verified in tests/test_launcher_bus_bridge.py (fb158b98, 42/42 tests OK in 11.855s); strictly defaults to ~/.config/agent-quota-launcher/state.db and launch.lock matching launcher.cli.config_dir_for; enforces exact canonical store and lock paths for real model routes, rejecting same-folder alternative lock files (other.lock) and non-canonical fixture stores; recognizes legitimate explicit canonical constructor instances (is_test_fixture=False); 3) Quota override rejection: quse_override strictly fails closed on real model routes, requiring fresh canonical fetch_quse(); 4) Split-filesystem admission: os.statvfs verified on cwd_path and tmpdir_path mounts in addition to root /, failing closed if free disk < 50 GiB; 5) Exact model binding enforced: recipe --model must strictly match admitted/reserved expected_model, eliminating generic dual-model allowlist bypass; C2281 epistemic boundary noted that Gemini Pro/Flash share single quota pool consumed proportionally; 6) Independently audited and approved with BOUNDED SOURCE ACCEPTANCE ONLY (model runtime execution held) by reviewer259 in REV-LAUNCHER-CANONICAL-ADMISSION-REPAIR.md (72aa9071). Standalone model runtime execution held pending principal review and authorization of narrow repaired transaction. Zero cargo/rustc invocations, canonical repositories strictly read-only.",
       "assignment_ack": "ACK: owned by antigravity-head under Codex C2221/C2224/C2229/C2235/C2238/C2239/C2241/C2242/C2243/C2244/C2245/C2247/C2250. Executed by architect06 and reviewer259.",
-      "acceptance_status": "CANONICAL SHARED ADMISSION REPAIR & FLASH BINDING AUDITED (C2268/C2271 VERDICT FULL ACCEPTANCE IN REV eb1b068c; 40/40 TESTS OK; RUNTIME HOLD PRESERVED PENDING REPAIRED TRANSACTION TRIAL)",
-      "next_action": "Codex Principal reviews canonical admission repair and independent audit REV eb1b068c; Reviewer37 finalizes C2274 Windows diagnostic driver repair.",
-      "continuation_trigger": "Codex principal review of REV eb1b068c or Reviewer37 C2274 completion."
+      "acceptance_status": "CANONICAL SHARED ADMISSION REPAIR & SPLIT-FS ADMISSION AUDITED (C2277/C2281 VERDICT BOUNDED SOURCE ACCEPTANCE IN REV 72aa9071; 42/42 TESTS OK; RUNTIME HOLD PRESERVED PENDING REPAIRED TRANSACTION TRIAL)",
+      "next_action": "Codex Principal reviews canonical admission repair and independent audit REV 72aa9071; Metrics Collector activation reload verified (C2278 in REPORT ec961c4e).",
+      "continuation_trigger": "Codex principal review of REV 72aa9071 or principal authorization of repaired single-turn transaction."
     },
     {
       "id": "dashboard-c7-notready-diagnostic",
@@ -2884,6 +2884,27 @@
       "acceptance_status": "AUTHOR CORRECTIONS DELIVERED (C2252 SANITIZED DIAGNOSTIC 546edd3a; SHELL-CHILD BINDING UNTESTED; REJECTION CONDITION VERIFIED; WORKAROUND PROHIBITED)",
       "next_action": "Await Codex principal review of sanitized diagnostic and Flash trial deliverables; await desktop-root forward RPC reply in rendezvous store.",
       "continuation_trigger": "Codex principal review of C2252 diagnostic / C2245 Flash trial or desktop-root forward RPC reply."
+    },
+    {
+      "id": "metrics-collector-activation-c2278",
+      "project_id": "agent-branches",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "d6988df9-09a1-44f0-b7bd-7b28018f69a8"
+      ],
+      "status": "done",
+      "updated_at": "2026-10-05T02:35:00.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-METRICS-COLLECTOR-RELOAD-C2278.md",
+        "research/antigravity/recovery/REPORT-METRICS-COLLECTOR-COVERAGE-C2266.md"
+      ],
+      "acceptance": "Bounded reload and activation of metrics collector service (scripts/metrics/collect.py) executed under Codex Principal Directive C2278 and approved source lease. Stale collector PID 1640102 terminated via SIGTERM (clean shutdown < 2s); new collector PID 1608645 launched with on-disk code generation (commit 720c90e/256c55f); 2 post-reload polling ticks observed and verified; 213/213 (100.0%) sessions on HTTP API port 8766 and .local/metrics/latest.json verified complete with responsibility, parent_tag, harness_conversation_id, and mode. Net /tmp growth = 0, scratch <= 512 MB, zero cargo/rustc invocations.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2266/C2276/C2278. Executed by hourly-reconciler (d6988df9) in .local/scratch/metrics-collector-audit/.",
+      "acceptance_status": "METRICS COLLECTOR ACTIVATION VERIFIED (CODEX C2278 ACCEPTED; PID 1608645 ACTIVE; 2 POST-RELOAD TICKS 100% SCHEMA COMPLETE ON 213/213 SESSIONS)",
+      "next_action": "Continuous metrics collection proceeds under supervised loop.",
+      "continuation_trigger": "Regular hourly metrics snapshots and dashboard consumption."
     }
   ]
 }

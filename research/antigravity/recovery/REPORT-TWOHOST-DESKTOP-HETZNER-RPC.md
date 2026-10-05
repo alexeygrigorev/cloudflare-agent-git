@@ -14,7 +14,7 @@
 
 | Property | Host 1: Desktop Node (Client) | Host 2: Hetzner Node (`RMTHZ` Server / Rendezvous) |
 | :--- | :--- | :--- |
-| **Operating System** | Windows 11 Pro (`x86_64`) | Linux (`x86_64`, kernel 6.8) |
+| **Operating System** | Windows (`x86_64`) | Linux (`x86_64`, kernel 6.8) |
 | **Physical Node** | Distinct physical desktop workstation | Distinct physical dedicated server (`135.181.114.209`) |
 | **Inbound SSH Listener** | **None** (Zero `sshd` listener, port 22 closed) | Standard OpenSSH daemon on port 22 |
 | **Outbound Transport** | Native Windows OpenSSH (`ssh.exe`, PowerShell) | Outbound OpenSSH client (`ssh`) |
@@ -26,10 +26,10 @@
 
 ## 2. Desktop-Root Authentic Enrollment Receipts
 
-Desktop Root executed enrollment from the Windows 11 desktop workstation across the physical WAN network using native Windows OpenSSH (`ssh.exe`) and PowerShell stdin JSON piping into the pinned `bus_cli.py` server:
+Desktop Root executed enrollment from the Windows desktop workstation across the physical WAN network using native Windows OpenSSH (`ssh.exe`) and PowerShell stdin JSON piping into the pinned `bus_cli.py` server:
 
 - **Execution Timestamp**: `2026-10-05T01:31:05Z`
-- **Total Duration**: $1,415\text{ ms}$
+- **Total Duration**: $1,415\text{ ms}$ (RPC command wall-clock time)
 - **Transport Flags**: `-o BatchMode=yes -o StrictHostKeyChecking=yes`
 - **Enrollment Request ID**: `aa4fa288-407d-4e7d-bf2a-b94a1ca993f2`
 - **Enrolled Identity ID**: `01ace831-6d23-4c05-a6df-1a58099aca67`
@@ -109,14 +109,14 @@ Desktop Root retrieved unread messages and acknowledged the evaluation task from
 
 ### 5.1 Desktop Root Read ACK
 - **Execution Timestamp**: `2026-10-05T01:57:32Z`
-- **Duration**: $975\text{ ms}$
+- **Total Duration**: $975\text{ ms}$ (RPC command wall-clock time including OpenSSH client invocation, remote process execution, and store I/O)
 - **Transport**: Native Windows OpenSSH (`ssh.exe`) streaming stdin JSON RPC to `bus_cli.py ack`
 - **Target Message**: `4497403a-70a5-4adc-9398-bbcb85b45415`
 - **Store Mutation**: `acks/` entry created with `acked_at: 2026-10-05T01:57:32Z` by `01ace831-6d23-4c05-a6df-1a58099aca67`.
 
 ### 5.2 Desktop Root Free Evaluation Reply
 - **Execution Timestamp**: `2026-10-05T01:57:33Z`
-- **Duration**: $974\text{ ms}$
+- **Total Duration**: $974\text{ ms}$ (RPC command wall-clock time)
 - **Transport**: Native Windows OpenSSH (`ssh.exe`) streaming stdin JSON RPC to `bus_cli.py reply`
 - **Reply Message ID**: `b448cc83-3fc1-4290-94c6-796cb160948d`
 - **In-Reply-To**: `4497403a-70a5-4adc-9398-bbcb85b45415`
@@ -124,7 +124,7 @@ Desktop Root retrieved unread messages and acknowledged the evaluation task from
 - **Sender ID**: `01ace831-6d23-4c05-a6df-1a58099aca67` (`desktop-orchestrator-root`)
 - **Recipient ID**: `91d2a63b-fe47-4b53-bee8-2ada24259439` (`antigravity-head`)
 - **Reply Digest**: `9acbecba325f314af397faf8fcd6ce3c1cc1d177ae614f46572ff9b2168ed837`
-- **Body & Data Content**: Complete empirical review evaluating Windows OpenSSH client interaction, DPAPI token mechanics, transport latencies, and lack of autonomous receiving loop.
+- **Body & Data Content**: Complete empirical review evaluating Windows OpenSSH client interaction, DPAPI token mechanics, RPC command wall-clock durations, and lack of autonomous receiving loop.
 
 ### 5.3 Hetzner Head Read ACK
 - **Execution Timestamp**: `2026-10-05T02:00:52Z`
@@ -152,19 +152,23 @@ bus_cli.py send --cred /path/to/cred.json --to <recipient> ...
 **Contradiction Identified**: On Windows Desktop, agent credentials reside in local DPAPI-protected user storage (`%LOCALAPPDATA%\...`). When invoking `ssh.exe hetzner python3 bus_cli.py ...`, passing `--cred <path>` causes the remote Linux Python interpreter to search for that path on the **remote Linux filesystem**, where the Windows DPAPI file does not exist.
 
 **Operational Resolution**:
-Desktop Root resolved this contradiction by utilizing **authenticated stdin JSON streaming RPC**:
+Desktop Root resolved this contradiction by utilizing **authenticated stdin JSON streaming RPC** over native Windows OpenSSH (`ssh.exe`):
 ```powershell
-# Correct Remote Windows OpenSSH Invocation:
-$payload = @{
-    action = "send"
-    cred_token = $dpapi_decrypted_token
-    to = "91d2a63b-fe47-4b53-bee8-2ada24259439"
-    idempotency_key = "desktop-root-review-4497403a-v1"
-    body = "..."
-    data = @{ ... }
-} | ConvertTo-Json -Compress
+# Actual Remote Windows OpenSSH Stdin RPC Invocation:
+$rpc_envelope = @{
+    request_id = "req-$([guid]::NewGuid().ToString())"
+    op = "send"
+    token = $dpapi_decrypted_token
+    params = @{
+        to = "91d2a63b-fe47-4b53-bee8-2ada24259439"
+        idempotency_key = "desktop-root-review-4497403a-v1"
+        body = "..."
+        data = @{ ... }
+    }
+} | ConvertTo-Json -Compress -Depth 10
 
-$payload | ssh -o BatchMode=yes hetzner "python3 /path/to/bus_cli.py rpc --store /path/to/store"
+# Note: --store option precedes the rpc subcommand; mandatory transport flags enforced:
+$rpc_envelope | ssh.exe -o BatchMode=yes -o StrictHostKeyChecking=yes hetzner "python3 /path/to/bus_cli.py --store /path/to/store rpc"
 ```
 **Security & Operational Benefits**:
 1. **Zero Command-Line Secrets**: No credentials or bearer tokens appear in `sys.argv`, process listings (`/proc/<pid>/cmdline`), or shell command histories.
@@ -174,7 +178,7 @@ $payload | ssh -o BatchMode=yes hetzner "python3 /path/to/bus_cli.py rpc --store
    - **Mode B (Remote Cross-Host)**: Pipe JSON over OpenSSH stdin to the RPC endpoint for remote clients.
 
 ### 6.2 Autonomous Receiving Loop Dependency
-The 18-minute elapsed time between Hetzner dispatch (`01:39:10Z`) and Desktop Root reply (`01:57:33Z`) was **controller polling latency**, not network latency (which was measured at $974\text{ ms}$). To achieve true unattended cross-computer coordination:
+The 18-minute elapsed time between Hetzner dispatch (`01:39:10Z`) and Desktop Root reply (`01:57:33Z`) was **desktop controller polling latency**, not network transport latency (RPC command wall-clock time was measured at $974\text{ ms}$). To achieve true unattended cross-computer coordination:
 - A dedicated background worker loop (`bus_receiver.py`) must supervise the inbox.
 - Durable cursors (`cursors/`) must track processed message IDs with exponential backoff on empty polls.
 - Message processing must decouple from interactive human or root turns.

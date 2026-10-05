@@ -1206,11 +1206,15 @@ class ChildModelRuntimeAdapter:
         self.bus_bridge = bus_bridge
 
     @classmethod
-    def check_host_admission(cls) -> Dict[str, Any]:
+    def check_host_admission(
+        cls,
+        paths_to_check: Optional[List[Union[str, Path]]] = None,
+    ) -> Dict[str, Any]:
         """
-        Validates host capacity gates under Codex C2083:
+        Validates host capacity gates under Codex C2083 and C2277:
         - MemAvailable >= 10 GiB floor
         - Root disk free >= 50 GiB floor
+        - Split-mount / filesystems for target paths (CWD, TMPDIR) >= 50 GiB floor (C2277)
         Fails closed with ResourceAdmissionError if below bounds.
         """
         try:
@@ -1232,16 +1236,35 @@ class ChildModelRuntimeAdapter:
         except OSError as exc:
             raise ResourceAdmissionError(f"Cannot read /proc/meminfo for memory admission: {exc}") from exc
 
+        min_disk_floor = 50 * (1024 ** 3)
         try:
             stat_res = os.statvfs("/")
             disk_free_bytes = stat_res.f_bavail * stat_res.f_frsize
-            min_disk_floor = 50 * (1024 ** 3)
             if disk_free_bytes < min_disk_floor:
                 raise ResourceAdmissionError(
                     f"Host root disk free {disk_free_bytes / (1024**3):.2f} GiB below 50 GiB floor"
                 )
         except OSError as exc:
             raise ResourceAdmissionError(f"Cannot stat root filesystem for disk admission: {exc}") from exc
+
+        # Multi-Mount / Split-Filesystem Host Admission Gates (C2277)
+        if paths_to_check:
+            for p_raw in paths_to_check:
+                p = Path(p_raw).resolve()
+                stat_target = p
+                while not stat_target.exists() and stat_target.parent != stat_target:
+                    stat_target = stat_target.parent
+                try:
+                    target_stat = os.statvfs(str(stat_target))
+                    target_disk_free = target_stat.f_bavail * target_stat.f_frsize
+                    if target_disk_free < min_disk_floor:
+                        raise ResourceAdmissionError(
+                            f"Filesystem for path '{p}' has {target_disk_free / (1024**3):.2f} GiB free below 50 GiB floor (C2277)"
+                        )
+                except OSError as exc:
+                    raise ResourceAdmissionError(
+                        f"Cannot stat filesystem for path '{p}': {exc}"
+                    ) from exc
 
         return {
             "admitted": True,
@@ -1330,17 +1353,23 @@ class ChildModelRuntimeAdapter:
                     "Alternative stores/locks are strictly non-runtime test fixtures."
                 )
 
+        # Pre-launch negative gate: reject quse_override on real model routes (C2277)
+        if not is_local_probe and not self.is_test_fixture and quse_override is not None:
+            raise QuotaAdmissionError(
+                "quse_override is strictly forbidden for real model routes; fresh canonical telemetry fetch is required (C2277)"
+            )
+
         tmpdir_path.mkdir(parents=True, exist_ok=True, mode=0o700)
         paths_to_own = owned_paths if owned_paths is not None else [str(cwd_path)]
 
         # Perform atomic check-and-reserve sequence strictly under launch_lock to prevent double-commit races
         with launch_lock(str(lock_file)):
-            # 2. Host Admission Gates (MemAvailable >= 10 GiB, Root Disk >= 50 GiB)
-            self.check_host_admission()
+            # 2. Host Admission Gates (MemAvailable >= 10 GiB, Root Disk >= 50 GiB, Split Mounts >= 50 GiB, C2277)
+            self.check_host_admission(paths_to_check=[cwd_path, tmpdir_path])
 
             # 3. Fresh Quota Admission (C2079 / C2083)
             chosen, provenance = self.check_quse_admission(
-                quse_data=quse_override,
+                quse_data=_DEFAULT if quse_override is None else quse_override,
                 model_requirements=model_requirements,
             )
 
@@ -1464,6 +1493,12 @@ class ChildModelRuntimeAdapter:
                     "Alternative stores/locks are strictly non-runtime test fixtures."
                 )
 
+        # Pre-launch negative gate: reject quse_override on real model routes (C2277)
+        if not is_local_probe and not self.is_test_fixture and quse_override is not None:
+            raise QuotaAdmissionError(
+                "quse_override is strictly forbidden for real model routes; fresh canonical telemetry fetch is required (C2277)"
+            )
+
         return self.prepare_and_dispatch_task(
             task_id=task_id,
             goal=goal,
@@ -1536,12 +1571,18 @@ class ChildModelRuntimeAdapter:
             if str(tmpdir_path).startswith("/tmp") or str(tmpdir_path).startswith("/data/tmp"):
                 raise ResourceAdmissionError(f"Contained TMPDIR violation: reject global /tmp path {tmpdir_path}")
 
+        # Pre-launch negative gate: reject quse_override on real model routes (C2277)
+        if not is_local_probe and not self.is_test_fixture and quse_override is not None:
+            raise QuotaAdmissionError(
+                "quse_override is strictly forbidden for real model routes; fresh canonical telemetry fetch is required (C2277)"
+            )
+
         tmpdir_path.mkdir(parents=True, exist_ok=True, mode=0o700)
 
         # 2. Atomic admission & reservation strictly under launch_lock
         with launch_lock(str(lock_file)):
-            # Host Admission Check
-            self.check_host_admission()
+            # Host Admission Check (MemAvailable >= 10 GiB, Root Disk >= 50 GiB, Split Mounts >= 50 GiB, C2277)
+            self.check_host_admission(paths_to_check=[cwd_path, tmpdir_path])
 
             chosen: Dict[str, Any] = {"provider": "local", "model": "none"}
             provenance: Any = None

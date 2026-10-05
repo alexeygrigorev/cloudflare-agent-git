@@ -633,9 +633,22 @@ class TestLauncherBusBridge(unittest.TestCase):
         bus_bridge = AgentBusEnrollmentBridge(bus_dir=self.bus_dir)
         canonical_store = self.store_db
         canonical_lock = self.workspace / ".local" / "test.lock"
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
         with patch(
             "research.antigravity.tooling.self_org.launcher_bus_bridge.get_canonical_launcher_paths",
             return_value=(canonical_store, canonical_lock),
+        ), patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.fetch_quse",
+            return_value=valid_telemetry,
         ):
             runtime = ChildModelRuntimeAdapter(
                 store=self.store,
@@ -643,16 +656,6 @@ class TestLauncherBusBridge(unittest.TestCase):
                 bus_bridge=bus_bridge,
                 lock_path=canonical_lock,
             )
-
-            valid_telemetry = {
-                "zai": {
-                    "status": "ok",
-                    "windows": {
-                        "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
-                        "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
-                    },
-                },
-            }
 
             dispatch = runtime.prepare_and_dispatch_task(
                 task_id="task-model-dispatch-1",
@@ -662,7 +665,6 @@ class TestLauncherBusBridge(unittest.TestCase):
                 requested_memory_mb=1500,
                 tmpdir=self.owned_tmp,
                 lock_path=canonical_lock,
-                quse_override=valid_telemetry,
             )
 
         self.assertEqual(dispatch["task_id"], "task-model-dispatch-1")
@@ -2328,14 +2330,17 @@ class TestLauncherBusBridge(unittest.TestCase):
                 lock_path=canonical_lock,
             )
             self.assertFalse(runtime_canon.is_test_fixture)
-            dispatch = runtime_canon.prepare_and_dispatch_under_launch_lock(
-                task_id="t-c2268-canon-ok",
-                goal="Real model goal",
-                cwd=self.workspace,
-                lock_path=canonical_lock,
-                quse_override=valid_telemetry,
-                is_local_probe=False,
-            )
+            with patch(
+                "research.antigravity.tooling.self_org.launcher_bus_bridge.fetch_quse",
+                return_value=valid_telemetry,
+            ):
+                dispatch = runtime_canon.prepare_and_dispatch_under_launch_lock(
+                    task_id="t-c2268-canon-ok",
+                    goal="Real model goal",
+                    cwd=self.workspace,
+                    lock_path=canonical_lock,
+                    is_local_probe=False,
+                )
             self.assertEqual(dispatch["task_id"], "t-c2268-canon-ok")
             self.assertEqual(dispatch["status"], "starting")
             self.assertTrue(dispatch["quse_admitted"])
@@ -2376,6 +2381,119 @@ class TestLauncherBusBridge(unittest.TestCase):
         with self.assertRaises(ResourceAdmissionError) as cm:
             validate_route_to_command("antigravity", flash_cmd, expected_model="gemini-3.1-pro-high")
         self.assertIn("Model binding mismatch: command recipe model 'gemini-3.7-flash-medium' does not match admitted/reserved model 'gemini-3.1-pro-high' (C2271)", str(cm.exception))
+
+    # -----------------------------------------------------------------------
+    # Test 41: Real Model Route Rejects quse_override (C2277)
+    # -----------------------------------------------------------------------
+    def test_41_c2277_real_model_route_rejects_quse_override(self) -> None:
+        """
+        Verify Directive C2277 rejection of quse_override on real model routes:
+        1. Calling prepare_and_dispatch_task with quse_override on real model route
+           (is_local_probe=False, is_test_fixture=False) raises QuotaAdmissionError.
+        2. Calling execute_in_verified_systemd_scope with quse_override on real model route
+           raises QuotaAdmissionError.
+        3. Local probe (is_local_probe=True) or fixture store is allowed.
+        """
+        canonical_dir = self.workspace / ".local" / "canonical_t41"
+        canonical_dir.mkdir(parents=True, exist_ok=True)
+        canonical_store = canonical_dir / "state.db"
+        canonical_lock = canonical_dir / "launch.lock"
+
+        valid_telemetry = {
+            "zai": {
+                "status": "ok",
+                "windows": {
+                    "5h": {"percent_remaining": 100.0, "rolling": True, "reset_at": "2026-10-06T12:00:00Z"},
+                    "7d": {"percent_remaining": 65.0, "reset_at": "2026-10-10T12:00:00Z"},
+                },
+            },
+        }
+
+        with patch(
+            "research.antigravity.tooling.self_org.launcher_bus_bridge.get_canonical_launcher_paths",
+            return_value=(canonical_store, canonical_lock),
+        ):
+            runtime = ChildModelRuntimeAdapter(
+                store=Store(str(canonical_store)),
+                workspace=self.workspace,
+                lock_path=canonical_lock,
+            )
+            self.assertFalse(runtime.is_test_fixture)
+
+            # 1. prepare_and_dispatch_task rejects quse_override on real model route
+            with self.assertRaises(QuotaAdmissionError) as cm:
+                runtime.prepare_and_dispatch_task(
+                    task_id="t-c2277-override-reject-1",
+                    goal="Real model goal",
+                    cwd=self.workspace,
+                    lock_path=canonical_lock,
+                    quse_override=valid_telemetry,
+                    is_local_probe=False,
+                )
+            self.assertIn("quse_override is strictly forbidden for real model routes", str(cm.exception))
+
+            # 2. execute_in_verified_systemd_scope rejects quse_override on real model route
+            model_cmd = build_adapter_argv("zai", "real model goal")
+            with self.assertRaises(QuotaAdmissionError) as cm:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id="t-c2277-override-reject-2",
+                    command_argv=model_cmd,
+                    cwd=self.workspace,
+                    lock_path=canonical_lock,
+                    quse_override=valid_telemetry,
+                    is_local_probe=False,
+                )
+            self.assertIn("quse_override is strictly forbidden for real model routes", str(cm.exception))
+
+    # -----------------------------------------------------------------------
+    # Test 42: Split Filesystem Below Disk Floor Fails Closed (C2277)
+    # -----------------------------------------------------------------------
+    def test_42_c2277_split_filesystem_below_disk_floor_fails_closed(self) -> None:
+        """
+        Verify Directive C2277 multi-mount / split-filesystem host admission:
+        1. check_host_admission checks filesystems for all paths in paths_to_check.
+        2. If a split mount backing cwd or tmpdir has < 50 GiB free,
+           ResourceAdmissionError is raised before launch without spawning any process.
+        """
+        split_tmp = self.workspace / ".local" / "split_tmp"
+        split_tmp.mkdir(parents=True, exist_ok=True)
+
+        orig_statvfs = os.statvfs
+
+        def mock_statvfs(path_str):
+            p = str(path_str)
+            if "split_tmp" in p:
+                # Simulate low disk on split tmp mount (10 GiB free < 50 GiB floor)
+                res = MagicMock()
+                res.f_bavail = 10 * (1024 ** 2)
+                res.f_frsize = 1024
+                return res
+            return orig_statvfs(path_str)
+
+        with patch("os.statvfs", side_effect=mock_statvfs):
+            # 1. Direct check_host_admission check
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                ChildModelRuntimeAdapter.check_host_admission(paths_to_check=[self.workspace, split_tmp])
+            self.assertIn("below 50 GiB floor", str(cm.exception))
+            self.assertIn(str(split_tmp), str(cm.exception))
+
+            # 2. Integration check in execute_in_verified_systemd_scope
+            runtime = ChildModelRuntimeAdapter(
+                store=self.store,
+                workspace=self.workspace,
+                lock_path=self.workspace / ".local" / "test.lock",
+                is_test_fixture=True,
+            )
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id="t-c2277-split-fs-reject",
+                    command_argv=["echo", "probe"],
+                    cwd=self.workspace,
+                    tmpdir=split_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    is_local_probe=True,
+                )
+            self.assertIn("below 50 GiB floor", str(cm.exception))
 
 
 if __name__ == "__main__":
