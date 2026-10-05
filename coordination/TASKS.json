@@ -5908,11 +5908,48 @@
         ".local/scratch/fleet_work/dash-hourly-coverage-01.json",
         ".local/scratch/fleet_work/ql-capacity-governor-audit-01.json"
       ],
-      "accepted_partial": "Launcher a91aaea6a736629d7e277aedc43b783bfcbbfc99 (197 tests, distinct review ACCEPT); live trial A->B auto-refill verified; supervisor bridge 90 tests, distinct reviewer ACCEPT/90 tests; daemon restarted and active. Full runtime continuous queue drain and failover verified via 4 live product tasks across all 4 products: ab-sync-clean-audit-01, coord-cross-host-audit-01, dash-hourly-coverage-01, and ql-capacity-governor-audit-01.",
+      "accepted_partial": "Launcher a91aaea6a736629d7e277aedc43b783bfcbbfc99 (197 tests, distinct review ACCEPT); live trial A->B auto-refill verified; supervisor bridge 90 tests, distinct reviewer ACCEPT/90 tests; daemon restarted and active. Continuous autonomous queue drain submilestone verified across 4 live product tasks (ab-sync-clean-audit-01, coord-cross-host-audit-01, dash-hourly-coverage-01, and ql-capacity-governor-audit-01) with distinct independent reviews all ACCEPTED.",
       "acceptance_status": "accepted",
       "runtime_verification": "supervision.service running under systemd (f18b4d39). Autonomous 60s drain loop dispatched all 4 product audit tasks under app.slice with gemini-3.1-pro-high (MemoryMax=768M, TasksMax=100, exit 0). Genuine first model tools, unit tests passed (11/11 for ab-sync, 9/9 for coord-audit, 9/9 for dash-audit, 9/9 for ql-capacity), artifacts written to .local/scratch/fleet_work/. Distinct independent reviews all ACCEPTED (REV-AB-SYNC-AUDIT-01-20261005.md, REV-COORD-CROSS-HOST-AUDIT-01-20261005.md, REV-DASH-HOURLY-COVERAGE-01-20261005.md, REV-QL-CAPACITY-GOVERNOR-AUDIT-01-20261005.md). All 4 tasks accepted in canonical store.",
-      "next_action": "Maintain persistent autonomous drain cycles across candidate databases; continue queue intake for active products with declared model_requirements; complete narrow below-30GiB cleanup task integration.",
+      "next_action": "Maintain persistent autonomous drain cycles across candidate databases; continue queue intake for active products with declared model_requirements.",
       "next_trigger": "Mechanical 60s supervision cycle + aplexer inbox notifications + completion-triggered refill hooks.",
+      "blocked_on": []
+    },
+    {
+      "id": "TASK-CONTINUITY-FAILOVER-AND-WAKE-GATE-C2693",
+      "team_id": "remote-autonomous-continuation",
+      "project_id": "quota-launcher",
+      "owner_tag": "ant-head-continuation-resume-20261005",
+      "owner_session_id": "36751672-c403-4ea8-9f53-9a0466434a37",
+      "status": "in_progress",
+      "created_at": "2026-10-05T22:20:00.000000+00:00",
+      "updated_at": "2026-10-05T22:20:00.000000+00:00",
+      "scope": "Exact backup session takeover and recurring UI wake delivery: record actual designated backup session (agent-coordination-head-gemini / fallback pool), takeover trigger, fencing receipt, unattended review scheduling without manual head accept, and two live wake outcomes.",
+      "designated_backup_session": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab (agent-coordination-head-gemini) / 750580e1 (quota-launcher-head-gemini)",
+      "takeover_trigger": "Supervision 3-minute (180s) unexplained idle with ready tasks and unblocked head state",
+      "unattended_review_scheduling": "automated refill hook in launcher/watch.py evaluates dependency unblocking upon review acceptance; task completion triggers dependent review unit dispatch",
+      "wake_delivery_status": "pending live episodes (supervision.service running f18b4d39; guards draft/menu composer)",
+      "blocked_on": []
+    },
+    {
+      "id": "TASK-QL-BELOW30G-CLEANUP-INTEGRATION-C2693",
+      "team_id": "remote-autonomous-continuation",
+      "project_id": "quota-launcher",
+      "owner_tag": "ant-head-continuation-resume-20261005",
+      "owner_session_id": "36751672-c403-4ea8-9f53-9a0466434a37",
+      "executor_tag": "cleanup-implementer-8ce01474",
+      "executor_ids": [
+        "8ce01474-96c2-42fe-ac30-54b149b77412"
+      ],
+      "status": "in_progress",
+      "created_at": "2026-10-05T22:16:55.000000+00:00",
+      "updated_at": "2026-10-05T22:20:00.000000+00:00",
+      "scope": "Narrow launcher below-30GiB cleanup task integration: check_disk_pressure sampling, continue eligible jobs >= 20GiB, exactly one deduplicated cleanup task enqueued per episode, fake resource probe tests at 29/30/20 GiB, re-arm on recovery.",
+      "first_tool_evidence": {
+        "tool_name": "view_file",
+        "target": "/home/alexey/git/agent-quota-launcher/launcher/resources.py"
+      },
+      "resource_bounds": "Simulated disk pressure boundaries: 29 GiB (pressure active, continue eligible + 1 cleanup task), 30 GiB (pressure cleared/re-arm), 20 GiB (hard floor rejection). Zero real disk fill.",
       "blocked_on": []
     }
   ]
