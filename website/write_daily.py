@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 ROOT=pathlib.Path(__file__).resolve().parent.parent
 parser=argparse.ArgumentParser()
 parser.add_argument('--date',default=datetime.datetime.now(ZoneInfo('Europe/Berlin')).date().isoformat())
+parser.add_argument('--fact-packet',default=None,help='Path to verified fact packet brief')
 parser.add_argument('--run',action='store_true')
 args=parser.parse_args()
 day=datetime.date.fromisoformat(args.date).isoformat()
@@ -33,14 +34,27 @@ if not args.run:
   if launch.exists():
    print(launch.read_text());raise SystemExit(0)
   tag='journal-opus-'+day
-  command=['aplexer','start','--workspace',str(ROOT),'--cwd',str(ROOT),'--engine','claude','--tag',tag,'--json','--','python3',str(pathlib.Path(__file__).resolve()),'--date',day,'--run']
+  cmd_args=['python3',str(pathlib.Path(__file__).resolve()),'--date',day,'--run']
+  if args.fact_packet: cmd_args.extend(['--fact-packet',str(args.fact_packet)])
+  command=['aplexer','start','--workspace',str(ROOT),'--cwd',str(ROOT),'--engine','claude','--tag',tag,'--json','--']+cmd_args
   response=subprocess.check_output(command,cwd=ROOT,text=True,timeout=60)
   launch.write_text(response);print(response)
  raise SystemExit(0)
 
 with (private/'writer.lock').open('a') as lock:
  fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
- prompt=f'''You are the dedicated Claude Opus daily writer for Alexey's authorized public Agent Branches journal, not a principal. Read website/editorial/WORKFLOW.md (follow its "Write for readers, not for the team" section: open by explaining the experiment to a newcomer, no internal codes/IDs/hashes/paths, role or process words, engine names as codes or self-describing qualifiers, explain needed terms at first use, readable link text, pass the cold reader test) and VISUALS.md, AGENTS public journal section, actual Substack voice guide in ../telegram-writing-assistant/articles/_meta/substack-writing-style.md and two relevant published archive articles. Read .local/journal/opus-writer/DAY2-FACT-PACKET.md for the verified factual brief and boundaries, and experiment/standups/2026-10-04.md for the canonical morning standup. Use stylint --style-guide alexey/voice/formatting/polish, --prompt alexey-brief/alexey-draft/abstract-subject/noun-phrase-smell, and full stylint without ignores. Read latest public research/orchestrator/heartbeat reports, experiment events and latest actual owned project evidence. Compare the previous daily report. Date {day} Europe/Berlin. Produce one reader-facing first-person build log, 700–1100 words, factual concrete short paragraphs, actual changes/failures/corrections/decisions/next experiments. If unchanged say so; don't invent success or drift into marketing. Attribute technical actions to agents. Evidence and as-of/source cutoff explicit. Bounded adoption != market validation; delivery != agreement; claims != independent verification. Link exact public source commit URLs. Private Telegram data is voice context only, never publish corpus or private paths/logs/session IDs/credentials. Output ONLY website/content/daily/{day}.md, {day}.json metadata, {day}.sharetext.txt <=350 chars, and .local/journal/{day}/writer-status.json. Metadata author Alexey Grigorev, actual model Opus identity, title/date/summary/source_cutoff/sources/image/image_alt/published:false. Choose existing illustration website/assets/{day}.png if desktop ImageGen provided it, otherwise approved agent-git-illustration.png, use ../../assets/ paths and team-workflow.svg or a truthful same-style dated diagram provided by desktop. Illustrations conceptual, not measurements. Full stylint must pass; fix prose without erasing meaning. No git commits/push/publication, no other writes, no worker launches, no social posts/purchases. Stop once artifacts/status exist.'''
+ day_num=(datetime.date.fromisoformat(day)-datetime.date(2026,10,2)).days
+ candidates=[
+  pathlib.Path(args.fact_packet) if args.fact_packet else None,
+  ROOT/'.local/journal/opus-writer'/f'{day}-FACT-PACKET.md',
+  ROOT/'.local/journal/opus-writer'/f'DAY{day_num}-FACT-PACKET.md',
+  private/'FACT-PACKET.md',
+ ]
+ fact_file=next((p for p in candidates if p and p.exists()), ROOT/'.local/journal/opus-writer'/f'DAY{day_num}-FACT-PACKET.md')
+ fact_ref=str(fact_file.relative_to(ROOT)) if fact_file.is_relative_to(ROOT) else str(fact_file)
+ standup_file=ROOT/'experiment/standups'/f'{day}.md'
+ standup_ref=f'experiment/standups/{day}.md' if standup_file.exists() else 'the canonical morning standup in experiment/standups/'
+ prompt=f'''You are the dedicated Claude Opus daily writer for Alexey's authorized public Agent Branches journal, not a principal. Read website/editorial/WORKFLOW.md (follow its "Write for readers, not for the team" section: open by explaining the experiment to a newcomer, no internal codes/IDs/hashes/paths, role or process words, engine names as codes or self-describing qualifiers, explain needed terms at first use, readable link text, pass the cold reader test) and VISUALS.md, AGENTS public journal section, actual Substack voice guide in ../telegram-writing-assistant/articles/_meta/substack-writing-style.md and two relevant published archive articles. Read {fact_ref} for the verified factual brief and boundaries, and {standup_ref} for the canonical morning standup. Use stylint --style-guide alexey/voice/formatting/polish, --prompt alexey-brief/alexey-draft/abstract-subject/noun-phrase-smell, and full stylint without ignores. Read latest public research/orchestrator/heartbeat reports, experiment events and latest actual owned project evidence. Compare the previous daily report. Date {day} Europe/Berlin. Produce one reader-facing first-person build log, 700–1100 words, factual concrete short paragraphs, actual changes/failures/corrections/decisions/next experiments. If unchanged say so; don't invent success or drift into marketing. Attribute technical actions to agents. Evidence and as-of/source cutoff explicit. Bounded adoption != market validation; delivery != agreement; claims != independent verification. Link exact public source commit URLs. Private Telegram data is voice context only, never publish corpus or private paths/logs/session IDs/credentials. Output ONLY website/content/daily/{day}.md, {day}.json metadata, {day}.sharetext.txt <=350 chars, and .local/journal/{day}/writer-status.json. Metadata author Alexey Grigorev, actual model Opus identity, title/date/summary/source_cutoff/sources/image/image_alt/published:false. Choose existing illustration website/assets/{day}.png if desktop ImageGen provided it, otherwise approved agent-git-illustration.png, use ../../assets/ paths and team-workflow.svg or a truthful same-style dated diagram provided by desktop. Illustrations conceptual, not measurements. Full stylint must pass; fix prose without erasing meaning. No git commits/push/publication, no other writes, no worker launches, no social posts/purchases. Stop once artifacts/status exist.'''
  (private/'prompt.txt').write_text(prompt)
  claude=shutil.which('claude')
  if not claude:raise SystemExit('Claude CLI unavailable')
