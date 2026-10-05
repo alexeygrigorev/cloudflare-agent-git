@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T14:27:40.182048+00:00",
+  "updated_at": "2026-10-05T17:54:55.445358+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -4055,10 +4055,11 @@
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
       "resumed_conversation": "245c7bba-9a7b-45c1-87a7-4537f289f9a5",
       "registered_at": "2026-10-05T14:09:31.570422+00:00",
-      "observed_state": "idle-ended-turn",
+      "observed_state": "OOM-ended; retained history",
       "first_action": "actual native aplexer whoami and scoped context/inbox tools observed; genuine ACK linked",
       "next_checkpoint": "2026-10-05T14:15:00Z",
-      "boundaries": "Delegate implementers and distinct reviewers; no principal mailbox authority; preserve leases/resources."
+      "boundaries": "Delegate implementers and distinct reviewers; no principal mailbox authority; preserve leases/resources.",
+      "replacement_session_id": "d78eeba5-7a0a-4b69-8a19-ca9d10b21371"
     },
     {
       "tag": "quota-launcher-head-gemini",
@@ -4091,20 +4092,35 @@
       "first_action": "actual native aplexer whoami and scoped context/inbox tools observed; genuine ACK linked",
       "next_checkpoint": "2026-10-05T14:15:00Z",
       "boundaries": "Delegate implementers and distinct reviewers; no principal mailbox authority; preserve leases/resources."
+    },
+    {
+      "tag": "ant-head-operational-resume-20261005",
+      "session_id": "d78eeba5-7a0a-4b69-8a19-ca9d10b21371",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "project_id": "agent-branches",
+      "assignment_ack": "01a10d2f-e2ab-7721-8056-64022465e366",
+      "resumed_conversation": "245c7bba-9a7b-45c1-87a7-4537f289f9a5",
+      "registered_at": "2026-10-05T17:54:55.445358+00:00",
+      "observed_state": "working at17:53UTC",
+      "first_action": "actual native whoami, retained handoff/governance/mailbox reads; startup receipt .local/audit/startup-d78eeba5-7a0a-4b69-8a19-ca9d10b21371.json",
+      "boundaries": "Protected original46 SIGSTOP preserved; useful worker/review/refill not yet verified; principal monitors, heads implement/review."
     }
   ],
   "projects": [
     {
       "id": "agent-branches",
       "name": "Agent Branches",
-      "head_tag": "antigravity-head-gemini-recovery",
-      "head_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
-      "integration_owner": "antigravity-head-gemini-recovery",
+      "head_tag": "ant-head-operational-resume-20261005",
+      "head_session_id": "d78eeba5-7a0a-4b69-8a19-ca9d10b21371",
+      "integration_owner": "ant-head-operational-resume-20261005",
       "principal_tags": [
         "codex-principal"
       ],
       "monitoring_provenance": "Codex C1637 ACK under human/OPERATING-MODEL",
-      "ownership_state": "Genuine current head ACK and first native tools verified; last observed turn ended/idle. New launches/growth held while root below50GiB. Project head owns worker/reviewer delegation; principal monitors big picture, no code review.",
+      "ownership_state": "Actual recovered interactive head identity, role reads and semantic custody ACK verified; useful product worker/output/independent review pending. Existing limits and leases preserved.",
       "head_history": [
         {
           "head_tag": "antigravity-head",
@@ -4113,12 +4129,19 @@
           "ownership_state": "Acknowledged; active implementation head on platform extraction, backup sync, and consumer dogfooding",
           "workspace": null,
           "first_action": null
+        },
+        {
+          "head_tag": "antigravity-head-gemini-recovery",
+          "head_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
+          "integration_owner": "antigravity-head-gemini-recovery",
+          "ownership_state": "Genuine current head ACK and first native tools verified; last observed turn ended/idle. New launches/growth held while root below50GiB. Project head owns worker/reviewer delegation; principal monitors big picture, no code review.",
+          "head_assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc"
         }
       ],
       "head_workspace": "/home/alexey/git/cloudflare-agent-git",
-      "head_assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
+      "head_assignment_ack": "01a10d2f-e2ab-7721-8056-64022465e366",
       "resumed_conversation": "245c7bba-9a7b-45c1-87a7-4537f289f9a5",
-      "updated_at": "2026-10-05T14:09:31.570422+00:00"
+      "updated_at": "2026-10-05T17:54:55.445358+00:00"
     },
     {
       "id": "agent-dashboard",
