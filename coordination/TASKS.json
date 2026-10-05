@@ -5197,9 +5197,9 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T15:32:15.901045+00:00",
+      "updated_at": "2026-10-05T15:39:06.202897+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "TerminalConsumer hardened (bounded receipt size, safe task-id spool paths, restart recovery, dedup idempotency, durable cursor tracking; 76/76 tests pass). Routing new pin to QL for distinct review. Root disk free: 50236243968 bytes (46.7861 GiB); launches held under 50 GiB floor.",
+      "next_action": "Anti-spoofing and genuine native evidence extraction delivered: no synthetic evidence fabrication, genuine file SHA verification, separate imported DB acceptance events ineligible for runtime autonomy; 79/79 tests pass. Routing pin to QL for distinct review. Root disk free: 50320437248 bytes (46.8646 GiB); launches held under 50 GiB floor.",
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
@@ -5217,7 +5217,7 @@
       "reviewer": "quota-launcher-head-gemini (a86056b5-8b6b-403a-9b8f-6f0b49308959)",
       "accepted_at": "2026-10-05T15:20:20Z",
       "commit": "530c10c",
-      "tests": "76/76 supervision tests pass in 0.80s (scripts/supervision/test_failure_recovery.py, test_terminal_consumer.py, test_service.py). Distinct review ACCEPT from quota-launcher-head-gemini (a86056b5, message 01a10ca6-ce9b-77d2-85e4-e8464072d5ca)."
+      "tests": "79/79 supervision tests pass in 0.96s (scripts/supervision/test_failure_recovery.py, test_terminal_consumer.py, test_service.py). Anti-spoofing and imported DB acceptance gates verified."
     },
     {
       "id": "REMOTE-AUTONOMY-REVIEW-1830",
@@ -5225,9 +5225,9 @@
       "owner_tag": null,
       "status": "blocked",
       "assignment_ack": "Offered; genuine owner ACK pending, not accepted",
-      "updated_at": "2026-10-05T15:32:15.901045+00:00",
+      "updated_at": "2026-10-05T15:39:06.202897+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Supervisor component review accepted by QL head (a86056b5, message 01a10ca6-ce9b). Full-runtime A->B autonomous trial review held pending host root disk restoration >= 50 GiB (measured free: 50236243968 bytes / 46.7861 GiB).",
+      "next_action": "Supervisor component review accepted by QL head (a86056b5, message 01a10ca6-ce9b). Full-runtime A->B autonomous trial review held pending host root disk restoration >= 50 GiB (measured free: 50320437248 bytes / 46.8646 GiB).",
       "blocked_on": [
         "root-disk-below-50GiB",
         "end-to-end-model-dispatch-held"

@@ -4,6 +4,10 @@ Ingests task-unit completion receipts and independent review receipts,
 enforces distinct reviewer validation (anti-self-review), gates dependent
 task transitions on review acceptance, and filters supervision notifications
 to only emit substantive actionable transitions.
+
+Guards strictly against synthetic or fabricated evidence:
+DB rows lacking genuine model execution/review logs are ingested as
+imported DB acceptances and marked explicitly ineligible for runtime/autonomy acceptance.
 """
 
 from datetime import datetime, timezone
@@ -12,10 +16,12 @@ import json
 import os
 import pathlib
 import re
+import uuid
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 MAX_RECEIPT_SIZE = 1024 * 1024  # 1 MiB limit
 SAFE_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_\-\.]+$')
+AUTHORIZED_ENGINES = {'zcodex', 'codex', 'claude', 'opencode', 'grok', 'gemini', 'antigravity', 'shell'}
 
 
 class ReceiptValidationError(ValueError):
@@ -41,6 +47,161 @@ def is_safe_identifier(val: Any) -> bool:
     if ".." in val or "/" in val or "\\" in val:
         return False
     return bool(SAFE_ID_PATTERN.match(val))
+
+
+def is_valid_uuid(val: Any) -> bool:
+    """Validate that val is a genuine UUID string and not a fabricated/synthetic prefix."""
+    if not isinstance(val, str) or not val:
+        return False
+    # Explicitly prohibit fabricated synthetic prefixes
+    if val.startswith("ql-") or val.startswith("synthetic-") or val.startswith("mock-"):
+        return False
+    try:
+        parsed = uuid.UUID(val)
+        return str(parsed).lower() == val.lower()
+    except (ValueError, TypeError, AttributeError):
+        return False
+
+
+def verify_real_artifact(path_str: str, expected_sha: str) -> bool:
+    """Verify that an artifact file actually exists on disk and its SHA-256 matches expected_sha."""
+    if not path_str or not expected_sha or not isinstance(path_str, str) or not isinstance(expected_sha, str):
+        return False
+    try:
+        p = pathlib.Path(path_str)
+        if not p.is_file():
+            return False
+        # Protect against oversized files
+        if p.stat().st_size > 100 * 1024 * 1024:
+            return False
+        actual_sha = hashlib.sha256(p.read_bytes()).hexdigest()
+        return actual_sha.lower() == expected_sha.lower()
+    except Exception:
+        return False
+
+
+def extract_native_evidence(
+    task_id: str,
+    payload_dict: Dict[str, Any],
+    reviewer: str,
+    reason: str,
+    updated_at: str,
+    db_paths_artifacts: Optional[List[str]] = None,
+) -> Optional[Tuple[Dict[str, Any], Dict[str, Any]]]:
+    """Extract and strictly validate genuine native execution and review evidence.
+
+    Returns (terminal_receipt, review_receipt) ONLY if all evidence is genuine,
+    unspoofed, and verified against actual file bytes.
+    Returns None if evidence is absent, incomplete, or synthetic.
+    """
+    if not isinstance(payload_dict, dict):
+        return None
+
+    # 1. Genuine executor validation
+    exec_data = payload_dict.get("executor") or payload_dict.get("native_executor")
+    if not isinstance(exec_data, dict):
+        return None
+    exec_sess = exec_data.get("session_id")
+    if not is_valid_uuid(exec_sess):
+        return None
+    exec_tag = exec_data.get("tag") or payload_dict.get("owner")
+    if not is_safe_identifier(exec_tag):
+        return None
+    exec_engine = exec_data.get("engine") or payload_dict.get("provider")
+    if not exec_engine or exec_engine not in AUTHORIZED_ENGINES:
+        return None
+
+    # 2. Genuine first tool validation
+    first_tool_raw = payload_dict.get("first_tool_evidence") or payload_dict.get("first_tool")
+    if isinstance(first_tool_raw, str):
+        tool_name = first_tool_raw.strip()
+        first_tool_dict = {"tool_name": tool_name, "timestamp": updated_at}
+    elif isinstance(first_tool_raw, dict):
+        tool_name = str(first_tool_raw.get("tool_name", "")).strip()
+        first_tool_dict = first_tool_raw
+    else:
+        return None
+
+    # Prohibit synthetic tool names
+    if not tool_name or tool_name in ("task_execution", "unknown", "none", "execute", "mock"):
+        return None
+
+    # 3. Genuine artifact verification
+    raw_artifacts = payload_dict.get("artifacts")
+    if not raw_artifacts and db_paths_artifacts:
+        raw_artifacts = []
+        for p_str in db_paths_artifacts:
+            p = pathlib.Path(p_str)
+            if p.is_file():
+                raw_artifacts.append({"path": p_str, "sha256": hashlib.sha256(p.read_bytes()).hexdigest()})
+
+    if not raw_artifacts or not isinstance(raw_artifacts, list):
+        return None
+
+    verified_artifacts = []
+    for art in raw_artifacts:
+        if not isinstance(art, dict):
+            return None
+        p_str = art.get("path")
+        sha = art.get("sha256")
+        if not verify_real_artifact(p_str, sha):
+            return None
+        verified_artifacts.append({"path": p_str, "sha256": sha})
+
+    # 4. Genuine reviewer validation
+    rev_data = payload_dict.get("reviewer_evidence") or payload_dict.get("reviewer_info")
+    if not isinstance(rev_data, dict):
+        return None
+
+    rev_sess = rev_data.get("session_id")
+    if not is_valid_uuid(rev_sess):
+        return None
+
+    rev_tag = rev_data.get("tag") or reviewer
+    if not is_safe_identifier(rev_tag):
+        return None
+
+    rev_engine = rev_data.get("engine") or "antigravity"
+    if rev_engine not in AUTHORIZED_ENGINES:
+        return None
+
+    # Anti-self-review gate
+    if rev_sess == exec_sess or rev_tag == exec_tag:
+        return None
+
+    terminal_receipt = {
+        "task_id": task_id,
+        "project_id": payload_dict.get("project_id", "agent-quota-launcher"),
+        "executor": {
+            "session_id": exec_sess,
+            "tag": exec_tag,
+            "engine": exec_engine,
+        },
+        "phase": "execution",
+        "status": "completed-awaiting-review",
+        "artifacts": verified_artifacts,
+        "first_tool_evidence": first_tool_dict,
+        "completed_at": updated_at,
+    }
+
+    review_receipt = {
+        "task_id": task_id,
+        "review_task_id": f"rev-{task_id}",
+        "reviewer": {
+            "session_id": rev_sess,
+            "tag": rev_tag,
+            "engine": rev_engine,
+        },
+        "target_receipt_sha256": canonical_json_hash(terminal_receipt),
+        "verdict": "ACCEPTED",
+        "review_evidence": {
+            "exit_code": 0,
+            "reason": reason or "distinct reviewer accepted verified artifacts",
+        },
+        "reviewed_at": updated_at,
+    }
+
+    return terminal_receipt, review_receipt
 
 
 def validate_terminal_receipt(receipt: Dict[str, Any]) -> Tuple[bool, Optional[str], str]:
@@ -69,7 +230,7 @@ def validate_terminal_receipt(receipt: Dict[str, Any]) -> Tuple[bool, Optional[s
     if not project_id or not isinstance(project_id, str):
         return False, "Missing or non-string 'project_id'", ""
     if not is_safe_identifier(project_id):
-        return False, f"Invalid or unsafe 'project_id': {project_id!r}", ""
+        return False, f"Invalid or unsafe 'project_id' (contains path traversal or invalid characters): {project_id!r}", ""
 
     executor = receipt.get("executor")
     if not isinstance(executor, dict):
@@ -184,18 +345,19 @@ class TerminalConsumer:
         self.receipts_dir.mkdir(parents=True, exist_ok=True)
         self.terminal_receipts: Dict[str, Dict[str, Any]] = {}
         self.review_receipts: Dict[str, Dict[str, Any]] = {}
+        self.imported_db_tasks: Dict[str, Dict[str, Any]] = {}
         self.task_states: Dict[str, Dict[str, Any]] = {}
         self.processed_receipt_shas: Set[str] = set()
         self.cursor_path = self.spool_dir / "launcher_cursor.json"
         self.recover_persisted_receipts()
 
     def recover_persisted_receipts(self) -> int:
-        """Recover persisted terminal and review receipts from disk upon initialization."""
+        """Recover persisted terminal, review, and imported DB receipts from disk upon initialization."""
         recovered = 0
         if not self.receipts_dir.exists():
             return 0
 
-        # 1. Recover terminal receipts first
+        # 1. Recover terminal receipts
         for rec_file in sorted(self.receipts_dir.glob("terminal-*.json")):
             try:
                 if rec_file.stat().st_size > MAX_RECEIPT_SIZE:
@@ -210,6 +372,8 @@ class TerminalConsumer:
                         "task_id": task_id,
                         "project_id": data["project_id"],
                         "status": "completed-awaiting-review",
+                        "autonomy_acceptance_eligible": False,
+                        "native_receipt": True,
                         "executor": data["executor"],
                         "terminal_receipt_sha256": r_sha,
                         "terminal_completed_at": data["completed_at"],
@@ -223,7 +387,7 @@ class TerminalConsumer:
             except Exception:
                 continue
 
-        # 2. Recover review receipts second to update task states
+        # 2. Recover review receipts to update task states
         for rev_file in sorted(self.receipts_dir.glob("review-*.json")):
             try:
                 if rev_file.stat().st_size > MAX_RECEIPT_SIZE:
@@ -239,10 +403,35 @@ class TerminalConsumer:
                     new_status = "accepted" if verdict == "ACCEPTED" else "rejected-needs-repair"
                     if task_id in self.task_states:
                         self.task_states[task_id]["status"] = new_status
+                        self.task_states[task_id]["autonomy_acceptance_eligible"] = (verdict == "ACCEPTED")
+                        self.task_states[task_id]["native_receipt"] = True
                         self.task_states[task_id]["reviewer"] = data["reviewer"]
                         self.task_states[task_id]["verdict"] = verdict
                         self.task_states[task_id]["review_receipt_sha256"] = r_sha
                         self.task_states[task_id]["reviewed_at"] = data.get("reviewed_at")
+                    recovered += 1
+            except Exception:
+                continue
+
+        # 3. Recover imported DB acceptances (explicitly ineligible for autonomy acceptance)
+        for imp_file in sorted(self.receipts_dir.glob("imported-db-*.json")):
+            try:
+                if imp_file.stat().st_size > MAX_RECEIPT_SIZE:
+                    continue
+                data = json.loads(imp_file.read_text())
+                task_id = data.get("task_id")
+                if task_id and is_safe_identifier(task_id):
+                    self.imported_db_tasks[task_id] = data
+                    self.task_states[task_id] = {
+                        "task_id": task_id,
+                        "project_id": data.get("project_id", "agent-quota-launcher"),
+                        "status": "imported-db-accepted",
+                        "autonomy_acceptance_eligible": False,
+                        "native_receipt": False,
+                        "executor": {"tag": data.get("owner"), "provider": data.get("provider")},
+                        "reviewer": {"tag": data.get("reviewer"), "reason": data.get("reason")},
+                        "reviewed_at": data.get("updated_at"),
+                    }
                     recovered += 1
             except Exception:
                 continue
@@ -280,6 +469,8 @@ class TerminalConsumer:
             "task_id": task_id,
             "project_id": receipt["project_id"],
             "status": "completed-awaiting-review",
+            "autonomy_acceptance_eligible": False,
+            "native_receipt": True,
             "executor": receipt["executor"],
             "terminal_receipt_sha256": r_sha,
             "terminal_completed_at": receipt["completed_at"],
@@ -335,6 +526,8 @@ class TerminalConsumer:
 
         if task_id in self.task_states:
             self.task_states[task_id]["status"] = new_status
+            self.task_states[task_id]["autonomy_acceptance_eligible"] = (verdict == "ACCEPTED")
+            self.task_states[task_id]["native_receipt"] = True
             self.task_states[task_id]["reviewer"] = review["reviewer"]
             self.task_states[task_id]["verdict"] = verdict
             self.task_states[task_id]["review_receipt_sha256"] = r_sha
@@ -354,11 +547,14 @@ class TerminalConsumer:
     def reconcile_and_unblock_tasks(self, tasks: List[Dict[str, Any]]) -> List[str]:
         """Check all blocked tasks against accepted dependencies and unblock them.
 
+        Only tasks with genuine native review acceptance (autonomy_acceptance_eligible=True)
+        are accepted as valid unblocking dependencies. Imported DB acceptances lacking
+        genuine native evidence are explicitly ineligible.
         Returns list of newly unblocked task IDs.
         """
         accepted_ids = {
             t_id for t_id, st in self.task_states.items()
-            if st.get("status") == "accepted"
+            if st.get("status") == "accepted" and st.get("autonomy_acceptance_eligible") is True
         }
 
         newly_unblocked = []
@@ -369,7 +565,7 @@ class TerminalConsumer:
             if not blocked_on:
                 continue
 
-            # Check if all blockers are satisfied in accepted_ids
+            # Check if all blockers are satisfied in genuinely accepted_ids
             if all(blocker in accepted_ids for blocker in blocked_on):
                 t["status"] = "ready"
                 t["unblocked_at"] = datetime.now(timezone.utc).isoformat()
@@ -396,9 +592,12 @@ class TerminalConsumer:
     def ingest_launcher_db(self, db_path: pathlib.Path) -> List[Dict[str, Any]]:
         """Ingest accepted tasks and reviews directly from an agent-quota-launcher state.db.
 
-        Reads tasks where state == 'accepted' and reviewer is non-empty.
-        Validates that reviewer is distinct from task owner/executor.
-        Tracks cursor state durably in launcher_cursor.json.
+        If a row has genuine, verified native evidence (valid UUID sessions, real first tool,
+        and real verified on-disk artifact bytes), it is ingested as native receipts with
+        autonomy_acceptance_eligible = True.
+        If native evidence is absent or spoofed, it is recorded as a clearly separate
+        imported DB acceptance event with autonomy_acceptance_eligible = False, keeping
+        the task ineligible for runtime/autonomy acceptance.
         """
         import sqlite3
 
@@ -417,6 +616,14 @@ class TerminalConsumer:
                 "SELECT id, payload, state, reviewer, reason, updated_at "
                 "FROM tasks WHERE state = 'accepted' AND reviewer IS NOT NULL AND reviewer != ''"
             ).fetchall()
+
+            task_paths_map = {}
+            try:
+                p_rows = cur.execute("SELECT task_id, path FROM task_paths").fetchall()
+                for t_id, p in p_rows:
+                    task_paths_map.setdefault(t_id, []).append(p)
+            except Exception:
+                pass
             con.close()
         except Exception:
             return []
@@ -426,7 +633,7 @@ class TerminalConsumer:
 
         for row in rows:
             task_id, payload_raw, state, reviewer, reason, updated_at = row
-            if task_id in known_task_ids or (task_id in self.task_states and self.task_states[task_id].get("status") == "accepted"):
+            if task_id in known_task_ids or (task_id in self.task_states and self.task_states[task_id].get("status") in ("accepted", "imported-db-accepted")):
                 continue
 
             # Safe identifier check for task_id and reviewer
@@ -434,61 +641,84 @@ class TerminalConsumer:
                 continue
 
             owner = "quota-launcher-head-gemini"
-            cwd = ""
+            provider = "antigravity"
+            payload_dict = {}
             if payload_raw:
                 try:
-                    payload = json.loads(payload_raw) if isinstance(payload_raw, str) else payload_raw
-                    owner = payload.get("owner", owner)
-                    cwd = payload.get("cwd", "")
+                    payload_dict = json.loads(payload_raw) if isinstance(payload_raw, str) else payload_raw
+                    if isinstance(payload_dict, dict):
+                        owner = payload_dict.get("owner", owner)
+                        provider = payload_dict.get("provider", provider)
                 except Exception:
-                    pass
+                    payload_dict = {}
 
             # Anti-self-review check
             if reviewer == owner or reviewer == task_id:
                 continue
 
-            terminal_receipt = {
-                "task_id": task_id,
-                "project_id": "agent-quota-launcher",
-                "executor": {
-                    "session_id": f"ql-{task_id}",
-                    "tag": owner,
-                    "engine": "antigravity",
-                },
-                "phase": "execution",
-                "status": "completed-awaiting-review",
-                "artifacts": [
-                    {
-                        "path": cwd or f"tasks/{task_id}",
-                        "sha256": canonical_json_hash({"task_id": task_id, "updated_at": updated_at}),
-                    }
-                ],
-                "first_tool_evidence": {
-                    "tool_name": "task_execution",
-                    "timestamp": updated_at,
-                },
-                "completed_at": updated_at,
-            }
-            term_res = self.ingest_terminal_receipt(terminal_receipt)
+            # Attempt extraction of genuine native evidence
+            db_paths = task_paths_map.get(task_id, [])
+            native_pair = extract_native_evidence(
+                task_id=task_id,
+                payload_dict=payload_dict,
+                reviewer=reviewer,
+                reason=reason or "head accepted reviewed artifacts",
+                updated_at=updated_at or datetime.now(timezone.utc).isoformat(),
+                db_paths_artifacts=db_paths,
+            )
 
-            review_receipt = {
-                "task_id": task_id,
-                "review_task_id": reviewer,
-                "reviewer": {
-                    "session_id": f"ql-{reviewer}",
-                    "tag": reviewer,
-                    "engine": "antigravity",
-                },
-                "target_receipt_sha256": term_res["sha256"],
-                "verdict": "ACCEPTED",
-                "review_evidence": {
-                    "exit_code": 0,
-                    "reason": reason or "head accepted reviewed artifacts",
-                },
-                "reviewed_at": updated_at,
-            }
-            rev_res = self.ingest_review_receipt(review_receipt)
-            results.append(rev_res)
+            if native_pair is not None:
+                # Genuine native evidence verified: consume exact values
+                term_receipt, rev_receipt = native_pair
+                term_res = self.ingest_terminal_receipt(term_receipt)
+                rev_res = self.ingest_review_receipt(rev_receipt)
+                results.append({
+                    "status": "ingested",
+                    "task_id": task_id,
+                    "verdict": "ACCEPTED",
+                    "native_evidence": True,
+                    "autonomy_acceptance_eligible": True,
+                    "sha256": rev_res["sha256"],
+                })
+            else:
+                # Native evidence is absent, incomplete, or spoofed:
+                # Record a clearly separate imported DB acceptance event
+                # Task remains INELIGIBLE for runtime/autonomy acceptance!
+                imp_record = {
+                    "kind": "imported-db-acceptance",
+                    "task_id": task_id,
+                    "project_id": payload_dict.get("project_id", "agent-quota-launcher"),
+                    "owner": owner,
+                    "provider": provider,
+                    "reviewer": reviewer,
+                    "reason": reason or "imported from launcher state.db",
+                    "updated_at": updated_at,
+                    "native_evidence_present": False,
+                    "autonomy_acceptance_eligible": False,
+                    "status": "imported-db-accepted",
+                    "spool_timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+                imp_path = self.receipts_dir / f"imported-db-{task_id}.json"
+                imp_path.write_text(json.dumps(imp_record, indent=2))
+                self.imported_db_tasks[task_id] = imp_record
+                self.task_states[task_id] = {
+                    "task_id": task_id,
+                    "project_id": payload_dict.get("project_id", "agent-quota-launcher"),
+                    "status": "imported-db-accepted",
+                    "autonomy_acceptance_eligible": False,
+                    "native_receipt": False,
+                    "executor": {"tag": owner, "provider": provider},
+                    "reviewer": {"tag": reviewer, "reason": reason},
+                    "reviewed_at": updated_at,
+                }
+                results.append({
+                    "status": "imported_db_acceptance",
+                    "task_id": task_id,
+                    "verdict": "ACCEPTED",
+                    "native_evidence": False,
+                    "autonomy_acceptance_eligible": False,
+                })
+
             new_task_ids.add(task_id)
             if not max_updated_at or (updated_at and updated_at > max_updated_at):
                 max_updated_at = updated_at

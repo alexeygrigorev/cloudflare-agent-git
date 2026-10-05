@@ -300,19 +300,203 @@ class TestTerminalConsumer(unittest.TestCase):
         self.assertEqual(results[0]["task_id"], "scale50-task-1")
         self.assertEqual(results[0]["verdict"], "ACCEPTED")
 
-        # Check that task state was recorded as accepted
+        # Check that task state was recorded as imported DB acceptance (ineligible for autonomy)
         self.assertIn("scale50-task-1", self.consumer.task_states)
-        self.assertEqual(self.consumer.task_states["scale50-task-1"]["status"], "accepted")
+        self.assertEqual(self.consumer.task_states["scale50-task-1"]["status"], "imported-db-accepted")
+        self.assertFalse(self.consumer.task_states["scale50-task-1"]["autonomy_acceptance_eligible"])
         self.assertNotIn("scale50-task-self", self.consumer.task_states)
 
-        # Dependent task unblocking verification
+        # Dependent task unblocking verification: imported DB acceptance MUST NOT unblock runtime tasks!
         tasks = [
-            {"id": "scale50-task-1", "status": "accepted", "blocked_on": []},
+            {"id": "scale50-task-1", "status": "imported-db-accepted", "blocked_on": []},
             {"id": "scale50-task-2", "status": "blocked", "blocked_on": ["scale50-task-1"]},
         ]
         unblocked = self.consumer.reconcile_and_unblock_tasks(tasks)
-        self.assertEqual(unblocked, ["scale50-task-2"])
+        self.assertEqual(unblocked, [])
+        self.assertEqual(tasks[1]["status"], "blocked")
+
+    def test_ingest_launcher_db_with_genuine_native_evidence(self):
+        import hashlib, sqlite3
+
+        # Create a real artifact file on disk with verified SHA-256
+        art_file = self.spool / "real_output.py"
+        art_file.write_text("print('verified native execution')\n")
+        art_sha = hashlib.sha256(art_file.read_bytes()).hexdigest()
+
+        db_path = self.spool / "genuine_launcher.db"
+        con = sqlite3.connect(str(db_path))
+        cur = con.cursor()
+        cur.execute(
+            "CREATE TABLE tasks (id TEXT PRIMARY KEY, payload TEXT, state TEXT, reviewer TEXT, reason TEXT, updated_at TEXT)"
+        )
+
+        genuine_payload = {
+            "owner": "worker-gemini-1",
+            "provider": "antigravity",
+            "executor": {
+                "session_id": "01a10ca4-a92a-7e61-b1ea-e393c5990c7a",
+                "tag": "worker-gemini-1",
+                "engine": "antigravity",
+            },
+            "first_tool_evidence": {
+                "tool_name": "view_file",
+                "timestamp": "2026-10-05T14:00:00Z",
+            },
+            "artifacts": [
+                {"path": str(art_file), "sha256": art_sha}
+            ],
+            "reviewer_evidence": {
+                "session_id": "01a10ca4-a967-72b1-b7bb-c08c695f0dba",
+                "tag": "reviewer-codex-1",
+                "engine": "codex",
+                "exit_code": 0,
+            },
+        }
+
+        cur.execute(
+            "INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                "genuine-native-task-1",
+                json.dumps(genuine_payload),
+                "accepted",
+                "reviewer-codex-1",
+                "distinct reviewer verified actual artifact",
+                "2026-10-05 14:00:00",
+            ),
+        )
+        con.commit()
+        con.close()
+
+        results = self.consumer.ingest_launcher_db(db_path)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["task_id"], "genuine-native-task-1")
+        self.assertEqual(results[0]["status"], "ingested")
+        self.assertTrue(results[0]["native_evidence"])
+        self.assertTrue(results[0]["autonomy_acceptance_eligible"])
+
+        # Check in-memory task state
+        st = self.consumer.task_states["genuine-native-task-1"]
+        self.assertEqual(st["status"], "accepted")
+        self.assertTrue(st["autonomy_acceptance_eligible"])
+        self.assertTrue(st["native_receipt"])
+
+        # Dependent task unblocking verification: genuine native acceptance DOES unblock runtime tasks!
+        tasks = [
+            {"id": "genuine-native-task-1", "status": "accepted", "blocked_on": []},
+            {"id": "dependent-task-2", "status": "blocked", "blocked_on": ["genuine-native-task-1"]},
+        ]
+        unblocked = self.consumer.reconcile_and_unblock_tasks(tasks)
+        self.assertEqual(unblocked, ["dependent-task-2"])
         self.assertEqual(tasks[1]["status"], "ready")
+
+    def test_ingest_launcher_db_rejects_spoofed_session_and_tool(self):
+        import sqlite3
+
+        db_path = self.spool / "spoofed_launcher.db"
+        con = sqlite3.connect(str(db_path))
+        cur = con.cursor()
+        cur.execute(
+            "CREATE TABLE tasks (id TEXT PRIMARY KEY, payload TEXT, state TEXT, reviewer TEXT, reason TEXT, updated_at TEXT)"
+        )
+
+        # Spoofed session_id ("ql-task") and synthetic tool ("task_execution")
+        spoofed_payload = {
+            "owner": "worker-spoof",
+            "executor": {
+                "session_id": "ql-fake-session-123",  # SYNTHETIC! Not UUID!
+                "tag": "worker-spoof",
+                "engine": "antigravity",
+            },
+            "first_tool_evidence": {
+                "tool_name": "task_execution",  # SYNTHETIC! Prohibited tool!
+            },
+            "artifacts": [{"path": "/tmp/nonexistent.py", "sha256": "fake123"}],
+            "reviewer_evidence": {
+                "session_id": "ql-reviewer-fake",
+                "tag": "reviewer-distinct",
+            },
+        }
+
+        cur.execute(
+            "INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                "spoofed-task-1",
+                json.dumps(spoofed_payload),
+                "accepted",
+                "reviewer-distinct",
+                "spoofed evidence test",
+                "2026-10-05 14:00:00",
+            ),
+        )
+        con.commit()
+        con.close()
+
+        results = self.consumer.ingest_launcher_db(db_path)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["status"], "imported_db_acceptance")
+        self.assertFalse(results[0]["native_evidence"])
+        self.assertFalse(results[0]["autonomy_acceptance_eligible"])
+
+        # Ineligible for autonomy acceptance
+        st = self.consumer.task_states["spoofed-task-1"]
+        self.assertEqual(st["status"], "imported-db-accepted")
+        self.assertFalse(st["autonomy_acceptance_eligible"])
+
+    def test_ingest_launcher_db_rejects_spoofed_artifact_sha(self):
+        import sqlite3
+
+        # Create a real file on disk
+        art_file = self.spool / "real_file.py"
+        art_file.write_text("real content\n")
+
+        db_path = self.spool / "spoofed_sha_launcher.db"
+        con = sqlite3.connect(str(db_path))
+        cur = con.cursor()
+        cur.execute(
+            "CREATE TABLE tasks (id TEXT PRIMARY KEY, payload TEXT, state TEXT, reviewer TEXT, reason TEXT, updated_at TEXT)"
+        )
+
+        spoofed_sha_payload = {
+            "owner": "worker-spoof-sha",
+            "executor": {
+                "session_id": "01a10ca4-a92a-7e61-b1ea-e393c5990c7a",
+                "tag": "worker-spoof-sha",
+                "engine": "antigravity",
+            },
+            "first_tool_evidence": {
+                "tool_name": "view_file",
+                "timestamp": "2026-10-05T14:00:00Z",
+            },
+            "artifacts": [
+                # Wrong SHA! Does not match file bytes!
+                {"path": str(art_file), "sha256": "0000000000000000000000000000000000000000000000000000000000000000"}
+            ],
+            "reviewer_evidence": {
+                "session_id": "01a10ca4-a967-72b1-b7bb-c08c695f0dba",
+                "tag": "reviewer-distinct",
+                "engine": "codex",
+            },
+        }
+
+        cur.execute(
+            "INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                "spoofed-sha-task",
+                json.dumps(spoofed_sha_payload),
+                "accepted",
+                "reviewer-distinct",
+                "spoofed sha test",
+                "2026-10-05 14:00:00",
+            ),
+        )
+        con.commit()
+        con.close()
+
+        results = self.consumer.ingest_launcher_db(db_path)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["status"], "imported_db_acceptance")
+        self.assertFalse(results[0]["native_evidence"])
+        self.assertFalse(results[0]["autonomy_acceptance_eligible"])
 
     def test_restart_persisted_receipt_recovery(self):
         # Ingest terminal and review receipt
