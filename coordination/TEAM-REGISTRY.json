@@ -148,6 +148,21 @@
           ]
         },
         {
+          "tag": "grok-capacity-reviewer",
+          "role": "Grok Capacity & Continuation Reviewer",
+          "mode": "headless",
+          "engine": "grok",
+          "session_id": "33748fbc-701f-44b3-9cdc-622cdf4a6fbc",
+          "parent_tag": "antigravity-head",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "assignment_ack": "Under Directives C2400/C2401, Grok 4.6 worker completed independent technical diagnosis of provider capacity rejection, stale working deadlock, and safe receiver continuation.",
+          "task_id": "grok-capacity-continuation-diagnosis",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-CAPACITY-CONTINUATION-GROK.md",
+            "research/antigravity/tooling/self_org/run_grok_capacity_diagnosis.py"
+          ]
+        },
+        {
           "tag": "zcy-dupexec",
           "role": "executor",
           "parent_tag": "antigravity-head",
@@ -3112,6 +3127,21 @@
             "experiment/human-remote-journal-preparation-20261005.txt",
             "AGENTS.md",
             ".local/journal/remote-preparation-handoff/**"
+          ]
+        },
+        {
+          "tag": "daily-journal-correction-20261005",
+          "role": "Daily Journal Correction Preparer",
+          "mode": "headless",
+          "engine": "shell/codex",
+          "session_id": "5f128723-9c88-466d-a602-d1d6439be03d",
+          "parent_tag": "public-journal-site",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "assignment_ack": "Under human directive 5 October 2026, remote Codex session correction-20261005 active for task correction-20261005-private-preparation",
+          "task_id": "correction-20261005-private-preparation",
+          "owned_paths": [
+            ".local/journal/correction-20261005/**",
+            "experiment/human-better-git-progress-and-utilization-20261005.txt"
           ]
         },
         {

@@ -3229,6 +3229,62 @@
       "reviewer": "public-journal-site (088a2387)",
       "accepted_at": null,
       "feature_id": null
+    },
+    {
+      "id": "grok-capacity-continuation-diagnosis",
+      "project_id": "agent-branches",
+      "team_id": "a16-runtime-protocol",
+      "owner_tag": "antigravity-head",
+      "status": "completed",
+      "updated_at": "2026-10-05T08:22:00.000000+00:00",
+      "next_action": "Incorporate Grok capacity deadlock and safe continuation findings into autonomous wake and continuation runtime.",
+      "acceptance": "Independent Grok 4.6 diagnosis of fleet capacity error, hook event tables, stale working deadlock, and safe 3-minute receiver continuation contract with verified FileBus exchange.",
+      "blocked_on": [],
+      "executor_ids": [
+        "33748fbc-701f-44b3-9cdc-622cdf4a6fbc"
+      ],
+      "owned_paths": [
+        "research/antigravity/reviews/REV-CAPACITY-CONTINUATION-GROK.md",
+        "research/antigravity/tooling/self_org/run_grok_capacity_diagnosis.py"
+      ],
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-CAPACITY-CONTINUATION-GROK.md"
+      ],
+      "first_action": "2026-10-05T08:14:26.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "FileBus verified reply edeb1734-192e-4e11-8430-632816a986c3 (verdict BOUNDED ACCEPTANCE, SHA256 a8f58837ac0ef1a1dee95452b3414f7e987af227ac550ee55886276883d7ec7b, publication guard PASS)",
+      "reviewer": "grok-capacity-reviewer (33748fbc)",
+      "accepted_at": "2026-10-05T08:21:54.000000+00:00",
+      "feature_id": null
+    },
+    {
+      "id": "correction-20261005-private-preparation",
+      "project_id": "publication",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "status": "running",
+      "updated_at": "2026-10-05T08:14:00.000000+00:00",
+      "next_action": "Execute private preparation of corrected 5 October daily report reflecting BETTER Git objective, 4-product metrics, and wake request evidence.",
+      "acceptance": "Daily report rewritten with requested 24h metrics, 4-product progress, and autonomous wake analysis pursuant to human directive 5 October 2026.",
+      "blocked_on": [],
+      "executor_ids": [
+        "5f128723-9c88-466d-a602-d1d6439be03d"
+      ],
+      "owned_paths": [
+        ".local/journal/correction-20261005",
+        "experiment/human-better-git-progress-and-utilization-20261005.txt"
+      ],
+      "evidence_paths": [
+        ".local/journal/correction-20261005"
+      ],
+      "first_action": "2026-10-05T08:14:00.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": null,
+      "reviewer": "public-journal-site (088a2387)",
+      "accepted_at": null,
+      "feature_id": null
     }
   ]
 }
