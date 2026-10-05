@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T14:09:31.570422+00:00",
+  "updated_at": "2026-10-05T14:27:40.182048+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -4299,6 +4299,24 @@
       "resumed_conversation": "764358a8-1b4e-49c6-845a-9b79bf3ba536",
       "updated_at": "2026-10-05T14:09:31.570422+00:00",
       "canonical_integration_custody": "Original protected canonical custody not released by silence; current head owns isolated work and requires genuine release/review before integration."
+    },
+    {
+      "id": "agent-bus",
+      "name": "AgentBus: session-independent agent messaging",
+      "repository": "https://github.com/PocketShell-io/agent-bus",
+      "visibility": "public",
+      "workspace": "/home/alexey/git/agent-bus",
+      "head_tag": "agent-coordination-head-gemini",
+      "head_workspace": "/home/alexey/git/cloudflare-agent-git",
+      "head_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
+      "principal_owner": "codex-principal",
+      "ownership_state": "Existing coordination head nominated AgentBus product responsibility; new explicit ACK pending. Does not release prior source custody or claim active workers.",
+      "head_handoff_id": "01a10c73-bad4-74e1-a299-60b7b186a8dd",
+      "head_assignment_ack": null,
+      "integration_owner": "pending explicit source-custody ACK from existing head",
+      "task_id": "AGENTBUS-APLEXER-EXTRACTION-HEADLESS-20261005",
+      "next_milestone": "Head ACK and nonoverlapping zcy lanes under fresh gates; real sessionless model task/result/ACK and distinct reviewer evidence.",
+      "updated_at": "2026-10-05T14:27:40.182048+00:00"
     }
   ],
   "delivery_executors": [
