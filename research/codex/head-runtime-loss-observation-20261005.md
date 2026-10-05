@@ -81,3 +81,25 @@ Parent reports this generation resumed saved conversation962ee79c-665f-43f2-a809
 Read-only `aplexer start --help` completed successfully after the supplement. It documents workload/session resource flags `--memory`, `--pids`, `--cpu-quota-us`, `--cpu-period-us`, plus engine/profile/workspace/cwd/history/timeout/attach options. It documents **no parent-detach, parent-session selection, worker-cgroup placement, or worker-custody independence flag**. `--fresh` chooses a free tag suffix; it does not establish custody independence and is not a recovery solution by itself. No environment/identity override or launch was attempted.
 
 Therefore this CLI help does not provide a supported direct flag to repair the observed worker-inside-Coordination coupling. The existing recovery owner should retain the restored useful session and separately investigate a verified existing independent launch/custody path, or delegate a bounded tool-gap task. A future independent-custody claim needs actual worker/workload cgroup receipts plus tested parent-loss recovery. Choosing another assumed flag, duplicating the live owner, or raising memory limits is unsupported by this observation.
+
+
+## Ant timer continuity metadata — 18:01 UTC
+
+Parent assigned a separate read-only check of recovered Ant native identity `d78eeba5-7a0a-4b69-8a19-ca9d10b21371`, worker 579273/workload 579323. At 17:59:43 UTC both PIDs were present; workload had no child PIDs at that observation. Saved native metadata recorded running phase, separate own workload scope, worker in `session-8544.scope`, limits 1572864000 bytes/100 PIDs, parent principal `93cf28f2-2872-411c-a5da-179e1b83b59f`. This was liveness, not a continuation verdict.
+
+Private source discovery used only process file-descriptor targets, scoped cache IDs and SQLite metadata. AGY process 579323 held `cli-20261005_194805.log`; its UUID references included supplied resume argument/historical context `245c7bba-9a7b-45c1-87a7-4537f289f9a5` and derived actual provider conversation `ea14b401-20e9-4e48-ab08-d15be08da30d`. Workspace last-conversation cache pointed to the latter. The old conversation DB's latest metadata was 10:51:49 UTC; it could not establish the evening timer. Do not label resumed historical context and actual new provider conversation as the same identity.
+
+Read-only SQLite source: `~/.gemini/antigravity-cli/conversations/ea14b401-20e9-4e48-ab08-d15be08da30d.db`, 4292608 bytes when observed. Selected only recent step metadata and bounded payloads; one last-60-step batch was 345184 bytes. No private prompt/history/environment content was printed or retained. Protobuf metadata timestamps and numeric step types/statuses were decoded; schema enum names were not guessed.
+
+| Step | Type/status | Actual metadata UTC | Safe receipt |
+|---|---|---|---|
+| 340 | 132/3 | created 17:55:57.192456; execution metadata 17:55:57.339995; completion 18:00:57.387962 | `DurationSeconds=300`, `TimerCondition=any`, task-340 identifier; timer/schedule terms present. Payload 2431 bytes; SHA-256 `57c56ecb46600c51920bd12741e28757c78e9452553d97278088ac07c4298380`. |
+| 344 | 101/3 | created 18:00:57.841620; update 18:00:57.841987 | Notification step includes task-340 and timestamp 2026-10-05T18:00:57Z. Payload 895 bytes; SHA-256 `bc95b050f1411cf6b0774b42e6930c8cb0ba80092d49b7ed2f7fc1e85e78c7d2`. |
+| 346 | 132/3 | created 18:01:01.961848; completion 18:01:02.070494 | Actual `run_command` tool payload; WaitMsBeforeAsync=5000, IsDaemon=false, RunPersistent=false. Payload SHA-256 `4a62f899aa00d61d0c096b0d1b9fae837d638c14431ef0880c8ddca70aab0fb3`. |
+| 349,352,355,358,361 | 132/3 | tool metadata continues from 18:01:05.908853 through completion 18:01:27.147947 | Additional actual post-notification tool steps. |
+
+At 18:01:50.251557 UTC the actual conversation had reached step 371. This is a **real five-minute timer and post-timer head tool continuation**, superseding a proposal-only interpretation. The timer is not an external shell `sleep` child; child absence at 17:59 does not invalidate it. The exact textual timer instruction/notification was intentionally withheld. Status number 3 alone was not interpreted as product acceptance.
+
+Parent independently observed post-timer message show/ACK commands and working screen at 18:01:09 UTC, with original C2652 native NOTREADY preserved and no forced/manual redelivery afterward. That parent observation is separate provenance; this auditor used no native mailbox or ACK authority. This evidence establishes timer→notification→tools ordering, not absence of every other possible model input, useful product delivery, or independently accepted continuation cycles.
+
+Head-owned next acceptance gap: link subsequent useful product tool/delegate first action to owned task, capture terminal outcome and distinct review, then prove the next useful continuation trigger. No timer repair is justified from this passing runtime observation. Preserve the existing head and avoid a duplicate recovery writer. No runtime mutation, launch, signal, build, installation, code review or commit was performed.

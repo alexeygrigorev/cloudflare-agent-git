@@ -116,3 +116,29 @@ Principal independently verified local AgentBranches HEAD **1fa3ab9b91e288a4cabf
 Ant's screen reports **72/72** full-suite passes in **22.01s**; this updates the earlier pending suite claim as **head-reported**, not a principal product test run. A claimed task-340 five-minute background completion trigger has not yet fired or proved receiver action.
 
 Ant ended its turn at19:56Berlin. Principal verified a fresh idle/empty screen, but original C2652 correction **01a10d36-0729-7f63-9e48-0132ef463685** was rejected native NOTREADY with the same idle/later-PTY contradiction. Original delivery remains pending, with no retry, readiness spoof or injected input. Genuine generation/custody ACK is real; automatic continuation remains broken. C2652 requests exact pin/full-suite/remote-sync correction and a new maintained-worker artifact followed by independent review and useful refill. These concrete delivery and synchronization failures remain head-owned product gates, not setup-only completion.
+
+
+### Actual timer-driven continuation — C2656, 5 October 2026, 18:01 UTC
+
+This evidence supersedes the earlier “timer not yet fired” statement: **one timer → notification → head-tool cycle is proved**. It does not close repeated autonomous recovery or the new maintained-worker/review/refill gate.
+
+Independent read-only metadata audit identifies the current actual provider conversation as **ea14b401-20e9-4e48-ab08-d15be08da30d**, different from the passed/retained **245c7bba** saved context. Historical recovery descriptions above refer to the requested saved context; they must not be read as proof that the new process uses the exact same provider conversation ID. Preserve both histories and distinguish context transfer from provider identity continuity.
+
+- DB step **340**, type132/status3, DurationSeconds300, TimerCondition `any`: created **17:55:57.192456 UTC**, completed **18:00:57.387962 UTC**; payload SHA256 **57c56ecb46600c51920bd12741e28757c78e9452553d97278088ac07c4298380**.
+- Step **344**, type101 notification `task-340`: created **18:00:57.841620 UTC**; payload SHA256 **bc95b050f1411cf6b0774b42e6930c8cb0ba80092d49b7ed2f7fc1e85e78c7d2**.
+- Actual `run_command` tool step **346**: **18:01:01.961848–18:01:02.070494 UTC**; subsequent tools349/352/355/358/361 continue through **18:01:27.147947 UTC**.
+
+The principal's fresh capture observed acknowledgment of the queued correction, Git SHA/remote checks, and actual `./branches sync git --preview` followed by `./branches sync git`. No manual input or forced input followed NOTREADY. Useful CLI dogfooding is therefore underway; its final result and actual remote synchronization remain pending until genuine output verifies them. This proves a bounded timer-triggered head continuation, not general safe native delivery acceptance.
+
+Genuine C2656 request **01a10d3a-ac47** asks for the sync outcome and head-owned worker next cycle, with **20:30 Berlin** outcome checkpoint. A new maintained worker artifact, distinct review/refill and repeated head-loss recovery/custody remain unproven. The earlier task-record snapshot and counts are unchanged; they are not current activity measurements.
+
+
+### CLI GitHub synchronization repaired — C2657–C2658, 18:03 UTC
+
+Ant's genuine C2657 message **01a10d3a-e14e-73a0-ae09-573dbf4f9b68** reports actual `./branches sync git` dogfooding with `verified=True`, corrected exact HEAD/remote **1fa3ab9b91e288a4cabf0eee0477dbfc8fa470e8**, and **72/72** tests in **22.01s**. The principal independently queried `git ls-remote` at18:03UTC and confirmed GitHub main at that full SHA. **The previously incorrect reported full SHA and unsynchronized remote state are now repaired**; earlier observations remain retained as history. This is a concrete CLI integration and real synchronization outcome, not a fabricated source or usage claim.
+
+Ant's new screen showed **0 native children** and scheduling of next timer **388**. Scheduling is not a fired timer or useful next-worker outcome. Current full worker roster remains **unknown**, and a **new post-recovery maintained-unit first tool plus distinct review** has not yet been proved.
+
+Principal C2658 reply **01a10d3b-fe51** assigns Ant a tiny maintained CLI-demo consumer and **distinct reviewer** under existing **AGENTBRANCHES-CLI-DEMO-20261006**. The task requires actual unit identity, first tool, artifact, independent acceptance and accepted next refill. It is owned ready work: Ant need not wait for idle QL/Coord to act as scheduler; fresh resource/provider admission and source leases still apply. Meaningful outcome was relayed to desktop in **01a10d3c-60e0**.
+
+Next **20:30 Berlin** check: actual admitted worker/first tool and consumer artifact, or a concrete bounded READY/blocker state with owner/action, followed by distinct review and a real completion/refill trigger. Existing timer388 is a next condition to observe, not acceptance. CLI synchronization is accepted bounded evidence; unattended head-loss recovery and repeated review-aware useful execution remain open.
