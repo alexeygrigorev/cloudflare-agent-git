@@ -99,11 +99,89 @@ python3 .local/scratch/architect06-bus-integration/agent-bus/coordination/bus_cl
 - **Message Digest**: `ae04c8cc80f614e343aadd01000abf51f8fcf4ba71a4bdbf3cd5b15d2594f80b`
 - **Creation Timestamp**: `2026-10-05T01:39:10Z`
 - **Delivery Timestamp**: `2026-10-05T01:39:10Z`
-- **Status in Store**: Stored in `messages/` under mode `0600`, ready for inbox retrieval by `desktop-orchestrator-root`.
+- **Status in Store**: Stored in `messages/` under mode `0600`, successfully retrieved by `desktop-orchestrator-root`.
 
 ---
 
-## 5. Architectural Evaluation: Forward Polling vs. Inbound Reverse SSH
+## 5. Desktop-Root Read ACK & Free Evaluation Reply Receipts
+
+Desktop Root retrieved unread messages and acknowledged the evaluation task from Windows 11 Desktop over OpenSSH:
+
+### 5.1 Desktop Root Read ACK
+- **Execution Timestamp**: `2026-10-05T01:57:32Z`
+- **Duration**: $975\text{ ms}$
+- **Transport**: Native Windows OpenSSH (`ssh.exe`) streaming stdin JSON RPC to `bus_cli.py ack`
+- **Target Message**: `4497403a-70a5-4adc-9398-bbcb85b45415`
+- **Store Mutation**: `acks/` entry created with `acked_at: 2026-10-05T01:57:32Z` by `01ace831-6d23-4c05-a6df-1a58099aca67`.
+
+### 5.2 Desktop Root Free Evaluation Reply
+- **Execution Timestamp**: `2026-10-05T01:57:33Z`
+- **Duration**: $974\text{ ms}$
+- **Transport**: Native Windows OpenSSH (`ssh.exe`) streaming stdin JSON RPC to `bus_cli.py reply`
+- **Reply Message ID**: `b448cc83-3fc1-4290-94c6-796cb160948d`
+- **In-Reply-To**: `4497403a-70a5-4adc-9398-bbcb85b45415`
+- **Idempotency Key**: `desktop-root-review-4497403a-v1`
+- **Sender ID**: `01ace831-6d23-4c05-a6df-1a58099aca67` (`desktop-orchestrator-root`)
+- **Recipient ID**: `91d2a63b-fe47-4b53-bee8-2ada24259439` (`antigravity-head`)
+- **Reply Digest**: `9acbecba325f314af397faf8fcd6ce3c1cc1d177ae614f46572ff9b2168ed837`
+- **Body & Data Content**: Complete empirical review evaluating Windows OpenSSH client interaction, DPAPI token mechanics, transport latencies, and lack of autonomous receiving loop.
+
+### 5.3 Hetzner Head Read ACK
+- **Execution Timestamp**: `2026-10-05T02:00:52Z`
+- **Command**:
+  ```bash
+  python3 .local/scratch/architect06-bus-integration/agent-bus/coordination/bus_cli.py \
+    --store /home/alexey/git/cloudflare-agent-git/.local/scratch/desktop-root-rpc-20261005/store \
+    ack \
+    --message-id b448cc83-3fc1-4290-94c6-796cb160948d \
+    --cred /home/alexey/git/cloudflare-agent-git/.local/scratch/desktop-root-rpc-20261005/head_cred.json
+  ```
+- **Store Mutation**: `acks/` entry created with `acked_at: 2026-10-05T02:00:52Z` by `91d2a63b-fe47-4b53-bee8-2ada24259439`.
+- **Bidirectional Completion**: Full 4-stage message cycle (Enrollment $\to$ Task Send $\to$ Desktop ACK $\to$ Desktop Reply $\to$ Head ACK) confirmed across two physical machines!
+
+---
+
+## 6. Operational Feedback & Run Instructions Correction (Directive C2260)
+
+### 6.1 The DPAPI Remote `--cred` Contradiction
+Initial CLI documentation and demo runbooks suggested running commands with `--cred <cred_path>`:
+```bash
+# Theoretical / Local POSIX invocation:
+bus_cli.py send --cred /path/to/cred.json --to <recipient> ...
+```
+**Contradiction Identified**: On Windows Desktop, agent credentials reside in local DPAPI-protected user storage (`%LOCALAPPDATA%\...`). When invoking `ssh.exe hetzner python3 bus_cli.py ...`, passing `--cred <path>` causes the remote Linux Python interpreter to search for that path on the **remote Linux filesystem**, where the Windows DPAPI file does not exist.
+
+**Operational Resolution**:
+Desktop Root resolved this contradiction by utilizing **authenticated stdin JSON streaming RPC**:
+```powershell
+# Correct Remote Windows OpenSSH Invocation:
+$payload = @{
+    action = "send"
+    cred_token = $dpapi_decrypted_token
+    to = "91d2a63b-fe47-4b53-bee8-2ada24259439"
+    idempotency_key = "desktop-root-review-4497403a-v1"
+    body = "..."
+    data = @{ ... }
+} | ConvertTo-Json -Compress
+
+$payload | ssh -o BatchMode=yes hetzner "python3 /path/to/bus_cli.py rpc --store /path/to/store"
+```
+**Security & Operational Benefits**:
+1. **Zero Command-Line Secrets**: No credentials or bearer tokens appear in `sys.argv`, process listings (`/proc/<pid>/cmdline`), or shell command histories.
+2. **Client-Controlled Secrets**: DPAPI keys never leave Windows memory unencrypted and are never written to disk on the remote Linux host.
+3. **Dual Mode Specification**:
+   - **Mode A (Local POSIX)**: Use `--cred <path>` for co-located processes on the same Linux host.
+   - **Mode B (Remote Cross-Host)**: Pipe JSON over OpenSSH stdin to the RPC endpoint for remote clients.
+
+### 6.2 Autonomous Receiving Loop Dependency
+The 18-minute elapsed time between Hetzner dispatch (`01:39:10Z`) and Desktop Root reply (`01:57:33Z`) was **controller polling latency**, not network latency (which was measured at $974\text{ ms}$). To achieve true unattended cross-computer coordination:
+- A dedicated background worker loop (`bus_receiver.py`) must supervise the inbox.
+- Durable cursors (`cursors/`) must track processed message IDs with exponential backoff on empty polls.
+- Message processing must decouple from interactive human or root turns.
+
+---
+
+## 7. Architectural Evaluation: Forward Polling vs. Inbound Reverse SSH
 
 Under Directives C2224 and C2226, the team evaluated whether an inbound reverse SSH service (running `sshd` on the Windows desktop) is required for cross-computer agent coordination:
 
@@ -123,14 +201,18 @@ In contrast, utilizing forward OpenSSH RPC against a reachable rendezvous server
 
 ---
 
-## 6. Epistemic Demarcation & Invariant Receipts
+## 8. Epistemic Demarcation & Negative Disclosures (Directive C2260)
 
-1. **Physical Host Boundary**:
-   - Real physical cross-machine enrollment is **demonstrated and verified** across Windows 11 Desktop and Hetzner Linux.
-   - The full bidirectional lifecycle (inbox retrieval, ACK, and reply) awaits desktop-root's subsequent execution from Windows PowerShell.
-2. **Platform Surface Boundaries**:
-   - Native Windows OpenSSH (`ssh.exe`) frontend execution is **verified**.
-   - Native Windows Python `SshFileBusClient` and Windows-local `FileBus` (requiring `flock` / `O_DIRECTORY`) remain strictly **`UNKNOWN/HELD`**.
+1. **Physical Host Boundary & Acceptance Status**:
+   - **Bounded ASCII forward OpenSSH / rendezvous task-ACK-reply-ACK cycle ACCEPTED**.
+   - Two physical machines (Windows 11 Desktop + Hetzner Linux) completed authentic mutual enrollment, task dispatch, read acknowledgment, and response correlation.
+2. **Negative Disclosures & Unvalidated Boundaries**:
+   - **Zero Timing Benefit Claimed**: The measured round-trip transport time was $974\text{ ms}$; the 18-minute turnaround was purely desktop agent check-in polling latency.
+   - **Zero Customer / Practitioner Adoption Claimed**: This remains an internal integration spike between two owned nodes.
+   - **Unicode & Non-ASCII Untested**: All tested bodies and data payloads were strictly ASCII strings.
+   - **Offline Failover Untested**: No network partition or local-store disconnected queue replay was tested.
+   - **Native Windows Python Client Held**: Native Windows execution of `SshFileBusClient` or Windows-local `FileBus` (`flock` / `O_DIRECTORY`) remains strictly **`UNKNOWN/HELD`**.
+   - **Zero Verdict Signposting**: Acceptance is strictly bounded to the empirical receipt of the 4 observed JSON envelopes.
 3. **Compiler Invariant**:
    - Exactly **`0`** `cargo` or `rustc` invocations were executed during this trial interval across all observed subprocesses under human hold.
 4. **Canonical Repositories**:
