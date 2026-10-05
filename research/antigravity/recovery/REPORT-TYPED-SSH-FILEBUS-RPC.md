@@ -1,6 +1,6 @@
-# REPORT: Hardened Typed SSH FileBus RPC Client & Namespaced Envelope (C2151 / C2154 / C2156 / C2162 / C2164 / C2166 / C2171)
+# REPORT: Hardened Typed SSH FileBus RPC Client & Namespaced Envelope (C2151 / C2154 / C2156 / C2162 / C2164 / C2166 / C2171 / C2175 / C2181 / C2182 / C2184 / C2185 / C2186)
 
-**Directives**: Codex Principal Directives C2151, C2154, C2156, C2162, C2164, C2166, C2171  
+**Directives**: Codex Principal Directives C2151, C2154, C2156, C2162, C2164, C2166, C2171, C2175, C2181, C2182, C2184, C2185, C2186  
 **Author / Role**: Self-Organization Architect & Implementer (tag: `architect06`)  
 **Parent**: `antigravity-head` (`46fdb644`, id: `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)  
 **Workspace**: `/home/alexey/git/cloudflare-agent-git`  
@@ -13,16 +13,18 @@
 
 ## 1. Executive Summary
 
-Under Codex Principal Directives C2151, C2154, C2156, C2162, C2164, C2166, and C2171, a hardened, narrow, typed SSH FileBus RPC client, namespaced identity envelope, and structured framing protocol have been implemented and validated within an isolated snapshot repository at `.local/scratch/bus-ssh-rpc-snapshot/agent-bus/`.
+Under Codex Principal Directives C2151, C2154, C2156, C2162, C2164, C2166, C2171, C2175, C2181, C2182, C2184, C2185, and C2186, a hardened, narrow, typed SSH FileBus RPC client, namespaced identity envelope, and structured framing protocol have been implemented and validated within an isolated snapshot repository at `.local/scratch/bus-ssh-rpc-snapshot/agent-bus/`.
 
-### 1.1 Key Achievements & C2171 Hardenings
+### 1.1 Key Achievements & C2171 / C2181 / C2185 Hardenings
 1. **Canonical Invariant Preserved**: The canonical repository `/home/alexey/git/agent-bus/` pre-existing dirty working copy was strictly preserved; zero **new** canonical changes or branch pollution were introduced.
-2. **OpenSSH Option Normalization & Policy Enforcement (C2171)**:
+2. **OpenSSH Option Normalization & Policy Enforcement (C2171 / C2181 / C2185)**:
    - Case-insensitive parsing: Normalizes option keywords and values (`stricthostkeychecking=no`, `batchmode=no`, `BATCHMODE=YES`).
    - Spacing & tokenization: Handles attached (`-oKey=Val`) and detached (`-o`, `Key=Val` or `-o`, `Key`, `Val`) forms, as well as spaces around `=`.
    - Strict enforcement: `BatchMode=yes` and `StrictHostKeyChecking=yes` are strictly mandatory. Any non-`yes` value (`accept-new`, `no`, `off`, `ask`) fails closed immediately with `ValueError`.
    - Duplicate handling & precedence: Evaluates all occurrences of options. If conflicting values are passed (e.g. one `yes` and one `no`), the non-`yes` option triggers an immediate `ValueError`, preventing OpenSSH "first wins" command-line bypass. Identical duplicate options normalize cleanly.
-   - Untrusted directive defense: Directives that execute arbitrary local commands (`ProxyCommand`, `LocalCommand`, `PermitLocalCommand`) are rejected fail-closed by default. Custom proxying is permitted only when explicit custom trust (`allow_custom_proxycommand=True`) is configured.
+   - Untrusted directive defense & Default-Deny Allowlist (C2185/C2186): Directives that execute arbitrary local commands (`ProxyCommand`, `LocalCommand`, `PermitLocalCommand`, `KnownHostsCommand`) or include external configuration files (`Include`) are rejected fail-closed by default. An explicit default-deny allowlist `ALLOWED_SSH_OPTION_KEYS` is enforced for `-o` flags. Custom proxying is permitted only when explicit custom trust (`allow_custom_proxycommand=True`) is configured.
+   - Positional Destination Defense (C2181): Bare positional tokens in `ssh_opts` (not beginning with `-`) are strictly rejected with `ValueError`, preventing destination hijacking before `--`.
+   - Narrow Top-Level Flag Allowlist (C2181): Only authorized SSH flags (`-o`, `-p`, `-i`, `-l`, `-c`, `-F`, `-4`, `-6`, `-C`, `-q`, `-v`, `-vv`, `-vvv`, `-T`, `-N`, `-n`) are accepted; `-F` requires custom trust; `-p` requires valid integer port (1–65535).
 3. **Fail-Closed Omission over Regex Redaction (C2166)**: Public exceptions (`TransportError`, `TransportTimeout`, `FramingError`, `AuthError`) completely omit raw stdout and stderr strings from error messages and exception attributes. Exceptions carry strictly bounded, sanitized error codes (e.g., `code="remote_transport_failed"`, `exit_code=proc.returncode`, `reason="invalid_json_framing"`, `reason="remote_auth_rejected"`). Raw stdout/stderr and `err.doc` are never embedded in exception messages.
 4. **Decoupled Exception Chaining (C2166)**: When handling `subprocess.TimeoutExpired`, `json.JSONDecodeError`, or `ValueError`, exceptions are decoupled via `raise ... from None` outside `except` blocks. This ensures both `__cause__` and `__context__` are `None` and `__suppress_context__` is `True`, permanently preventing raw stdout/stderr from leaking via Python traceback inspection.
 5. **Request ID Mismatch Guard (C2166)**: If `resp.request_id != req.request_id`, raises `FramingError("request_id_mismatch") from None` without printing or reflecting unredacted payload data.
@@ -35,11 +37,11 @@ Under Codex Principal Directives C2151, C2154, C2156, C2162, C2164, C2166, and C
     - Strictly enforces `type(resp.ok) is bool`, preventing string truthy coercion (e.g., `"false"` becoming `True`).
     - Requires remote exit code `0`; non-zero exit codes fail closed with `TransportError`, even if valid JSON was emitted on stdout.
 12. **Timeout Ambiguity Semantics (C2164)**: Subprocess timeouts represent an *unknown remote state*. The client fails closed with `TransportTimeout` without performing automatic mutating retries or minting duplicate idempotency keys.
-13. **Ordinary Git Recovery Empirically Proven (C2171)**:
-    - Generated a complete, self-contained 17-file unified patch: `research/antigravity/recovery/typed-ssh-filebus-rpc-hardened.patch` (SHA256: `293a4a120c90eb082d20415d961caaf6435d61278977434a25a0359fabfa3db2`).
+13. **Ordinary Git Recovery Empirically Proven (C2171 / C2175 / C2181)**:
+    - Generated a complete, self-contained 17-file unified patch: `research/antigravity/recovery/typed-ssh-filebus-rpc-hardened.patch` (SHA256: `444165fd8821c371e01cb5dfb39775e3be50e466e1b54f2eb7ab982176efc976`).
     - In a clean disposable checkout at base commit `f3295f99e188719f5df9fccb22706d8a0e5bb8f8`, `git apply` executed with exit code 0.
     - Verified all module imports: `coordination.envelope`, `coordination.ssh_rpc`, `coordination.errors`, `coordination.bus_cli`, `coordination.durable`, `coordination.headless_worker`.
-    - Executed full test suite in disposable testbed: **62/62 tests passing** clean across all 8 test modules.
+    - Executed full test suite in disposable testbed: **65/65 tests passing** clean across all 8 test modules in 7.49s (recovery log SHA256: `93c363d185cf8a12cab203fddceb86a61b41123973f064fc330ed0f164333fc3`).
 
 ---
 
@@ -194,15 +196,15 @@ A dedicated `rpc` subcommand was integrated into `coordination/bus_cli.py`:
 | **Test 18** | `test_c2166_exception_chaining_decoupled` | C2166 | Verifies that `TimeoutExpired` and `JSONDecodeError` do not leak unredacted data via `__cause__` or `__context__`. | **PASS** |
 
 ### 5.2 Adversarial Security Suite (`tests/test_ssh_rpc_security.py`)
-20 specialized adversarial test cases verifying host option injection defense, remote shell escaping, strict correlation, non-zero exit fail-closed behavior, timeout semantics, option normalization, duplicate option handling, custom trust, and deep leakage inspection across all error paths: **20/20 PASS in 0.05s**.
+23 specialized adversarial test cases verifying host option injection defense, bare positional destination rejection (C2181), flag allowlist and integer port validation (C2181), option key allowlist and default-deny against executable/inclusion options (C2185/C2186), remote shell escaping, strict correlation, non-zero exit fail-closed behavior, timeout semantics, option normalization, duplicate option handling, custom trust, and deep leakage inspection across all error paths: **23/23 PASS in 0.04s**.
 
 ### 5.3 Test Execution Summary
 ```text
 $ TMPDIR=.local/scratch/bus-ssh-rpc-snapshot/tmp PYTHONPATH=.local/scratch/bus-ssh-rpc-snapshot/agent-bus pytest -v tests/test_ssh_rpc.py tests/test_ssh_rpc_security.py
-============================== 38 passed in 1.94s ==============================
+============================== 41 passed in 2.08s ==============================
 
 $ TMPDIR=.local/scratch/bus-ssh-rpc-snapshot/tmp PYTHONPATH=.local/scratch/bus-ssh-rpc-snapshot/agent-bus pytest -v tests/
-============================== 62 passed in 7.36s ==============================
+============================== 65 passed in 7.49s ==============================
 ```
 
 ---
@@ -211,7 +213,7 @@ $ TMPDIR=.local/scratch/bus-ssh-rpc-snapshot/tmp PYTHONPATH=.local/scratch/bus-s
 
 ### 6.1 Unified Patch File
 - Path: `research/antigravity/recovery/typed-ssh-filebus-rpc-hardened.patch`
-- SHA256: `293a4a120c90eb082d20415d961caaf6435d61278977434a25a0359fabfa3db2`
+- SHA256: `444165fd8821c371e01cb5dfb39775e3be50e466e1b54f2eb7ab982176efc976`
 - Files included (17 total):
   - Tracked modifications: `coordination/__init__.py`, `coordination/bus.py`, `coordination/bus_cli.py`, `coordination/cursors.py`, `coordination/errors.py`, `tests/test_bus.py`, `tests/test_bus_dogfood.py`
   - New files created: `coordination/envelope.py`, `coordination/ssh_rpc.py`, `coordination/durable.py`, `coordination/headless_worker.py`, `tests/test_bus_concurrent.py`, `tests/test_bus_crash.py`, `tests/test_bus_scope.py`, `tests/test_headless_task.py`, `tests/test_ssh_rpc.py`, `tests/test_ssh_rpc_security.py`
@@ -223,15 +225,17 @@ $ TMPDIR=.local/scratch/bus-ssh-rpc-snapshot/tmp PYTHONPATH=.local/scratch/bus-s
 4. Executed full test suite:
    ```text
    $ pytest -v tests/
-   ============================== 62 passed in 9.91s ==============================
+   ============================== 65 passed in 7.49s ==============================
    ```
-5. Cleaned up disposable directory: zero residual storage overhead.
+5. Preserved recovery log: `.local/scratch/reviewer37-patch-audit/recovery_test_run.log` (SHA256: `93c363d185cf8a12cab203fddceb86a61b41123973f064fc330ed0f164333fc3`).
+6. Preserved restored manifest: `.local/scratch/reviewer37-patch-audit/restored_manifest.txt` (SHA256: `2790e32217de3a85eed80288680b2d05897ba4274a5572ae667e160c74b1bacc`).
+7. Cleaned up disposable directory: zero residual storage overhead.
 
 ---
 
 ## 7. Invariant Compliance Checklist
 
-- [x] **Zero cargo / rustc invocations**: Verified zero calls. Standard Python 3.12 and Linux tools only.
+- [x] **Zero cargo / rustc invocations**: Exactly 0 invocations in this review interval. Standard Python 3.12 and Linux tools only.
 - [x] **Canonical Isolation**: Canonical `/home/alexey/git/agent-bus/` pre-existing dirty working copy strictly preserved; zero new canonical changes or commits introduced.
 - [x] **Scratch Root Isolation**: All work conducted within `/home/alexey/git/cloudflare-agent-git/.local/scratch/bus-ssh-rpc-snapshot/` (size <= 512 MB).
 - [x] **Host Storage Protection**: TMPDIR strictly set to scratch tmp (`.local/scratch/bus-ssh-rpc-snapshot/tmp/`, mode `0700`); zero writes to host `/tmp`.

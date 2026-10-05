@@ -2776,18 +2776,41 @@
         "06ecf158-e51f-411c-89b8-083fc9fb3dd6"
       ],
       "status": "done",
-      "updated_at": "2026-10-05T00:39:15.000000+00:00",
+      "updated_at": "2026-10-05T00:52:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/recovery/REPORT-TYPED-SSH-FILEBUS-RPC.md",
         "research/antigravity/reviews/REV-TYPED-SSH-FILEBUS-RPC.md",
         "research/antigravity/recovery/typed-ssh-filebus-rpc-hardened.patch"
       ],
-      "acceptance": "BOUNDED ACCEPTANCE granted by reviewer37 in REV-TYPED-SSH-FILEBUS-RPC.md. All 6 security vectors certified: local option injection defense (leading dash rejected, explicit -- delimiter), OpenSSH option normalization (case-insensitive, spacing-tolerant, strict rejection of non-yes [accept-new/no/off/ask], duplicate conflicting options rejected to defeat OpenSSH 'first wins' bypass, untrusted directives [ProxyCommand/LocalCommand/PermitLocalCommand] prohibited unless allow_custom_proxycommand=True), remote shell argument quoting with shlex.quote() scoped to POSIX login shells ($SHELL/bash/sh), strict request_id correlation, fail-closed boolean coercion (string false fails closed), non-zero returncode fails closed with TransportError, noisy banner rejected, credential hygiene with fail-closed attribute omission (no raw stderr/stdout in exception attributes), decoupled exception chaining (raise ... from None) preventing traceback leakage, and ambiguous timeout semantics (UNKNOWN outcome, zero automated mutating retries). Ordinary Git recovery empirically verified: complete 17-file unified patch (SHA256: 293a4a12...) applied cleanly to fresh disposable checkout at base f3295f99 with 0 errors, all modules importing clean, and 62/62 tests passing. Canonical agent-bus pre-existing dirty working copy strictly preserved; zero new canonical dirt. Two-host multi-machine rollout and Windows targets remain HELD pending live two-host validation.",
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C2151/C2154/C2156/C2162/C2164/C2166/C2171. Executed by architect06 and independently audited by reviewer37 in .local/scratch/bus-ssh-rpc-snapshot/agent-bus/.",
+      "acceptance": "BOUNDED ACCEPTANCE granted by reviewer37 in REV-TYPED-SSH-FILEBUS-RPC.md. All security vectors certified: local option injection defense (leading dash rejected, explicit -- delimiter), OpenSSH option normalization (case-insensitive, spacing-tolerant, strict rejection of non-yes [accept-new/no/off/ask], duplicate conflicting options rejected to defeat OpenSSH 'first wins' bypass, untrusted directives [ProxyCommand/LocalCommand/PermitLocalCommand] prohibited unless allow_custom_proxycommand=True), default-deny option key allowlist (ALLOWED_SSH_OPTION_KEYS) rejecting executable/inclusion directives (KnownHostsCommand, Include, LocalCommand, PermitLocalCommand, Match, PKCS11Provider) per C2185/C2186, bare positional destination rejection (C2181), narrow flag allowlist with integer port checking (C2181), remote shell argument quoting with shlex.quote() scoped to POSIX login shells ($SHELL/bash/sh), strict request_id correlation, fail-closed boolean coercion (string false fails closed), non-zero returncode fails closed with TransportError, noisy banner rejected, credential hygiene with fail-closed attribute omission (no raw stderr/stdout in exception attributes), decoupled exception chaining (raise ... from None) preventing traceback leakage, and ambiguous timeout semantics (UNKNOWN outcome, zero automated mutating retries). Ordinary Git recovery empirically verified: complete 17-file unified patch (SHA256: 444165fd...) applied cleanly to fresh disposable checkout at base f3295f99 with 0 errors, all modules importing clean, and 65/65 tests passing in 7.49s (recovery log SHA256: 93c363d1...). Canonical agent-bus pre-existing dirty working copy strictly preserved; zero new canonical dirt. Two-host multi-machine rollout and Windows targets remain HELD pending live two-host validation.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2151/C2154/C2156/C2162/C2164/C2166/C2171/C2175/C2181/C2182/C2184/C2185/C2186. Executed by architect06 and independently audited by reviewer37 in .local/scratch/bus-ssh-rpc-snapshot/agent-bus/.",
       "acceptance_status": "ACCEPTED (BOUNDED ACCEPTANCE - POSIX COMPONENT LEVEL)",
-      "next_action": "Ordinary Git recovery and option normalization verified clean. Ready for live two-host bidirectional connectivity testing between desktop and Hetzner nodes under POSIX remote shell contract.",
+      "next_action": "Ordinary Git recovery, option allowlist, and component negative tests verified clean (65/65 PASS). Ready for live two-host bidirectional connectivity testing between desktop and Hetzner nodes under POSIX remote shell contract.",
       "continuation_trigger": "Multi-host two-computer agent communication milestone."
+    },
+    {
+      "id": "dashboard-staged-consumer-delivery-audit",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "259526a9-5deb-47ce-810c-ca5f2da56b68"
+      ],
+      "status": "done",
+      "updated_at": "2026-10-05T00:52:00.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-DASHBOARD-STAGED-CONSUMER-DELIVERY.md",
+        "research/antigravity/recovery/REPORT-DASHBOARD-HEAD-READINESS-REPAIR.md",
+        "research/antigravity/recovery/dashboard-alias-and-fourth-project-minimal.patch",
+        "research/antigravity/recovery/dashboard-static-fourth-project-minimal.patch"
+      ],
+      "acceptance": "Independent delivery audit completed by reviewer259 in REV-DASHBOARD-STAGED-CONSUMER-DELIVERY.md under Codex C2180/C2187/C2189. Staged minimal patches (007a6ef3 backend, f2e29142 static) verified in scratch testbed (48/48 tests PASS, Node.js mockDOM simulation renders 4th product cleanly). Canonical repository /home/alexey/git/agent-dashboard at efed70d audited strictly read-only; confirmed all four features (alias resolution, 4th project backend ID, 4th project HTML card, 4th project JS PROJECT_IDS) are NOT INTEGRATED in canonical. Canonical dirty working tree (2,102 insertions, 410 deletions) strictly preserved; blanket git apply withdrawn; integration delegated exclusively to agent-dashboard-head. Zero accepted features recorded for these four delta features in analytical accounting pending canonical merge. Native cross-workspace handoff message 01a10988-c253 safely queued in dashboard mailbox without identity spoofing or forced state overrides; authoritative readiness repair architecture established in REPORT-DASHBOARD-HEAD-READINESS-REPAIR.md.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2180/C2187/C2189/C2190/C2191. Audited by reviewer259 in .local/scratch/dashboard-consumer-audit/.",
+      "acceptance_status": "STAGED CONSUMER VERIFIED (CANONICAL UNINTEGRATED; DELEGATED TO AGENT-DASHBOARD-HEAD)",
+      "next_action": "Wait for agent-dashboard-head to ingest queued handoff message 01a10988-c253 from mailbox, execute owned manual merge of minimal reference deltas into active branch, run tests, and commit under flock .local/git.lock.",
+      "continuation_trigger": "Canonical dashboard integration commit and signed review completion."
     }
   ]
 }

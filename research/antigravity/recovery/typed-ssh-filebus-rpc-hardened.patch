@@ -1557,10 +1557,10 @@ index 0000000..8788a59
 +    raise SystemExit(main())
 diff --git a/coordination/ssh_rpc.py b/coordination/ssh_rpc.py
 new file mode 100644
-index 0000000..a9d42d5
+index 0000000..8250896
 --- /dev/null
 +++ b/coordination/ssh_rpc.py
-@@ -0,0 +1,531 @@
+@@ -0,0 +1,664 @@
 +"""Typed SSH FileBus RPC Client.
 +
 +Communicates with a remote FileBus store over SSH using pinned CLI execution
@@ -1659,6 +1659,30 @@ index 0000000..a9d42d5
 +    return "", ""
 +
 +
++ALLOWED_SSH_OPTION_KEYS: set[str] = {
++    "batchmode",
++    "stricthostkeychecking",
++    "connecttimeout",
++    "serveraliveinterval",
++    "serveralivecountmax",
++    "tcpkeepalive",
++    "compression",
++    "port",
++    "user",
++    "identityfile",
++    "identitiesonly",
++    "ciphers",
++    "macs",
++    "kexalgorithms",
++    "hostkeyalgorithms",
++}
++
++CUSTOM_TRUST_OPTION_KEYS: set[str] = {
++    "proxycommand",
++    "proxyjump",
++}
++
++
 +def _parse_and_validate_ssh_opts(
 +    opts: list[str],
 +    allow_custom_proxycommand: bool = False,
@@ -1666,15 +1690,24 @@ index 0000000..a9d42d5
 +    """
 +    Parses and validates OpenSSH options to prevent option injection and policy bypass.
 +
-+    Directives (C2162, C2166, C2171):
++    Directives (C2162, C2166, C2171, C2181, C2185, C2186):
 +    - Normalization: case-insensitive parsing of option keywords and values (e.g. stricthostkeychecking=no, batchmode=no).
 +    - Spacing & tokenization: handles attached (-oKey=Val) and detached (-o, Key=Val or -o, Key, Val) forms, spaces around '='.
 +    - Strict enforcement: BatchMode=yes and StrictHostKeyChecking=yes are mandatory.
 +      Values like 'accept-new', 'no', 'off', 'ask' strictly fail closed with ValueError.
 +    - Precedence & duplicate handling: inspects ALL occurrences of options.
 +      If conflicting values are present, non-'yes' values fail closed immediately.
-+    - Untrusted directive defense: rejects dangerous directives such as ProxyCommand, LocalCommand,
-+      and PermitLocalCommand unless explicit custom trust (allow_custom_proxycommand=True) is granted.
++    - Default-deny option allowlist (C2185 / C2186): only vetted option keys (ALLOWED_SSH_OPTION_KEYS)
++      are permitted. Arbitrary directives (KnownHostsCommand, Include, LocalCommand, PermitLocalCommand,
++      Match, PKCS11Provider) strictly fail closed with ValueError.
++    - Untrusted directive defense: ProxyCommand and ProxyJump are rejected unless explicit custom trust
++      (allow_custom_proxycommand=True) is granted.
++    - Narrow flag allowlist (C2181): only allowed option flags (-o, -p, -i, -F, -4, -6, -C, -q, -v, -vv, -vvv, -T, -N, -n).
++      Unrecognized flags fail closed.
++    - Positional destination defense (C2181): bare positional arguments in ssh_opts (tokens not starting with '-')
++      are strictly prohibited to prevent preceding destination hijacking before '--'.
++    - Config file defense (C2181): '-F' custom config files are prohibited unless allow_custom_proxycommand=True,
++      preventing ambient configuration files from re-introducing LocalCommand or ProxyCommand.
 +    """
 +    normalized_other: list[str] = []
 +    seen_options: dict[str, list[str]] = {}
@@ -1682,6 +1715,11 @@ index 0000000..a9d42d5
 +    i = 0
 +    while i < len(opts):
 +        arg = opts[i]
++        if not arg or not arg.strip():
++            i += 1
++            continue
++
++        # 1. OpenSSH -o option processing
 +        if arg == "-o":
 +            if i + 1 >= len(opts):
 +                raise ValueError("-o flag requires an option argument")
@@ -1691,6 +1729,31 @@ index 0000000..a9d42d5
 +            if not v and i < len(opts) and not opts[i].startswith("-"):
 +                k, v = opt_str.strip().lower(), opts[i].strip()
 +                i += 1
++            seen_options.setdefault(k, []).append(v)
++            v_lower = v.lower()
++
++            if k in CUSTOM_TRUST_OPTION_KEYS:
++                if not allow_custom_proxycommand:
++                    raise ValueError(
++                        f"OpenSSH directive '{k}' is untrusted and prohibited without explicit custom trust (allow_custom_proxycommand=True)"
++                    )
++            elif k not in ALLOWED_SSH_OPTION_KEYS:
++                raise ValueError(
++                    f"OpenSSH option '{k}' is prohibited; only vetted options in allowlist are permitted (prohibiting directives like KnownHostsCommand, Include, LocalCommand)"
++                )
++
++            if k == "stricthostkeychecking":
++                if v_lower != "yes":
++                    raise ValueError(
++                        f"StrictHostKeyChecking must be 'yes' (found '{v}'); StrictHostKeyChecking={v} is prohibited"
++                    )
++            elif k == "batchmode":
++                if v_lower != "yes":
++                    raise ValueError(
++                        f"BatchMode must be 'yes' (found '{v}'); BatchMode={v} is prohibited"
++                    )
++            continue
++
 +        elif arg.startswith("-o"):
 +            opt_str = arg[2:].lstrip()
 +            i += 1
@@ -1698,29 +1761,99 @@ index 0000000..a9d42d5
 +            if not v and i < len(opts) and not opts[i].startswith("-"):
 +                k, v = opt_str.strip().lower(), opts[i].strip()
 +                i += 1
-+        else:
++            seen_options.setdefault(k, []).append(v)
++            v_lower = v.lower()
++
++            if k in CUSTOM_TRUST_OPTION_KEYS:
++                if not allow_custom_proxycommand:
++                    raise ValueError(
++                        f"OpenSSH directive '{k}' is untrusted and prohibited without explicit custom trust (allow_custom_proxycommand=True)"
++                    )
++            elif k not in ALLOWED_SSH_OPTION_KEYS:
++                raise ValueError(
++                    f"OpenSSH option '{k}' is prohibited; only vetted options in allowlist are permitted (prohibiting directives like KnownHostsCommand, Include, LocalCommand)"
++                )
++
++            if k == "stricthostkeychecking":
++                if v_lower != "yes":
++                    raise ValueError(
++                        f"StrictHostKeyChecking must be 'yes' (found '{v}'); StrictHostKeyChecking={v} is prohibited"
++                    )
++            elif k == "batchmode":
++                if v_lower != "yes":
++                    raise ValueError(
++                        f"BatchMode must be 'yes' (found '{v}'); BatchMode={v} is prohibited"
++                    )
++            continue
++
++        # 2. OpenSSH -F custom config processing (C2181)
++        elif arg == "-F" or arg.startswith("-F"):
++            if not allow_custom_proxycommand:
++                raise ValueError(
++                    "OpenSSH config file option '-F' is untrusted and prohibited without explicit custom trust (allow_custom_proxycommand=True)"
++                )
++            if arg == "-F":
++                if i + 1 >= len(opts):
++                    raise ValueError("-F flag requires a config path argument")
++                cfg_val = opts[i + 1]
++                if cfg_val.startswith("-"):
++                    raise ValueError(f"Config path for '-F' must not start with '-': {cfg_val}")
++                normalized_other.extend(["-F", cfg_val])
++                i += 2
++            else:
++                cfg_val = arg[2:].lstrip()
++                if not cfg_val or cfg_val.startswith("-"):
++                    raise ValueError(f"Config path for '-F' must not start with '-': {cfg_val}")
++                normalized_other.append(arg)
++                i += 1
++            continue
++
++        # 3. Known allowed value flags: -p, -i, -l, -c
++        elif arg in ("-p", "-i", "-l", "-c"):
++            if i + 1 >= len(opts):
++                raise ValueError(f"SSH flag '{arg}' requires an argument")
++            val = opts[i + 1]
++            if val.startswith("-"):
++                raise ValueError(f"Argument for SSH flag '{arg}' must not start with '-': {val}")
++            if arg == "-p":
++                try:
++                    port = int(val)
++                    if not (1 <= port <= 65535):
++                        raise ValueError()
++                except (ValueError, TypeError):
++                    raise ValueError(f"SSH port flag '-p' requires a valid integer port between 1 and 65535 (got '{val}')")
++            normalized_other.extend([arg, val])
++            i += 2
++            continue
++
++        elif any(arg.startswith(prefix) for prefix in ("-p", "-i", "-l", "-c")) and len(arg) > 2:
++            prefix = arg[:2]
++            val = arg[2:]
++            if prefix == "-p":
++                try:
++                    port = int(val)
++                    if not (1 <= port <= 65535):
++                        raise ValueError()
++                except (ValueError, TypeError):
++                    raise ValueError(f"SSH port flag '-p' requires a valid integer port between 1 and 65535 (got '{val}')")
 +            normalized_other.append(arg)
 +            i += 1
 +            continue
 +
-+        seen_options.setdefault(k, []).append(v)
-+        v_lower = v.lower()
++        # 4. Known allowed boolean flags
++        elif arg in ("-4", "-6", "-C", "-q", "-v", "-vv", "-vvv", "-T", "-N", "-n"):
++            normalized_other.append(arg)
++            i += 1
++            continue
 +
-+        if k == "stricthostkeychecking":
-+            if v_lower != "yes":
++        # 5. Any bare positional argument or unrecognized flag fails closed!
++        else:
++            if not arg.startswith("-"):
 +                raise ValueError(
-+                    f"StrictHostKeyChecking must be 'yes' (found '{v}'); StrictHostKeyChecking={v} is prohibited"
++                    f"Positional destination argument in ssh_opts is prohibited (destinations must use host parameter): '{arg}'"
 +                )
-+        elif k == "batchmode":
-+            if v_lower != "yes":
-+                raise ValueError(
-+                    f"BatchMode must be 'yes' (found '{v}'); BatchMode={v} is prohibited"
-+                )
-+        elif k in ("proxycommand", "localcommand", "permitlocalcommand"):
-+            if not allow_custom_proxycommand:
-+                raise ValueError(
-+                    f"OpenSSH directive '{k}' is untrusted and prohibited without explicit custom trust (allow_custom_proxycommand=True)"
-+                )
++            else:
++                raise ValueError(f"Prohibited or unrecognized SSH option flag: '{arg}'")
 +
 +    # Mandatory canonical options: BatchMode=yes and StrictHostKeyChecking=yes
 +    out: list[str] = ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes"]
@@ -3434,10 +3567,10 @@ index 0000000..7e96f74
 +    assert exc_info2.value.__context__ is None
 diff --git a/tests/test_ssh_rpc_security.py b/tests/test_ssh_rpc_security.py
 new file mode 100644
-index 0000000..42859a0
+index 0000000..9c3878a
 --- /dev/null
 +++ b/tests/test_ssh_rpc_security.py
-@@ -0,0 +1,528 @@
+@@ -0,0 +1,607 @@
 +"""Adversarial Security Test Suite for Typed SSH FileBus RPC.
 +
 +Directives:
@@ -3582,7 +3715,7 @@ index 0000000..42859a0
 +        ["-o", "PermitLocalCommand=yes"],
 +    ]
 +    for untrusted in untrusted_directives:
-+        with pytest.raises(ValueError, match="is untrusted and prohibited without explicit custom trust"):
++        with pytest.raises(ValueError, match="(is untrusted and prohibited|is prohibited; only vetted options)"):
 +            SshFileBusClient(host="host", store_path="/store", ssh_opts=untrusted)
 +
 +    # When explicit custom trust is granted, ProxyCommand is permitted
@@ -3594,6 +3727,85 @@ index 0000000..42859a0
 +        allow_custom_proxycommand=True,
 +    )
 +    assert any("proxycommand=ssh -W %h:%p jumpbox.internal" in opt for opt in client_trusted.ssh_opts)
++
++
++def test_ssh_c2181_bare_positional_arguments_rejected():
++    """Verify that bare positional arguments in ssh_opts fail closed to prevent destination hijacking."""
++    prohibited_positionals = [
++        ["attacker.com"],
++        ["evil.host", "-o", "BatchMode=yes"],
++        ["-o", "BatchMode=yes", "rogue-host"],
++    ]
++    for bad_opts in prohibited_positionals:
++        with pytest.raises(ValueError, match="Positional destination argument in ssh_opts"):
++            SshFileBusClient(host="intended.host", store_path="/store", ssh_opts=bad_opts)
++
++
++def test_ssh_c2181_config_file_and_flags_allowlist():
++    """Verify narrow flag allowlist and -F custom config defense under C2181."""
++    # -F custom config rejected by default
++    with pytest.raises(ValueError, match="OpenSSH config file option '-F' is untrusted and prohibited"):
++        SshFileBusClient(host="host", store_path="/store", ssh_opts=["-F", "/tmp/bad_config"])
++
++    with pytest.raises(ValueError, match="OpenSSH config file option '-F' is untrusted and prohibited"):
++        SshFileBusClient(host="host", store_path="/store", ssh_opts=["-F/tmp/bad_config"])
++
++    # -F allowed with explicit custom trust
++    client_cfg = SshFileBusClient(
++        host="host",
++        store_path="/store",
++        ssh_opts=["-F", "/path/to/custom_config"],
++        allow_custom_proxycommand=True,
++    )
++    assert "-F" in client_cfg.ssh_opts
++    assert "/path/to/custom_config" in client_cfg.ssh_opts
++
++    # Valid allowed flags: -p (port), -i (identity), -C (compression), -q (quiet)
++    client_allowed = SshFileBusClient(
++        host="host",
++        store_path="/store",
++        ssh_opts=["-p", "2222", "-C", "-q"],
++    )
++    assert "-p" in client_allowed.ssh_opts
++    assert "2222" in client_allowed.ssh_opts
++    assert "-C" in client_allowed.ssh_opts
++
++    # Invalid port rejected
++    with pytest.raises(ValueError, match="requires a valid integer port"):
++        SshFileBusClient(host="host", store_path="/store", ssh_opts=["-p", "999999"])
++
++    # Disallowed flag rejected
++    with pytest.raises(ValueError, match="Prohibited or unrecognized SSH option flag"):
++        SshFileBusClient(host="host", store_path="/store", ssh_opts=["-D", "1080"])
++
++
++def test_ssh_c2185_option_key_allowlist_and_default_deny():
++    """Verify default-deny allowlist rejects arbitrary executable/inclusion directives (C2185/C2186)."""
++    prohibited_options = [
++        ["-o", "KnownHostsCommand=/tmp/evil_lookup"],
++        ["-oKnownHostsCommand=whoami"],
++        ["-o", "knownhostscommand = /tmp/lookup"],
++        ["-o", "Include=/etc/ssh/malicious_include"],
++        ["-oInclude /tmp/cfg"],
++        ["-o", "LocalCommand=id"],
++        ["-o", "PermitLocalCommand=yes"],
++        ["-o", "PKCS11Provider=/tmp/libevil.so"],
++        ["-o", "Match=all"],
++        ["-o", "UserKnownHostsFile=/dev/null"],
++        ["-o", "ArbitraryOption=evil"],
++    ]
++    for bad_opt in prohibited_options:
++        with pytest.raises(ValueError, match="(prohibited|only vetted options)"):
++            SshFileBusClient(host="host", store_path="/store", ssh_opts=bad_opt)
++
++    # Allowed safe options pass
++    client_safe = SshFileBusClient(
++        host="host",
++        store_path="/store",
++        ssh_opts=["-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=15", "-o", "Compression=yes"],
++    )
++    assert any("connecttimeout=10" in opt for opt in client_safe.ssh_opts)
++    assert any("serveraliveinterval=15" in opt for opt in client_safe.ssh_opts)
 +
 +
 +def test_ssh_option_injection_host_rejected_at_init():
