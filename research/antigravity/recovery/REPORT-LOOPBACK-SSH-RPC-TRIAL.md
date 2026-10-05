@@ -101,10 +101,12 @@ ALL LOOPBACK SSH FILEBUS RPC CHECKS PASSED in 3.019s
 | Send Message | `send` | OpenSSH (`hetzner`) | 0.396s | `msg_id=81068d4e...` |
 | Inbox Query | `inbox` | OpenSSH (`hetzner`) | 0.329s | 1 message retrieved |
 | Acknowledge | `ack` | OpenSSH (`hetzner`) | 0.362s | `acked_at: 2026-10-05T01:16:47Z` |
-| Inbox Verification | `inbox` | OpenSSH (`hetzner`) | 0.350s | 0 unread messages |
+| Inbox Verification | `inbox` | OpenSSH (`hetzner`) | 0.350s* | 0 unread messages |
 | Correlated Reply | `reply` | OpenSSH (`hetzner`) | 0.406s | `reply_id=af7c22f6...` |
 | Inbox Verification | `inbox` | OpenSSH (`hetzner`) | 0.346s | Reply verified |
 | **Total Cycle** | 8 RPC calls | OpenSSH (`hetzner`) | **3.019s** | **100% PASS** |
+
+*\*Note on Step 6 Timing (per C2230/C2236 audit)*: Unlike the other 7 operations which recorded discrete `time.monotonic()` deltas, Step 6 ("Inbox Verification") did not measure an isolated delta in `verify_loopback_ssh_rpc.py`. The reported latency of `0.350s` represents an **inferred residual duration** ($3.019\text{s} - 2.669\text{s} = 0.350\text{s}$) capturing Step 6 execution along with subprocess cleanup, garbage collection, and script teardown overhead. Individual step inbox latency was not discretely isolated for Step 6.
 
 ---
 
