@@ -99,3 +99,5 @@ Actual16-d PROVENANCE.md5483B SHAa271e18ec516d5f6d9eb859a75bed9ba8867b2fa0c3472f
 
 
 12:46:33UTC: zero loaded agent-task/ql-ctl units; recorded SDK45fix worker3356383/controller3355024 absent. Covered actual active useful workers0, full other fleet unknown. No completed artifact credit: SDKfix remains dirty at10d9/expectedreportmissing.12:30 target50 missed; non-Grok head transfer/readiness recovery now critical path. Proposed10at12:55/25at13:20/50at13:50 awaits actual head allocation, not capacity/acceptance.
+
+2026-10-05T12:55:46.075294+00:00: proposed12:55UTC target10 missed; actual12:55:01 agent-task/ql-ctl loaded roster0. Genuine new Gemini head68cfdd4d continues isolated integration/test tools, not a task worker. Real SDK private recovery report now exists, six owner-reported tests and HOLD on broad generator/content contract; principal source review supports HOLD, no own test executed. New isolated launcher104777a combines controller8dd and Gemini029-derived argv; dirty follow-up fixes not yet independently accepted/runtime first use. Actual worker dispatch still next checkpoint;25/50 proposed13:20/13:50 unaccepted estimates.
