@@ -604,7 +604,7 @@ def daily_page(d):
     sources = ''.join('<a class="src" href="'+E(u, quote=True)+'">'+E(source_title(u, titles))+'</a>' for u in d.get('sources', []))
     return ('<article class="article">'+article_head(d['title'], d.get('summary', ''), byline_block(person, spans))
             +'<div class="prose">'+prose+'</div>'
-            '<div class="article-sources"><details class="sources-more"><summary class="sources-h">Sources ('+str(len(d.get('sources', [])))+')</summary>'+sources+'</details></div></article>')
+            '<div class="article-sources"><details class="sources-more"><summary class="sources-h" style="cursor:pointer">Sources ('+str(len(d.get('sources', [])))+')</summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">'+sources+'</div></details></div></article>')
 
 def note_page(rp):
     info = note_info(rp)
