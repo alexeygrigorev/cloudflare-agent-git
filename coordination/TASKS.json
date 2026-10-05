@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T10:09:02.652216+00:00",
+  "updated_at": "2026-10-05T10:34:55.033933+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -457,7 +457,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-05T10:09:02.652216+00:00",
+      "updated_at": "2026-10-05T10:34:55.033933+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -484,10 +484,10 @@
         "research/codex/active-worker-checkpoint-20261005.md"
       ],
       "blocked_on": [],
-      "next_action": "C2458\u20132460: reciprocal head-owned final CLI/unit review then first safe product task through maintained launcher, own bus events/output/refill. Independent census10:07\u201310:08UTC0covered native/unit taskworkers; fullharness/headless countUNKNOWN. Actual50 remainsunachieved. Ant owns released idleworker reconciliation and candidate-vs-live tracker correction.",
+      "next_action": "C2474:12:30Berlin exact10:29:59UTC0coveredcurrenttaskunits/fullfleetUNKNOWN;50andinterimoverlapmissed. QL owns correctedexport2b/filterimplementation1c liveadmission/firsttools/output/refill. Ant unitcwd/collectcleanup repairs70e5a95/ae7b5ca reported147tests/offlinewitness, actualruntimeacceptancepending. Pub reportcontentaccepted but wrongreviewdigestneedsreconciliation; privateTask/ZCode canonicaladoption remainsblocked. Nextactualtaskevent then13:00Berlin11:00UTC independentroster; headfreshsafeusefulscale, no rootQA.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
-      "continuation_trigger": "Actual head reply/runtime dispatcher first action -> independent active roster and useful output review -> head refill callback; native message wait at natural boundaries. Manual Pub guarded delivery not unattended acceptance; no root QA gate."
+      "continuation_trigger": "Nativeactualhead completion/dependency event -> principal independentreview ofloadedsource/firstmodeltool/output and true activecount -> headnextsafeownedtask. Nextfreshcheckpoint11:00UTC, do not awaitroot; manualguardedPub/Antrecoveries notautowakeacceptance."
     },
     {
       "id": "a09-incumbent-check",
@@ -3759,6 +3759,62 @@
       "reviewer": "codex-principal",
       "accepted_at": "2026-10-05T10:28:00.000000+00:00",
       "feature_id": "task-units-workingdirectory-repair"
+    },
+    {
+      "id": "dashboard-tasks-candidate-review-c2477",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T10:50:00.000000+00:00",
+      "next_action": "Handoff to agent-dashboard-head for integration into working branch.",
+      "acceptance": "Independent non-author audit of dashboard-tasks-tracker-and-usability.patch in isolated scratch testbed atop 249d086 with full live server and rendering verification while protecting canonical c7.",
+      "blocked_on": [],
+      "executor_ids": [
+        "5e50ddee-497f-4121-a713-bfc3fd9164c6"
+      ],
+      "owned_paths": [
+        "research/antigravity/reviews/REV-DASHBOARD-TASKS-CANDIDATE.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-DASHBOARD-TASKS-CANDIDATE.md"
+      ],
+      "first_action": "2026-10-05T10:44:23.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "69/69 tests PASS (48 baseline + 21 new), live HTTP endpoints /api/tasks /api/hourly verified on port 8931, Kanban board + SVG charts verified, publication guard exit 0",
+      "reviewer": "dashboard-tasks-reviewer (5e50ddee)",
+      "accepted_at": "2026-10-05T10:50:00.000000+00:00",
+      "feature_id": "dashboard-tasks-review"
+    },
+    {
+      "id": "agentbus-standalone-modelworker-c2477",
+      "project_id": "agent-coordination",
+      "team_id": "agent-coordination",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T10:49:49.000000+00:00",
+      "next_action": "Cross-computer WAN transport bridge validation.",
+      "acceptance": "Standalone AgentBus modelworker lifecycle on reviewed FileBus: task dispatch, worker inbox ingest, worker read ACK, model reasoning execution, artifact creation, worker reply, head read ACK, and next-task callback.",
+      "blocked_on": [],
+      "executor_ids": [
+        "e5366811-fe01-4331-b078-cc75efdeb081"
+      ],
+      "owned_paths": [
+        "research/antigravity/recovery/REPORT-BUS-MODELWORKER-C2477.md",
+        "research/antigravity/recovery/agentbus_modelworker_c2477.py",
+        "tests/test_agentbus_modelworker_c2477.py"
+      ],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-BUS-MODELWORKER-C2477.md"
+      ],
+      "first_action": "2026-10-05T10:44:23.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "11/11 tests PASS in test_agentbus_modelworker_c2477.py, all 6 stages verified end-to-end, idempotency and crash recovery verified, publication guard exit 0",
+      "reviewer": "antigravity-head",
+      "accepted_at": "2026-10-05T10:49:49.000000+00:00",
+      "feature_id": "agentbus-standalone-modelworker"
     }
   ]
 }
