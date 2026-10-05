@@ -19,13 +19,14 @@ import sys
 import time
 import uuid
 
-# Ensure scripts/supervision modules (ack_reconciliation, retention) are importable
-_SUPERVISION_DIR = pathlib.Path(__file__).resolve().parents[4] / 'scripts/supervision'
+# Ensure scripts/supervision modules (ack_reconciliation, retention, terminal_consumer) are importable
+_SUPERVISION_DIR = pathlib.Path(__file__).resolve().parent
 if str(_SUPERVISION_DIR) not in sys.path:
     sys.path.insert(0, str(_SUPERVISION_DIR))
 
 from ack_reconciliation import exact_ack
 from retention import StorageFull, archive_operational, archive_verified, read_archived, storage_guard
+from terminal_consumer import TerminalConsumer
 
 ROOT = pathlib.Path('/home/alexey/git/cloudflare-agent-git')
 PRIVATE = ROOT / '.local/supervision'
@@ -790,6 +791,8 @@ def run():
     if storage_guard(PRIVATE)['state'] != 'paused-hard-limit':
         event('service-started', session_id=identity['id'], binary_sha256=expected_hash)
 
+    consumer = TerminalConsumer(PRIVATE)
+
     while not (PRIVATE / 'stop').exists():
         report = {'timestamp': now(), 'identity': identity['id'], 'principals': {}, 'errors': [], 'actions': [], 'degraded': False}
         try:
@@ -799,8 +802,31 @@ def run():
             registry_full = json.loads((ROOT / 'coordination/TEAM-REGISTRY.json').read_text())
             entities = extract_supervision_entities(registry_full)
             tasks = records(ROOT / 'coordination/TASKS.json', 'tasks')
+
+            # Ingest receipts and maintained task-unit launcher state
+            ql_db_candidates = [
+                pathlib.Path('/home/alexey/git/agent-quota-launcher/.local/scale50/wt-gemini-head/.config/ql/state.db'),
+                pathlib.Path('/home/alexey/git/agent-quota-launcher/.local/state.db'),
+            ]
+            ingested_launcher_tasks = 0
+            for ql_db in ql_db_candidates:
+                if ql_db.exists():
+                    ingested_launcher_tasks += len(consumer.ingest_launcher_db(ql_db))
+
+            # Reconcile dependencies and unblock ready tasks
+            unblocked = consumer.reconcile_and_unblock_tasks(tasks)
+            if unblocked:
+                event('tasks-unblocked-by-review', unblocked_tasks=unblocked)
+
             active, digest, counts = task_event(tasks)
             report['task_counts'] = counts
+            report['terminal_consumer_tasks'] = len(consumer.task_states)
+            report['ingested_launcher_tasks'] = ingested_launcher_tasks
+
+            # Actionable event filtering
+            actionable_events, actionable_digest = consumer.compute_actionable_events(tasks)
+            report['actionable_events'] = actionable_events
+            report['actionable_digest'] = actionable_digest
             active_tags = active_principals(entities, PRIVATE, registry_full)
             report['active_principals'] = active_tags
             sessions = json.loads(command(['aplexer', 'list', '--json']))

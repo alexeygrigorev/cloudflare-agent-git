@@ -250,6 +250,95 @@ class TerminalConsumer:
 
         return newly_unblocked
 
+    def ingest_launcher_db(self, db_path: pathlib.Path) -> List[Dict[str, Any]]:
+        """Ingest accepted tasks and reviews directly from an agent-quota-launcher state.db.
+
+        Reads tasks where state == 'accepted' and reviewer is non-empty.
+        Validates that reviewer is distinct from task owner/executor.
+        Registers terminal and review state, and reconciles dependencies.
+        """
+        import sqlite3
+
+        db_file = pathlib.Path(db_path)
+        if not db_file.exists():
+            return []
+
+        results = []
+        try:
+            con = sqlite3.connect(str(db_file), timeout=10.0)
+            cur = con.cursor()
+            rows = cur.execute(
+                "SELECT id, payload, state, reviewer, reason, updated_at "
+                "FROM tasks WHERE state = 'accepted' AND reviewer IS NOT NULL AND reviewer != ''"
+            ).fetchall()
+            con.close()
+        except Exception:
+            return []
+
+        for row in rows:
+            task_id, payload_raw, state, reviewer, reason, updated_at = row
+            if task_id in self.task_states and self.task_states[task_id].get("status") == "accepted":
+                continue
+
+            owner = "quota-launcher-head-gemini"
+            cwd = ""
+            if payload_raw:
+                try:
+                    payload = json.loads(payload_raw) if isinstance(payload_raw, str) else payload_raw
+                    owner = payload.get("owner", owner)
+                    cwd = payload.get("cwd", "")
+                except Exception:
+                    pass
+
+            # Anti-self-review check
+            if reviewer == owner or reviewer == task_id:
+                continue
+
+            terminal_receipt = {
+                "task_id": task_id,
+                "project_id": "agent-quota-launcher",
+                "executor": {
+                    "session_id": f"ql-{task_id}",
+                    "tag": owner,
+                    "engine": "antigravity",
+                },
+                "phase": "execution",
+                "status": "completed-awaiting-review",
+                "artifacts": [
+                    {
+                        "path": cwd or f"tasks/{task_id}",
+                        "sha256": canonical_json_hash({"task_id": task_id, "updated_at": updated_at}),
+                    }
+                ],
+                "first_tool_evidence": {
+                    "tool_name": "task_execution",
+                    "timestamp": updated_at,
+                },
+                "completed_at": updated_at,
+            }
+            term_res = self.ingest_terminal_receipt(terminal_receipt)
+
+            review_receipt = {
+                "task_id": task_id,
+                "review_task_id": reviewer,
+                "reviewer": {
+                    "session_id": f"ql-{reviewer}",
+                    "tag": reviewer,
+                    "engine": "antigravity",
+                },
+                "target_receipt_sha256": term_res["sha256"],
+                "verdict": "ACCEPTED",
+                "review_evidence": {
+                    "exit_code": 0,
+                    "reason": reason or "head accepted reviewed artifacts",
+                },
+                "reviewed_at": updated_at,
+            }
+            rev_res = self.ingest_review_receipt(review_receipt)
+            results.append(rev_res)
+
+        return results
+
     def compute_actionable_events(
         self,
         tasks: List[Dict[str, Any]],

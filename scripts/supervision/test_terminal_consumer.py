@@ -233,6 +233,62 @@ class TestTerminalConsumer(unittest.TestCase):
         self.assertIn("1 need review", msg)
         self.assertIn("[REVIEW_REQUIRED] TASK-A", msg)
 
+    def test_ingest_launcher_db(self):
+        import sqlite3
+
+        db_path = self.spool / "test_launcher.db"
+        con = sqlite3.connect(str(db_path))
+        cur = con.cursor()
+        cur.execute(
+            "CREATE TABLE tasks (id TEXT PRIMARY KEY, payload TEXT, state TEXT, reviewer TEXT, reason TEXT, updated_at TEXT)"
+        )
+        # Add an accepted task reviewed by an independent reviewer
+        cur.execute(
+            "INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                "scale50-task-1",
+                json.dumps({"goal": "implement feature", "owner": "worker-1", "cwd": "/tmp/task-1"}),
+                "accepted",
+                "reviewer-distinct-1",
+                "passed all unit and negative tests",
+                "2026-10-05 14:00:00",
+            ),
+        )
+        # Add a task with self-review (must be rejected)
+        cur.execute(
+            "INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                "scale50-task-self",
+                json.dumps({"goal": "self reviewed", "owner": "worker-self"}),
+                "accepted",
+                "worker-self",  # reviewer == owner!
+                "invalid self review",
+                "2026-10-05 14:01:00",
+            ),
+        )
+        con.commit()
+        con.close()
+
+        # Ingest from launcher db
+        results = self.consumer.ingest_launcher_db(db_path)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["task_id"], "scale50-task-1")
+        self.assertEqual(results[0]["verdict"], "ACCEPTED")
+
+        # Check that task state was recorded as accepted
+        self.assertIn("scale50-task-1", self.consumer.task_states)
+        self.assertEqual(self.consumer.task_states["scale50-task-1"]["status"], "accepted")
+        self.assertNotIn("scale50-task-self", self.consumer.task_states)
+
+        # Dependent task unblocking verification
+        tasks = [
+            {"id": "scale50-task-1", "status": "accepted", "blocked_on": []},
+            {"id": "scale50-task-2", "status": "blocked", "blocked_on": ["scale50-task-1"]},
+        ]
+        unblocked = self.consumer.reconcile_and_unblock_tasks(tasks)
+        self.assertEqual(unblocked, ["scale50-task-2"])
+        self.assertEqual(tasks[1]["status"], "ready")
+
 
 if __name__ == "__main__":
     unittest.main()
