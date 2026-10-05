@@ -5,7 +5,14 @@ import subprocess
 import sys
 import os
 
-APLEXER_BIN = os.path.expanduser("~/.local/bin/a")
+APLEXER_BIN = os.environ.get("APLEXER_BIN", os.path.expanduser("~/.local/bin/a"))
+
+def aplexer_supports_idempotency_key(aplexer_bin):
+    try:
+        res = subprocess.run([aplexer_bin, "message", "send", "--help"], capture_output=True, text=True)
+        return "--idempotency-key" in res.stdout
+    except Exception:
+        return False
 
 def run_cmd(cmd, check=True):
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -36,6 +43,8 @@ def cmd_send(args):
         "base": args.base,
         "current_head": current_head,
     }
+    if args.idempotency_key:
+        data["idempotency_key"] = args.idempotency_key
     
     cmd = [
         APLEXER_BIN, "message", "send",
@@ -44,7 +53,7 @@ def cmd_send(args):
         "--data", json.dumps(data),
         "--queue"
     ]
-    if args.idempotency_key:
+    if args.idempotency_key and aplexer_supports_idempotency_key(APLEXER_BIN):
         cmd.extend(["--idempotency-key", args.idempotency_key])
         
     cmd.append(args.text)
@@ -75,6 +84,12 @@ def cmd_accept(args):
     if not data:
         print("Handoff message is missing data payload.", file=sys.stderr)
         sys.exit(1)
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except json.JSONDecodeError:
+            print("Failed to decode data payload as JSON.", file=sys.stderr)
+            sys.exit(1)
         
     expected_head = data.get("current_head")
     task = data.get("task")
