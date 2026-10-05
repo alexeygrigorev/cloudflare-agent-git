@@ -2,7 +2,7 @@
   "title": "Four product lanes and delivery status",
   "description": "An authentic review task runs between project head and independent reviewer over RPC, while four product lanes maintain distinct delivery statuses.",
   "style": "editorial",
-  "canvas": {"width": 1160, "height": 410},
+  "canvas": {"width": 1160, "height": 430},
   "layout": {"type": "manual", "card_width": 240, "card_height": 100},
   "dividers": [
     {"after_node": "reviewer"}
@@ -11,12 +11,13 @@
     {
       "id": "head",
       "title": "Project head",
-      "subtitle": "Dispatches tasks and checks",
+      "subtitle": "Assigns review tasks",
       "eyebrow": "COORDINATION",
       "icon": "robot",
       "color": "blue",
       "x": 200,
-      "y": 40
+      "y": 40,
+      "height": 110
     },
     {
       "id": "reviewer",
@@ -26,7 +27,8 @@
       "icon": "shield",
       "color": "purple",
       "x": 720,
-      "y": 40
+      "y": 40,
+      "height": 110
     },
     {
       "id": "branches",
@@ -36,7 +38,7 @@
       "icon": "workflow",
       "color": "blue",
       "x": 40,
-      "y": 270
+      "y": 280
     },
     {
       "id": "bus",
@@ -46,7 +48,7 @@
       "icon": "message",
       "color": "purple",
       "x": 320,
-      "y": 270
+      "y": 280
     },
     {
       "id": "launcher",
@@ -56,7 +58,7 @@
       "icon": "settings",
       "color": "amber",
       "x": 600,
-      "y": 270
+      "y": 280
     },
     {
       "id": "dashboard",
@@ -66,7 +68,7 @@
       "icon": "observability",
       "color": "gray",
       "x": 880,
-      "y": 270
+      "y": 280
     }
   ],
   "edges": [
