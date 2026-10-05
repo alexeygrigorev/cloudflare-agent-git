@@ -1,8 +1,8 @@
-# REPORT: Dashboard Unattributed Telemetry Rollup & Synchronized as_of Window Patch (Directives C2371, C2372 & C2374)
+# REPORT: Dashboard Unattributed Telemetry Rollup & Synchronized as_of Window Patch (Directives C2371, C2372, C2374 & C2392)
 
 - **Audit Target:** Canonical Agent Dashboard Repository (`/home/alexey/git/agent-dashboard`)
 - **Pinned Base Commit (HEAD):** `249d086a007ee3d5d0381334a27d56771b959d11` on branch `main`
-- **Governing Directives:** Codex Principal Directives C2374, C2372, C2371, C2369, C2332, C2136, C2124; Operating Model ([`coordination/OPERATING-MODEL.md`](file:///home/alexey/git/cloudflare-agent-git/coordination/OPERATING-MODEL.md)); Authoritative Four-Product Delivery Reset (2026-10-04)
+- **Governing Directives:** Codex Principal Directives C2392, C2374, C2372, C2371, C2369, C2332, C2136, C2124; Operating Model ([`coordination/OPERATING-MODEL.md`](file:///home/alexey/git/cloudflare-agent-git/coordination/OPERATING-MODEL.md)); Authoritative Four-Product Delivery Reset (2026-10-04)
 - **Author / Reconciler:** `architect06` (Session UUID: `06ecf158-e51f-411c-89b8-083fc9fb3dd6`)
 - **Dispatcher / Authority:** `antigravity-head` (Session UUID: `46fdb644-9b58-4e2f-aab3-9be5e1e33337`, Conversation ID: `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
 - **Deliverable Patch:** [`research/antigravity/recovery/dashboard-unattributed-and-as-of-c2372.patch`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/dashboard-unattributed-and-as-of-c2372.patch)
@@ -72,17 +72,17 @@ The remediation was developed and verified entirely within an isolated disposabl
 ## 3. Patch Diffstat & Source Manifest
 
 Patch file: [`dashboard-unattributed-and-as-of-c2372.patch`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/dashboard-unattributed-and-as-of-c2372.patch)  
-File Size: `24,795 B`  
-SHA256: `7a9322a9331aede2ab428f68176b96fdc08d266e10d765b416f842040eefb3d7`
+File Size: `24,855 B`  
+SHA256: `2549317aa716edc744326c72a71960398f6315386e89a8e33a5879bfabba2efd`
 
 ```text
  src/dashboard/server.py                |  27 +++
  static/dashboard.css                   |   8 +
  static/dashboard.js                    |  48 ++++-
  static/index.html                      |  21 ++-
- tests/test_dashboard_js_transitions.js | 324 +++++++++++++++++++++++++++++++++
+ tests/test_dashboard_js_transitions.js | 325 +++++++++++++++++++++++++++++++++
  tests/test_server.py                   |  72 ++++++++
- 6 files changed, 496 insertions(+), 4 deletions(-)
+ 6 files changed, 497 insertions(+), 4 deletions(-)
 ```
 
 ### 3.1 Summary of Exact Source Modifications
@@ -93,7 +93,7 @@ SHA256: `7a9322a9331aede2ab428f68176b96fdc08d266e10d765b416f842040eefb3d7`
 | `static/dashboard.css` | +8 / -0 | `.card-unattributed`, `.unattrib-warning` | Visual styling demarcating unscoped/platform telemetry. |
 | `static/dashboard.js` | +44 / -4 | `renderHourly`, `renderUsage`, `loadAll` | Synchronous `as_of` dispatch, explicit `#unattributed` card rendering, empty state reset & error clearing. |
 | `static/index.html` | +20 / -1 | Controls, `#project-grid` | Added `#unattributed` section with full metric elements and chart container. |
-| `tests/test_dashboard_js_transitions.js` | +324 / -0 | DOM Transition Harness | Node-based automated regression tests for Transition 1 (empty reset) and Transition 2 (HTTP 400 error clear). |
+| `tests/test_dashboard_js_transitions.js` | +325 / -0 | DOM Transition Harness | Node-based automated regression tests for Transition 1 (empty reset), Transition 2 (HTTP 400 error clear), and Test 3 (null fallbacks). |
 | `tests/test_server.py` | +72 / -0 | `TestDashboardServer` | 7 new automated tests (6 endpoint/HTML tests + `test_js_dom_transitions`). |
 
 ---
@@ -118,7 +118,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests/ -v
   - `test_html_root_contains_unattributed_card`: PASS (verifies HTML elements `#unattributed`, `#chart-unattributed`, `#unique-unattributed`, and warning labels).
   - `test_unattributed_payload_key_exposed`: PASS (verifies payload exposure across `/api/hourly` and `/api/usage`).
   - `test_js_dom_transitions`: PASS (executes `tests/test_dashboard_js_transitions.js` verifying empty cutoff reset and HTTP 400 error clearing).
-- **Total Execution Time:** **0.638 seconds**
+- **Total Execution Time:** **0.649 seconds**
 - **Regressions:** **0 regressions** (all 48 base commit tests continue to pass).
 
 ### 4.2 Dry-Run Patch Verification against Canonical Repository
@@ -127,6 +127,50 @@ A dry-run application against canonical repository `/home/alexey/git/agent-dashb
 git apply --check research/antigravity/recovery/dashboard-unattributed-and-as-of-c2372.patch
 ```
 Result: **Exit Code 0 (Clean, 0 rejects, 0 fuzz)**.
+
+### 4.3 Null Chart Fallback Test & Verification Receipt (Directive C2392)
+
+Under Codex Principal Directive C2392, explicit automated test assertions guarantee that the chart container (`#chart-unattributed`) renders the fallback message `"no bucket data (unknown)"` with CSS class `"muted"` whenever bucket data is absent, null, or errored:
+
+1. **Test 2 (`testTransition2_SuccessToHttp400Error`):**
+   - Simulates transition from an initial successful payload (with populated SVG bucket bars) to an HTTP 400 error triggered by an invalid `as_of` parameter.
+   - Explicitly asserts that previous bucket child elements are discarded and replaced with a single muted fallback paragraph:
+     ```javascript
+     const chartChildren = env.elements["chart-unattributed"].children;
+     assert.strictEqual(chartChildren.length, 1, "Chart must contain fallback paragraph");
+     assert.strictEqual(chartChildren[0].textContent, "no bucket data (unknown)");
+     assert.strictEqual(chartChildren[0].className, "muted");
+     ```
+2. **Test 3 (`testDirectNullFallbacks`):**
+   - Directly exercises `ctx.renderHourly(null)` on pre-populated DOM state.
+   - Explicitly asserts immediate defensive clearing of the chart container to a single fallback child:
+     ```javascript
+     ctx.renderHourly(null);
+     const chartChildren = env.elements["chart-unattributed"].children;
+     assert.strictEqual(chartChildren.length, 1);
+     assert.strictEqual(chartChildren[0].textContent, "no bucket data (unknown)");
+     assert.strictEqual(chartChildren[0].className, "muted");
+     ```
+
+#### 4.3.1 Standalone Node.js Test Execution Receipt
+Executed directly inside `.local/scratch/dashboard-c2372/repo`:
+```bash
+$ node tests/test_dashboard_js_transitions.js
+Running Test 1: Transition from non-empty cutoff to empty cutoff resets usage counts...
+  PASS: Transition 1 verified cleanly.
+Running Test 2: Transition from success to HTTP 400 error clears all unattributed fields...
+  PASS: Transition 2 verified cleanly.
+Running Test 3: Direct renderHourly(null) and renderUsage(null)...
+  PASS: Direct null fallbacks verified cleanly.
+
+All 3 JS transition regression suites passed successfully.
+(Exit Code: 0)
+```
+
+#### 4.3.2 Full Test Suite Verification Receipt
+Executed under Python 3.12 standard library `unittest` via `PYTHONPATH=src python3 -m unittest discover -s tests/ -v`:
+- `tests/test_server.py::TestDashboardServer::test_js_dom_transitions`: **PASS** (invokes `node tests/test_dashboard_js_transitions.js` and validates clean exit code 0).
+- Suite total: **55/55 unit tests PASS** (0 regressions, 0 errors, 0 failures, execution time 0.65s).
 
 ---
 

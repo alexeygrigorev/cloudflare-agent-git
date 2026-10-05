@@ -457,7 +457,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-05T06:48:34.643955+00:00",
+      "updated_at": "2026-10-05T07:26:35.459176+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -480,10 +480,10 @@
         "research/codex/busworker-trial-review-20261005.md"
       ],
       "blocked_on": [],
-      "next_action": "C2374 guarded Ant delivery submitted and actual receiver source tools observed. Verify06/259/37 corrected JS empty/error/null tests; C2375 explicit as_of fixes hardcoded04:30 before actual07UTC morning24h. Authentic model useful UI review through own AgentBus credentials/canonical admission; component SHA fixture not runtime independence.",
+      "next_action": "Verify d698/37 C2392 controller repairs: independent actual verdict/no default approval, exact worker/task/artifact correlation and head ACK, per-run exclusive history. Actual Grok071104 task completed445.31s/55+3 useful tests, approval qualified by signposted prompt. New consumer e37 differs reviewed a30: delta review before numeric publication. C7 new changedpatch handoffaf2-d42d nativeNOTREADY queued; head owns genuine readiness repair.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
-      "continuation_trigger": "Author correction -> independent exactpin negative review -> head-owned admitted useful model bus readACK/verdict/reply/headACK. Principal event wait/monitor; no final while queued repairs remain. Nativec7 oldNOTREADY unchanged; no busy/draft injection."
+      "continuation_trigger": "ExistingAnt d698/37 completion -> exact negative artifacts/non-author review -> useful admitted model task using authentic own Bus readACK/verdict/reply/headACK -> next head queue. Antaf0 guarded submitted and actualdelegation observed. Pub timer cycles/release owner active; no final while readiness/controller repairs remain."
     },
     {
       "id": "a09-incumbent-check",

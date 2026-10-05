@@ -1,18 +1,24 @@
-# REV-HOURLY-0700UTC-PIN — Independent Technical Audit of 07:00:00 UTC Four-Project Hourly Consumer Telemetry
+# REV-HOURLY-0700UTC-PIN — Independent Technical Audit of 07:00:00 UTC Four-Project Hourly Consumer Telemetry & Lineage Delta
 
 - **Target Generator:** [`.local/scratch/hourly-consumer-c2332/generate_hourly_consumer.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/hourly-consumer-c2332/generate_hourly_consumer.py)
-  * File Size: 54,164 bytes (1,095 LOC)
-  * SHA256 Checksum: `e424ad6332b5e428ad7fa887e7c6ed3e04224f82933a2c0c4921a38e7d673875`
-- **Target Payload:** [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json)
-  * File Mode: `0600` (strictly restricted)
-  * File Size: 121,816 bytes
-  * SHA256 Checksum: `a30bc979ec145220f35be9bf4244e174c45f46f573e41d6496b6b421a456933d`
-  * Schema Version: `2.4.0-c2332`
-  * Directive: `Codex Principal C2332 Fixed-Cutoff Four-Project Hourly Consumer Artifact`
-- **Governing Directives:** Codex Directives C2332, C2346, C2347, C2375, C2384, C2385; Operating Model Reset ([`coordination/OPERATING-MODEL.md`](file:///home/alexey/git/cloudflare-agent-git/coordination/OPERATING-MODEL.md)); User Messages 26, 31, 32, 34
+  * Current File Size: 58,661 bytes (1,161 LOC)
+  * Current SHA256 Checksum (with report markdown sync): `3d045cc1ab0285fb8d32f7e4c61f732ab9f6946caa8d9abb1dc06bddca4dc10d`
+  * Initial 07:00 UTC Run SHA256 Checksum: `e424ad6332b5e428ad7fa887e7c6ed3e04224f82933a2c0c4921a38e7d673875` (1,095 LOC, 54,164 bytes)
+- **Target Payloads (Audited & Reconciled):**
+  * **Root Standup Archive (`a30`):** [`.local/metrics/standup-20261005T0700-root-observed.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/standup-20261005T0700-root-observed.json)
+    - File Mode: `0600` (strictly restricted)
+    - File Size: 121,816 bytes
+    - SHA256 Checksum: `a30bc979ec145220f35be9bf4244e174c45f46f573e41d6496b6b421a456933d`
+  * **Regenerated Payload (`e37`):** [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json)
+    - File Mode: `0600` (strictly restricted)
+    - File Size: 121,816 bytes
+    - SHA256 Checksum: `e37cc1925bac409fa824acbd541b666d86c0f319329091d12afe111c752a415d`
+  * Schema Version: `2.4.0-c2332` / `2.5.0-c2369`
+  * Governing Directive: `Codex Principal C2332 Fixed-Cutoff Four-Project Hourly Consumer Artifact`
+- **Governing Directives:** Codex Directives C2332, C2346, C2347, C2375, C2384, C2385, C2392; Operating Model Reset ([`coordination/OPERATING-MODEL.md`](file:///home/alexey/git/cloudflare-agent-git/coordination/OPERATING-MODEL.md)); User Messages 26, 31, 32, 34
 - **Auditor / Challenger:** Independent Challenger Subagent Reviewer 37 (`37aa1067-8bda-4dde-95b8-7b5bb927bd1f`)
 - **Parent Orchestrator:** `antigravity-head` (`46fdb644`, ID `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
-- **Audit Timestamp:** `2026-10-05T07:08:30Z` / `2026-10-05T09:08:30+02:00`
+- **Audit Timestamp:** `2026-10-05T07:25:00Z` / `2026-10-05T09:25:00+02:00`
 - **Analysis Window:** `[2026-10-04T07:00:00Z, 2026-10-05T07:00:00Z)` (exactly 24 contiguous half-open hourly buckets, 24.0 hours)
 - **Normalized Berlin Window:** `[2026-10-04T05:00:00Z, 2026-10-05T05:00:00Z)`
 - **Scratch Workspace:** `.local/scratch/reviewer37-worker-audit/` (mode `0700`, disk: 64 KB $\le$ 512 MB ceiling, net `/tmp` growth = 0 bytes)
@@ -23,62 +29,61 @@
 
 ## 1. Executive Summary & Review Verdict
 
-Under Codex Principal Directives C2384 and C2385, this independent technical audit evaluates the authoritative 07:00:00 UTC hourly consumer run: the generator script [`.local/scratch/hourly-consumer-c2332/generate_hourly_consumer.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/hourly-consumer-c2332/generate_hourly_consumer.py) and its structured companion payload [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json).
+Under Codex Principal Directives C2384, C2385, and C2392, this independent technical audit evaluates the authoritative 07:00:00 UTC hourly consumer run: the generator script [`.local/scratch/hourly-consumer-c2332/generate_hourly_consumer.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/hourly-consumer-c2332/generate_hourly_consumer.py), the initial Root standup archive [`.local/metrics/standup-20261005T0700-root-observed.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/standup-20261005T0700-root-observed.json) (`a30`), and the regenerated consumer payload [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json) (`e37`).
 
-An automated, standalone test suite was created and executed in an isolated scratch environment at [`.local/scratch/reviewer37-worker-audit/test_hourly_0700_pin.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/reviewer37-worker-audit/test_hourly_0700_pin.py) (`Ran 4 tests in 0.353s, OK`). The evaluation rigorously verified all four critical invariants mandated by Codex and the Operating Model:
-1. **Stale Hook Rejection Boundary Matrix:** Verified that mock snapshots with `stale_hook: true`, `stale_hook: None`, and `hook_age > 300` are strictly excluded from verified working hours.
-2. **Pre-Commissioning Null Invariant:** Verified that all 24 hourly buckets prior to product commissioning timestamps (11:08:25 UTC for products 1–3, 11:40:49 UTC for product 4) have `presence_hours: null`, `verified_working_hours: null`, and `coverage_fraction: null`, with zero synthetic `0.0` or fake `100%` values.
+An automated, standalone test suite was created and executed in an isolated scratch environment at [`.local/scratch/reviewer37-worker-audit/test_hourly_0700_pin.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/reviewer37-worker-audit/test_hourly_0700_pin.py) (`Ran 5 tests in 0.635s, OK`). The evaluation rigorously verified all core invariants and conducted an exhaustive key-by-key delta analysis:
+1. **Stale Hook Rejection Boundary Matrix:** Verified that mock snapshots with `stale_hook: true`, uninstrumented missing hooks (`stale_hook: None` with `hook_age: None`), and `hook_age > 300` are strictly excluded from verified working hours.
+2. **Pre-Commissioning Null Invariant:** Verified that all 24 hourly buckets prior to product commissioning timestamps (11:08:25 UTC for products 1–3, 11:40:49 UTC for product 4) have `presence_hours: null`, `verified_working_hours: null`, and `coverage_fraction: null`, with zero synthetic `0.0` or fake `100%` values in both `a30` and `e37`.
 3. **Fail-Closed Future Clock Enforcement:** Verified that `--as-of` timestamps strictly reject future clocks when run without `--frozen-test-clock` (exit code 1), and reject malformed timestamps (exit code 1).
-4. **Cryptographic Integrity & Permission Gates:** Cryptographic SHA256 checksums of both generator and payload were certified on disk, with payload file permissions strictly at mode `0600`.
+4. **Cryptographic Integrity & Lineage Audit (C2392):** Conducted full recursive diffing between the Root standup archive (`a30`) and the regenerated payload (`e37`). Certified that 100% of product metrics, presence hours, verified working hours, task counts, feature counts, and all 120 hourly bucket values across all 5 products are numerically identical. Drift between `a30` and `e37` is strictly and exclusively confined to 6 metadata fields in `data_provenance.ingested_sources` caused by natural background collector tick emissions and snapshot archive rotation.
 
-**Verdict: FULL ACCEPTANCE.** Both deliverables satisfy all governing directives and demonstrate total mathematical and epistemic integrity.
+**Verdict: FULL ACCEPTANCE.** Both deliverables satisfy all governing directives and demonstrate total mathematical, epistemic, and architectural integrity.
 
 ---
 
 ## 2. Target Generator Source Code & Logic Verification
 
-### 2.1 Cryptographic Identity
+### 2.1 Cryptographic Identity & Version Lineage
 - **File Path:** `/home/alexey/git/cloudflare-agent-git/.local/scratch/hourly-consumer-c2332/generate_hourly_consumer.py`
-- **SHA256 Checksum:** `e424ad6332b5e428ad7fa887e7c6ed3e04224f82933a2c0c4921a38e7d673875`
-- **Total Lines:** 1,095
-- **File Size:** 54,164 bytes
+- **Initial 07:00 UTC Run SHA256:** `e424ad6332b5e428ad7fa887e7c6ed3e04224f82933a2c0c4921a38e7d673875` (1,095 LOC, 54,164 bytes)
+- **Current Generator SHA256 (incorporating report markdown sync):** `3d045cc1ab0285fb8d32f7e4c61f732ab9f6946caa8d9abb1dc06bddca4dc10d` (1,161 LOC, 58,661 bytes)
 
 ### 2.2 Stale Hook Rejection Defense Logic
-In `generate_hourly_consumer.py` (lines 751–769), telemetry classification strictly enforces staleness guards:
+In `generate_hourly_consumer.py` (lines 817–836), telemetry classification strictly enforces staleness guards:
 ```python
-stale_hook = sdata.get("stale_hook")
-hook_age = sdata.get("hook_age_seconds")
 is_stale = False
 if stale_hook is True:
     is_stale = True
 elif hook_age is not None:
     try:
-        h_age_f = float(hook_age)
-        if h_age_f > 300.0 or h_age_f < 0.0:
+        age_val = float(hook_age)
+        if age_val > 300.0 or age_val < 0.0:
             is_stale = True
     except (ValueError, TypeError):
         is_stale = True
 elif stale_hook is None:
-    # Stale hook flag missing entirely -> cannot verify freshness affirmatively
     is_stale = True
 
+# Enforce process liveness invariant: W is subset of P
 if pid_live:
-    presence_intervals[pid].append((t, sdata))
+    presence_intervals[proj][actor].append((tick_start, tick_end))
     if not is_stale and (hook_working or reported_state == "working"):
-        working_intervals[pid].append((t, sdata))
+        working_intervals[proj][actor].append((tick_start, tick_end))
 ```
 
 ### 2.3 Key Architectural Invariants Audited:
-1. **Explicit Staleness Boundary:** Any telemetry packet where `stale_hook is True`, `stale_hook is None` (uninstrumented/omitted), `hook_age > 300.0s`, or `hook_age < 0.0s` (clock skew) sets `is_stale = True`.
-2. **Strict Demarcation of Verified Work:** Verified working intervals are accumulated **only** if `not is_stale and (hook_working or reported_state == "working")`. Stale hook emissions can never manufacture affirmative working hours.
-3. **PID Liveness Boundary ($W \subseteq P$):** `working_intervals` is strictly nested under `if pid_live:`. If a process is dead/terminated, it is excluded from presence intervals and cannot leak into working intervals.
-4. **Empirical Boundary Matrix Proof:**
-   In [`.local/scratch/reviewer37-worker-audit/test_hourly_0700_pin.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/reviewer37-worker-audit/test_hourly_0700_pin.py) (`test_01_stale_hook_rejection_boundary_matrix`), synthetic test fixtures with 4 mock sessions were processed by the generator:
-   - `sess-stale-true`: `stale_hook: True` -> 0.0 working hours.
-   - `sess-stale-none`: `stale_hook: None` -> 0.0 working hours.
-   - `sess-age-301`: `hook_age: 301.0` -> 0.0 working hours.
-   - `sess-fresh-working`: `stale_hook: False`, `hook_age: 5.0`, `hook_working: True` -> exactly 0.3333 working hours (20 minutes).
-   - Outcome: Verified working hours strictly contained only `sess-fresh-working`, proving zero false-positive contamination.
+1. **Explicit Staleness Boundary:** Any telemetry packet where `stale_hook is True`, `hook_age > 300.0s`, `hook_age < 0.0s` (clock skew), or where both `stale_hook` and `hook_age` are uninstrumented (`None`), immediately marks `is_stale = True`.
+2. **Affirmative Freshness Evidence:** If `stale_hook` is omitted (`None`) but `hook_age` is affirmatively provided and fresh ($0.0 \le \text{age} \le 300.0\text{s}$), the generator accepts the hook as fresh. If both are omitted, it defensively fails closed as stale.
+3. **Strict Demarcation of Verified Work:** Verified working intervals are accumulated **only** if `not is_stale and (hook_working or reported_state == "working")`. Stale hook emissions can never manufacture affirmative working hours.
+4. **PID Liveness Boundary ($W \subseteq P$):** `working_intervals` is strictly nested under `if pid_live:`. If a process is dead/terminated, it is excluded from presence intervals and cannot leak into working intervals.
+5. **Empirical Boundary Matrix Proof:**
+   In [`.local/scratch/reviewer37-worker-audit/test_hourly_0700_pin.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/reviewer37-worker-audit/test_hourly_0700_pin.py) (`test_01_stale_hook_rejection_boundary_matrix`), synthetic test fixtures with 5 mock worker configurations were processed:
+   - `worker-stale-true`: `stale_hook: True`, `hook_age: 10.0` -> excluded from work (0.0h).
+   - `worker-stale-none`: `stale_hook: None`, `hook_age: None` (uninstrumented) -> excluded from work (0.0h).
+   - `worker-age-301`: `stale_hook: False`, `hook_age: 301.0` -> excluded from work (0.0h).
+   - `worker-dead-pid`: `pid_live: False`, `hook_working: True` -> excluded from presence and work (0.0h).
+   - `worker-valid`: `stale_hook: False`, `hook_age: 5.0`, `hook_working: True`, `pid_live: True` -> accepted (0.3333h).
+   - Outcome: Verified working hours strictly contained only `worker-valid`, proving zero false-positive contamination.
 
 ---
 
@@ -94,7 +99,7 @@ Under Directives C2136 and C2332, pre-commissioning hourly buckets must reflect 
 - `unattributed`: Unbounded (`commissioned_at_utc: null`)
 
 ### 3.2 Generator Null Assignment Implementation
-In `generate_hourly_consumer.py` (lines 803–807):
+In `generate_hourly_consumer.py` (lines 882–886):
 ```python
 if comm is not None and be <= comm:
     status = "unobserved"
@@ -104,8 +109,8 @@ if comm is not None and be <= comm:
 ```
 When a bucket's end time `be` is less than or equal to the product's commissioning timestamp `comm`, all metric fields are assigned `None` (`null` in JSON).
 
-### 3.3 Payload Bucket Verification (Live 07:00:00 UTC Payload)
-The live payload [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json) was parsed across all 5 streams (120 bucket records total).
+### 3.3 Payload Bucket Verification (Live 07:00:00 UTC Payloads `a30` and `e37`)
+Both payloads [`.local/metrics/standup-20261005T0700-root-observed.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/standup-20261005T0700-root-observed.json) and [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json) were parsed across all 5 streams (120 bucket records total).
 
 #### Pre-Commissioning Buckets (Buckets 0, 1, 2, 3: 07:00 UTC to 11:00 UTC):
 | Bucket Index | Start UTC | End UTC | Status | `presence_hours` | `verified_working_hours` | `coverage_fraction` | `active_agents` |
@@ -115,7 +120,7 @@ The live payload [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey
 | **2** | `2026-10-04T09:00:00Z` | `2026-10-04T10:00:00Z` | `unobserved` | `null` | `null` | `null` | `null` |
 | **3** | `2026-10-04T10:00:00Z` | `2026-10-04T11:00:00Z` | `unobserved` | `null` | `null` | `null` | `null` |
 
-All four products (`agent-branches`, `agent-dashboard`, `quota-launcher`, `agent-coordination`) strictly report `null` across all fields in Buckets 0 through 3. Zero fake `0.0` or synthetic `100%` values exist in the pre-commissioning window.
+All four products (`agent-branches`, `agent-dashboard`, `quota-launcher`, `agent-coordination`) strictly report `null` across all fields in Buckets 0 through 3 in both payloads. Zero fake `0.0` or synthetic `100%` values exist in the pre-commissioning window.
 
 #### Transition Bucket 4 (11:00 UTC to 12:00 UTC):
 - Products 1–3 (`agent-branches`, `agent-dashboard`, `quota-launcher`): Commissioned at `11:08:25Z` (within bucket 4). Bucket 4 is marked `observed` with partial interval coverage.
@@ -129,38 +134,37 @@ All four products (`agent-branches`, `agent-dashboard`, `quota-launcher`, `agent
 ## 4. Fail-Closed Future Clock Enforcement Audit
 
 ### 4.1 CLI Argument & Clock Enforcement Logic
-In `generate_hourly_consumer.py` (lines 526–544):
+In `generate_hourly_consumer.py` (lines 595–611):
 ```python
-if args.as_of:
+if args.as_of is not None:
     try:
-        now = datetime.fromisoformat(args.as_of.replace("Z", "+00:00"))
-        if now.tzinfo is None:
-            now = now.replace(tzinfo=timezone.utc)
-    except Exception as e:
-        sys.stderr.write(f"Error: Malformed --as-of timestamp {args.as_of}: {e}\n")
+        now = parse_utc_iso(args.as_of)
+    except Exception as exc:
+        print(f"Error: Fail-closed invalid --as-of timestamp '{args.as_of}': {exc}", file=sys.stderr)
         sys.exit(1)
-        
-    host_now = datetime.now(timezone.utc)
+
+    host_now = datetime.datetime.now(UTC)
     if now > host_now and not args.frozen_test_clock:
-        sys.stderr.write(
-            f"Error: Refusing to evaluate future as-of timestamp {args.as_of} "
-            f"(host now: {host_now.isoformat()}). "
-            f"Future evaluation requires --frozen-test-clock for offline regression testing.\n"
+        print(
+            f"Error: Fail-closed: --as-of timestamp '{now.strftime('%Y-%m-%dT%H:%M:%SZ')}' is in the future "
+            f"relative to actual host UTC time ({host_now.strftime('%Y-%m-%dT%H:%M:%SZ')}). "
+            "Pass --frozen-test-clock to permit offline synthetic test validation.",
+            file=sys.stderr,
         )
         sys.exit(1)
 ```
 
 ### 4.2 Empirical CLI Enforcement Verification
 The test suite [`.local/scratch/reviewer37-worker-audit/test_hourly_0700_pin.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/reviewer37-worker-audit/test_hourly_0700_pin.py) (`test_03_fail_closed_future_clock_enforcement`) verified the following execution branches:
-1. **Future Clock Rejection:** Running with `--as-of 2099-01-01T00:00:00Z` without `--frozen-test-clock` exited with status `1` and emitted the expected error message: `Refusing to evaluate future as-of timestamp`.
+1. **Future Clock Rejection:** Running with `--as-of 2099-01-01T00:00:00Z` without `--frozen-test-clock` exited with status `1` and emitted the expected error message: `Fail-closed: --as-of timestamp ... is in the future`.
 2. **Offline Regression Bypass:** Running with `--as-of 2099-01-01T00:00:00Z --frozen-test-clock` succeeded (status `0`), enabling safe deterministic regression testing with synthetic future fixtures.
-3. **Malformed Timestamp Rejection:** Running with `--as-of NOT_AN_ISO_TIMESTAMP` exited with status `1` and printed `Malformed --as-of timestamp`.
+3. **Malformed Timestamp Rejection:** Running with `--as-of not-a-timestamp` exited with status `1` and printed `Fail-closed invalid --as-of timestamp`.
 
 ---
 
 ## 5. Disaggregated Product Telemetry & Metrics Ledger
 
-Summary metrics extracted directly from the verified 07:00:00 UTC consumer payload [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json):
+Summary metrics extracted from both verified 07:00:00 UTC consumer payloads (`a30` and `e37`):
 
 | Product ID | Commissioned At (UTC) | Observed Window (h) | Sampling Coverage | Presence Hours ($T_{\text{pres}}$) | Verified Work ($T_{\text{wrk}}$) | Hook-Absent ($\Delta$) | Accepted Features | Candidate Tasks |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -229,7 +233,48 @@ The generator audits artifact-backed receipts against filesystem reality. All re
 
 ---
 
-## 7. Publication Guard & Resource Governance Compliance
+## 7. Payload Checksum Delta & Lineage Audit (Codex Directive C2392)
+
+### 7.1 Payload Identifiers & Lineage
+Under Codex Directive C2392, an exhaustive delta audit was conducted between two authoritative consumer payloads representing the 07:00:00 UTC mission cutoff:
+1. **Initial Standup Archive (`a30`):** [`.local/metrics/standup-20261005T0700-root-observed.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/standup-20261005T0700-root-observed.json)
+   - SHA256: `a30bc979ec145220f35be9bf4244e174c45f46f573e41d6496b6b421a456933d`
+   - Preserved as the exact payload ingested during the 07:08 UTC Root standup check.
+2. **Regenerated Payload (`e37`):** [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json)
+   - SHA256: `e37cc1925bac409fa824acbd541b666d86c0f319329091d12afe111c752a415d`
+   - Generated when `architect06` executed the generator at ~09:14 UTC to synchronize tabular markdown reports.
+
+### 7.2 Full Key-by-Key Difference Analysis
+Using an automated recursive dictionary diffing script in [`.local/scratch/reviewer37-worker-audit/test_hourly_0700_pin.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/reviewer37-worker-audit/test_hourly_0700_pin.py) (`test_05_payload_delta_audit_a30_vs_e37`), all top-level keys, product summaries, hourly buckets, policies, and provenance manifests were compared.
+
+The audit revealed **exactly 6 differing values**, all strictly confined to `data_provenance.ingested_sources`:
+
+| JSON Path | Archive `a30` Value | Regenerated `e37` Value | Root Cause |
+| :--- | :---: | :---: | :--- |
+| `data_provenance.ingested_sources[0].sha256` | `86fd554b...` | `47c46fbe...` | `observation-state.json` modified by live observer daemon tick |
+| `data_provenance.ingested_sources[0].size_bytes` | `221528` | `221503` | Live observer state JSON compaction delta |
+| `data_provenance.ingested_sources[4].sha256` | `563e12ef...` | `cd692e48...` | `latest.json` updated with live tick emitted by daemon PID 1608645 |
+| `data_provenance.ingested_sources[4].size_bytes` | `781577` | `781560` | Dynamic session snapshot tick payload size delta |
+| `data_provenance.ingested_sources[5].files_scanned_count` | `319` | `322` | +3 snapshot file segments scanned covering the tail |
+| `data_provenance.ingested_sources[5].total_snapshot_files` | `487` | `490` | +3 snapshot rotation files created on disk by continuous collector |
+
+### 7.3 Mathematical & Epistemic Invariance Proof
+The audit verified that outside of the observer source manifest metadata, **ZERO telemetry drift occurred**:
+- **`summary_by_product`:** 100% identical across all 5 products.
+  * `total_presence_hours`: `agent-branches` (40.3777h), `agent-dashboard` (77.9553h), `quota-launcher` (71.2497h), `agent-coordination` (5.8817h), `unattributed` (236.8118h).
+  * `total_verified_working_hours`: `agent-branches` (12.5576h), `agent-dashboard` (0.0677h), `quota-launcher` (0.0000h), `agent-coordination` (0.0000h), `unattributed` (3.2379h).
+  * `telemetry_sampling_coverage_ratio`: Identical to 6 decimal places (0.999188 for products 1–3, 0.999165 for product 4, 0.999328 for unattributed).
+  * `commissioning_eligibility_ratio`: Identical (0.827488 for products 1–3, 0.804988 for product 4, 1.000000 for unattributed).
+  * Feature counts, task counts, and candidate lists: 100% identical.
+- **`hourly_buckets`:** All 120 hourly bucket structures (24 buckets $\times$ 5 products) match exactly.
+  * Every single start time, end time, observation status, presence hour float, working hour float, active agent count, and coverage fraction is 100% numerically identical.
+- **Operational Explanation:** The generator's evaluation cutoff window is strictly pinned to `[2026-10-04T07:00:00Z, 2026-10-05T07:00:00Z)`. Although the continuous background collector (PID 1608645) continued appending snapshots for times $t > \text{07:00:00Z}$ (causing the ingested file hashes to shift), the generator's chronological window filter (`if at_dt < win_start or at_dt > now: continue`) completely excluded all subsequent ticks from metric aggregation.
+
+Therefore, `a30` and `e37` represent identical analytical calculations over the identical fixed historical window, with drift strictly isolated to ambient observer telemetry file rotation.
+
+---
+
+## 8. Publication Guard & Resource Governance Compliance
 
 1. **Publication Credential Guard:**
    - Executed: `python3 research/antigravity/tooling/publication_guard.py research/antigravity/reviews/REV-HOURLY-0700UTC-PIN.md`
@@ -238,7 +283,7 @@ The generator audits artifact-backed receipts against filesystem reality. All re
 2. **Compiler Invariant Under Human Hold:**
    - ZERO `cargo` or `rustc` invocations host-wide during this entire audit.
 3. **Payload Permissions:**
-   - Mode `0600` strictly verified on [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json).
+   - Mode `0600` strictly verified on both [`.local/metrics/standup-20261005T0700-root-observed.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/standup-20261005T0700-root-observed.json) and [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json).
 4. **Scratch Storage Budget:**
    - Total disk used: 64 KB, well within the 512 MB ceiling.
    - Net `/tmp` growth: 0 bytes.
@@ -246,8 +291,8 @@ The generator audits artifact-backed receipts against filesystem reality. All re
 
 ---
 
-## 8. Final Verdict & Certification
+## 9. Final Verdict & Certification
 
 **FULL ACCEPTANCE.**
 
-The 07:00:00 UTC hourly consumer run under generator `generate_hourly_consumer.py` (`e424ad63...`) and payload `hourly_24h_consumer.json` (`a30bc979...`) rigorously complies with Codex Directives C2332, C2346, C2347, C2375, C2384, and C2385. Stale hooks are strictly rejected, pre-commissioning buckets are epistemically preserved as null, future clocks fail closed, and disaggregated metrics accurately reflect autonomous multi-agent delivery.
+The 07:00:00 UTC hourly consumer run under generator `generate_hourly_consumer.py` and payloads `standup-20261005T0700-root-observed.json` (`a30bc979...`) and `hourly_24h_consumer.json` (`e37cc192...`) rigorously complies with Codex Directives C2332, C2346, C2347, C2375, C2384, C2385, and C2392. Stale hooks are strictly rejected, pre-commissioning buckets are epistemically preserved as null, future clocks fail closed, payload drift is certified strictly confined to observer provenance rotation, and disaggregated metrics accurately reflect autonomous multi-agent delivery.
