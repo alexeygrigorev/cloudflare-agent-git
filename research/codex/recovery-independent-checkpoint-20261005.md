@@ -53,3 +53,9 @@ This verdict accepts only that exact organizational text for integration. It doe
 - `coordination/TASKS.json`: `8d509a9c7ec57dc322e50c2088891985b0203387e400427cb8daaa51c0400248`
 - `research/codex/remote-autonomy-1830-plan-20261005.md`: `64ea417e23276c9a3a36e7dbfdb13e64e98cd46bdbd18c75cff84506d33adc58`
 - `research/codex/non-grok-recovery-outcomes-20261005.md`: `e3ab432037250c4a0e2ec9f07b0ff8b0a04afa047d575d1f0a749ce94f06d922`
+
+## Follow-up supervision source-contract review
+
+**ACCEPTED, docs-only:** complete `coordination/SUPERVISION.md` diff independently read:15 inserted lines/3 replacements, exact SHA256 `b54d5b126991669429bb4f61ed2dacf5c11f486fc0d6da72b8e8e50ba9aea59e`. Writer `/root/fix_run_governance`; distinct reviewer `/root/recovery_contract_review`. The correction removes routine root reload approval, assigns bounded existing-service integration to genuine Ant recovery head5e1abcdb, preserves original parent/service custody and unresolved original envelopes/cursors, requires exact candidate independent review and loaded-process provenance, labels historical binary authority/deployments as historical, and distinguishes current source contract from runtime acceptance. It retains no duplicate daemon, no unknown kill/Rust/global install/readiness override and fresh admission constraints.
+
+This resolves the obsolete root-reload ownership text noted above. It does **not** establish a deployed correction, runtime activation, receiver ACK/first tool, current executable pin, absent-principal repeated useful continuation, or any50-active stage. Those remain head-owned runtime gates requiring real receipts and independent runtime reviewer acceptance. OPERATING50GB/private-main wording and actual startup-template rollout remain separate organizational follow-ups. This review performed no service, process, mailbox or product-code action.

@@ -1,0 +1,43 @@
+{
+  "recorded_at": "2026-10-05T15:00:42.830346+00:00",
+  "authority": "Evidence export of two owned canonical TASKS rows, not an alternate tracker",
+  "tasks": [
+    {
+      "id": "AGENTS-FIX-VERIFY-RESUME-20261005",
+      "project_id": "oversight",
+      "team_id": "oversight",
+      "owner_tag": "codex-principal",
+      "executor_actor": "/root/fix_run_governance",
+      "reviewer_actor": "/root/recovery_contract_review",
+      "status": "review",
+      "assignment_ack": "Internal helper explicit first-tool/read receipt received; canonical AGENTS clean/no active conflicting path lease observed. No native-head execution inferred.",
+      "first_tool": "git status/diff AGENTS.md and read three genuine human intakes/current role docs",
+      "action_taken": "Canonical AGENTS actually integrated, independent source-policy review accepted, pushed origin/main. Startup/head read-ACK and production runtime recovery acceptance still pending.",
+      "acceptance": "Canonical AGENTS policy integrated with distinct docs hash verdict, GitHub push and actual startup read-ACK rollout; docs/source acceptance distinct from runtime autonomy.",
+      "next_trigger": "Existing heads read canonical commit and supply actual startup ACK; head-owned runtime reviewer validates useful resumed work after desktop/principal absent.",
+      "updated_at": "2026-10-05T15:00:42.830346+00:00",
+      "source_commit": "dbfe4b9",
+      "source_sha256": "7f07ffa2260e1f21c8eded6c0e581578f9256ab202b6d4c7465f0518ac4c1340",
+      "independent_verdict": "ACCEPTED docs only /root/recovery_contract_review"
+    },
+    {
+      "id": "RECOVERY-INDEPENDENT-EVIDENCE-20261005",
+      "project_id": "oversight",
+      "team_id": "oversight",
+      "owner_tag": "codex-principal",
+      "executor_actor": "/root/recovery_contract_review",
+      "status": "review",
+      "assignment_ack": "Internal reviewer first-tool/read receipt received; no inherited native mailbox authority",
+      "first_tool": "pwd; rg governance/recovery evidence; fresh df at14:56UTC",
+      "action_taken": "Independent docs-only failure map completed and published; source/runtime distinction, current head ACKs and exact acceptance gaps recorded. Narrow SUPERVISION custody-contract correction being independently reviewed next.",
+      "acceptance": "Evidence-bounded failure/recovery map and docs verdict; no source-only runtime acceptance.",
+      "next_trigger": "SUPERVISION source-contract verdict; existing Ant names distinct full-runtime reviewer and exercises useful absent-principal recovery.",
+      "updated_at": "2026-10-05T15:00:42.830346+00:00",
+      "source_commit": "dbfe4b9",
+      "evidence_paths": [
+        "research/codex/recovery-independent-checkpoint-20261005.md",
+        "research/codex/current-admission-recovery-options-20261005.md"
+      ]
+    }
+  ]
+}
