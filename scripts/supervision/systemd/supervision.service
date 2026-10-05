@@ -12,9 +12,8 @@ Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONPATH=/home/alexey/git/cloudflare-agent-git
 Environment=PATH=/home/alexey/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ExecStart=/home/alexey/git/cloudflare-agent-git/scripts/supervision/systemd/launch_supervision.sh
-ExecStop=/bin/touch /home/alexey/git/cloudflare-agent-git/.local/supervision/stop
-TimeoutStopSec=15s
-KillMode=none
+ExecStop=/bin/bash -c "touch /home/alexey/git/cloudflare-agent-git/.local/supervision/stop; for i in {1..30}; do if ! aplexer status experiment-supervision >/dev/null 2>&1; then break; fi; sleep 1; done"
+TimeoutStopSec=35s
 
 [Install]
 WantedBy=default.target
