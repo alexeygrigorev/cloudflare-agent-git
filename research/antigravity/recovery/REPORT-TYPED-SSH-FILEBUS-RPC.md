@@ -41,7 +41,7 @@ Under Codex Principal Directives C2151, C2154, C2156, C2162, C2164, C2166, C2171
     - Generated a complete, self-contained 17-file unified patch: `research/antigravity/recovery/typed-ssh-filebus-rpc-hardened.patch` (SHA256: `444165fd8821c371e01cb5dfb39775e3be50e466e1b54f2eb7ab982176efc976`).
     - In a clean disposable checkout at base commit `f3295f99e188719f5df9fccb22706d8a0e5bb8f8`, `git apply` executed with exit code 0.
     - Verified all module imports: `coordination.envelope`, `coordination.ssh_rpc`, `coordination.errors`, `coordination.bus_cli`, `coordination.durable`, `coordination.headless_worker`.
-    - Executed full test suite in disposable testbed: **65/65 tests passing** clean across all 8 test modules in 7.49s (recovery log SHA256: `93c363d185cf8a12cab203fddceb86a61b41123973f064fc330ed0f164333fc3`).
+    - Executed full test suite in disposable testbed: **65/65 tests passing** clean across all 8 test modules in 7.54s (recovery log SHA256: `7e4d19d37af53de2624e0b20c9e854678fb8308b8c670b986dfc6f9c41abb5b2`).
 
 ---
 
@@ -204,7 +204,7 @@ $ TMPDIR=.local/scratch/bus-ssh-rpc-snapshot/tmp PYTHONPATH=.local/scratch/bus-s
 ============================== 41 passed in 2.08s ==============================
 
 $ TMPDIR=.local/scratch/bus-ssh-rpc-snapshot/tmp PYTHONPATH=.local/scratch/bus-ssh-rpc-snapshot/agent-bus pytest -v tests/
-============================== 65 passed in 7.49s ==============================
+============================== 65 passed in 7.54s ==============================
 ```
 
 ---
@@ -225,10 +225,10 @@ $ TMPDIR=.local/scratch/bus-ssh-rpc-snapshot/tmp PYTHONPATH=.local/scratch/bus-s
 4. Executed full test suite:
    ```text
    $ pytest -v tests/
-   ============================== 65 passed in 7.49s ==============================
+   ============================== 65 passed in 7.54s ==============================
    ```
-5. Preserved recovery log: `.local/scratch/reviewer37-patch-audit/recovery_test_run.log` (SHA256: `93c363d185cf8a12cab203fddceb86a61b41123973f064fc330ed0f164333fc3`).
-6. Preserved restored manifest: `.local/scratch/reviewer37-patch-audit/restored_manifest.txt` (SHA256: `2790e32217de3a85eed80288680b2d05897ba4274a5572ae667e160c74b1bacc`).
+5. Preserved recovery log: `.local/scratch/reviewer37-patch-audit/recovery_test_run.log` (SHA256: `7e4d19d37af53de2624e0b20c9e854678fb8308b8c670b986dfc6f9c41abb5b2`).
+6. Preserved restored manifest: `.local/scratch/reviewer37-patch-audit/restored_manifest.txt` (SHA256: `bdca2ca979854695eeb057cde1bd2d03b83407765af7cd24b00f18fbd8565a92`).
 7. Cleaned up disposable directory: zero residual storage overhead.
 
 ---

@@ -41,15 +41,16 @@ ReadinessVerdict::Reject(readiness_detail(record, state, source, now))
 ### 1.2 Evaluation of Rejection Telemetry
 - **Actual Timestamps**:
   * Last reported idle timestamp: `oldidle: 1791113916291` ms.
-  * Subsequent PTY activity timestamp: `laterPTY: 1791161046182` ms (~47 seconds newer).
+  * Subsequent PTY activity timestamp: `laterPTY: 1791161046182` ms.
+  * Exact divergence: `1791161046182 - 1791113916291 = 47,129,891` ms = **13 hours, 05 minutes, 29.891 seconds** (representing a historical resting state that was superseded by activity half a day later, not 47 seconds).
 - **Composer vs. Screen Capture State**:
   * PTY screen capture showed a valid screen with an **`EMPTYCOMPOSER`** (`› Ask Codex to do anything`).
   * However, under `message_deferred.rs` line 127: `"Expired waiting + empty composer does NOT prove completed turn; fail closed"`.
   * Because `laterPTY > oldidle`, `idle_was_contradicted_with_hooks` evaluated to `true`, and the resting state was contradicted.
-- **Engine-Specific Behavior**:
+- **Engine-Specific Behavior & Source Parity Disclosure**:
   * In line 102, only the `antigravity` engine has background cursor/timer redraw exemptions. The `zcodex` engine has no exemption and strictly fails closed when any subsequent PTY write occurs after an idle report.
-  * While the exact root cause of the later PTY write in `zcodex` remains an unverified hypothesis (`HYPOTHESIS / UNKNOWN` pending producer tracing), the fail-closed behavior of the aplexer guard is verified code logic.
-  * Conclusion: The guard functioned strictly as specified in protocol source.
+  * While the inspected source logic in `cloudflare-aplexer-protocol/src/bin/aplexer/message_deferred.rs:100-128` cleanly accounts for the rejection message, source/binary parity of the currently installed aplexer binary is not established; this diagnostic constitutes an inspect-level model hypothesis (`HYPOTHESIS / UNVERIFIED`), not a live kernel trace.
+  * Conclusion: The guard functioned strictly consistent with protocol source specifications.
 
 ---
 

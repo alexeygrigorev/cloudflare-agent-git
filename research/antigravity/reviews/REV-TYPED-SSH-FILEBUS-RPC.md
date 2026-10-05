@@ -8,10 +8,10 @@
 - **Pinned Hardened Patch**: `research/antigravity/recovery/typed-ssh-filebus-rpc-hardened.patch`
   - **Patch SHA256**: `444165fd8821c371e01cb5dfb39775e3be50e466e1b54f2eb7ab982176efc976`
 - **Preserved Recovery Test Run Log**: `.local/scratch/reviewer37-patch-audit/recovery_test_run.log`
-  - **Recovery Log SHA256**: `93c363d185cf8a12cab203fddceb86a61b41123973f064fc330ed0f164333fc3`
-  - **Log Receipt**: `65 passed in 7.49s` on clean disposable clone
+  - **Recovery Log SHA256**: `7e4d19d37af53de2624e0b20c9e854678fb8308b8c670b986dfc6f9c41abb5b2`
+  - **Log Receipt**: `65 passed in 7.54s` on clean disposable clone
 - **Restored Source Manifest**: `.local/scratch/reviewer37-patch-audit/restored_manifest.txt`
-  - **Manifest SHA256**: `2790e32217de3a85eed80288680b2d05897ba4274a5572ae667e160c74b1bacc`
+  - **Manifest SHA256**: `bdca2ca979854695eeb057cde1bd2d03b83407765af7cd24b00f18fbd8565a92`
 - **Complete Restored Source & Test Manifest (17 Files)**:
   - `coordination/__init__.py`: `3fb6276d7c7060a107e549308765e9a40bd695ac85de8428b5569c2ab342479c`
   - `coordination/bus.py`: `2720c191f0b6a32a6d0ad933737a7239126472e40907a55c4bc55d7396b00370`
@@ -21,7 +21,7 @@
   - `coordination/envelope.py`: `a6abcf56dff5145da8b923de88bd1256db27bc26a05367e56b3135c52322c2b8`
   - `coordination/errors.py`: `3ddd46071abce2d5269cb7804fd5207c8150cb5f23e3777e47aa33de076939e5`
   - `coordination/headless_worker.py`: `5f8cc069aaa7fb516f8cd2a3561a560fa01d3e6cdf0f41260d315c69a5b94405`
-  - `coordination/ssh_rpc.py`: `6382e6cbb4d6217cf7b484d054c2d81993d4ed5a29ac575746fd680697ed2290`
+  - `coordination/ssh_rpc.py`: `98c2d3767c9b6672cb76850cac06a4b47069b9b8a451b233ee4733dc3e081429`
   - `tests/test_bus.py`: `0aa2c0fbb8616ff3eda78467f21cd36328b9bb2aaba39fcc1eb80e3a1a1e0ef7`
   - `tests/test_bus_concurrent.py`: `cd8509285462004c2597333a0aaaa625a620c4dbab59f474a18316f2629bc315`
   - `tests/test_bus_crash.py`: `1a7f95bc9b9b048ba2028e40cc2039f0e8fd422074862f8c353d707dec2275a8`
@@ -29,7 +29,7 @@
   - `tests/test_bus_scope.py`: `63d4907368fe4d8195fdd8ac011a822ce4bfdebb95119e9f6edd46c17fead2d7`
   - `tests/test_headless_task.py`: `cbe6bf747b4a6c31fc72aebd306047ff3c3e53d7884f916d48ca50192d230b59`
   - `tests/test_ssh_rpc.py`: `82d876d0580045756aafadd3cbaa07bd5d4488d78c899158c4fa8fd288de9ab9`
-  - `tests/test_ssh_rpc_security.py`: `90966ccbcec2ccec934d759d2e81cc2a9d5d5f869d8f11a7b383fb2baa6fa6ce`
+  - `tests/test_ssh_rpc_security.py`: `b07a6eefeda9ee2cc34adfaeae1ae6a5d40a681f9568acb244017b8f2c3a851d`
 - **Authentic Reviewer First Tools**:
   - `sha256sum research/antigravity/recovery/typed-ssh-filebus-rpc-hardened.patch .local/scratch/reviewer37-patch-audit/recovery_test_run.log .local/scratch/reviewer37-patch-audit/restored_manifest.txt`
   - `TMPDIR=.local/scratch/bus-ssh-rpc-snapshot/tmp PYTHONPATH=.local/scratch/bus-ssh-rpc-snapshot/agent-bus python3 -m pytest -v .local/scratch/bus-ssh-rpc-snapshot/agent-bus/tests/test_ssh_rpc_security.py .local/scratch/bus-ssh-rpc-snapshot/agent-bus/tests/test_ssh_rpc.py`
@@ -131,8 +131,8 @@ Recovery from the landed patch was verified independently:
    - Cloned canonical `/home/alexey/git/agent-bus` to disposable testbed and reset hard to base commit `f3295f99e188719f5df9fccb22706d8a0e5bb8f8`.
    - Applied patch via `git apply`. All 17 files restored cleanly without warnings.
    - Verified Python import integrity across all restored modules: zero `ModuleNotFoundError`.
-   - Executed full test suite: **65/65 tests PASSED** in 7.49s.
-   - Recovery test log digest: `93c363d185cf8a12cab203fddceb86a61b41123973f064fc330ed0f164333fc3`.
+   - Executed full test suite: **65/65 tests PASSED** in 7.54s.
+   - Recovery test log digest: `7e4d19d37af53de2624e0b20c9e854678fb8308b8c670b986dfc6f9c41abb5b2`.
 
 ---
 
