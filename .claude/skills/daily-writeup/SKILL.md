@@ -35,6 +35,7 @@ Every report tells one story, not a list of updates:
 If a section can't say what problem it's about, cut it.
 
 ## What goes in
+- The title states the day's story in plain words, the way the closing section would sum it up, such as "Everything Works Alone. Next, Many Agents Together". It doesn't name a single technical fix or use jargon a newcomer wouldn't know.
 
 - Open with what the experiment is and why it matters, in two or three sentences a newcomer understands.
 - For each product or team, say what changed, what failed and what's next, in plain words.
