@@ -7,15 +7,16 @@ ROOT=pathlib.Path(__file__).resolve().parent.parent
 parser=argparse.ArgumentParser()
 parser.add_argument('--date',default=datetime.datetime.now(ZoneInfo('Europe/Berlin')).date().isoformat())
 parser.add_argument('--fact-packet',default=None,help='Path to verified fact packet brief')
+parser.add_argument('--correction-token',default=None,help='Authorized correction token to execute rewrite in dedicated directory')
 parser.add_argument('--run',action='store_true')
 args=parser.parse_args()
 day=datetime.date.fromisoformat(args.date).isoformat()
-private=ROOT/'.local/journal'/day
+private=ROOT/'.local/journal'/(f'correction-{day}' if args.correction_token else day)
 private.mkdir(parents=True,exist_ok=True)
 meta=ROOT/'website/content/daily'/f'{day}.json'
 m=json.loads(meta.read_text()) if meta.exists() else {}
 response=private/'response.json'
-if m.get('published') and not m.get('early_update') and response.exists():
+if not args.correction_token and m.get('published') and not m.get('early_update') and response.exists():
  try:
   runtime=json.loads(response.read_text())
   if not runtime.get('is_error') and any('opus' in str(x).lower() for x in runtime.get('modelUsage', {})):
@@ -28,14 +29,16 @@ if not args.run:
  if quota.get('error') or quota.get('status')!='ok' or not remaining or min(remaining)<=0 or quota.get('details',{}).get('limit_reached'):
   raise SystemExit('Claude quota unknown/exhausted; retain last publication')
  (private/'quota.json').write_text(json.dumps(quota))
- with (ROOT/'.local/journal/launch.lock').open('a') as lock:
+ lock_path=ROOT/'.local/journal'/(f'launch-corr-{day}.lock' if args.correction_token else 'launch.lock')
+ with lock_path.open('a') as lock:
   fcntl.flock(lock,fcntl.LOCK_EX)
   launch=private/'launch.json'
   if launch.exists():
    print(launch.read_text());raise SystemExit(0)
-  tag='journal-opus-'+day
+  tag=('journal-opus-corr-' if args.correction_token else 'journal-opus-')+day
   cmd_args=['python3',str(pathlib.Path(__file__).resolve()),'--date',day,'--run']
   if args.fact_packet: cmd_args.extend(['--fact-packet',str(args.fact_packet)])
+  if args.correction_token: cmd_args.extend(['--correction-token',str(args.correction_token)])
   command=['aplexer','start','--workspace',str(ROOT),'--cwd',str(ROOT),'--engine','claude','--tag',tag,'--json','--']+cmd_args
   response=subprocess.check_output(command,cwd=ROOT,text=True,timeout=60)
   launch.write_text(response);print(response)

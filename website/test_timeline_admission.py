@@ -62,28 +62,67 @@ def test_admitted_notes_meet_criteria():
             assert jargon not in summary, f"{key}: summary contains internal jargon '{jargon}'"
 
 def test_notes_page_rendering():
-    """The generated timeline page must display admitted notes and exclude unadmitted/generic text."""
-    html = notes_page()
+    """The generated timeline pages must display admitted notes, pagination controls, and exclude unadmitted/generic text."""
+    admitted = [rp for rp in REPORTS if note_info(rp) is not None]
+    total_pages = max(1, (len(admitted) + 9) // 10)
+    
+    html = notes_page(page_num=1, total_pages=total_pages)
     
     # Legend includes approved categories
     assert 'Failure' in html
     assert 'Decision or correction' in html
     assert 'Milestone or result' in html
     assert 'Routine check' not in html
+
+    # Pagination controls appear on page 1
+    assert 'tl-pagination' in html
+    assert 'Older notes' in html
+    assert 'tl-pagination-disabled' in html  # Newer notes disabled on page 1
     
-    # Every admitted note title appears in the timeline
+    # Across all paginated pages, every admitted note title and summary appears
+    all_pages_html = ''.join(notes_page(page_num=p, total_pages=total_pages) for p in range(1, total_pages + 1))
     for key, (title, summary, kind) in NOTE_TEXT.items():
-        assert title in html, f"Admitted note '{title}' missing from notes_page"
-        assert summary in html, f"Admitted summary missing for '{title}'"
+        assert title in all_pages_html, f"Admitted note '{title}' missing from notes_page"
+        assert summary in all_pages_html, f"Admitted summary missing for '{title}'"
     
     # No generic check-in titles in timeline items
-    assert 'Orchestrator check-in' not in html
-    assert 'Remote check \u2014' not in html
-    assert 'Read the full note for the details' not in html
+    assert 'Orchestrator check-in' not in all_pages_html
+    assert 'Remote check \u2014' not in all_pages_html
+    assert 'Read the full note for the details' not in all_pages_html
     
     # Visible link text is descriptive, not a raw repository path
-    assert 'Read full field note' in html
-    assert 'research/orchestrator/heartbeat-' not in html
+    assert 'Read full field note' in all_pages_html
+    assert 'research/orchestrator/heartbeat-' not in all_pages_html
+
+def test_notes_page_pagination():
+    """Pagination navigation links, bounds, and indicators must be correct across all pages."""
+    admitted = [rp for rp in REPORTS if note_info(rp) is not None]
+    assert len(admitted) > 10, "Expected more than 10 admitted notes to require pagination"
+    total_pages = max(1, (len(admitted) + 9) // 10)
+    assert total_pages >= 3
+
+    # Page 1: has Next link, no active Prev link
+    p1 = notes_page(page_num=1, total_pages=total_pages)
+    assert 'Older notes' in p1
+    assert 'page/2/' in p1
+    assert 'Newer notes' in p1
+    assert 'tl-pagination-disabled' in p1
+    assert 'aria-current="page">1</span>' in p1
+
+    # Page 2: has both Prev and Next links
+    p2 = notes_page(page_num=2, total_pages=total_pages)
+    assert 'Older notes' in p2
+    assert 'Newer notes' in p2
+    assert 'page/3/' in p2
+    assert '/reports/' in p2
+    assert 'aria-current="page">2</span>' in p2
+
+    # Page 3: has Prev link, no active Next link
+    p3 = notes_page(page_num=total_pages, total_pages=total_pages)
+    assert 'Newer notes' in p3
+    assert f'page/{total_pages - 1}/' in p3
+    assert 'tl-pagination-disabled' in p3
+    assert f'aria-current="page">{total_pages}</span>' in p3
 
 def test_home_page_field_notes_section():
     """The home page field notes column must show only admitted notes and describe findings, not checks."""
@@ -100,8 +139,10 @@ def test_home_page_field_notes_section():
         assert title in html, f"Home page missing newest field note '{title}'"
 
 def test_site_css_supports_all_timeline_kinds():
-    """CSS must define styling for all admitted timeline dot kinds."""
+    """CSS must define styling for all admitted timeline dot kinds and pagination."""
     css = (ROOT / 'website/assets/site.css').read_text()
     assert '.tl-failed' in css
     assert '.tl-decision' in css
     assert '.tl-milestone' in css or '.tl-result' in css
+    assert '.tl-pagination' in css
+    assert '.tl-pagination-page' in css
