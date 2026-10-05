@@ -5051,22 +5051,26 @@
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": true,
       "status": "ready",
-      "updated_at": "2026-10-05T15:56:00Z",
+      "updated_at": "2026-10-05T16:05:00Z",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Measured whole descendantRAM/threads/controllers and freshroutes support10 then25 then50; bindingmax/alternative if impossible",
-      "next_action": "Measured host capacity: MemAvailable 28.7 GiB, Root Statvfs 46.73 GiB (deficit 3.27 GiB). Stage 1 (10 tasks, 7.68 GiB RAM at 768M) is memory-feasible (leaves 21.0 GiB RAM) but blocked by root disk gate. Stage 2 (25 tasks) requires 650M ceiling (16.25 GiB RAM) to preserve >=10 GiB host floor, plus unblocking 11 predecessor tasks. Stage 3 (50 tasks) is physically impossible at 768M (38.4 GiB > 28.7 GiB MemAvailable) and violates 10 GiB floor at 512M (leaves only 3.1 GiB RAM); requires 350M ceiling (17.5 GiB RAM) plus unblocking 36 tasks. Named accountable owners: QL Head (a86056b5) owning launcher/watch, Coord Head (8d4c026c) owning coordination tasks, Ant (5e1abcdb) owning supervision. No worker launch below 50-GiB floor.",
+      "next_action": "Task-specific RAM audit completed: 350M recommendation is rejected as unsafe. Empirical journalctl cgroup telemetry shows real task units peak at 358.1M (review-refill-runtime), 367.0M (scale50-08-agy-audit), and 768.0M (scale50-07-opencode-audit). Enforcing 350M MemoryMax triggers immediate cgroup kernel OOM-killer termination on real provider CLIs (Node/OpenCode and Python/AGY). Furthermore, 50x350M (17.09 GiB) + OS baseline (2.49 GiB) + 50 cgroup/controller scopes (1.22 GiB) leaves only 399 MiB above the mandatory 10.0 GiB host MemAvailable floor, creating catastrophic thrashing risk. Stage 50 is officially marked UNPROVEN / INFEASIBLE on single host. Safe alternative: Bounded concurrency at Stage 1 (10 workers, 768M MemoryMax, 7.68 GiB total) or Stage 2 (max 15 workers, 11.52 GiB total) with automated completion-to-refill (wt-refill-runtime) preserving >=17-21 GiB host RAM floor. Launch strictly held under root storage gate (deficit 3.27 GiB).",
       "evidence": [
-        "research/codex/scale-to50-plan-20261005.md"
+        "research/codex/scale-to50-plan-20261005.md",
+        "research/antigravity/reviews/REV-SCALE50-RAM-PROOF-AND-CAPACITY-20261005.md"
       ],
       "actual_covered_active": 0,
-      "actual_as_of": "2026-10-05T15:56:00Z",
+      "actual_as_of": "2026-10-05T16:05:00Z",
       "measurement_coverage": "maintained launcher task-unit roster; full other fleet unknown",
       "current_observation": {
         "maintained_active_count": 0,
         "coverage": "systemctl --user agent-task-* only (0 loaded units); full other fleet unknown",
         "root_available_bytes": 50178809856,
         "live_deficit_bytes": 3508281344,
+        "stage50_verdict": "UNPROVEN_SINGLE_HOST_RAM_BREACH",
+        "safe_alternative": "Stage 1 (10 workers) or Stage 2 (max 15 workers) at 768M MemoryMax with automated wt-refill-runtime loop; cross-computer distribution for 50 concurrent",
+        "measured_real_peaks": "scale50-07: 768.0M; scale50-08: 367.0M; review-refill: 358.1M; reviews: 123.4M-176.3M",
         "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
         "native_delivery": "provenance audit commit 6437b81; CODE_ACCEPTED_RUNTIME_UNPROVEN recorded; launch gate held closed"
       },
