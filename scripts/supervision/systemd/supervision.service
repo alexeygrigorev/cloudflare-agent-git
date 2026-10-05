@@ -14,6 +14,7 @@ Environment=PATH=/home/alexey/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbi
 ExecStart=/home/alexey/git/cloudflare-agent-git/scripts/supervision/systemd/launch_supervision.sh
 ExecStop=/bin/bash -c "touch /home/alexey/git/cloudflare-agent-git/.local/supervision/stop; for i in {1..30}; do if ! aplexer status experiment-supervision >/dev/null 2>&1; then break; fi; sleep 1; done"
 TimeoutStopSec=35s
+KillMode=mixed
 
 [Install]
 WantedBy=default.target

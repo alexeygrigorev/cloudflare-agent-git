@@ -805,6 +805,7 @@ def run():
 
             # Ingest receipts and maintained task-unit launcher state
             ql_db_candidates = [
+                pathlib.Path('/home/alexey/git/agent-quota-launcher/.local/launcher-config/state.db'),
                 pathlib.Path('/home/alexey/git/agent-quota-launcher/.local/scale50/wt-gemini-head/.config/ql/state.db'),
                 pathlib.Path('/home/alexey/git/agent-quota-launcher/.local/state.db'),
             ]

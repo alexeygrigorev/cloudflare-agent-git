@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T15:00:42.830346+00:00",
+  "updated_at": "2026-10-05T16:39:54.472009+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -4174,18 +4174,30 @@
       "owner_tag": "agent-coordination-head-gemini",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": true,
-      "status": "ready",
-      "updated_at": "2026-10-05T15:42:00Z",
+      "status": "accepted",
+      "updated_at": "2026-10-05T16:39:24.490237+00:00",
       "title": "CLI lifecycle vocabulary fidelity",
       "source": "experiment/human-unified-headless-tui-message-bus-adoption-20261005.txt",
       "acceptance": "compare delivered/readACK/accepted/outcome implementation with claimed fields, explicit missing labels",
       "dependencies": [],
       "write_scope": "/home/alexey/git/agent-bus/.local/scale50/scale50-17/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD",
+      "next_action": "Head-owned distinct process/tool-evidence review; preserve useful output; do not count full containment/autonomy acceptance before evidence.",
       "owner_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
       "assignment_ack": "8d4c026c-head-acceptance-20261005",
-      "first_action": "Bounded in-session verification of FileBus CLI vocabulary and invariants; zero worker launches while host root disk < 50.0 GiB"
+      "first_action": "Bounded in-session verification of FileBus CLI vocabulary and invariants; zero worker launches while host root disk < 50.0 GiB",
+      "execution_head_tag": "quota-launcher-head-gemini",
+      "execution_receipt": "01a10cec-950a-7f60-9c35-2a9f01a4d326",
+      "unit_name": "agent-task-scale50-17.service",
+      "controller_unit": "ql-ctl-scale50-17.service",
+      "invocation_id": "978a68275cd84c91aa5e92458e0c1256",
+      "model_route_reported": "gemini-3.1-pro-high via maintained AGY adapter",
+      "first_action_reported": "AGY prompt invocation; actual model-tool trace not yet supplied",
+      "artifact_path": "/home/alexey/git/agent-bus/.local/scale50/scale50-17/VOCABULARY-FIDELITY.md",
+      "artifact_bytes": 1893,
+      "artifact_sha256": "4e2a884493814a0714e60bd3094ebbddfcb3ff682fec58e9f7ec8d125b3628ae",
+      "independent_review_reported": "QL head ACCEPT d904f66; distinct implementer actor. Dedicated full process/model-tool provenance reviewer requested C2618.",
+      "execution_acceptance_boundary": "Head accepted vocabulary artifact via distinct actor review; separate model-tool/process-containment/autonomy provenance gate remains pending, not a principal product code approval."
     },
     {
       "id": "scale50-18",
@@ -4234,18 +4246,22 @@
       "owner_tag": "agent-coordination-head-gemini",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": true,
-      "status": "ready",
-      "updated_at": "2026-10-05T15:42:00Z",
+      "status": "blocked",
+      "updated_at": "2026-10-05T16:39:24.490237+00:00",
       "title": "ReadACK timestamp invariant test",
       "source": "experiment/human-unified-headless-tui-message-bus-adoption-20261005.txt",
       "acceptance": "changed nonempty ACK timestamp must fail; no equality-or-truthy assertion",
       "dependencies": [],
       "write_scope": "/home/alexey/git/agent-bus/.local/scale50/scale50-20/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD",
+      "next_action": "QL delegates narrow tmpdir/review-aware refill repair and independent review, then retry exact task scope only if fresh gates pass.",
       "owner_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
       "assignment_ack": "8d4c026c-head-acceptance-20261005",
-      "first_action": "Bounded in-session verification of FileBus CLI vocabulary and invariants; zero worker launches while host root disk < 50.0 GiB"
+      "first_action": "Bounded in-session verification of FileBus CLI vocabulary and invariants; zero worker launches while host root disk < 50.0 GiB",
+      "execution_head_tag": "quota-launcher-head-gemini",
+      "execution_observed": "Maintained state.db failed16:34:19, declared artifact absent",
+      "repair_request_id": "01a10ceb-1e53-7642-9eab-4f6c1568ade0",
+      "diagnosis_reported": "Inherited task17 tmpdir fails task20 containment; near50.5GiB spike threshold; pre-review refill qualifies autonomy."
     },
     {
       "id": "scale50-21",
@@ -5224,9 +5240,9 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T16:30:45.121474+00:00",
+      "updated_at": "2026-10-05T16:41:05.281704+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Service running head-independently under persistent systemd user unit (session 2709c046, PID 2045425, cgroup app.slice/supervision.service, parent_session null). Audit report published at research/antigravity/reviews/REV-SUPERVISION-HEAD-INDEPENDENT-MIGRATION-2709C046.md.",
+      "next_action": "Continuity resolved: codex-principal (93cf28f2) provided genuine native reply 01a10cec-71ee to preserved message 01a10c9d-5a15; live supervisor 2709c046 emitted current-identity request 01a10cec-a5ae, confirmed degraded=false and errors=[]. Added KillMode=mixed and QL state DB discovery in scripts/supervision/service.py and systemd unit. Pinned commit submitted to Coordination for distinct review.",
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
@@ -5326,7 +5342,39 @@
         "holding_status": "not_held_transient_flock",
         "degraded_root_cause": "Pending message 01a10c9d-5a15-75d1-b1c7-c5a90ea819e3 sent by prior supervisor session 4914b3d1 to codex-principal remains un-ACKed (>4700s > 300s SLO). Supervisor refuses to forge recipient ACK.",
         "resumable_trigger": "codex-principal (93cf28f2) acks message 01a10c9d-5a15-75d1-b1c7-c5a90ea819e3"
-      }
+      },
+      "principal_continuity_observation": {
+        "observed_at": "2026-10-05T16:39:24.490237+00:00",
+        "status_timestamp": "2026-10-05T16:38:38.451787+00:00",
+        "current_native_service_id": "2709c046-ceff-48f9-9f6c-d05647112fe8",
+        "old_envelope": "01a10c9d-5a15-75d1-b1c7-c5a90ea819e3",
+        "old_native_ack": "preserved unread; no ACK call",
+        "genuine_recipient_reply": "01a10cec-71ee-7b63-89a0-b35ecf35b3df",
+        "service_last_request": {
+          "id": "01a10cec-a5ae-70e1-a9bd-b520e0e6c504",
+          "sender_id": "2709c046-ceff-48f9-9f6c-d05647112fe8",
+          "event": "fde566ca3b7813a64079",
+          "delivery": "inbox",
+          "created_at": "2026-10-05T16:36:38.016093+00:00",
+          "acknowledged_at": "2026-10-05T16:38:38.826252+00:00",
+          "ack_evidence": {
+            "message_id": "01a10cec-a5ae-70e1-a9bd-b520e0e6c504",
+            "original_sender_id": "2709c046-ceff-48f9-9f6c-d05647112fe8",
+            "recipient_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
+            "source": "native-exact-consumer-cursor",
+            "envelope_sha256": "31ef5073dd9bf7dcfef233973b9f6ea29aabba0e6f588e474933e87177f50ac0",
+            "cursor_sha256": "134d30313373b51d6bf661af52fd043313ef6b4aa28867cf359a23ac313e61e5",
+            "mailbox_key": "ff8f632ef4db3dc1682bad50bcdc8aaf",
+            "read_only": true
+          }
+        },
+        "pending_reason": null,
+        "degraded": false,
+        "boundary": "Reply recognized by real current service; two-tick and useful unattended review/refill still separate gates"
+      },
+      "checkpoint_due": "2026-10-05T16:45:00Z",
+      "responsible_owner": "antigravity-head-gemini-recovery (5e1abcdb-44d3-44c9-ba20-eb21f6235672)",
+      "measurable_acceptance_evidence": "Live supervisor 2709c046 status at 16:38:38 UTC shows degraded=false, errors=[], last_request 01a10cec-a5ae ACKed, genuine reply 01a10cec-71ee preserved without synthetic ACKs. KillMode=mixed configured for cgroup singleton fencing."
     },
     {
       "id": "REMOTE-AUTONOMY-REVIEW-1830",
