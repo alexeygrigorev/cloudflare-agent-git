@@ -12,7 +12,8 @@ day=datetime.date.fromisoformat(args.date).isoformat()
 private=ROOT/'.local/journal'/day
 private.mkdir(parents=True,exist_ok=True)
 meta=ROOT/'website/content/daily'/f'{day}.json'
-if meta.exists() and json.loads(meta.read_text()).get('published'):
+m=json.loads(meta.read_text()) if meta.exists() else {}
+if m.get('published') and any('opus' in str(x).lower() for x in m.get('actual_writer_models', [])):
  print(json.dumps({'status':'already_published','date':day}));raise SystemExit(0)
 if not args.run:
  quota=json.loads(subprocess.check_output(['quse','claude','--json'],text=True,timeout=45))['claude']

@@ -532,12 +532,15 @@ def daily_page(d):
     if d.get('update_cutoff'):
         spans.append('<span>MORNING UPDATE UP TO '+E(utc_text(d['update_cutoff']))+'</span>')
     spans.append('<span>'+str(len(d.get('sources', [])))+' SOURCES LINKED BELOW</span>')
-    person = '<span class="byline-name">'+E(d.get('author', 'Alexey Grigorev'))+'</span><span class="muted">Written with Claude Opus</span><span class="muted">'+E(long_date(d['date']))+'</span>'
+    is_opus = any('opus' in str(x).lower() for x in d.get('actual_writer_models', []))
+    writer_badge = 'Written with Claude Opus' if is_opus else 'Early technical update \u00b7 writer unverified'
+    person = '<span class="byline-name">'+E(d.get('author', 'Alexey Grigorev'))+'</span><span class="muted">'+writer_badge+'</span><span class="muted">'+E(long_date(d['date']))+'</span>'
     titles = d.get('source_titles', {})
     sources = ''.join('<a class="src" href="'+E(u, quote=True)+'">'+E(source_title(u, titles))+'</a>' for u in d.get('sources', []))
+    writer_note = 'Writing assistance: Claude Opus.' if is_opus else 'Draft provenance: early technical recovery snapshot (writer unverified, not Claude Opus).'
     return ('<article class="article">'+article_head(d['title'], d.get('summary', ''), byline_block(person, spans))
             +'<div class="prose">'+prose+'</div>'
-            '<div class="article-sources">'+'<h2 class="sources-h">Sources for this report</h2>'+sources+'<p class="source-line">Writing assistance: Claude Opus. Original Markdown: <a href="'+public_source(d['path'].relative_to(ROOT))+'">read in the repository'+EXT+'</a>. Illustrations are conceptual artwork.</p></div></article>')
+            '<div class="article-sources">'+'<h2 class="sources-h">Sources for this report</h2>'+sources+'<p class="source-line">'+writer_note+' Original Markdown: <a href="'+public_source(d['path'].relative_to(ROOT))+'">read in the repository'+EXT+'</a>. Illustrations are conceptual artwork.</p></div></article>')
 
 def note_page(rp):
     info = note_info(rp)
@@ -556,8 +559,10 @@ def note_page(rp):
 def home_page():
     if LATEST:
         cutoff = LATEST_CUTOFF.strftime('%Y-%m-%d %H:%M')+' UTC' if LATEST_CUTOFF else str(LATEST['date'])
+        latest_is_opus = any('opus' in str(x).lower() for x in LATEST.get('actual_writer_models', []))
+        latest_writer = 'Written with Claude Opus' if latest_is_opus else 'Early technical update'
         feature = ('<article class="feature"><h1><a href="'+BASE+'/'+LATEST['route']+'">'+E(LATEST['title'])+'</a></h1><p class="feature-deck">'+E(LATEST.get('summary', ''))+'</p>'
-                   '<p class="feature-byline"><span class="ink">'+E(LATEST.get('author', 'Alexey Grigorev'))+'</span><span>Written with Claude Opus</span><span>'+E(long_date(LATEST['date']))+'</span><span class="chip">EVIDENCE UP TO '+E(cutoff)+'</span></p>'
+                   '<p class="feature-byline"><span class="ink">'+E(LATEST.get('author', 'Alexey Grigorev'))+'</span><span>'+latest_writer+'</span><span>'+E(long_date(LATEST['date']))+'</span><span class="chip">EVIDENCE UP TO '+E(cutoff)+'</span></p>'
                    '<a class="read-more" href="'+BASE+'/'+LATEST['route']+'">Read the daily report'+ARROW+'</a></article>')
     else:
         feature = '<article class="feature"><h1>What we learn belongs here</h1><p class="feature-deck">The opening story is being written and checked against the evidence. Read the dated field notes while it is prepared.</p><a class="read-more" href="'+BASE+'/reports/">Read the field notes'+ARROW+'</a></article>'

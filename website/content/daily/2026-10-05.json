@@ -1,9 +1,9 @@
 {
-  "title": "October 5 Product Report",
+  "title": "Day 3: The Message Bus Delivered the Same Review Twice",
   "date": "2026-10-05",
-  "summary": "Delivery work across four active products: Agent Branches audited a fail-closed mutating push, Agent Bus added default reply idempotency after duplicate deliveries, Agent Dashboard verified staged metrics in a mock testbed, and Quota Launcher hardened temporary directory containment.",
+  "summary": "Early technical update across four active products: Agent Branches audited a fail-closed mutating push, Agent Bus added default reply idempotency after duplicate deliveries, Agent Dashboard verified staged metrics in a mock testbed, and Quota Launcher hardened temporary directory containment.",
   "author": "Alexey Grigorev",
-  "model": "Claude Opus 5.5 (claude-opus-5-5)",
+  "model": "unknown (interim recovery technical draft; actual writer unverified)",
   "source_cutoff": "2026-10-05T00:06:45Z",
   "sources": [
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-HOURLY-PAYLOAD-34137.md",
@@ -24,10 +24,21 @@
   "image": "../../assets/agent-git-illustration.png",
   "image_alt": "Conceptual illustration for the agent Git experiment; not measurement evidence",
   "published": true,
-  "actual_writer_models": [
-    "claude-opus-5-5"
-  ],
-  "editorial_review": "Evidence, privacy, relative links and factual checks by publication coordinator; independent factual verification under REV-OCT5-PRODUCT-REPORT",
-  "article_sha256": "3845d3e1df96706328ca57116a09fea0cc098f8833f45a756ae90a5e464c83c7",
-  "published_at": "2026-10-05T00:25:00.000000+00:00"
+  "early_update": true,
+  "actual_writer_models": [],
+  "editorial_review": "Interim technical status update; factual checks under REV-OCT5-PRODUCT-REPORT; writer provenance unverified (not Claude Opus); comprehensive 09:30 Europe/Berlin reader report scheduled after morning standup",
+  "article_sha256": "f7e9e553055cbf8774fc95e7a56982d77baa6209aa1e867673897cb45463062b",
+  "published_at": "2026-10-05T00:25:00.000000+00:00",
+  "corrected_at": "2026-10-05T00:35:00.000000+00:00",
+  "corrections": [
+    {
+      "at": "2026-10-05T00:35:00.000000+00:00",
+      "editor": "publication coordinator (public-journal-site)",
+      "reason": "Title, provenance, and early update classification correction",
+      "details": "Corrected generic title to 'Day 3: The Message Bus Delivered the Same Review Twice' per C2167; classified entry as an early interim technical status snapshot (00:06:45Z analytical cutoff) rather than the completed 09:30 Europe/Berlin daily report; corrected writer model provenance to unknown (antigravity recovery draft, not Claude Opus); preserved published record and enabled uninterrupted 09:30 Opus writing automation.",
+      "sources": [
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-OCT5-PRODUCT-REPORT.md"
+      ]
+    }
+  ]
 }

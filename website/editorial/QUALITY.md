@@ -60,6 +60,14 @@ Every admitted timeline card must satisfy all of the following requirements:
 
 Unadmitted routine check-in reports remain permanently preserved in `research/orchestrator/` in the repository and are navigable via their individual HTML archive URLs. Omission from the public timeline feed preserves high signal for readers without deleting or rewriting durable research records.
 
+### Daily report and update admission rules
+
+Daily reports and public updates publish only when there is a concrete, verified technical delta to communicate. Follow these admission criteria:
+
+1. **Concrete headline**: Headlines must name an actual changed behavior, technical finding, or architecture decision (e.g. "Day 3: The Message Bus Delivered the Same Review Twice"), never a generic date or status placeholder (e.g. "October 5 Product Report").
+2. **Verified deltas only**: Publish only verified artifact, test, or user-impact deltas. Omit routine heartbeat summaries, open process counts, live PIDs, CPU seconds, and plan-only padding.
+3. **Contributor counts inside body**: Any contributor or agent statistics must remain inside the bounded report body with an explicit UTC window, source deliverables, and acknowledged unknown coverage per [WORKFLOW.md](WORKFLOW.md#contributor-and-agent-statistics-rules-for-daily-reports); never in titles or subtitles.
+
 ## Regression and continuation
 
 Template/CSS/navigation/diagram changes require the five-page desktop/mobile comparison. Isolated article factual text changes require editorial review plus affected-page rendering and layout invariants; metadata-only fieldnotes require source/cutoff/link checks. Signup changes require independent privacy/function checks and affected visual checks. After every failed gate the coordinator records owner, next action and bounded checkpoint, and delegates repair while reviewers continue independent useful work. Principals inspect the missing-evidence/review queue, not every page themselves.
