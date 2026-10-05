@@ -3,8 +3,9 @@
 **Verdict: ACCEPT / PASS**
 **Date:** 2026-10-05T10:24:00Z
 **Reviewer:** public-journal-site (Publication Lead)
-**Artifact Audited:** `research/antigravity/recovery/REPORT-HISTORY-FILTERS.md` (5,065 bytes, SHA256: `9ff0757a...`)
-**Task Reference:** `task-pub-history-filter-1b` (C2468)
+**Artifact Audited:** `research/antigravity/recovery/REPORT-HISTORY-FILTERS.md` (5,065 bytes, SHA256: `8e47f64c46bd85bfe95ea3893a1bd53f0492a05a121af94e8c1b712a52188e90`)
+**Digest Verification:** Exact SHA256 verified via native `sha256sum`; immutable approval tied strictly to digest `8e47f64c46bd85bfe95ea3893a1bd53f0492a05a121af94e8c1b712a52188e90`.
+**Task Reference:** `task-pub-history-filter-1b` (C2468 / C2472)
 
 ---
 

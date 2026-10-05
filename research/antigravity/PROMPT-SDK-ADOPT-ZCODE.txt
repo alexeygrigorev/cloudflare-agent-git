@@ -1,0 +1,50 @@
+You are zcode-sdk-adopt, an executor launched by antigravity-head (46fdb644) under Codex Principal C1499 directive.
+
+Workspace: /home/alexey/git/agent-branches-sdk-adoption (branch proto/sdk-get-task-auth, baseline commit 7868334).
+Owned paths: agent_branches/client.py, tests/test_client.py, tests/mock_l1_server.py.
+Invariants:
+- TMPDIR: /home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-sdk-adopt/ (already configured).
+- cgroup memory: 1500M.
+- Serialize commits with: flock /home/alexey/git/cloudflare-agent-git/.local/git.lock
+
+Your task: Real code-adoption task: implement authenticated task detail reads in SDK client `get_task` (support bearer token forwarding, task_token cache, and negative cross-agent/runner auth tests matching proto/auth-reads router schema).
+
+Background / Context (Codex C1499):
+In proto/auth-reads (commit 2302d70), GET /tasks/:id was locked down:
+- Unauthenticated requests return 401 Unauthorized.
+- Requests with runner token ($RUNNER_TOKEN) or foreign agent token return 403 Forbidden.
+- Requests with the task's owning agent token or admin token ($ADMIN_TOKEN) return 200 OK.
+Currently in `agent_branches/client.py` lines 189-195:
+`get_task` sends a bare unauthenticated GET /tasks/:id without any Authorization header!
+Furthermore, `push()` calls `self.get_task(task_id)` if `agent_id` is omitted, which immediately breaks with 401 against authenticated coordinators!
+
+Specific Requirements:
+1. Declare your work with:
+   aplexer work join /home/alexey/git/agent-branches-sdk-adoption --task "C1499: implement authenticated get_task and token forwarding" --mode edit --paths agent_branches/client.py --paths tests/test_client.py --paths tests/mock_l1_server.py
+2. Implement in `agent_branches/client.py`:
+   - In `__init__`: initialize `self.task_tokens: Dict[str, str] = {}`
+   - In `create_task()`: when `res` is returned containing `"token"` (the agent's minted bearer token), store it:
+     `if task_id and res.get("token"): self.task_tokens[task_id] = res["token"]`
+   - Update `get_task`:
+     `def get_task(self, task_id: str, token: Optional[str] = None) -> Dict[str, Any]:`
+     Resolve effective token:
+     `effective_token = token or self.task_tokens.get(task_id) or os.environ.get("TASK_TOKEN") or os.environ.get("ADMIN_TOKEN")`
+     If `effective_token`: attach `headers={"Authorization": f"Bearer {effective_token}"}`.
+   - In `push()`: when calling `self.get_task(task_id)`, pass `token=effective_agent_id` or let `get_task` resolve from `self.task_tokens`.
+3. Update `tests/mock_l1_server.py`:
+   - Ensure mock L1 server `do_GET` handles `GET /tasks/:id` with bearer check matching `prototype/src/core/router.ts` (accepts owning agent token or admin token, returns 401 if missing, 403 if foreign/runner token).
+4. Add comprehensive tests to `tests/test_client.py`:
+   - Test unauthenticated `get_task` -> 401 (proves the regression before fix).
+   - Test authenticated `get_task(task_id, token=agent_token)` -> 200.
+   - Test authenticated `get_task(task_id, token=admin_token)` -> 200.
+   - Test authenticated `get_task(task_id, token=runner_token)` -> 403 Forbidden.
+   - Test authenticated `get_task(task_id, token=foreign_agent_token)` -> 403 Forbidden.
+   - Test auto-token resolution: `client.create_task()` then `client.get_task(task_id)` without explicit token -> 200.
+5. Verification:
+   - Run `python3 -m unittest -v tests/test_client.py`. All tests (including pre-existing 16 tests) must PASS cleanly.
+   - Run `python3 -m py_compile agent_branches/client.py tests/test_client.py tests/mock_l1_server.py`.
+6. Commit & Message:
+   - Commit with explicit staged paths under `flock /home/alexey/git/cloudflare-agent-git/.local/git.lock`:
+     `git commit -m "feat(l2-client): authenticated get_task detail reads and auto token cache (C1499)"`
+   - Send completion message to `antigravity-head`:
+     `aplexer message send antigravity-head "zcode-sdk-adopt: authenticated get_task complete. Tests pass. Commit <sha> on proto/sdk-get-task-auth"`

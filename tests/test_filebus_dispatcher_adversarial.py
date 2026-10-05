@@ -918,6 +918,232 @@ class TestFileBusDispatcherAdversarial(unittest.TestCase):
         data = json.loads(res.stdout)
         self.assertIn("status", data)
 
+    def test_33_reply_failure_outbox_retry_without_second_model_run(self) -> None:
+        """
+        Directives C2350 / C2406: Verifies that if send_reply fails, the reply is persisted
+        in the durable outbox directory, and flush_outbox retries delivering the exact same
+        correlated response without re-executing the model or generating a second receipt.
+        """
+        msg_id = str(uuid.uuid4())
+        task_id = "test-outbox-retry-c2350"
+        self.service.load_state()
+
+        task_msg = {
+            "message_id": msg_id,
+            "sender_id": str(uuid.uuid4()),
+            "task_id": task_id,
+            "command_argv": ["echo", "test outbox retry"],
+            "requested_memory_mb": 128,
+            "timeout_sec": 60,
+        }
+
+        # First dispatch: simulate send_reply failure
+        send_reply_calls = []
+        def failing_send_reply(message_id: str, body: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+            send_reply_calls.append((message_id, body, data))
+            raise RuntimeError("Simulated network/FileBus outage during send_reply")
+
+        with patch.object(self.service, "ack_message", return_value={"acked": True}), \
+             patch.object(self.service, "send_reply", side_effect=failing_send_reply):
+            receipt = self.service.dispatch_task(task_msg)
+
+        self.assertEqual(len(send_reply_calls), 1)
+        self.assertEqual(receipt.get("returncode"), 0)
+
+        # Assert outbox file exists on disk with mode 0600
+        outbox_file = self.service.outbox_dir / f"{msg_id}.json"
+        self.assertTrue(outbox_file.exists(), "Outbox file must be persisted on send_reply failure")
+        outbox_stat = os.stat(outbox_file)
+        self.assertEqual(stat.S_IMODE(outbox_stat.st_mode), 0o600)
+        outbox_content = json.loads(outbox_file.read_text(encoding="utf-8"))
+        self.assertEqual(outbox_content.get("message_id"), msg_id)
+        self.assertEqual(outbox_content.get("task_id"), task_id)
+        first_hash = outbox_content.get("data", {}).get("receipt_hash")
+
+        # Now flush outbox with healthy send_reply (Directive C2350: NO second model run)
+        successful_replies = []
+        def healthy_send_reply(message_id: str, body: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+            successful_replies.append((message_id, body, data))
+            return {"reply_to": message_id, "body": body, "data": data}
+
+        with patch.object(self.service, "execute_task_in_scope") as mock_exec, \
+             patch.object(self.service, "send_reply", side_effect=healthy_send_reply):
+            flushed = self.service.flush_outbox()
+
+        mock_exec.assert_not_called()  # Proves zero second model run!
+        self.assertEqual(flushed, 1)
+        self.assertEqual(len(successful_replies), 1)
+        self.assertEqual(successful_replies[0][0], msg_id)
+        self.assertEqual(successful_replies[0][2].get("receipt_hash"), first_hash)
+        self.assertFalse(outbox_file.exists(), "Outbox file must be unlinked after successful flush")
+
+    def test_34_task_exception_does_not_kill_queue(self) -> None:
+        """
+        Directive C2406: Verifies that when an individual task execution raises TaskExecutionError,
+        dispatch_next catches the exception, returns an error receipt, advances the cursor,
+        and leaves the dispatcher service running healthy for subsequent tasks.
+        """
+        bad_msg_id = str(uuid.uuid4())
+        good_msg_id = str(uuid.uuid4())
+        self.service.load_state()
+
+        messages = [
+            {
+                "message_id": bad_msg_id,
+                "sender_id": str(uuid.uuid4()),
+                "task_id": "test-failing-task-1",
+                "command_argv": ["false"],  # Exits 1
+                "requested_memory_mb": 128,
+                "timeout_sec": 60,
+            },
+            {
+                "message_id": good_msg_id,
+                "sender_id": str(uuid.uuid4()),
+                "task_id": "test-healthy-task-2",
+                "command_argv": ["echo", "healthy subsequent task"],
+                "requested_memory_mb": 128,
+                "timeout_sec": 60,
+            }
+        ]
+
+        def mock_poll(unread_only: bool = True) -> List[Dict[str, Any]]:
+            # Return remaining unhandled messages
+            processed = set(self.service.state.processed_message_ids) if self.service.state else set()
+            return [m for m in messages if m["message_id"] not in processed]
+
+        with patch.object(self.service, "poll_inbox", side_effect=mock_poll), \
+             patch.object(self.service, "ack_message", return_value={"acked": True}), \
+             patch.object(self.service, "send_reply", return_value={"replied": True}):
+            # First cycle: bad task fails but does NOT raise unhandled exception
+            receipt1 = self.service.dispatch_next()
+            self.assertIsNotNone(receipt1)
+            self.assertEqual(receipt1.get("status"), "error")
+            self.assertIn(bad_msg_id, self.service.state.processed_message_ids)
+
+            # Second cycle: good task executes cleanly
+            receipt2 = self.service.dispatch_next()
+            self.assertIsNotNone(receipt2)
+            self.assertEqual(receipt2.get("returncode"), 0)
+            self.assertIn(good_msg_id, self.service.state.processed_message_ids)
+
+    def test_35_restart_recovers_pending_outbox_replies(self) -> None:
+        """
+        Directives C2350 / C2406: Verifies that when the dispatcher process restarts with a
+        pending outbox reply, a newly initialized FileBusDispatcherService flushes the outbox
+        and delivers the reply without re-running any tasks.
+        """
+        msg_id = str(uuid.uuid4())
+        task_id = "test-restart-outbox-c2350"
+        self.service.load_state()
+
+        # Seed an outbox reply file directly
+        if not hasattr(self.service, "outbox_dir"):
+            self.service.outbox_dir = self.service.scratch_root / "outbox"
+        self.service.outbox_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+        outbox_file = self.service.outbox_dir / f"{msg_id}.json"
+        outbox_payload = {
+            "message_id": msg_id,
+            "task_id": task_id,
+            "body": f"Task {task_id} completed prior to restart",
+            "data": {"task_id": task_id, "status": "completed", "receipt_hash": "abc123hash"},
+            "status": "completed",
+            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+        outbox_file.write_text(json.dumps(outbox_payload), encoding="utf-8")
+        os.chmod(outbox_file, 0o600)
+
+        # Create a fresh dispatcher instance (simulating clean service restart)
+        new_service = FileBusDispatcherService(
+            bus_store=self.service.bus_store,
+            workspace=self.service.workspace,
+            scratch_root=self.service.scratch_root,
+            cred_path=self.service.cred_path,
+            state_path=self.service.state_path,
+        )
+        delivered_replies = []
+        def record_reply(message_id: str, body: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+            delivered_replies.append((message_id, body, data))
+            return {"reply_to": message_id, "body": body, "data": data}
+
+        with patch.object(new_service, "send_reply", side_effect=record_reply):
+            flushed = new_service.flush_outbox()
+
+        self.assertEqual(flushed, 1)
+        self.assertEqual(len(delivered_replies), 1)
+        self.assertEqual(delivered_replies[0][0], msg_id)
+        self.assertEqual(delivered_replies[0][2].get("receipt_hash"), "abc123hash")
+        self.assertFalse(outbox_file.exists())
+
+    def test_36_outbox_corrupted_file_fails_closed_and_quarantines(self) -> None:
+        """
+        Directives C2347 / C2350: Verifies that corrupted JSON or empty files in the outbox
+        fail closed, are quarantined into outbox_corrupted_*.raw, and do not crash flush_outbox.
+        """
+        if not hasattr(self.service, "outbox_dir"):
+            self.service.outbox_dir = self.service.scratch_root / "outbox"
+        self.service.outbox_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+        corrupted_file = self.service.outbox_dir / "corrupted_msg.json"
+        corrupted_file.write_text("{malformed: json, not valid", encoding="utf-8")
+
+        empty_file = self.service.outbox_dir / "empty_msg.json"
+        empty_file.write_text("", encoding="utf-8")
+
+        flushed = self.service.flush_outbox()
+        self.assertEqual(flushed, 0)
+        self.assertFalse(corrupted_file.exists())
+        self.assertFalse(empty_file.exists())
+
+        quarantined_files = list(self.service.scratch_root.glob("outbox_*"))
+        self.assertGreaterEqual(len(quarantined_files), 2)
+
+    def test_37_admission_rejected_does_not_kill_queue(self) -> None:
+        """
+        Directive C2406: Verifies that when an incoming message fails admission boundaries
+        (e.g. requesting 2000 MB memory exceeding 1500 MB ceiling), dispatch_next catches
+        DispatcherAdmissionError, acks the message, records admission_rejected in state,
+        advances the cursor, and does not crash the loop.
+        """
+        bad_msg_id = str(uuid.uuid4())
+        good_msg_id = str(uuid.uuid4())
+        self.service.load_state()
+
+        messages = [
+            {
+                "message_id": bad_msg_id,
+                "sender_id": str(uuid.uuid4()),
+                "task_id": "test-unadmitted-memory-limit",
+                "command_argv": ["echo", "too much memory"],
+                "requested_memory_mb": 2500,  # Exceeds 1500 MB
+                "timeout_sec": 60,
+            },
+            {
+                "message_id": good_msg_id,
+                "sender_id": str(uuid.uuid4()),
+                "task_id": "test-admitted-memory-ok",
+                "command_argv": ["echo", "normal memory"],
+                "requested_memory_mb": 256,
+                "timeout_sec": 60,
+            }
+        ]
+
+        def mock_poll(unread_only: bool = True) -> List[Dict[str, Any]]:
+            processed = set(self.service.state.processed_message_ids) if self.service.state else set()
+            return [m for m in messages if m["message_id"] not in processed]
+
+        with patch.object(self.service, "poll_inbox", side_effect=mock_poll), \
+             patch.object(self.service, "ack_message", return_value={"acked": True}), \
+             patch.object(self.service, "send_reply", return_value={"replied": True}):
+            receipt1 = self.service.dispatch_next()
+            self.assertIsNotNone(receipt1)
+            self.assertEqual(receipt1.get("status"), "admission_rejected")
+            self.assertIn(bad_msg_id, self.service.state.processed_message_ids)
+
+            receipt2 = self.service.dispatch_next()
+            self.assertIsNotNone(receipt2)
+            self.assertEqual(receipt2.get("returncode"), 0)
+            self.assertIn(good_msg_id, self.service.state.processed_message_ids)
+
 
 if __name__ == "__main__":
     unittest.main()
+

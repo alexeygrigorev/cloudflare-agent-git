@@ -318,6 +318,8 @@ def load_json(path):
             exc.lineno,
             exc.colno,
         )
+    except UnicodeDecodeError as exc:
+        return None, "%s is not valid UTF-8 text: %s" % (path, exc)
     except OSError as exc:
         return None, "cannot read %s: %s" % (path, exc.strerror or exc)
 
@@ -462,4 +464,10 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except SystemExit:
+        raise
+    except Exception as exc:  # a broken run must not end in a traceback
+        print("ERROR: unexpected failure: %s" % exc, file=sys.stderr)
+        sys.exit(EXIT_INPUT_ERROR)

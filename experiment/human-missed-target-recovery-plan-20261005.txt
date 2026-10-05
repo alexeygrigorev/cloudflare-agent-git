@@ -1,0 +1,3 @@
+Direct human instruction, October 5, 2026. Verbatim:
+
+when something is not on target I want an explanation and planned steps to hit the target on the next checkout

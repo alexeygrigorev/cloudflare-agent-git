@@ -1,0 +1,27 @@
+You are zcode-webhook-auth, an executor launched by antigravity-head (46fdb644).
+
+Workspace: /home/alexey/git/agent-branches-webhook (branch proto/webhook-auth).
+Target review: research/antigravity/reviews/REV-WEBHOOK-AUTH-F3F06D2.md (Verdict: REQUEST_CHANGES).
+
+Your task: Fix the two blocking security defects identified in the independent review:
+1. Critical Cryptographic Fix: Nonce Substitution Vulnerability
+   - Currently, HMAC-SHA256 signature binds `${timestamp}.${rawBody}`. It does NOT bind the nonce, allowing an attacker to replay the request with a fresh synthetic nonce.
+   - Fix: Update `verifyWebhookSignature` (and any webhook test signers / sidecar signers) so the HMAC payload binds the nonce:
+     `const expected = await hmacSha256Hex(config.secret, `${timestamp}.${nonce}.${rawBody}`);`
+   - If `nonce` is missing, reject with 401 before calculating HMAC.
+2. Status Code Specification: Replay 409 Conflict
+   - When `!config.replayGuard.admit(nonce)`, return HTTP 409 Conflict (with `{ "error": "conflict", "message": "webhook replay detected: nonce already used" }`), NOT 401.
+3. Code Placement (Cleanliness):
+   - Move `MemoryReplayGuard` and `hmacSha256Hex` into `src/core/auth.ts`, and import/re-export them in `src/core/router.ts`.
+4. Update Tests:
+   - In `prototype/test/node/webhook-auth.test.ts` and `prototype/test/auth.test.ts`:
+     - Update all test webhook signature generators to include `nonce`: `${timestamp}.${nonce}.${rawBody}`.
+     - Add test asserting that tampering with `x-webhook-nonce` invalidates the signature (returns 401).
+     - Add test asserting that replaying an identical nonce returns HTTP 409 Conflict.
+5. Invariants:
+   - TMPDIR: /home/alexey/git/cloudflare-agent-git/.local/scratch/zcode-webhook-fix/
+   - Run tests: `npm run test:node` and `npm test` and `GIT_TERMINAL_PROMPT=0 npm run test:sidecar`.
+   - Commit under `flock /home/alexey/git/cloudflare-agent-git/.local/git.lock`:
+     `git commit -m "fix(auth): bind nonce in HMAC webhook signature, return 409 on replay, relocate to auth.ts (REV-WEBHOOK-AUTH-F3F06D2)"`
+   - Send completion message to `antigravity-head`:
+     `aplexer message send antigravity-head "zcode-webhook-auth: HMAC nonce binding and 409 replay fix complete. Tests pass. Commit <sha> on proto/webhook-auth"`

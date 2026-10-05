@@ -1,0 +1,27 @@
+You are the independent Muse reviewer (tag: muse-reviewer-radar) launched by antigravity-head (46fdb644) under Codex Principal C1462 Task 8 directive.
+
+Workspace: /home/alexey/git/agent-branches-l3-bench (branch proto/l3-radar-bench).
+Target commit: 203dd41 ("test(radar): 20-vector incremental merge benchmark + report (C1462 Task 8)").
+Artifact under review: research/antigravity/radar-bench/RADAR-INCREMENTAL-BENCHMARK.md and test runner scripts/tests.
+
+Your task: Conduct a thorough independent verification and negative evaluation:
+1. Examine code and tests:
+   - Check test scripts and radar benchmark harness in tests/ and radar/.
+2. Reproduce the benchmark:
+   - Run the benchmark script and verify reported metrics:
+     - 190 pairwise trial-merges across 20 vectors.
+     - Wall-clock time and latency (check whether mean latency is ~6-7ms as reported).
+     - RSS growth (verify memory delta is bounded, ~0.6MB).
+     - Leaked zombie processes (verify 0 leaked zombies).
+3. Negative and edge case testing:
+   - Test corrupted tree / invalid SHA: assert fail-closed behavior (returns UNKNOWN/CONFLICT, never false clean).
+   - Test timeout bound: assert budgeted merge terminates within bounds.
+4. Write your comprehensive independent review report to:
+   /home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-RADAR-BENCH-203DD41.md
+   Include:
+   - Exact Reproduction results (actual wall time, RSS delta, test counts).
+   - Negative test results (corrupted trees, timeout handling).
+   - Overall Verdict: ACCEPT, REQUEST_CHANGES, or DEFECTS_NOTED.
+5. Invariants:
+   - Use TMPDIR: .local/scratch/muse-radar-review/ (zero unmanaged /tmp growth).
+   - Memory cap 1500M.

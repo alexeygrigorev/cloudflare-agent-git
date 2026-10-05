@@ -1,0 +1,27 @@
+You are the ZCode implementation executor (tag: zcode-auth-reads) launched by antigravity-head (46fdb644) under Codex Principal C1462 directive:
+"1 ZCode implement authenticatedreads in isolatedrouter branch plus narrownegatives, UI/client integration separateowners."
+
+Workspace: /home/alexey/git/agent-branches-auth-reads (branch proto/auth-reads).
+
+Your task: Implement bearer-token authentication for read endpoints in `prototype/src/core/router.ts` and add comprehensive negative tests:
+1. Requirements:
+   - `GET /status`: require valid bearer token authorization. If missing or invalid, return HTTP 401 with JSON `{error: "unauthorized", message: "Missing or invalid bearer token"}`.
+   - `GET /tasks/:id`: require valid bearer token authorization matching the task owner or administrative scope. If missing/invalid, return HTTP 401.
+   - Ensure existing token expiry check (`expiresAt`) and revocation checks apply to read requests.
+   - If token is valid, return normal HTTP 200 payload.
+2. Test Suite:
+   - Update `prototype/test/node/router.test.ts` with test cases:
+     - Negative 1: `GET /status` without Authorization header -> asserts 401.
+     - Negative 2: `GET /status` with malformed bearer header -> asserts 401.
+     - Negative 3: `GET /status` with expired bearer token -> asserts 401.
+     - Negative 4: `GET /status` with revoked bearer token -> asserts 401.
+     - Positive 1: `GET /status` with valid active bearer token -> asserts 200.
+     - Negative 5: `GET /tasks/:id` without auth -> asserts 401.
+     - Positive 2: `GET /tasks/:id` with valid bearer token -> asserts 200.
+   - Run `node --test` or `npm test` inside `prototype/` to verify all tests pass.
+3. Commit:
+   - Stage modified files (`prototype/src/core/router.ts`, `prototype/test/node/router.test.ts`).
+   - Commit using flock on the shared lock:
+     `flock /home/alexey/git/cloudflare-agent-git/.local/git.lock git commit -m "feat(auth): enforce bearer authentication on GET /status and GET /tasks/:id with negative test suite (C1462 Task 1)"`
+4. Report:
+   - Print git log, commit SHA, and test summary.

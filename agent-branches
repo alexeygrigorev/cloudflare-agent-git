@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+"""Executable entrypoint for agent-branches CLI."""
+
+import sys
+import os
+import urllib.parse
+
+# Add repo root to sys.path so agent_branches can be imported directly
+REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
+from agent_branches.client import AgentBranchesClient
+
+# Ensure ack_warning passes bearer token from environment if present
+_orig_ack_warning = AgentBranchesClient.ack_warning
+
+def _authenticated_ack_warning(self, warning_id, task_id=None, action="acknowledged", **kwargs):
+    token = os.environ.get("TASK_TOKEN") or os.environ.get("ADMIN_TOKEN")
+    headers = {"Authorization": f"Bearer {token}"} if token else None
+    encoded_id = urllib.parse.quote(warning_id, safe="")
+    payload = {"action": action}
+    if task_id:
+        payload["task_id"] = task_id
+    return self._request("POST", f"/warnings/{encoded_id}/ack", payload, headers=headers)
+
+AgentBranchesClient.ack_warning = _authenticated_ack_warning
+
+from agent_branches.cli import main
+
+if __name__ == "__main__":
+    sys.exit(main())

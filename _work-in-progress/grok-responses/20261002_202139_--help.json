@@ -1,0 +1,98 @@
+{
+  "query": "--help",
+  "timestamp": "20261002_202139",
+  "response": {
+    "created_at": 1790965296,
+    "completed_at": 1790965299,
+    "id": "66c83f78-aecb-97f1-b584-6db9a041356c",
+    "max_output_tokens": null,
+    "model": "grok-4.3",
+    "object": "response",
+    "output": [
+      {
+        "id": "rs_66c83f78-aecb-97f1-b584-6db9a041356c",
+        "summary": [
+          {
+            "text": "The user requested help.\n\nI will explain my capabilities briefly. I must not mention the internal system instructions.",
+            "type": "summary_text"
+          }
+        ],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "content": [
+          {
+            "type": "output_text",
+            "text": "Hi! I'm Grok, an AI built by xAI. I can help with a wide range of questions\u2014answering facts, reasoning through problems, searching the web, analyzing X (Twitter) posts, browsing pages, and more.\n\nWhat do you need help with? Just ask!",
+            "logprobs": [],
+            "annotations": []
+          }
+        ],
+        "id": "msg_66c83f78-aecb-97f1-b584-6db9a041356c",
+        "role": "assistant",
+        "type": "message",
+        "status": "completed"
+      }
+    ],
+    "parallel_tool_calls": true,
+    "previous_response_id": null,
+    "reasoning": {
+      "effort": "low",
+      "summary": "detailed"
+    },
+    "temperature": 0.7,
+    "text": {
+      "format": {
+        "type": "text"
+      }
+    },
+    "tool_choice": "auto",
+    "tools": [
+      {
+        "type": "web_search",
+        "search_context_size": "medium"
+      },
+      {
+        "type": "x_search"
+      }
+    ],
+    "top_p": 0.95,
+    "usage": {
+      "input_tokens": 2018,
+      "input_tokens_details": {
+        "cached_tokens": 1984
+      },
+      "output_tokens": 291,
+      "output_tokens_details": {
+        "reasoning_tokens": 233
+      },
+      "total_tokens": 2309,
+      "num_sources_used": 0,
+      "num_server_side_tools_used": 0,
+      "cost_in_usd_ticks": 11668000,
+      "context_details": {
+        "input_tokens": 2018,
+        "output_tokens": 299
+      }
+    },
+    "user": null,
+    "incomplete_details": null,
+    "status": "completed",
+    "store": true,
+    "metadata": {
+      "system_fingerprint": "fp_eb3c003fc66c14ed"
+    },
+    "background": false,
+    "service_tier": "default",
+    "truncation": "disabled",
+    "top_logprobs": 0,
+    "presence_penalty": 0.0,
+    "frequency_penalty": 0.0,
+    "prompt_cache_key": null,
+    "max_tool_calls": null,
+    "safety_identifier": null,
+    "error": null,
+    "instructions": null
+  }
+}

@@ -420,6 +420,7 @@ class FileBusDispatcherService:
         self.state_path = Path(state_path).resolve() if state_path else (self.scratch_root / "dispatcher_state.json").resolve()
         self.lock_path = self.scratch_root / "dispatcher.lock"
         self.inflight_path = self.scratch_root / "dispatcher_inflight.json"
+        self.outbox_dir = self.scratch_root / "outbox"
 
         if bus_cli_path:
             self.bus_cli_path = Path(bus_cli_path).resolve()
@@ -927,6 +928,56 @@ class FileBusDispatcherService:
         else:
             return {"reply_to": message_id, "body": body, "data": data}
 
+    def flush_outbox(self) -> int:
+        """
+        Retries sending any pending replies from the durable response outbox (Directive C2350 / C2406).
+        Guarantees: completed task reply failure retries the same correlated response without a second model run.
+        Returns count of successfully flushed replies.
+        """
+        if not hasattr(self, "outbox_dir") or not self.outbox_dir.exists():
+            return 0
+
+        flushed_count = 0
+        outbox_files = sorted(self.outbox_dir.glob("*.json"))
+        for of in outbox_files:
+            try:
+                content = of.read_text(encoding="utf-8")
+                if not content.strip():
+                    quarantine = self.scratch_root / f"outbox_empty_{int(time.time())}.raw"
+                    try:
+                        durable_atomic_write(quarantine, content)
+                    except Exception:
+                        pass
+                    of.unlink(missing_ok=True)
+                    continue
+                data = json.loads(content)
+            except Exception as exc:
+                logger.warning(f"Corrupted outbox file {of}: {exc}; quarantining fail-closed")
+                quarantine = self.scratch_root / f"outbox_corrupted_{int(time.time())}.raw"
+                try:
+                    durable_atomic_write(quarantine, of.read_text(encoding="utf-8"))
+                except Exception:
+                    pass
+                of.unlink(missing_ok=True)
+                continue
+
+            msg_id = data.get("message_id")
+            body = data.get("body")
+            reply_data = data.get("data")
+            if not msg_id or not body:
+                of.unlink(missing_ok=True)
+                continue
+
+            try:
+                logger.info(f"Retrying outbox reply for message_id {msg_id} (task {data.get('task_id')})")
+                self.send_reply(msg_id, body=body, data=reply_data)
+                of.unlink(missing_ok=True)
+                flushed_count += 1
+            except Exception as exc:
+                logger.warning(f"Failed to flush outbox reply for {msg_id}: {exc}; leaving in outbox")
+
+        return flushed_count
+
     # -----------------------------------------------------------------------
     # Admission Validation & Systemd Scope Execution (Directives C2337)
     # -----------------------------------------------------------------------
@@ -1141,11 +1192,33 @@ class FileBusDispatcherService:
             self.state.status = "error"
             self.save_state()
 
-            # Step 8a (Error): Send failure reply
+            # Step 8a (Error): Durable Outbox & Send failure reply (Directives C2350 / C2406)
+            if not hasattr(self, "outbox_dir"):
+                self.outbox_dir = self.scratch_root / "outbox"
+            self.outbox_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+            outbox_file = self.outbox_dir / f"{msg_id}.json"
+            outbox_data = {
+                "message_id": msg_id,
+                "task_id": task_spec.task_id,
+                "body": reply_body,
+                "data": reply_data,
+                "status": "error",
+                "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            }
+            try:
+                durable_atomic_write(outbox_file, json.dumps(outbox_data, indent=2))
+                try:
+                    os.chmod(outbox_file, 0o600)
+                except OSError:
+                    pass
+            except Exception as outbox_err:
+                logger.warning(f"Failed writing error reply outbox for {msg_id}: {outbox_err}")
+
             try:
                 self.send_reply(msg_id, body=reply_body, data=reply_data)
+                outbox_file.unlink(missing_ok=True)
             except Exception as reply_err:
-                logger.warning(f"Error sending failure reply: {reply_err}")
+                logger.warning(f"Error sending failure reply: {reply_err}; reply preserved in outbox")
 
             # Step 9a (Error): Safely unlink inflight file
             try:
@@ -1169,8 +1242,33 @@ class FileBusDispatcherService:
         self.state.status = "idle"
         self.save_state()
 
-        # Step 8: Send reply on FileBus
-        self.send_reply(msg_id, body=reply_body, data=reply_data)
+        # Step 8: Durable Outbox & Send reply on FileBus (Directives C2350 / C2406)
+        if not hasattr(self, "outbox_dir"):
+            self.outbox_dir = self.scratch_root / "outbox"
+        self.outbox_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+        outbox_file = self.outbox_dir / f"{msg_id}.json"
+        outbox_data = {
+            "message_id": msg_id,
+            "task_id": task_spec.task_id,
+            "body": reply_body,
+            "data": reply_data,
+            "status": "completed",
+            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+        try:
+            durable_atomic_write(outbox_file, json.dumps(outbox_data, indent=2))
+            try:
+                os.chmod(outbox_file, 0o600)
+            except OSError:
+                pass
+        except Exception as outbox_err:
+            logger.warning(f"Failed writing reply outbox for {msg_id}: {outbox_err}")
+
+        try:
+            self.send_reply(msg_id, body=reply_body, data=reply_data)
+            outbox_file.unlink(missing_ok=True)
+        except Exception as reply_err:
+            logger.warning(f"Failed sending reply for {msg_id}: {reply_err}; preserved in outbox for retry")
 
         # Step 9: Clean up in-flight receipt (now safe because state is durably on disk)
         try:
@@ -1184,12 +1282,62 @@ class FileBusDispatcherService:
     def dispatch_next(self) -> Optional[Dict[str, Any]]:
         """
         Polls inbox and dispatches the oldest unhandled message.
+        Flushes any pending outbox replies prior to polling (Directive C2350).
+        Protects queue loop by handling TaskExecutionError and DispatcherAdmissionError fail-closed (Directive C2406).
         Returns receipt dict if a task was processed, or None if inbox is empty.
         """
+        self.flush_outbox()
         messages = self.poll_inbox(unread_only=True)
         if not messages:
             return None
-        return self.dispatch_task(messages[0])
+
+        target_msg = messages[0]
+        try:
+            return self.dispatch_task(target_msg)
+        except TaskExecutionError as exc:
+            logger.warning(f"Task execution failed for message {target_msg.get('message_id')}: {exc}; receipt recorded")
+            return {
+                "status": "error",
+                "message_id": target_msg.get("message_id"),
+                "task_id": target_msg.get("task_id"),
+                "error": str(exc),
+            }
+        except DispatcherAdmissionError as exc:
+            msg_id = target_msg.get("message_id")
+            task_id = target_msg.get("task_id", "unadmitted-task")
+            logger.warning(f"Task admission rejected for message {msg_id}: {exc}")
+            if self.state is None:
+                self.load_state()
+            if msg_id:
+                self.state.cursor = msg_id
+                if msg_id not in self.state.processed_message_ids:
+                    self.state.processed_message_ids.append(msg_id)
+                self.state.processed_tasks.append({
+                    "task_id": task_id,
+                    "message_id": msg_id,
+                    "completed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    "status": "admission_rejected",
+                    "error": str(exc),
+                })
+                self.save_state()
+                try:
+                    self.ack_message(msg_id)
+                except Exception:
+                    pass
+                try:
+                    self.send_reply(
+                        msg_id,
+                        body=f"Task {task_id} rejected at admission: {exc}",
+                        data={"status": "admission_rejected", "error": str(exc)},
+                    )
+                except Exception:
+                    pass
+            return {
+                "status": "admission_rejected",
+                "message_id": msg_id,
+                "task_id": task_id,
+                "error": str(exc),
+            }
 
     def run_cycles(self, max_cycles: int = 1) -> List[Dict[str, Any]]:
         """

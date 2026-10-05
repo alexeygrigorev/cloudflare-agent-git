@@ -432,6 +432,15 @@ class CliBehaviourTests(FixtureBase):
         self.assertIn("not found", result.stderr)
         self.assertNotIn("Traceback", result.stderr)
 
+    def test_non_utf8_tasks_file_is_clean_error(self):
+        path = self.root / "binary.json"
+        path.write_bytes(b"\xff\xfe\x00not json at all")
+        result = self.run_tool(path)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("ERROR", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertNotIn("Traceback", result.stdout)
+
     def test_all_problems_reported_not_just_first(self):
         row = valid_row(status="WIP", owner_tag=5)
         del row["acceptance"]

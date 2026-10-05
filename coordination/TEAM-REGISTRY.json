@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T09:05:00.000000+00:00",
+  "updated_at": "2026-10-05T14:09:31.570422+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -4043,20 +4043,82 @@
         "first_tool_at_utc": "2026-10-04T20:10:00Z",
         "timestamp_verification": "unverified_owner_metadata"
       }
+    },
+    {
+      "tag": "antigravity-head-gemini-recovery",
+      "session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "project_id": "agent-branches",
+      "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
+      "resumed_conversation": "245c7bba-9a7b-45c1-87a7-4537f289f9a5",
+      "registered_at": "2026-10-05T14:09:31.570422+00:00",
+      "observed_state": "idle-ended-turn",
+      "first_action": "actual native aplexer whoami and scoped context/inbox tools observed; genuine ACK linked",
+      "next_checkpoint": "2026-10-05T14:15:00Z",
+      "boundaries": "Delegate implementers and distinct reviewers; no principal mailbox authority; preserve leases/resources."
+    },
+    {
+      "tag": "quota-launcher-head-gemini",
+      "session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "project_id": "quota-launcher",
+      "assignment_ack": "01a10c4d-0922-71d0-a079-611bfd473e8e",
+      "resumed_conversation": "962ee79c-665f-43f2-a809-365701243ddf",
+      "registered_at": "2026-10-05T14:09:31.570422+00:00",
+      "observed_state": "idle-ended-turn",
+      "first_action": "actual native aplexer whoami and scoped context/inbox tools observed; genuine ACK linked",
+      "next_checkpoint": "2026-10-05T14:15:00Z",
+      "boundaries": "Delegate implementers and distinct reviewers; no principal mailbox authority; preserve leases/resources."
+    },
+    {
+      "tag": "agent-coordination-head-gemini",
+      "session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "project_id": "agent-coordination",
+      "assignment_ack": "01a10c5b-8461-7fd3-9209-06af1a3f155e",
+      "resumed_conversation": "764358a8-1b4e-49c6-845a-9b79bf3ba536",
+      "registered_at": "2026-10-05T14:09:31.570422+00:00",
+      "observed_state": "idle-ended-turn",
+      "first_action": "actual native aplexer whoami and scoped context/inbox tools observed; genuine ACK linked",
+      "next_checkpoint": "2026-10-05T14:15:00Z",
+      "boundaries": "Delegate implementers and distinct reviewers; no principal mailbox authority; preserve leases/resources."
     }
   ],
   "projects": [
     {
       "id": "agent-branches",
       "name": "Agent Branches",
-      "head_tag": "antigravity-head",
-      "head_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
-      "integration_owner": "antigravity-head",
+      "head_tag": "antigravity-head-gemini-recovery",
+      "head_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
+      "integration_owner": "antigravity-head-gemini-recovery",
       "principal_tags": [
         "codex-principal"
       ],
       "monitoring_provenance": "Codex C1637 ACK under human/OPERATING-MODEL",
-      "ownership_state": "Acknowledged; active implementation head on platform extraction, backup sync, and consumer dogfooding"
+      "ownership_state": "Genuine current head ACK and first native tools verified; last observed turn ended/idle. New launches/growth held while root below50GiB. Project head owns worker/reviewer delegation; principal monitors big picture, no code review.",
+      "head_history": [
+        {
+          "head_tag": "antigravity-head",
+          "head_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+          "integration_owner": "antigravity-head",
+          "ownership_state": "Acknowledged; active implementation head on platform extraction, backup sync, and consumer dogfooding",
+          "workspace": null,
+          "first_action": null
+        }
+      ],
+      "head_workspace": "/home/alexey/git/cloudflare-agent-git",
+      "head_assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
+      "resumed_conversation": "245c7bba-9a7b-45c1-87a7-4537f289f9a5",
+      "updated_at": "2026-10-05T14:09:31.570422+00:00"
     },
     {
       "id": "agent-dashboard",
@@ -4085,30 +4147,49 @@
     {
       "id": "quota-launcher",
       "name": "Agent Quota Launcher",
-      "head_tag": "quota-launcher-head",
-      "head_session_id": "6be4c247-4410-4bdb-968e-7fc2d5844941",
+      "head_tag": "quota-launcher-head-gemini",
+      "head_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
       "integration_owner": "quota-launcher-head",
       "principal_tags": [
         "codex-principal"
       ],
       "monitoring_provenance": "Codex C1637 ACK under human/OPERATING-MODEL",
-      "ownership_state": "Genuine Grok head active in /home/alexey/git/agent-quota-launcher; owns launcher/, tests/, README, pyproject, examples",
+      "ownership_state": "Genuine current head ACK and first native tools verified; last observed turn ended/idle. New launches/growth held while root below50GiB. Project head owns worker/reviewer delegation; principal monitors big picture, no code review.",
       "workspace": "/home/alexey/git/agent-quota-launcher",
       "first_action": {
         "path": "/home/alexey/git/agent-quota-launcher/.local/head-first-action.json",
         "at": "2026-10-04T11:08:51Z",
         "tool": "aplexer whoami --json"
-      }
+      },
+      "head_history": [
+        {
+          "head_tag": "quota-launcher-head",
+          "head_session_id": "6be4c247-4410-4bdb-968e-7fc2d5844941",
+          "integration_owner": "quota-launcher-head",
+          "ownership_state": "Genuine Grok head active in /home/alexey/git/agent-quota-launcher; owns launcher/, tests/, README, pyproject, examples",
+          "workspace": "/home/alexey/git/agent-quota-launcher",
+          "first_action": {
+            "path": "/home/alexey/git/agent-quota-launcher/.local/head-first-action.json",
+            "at": "2026-10-04T11:08:51Z",
+            "tool": "aplexer whoami --json"
+          }
+        }
+      ],
+      "head_workspace": "/home/alexey/git/cloudflare-agent-git",
+      "head_assignment_ack": "01a10c4d-0922-71d0-a079-611bfd473e8e",
+      "resumed_conversation": "962ee79c-665f-43f2-a809-365701243ddf",
+      "updated_at": "2026-10-05T14:09:31.570422+00:00",
+      "canonical_integration_custody": "Original protected canonical custody not released by silence; current head owns isolated work and requires genuine release/review before integration."
     },
     {
       "id": "agent-coordination",
       "name": "Cross-computer Agent Coordination",
-      "head_tag": "agent-coordination-head",
-      "head_session_id": "81e8010c-89e4-478b-be3a-4ee6991607f3",
+      "head_tag": "agent-coordination-head-gemini",
+      "head_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
       "workspace": "/home/alexey/git/agent-coordination",
       "integration_owner": "agent-coordination-head",
       "principal_owner": "codex-principal",
-      "ownership_state": "Actual ownwhoami11:41:38Z and semantic C1341 ACK written11:46Z verified; first starter source present; actual delegate/reviewer receipts pending",
+      "ownership_state": "Genuine current head ACK and first native tools verified; last observed turn ended/idle. New launches/growth held while root below50GiB. Project head owns worker/reviewer delegation; principal monitors big picture, no code review.",
       "first_action": {
         "schema_version": 1,
         "recorded_at_utc": "2026-10-04T11:41:38Z",
@@ -4184,7 +4265,40 @@
         },
         "baseline_not_acceptance": "scripts/orchestrator-channel.py and SSH remote mailbox wrappers remain baseline, not native cross-host acceptance",
         "next_checkpoint": "stdlib SSH relay tests green; executor first-actions; private GitHub main restore; desktop test contract nominated (not yet executed)"
-      }
+      },
+      "head_history": [
+        {
+          "head_tag": "agent-coordination-head",
+          "head_session_id": "81e8010c-89e4-478b-be3a-4ee6991607f3",
+          "integration_owner": "agent-coordination-head",
+          "ownership_state": "Actual ownwhoami11:41:38Z and semantic C1341 ACK written11:46Z verified; first starter source present; actual delegate/reviewer receipts pending",
+          "workspace": "/home/alexey/git/agent-coordination",
+          "first_action": {
+            "schema_version": 1,
+            "recorded_at_utc": "2026-10-04T11:41:38Z",
+            "tool": "aplexer whoami --json",
+            "selected": {
+              "id": "81e8010c-89e4-478b-be3a-4ee6991607f3",
+              "tag": "agent-coordination-head",
+              "workspace": "/home/alexey/git/agent-coordination",
+              "engine": "shell",
+              "reported_state": "working",
+              "phase": "running",
+              "worker_pid": 2292031,
+              "workload_pid": 2292033
+            },
+            "project_id": "agent-coordination",
+            "human_source": "experiment/human-cross-computer-product-20261004.txt",
+            "principal_handoff_id": "01a106b7-a74b-7b11-bce8-69e6a281782c",
+            "environment_correction_id": "01a106bb-0ab2-77f3-8c09-bd4441b053d2"
+          }
+        }
+      ],
+      "head_workspace": "/home/alexey/git/cloudflare-agent-git",
+      "head_assignment_ack": "01a10c5b-8461-7fd3-9209-06af1a3f155e",
+      "resumed_conversation": "764358a8-1b4e-49c6-845a-9b79bf3ba536",
+      "updated_at": "2026-10-05T14:09:31.570422+00:00",
+      "canonical_integration_custody": "Original protected canonical custody not released by silence; current head owns isolated work and requires genuine release/review before integration."
     }
   ],
   "delivery_executors": [

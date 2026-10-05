@@ -1,0 +1,3 @@
+Direct human instruction, October 5, 2026. Verbatim:
+
+it will be the same for other metrics - document it. now relay this to the agents and show me the concrete next steps. these steps should be in the task tracker

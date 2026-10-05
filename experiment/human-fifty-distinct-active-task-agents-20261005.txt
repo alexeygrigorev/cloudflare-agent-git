@@ -1,0 +1,3 @@
+Direct human instruction, October 5, 2026. Verbatim:
+
+I want 50 agents running right now on different tasks. we have a lot of tasks based on my intake.
