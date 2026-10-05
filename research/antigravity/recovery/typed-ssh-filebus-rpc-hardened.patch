@@ -1,0 +1,1505 @@
+diff --git a/coordination/__init__.py b/coordination/__init__.py
+index d8bb529..77d3b84 100644
+--- a/coordination/__init__.py
++++ b/coordination/__init__.py
+@@ -1,2 +1,3 @@
+-from .bus import BusIdentity, BusMessage, FileBus
+-__all__ = ["BusIdentity", "BusMessage", "FileBus"]
++from .bus import BusError, BusIdentity, BusMessage, FileBus
++
++__all__ = ["BusError", "BusIdentity", "BusMessage", "FileBus"]
+diff --git a/coordination/bus.py b/coordination/bus.py
+index 3ee2088..3078f9c 100644
+--- a/coordination/bus.py
++++ b/coordination/bus.py
+@@ -3,20 +3,26 @@
+ Identities, credentials, devices, projects and tasks are bus-native.
+ They are never an aplexer session id, APLEXER_* env, or PID. The
+ installed aplexer CLI is an optional adapter, not this store.
++
++Trust boundary: local FS permissions (store 0700, files 0600) protect
++other OS users. They do not isolate mutually hostile agents that share
++the same OS user and can open the store path. Token checks and
++project-scope gates are API accident barriers, not a hostile-agent TCB.
+ """
+ 
+ from __future__ import annotations
+ 
++import hashlib
+ import json
+-import os
+ import time
+ import uuid
+ from dataclasses import asdict, dataclass, field
+ from datetime import datetime, timezone
+ from pathlib import Path
+-from typing import Any, Iterator
++from typing import Any
+ 
+-from .cursors import payload_digest
++from .cursors import CursorStore, payload_digest
++from .durable import FileLock, atomic_write_json, fsync_dir
+ from .errors import CoordinationError, IdempotencyConflict
+ 
+ 
+@@ -34,6 +40,10 @@ def _new_id() -> str:
+     return str(uuid.uuid4())
+ 
+ 
++def _file_digest(path: Path) -> str:
++    return hashlib.sha256(path.read_bytes()).hexdigest()
++
++
+ @dataclass
+ class BusIdentity:
+     identity_id: str
+@@ -41,12 +51,12 @@ class BusIdentity:
+     project_id: str
+     agent_name: str
+     task_id: str | None = None
++    parent_id: str | None = None
+     kind: str = "bus-agent"
+     created_at: str = field(default_factory=_utc)
+ 
+     def public(self) -> dict[str, Any]:
+-        data = asdict(self)
+-        return data
++        return asdict(self)
+ 
+ 
+ @dataclass
+@@ -60,37 +70,28 @@ class BusMessage:
+     kind: str
+     reply_to: str | None
+     created_at: str
++    delivered_at: str | None = None
+     acked_at: str | None = None
++    accepted_at: str | None = None
++    outcome: dict[str, Any] | None = None
++    outcome_at: str | None = None
+     digest: str = ""
+ 
+     def to_public(self) -> dict[str, Any]:
+         return asdict(self)
+ 
+ 
+-class FileLock:
+-    def __init__(self, path: Path):
+-        self.path = path
+-        self._fd: int | None = None
+-
+-    def __enter__(self) -> FileLock:
+-        import fcntl
+-
+-        self.path.parent.mkdir(parents=True, exist_ok=True)
+-        self._fd = os.open(self.path, os.O_CREAT | os.O_RDWR, 0o600)
+-        fcntl.flock(self._fd, fcntl.LOCK_EX)
+-        return self
+-
+-    def __exit__(self, *exc: object) -> None:
+-        import fcntl
+-
+-        if self._fd is not None:
+-            fcntl.flock(self._fd, fcntl.LOCK_UN)
+-            os.close(self._fd)
+-            self._fd = None
++def _msg(raw: dict[str, Any]) -> BusMessage:
++    return BusMessage(**{k: raw.get(k) for k in BusMessage.__dataclass_fields__})
+ 
+ 
+ class FileBus:
+-    """Durable JSON-file bus. Crash-restart safe: send returns after fsync."""
++    """Durable JSON-file bus. Crash-restart safe: send returns after fsync.
++
++    Four states stay separate on each message:
++    delivered_at (durable receipt), acked_at (read ACK),
++    accepted_at (semantic accept), outcome/outcome_at (task result + digest).
++    """
+ 
+     def __init__(self, root: str | Path):
+         self.root = Path(root)
+@@ -98,7 +99,11 @@ class FileBus:
+         self._identities = self.root / "identities.json"
+         self._tokens = self.root / "tokens.json"
+         self._messages = self.root / "messages.json"
++        self._journal = self.root / "journal.json"
+         self._lock = self.root / "bus.lock"
++        self._cursors = CursorStore(self.root / "cursors")
++        with FileLock(self._lock):
++            self._recover_locked()
+ 
+     def _read(self, path: Path, default: Any) -> Any:
+         if not path.exists():
+@@ -106,15 +111,97 @@ class FileBus:
+         return json.loads(path.read_text(encoding="utf-8"))
+ 
+     def _write(self, path: Path, value: Any) -> None:
+-        tmp = path.with_suffix(".tmp")
+-        payload = json.dumps(value, indent=2, sort_keys=True)
+-        fd = os.open(tmp, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
++        atomic_write_json(path, value)
++
++    def _commit(self, files: dict[Path, Any]) -> None:
++        writes = []
++        for path, value in files.items():
++            rel = path.relative_to(self.root).as_posix()
++            if Path(rel).is_absolute() or ".." in Path(rel).parts:
++                raise BusError("journal_path", rel)
++            writes.append({"path": rel, "value": value})
++        self._write(self._journal, {"writes": writes})
++        for path, value in files.items():
++            self._write(path, value)
+         try:
+-            os.write(fd, payload.encode("utf-8"))
+-            os.fsync(fd)
+-        finally:
+-            os.close(fd)
+-        os.replace(tmp, path)
++            self._journal.unlink()
++        except FileNotFoundError:
++            pass
++        fsync_dir(self.root)
++
++    def _recover_locked(self) -> None:
++        if self._journal.exists():
++            journal = self._read(self._journal, {})
++            for item in journal.get("writes", []) if isinstance(journal, dict) else []:
++                rel = str(item.get("path", ""))
++                if not rel or Path(rel).is_absolute() or ".." in Path(rel).parts:
++                    raise BusError("journal_path", rel)
++                self._write(self.root / rel, item["value"])
++            try:
++                self._journal.unlink()
++            except FileNotFoundError:
++                pass
++            fsync_dir(self.root)
++        identities = self._read(self._identities, {})
++        tokens = self._read(self._tokens, {})
++        if not isinstance(identities, dict):
++            identities = {}
++        if not isinstance(tokens, dict):
++            tokens = {}
++        id_keys = set(identities)
++        tok_keys = set(tokens)
++        if id_keys != tok_keys:
++            for key in list(identities):
++                if key not in tokens:
++                    del identities[key]
++            for key in list(tokens):
++                if key not in identities:
++                    del tokens[key]
++            self._commit({self._identities: identities, self._tokens: tokens})
++
++    def _auth_locked(self, identity_id: str, token: str) -> dict[str, Any]:
++        identities = self._read(self._identities, {})
++        tokens = self._read(self._tokens, {})
++        if identity_id not in identities:
++            raise BusError("unknown_identity", identity_id)
++        if tokens.get(identity_id) != token:
++            raise BusError("auth_failed", identity_id)
++        return identities[identity_id]
++
++    def _require_same_project(self, left: dict[str, Any], right: dict[str, Any]) -> None:
++        if left.get("project_id") != right.get("project_id"):
++            raise BusError(
++                "project_scope",
++                f"{left.get('identity_id')}->{right.get('identity_id')}",
++            )
++
++    def _require_reply_target_locked(
++        self,
++        *,
++        sender: dict[str, Any],
++        sender_id: str,
++        identities: dict[str, Any],
++        messages: dict[str, Any],
++        kind: str,
++        reply_to: str | None,
++    ) -> None:
++        if kind != "reply" and reply_to is None:
++            return
++        if not reply_to:
++            raise BusError("unknown_message", "reply_to")
++        original = messages.get(reply_to)
++        if not original:
++            raise BusError("unknown_message", reply_to)
++        orig_sender = identities.get(original["sender_id"])
++        orig_recipient = identities.get(original["recipient_id"])
++        if orig_sender is None:
++            raise BusError("unknown_identity", original["sender_id"])
++        if orig_recipient is None:
++            raise BusError("unknown_identity", original["recipient_id"])
++        self._require_same_project(sender, orig_sender)
++        self._require_same_project(sender, orig_recipient)
++        if kind == "reply" and original["recipient_id"] != sender_id:
++            raise BusError("not_recipient", reply_to)
+ 
+     def register(
+         self,
+@@ -123,8 +210,19 @@ class FileBus:
+         device_id: str,
+         project_id: str,
+         task_id: str | None = None,
++        parent_id: str | None = None,
++        parent_token: str | None = None,
+     ) -> tuple[BusIdentity, str]:
+         with FileLock(self._lock):
++            self._recover_locked()
++            if parent_id is not None:
++                if not parent_token:
++                    raise BusError("auth_failed", parent_id)
++                parent = self._auth_locked(parent_id, parent_token)
++                self._require_same_project(
++                    parent,
++                    {"identity_id": "child", "project_id": project_id},
++                )
+             identities = self._read(self._identities, {})
+             tokens = self._read(self._tokens, {})
+             ident = BusIdentity(
+@@ -133,23 +231,14 @@ class FileBus:
+                 project_id=project_id,
+                 agent_name=agent_name,
+                 task_id=task_id,
++                parent_id=parent_id,
+             )
+             token = _new_id()
+             identities[ident.identity_id] = ident.public()
+             tokens[ident.identity_id] = token
+-            self._write(self._identities, identities)
+-            self._write(self._tokens, tokens)
++            self._commit({self._identities: identities, self._tokens: tokens})
+             return ident, token
+ 
+-    def _auth(self, identity_id: str, token: str) -> dict[str, Any]:
+-        identities = self._read(self._identities, {})
+-        tokens = self._read(self._tokens, {})
+-        if identity_id not in identities:
+-            raise BusError("unknown_identity", identity_id)
+-        if tokens.get(identity_id) != token:
+-            raise BusError("auth_failed", identity_id)
+-        return identities[identity_id]
+-
+     def send(
+         self,
+         *,
+@@ -163,66 +252,209 @@ class FileBus:
+         reply_to: str | None = None,
+     ) -> BusMessage:
+         with FileLock(self._lock):
+-            self._auth(sender_id, token)
+-            identities = self._read(self._identities, {})
+-            if recipient_id not in identities:
+-                raise BusError("unknown_recipient", recipient_id)
+-            key = idempotency_key or _new_id()
+-            digest = payload_digest(body, data)
+-            messages: dict[str, Any] = self._read(self._messages, {})
+-            for existing in messages.values():
+-                if existing.get("idempotency_key") == key:
+-                    if (
+-                        existing["sender_id"] == sender_id
+-                        and existing["recipient_id"] == recipient_id
+-                        and existing.get("digest") == digest
+-                    ):
+-                        return BusMessage(**{k: existing[k] for k in BusMessage.__dataclass_fields__})
+-                    raise IdempotencyConflict(key)
+-            msg = BusMessage(
+-                message_id=_new_id(),
+-                idempotency_key=key,
++            self._recover_locked()
++            return self._send_locked(
+                 sender_id=sender_id,
++                token=token,
+                 recipient_id=recipient_id,
+                 body=body,
+                 data=data,
++                idempotency_key=idempotency_key,
+                 kind=kind,
+                 reply_to=reply_to,
+-                created_at=_utc(),
+-                digest=digest,
+             )
+-            messages[msg.message_id] = msg.to_public()
+-            self._write(self._messages, messages)
+-            return msg
++
++    def _send_locked(
++        self,
++        *,
++        sender_id: str,
++        token: str,
++        recipient_id: str,
++        body: str,
++        data: dict[str, Any] | None = None,
++        idempotency_key: str | None = None,
++        kind: str = "note",
++        reply_to: str | None = None,
++    ) -> BusMessage:
++        sender = self._auth_locked(sender_id, token)
++        identities = self._read(self._identities, {})
++        if recipient_id not in identities:
++            raise BusError("unknown_recipient", recipient_id)
++        self._require_same_project(sender, identities[recipient_id])
++        messages: dict[str, Any] = self._read(self._messages, {})
++        self._require_reply_target_locked(
++            sender=sender,
++            sender_id=sender_id,
++            identities=identities,
++            messages=messages,
++            kind=kind,
++            reply_to=reply_to,
++        )
++        digest = payload_digest(body, data)
++        key = idempotency_key or (
++            f"reply:{reply_to}:{sender_id}:{digest}"
++            if kind == "reply" and reply_to
++            else _new_id()
++        )
++
++        for existing in messages.values():
++            if existing.get("idempotency_key") == key or key in existing.get("aliases", []):
++                if (
++                    existing["sender_id"] == sender_id
++                    and existing["recipient_id"] == recipient_id
++                    and existing.get("digest") == digest
++                    and existing.get("kind") == kind
++                    and existing.get("reply_to") == reply_to
++                ):
++                    return _msg(existing)
++                raise IdempotencyConflict(key)
++        if kind == "reply" and reply_to:
++            for existing in messages.values():
++                if (
++                    existing.get("kind") == "reply"
++                    and existing.get("reply_to") == reply_to
++                    and existing["sender_id"] == sender_id
++                    and existing["recipient_id"] == recipient_id
++                    and existing.get("digest") == digest
++                ):
++                    aliases = existing.setdefault("aliases", [])
++                    if key not in aliases and key != existing.get("idempotency_key"):
++                        aliases.append(key)
++                        messages[existing["message_id"]] = existing
++                        self._write(self._messages, messages)
++                    self._cursors.remember_send(
++                        key,
++                        sender=sender_id,
++                        recipient=recipient_id,
++                        digest=digest,
++                        message_id=existing["message_id"],
++                    )
++                    return _msg(existing)
++        now = _utc()
++        msg = BusMessage(
++            message_id=_new_id(),
++            idempotency_key=key,
++            sender_id=sender_id,
++            recipient_id=recipient_id,
++            body=body,
++            data=data,
++            kind=kind,
++            reply_to=reply_to,
++            created_at=now,
++            delivered_at=now,
++            digest=digest,
++        )
++        messages[msg.message_id] = msg.to_public()
++        self._write(self._messages, messages)
++        self._cursors.remember_send(
++            key,
++            sender=sender_id,
++            recipient=recipient_id,
++            digest=digest,
++            message_id=msg.message_id,
++        )
++        return msg
+ 
+     def inbox(self, identity_id: str, token: str, *, unread_only: bool = True) -> list[BusMessage]:
+         with FileLock(self._lock):
+-            self._auth(identity_id, token)
++            self._recover_locked()
++            ident = self._auth_locked(identity_id, token)
++            identities = self._read(self._identities, {})
+             messages = self._read(self._messages, {})
+             out = []
+             for raw in messages.values():
+                 if raw["recipient_id"] != identity_id:
+                     continue
++                sender = identities.get(raw["sender_id"])
++                if not sender or sender.get("project_id") != ident.get("project_id"):
++                    continue
+                 if unread_only and raw.get("acked_at"):
+                     continue
+-                out.append(BusMessage(**{k: raw.get(k) for k in BusMessage.__dataclass_fields__}))
++                out.append(_msg(raw))
+             out.sort(key=lambda m: m.created_at)
+             return out
+ 
++    def get(self, identity_id: str, token: str, message_id: str) -> BusMessage:
++        with FileLock(self._lock):
++            self._recover_locked()
++            ident = self._auth_locked(identity_id, token)
++            messages = self._read(self._messages, {})
++            identities = self._read(self._identities, {})
++            raw = messages.get(message_id)
++            if not raw:
++                raise BusError("unknown_message", message_id)
++            if identity_id not in (raw["sender_id"], raw["recipient_id"]):
++                raise BusError("not_participant", message_id)
++            other_id = raw["sender_id"] if identity_id == raw["recipient_id"] else raw["recipient_id"]
++            other = identities.get(other_id)
++            if not other:
++                raise BusError("unknown_identity", other_id)
++            self._require_same_project(ident, other)
++            return _msg(raw)
++
+     def ack(self, identity_id: str, token: str, message_id: str) -> BusMessage:
+         with FileLock(self._lock):
+-            self._auth(identity_id, token)
++            self._recover_locked()
++            return self._touch_locked(identity_id, token, message_id, field="acked_at")
++
++    def accept(self, identity_id: str, token: str, message_id: str) -> BusMessage:
++        with FileLock(self._lock):
++            self._recover_locked()
++            return self._touch_locked(identity_id, token, message_id, field="accepted_at")
++
++    def _touch_locked(self, identity_id: str, token: str, message_id: str, *, field: str) -> BusMessage:
++        self._auth_locked(identity_id, token)
++        messages = self._read(self._messages, {})
++        raw = messages.get(message_id)
++        if not raw:
++            raise BusError("unknown_message", message_id)
++        if raw["recipient_id"] != identity_id:
++            raise BusError("not_recipient", message_id)
++        if not raw.get(field):
++            raw[field] = _utc()
++            messages[message_id] = raw
++            self._write(self._messages, messages)
++        return _msg(raw)
++
++    def complete(
++        self,
++        identity_id: str,
++        token: str,
++        message_id: str,
++        *,
++        status: str,
++        artifact: str | None = None,
++        digest: str | None = None,
++        extra: dict[str, Any] | None = None,
++    ) -> BusMessage:
++        with FileLock(self._lock):
++            self._recover_locked()
++            self._auth_locked(identity_id, token)
+             messages = self._read(self._messages, {})
+             raw = messages.get(message_id)
+             if not raw:
+                 raise BusError("unknown_message", message_id)
+             if raw["recipient_id"] != identity_id:
+                 raise BusError("not_recipient", message_id)
+-            if not raw.get("acked_at"):
+-                raw["acked_at"] = _utc()
+-                messages[message_id] = raw
+-                self._write(self._messages, messages)
+-            return BusMessage(**{k: raw.get(k) for k in BusMessage.__dataclass_fields__})
++            if artifact and not digest:
++                digest = _file_digest(Path(artifact))
++            outcome = {"status": status}
++            if artifact is not None:
++                outcome["artifact"] = artifact
++            if digest is not None:
++                outcome["digest"] = digest
++            if extra:
++                outcome.update(extra)
++            existing = raw.get("outcome")
++            if existing:
++                if existing != outcome:
++                    raise BusError("outcome_conflict", message_id)
++                return _msg(raw)
++            raw["outcome"] = outcome
++            raw["outcome_at"] = _utc()
++            messages[message_id] = raw
++            self._write(self._messages, messages)
++            return _msg(raw)
+ 
+     def reply(
+         self,
+@@ -235,21 +467,75 @@ class FileBus:
+         idempotency_key: str | None = None,
+     ) -> BusMessage:
+         with FileLock(self._lock):
+-            self._auth(sender_id, token)
++            self._recover_locked()
++            self._auth_locked(sender_id, token)
+             messages = self._read(self._messages, {})
+             original = messages.get(message_id)
+             if not original:
+                 raise BusError("unknown_message", message_id)
+-        return self.send(
+-            sender_id=sender_id,
+-            token=token,
+-            recipient_id=original["sender_id"],
+-            body=body,
+-            data=data,
+-            idempotency_key=idempotency_key,
+-            kind="reply",
+-            reply_to=message_id,
+-        )
++            if original["recipient_id"] != sender_id:
++                raise BusError("not_recipient", message_id)
++            return self._send_locked(
++                sender_id=sender_id,
++                token=token,
++                recipient_id=original["sender_id"],
++                body=body,
++                data=data,
++                idempotency_key=idempotency_key,
++                kind="reply",
++                reply_to=message_id,
++            )
++
++    def queue_offline(
++        self,
++        *,
++        sender_id: str,
++        token: str,
++        recipient_id: str,
++        body: str,
++        data: dict[str, Any] | None = None,
++        idempotency_key: str | None = None,
++        kind: str = "note",
++    ) -> dict[str, Any]:
++        with FileLock(self._lock):
++            self._recover_locked()
++            sender = self._auth_locked(sender_id, token)
++            identities = self._read(self._identities, {})
++            if recipient_id not in identities:
++                raise BusError("unknown_recipient", recipient_id)
++            self._require_same_project(sender, identities[recipient_id])
++            record = {
++                "sender_id": sender_id,
++                "recipient_id": recipient_id,
++                "body": body,
++                "data": data,
++                "idempotency_key": idempotency_key or _new_id(),
++                "kind": kind,
++                "queued_at": _utc(),
++            }
++            self._cursors.queue_offline(record)
++            return record
++
++    def flush_outbox(self, sender_id: str, token: str) -> list[BusMessage]:
++        with FileLock(self._lock):
++            self._recover_locked()
++            self._auth_locked(sender_id, token)
++            sent: list[BusMessage] = []
++            for record in self._cursors.pending_outbox():
++                if record.get("sender_id") != sender_id:
++                    continue
++                msg = self._send_locked(
++                    sender_id=sender_id,
++                    token=token,
++                    recipient_id=record["recipient_id"],
++                    body=record["body"],
++                    data=record.get("data"),
++                    idempotency_key=record.get("idempotency_key"),
++                    kind=record.get("kind") or "note",
++                )
++                self._cursors.mark_sent(record["idempotency_key"], msg.message_id)
++                sent.append(msg)
++            return sent
+ 
+     def wait(
+         self,
+diff --git a/coordination/bus_cli.py b/coordination/bus_cli.py
+index 70cabac..b27962a 100644
+--- a/coordination/bus_cli.py
++++ b/coordination/bus_cli.py
+@@ -13,30 +13,44 @@ if str(ROOT) not in sys.path:
+     sys.path.insert(0, str(ROOT))
+ 
+ from coordination.bus import FileBus
++from coordination.durable import write_secret_json
++from coordination.envelope import RpcRequest, RpcResponse
++from coordination.errors import CoordinationError
+ 
+ 
+ def _bus(args: argparse.Namespace) -> FileBus:
+     return FileBus(args.store)
+ 
+ 
++def _cred(path: str) -> dict:
++    return json.loads(Path(path).read_text(encoding="utf-8"))
++
++
+ def cmd_register(args: argparse.Namespace) -> int:
++    parent_id = None
++    parent_token = None
++    project_id = args.project
++    if args.parent_cred:
++        parent = _cred(args.parent_cred)
++        parent_id = parent["identity_id"]
++        parent_token = parent["token"]
++        if not project_id:
++            project_id = parent["project_id"]
+     ident, token = _bus(args).register(
+         agent_name=args.agent,
+         device_id=args.device,
+-        project_id=args.project,
++        project_id=project_id or "agent-coordination",
+         task_id=args.task,
++        parent_id=parent_id,
++        parent_token=parent_token,
+     )
+     out = ident.public()
+     out["token"] = token
+-    Path(args.cred).write_text(json.dumps(out, indent=2), encoding="utf-8")
++    write_secret_json(Path(args.cred), out)
+     print(json.dumps({"identity_id": ident.identity_id, "agent_name": ident.agent_name, "cred": args.cred}))
+     return 0
+ 
+ 
+-def _cred(path: str) -> dict:
+-    return json.loads(Path(path).read_text(encoding="utf-8"))
+-
+-
+ def cmd_send(args: argparse.Namespace) -> int:
+     cred = _cred(args.cred)
+     msg = _bus(args).send(
+@@ -65,6 +79,13 @@ def cmd_wait(args: argparse.Namespace) -> int:
+     return 0 if items else 2
+ 
+ 
++def cmd_show(args: argparse.Namespace) -> int:
++    cred = _cred(args.cred)
++    msg = _bus(args).get(cred["identity_id"], cred["token"], args.message_id)
++    print(json.dumps(msg.to_public(), indent=2))
++    return 0
++
++
+ def cmd_ack(args: argparse.Namespace) -> int:
+     cred = _cred(args.cred)
+     msg = _bus(args).ack(cred["identity_id"], cred["token"], args.message_id)
+@@ -72,6 +93,29 @@ def cmd_ack(args: argparse.Namespace) -> int:
+     return 0
+ 
+ 
++def cmd_accept(args: argparse.Namespace) -> int:
++    cred = _cred(args.cred)
++    msg = _bus(args).accept(cred["identity_id"], cred["token"], args.message_id)
++    print(json.dumps(msg.to_public(), indent=2))
++    return 0
++
++
++def cmd_complete(args: argparse.Namespace) -> int:
++    cred = _cred(args.cred)
++    extra = json.loads(args.extra) if args.extra else None
++    msg = _bus(args).complete(
++        cred["identity_id"],
++        cred["token"],
++        args.message_id,
++        status=args.status,
++        artifact=args.artifact,
++        digest=args.digest,
++        extra=extra,
++    )
++    print(json.dumps(msg.to_public(), indent=2))
++    return 0
++
++
+ def cmd_reply(args: argparse.Namespace) -> int:
+     cred = _cred(args.cred)
+     msg = _bus(args).reply(
+@@ -79,12 +123,142 @@ def cmd_reply(args: argparse.Namespace) -> int:
+         token=cred["token"],
+         message_id=args.message_id,
+         body=args.body,
++        data=json.loads(args.data) if args.data else None,
+         idempotency_key=args.idempotency_key,
+     )
+     print(json.dumps(msg.to_public(), indent=2))
+     return 0
+ 
+ 
++def cmd_queue(args: argparse.Namespace) -> int:
++    cred = _cred(args.cred)
++    record = _bus(args).queue_offline(
++        sender_id=cred["identity_id"],
++        token=cred["token"],
++        recipient_id=args.to,
++        body=args.body,
++        data=json.loads(args.data) if args.data else None,
++        idempotency_key=args.idempotency_key,
++    )
++    print(json.dumps(record, indent=2))
++    return 0
++
++
++def cmd_flush(args: argparse.Namespace) -> int:
++    cred = _cred(args.cred)
++    items = _bus(args).flush_outbox(cred["identity_id"], cred["token"])
++    print(json.dumps([m.to_public() for m in items], indent=2))
++    return 0
++
++
++def cmd_rpc(args: argparse.Namespace) -> int:
++    try:
++        raw_input = sys.stdin.read()
++        if not raw_input.strip():
++            resp = RpcResponse(
++                request_id="",
++                ok=False,
++                error={"code": "empty_request", "message": "No input received on stdin"},
++            )
++            print(json.dumps(resp.to_dict()), flush=True)
++            return 1
++        req_dict = json.loads(raw_input)
++        req = RpcRequest.from_dict(req_dict)
++    except Exception as exc:
++        resp = RpcResponse(
++            request_id="",
++            ok=False,
++            error={"code": "framing_error", "message": f"Malformed JSON request: {exc}"},
++        )
++        print(json.dumps(resp.to_dict()), flush=True)
++        return 1
++
++    bus = _bus(args)
++    op = req.op
++    p = req.params
++
++    try:
++        if op in ("enroll", "register"):
++            ident, token = bus.register(
++                agent_name=p["agent_name"],
++                device_id=p["device_id"],
++                project_id=p.get("project_id", "agent-coordination"),
++                task_id=p.get("task_id"),
++                parent_id=p.get("parent_id"),
++                parent_token=p.get("parent_token"),
++            )
++            out = ident.public()
++            out["token"] = token
++            resp = RpcResponse(request_id=req.request_id, ok=True, result=out)
++        elif op == "send":
++            msg = bus.send(
++                sender_id=p["sender_id"],
++                token=p["token"],
++                recipient_id=p["recipient_id"],
++                body=p["body"],
++                data=p.get("data"),
++                idempotency_key=p.get("idempotency_key"),
++            )
++            resp = RpcResponse(request_id=req.request_id, ok=True, result=msg.to_public())
++        elif op == "inbox":
++            msgs = bus.inbox(
++                identity_id=p["identity_id"],
++                token=p["token"],
++                unread_only=p.get("unread_only", True),
++            )
++            resp = RpcResponse(
++                request_id=req.request_id,
++                ok=True,
++                result=[m.to_public() for m in msgs],
++            )
++        elif op == "ack":
++            msg = bus.ack(
++                identity_id=p["identity_id"],
++                token=p["token"],
++                message_id=p["message_id"],
++            )
++            resp = RpcResponse(request_id=req.request_id, ok=True, result=msg.to_public())
++        elif op == "reply":
++            msg = bus.reply(
++                sender_id=p["sender_id"],
++                token=p["token"],
++                message_id=p["message_id"],
++                body=p["body"],
++                data=p.get("data"),
++                idempotency_key=p.get("idempotency_key"),
++            )
++            resp = RpcResponse(request_id=req.request_id, ok=True, result=msg.to_public())
++        elif op in ("get", "show"):
++            msg = bus.get(
++                identity_id=p["identity_id"],
++                token=p["token"],
++                message_id=p["message_id"],
++            )
++            resp = RpcResponse(request_id=req.request_id, ok=True, result=msg.to_public())
++        else:
++            resp = RpcResponse(
++                request_id=req.request_id,
++                ok=False,
++                error={"code": "unsupported_op", "message": f"Unsupported op: {op}"},
++            )
++    except CoordinationError as exc:
++        code = getattr(exc, "code", "coordination_error")
++        resp = RpcResponse(
++            request_id=req.request_id,
++            ok=False,
++            error={"code": code, "message": str(exc)},
++        )
++    except Exception as exc:
++        resp = RpcResponse(
++            request_id=req.request_id,
++            ok=False,
++            error={"code": "internal_error", "message": str(exc)},
++        )
++
++    print(json.dumps(resp.to_dict()), flush=True)
++    return 0
++
++
+ def main(argv: list[str] | None = None) -> int:
+     parser = argparse.ArgumentParser(description="Agent Bus CLI (no aplexer dependency)")
+     parser.add_argument("--store", required=True)
+@@ -93,9 +267,10 @@ def main(argv: list[str] | None = None) -> int:
+     p = sub.add_parser("register")
+     p.add_argument("--agent", required=True)
+     p.add_argument("--device", required=True)
+-    p.add_argument("--project", default="agent-coordination")
++    p.add_argument("--project", default=None)
+     p.add_argument("--task")
+     p.add_argument("--cred", required=True)
++    p.add_argument("--parent-cred")
+     p.set_defaults(func=cmd_register)
+ 
+     p = sub.add_parser("send")
+@@ -116,19 +291,56 @@ def main(argv: list[str] | None = None) -> int:
+     p.add_argument("--timeout", type=float, default=5.0)
+     p.set_defaults(func=cmd_wait)
+ 
++    p = sub.add_parser("show")
++    p.add_argument("--cred", required=True)
++    p.add_argument("--message-id", required=True)
++    p.set_defaults(func=cmd_show)
++
+     p = sub.add_parser("ack")
+     p.add_argument("--cred", required=True)
+     p.add_argument("--message-id", required=True)
+     p.set_defaults(func=cmd_ack)
+ 
++    p = sub.add_parser("accept")
++    p.add_argument("--cred", required=True)
++    p.add_argument("--message-id", required=True)
++    p.set_defaults(func=cmd_accept)
++
++    p = sub.add_parser("complete")
++    p.add_argument("--cred", required=True)
++    p.add_argument("--message-id", required=True)
++    p.add_argument("--status", required=True)
++    p.add_argument("--artifact")
++    p.add_argument("--digest")
++    p.add_argument("--extra")
++    p.set_defaults(func=cmd_complete)
++
+     p = sub.add_parser("reply")
+     p.add_argument("--cred", required=True)
+     p.add_argument("--message-id", required=True)
+     p.add_argument("--body", required=True)
++    p.add_argument("--data")
+     p.add_argument("--idempotency-key")
+     p.set_defaults(func=cmd_reply)
+ 
++    p = sub.add_parser("queue")
++    p.add_argument("--cred", required=True)
++    p.add_argument("--to", required=True)
++    p.add_argument("--body", required=True)
++    p.add_argument("--data")
++    p.add_argument("--idempotency-key")
++    p.set_defaults(func=cmd_queue)
++
++    p = sub.add_parser("flush")
++    p.add_argument("--cred", required=True)
++    p.set_defaults(func=cmd_flush)
++
++    p = sub.add_parser("rpc")
++    p.set_defaults(func=cmd_rpc)
++
+     args = parser.parse_args(argv)
++    if args.cmd == "register" and not args.project and not args.parent_cred:
++        args.project = "agent-coordination"
+     return args.func(args)
+ 
+ 
+diff --git a/coordination/cursors.py b/coordination/cursors.py
+index fe341dd..160a1cb 100644
+--- a/coordination/cursors.py
++++ b/coordination/cursors.py
+@@ -7,6 +7,7 @@ import json
+ from pathlib import Path
+ from typing import Any
+ 
++from .durable import FileLock, atomic_write_json
+ from .errors import IdempotencyConflict
+ 
+ 
+@@ -18,20 +19,19 @@ def payload_digest(body: str, data: dict[str, Any] | None) -> str:
+ class CursorStore:
+     def __init__(self, root: str | Path):
+         self.root = Path(root)
+-        self.root.mkdir(parents=True, exist_ok=True)
++        self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+         self._idem = self.root / "idempotency.json"
+         self._cursors = self.root / "cursors.json"
+-        self._outbox = self.root / "outbox.jsonl"
++        self._outbox = self.root / "outbox.json"
++        self._lock = self.root / "cursors.lock"
+ 
+-    def _load(self, path: Path) -> dict[str, Any]:
++    def _load(self, path: Path) -> Any:
+         if not path.exists():
+-            return {}
++            return {} if path != self._outbox else []
+         return json.loads(path.read_text(encoding="utf-8"))
+ 
+-    def _save(self, path: Path, value: dict[str, Any]) -> None:
+-        tmp = path.with_suffix(".tmp")
+-        tmp.write_text(json.dumps(value, indent=2, sort_keys=True), encoding="utf-8")
+-        tmp.replace(path)
++    def _save(self, path: Path, value: Any) -> None:
++        atomic_write_json(path, value)
+ 
+     def lookup_send(
+         self,
+@@ -40,6 +40,17 @@ class CursorStore:
+         sender: str,
+         recipient: str,
+         digest: str,
++    ) -> str | None:
++        with FileLock(self._lock):
++            return self._lookup_locked(key, sender=sender, recipient=recipient, digest=digest)
++
++    def _lookup_locked(
++        self,
++        key: str,
++        *,
++        sender: str,
++        recipient: str,
++        digest: str,
+     ) -> str | None:
+         existing = self._load(self._idem).get(key)
+         if not existing:
+@@ -61,52 +72,52 @@ class CursorStore:
+         digest: str,
+         message_id: str,
+     ) -> str | None:
+-        existing = self.lookup_send(key, sender=sender, recipient=recipient, digest=digest)
+-        if existing:
+-            return existing
+-        table = self._load(self._idem)
+-        table[key] = {
+-            "sender": sender,
+-            "recipient": recipient,
+-            "digest": digest,
+-            "message_id": message_id,
+-        }
+-        self._save(self._idem, table)
+-        return None
++        with FileLock(self._lock):
++            existing = self._lookup_locked(key, sender=sender, recipient=recipient, digest=digest)
++            if existing:
++                return existing
++            table = self._load(self._idem)
++            table[key] = {
++                "sender": sender,
++                "recipient": recipient,
++                "digest": digest,
++                "message_id": message_id,
++            }
++            self._save(self._idem, table)
++            return None
+ 
+     def queue_offline(self, record: dict[str, Any]) -> None:
+-        with self._outbox.open("a", encoding="utf-8") as handle:
+-            handle.write(json.dumps(record, sort_keys=True) + "\n")
++        with FileLock(self._lock):
++            rows = self._load(self._outbox)
++            if not isinstance(rows, list):
++                rows = []
++            rows.append(record)
++            self._save(self._outbox, rows)
+ 
+     def pending_outbox(self) -> list[dict[str, Any]]:
+-        if not self._outbox.exists():
+-            return []
+-        rows = []
+-        for line in self._outbox.read_text(encoding="utf-8").splitlines():
+-            if line.strip():
+-                rows.append(json.loads(line))
+-        return [r for r in rows if not r.get("sent")]
++        with FileLock(self._lock):
++            rows = self._load(self._outbox)
++            if not isinstance(rows, list):
++                return []
++            return [r for r in rows if not r.get("sent")]
+ 
+     def mark_sent(self, idempotency_key: str, message_id: str) -> None:
+-        rows = []
+-        if self._outbox.exists():
+-            for line in self._outbox.read_text(encoding="utf-8").splitlines():
+-                if not line.strip():
+-                    continue
+-                row = json.loads(line)
++        with FileLock(self._lock):
++            rows = self._load(self._outbox)
++            if not isinstance(rows, list):
++                rows = []
++            for row in rows:
+                 if row.get("idempotency_key") == idempotency_key:
+                     row["sent"] = True
+                     row["message_id"] = message_id
+-                rows.append(row)
+-        self._outbox.write_text(
+-            "".join(json.dumps(r, sort_keys=True) + "\n" for r in rows),
+-            encoding="utf-8",
+-        )
++            self._save(self._outbox, rows)
+ 
+     def cursor(self, mailbox: str) -> str | None:
+-        return self._load(self._cursors).get(mailbox)
++        with FileLock(self._lock):
++            return self._load(self._cursors).get(mailbox)
+ 
+     def advance(self, mailbox: str, message_id: str) -> None:
+-        table = self._load(self._cursors)
+-        table[mailbox] = message_id
+-        self._save(self._cursors, table)
++        with FileLock(self._lock):
++            table = self._load(self._cursors)
++            table[mailbox] = message_id
++            self._save(self._cursors, table)
+diff --git a/coordination/errors.py b/coordination/errors.py
+index 29f2413..babab51 100644
+--- a/coordination/errors.py
++++ b/coordination/errors.py
+@@ -47,3 +47,74 @@ class NativeBindingMissing(CoordinationError):
+         super().__init__(f"native_binding_missing:{device_id}")
+         self.device_id = device_id
+         self.code = "native_binding_missing"
++
++
++class TransportError(CoordinationError):
++    """Raised when the remote transport exits non-zero or connection fails.
++
++    Per C2166: Completely omits raw remote stdout and stderr strings from public
++    exception messages and exception attributes. Carries only bounded, structured,
++    sanitized error codes and exit code.
++    """
++
++    def __init__(
++        self,
++        message: str = "remote_transport_failed",
++        exit_code: int | None = None,
++        code: str = "remote_transport_failed",
++    ):
++        super().__init__(message)
++        self.exit_code = exit_code
++        self.code = code
++
++
++class TransportTimeout(TransportError):
++    """Raised when the remote command execution exceeds the timeout limit.
++
++    Per C2164 / C2166: Represents an unknown remote state with zero automated mutating retries.
++    Completely omits raw stdout/stderr to prevent traceback leaks.
++    """
++
++    def __init__(
++        self,
++        message: str = "transport_timeout",
++        timeout_sec: float | None = None,
++        code: str = "transport_timeout",
++    ):
++        super().__init__(message=message, exit_code=None, code=code)
++        self.timeout_sec = timeout_sec
++
++
++class FramingError(CoordinationError):
++    """Raised when remote output is corrupted, non-JSON, or malformed framing.
++
++    Per C2166: Carries only bounded, structured error reasons. Raw remote output
++    and JSONDecodeError doc strings are completely omitted.
++    """
++
++    def __init__(
++        self,
++        message: str = "invalid_json_framing",
++        reason: str = "invalid_json_framing",
++        code: str = "framing_error",
++    ):
++        super().__init__(message)
++        self.reason = reason
++        self.code = code
++
++
++class AuthError(CoordinationError):
++    """Raised when authentication or authorization fails on the remote FileBus.
++
++    Per C2166: Carries only bounded, structured reasons. Never embeds tokens or details.
++    """
++
++    def __init__(
++        self,
++        message: str = "remote_auth_rejected",
++        reason: str = "remote_auth_rejected",
++        code: str = "auth_error",
++    ):
++        super().__init__(message)
++        self.reason = reason
++        self.code = code
+diff --git a/tests/test_bus.py b/tests/test_bus.py
+index a0267a1..1c71582 100644
+--- a/tests/test_bus.py
++++ b/tests/test_bus.py
+@@ -1,3 +1,4 @@
++import hashlib
+ from pathlib import Path
+ 
+ import pytest
+@@ -68,3 +69,199 @@ def test_identity_is_not_aplexer_session(tmp_path: Path, monkeypatch):
+     ident, _ = bus.register(agent_name="plain", device_id="hetzner-rmthz", project_id="agent-coordination")
+     assert ident.identity_id != "81e8010c-89e4-478b-be3a-4ee6991607f3"
+     assert ident.kind == "bus-agent"
++
++
++def test_unknown_identity_unknown_message_not_recipient(tmp_path: Path):
++    bus = FileBus(tmp_path)
++    a, ta = bus.register(agent_name="a", device_id="d", project_id="p")
++    b, tb = bus.register(agent_name="b", device_id="d", project_id="p")
++    msg = bus.send(sender_id=a.identity_id, token=ta, recipient_id=b.identity_id, body="x")
++    with pytest.raises(BusError) as err:
++        bus.inbox("missing-id", ta)
++    assert err.value.code == "unknown_identity"
++    with pytest.raises(BusError) as err2:
++        bus.ack(b.identity_id, tb, "missing-msg")
++    assert err2.value.code == "unknown_message"
++    with pytest.raises(BusError) as err3:
++        bus.ack(a.identity_id, ta, msg.message_id)
++    assert err3.value.code == "not_recipient"
++    with pytest.raises(BusError) as err4:
++        bus.accept(a.identity_id, ta, msg.message_id)
++    assert err4.value.code == "not_recipient"
++    with pytest.raises(BusError) as err5:
++        bus.reply(sender_id=a.identity_id, token=ta, message_id=msg.message_id, body="nope")
++    assert err5.value.code == "not_recipient"
++    with pytest.raises(BusError) as err6:
++        bus.complete(a.identity_id, ta, msg.message_id, status="ok")
++    assert err6.value.code == "not_recipient"
++
++
++def test_four_states_and_artifact_digest(tmp_path: Path):
++    bus = FileBus(tmp_path)
++    a, ta = bus.register(agent_name="a", device_id="d", project_id="p")
++    b, tb = bus.register(agent_name="b", device_id="d", project_id="p")
++    artifact = tmp_path / "out.txt"
++    artifact.write_text("result\n", encoding="utf-8")
++    msg = bus.send(sender_id=a.identity_id, token=ta, recipient_id=b.identity_id, body="do")
++    assert msg.delivered_at
++    assert msg.acked_at is None
++    assert msg.accepted_at is None
++    assert msg.outcome is None
++    acked = bus.ack(b.identity_id, tb, msg.message_id)
++    accepted = bus.accept(b.identity_id, tb, msg.message_id)
++    done = bus.complete(b.identity_id, tb, msg.message_id, status="ok", artifact=str(artifact))
++    assert acked.acked_at
++    assert accepted.accepted_at
++    assert done.outcome_at
++    assert done.outcome["status"] == "ok"
++    assert done.outcome["artifact"] == str(artifact)
++    assert done.outcome["digest"] == hashlib.sha256(artifact.read_bytes()).hexdigest()
++    seen = bus.get(a.identity_id, ta, msg.message_id)
++    assert seen.delivered_at and seen.acked_at and seen.accepted_at and seen.outcome
++    again = bus.complete(b.identity_id, tb, msg.message_id, status="ok", artifact=str(artifact))
++    assert again.outcome == done.outcome
++    with pytest.raises(BusError) as err:
++        bus.complete(b.identity_id, tb, msg.message_id, status="other", artifact=str(artifact))
++    assert err.value.code == "outcome_conflict"
++
++
++def test_send_kind_reply_rejects_unrelated_same_project_identity(tmp_path: Path):
++    bus = FileBus(tmp_path)
++    a, ta = bus.register(agent_name="a", device_id="d", project_id="p")
++    b, tb = bus.register(agent_name="b", device_id="d", project_id="p")
++    c, tc = bus.register(agent_name="c", device_id="d", project_id="p")
++    msg = bus.send(sender_id=a.identity_id, token=ta, recipient_id=b.identity_id, body="task")
++    with pytest.raises(BusError) as err:
++        bus.send(
++            sender_id=c.identity_id,
++            token=tc,
++            recipient_id=a.identity_id,
++            body="spoof",
++            kind="reply",
++            reply_to=msg.message_id,
++        )
++    assert err.value.code == "not_recipient"
++    assert bus.inbox(a.identity_id, ta) == []
++    legit = bus.reply(
++        sender_id=b.identity_id,
++        token=tb,
++        message_id=msg.message_id,
++        body="ok",
++        idempotency_key="legit-reply",
++    )
++    assert legit.kind == "reply"
++    assert legit.reply_to == msg.message_id
++    via_send = bus.send(
++        sender_id=b.identity_id,
++        token=tb,
++        recipient_id=a.identity_id,
++        body="ok2",
++        kind="reply",
++        reply_to=msg.message_id,
++        idempotency_key="legit-send-reply",
++    )
++    assert via_send.reply_to == msg.message_id
++    assert via_send.sender_id == b.identity_id
++
++
++def test_send_reply_to_rejects_different_project_message(tmp_path: Path):
++    bus = FileBus(tmp_path)
++    a, ta = bus.register(agent_name="a", device_id="d", project_id="alpha")
++    b, _tb = bus.register(agent_name="b", device_id="d", project_id="alpha")
++    c, tc = bus.register(agent_name="c", device_id="d", project_id="beta")
++    d, td = bus.register(agent_name="d", device_id="d", project_id="beta")
++    msg = bus.send(sender_id=a.identity_id, token=ta, recipient_id=b.identity_id, body="alpha-task")
++    with pytest.raises(BusError) as err:
++        bus.send(
++            sender_id=c.identity_id,
++            token=tc,
++            recipient_id=d.identity_id,
++            body="spoof",
++            reply_to=msg.message_id,
++        )
++    assert err.value.code == "project_scope"
++    assert bus.inbox(d.identity_id, td) == []
++    with pytest.raises(BusError) as err2:
++        bus.send(
++            sender_id=c.identity_id,
++            token=tc,
++            recipient_id=d.identity_id,
++            body="spoof",
++            kind="reply",
++            reply_to=msg.message_id,
++        )
++    assert err2.value.code == "project_scope"
++    assert bus.inbox(d.identity_id, td) == []
++
++
++def test_idempotent_send_conflict_when_kind_or_reply_to_change(tmp_path: Path):
++    bus = FileBus(tmp_path)
++    a, ta = bus.register(agent_name="a", device_id="d", project_id="p")
++    b, tb = bus.register(agent_name="b", device_id="d", project_id="p")
++    original = bus.send(
++        sender_id=a.identity_id,
++        token=ta,
++        recipient_id=b.identity_id,
++        body="task",
++        idempotency_key="orig",
++    )
++    first = bus.send(
++        sender_id=b.identity_id,
++        token=tb,
++        recipient_id=a.identity_id,
++        body="x",
++        idempotency_key="k",
++        kind="note",
++    )
++    with pytest.raises(IdempotencyConflict):
++        bus.send(
++            sender_id=b.identity_id,
++            token=tb,
++            recipient_id=a.identity_id,
++            body="x",
++            idempotency_key="k",
++            kind="reply",
++            reply_to=original.message_id,
++        )
++    with pytest.raises(IdempotencyConflict):
++        bus.send(
++            sender_id=b.identity_id,
++            token=tb,
++            recipient_id=a.identity_id,
++            body="x",
++            idempotency_key="k",
++            kind="note",
++            reply_to=original.message_id,
++        )
++    replay = bus.send(
++        sender_id=b.identity_id,
++        token=tb,
++        recipient_id=a.identity_id,
++        body="x",
++        idempotency_key="k",
++        kind="note",
++    )
++    assert replay.message_id == first.message_id
++    assert bus.inbox(a.identity_id, ta) == [first]
++
++
++def test_parent_child_independent_credentials(tmp_path: Path):
++    bus = FileBus(tmp_path)
++    parent, pt = bus.register(agent_name="head", device_id="d", project_id="p", task_id="integrate")
++    child, ct = bus.register(
++        agent_name="worker",
++        device_id="d",
++        project_id="p",
++        task_id="core",
++        parent_id=parent.identity_id,
++        parent_token=pt,
++    )
++    assert child.parent_id == parent.identity_id
++    assert child.identity_id != parent.identity_id
++    assert ct != pt
++    with pytest.raises(BusError) as err:
++        bus.inbox(child.identity_id, pt)
++    assert err.value.code == "auth_failed"
++    msg = bus.send(sender_id=parent.identity_id, token=pt, recipient_id=child.identity_id, body="work")
++    assert bus.inbox(child.identity_id, ct)[0].message_id == msg.message_id
++    assert bus.inbox(parent.identity_id, pt) == []
+diff --git a/tests/test_bus_dogfood.py b/tests/test_bus_dogfood.py
+index e7e7081..90e82ce 100644
+--- a/tests/test_bus_dogfood.py
++++ b/tests/test_bus_dogfood.py
+@@ -1,23 +1,32 @@
+-"""Two headless processes exchange a task+artifact over the bus.
++"""Pytest fallback: two headless CLI processes plus an independent worker.
+ 
+-No aplexer executable is invoked. One process restarts and still sees
+-the unacked message (redelivery).
++The worker subprocess consumes the bus message and writes the artifact.
++The controller does not write the artifact. No aplexer executable is invoked.
+ """
+ 
+ from __future__ import annotations
+ 
+ import json
++import os
++import stat
+ import subprocess
+ import sys
+ from pathlib import Path
+ 
+ ROOT = Path(__file__).resolve().parents[1]
+ CLI = ROOT / "coordination" / "bus_cli.py"
++WORKER = ROOT / "coordination" / "headless_worker.py"
+ 
+ 
+-def _run(store: Path, args: list[str], cred: Path | None = None) -> subprocess.CompletedProcess:
++def _clean_env() -> dict[str, str]:
++    env = {k: v for k, v in os.environ.items() if not k.startswith("APLEXER_")}
++    env["PYTHONPATH"] = str(ROOT)
++    return env
++
++
++def _run(store: Path, args: list[str]) -> subprocess.CompletedProcess:
+     cmd = [sys.executable, str(CLI), "--store", str(store), *args]
+-    return subprocess.run(cmd, capture_output=True, text=True, timeout=20, check=True, cwd=ROOT)
++    return subprocess.run(cmd, capture_output=True, text=True, timeout=20, check=True, cwd=ROOT, env=_clean_env())
+ 
+ 
+ def test_two_headless_processes_and_restart(tmp_path: Path):
+@@ -26,9 +35,45 @@ def test_two_headless_processes_and_restart(tmp_path: Path):
+     b_cred = tmp_path / "b.json"
+     artifact = tmp_path / "artifact.txt"
+     _run(store, ["register", "--agent", "proc-a", "--device", "hetzner-rmthz", "--task", "dogfood", "--cred", str(a_cred)])
+-    _run(store, ["register", "--agent", "proc-b", "--device", "hetzner-rmthz", "--task", "dogfood", "--cred", str(b_cred)])
++    _run(
++        store,
++        [
++            "register",
++            "--agent",
++            "proc-b",
++            "--device",
++            "hetzner-rmthz",
++            "--task",
++            "dogfood",
++            "--cred",
++            str(b_cred),
++            "--parent-cred",
++            str(a_cred),
++        ],
++    )
++    assert stat.S_IMODE(a_cred.stat().st_mode) == 0o600
++    assert stat.S_IMODE(b_cred.stat().st_mode) == 0o600
+     a_id = json.loads(a_cred.read_text())["identity_id"]
+     b_id = json.loads(b_cred.read_text())["identity_id"]
++    worker = subprocess.Popen(
++        [
++            sys.executable,
++            str(WORKER),
++            "--store",
++            str(store),
++            "--cred",
++            str(b_cred),
++            "--allow-root",
++            str(tmp_path),
++            "--timeout",
++            "15",
++        ],
++        cwd=ROOT,
++        env=_clean_env(),
++        stdout=subprocess.PIPE,
++        stderr=subprocess.PIPE,
++        text=True,
++    )
+     sent = json.loads(
+         _run(
+             store,
+@@ -39,39 +84,29 @@ def test_two_headless_processes_and_restart(tmp_path: Path):
+                 "--to",
+                 b_id,
+                 "--body",
+-                f"write {artifact}",
++                "write artifact",
++                "--data",
++                json.dumps({"task": "write_artifact", "artifact": str(artifact), "contents": "done-by-proc-b\n"}),
+                 "--idempotency-key",
+                 "dogfood-1",
+             ],
+         ).stdout
+     )
+-    # Simulate process B crash before ACK: new process reads inbox.
+-    inbox = json.loads(_run(store, ["inbox", "--cred", str(b_cred)]).stdout)
+-    assert inbox[0]["message_id"] == sent["message_id"]
+-    artifact.write_text("done-by-proc-b\n", encoding="utf-8")
+-    _run(store, ["ack", "--cred", str(b_cred), "--message-id", sent["message_id"]])
+-    reply = json.loads(
+-        _run(
+-            store,
+-            [
+-                "reply",
+-                "--cred",
+-                str(b_cred),
+-                "--message-id",
+-                sent["message_id"],
+-                "--body",
+-                "artifact-written",
+-                "--idempotency-key",
+-                "dogfood-1-reply",
+-            ],
+-        ).stdout
+-    )
++    stdout, stderr = worker.communicate(timeout=20)
++    assert worker.returncode == 0, stderr
++    assert artifact.read_text() == "done-by-proc-b\n"
++    shown = json.loads(_run(store, ["show", "--cred", str(a_cred), "--message-id", sent["message_id"]]).stdout)
++    assert shown["delivered_at"]
++    assert shown["acked_at"]
++    assert shown["accepted_at"]
++    assert shown["outcome"]["status"] == "ok"
++    assert shown["outcome"]["digest"]
+     a_inbox = json.loads(_run(store, ["inbox", "--cred", str(a_cred)]).stdout)
+-    assert a_inbox[0]["message_id"] == reply["message_id"]
+     assert a_inbox[0]["reply_to"] == sent["message_id"]
+-    assert artifact.read_text() == "done-by-proc-b\n"
+-    # Restart A still sees unacked reply.
++    assert a_inbox[0]["kind"] == "reply"
+     restarted = json.loads(_run(store, ["inbox", "--cred", str(a_cred)]).stdout)
+-    assert restarted[0]["message_id"] == reply["message_id"]
+-    _run(store, ["ack", "--cred", str(a_cred), "--message-id", reply["message_id"]])
++    assert restarted[0]["message_id"] == a_inbox[0]["message_id"]
++    _run(store, ["ack", "--cred", str(a_cred), "--message-id", a_inbox[0]["message_id"]])
+     assert json.loads(_run(store, ["inbox", "--cred", str(a_cred)]).stdout) == []
++    assert a_id != b_id
++    assert "APLEXER" not in stdout

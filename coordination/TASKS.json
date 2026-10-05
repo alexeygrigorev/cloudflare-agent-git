@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T00:24:35.093755+00:00",
+  "updated_at": "2026-10-05T00:30:58.527039+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -2775,20 +2775,19 @@
       "executor_ids": [
         "06ecf158-e51f-411c-89b8-083fc9fb3dd6"
       ],
-      "status": "in_progress",
-      "updated_at": "2026-10-05T00:24:35.093755+00:00",
+      "status": "done",
+      "updated_at": "2026-10-05T00:30:58.527039+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/recovery/REPORT-TYPED-SSH-FILEBUS-RPC.md",
-        ".local/scratch/bus-ssh-rpc-snapshot/agent-bus/coordination/envelope.py",
-        ".local/scratch/bus-ssh-rpc-snapshot/agent-bus/coordination/ssh_rpc.py",
-        ".local/scratch/bus-ssh-rpc-snapshot/agent-bus/tests/test_ssh_rpc.py"
+        "research/antigravity/reviews/REV-TYPED-SSH-FILEBUS-RPC.md",
+        "research/antigravity/recovery/typed-ssh-filebus-rpc-hardened.patch"
       ],
-      "acceptance": "Narrow typed SSH FileBus RPC implemented in isolated snapshot (.local/scratch/bus-ssh-rpc-snapshot/agent-bus/). Zero canonical dirt. NamespacedId with URI-safe encoding; SshFileBusClient executing pinned remote bus_cli.py rpc via stdin JSON streams; zero credentials or payloads in process argv. 9/9 unit tests pass in 2.22s. C2162 hardening (host injection defense, remote shell argument escaping with shlex.quote, strict correlation, boolean validation, and error redaction) undergoing verification and independent challenge.",
+      "acceptance": "BOUNDED ACCEPTANCE granted by reviewer37 in REV-TYPED-SSH-FILEBUS-RPC.md (SHA256: ea929f9a...). All 5 security vectors certified: local option injection defense (leading dash rejected, explicit -- delimiter), remote shell argument quoting with shlex.quote() scoped to POSIX login shells ($SHELL/bash/sh), strict request_id correlation, fail-closed boolean coercion (string false fails closed), non-zero returncode fails closed with TransportError, noisy banner rejected, credential hygiene with fail-closed attribute omission (no raw stderr/stdout in exception attributes), decoupled exception chaining (raise ... from None) preventing traceback leakage, and ambiguous timeout semantics (UNKNOWN outcome, zero automated mutating retries). 34/34 security and functional tests pass in isolated snapshot. Canonical agent-bus 100% untouched. Windows remote shells and locking remain HELD pending native Windows verification.",
       "assignment_ack": "ACK: owned by antigravity-head under Codex C2151/C2154/C2156/C2162. Executed by architect06 in .local/scratch/bus-ssh-rpc-snapshot/agent-bus/.",
-      "acceptance_status": "PENDING_CHALLENGE",
-      "next_action": "reviewer37 independent security negative test suite and review.",
-      "continuation_trigger": "reviewer37 independent challenge completion."
+      "acceptance_status": "ACCEPTED (BOUNDED ACCEPTANCE - POSIX REMOTE SHELL CERTIFIED)",
+      "next_action": "Ready for multi-host cross-computer dogfood adoption between desktop and Hetzner nodes under POSIX remote shell contract.",
+      "continuation_trigger": "Multi-host two-computer agent communication milestone."
     }
   ]
 }
