@@ -2886,13 +2886,57 @@
         "research/antigravity/reviews/REV-ADMITTED-WORKER-TRIAL.md",
         "research/antigravity/reviews/REV-WINDOWS-DRIVER-2FD1BE4E.md",
         "research/antigravity/reviews/archive/REV-WINDOWS-DRIVER-2FD1BE4E-trial1-d93f3707.md",
-        "research/antigravity/recovery/REPORT-EVENT-ADAPTER-CYCLES.md"
+        "research/antigravity/recovery/REPORT-EVENT-ADAPTER-CYCLES.md",
+        "research/antigravity/tooling/self_org/launcher_bus_bridge.py",
+        "tests/test_launcher_bus_bridge.py"
       ],
-      "acceptance": "Autonomous FileBus dogfood cycle, dual deliverable preservation, append-only runner repair, exclusive collision denial, and adversarial output-admission negative verification audited under Codex Directives C2299, C2300, C2304, C2306, C2310, C2312, C2313, C2317, and C2318 in REV-ADMITTED-WORKER-TRIAL.md (SHA256: ea63b38688969864ddba663a88a6dc1491718bb781ac916ba7ba47a99739a542) against frozen runner script run_admitted_busworker_trial.py (SHA256: 4f974a7483f6785171b2d520bc5597c5cee253550a5079adef29479a5ef26b48) and test suite test_output_admission_negatives.py (SHA256: e7337905121fe293df679bbed7fa6f76a6f1c7987fe802025ba8e1c7c88486d7, 5/5 tests PASS). 1) FileBus dogfood cycle: Head dispatched task a00877e2 under head_cred; worker gemini-3.1-pro-high in systemd scope agent-scope-t-busworker-c6085104.scope (Invocation ID 185ca9328b454142988a149886a5f55e, TasksMax=100, MemoryMax=1500M) autonomously consumed task, issued read-ACK on FileBus (worker_ack_executed_by_controller=false), directly authored review deliverable REV-WINDOWS-DRIVER-2FD1BE4E.md (SHA256: 470a9ee6892fb8f5b452cca6c644151d5cd0dfd990ce5586891d4cee72188d2d, 3560 bytes) via CLI tool write, and autonomously sent completion reply e98f1f5a with genuine unforced verdict REQUEST_CHANGES; Head alone read-ACKed worker reply; 2) Dual deliverable preservation: Trial 1 archived at research/antigravity/reviews/archive/REV-WINDOWS-DRIVER-2FD1BE4E-trial1-d93f3707.md (d93f3707, 5945 bytes, BOUNDED ACCEPTANCE); Trial 2 preserved at research/antigravity/reviews/REV-WINDOWS-DRIVER-2FD1BE4E.md (470a9ee6, 3560 bytes, REQUEST_CHANGES); 3) Append-only runner repair & exclusive collision-deny: architect06 refactored runner script eliminating all raw SQL DELETE queries, rmtree wipes, and unlinks; enforced run-scoped unique IDs (run_id/task_id) and isolated directories; enforced exclusive directory creation and immutable receipt writing with collision-deny on duplicate run IDs; verified --device hetzner physical device attribution; 4) Adversarial output-admission testing: reviewer259 verified 5 negative cases: Test A (pre-existing public artifact isolation), Test B (missing new artifact rejection), Test C (wrong-thread reply rejection), Test D (conflicting verdict fail-closed as UNKNOWN_CONFLICT), Test E (exclusive create and collision-deny on directories and receipts); 5) Re-qualified report status: Base64 padding regex leak verified as active defect; sys.stderr spillage and Windows OpenSSH quoting re-qualified as architectural hypotheses / OS shell resolution questions; 6) Formal independent audit verdict: FULL ACCEPTANCE OF ADMISSION, NATIVE BUS DOGFOOD CYCLE & OUTPUT-ADMISSION ADVERSARIAL REPAIR; DRIVER VERDICT REQUEST_CHANGES RECORDED; PHYSICAL WINDOWS RUNTIME HELD. Zero cargo/rustc invocations, canonical repositories strictly read-only.",
-      "assignment_ack": "ACK: owned by antigravity-head under Codex C2310/C2312/C2313/C2315/C2317/C2318. Executed by architect06 and reviewer259.",
-      "acceptance_status": "FULL ACCEPTANCE OF ADMISSION, NATIVE BUS DOGFOOD CYCLE & OUTPUT-ADMISSION ADVERSARIAL REPAIR (C2310/C2312/C2313/C2315/C2317/C2318 ACCEPTED IN REV-ADMITTED-WORKER-TRIAL.md SHA ea63b386; RUNNER 4f974a74; 5/5 NEGATIVE TESTS PASS; DRIVER VERDICT REQUEST_CHANGES; WINDOWS RUNTIME HELD)",
-      "next_action": "Project heads and principals advance Windows diagnostic driver repair (reviewer37) addressing Base64 padding regex leak before desktop trial.",
-      "continuation_trigger": "Independent repair and test of Windows diagnostic driver."
+      "acceptance": "Autonomous FileBus dogfood cycle, dual deliverable preservation, append-only runner repair, exclusive collision denial, bridge fail-closed kwargs validation, and adversarial output-admission negative verification audited under Codex Directives C2299, C2300, C2304, C2306, C2310, C2312, C2313, C2317, C2318, C2319, and C2321 in REV-ADMITTED-WORKER-TRIAL.md (SHA256: eaf119719615e53b1b46793af7c0139378d4220e17728994128d1e6b654bf664) against frozen runner script run_admitted_busworker_trial.py (SHA256: 4f974a7483f6785171b2d520bc5597c5cee253550a5079adef29479a5ef26b48), negative test suite test_output_admission_negatives.py (SHA256: e7337905121fe293df679bbed7fa6f76a6f1c7987fe802025ba8e1c7c88486d7, 5/5 tests PASS), and bridge test_launcher_bus_bridge.py (48/48 tests PASS in 17.559s). 1) FileBus dogfood cycle: Head dispatched task a00877e2 under head_cred; worker gemini-3.1-pro-high in systemd scope agent-scope-t-busworker-c6085104.scope (Invocation ID 185ca9328b454142988a149886a5f55e, TasksMax=100, MemoryMax=1500M) autonomously consumed task, issued read-ACK on FileBus (worker_ack_executed_by_controller=false), directly authored review deliverable REV-WINDOWS-DRIVER-2FD1BE4E.md (SHA256: 470a9ee6892fb8f5b452cca6c644151d5cd0dfd990ce5586891d4cee72188d2d, 3560 bytes) via CLI tool write, and autonomously sent completion reply e98f1f5a with genuine unforced verdict REQUEST_CHANGES; Head alone read-ACKed worker reply; 2) Dual deliverable preservation: Trial 1 archived at research/antigravity/reviews/archive/REV-WINDOWS-DRIVER-2FD1BE4E-trial1-d93f3707.md (d93f3707, 5945 bytes, BOUNDED ACCEPTANCE); Trial 2 preserved at research/antigravity/reviews/REV-WINDOWS-DRIVER-2FD1BE4E.md (470a9ee6, 3560 bytes, REQUEST_CHANGES); 3) Append-only runner repair & exclusive collision-deny: architect06 refactored runner script eliminating all raw SQL DELETE queries, rmtree wipes, and unlinks; enforced run-scoped unique IDs (run_id/task_id) and isolated directories; head (46fdb644) integrated exclusive directory creation and immutable receipt writing with collision-deny on duplicate run IDs; verified --device hetzner physical device attribution; 4) Adversarial output-admission testing: reviewer259 verified 5 negative cases: Test A (pre-existing public artifact isolation), Test B (missing new artifact rejection), Test C (wrong-thread reply rejection), Test D (conflicting verdict fail-closed as UNKNOWN_CONFLICT), Test E (exclusive create and collision-deny on directories and receipts); 5) Bridge fail-closed kwargs validation (C2321): launcher_bus_bridge.py (SHA256: 7c46b4b5acbceebc02e3f1daf8ae25ee9e9a990669d058668de55ff79250a18a) hardened with fail-closed validation rejecting unknown kwargs and conflicting formal vs alias args, verified in Tests 47 & 48 (2/2 pass in 0.276s, full suite 48/48 pass in 17.559s); bridge hash transition recorded (Trial 1 & 2 loaded 2ba3ea490fffff650789d6594d778d2555b8e985f0d5ca67827af8a8abdaf411); 6) Formal independent audit verdict: FULL ACCEPTANCE OF ADMISSION, NATIVE BUS DOGFOOD CYCLE, FROZEN RUNNER REPAIR & BRIDGE FAIL-CLOSED KWARGS VALIDATION; DRIVER VERDICT REQUEST_CHANGES RECORDED; PHYSICAL WINDOWS RUNTIME HELD. Zero cargo/rustc invocations, canonical repositories strictly read-only.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2310/C2312/C2313/C2315/C2317/C2318/C2319/C2321. Executed by architect06 and reviewer259.",
+      "acceptance_status": "FULL ACCEPTANCE OF ADMISSION, NATIVE BUS DOGFOOD CYCLE, FROZEN RUNNER REPAIR & BRIDGE KWARGS VALIDATION (C2310/C2312/C2313/C2315/C2317/C2318/C2319/C2321 ACCEPTED IN REV-ADMITTED-WORKER-TRIAL.md SHA eaf11971; RUNNER 4f974a74; 5/5 NEGATIVE TESTS PASS; BRIDGE 7c46b4b5 48/48 TESTS PASS; DRIVER VERDICT REQUEST_CHANGES; WINDOWS RUNTIME HELD)",
+      "next_action": "Project heads advance Windows diagnostic driver repair and collector persistence.",
+      "continuation_trigger": "Completion of windows-rpc-diagnostic-driver-privacy-repair and metrics-collector-lifecycle-binding."
+    },
+    {
+      "id": "windows-rpc-diagnostic-driver-privacy-repair",
+      "project_id": "agent-coordination",
+      "team_id": "agent-coordination",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "37aa1067-8bda-4dde-95b8-7b5bb927bd1f"
+      ],
+      "status": "completed",
+      "updated_at": "2026-10-05T03:36:30.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/recovery/windows_rpc_diagnostic_driver.py",
+        "tests/test_windows_rpc_diagnostic_driver.py",
+        "research/antigravity/recovery/REPORT-WINDOWS-DRIVER-PRIVACY-REPAIR.md"
+      ],
+      "acceptance": "Windows diagnostic driver privacy repair and negative verification under Directives C2315, C2317, and C2319 executed by reviewer37. Fixed Base64 padding regex truncation ([+/=]), implemented SanitizingTextIO stderr stream sanitization intercepting unhandled errors/warnings, and added dynamic OS detection for ssh.exe on Windows. Dedicated test suite in tests/test_windows_rpc_diagnostic_driver.py passed 6/6 tests in 0.075s with zero byte token leakage. Regression tests verified (11/11 RPC contract, 4/4 unicode RPC). Zero cargo/rustc compiler invocations.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2315/C2317/C2319. Executed by reviewer37 in .local/scratch/reviewer37-windows-client-audit/.",
+      "acceptance_status": "REPAIRED AND NEGATIVELY VERIFIED (FULL PRIVACY & REDACTION CONFORMANCE, 6/6 TESTS PASS)",
+      "next_action": "Desktop trial can safely evaluate repaired driver when physical desktop testing is authorized.",
+      "continuation_trigger": "Desktop-root forward RPC execution."
+    },
+    {
+      "id": "metrics-collector-lifecycle-binding",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "d6988df9-09a1-44f0-b7bd-7b28018f69a8"
+      ],
+      "status": "completed",
+      "updated_at": "2026-10-05T03:36:15.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-METRICS-COLLECTOR-BINDING.md"
+      ],
+      "acceptance": "Investigation of systemd user service binding for metrics collector PID 1608645 under Directives C2316 and C2319 by d6988df9. Strictly zero signals or disruptive reloads sent to active collector (continuously serving 217/217 rows at :8766). Diagnosed session-scope cleanup vulnerability and formulated non-disruptive systemd user service architecture (agent-metrics-collector.service) with Linger=yes under app.slice, providing permanent lifecycle persistence across session loss without forging dead UUIDs or restarting active service.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2316/C2319. Executed by d6988df9 in .local/scratch/collector-binding-audit/.",
+      "acceptance_status": "SYSTEMD USER SERVICE PERSISTENCE ARCHITECTURE DOCUMENTED (PID 1608645 UNDISTURBED)",
+      "next_action": "Staged migration runbook ready for execution at authorized maintenance window.",
+      "continuation_trigger": "Authorized metrics collector handoff window."
     },
     {
       "id": "dashboard-c7-notready-diagnostic",

@@ -2766,6 +2766,78 @@ class TestLauncherBusBridge(unittest.TestCase):
             self.assertIn("-p", called_cmd)
             self.assertIn("TasksMax=100", called_cmd)
 
+    # -----------------------------------------------------------------------
+    # Test 47: Unknown kwargs Rejected Fail-Closed (Directive C2321)
+    # -----------------------------------------------------------------------
+    def test_47_c2321_unknown_kwargs_rejected_fail_closed(self) -> None:
+        """
+        Verify that passing unknown or undeclared kwargs to
+        execute_in_verified_systemd_scope strictly fails closed with ResourceAdmissionError,
+        preventing silent argument leakage or contract bypasses.
+        """
+        runtime = ChildModelRuntimeAdapter(
+            store=self.store,
+            workspace=self.workspace,
+            is_test_fixture=True,
+        )
+        task_id = "t47-unknown-kwargs"
+        task_dir = self.workspace / ".local" / task_id
+        task_dir.mkdir(parents=True, exist_ok=True)
+
+        with self.assertRaises(ResourceAdmissionError) as cm:
+            runtime.execute_in_verified_systemd_scope(
+                task_id=task_id,
+                command_argv=["echo", "test"],
+                cwd=task_dir,
+                is_local_probe=True,
+                unauthorized_extra_kwarg="malicious_payload",
+            )
+        self.assertIn("Unknown kwargs passed to execute_in_verified_systemd_scope", str(cm.exception))
+        self.assertIn("unauthorized_extra_kwarg", str(cm.exception))
+
+    # -----------------------------------------------------------------------
+    # Test 48: Conflicting Formal and Alias Paths Rejected Fail-Closed (Directive C2321)
+    # -----------------------------------------------------------------------
+    def test_48_c2321_conflicting_formal_and_alias_paths_rejected_fail_closed(self) -> None:
+        """
+        Verify that passing conflicting formal arguments and alias kwargs
+        (e.g., cwd != cwd_path or tmpdir != tmpdir_path) strictly fails closed with
+        ResourceAdmissionError rather than silently picking one.
+        """
+        runtime = ChildModelRuntimeAdapter(
+            store=self.store,
+            workspace=self.workspace,
+            is_test_fixture=True,
+        )
+        task_id = "t48-conflicting-paths"
+        dir_a = self.workspace / ".local" / "dir_a"
+        dir_b = self.workspace / ".local" / "dir_b"
+        dir_a.mkdir(parents=True, exist_ok=True)
+        dir_b.mkdir(parents=True, exist_ok=True)
+
+        # 1. Conflicting cwd vs cwd_path
+        with self.assertRaises(ResourceAdmissionError) as cm_cwd:
+            runtime.execute_in_verified_systemd_scope(
+                task_id=task_id,
+                command_argv=["echo", "test"],
+                cwd=dir_a,
+                cwd_path=dir_b,
+                is_local_probe=True,
+            )
+        self.assertIn("Conflicting cwd and cwd_path arguments", str(cm_cwd.exception))
+
+        # 2. Conflicting tmpdir vs tmpdir_path
+        with self.assertRaises(ResourceAdmissionError) as cm_tmp:
+            runtime.execute_in_verified_systemd_scope(
+                task_id=task_id,
+                command_argv=["echo", "test"],
+                cwd=dir_a,
+                tmpdir=dir_a,
+                tmpdir_path=dir_b,
+                is_local_probe=True,
+            )
+        self.assertIn("Conflicting tmpdir and tmpdir_path arguments", str(cm_tmp.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

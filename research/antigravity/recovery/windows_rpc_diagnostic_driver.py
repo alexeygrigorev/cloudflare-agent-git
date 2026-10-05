@@ -45,14 +45,48 @@ def sanitize_text(text: str) -> str:
     """Redacts tokens, passwords, and sensitive keys from output strings."""
     if not text:
         return ""
+    # Redact JSON tokens, handling escaped quotes within token values
     t = re.sub(
-        r'("(?:token|parent_token|password|secret)":\s*")[^"]+(")',
+        r'("(?:token|parent_token|password|secret)":\s*")(?:\\.|[^"\\])*(")',
         r'\1[REDACTED]\2',
         text,
     )
     t = re.sub(r'(token=)[^\s&]+', r'\1[REDACTED]', t)
-    t = re.sub(r'(bearer\s+)[a-zA-Z0-9_\-\.]+', r'\1[REDACTED]', t, flags=re.IGNORECASE)
+    # Redact Bearer tokens including standard Base64 characters (+, /, =) and URL-safe Base64
+    t = re.sub(r'(bearer\s+)[a-zA-Z0-9_\-\.\+\/\=]+', r'\1[REDACTED]', t, flags=re.IGNORECASE)
     return t
+
+
+class SanitizingTextIO:
+    """Wraps a TextIO stream (e.g. sys.stderr) to pass all written output through sanitize_text()."""
+
+    def __init__(self, target: Any) -> None:
+        self._target = target
+
+    def write(self, s: str) -> int:
+        sanitized = sanitize_text(s)
+        return self._target.write(sanitized)
+
+    def writelines(self, lines: Any) -> None:
+        for line in lines:
+            self.write(line)
+
+    def flush(self) -> None:
+        if hasattr(self._target, "flush"):
+            self._target.flush()
+
+    def isatty(self) -> bool:
+        if hasattr(self._target, "isatty"):
+            return self._target.isatty()
+        return False
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._target, name)
+
+
+def get_default_ssh_binary() -> str:
+    """Returns 'ssh.exe' on Windows (win32), otherwise 'ssh'."""
+    return "ssh.exe" if sys.platform == "win32" else "ssh"
 
 
 def sanitize_message_summary(msg: dict[str, Any]) -> dict[str, Any]:
@@ -154,6 +188,10 @@ def resolve_and_import_client(repo_dir: str | None = None) -> type[Any]:
 
 
 def main() -> int:
+    # Wrap sys.stderr so any low-level library, exception traceback, or direct stderr output is sanitized
+    sys.stderr = SanitizingTextIO(sys.stderr)  # type: ignore[assignment]
+
+    default_ssh = get_default_ssh_binary()
     parser = argparse.ArgumentParser(
         description="Windows RPC Diagnostic Driver: executes remote FileBus RPC via typed SshFileBusClient."
     )
@@ -164,7 +202,11 @@ def main() -> int:
         help="Path to bus_cli.py on remote host (default: coordination/bus_cli.py)",
     )
     parser.add_argument("--store", required=True, help="Absolute path to FileBus store on remote host")
-    parser.add_argument("--ssh-binary", default="ssh", help="SSH binary path (default: ssh, or ssh.exe on Windows)")
+    parser.add_argument(
+        "--ssh-binary",
+        default=default_ssh,
+        help=f"SSH binary path (default: {default_ssh})",
+    )
     parser.add_argument(
         "--action",
         required=True,

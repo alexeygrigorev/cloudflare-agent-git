@@ -1579,6 +1579,19 @@ class ChildModelRuntimeAdapter:
         - Bounded log streaming (<= 64 KiB)
         - Typed local probes (C2114) with ZERO model quota claim
         """
+        # Strict kwargs validation (Directives C2321): reject unknown kwargs and reject conflicting formal vs alias args
+        allowed_kwargs = {"cwd_path", "tmpdir_path"}
+        unknown_kwargs = set(kwargs.keys()) - allowed_kwargs
+        if unknown_kwargs:
+            raise ResourceAdmissionError(
+                f"Unknown kwargs passed to execute_in_verified_systemd_scope: {sorted(unknown_kwargs)}"
+            )
+
+        if cwd is not None and "cwd_path" in kwargs:
+            if Path(cwd).resolve() != Path(kwargs["cwd_path"]).resolve():
+                raise ResourceAdmissionError(
+                    f"Conflicting cwd and cwd_path arguments: cwd={cwd}, cwd_path={kwargs['cwd_path']}"
+                )
         cwd_val = cwd if cwd is not None else kwargs.get("cwd_path")
         if cwd_val is None:
             raise ResourceAdmissionError("cwd must be provided")
@@ -1599,6 +1612,11 @@ class ChildModelRuntimeAdapter:
             )
 
         # 1. Contained TMPDIR (reject global /tmp)
+        if tmpdir is not None and "tmpdir_path" in kwargs:
+            if Path(tmpdir).resolve() != Path(kwargs["tmpdir_path"]).resolve():
+                raise ResourceAdmissionError(
+                    f"Conflicting tmpdir and tmpdir_path arguments: tmpdir={tmpdir}, tmpdir_path={kwargs['tmpdir_path']}"
+                )
         tmpdir_val = tmpdir if tmpdir is not None else kwargs.get("tmpdir_path")
         if tmpdir_val is None:
             tmpdir_path = workspace_path / ".local" / "tmp"
