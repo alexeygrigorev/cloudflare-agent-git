@@ -65,10 +65,9 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 # Ensure repository and sibling repositories are in sys.path (strictly read-only access)
 WORKSPACE_PATH = Path("/home/alexey/git/cloudflare-agent-git").resolve()
 LAUNCHER_REPO_PATH = Path("/home/alexey/git/agent-quota-launcher").resolve()
-BUS_REPO_PATH = Path("/home/alexey/git/agent-bus").resolve()
 COORDINATION_REPO_PATH = Path("/home/alexey/git/agent-coordination").resolve()
 
-for repo_path in (WORKSPACE_PATH, LAUNCHER_REPO_PATH, BUS_REPO_PATH, COORDINATION_REPO_PATH):
+for repo_path in (WORKSPACE_PATH, LAUNCHER_REPO_PATH, COORDINATION_REPO_PATH):
     if repo_path.exists() and str(repo_path) not in sys.path:
         sys.path.insert(0, str(repo_path))
 
@@ -96,7 +95,8 @@ DEFAULT_WORKSPACE = Path("/home/alexey/git/cloudflare-agent-git")
 DEFAULT_SCRATCH_ROOT = DEFAULT_WORKSPACE / ".local" / "scratch" / "filebus-dispatcher-c2332"
 DEFAULT_STATE_FILE = DEFAULT_SCRATCH_ROOT / "dispatcher_state.json"
 DEFAULT_CRED_FILE = DEFAULT_SCRATCH_ROOT / "dispatcher_cred.json"
-DEFAULT_BUS_CLI = BUS_REPO_PATH / "coordination" / "bus_cli.py"
+PINNED_BUS_CLI = WORKSPACE_PATH / ".local" / "scratch" / "architect06-bus-integration" / "agent-bus" / "coordination" / "bus_cli.py"
+DEFAULT_BUS_CLI = PINNED_BUS_CLI
 
 MAX_WORKER_MEMORY_MB = 1500
 MAX_SCRATCH_DIR_BYTES = 512 * 1024 * 1024  # 512 MiB
@@ -300,6 +300,7 @@ class TaskSpecification:
     expected_outputs: Optional[List[str]] = None
     is_local_probe: bool = False
     env_vars: Optional[Dict[str, str]] = None
+    model_requirements: Optional[Dict[str, Any]] = None
 
     def __post_init__(self) -> None:
         if not self.is_local_probe and self.command_argv:
@@ -331,8 +332,13 @@ class TaskSpecification:
         else:
             task_dict = msg
 
-        task_id = str(task_dict.get("task_id") or msg_id)
-        cmd = task_dict.get("command_argv") or task_dict.get("command")
+        task_id = str(task_dict.get("task_id") or msg.get("task_id") or msg_id)
+        cmd = (
+            task_dict.get("command_argv")
+            or task_dict.get("command")
+            or msg.get("command_argv")
+            or msg.get("command")
+        )
         if isinstance(cmd, str):
             cmd_argv = cmd.split()
         elif isinstance(cmd, list):
@@ -341,26 +347,32 @@ class TaskSpecification:
             body_cmd = msg.get("body", "").strip()
             cmd_argv = body_cmd.split() if body_cmd and not body_cmd.startswith("{") else ["echo", f"task-{task_id}"]
 
-        cwd_raw = task_dict.get("cwd")
+        cwd_raw = task_dict.get("cwd") or msg.get("cwd")
         cwd_path = Path(cwd_raw).resolve() if cwd_raw else default_workspace.resolve()
 
-        req_mem = int(task_dict.get("requested_memory_mb", MAX_WORKER_MEMORY_MB))
-        timeout = float(task_dict.get("timeout_sec", 120.0))
+        req_mem = int(task_dict.get("requested_memory_mb") or msg.get("requested_memory_mb") or MAX_WORKER_MEMORY_MB)
+        timeout = float(task_dict.get("timeout_sec") or msg.get("timeout_sec") or 120.0)
 
-        tmpdir_raw = task_dict.get("tmpdir")
+        tmpdir_raw = task_dict.get("tmpdir") or msg.get("tmpdir")
         tmpdir_path = Path(tmpdir_raw).resolve() if tmpdir_raw else default_tmpdir.resolve()
 
-        expected = task_dict.get("expected_outputs")
+        expected = task_dict.get("expected_outputs") or msg.get("expected_outputs")
         expected_outputs = [str(p) for p in expected] if isinstance(expected, list) else None
 
         # Automatically mark non-model CLI commands as local probes (C2114 / C2118 / C2126)
-        is_probe = bool(task_dict.get("is_local_probe", False))
+        is_probe = bool(task_dict.get("is_local_probe", msg.get("is_local_probe", False)))
         if not is_probe and cmd_argv:
             bin_name = Path(cmd_argv[0]).name
             if bin_name not in MODEL_CLIS:
                 is_probe = True
 
-        env_vars = task_dict.get("env_vars") if isinstance(task_dict.get("env_vars"), dict) else None
+        env_vars = task_dict.get("env_vars") or msg.get("env_vars")
+        if not isinstance(env_vars, dict):
+            env_vars = None
+
+        model_reqs = task_dict.get("model_requirements") or msg.get("model_requirements")
+        if not isinstance(model_reqs, dict):
+            model_reqs = None
 
         return cls(
             task_id=task_id,
@@ -372,6 +384,7 @@ class TaskSpecification:
             expected_outputs=expected_outputs,
             is_local_probe=is_probe,
             env_vars=env_vars,
+            model_requirements=model_reqs,
         )
 
 
@@ -985,6 +998,18 @@ class FileBusDispatcherService:
         effective_tmp.mkdir(parents=True, exist_ok=True, mode=0o700)
         clean_env = clean_child_env(task_spec.env_vars, effective_tmp)
 
+        reqs = getattr(task_spec, "model_requirements", None)
+        if reqs is None and not task_spec.is_local_probe and task_spec.command_argv:
+            bin_name = Path(task_spec.command_argv[0]).name
+            if bin_name == "grok":
+                reqs = {"allowed_providers": ["grok"]}
+            elif bin_name in ("agy", "env"):
+                reqs = {"allowed_providers": ["antigravity", "gemini"]}
+            elif bin_name == "zcodex":
+                reqs = {"allowed_providers": ["zai", "zcode"]}
+            elif bin_name == "opencode":
+                reqs = {"allowed_providers": ["opencode"]}
+
         try:
             res = self.runtime_adapter.execute_in_verified_systemd_scope(
                 task_id=task_spec.task_id,
@@ -995,6 +1020,7 @@ class FileBusDispatcherService:
                 tmpdir=effective_tmp,
                 expected_outputs=task_spec.expected_outputs,
                 is_local_probe=task_spec.is_local_probe,
+                model_requirements=reqs,
                 env_vars=clean_env,
             )
             if res.get("returncode") != 0:

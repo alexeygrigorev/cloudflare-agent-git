@@ -830,6 +830,94 @@ class TestFileBusDispatcherAdversarial(unittest.TestCase):
         self.assertTrue(has_msg_before_unlink, "msg_id must be in state_path before inflight unlink")
         self.assertTrue(has_task_before_unlink, "task_id must be in state_path before inflight unlink")
 
+    def test_31_model_requirements_forwarding_and_provider_binding(self) -> None:
+        """
+        Confirms that model_requirements are parsed from message data and automatically
+        bound to allowed_providers in execute_task_in_scope (Directives C2353 / C2355).
+        """
+        # Case 1: Explicit model_requirements parsed from message
+        msg_with_reqs = {
+            "message_id": str(uuid.uuid4()),
+            "task_id": "test-reqs-explicit",
+            "command_argv": ["grok", "-p", "audit"],
+            "data": {
+                "model_requirements": {"allowed_providers": ["grok"]},
+            },
+        }
+        spec = TaskSpecification.from_message(
+            msg_with_reqs,
+            default_workspace=self.service.workspace,
+            default_tmpdir=self.service.scratch_tmp,
+        )
+        self.assertFalse(spec.is_local_probe)
+        self.assertEqual(spec.model_requirements, {"allowed_providers": ["grok"]})
+
+        # Case 2: Automatic provider binding for grok when model_requirements omitted
+        msg_grok_auto = {
+            "message_id": str(uuid.uuid4()),
+            "task_id": "test-grok-auto",
+            "command_argv": ["grok", "-p", "review"],
+        }
+        spec_auto = TaskSpecification.from_message(
+            msg_grok_auto,
+            default_workspace=self.service.workspace,
+            default_tmpdir=self.service.scratch_tmp,
+        )
+        self.assertFalse(spec_auto.is_local_probe)
+        self.assertIsNone(spec_auto.model_requirements)
+
+        # Mock runtime adapter execute_in_verified_systemd_scope to verify forwarded model_requirements
+        captured_call_args = {}
+        def mock_execute(*args: Any, **kwargs: Any) -> Dict[str, Any]:
+            captured_call_args.update(kwargs)
+            return {
+                "task_id": kwargs.get("task_id"),
+                "returncode": 0,
+                "unit_name": "agent-scope-mock-unit.scope",
+                "completed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            }
+
+        with patch.object(self.service.runtime_adapter, "execute_in_verified_systemd_scope", side_effect=mock_execute):
+            res = self.service.execute_task_in_scope(spec_auto)
+
+        self.assertEqual(res["returncode"], 0)
+        self.assertEqual(captured_call_args.get("model_requirements"), {"allowed_providers": ["grok"]})
+
+        # Case 3: Local probe commands remain untainted by model_requirements
+        msg_local = {
+            "message_id": str(uuid.uuid4()),
+            "task_id": "test-local-echo",
+            "command_argv": ["echo", "local probe"],
+        }
+        spec_local = TaskSpecification.from_message(
+            msg_local,
+            default_workspace=self.service.workspace,
+            default_tmpdir=self.service.scratch_tmp,
+        )
+        self.assertTrue(spec_local.is_local_probe)
+
+    def test_32_cli_parser_and_status_regression(self) -> None:
+        """
+        Confirms CLI parser parses --cred and status command without NameError,
+        verifying DEFAULT_CRED_FILE presence and status execution (Directive C2356).
+        """
+        from research.antigravity.tooling.self_org.filebus_dispatcher_service import DEFAULT_CRED_FILE, DEFAULT_STATE_FILE
+        self.assertTrue(DEFAULT_CRED_FILE.name == "dispatcher_cred.json")
+
+        script_path = str(WORKSPACE / "research" / "antigravity" / "tooling" / "self_org" / "filebus_dispatcher_service.py")
+        cmd = [
+            sys.executable,
+            script_path,
+            "--store", str(self.service.bus_store),
+            "--cred", str(self.cred_path),
+            "--state", str(self.state_path),
+            "status",
+        ]
+        res = subprocess.run(cmd, cwd=str(WORKSPACE), capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, f"status subcommand failed: {res.stderr}")
+        data = json.loads(res.stdout)
+        self.assertIn("status", data)
+
 
 if __name__ == "__main__":
     unittest.main()
