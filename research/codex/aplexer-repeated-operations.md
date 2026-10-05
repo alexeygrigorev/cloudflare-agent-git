@@ -76,3 +76,10 @@ Maintainer-intake continuation 2026-10-05T00:42:34.065170+00:00: publication pro
 
 
 2026-10-05T01:11:42.839457+00:00 Maintainer intake: CLI run instructions in multiple agent reports invented enroll/agent-name/unread-only flags even though actual parser uses register/agent/default-unread and credential-file writes. Tool should expose machine-readable CLI/API contract and require source-pinned executable documentation smoke receipts; baseline comparisons must name actual supported JSON/credential interfaces. Public checkpoint + real model task/ACK evidence cannot certify unexecuted runbook or fabricated competitor weakness. Existing head owns narrow correction/tests.
+
+
+### Maintainer intake: evidence-scoped diagrams and independent continuation — C2224–C2230
+
+Observed repeated friction: a publication diagram drew product integrations and RPC recipients not exercised by the actual trial; geometry-only assertions missed wrapped text crossing card borders. Feature requirement: bind observed edges to exact sender/recipient/task evidence; label proposed edges separately; render the actual datedasset and review pixels before publication. Store writer response/base draft plus subsequent editor/article/asset/style digests separately, not one inherited modelcredit. Owner publication088; falsifier a diagram edge without corresponding observed receipt or visible clipping after asserted visual pass.
+
+Observed head stalled unrelated executor route evaluation behind desktop RPC reply even though the route/admission check could proceed independently. Principal corrected C2229 and used twicefresh idle/empty guarded original-envelope delivery. Feature requirement: completion/dependency queue must distinguish genuine prerequisites from independent ready work and dispatch the next owned task with receiver ACK/firsttool/result. Desktop input remains an external test participant, not routine scheduler. Owner Ant46 continuation lane; acceptance requires actual independent dispatch and repeated completion-to-next-work cycles, not a declared trigger.
