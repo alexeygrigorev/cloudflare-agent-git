@@ -3139,6 +3139,66 @@
       "reviewer": "grok-4.6 (dogfood-model-reviewer)",
       "accepted_at": "2026-10-05T06:10:59.046088+00:00",
       "feature_id": null
+    },
+    {
+      "id": "filebus-hardened-runner-guards-c2387",
+      "project_id": "agent-coordination",
+      "team_id": "agent-coordination",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T07:30:14.000000+00:00",
+      "next_action": "Hardened runner guards delivered and independently certified under C2387/C2392/C2394; ready for unsteered model tasks.",
+      "acceptance": "Implemented 4f974 frozen-runner invariants in run_hardened_filebus_model_review.py (unsteered prompt, fail-closed verdict parser, exact correlation, cryptographic digest match, append-only trial ledger, loaded source manifest, per-run exclusivity). Verified by author test suite test_hardened_runner_guards.py (8/8 PASS) and independent audit REV-FILEBUS-RUNNER-GUARDS.md (Reviewer 37, 13/13 tests PASS, verdict FULL ACCEPTANCE, commit ef19315).",
+      "blocked_on": [],
+      "executor_ids": [
+        "d6988df9-09a1-44f0-b7bd-7b28018f69a8",
+        "37aa1067-8bda-4dde-95b8-7b5bb927bd1f"
+      ],
+      "owned_paths": [
+        ".local/scratch/run_hardened_filebus_model_review.py",
+        ".local/scratch/test_hardened_runner_guards.py",
+        "research/antigravity/reviews/REV-FILEBUS-RUNNER-GUARDS.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-FILEBUS-RUNNER-GUARDS.md",
+        ".local/scratch/filebus-hardened-model-review/trial_receipts.jsonl"
+      ],
+      "first_action": "2026-10-05T07:15:00.000000+00:00",
+      "commit": "ef19315",
+      "pr_url": null,
+      "tests": "test_hardened_runner_guards.py (8 tests) + test_adversarial_runner_mutants.py (5 tests)",
+      "reviewer": "reviewer37 (37aa1067)",
+      "accepted_at": "2026-10-05T07:30:14.000000+00:00",
+      "feature_id": null
+    },
+    {
+      "id": "agent-branches-sdk-dogfood-c2395",
+      "project_id": "agent-branches",
+      "team_id": "agent-branches",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T07:33:00.000000+00:00",
+      "next_action": "Comparative dogfood report delivered under C2395; ordinary Git checkpoint verified alongside Agent Branches vector clock fencing.",
+      "acceptance": "Real product dogfood trial comparing Agent Branches SDK (pinned commit cbf72e25) against Ordinary Git using real project deliverables (hardened runner, test suite, review report, dashboard patch) in isolated scratch workspace (.local/scratch/agent-branches-dogfood/receipt.json). Delivered REPORT-AGENT-BRANCHES-DOGFOOD-C2395.md (commit 35d8228). Verified commit provenance enforcement (HTTP 400 on un-transported commit) and vector clock conflict fencing (HTTP 409 StaleVectorError).",
+      "blocked_on": [],
+      "executor_ids": [
+        "46fdb644-9b58-4e2f-aab3-9be5e1e33337"
+      ],
+      "owned_paths": [
+        "research/antigravity/recovery/REPORT-AGENT-BRANCHES-DOGFOOD-C2395.md",
+        ".local/scratch/agent-branches-dogfood/dogfood_trial.py"
+      ],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-AGENT-BRANCHES-DOGFOOD-C2395.md",
+        ".local/scratch/agent-branches-dogfood/receipt.json"
+      ],
+      "first_action": "2026-10-05T07:28:00.000000+00:00",
+      "commit": "35d8228",
+      "pr_url": null,
+      "tests": "dogfood_trial.py (ordinary git + agent branches real comparison)",
+      "reviewer": "antigravity-head (46fdb644)",
+      "accepted_at": "2026-10-05T07:33:00.000000+00:00",
+      "feature_id": null
     }
   ]
 }
