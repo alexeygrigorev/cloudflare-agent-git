@@ -179,13 +179,16 @@ def clean_child_env(
     contained_tmp: Optional[Union[str, Path]] = None,
 ) -> Dict[str, str]:
     """
-    Strips APLEXER_* environment variables from child process environment to prevent
-    identity hijacking, mailbox pollution, or caller impersonation.
+    Strips APLEXER_* environment variables and forbidden system overrides
+    (PATH, HOME, XDG_RUNTIME_DIR, DBUS_SESSION_BUS_ADDRESS) from child process environment
+    to prevent identity hijacking, mailbox pollution, caller impersonation, or scope escape.
     Sets contained TMPDIR, TMP, and TEMP variables to the authorized scratch root.
     """
-    env = dict(base_env if base_env is not None else os.environ)
+    env = dict(base_env if base_env is not None else {})
     for key in list(env.keys()):
         if key.startswith("APLEXER_"):
+            env.pop(key, None)
+        if key in ("PATH", "HOME", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS"):
             env.pop(key, None)
 
     if contained_tmp is not None:

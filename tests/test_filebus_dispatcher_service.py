@@ -28,6 +28,12 @@ Verifies the 5 required test cases:
   * Verifies stripping of APLEXER_* environment variables from execution context.
   * Verifies contained scratch TMPDIR enforcement (mode 0700).
   * Verifies ChildModelRuntimeAdapter execution parameters (is_local_probe, MemoryMax=1500M).
+- Test 6: clean_child_env default isolation and system override stripping (Directives C2384 / C2385):
+  * Verifies clean_child_env(None, contained_tmp) defaults to empty base_env,
+    producing only TMPDIR, TMP, TEMP, and does NOT leak host HOME, PATH, or environment.
+  * Verifies clean_child_env({"HOME": "/bad", "CUSTOM": "ok"}, contained_tmp)
+    strips HOME while preserving CUSTOM and setting TMPDIR/TMP/TEMP.
+  * Verifies stripping of all forbidden system keys: PATH, HOME, XDG_RUNTIME_DIR, DBUS_SESSION_BUS_ADDRESS.
 
 Zero cargo/rustc invocations.
 Zero /tmp growth (TMPDIR strictly in .local/scratch/filebus-dispatcher-c2332).
@@ -552,6 +558,53 @@ class TestFileBusDispatcherService(unittest.TestCase):
         call_kwargs = mock_adapter.execute_in_verified_systemd_scope.call_args[1]
         self.assertEqual(call_kwargs["task_id"], "valid-spec-01")
         self.assertEqual(call_kwargs["requested_memory_mb"], 1024)
+
+    # -----------------------------------------------------------------------
+    # Test 6: clean_child_env defaults and system override stripping (C2384/C2385)
+    # -----------------------------------------------------------------------
+    def test_06_clean_child_env_defaults_and_system_stripping(self) -> None:
+        """
+        Codex Directives C2384 & C2385:
+        Verifies:
+        1. clean_child_env(None, contained_tmp) produces only TMPDIR, TMP, TEMP,
+           and does NOT leak host HOME, PATH, or environment variables.
+        2. clean_child_env({"HOME": "/bad", "CUSTOM": "ok"}, contained_tmp)
+           strips HOME while preserving CUSTOM and setting TMPDIR/TMP/TEMP.
+        3. Strips all forbidden system keys: PATH, HOME, XDG_RUNTIME_DIR, DBUS_SESSION_BUS_ADDRESS.
+        """
+        contained_tmp = self.test_dir / "clean_tmp"
+        expected_tmp = str(contained_tmp.resolve())
+
+        # 1. base_env is None -> defaults to empty dict (no os.environ leak)
+        none_env = clean_child_env(None, contained_tmp)
+        self.assertEqual(
+            none_env,
+            {"TMPDIR": expected_tmp, "TMP": expected_tmp, "TEMP": expected_tmp},
+        )
+        self.assertNotIn("HOME", none_env)
+        self.assertNotIn("PATH", none_env)
+        self.assertNotIn("XDG_RUNTIME_DIR", none_env)
+        self.assertNotIn("DBUS_SESSION_BUS_ADDRESS", none_env)
+
+        # 2. base_env with forbidden system overrides and valid custom variables
+        dirty_input = {
+            "HOME": "/bad",
+            "CUSTOM": "ok",
+            "PATH": "/bad/bin",
+            "XDG_RUNTIME_DIR": "/bad/run",
+            "DBUS_SESSION_BUS_ADDRESS": "unix:path=/bad/bus",
+            "APLEXER_SESSION_ID": "aplexer-secret",
+        }
+        cleaned = clean_child_env(dirty_input, contained_tmp)
+        self.assertEqual(cleaned.get("CUSTOM"), "ok")
+        self.assertEqual(cleaned.get("TMPDIR"), expected_tmp)
+        self.assertEqual(cleaned.get("TMP"), expected_tmp)
+        self.assertEqual(cleaned.get("TEMP"), expected_tmp)
+        self.assertNotIn("HOME", cleaned)
+        self.assertNotIn("PATH", cleaned)
+        self.assertNotIn("XDG_RUNTIME_DIR", cleaned)
+        self.assertNotIn("DBUS_SESSION_BUS_ADDRESS", cleaned)
+        self.assertNotIn("APLEXER_SESSION_ID", cleaned)
 
 
 if __name__ == "__main__":

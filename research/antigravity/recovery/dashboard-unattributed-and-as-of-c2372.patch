@@ -63,7 +63,7 @@ index bf47d38..845e938 100644
  
  .metrics { margin: 0; }
 diff --git a/static/dashboard.js b/static/dashboard.js
-index d0bf733..d5852dd 100644
+index d0bf733..c8a71b7 100644
 --- a/static/dashboard.js
 +++ b/static/dashboard.js
 @@ -134,6 +134,28 @@ function renderHourly(data) {
@@ -73,12 +73,12 @@ index d0bf733..d5852dd 100644
 +  // Render explicit unattributed cohort card
 +  var u = (projects && projects.unattributed) || (data && data.unattributed) || null;
 +  var uBadge = document.getElementById("unknown-unattributed");
-+  if (!u) {
++  if (!u || data === null) {
 +    if (uBadge) uBadge.hidden = false;
 +    setCell("unique-unattributed", { text: "n/a", cls: "na" });
-+    setCell("hours-unattributed", topUnattrib === null ? { text: "n/a", cls: "na" } : fmtHours(topUnattrib));
++    setCell("hours-unattributed", (data !== null && topUnattrib !== null) ? fmtHours(topUnattrib) : { text: "n/a", cls: "na" });
 +    setCell("coverage-unattributed", { text: "unknown", cls: "na" });
-+    setCell("telemetry-status-unattributed", { text: "unscoped/platform", cls: "na" });
++    setCell("telemetry-status-unattributed", { text: "unknown", cls: "na" });
 +    renderChart("unattributed", []);
 +  } else {
 +    if (uBadge) uBadge.hidden = !(u.unknown === true);
@@ -95,7 +95,16 @@ index d0bf733..d5852dd 100644
    // Shared identities note — counts are non-additive across projects.
    var note = document.getElementById("shared-note");
    var shared = data && data.shared_agent_ids;
-@@ -261,6 +283,20 @@ function renderUsage(data) {
+@@ -221,6 +243,8 @@ function renderUsage(data) {
+   if (projects && projects.projects && typeof projects.projects === "object") projects = projects.projects;
+   var keys = projects ? Object.keys(projects) : [];
+   if (keys.length === 0) {
++    setCell("events-unattributed", { text: "n/a", cls: "na" });
++    setCell("tokens-unattributed", { text: "n/a", cls: "na" });
+     var tr = document.createElement("tr");
+     var td = document.createElement("td");
+     td.colSpan = 9;
+@@ -261,6 +285,20 @@ function renderUsage(data) {
      tr.appendChild(cell(flags.length ? flags.join("; ") : "—", flags.length ? null : "na"));
      body.appendChild(tr);
    });
@@ -116,7 +125,7 @@ index d0bf733..d5852dd 100644
  }
  
  function renderFeatures(data) {
-@@ -322,16 +358,20 @@ function setRefreshStatus(text) {
+@@ -322,16 +360,20 @@ function setRefreshStatus(text) {
  
  function loadAll(asOfISO) {
    setRefreshStatus("loading…");
@@ -179,11 +188,349 @@ index a1687be..7547ac9 100644
      </div>
  
      <section class="panel" id="usage-section" aria-label="Usage accounting">
+diff --git a/tests/test_dashboard_js_transitions.js b/tests/test_dashboard_js_transitions.js
+new file mode 100644
+index 0000000..41126f6
+--- /dev/null
++++ b/tests/test_dashboard_js_transitions.js
+@@ -0,0 +1,324 @@
++/**
++ * Automated JS/DOM Regression Suite for Dashboard Transitions (Directive C2374)
++ * Verifies:
++ * 1. Transition 1: non-empty cutoff -> empty cutoff properly resets #events-unattributed and #tokens-unattributed to "n/a".
++ * 2. Transition 2: success -> HTTP 400 error properly clears all unattributed fields to "unknown" / "n/a" (never leaves stale data or zero).
++ * 3. renderHourly(null) and renderUsage(null) error fallback clearing.
++ */
++
++const fs = require("fs");
++const path = require("path");
++const vm = require("vm");
++const assert = require("assert");
++
++// Lightweight DOM mock
++class MockElement {
++  constructor(tagName, id) {
++    this.tagName = tagName.toUpperCase();
++    this.id = id || "";
++    this.children = [];
++    this._textContent = "";
++    this.className = "";
++    this.hidden = false;
++    this.style = {};
++    this.attributes = {};
++    this.colSpan = 1;
++    this.value = "";
++    this.title = "";
++  }
++
++  get textContent() {
++    return this._textContent;
++  }
++
++  set textContent(val) {
++    this._textContent = val === null || val === undefined ? "" : String(val);
++    if (this._textContent === "") {
++      this.children = [];
++    }
++  }
++
++  appendChild(child) {
++    this.children.push(child);
++    return child;
++  }
++
++  setAttribute(name, val) {
++    this.attributes[name] = String(val);
++  }
++
++  getAttribute(name) {
++    return this.attributes[name] || null;
++  }
++}
++
++function createDOMEnvironment() {
++  const elements = {};
++  const htmlPath = path.join(__dirname, "../static/index.html");
++  const html = fs.readFileSync(htmlPath, "utf-8");
++
++  // Extract all IDs from static/index.html
++  const idRegex = /id="([a-zA-Z0-9_\-]+)"/g;
++  let match;
++  while ((match = idRegex.exec(html)) !== null) {
++    const id = match[1];
++    elements[id] = new MockElement("div", id);
++  }
++
++  const document = {
++    getElementById(id) {
++      if (!elements[id]) {
++        elements[id] = new MockElement("div", id);
++      }
++      return elements[id];
++    },
++    createElement(tagName) {
++      return new MockElement(tagName);
++    },
++    addEventListener(event, fn) {
++      // DOMContentLoaded hook
++    }
++  };
++
++  return { document, elements };
++}
++
++function runDashboardScript(env, mockFetch) {
++  const jsPath = path.join(__dirname, "../static/dashboard.js");
++  const code = fs.readFileSync(jsPath, "utf-8");
++
++  const sandbox = {
++    document: env.document,
++    fetch: mockFetch || (() => Promise.reject(new Error("fetch not mocked"))),
++    setTimeout,
++    clearTimeout,
++    Date,
++    Math,
++    Number,
++    String,
++    Array,
++    Object,
++    Boolean,
++    RegExp,
++    Error,
++    encodeURIComponent,
++    isFinite,
++    isNaN,
++    console
++  };
++
++  const context = vm.createContext(sandbox);
++  vm.runInContext(code, context);
++  return context;
++}
++
++async function testTransition1_NonEmptyToEmptyCutoff() {
++  console.log("Running Test 1: Transition from non-empty cutoff to empty cutoff resets usage counts...");
++  const env = createDOMEnvironment();
++  const ctx = runDashboardScript(env);
++
++  // 1. Initial non-empty usage data with unattributed metrics
++  const nonEmptyUsage = {
++    projects: {
++      "agent-branches": { event_count: 10, total_input_tokens: 500, total_output_tokens: 200 },
++      "unattributed": {
++        event_count: 85,
++        total_input_tokens: 12500,
++        total_output_tokens: 3400
++      }
++    }
++  };
++
++  ctx.renderUsage(nonEmptyUsage);
++
++  const evEl = env.elements["events-unattributed"];
++  const tokEl = env.elements["tokens-unattributed"];
++
++  assert.strictEqual(evEl.textContent, "85", "Expected events-unattributed to be 85");
++  assert.strictEqual(tokEl.textContent, "12500 in / 3400 out", "Expected formatted tokens");
++
++  // 2. Transition to empty cutoff
++  const emptyUsage = {
++    projects: {}
++  };
++
++  ctx.renderUsage(emptyUsage);
++
++  assert.strictEqual(evEl.textContent, "n/a", "events-unattributed must be reset to 'n/a'");
++  assert.strictEqual(evEl.className, "na", "events-unattributed class must be 'na'");
++  assert.strictEqual(tokEl.textContent, "n/a", "tokens-unattributed must be reset to 'n/a'");
++  assert.strictEqual(tokEl.className, "na", "tokens-unattributed class must be 'na'");
++
++  console.log("  PASS: Transition 1 verified cleanly.");
++}
++
++async function testTransition2_SuccessToHttp400Error() {
++  console.log("Running Test 2: Transition from success to HTTP 400 error clears all unattributed fields...");
++  const env = createDOMEnvironment();
++
++  let simulateError = false;
++
++  const mockFetch = (url) => {
++    if (simulateError) {
++      return Promise.resolve({
++        ok: false,
++        status: 400,
++        statusText: "Bad Request"
++      });
++    }
++
++    if (url.includes("/api/hourly")) {
++      return Promise.resolve({
++        ok: true,
++        status: 200,
++        json: () => Promise.resolve({
++          as_of: "2026-10-05T04:30:00Z",
++          window_start: "2026-10-04T04:30:00Z",
++          window_end: "2026-10-05T04:30:00Z",
++          projects: {
++            "agent-branches": { unique_agents: 2, total_agent_hours: 15.5, coverage: 1.0, hourly_buckets: [] },
++            "unattributed": {
++              unique_agents: 12,
++              total_agent_hours: 245.8,
++              coverage: 0.999,
++              hourly_buckets: [{ bucket_start: "2026-10-04T04:30:00Z", bucket_end: "2026-10-04T05:30:00Z", agent_hours: 10.2 }]
++            }
++          }
++        })
++      });
++    }
++
++    if (url.includes("/api/usage")) {
++      return Promise.resolve({
++        ok: true,
++        status: 200,
++        json: () => Promise.resolve({
++          projects: {
++            "unattributed": {
++              event_count: 140,
++              total_input_tokens: 50000,
++              total_output_tokens: 15000
++            }
++          }
++        })
++      });
++    }
++
++    if (url.includes("/api/features")) {
++      return Promise.resolve({
++        ok: true,
++        status: 200,
++        json: () => Promise.resolve({ projects: {} })
++      });
++    }
++
++    if (url.includes("/api/health")) {
++      return Promise.resolve({
++        ok: true,
++        status: 200,
++        json: () => Promise.resolve({ status: "ok" })
++      });
++    }
++
++    return Promise.reject(new Error("Unknown URL: " + url));
++  };
++
++  const ctx = runDashboardScript(env, mockFetch);
++
++  // 1. Initial successful load
++  await ctx.loadAll("2026-10-05T04:30:00Z");
++
++  assert.strictEqual(env.elements["unique-unattributed"].textContent, "12");
++  assert.strictEqual(env.elements["hours-unattributed"].textContent, "245.80 h");
++  assert.strictEqual(env.elements["coverage-unattributed"].textContent, "99.9%");
++  assert.strictEqual(env.elements["telemetry-status-unattributed"].textContent, "unscoped/platform");
++  assert.strictEqual(env.elements["events-unattributed"].textContent, "140");
++  assert.strictEqual(env.elements["tokens-unattributed"].textContent, "50000 in / 15000 out");
++  assert.strictEqual(env.elements["chart-unattributed"].children.length > 0, true);
++
++  // 2. Transition to HTTP 400 error
++  simulateError = true;
++  await ctx.loadAll("invalid-as-of-cutoff");
++
++  // Verify all 6 fields cleared to unknown / n/a
++  assert.strictEqual(env.elements["unique-unattributed"].textContent, "n/a");
++  assert.strictEqual(env.elements["unique-unattributed"].className, "na");
++
++  assert.strictEqual(env.elements["hours-unattributed"].textContent, "n/a");
++  assert.strictEqual(env.elements["hours-unattributed"].className, "na");
++
++  assert.strictEqual(env.elements["coverage-unattributed"].textContent, "unknown");
++  assert.strictEqual(env.elements["coverage-unattributed"].className, "na");
++
++  assert.strictEqual(env.elements["telemetry-status-unattributed"].textContent, "unknown");
++  assert.strictEqual(env.elements["telemetry-status-unattributed"].className, "na");
++
++  assert.strictEqual(env.elements["events-unattributed"].textContent, "n/a");
++  assert.strictEqual(env.elements["events-unattributed"].className, "na");
++
++  assert.strictEqual(env.elements["tokens-unattributed"].textContent, "n/a");
++  assert.strictEqual(env.elements["tokens-unattributed"].className, "na");
++
++  // Verify chart container cleared to unknown
++  const chartChildren = env.elements["chart-unattributed"].children;
++  assert.strictEqual(chartChildren.length, 1, "Chart must contain fallback paragraph");
++  assert.strictEqual(chartChildren[0].textContent, "no bucket data (unknown)");
++  assert.strictEqual(chartChildren[0].className, "muted");
++
++  // Verify errors are exposed in UI error banners
++  assert.strictEqual(env.elements["hourly-error"].hidden, false);
++  assert.strictEqual(env.elements["usage-error"].hidden, false);
++
++  console.log("  PASS: Transition 2 verified cleanly.");
++}
++
++async function testDirectNullFallbacks() {
++  console.log("Running Test 3: Direct renderHourly(null) and renderUsage(null)...");
++  const env = createDOMEnvironment();
++  const ctx = runDashboardScript(env);
++
++  // Populate first
++  env.elements["unique-unattributed"].textContent = "99";
++  env.elements["hours-unattributed"].textContent = "123.45";
++  env.elements["coverage-unattributed"].textContent = "100.0%";
++  env.elements["telemetry-status-unattributed"].textContent = "unscoped/platform";
++  env.elements["events-unattributed"].textContent = "500";
++  env.elements["tokens-unattributed"].textContent = "10k in / 10k out";
++
++  // Call null fallbacks
++  ctx.renderHourly(null);
++  ctx.renderUsage(null);
++
++  assert.strictEqual(env.elements["unique-unattributed"].textContent, "n/a");
++  assert.strictEqual(env.elements["hours-unattributed"].textContent, "n/a");
++  assert.strictEqual(env.elements["coverage-unattributed"].textContent, "unknown");
++  assert.strictEqual(env.elements["telemetry-status-unattributed"].textContent, "unknown");
++  assert.strictEqual(env.elements["events-unattributed"].textContent, "n/a");
++  assert.strictEqual(env.elements["tokens-unattributed"].textContent, "n/a");
++
++  const chartChildren = env.elements["chart-unattributed"].children;
++  assert.strictEqual(chartChildren.length, 1);
++  assert.strictEqual(chartChildren[0].textContent, "no bucket data (unknown)");
++
++  console.log("  PASS: Direct null fallbacks verified cleanly.");
++}
++
++async function main() {
++  await testTransition1_NonEmptyToEmptyCutoff();
++  await testTransition2_SuccessToHttp400Error();
++  await testDirectNullFallbacks();
++  console.log("\nAll 3 JS transition regression suites passed successfully.");
++}
++
++if (require.main === module) {
++  main().catch((err) => {
++    console.error("Test failed:", err);
++    process.exit(1);
++  });
++}
++
++module.exports = {
++  testTransition1_NonEmptyToEmptyCutoff,
++  testTransition2_SuccessToHttp400Error,
++  testDirectNullFallbacks
++};
 diff --git a/tests/test_server.py b/tests/test_server.py
-index 7d99455..f3f4605 100644
+index 7d99455..b7760d7 100644
 --- a/tests/test_server.py
 +++ b/tests/test_server.py
-@@ -140,6 +140,65 @@ class TestDashboardServer(unittest.TestCase):
+@@ -5,6 +5,7 @@ Unit tests for dashboard preview server endpoints.
+ import datetime
+ import json
+ import os
++import subprocess
+ import threading
+ import time
+ import unittest
+@@ -140,6 +141,65 @@ class TestDashboardServer(unittest.TestCase):
          self.assertIn("projects", payload)
          self.assertIn("coverage_gaps", payload)
  
@@ -249,3 +596,22 @@ index 7d99455..f3f4605 100644
      def test_missing_source_coverage_gap(self):
          old = os.environ.get("AGENT_SPANS_PATH")
          os.environ["AGENT_SPANS_PATH"] = os.path.join(SCRATCH, "missing-spans.json")
+@@ -167,6 +227,18 @@ class TestDashboardServer(unittest.TestCase):
+         self.assertEqual(status, 200)
+         self.assertIn("text/css", headers.get("Content-Type", ""))
+ 
++    def test_js_dom_transitions(self):
++        js_test_path = os.path.join(os.path.dirname(__file__), "test_dashboard_js_transitions.js")
++        if not os.path.isfile(js_test_path):
++            self.skipTest("tests/test_dashboard_js_transitions.js not present")
++        res = subprocess.run(["node", js_test_path], capture_output=True, text=True)
++        self.assertEqual(
++            res.returncode,
++            0,
++            f"JS DOM transitions test failed with code {res.returncode}:\nStdout:\n{res.stdout}\nStderr:\n{res.stderr}",
++        )
++
+ 
+ if __name__ == "__main__":
+     unittest.main()
++

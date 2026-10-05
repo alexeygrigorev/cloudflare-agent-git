@@ -4,17 +4,17 @@
 - **Dispatched By:** `antigravity-head` (`46fdb644-9b58-4e2f-aab3-9be5e1e33337` / harness: `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
 - **Governing Directives:** Codex Principal Directives C2369, C2332, C2136, C2124, C2120, C2108, C2105, C2059; Operating Model ([`coordination/OPERATING-MODEL.md`](file:///home/alexey/git/cloudflare-agent-git/coordination/OPERATING-MODEL.md)); Authoritative Four-Product Delivery Reset (2026-10-04)
 - **Target Endpoint:** `http://127.0.0.1:8766/api/latest` (PID 1608645, 217/217 rows, observed live and unperturbed)
-- **Fixed Cutoff Instant:** `2026-10-05T04:30:00Z` (exact mission assignment tick instant; zero future projection)
-- **Primary Rolling Window:** `[2026-10-04T04:30:00Z, 2026-10-05T04:30:00Z)` (24 contiguous half-open UTC hourly buckets)
+- **Fixed Cutoff Instant:** `2026-10-05T07:00:00Z` (exact mission assignment tick instant; zero future projection)
+- **Primary Rolling Window:** `[2026-10-04T07:00:00Z, 2026-10-05T07:00:00Z)` (24 contiguous half-open UTC hourly buckets)
 - **Total Competition Window:** `24.0` hours
 - **Normalized Berlin Day Window:** `[2026-10-03T22:00:00Z, 2026-10-04T22:00:00Z)` (`2026-10-04 00:00` to `2026-10-05 00:00` CEST)
 - **Deliverables:**
-  1. Structured JSON: [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json) (mode `0600`, size: `121,972 B`, SHA256: `643b77ab6fd1d087c69fabe0e1e0640db855bb1b17cbc0f4cc008f5fd6f023b6`)
+  1. Structured JSON: [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json) (mode `0600`, size: `121,816 B`, SHA256: `e37cc1925bac409fa824acbd541b666d86c0f319329091d12afe111c752a415d`)
   2. Analytical Report: [`research/antigravity/recovery/REPORT-HOURLY-24H-CONSUMER.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-HOURLY-24H-CONSUMER.md)
 - **Scratch Testbed:** `.local/scratch/hourly-consumer-c2332/` (mode `0700`, measured disk: `44 KB` $\le$ 512 MB, zero net `/tmp` growth)
 - **Compiler Hold Invariant:** Host-wide **0 cargo / rustc invocations under human hold**
 - **Publication Guard:** Verified via [`research/antigravity/tooling/publication_guard.py`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/tooling/publication_guard.py) (Clean: Exit 0)
-- **As-of Date:** 2026-10-05T04:30:00Z (Europe/Berlin: 06:30 CEST)
+- **As-of Date:** 2026-10-05T07:00:00Z (Europe/Berlin: 09:00 CEST)
 
 ---
 
@@ -27,14 +27,14 @@ Under Codex Principal Directives C2332 and C2369, this authoritative 24-hour hou
    - Dedicated tracking is maintained for the exact 4 active products: `agent-branches`, `agent-dashboard`, `quota-launcher`, and `agent-coordination`, alongside `unattributed`.
    - All legacy or alternative aliases (`agent-quota-launcher`, `agent_quota_launcher`, `agent_branches`, `agent_dashboard`, `agent_coordination`) are strictly and deterministically normalized into their canonical project identifiers.
 2. **Fixed Cutoff & 24 Contiguous Half-Open UTC Buckets:**
-   - The primary evaluation window is pinned to `[2026-10-04T04:30:00Z, 2026-10-05T04:30:00Z)`, corresponding to the exact issuance instant of Directive C2332.
+   - The primary evaluation window is pinned to `[2026-10-04T07:00:00Z, 2026-10-05T07:00:00Z)`, corresponding to the authoritative morning mission cutoff.
    - The window is partitioned into exactly 24 contiguous half-open hourly buckets $[t_i, t_{i+1})$, where bucket $i = [\text{win\_start} + i\times 1\text{h}, \text{win\_start} + (i+1)\times 1\text{h})$.
 3. **Snapshot Record Normalization & Deduplication (Directive C2369):**
    - Snapshot records are ingested, sorted chronologically, and deduplicated by `(normalized_timestamp, session_or_hook_id)` before forming sampling or presence intervals.
    - Out-of-order ticks and duplicate session entries within identical timestamp buckets are neutralized, preventing synthetic interval width inflation. Ingested 1,431 raw ticks resolve to exactly 1,431 unique timestamps with 6,784 redundant session records deduplicated.
 4. **Decoupled Summary Ratios: Eligibility vs. Sampling Coverage (Directive C2369):**
-   - `commissioning_eligibility_ratio`: measures the temporal fraction of the 24h evaluation window since official commissioning ($W_{\text{obs}} / 24.0$, e.g. $0.723322$ for 17.3597h).
-   - `telemetry_sampling_coverage_ratio`: measures actual observer sampling continuity across the commissioned window ($W_{\text{sampled}} / W_{\text{obs}}$, e.g. $0.999058$ representing 99.91% continuous tick coverage).
+   - `commissioning_eligibility_ratio`: measures the temporal fraction of the 24h evaluation window since official commissioning ($W_{\text{obs}} / 24.0$, e.g. `0.827488` for 19.8597h on primary products `agent-branches`, `agent-dashboard`, `quota-launcher`, and `0.804988` for 19.3197h on `agent-coordination`).
+   - `telemetry_sampling_coverage_ratio`: measures actual observer sampling continuity across the commissioned window ($W_{\text{sampled}} / W_{\text{obs}}$, e.g. `0.999188` [99.92%] on primary products, `0.999165` on `agent-coordination`, and `0.999328` on `unattributed`).
    - Retains legacy alias `observed_window_coverage_ratio` for downstream compatibility.
 5. **Truthful Coverage & Outage Detection:**
    - Prior to official commissioning (11:08:25 UTC for `agent-branches`, `agent-dashboard`, and `quota-launcher`; 11:40:49 UTC for `agent-coordination`), product metrics are marked as `observation_status: "unobserved"` with null hours.
@@ -60,18 +60,18 @@ Under Codex Principal Directives C2332 and C2369, this authoritative 24-hour hou
 
 ## 2. Reconciled 24h Hourly Utilization & Concurrency Matrix
 
-**Window:** `[2026-10-04T04:30:00Z, 2026-10-05T04:30:00Z)` (24 contiguous half-open UTC hourly buckets)  
+**Window:** `[2026-10-04T07:00:00Z, 2026-10-05T07:00:00Z)` (24 contiguous half-open UTC hourly buckets)  
 **Total Competition Window:** `24.0` hours  
-**Measured Cutoff Instant:** `2026-10-05T04:30:00Z`  
+**Measured Cutoff Instant:** `2026-10-05T07:00:00Z`  
 **Snapshot Archives Scanned:** 322 multi-workspace periodic snapshot files across `.local/metrics/` (1,431 ticks, 6,784 duplicate sessions deduplicated per C2369)
 
 | Product ID | Observation Status | Commissioned (UTC) | Observed Window ($W_{\text{obs}}$) | Commissioning Ratio ($W_{\text{obs}} / 24$) | Sampling Ratio ($W_{\text{samp}} / W_{\text{obs}}$) | Total Presence (h) | Avg Concurrency ($W_{\text{obs}}$) | 24h Presence Lower Bound | Verified Work (h) | Avg Work Concurrency ($W_{\text{obs}}$) | 24h Work Lower Bound | Hook-Absent Presence (h) | Physical Resting Key | Accepted Features |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **`agent-branches`** | Observed | 2026-10-04 11:08:25 | 17.3597 h | 0.723322 | 0.999058 | **35.3773** | **2.0379** | **1.4741** | **10.6340** | **0.6126** | **0.4431** | 24.7433 | `null` | **1** |
-| **`agent-dashboard`** | Observed | 2026-10-04 11:08:25 | 17.3597 h | 0.723322 | 0.999058 | **67.9544** | **3.9145** | **2.8314** | **0.0000** | **0.0000** | **0.0000** | 67.9544 | `null` | **0** |
-| **`quota-launcher`** | Observed | 2026-10-04 11:08:25 | 17.3597 h | 0.723322 | 0.999058 | **61.2488** | **3.5282** | **2.5520** | **0.0000** | **0.0000** | **0.0000** | 61.2488 | `null` | **0** |
-| **`agent-coordination`** | Observed | 2026-10-04 11:40:49 | 16.8197 h | 0.700822 | 0.999028 | **5.8817** | **0.3497** | **0.2451** | **0.0000** | **0.0000** | **0.0000** | 5.8817 | `null` | **0** |
-| **`unattributed`** | Observed | Continuous | 24.0000 h | 1.000000 | 0.999319 | **274.3757** | **11.4323** | **11.4323** | **5.8941** | **0.2456** | **0.2456** | 268.4816 | `null` | **0** |
+| **`agent-branches`** | Observed | 2026-10-04 11:08:25 | 19.8597 h | 0.827488 | 0.999188 | **40.3777** | **2.0331** | **1.6824** | **12.5576** | **0.6323** | **0.5232** | 27.8201 | `null` | **1** |
+| **`agent-dashboard`** | Observed | 2026-10-04 11:08:25 | 19.8597 h | 0.827488 | 0.999188 | **77.9553** | **3.9253** | **3.2481** | **0.0677** | **0.0034** | **0.0028** | 77.8876 | `null` | **0** |
+| **`quota-launcher`** | Observed | 2026-10-04 11:08:25 | 19.8597 h | 0.827488 | 0.999188 | **71.2497** | **3.5876** | **2.9687** | **0.0000** | **0.0000** | **0.0000** | 71.2497 | `null` | **0** |
+| **`agent-coordination`** | Observed | 2026-10-04 11:40:49 | 19.3197 h | 0.804988 | 0.999165 | **5.8817** | **0.3044** | **0.2451** | **0.0000** | **0.0000** | **0.0000** | 5.8817 | `null` | **0** |
+| **`unattributed`** | Observed | Continuous | 24.0000 h | 1.000000 | 0.999328 | **236.8118** | **9.8672** | **9.8672** | **3.2379** | **0.1349** | **0.1349** | 233.5739 | `null` | **0** |
 
 *Note: In accordance with Codex Directives C2062 and C2120, cross-product aggregates are non-additive and intentionally omitted to prevent fleet-wide conflation.*
 
@@ -83,55 +83,55 @@ To ensure truthful operational reporting, cross-cutting oversight principals (`c
 
 | Product ID | Dedicated Delivery Presence (h) | Dedicated Delivery Presence Actors | Oversight Principal Presence (h) | Oversight Principal Actors | Dedicated Delivery Work (h) | Dedicated Delivery Work Actors | Oversight Principal Work (h) | Oversight Principal Work Actors |
 | :--- | :---: | :--- | :---: | :--- | :---: | :--- | :---: | :--- |
-| **`agent-branches`** | **18.1189** | `antigravity-head`, `muse-reviewer-auth-ui` | **17.2584** | `codex-principal` | **9.0100** | `antigravity-head` | **1.6240** | `codex-principal` |
-| **`agent-dashboard`** | **67.9544** | `ad-backend-exec`, `ad-frontend-exec`, `ad-independent-reviewer`, `agent-dashboard-head` | **0.0000** | *None* | **0.0000** | *None* | **0.0000** | *None* |
-| **`quota-launcher`** | **44.1257** | `quota-launcher-core-3`, `quota-launcher-head`, `quota-platform-coordinator`, `quota-platform-sidecar` | **17.1231** | `desktop-orchestrator` | **0.0000** | *None* | **0.0000** | *None* |
+| **`agent-branches`** | **20.6192** | `antigravity-head`, `muse-reviewer-auth-ui` | **19.7586** | `codex-principal` | **10.6977** | `antigravity-head` | **1.8599** | `codex-principal` |
+| **`agent-dashboard`** | **77.9553** | `ad-backend-exec`, `ad-frontend-exec`, `ad-independent-reviewer`, `agent-dashboard-head` | **0.0000** | *None* | **0.0677** | `agent-dashboard-head` | **0.0000** | *None* |
+| **`quota-launcher`** | **51.6264** | `quota-launcher-core-3`, `quota-launcher-head`, `quota-platform-coordinator`, `quota-platform-sidecar` | **19.6233** | `desktop-orchestrator` | **0.0000** | *None* | **0.0000** | *None* |
 | **`agent-coordination`** | **5.8817** | `agent-coordination-head` | **0.0000** | *None* | **0.0000** | *None* | **0.0000** | *None* |
-| **`unattributed`** | **214.8535** | 23 workers/services (`grok-head`, `zcode-independent`, `public-journal-site`, `relay`, etc.) | **59.5222** | `codex-principal`, `desktop-orchestrator`, `experiment-metrics`, `experiment-supervision` | **5.7422** | 6 workers/services | **0.1519** | `codex-principal` |
+| **`unattributed`** | **184.7894** | `antigravity-head`, `grok-capacity-recovery`, `grok-head`, `journal-opus-2026-10-04`, `journal-opus-2026-10-05`, `muse-cli-runbook`, `muse-radar-bench`, `muse-reviewer-auth-ui`, `muse-reviewer-webhook`, `muse-ui-auth`, `public-journal-site`, `readiness-recovery-executor`, `redesign`, `relay`, `sb-reviewer-sdk`, `ui`, `zcode-auth-reads`, `zcode-independent`, `zcode-l2-client`, `zcode-metrics-repro`, `zcode-recovery-test`, `zcode-sdk-adopt`, `zcode-webhook-auth` | **52.0224** | `codex-principal`, `desktop-orchestrator`, `experiment-metrics`, `experiment-supervision` | **3.2379** | `antigravity-head`, `grok-capacity-recovery`, `journal-opus-2026-10-04`, `journal-opus-2026-10-05`, `public-journal-site` | **0.0000** | *None* |
 
 ---
 
 ## 4. Hourly Half-Open Bucket Telemetry (24 UTC Buckets)
 
-The 24 contiguous half-open hourly buckets $[t_i, t_{i+1})$ span from `2026-10-04T04:30:00Z` to `2026-10-05T04:30:00Z`.
+The 24 contiguous half-open hourly buckets $[t_i, t_{i+1})$ span from `2026-10-04T07:00:00Z` to `2026-10-05T07:00:00Z`.
 
 ### 4.1 Bucket Status Distribution by Product
 - **`agent-branches`**:
-  - Buckets 0–5 (`04:30` to `10:30` UTC): `unobserved` (pre-commissioning; presence/work = `null`).
-  - Bucket 6 (`10:30` to `11:30` UTC): `partial` (commissioned at 11:08:25 UTC; 0.3597 h window; presence = 0.5283 h).
-  - Buckets 7–23 (`11:30` to `04:30` UTC next day): `observed` (17 full 1h buckets; verified working observed).
+  - Buckets 0–3 (`07:00` to `11:00` UTC): `unobserved` (pre-commissioning; presence/work = `null`).
+  - Bucket 4 (`11:00` to `12:00` UTC): `partial` (commissioned at 11:08:25 UTC; 0.8597 h window; presence = 2.5083 h).
+  - Buckets 5–23 (`12:00` to `07:00` UTC next day): `observed` (19 full 1h buckets; verified working observed).
 - **`agent-dashboard`**:
-  - Buckets 0–5: `unobserved` (`null`).
-  - Bucket 6: `partial` (commissioned at 11:08:25 UTC).
-  - Buckets 7–23: `observed` (presence observed across 4 actors; verified working = 0.0000 h).
+  - Buckets 0–3 (`07:00` to `11:00` UTC): `unobserved` (`null`).
+  - Bucket 4 (`11:00` to `12:00` UTC): `partial` (commissioned at 11:08:25 UTC; 0.8597 h window; presence = 2.0198 h).
+  - Buckets 5–23 (`12:00` to `07:00` UTC next day): `observed` (19 full 1h buckets; presence observed across 4 actors; verified working = 0.0677 h).
 - **`quota-launcher`**:
-  - Buckets 0–5: `unobserved` (`null`).
-  - Bucket 6: `partial` (commissioned at 11:08:25 UTC).
-  - Buckets 7–23: `observed` (presence observed across 5 actors; verified working = 0.0000 h).
+  - Buckets 0–3 (`07:00` to `11:00` UTC): `unobserved` (`null`).
+  - Bucket 4 (`11:00` to `12:00` UTC): `partial` (commissioned at 11:08:25 UTC; 0.8597 h window; presence = 0.6907 h).
+  - Buckets 5–23 (`12:00` to `07:00` UTC next day): `observed` (19 full 1h buckets; presence observed across 5 actors; verified working = 0.0000 h).
 - **`agent-coordination`**:
-  - Buckets 0–6: `unobserved` (`null`, commissioned at 11:40:49 UTC).
-  - Bucket 7 (`11:30` to `12:30` UTC): `partial` (presence = 0.3197 h).
-  - Buckets 8–23: `observed` (16 full 1h buckets).
+  - Buckets 0–3 (`07:00` to `11:00` UTC): `unobserved` (`null`, commissioned at 11:40:49 UTC).
+  - Bucket 4 (`11:00` to `12:00` UTC): `partial` (commissioned at 11:40:49 UTC; 0.3197 h window; presence = 0.0000 h).
+  - Buckets 5–23 (`12:00` to `07:00` UTC next day): `observed` (19 full 1h buckets; presence = 5.8817 h).
 - **`unattributed`**:
-  - Buckets 0–23: `observed` (full 24h continuous observation).
+  - Buckets 0–23 (`07:00` to `07:00` UTC next day): `observed` (24 full 1h buckets; continuous observation; presence = 236.8118 h, verified work = 3.2379 h).
 
 ### 4.2 Tabular Hourly Bucket Ledger (Sample Progression)
 
 | Bucket Index | Start UTC | End UTC | `agent-branches` Pres/Work (h) | `agent-dashboard` Pres/Work (h) | `quota-launcher` Pres/Work (h) | `agent-coordination` Pres/Work (h) | `unattributed` Pres/Work (h) |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **0** | 10-04 04:30 | 10-04 05:30 | `null` / `null` | `null` / `null` | `null` / `null` | `null` / `null` | 23.00 / 1.04 *(cov=1.0)* |
-| **1** | 10-04 05:30 | 10-04 06:30 | `null` / `null` | `null` / `null` | `null` / `null` | `null` / `null` | 23.00 / 1.07 *(cov=1.0)* |
-| **2** | 10-04 06:30 | 10-04 07:30 | `null` / `null` | `null` / `null` | `null` / `null` | `null` / `null` | 23.68 / 1.18 *(cov=1.0)* |
-| **3** | 10-04 07:30 | 10-04 08:30 | `null` / `null` | `null` / `null` | `null` / `null` | `null` / `null` | 24.00 / 0.24 *(cov=1.0)* |
-| **4** | 10-04 08:30 | 10-04 09:30 | `null` / `null` | `null` / `null` | `null` / `null` | `null` / `null` | 24.78 / 0.52 *(cov=1.0)* |
-| **5** | 10-04 09:30 | 10-04 10:30 | `null` / `null` | `null` / `null` | `null` / `null` | `null` / `null` | 25.00 / 0.29 *(cov=1.0)* |
-| **6** | 10-04 10:30 | 10-04 11:30 | 1.05 / 0.27 *(part, cov=1.0)* | 0.02 / 0.00 *(part, cov=1.0)* | 0.19 / 0.00 *(part, cov=1.0)* | `null` / `null` | 23.73 / 0.22 *(cov=1.0)* |
-| **7** | 10-04 11:30 | 10-04 12:30 | 2.47 / 0.64 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 1.00 / 0.00 *(cov=1.0)* | 0.00 / 0.00 *(part, cov=1.0)* | 13.26 / 0.08 *(cov=1.0)* |
-| **8** | 10-04 12:30 | 10-04 13:30 | 2.00 / 0.83 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 1.10 / 0.00 *(cov=1.0)* | 0.02 / 0.00 *(cov=1.0)* | 6.02 / 0.00 *(cov=1.0)* |
-| **12** | 10-04 16:30 | 10-04 17:30 | 2.00 / 0.00 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 1.00 / 0.00 *(cov=1.0)* | 7.00 / 0.00 *(cov=1.0)* |
-| **16** | 10-04 20:30 | 10-04 21:30 | 1.95 / 1.09 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 3.95 / 0.00 *(cov=1.0)* | 0.00 / 0.00 *(cov=1.0)* | 7.15 / 0.05 *(cov=1.0)* |
-| **20** | 10-05 00:30 | 10-05 01:30 | 2.00 / 0.85 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 0.00 / 0.00 *(cov=1.0)* | 7.14 / 0.36 *(cov=1.0)* |
-| **23** | 10-05 03:30 | 10-05 04:30 | 1.97 / 0.49 *(cov=0.98)* | 3.93 / 0.00 *(cov=0.98)* | 3.93 / 0.00 *(cov=0.98)* | 0.00 / 0.00 *(cov=0.98)* | 5.90 / 0.00 *(cov=0.98)* |
+| **0** | 10-04 07:00 | 10-04 08:00 | `null` / `null` | `null` / `null` | `null` / `null` | `null` / `null` | 22.12 / 0.78 *(cov=1.0)* |
+| **1** | 10-04 08:00 | 10-04 09:00 | `null` / `null` | `null` / `null` | `null` / `null` | `null` / `null` | 22.28 / 0.26 *(cov=1.0)* |
+| **2** | 10-04 09:00 | 10-04 10:00 | `null` / `null` | `null` / `null` | `null` / `null` | `null` / `null` | 23.00 / 0.44 *(cov=1.0)* |
+| **3** | 10-04 10:00 | 10-04 11:00 | `null` / `null` | `null` / `null` | `null` / `null` | `null` / `null` | 23.00 / 0.29 *(cov=1.0)* |
+| **4** | 10-04 11:00 | 10-04 12:00 | 2.51 / 0.86 *(part, cov=1.0)* | 2.02 / 0.00 *(part, cov=1.0)* | 0.69 / 0.00 *(part, cov=1.0)* | 0.00 / 0.00 *(part, cov=1.0)* | 19.56 / 0.16 *(cov=1.0)* |
+| **5** | 10-04 12:00 | 10-04 13:00 | 2.00 / 0.40 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 1.05 / 0.00 *(cov=1.0)* | 0.01 / 0.00 *(cov=1.0)* | 6.01 / 0.00 *(cov=1.0)* |
+| **6** | 10-04 13:00 | 10-04 14:00 | 2.00 / 0.73 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 1.62 / 0.00 *(cov=1.0)* | 0.20 / 0.00 *(cov=1.0)* | 6.19 / 0.00 *(cov=1.0)* |
+| **7** | 10-04 14:00 | 10-04 15:00 | 2.00 / 0.93 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 1.00 / 0.00 *(cov=1.0)* | 6.98 / 0.00 *(cov=1.0)* |
+| **8** | 10-04 15:00 | 10-04 16:00 | 2.00 / 0.86 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 1.00 / 0.00 *(cov=1.0)* | 7.00 / 0.41 *(cov=1.0)* |
+| **12** | 10-04 19:00 | 10-04 20:00 | 2.00 / 0.00 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 0.66 / 0.00 *(cov=1.0)* | 7.00 / 0.00 *(cov=1.0)* |
+| **16** | 10-04 23:00 | 10-05 00:00 | 2.00 / 0.55 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 0.00 / 0.00 *(cov=1.0)* | 7.00 / 0.00 *(cov=1.0)* |
+| **20** | 10-05 03:00 | 10-05 04:00 | 2.00 / 0.94 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 4.00 / 0.00 *(cov=1.0)* | 0.00 / 0.00 *(cov=1.0)* | 6.00 / 0.00 *(cov=1.0)* |
+| **23** | 10-05 06:00 | 10-05 07:00 | 1.97 / 0.43 *(cov=0.98)* | 3.94 / 0.00 *(cov=0.98)* | 3.94 / 0.00 *(cov=0.98)* | 0.00 / 0.00 *(cov=0.98)* | 5.90 / 0.02 *(cov=0.98)* |
 
 *All 24 buckets are fully detailed in [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json).*
 
@@ -226,7 +226,7 @@ Every canonical actor contributing to project progress is mapped directly to a v
 
 | Artifact Path | Description | File Size | SHA256 Checksum |
 | :--- | :--- | :---: | :--- |
-| [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json) | Machine-readable C2369 consumer payload (mode `0600`) | 121,972 B | `643b77ab6fd1d087c69fabe0e1e0640db855bb1b17cbc0f4cc008f5fd6f023b6` | Machine-readable C2332 consumer payload (mode `0600`) | 115,486 B | `0a6112c90c0039f74b912f8788c88617cec960a4fa2501ecae89eff5a93707bf` |
+| [`.local/metrics/hourly_24h_consumer.json`](file:///home/alexey/git/cloudflare-agent-git/.local/metrics/hourly_24h_consumer.json) | Machine-readable C2369/C2375 consumer payload (mode `0600`) | 121,816 B | `e37cc1925bac409fa824acbd541b666d86c0f319329091d12afe111c752a415d` |
 | [`research/antigravity/recovery/REPORT-HOURLY-24H-CONSUMER.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-HOURLY-24H-CONSUMER.md) | Authoritative analytical report | Markdown deliverable | Verified clean via publication guard |
 
 ---
