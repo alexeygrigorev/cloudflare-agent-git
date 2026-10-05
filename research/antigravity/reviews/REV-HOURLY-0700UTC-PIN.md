@@ -19,8 +19,7 @@
 - **Auditor / Challenger:** Independent Challenger Subagent Reviewer 37 (`37aa1067-8bda-4dde-95b8-7b5bb927bd1f`)
 - **Parent Orchestrator:** `antigravity-head` (`46fdb644`, ID `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
 - **Audit Timestamp:** `2026-10-05T07:25:00Z` / `2026-10-05T09:25:00+02:00`
-- **Analysis Window:** `[2026-10-04T07:00:00Z, 2026-10-05T07:00:00Z)` (exactly 24 contiguous half-open hourly buckets, 24.0 hours)
-- **Normalized Berlin Window:** `[2026-10-04T05:00:00Z, 2026-10-05T05:00:00Z)`
+- **Normalized Berlin Window:** `[2026-10-04T09:00:00+02:00, 2026-10-05T09:00:00+02:00)` (`[2026-10-04T07:00:00Z, 2026-10-05T07:00:00Z)`)
 - **Scratch Workspace:** `.local/scratch/reviewer37-worker-audit/` (mode `0700`, disk: 64 KB $\le$ 512 MB ceiling, net `/tmp` growth = 0 bytes)
 - **Compiler Invariant:** ZERO `cargo` / `rustc` compiler invocations host-wide under human hold
 - **Verdict:** **FULL ACCEPTANCE**
