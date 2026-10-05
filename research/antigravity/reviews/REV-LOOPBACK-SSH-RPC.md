@@ -13,7 +13,7 @@
 - **Compiler Invariant**: Exactly `0` `cargo` or `rustc` invocations executed during this review interval and audit environment under human hold (scoped strictly to reviewer actions and subprocesses).
 - **Date**: 2026-10-05T03:30:00+02:00 (Europe/Berlin)
 - **Verdict**: **BOUNDED ACCEPTANCE (SELF-HOST OPENSSH / LINUX CLIENT SCOPE)**
-  *(Self-host OpenSSH RPC lifecycle and negative security defenses verified on Linux; live multi-host network execution across distinct physical machines remains UNKNOWN/HELD)*
+  *(Self-host OpenSSH RPC lifecycle and negative security defenses verified on Linux; real two-physical-host enrollment observed from Windows Desktop to Hetzner rendezvous store, while completed bidirectional request/reply cycle across distinct physical machines remains pending/unknown)*
 
 ---
 
@@ -24,7 +24,7 @@ Under Codex Principal Directives C2219 and C2221, an independent challenger revi
 This review evaluated:
 1. **Happy-Path Receipts & Timing Analysis**: Verification of the 8-step multi-agent handshake lifecycle and an empirical audit of the timing data reported in `REPORT-LOOPBACK-SSH-RPC-TRIAL.md`.
 2. **Negative & Security Test Execution**: An independent test suite (`test_ssh_rpc_negatives.py`) comprising two real OpenSSH integration tests against destination `hetzner` (store paths with spaces, and authentication failure credential/traceback redaction) and two client-side option validation tests (positional destination injection defense and strict host key checking bypass rejection).
-3. **Epistemic Boundaries**: Rigorous classification of physical network topology boundaries, ambient SSH configuration trust boundaries, and platform scope limitations.
+3. **Epistemic Boundaries**: Rigorous classification of physical network topology boundaries, distinguishing that while real two-physical-host enrollment has now been observed and verified (Windows Desktop to Hetzner rendezvous store), the completed bidirectional cross-computer request/reply cycle remains pending/unknown.
 
 ---
 
@@ -49,7 +49,7 @@ In Section 4 of `REPORT-LOOPBACK-SSH-RPC-TRIAL.md`, the timing breakdown lists:
     assert len(inbox_bob_after) == 0, f"Expected 0 unread messages, got {len(inbox_bob_after)}"
     print("  [OK] Verified Bob unread inbox is empty after ACK")
 ```
-Unlike Steps 1–5, 7, and 8, Step 6 did not record a distinct `t_step = time.monotonic()` timestamp delta or print its duration in the execution log. The reported duration of `0.350s` was mathematically back-calculated by subtracting the sum of the 7 individually timed operations ($2.669\text{s}$) from the total run duration ($3.019\text{s}$). While the aggregate time of $3.019\text{s}$ is accurate and the back-calculation is mathematically sound ($3.019 - 2.669 = 0.350\text{s}$), discrete telemetry for Step 6 was absent in the benchmark script itself.
+Unlike Steps 1–5, 7, and 8, Step 6 did not record a distinct `t_step = time.monotonic()` timestamp delta or print its duration in the execution log. The reported 0.350s duration is an inferred residual / unmeasured individual step duration (includes step execution, cleanup, and teardown overhead), mathematically derived by subtracting the sum of the 7 individually timed operations ($2.669\text{s}$) from the total run duration ($3.019\text{s}$), rather than a discretely measured inbox latency.
 
 ---
 
@@ -86,7 +86,7 @@ collected 4 items
      * Raised `AuthError` fail-closed.
      * `str(err)` contained `Remote authentication error (invalid_token)` and completely omitted the invalid bearer token.
      * `str(err)` contained zero traceback text, file paths, or line numbers (`Traceback`, `File "` absent).
-     * Exception chaining was strictly decoupled: `err.__cause__ is None` and `err.__context__ is None`, guaranteeing zero leakage via exception inspection.
+     * Exception chaining was strictly decoupled: `err.__cause__ is None` and `err.__context__ is None`; zero token and traceback leakage was verified specifically for this tested `AuthError` invalid token exception path under decoupled chaining (`cause=None`, `context=None`), rather than serving as an unproven universal guarantee for all future arbitrary exceptions.
 
 3. **Destination Injection Defense (`test_destination_injection_defense`) [Client-Side Unit Validation]**:
    - **Threat / Edge Case**: An attacker supplies a bare destination operand (e.g. `['attacker.com']`) or tunneling flags in `ssh_opts` to redirect the SSH connection before the `--` separator.
@@ -104,16 +104,16 @@ collected 4 items
 
 1. **Topology Demarcation (Self-Host vs. Physical Multi-Machine)**:
    - In the audit environment, the OpenSSH destination alias `hetzner` resolves to a local loopback / self-host OpenSSH endpoint on host `RMTHZ`.
-   - While this trial validates authentic OpenSSH process execution, Unix socket creation, authentication handshakes, and process argument isolation against a real `sshd` process, it **does not demonstrate two distinct physical or virtual machines communicating across a physical network**.
-   - Distinct physical multi-machine execution across WAN/LAN remains **`UNKNOWN/HELD`**.
+   - While this trial validates authentic OpenSSH process execution, Unix socket creation, authentication handshakes, and process argument isolation against a real `sshd` process on the local machine, cross-computer testing is actively progressing: real two-physical-host enrollment has now been observed and verified (Windows Desktop node enrolling into the Hetzner rendezvous FileBus store).
+   - However, a completed bidirectional request/reply cycle across distinct physical machines remains pending/unknown (designated **`UNKNOWN/HELD`**).
 
 2. **Network Resilience & Jitter**:
-   - Loopback OpenSSH execution incurs negligible packet loss, zero MTU fragmentation, and sub-millisecond round-trip times.
+   - Loopback OpenSSH execution operates over local host network interfaces with unmeasured self-host network characteristics (no packet loss, MTU fragmentation, or latency telemetry was recorded in this trial).
    - Real WAN network hazards (TCP connection drops, NAT traversal timeouts, asymmetric routing, DNS delays, SSH keepalive timeouts under load) remain **untested and unmeasured**.
 
 3. **Bidirectional Communication Architecture Clarification**:
    - A reverse SSH connection (i.e. running an inbound OpenSSH server on the desktop) is **not strictly required** for bidirectional application-level message exchange when a forward polling and reply pattern against a reachable rendezvous FileBus store (e.g. on Hetzner) is employed. Under this forward-only architecture, the desktop node initiates forward SSH RPC sessions to send, poll (`wait`), and acknowledge messages on the remote server.
-   - A reverse SSH endpoint or tunnel is only required if the system architecture specifically demands direct push or symmetric inbound connection initiation from Hetzner into the desktop. True cross-computer execution between distinct physical machines remains designated **`UNKNOWN/HELD`** until verified over live distinct hardware.
+   - While real two-physical-host enrollment has now been observed and verified from Windows Desktop to Hetzner, the full bidirectional request/reply cycle across distinct physical machines remains pending live end-to-end verification.
 
 4. **Platform Scope Limitations & Windows Demarcation**:
    - All audit tests in this review were executed on Linux (`x86_64`, kernel 6.8).
@@ -145,7 +145,7 @@ collected 4 items
 The loopback OpenSSH FileBus RPC implementation in `feat/typed-ssh-filebus-rpc` (commit `23b0742b1f00ec027d830763e773577a807dbc39`) is accepted for single-node / self-host OpenSSH integration on Linux/POSIX client nodes.
 
 **Boundaries & Held States**:
-- **Physical Multi-Machine Cross-Network Execution**: Designated **`UNKNOWN/HELD`** pending bidirectional network execution between distinct physical machines.
+- **Physical Multi-Machine Cross-Network Execution**: Real two-physical-host enrollment has now been observed and verified (Windows Desktop to Hetzner rendezvous store); however, a completed bidirectional request/reply cycle across distinct physical machines remains pending/unknown (designated **`UNKNOWN/HELD`**).
 - **Ambient Configuration Trust Boundary**: Ambient user configurations (`~/.ssh/config`) are an administrative trust boundary; universal protection against hostile local ambient configs is withheld unless local config evaluation is suppressed (`-F /dev/null`).
 - **Timing Telemetry Requirement**: Future benchmarking scripts must capture discrete `monotonic()` timestamps for all individual operations (including post-ACK inbox queries) rather than back-calculating from aggregate cycle times.
 - **Windows Platform Surface**: Native Python `SshFileBusClient` execution and Windows-local `FileBus` storage remain designated **`UNKNOWN/HELD`** (while Windows frontend `ssh.exe` via PowerShell was demonstrated by desktop-root `01a109b0`, native Python client and local storage semantics remain unverified on Windows).
