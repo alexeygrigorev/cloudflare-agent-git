@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T17:15:59.545900+00:00",
+  "updated_at": "2026-10-05T17:30:44.999845+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -458,7 +458,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-05T17:06:34.678278+00:00",
+      "updated_at": "2026-10-05T17:26:16.966833+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -485,7 +485,7 @@
         "research/codex/active-worker-checkpoint-20261005.md"
       ],
       "blocked_on": [],
-      "next_action": "Close-supervise actual head-owned parallel tasks to verified25; roothuman31 latestroles retainprincipalnonimplementation. CurrentCoordreview11cde97, Antrestart3ticks e9c38db; no activecompletedcount. Nextheadchild firsttools/currentrosters, task20actualstructuredtelemetry and reviewedrefill; dashboardNOTREADY original preserved Antrepair. Manualcontinuation notfullautonomy.",
+      "next_action": "C2640 verified25snapshot accepted, latestnativeQL/Antheads absent knownPIDsgone; rootoperator continuity inquiry01a10d17-1e33, Coordcoverage01a10d17-1f98, scopedreadonlyhead-runtime-loss-audit firstreads acknowledged. Continue genuine head-owned work/recovery and independent count/custody reconciliation; no own productimplementation/code review. Next20:00Berlin evidence packet.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
       "continuation_trigger": "Nativeactualhead completion/dependency event -> principal independentreview ofloadedsource/firstmodeltool/output and true activecount -> headnextsafeownedtask. Nextfreshcheckpoint11:00UTC, do not awaitroot; manualguardedPub/Antrecoveries notautowakeacceptance."
@@ -775,7 +775,7 @@
       ],
       "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
       "model": "gemini-3.1-pro-high",
-      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 \u00b7 PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
+      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 · PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
     },
     {
       "id": "publication-release-verification",
@@ -1209,7 +1209,7 @@
       "assignment_ack": "Launched per Desktop Orchestrator 12:50 Berlin and Codex Principal C1818 directives. Independent technical audit of container-and-patch-workflows.md, examining production container/microVM paradigms (OpenHands, SWE-bench, Devin, Daytona, Modal, E2B), network/credential egress boundaries, single-synthesizer and worktree integration patterns, and unsteered buyer adoption guidance.",
       "next_action": "Independent review completed in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md (verdict: BOUNDED ACCEPTANCE). Deliverables landed on origin/main; findings ready for principal integration.",
       "acceptance": "Independent review deliverable in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md with clear verdict, rigorous technical verification across all 10 evaluation dimensions, and clean publication guard.",
-      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE \u2014 TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
+      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE — TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
     },
     {
       "id": "ab-safe-main-restore",
@@ -3823,20 +3823,35 @@
       "project_id": "quota-launcher",
       "owner_tag": "codex-principal",
       "status": "in_progress",
-      "updated_at": "2026-10-05T17:15:59.545900+00:00",
+      "updated_at": "2026-10-05T17:26:16.966833+00:00",
       "source": "experiment/human-enforce-fifty-active-focus-20261005.txt",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md",
         "research/codex/scale-to50-task-slices-20261005.json"
       ],
-      "next_action": "Immediate25 concurrent useful target unverified: QL roster16running+9finished not25active; Ant/Coordcurrentstate pending. Genuine20completedartifact/tooltrace awaitingCoordreview, sourceleaseattribution delegated. Fixcounts/meaningfulcallback+ownedstoragerecovery thenadmittedrefill, preserveproductiveworkers.",
+      "next_action": "C2640 numerical25snapshot accepted from genuine25actor/tool evidence, desktopreturns30mincadence; remoteheads retain continuouscompletion/refill and50goal. CurrentQL/Antnativeheads andknownPIDs absent17:22-17:24, actorcurrentstates unknown until lifecycleaudit/ownerrecovery; Coordsurvives/current21/22 attestation. Preserveoutputs, no death-as-completion, no duplicatewriter or unknownkill. Next20:00Berlin actualoutcomes/currentroster/repair packet.",
       "actual_covered_active": 0,
       "actual_as_of": "2026-10-05T17:06:34.678278+00:00",
       "measurement_coverage": "maintained agent-task units0; head-owned harness current rosters pending; completed17/auditor and services excluded",
       "human_policy_sources": [
         "experiment/human-ram-override-twentyfive-subagents-20261005.txt",
         "experiment/human-close-supervision-fifty-mixed-providers-20261005.txt"
-      ]
+      ],
+      "verified_25_milestone": {
+        "as_of_utc": "2026-10-05T17:21:24Z",
+        "checked_at_utc": "2026-10-05T17:22:37.963270+00:00",
+        "distinct_running_actor_ids": 25,
+        "with_genuine_tool_events": 25,
+        "tool_events_per_actor_range": [
+          7,
+          13
+        ],
+        "evidence_path": ".local/scale50/ROOT-25-TRANSCRIPT-EVIDENCE-20261005.json",
+        "sha256": "baff8e2523ce07f594cf59ad8d9340da91c225717d3c1665b0b0dabaa6d4f3d5",
+        "genuine_root_receipt": "01a10d17-46ce-7d11-943f-1e31745db614",
+        "acceptance": "25 concurrent useful harnessactor snapshot accepted; currentcount, sourceintegration, perprocesscontainment and autonomouscontinuation separate"
+      },
+      "current_count_boundary": "25 verified as of17:21:24UTC, not asserted stillactive after17:22 headruntime loss; currentfleetUNKNOWN, maintainedunit20finished."
     },
     {
       "id": "scale50-01",
@@ -5228,11 +5243,11 @@
       "proposed_execution_head": "agent-dashboard-head",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-05T17:15:59.545900+00:00",
+      "updated_at": "2026-10-05T17:26:16.966833+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Exact dedup current active/unknown/ended categories from launcher evidence; readable task recovery and targets; no queued offers or controllers counted as active.",
-      "next_action": "C2635 reject QL25-active roster:25rows=16running+8completed+1completed-awaiting-review, future19:13Ztimestamp; request corrected actualUTC/currentdedup and peakoverlap evidence. Actualotherheadstates pending; no verified25. Completion/refill remainshead-owned, desktop30mincadence onlyafterverified25.",
+      "next_action": "C2640 numerical25snapshot accepted from genuine25actor/tool evidence, desktopreturns30mincadence; remoteheads retain continuouscompletion/refill and50goal. CurrentQL/Antnativeheads andknownPIDs absent17:22-17:24, actorcurrentstates unknown until lifecycleaudit/ownerrecovery; Coordsurvives/current21/22 attestation. Preserveoutputs, no death-as-completion, no duplicatewriter or unknownkill. Next20:00Berlin actualoutcomes/currentroster/repair packet.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
@@ -5258,7 +5273,22 @@
         "observed_at": "2026-10-05T17:15:59.545900+00:00",
         "acceptance": "WITHHELD:completedcountsandfuturetimestamp",
         "correction_request": "01a10d10-21e4-74d0-a7d1-7a4c91dd8cef"
-      }
+      },
+      "verified_25_milestone": {
+        "as_of_utc": "2026-10-05T17:21:24Z",
+        "checked_at_utc": "2026-10-05T17:22:37.963270+00:00",
+        "distinct_running_actor_ids": 25,
+        "with_genuine_tool_events": 25,
+        "tool_events_per_actor_range": [
+          7,
+          13
+        ],
+        "evidence_path": ".local/scale50/ROOT-25-TRANSCRIPT-EVIDENCE-20261005.json",
+        "sha256": "baff8e2523ce07f594cf59ad8d9340da91c225717d3c1665b0b0dabaa6d4f3d5",
+        "genuine_root_receipt": "01a10d17-46ce-7d11-943f-1e31745db614",
+        "acceptance": "25 concurrent useful harnessactor snapshot accepted; currentcount, sourceintegration, perprocesscontainment and autonomouscontinuation separate"
+      },
+      "current_count_boundary": "25 verified as of17:21:24UTC, not asserted stillactive after17:22 headruntime loss; currentfleetUNKNOWN, maintainedunit20finished."
     },
     {
       "id": "grok-five-percent-admission",
@@ -5321,7 +5351,7 @@
       },
       "next_action": "QL commit a916090 delivers structured stream-json invocation and tool telemetry capture in task-units (187/187 tests pass); commit 8486acf accepted by Coord (8aa6505); commit a916090 submitted to Coord for distinct review. scale50-20 retry held until Coord code acceptance and root disk margin >= 50.5 GiB.",
       "blocked_on": [],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "agent-quota-launcher commit a916090 (launcher/launch.py, launcher/task_units.py, tests/test_telemetry.py)",
         "agent-quota-launcher commit 8486acf (accepted by Coord in REV-QL-8486ACF-TMPDIR-REFILL-REVIEW.md)",
@@ -5346,7 +5376,7 @@
         "root-disk-below-50GiB-floor",
         "waiting-storage-floor-restoration"
       ],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ],
@@ -5373,7 +5403,7 @@
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md",
         "research/antigravity/remote-autonomy-supervisor-contract-20261005.md",
@@ -5528,7 +5558,7 @@
         "root-disk-below-50GiB",
         "end-to-end-model-dispatch-held"
       ],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md",
         "research/antigravity/reviews/REV-SUPERVISION-ANTI-SPOOFING-156752B.md"
@@ -5548,7 +5578,7 @@
       "deadline": "2026-10-05T16:30:00Z",
       "next_action": "Follow backward plan and verify real owner ACK, first tool, pinned evidence and next continuation trigger",
       "blocked_on": [],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ]
@@ -5712,6 +5742,37 @@
         "research/codex/recovery-independent-checkpoint-20261005.md",
         "research/codex/current-admission-recovery-options-20261005.md"
       ]
+    },
+    {
+      "id": "HEAD-RECOVERY-QL-ANT-OOM-20261005",
+      "team_id": "remote-autonomous-continuation",
+      "project_id": "quota-launcher",
+      "owner_tag": "agent-coordination-head-gemini",
+      "owner_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
+      "status": "running",
+      "updated_at": "2026-10-05T17:30:44.999845+00:00",
+      "assignment_ack": "01a10d1b-c65f-7c30-ad06-cc07c842e670",
+      "principal_owner": "codex-principal",
+      "first_action": "Actual healthyhead UI17:29UTC: read/ACK C2642, inspect existing savedbrain paths and nativeactor state; own bounded broadfind diagnostic task2650 cancelled, then exactbrain-path checks. Recoverygeneration/usefulfirstmodeltool NOTyetverified.",
+      "acceptance": "Same retained QL/Ant conversations safely resumed with actual newnativeidentity/generation, no productive orphan duplicatewriter; useful firsttool/artifact and distinct head-owned review, separatelybounded/measuredfanout; actual subsequent durable headloss->recovery->review/refill withoutdesktop before autonomy acceptance.",
+      "blocked_on": [
+        "freshdisk/quota/currentorphanwriterandgenerationchecks"
+      ],
+      "next_action": "HealthyCoord ACK custody; perform exacthistory interactive recovery, register first tools/newgeneration, independent recovery reviewer; own durable supervisor headloss trigger/custody. Root confirms no competing operatorstop/recovery; do not await rootclock.",
+      "evidence_paths": [
+        "research/codex/head-runtime-loss-observation-20261005.md",
+        ".local/scale50/ROOT-25-TRANSCRIPT-EVIDENCE-20261005.json"
+      ],
+      "failure_evidence": {
+        "Ant_userjournal_oom_at": "2026-10-05T17:21:03.463648Z",
+        "QL_userjournal_oom_at": "2026-10-05T17:21:59.653342Z",
+        "aggregate_head_memory_limit_bytes": 1572864000,
+        "aggregate_head_pids_limit": 100,
+        "memory_peak_reported": "1.4G",
+        "kernel_oom_constraint": "UNKNOWN; userjournal confirms OOM event but no kernel match/victimpid",
+        "historical_25_milestone": "2026-10-05T17:21:24Z; currentactivity separatelyunknown"
+      },
+      "continuation_trigger": "Existingdurable supervisor journals/catalog monitors headgeneration loss -> custodyownerCoord verifies actorstate/lease -> maintainedinteractive resume -> genuine newrecipientwhoami -> useful taskoutput -> distinctreview -> next admittedtask; not yetaccepted runtime."
     }
   ]
 }
