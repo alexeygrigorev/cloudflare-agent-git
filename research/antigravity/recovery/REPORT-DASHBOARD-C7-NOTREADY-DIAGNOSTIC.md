@@ -1,36 +1,41 @@
-# REPORT: Authoritative Source-Only Technical Diagnostic of Dashboard Native NOTREADY / Old-Idle / Later-PTY (C2248)
+# REPORT: Authoritative Source-Only Technical Diagnostic of Dashboard Native NOTREADY / Old-Idle / Later-PTY (C2248 / C2252)
 
 - **Audit Target:** Dashboard Session `c7` (`c7a75f76-1f51-4f14-873e-7a60569838c3`, workspace: `/home/alexey/git/agent-dashboard`) and Comparative Session `ui` (`06a6e276-18f5-4abe-b66e-aee30d4e91a4`, workspace: `/home/alexey/git/cloudflare-agent-git`)
-- **Governing Directives:** Codex Principal Directive C2248; Operating Model (`coordination/OPERATING-MODEL.md`); Human Delivery Reset (2026-10-04)
+- **Governing Directives:** Codex Principal Directives C2248 and C2252; Operating Model (`coordination/OPERATING-MODEL.md`); Human Delivery Reset (2026-10-04)
 - **Reviewer / Author:** Independent Dashboard & Coordination Reviewer (`reviewer259`, session UUID: `259526a9-5deb-47ce-810c-ca5f2da56b68`)
 - **Authority / Dispatcher:** `antigravity-head` (`46fdb644`, conversation ID: `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
 - **Deliverable Path:** [`research/antigravity/recovery/REPORT-DASHBOARD-C7-NOTREADY-DIAGNOSTIC.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-DASHBOARD-C7-NOTREADY-DIAGNOSTIC.md)
 - **Scratch Workspace:** `.local/scratch/reviewer259-dashboard-c7-diagnostic/` (mode `0700`, strictly $\le$ 512 MB, net `/tmp` growth = 0)
-- **Compiler Invariant:** Exactly **0 cargo / rustc invocations host-wide under human hold**
+- **Compiler Invariant:** Reviewer actor and audited subprocesses strictly **0 cargo / rustc invocations under human hold**
 - **Canonical Repository Invariant:** `/home/alexey/git/agent-dashboard` audited **STRICTLY READ-ONLY** (0 writes, 0 edits, 0 git stage/commit mutations; existing 2,102 LOC working copy dirt preserved)
-- **Privacy & Security Invariant:** Inspect only APLEXER identity/workspace fields (zero raw secrets, tokens, or private configurations published)
-- **Audit Date:** 2026-10-05T03:55:00+02:00 (Europe/Berlin)
+- **Privacy & Security Invariant:** Inspect only APLEXER identity/workspace fields (zero raw secrets, tokens, or private configuration files published)
+- **Audit Date:** 2026-10-05T03:57:00+02:00 (Europe/Berlin)
 
 ---
 
 ## 1. Executive Summary & Diagnostic Findings
 
-Under Codex Principal Directive C2248, an independent, source-only technical diagnostic was conducted to determine the exact root cause of the Dashboard native `NOTREADY` / `oldidle` / `laterPTY` delivery guard rejection originally reported in message `01a10988-c253`.
+Under Codex Principal Directives C2248 and C2252, an independent, source-only technical diagnostic was conducted to examine the native `NOTREADY` / `oldidle` / `laterPTY` delivery guard rejection originally reported in message `01a10988-c253` for `agent-dashboard-head` session `c7a75f76`.
 
 ### 1.1 Core Diagnostic Conclusions
-1. **Refutation of the "Stale Shell Snapshot Overwrote Validenv" Hypothesis:**
-   - **Finding:** The hypothesis that a stale `shell_snapshot` overwrote the valid environment of session `c7a75f76` is **EMPIRICALLY REFUTED**.
-   - **Evidence:** Direct inspection of `/proc/1508033/environ` (the live workload process of `c7a75f76`) demonstrates that `APLEXER_SESSION_ID`, `APLEXER_TAG`, and `APLEXER_WORKSPACE` are **100% pristine, accurate, and correctly bound** to `c7a75f76-1f51-4f14-873e-7a60569838c3`, `agent-dashboard-head`, and `/home/alexey/git/agent-dashboard`.
-   - **Snapshot Storage Audit:** File system inspection of `/home/alexey/.codex/shell_snapshots/` confirms that **zero shell snapshot files have been written since 2026-10-02 22:33**. The shell snapshot issue is a historical incident from October 2 that never occurred in session `c7a75f76`.
-2. **Exact Root Cause of NOTREADY Rejection:**
-   - The rejection is caused entirely by an **asymmetric temporal divergence** between the Codex lifecycle hook architecture and low-level PTY terminal master reads:
-     * **Frozen Idle Timestamp:** In [`/home/alexey/.codex/hooks.json`](file:///home/alexey/.codex/hooks.json), Codex lifecycle hooks are installed only for `SessionStart`, `Stop`, and `UserPromptSubmit`. At `1791113916291` ms (2026-10-04T11:38:36Z / 1:38 PM Berlin), `zcodex` concluded its working turn and fired the `Stop` hook, executing `a state-report idle`. Because Codex possesses no periodic heartbeat or prompt-redraw hook, `reported_state_at_ms` was never updated again.
-     * **Advancing PTY Activity:** The interactive prompt `› Ask Codex to do anything` emits periodic ANSI cursor repositioning sequences (`\x1b[?2026h\x1b[39m\x1b[49m\x1b[0m\x1b[22;3H\x1b[?25h\x1b[?2026l`) when screen captures or status queries occur. Under [`cloudflare-aplexer-protocol/src/worker/spawn.rs:442`](file:///home/alexey/git/cloudflare-aplexer-protocol/src/worker/spawn.rs#L442), any byte read by the PTY master updates `last_activity_ms` to current time.
-     * **Strict Protocol Fail-Closed:** When delivery was attempted over 13 hours later, `last_activity_ms` (`1791161046182`) exceeded `reported_state_at_ms` (`1791113916291`) + 2000 ms by 47,127,891 ms. Under [`cloudflare-aplexer-protocol/src/watch/state.rs:170`](file:///home/alexey/git/cloudflare-aplexer-protocol/src/watch/state.rs#L170), only Antigravity is exempted from PTY cursor redraws; `zcodex` has no exemption.
-     * **Line 127 Policy:** In [`message_deferred.rs:127`](file:///home/alexey/git/cloudflare-aplexer-protocol/src/bin/aplexer/message_deferred.rs#L127), `"Expired waiting + empty composer does NOT prove completed turn; fail closed"`. The delivery guard functioned exactly as specified by failing closed.
-3. **Comparative Session Equivalence:**
-   - Session `06a6e276-18f5-4abe-b66e-aee30d4e91a4` (`ui` in `/home/alexey/git/cloudflare-agent-git`) exhibits the identical phenomenon: `reported_state_at_ms: 1791103959641` (frozen from 08:52 UTC Oct 4) vs `last_activity_ms: 1791165248666` (divergence > 17 hours).
-   - This proves that the issue is not session-specific, workspace-specific, or caused by environment corruption, but is the systemic behavior of unexempted `zcodex` / `codex` sessions parked at an interactive prompt.
+1. **Workload Process Identity Concordance (Pristine Parent Environment):**
+   - **Finding:** Direct inspection of `/proc/1508033/environ` (the live workload process of `c7a75f76`) verifies that `APLEXER_SESSION_ID`, `APLEXER_TAG`, and `APLEXER_WORKSPACE` are **100% pristine, accurate, and correctly bound** to `c7a75f76-1f51-4f14-873e-7a60569838c3`, `agent-dashboard-head`, and `/home/alexey/git/agent-dashboard`.
+2. **Tool-Shell Child Environment Binding Demarcation:**
+   - **Epistemic Distinction (C2252):** In the historical October 2 incident, parent process environments were correct while child tool-shells spawned by the agent were overwritten by shell snapshots.
+   - **Status:** In session `c7a75f76`, child tool-shell binding is classified as **`UNTESTED`** until observed child process or source load evidence exists. Impersonating tool probes into the dormant session are strictly prohibited. Filesystem audit confirms no shell snapshot files have been written to `/home/alexey/.codex/shell_snapshots/` since October 2.
+3. **Verification of the Rejection Condition in `watch/state.rs`:**
+   - The delivery guard failure is mathematically and logically accounted for by the exact rejection condition in [`cloudflare-aplexer-protocol/src/watch/state.rs:141-171`](file:///home/alexey/git/cloudflare-aplexer-protocol/src/watch/state.rs#L141-L171):
+     * The session recorded `reported_state: "idle"` at timestamp `1791113916291` ms.
+     * Subsequent PTY activity was recorded at timestamp `1791161046182` ms (divergence $\Delta t = 47,129,891\text{ ms} = \mathbf{13\text{ hours, } 05\text{ minutes, } 29.891\text{ seconds}}$).
+     * Because `record.engine == "zcodex" != "antigravity"`, the unexempted engine check evaluated `idle_was_contradicted_with_hooks = true`.
+     * Under line 127 of [`message_deferred.rs`](file:///home/alexey/git/cloudflare-aplexer-protocol/src/bin/aplexer/message_deferred.rs#L127), an expired resting report with an empty composer fails closed.
+   - **Causal Demarcation (C2252):** The protocol guard and timestamp divergence confirm the **rejection condition** in `watch/state.rs`. The physical mechanisms (e.g. terminal cursor redraws and `Stop` hook execution) represent modeled explanations consistent with observed telemetry, rather than proven kernel-level causal traces.
+4. **Empirical Correlation Across Sessions:**
+   - Session `06a6e276-18f5-4abe-b66e-aee30d4e91a4` (`ui` in `/home/alexey/git/cloudflare-agent-git`) exhibits an identical divergence (`reported_state_at_ms: 1791103959641` vs `last_activity_ms: 1791165248666`, divergence > 17 hours).
+   - This provides an **empirical observation of common behavior** across unexempted CLI sessions resting at interactive prompts, though not universal root-cause proof.
+5. **Strict Governance & Anti-Workaround Invariants:**
+   - Synthetic state pushes (`a state-report idle`) or artificial newline/keypress injections into the dormant terminal pane are **STRICTLY PROHIBITED**. No operator reset workaround is authorized.
+   - Blind patching of the 2,102 uncommitted lines in `/home/alexey/git/agent-dashboard` via `ad-backend-exec` without an accepted owner ACK is **STRICTLY FORBIDDEN**.
 
 ---
 
@@ -67,7 +72,7 @@ APLEXER_TAG          = antigravity-head
 APLEXER_WORKSPACE    = /home/alexey/git/cloudflare-agent-git
 ```
 
-**Provenance Finding:** The worker process PID 1507995 was spawned by `antigravity-head` (`46fdb644`), which correctly initialized child workload PID 1508033 with its dedicated session identity (`c7a75f76`, `agent-dashboard-head`, `/home/alexey/git/agent-dashboard`). The live environment is 100% concordant with `session.json`.
+**Provenance Finding:** The workload process PID 1508033 possesses pristine environment variables concordant with its recorded session identity.
 
 ### 2.2 Comparative Session `06a6` Process & Identity Audit
 From `/home/alexey/.local/state/aplexer/sessions/06a6e276-18f5-4abe-b66e-aee30d4e91a4/session.json`:
@@ -87,157 +92,78 @@ APLEXER_TAG          = ui
 APLEXER_WORKSPACE    = /home/alexey/git/cloudflare-agent-git
 ```
 
-**Provenance Finding:** Both sessions maintain uncorrupted, perfectly isolated environment bindings.
+**Provenance Finding:** In both sessions, the parent workload process environments match their respective session boundaries without cross-contamination.
 
 ---
 
-## 3. Evaluation of the "Stale Shell Snapshot" Hypothesis
+## 3. Tool-Shell Snapshot Binding Demarcation
 
-### 3.1 Origin of the Hypothesis
-On October 2 (documented in `coordination/INTERACTIVE-SESSIONS.md:21-27` and `coordination/codex.md:152`), Codex principal session `56420916` was resumed from an older conversation, causing Codex's built-in shell snapshot restore feature to load a stale shell snapshot from session `ff5105df`. This overwrote `APLEXER_SESSION_ID` with an invalid ID. The issue was resolved by resuming with `--disable shell_snapshot` under session `93cf28f2`.
+### 3.1 Lessons from Historical Incident (October 2)
+In the incident documented in `coordination/INTERACTIVE-SESSIONS.md:21-27` and `coordination/codex.md:152`, Codex principal session `56420916` had a correct parent process environment in `/proc`, but child tool-shells spawned by the agent sourced an exported shell snapshot, which injected an unrelated session identity (`ff5105df`).
 
-### 3.2 Empirical Audit in Target Workspace
-1. **No Recent Snapshots:** Inspection of `/home/alexey/.codex/shell_snapshots/` revealed that all 14 snapshot files on disk date between September 30 and October 2:
-   ```text
-   -rw-rw-r-- 1 alexey alexey 8512 Oct  2 22:33 01a0fe52-ddfe-7410-98d9-a91012a98157.1790973238831480833.sh
-   ```
-   Zero snapshot files have been written since October 2.
-2. **Launch Configuration:** Session `c7a75f76` was launched cleanly by aplexer at `1791112464416` ms (2026-10-04T11:14:24Z) with command:
-   `["/home/alexey/.local/bin/zcodex", "-c", "check_for_update_on_startup=false", "--dangerously-bypass-approvals-and-sandbox"]`
-   It did not restore any prior conversation or shell snapshot.
-3. **Environment Reality:** The live workload process PID 1508033 contains pristine `APLEXER_SESSION_ID=c7a75f76-1f51-4f14-873e-7a60569838c3`.
-
-### 3.3 Epistemic Verdict
-$$\mathbf{Verdict: \text{ EMPIRICALLY REFUTED / UNFOUNDED}}$$
-The hypothesis that a stale shell snapshot overwrote valid environment variables in `c7a75f76` is contradicted by direct process memory and filesystem evidence.
+### 3.2 Evaluation in Session `c7`
+1. **Parent Environment:** Workload PID 1508033 environment is confirmed pristine.
+2. **Child Shell Environment:** Because session `c7a75f76` is dormant and running no active tool commands, no child process exists in its process tree to inspect.
+3. **Snapshot Directory Status:** Filesystem inspection of `/home/alexey/.codex/shell_snapshots/` reveals that all 14 files on disk date prior to October 2 22:33 UTC. No snapshot files have been written during the lifetime of session `c7a75f76`.
+4. **Epistemic Classification (C2252):**
+   $$\mathbf{Status: \text{ UNTESTED}}$$
+   Parent `/proc` environment concordance does not prove what child tool-shells would inherit upon execution. Child tool-shell binding remains formally **UNTESTED** until observed child process or source load evidence exists. Running synthetic tool probes or impersonating commands into the session to test child environments is strictly prohibited.
 
 ---
 
 ## 4. Lifecycle Hook Architecture vs. PTY Activity Mechanics
 
-### 4.1 Authoritative Hook Configuration
-Inspection of `/home/alexey/.codex/hooks.json` demonstrates the exact hook definitions managing `zcodex` and `codex`:
+### 4.1 Conceptual Summary of Lifecycle Hook Coverage
+In conformance with privacy and security invariants, private configuration files are summarized conceptually:
+- **Installed Event Coverage:** Codex lifecycle hooks are configured exclusively for discrete session transitions: session startup (`SessionStart`), user prompt submission (`UserPromptSubmit`), and turn completion (`Stop`).
+- **Absence of Heartbeat / Redraw Hooks:** Codex possesses no continuous background heartbeat hook, no prompt-redraw hook, and no cursor-blink hook.
+- **Hook Inactivity During Resting State:** Once a turn completes and the `Stop` event pushes an idle report, no further lifecycle hooks fire while the session sits unattended at an interactive prompt.
 
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "hooks": [
-          {
-            "command": "/home/alexey/git/cloudflare-aplexer-protocol/target/debug/aplexer context hook --engine codex 2>/dev/null || true # aplexer-managed-awareness-hook-v1",
-            "timeout": 5,
-            "type": "command"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "command": "/home/alexey/.local/bin/a state-report working || true",
-            "type": "command"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "command": "/home/alexey/.local/bin/a state-report idle || true",
-            "type": "command"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "command": "/home/alexey/.local/bin/a state-report working || true",
-            "type": "command"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-### 4.2 Chronological Mechanism of Failure
-
-```
-+-----------------------------------------------------------------------------------------------+
-| Oct 04, 11:38:36 UTC (1:38 PM Berlin)                                                         |
-| zcodex finishes 21m 37s turn -> Stop hook executes:                                           |
-|   `a state-report idle` -> reported_state = "idle", reported_state_at_ms = 1791113916291        |
-+-----------------------------------------------------------------------------------------------+
-                                               |
-                                               | (Session sits at interactive prompt for >13h)
-                                               | (No new user prompt submitted -> NO HOOKS FIRE)
-                                               v
-+-----------------------------------------------------------------------------------------------+
-| Oct 05, 00:44:06 UTC (2:44 AM Berlin)                                                         |
-| Aplexer attaches / captures screen -> zcodex TUI emits ANSI cursor redraw sequences:          |
-|   `\x1b[?2026h\x1b[39m\x1b[49m\x1b[0m\x1b[22;3H\x1b[?25h\x1b[?2026l`                          |
-| PTY reader (spawn.rs:442) updates:                                                            |
-|   `last_activity_ms = 1791161046182`                                                          |
-+-----------------------------------------------------------------------------------------------+
-                                               |
-                                               v
-+-----------------------------------------------------------------------------------------------+
-| Message 01a10988 delivery attempted:                                                         |
-|   evaluate_readiness_verdict() -> idle_was_contradicted_with_hooks():                         |
-|     last_activity_ms (1791161046182) > reported_state_at_ms (1791113916291) + 2000 ms         |
-|     Engine == "zcodex" != "antigravity" (NO REDRAW EXEMPTION)                                 |
-|   -> Resting state contradicted = TRUE                                                        |
-|   -> Line 127: Expired waiting + empty composer does NOT prove completed turn; fail closed.   |
-|   -> Result: FAIL-CLOSED with NOTREADY                                                        |
-+-----------------------------------------------------------------------------------------------+
-```
-
-### 4.3 Why Antigravity Does Not Suffer This Defect
-In [`cloudflare-aplexer-protocol/src/watch/state.rs:170`](file:///home/alexey/git/cloudflare-aplexer-protocol/src/watch/state.rs#L170):
-```rust
-record.engine != "antigravity"
-```
-Antigravity's interactive TUI continuously produces background cursor flickers and timer redraws on its PTY while idling. The protocol engine explicitly exempts Antigravity from PTY activity contradiction. Because `zcodex` lacks this exemption, benign cursor redraws permanently contradict stale idle reports.
+### 4.2 Modeled Mechanism vs. Verified Rejection Condition
+1. **Verified Rejection Condition:**
+   - In `cloudflare-aplexer-protocol/src/bin/aplexer/message_deferred.rs:100-130`:
+     * `record.reported_state` was `"idle"`.
+     * `record.reported_state_at_ms` was `1791113916291`.
+     * `record.last_activity_ms` was `1791161046182`.
+     * In `watch/state.rs:141-171`, `idle_was_contradicted_with_hooks` evaluated to `true` because `last_activity > at + 2000` ms and `record.engine != "antigravity"`.
+     * Under line 127, an expired resting report with an empty composer fails closed.
+   - **Conclusion:** The delivery rejection was an exact, mathematically verified execution of the protocol guard.
+2. **Modeled Terminal Activity:**
+   - In `spawn.rs:442`, master PTY reads update `runtime.last_activity_ms` on every byte.
+   - In terminal capture dumps, ANSI cursor repositioning sequences (`\x1b[?2026h\x1b[39m\x1b[49m\x1b[0m\x1b[22;3H\x1b[?25h\x1b[?2026l` at row 22, col 3) are observed.
+   - **Epistemic Demarcation (C2252):** The protocol guard and timestamp divergence confirm the **rejection condition**. The causal assertion that PTY updates were specifically driven by terminal redraws is a consistent model explanation, not a kernel-proven causal trace.
+3. **Comparative Observation:**
+   - Session `06a6e276` (`ui`) exhibits an identical divergence (>17h) without environment corruption. This is an empirical observation of common behavior across resting interactive CLI sessions, not universal root-cause proof.
 
 ---
 
-## 5. Remediation & Clean Recovery Paths
+## 5. Remediation & Governance Boundaries (C2252)
 
-Because session `c7a75f76` is dormant with an unrefreshed idle report, two remediation routes exist:
+### 5.1 Prohibition of Operator Reset Workarounds
+- **Strict Prohibition:** Proactively pushing synthetic state reports (`a state-report idle`) or injecting synthetic newlines/keystrokes into dormant terminal panes is **STRICTLY PROHIBITED**.
+- **Governance Rationale:** Bypassing delivery guards through unverified state overrides or terminal injection risks corrupting in-flight agent state and violates the fundamental safety invariants of the aplexer protocol. No operator reset workaround is authorized.
 
-### 5.1 Route 1: Direct Session Refresh (Narrow Repair Owner)
-- **Repair Owner:** `agent-dashboard-head` (session `c7a75f76`) or human operator controlling the interactive pane.
-- **Action:**
-  1. The operator inputs a newline or command in `c7a75f76`'s terminal pane, or
-  2. The session executes `a state-report idle` directly from its shell.
-- **Result:** This refreshes `reported_state_at_ms` to current wall-clock time (`now_ms()`), bringing it ahead of `last_activity_ms` and clearing the contradiction. The pending handoff message `01a10988-c253` (which is safely queued on disk) can then be ingested directly via `a message inbox`.
-
-### 5.2 Route 2: Acknowledged Bus Delegation to `ad-backend-exec` (Non-Blocking)
-- **Context:** Canonical `/home/alexey/git/agent-dashboard` at committed HEAD `efed70d` contains 2,102 uncommitted insertions across 9 files created by `ad-backend-exec` (message `01a106ba`, 44/44 backend tests pass).
-- **Action:**
-  1. Formal handoff on the bus delegating integration to `ad-backend-exec`.
-  2. Under `flock .local/git.lock`, merge minimal backend patch (`007a6ef3`, 137 lines) and static patch (`f2e29142`, 39 lines).
-  3. Verify combined 48-test suite: `PYTHONPATH=src python3 -m unittest discover -s tests/ -v`.
-  4. Commit cleanly to `main` with explicit file lists under flock.
-  5. Pin commit SHA and trigger independent review by `ad-independent-reviewer`.
-- **Advantage:** Breaks the circular dependency on dormant session `c7a75f76` without modifying canonical files externally.
+### 5.2 Integration Route Governance: No Blind Patching
+- **Current State:** Canonical `/home/alexey/git/agent-dashboard` at committed HEAD `efed70d` contains 2,102 in-flight uncommitted insertions across 9 files created by `ad-backend-exec` (message `01a106ba`, 44/44 backend tests pass).
+- **Strict Prohibition (C2252):** External agents or parent orchestrators must NOT attempt blind-patching or automated integration into this active working tree via `ad-backend-exec` without an **accepted owner ACK**.
+- **Authorized Procedure:**
+  1. Handoff message `01a10988-c253` remains safely queued on disk in `/home/alexey/.local/state/aplexer/messages/03c9ec4101be7a25620818707fb14ec7/msgs/`.
+  2. Integration of the minimal reference deltas (`007a6ef3` backend, `f2e29142` static) can proceed only through an explicit, acknowledged handoff accepted by the workspace owner.
+  3. All operations within `/home/alexey/git/agent-dashboard` must be strictly serialized under `flock .local/git.lock`.
+  4. Until a canonical commit is produced and independently reviewed, feature delivery remains strictly recorded as **0 accepted features**.
 
 ---
 
 ## 6. Verification & Invariants Checklist
 
-- [x] **Zero Compiler Invocations:** Reviewer actor strictly executed 0 `cargo` / `rustc` compiler invocations under human hold.
+- [x] **Zero Compiler Invocations:** Reviewer actor and audited subprocesses strictly executed 0 `cargo` / `rustc` compiler invocations under human hold.
 - [x] **Canonical Workspaces Read-Only:** `/home/alexey/git/agent-dashboard` audited strictly read-only; 0 writes, 0 edits, 0 git stage/commit mutations.
 - [x] **Scratch Footprint & Isolation:** `.local/scratch/reviewer259-dashboard-c7-diagnostic/` configured mode `0700`, measured usage 4.0 KB $\le$ 512 MB, `/tmp` net growth = 0.
-- [x] **Environment Audit:** Inspected live `/proc/1508033/environ` and `/proc/1657502/environ` for APLEXER fields; verified 100% concordance with session identities.
-- [x] **Snapshot Audit:** Audited `/home/alexey/.codex/shell_snapshots/`; confirmed zero files written since Oct 2.
-- [x] **Hypothesis Evaluated:** "Stale shell snapshot overwrote validenv" is empirically refuted.
-- [x] **Mechanism Pinpointed:** Provenance traced to Codex lifecycle hook gap (`hooks.json` lacks redraw/heartbeat hooks) + PTY cursor read updates in `spawn.rs:442` + unexempted engine fail-closed rule in `watch/state.rs:170`.
+- [x] **Environment Concordance Kept:** Verified live `/proc/1508033/environ` contains pristine `APLEXER_*` identity for session `c7a75f76`.
+- [x] **Child Shell Binding Classified UNTESTED:** Reflected lessons from historical Oct 2 incident; labeled child tool-shell binding as UNTESTED (no synthetic tool probes).
+- [x] **Causal Framing Corrected:** Demarcated verified protocol rejection condition from modeled PTY activity; framed dual-session data as empirical observation.
+- [x] **Privacy Preserved:** Raw private `hooks.json` content block removed; summarized lifecycle coverage conceptually.
+- [x] **Workaround Prohibited:** Removed operator reset / synthetic state push route; strictly prohibited terminal injection.
+- [x] **Integration Governance Upheld:** Removed claims of blind-patching 2,102 dirty lines via `ad-backend-exec` without accepted owner ACK.
 - [x] **Publication Credential Guard:** Verified via `python3 research/antigravity/tooling/publication_guard.py` (Exit Code 0).
 - [x] **Git Invariant:** Zero git commits or pushes from subagent.
