@@ -4745,18 +4745,22 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": true,
-      "status": "ready",
-      "updated_at": "2026-10-05T15:42:00Z",
+      "status": "review",
+      "updated_at": "2026-10-05T16:30:45.121474+00:00",
       "title": "SDK auth cold-client route integration validation",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "fresh client actual explicit token/admin/no-token matrix, no inherited warm cache",
       "dependencies": [],
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-46/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD",
+      "next_action": "Awaiting distinct peer review from quota-launcher-head-gemini or agent-coordination-head-gemini on /home/alexey/git/agent-branches/.local/scale50/scale50-46/COLD-CLIENT-VALIDATION.md",
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "assignment_ack": "01a10cba-2d4c-78d3-b64a-64fab9b8e5ea",
-      "first_action": "Inspect router and client auth handling in /home/alexey/git/agent-branches to prepare cold-client route test matrix; zero worker launches while root disk < 50.0 GiB"
+      "first_action": "Executed cold-client auth route matrix validation (validate.py) testing fresh client against mock L1 server across 6 scenarios (explicit token, admin token, unauthenticated 401). All 6 passed.",
+      "evidence_paths": [
+        "/home/alexey/git/agent-branches/.local/scale50/scale50-46/COLD-CLIENT-VALIDATION.md",
+        "/home/alexey/git/agent-branches/.local/scale50/scale50-46/validate.py"
+      ]
     },
     {
       "id": "scale50-47",
@@ -5220,7 +5224,7 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T16:19:46.562081+00:00",
+      "updated_at": "2026-10-05T16:30:45.121474+00:00",
       "deadline": "2026-10-05T16:30:00Z",
       "next_action": "Service running head-independently under persistent systemd user unit (session 2709c046, PID 2045425, cgroup app.slice/supervision.service, parent_session null). Audit report published at research/antigravity/reviews/REV-SUPERVISION-HEAD-INDEPENDENT-MIGRATION-2709C046.md.",
       "blocked_on": [
@@ -5314,6 +5318,14 @@
         "workload_cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/supervision.service",
         "finding": "Post-start verification proves service session 2709c046 has parent_session=null and runs directly in systemd user manager cgroup (/user.slice/user-1000.slice/user@1000.service/app.slice/supervision.service). Zero inheritance from Ant 5e1abcdb or interactive scopes. Singleton lock on .local/supervision/service.lock held exclusively by PID 2045425. Live restart recovery verified.",
         "verdict": "HEAD_INDEPENDENT_CERTIFIED"
+      },
+      "mailbox_lock_audit": {
+        "audited_at": "2026-10-05T16:30:45.121474+00:00",
+        "lock_file": "/home/alexey/.local/state/aplexer/messages/ff8f632ef4db3dc1682bad50bcdc8aaf/.mailbox.lock",
+        "lock_holder_pid": null,
+        "holding_status": "not_held_transient_flock",
+        "degraded_root_cause": "Pending message 01a10c9d-5a15-75d1-b1c7-c5a90ea819e3 sent by prior supervisor session 4914b3d1 to codex-principal remains un-ACKed (>4700s > 300s SLO). Supervisor refuses to forge recipient ACK.",
+        "resumable_trigger": "codex-principal (93cf28f2) acks message 01a10c9d-5a15-75d1-b1c7-c5a90ea819e3"
       }
     },
     {
