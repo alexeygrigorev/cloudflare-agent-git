@@ -3624,6 +3624,33 @@
       "reviewer": "filebus-backend-reviewer (c0f1e29a)",
       "accepted_at": "2026-10-05T09:32:00.000000+00:00",
       "feature_id": "filebus-backend-review"
+    },
+    {
+      "id": "transient-unit-model-execution-c2444",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T09:39:02.000000+00:00",
+      "next_action": "Adaptive batch intake scale-out under transient sibling unit contract.",
+      "acceptance": "Empirical validation of manager-spawned sibling transient service unit running real Grok 4.6 model workload outside head scope with zero cgroup task limit errors.",
+      "blocked_on": [],
+      "executor_ids": [
+        "46fdb644-9b58-4e2f-aab3-9be5e1e33337"
+      ],
+      "owned_paths": [
+        "research/antigravity/recovery/REPORT-TRANSIENT-UNIT-MODEL-EXECUTION-C2444.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-TRANSIENT-UNIT-MODEL-EXECUTION-C2444.md"
+      ],
+      "first_action": "2026-10-05T09:36:01.000000+00:00",
+      "commit": "d8b4d7d",
+      "pr_url": null,
+      "tests": "Real Grok model execution: exit code 0, 181.1s, 68 tasks/threads (safely below 100 limit), peak memory 334.7M/768M, deliverable c2443-sibling-census.md generated, clean unit dissolution verified",
+      "reviewer": "antigravity-head",
+      "accepted_at": "2026-10-05T09:39:02.000000+00:00",
+      "feature_id": "transient-unit-model-execution"
     }
   ]
 }
