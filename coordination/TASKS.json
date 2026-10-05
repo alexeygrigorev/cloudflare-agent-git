@@ -2864,6 +2864,26 @@
       "acceptance_status": "INDEPENDENT REVIEW COMPLETE (REV-SESSIONLESS-EXECUTOR-ROUTE-ADMISSION f34b9976: ZAI HELD TMPDIR; GROK BLOCKED ARGV; AGY CANDIDATE TRIAL PENDING; OPENCODE BLOCKED LAUNCHER-ABSENT; STAGED GROK FIX 13609f93 & OFFLINE TESTS 30056223 APPROVED AS STAGED PIN)",
       "next_action": "Awaiting desktop-root forward RPC reply from Windows Desktop in rendezvous store; prepare and execute contained Antigravity Flash admission smoke trial in dedicated scratch cgroup/TMPDIR with real useful task under C2221/C2241/C2245.",
       "continuation_trigger": "Desktop-root forward RPC reply in .local/scratch/desktop-root-rpc-20261005/store/ or contained agy flash admission trial launch."
+    },
+    {
+      "id": "dashboard-c7-notready-diagnostic",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "259526a9-5deb-47ce-810c-ca5f2da56b68"
+      ],
+      "status": "done",
+      "updated_at": "2026-10-05T01:56:00.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-DASHBOARD-C7-NOTREADY-DIAGNOSTIC.md"
+      ],
+      "acceptance": "Authoritative source-only diagnostic of dashboard native NOTREADY / old-idle / later-PTY issue (originally 01a10988) executed by reviewer259 under Codex Principal C2248 in REPORT-DASHBOARD-C7-NOTREADY-DIAGNOSTIC.md (SHA256: 3c45796728a8a8b2c9b8f45ecdf0a1c72c25c11b64f514974a27c796c44e99d1; publication guard exit 0). Key findings: 1) Stale shell snapshot hypothesis empirically refuted (environ of c7a75f76 PID 1508033 verified 100% pristine with correct session/tag/workspace; zero snapshots written since Oct 2); 2) Exact mechanical cause: zcodex hook architecture gap (hooks only fire on SessionStart, Stop, UserPromptSubmit; reported_state_at_ms was never refreshed during 13h idle, while ANSI cursor queries updated last_activity_ms under spawn.rs:442, triggering watch/state.rs:170 fail-closed delivery refusal under Line 127); 3) Systemic equivalence demonstrated in ui session 06a6e276; 4) Concrete remediation paths documented (state-report refresh vs acknowledged bus delegation). Canonical agent-dashboard strictly read-only; 0 cargo/rustc invocations.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2248. Executed by reviewer259 in .local/scratch/reviewer259-dashboard-c7-diagnostic/.",
+      "acceptance_status": "ACCEPTED (DIAGNOSTIC PROVENANCE TRACE COMPLETE; SHELL SNAPSHOT HYPOTHESIS REFUTED; EXACT PTY/HOOK GAP IDENTIFIED)",
+      "next_action": "Coordinate with agent-dashboard-head / codex-principal on chosen remediation route (direct state-report refresh or delegated integration).",
+      "continuation_trigger": "Codex principal receipt or dashboard integration lease handoff."
     }
   ]
 }
