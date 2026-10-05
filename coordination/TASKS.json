@@ -5173,9 +5173,9 @@
       "owner_tag": "agent-coordination-head-gemini",
       "status": "blocked",
       "assignment_ack": "01a10c5b-8461-7fd3-9209-06af1a3f155e",
-      "updated_at": "2026-10-05T15:13:00Z",
+      "updated_at": "2026-10-05T15:24:00Z",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Storage floor currently 47.6 GiB (<50 GiB); worker launch held per policy. QL task-unit adapter implemented at coordination/ql_task_unit_adapter.py ready to submit upon floor recovery.",
+      "next_action": "Host root free space is 46.79 GiB (<50.0 GiB floor); worker launch held closed. Once storage recovers >=50.0 GiB, submit model task unit via QLSessionlessConsumer.",
       "blocked_on": [
         "root-disk-below-50GiB-floor",
         "waiting-storage-floor-restoration"
@@ -5186,9 +5186,14 @@
       ],
       "owner_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
       "implementer": "coordination/ql_task_unit_adapter.py (maintained QL task-unit route via wt-refill-runtime)",
-      "reviewer": "antigravity-head-gemini-recovery (5e1abcdb) / nominated independent reviewer",
+      "reviewer": "quota-launcher-head-gemini (a86056b5) & independent reviewer subagent (747bd07e)",
       "first_tool": "coordination/ql_task_unit_adapter.py check_storage_floor + format_ql_payload",
-      "first_output": "coordination/ql_task_unit_adapter.py"
+      "first_output": "coordination/ql_task_unit_adapter.py",
+      "code_diff": "git diff 5ee5207e..48ab4fb (PocketShell-io/agent-bus)",
+      "pinned_commit": "acc993211d06387f288a9fe199a747c64230e866",
+      "tests": "36 passed in 11.25s (tests/test_ql_task_unit_adapter.py 12/12 passed)",
+      "reviewer_verdict": "ACCEPT (a86056b5 inbox 01a10ca7-e123 & reviews/REV-QL-TASK-UNIT-ADAPTER.md)",
+      "receiver_ack": "01a10ca7-e123-7a01-bfba-8647e924a329-ACKED"
     },
     {
       "id": "REMOTE-AUTONOMY-SUPERVISOR-1830",
@@ -5348,9 +5353,9 @@
       "offered_to_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
       "status": "blocked",
       "assignment_ack": "01a10c73-bad4-74e1-a299-60b7b186a8dd-ACKED",
-      "updated_at": "2026-10-05T15:13:00Z",
+      "updated_at": "2026-10-05T15:24:00Z",
       "handoff_id": "01a10c73-bad4-74e1-a299-60b7b186a8dd",
-      "next_action": "Product custody acknowledged; standalone core pinned at 5ee5207e; worker launches held until root filesystem free space >= 50 GiB.",
+      "next_action": "Adapter reviewed and accepted on pin acc9932; worker launches held until root filesystem free space >= 50.0 GiB.",
       "blocked_on": [
         "root-disk-below-50GiB-floor",
         "waiting-storage-floor-restoration"
@@ -5362,11 +5367,15 @@
       ],
       "owner_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
       "pinned_repo": "https://github.com/PocketShell-io/agent-bus",
-      "remote_main_pin": "5ee5207e8c540b712f7bc862af8f3bf29dc6df69",
+      "remote_main_pin": "acc993211d06387f288a9fe199a747c64230e866",
       "implementer": "coordination/ql_task_unit_adapter.py (maintained QL task-unit route via wt-refill-runtime)",
-      "reviewer": "antigravity-head-gemini-recovery (5e1abcdb)",
+      "reviewer": "quota-launcher-head-gemini (a86056b5) & independent reviewer subagent (747bd07e)",
       "first_tool": "coordination/ql_task_unit_adapter.py",
-      "first_output": "coordination/ql_task_unit_adapter.py"
+      "first_output": "coordination/ql_task_unit_adapter.py",
+      "code_diff": "git diff 5ee5207e..48ab4fb (+831 lines in coordination/ql_task_unit_adapter.py and tests/test_ql_task_unit_adapter.py)",
+      "tests": "36/36 passed",
+      "reviewer_verdict": "ACCEPT",
+      "receiver_ack": "01a10ca7-e123-7a01-bfba-8647e924a329-ACKED"
     },
     {
       "id": "AGENTS-FIX-VERIFY-RESUME-20261005",
