@@ -62,12 +62,13 @@ import sys
 import time
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
-# Ensure sibling repositories are in sys.path (strictly read-only access)
+# Ensure repository and sibling repositories are in sys.path (strictly read-only access)
+WORKSPACE_PATH = Path("/home/alexey/git/cloudflare-agent-git").resolve()
 LAUNCHER_REPO_PATH = Path("/home/alexey/git/agent-quota-launcher").resolve()
-COORDINATION_REPO_PATH = Path("/home/alexey/git/agent-coordination").resolve()
 BUS_REPO_PATH = Path("/home/alexey/git/agent-bus").resolve()
+COORDINATION_REPO_PATH = Path("/home/alexey/git/agent-coordination").resolve()
 
-for repo_path in (LAUNCHER_REPO_PATH, COORDINATION_REPO_PATH, BUS_REPO_PATH):
+for repo_path in (WORKSPACE_PATH, LAUNCHER_REPO_PATH, BUS_REPO_PATH, COORDINATION_REPO_PATH):
     if repo_path.exists() and str(repo_path) not in sys.path:
         sys.path.insert(0, str(repo_path))
 
