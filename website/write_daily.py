@@ -13,8 +13,14 @@ private=ROOT/'.local/journal'/day
 private.mkdir(parents=True,exist_ok=True)
 meta=ROOT/'website/content/daily'/f'{day}.json'
 m=json.loads(meta.read_text()) if meta.exists() else {}
-if m.get('published') and any('opus' in str(x).lower() for x in m.get('actual_writer_models', [])):
- print(json.dumps({'status':'already_published','date':day}));raise SystemExit(0)
+response=private/'response.json'
+if m.get('published') and response.exists():
+ try:
+  runtime=json.loads(response.read_text())
+  if not runtime.get('is_error') and any('opus' in str(x).lower() for x in runtime.get('modelUsage', {})):
+   print(json.dumps({'status':'already_published','date':day}));raise SystemExit(0)
+ except (json.JSONDecodeError, OSError):
+  pass
 if not args.run:
  quota=json.loads(subprocess.check_output(['quse','claude','--json'],text=True,timeout=45))['claude']
  remaining=[v['percent_remaining'] for v in quota.get('windows',{}).values() if v.get('percent_remaining') is not None]
