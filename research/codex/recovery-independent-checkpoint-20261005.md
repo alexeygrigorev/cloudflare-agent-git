@@ -59,3 +59,16 @@ This verdict accepts only that exact organizational text for integration. It doe
 **ACCEPTED, docs-only:** complete `coordination/SUPERVISION.md` diff independently read:15 inserted lines/3 replacements, exact SHA256 `b54d5b126991669429bb4f61ed2dacf5c11f486fc0d6da72b8e8e50ba9aea59e`. Writer `/root/fix_run_governance`; distinct reviewer `/root/recovery_contract_review`. The correction removes routine root reload approval, assigns bounded existing-service integration to genuine Ant recovery head5e1abcdb, preserves original parent/service custody and unresolved original envelopes/cursors, requires exact candidate independent review and loaded-process provenance, labels historical binary authority/deployments as historical, and distinguishes current source contract from runtime acceptance. It retains no duplicate daemon, no unknown kill/Rust/global install/readiness override and fresh admission constraints.
 
 This resolves the obsolete root-reload ownership text noted above. It does **not** establish a deployed correction, runtime activation, receiver ACK/first tool, current executable pin, absent-principal repeated useful continuation, or any50-active stage. Those remain head-owned runtime gates requiring real receipts and independent runtime reviewer acceptance. OPERATING50GB/private-main wording and actual startup-template rollout remain separate organizational follow-ups. This review performed no service, process, mailbox or product-code action.
+
+## Reverified restored RAM/count/cadence source policy
+
+**ACCEPTED, docs-only**, after reading absolute canonical paths and verifying SHA256 matches the originally reviewed candidates byte-for-byte:
+
+- `AGENTS.md`: `8a8a3bc7361e2f06db20f5274a74e2ef17ae819dbb96bda454a4a5567143ba3e`.
+- `coordination/RESOURCE-POLICY.md`: `258b4faba9e02b4770f186df5dc4ed96f623149ec975ca46b4c8a73cd54d1cbf`.
+
+Writer/restorer `/root/fix_run_governance`; distinct reviewer `/root/recovery_contract_review`. Exact human RAM override/25-inclusive-subagent and earlier50mixed-provider sources were read in the original review. Restored text correctly removes MemAvailable-floor refusal for this initiative, retains1500M/100Tasks containment, disk/scratch/fresh quota/identity/privacy/ownership/Rust/spending gates, and leaves unrelated defaults intact. True concurrent useful subagents count without extra aplexer sessions; duplicated parent wrappers, idle/completed/queued/controller/service/coordination-only actors do not. Latest25 changes close-supervision transition, not50longer-term target; temporary root/Luna bootstrap then30-minute desktop oversight requires verified25. Heads retain execution, independent code review and refill.
+
+Earlier tool receipts recorded these accepted hashes, but the later canonical policy/checkpoint disappearance has unknown cause; no overwrite actor or transport fault is attributed. This re-read verifies restored current source only. No deployed admission override, startup rollout,25/50observed actors, worker first-tool coverage, capture candidate correctness or autonomous continuation is accepted. Product runtime/capture review remains head-owned.
+
+Reverification UTC: 2026-10-05T17:07:19.400639+00:00
