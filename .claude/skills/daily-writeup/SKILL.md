@@ -22,6 +22,8 @@ The daily report is a short story for human readers who don't follow the experim
 
 After step 2, the article is ready. Principals and heads don't re-review or edit it. The coordinating agent only confirms that both sessions ran on Opus and that `check.json` exists, then runs `python3 website/publish_daily.py YYYY-MM-DD --publish`, commits the daily files and assets, and pushes.
 
+The coordinator then sends the laptop orchestrator one message saying the article is ready, with its public link. The laptop orchestrator only shows it to Alexey. It doesn't review, edit or summarise it.
+
 ## Story arc
 
 Every report tells one story, not a list of updates:
