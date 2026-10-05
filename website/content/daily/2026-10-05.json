@@ -1,10 +1,10 @@
 {
   "title": "Day 3: The Message Bus Delivered the Same Review Twice",
   "date": "2026-10-05",
-  "summary": "Early technical update across four active products: Agent Branches audited a fail-closed mutating push, Agent Bus verified typed SSH FileBus RPC dogfood and reply idempotency, Agent Dashboard verified staged metrics in a mock testbed, and Quota Launcher hardened temporary directory containment.",
+  "summary": "Early technical update across four active products: Agent Branches audited a fail-closed mutating push, Agent Bus verified typed SSH FileBus RPC dogfood, reply idempotency, and a two-host Windows-to-Hetzner cycle, Agent Dashboard verified staged metrics in a mock testbed, and Quota Launcher hardened containment and repaired shared admission.",
   "author": "Alexey Grigorev",
   "model": "unknown (interim recovery technical draft; actual writer unverified)",
-  "source_cutoff": "2026-10-05T01:10:00Z",
+  "source_cutoff": "2026-10-05T02:15:00Z",
   "sources": [
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-HOURLY-PAYLOAD-34137.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-SDK-CLI-TIMEOUT-ZCODE.md",
@@ -13,7 +13,8 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-DEFAULT-IDEMPOTENCY.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-TYPED-SSH-PORTABILITY.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-TYPED-SSH-FILEBUS-RPC-DOGFOOD.md",
-    "https://github.com/PocketShell-io/agent-bus/tree/feat/typed-ssh-filebus-rpc"
+    "https://github.com/PocketShell-io/agent-bus/tree/feat/typed-ssh-filebus-rpc",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/recovery/REPORT-TWOHOST-DESKTOP-HETZNER-RPC.md"
   ],
   "source_titles": {
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-HOURLY-PAYLOAD-34137.md": "Independent review of the 24-hour analytical payload",
@@ -23,7 +24,8 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-DEFAULT-IDEMPOTENCY.md": "Review of default idempotency keys and duplicate prevention",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-TYPED-SSH-PORTABILITY.md": "Portability review identifying transport module gaps and Windows locking issues",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-TYPED-SSH-FILEBUS-RPC-DOGFOOD.md": "Independent review of typed SSH FileBus RPC dogfood and component tests",
-    "https://github.com/PocketShell-io/agent-bus/tree/feat/typed-ssh-filebus-rpc": "Public PocketShell-io/agent-bus feature branch for typed SSH FileBus RPC"
+    "https://github.com/PocketShell-io/agent-bus/tree/feat/typed-ssh-filebus-rpc": "Public PocketShell-io/agent-bus feature branch for typed SSH FileBus RPC",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/recovery/REPORT-TWOHOST-DESKTOP-HETZNER-RPC.md": "Empirical report on two-host cross-computer FileBus RPC between Windows desktop and Hetzner Linux"
   },
   "image": "../../assets/agent-git-illustration.png",
   "image_alt": "Conceptual illustration for the agent Git experiment; not measurement evidence",
@@ -31,9 +33,9 @@
   "early_update": true,
   "actual_writer_models": [],
   "editorial_review": "Interim technical status update; factual checks under REV-OCT5-PRODUCT-REPORT; writer provenance unverified (not Claude Opus); comprehensive 09:30 Europe/Berlin reader report scheduled after morning standup",
-  "article_sha256": "32c2802264c8abd5bf1235124ef7d7ef58eda7086fc27b0fe3b5d801746b6fbe",
+  "article_sha256": "821255bf372549f6d57457e3c4aa8d65d5c4056345c03cbe40fdb77ea65379b5",
   "published_at": "2026-10-05T00:25:00.000000+00:00",
-  "corrected_at": "2026-10-05T01:15:00.000000+00:00",
+  "corrected_at": "2026-10-05T02:25:00.000000+00:00",
   "corrections": [
     {
       "at": "2026-10-05T00:35:00.000000+00:00",
@@ -52,6 +54,15 @@
       "sources": [
         "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-TYPED-SSH-FILEBUS-RPC-DOGFOOD.md",
         "https://github.com/PocketShell-io/agent-bus/tree/feat/typed-ssh-filebus-rpc"
+      ]
+    },
+    {
+      "at": "2026-10-05T02:25:00.000000+00:00",
+      "editor": "publication coordinator (public-journal-site)",
+      "reason": "Intake of verified two-host cross-computer RPC cycle and launcher admission repair",
+      "details": "Updated Agent Bus narrative with verified 4-stage cross-computer exchange between a Windows desktop and Hetzner Linux over outbound OpenSSH stdin JSON RPC (task 4497403a, reply b448cc83 at commit 48003a6). Recorded 974ms command wall time with 18-minute controller availability gap; preserved negative disclosures (ASCII-only, Windows Python driver under review with mock tests not runtime acceptance, no inbound desktop SSH). Recorded Quota Launcher shared admission repair with runtime acceptance remaining held.",
+      "sources": [
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/recovery/REPORT-TWOHOST-DESKTOP-HETZNER-RPC.md"
       ]
     }
   ]
