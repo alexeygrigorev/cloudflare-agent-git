@@ -76,3 +76,16 @@ The human explicitly assigned routine daily article preparation to remote Codex 
 
 The publication coordinator (`public-journal-site`) remains the publication head and independent release collaborator, responsible for independent editorial/visual quality checks, publication script gate validation (`website/publish_daily.py`), timeline admission tests, and live deployment verification. Remote preparation logs and receipts reside in `.local/journal/remote-preparation-handoff/**`.
 
+## Missed target explanation and recovery protocol — human directive 5 October 2026
+
+The human explicitly instructed: *"when something is not on target I want an explanation and planned steps to hit the target on the next checkout"* (`experiment/human-missed-target-recovery-plan-20261005.txt`).
+The term "checkout" is interpreted as the next checkpoint/check-in, preserving the exact original wording.
+
+Whenever an authorized milestone, target, or metric is not on target:
+1. **Target vs. Actual Result:** State the exact target and measured actual outcome with clear time coverage and timestamp.
+2. **Confirmed Cause vs. Unknowns:** Provide a fact-based explanation that clearly distinguishes confirmed, verified root causes from unconfirmed hypotheses or unknown gaps.
+3. **Corrective Recovery Plan:** Define ordered corrective steps with an accountable owner, strict dependencies, expected interim outputs, and the specific next checkout/checkpoint time.
+4. **Verification Method:** State how the recovery will be independently tested and verified (unit test, render capture, hash check, live probe).
+5. **Honest Shortfall and Real Risks:** Disclose constraints, quotas, route errors, or safety floors (host memory/disk, provider reserves) that could prevent reaching the target, and report the maximum safe useful capacity without fabricating progress or numbers.
+6. **No Actor-Count-Only Report Cards:** Never publish raw numbers, task lane counts, or superficial status dumps without genuine task IDs, live whoami mutation, and verified output evidence.
+
