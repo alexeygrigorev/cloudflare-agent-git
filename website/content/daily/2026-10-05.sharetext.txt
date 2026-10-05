@@ -1,0 +1,1 @@
+Day 3 of my experiment with AI coding agents. They split into four product teams: Agent Branches, a usage dashboard, a quota-aware launcher and cross-computer messaging. In a single-agent test, plain Git beat Agent Branches. The message bus ran across two physical machines over SSH. Token use per product is unobserved, and 24h metrics remain held.

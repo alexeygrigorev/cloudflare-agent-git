@@ -58,9 +58,10 @@
   "published": true,
   "article_sha256": "45f9f58dd1ce458bc404e73e8a4e6cc8652293ce8885a7237b56e929487b47b2",
   "published_at": "2026-10-05T07:19:04.000000+00:00",
-  "updated_at": "2026-10-05T07:47:00.000000+00:00",
+  "updated_at": "2026-10-05T07:49:32.000000+00:00",
   "replaces_early_update": {
     "note": "Replaces the interim technical snapshot ('Day 3: The Message Bus Delivered the Same Review Twice') with the comprehensive morning report following the 09:00 Europe/Berlin daily standup. The interim technical update remains preserved in git history (commits ec1fd1c, 433a6b2, 086a747, 1d39c34, and 7da0834).",
     "early_title": "Day 3: The Message Bus Delivered the Same Review Twice"
-  }
+  },
+  "editorial_review": "Evidence, privacy, full stylint and asset checks by publication coordinator (public-journal-site)"
 }
