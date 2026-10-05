@@ -5152,20 +5152,20 @@
       "owner_tag": "quota-launcher-head-gemini",
       "status": "blocked",
       "assignment_ack": "01a10c4d-0922-71d0-a079-611bfd473e8e",
-      "updated_at": "2026-10-05T15:12:00.000000+00:00",
+      "updated_at": "2026-10-05T15:23:00.000000+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Gated useful 2-cycle autonomy milestone achieved; worker launches held under 47.65 GiB root disk floor. Ready for 15:00 UTC Bus integration and existing supervisor event consumption once host floor restored.",
+      "next_action": "Pinned runtime change finished and pushed: QL scale50-refill-runtime commit 181b522 on github (176/176 tests pass, reviewer review-scale50-refill ACCEPT); AB branches sync git commit 1fa3ab9 on origin (72/72 tests pass, reviewer review-branches-sync-v2 ACCEPT); distinct review of AgentBus QL adapter commit 48ab4fb rendered ACCEPT (36/36 tests pass). Two-cycle useful autonomy verified. Next gated cycles ready to resume once root >= 50.0 GiB.",
       "blocked_on": [
-        "root-disk-below-50GiB",
-        "current-head-turn-ended-native-safe-continuation-unacknowledged"
+        "root-disk-below-50GiB"
       ],
       "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
-        "research/codex/remote-autonomy-1830-plan-20261005.md",
-        ".local/scale50/REMOTE-AUTONOMY-LAUNCHER-1830.md"
+        ".local/scale50/ROOT-STORAGE-ATTRIBUTION.md",
+        ".local/scale50/REMOTE-AUTONOMY-LAUNCHER-1830.md",
+        "research/codex/remote-autonomy-1830-plan-20261005.md"
       ],
       "owner_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
-      "first_action": "In-session launcher recovery executed: unmocked 2-cycle useful LLM pipeline (scale50-07 opencode audit -> review -> refill -> scale50-08 agy audit -> review) verified exit 0, PIDs/invocations recorded in REMOTE-AUTONOMY-LAUNCHER-1830.md. Critical bug in launcher/launch.py:44 (-p placement) diagnosed and verified. 176/176 QL tests pass. Hardened branches sync git v2 (1fa3ab9) passed 72/72 tests."
+      "first_action": "In-session launcher recovery executed: unmocked 2-cycle useful LLM pipeline (scale50-07 opencode audit -> review -> refill -> scale50-08 agy audit -> review) verified exit 0, PIDs/invocations recorded in REMOTE-AUTONOMY-LAUNCHER-1830.md. Critical bug in launcher/launch.py:44 (-p placement) diagnosed and verified. Pinned runtime change committed and pushed: QL commit 181b522 (reviewer review-scale50-refill ACCEPT, 176/176 tests pass); AB branches sync git commit 1fa3ab9 (reviewer review-branches-sync-v2 ACCEPT, 72/72 tests pass); AgentBus adapter commit 48ab4fb reviewed (ACCEPT). Worker launches strictly held under 50-GiB floor."
     },
     {
       "id": "REMOTE-AUTONOMY-BUS-1830",
@@ -5196,9 +5196,9 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T15:18:40.449477+00:00",
+      "updated_at": "2026-10-05T15:22:35.606229+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Bounded supervisor integration and isolated failure recovery test suite completed (commit 530c10c, 70/70 tests pass). Pinned diff routed to QL head for distinct review. PID 3265459 preserved; worker launches held while root disk is below 50 GiB.",
+      "next_action": "Supervisor failure recovery and terminal consumer integration verified and accepted by distinct QL review (commit 530c10c). Live supervisor PID 3265459 preserved. Model worker launches held pending restoration of root filesystem >= 50 GiB floor (current: 47.52 GiB).",
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
@@ -5209,9 +5209,14 @@
         "research/antigravity/reviews/REV-SUPERVISION-TERMINAL-LAUNCHER-6E995C9.md",
         "scripts/supervision/terminal_consumer.py",
         "scripts/supervision/test_terminal_consumer.py",
-        "scripts/supervision/test_failure_recovery.py"
+        "scripts/supervision/test_failure_recovery.py",
+        "research/antigravity/reviews/REV-SUPERVISION-FAILURE-RECOVERY-530C10C.md"
       ],
-      "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672"
+      "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
+      "reviewer": "quota-launcher-head-gemini (a86056b5-8b6b-403a-9b8f-6f0b49308959)",
+      "accepted_at": "2026-10-05T15:20:20Z",
+      "commit": "530c10c",
+      "tests": "70/70 supervision tests pass in 0.77s (scripts/supervision/test_failure_recovery.py, test_terminal_consumer.py, test_service.py). Distinct review ACCEPT from quota-launcher-head-gemini (a86056b5, message 01a10ca6-ce9b-77d2-85e4-e8464072d5ca)."
     },
     {
       "id": "REMOTE-AUTONOMY-REVIEW-1830",
@@ -5319,19 +5324,20 @@
       "offered_to_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
       "status": "in_progress",
       "assignment_ack": "Accepted by quota-launcher-head-gemini a86056b5 at 2026-10-05T15:10:00Z",
-      "updated_at": "2026-10-05T15:12:00.000000+00:00",
+      "updated_at": "2026-10-05T15:23:00.000000+00:00",
       "checkpoint_due": "2026-10-05T16:30:00Z",
-      "next_action": "Read-only storage attribution complete: in-scope competition workspaces consume 5.3 GiB total; floor miss (47.65 GiB free vs 50 GiB floor) is driven by external out-of-workspace writer. Worker launches held. Recovery requires root/user handling external writer.",
+      "next_action": "Scoped read-only storage attribution complete: free 51,019,907,072 bytes (47.52 GiB), deficit 2,667,184,128 bytes (2.48 GiB). Competition footprint strictly ~5.3 GiB total. Concrete candidate recovery paths proved unreferenced, non-worktree, outside protected caches: scratch/design-port-fix (923.74M), scratch/daily-rewrite (262.68M), .local/muse-r48 (668.50M), .local/muse-r46 (336.59M) = 2,297,967,728 bytes (2.14 GiB). Exact-path cleanup awaits explicit authorization. Worker launches held (0 active).",
       "acceptance": "At 14:30Z report fresh df, scoped competition-tree attribution, named owner for any actionable in-scope recovery, and independent review. External-owner contact remains with root; no destructive cleanup. Resume only after root >=50GiB free, >=10GiB MemAvailable, fresh applicable quota and an actually accepted useful READY task.",
       "blocked_on": [
         "root disk below 50GiB; worker launch held"
       ],
       "evidence_paths": [
+        ".local/scale50/ROOT-STORAGE-ATTRIBUTION.md",
         ".local/continuation-monitor-progress.md",
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ],
       "owner_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
-      "first_action": "Read-only storage attribution executed: competition workspaces consume ~5.3 GiB total (cloudflare-agent-git 5.2G, QL 45M with .local/scale50 <20M, branches 16M, coordination 2.9M, bus 1.2M, dashboard 28M). Root statvfs 47.65 GiB free (51161559040 bytes) is driven by external out-of-workspace writer. Worker launches strictly held.",
+      "first_action": "Scoped read-only storage attribution executed: measured free 51,019,907,072 bytes (47.5160 GiB vs 50.0 GiB floor, delta 2,667,184,128 bytes). Competition footprint ~5.3 GiB total. Concrete actionable >=1.7-GiB candidates identified: scratch/design-port-fix (923.74M), scratch/daily-rewrite (262.68M), .local/muse-r48 (668.50M) subtotal 1.81 GiB; with muse-r46 (336.59M) total 2.14 GiB. Proved 0 worktree collisions, 0 TASKS references, 0 active PIDs (fuser empty), outside protected caches. External private writer left strictly untouched. Worker launches held.",
       "deadline": "2026-10-05T16:30:00Z"
     },
     {
