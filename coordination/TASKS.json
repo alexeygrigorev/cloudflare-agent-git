@@ -6066,7 +6066,7 @@
       "id": "synthesis-agent-branches-20261006011745-4315",
       "project_id": "agent-branches",
       "team_id": "research-synthesis",
-      "status": "completed",
+      "status": "remediation_needed",
       "created_at": "2026-10-05T23:17:45.810859+00:00",
       "updated_at": "2026-10-05T23:35:00.000000+00:00",
       "title": "Concurrency & Race Condition Resilience",
@@ -6075,9 +6075,10 @@
       "blocked_on": [],
       "dependencies": [],
       "evidence_paths": [
-        "prototype/src/core/coordinator.ts",
-        ".local/scratch/agent-branches-concurrency/test_concurrency.py"
-      ]
+        "research/antigravity/reviews/REV-SYNTHESIS-AGENT-BRANCHES-4315-20261005.md",
+        "prototype/src/core/coordinator.ts"
+      ],
+      "acceptance_status": "REJECTED: Independent peer review (REV-SYNTHESIS-AGENT-BRANCHES-4315-20261005.md) rejected task due to stubbed test_concurrency.py containing empty pass methods with zero assertions, zero TypeScript test coverage for receipts/stale-head coordinator logic, and execution failure."
     },
     {
       "id": "synthesis-agent-coordination-20261006011745-5669",
@@ -6106,11 +6107,14 @@
       "blocked_on": [],
       "dependencies": [],
       "evidence_paths": [
-        "scripts/coordination/git_handoff.py"
+        "scripts/coordination/git_handoff.py",
+        "tests/test_git_handoff.py",
+        "research/antigravity/reviews/REV-SYNTHESIS-AGENT-COORDINATION-4135-20261005.md"
       ],
       "owner_tag": "antigravity-head",
       "assignment_ack": "ACK: implemented Python CLI wrapper leveraging aplexer durable messages with explicit canonical drift detection logic to satisfy cross-host requirements.",
-      "next_action": "Delivered scripts/coordination/git_handoff.py providing send/accept capabilities for Git-Bound Session Handoffs."
+      "next_action": "Delivered scripts/coordination/git_handoff.py providing send/accept capabilities for Git-Bound Session Handoffs.",
+      "acceptance_status": "ACCEPTED: Independent peer review (REV-SYNTHESIS-AGENT-COORDINATION-4135-20261005.md) verified CLI send/accept with canonical drift detection (dirty workspace and HEAD mismatch) over durable aplexer message bus. Hardened with safe payload idempotency-key and 9 passing unit tests in tests/test_git_handoff.py."
     },
     {
       "id": "synthesis-agent-coordination-20261006011745-8445",
