@@ -73,3 +73,6 @@ Maintainer-intake continuation 2026-10-05T00:42:34.065170+00:00: publication pro
 
 
 2026-10-05T01:03:29.153090+00:00 Maintainer intake: repeated ManageSubagents(list) loops after completed actors should become an await-completion/next-ready-task event primitive with typed task owner, immutable source pin, receiver ACK, first action, outcome and timeout escalation. Native safe-delivery original messages need source-backed readiness diagnosis and actual producer event, not prompt-empty inference or repeated manual submission. Review metadata must detect stale manifests against actual target/artifact before approval and distinguish templates/seeded transport tests from authentic model task uptake. These features are requirements; runtime repair not yet accepted.
+
+
+2026-10-05T01:11:42.839457+00:00 Maintainer intake: CLI run instructions in multiple agent reports invented enroll/agent-name/unread-only flags even though actual parser uses register/agent/default-unread and credential-file writes. Tool should expose machine-readable CLI/API contract and require source-pinned executable documentation smoke receipts; baseline comparisons must name actual supported JSON/credential interfaces. Public checkpoint + real model task/ACK evidence cannot certify unexecuted runbook or fabricated competitor weakness. Existing head owns narrow correction/tests.
