@@ -1,0 +1,11 @@
+Human intake — 2026-10-05
+Source: direct messages in resumed Codex principal conversation.
+These are requests, not claims of implemented functionality or accepted ownership.
+
+Verbatim request 1:
+there was another task that seems missing - I asked to decouple messageing from aplexer, so the message bus is a separate project that can also work for agents running in headless mode. status on that?
+you don't do this stuff yourself. for simple adhoc requests you launch a subagent. for more substantial work you forward it to heads
+make sure it's documented in your role
+
+Verbatim request 2:
+https://github.com/PocketShell-io/agent-bus I see it here. make sure there' sa head reponsible for that. run as many zcy projects for porting this functionality from aplexer. use this as playbook for other work you do so I don't have to handhold you
