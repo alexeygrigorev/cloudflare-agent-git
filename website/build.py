@@ -596,10 +596,7 @@ def daily_page(d):
     prose = markdown(content, d['path'])
     strip = '<div class="stat-strip">'+''.join('<div><span class="stat-n">'+E(n)+'</span><span class="stat-l">'+E(l)+'</span></div>' for n, l in PAIN_STATS)+'</div>'
     prose = re.sub(r'(<p>[^\n]*111\.7 GiB of physical disk[^\n]*</p>)', lambda m: m[1]+strip, prose, count=1)
-    spans = ['<span class="ink">EVIDENCE UP TO '+E(utc_text(d.get('source_cutoff', d['date'])))+'</span>']
-    if d.get('update_cutoff'):
-        spans.append('<span>MORNING UPDATE UP TO '+E(utc_text(d['update_cutoff']))+'</span>')
-    spans.append('<span>'+str(len(d.get('sources', [])))+' SOURCES LINKED BELOW</span>')
+    spans = []
     is_opus = any('opus' in str(x).lower() for x in d.get('actual_writer_models', []))
     writer_badge = 'Written with Claude Opus' if is_opus else 'Early technical update \u00b7 writer unverified'
     person = '<span class="byline-name">'+E(d.get('author', 'Alexey Grigorev'))+'</span><span class="muted">'+writer_badge+'</span><span class="muted">'+E(long_date(d['date']))+'</span>'
@@ -689,7 +686,7 @@ def main():
     for d in daily:
         write(d['route'], d['title'], daily_page(d), d.get('summary'), 'article')
     write('', LATEST['title'] if LATEST else 'Agent Branches', home_page(), kind='home')
-    rows = ''.join('<a class="journal-row" href="'+BASE+'/'+d['route']+'"><span class="journal-title">'+E(d['title'])+'</span><span class="journal-date">'+E(long_date(d['date']))+' \u00b7 evidence up to '+E(utc_text(d.get('source_cutoff', d['date'])))+'</span><span class="journal-summary">'+E(d.get('summary', ''))+'</span><span class="read-more-sm">Read the story'+ARROW+'</span></a>' for d in daily)
+    rows = ''.join('<a class="journal-row" href="'+BASE+'/'+d['route']+'"><span class="journal-title">'+E(d['title'])+'</span><span class="journal-date">'+E(long_date(d['date']))+'</span><span class="journal-summary">'+E(d.get('summary', ''))+'</span><span class="read-more-sm">Read the story'+ARROW+'</span></a>' for d in daily)
     write('daily/', 'Daily journal', '<div class="narrow">'+intro('The daily journal', 'What we tried, what held up, and what changed our minds. Written with Claude Opus, checked against the experiment.', '<a class="read-more-sm" href="'+BASE+'/feed.xml">Subscribe via RSS'+ARROW+'</a>')+'<div class="journal-list">'+(rows or '<p>The first evidence-checked story is being prepared.</p>')+'</div></div>')
     write('projects/', 'Hypotheses', intro('Ideas with work to do', str(len(PROJECTS))+' directions have pages here: '+str(ACTIVE_COUNT)+' retained for falsification and '+str(PARKED_COUNT)+' parked. Selection and development gates are separate; these are provisional research lanes, not products. Each page states what would change our mind.')+cards(with_next=True))
     for i, p in enumerate(PROJECTS):
