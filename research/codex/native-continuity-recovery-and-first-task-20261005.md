@@ -84,3 +84,35 @@ Setup first whoami, governance reads and mailbox activity were observed. **No us
 The 20:00 packet therefore records: historical25 numerical milestone accepted; kernel memory-cgroup cause confirmed; same-history Ant resumption and genuine custody ACK achieved; current deduplicated useful-executor census **unknown**, new productive recovery artifact **not yet evidenced**, distinct recovery verdict **pending**, and autonomous continuation **unaccepted**. Earlier missed19:40 productive-first-tool checkpoint remains a miss. Do not turn setup activity into an adoption or implementation claim.
 
 Next owned trigger: Ant supplies actual delegate identity, useful first tool and artifact for its stated repair/custody priority; Coord supplies the independent recovery/cgroup-custody verdict and corrected aggregate; QL supplies review-aware useful next-task evidence. Principal monitors these outcomes and routes stalls through heads. Safe receiver delivery and durable head-loss recovery remain head-owned features requiring actual subsequent useful cycles.
+
+
+## 20:00 packet update: useful CLI integration and tracker snapshot
+
+Ant's genuine message **01a10d35-0140-72b3-9258-0cada15774cd** reports AgentBranches `branches sync git` fast-forward integrated into main at **1fa3ab93f619e18b528b122bb8be2e2609eb47b0**, backed by existing distinct `INDEPENDENT-REVIEW-V2` ACCEPT and **11 passing unit tests**. [Integration report](../antigravity/reviews/REV-AGENTBRANCHES-SYNC-GIT-INTEGRATION-20261005.md) supplies run instructions. The principal observed actual head `merge --ff-only` and full-suite execution running at19:55:20Berlin. Full-suite completion and actual GitHub remote main SHA are **not yet verified**. This supersedes “no useful head outcome” for integration, but does not establish a new maintained worker outcome or independent recovery acceptance.
+
+Principal reply **01a10d35-57b1** explicitly separates this useful head integration from the still-required **new maintained worker → distinct review → useful refill/autowake** gate. Tracker/new head generation commit **2379c3c** was pushed, per principal evidence. At17:55:40UTC root free was **53,853,069,312 bytes**, about **158 MiB** above the50GiB floor; MemAvailable **32,003,336 kB**. Current useful-executor count remains unknown; these snapshots are not future admission authorization.
+
+Read-only tracker snapshot SHA256 **d1af4d84cc09d0022200d86f3bcc3878f9d6c86a50f4e6dac694dad6c3cbc05d** contains **239 task records /239 unique IDs**. Literal status counts are: done100, completed10, complete1, accepted6, integrated2, blocked33, running19, in_progress10, ready17, review19, queued20, delivered1, held1. For a provisional reporting view, map done/completed/complete/accepted/integrated to **119 closed-status records**, and all remaining statuses to **120 open-status records**; no cancelled records appear. This is a declared label mapping, **not an audit that every closed label has independently accepted evidence**. Running task labels do not measure currently active agents. No record has `created_at`, so creation counts within the reporting interval are **unknown**;239 means records present, not239 tasks created in the last24h.
+
+Per-project record/open-status/closed-status counts, retaining literal project assignments:
+
+- AgentBranches: **36 /9 /27**.
+- AgentBus: **1 /1 /0**.
+- Agent Coordination: **34 /22 /12**.
+- Agent Dashboard: **37 /22 /15**.
+- `quota-launcher`: **35 /26 /9**; separate `agent-quota-launcher`: **2 /0 /2**. If the owner confirms these are aliases, combined Launcher is **37 /26 /11**; do not silently rewrite source attribution.
+- Publication: **13 /12 /1**; infrastructure: **2 /0 /2**; oversight: **2 /2 /0**; website: **1 /0 /1**.
+- No project assignment: **78 /28 /50**, kept explicitly unattributed rather than allocated to product teams.
+
+These are task-record statistics, not all-night token usage, contributor totals or current active-worker metrics. Per-project closed-work summaries require owners to attach concrete accepted outcomes and correct stale labels; the snapshot alone does not verify them. Heads own execution/code review/integration and sync, reviewers independently inspect pins, and the principal monitors outcome and reporting boundaries.
+
+
+### Verification correction — C2652, 5 October 2026, 17:56 UTC
+
+This latest correction supersedes the earlier claimed full source SHA and pending full-suite status above; suite evidence is now head-reported, while GitHub sync remains unverified.
+
+Principal independently verified local AgentBranches HEAD **1fa3ab9b91e288a4cabf0eee0477dbfc8fa470e8**, which differs from Ant's report/tracker full SHA **1fa3ab93f619e18b528b122bb8be2e2609eb47b0**. At17:56UTC actual `git ls-remote origin refs/heads/main` returned **10d9d505e12b227582e8f2e56ad0cfcfe7d5ca7c**. Therefore local CLI integration is evidenced, **GitHub main synchronization is not**. The head owns correcting the full pin, pushing intended reviewed source and verifying remote SHA.
+
+Ant's screen reports **72/72** full-suite passes in **22.01s**; this updates the earlier pending suite claim as **head-reported**, not a principal product test run. A claimed task-340 five-minute background completion trigger has not yet fired or proved receiver action.
+
+Ant ended its turn at19:56Berlin. Principal verified a fresh idle/empty screen, but original C2652 correction **01a10d36-0729-7f63-9e48-0132ef463685** was rejected native NOTREADY with the same idle/later-PTY contradiction. Original delivery remains pending, with no retry, readiness spoof or injected input. Genuine generation/custody ACK is real; automatic continuation remains broken. C2652 requests exact pin/full-suite/remote-sync correction and a new maintained-worker artifact followed by independent review and useful refill. These concrete delivery and synchronization failures remain head-owned product gates, not setup-only completion.
