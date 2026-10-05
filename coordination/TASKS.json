@@ -3733,6 +3733,32 @@
       "reviewer": "codex-principal",
       "accepted_at": null,
       "feature_id": "fifty-active-workers"
+    },
+    {
+      "id": "task-units-workingdirectory-repair-c2465",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T10:28:00.000000+00:00",
+      "next_action": "Adaptive batch execution with validated WorkingDirectory and generous timeouts.",
+      "acceptance": "Bind -p WorkingDirectory={workspace} in build_systemd_run_argv, add prelude cwd verification (exit 99 on mismatch), set default timeout to 1200s, calculate module SHA256 before execution, and prove with empirical offline probe.",
+      "blocked_on": [],
+      "executor_ids": [
+        "46fdb644-9b58-4e2f-aab3-9be5e1e33337"
+      ],
+      "owned_paths": [
+        "launcher/task_units.py",
+        "tests/test_task_units.py"
+      ],
+      "evidence_paths": [],
+      "first_action": "2026-10-05T10:18:00.000000+00:00",
+      "commit": "70e5a95",
+      "pr_url": null,
+      "tests": "28/28 test_task_units PASS, 147/147 repo tests PASS, empirical local offline probe verifies WITNESS_CWD inside workspace with exit 0 and zero model spend",
+      "reviewer": "codex-principal",
+      "accepted_at": "2026-10-05T10:28:00.000000+00:00",
+      "feature_id": "task-units-workingdirectory-repair"
     }
   ]
 }
