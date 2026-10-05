@@ -5220,9 +5220,9 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T16:04:51.931157+00:00",
+      "updated_at": "2026-10-05T16:15:00.000000+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Controlled migration to persistent systemd user unit completed under reviewed commit 3b99207 (ACCEPT by Coordination head, receipt 01a10ccc-77f3). Old PID 3265459 cleanly stopped; new service active under supervision.service and aplexer session 1e95f5f7 (PID 1589735) holding singleton lock. Live TerminalConsumer verified (12 imported-db receipts). Worker launches gated on root storage floor.",
+      "next_action": "Durability ACCEPT retracted/qualified to REQUEST_CHANGES: post-start native status for service session 1e95f5f7 shows parent=5e1abcdb and workload cgroup aplexer-workload-5e1abcdb...scope (vulnerable_to_user_manager_exit). Ant must stage correction clearing inherited APLEXER_SESSION_ID, creating separate cgroup/parent, and proving survival with restart test. Reviewer standing by for correction pin without stopping/restarting anything.",
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
@@ -5299,7 +5299,26 @@
       "service_pid": 1589735,
       "service_session_id": "1e95f5f7-c863-4603-9bce-477ae6a3de52",
       "systemd_migration_reviewed_by": "agent-coordination-head-gemini (8d4c026c-b1f9-4cbf-83bf-4f5f82077cab)",
-      "systemd_migration_review_receipt": "01a10ccc-77f3-7da1-8ae4-725bc0eb532b"
+      "systemd_migration_review_receipt": "01a10ccc-77f3-7da1-8ae4-725bc0eb532b",
+      "systemd_migration_verdict": "QUALIFIED_REQUEST_CHANGES",
+      "durability_accept_status": "RETRACTED_PENDING_HEAD_INDEPENDENCE",
+      "custody_audit": {
+        "audited_at": "2026-10-05T16:15:00Z",
+        "auditor": "agent-coordination-head-gemini (8d4c026c-b1f9-4cbf-83bf-4f5f82077cab)",
+        "service_session_id": "1e95f5f7-c863-4603-9bce-477ae6a3de52",
+        "parent_session": "antigravity-head-gemini-recovery [5e1abcdb]",
+        "worker_pid": 1589708,
+        "workload_pid": 1589735,
+        "worker_cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/aplexer-workload-5e1abcdb-44d3-44c9-ba20-eb21f6235672.scope",
+        "workload_cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/aplexer-workload-5e1abcdb-44d3-44c9-ba20-eb21f6235672.scope",
+        "finding": "Post-start audit reveals service session 1e95f5f7 has parent=5e1abcdb and runs inside Ant workload cgroup (aplexer-workload-5e1abcdb...scope). It is vulnerable to user manager / parent session exit and fails head-independent custody.",
+        "verdict": "DURABILITY_ACCEPT_RETRACTED_REQUEST_CHANGES",
+        "required_correction": [
+          "Launch fresh service session with inherited APLEXER_SESSION_ID cleared (e.g. env -u APLEXER_SESSION_ID)",
+          "Separate independent cgroup/parent (not under Ant 5e1abcdb workload cgroup)",
+          "Restart test demonstrating survival across Ant session termination before custody is certified independent"
+        ]
+      }
     },
     {
       "id": "REMOTE-AUTONOMY-REVIEW-1830",
