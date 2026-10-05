@@ -47,3 +47,14 @@ The latest human RAM instruction is a scoped override, not permission to discard
 At **17:03 UTC**, root free **54,061,715,456 bytes** clears the **50-GiB** floor but remains below the launcher's **50.5-GiB** reserve. Recheck rather than reuse this snapshot for dispatch. Canonical tracker oversight was updated at17:06; task17's useful content reviews remain bounded acceptance and its first model-tool trace remains unknown.
 
 Next events are real head child identities/first actions for Bus and Dashboard, independently reviewed narrow telemetry/refill/readiness repairs, and useful task20 output after fresh admission. Heads own product implementation and code review; this digest neither supplies nor invents their acceptance.
+
+
+## Subsequent useful head milestones — 17:07–17:10 UTC
+
+Ant's genuine report **01a10d09-0ec1** and registry commit **2b0c74d** record five children: task45 **9ef14859**,46 **512468f3**,48 **79d98c5b**,49 **5d83a00b**,50 **d40455c2**. Ant reported them active at17:07UTC; completions subsequently reduce the count, so this is not a claim that five remain active. The principal verified fresh artifact metadata for45/46/49/50 during17:07–17:10. Artifact freshness is useful progress evidence, not independent acceptance of content.
+
+At17:09, screenshots displayed **23 QL native-child slots +3 Ant +1 Coord**, with simultaneous tool activity. **27 displayed slots are not a verified deduplicated current25-active census**: exact identities and overlap with maintained units still require head roster reconciliation. Task20 was observed active with structured telemetry at17:10, with no artifact yet; completion and reviewer acceptance remain pending.
+
+Canonical policy **fe1826d** was pushed and remote-verified by the principal; root custody for source intakes remains pending. Root free at17:10 was **52,917,911,552 bytes**, below50GiB after decline. **C2632** assigns bounded storage action to QL/Ant, preserving productive work and forbidding unknown kills; fresh dispatch stays gated until actual capacity is restored. Earlier passing snapshots are superseded.
+
+**C2630** routes meaningful-event/cursor functionality to Ant as product intake. **C2634** challenges Coord to demonstrate actual headless AgentBus adoption: a runbook or passing tests alone cannot close that milestone. Next oversight checks are exact head child identities and first tools, concrete artifacts and distinct review outcomes, and the review-aware completion-to-next-task trigger. No principal product code review or achieved25/50/full-autonomy claim is made.
