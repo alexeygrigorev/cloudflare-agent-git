@@ -5,3 +5,11 @@
 node_modules/
 .wrangler/
 *.log
+
+# Local junk
+__pycache__/
+*.pyc
+*.lock
+scratch/
+local-coordinator-state.json
+/9
