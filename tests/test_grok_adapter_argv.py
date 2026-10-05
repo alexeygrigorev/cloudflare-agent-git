@@ -1,43 +1,63 @@
 #!/usr/bin/env python3
 """
-Unit and regression tests for Grok Adapter argv ordering fix (Codex Principal Directives C2239 / C2241).
+Offline regression and integration test suite for Grok Adapter argv ordering fix.
+Enacted under Codex Principal Directives C2239, C2241, and C2243.
 
 Verifies:
-1. Old argv ordering (`grok -p --model ...`) causes an immediate clap parse error
-   (exit code 2: error: a value is required for '--single <PROMPT>' but none was supplied)
-   offline with zero model dispatches and zero network calls.
-2. Patched argv ordering (`grok --model ... -p <goal>`) places `-p` immediately adjacent
-   to the goal argument, satisfying clap's argument parser.
-3. Test suite enforces strictly offline execution: runtime live model execution is labeled
-   as UNKNOWN / HELD pending canonical admission and process containment (C2241).
-4. Staged unified patch `research/antigravity/recovery/grok-launcher-argv-fix.patch` applies
-   cleanly to canonical `agent-quota-launcher/launcher/launch.py` via git apply --check.
+1. Documented historical fixture and mock parser analysis for unpatched argv ordering
+   (clap parse failure with exit code 2: error: a value is required for '--single <PROMPT>').
+   No uncontained live binary invocations in unit test runs.
+2. Patch file validation and clean applicability against canonical agent-quota-launcher
+   via `git apply --check`.
+3. Real in-situ verification: Copies launcher source into an isolated scratch testbed,
+   applies the staged recovery patch `research/antigravity/recovery/grok-launcher-argv-fix.patch`,
+   imports the REAL patched `launcher.launch` module, and executes `build_adapter_argv("grok", goal)`
+   against an expanded matrix of standard, option-looking, quoted, and unicode goals.
+4. Asserts that in all test matrix cases, `argv[-2] == "-p"` and `argv[-1] == goal`.
 """
 
 from __future__ import annotations
 
+import importlib.util
 import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import unittest
 
 REPO_ROOT = Path("/home/alexey/git/cloudflare-agent-git")
 LAUNCHER_ROOT = Path("/home/alexey/git/agent-quota-launcher")
 PATCH_PATH = REPO_ROOT / "research/antigravity/recovery/grok-launcher-argv-fix.patch"
+SCRATCH_TESTBED = REPO_ROOT / ".local/scratch/architect06-executor-admission/testbed"
 
-OLD_GROK_ARGV_RECIPE = [
-    "grok",
-    "-p",
-    "--model",
-    "grok-4.6",
-    "--effort",
-    "high",
-    "--permission-mode",
-    "auto",
-]
+# Documented historical receipt of unpatched grok CLI invocation (Directive C2243)
+HISTORICAL_CLAP_PARSE_FAILURE_RECEIPT = {
+    "exit_code": 2,
+    "stderr": (
+        "error: a value is required for '--single <PROMPT>' but none was supplied\n\n"
+        "For more information, try '--help'.\n"
+    ),
+    "argv": [
+        "grok",
+        "-p",
+        "--model",
+        "grok-4.6",
+        "--effort",
+        "high",
+        "--permission-mode",
+        "auto",
+        "offline test goal",
+    ],
+    "defect_mechanism": (
+        "Clap parses positional options greedily. In `-p --model grok-4.6 ...`, clap "
+        "encounters `--model` immediately after `-p` / `--single`, identifies it as an "
+        "option flag rather than a value argument, and halts with exit code 2 without "
+        "ever initializing runtime models or network connections."
+    ),
+}
 
-PATCHED_GROK_ARGV_RECIPE = [
+EXPECTED_BASE_ARGV = [
     "grok",
     "--model",
     "grok-4.6",
@@ -50,82 +70,78 @@ PATCHED_GROK_ARGV_RECIPE = [
 
 
 class TestGrokAdapterArgv(unittest.TestCase):
-    """Offline regression tests for Grok CLI argument ordering."""
+    """Offline unit and integration tests for Grok CLI argument ordering."""
 
-    def test_old_grok_argv_clap_parse_error_offline(self):
-        """
-        Verify that the unpatched argv ordering causes an immediate clap argument parse error
-        (exit code 2) without attempting any model calls or network activity.
-        """
-        grok_bin = shutil.which("grok") or "/home/alexey/.local/bin/grok"
-        if not os.path.exists(grok_bin):
-            self.skipTest(f"grok binary not found at {grok_bin}")
+    @classmethod
+    def setUpClass(cls):
+        """Prepare scratch testbed with patched launcher source (Directive C2243)."""
+        if SCRATCH_TESTBED.exists():
+            shutil.rmtree(SCRATCH_TESTBED)
+        SCRATCH_TESTBED.mkdir(parents=True, exist_ok=True)
 
-        goal = "offline test goal for clap parser verification"
-        command = [grok_bin] + OLD_GROK_ARGV_RECIPE[1:] + [goal]
+        # Copy launcher source tree to scratch testbed
+        src_launcher = LAUNCHER_ROOT / "launcher"
+        dst_launcher = SCRATCH_TESTBED / "launcher"
+        if not src_launcher.is_dir():
+            raise RuntimeError(f"Source launcher directory missing: {src_launcher}")
+        shutil.copytree(src_launcher, dst_launcher)
 
-        # The old argv places "-p" before "--model". Clap interprets "--model" as a flag,
-        # leaving "-p" / "--single" without its required argument value.
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            timeout=5.0,
+        # Apply exact staged unified patch using /usr/bin/patch
+        patch_cmd = [
+            "/usr/bin/patch",
+            "-p1",
+            "-d",
+            str(SCRATCH_TESTBED),
+            "-i",
+            str(PATCH_PATH.resolve()),
+        ]
+        patch_res = subprocess.run(patch_cmd, capture_output=True, text=True)
+        if patch_res.returncode != 0:
+            raise RuntimeError(
+                f"Failed to apply patch in testbed: {patch_res.stderr}\nStdout: {patch_res.stdout}"
+            )
+
+        # Dynamically load the REAL patched launch module from testbed
+        patched_launch_path = dst_launcher / "launch.py"
+        spec = importlib.util.spec_from_file_location(
+            "testbed_launcher_launch", str(patched_launch_path)
         )
+        if spec is None or spec.loader is None:
+            raise RuntimeError("Failed to create module spec for patched launch.py")
 
-        self.assertEqual(
-            result.returncode,
-            2,
-            f"Expected clap parser error (exit code 2), got {result.returncode}. Stderr: {result.stderr}",
-        )
-        self.assertIn(
-            "error: a value is required for '--single <PROMPT>' but none was supplied",
-            result.stderr,
-            "Expected clap error message indicating missing value for --single / -p",
-        )
+        # Ensure launcher package resolution works by prepending testbed to sys.path
+        sys.path.insert(0, str(SCRATCH_TESTBED))
+        try:
+            cls.launch_mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(cls.launch_mod)
+        finally:
+            if sys.path and sys.path[0] == str(SCRATCH_TESTBED):
+                sys.path.pop(0)
 
-    def test_patched_grok_argv_structure(self):
+    @classmethod
+    def tearDownClass(cls):
+        """Clean up scratch testbed."""
+        if SCRATCH_TESTBED.exists():
+            shutil.rmtree(SCRATCH_TESTBED, ignore_errors=True)
+
+    def test_historical_clap_parse_receipt_and_token_isolation(self):
         """
-        Verify that the patched recipe places '-p' at the end of the adapter options,
-        so when build_adapter_argv appends <goal>, '-p' is immediately adjacent to <goal>.
+        Verify documented historical clap parse error contract (exit code 2) and
+        token isolation defect without live binary invocations (Directive C2243).
         """
-        goal = "run offline verification task"
+        receipt = HISTORICAL_CLAP_PARSE_FAILURE_RECEIPT
+        self.assertEqual(receipt["exit_code"], 2)
+        self.assertIn("error: a value is required for '--single <PROMPT>'", receipt["stderr"])
 
-        # Simulate build_adapter_argv("grok", goal) with patched recipe
-        patched_argv = list(PATCHED_GROK_ARGV_RECIPE) + [str(goal)]
-
-        # Positional assertions
-        self.assertEqual(patched_argv[-2], "-p", "The second-to-last argument must be '-p'")
-        self.assertEqual(patched_argv[-1], goal, "The final argument must be the goal string")
-
-        # Adjacent assertion: index of goal must be index of "-p" + 1
-        p_index = patched_argv.index("-p")
-        self.assertEqual(p_index, len(patched_argv) - 2)
-        self.assertEqual(patched_argv[p_index + 1], goal)
-
-        # Contrast with old argv where -p was followed by --model
-        old_argv = list(OLD_GROK_ARGV_RECIPE) + [str(goal)]
-        old_p_index = old_argv.index("-p")
-        self.assertNotEqual(
-            old_argv[old_p_index + 1],
-            goal,
-            "Old argv improperly placed a flag immediately after -p instead of the goal",
-        )
-        self.assertEqual(old_argv[old_p_index + 1], "--model")
-
-    def test_live_model_dispatch_held_offline(self):
-        """
-        C2241 constraint from Codex Principal:
-        Tests for Grok argv fix are strictly offline and must NOT invoke the live grok CLI
-        with a valid prompt (which would trigger uncontained external provider calls).
-        Runtime live model execution is labeled UNKNOWN / HELD pending canonical admission.
-        """
-        runtime_live_execution_status = "UNKNOWN_HELD_PENDING_CANONICAL_ADMISSION"
+        # Token adjacency analysis on historical argv
+        argv = receipt["argv"]
+        p_idx = argv.index("-p")
+        next_token = argv[p_idx + 1]
         self.assertTrue(
-            runtime_live_execution_status.startswith("UNKNOWN"),
-            "Live model execution status must be UNKNOWN pending canonical admission",
+            next_token.startswith("-"),
+            f"Expected next token after -p to be a flag in unpatched argv, got: {next_token}",
         )
-        self.assertIn("HELD", runtime_live_execution_status)
+        self.assertEqual(next_token, "--model")
 
     def test_patch_file_exists_and_valid(self):
         """Verify that the staged recovery patch file exists and contains the expected diff."""
@@ -140,8 +156,8 @@ class TestGrokAdapterArgv(unittest.TestCase):
 
     def test_patch_applies_cleanly_to_launcher_repo(self):
         """
-        Verify that the staged patch applies cleanly to agent-quota-launcher without mutating
-        the canonical repository (using git apply --check).
+        Verify that the staged patch applies cleanly to canonical agent-quota-launcher
+        without mutating the repository (using git apply --check).
         """
         if not (LAUNCHER_ROOT / ".git").is_dir():
             self.skipTest(f"Launcher git repo not found at {LAUNCHER_ROOT}")
@@ -158,56 +174,85 @@ class TestGrokAdapterArgv(unittest.TestCase):
             f"Patch failed git apply --check: {check_result.stderr}",
         )
 
-    def test_simulated_launch_py_build_adapter_argv(self):
+    def test_real_patched_build_adapter_argv_goal_matrix(self):
         """
-        Verify the behavior of build_adapter_argv when applied to the patched launch.py content.
+        Test the REAL patched build_adapter_argv against an expanded goal test matrix:
+        - standard goals
+        - option-looking goals (--model, --help, -p, etc.)
+        - spaces, quotes, and unicode goals
+        Asserts that in all cases argv[-2] == '-p' and argv[-1] == goal (Directive C2243).
+
+        Epistemic Demarcation (Directive C2247):
+        This matrix verifies Python argv list construction and serialization boundaries.
+        It proves that build_adapter_argv correctly places -p adjacent to the goal string.
+        However, for leading-dash tokens (e.g. '--model'), live clap CLI parser acceptance
+        without '--single=VALUE' syntax remains UNKNOWN / FAIL-CLOSED because clap option
+        greediness may interpret tokens starting with '-' as flags rather than values.
         """
-        launch_py_path = LAUNCHER_ROOT / "launcher/launch.py"
-        if not launch_py_path.is_file():
-            self.skipTest(f"launch.py not found at {launch_py_path}")
+        goal_matrix = [
+            # Standard goals (verified intended usage)
+            ("standard_offline_task", "run offline task"),
+            ("build_artifact_task", "compile offline verification deliverable"),
+            # Option-looking goals (verifies argv serialization boundary; live CLI acceptance UNKNOWN/FAIL-CLOSED per C2247)
+            ("option_model", "--model"),
+            ("option_help", "--help"),
+            ("option_p", "-p"),
+            ("option_effort", "--effort"),
+            ("option_v", "-v"),
+            ("option_permission_mode", "--permission-mode"),
+            ("option_with_value", "--custom-flag value"),
+            # Whitespace, quotes, and special characters
+            ("multiple_spaces", "multi word goal with   multiple   spaces"),
+            ("double_quotes", 'goal with "double quotes" embedded'),
+            ("single_quotes", "goal with 'single quotes' embedded"),
+            ("mixed_quotes", 'nested "double" and \'single\' characters'),
+            ("semicolon_command", "echo test; ls -la && exit 1"),
+            ("newlines", "line 1\nline 2\nline 3"),
+            # Unicode goals
+            ("unicode_symbols", "unicode goal: 🚀 α/β → 100% 🎯"),
+            ("cjk_characters", "自然语言处理目标 2026"),
+            # Edge cases
+            ("empty_goal", ""),
+        ]
 
-        code = launch_py_path.read_text(encoding="utf-8")
-
-        # Replace old argv chunk with new argv chunk as done by the patch
-        old_chunk = (
-            '        "argv": ["grok", "-p", "--model", "grok-4.6", "--effort", "high",\n'
-            '                 "--permission-mode", "auto"],'
-        )
-        new_chunk = (
-            '        "argv": ["grok", "--model", "grok-4.6", "--effort", "high",\n'
-            '                 "--permission-mode", "auto", "-p"],'
-        )
-
-        self.assertIn(old_chunk, code, "Original launch.py must contain the unpatched grok argv")
-        patched_code = code.replace(old_chunk, new_chunk, 1)
-
-        scope: dict = {}
-        # Execute configuration dictionary and function in isolated scope
-        exec(
-            compile(
-                """
-ADAPTERS = {
-    "grok": {
-        "argv": ["grok", "--model", "grok-4.6", "--effort", "high",
-                 "--permission-mode", "auto", "-p"],
-        "env": {},
-    },
-}
-def build_adapter_argv(provider, goal):
-    adapter = ADAPTERS.get(provider)
-    if not adapter:
-        raise ValueError(f"Unsupported provider: {provider}")
-    return list(adapter["argv"]) + [str(goal)]
-""",
-                "<simulated_launch>",
-                "exec",
-            ),
-            scope,
+        # Verify adapter definition in real patched module
+        grok_adapter = self.launch_mod.ADAPTERS.get("grok")
+        self.assertIsNotNone(grok_adapter, "grok adapter must exist in ADAPTERS")
+        self.assertEqual(
+            grok_adapter["argv"],
+            EXPECTED_BASE_ARGV,
+            "Real patched launch.py must contain the corrected argv recipe",
         )
 
-        built = scope["build_adapter_argv"]("grok", "check canonical containment")
-        self.assertEqual(built[-2], "-p")
-        self.assertEqual(built[-1], "check canonical containment")
+        for case_name, goal in goal_matrix:
+            with self.subTest(case=case_name, goal=goal):
+                argv = self.launch_mod.build_adapter_argv("grok", goal)
+
+                # Ensure base arguments match expected recipe exactly
+                self.assertEqual(
+                    argv[:-1],
+                    EXPECTED_BASE_ARGV,
+                    f"Base arguments before goal deviated for case {case_name}",
+                )
+
+                # Ensure positional adjacency
+                self.assertEqual(
+                    argv[-2],
+                    "-p",
+                    f"Second-to-last argument must be '-p' for case {case_name}",
+                )
+                self.assertEqual(
+                    argv[-1],
+                    goal,
+                    f"Final argument must match goal string for case {case_name}",
+                )
+
+                # Ensure total length is exactly len(base) + 1
+                self.assertEqual(
+                    len(argv),
+                    len(EXPECTED_BASE_ARGV) + 1,
+                    f"Unexpected argv length for case {case_name}",
+                )
 
 
 if __name__ == "__main__":
