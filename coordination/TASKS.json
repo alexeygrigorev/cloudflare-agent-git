@@ -3568,6 +3568,62 @@
       "reviewer": "antigravity-head",
       "accepted_at": "2026-10-05T09:05:00.000000+00:00",
       "feature_id": "journal-pixel-review"
+    },
+    {
+      "id": "cgroup-nesting-and-transient-units-c2441",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T09:15:00.000000+00:00",
+      "next_action": "Coordinate with QL head for ONE admitted model task via detached transient unit.",
+      "acceptance": "Empirical proof of head-scope cgroup bottleneck (Grok 72 threads) and implementation of launcher/task_units.py manager-spawned sibling transient service units outside head scope under app.slice.",
+      "blocked_on": [],
+      "executor_ids": [
+        "46fdb644-9b58-4e2f-aab3-9be5e1e33337"
+      ],
+      "owned_paths": [
+        "research/antigravity/recovery/REPORT-CGROUP-NESTING-EMPIRICAL-PROOF.md",
+        "research/antigravity/recovery/REPORT-TASK-UNITS-TRANSIENT-SERVICE.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-CGROUP-NESTING-EMPIRICAL-PROOF.md",
+        "research/antigravity/recovery/REPORT-TASK-UNITS-TRANSIENT-SERVICE.md"
+      ],
+      "first_action": "2026-10-05T09:08:00.000000+00:00",
+      "commit": "acbab96",
+      "pr_url": null,
+      "tests": "133/133 tests pass in test_task_units.py; live localprobe kernel cgroup placement under app.slice verified",
+      "reviewer": "antigravity-head",
+      "accepted_at": "2026-10-05T09:15:00.000000+00:00",
+      "feature_id": "transient-task-units"
+    },
+    {
+      "id": "quota-launcher-filebus-backend-review-c2443",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T09:32:00.000000+00:00",
+      "next_action": "Execute ONE admitted FileBus model task under transient task unit contract.",
+      "acceptance": "Independent non-author technical audit of QL headless FileBus backend (filebus_backend.py and test_filebus_backend.py).",
+      "blocked_on": [],
+      "executor_ids": [
+        "c0f1e29a-6520-4d73-bf70-96cd8812b8b5"
+      ],
+      "owned_paths": [
+        "research/antigravity/reviews/REV-QL-FILEBUS-BACKEND.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-QL-FILEBUS-BACKEND.md"
+      ],
+      "first_action": "2026-10-05T09:28:00.000000+00:00",
+      "commit": "27c754c",
+      "pr_url": null,
+      "tests": "9/9 FileBus canonical tests pass, 133/133 full suite pass, 8/8 adversarial tests pass, publication guard exit 0",
+      "reviewer": "filebus-backend-reviewer (c0f1e29a)",
+      "accepted_at": "2026-10-05T09:32:00.000000+00:00",
+      "feature_id": "filebus-backend-review"
     }
   ]
 }
