@@ -31,7 +31,7 @@
   "early_update": true,
   "actual_writer_models": [],
   "editorial_review": "Interim technical status update; factual checks under REV-OCT5-PRODUCT-REPORT; writer provenance unverified (not Claude Opus); comprehensive 09:30 Europe/Berlin reader report scheduled after morning standup",
-  "article_sha256": "48d5399ad3963f5f639679045bfedd05deb01cc654805bb3b6cc772167676caa",
+  "article_sha256": "32c2802264c8abd5bf1235124ef7d7ef58eda7086fc27b0fe3b5d801746b6fbe",
   "published_at": "2026-10-05T00:25:00.000000+00:00",
   "corrected_at": "2026-10-05T01:15:00.000000+00:00",
   "corrections": [
