@@ -11,10 +11,11 @@ import hashlib
 import json
 import os
 import pathlib
-import uuid
+import re
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 MAX_RECEIPT_SIZE = 1024 * 1024  # 1 MiB limit
+SAFE_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_\-\.]+$')
 
 
 class ReceiptValidationError(ValueError):
@@ -33,6 +34,15 @@ def canonical_json_hash(data: Dict[str, Any]) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def is_safe_identifier(val: Any) -> bool:
+    """Validate that an identifier is a safe non-empty string without path traversal."""
+    if not isinstance(val, str) or not val:
+        return False
+    if ".." in val or "/" in val or "\\" in val:
+        return False
+    return bool(SAFE_ID_PATTERN.match(val))
+
+
 def validate_terminal_receipt(receipt: Dict[str, Any]) -> Tuple[bool, Optional[str], str]:
     """Validate task execution terminal receipt.
 
@@ -41,13 +51,25 @@ def validate_terminal_receipt(receipt: Dict[str, Any]) -> Tuple[bool, Optional[s
     if not isinstance(receipt, dict):
         return False, "Receipt must be a JSON object", ""
 
+    try:
+        raw_size = len(json.dumps(receipt, separators=(',', ':')).encode('utf-8'))
+    except Exception as e:
+        return False, f"Receipt cannot be serialized to JSON: {e}", ""
+
+    if raw_size > MAX_RECEIPT_SIZE:
+        return False, f"Receipt payload size ({raw_size} bytes) exceeds MAX_RECEIPT_SIZE ({MAX_RECEIPT_SIZE} bytes)", ""
+
     task_id = receipt.get("task_id")
     if not task_id or not isinstance(task_id, str):
         return False, "Missing or non-string 'task_id'", ""
+    if not is_safe_identifier(task_id):
+        return False, f"Invalid or unsafe 'task_id' (contains path traversal or invalid characters): {task_id!r}", ""
 
     project_id = receipt.get("project_id")
     if not project_id or not isinstance(project_id, str):
         return False, "Missing or non-string 'project_id'", ""
+    if not is_safe_identifier(project_id):
+        return False, f"Invalid or unsafe 'project_id': {project_id!r}", ""
 
     executor = receipt.get("executor")
     if not isinstance(executor, dict):
@@ -96,13 +118,25 @@ def validate_review_receipt(
     if not isinstance(review, dict):
         return False, "Review must be a JSON object", ""
 
+    try:
+        raw_size = len(json.dumps(review, separators=(',', ':')).encode('utf-8'))
+    except Exception as e:
+        return False, f"Review receipt cannot be serialized to JSON: {e}", ""
+
+    if raw_size > MAX_RECEIPT_SIZE:
+        return False, f"Review receipt payload size ({raw_size} bytes) exceeds MAX_RECEIPT_SIZE ({MAX_RECEIPT_SIZE} bytes)", ""
+
     task_id = review.get("task_id")
     if not task_id or not isinstance(task_id, str):
         return False, "Missing or non-string 'task_id'", ""
+    if not is_safe_identifier(task_id):
+        return False, f"Invalid or unsafe 'task_id': {task_id!r}", ""
 
     review_task_id = review.get("review_task_id")
     if not review_task_id or not isinstance(review_task_id, str):
         return False, "Missing or non-string 'review_task_id'", ""
+    if not is_safe_identifier(review_task_id):
+        return False, f"Invalid or unsafe 'review_task_id': {review_task_id!r}", ""
 
     reviewer = review.get("reviewer")
     if not isinstance(reviewer, dict):
@@ -119,7 +153,7 @@ def validate_review_receipt(
     review_evidence = review.get("review_evidence")
     if not isinstance(review_evidence, dict):
         return False, "Missing or invalid 'review_evidence' block", ""
-    if "exit_code" not in review_evidence or review_evidence.get("exit_code") != 0 and verdict == "ACCEPTED":
+    if "exit_code" not in review_evidence or (review_evidence.get("exit_code") != 0 and verdict == "ACCEPTED"):
         return False, "Accepted review requires exit_code == 0", ""
 
     target_sha = review.get("target_receipt_sha256")
@@ -152,6 +186,68 @@ class TerminalConsumer:
         self.review_receipts: Dict[str, Dict[str, Any]] = {}
         self.task_states: Dict[str, Dict[str, Any]] = {}
         self.processed_receipt_shas: Set[str] = set()
+        self.cursor_path = self.spool_dir / "launcher_cursor.json"
+        self.recover_persisted_receipts()
+
+    def recover_persisted_receipts(self) -> int:
+        """Recover persisted terminal and review receipts from disk upon initialization."""
+        recovered = 0
+        if not self.receipts_dir.exists():
+            return 0
+
+        # 1. Recover terminal receipts first
+        for rec_file in sorted(self.receipts_dir.glob("terminal-*.json")):
+            try:
+                if rec_file.stat().st_size > MAX_RECEIPT_SIZE:
+                    continue
+                data = json.loads(rec_file.read_text())
+                ok, err, r_sha = validate_terminal_receipt(data)
+                if ok:
+                    task_id = data["task_id"]
+                    self.terminal_receipts[task_id] = data
+                    self.processed_receipt_shas.add(r_sha)
+                    self.task_states[task_id] = {
+                        "task_id": task_id,
+                        "project_id": data["project_id"],
+                        "status": "completed-awaiting-review",
+                        "executor": data["executor"],
+                        "terminal_receipt_sha256": r_sha,
+                        "terminal_completed_at": data["completed_at"],
+                        "artifacts": data["artifacts"],
+                        "first_tool_evidence": data["first_tool_evidence"],
+                        "reviewer": None,
+                        "verdict": None,
+                        "reviewed_at": None,
+                    }
+                    recovered += 1
+            except Exception:
+                continue
+
+        # 2. Recover review receipts second to update task states
+        for rev_file in sorted(self.receipts_dir.glob("review-*.json")):
+            try:
+                if rev_file.stat().st_size > MAX_RECEIPT_SIZE:
+                    continue
+                data = json.loads(rev_file.read_text())
+                task_id = data.get("task_id")
+                term = self.terminal_receipts.get(task_id)
+                ok, err, r_sha = validate_review_receipt(data, term)
+                if ok:
+                    self.review_receipts[task_id] = data
+                    self.processed_receipt_shas.add(r_sha)
+                    verdict = data["verdict"]
+                    new_status = "accepted" if verdict == "ACCEPTED" else "rejected-needs-repair"
+                    if task_id in self.task_states:
+                        self.task_states[task_id]["status"] = new_status
+                        self.task_states[task_id]["reviewer"] = data["reviewer"]
+                        self.task_states[task_id]["verdict"] = verdict
+                        self.task_states[task_id]["review_receipt_sha256"] = r_sha
+                        self.task_states[task_id]["reviewed_at"] = data.get("reviewed_at")
+                    recovered += 1
+            except Exception:
+                continue
+
+        return recovered
 
     def ingest_terminal_receipt(self, receipt: Dict[str, Any]) -> Dict[str, Any]:
         """Ingest and validate execution terminal receipt."""
@@ -160,6 +256,23 @@ class TerminalConsumer:
             raise ReceiptValidationError(f"Invalid terminal receipt: {err}")
 
         task_id = receipt["task_id"]
+
+        # Safe spool path confinement check
+        rec_path = (self.receipts_dir / f"terminal-{task_id}.json").resolve()
+        if not str(rec_path).startswith(str(self.receipts_dir.resolve())):
+            raise ReceiptValidationError(f"Path traversal detected in task_id: {task_id}")
+
+        # Dedup / idempotency: do not clobber existing accepted review state
+        if r_sha in self.processed_receipt_shas and task_id in self.task_states:
+            current_status = self.task_states[task_id].get("status")
+            return {
+                "status": "ingested",
+                "task_id": task_id,
+                "sha256": r_sha,
+                "action_required": "NONE" if current_status == "accepted" else "REVIEW_REQUIRED",
+                "duplicate": True,
+            }
+
         self.terminal_receipts[task_id] = receipt
         self.processed_receipt_shas.add(r_sha)
 
@@ -178,7 +291,6 @@ class TerminalConsumer:
         }
 
         # Persist receipt
-        rec_path = self.receipts_dir / f"terminal-{task_id}.json"
         rec_path.write_text(json.dumps(receipt, indent=2))
 
         return {
@@ -199,6 +311,22 @@ class TerminalConsumer:
                 raise SelfReviewProhibitedError(err)
             raise ReceiptValidationError(f"Invalid review receipt: {err}")
 
+        # Safe spool path confinement check
+        rev_path = (self.receipts_dir / f"review-{task_id}.json").resolve()
+        if not str(rev_path).startswith(str(self.receipts_dir.resolve())):
+            raise ReceiptValidationError(f"Path traversal detected in task_id: {task_id}")
+
+        # Dedup / idempotency
+        if r_sha in self.processed_receipt_shas and task_id in self.review_receipts:
+            return {
+                "status": "ingested",
+                "task_id": task_id,
+                "verdict": review["verdict"],
+                "new_task_status": self.task_states.get(task_id, {}).get("status", "accepted"),
+                "sha256": r_sha,
+                "duplicate": True,
+            }
+
         self.review_receipts[task_id] = review
         self.processed_receipt_shas.add(r_sha)
 
@@ -213,7 +341,6 @@ class TerminalConsumer:
             self.task_states[task_id]["reviewed_at"] = review.get("reviewed_at")
 
         # Persist review
-        rev_path = self.receipts_dir / f"review-{task_id}.json"
         rev_path.write_text(json.dumps(review, indent=2))
 
         return {
@@ -250,18 +377,37 @@ class TerminalConsumer:
 
         return newly_unblocked
 
+    def load_launcher_cursor(self) -> Dict[str, Any]:
+        """Load persistent cursor for launcher state DB ingestion."""
+        if self.cursor_path.exists():
+            try:
+                if self.cursor_path.stat().st_size <= MAX_RECEIPT_SIZE:
+                    return json.loads(self.cursor_path.read_text())
+            except Exception:
+                pass
+        return {"last_ingested_at": None, "known_task_ids": []}
+
+    def save_launcher_cursor(self, cursor: Dict[str, Any]) -> None:
+        """Atomically persist cursor for launcher state DB ingestion."""
+        tmp = self.cursor_path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(cursor, indent=2))
+        tmp.replace(self.cursor_path)
+
     def ingest_launcher_db(self, db_path: pathlib.Path) -> List[Dict[str, Any]]:
         """Ingest accepted tasks and reviews directly from an agent-quota-launcher state.db.
 
         Reads tasks where state == 'accepted' and reviewer is non-empty.
         Validates that reviewer is distinct from task owner/executor.
-        Registers terminal and review state, and reconciles dependencies.
+        Tracks cursor state durably in launcher_cursor.json.
         """
         import sqlite3
 
         db_file = pathlib.Path(db_path)
         if not db_file.exists():
             return []
+
+        cursor = self.load_launcher_cursor()
+        known_task_ids = set(cursor.get("known_task_ids", []))
 
         results = []
         try:
@@ -275,9 +421,16 @@ class TerminalConsumer:
         except Exception:
             return []
 
+        new_task_ids = set()
+        max_updated_at = cursor.get("last_ingested_at")
+
         for row in rows:
             task_id, payload_raw, state, reviewer, reason, updated_at = row
-            if task_id in self.task_states and self.task_states[task_id].get("status") == "accepted":
+            if task_id in known_task_ids or (task_id in self.task_states and self.task_states[task_id].get("status") == "accepted"):
+                continue
+
+            # Safe identifier check for task_id and reviewer
+            if not is_safe_identifier(task_id) or not is_safe_identifier(reviewer):
                 continue
 
             owner = "quota-launcher-head-gemini"
@@ -336,6 +489,15 @@ class TerminalConsumer:
             }
             rev_res = self.ingest_review_receipt(review_receipt)
             results.append(rev_res)
+            new_task_ids.add(task_id)
+            if not max_updated_at or (updated_at and updated_at > max_updated_at):
+                max_updated_at = updated_at
+
+        if new_task_ids:
+            cursor["known_task_ids"] = sorted(known_task_ids | new_task_ids)
+            cursor["last_ingested_at"] = max_updated_at
+            cursor["ingested_count"] = len(cursor["known_task_ids"])
+            self.save_launcher_cursor(cursor)
 
         return results
 

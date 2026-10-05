@@ -5201,9 +5201,9 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T15:31:13.505854+00:00",
+      "updated_at": "2026-10-05T15:32:15.901045+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "TerminalConsumer hardened (bounded receipt size, safe task-id spool paths, restart recovery, dedup idempotency, durable cursor tracking; 76/76 tests pass). Routing new pin to QL for distinct review. Root disk free: 50241183744 bytes (46.7907 GiB); launches held under 50 GiB floor.",
+      "next_action": "TerminalConsumer hardened (bounded receipt size, safe task-id spool paths, restart recovery, dedup idempotency, durable cursor tracking; 76/76 tests pass). Routing new pin to QL for distinct review. Root disk free: 50236243968 bytes (46.7861 GiB); launches held under 50 GiB floor.",
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
@@ -5229,9 +5229,9 @@
       "owner_tag": null,
       "status": "blocked",
       "assignment_ack": "Offered; genuine owner ACK pending, not accepted",
-      "updated_at": "2026-10-05T15:31:13.505854+00:00",
+      "updated_at": "2026-10-05T15:32:15.901045+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Supervisor component review accepted by QL head (a86056b5, message 01a10ca6-ce9b). Full-runtime A->B autonomous trial review held pending host root disk restoration >= 50 GiB (measured free: 50241183744 bytes / 46.7907 GiB).",
+      "next_action": "Supervisor component review accepted by QL head (a86056b5, message 01a10ca6-ce9b). Full-runtime A->B autonomous trial review held pending host root disk restoration >= 50 GiB (measured free: 50236243968 bytes / 46.7861 GiB).",
       "blocked_on": [
         "root-disk-below-50GiB",
         "end-to-end-model-dispatch-held"

@@ -123,6 +123,31 @@ class TestReceiptValidation(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("target_receipt_sha256 mismatch", err)
 
+    def test_bounded_receipt_size_rejection(self):
+        oversized_terminal = dict(self.valid_terminal)
+        oversized_terminal["large_payload"] = "X" * (1024 * 1024 + 50)
+        ok, err, _ = validate_terminal_receipt(oversized_terminal)
+        self.assertFalse(ok)
+        self.assertIn("exceeds MAX_RECEIPT_SIZE", err)
+
+    def test_unsafe_task_id_rejection(self):
+        unsafe_ids = ["../evil", "foo/bar", "task;rm -rf", "task\\path"]
+        for bad_id in unsafe_ids:
+            bad = dict(self.valid_terminal)
+            bad["task_id"] = bad_id
+            ok, err, _ = validate_terminal_receipt(bad)
+            self.assertFalse(ok, f"Expected failure for unsafe task_id: {bad_id!r}")
+            self.assertIn("Invalid or unsafe 'task_id'", err)
+
+    def test_unsafe_project_id_rejection(self):
+        unsafe_projects = ["../bad", "proj/sub", "proj evil"]
+        for bad_proj in unsafe_projects:
+            bad = dict(self.valid_terminal)
+            bad["project_id"] = bad_proj
+            ok, err, _ = validate_terminal_receipt(bad)
+            self.assertFalse(ok, f"Expected failure for unsafe project_id: {bad_proj!r}")
+            self.assertIn("Invalid or unsafe 'project_id'", err)
+
 
 class TestTerminalConsumer(unittest.TestCase):
 
@@ -288,6 +313,90 @@ class TestTerminalConsumer(unittest.TestCase):
         unblocked = self.consumer.reconcile_and_unblock_tasks(tasks)
         self.assertEqual(unblocked, ["scale50-task-2"])
         self.assertEqual(tasks[1]["status"], "ready")
+
+    def test_restart_persisted_receipt_recovery(self):
+        # Ingest terminal and review receipt
+        self.consumer.ingest_terminal_receipt(self.terminal_receipt)
+        review = {
+            "task_id": "TASK-A",
+            "review_task_id": "REV-TASK-A",
+            "reviewer": {
+                "session_id": "rev-distinct",
+                "tag": "rev-distinct",
+                "engine": "opencode",
+                "workload_pid": 8888,
+            },
+            "target_receipt_sha256": self.term_sha,
+            "verdict": "ACCEPTED",
+            "review_evidence": {"exit_code": 0},
+            "reviewed_at": "2026-10-05T14:10:00Z",
+        }
+        self.consumer.ingest_review_receipt(review)
+        self.assertEqual(self.consumer.task_states["TASK-A"]["status"], "accepted")
+
+        # Simulate service restart with new TerminalConsumer pointing to same spool directory
+        consumer_after_restart = TerminalConsumer(self.spool)
+        self.assertIn("TASK-A", consumer_after_restart.task_states)
+        self.assertEqual(consumer_after_restart.task_states["TASK-A"]["status"], "accepted")
+        self.assertEqual(consumer_after_restart.task_states["TASK-A"]["reviewer"]["tag"], "rev-distinct")
+        self.assertIn(self.term_sha, consumer_after_restart.processed_receipt_shas)
+
+    def test_dedup_does_not_clobber_accepted_status(self):
+        # 1. Ingest terminal receipt
+        self.consumer.ingest_terminal_receipt(self.terminal_receipt)
+        # 2. Ingest accepted review
+        review = {
+            "task_id": "TASK-A",
+            "review_task_id": "REV-TASK-A",
+            "reviewer": {
+                "session_id": "rev-distinct",
+                "tag": "rev-distinct",
+                "engine": "opencode",
+            },
+            "target_receipt_sha256": self.term_sha,
+            "verdict": "ACCEPTED",
+            "review_evidence": {"exit_code": 0},
+            "reviewed_at": "2026-10-05T14:10:00Z",
+        }
+        self.consumer.ingest_review_receipt(review)
+        self.assertEqual(self.consumer.task_states["TASK-A"]["status"], "accepted")
+
+        # 3. Re-ingest identical terminal receipt -> MUST NOT reset to 'completed-awaiting-review'
+        dup_res = self.consumer.ingest_terminal_receipt(self.terminal_receipt)
+        self.assertEqual(dup_res["status"], "ingested")
+        self.assertTrue(dup_res.get("duplicate"))
+        self.assertEqual(self.consumer.task_states["TASK-A"]["status"], "accepted")
+        self.assertEqual(self.consumer.task_states["TASK-A"]["reviewer"]["tag"], "rev-distinct")
+
+    def test_launcher_cursor_persistence_and_resume(self):
+        import sqlite3
+
+        db_path = self.spool / "cursor_test_launcher.db"
+        con = sqlite3.connect(str(db_path))
+        cur = con.cursor()
+        cur.execute(
+            "CREATE TABLE tasks (id TEXT PRIMARY KEY, payload TEXT, state TEXT, reviewer TEXT, reason TEXT, updated_at TEXT)"
+        )
+        cur.execute(
+            "INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?)",
+            ("c-task-1", json.dumps({"owner": "w1"}), "accepted", "rev1", "ok", "2026-10-05 14:00:00"),
+        )
+        con.commit()
+        con.close()
+
+        # Ingest first batch
+        results1 = self.consumer.ingest_launcher_db(db_path)
+        self.assertEqual(len(results1), 1)
+        self.assertTrue(self.consumer.cursor_path.exists())
+
+        # Second ingest with same DB without new rows -> cursor prevents redundant re-processing
+        results2 = self.consumer.ingest_launcher_db(db_path)
+        self.assertEqual(len(results2), 0)
+
+        # Restart consumer: cursor should persist known task IDs
+        consumer2 = TerminalConsumer(self.spool)
+        results3 = consumer2.ingest_launcher_db(db_path)
+        self.assertEqual(len(results3), 0)
 
 
 if __name__ == "__main__":
