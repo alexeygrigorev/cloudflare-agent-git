@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T18:10:27.725078+00:00",
+  "updated_at": "2026-10-05T18:17:17.837778+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -5803,35 +5803,47 @@
       "id": "ZAI-SHARED-CONCURRENCY-26-20261005",
       "team_id": "quota-launcher",
       "project_id": "agent-quota-launcher",
-      "owner_tag": "quota-launcher-head-gemini",
-      "owner_session_id": "750580e1-4089-4884-a04d-a5e85fbe1f1c",
-      "assignment_ack": false,
-      "status": "ready",
+      "owner_tag": "ant-head-operational-resume-20261005",
+      "owner_session_id": "d78eeba5-7a0a-4b69-8a19-ca9d10b21371",
+      "assignment_ack": true,
+      "status": "in_progress",
       "created_at": "2026-10-05T18:10:27.725078+00:00",
-      "updated_at": "2026-10-05T18:10:27.725078+00:00",
+      "updated_at": "2026-10-05T18:19:12.832438+00:00",
       "principal_owner": "codex-principal",
       "fallback_dispatch_head": "ant-head-operational-resume-20261005",
       "approved_shared_cap": 26,
       "source": "research/codex/zai-shared-concurrency-intake-20261005.md",
       "evidence_paths": [
         ".local/codex/zai-host-process-inventory-20261005-1805.json",
-        ".local/audit/zai-native-route-inventory-20261005T1807Z.json"
+        ".local/audit/zai-native-route-inventory-20261005T1807Z.json",
+        ".local/scratch/zai_governor/zai_governor.py",
+        ".local/scratch/zai_governor/test_zai_governor.py",
+        "research/antigravity/reviews/REV-ZAI-SHARED-CONCURRENCY-GOVERNOR-20261005.md"
       ],
       "observation": {
-        "as_of": "2026-10-05T18:06:13Z",
-        "live_zcode_backends": 28,
+        "as_of": "2026-10-05T18:15:26.028312Z",
+        "live_zcode_backends": 31,
         "competition_backends": 0,
         "frontend_processes": 14,
-        "childless_frontends": 7,
-        "boundary": "hostonly processactors; simultaneousAPIcalls/otherhosts/accountdedup unknown; OpenCode6 routesunverified"
+        "excluded_shell_argument_mentions": 1,
+        "boundary": "read-only independent actualcomm/executable/nonzombie classification; all31stateS, exact APIcalls/otherhosts/accountdedup UNKNOWN"
       },
       "genuine_dispatch_ids": [
         "01a10d3e-4b8b-77b2-b1d0-7d0c20d9af9e",
         "01a10d41-ae3e-7ba0-a713-11ac00808d1f"
       ],
-      "next_action": "Actual headACK, isolated sharedadmission/cooldown candidate and DISTINCTreview; actualruntime at26/above26 rejectsnewZAI whilepreservingexistingjobs. Crossproject outside/headless backends count once, atomicreservation/provenexit, no perproject26allowance or ratchettonewoccupancy. QLcanonicalleases preserved; activeAnt may own isolatedcandidate dispatch withoutwaitingidleQL as scheduler.",
+      "next_action": "Candidate and race-safe reservation suite accepted; awaiting QL head (750580e1) receiver recovery for canonical launcher integration.",
       "acceptance": "Verifiedloaded governor source/config cap26, hostwide admission includingoutsideprojects+innerbackendactors, race-safe simultaneousreserve/release tests,429Retry-After/cooldown, one bounded actual rejectednewadmission and eligiblefallback; no runtimeacceptance from docs alone.",
-      "next_trigger": "CurrentAnt nextreal nativecompletion/timer cycle reads C2664->delegatecandidate+review; actualQLrecipientACK/integrationowner later required; principal checks20:30 outcomes."
+      "next_trigger": "CurrentAnt nextreal nativecompletion/timer cycle reads C2664->delegatecandidate+review; actualQLrecipientACK/integrationowner later required; principal checks20:30 outcomes.",
+      "verdict": "CANDIDATE_ACCEPTED_CANONICAL_INTEGRATION_PENDING",
+      "reviewer": "f14aecc7-33b3-4fcf-ac79-9dee667c8631 (ZAI Governor Independent Reviewer)",
+      "tests": "5/5 unit tests passing in 0.014s including 10-thread simultaneous reservation race test (25 existing + 10 requests => exactly 1 grant, 9 reject, proven exit release). Live host detected 31 backends and rejected.",
+      "candidate_review_verdict": "ACCEPTED",
+      "overall_acceptance": "PENDING canonical shared launch-path integration/current-owner ACK and race-safe actual reservation/fallback evidence",
+      "assignment_ack_message": "01a10d45-091e-7791-9f0f-9fb3ed4fc443",
+      "principal_scope_correction": "C2666 original01a10d48-3ba0-7dd1-8002-629fcacba026: preserve candidate ACCEPT/report; task closure awaits original loaded-admission acceptance, not source/tests only.",
+      "candidate_status": "candidate_accepted",
+      "canonical_integration_status": "pending_ql_owner_ack"
     }
   ]
 }
