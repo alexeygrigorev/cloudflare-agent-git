@@ -5245,21 +5245,22 @@
       "owner_tag": "quota-launcher-head-gemini",
       "status": "in_progress",
       "assignment_ack": "Accepted by quota-launcher-head-gemini a86056b5 at 2026-10-05T15:40:00Z",
-      "updated_at": "2026-10-05T15:42:00.000000+00:00",
+      "updated_at": "2026-10-05T15:53:30.000000+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Distinct code review of supervisor hardening completed: commit 02ac777 reviewed (REQUEST_CHANGES sent via 01a10cb9-923a); commit 156752b verified and ACCEPTED (01a10cba-86f3). Next runtime trial review held pending root storage >= 50 GiB.",
+      "next_action": "Provenance audit of commit 156752b completed: code hardening is ACCEPTED (synthetic fabrication eliminated, real on-disk artifact SHA verified, imported DB segregated); runtime evidence is NOT PROVEN (state.db rows lack native session provenance, imported DB rows strictly ineligible). 4 negative tests added (83/83 pass). Worker launches strictly held under 50-GiB floor (free: 46.78 GiB).",
       "blocked_on": [
         "root-disk-below-50GiB",
         "end-to-end-model-dispatch-held"
       ],
       "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
-        "research/codex/remote-autonomy-1830-plan-20261005.md"
+        "research/codex/remote-autonomy-1830-plan-20261005.md",
+        "research/antigravity/reviews/REV-SUPERVISION-ANTI-SPOOFING-156752B.md"
       ],
       "owner_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
       "reviewed_commit": "156752bf51d718226ba0748fe4ba16c4955f5342",
-      "verdict": "ACCEPTED",
-      "tests": "79/79 supervision tests pass"
+      "verdict": "CODE_ACCEPTED_RUNTIME_UNPROVEN",
+      "tests": "83/83 supervision tests pass in 1.04s (including negative tests for unregistered UUID, synthetic tool name/time, wrong task owner, and imported DB ineligibility)"
     },
     {
       "id": "REMOTE-AUTONOMY-PRINCIPAL-1830",

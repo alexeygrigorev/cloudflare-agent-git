@@ -87,6 +87,7 @@ def extract_native_evidence(
     reason: str,
     updated_at: str,
     db_paths_artifacts: Optional[List[str]] = None,
+    registered_sessions: Optional[Set[str]] = None,
 ) -> Optional[Tuple[Dict[str, Any], Dict[str, Any]]]:
     """Extract and strictly validate genuine native execution and review evidence.
 
@@ -104,7 +105,15 @@ def extract_native_evidence(
     exec_sess = exec_data.get("session_id")
     if not is_valid_uuid(exec_sess):
         return None
-    exec_tag = exec_data.get("tag") or payload_dict.get("owner")
+    if registered_sessions is not None and exec_sess not in registered_sessions:
+        return None
+
+    payload_owner = payload_dict.get("owner")
+    exec_tag = exec_data.get("tag")
+    # Prohibit wrong task owner: receipt tag must match assigned payload owner
+    if payload_owner and exec_tag and exec_tag != payload_owner:
+        return None
+    exec_tag = exec_tag or payload_owner
     if not is_safe_identifier(exec_tag):
         return None
     exec_engine = exec_data.get("engine") or payload_dict.get("provider")
@@ -118,12 +127,15 @@ def extract_native_evidence(
         first_tool_dict = {"tool_name": tool_name, "timestamp": updated_at}
     elif isinstance(first_tool_raw, dict):
         tool_name = str(first_tool_raw.get("tool_name", "")).strip()
+        ts = first_tool_raw.get("timestamp")
+        if not ts or not isinstance(ts, str) or not ts.strip():
+            return None
         first_tool_dict = first_tool_raw
     else:
         return None
 
     # Prohibit synthetic tool names
-    if not tool_name or tool_name in ("task_execution", "unknown", "none", "execute", "mock"):
+    if not tool_name or tool_name.lower() in ("task_execution", "unknown", "none", "execute", "mock", "run_task", "test"):
         return None
 
     # 3. Genuine artifact verification
@@ -155,6 +167,8 @@ def extract_native_evidence(
 
     rev_sess = rev_data.get("session_id")
     if not is_valid_uuid(rev_sess):
+        return None
+    if registered_sessions is not None and rev_sess not in registered_sessions:
         return None
 
     rev_tag = rev_data.get("tag") or reviewer
@@ -204,7 +218,12 @@ def extract_native_evidence(
     return terminal_receipt, review_receipt
 
 
-def validate_terminal_receipt(receipt: Dict[str, Any]) -> Tuple[bool, Optional[str], str]:
+def validate_terminal_receipt(
+    receipt: Dict[str, Any],
+    expected_owner: Optional[str] = None,
+    registered_sessions: Optional[Set[str]] = None,
+    require_first_tool_timestamp: bool = False,
+) -> Tuple[bool, Optional[str], str]:
     """Validate task execution terminal receipt.
 
     Returns: (is_valid, error_message, receipt_sha256).
@@ -240,6 +259,14 @@ def validate_terminal_receipt(receipt: Dict[str, Any]) -> Tuple[bool, Optional[s
         if not val or not isinstance(val, str):
             return False, f"Missing or invalid executor field '{field}'", ""
 
+    exec_sess = executor.get("session_id")
+    if registered_sessions is not None and exec_sess not in registered_sessions:
+        return False, f"Unregistered executor session_id: {exec_sess!r}", ""
+
+    exec_tag = executor.get("tag")
+    if expected_owner and exec_tag != expected_owner:
+        return False, f"Task owner mismatch: expected {expected_owner}, got {exec_tag}", ""
+
     phase = receipt.get("phase")
     if phase != "execution":
         return False, f"Expected phase 'execution', got {phase!r}", ""
@@ -256,8 +283,17 @@ def validate_terminal_receipt(receipt: Dict[str, Any]) -> Tuple[bool, Optional[s
             return False, "Each artifact must contain 'path' and 'sha256'", ""
 
     first_tool = receipt.get("first_tool_evidence")
-    if not isinstance(first_tool, dict) or not first_tool.get("tool_name"):
-        return False, "Missing or invalid 'first_tool_evidence' with 'tool_name'", ""
+    if not isinstance(first_tool, dict):
+        return False, "Missing or invalid 'first_tool_evidence'", ""
+    tool_name = str(first_tool.get("tool_name", "")).strip()
+    if not tool_name:
+        return False, "Missing or empty tool_name in first_tool_evidence", ""
+    if tool_name.lower() in ("task_execution", "unknown", "none", "execute", "mock", "run_task", "test"):
+        return False, f"Prohibited synthetic tool_name in first_tool_evidence: {tool_name!r}", ""
+    if require_first_tool_timestamp or "timestamp" in first_tool:
+        ts = first_tool.get("timestamp")
+        if not ts or not isinstance(ts, str) or not ts.strip():
+            return False, "Missing or invalid timestamp in first_tool_evidence", ""
 
     completed_at = receipt.get("completed_at")
     if not completed_at or not isinstance(completed_at, str):
@@ -270,6 +306,7 @@ def validate_terminal_receipt(receipt: Dict[str, Any]) -> Tuple[bool, Optional[s
 def validate_review_receipt(
     review: Dict[str, Any],
     terminal_receipt: Optional[Dict[str, Any]] = None,
+    registered_sessions: Optional[Set[str]] = None,
 ) -> Tuple[bool, Optional[str], str]:
     """Validate independent review receipt.
 
@@ -307,6 +344,10 @@ def validate_review_receipt(
         if not val or not isinstance(val, str):
             return False, f"Missing or invalid reviewer field '{field}'", ""
 
+    rev_sess = reviewer.get("session_id")
+    if registered_sessions is not None and rev_sess not in registered_sessions:
+        return False, f"Unregistered reviewer session_id: {rev_sess!r}", ""
+
     verdict = review.get("verdict")
     if verdict not in ("ACCEPTED", "REJECTED"):
         return False, f"Verdict must be 'ACCEPTED' or 'REJECTED', got {verdict!r}", ""
@@ -339,8 +380,9 @@ def validate_review_receipt(
 class TerminalConsumer:
     """Manages ingestion of terminal and review receipts and computes state transitions."""
 
-    def __init__(self, spool_dir: pathlib.Path):
+    def __init__(self, spool_dir: pathlib.Path, registered_sessions: Optional[Set[str]] = None):
         self.spool_dir = pathlib.Path(spool_dir)
+        self.registered_sessions = set(registered_sessions) if registered_sessions is not None else None
         self.receipts_dir = self.spool_dir / "receipts"
         self.receipts_dir.mkdir(parents=True, exist_ok=True)
         self.terminal_receipts: Dict[str, Dict[str, Any]] = {}
@@ -440,7 +482,7 @@ class TerminalConsumer:
 
     def ingest_terminal_receipt(self, receipt: Dict[str, Any]) -> Dict[str, Any]:
         """Ingest and validate execution terminal receipt."""
-        ok, err, r_sha = validate_terminal_receipt(receipt)
+        ok, err, r_sha = validate_terminal_receipt(receipt, registered_sessions=self.registered_sessions)
         if not ok:
             raise ReceiptValidationError(f"Invalid terminal receipt: {err}")
 
@@ -496,7 +538,7 @@ class TerminalConsumer:
         task_id = review.get("task_id")
         term_receipt = self.terminal_receipts.get(task_id)
 
-        ok, err, r_sha = validate_review_receipt(review, term_receipt)
+        ok, err, r_sha = validate_review_receipt(review, term_receipt, registered_sessions=self.registered_sessions)
         if not ok:
             if "Self-review prohibited" in err:
                 raise SelfReviewProhibitedError(err)
@@ -665,6 +707,7 @@ class TerminalConsumer:
                 reason=reason or "head accepted reviewed artifacts",
                 updated_at=updated_at or datetime.now(timezone.utc).isoformat(),
                 db_paths_artifacts=db_paths,
+                registered_sessions=self.registered_sessions,
             )
 
             if native_pair is not None:

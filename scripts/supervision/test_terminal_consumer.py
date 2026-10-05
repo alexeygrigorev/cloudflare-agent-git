@@ -10,6 +10,7 @@ from scripts.supervision.terminal_consumer import (
     SelfReviewProhibitedError,
     TerminalConsumer,
     canonical_json_hash,
+    extract_native_evidence,
     validate_review_receipt,
     validate_terminal_receipt,
 )
@@ -581,6 +582,184 @@ class TestTerminalConsumer(unittest.TestCase):
         consumer2 = TerminalConsumer(self.spool)
         results3 = consumer2.ingest_launcher_db(db_path)
         self.assertEqual(len(results3), 0)
+
+    def test_unregistered_uuid_rejection(self):
+        """Syntactically valid UUID that is not in registered catalog must be rejected."""
+        valid_uuid = "01a10ca4-a92a-7e61-b1ea-e393c5990c7a"
+        registered = {"01a10ca4-ffff-ffff-ffff-ffffffffffff"}
+        receipt = dict(self.terminal_receipt)
+        receipt["executor"] = {
+            "session_id": valid_uuid,
+            "tag": "worker-1",
+            "engine": "antigravity",
+        }
+        ok, err, _ = validate_terminal_receipt(receipt, registered_sessions=registered)
+        self.assertFalse(ok)
+        self.assertIn("Unregistered executor session_id", err)
+
+        # In review validation as well
+        rev = {
+            "task_id": "TASK-A",
+            "review_task_id": "REV-TASK-A",
+            "reviewer": {
+                "session_id": valid_uuid,
+                "tag": "reviewer-distinct",
+                "engine": "antigravity",
+            },
+            "target_receipt_sha256": self.term_sha,
+            "verdict": "ACCEPTED",
+            "review_evidence": {"exit_code": 0},
+            "reviewed_at": "2026-10-05T14:05:00Z",
+        }
+        ok_rev, err_rev, _ = validate_review_receipt(rev, registered_sessions=registered)
+        self.assertFalse(ok_rev)
+        self.assertIn("Unregistered reviewer session_id", err_rev)
+
+        # In extract_native_evidence
+        payload = {
+            "owner": "worker-1",
+            "executor": receipt["executor"],
+            "first_tool_evidence": {"tool_name": "view_file", "timestamp": "2026-10-05T14:00:00Z"},
+            "artifacts": [{"path": "/tmp/test.txt", "sha256": "abc"}],
+            "reviewer_evidence": rev["reviewer"],
+        }
+        res = extract_native_evidence(
+            task_id="task-test",
+            payload_dict=payload,
+            reviewer="reviewer-distinct",
+            reason="test",
+            updated_at="2026-10-05T14:00:00Z",
+            registered_sessions=registered,
+        )
+        self.assertIsNone(res)
+
+    def test_fabricated_tool_name_and_timestamp_rejection(self):
+        """Fabricated/synthetic tool names and missing/empty timestamps must be rejected."""
+        receipt = dict(self.terminal_receipt)
+        # Synthetic tool name
+        receipt["first_tool_evidence"] = {"tool_name": "task_execution", "timestamp": "2026-10-05T12:00:00Z"}
+        ok, err, _ = validate_terminal_receipt(receipt)
+        self.assertFalse(ok)
+        self.assertIn("Prohibited synthetic tool_name", err)
+
+        receipt["first_tool_evidence"] = {"tool_name": "mock", "timestamp": "2026-10-05T12:00:00Z"}
+        ok, err, _ = validate_terminal_receipt(receipt)
+        self.assertFalse(ok)
+        self.assertIn("Prohibited synthetic tool_name", err)
+
+        # Empty/missing timestamp when required
+        receipt["first_tool_evidence"] = {"tool_name": "view_file", "timestamp": ""}
+        ok, err, _ = validate_terminal_receipt(receipt, require_first_tool_timestamp=True)
+        self.assertFalse(ok)
+        self.assertIn("Missing or invalid timestamp", err)
+
+        # In extract_native_evidence
+        payload_synth = {
+            "owner": "worker-1",
+            "executor": {"session_id": "01a10ca4-a92a-7e61-b1ea-e393c5990c7a", "tag": "worker-1", "engine": "antigravity"},
+            "first_tool_evidence": {"tool_name": "task_execution", "timestamp": "2026-10-05T12:00:00Z"},
+            "artifacts": [],
+            "reviewer_evidence": {"session_id": "01a10ca4-a967-72b1-b7bb-c08c695f0dba", "tag": "rev", "engine": "codex"},
+        }
+        self.assertIsNone(extract_native_evidence("t1", payload_synth, "rev", "test", "2026-10-05T12:00:00Z"))
+
+        # Empty timestamp in dict
+        payload_no_ts = dict(payload_synth)
+        payload_no_ts["first_tool_evidence"] = {"tool_name": "view_file", "timestamp": ""}
+        self.assertIsNone(extract_native_evidence("t1", payload_no_ts, "rev", "test", "2026-10-05T12:00:00Z"))
+
+    def test_wrong_task_owner_rejection(self):
+        """Receipt executor tag that does not match assigned task owner must be rejected."""
+        receipt = dict(self.terminal_receipt)
+        receipt["executor"] = {
+            "session_id": "01a10ca4-a92a-7e61-b1ea-e393c5990c7a",
+            "tag": "worker-imposter",
+            "engine": "antigravity",
+        }
+        ok, err, _ = validate_terminal_receipt(receipt, expected_owner="quota-launcher-head-gemini")
+        self.assertFalse(ok)
+        self.assertIn("Task owner mismatch", err)
+
+        # In extract_native_evidence
+        payload_wrong_owner = {
+            "owner": "quota-launcher-head-gemini",
+            "executor": {
+                "session_id": "01a10ca4-a92a-7e61-b1ea-e393c5990c7a",
+                "tag": "worker-imposter",
+                "engine": "antigravity",
+            },
+            "first_tool_evidence": {"tool_name": "view_file", "timestamp": "2026-10-05T12:00:00Z"},
+            "artifacts": [],
+            "reviewer_evidence": {
+                "session_id": "01a10ca4-a967-72b1-b7bb-c08c695f0dba",
+                "tag": "rev-distinct",
+                "engine": "codex",
+            },
+        }
+        self.assertIsNone(extract_native_evidence("t1", payload_wrong_owner, "rev-distinct", "test", "2026-10-05T12:00:00Z"))
+        ok, err, _ = validate_terminal_receipt(receipt, expected_owner="quota-launcher-head-gemini")
+        self.assertFalse(ok)
+        self.assertIn("Task owner mismatch", err)
+
+        # In extract_native_evidence
+        payload_wrong_owner = {
+            "owner": "quota-launcher-head-gemini",
+            "executor": {
+                "session_id": "01a10ca4-a92a-7e61-b1ea-e393c5990c7a",
+                "tag": "worker-imposter",
+                "engine": "antigravity",
+            },
+            "first_tool_evidence": {"tool_name": "view_file", "timestamp": "2026-10-05T12:00:00Z"},
+            "artifacts": [],
+            "reviewer_evidence": {
+                "session_id": "01a10ca4-a967-72b1-b7bb-c08c695f0dba",
+                "tag": "rev-distinct",
+                "engine": "codex",
+            },
+        }
+        self.assertIsNone(extract_native_evidence("t1", payload_wrong_owner, "rev-distinct", "test", "2026-10-05T12:00:00Z"))
+
+    def test_imported_db_rows_ineligible_without_trusted_provenance(self):
+        """Tasks imported from launcher DB without trusted provenance remain ineligible and cannot unblock dependents."""
+        import sqlite3
+
+        db_path = self.spool / "unproven_launcher.db"
+        con = sqlite3.connect(str(db_path))
+        cur = con.cursor()
+        cur.execute(
+            "CREATE TABLE tasks (id TEXT PRIMARY KEY, payload TEXT, state TEXT, reviewer TEXT, reason TEXT, updated_at TEXT)"
+        )
+        cur.execute(
+            "INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                "unproven-task-1",
+                json.dumps({"owner": "quota-launcher-head-gemini", "goal": "real task execution"}),
+                "accepted",
+                "reviewer-tag-only",
+                "accepted without native session provenance",
+                "2026-10-05 15:00:00",
+            ),
+        )
+        con.commit()
+        con.close()
+
+        results = self.consumer.ingest_launcher_db(db_path)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["status"], "imported_db_acceptance")
+        self.assertFalse(results[0]["autonomy_acceptance_eligible"])
+
+        # Check task state in consumer
+        st = self.consumer.task_states["unproven-task-1"]
+        self.assertEqual(st["status"], "imported-db-accepted")
+        self.assertFalse(st["autonomy_acceptance_eligible"])
+
+        # Reconcile dependent task: MUST NOT be unblocked
+        dependent_tasks = [
+            {"id": "dependent-task-X", "status": "blocked", "blocked_on": ["unproven-task-1"]},
+        ]
+        unblocked = self.consumer.reconcile_and_unblock_tasks(dependent_tasks)
+        self.assertEqual(unblocked, [])
+        self.assertEqual(dependent_tasks[0]["status"], "blocked")
 
 
 if __name__ == "__main__":
