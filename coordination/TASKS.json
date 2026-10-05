@@ -5196,9 +5196,9 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T15:15:11.896191+00:00",
+      "updated_at": "2026-10-05T15:18:40.449477+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Bounded supervisor integration with maintained task-unit launcher state.db completed (commit 6e995c9) and independently accepted (REV-SUPERVISION-TERMINAL-LAUNCHER-6E995C9.md). Preserving PID 3265459, locks, cursors, and logs. Worker launch held on root statvfs 47.58 GiB < 50 GiB.",
+      "next_action": "Bounded supervisor integration and isolated failure recovery test suite completed (commit 530c10c, 70/70 tests pass). Pinned diff routed to QL head for distinct review. PID 3265459 preserved; worker launches held while root disk is below 50 GiB.",
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
@@ -5208,7 +5208,8 @@
         "research/antigravity/remote-autonomy-supervisor-contract-20261005.md",
         "research/antigravity/reviews/REV-SUPERVISION-TERMINAL-LAUNCHER-6E995C9.md",
         "scripts/supervision/terminal_consumer.py",
-        "scripts/supervision/test_terminal_consumer.py"
+        "scripts/supervision/test_terminal_consumer.py",
+        "scripts/supervision/test_failure_recovery.py"
       ],
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672"
     },
