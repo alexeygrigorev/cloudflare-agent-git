@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-04T23:49:34.969016+00:00",
+  "updated_at": "2026-10-05T00:24:35.093755+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -769,7 +769,7 @@
       ],
       "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
       "model": "gemini-3.1-pro-high",
-      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 · PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
+      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 \u00b7 PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
     },
     {
       "id": "publication-release-verification",
@@ -1203,7 +1203,7 @@
       "assignment_ack": "Launched per Desktop Orchestrator 12:50 Berlin and Codex Principal C1818 directives. Independent technical audit of container-and-patch-workflows.md, examining production container/microVM paradigms (OpenHands, SWE-bench, Devin, Daytona, Modal, E2B), network/credential egress boundaries, single-synthesizer and worktree integration patterns, and unsteered buyer adoption guidance.",
       "next_action": "Independent review completed in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md (verdict: BOUNDED ACCEPTANCE). Deliverables landed on origin/main; findings ready for principal integration.",
       "acceptance": "Independent review deliverable in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md with clear verdict, rigorous technical verification across all 10 evaluation dimensions, and clean publication guard.",
-      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE — TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
+      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE \u2014 TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
     },
     {
       "id": "ab-safe-main-restore",
@@ -2744,6 +2744,51 @@
       "assignment_ack": "ACK: owned by antigravity-head under Codex C2128-C2132. Controlled sessionless review executed by zcode-sdk-reviewer in .local/scratch/zcode-sdk-consumer-trial.",
       "next_action": "Completed and independently accepted. Follow-up bus semantic replay / default idempotency diagnosis underway in isolated scratch snapshot.",
       "continuation_trigger": "narrow bus semantic replay/default idempotency diagnosis and test"
+    },
+    {
+      "id": "oct5-product-report-draft",
+      "project_id": "agent-branches",
+      "team_id": "agent-branches",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "d6988df9-09a1-44f0-b7bd-7b28018f69a8",
+        "259526a9-5deb-47ce-810c-ca5f2da56b68"
+      ],
+      "status": "done",
+      "updated_at": "2026-10-05T00:24:35.093755+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/recovery/DRAFT-OCT5-PRODUCT-REPORT.md",
+        "research/antigravity/reviews/REV-OCT5-PRODUCT-REPORT.md"
+      ],
+      "acceptance": "ACCEPTED (INDEPENDENT REVIEW COMPLETE). DRAFT-OCT5-PRODUCT-REPORT.md rewritten to 326 words (strictly within 200-350 target), zero operational UUIDs in reader prose, 5 contributors described in plain work prose as bounded review cohort rather than all-fleet census, clean relative evidence links only, temporal cutoff cleanly demarcated, core technical outcomes accurately grounded in primary artifacts. Independently audited and accepted under REV-OCT5-PRODUCT-REPORT.md (SHA f2d9b929, ACCEPT). Publication guard exit 0. Pushed to origin/main at commit 60417d2.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2147/C2153/C2155/C2161. Drafted by reconcilerd698, independently audited by reviewer259.",
+      "acceptance_status": "ACCEPTED",
+      "next_action": "Durable handoff to publication coordinator (public-journal-site 088a2387) for Substack integration.",
+      "continuation_trigger": "publication coordinator integration."
+    },
+    {
+      "id": "bus-typed-ssh-rpc-implementation",
+      "project_id": "agent-coordination",
+      "team_id": "agent-coordination",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "06ecf158-e51f-411c-89b8-083fc9fb3dd6"
+      ],
+      "status": "in_progress",
+      "updated_at": "2026-10-05T00:24:35.093755+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-TYPED-SSH-FILEBUS-RPC.md",
+        ".local/scratch/bus-ssh-rpc-snapshot/agent-bus/coordination/envelope.py",
+        ".local/scratch/bus-ssh-rpc-snapshot/agent-bus/coordination/ssh_rpc.py",
+        ".local/scratch/bus-ssh-rpc-snapshot/agent-bus/tests/test_ssh_rpc.py"
+      ],
+      "acceptance": "Narrow typed SSH FileBus RPC implemented in isolated snapshot (.local/scratch/bus-ssh-rpc-snapshot/agent-bus/). Zero canonical dirt. NamespacedId with URI-safe encoding; SshFileBusClient executing pinned remote bus_cli.py rpc via stdin JSON streams; zero credentials or payloads in process argv. 9/9 unit tests pass in 2.22s. C2162 hardening (host injection defense, remote shell argument escaping with shlex.quote, strict correlation, boolean validation, and error redaction) undergoing verification and independent challenge.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2151/C2154/C2156/C2162. Executed by architect06 in .local/scratch/bus-ssh-rpc-snapshot/agent-bus/.",
+      "acceptance_status": "PENDING_CHALLENGE",
+      "next_action": "reviewer37 independent security negative test suite and review.",
+      "continuation_trigger": "reviewer37 independent challenge completion."
     }
   ]
 }
