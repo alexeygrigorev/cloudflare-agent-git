@@ -1,91 +1,90 @@
 {
-  "title": "Four product teams and current delivery status",
-  "description": "Agent Branches audits fail-closed push, Agent Bus verifies local RPC dogfood, and Dashboard and Launcher integrations remain held under monitor oversight.",
+  "title": "Four product lanes and delivery status",
+  "description": "An authentic review task runs between project head and independent reviewer over RPC, while four product lanes maintain distinct delivery statuses.",
   "style": "editorial",
-  "canvas": {"width": 940, "height": 490},
+  "canvas": {"width": 1160, "height": 410},
   "layout": {"type": "manual", "card_width": 240, "card_height": 100},
+  "dividers": [
+    {"after_node": "reviewer"}
+  ],
   "nodes": [
     {
-      "id": "monitor",
-      "title": "Codex principal",
-      "subtitle": "Tracks tasks and evidence",
+      "id": "head",
+      "title": "Project head",
+      "subtitle": "Dispatches tasks and checks",
+      "eyebrow": "COORDINATION",
       "icon": "robot",
       "color": "blue",
-      "x": 350,
+      "x": 200,
+      "y": 40
+    },
+    {
+      "id": "reviewer",
+      "title": "Independent reviewer",
+      "subtitle": "Validates negative cases",
+      "eyebrow": "CHALLENGER",
+      "icon": "shield",
+      "color": "purple",
+      "x": 720,
       "y": 40
     },
     {
       "id": "branches",
       "title": "Agent Branches",
-      "subtitle": "SDK push fails closed",
+      "subtitle": "Internal review tested",
+      "eyebrow": "PRODUCT LANE",
       "icon": "workflow",
       "color": "blue",
       "x": 40,
-      "y": 190
+      "y": 270
     },
     {
       "id": "bus",
       "title": "Agent Bus",
-      "subtitle": "Local RPC dogfood verified",
+      "subtitle": "Internal review tested",
+      "eyebrow": "PRODUCT LANE",
       "icon": "message",
       "color": "purple",
-      "x": 40,
-      "y": 350
+      "x": 320,
+      "y": 270
     },
     {
       "id": "launcher",
       "title": "Quota Launcher",
-      "subtitle": "Autonomous runtime held",
+      "subtitle": "Runtime unverified",
+      "eyebrow": "PRODUCT LANE",
       "icon": "settings",
       "color": "amber",
-      "x": 660,
-      "y": 190
+      "x": 600,
+      "y": 270
     },
     {
       "id": "dashboard",
       "title": "Agent Dashboard",
-      "subtitle": "Canonical integration held",
+      "subtitle": "Integration pending",
+      "eyebrow": "PRODUCT LANE",
       "icon": "observability",
       "color": "gray",
-      "x": 660,
-      "y": 350
+      "x": 880,
+      "y": 270
     }
   ],
   "edges": [
     {
-      "from": "monitor",
-      "to": "branches",
-      "route": "orthogonal",
-      "color": "blue"
-    },
-    {
-      "from": "monitor",
-      "to": "launcher",
-      "route": "orthogonal",
-      "color": "amber"
-    },
-    {
-      "from": "branches",
-      "to": "bus",
-      "route": "orthogonal",
-      "label": "Review task",
+      "from": "head",
+      "to": "reviewer",
+      "from_anchor": "right_top",
+      "to_anchor": "left_top",
+      "label": "RPC task",
       "color": "purple"
     },
     {
-      "from": "launcher",
-      "to": "dashboard",
-      "route": "orthogonal",
-      "dashed": true,
-      "color": "gray"
-    },
-    {
-      "from": "bus",
-      "to": "monitor",
-      "route": "orthogonal",
-      "from_anchor": "right",
-      "to_anchor": "bottom",
-      "dashed": true,
+      "from": "reviewer",
+      "to": "head",
+      "from_anchor": "left_bottom",
+      "to_anchor": "right_bottom",
       "label": "RPC reply",
+      "dashed": true,
       "color": "purple"
     }
   ]
