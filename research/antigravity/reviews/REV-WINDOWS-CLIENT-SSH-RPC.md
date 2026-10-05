@@ -1,8 +1,8 @@
-# Independent Technical Review: Windows Client vs. Remote POSIX Audit & Unicode RPC Diagnostic Design (Codex Directive C2263 / C2267)
+# Independent Technical Review: Windows Client vs. Remote POSIX Audit, Unicode RPC Diagnostic Design & Repaired Diagnostic Driver (Codex Directives C2263 / C2267 / C2274)
 
 - **Reviewer**: Independent Challenger Reviewer (`reviewer37`, subagent conversation ID: `37aa1067-8bda-4dde-95b8-7b5bb927bd1f`)
 - **Reviewer Identity ID**: `163fa1fb-38ac-47ba-a73c-afe0778fec7d`
-- **Authority**: Dispatched by `antigravity-head` (`46fdb644`, conversation ID: `245c7bba-9a7b-45c1-87a7-4537f289f9a5`) under Codex Principal Directives C2263 and C2267; auditing sibling integration codebase under Directives C2162, C2164, C2166, C2214, C2217, C2224, and C2226; authorized by human cross-computer steering (`experiment/human-cross-computer-product-20261004.txt`).
+- **Authority**: Dispatched by `antigravity-head` (`46fdb644`, conversation ID: `245c7bba-9a7b-45c1-87a7-4537f289f9a5`) under Codex Principal Directives C2263, C2267, and C2274; auditing sibling integration codebase under Directives C2162, C2164, C2166, C2214, C2217, C2224, C2226, and C2274; authorized by human cross-computer steering (`experiment/human-cross-computer-product-20261004.txt`).
 - **Target Integration Repository**: `/home/alexey/git/cloudflare-agent-git/.local/scratch/architect06-bus-integration/agent-bus`
 - **Pinned Sibling Commit**: `23b0742b1f00ec027d830763e773577a807dbc39` atop `f3295f99e188719f5df9fccb22706d8a0e5bb8f8` (`feat/typed-ssh-filebus-rpc`)
 - **Diagnostic Deliverable**: `research/antigravity/recovery/test_windows_client_unicode_rpc.py`
@@ -11,7 +11,7 @@
 - **Audit Testbed**: `.local/scratch/reviewer37-windows-client-audit/` (mode `0700`, <= 512 MB, zero net `/tmp` growth)
 - **Canonical Repositories Status**: Canonical `/home/alexey/git/agent-bus` and `/home/alexey/git/agent-dashboard` remained strictly read-only with respect to reviewer actions and observed subprocesses throughout this review.
 - **Compiler Invariant**: Exactly `0` `cargo` or `rustc` invocations executed during this review interval and audit environment under human hold (scoped strictly to reviewer actions and subprocesses).
-- **Date**: 2026-10-05T04:15:00+02:00 (Europe/Berlin)
+- **Date**: 2026-10-05T04:26:00+02:00 (Europe/Berlin)
 - **Status / Verdict**: **STATUS: SOURCE-CANDIDATE / UNVALIDATED WINDOWS RUNTIME (LINUX FCNTL-SIMULATION ONLY; WIRE UNICODE & NATIVE WINDOWS SUBPROCESS UNVERIFIED)**
 
 ---
@@ -207,23 +207,50 @@ The Python `SshFileBusClient` implementation in `coordination/ssh_rpc.py` operat
 3. It pipes the entire JSON request over stdin to `python3 bus_cli.py rpc`.
 4. `bus_cli.py rpc` receives the token via stdin, authenticates against the Linux FileBus store, and returns the response over stdout.
 
-### 5.1 Real CLI Diagnostic Driver Delivered: `windows_rpc_diagnostic_driver.py`
-Under Directive C2267, a standalone diagnostic CLI driver was authored:
+### 5.1 Real CLI Diagnostic Driver Delivered & Refactored: `windows_rpc_diagnostic_driver.py` (Directives C2267 & C2274)
+Under Codex Principal Directives C2267 and C2274, the standalone diagnostic CLI driver was authored and refactored:
 [`research/antigravity/recovery/windows_rpc_diagnostic_driver.py`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/windows_rpc_diagnostic_driver.py)
+- **SHA256**: `2fd1be4ef2b9d0437ac47e3635f13212886f2e8c56d0dea94919f057a3205d44`
 
-- **Pure Standard Library**: Requires no external dependencies; executable via standard Python 3.10+ on Windows (`python.exe`) or Linux.
-- **Strict Stdin Credential Ingestion**: Reads bearer tokens or JSON credentials strictly from `sys.stdin` (matching Desktop Root's PowerShell DPAPI pattern). Zero tokens appear on `sys.argv`.
-- **Supported Actions**: `--action {inbox,send,ack,reply,enroll}` with options `--host`, `--remote-cli`, `--store`, `--ssh-binary` (defaulting to `ssh` or `ssh.exe`).
-- **Real Rendezvous Store Verification**:
-  Executed against the live Hetzner rendezvous store (`.local/scratch/desktop-root-rpc-20261005/store`) with credentials piped via stdin:
-  ```bash
-  cat head_cred.json | python3 research/antigravity/recovery/windows_rpc_diagnostic_driver.py \
-    --host hetzner \
-    --remote-cli /path/to/bus_cli.py \
-    --store /path/to/store \
-    --action inbox --all
-  ```
-  Successfully connected over live OpenSSH and retrieved Desktop Root's authentic cross-computer reply message `b448cc83-3fc1-4290-94c6-796cb160948d` with exit code 0.
+**Key Directive C2274 Architectural & Security Corrections**:
+1. **Reuse Pinned Typed Client (`SshFileBusClient`)**:
+   - Replaced redundant raw subprocess command construction and fragile regex sanitization with direct reuse of `SshFileBusClient` from `coordination.ssh_rpc`.
+   - Inherits strict `request_id` correlation, `bool(ok)` verification, fail-closed omission of raw output, and safe decoupled exception chaining.
+   - Dynamic repository resolution via `--repo-dir` with automatic fallback scanning of local scratch checkouts.
+2. **Elimination of `enroll` Action**:
+   - Desktop Root is pre-enrolled (`01ace831-6d23-4c05-a6df-1a58099aca67`).
+   - `enroll` is completely eliminated from `--action` choices, argument parser, and execution logic, permanently closing the risk of leaking bearer tokens on stdout.
+3. **Strict Stdin Ingestion & Zero Secrets/Payloads on `sys.argv`**:
+   - Bearer tokens are read strictly from `sys.stdin` (plain text string or structured JSON).
+   - `--body` is completely eliminated from `sys.argv`.
+   - If no explicit body is provided via stdin JSON, the driver defaults to a built-in multi-byte UTF-8 verification probe:
+     `"RPC-Unicode-Diagnostic: Grüß Gott 🚀 / Привет мир / 2H₂ + O₂ ⇌ 2H₂O / 100% 🎯"` (75 characters, 100 UTF-8 bytes).
+   - Custom non-secret bodies can be supplied safely via stdin JSON (`{"token": ..., "body": ...}`).
+4. **Sanitized Output Only (Zero Token / Body Leakage)**:
+   - Inboxes, lookups, and message acknowledgments NEVER print raw tokens or private message bodies to stdout.
+   - Outputs emit clean JSON containing message metadata, message counts, character lengths, byte lengths, and SHA256 body digests.
+
+### 5.2 Empirical Verification Receipts (Directives C2267 & C2274)
+1. **Real Rendezvous Store Verification**:
+   - Executed against live Hetzner rendezvous store (`.local/scratch/desktop-root-rpc-20261005/store`) with credentials piped via stdin:
+     ```bash
+     cat .local/scratch/desktop-root-rpc-20261005/head_cred.json | python3 research/antigravity/recovery/windows_rpc_diagnostic_driver.py \
+       --host 127.0.0.1 \
+       --remote-cli /home/alexey/git/cloudflare-agent-git/.local/scratch/architect06-bus-integration/agent-bus/coordination/bus_cli.py \
+       --store /home/alexey/git/cloudflare-agent-git/.local/scratch/desktop-root-rpc-20261005/store \
+       --action inbox --all
+     ```
+   - **Receipt**: Exit code 0; retrieved Desktop Root's authentic cross-computer reply message `b448cc83-3fc1-4290-94c6-796cb160948d` (sender: `01ace831-6d23-4c05-a6df-1a58099aca67`, recipient: `91d2a63b-fe47-4b53-bee8-2ada24259439`, body length 775 bytes, SHA256: `73bcb598b1586e11bb47350fc6c763b8e9d35edc7380d6fcbf4739844883a01a`).
+2. **Complete 4-Stage Exchange Lifecycle (Isolated Scratch Store)**:
+   - In `.local/scratch/reviewer37-windows-client-audit/test_store`:
+     - Stage 1 (`send`): Alice sends default multi-byte Unicode probe to Bob (message `9e2e1328-1d0f-48b1-8665-562af88ee93a`, 75 chars, 100 bytes, SHA256 `64e3542858937d44b5b8e69667e3c3c12b0a83b5b270144a3a55870e2145db98`, `is_default_unicode_probe=true`).
+     - Stage 2 (`inbox`): Bob reads unread message (count 1, matching SHA256 `64e35428...`).
+     - Stage 3 (`reply`): Bob replies with custom body piped via stdin JSON (reply `cea9e7cd-a0c8-4e46-8cdf-7c64ee34898f`, 50 chars, 55 bytes, SHA256 `64dd9ef751912f97e4b441c1858b8b4186a2097df9c4ecb47815da8809cd2a10`).
+     - Stage 4 (`ack`): Alice acknowledges Bob's reply (status `acknowledged`).
+3. **Negative Fail-Closed Tests**:
+   - Passing `--body` on `sys.argv`: Fails closed (`unrecognized arguments: --body`).
+   - Invoking `--action enroll`: Fails closed (`invalid choice: 'enroll'`).
+   - Empty stdin: Fails closed with clean error JSON (`"message": "Stdin was empty; expected bearer [REDACTED] or credential JSON"`).
 
 ---
 
@@ -232,7 +259,7 @@ Under Directive C2267, a standalone diagnostic CLI driver was authored:
 | Component / Subsystem | Host Platform | Role | Status | Technical Rationale |
 | :--- | :--- | :--- | :--- | :--- |
 | **`SshFileBusClient`** | **Windows Desktop** | Outbound RPC Client | **SOURCE-CANDIDATE / UNVALIDATED WINDOWS RUNTIME** | Pure stdlib client; imports without `fcntl`; delegates transport to `ssh.exe`; streams JSON over stdin; Linux simulation + mock runner passed; native Windows execution, native `ssh.exe`, and live wire transport remain UNKNOWN/HELD. |
-| **`windows_rpc_diagnostic_driver.py`** | **Windows / Linux** | CLI Diagnostic Driver | **VERIFIED ON REAL STORE** | Pure stdlib CLI driver; reads token strictly from stdin; zero secrets on `sys.argv`; verified against real Hetzner rendezvous store over OpenSSH; ready for Windows DPAPI pipe. |
+| **`windows_rpc_diagnostic_driver.py`** | **Windows / Linux** | CLI Diagnostic Driver | **VERIFIED ON REAL STORE (REPAIRED C2274)** | Reuses pinned `SshFileBusClient`; reads token strictly from stdin; zero secrets/payloads on `sys.argv`; emits sanitized digests only; verified against real Hetzner rendezvous store over OpenSSH; ready for Windows DPAPI pipe. |
 | **`test_windows_client_unicode_rpc.py`** | **Windows / Linux** | Diagnostic Test Suite | **VERIFIED (Linux Simulation & Logical Mock Runner)** | Tests UTF-8 Unicode framing, missing `fcntl` import, and DPAPI stdin streaming pattern with zero dependencies. |
 | **Windows OpenSSH Frontend (`ssh.exe`)** | **Windows Desktop** | Subprocess Transport | **VERIFIED (LIVE WAN)** | Empirically verified in live cross-computer test (`REPORT-TWOHOST-DESKTOP-HETZNER-RPC.md`, latency 974ms). |
 | **Windows Inbound SSH Listener (`sshd`)** | **Windows Desktop** | Inbound Server | **DISCOURAGED / NOT REQUIRED** | Forward polling/reply pattern eliminates need for inbound ports, NAT hole punching, and desktop daemon management. |
@@ -248,7 +275,7 @@ Under Directive C2267, a standalone diagnostic CLI driver was authored:
 2. **Canonical Repositories Cleanliness**:
    - `/home/alexey/git/agent-bus` and `/home/alexey/git/agent-dashboard` remained completely untouched and strictly read-only with respect to all reviewer actions and observed subprocesses.
 3. **Scratch Resource Isolation**:
-   - Testbed confined strictly to `.local/scratch/reviewer37-windows-client-audit/` (mode `0700`, size 8 KB $\le$ 512 MB).
+   - Testbed confined strictly to `.local/scratch/reviewer37-windows-client-audit/` (mode `0700`, size 40 KB $\le$ 512 MB).
    - `TMPDIR` set inside scratch directory with zero net growth on system `/tmp`.
 4. **Subagent Git Constraints**:
    - Zero `git commit` or `git push` commands were issued.
@@ -265,5 +292,5 @@ Under Directive C2267, a standalone diagnostic CLI driver was authored:
 2. **Runtime Demarcation**: Tests in `test_windows_client_unicode_rpc.py` were conducted as a Linux missing-fcntl simulation (`sys.modules["fcntl"] = None`) with a mock subprocess runner. Native Windows Python execution, native Windows OpenSSH (`ssh.exe`) process invocation, DPAPI token decryption on Windows, and live wire transport remain **`UNKNOWN / HELD`** pending genuine platform execution receipts.
 3. **Wire UTF-8 vs. Logical JSON**: `coordination.ssh_rpc._execute_rpc` and default Python `json.dumps` use `ensure_ascii=True` (emitting `\uXXXX` escape sequences). Therefore, a logical JSON string roundtrip does not attest UTF-8 wire encoding across network boundaries.
 4. **Universal Claims Withdrawn**: Earlier claims of zero escaping/truncation risk are withdrawn; PowerShell/cmdline quoting differs from POSIX `shlex`.
-5. **Real CLI Diagnostic Driver Delivered**: `windows_rpc_diagnostic_driver.py` has been authored and verified against the live Hetzner rendezvous store with stdin credential piping, providing an immediate test vehicle for native Windows validation.
+5. **Real CLI Diagnostic Driver Delivered & Repaired (C2274)**: `windows_rpc_diagnostic_driver.py` reuses pinned `SshFileBusClient`, completely eliminates `enroll` and `--body`, enforces strict stdin token/payload ingestion, and emits sanitized SHA256 body digests, providing a hardened, verified vehicle for native Windows execution.
 6. **Local Windows Store Backend**: Remains strictly designated **`UNKNOWN / HELD`** (lacks native Windows `flock` and `O_DIRECTORY` directory fsync).
