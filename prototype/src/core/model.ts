@@ -156,6 +156,7 @@ export interface CoordinatorModel {
   radarLog: RadarLogEntry[];
   pairChecks: Record<string, PairCheckRecord>;
   lastRunnerReport: RunnerReport | null;
+  receipts: Record<string, { id: string; agentId: string; sha: string; status: "valid" | "invalidated"; createdAt: string }>;
 }
 
 export interface AgentTokenRecord {
@@ -187,6 +188,7 @@ export function emptyModel(): CoordinatorModel {
     radarLog: [],
     pairChecks: {},
     lastRunnerReport: null,
+    receipts: {},
   };
 }
 
@@ -199,6 +201,7 @@ export function migrateStoredModel(stored: CoordinatorModel | undefined): Coordi
   model.pairChecks ??= {};
   model.warnSeq ??= model.warnings.length;
   model.lastRunnerReport ??= null;
+  model.receipts ??= {};
   // muse-r46 D2: pre-0.1.1 models kept one flat "agentId:sha" array;
   // regroup it into the bounded per-agent ring.
   if (Array.isArray(model.seenPushes)) {

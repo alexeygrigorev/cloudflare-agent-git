@@ -88,6 +88,7 @@ export interface RecordPushResult {
   agent: string;
   heads: Record<string, string>;
   invalidatedWarnings: string[];
+  receipt?: { id: string; sha: string; status: "valid" | "invalidated" };
   newWarnings: WarningRecord[];
   radarChecks: number;
 }
@@ -233,6 +234,7 @@ export class CoordinatorCore implements CoordinatorAccess {
 
   private async createTaskNow(input: CreateTaskInput): Promise<CreateTaskResult> {
     const model = await this.load();
+    const now = this.ports.clock.iso();
     if (!model.canonicalName) {
       await this.setupNow();
     }
@@ -281,7 +283,7 @@ export class CoordinatorCore implements CoordinatorAccess {
     const forkLog = await git.log(forkName, { limit: 1 });
     const head = forkLog[0]?.id ?? null;
     const ref = "refs/heads/main";
-    const now = this.ports.clock.iso();
+    
     model.agents[agentId] = {
       agentId,
       taskId,
@@ -324,6 +326,32 @@ export class CoordinatorCore implements CoordinatorAccess {
 
   private async recordPushNow(input: RecordPushInput): Promise<RecordPushResult> {
     const model = await this.load();
+    const git = this.ports.git;
+    const now = this.ports.clock.iso();
+    
+
+    if (input.fork && input.fork === model.canonicalName) {
+      // Main advancement! Invalidate all existing receipts.
+      const invalidatedReceipts: string[] = [];
+      for (const [id, receipt] of Object.entries(model.receipts)) {
+        if (receipt.status === "valid") {
+          receipt.status = "invalidated";
+          invalidatedReceipts.push(id);
+        }
+      }
+      
+      await this.persist();
+      return {
+        accepted: true,
+        deduped: false,
+        agent: "canonical",
+        heads: { ...model.heads },
+        invalidatedWarnings: [],
+        newWarnings: [],
+        radarChecks: 0
+      };
+    }
+
     // The sidecar webhook posts {fork, ref, sha} without an agent id; resolve
     // the owning agent from the fork (codex C-1309 #7a).
     let agentRecord = input.agent ? model.agents[input.agent] : undefined;
@@ -340,33 +368,56 @@ export class CoordinatorCore implements CoordinatorAccess {
       throw new Error(`fork ${input.fork} does not belong to agent ${agentId}`);
     }
     const dedupKey = `${agentId}:${input.sha}`;
-    // muse-r46 D2: bounded per-agent ring instead of an ever-growing array
-    // (the old `seenPushes.includes` was O(total pushes) per request).
     let seen = model.seenPushes[agentId];
     if (!seen) {
       seen = model.seenPushes[agentId] = [];
     }
     const deduped = seen.includes(dedupKey) || model.heads[agentId] === input.sha;
+    
+    // Check for stale-head refusal
+    const before = model.heads[agentId] ?? null;
+    if (before && before !== input.sha && !deduped) {
+      const history = await git.log(agentRecord.forkName, { ref: input.sha, limit: 1000 }).catch(() => []);
+      if (!history.some((c: any) => c.id === before)) {
+        // 'before' is NOT in the history of 'input.sha'.
+        // Let's verify if 'input.sha' is older by checking if it's in the history of 'before'
+        const beforeHistory = await git.log(agentRecord.forkName, { ref: before, limit: 1000 }).catch(() => []);
+        if (beforeHistory.some((c: any) => c.id === input.sha)) {
+          // Stale head refusal! The pushed sha is an ancestor of the current head (arrived out of order).
+          // We return accepted: false, treating it safely as idempotent/reordered event.
+          return {
+            accepted: false,
+            deduped: false,
+            agent: agentId,
+            heads: { ...model.heads },
+            invalidatedWarnings: [],
+            newWarnings: [],
+            radarChecks: 0
+          };
+        }
+      }
+    }
+
     if (deduped) {
+      const existingReceipt = Object.values(model.receipts).find(r => r.agentId === agentId && r.sha === input.sha);
       return {
         accepted: true,
         deduped: true,
         agent: agentId,
-        // Snapshot: callers must never hold a live reference into the model.
         heads: { ...model.heads },
         invalidatedWarnings: [],
         newWarnings: [],
         radarChecks: 0,
+        receipt: existingReceipt ? { ...existingReceipt } : undefined
       };
     }
-    const git = this.ports.git;
     const known = await git.hasCommit(agentRecord.forkName, input.sha);
     if (!known) {
       throw new Error(`commit ${input.sha} not found in ${agentRecord.forkName}`);
     }
-    const before = model.heads[agentId] ?? null;
+
     const ref = input.ref ?? agentRecord.ref;
-    const now = this.ports.clock.iso();
+    
     seen.push(dedupKey);
     if (seen.length > SEEN_PUSHES_CAP_PER_AGENT) {
       seen.splice(0, seen.length - SEEN_PUSHES_CAP_PER_AGENT);
@@ -379,6 +430,12 @@ export class CoordinatorCore implements CoordinatorAccess {
     const invalidatedWarnings = this.invalidateWarningsFor(model, agentId, now);
     const radarOutcome = this.runRadar(model, { agent: agentId, ref, sha: input.sha, before });
     const newWarnings = radarOutcome.created;
+    
+    // Create exact-SHA receipt
+    const receiptId = `receipt-${agentId}-${input.sha}`;
+    const newReceipt = { id: receiptId, agentId, sha: input.sha, status: "valid" as const, createdAt: now };
+    model.receipts[receiptId] = newReceipt;
+
     await this.persist();
     return {
       accepted: true,
@@ -389,6 +446,7 @@ export class CoordinatorCore implements CoordinatorAccess {
       invalidatedWarnings,
       newWarnings,
       radarChecks: radarOutcome.checks.length,
+      receipt: newReceipt,
     };
   }
 
@@ -681,6 +739,7 @@ export class CoordinatorCore implements CoordinatorAccess {
   }): Promise<{ accepted: number; pairs: PairStatusView[]; createdWarnings: WarningRecord[] }> {
     const model = await this.load();
     const now = this.ports.clock.iso();
+    
     const createdWarnings: WarningRecord[] = [];
     for (const result of input.results) {
       if (!Array.isArray(result.pair) || result.pair.length !== 2) {
@@ -856,8 +915,9 @@ export class CoordinatorCore implements CoordinatorAccess {
     change: { agent: string; ref: string; sha: string; before: string | null },
   ): { checks: RadarPairResult[]; created: WarningRecord[] } {
     const siblings = Object.keys(model.heads);
-    const checks = this.ports.radar.onPush(change, model.heads, siblings);
     const now = this.ports.clock.iso();
+    const checks = this.ports.radar.onPush(change, model.heads, siblings);
+    
     const created: WarningRecord[] = [];
     for (const check of checks) {
       this.pushRadarLog(model, check, now);
