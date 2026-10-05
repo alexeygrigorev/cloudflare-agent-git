@@ -20,9 +20,13 @@ for image in images:
 subprocess.run(['stylint',str(article)],cwd=ROOT,timeout=60,check=True)
 share=folder/f'{day}.sharetext.txt';assert len(share.read_text().strip())<=350
 if a.publish:
+ has_prior_pub=bool(m.get('published_at'))
  pub_at=m.get('published_at') or datetime.datetime.now(datetime.timezone.utc).isoformat()
  upd_at=datetime.datetime.now(datetime.timezone.utc).isoformat()
  reviewer=a.reviewer or m.get('editorial_review') or 'Evidence, privacy, full stylint and asset checks by publication coordinator (public-journal-site)'
- m.update(published=True,actual_writer_models=models,editorial_review=reviewer,article_sha256=hashlib.sha256(article.read_bytes()).hexdigest(),published_at=pub_at,updated_at=upd_at)
+ updates={'published':True,'actual_writer_models':models,'editorial_review':reviewer,'article_sha256':hashlib.sha256(article.read_bytes()).hexdigest(),'published_at':pub_at,'updated_at':upd_at}
+ if has_prior_pub:
+  updates['revised_at']=upd_at
+ m.update(**updates)
  temporary=metadata.with_suffix('.json.tmp');temporary.write_text(json.dumps(m,indent=2)+'\n');temporary.replace(metadata)
 print(json.dumps({'date':day,'checks':'passed','published':bool(m.get('published')),'actual_writer_models':models}))
