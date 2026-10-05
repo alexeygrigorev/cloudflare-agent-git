@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T06:02:51.516353+00:00",
+  "updated_at": "2026-10-05T06:11:05.201776+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -4247,7 +4247,7 @@
       "provider": "gemini",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "task_id": "dashboard-visibility-window-c2372",
-      "status": "in_progress",
+      "status": "done",
       "harness_conversation_id": "06ecf158-e51f-411c-89b8-083fc9fb3dd6",
       "owned_paths": [
         "research/antigravity/recovery/dashboard-unattributed-and-as-of-c2372.patch",
@@ -4479,7 +4479,7 @@
       "provider": "gemini",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "task_id": "bus-worker-receive-reply-cycle-c2372",
-      "status": "in_progress",
+      "status": "done",
       "harness_conversation_id": "d6988df9-09a1-44f0-b7bd-7b28018f69a8",
       "owned_paths": [
         "research/antigravity/reviews/REV-AGENTBUS-WORKER-CYCLE-C2372.md"

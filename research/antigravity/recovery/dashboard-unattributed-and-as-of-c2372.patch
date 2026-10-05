@@ -1,0 +1,251 @@
+diff --git a/src/dashboard/server.py b/src/dashboard/server.py
+index 2a98ae3..8df7bdd 100644
+--- a/src/dashboard/server.py
++++ b/src/dashboard/server.py
+@@ -159,6 +159,18 @@ def _load_hourly_payload(as_of: datetime.datetime) -> Dict[str, Any]:
+         existing_gaps = []
+     result["coverage_gaps"] = existing_gaps + coverage_gaps
+     result["hourly_source_kind"] = hourly_kind
++    if "unattributed" in result.get("projects", {}):
++        result["unattributed"] = result["projects"]["unattributed"]
++    else:
++        top_unattrib_hours = result.get("unattributed_agent_hours")
++        result["unattributed"] = {
++            "unique_agents": 0,
++            "total_agent_hours": top_unattrib_hours if top_unattrib_hours is not None else 0.0,
++            "coverage": None,
++            "unattributed_agent_hours": top_unattrib_hours if top_unattrib_hours is not None else 0.0,
++            "unknown": True,
++            "hourly_buckets": [],
++        }
+     return result
+ 
+ 
+@@ -224,6 +236,21 @@ def _load_usage_payload(as_of: datetime.datetime) -> Dict[str, Any]:
+     result = aggregate_project_usage(records, as_of=as_of)
+     result["sources"] = {**sources, **(result.get("sources") or {})}
+     result["coverage_gaps"] = list(result.get("coverage_gaps") or []) + coverage_gaps
++    if "unattributed" in result.get("projects", {}):
++        result["unattributed"] = result["projects"]["unattributed"]
++    else:
++        result["unattributed"] = {
++            "event_count": 0,
++            "total_input_tokens": None,
++            "total_output_tokens": None,
++            "total_cache_read_tokens": None,
++            "total_cache_creation_tokens": None,
++            "total_reasoning_tokens": None,
++            "total_quota_delta_percent": None,
++            "total_cost": None,
++            "has_unknown_tokens": False,
++            "unknown": True,
++        }
+     return result
+ 
+ 
+diff --git a/static/dashboard.css b/static/dashboard.css
+index bf47d38..845e938 100644
+--- a/static/dashboard.css
++++ b/static/dashboard.css
+@@ -112,6 +112,14 @@ h3 { font-size: 0.95rem; color: var(--muted); margin: 1rem 0 0.5rem; font-weight
+   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+ }
+ 
++.card-unattributed {
++  border-color: #475569;
++}
++.unattrib-warning {
++  margin: 0 0 0.75rem;
++  color: var(--warn);
++}
++
+ .proj-sub { color: var(--muted); margin: 0 0 0.5rem; }
+ 
+ .metrics { margin: 0; }
+diff --git a/static/dashboard.js b/static/dashboard.js
+index d0bf733..d5852dd 100644
+--- a/static/dashboard.js
++++ b/static/dashboard.js
+@@ -134,6 +134,28 @@ function renderHourly(data) {
+     renderChart(pid, p.hourly_buckets || []);
+   });
+ 
++  // Render explicit unattributed cohort card
++  var u = (projects && projects.unattributed) || (data && data.unattributed) || null;
++  var uBadge = document.getElementById("unknown-unattributed");
++  if (!u) {
++    if (uBadge) uBadge.hidden = false;
++    setCell("unique-unattributed", { text: "n/a", cls: "na" });
++    setCell("hours-unattributed", topUnattrib === null ? { text: "n/a", cls: "na" } : fmtHours(topUnattrib));
++    setCell("coverage-unattributed", { text: "unknown", cls: "na" });
++    setCell("telemetry-status-unattributed", { text: "unscoped/platform", cls: "na" });
++    renderChart("unattributed", []);
++  } else {
++    if (uBadge) uBadge.hidden = !(u.unknown === true);
++    setCell("unique-unattributed", fmtInt(u.unique_agents));
++    setCell("hours-unattributed", fmtHours(u.total_agent_hours));
++    setCell("coverage-unattributed", fmtCoverage(u.coverage));
++    setCell("telemetry-status-unattributed", {
++      text: u.unknown ? "unknown" : "unscoped/platform",
++      cls: u.unknown ? "na" : ""
++    });
++    renderChart("unattributed", u.hourly_buckets || []);
++  }
++
+   // Shared identities note — counts are non-additive across projects.
+   var note = document.getElementById("shared-note");
+   var shared = data && data.shared_agent_ids;
+@@ -261,6 +283,20 @@ function renderUsage(data) {
+     tr.appendChild(cell(flags.length ? flags.join("; ") : "—", flags.length ? null : "na"));
+     body.appendChild(tr);
+   });
++
++  // Render explicit unattributed usage metrics in the #unattributed card
++  var uUsage = (projects && projects.unattributed) || (data && data.unattributed) || null;
++  if (uUsage) {
++    var ev = fmtInt(uUsage.event_count);
++    var fi = fmtTokens(uUsage.total_input_tokens);
++    var fo = fmtTokens(uUsage.total_output_tokens);
++    var tokText = (fi.text === "n/a" && fo.text === "n/a") ? "n/a" : (fi.text + " in / " + fo.text + " out");
++    setCell("events-unattributed", ev);
++    setCell("tokens-unattributed", { text: tokText, cls: (fi.cls === "na" && fo.cls === "na") ? "na" : "" });
++  } else {
++    setCell("events-unattributed", { text: "n/a", cls: "na" });
++    setCell("tokens-unattributed", { text: "n/a", cls: "na" });
++  }
+ }
+ 
+ function renderFeatures(data) {
+@@ -322,16 +358,20 @@ function setRefreshStatus(text) {
+ 
+ function loadAll(asOfISO) {
+   setRefreshStatus("loading…");
+-  var hourlyURL = "/api/hourly" + (asOfISO ? "?as_of=" + encodeURIComponent(asOfISO) : "");
++  var queryParam = asOfISO ? "?as_of=" + encodeURIComponent(asOfISO) : "";
++  var hourlyURL = "/api/hourly" + queryParam;
++  var usageURL = "/api/usage" + queryParam;
++  var featuresURL = "/api/features" + queryParam;
++
+   var hourlyP = getJSON(hourlyURL).then(
+     function (d) { return { ok: true, data: d }; },
+     function (e) { return { ok: false, error: e }; }
+   );
+-  var usageP = getJSON("/api/usage").then(
++  var usageP = getJSON(usageURL).then(
+     function (d) { return { ok: true, data: d }; },
+     function (e) { return { ok: false, error: e }; }
+   );
+-  var featuresP = getJSON("/api/features").then(
++  var featuresP = getJSON(featuresURL).then(
+     function (d) { return { ok: true, data: d }; },
+     function (e) { return { ok: false, error: e }; }
+   );
+diff --git a/static/index.html b/static/index.html
+index a1687be..7547ac9 100644
+--- a/static/index.html
++++ b/static/index.html
+@@ -26,7 +26,7 @@
+       <button id="refresh-btn" type="button">Refresh</button>
+       <span id="refresh-status" class="muted" role="status">idle</span>
+     </div>
+-    <p id="asof-help" class="muted small">Leave blank for server time. When set, the client passes <code>?as_of=&lt;ISO8601&gt;</code> to <code>/api/hourly</code>.</p>
++    <p id="asof-help" class="muted small">Leave blank for server time. When set, the client passes <code>?as_of=&lt;ISO8601&gt;</code> to <code>/api/hourly</code>, <code>/api/usage</code>, and <code>/api/features</code>.</p>
+     <p id="shared-note" class="note">Shared-agent accounting: counts are non-additive across projects (loading&hellip;).</p>
+     <p id="hourly-error" class="error-banner" hidden></p>
+   </section>
+@@ -96,6 +96,25 @@
+         </div>
+         <p class="muted small axis-note">Bars show agent-hours per half-open bucket <code>[start, end)</code> in UTC. Hover/tap a bar for exact bounds.</p>
+       </section>
++
++      <section class="card card-unattributed" id="unattributed" aria-label="Unattributed platform telemetry">
++        <h2>Unattributed / Platform Telemetry</h2>
++        <p class="proj-sub"><code>unattributed</code> <span id="status-unattributed" class="badge badge-unknown">unscoped/platform</span> <span id="unknown-unattributed" class="badge badge-unknown" hidden>unknown</span></p>
++        <p class="unattrib-warning muted small">Unscoped/platform telemetry (unknown origin, never counted as productive agent work).</p>
++        <dl class="metrics">
++          <div><dt>Unique agents</dt><dd id="unique-unattributed">loading&hellip;</dd></div>
++          <div><dt>Total agent-hours</dt><dd id="hours-unattributed">loading&hellip;</dd></div>
++          <div><dt>Coverage</dt><dd id="coverage-unattributed">loading&hellip;</dd></div>
++          <div><dt>Status</dt><dd id="telemetry-status-unattributed">loading&hellip;</dd></div>
++          <div><dt>Usage events</dt><dd id="events-unattributed">loading&hellip;</dd></div>
++          <div><dt>Tokens (in / out)</dt><dd id="tokens-unattributed">loading&hellip;</dd></div>
++        </dl>
++        <h3>Hourly buckets (UTC, 24 &times; 1h)</h3>
++        <div class="chart" id="chart-unattributed" aria-label="Hourly bar chart for unattributed">
++          <p class="muted">chart loading&hellip;</p>
++        </div>
++        <p class="muted small axis-note">Bars show agent-hours per half-open bucket <code>[start, end)</code> in UTC. Hover/tap a bar for exact bounds.</p>
++      </section>
+     </div>
+ 
+     <section class="panel" id="usage-section" aria-label="Usage accounting">
+diff --git a/tests/test_server.py b/tests/test_server.py
+index 7d99455..f3f4605 100644
+--- a/tests/test_server.py
++++ b/tests/test_server.py
+@@ -140,6 +140,65 @@ class TestDashboardServer(unittest.TestCase):
+         self.assertIn("projects", payload)
+         self.assertIn("coverage_gaps", payload)
+ 
++    def test_usage_honors_as_of(self):
++        status, _headers, data = self._get("/api/usage?as_of=2026-10-04T12:00:00Z")
++        self.assertEqual(status, 200)
++        payload = json.loads(data.decode("utf-8"))
++        self.assertTrue(payload["window_end"].startswith("2026-10-04T12:00:00"))
++        self.assertTrue(payload["window_start"].startswith("2026-10-03T12:00:00"))
++        self.assertIn("agent-dashboard", payload["projects"])
++
++        # Query with as_of before the event timestamp excludes the event
++        status_old, _headers_old, data_old = self._get("/api/usage?as_of=2026-10-03T10:00:00Z")
++        self.assertEqual(status_old, 200)
++        payload_old = json.loads(data_old.decode("utf-8"))
++        self.assertTrue(payload_old["unknown"])
++        self.assertEqual(len(payload_old["projects"]), 0)
++
++    def test_usage_invalid_as_of(self):
++        req = urllib.request.Request(self.base + "/api/usage?as_of=not-a-date")
++        with self.assertRaises(urllib.error.HTTPError) as ctx:
++            urllib.request.urlopen(req)
++        self.assertEqual(ctx.exception.code, 400)
++
++    def test_features_honors_as_of(self):
++        status, _headers, data = self._get("/api/features?as_of=2026-10-04T12:00:00Z")
++        self.assertEqual(status, 200)
++        payload = json.loads(data.decode("utf-8"))
++        self.assertTrue(payload["window_end"].startswith("2026-10-04T12:00:00"))
++        self.assertTrue(payload["window_start"].startswith("2026-10-03T12:00:00"))
++
++    def test_features_invalid_as_of(self):
++        req = urllib.request.Request(self.base + "/api/features?as_of=not-a-date")
++        with self.assertRaises(urllib.error.HTTPError) as ctx:
++            urllib.request.urlopen(req)
++        self.assertEqual(ctx.exception.code, 400)
++
++    def test_html_root_contains_unattributed_card(self):
++        status, _headers, data = self._get("/")
++        self.assertEqual(status, 200)
++        self.assertIn(b'id="unattributed"', data)
++        self.assertIn(b'aria-label="Unattributed platform telemetry"', data)
++        self.assertIn(b'id="chart-unattributed"', data)
++        self.assertIn(b'id="unique-unattributed"', data)
++        self.assertIn(b'id="hours-unattributed"', data)
++        self.assertIn(b'id="coverage-unattributed"', data)
++        self.assertIn(b'id="telemetry-status-unattributed"', data)
++        self.assertIn(b"Unscoped/platform telemetry", data)
++        self.assertIn(b"never counted as productive agent work", data)
++
++    def test_unattributed_payload_key_exposed(self):
++        status, _headers, data = self._get("/api/hourly?as_of=2026-10-04T12:00:00Z")
++        self.assertEqual(status, 200)
++        payload = json.loads(data.decode("utf-8"))
++        # Must expose either top-level unattributed or projects.unattributed
++        self.assertTrue("unattributed" in payload or "unattributed" in payload.get("projects", {}))
++
++        status_u, _headers_u, data_u = self._get("/api/usage?as_of=2026-10-04T12:00:00Z")
++        self.assertEqual(status_u, 200)
++        payload_u = json.loads(data_u.decode("utf-8"))
++        self.assertTrue("unattributed" in payload_u or "unattributed" in payload_u.get("projects", {}))
++
+     def test_missing_source_coverage_gap(self):
+         old = os.environ.get("AGENT_SPANS_PATH")
+         os.environ["AGENT_SPANS_PATH"] = os.path.join(SCRATCH, "missing-spans.json")

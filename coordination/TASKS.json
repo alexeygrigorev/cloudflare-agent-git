@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T06:02:34.645748+00:00",
+  "updated_at": "2026-10-05T06:10:59.046088+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -3085,9 +3085,9 @@
       "project_id": "agent-dashboard",
       "team_id": "agent-dashboard",
       "owner_tag": "antigravity-head",
-      "status": "in_progress",
-      "updated_at": "2026-10-05T06:02:34.645748+00:00",
-      "next_action": "Architect06 constructing isolated dashboard visibility & as_of window alignment patch in disposable testbed .local/scratch/dashboard-c2372/repo atop 249d086; nonauthor review by reviewer37/259",
+      "status": "done",
+      "updated_at": "2026-10-05T06:10:59.046088+00:00",
+      "next_action": "Handoff patch to agent-dashboard-head for integration into working branch (zero canonical writes performed)",
       "acceptance": "Explicit unattributed rollup rendered in UI (unknown origin, never counted as productive agent work); synchronized as_of passed to /api/hourly, /api/usage, /api/features; server handles as_of query param; original 48 tests PASS + new regression tests PASS; zero writes to canonical agent-dashboard",
       "blocked_on": [],
       "executor_ids": [
@@ -3105,8 +3105,8 @@
       "commit": null,
       "pr_url": null,
       "tests": "tests/test_server.py",
-      "reviewer": null,
-      "accepted_at": null,
+      "reviewer": "reviewer259",
+      "accepted_at": "2026-10-05T06:10:59.046088+00:00",
       "feature_id": null
     },
     {
@@ -3114,9 +3114,9 @@
       "project_id": "agent-coordination",
       "team_id": "agent-coordination",
       "owner_tag": "antigravity-head",
-      "status": "in_progress",
-      "updated_at": "2026-10-05T06:02:34.645748+00:00",
-      "next_action": "d698 conducting narrow headless identity resolution probe (verifying C2371 aplexer exit 127 fail-closed) and end-to-end FileBus worker receive/reply cycle under registered worker credentials",
+      "status": "done",
+      "updated_at": "2026-10-05T06:10:59.046088+00:00",
+      "next_action": "C2372 autonomous FileBus worker receive/reply cycle and C2371 aplexer exit 127 fail-closed isolation certified",
       "acceptance": "Child scope proves aplexer fails closed (exit 127, zero parent mailbox exposure); worker enrolls with own credentials; task sent, acked, executed, and replied over FileBus with verified payload digest; zero native aplexer CLI use",
       "blocked_on": [],
       "executor_ids": [
@@ -3132,8 +3132,8 @@
       "commit": null,
       "pr_url": null,
       "tests": "tests/test_launcher_bus_bridge.py",
-      "reviewer": null,
-      "accepted_at": null,
+      "reviewer": "reviewer37",
+      "accepted_at": "2026-10-05T06:10:59.046088+00:00",
       "feature_id": null
     }
   ]
