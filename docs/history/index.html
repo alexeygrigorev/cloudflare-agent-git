@@ -1,0 +1,862 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hourly telemetry &amp; tasks · Agent Branches</title><meta name="description" content="Sanitized 24-hour telemetry, hourly occupancy charts, and active product delivery tracking."><meta name="theme-color" content="#2455ed"><meta name="build-commit" content="80681426edec5a07bc67c65abaa906e8e362e0a6"><link rel="stylesheet" href="/cloudflare-agent-git/assets/site.css"><link rel="alternate" type="application/rss+xml" title="Agent Branches journal" href="/cloudflare-agent-git/feed.xml"><link rel="canonical" href="https://alexeygrigorev.com/cloudflare-agent-git/history/"><script src="/cloudflare-agent-git/assets/signup.js" defer></script></head><body><div class="grain" aria-hidden="true"></div><div class="frame"><a class="skip" href="#main">Skip to content</a><header class="site-header"><div class="header-top"><a class="header-brand" href="/cloudflare-agent-git/"><span class="header-logo" aria-hidden="true"><svg viewBox="0 0 64 64" width="100%" height="100%" aria-hidden="true"><defs><filter id="mcircler" x="-15%" y="-15%" width="130%" height="130%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="3" result="t"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="t" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="d"></feDisplacementMap><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="7" result="n"></feTurbulence><feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -2.2 0.72" result="w"></feColorMatrix><feComposite in="w" in2="d" operator="in" result="ws"></feComposite><feMerge><feMergeNode in="d"></feMergeNode><feMergeNode in="ws"></feMergeNode></feMerge></filter><filter id="mcircles" x="-10%" y="-30%" width="120%" height="160%"><feTurbulence type="fractalNoise" baseFrequency="1.3" numOctaves="1" seed="2" result="n"></feTurbulence><feColorMatrix in="n" type="matrix" values="0 0 0 0 .09  0 0 0 0 .09  0 0 0 0 .1  4.5 0 0 0 -1.9" result="a"></feColorMatrix><feComposite in="a" in2="SourceGraphic" operator="in"></feComposite></filter><radialGradient id="mcircleg"><stop offset="0%" stop-color="#000" stop-opacity="1"></stop><stop offset="100%" stop-color="#000" stop-opacity="0"></stop></radialGradient></defs><g filter="url(#mcircler)"><g><line x1="21.52" y1="31.700000000000003" x2="19" y2="49.900000000000006" stroke="#1C2027" stroke-width="2.1" stroke-linecap="round"></line><line x1="30.48" y1="31.700000000000003" x2="31.88" y2="49.900000000000006" stroke="#1C2027" stroke-width="2.1" stroke-linecap="round"></line><circle cx="26" cy="24" r="14" fill="#2455ED"></circle><circle cx="22.64" cy="23.3" r="1.54" fill="#fff"></circle><circle cx="29.36" cy="23.3" r="1.54" fill="#fff"></circle></g></g></svg></span><span class="header-title">Agent Branches</span></a></div><nav class="site-nav" aria-label="Main navigation"><a href="/cloudflare-agent-git/">Journal</a><a href="/cloudflare-agent-git/projects/">Hypotheses</a><a href="/cloudflare-agent-git/checklist/">Checklist</a><a href="/cloudflare-agent-git/daily/2026-10-05/">Daily report</a><a href="/cloudflare-agent-git/reports/">Field notes</a><a aria-current="page" href="/cloudflare-agent-git/history/">Hourly history</a><a href="/cloudflare-agent-git/research/">Library</a><a href="/cloudflare-agent-git/experiment/">About</a></nav></header><main id="main" class="page page-wide">
+    <div class="narrow">
+      <header class="page-intro">
+        <div class="mono-meta">
+          <span>WINDOW: <span class="ink">2026-10-04T07:00:00Z &ndash; 2026-10-05T07:00:00Z</span></span>
+          <span>&middot;</span>
+          <span>DURATION: <span class="ink">24.0h (20 observed)</span></span>
+        </div>
+        <h1>Telemetry &amp; Task Tracker</h1>
+        <p class="intro-deck">
+          Sanitized 24-hour resource attribution, hourly occupancy charts, and active delivery tracking across the four product teams.
+        </p>
+      </header>
+
+      
+    <div class="epistemic-callout">
+      <div class="callout-badge">EPISTEMIC BOUNDARIES &amp; MEASUREMENT METHOD</div>
+      <p class="callout-text">
+        <strong>Strict distinction:</strong> Session presence (process running or pane open) is <em>never</em> treated as verified productive work.
+        Sampled working hours reflect only periodic polling hooks where active subagents explicitly reported status.
+        The first four hours (09:00–13:00 Berlin / 07:00–11:00 UTC) are labeled <strong>Unobserved</strong> because the telemetry collector was launched at 13:00 CEST.
+        Token numbers reflect read-only SQLite audits of competition repositories; non-competition sessions and uninstrumented CLI executions are strictly excluded.
+      </p>
+    </div>
+    
+      
+    <div class="kpi-grid">
+      
+    <div class="kpi-card is-highlight">
+      <span class="kpi-num">1,086,844</span>
+      <span class="kpi-label">Measured Tokens</span>
+      <span class="kpi-note">Audited across 37 completions in Dashboard &amp; Coordination</span>
+    </div>
+    
+      
+    <div class="kpi-card">
+      <span class="kpi-num">20 / 24</span>
+      <span class="kpi-label">Observed Hours</span>
+      <span class="kpi-note">4 hours unobserved before collector launch; 20 fully sampled</span>
+    </div>
+    
+      
+    <div class="kpi-card">
+      <span class="kpi-num">12.63 h</span>
+      <span class="kpi-label">Sampled Working Time</span>
+      <span class="kpi-note">Across all teams; branches 12.56h, dashboard 0.07h</span>
+    </div>
+    
+      
+    <div class="kpi-card">
+      <span class="kpi-num">4 Teams</span>
+      <span class="kpi-label">Active Products</span>
+      <span class="kpi-note">Branches, Dashboard, Quota Launcher, Coordination</span>
+    </div>
+    
+    </div>
+    
+      
+    <section class="telemetry-chart-section">
+      <div class="section-head">
+        <h2>Hourly Activity &amp; Occupancy (Preceding 24h)</h2>
+        <p>Times shown in Europe/Berlin (CEST) with UTC mapping in the ledger below</p>
+      </div>
+      <div class="chart-wrapper">
+        <svg viewBox="0 0 960 240" class="telemetry-chart-svg" role="img" aria-label="Hourly agent presence and working hours chart for the 24-hour window"><line x1="60" y1="196.0" x2="936" y2="196.0" stroke="#DADCD9" stroke-width="1" stroke-dasharray="2,2"/><text x="52" y="200.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#656A73" text-anchor="end">0.0h</text><line x1="60" y1="140.0" x2="936" y2="140.0" stroke="#DADCD9" stroke-width="1" stroke-dasharray="2,2"/><text x="52" y="144.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#656A73" text-anchor="end">1.5h</text><line x1="60" y1="84.0" x2="936" y2="84.0" stroke="#DADCD9" stroke-width="1" stroke-dasharray="2,2"/><text x="52" y="88.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#656A73" text-anchor="end">3.0h</text><line x1="60" y1="28.0" x2="936" y2="28.0" stroke="#DADCD9" stroke-width="1" stroke-dasharray="2,2"/><text x="52" y="32.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#656A73" text-anchor="end">4.5h</text><rect x="62.0" y="28.0" width="32.5" height="168.0" fill="#F4F5F0" stroke="#DADCD9" stroke-width="1" stroke-dasharray="3,3"/><text x="78.2" y="226.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#1C2027" text-anchor="middle">09:00</text><rect x="98.5" y="28.0" width="32.5" height="168.0" fill="#F4F5F0" stroke="#DADCD9" stroke-width="1" stroke-dasharray="3,3"/><text x="133.0" y="44.0" font-family="Arial,sans-serif" font-size="11" fill="#EF7134" font-weight="600" text-anchor="middle">Pre-collector (Unobserved)</text><rect x="135.0" y="28.0" width="32.5" height="168.0" fill="#F4F5F0" stroke="#DADCD9" stroke-width="1" stroke-dasharray="3,3"/><rect x="171.5" y="28.0" width="32.5" height="168.0" fill="#F4F5F0" stroke="#DADCD9" stroke-width="1" stroke-dasharray="3,3"/><text x="187.8" y="226.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#1C2027" text-anchor="middle">12:00</text><rect x="209.0" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="210.0" y="163.9" width="28.5" height="32.1" fill="#2455ED" rx="1"/><rect x="245.5" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="246.5" y="181.2" width="28.5" height="14.8" fill="#2455ED" rx="1"/><rect x="282.0" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="283.0" y="168.8" width="28.5" height="27.2" fill="#2455ED" rx="1"/><text x="297.2" y="226.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#1C2027" text-anchor="middle">15:00</text><rect x="318.5" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="319.5" y="161.2" width="28.5" height="34.8" fill="#2455ED" rx="1"/><rect x="355.0" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="356.0" y="163.7" width="28.5" height="32.3" fill="#2455ED" rx="1"/><rect x="391.5" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="392.5" y="193.0" width="28.5" height="3.0" fill="#2455ED" rx="1"/><text x="406.8" y="226.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#1C2027" text-anchor="middle">18:00</text><rect x="428.0" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="464.5" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="501.0" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><text x="516.2" y="226.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#1C2027" text-anchor="middle">21:00</text><rect x="537.5" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="538.5" y="172.1" width="28.5" height="23.9" fill="#2455ED" rx="1"/><rect x="574.0" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="575.0" y="163.7" width="28.5" height="32.3" fill="#2455ED" rx="1"/><rect x="610.5" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="611.5" y="158.0" width="28.5" height="38.0" fill="#2455ED" rx="1"/><text x="625.8" y="226.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#1C2027" text-anchor="middle">00:00</text><rect x="647.0" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="648.0" y="175.4" width="28.5" height="20.6" fill="#2455ED" rx="1"/><rect x="683.5" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="684.5" y="159.5" width="28.5" height="36.5" fill="#2455ED" rx="1"/><rect x="720.0" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="721.0" y="167.3" width="28.5" height="28.7" fill="#2455ED" rx="1"/><text x="735.2" y="226.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#1C2027" text-anchor="middle">03:00</text><rect x="756.5" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="757.5" y="158.9" width="28.5" height="37.1" fill="#2455ED" rx="1"/><rect x="793.0" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="794.0" y="160.8" width="28.5" height="35.2" fill="#2455ED" rx="1"/><rect x="829.5" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="830.5" y="175.9" width="28.5" height="20.1" fill="#2455ED" rx="1"/><text x="844.8" y="226.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#1C2027" text-anchor="middle">06:00</text><rect x="866.0" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="867.0" y="157.1" width="28.5" height="38.9" fill="#2455ED" rx="1"/><rect x="902.5" y="28.0" width="30.5" height="168.0" fill="#E5E8EB" rx="1"/><rect x="903.5" y="180.1" width="28.5" height="15.9" fill="#2455ED" rx="1"/><text x="917.8" y="226.0" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" fill="#1C2027" text-anchor="middle">08:00</text><g transform="translate(60, 12)"><rect x="0" y="0" width="12" height="12" fill="#2455ED"/><text x="16" y="10" font-family="Arial,sans-serif" font-size="12" fill="#1C2027">Sampled Working Hours (Reported Status)</text><rect x="290" y="0" width="12" height="12" fill="#E5E8EB"/><text x="306" y="10" font-family="Arial,sans-serif" font-size="12" fill="#1C2027">Session Presence Hours (Open Sessions)</text><rect x="580" y="0" width="12" height="12" fill="#F4F5F0" stroke="#DADCD9" stroke-dasharray="2,2"/><text x="596" y="10" font-family="Arial,sans-serif" font-size="12" fill="#656A73">Unobserved Interval (Pre-Collector)</text></g></svg>
+      </div>
+    </section>
+    
+      
+    <section class="telemetry-table-section">
+      <div class="section-head">
+        <h2>24-Hour Telemetry Ledger</h2>
+        <p>Complete 24 half-open buckets: Berlin time (CEST) and UTC offsets</p>
+      </div>
+      <div class="table-responsive">
+        <table class="telemetry-table">
+          <thead>
+            <tr>
+              <th>Time Window</th>
+              <th>Agent Branches</th>
+              <th>Agent Dashboard</th>
+              <th>Quota Launcher</th>
+              <th>Coordination</th>
+              <th>Tokens</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr class="row-unobserved">
+              <td class="col-time">2026-10-04 09:00–10:00 CEST<div class="sub-utc">07:00:00–08:00:00 UTC</div></td>
+              <td colspan="5" class="cell-unobserved">
+                <span class="badge-unobserved">UNOBSERVED</span> Telemetry collector was not running before 13:00 CEST
+              </td>
+            </tr>
+            
+            <tr class="row-unobserved">
+              <td class="col-time">2026-10-04 10:00–11:00 CEST<div class="sub-utc">08:00:00–09:00:00 UTC</div></td>
+              <td colspan="5" class="cell-unobserved">
+                <span class="badge-unobserved">UNOBSERVED</span> Telemetry collector was not running before 13:00 CEST
+              </td>
+            </tr>
+            
+            <tr class="row-unobserved">
+              <td class="col-time">2026-10-04 11:00–12:00 CEST<div class="sub-utc">09:00:00–10:00:00 UTC</div></td>
+              <td colspan="5" class="cell-unobserved">
+                <span class="badge-unobserved">UNOBSERVED</span> Telemetry collector was not running before 13:00 CEST
+              </td>
+            </tr>
+            
+            <tr class="row-unobserved">
+              <td class="col-time">2026-10-04 12:00–13:00 CEST<div class="sub-utc">10:00:00–11:00:00 UTC</div></td>
+              <td colspan="5" class="cell-unobserved">
+                <span class="badge-unobserved">UNOBSERVED</span> Telemetry collector was not running before 13:00 CEST
+              </td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>13:00–14:00</strong><div class="sub-utc">11:00:00–12:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.86h work</span>
+                  <span class="cell-pres">2.51h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">2.02h open</span>
+                  <div class="cell-tok">+680,764 tok</div>
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.69h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">+680,764</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>14:00–15:00</strong><div class="sub-utc">12:00:00–13:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.40h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">1.05h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.01h open</span>
+                  <div class="cell-tok">+406,080 tok</div>
+                </div>
+                </td>
+              <td class="col-tok">+406,080</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>15:00–16:00</strong><div class="sub-utc">13:00:00–14:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.73h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">1.62h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.20h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>16:00–17:00</strong><div class="sub-utc">14:00:00–15:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.93h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">1.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>17:00–18:00</strong><div class="sub-utc">15:00:00–16:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.86h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">1.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>18:00–19:00</strong><div class="sub-utc">16:00:00–17:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.08h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">1.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>19:00–20:00</strong><div class="sub-utc">17:00:00–18:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">1.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>20:00–21:00</strong><div class="sub-utc">18:00:00–19:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">1.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>21:00–22:00</strong><div class="sub-utc">19:00:00–20:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.66h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>22:00–23:00</strong><div class="sub-utc">20:00:00–21:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.64h work</span>
+                  <span class="cell-pres">1.90h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">3.95h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>23:00–00:00</strong><div class="sub-utc">21:00:00–22:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.87h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>00:00–01:00</strong><div class="sub-utc">22:00:00–23:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">1.02h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>01:00–02:00</strong><div class="sub-utc">23:00:00–00:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.55h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>02:00–03:00</strong><div class="sub-utc">00:00:00–01:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.98h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>03:00–04:00</strong><div class="sub-utc">01:00:00–02:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.77h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>04:00–05:00</strong><div class="sub-utc">02:00:00–03:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.99h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>05:00–06:00</strong><div class="sub-utc">03:00:00–04:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.94h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>06:00–07:00</strong><div class="sub-utc">04:00:00–05:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.47h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.07h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>07:00–08:00</strong><div class="sub-utc">05:00:00–06:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">1.04h work</span>
+                  <span class="cell-pres">2.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">4.00h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+            <tr>
+              <td class="col-time"><strong>08:00–09:00</strong><div class="sub-utc">06:00:00–07:00:00 UTC</div></td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.43h work</span>
+                  <span class="cell-pres">1.97h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">3.94h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">3.94h open</span>
+                  
+                </div>
+                </td>
+              <td>
+                <div class="prod-cell">
+                  <span class="cell-work">0.00h work</span>
+                  <span class="cell-pres">0.00h open</span>
+                  
+                </div>
+                </td>
+              <td class="col-tok">—</td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </section>
+    
+      
+    <section class="task-tracker-section">
+      <div class="section-head">
+        <h2>Active Delivery &amp; Task Tracker</h2>
+        <p>Current tasks, responsible project heads, accepted outcomes, and concrete next steps</p>
+      </div>
+
+      <div class="tracker-grid">
+        <!-- Card 1: Agent Branches -->
+        <div class="tracker-card">
+          <div class="tracker-card-head">
+            <span class="tracker-prod-name">Agent Branches</span>
+            <span class="status-badge is-active">ACTIVE LANE</span>
+          </div>
+          <p class="tracker-desc">Git-compatible task branches with optimistic concurrency and pre-merge conflict prevention.</p>
+          <div class="tracker-meta">
+            <div class="meta-row"><span class="meta-label">Head:</span> <span class="meta-val">Claude &amp; Codex principals</span></div>
+            <div class="meta-row"><span class="meta-label">Current Task:</span> <span class="meta-val">Stop-on-push failure handling and 2-agent live warning test</span></div>
+            <div class="meta-row"><span class="meta-label">Today's Result:</span> <span class="meta-val">Feature trial replay; push failure retry bounded; plain Git baseline comparison</span></div>
+            <div class="meta-row"><span class="meta-label">Next Step:</span> <span class="meta-val">Two real concurrent agents writing conflicting files under collision radar</span></div>
+          </div>
+        </div>
+
+        <!-- Card 2: Agent Dashboard -->
+        <div class="tracker-card">
+          <div class="tracker-card-head">
+            <span class="tracker-prod-name">Agent Dashboard</span>
+            <span class="status-badge is-progress">REDESIGN IN PROGRESS</span>
+          </div>
+          <p class="tracker-desc">Cross-project telemetry, agent census, and hourly resource attribution.</p>
+          <div class="tracker-meta">
+            <div class="meta-row"><span class="meta-label">Head:</span> <span class="meta-val">agent-dashboard-head (ZCode delegate assigned)</span></div>
+            <div class="meta-row"><span class="meta-label">Current Task:</span> <span class="meta-val">Usability overhaul: clean visual cards, legible charts/graphs, and mobile layout</span></div>
+            <div class="meta-row"><span class="meta-label">Today's Result:</span> <span class="meta-val">Real-time collector merged (commit 249d086); 24h hourly attribution export created</span></div>
+            <div class="meta-row"><span class="meta-label">Next Step:</span> <span class="meta-val">Rendered browser test of redesigned UI at http://127.0.0.1:8766/</span></div>
+          </div>
+        </div>
+
+        <!-- Card 3: Agent Quota Launcher -->
+        <div class="tracker-card">
+          <div class="tracker-card-head">
+            <span class="tracker-prod-name">Agent Quota Launcher</span>
+            <span class="status-badge is-active">ACTIVE LANE</span>
+          </div>
+          <p class="tracker-desc">Deterministic admission control, provider budget fences, and host isolation.</p>
+          <div class="tracker-meta">
+            <div class="meta-row"><span class="meta-label">Head:</span> <span class="meta-val">quota-launcher-head</span></div>
+            <div class="meta-row"><span class="meta-label">Current Task:</span> <span class="meta-val">Fail-closed duplicate-write prevention &amp; task-scoped worker lifecycle</span></div>
+            <div class="meta-row"><span class="meta-label">Today's Result:</span> <span class="meta-val">61 unit tests passed; bounded Grok review trial completed in 463.92s</span></div>
+            <div class="meta-row"><span class="meta-label">Next Step:</span> <span class="meta-val">Autonomous worker review with authenticated identity &amp; completion exit</span></div>
+          </div>
+        </div>
+
+        <!-- Card 4: Cross-computer Agent Coordination -->
+        <div class="tracker-card">
+          <div class="tracker-card-head">
+            <span class="tracker-prod-name">Cross-computer Coordination</span>
+            <span class="status-badge is-active">ACTIVE LANE</span>
+          </div>
+          <p class="tracker-desc">Multi-host agent communication over outbound SSH and distributed FileBus.</p>
+          <div class="tracker-meta">
+            <div class="meta-row"><span class="meta-label">Head:</span> <span class="meta-val">coordination-head</span></div>
+            <div class="meta-row"><span class="meta-label">Current Task:</span> <span class="meta-val">Two-computer native bidirectional communication &amp; offline queue recovery</span></div>
+            <div class="meta-row"><span class="meta-label">Today's Result:</span> <span class="meta-val">Verified Windows desktop &lt;-&gt; Hetzner server RPC; Cloudflare $5 pricing verified</span></div>
+            <div class="meta-row"><span class="meta-label">Next Step:</span> <span class="meta-val">Offline recovery trial without cloud relay dependency; Windows Python runbook</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tracker-sources">
+        <p class="source-line">
+          <strong>Machine-readable sources:</strong>
+          <a href="/cloudflare-agent-git/assets/data/public_hourly_history.json" target="_blank">Sanitized Hourly Telemetry JSON</a> &middot;
+          <a href="https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/coordination/TASKS.json" target="_blank">Canonical TASKS.json</a> &middot;
+          <a href="https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/coordination/DELIVERY-BACKLOG.json" target="_blank">Delivery Backlog</a>
+        </p>
+      </div>
+    </section>
+    
+    </div>
+    </main><div class="column signup-wrap"><section class="email-signup" aria-labelledby="signup-title"><div class="signup-copy"><h2 id="signup-title">Get experiment updates</h2><p>New findings, failures, and what we build next. Confirm your address before joining the list.</p><p class="signup-detail">Sign up for occasional experiment updates. Read the daily reports in the journal.</p></div><form id="journal-signup" class="signup-form" action="javascript:void(0);" method="dialog" onsubmit="return false;" data-relay-list="https://relay.datatalks.club/api/public/lists/agent-git-lab" data-enabled="true" aria-busy="false"><label for="signup-email">Your email address</label><input id="signup-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="you@example.com" required><label class="signup-consent" for="signup-consent"><input id="signup-consent" name="consent" type="checkbox" required><span>I agree to receive occasional Agent Branches experiment updates by email.</span></label><div class="signup-controls"><button id="signup-submit" class="button" type="submit">Keep me posted<span class="arr" aria-hidden="true">→</span></button></div><p class="signup-detail">Your address is processed by DataTalks.Club Relay for this list. Unsubscribe through the link in an update email. <a href="/cloudflare-agent-git/privacy/">Email privacy</a>.</p><p id="signup-status" class="signup-status" role="status" aria-live="polite" aria-atomic="true" tabindex="-1" hidden></p><noscript><p class="signup-status is-error" style="display:block;margin-top:12px">Email signup requires JavaScript for the confirmation flow. You can follow the <a href="/cloudflare-agent-git/feed.xml">RSS feed</a> without JavaScript.</p></noscript></form></section></div><footer class="site-footer"><!-- built from main @ 80681426edec5a07bc67c65abaa906e8e362e0a6 · site built 2026-10-05 09:08 UTC · evidence up to 2026-10-05 08:43 UTC · latest field note 2026-10-05 07:26 UTC --><div class="footer-inner"><nav class="footer-links" aria-label="Footer"><a href="https://github.com/alexeygrigorev/cloudflare-agent-git">GitHub repository<span class="arr" aria-hidden="true">↗</span></a><a href="/cloudflare-agent-git/research/">Research library</a><a href="/cloudflare-agent-git/feed.xml">RSS feed</a><a href="/cloudflare-agent-git/privacy/">Email privacy</a></nav></div></footer></div></body></html>

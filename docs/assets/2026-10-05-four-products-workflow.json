@@ -1,0 +1,93 @@
+{
+  "title": "Four product lanes and delivery status",
+  "description": "An authentic review task runs between project head and independent reviewer over RPC, while four product lanes maintain distinct delivery statuses.",
+  "style": "editorial",
+  "canvas": {"width": 1160, "height": 430},
+  "layout": {"type": "manual", "card_width": 240, "card_height": 100},
+  "dividers": [
+    {"after_node": "reviewer"}
+  ],
+  "nodes": [
+    {
+      "id": "head",
+      "title": "Project head",
+      "subtitle": "Assigns review tasks",
+      "eyebrow": "COORDINATION",
+      "icon": "robot",
+      "color": "blue",
+      "x": 200,
+      "y": 40,
+      "height": 110
+    },
+    {
+      "id": "reviewer",
+      "title": "Independent reviewer",
+      "subtitle": "Validates negative cases",
+      "eyebrow": "CHALLENGER",
+      "icon": "shield",
+      "color": "purple",
+      "x": 720,
+      "y": 40,
+      "height": 110
+    },
+    {
+      "id": "branches",
+      "title": "Agent Branches",
+      "subtitle": "Internal review tested",
+      "eyebrow": "PRODUCT LANE",
+      "icon": "workflow",
+      "color": "blue",
+      "x": 40,
+      "y": 280
+    },
+    {
+      "id": "bus",
+      "title": "Agent Bus",
+      "subtitle": "Internal review tested",
+      "eyebrow": "PRODUCT LANE",
+      "icon": "message",
+      "color": "purple",
+      "x": 320,
+      "y": 280
+    },
+    {
+      "id": "launcher",
+      "title": "Quota Launcher",
+      "subtitle": "Runtime unverified",
+      "eyebrow": "PRODUCT LANE",
+      "icon": "settings",
+      "color": "amber",
+      "x": 600,
+      "y": 280
+    },
+    {
+      "id": "dashboard",
+      "title": "Agent Dashboard",
+      "subtitle": "Integration pending",
+      "eyebrow": "PRODUCT LANE",
+      "icon": "observability",
+      "color": "gray",
+      "x": 880,
+      "y": 280
+    }
+  ],
+  "edges": [
+    {
+      "from": "head",
+      "to": "reviewer",
+      "from_anchor": "right_top",
+      "to_anchor": "left_top",
+      "label": "RPC task",
+      "color": "purple"
+    },
+    {
+      "from": "reviewer",
+      "to": "head",
+      "from_anchor": "left_bottom",
+      "to_anchor": "right_bottom",
+      "label": "RPC reply",
+      "dashed": true,
+      "color": "purple"
+    }
+  ]
+}

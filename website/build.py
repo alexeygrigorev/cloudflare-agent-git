@@ -18,6 +18,11 @@ from urllib.parse import quote, urlparse
 from xml.etree import ElementTree as ET
 from zoneinfo import ZoneInfo
 
+try:
+    from website.history import history_page
+except ImportError:
+    from history import history_page
+
 ROOT = Path(__file__).resolve().parents[1]
 BASE = '/cloudflare-agent-git'
 REPO = 'https://github.com/alexeygrigorev/cloudflare-agent-git'
@@ -295,7 +300,7 @@ def report_title(path):
     return tidy(heading[1]) if heading else 'Orchestrator check-in'
 
 # ---------------------------------------------------------------- page frame
-NAV = [('Journal', ''), ('Hypotheses', 'projects/'), ('Checklist', 'checklist/'), ('Daily report', 'daily/'), ('Field notes', 'reports/'), ('Library', 'research/'), ('About', 'experiment/')]
+NAV = [('Journal', ''), ('Hypotheses', 'projects/'), ('Checklist', 'checklist/'), ('Daily report', 'daily/'), ('Field notes', 'reports/'), ('Hourly history', 'history/'), ('Library', 'research/'), ('About', 'experiment/')]
 
 def nav_html(route):
     out = []
@@ -704,6 +709,7 @@ def main():
             write(f'reports/page/{p}/', page_title, page_html)
     for rp in REPORTS:
         write('reports/'+rp.stem+'/', report_title(rp), note_page(rp), None, 'article')
+    write('history/', 'Hourly telemetry & tasks', history_page(), 'Sanitized 24-hour telemetry, hourly occupancy charts, and active product delivery tracking.', 'wide')
     write('research/', 'Research library', library_page())
     ideas_title, ideas_body = ideas_page()
     write('ideas/', ideas_title, ideas_body, 'What each of the 20 approaches collected by the agent team would do.', 'article')

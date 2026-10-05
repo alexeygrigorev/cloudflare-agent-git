@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="420" viewBox="0 0 1080 420" role="img" aria-labelledby="title desc">
+  <title id="title">Agent Branches workflow</title>
+  <desc id="desc">Each coding agent works on its own repository fork with short-lived tokens, while a coordinator tracks tasks and a background checker tests combined branches.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#1c2027" flood-opacity="0.04"/>
+    </filter>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <symbol id="icon-api" viewBox="0 0 24 24">
+        <path d="m8 5-5 7 5 7M16 5l5 7-5 7M14 3l-4 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <symbol id="icon-browser" viewBox="0 0 32 22">
+        <rect x="1" y="1.5" width="30" height="19" rx="2.25" fill="none" stroke="currentColor" stroke-width="2.67"/>
+        <path d="M1.5 6.5h29" fill="none" stroke="currentColor" stroke-width="2.67"/>
+        <circle cx="4" cy="4" r=".48" fill="currentColor"/>
+        <circle cx="6.2" cy="4" r=".48" fill="currentColor"/>
+        <circle cx="8.4" cy="4" r=".48" fill="currentColor"/>
+        <rect x="12" y="3.3" width="15" height="1.5" rx=".75" fill="currentColor" opacity=".35"/>
+      </symbol>
+    <symbol id="icon-robot" viewBox="0 0 24 24">
+        <path d="M12 5V2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="12" cy="2.5" r="1" fill="currentColor"/>
+        <rect x="4" y="5" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M4 10H2.5v5H4M20 10h1.5v5H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="11" r="1.3" fill="currentColor"/>
+        <circle cx="15" cy="11" r="1.3" fill="currentColor"/>
+        <path d="M8.5 16h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </symbol>
+    <symbol id="icon-workflow" viewBox="0 0 24 24">
+        <path d="M4 11A8.5 8.5 0 0 1 19.5 8.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M19.5 4.5v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M20 13A8.5 8.5 0 0 1 4.5 15.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M4.5 19.5v-4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <style>
+      text { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1c2027; }
+      symbol [stroke] { vector-effect: non-scaling-stroke; }
+      .node rect { stroke-width: 2; }
+      .node-boundary rect { stroke-width: 2; stroke-dasharray: 8 8; }
+      .boundary-title { font-size: 16px; font-weight: 750; text-anchor: start; }
+      .node-title { font-weight: 750; text-anchor: middle; }
+      .node-title.icon-copy { text-anchor: start; }
+      .node-subtitle { font-weight: 500; fill: #1c2027; text-anchor: middle; }
+      .eyebrow { font-weight: 750; letter-spacing: 1px; fill: #1c2027; text-anchor: middle; }
+      .mention-icon { font-size: 27px; font-weight: 750; text-anchor: middle; }
+      .standalone-mention { font-size: 52px; font-weight: 750; text-anchor: middle; }
+      .icon-node-title { font-size: 16px; font-weight: 750; text-anchor: middle; }
+      .edge { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .edge-label rect { stroke-width: 2; }
+      .edge-label text { font-size: 14px; font-weight: 750; text-anchor: middle; dominant-baseline: central; }
+      .divider { stroke: #1c2027; stroke-width: 2; stroke-dasharray: 6 8; stroke-linecap: round; }
+      .center-annotation { fill: #fcfcf8; stroke: none; }
+      .center-title { font-weight: 800; letter-spacing: 0.08em; fill: #1c2027; text-anchor: middle; }
+      .center-detail { font-weight: 600; fill: #1c2027; text-anchor: middle; }
+    </style>
+  </defs>
+  <rect width="1080" height="420" fill="#fcfcf8"/>
+
+  <path class="edge" d="M260 110H345V200H430" stroke="#1c2027" marker-end="url(#arrow-gray)"/>
+  <g class="edge-label" transform="translate(345 155)">
+    <rect x="-31.21" y="-16" width="62.41" height="32" rx="16.0" fill="#fcfcf8" stroke="#1c2027"/>
+    <text fill="#1c2027">Push</text>
+  </g>
+  <path class="edge" d="M260 290H345V200H430" stroke="#1c2027" marker-end="url(#arrow-gray)"/>
+  <g class="edge-label" transform="translate(345 245)">
+    <rect x="-31.21" y="-16" width="62.41" height="32" rx="16.0" fill="#fcfcf8" stroke="#1c2027"/>
+    <text fill="#1c2027">Push</text>
+  </g>
+  <path class="edge" d="M540 150L540 93.33L820 93.33" stroke="#ef7134" marker-end="url(#arrow-amber)"/>
+  <g class="edge-label" transform="translate(540 93.33)">
+    <rect x="-56.82" y="-16" width="113.65" height="32" rx="16.0" fill="#fcfcf8" stroke="#ef7134"/>
+    <text fill="#ef7134">Test merge</text>
+  </g>
+  <path class="edge" d="M820 126.67H735V200H650" stroke="#ef7134" stroke-dasharray="8 8" marker-end="url(#arrow-amber)"/>
+  <g class="edge-label" transform="translate(735 163.33)">
+    <rect x="-49.45" y="-16" width="98.9" height="32" rx="16.0" fill="#fcfcf8" stroke="#ef7134"/>
+    <text fill="#ef7134">Warnings</text>
+  </g>
+  <path class="edge" d="M650 200H735V290H820" stroke="#1c2027" marker-end="url(#arrow-gray)"/>
+  <g class="edge-label" transform="translate(735 245)">
+    <rect x="-37.2" y="-16" width="74.4" height="32" rx="16.0" fill="#fcfcf8" stroke="#1c2027"/>
+    <text fill="#1c2027">Status</text>
+  </g>
+
+  <g class="node node-blue" transform="translate(40 60)" filter="url(#shadow)">
+    <rect width="220" height="100" rx="18" fill="#fcfcf8" stroke="#2455ed"/>
+    <use href="#icon-robot" x="16" y="20" width="34" height="34" color="#2455ed"/>
+    <text class="node-title icon-copy" x="62" y="42.4" font-size="15">Agent Alpha</text>
+    <text class="node-subtitle" x="110" y="75" font-size="16">Own repository fork</text>
+  </g>
+  <g class="node node-blue" transform="translate(40 240)" filter="url(#shadow)">
+    <rect width="220" height="100" rx="18" fill="#fcfcf8" stroke="#2455ed"/>
+    <use href="#icon-robot" x="16" y="20" width="34" height="34" color="#2455ed"/>
+    <text class="node-title icon-copy" x="62" y="42.4" font-size="15">Agent Beta</text>
+    <text class="node-subtitle" x="110" y="75" font-size="16">Own repository fork</text>
+  </g>
+  <g class="node node-blue" transform="translate(430 150)" filter="url(#shadow)">
+    <rect width="220" height="100" rx="18" fill="#fcfcf8" stroke="#2455ed"/>
+    <use href="#icon-api" x="16" y="9" width="34" height="34" color="#2455ed"/>
+    <text class="node-title icon-copy" x="62" y="31.4" font-size="15">Coordinator</text>
+    <text class="node-subtitle" x="110" y="64" font-size="16">Tracks branches and</text>
+    <text class="node-subtitle" x="110" y="86" font-size="16">tasks</text>
+  </g>
+  <g class="node node-amber" transform="translate(820 60)" filter="url(#shadow)">
+    <rect width="220" height="100" rx="18" fill="#fcfcf8" stroke="#ef7134"/>
+    <use href="#icon-workflow" x="16" y="9" width="34" height="34" color="#ef7134"/>
+    <text class="node-title icon-copy" x="62" y="31.4" font-size="15">Conflict checker</text>
+    <text class="node-subtitle" x="110" y="64" font-size="16">Test-merges and runs</text>
+    <text class="node-subtitle" x="110" y="86" font-size="16">tests</text>
+  </g>
+  <g class="node node-gray" transform="translate(820 240)" filter="url(#shadow)">
+    <rect width="220" height="100" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <use href="#icon-browser" x="16" y="9" width="34" height="34" color="#1c2027"/>
+    <text class="node-title icon-copy" x="62" y="31.4" font-size="15">Review page</text>
+    <text class="node-subtitle" x="110" y="64" font-size="16">Shows warnings and</text>
+    <text class="node-subtitle" x="110" y="86" font-size="16">status</text>
+  </g>
+</svg>
