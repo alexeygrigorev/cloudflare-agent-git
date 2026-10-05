@@ -5884,7 +5884,9 @@
         "96221610-7294-4c60-8dcc-cb823a7de599",
         "8168fd9d-012e-457d-8129-9c3ae04b67d6",
         "74e8f336-1f29-45cb-8fe7-2da107dc1c6d",
-        "4e0af192-73e5-4425-a729-b8c158dc49e9"
+        "4e0af192-73e5-4425-a729-b8c158dc49e9",
+        "d3f2bcf1-c14e-4834-aa9f-b8b533c4bdd0",
+        "c282a378-8ba8-4637-8e80-fb671100f876"
       ],
       "evidence_paths": [
         "research/codex/continuity-scheduler-design-20261005.md",
@@ -5897,15 +5899,19 @@
         "research/antigravity/reviews/REV-SUPERVISOR-DRAIN-C2686-20261005.md",
         "research/antigravity/reviews/REV-AB-SYNC-AUDIT-01-20261005.md",
         "research/antigravity/reviews/REV-COORD-CROSS-HOST-AUDIT-01-20261005.md",
+        "research/antigravity/reviews/REV-DASH-HOURLY-COVERAGE-01-20261005.md",
+        "research/antigravity/reviews/REV-QL-CAPACITY-GOVERNOR-AUDIT-01-20261005.md",
         ".local/scratch/fleet_work/trial-a-evidence.json",
         ".local/scratch/fleet_work/trial-b-evidence.json",
         ".local/scratch/fleet_work/ab-sync-audit-01.json",
-        ".local/scratch/fleet_work/coord-cross-host-audit-01.json"
+        ".local/scratch/fleet_work/coord-cross-host-audit-01.json",
+        ".local/scratch/fleet_work/dash-hourly-coverage-01.json",
+        ".local/scratch/fleet_work/ql-capacity-governor-audit-01.json"
       ],
-      "accepted_partial": "Launcher a91aaea6a736629d7e277aedc43b783bfcbbfc99 (197 tests, distinct review ACCEPT); live trial A->B auto-refill verified; supervisor bridge 90 tests, distinct reviewer ACCEPT/90 tests; daemon restarted and active. Full runtime continuous queue drain and failover verified via ab-sync-clean-audit-01 and coord-cross-host-audit-01 autonomous executions.",
+      "accepted_partial": "Launcher a91aaea6a736629d7e277aedc43b783bfcbbfc99 (197 tests, distinct review ACCEPT); live trial A->B auto-refill verified; supervisor bridge 90 tests, distinct reviewer ACCEPT/90 tests; daemon restarted and active. Full runtime continuous queue drain and failover verified via 4 live product tasks across all 4 products: ab-sync-clean-audit-01, coord-cross-host-audit-01, dash-hourly-coverage-01, and ql-capacity-governor-audit-01.",
       "acceptance_status": "accepted",
-      "runtime_verification": "supervision.service running under systemd (f18b4d39). Autonomous 60s drain loop dispatched ab-sync-clean-audit-01 and coord-cross-host-audit-01 under app.slice with gemini-3.1-pro-high (MemoryMax=768M, TasksMax=100, exit 0). Genuine first model tools view_file, pytest tests passed (11/11 for ab-sync, 9/9 for coord-audit), artifacts written. Distinct independent reviews ACCEPTED (REV-AB-SYNC-AUDIT-01-20261005.md, REV-COORD-CROSS-HOST-AUDIT-01-20261005.md). Both accepted in canonical store. Subsequent dependent product tasks dash-hourly-coverage-01 and ql-capacity-governor-audit-01 enqueued and autonomously draining.",
-      "next_action": "Maintain persistent autonomous drain cycles across candidate databases; continue queue intake for active products with declared model_requirements.",
+      "runtime_verification": "supervision.service running under systemd (f18b4d39). Autonomous 60s drain loop dispatched all 4 product audit tasks under app.slice with gemini-3.1-pro-high (MemoryMax=768M, TasksMax=100, exit 0). Genuine first model tools, unit tests passed (11/11 for ab-sync, 9/9 for coord-audit, 9/9 for dash-audit, 9/9 for ql-capacity), artifacts written to .local/scratch/fleet_work/. Distinct independent reviews all ACCEPTED (REV-AB-SYNC-AUDIT-01-20261005.md, REV-COORD-CROSS-HOST-AUDIT-01-20261005.md, REV-DASH-HOURLY-COVERAGE-01-20261005.md, REV-QL-CAPACITY-GOVERNOR-AUDIT-01-20261005.md). All 4 tasks accepted in canonical store.",
+      "next_action": "Maintain persistent autonomous drain cycles across candidate databases; continue queue intake for active products with declared model_requirements; complete narrow below-30GiB cleanup task integration.",
       "next_trigger": "Mechanical 60s supervision cycle + aplexer inbox notifications + completion-triggered refill hooks.",
       "blocked_on": []
     }
