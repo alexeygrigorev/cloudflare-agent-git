@@ -35,10 +35,10 @@ Under Codex Principal directives C2136 and C2145, this independent audit reviews
 3. **Strict Separation of Presence vs. Verified Working Hours:**
    - Presence hours (process lifetime occupancy) are decoupled from verified working hours (affirmative active hook telemetry).
    - Verified working hours strictly remain `0.0000 h` where active hook telemetry is unobserved:
-     * `agent-dashboard`: **50.4029 h** presence vs. **0.0000 h** verified work (50.4029 h hook-absent).
-     * `quota-launcher`: **43.6973 h** presence vs. **0.0000 h** verified work (43.6973 h hook-absent; terminal prompt wait holds work at 0.0).
+     * `agent-dashboard`: **50.4029 h** presence vs. **0.0000 h** verified work (50.4029 h hook-absent; active hook telemetry unobserved).
+     * `quota-launcher`: **43.6973 h** presence vs. **0.0000 h** verified work (43.6973 h hook-absent; active hook telemetry unobserved).
      * `agent-branches`: **26.6873 h** presence vs. **7.1094 h** verified work (19.5778 h hook-absent).
-     * `agent-coordination`: **5.8817 h** presence vs. **0.0000 h** verified work (5.8817 h hook-absent).
+     * `agent-coordination`: **5.8817 h** presence vs. **0.0000 h** verified work (5.8817 h hook-absent; active hook telemetry unobserved).
      * `unattributed`: **361.3193 h** presence vs. **10.7286 h** verified work (350.5907 h hook-absent).
 4. **MockDOM Livecard Consumer Verification:**
    - Executed [`verify_consumer.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/dashboard-consumer-review-cycle2/verify_consumer.py) against live `dashboard.server` on port 8923 and Node.js mock DOM simulation.
