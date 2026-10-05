@@ -131,14 +131,14 @@
     {
       "id": "a16-runtime-protocol",
       "name": "Workspaces, execution runtime and coordination repairs",
-      "head_tag": "antigravity-head",
+      "head_tag": null,
       "principal_tags": [
         "claude-principal",
         "codex-principal"
       ],
       "agents": [
         {
-          "tag": "antigravity-head",
+          "tag": "antigravity-head-legacy-a16",
           "role": "head",
           "mode": "interactive",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
@@ -3400,7 +3400,7 @@
     {
       "id": "product-integration",
       "name": "Transferred product implementation lanes",
-      "head_tag": "antigravity-head",
+      "head_tag": null,
       "principal_tags": [
         "codex-principal"
       ],
