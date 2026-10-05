@@ -9,7 +9,7 @@
 - **Audited Trial Report**: `/home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-LOOPBACK-SSH-RPC-TRIAL.md`
 - **Audited Trial Store**: `/home/alexey/git/cloudflare-agent-git/.local/scratch/loopback-ssh-trial/store`
 - **Audit Testbed**: `.local/scratch/reviewer37-ssh-negatives/` (mode `0700`, <= 512 MB, zero net `/tmp` growth)
-- **Canonical Repositories Status**: Canonical `/home/alexey/git/agent-bus` and `/home/alexey/git/agent-dashboard` remained strictly read-only throughout this review.
+- **Canonical Repositories Status**: Canonical `/home/alexey/git/agent-bus` and `/home/alexey/git/agent-dashboard` remained strictly read-only with respect to reviewer actions and observed subprocesses throughout this review.
 - **Compiler Invariant**: Exactly `0` `cargo` or `rustc` invocations executed during this review interval and audit environment under human hold (scoped strictly to reviewer actions and subprocesses).
 - **Date**: 2026-10-05T03:30:00+02:00 (Europe/Berlin)
 - **Verdict**: **BOUNDED ACCEPTANCE (SELF-HOST OPENSSH / LINUX CLIENT SCOPE)**
@@ -23,7 +23,7 @@ Under Codex Principal Directives C2219 and C2221, an independent challenger revi
 
 This review evaluated:
 1. **Happy-Path Receipts & Timing Analysis**: Verification of the 8-step multi-agent handshake lifecycle and an empirical audit of the timing data reported in `REPORT-LOOPBACK-SSH-RPC-TRIAL.md`.
-2. **Live Adversarial & Negative Test Execution**: An independent test suite (`test_ssh_rpc_negatives.py`) executed against a real OpenSSH daemon (`host="hetzner"`) exercising spaces in store paths, credential and traceback redaction on authentication failures, positional destination injection defenses, and strict host key checking policy bypass rejection.
+2. **Negative & Security Test Execution**: An independent test suite (`test_ssh_rpc_negatives.py`) comprising two real OpenSSH integration tests against destination `hetzner` (store paths with spaces, and authentication failure credential/traceback redaction) and two client-side option validation tests (positional destination injection defense and strict host key checking bypass rejection).
 3. **Epistemic Boundaries**: Rigorous classification of physical network topology boundaries, ambient SSH configuration trust boundaries, and platform scope limitations.
 
 ---
@@ -55,7 +55,7 @@ Unlike Steps 1–5, 7, and 8, Step 6 did not record a distinct `t_step = time.mo
 
 ## 3. Independent Negative Verification Suite: `test_ssh_rpc_negatives.py`
 
-To independently challenge the implementation's resilience against misconfigurations, adversarial options, and credential leaks, a dedicated negative test suite was created in `.local/scratch/reviewer37-ssh-negatives/test_ssh_rpc_negatives.py` and executed against the live OpenSSH daemon:
+To independently challenge the implementation's resilience against misconfigurations, adversarial options, and credential leaks, a dedicated negative test suite was created in `.local/scratch/reviewer37-ssh-negatives/test_ssh_rpc_negatives.py`. Exactly two of these tests execute live OpenSSH subprocesses against the `hetzner` daemon, while the remaining two tests validate client-side option parsing and security assertions without spawning remote processes:
 
 ```text
 ============================= test session starts ==============================
@@ -74,12 +74,12 @@ collected 4 items
 
 ### Detailed Negative Case Analysis:
 
-1. **Store Path with Spaces (`test_store_path_with_spaces_over_real_ssh`)**:
+1. **Store Path with Spaces (`test_store_path_with_spaces_over_real_ssh`) [Real OpenSSH Integration]**:
    - **Threat / Edge Case**: Paths containing whitespace (e.g. `/path/to/store with spaces in name`) frequently suffer from word-splitting bugs when passed through remote shell execution strings (`ssh host python3 bus_cli.py --store ...`).
    - **Verification**: A store was initialized at `.local/scratch/reviewer37-ssh-negatives/store with spaces in name`. `SshFileBusClient` enrolled an identity, sent a message, retrieved the inbox, and acknowledged the message over real OpenSSH.
    - **Outcome**: PASSED. Remote command assembly in `_execute_rpc` properly applies `shlex.quote(self.store_path)` and `shlex.quote(self.bus_cli_path)`, preventing POSIX remote login shells from splitting the path arguments.
 
-2. **Authentication Failure Redaction & Decoupled Chaining (`test_auth_failure_redaction_over_real_ssh`)**:
+2. **Authentication Failure Redaction & Decoupled Chaining (`test_auth_failure_redaction_over_real_ssh`) [Real OpenSSH Integration]**:
    - **Threat / Edge Case**: When an unprivileged or hostile agent provides an invalid token, unhandled exceptions or error messages may echo the provided token, raw stdout/stderr, or remote Python tracebacks into logs or parent process context.
    - **Verification**: Enrolled identity `bob-auth` and subsequently issued an inbox query with invalid bearer token `SUPER_SECRET_INVALID_TOKEN_99999` over real OpenSSH.
    - **Outcome**: PASSED.
@@ -88,14 +88,14 @@ collected 4 items
      * `str(err)` contained zero traceback text, file paths, or line numbers (`Traceback`, `File "` absent).
      * Exception chaining was strictly decoupled: `err.__cause__ is None` and `err.__context__ is None`, guaranteeing zero leakage via exception inspection.
 
-3. **Destination Injection Defense (`test_destination_injection_defense`)**:
+3. **Destination Injection Defense (`test_destination_injection_defense`) [Client-Side Unit Validation]**:
    - **Threat / Edge Case**: An attacker supplies a bare destination operand (e.g. `['attacker.com']`) or tunneling flags in `ssh_opts` to redirect the SSH connection before the `--` separator.
-   - **Verification**: Tested positional arguments without leading `-` and disallowed flags (`-D`, `-L`, `-R`, `-X`, `-Y`, `-A`, `-w`).
+   - **Verification**: Tested client-side rejection of positional arguments without leading `-` and disallowed flags (`-D`, `-L`, `-R`, `-X`, `-Y`, `-A`, `-w`).
    - **Outcome**: PASSED. Any positional argument in `ssh_opts` without a `-` prefix is immediately rejected with `ValueError("Positional destination argument in ssh_opts is prohibited...")`. All disallowed flags fail closed with `ValueError("Prohibited or unrecognized SSH option flag...")`.
 
-4. **Strict Host Key Checking Bypass Rejection (`test_strict_host_key_checking_bypass_rejection`)**:
+4. **Strict Host Key Checking Bypass Rejection (`test_strict_host_key_checking_bypass_rejection`) [Client-Side Unit Validation]**:
    - **Threat / Edge Case**: An agent attempts to bypass MITM verification by specifying `-o StrictHostKeyChecking=accept-new`, `-o StrictHostKeyChecking=no`, or `-o BatchMode=no`.
-   - **Verification**: Tested attached, detached, and spaced variations of `StrictHostKeyChecking=no`, `accept-new`, `off`, `ask`, and `BatchMode=no`, as well as dangerous executable options (`KnownHostsCommand=/bin/true`).
+   - **Verification**: Tested client-side rejection of `-o StrictHostKeyChecking=no`, `-o StrictHostKeyChecking=accept-new`, attached `-oStrictHostKeyChecking=off`, `-o BatchMode=no`, and untrusted directive `-o KnownHostsCommand=/bin/true`. (Note: tests are scoped to these specific tested cases without claims of testing `ask` or an exhaustive detached/spaced matrix beyond these unit assertions).
    - **Outcome**: PASSED. Option normalization parses keywords case-insensitively and fails closed with `ValueError("StrictHostKeyChecking must be 'yes'...")` or `ValueError("BatchMode must be 'yes'...")`. Untrusted options outside `ALLOWED_SSH_OPTION_KEYS` fail closed with `ValueError("OpenSSH option ... is prohibited...")`.
 
 ---
@@ -111,12 +111,14 @@ collected 4 items
    - Loopback OpenSSH execution incurs negligible packet loss, zero MTU fragmentation, and sub-millisecond round-trip times.
    - Real WAN network hazards (TCP connection drops, NAT traversal timeouts, asymmetric routing, DNS delays, SSH keepalive timeouts under load) remain **untested and unmeasured**.
 
-3. **Reverse Desktop Host Input Dependency**:
-   - To achieve bidirectional cross-computer communication between the desktop node and the Hetzner node, a reverse SSH endpoint or network path back to the desktop is required as an external input from `desktop-orchestrator` / human root.
+3. **Bidirectional Communication Architecture Clarification**:
+   - A reverse SSH connection (i.e. running an inbound OpenSSH server on the desktop) is **not strictly required** for bidirectional application-level message exchange when a forward polling and reply pattern against a reachable rendezvous FileBus store (e.g. on Hetzner) is employed. Under this forward-only architecture, the desktop node initiates forward SSH RPC sessions to send, poll (`wait`), and acknowledge messages on the remote server.
+   - A reverse SSH endpoint or tunnel is only required if the system architecture specifically demands direct push or symmetric inbound connection initiation from Hetzner into the desktop. True cross-computer execution between distinct physical machines remains designated **`UNKNOWN/HELD`** until verified over live distinct hardware.
 
-4. **Platform Scope Limitations (POSIX vs. Windows)**:
-   - All tests were executed on Linux (`x86_64`, kernel 6.8).
-   - Windows execution (`cmd.exe` / `powershell.exe`) remains strictly **`UNKNOWN/HELD`**. Windows lacks POSIX `fcntl.flock`, does not support `O_DIRECTORY` file descriptors, and uses incompatible argument escaping rules that make `shlex.quote` unsafe.
+4. **Platform Scope Limitations & Windows Demarcation**:
+   - All audit tests in this review were executed on Linux (`x86_64`, kernel 6.8).
+   - Native Windows OpenSSH client frontend execution (`ssh.exe` via PowerShell) has been demonstrated in external trials by `desktop-root` (`01a109b0`), confirming basic SSH client invocation availability on the desktop host.
+   - However, executing native Python `SshFileBusClient` on Windows (with PowerShell / `cmd.exe` remote command escaping semantics) or running a Windows-local `FileBus` backend (which lacks POSIX `fcntl.flock` and does not support `O_DIRECTORY` directory file descriptors for durable fsync) remains strictly **`UNKNOWN/HELD`**.
 
 ---
 
@@ -125,7 +127,7 @@ collected 4 items
 1. **Compiler Hold**:
    - Exactly **`0`** `cargo` or `rustc` invocations were executed during this review interval and audit environment under human hold (scoped strictly to reviewer actions and subprocesses).
 2. **Canonical Repositories**:
-   - `/home/alexey/git/agent-bus` and `/home/alexey/git/agent-dashboard` remained completely untouched and strictly read-only.
+   - `/home/alexey/git/agent-bus` and `/home/alexey/git/agent-dashboard` remained completely untouched and strictly read-only with respect to all reviewer actions and observed subprocesses.
 3. **Scratch Resource Isolation**:
    - Testbed confined strictly to `.local/scratch/reviewer37-ssh-negatives/` (mode `0700`, total size 44 KB $\le$ 512 MB).
    - `TMPDIR` was set strictly inside `.local/scratch/reviewer37-ssh-negatives/tmp` with zero net growth in system `/tmp`.
@@ -146,4 +148,4 @@ The loopback OpenSSH FileBus RPC implementation in `feat/typed-ssh-filebus-rpc` 
 - **Physical Multi-Machine Cross-Network Execution**: Designated **`UNKNOWN/HELD`** pending bidirectional network execution between distinct physical machines.
 - **Ambient Configuration Trust Boundary**: Ambient user configurations (`~/.ssh/config`) are an administrative trust boundary; universal protection against hostile local ambient configs is withheld unless local config evaluation is suppressed (`-F /dev/null`).
 - **Timing Telemetry Requirement**: Future benchmarking scripts must capture discrete `monotonic()` timestamps for all individual operations (including post-ACK inbox queries) rather than back-calculating from aggregate cycle times.
-- **Windows Platform Surface**: Strictly designated **`UNKNOWN/HELD`** (zero Windows execution performed).
+- **Windows Platform Surface**: Native Python `SshFileBusClient` execution and Windows-local `FileBus` storage remain designated **`UNKNOWN/HELD`** (while Windows frontend `ssh.exe` via PowerShell was demonstrated by desktop-root `01a109b0`, native Python client and local storage semantics remain unverified on Windows).
