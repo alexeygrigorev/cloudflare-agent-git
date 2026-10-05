@@ -1,0 +1,1 @@
+this work that you do for preparing article should be done by a codex agent on the remote machine - you just give the command to do it and watch it happen (create like a skill in that remote folder so it knows what to do)
