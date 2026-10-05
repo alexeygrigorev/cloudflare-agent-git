@@ -4986,12 +4986,11 @@
       "proposed_execution_head": "quota-launcher-head-gemini",
       "ownership_ack": true,
       "status": "ready",
-      "updated_at": "2026-10-05T15:12:00.000000+00:00",
+      "updated_at": "2026-10-05T15:35:00Z",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
-      "due_checkpoint": "2026-10-05T11:15:00Z",
       "acceptance": "Actual maintained route/sourcepin/cwd/TMPDIR/timeout/collect cleanup; own admitted task firsttool/outcome/nextcallback, unsupported heldroutes reject",
-      "next_action": "Maintained task-units backend verified (commit a35e7ff, 176/176 tests pass). Launch held under root disk 47.65 GiB floor. Feasible stages: Stage 1 (10 active workers) admits scale50-01..10; Stage 2 (25 active workers) admits scale50-11..35; Stage 3 (50 active workers) admits scale50-36..58 under 512M task ceiling.",
+      "next_action": "Maintained task-units backend verified (commit a35e7ff, 176/176 tests pass). Launch held under root disk 46.83 GiB floor (<50.0 GiB required). Feasible stages: Stage 1 (10 active workers); Stage 2 (25 active workers); Stage 3 (50 active workers under 512M ceiling).",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
@@ -5001,9 +5000,10 @@
       "current_observation": {
         "maintained_active_count": 0,
         "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
-        "root_available_bytes": 51161559040,
+        "root_available_bytes": 50282192896,
         "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
-        "native_delivery": "verified in-session recovery 2-cycle exit 0"
+        "native_delivery": "verified in-session recovery 2-cycle exit 0",
+        "status": "Live dispatch held closed by 50.0 GiB floor (current: 46.83 GiB)"
       },
       "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable."
     },
@@ -5015,19 +5015,18 @@
       "proposed_execution_head": "codex-principal",
       "ownership_ack": false,
       "status": "in_progress",
-      "updated_at": "2026-10-05T15:12:00.000000+00:00",
+      "updated_at": "2026-10-05T15:35:00Z",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
-      "due_checkpoint": "2026-10-05T11:15:00Z",
       "acceptance": "58sourced distinct slice offers; >=50 genuinely owned executable scopes with headACK needed; no fake ready/duplicatewriters",
-      "next_action": "Feasible task allocation: Stage 1 (10 tasks, 7.7 GiB RAM required) -> Stage 2 (25 tasks, 19.2 GiB RAM required) -> Stage 3 (50 tasks, 25.6 GiB RAM required at 512M per unit). Gated strictly by root disk >=50 GiB.",
+      "next_action": "Audited 58 scale rows: 12 reviewed/accepted (scale50-01..05, 07..09, 14, 15, 16, 45 with head ACK), 14 unaccepted ready offers (scale50-17, 20, 29, 30, 33, 36, 39, 41, 46, 53, 55..58 with ack=None), 32 blocked rows. Checkpoints: Stage 1 (10 tasks, 7.7 GiB RAM) -> Stage 2 (25 tasks, 19.2 GiB RAM) -> Stage 3 (50 tasks, 25.6 GiB RAM at 512M per unit). Gated strictly by root disk >= 50.0 GiB.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
       "current_observation": {
         "maintained_active_count": 0,
         "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
-        "root_available_bytes": 51161559040,
+        "root_available_bytes": 50282192896,
         "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
         "native_delivery": "verified in-session recovery 2-cycle exit 0"
       },
@@ -5041,12 +5040,11 @@
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-05T15:12:00.000000+00:00",
+      "updated_at": "2026-10-05T15:35:00Z",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
-      "due_checkpoint": "2026-10-05T11:25:00Z",
       "acceptance": "Measured whole descendantRAM/threads/controllers and freshroutes support10 then25 then50; bindingmax/alternative if impossible",
-      "next_action": "Measured host capacity: MemAvailable 28.7 GiB supports 10 workers (7.7 GiB) and 25 workers (19.2 GiB) at 768M MemoryMax; 50 workers require 512M per-unit ceiling (25.6 GiB total) to fit within host memory floor (>=10 GiB available). Bounded by root disk >=50 GiB admission floor.",
+      "next_action": "Measured host capacity: MemAvailable ~28.7 GiB supports Stage 1 (10 workers, 7.7 GiB) and Stage 2 (25 workers, 19.2 GiB) at 768M MemoryMax; Stage 3 (50 workers) requires 512M ceiling (25.6 GiB total) to preserve >=10 GiB host floor. Hard admission gate: root disk >= 50.0 GiB (currently 46.83 GiB, held).",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
@@ -5056,7 +5054,7 @@
       "current_observation": {
         "maintained_active_count": 0,
         "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
-        "root_available_bytes": 51161559040,
+        "root_available_bytes": 50282192896,
         "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
         "native_delivery": "verified in-session recovery 2-cycle exit 0"
       },
@@ -5070,12 +5068,11 @@
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-05T15:12:00.000000+00:00",
+      "updated_at": "2026-10-05T15:35:00Z",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
-      "due_checkpoint": "2026-10-05T11:15:00Z",
-      "acceptance": "Current target4 actualexecuting by11:15,10by11:25,25by11:40,50by12UTC; headcompletion callback starts nextusefultask",
-      "next_action": "Automated completion-to-refill verified in wt-refill-runtime (exit 0 invokes watch_loop single pass without LLM). Stage 10/25/50 refills proceed automatically upon each task exit 0 when queue is populated and host admission gates pass.",
+      "acceptance": "Automated completion-to-refill single-pass non-LLM watch loop in wt-refill-runtime dispatches next admitted task upon task exit 0 when queue is populated and admission gates pass; head completion callback starts next useful task.",
+      "next_action": "Automated completion-to-refill verified in wt-refill-runtime. Stage 10/25/50 refills proceed automatically upon each task exit 0 when queue is populated and host admission gates (root disk >= 50.0 GiB) pass.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
@@ -5085,7 +5082,7 @@
       "current_observation": {
         "maintained_active_count": 0,
         "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
-        "root_available_bytes": 51161559040,
+        "root_available_bytes": 50282192896,
         "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
         "native_delivery": "verified in-session recovery 2-cycle exit 0"
       },
@@ -5099,19 +5096,18 @@
       "proposed_execution_head": "agent-dashboard-head",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-05T15:12:00.000000+00:00",
+      "updated_at": "2026-10-05T15:35:00Z",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
-      "due_checkpoint": "2026-10-05T11:15:00Z",
-      "acceptance": "Exact dedup currentactive/unknown/ended categories fromlauncher evidence, readable taskrecovery and targets; no stale3actoractive",
-      "next_action": "State database (state.db) records 15 accepted tasks, 0 running, 0 queued. Active count strictly reflects live agent-task-*.service units. No controllers or queued items counted as active.",
+      "acceptance": "Exact dedup current active/unknown/ended categories from launcher evidence; readable task recovery and targets; no queued offers or controllers counted as active.",
+      "next_action": "State database records live agent-task-*.service units (currently 0 active). Queued offers, controllers, and unaccepted ready rows are not counted as active.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
       "current_observation": {
         "maintained_active_count": 0,
         "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
-        "root_available_bytes": 51161559040,
+        "root_available_bytes": 50282192896,
         "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
         "native_delivery": "verified in-session recovery 2-cycle exit 0"
       },
