@@ -6117,15 +6117,23 @@
       "id": "synthesis-agent-coordination-20261006011745-3205",
       "project_id": "agent-coordination",
       "team_id": "research-synthesis",
-      "status": "queued",
+      "status": "done",
       "created_at": "2026-10-05T23:17:45.810889+00:00",
-      "updated_at": "2026-10-05T23:17:45.810890+00:00",
+      "updated_at": "2026-10-05T23:23:45.000000+00:00",
       "title": "Sessionless Worker Restart & Failover Gates",
       "scope": "Ensure independent sessionless real worker send/receive/ACK semantics with durable cursor reloads.",
       "acceptance": "Cold receiver successfully recovers current owner generation, base/fork, task policy, crash point, and next action, then genuinely ACKs.",
       "blocked_on": [],
       "dependencies": [],
-      "evidence_paths": []
+      "commit": "8ee61d9",
+      "reviewer": "56f19e34-e76d-49dd-8938-7e07f52702c9 (Coord CLI Reviewer)",
+      "review_artifact": "research/antigravity/reviews/REV-COORD-NATIVE-CLI-SOURCE-20261005.md",
+      "review_verdict": "ACCEPTED",
+      "evidence_paths": [
+        "coordination/bus_cli.py",
+        "tests/test_worker_bus_cli.py",
+        "research/antigravity/reviews/REV-COORD-NATIVE-CLI-SOURCE-20261005.md"
+      ]
     }
   ]
 }
