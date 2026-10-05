@@ -5213,9 +5213,9 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T15:42:25.429160+00:00",
+      "updated_at": "2026-10-05T16:05:00.000000+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Anti-spoofing and genuine native evidence extraction delivered on 156752b and ACCEPTED by QL head (receipt 01a10cba-86f3). All 79 supervision tests pass. Gated on host root disk floor (measured free: 50283888640 bytes / 46.8305 GiB < 50 GiB); launches held under 50 GiB floor.",
+      "next_action": "Read-only durability audit completed by Coordination head (8d4c026c): running PID 3265459 has stale Oct 4 bytecode (lacks 6e995c9/156752b), is vulnerable to PTY disconnect (session-8309.scope) and cannot survive host reboot. Voluntary stop-file handoff via .local/supervision/stop verified. Migration to persistent systemd user unit under reviewed commit 156752b required. Gated on host root disk floor (free: 46.83 GiB < 50 GiB); launches held.",
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
@@ -5228,16 +5228,62 @@
         "scripts/supervision/test_terminal_consumer.py",
         "scripts/supervision/test_failure_recovery.py",
         "research/antigravity/reviews/REV-SUPERVISION-FAILURE-RECOVERY-530C10C.md",
-        "research/antigravity/reviews/REV-SUPERVISION-ANTI-SPOOFING-156752B.md"
+        "research/antigravity/reviews/REV-SUPERVISION-ANTI-SPOOFING-156752B.md",
+        "research/antigravity/reviews/REV-SUPERVISION-DURABILITY-ACTIVATION-AUDIT-20261005.md"
       ],
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
-      "reviewer": "quota-launcher-head-gemini (a86056b5-8b6b-403a-9b8f-6f0b49308959)",
+      "reviewer": "quota-launcher-head-gemini (a86056b5-8b6b-403a-9b8f-6f0b49308959) & agent-coordination-head-gemini (8d4c026c-b1f9-4cbf-83bf-4f5f82077cab)",
       "accepted_at": "2026-10-05T15:41:53Z",
       "commit": "156752bf51d718226ba0748fe4ba16c4955f5342",
       "tests": "79/79 supervision tests pass in 0.92s. Strict anti-spoofing, real artifact SHA verification from SQLite task_paths, UUID validation, and imported-db-accepted segregation verified.",
       "reviewed_commit": "156752bf51d718226ba0748fe4ba16c4955f5342",
       "verdict": "ACCEPTED",
-      "review_receipt": "01a10cba-86f3-74a2-86b6-85ca0cbf1ea2"
+      "review_receipt": "01a10cba-86f3-74a2-86b6-85ca0cbf1ea2",
+      "durability_and_activation_audit": {
+        "audited_at": "2026-10-05T16:05:00Z",
+        "auditor": "agent-coordination-head-gemini (8d4c026c-b1f9-4cbf-83bf-4f5f82077cab)",
+        "evidence_path": "research/antigravity/reviews/REV-SUPERVISION-DURABILITY-ACTIVATION-AUDIT-20261005.md",
+        "read_only_evidence": {
+          "pid": 3265459,
+          "ppid": 3265406,
+          "parent_session": "experiment-supervision [4914b3d1-b577-484b-ae0a-5f47dab74d87]",
+          "grandparent_pid": 560806,
+          "cgroup": "0::/user.slice/user-1000.slice/session-8309.scope",
+          "started_at": "2026-10-04T14:51:06Z",
+          "cmdline": "python3 scripts/supervision/service.py",
+          "open_fds": {
+            "0_1_2": "/dev/pts/12",
+            "3": "/home/alexey/git/cloudflare-agent-git/.local/supervision/service.lock",
+            "4": "/proc/560857",
+            "7": "/proc/560857/smaps"
+          }
+        },
+        "code_loaded_in_memory": {
+          "status": "stale_oct4_bytecode",
+          "loaded_epoch": "2026-10-04 14:51:06 UTC (commit d6be426 or older)",
+          "missing_oct5_commits": [
+            "6e995c9 (TerminalConsumer integration)",
+            "02ac777 (spool hardening)",
+            "156752b (anti-spoofing / genuine native verification)"
+          ],
+          "verdict": "PID 3265459 has never executed Oct 5 TerminalConsumer or anti-spoofing logic; running memory is stale."
+        },
+        "durability_assessment": {
+          "desktop_laptop_disconnect": "VULNERABLE. In interactive session scope session-8309.scope with stdio on /dev/pts/12. Receives SIGHUP if login session closes or PTY disconnects without daemonization.",
+          "host_reboot": "NON-SURVIVABLE. Zero persistent systemd units exist (systemctl --user list-unit-files lacks supervision.service) and no cron revive entry. Process destroyed on reboot."
+        },
+        "service_lock_and_stop_file_handoff": {
+          "lock_file": ".local/supervision/service.lock",
+          "stop_file": ".local/supervision/stop",
+          "behavior": "Polling for stop file triggers voluntary graceful exit and releases service.lock without orphan lock file or SIGKILL."
+        },
+        "reviewed_source_commit_needed": "156752bf51d718226ba0748fe4ba16c4955f5342 (reviewed and accepted by QL head receipt 01a10cba-86f3)",
+        "missing_proof": [
+          "Zero live runtime evidence of commit 156752b/6e995c9 in PID 3265459 (stale Oct 4 code in memory)",
+          "Zero reboot survival proof (no systemd user unit defined)"
+        ],
+        "safe_near_term_recovery_step": "Touch .local/supervision/stop for voluntary graceful exit of PID 3265459, verify .local/supervision/service.lock release, and relaunch under persistent systemd user unit pointing to reviewed commit 156752b."
+      }
     },
     {
       "id": "REMOTE-AUTONOMY-REVIEW-1830",
