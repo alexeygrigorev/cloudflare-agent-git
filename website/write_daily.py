@@ -62,7 +62,7 @@ with (private/'writer.lock').open('a') as lock:
  claude=shutil.which('claude')
  if not claude:raise SystemExit('Claude CLI unavailable')
  with (private/'response.json').open('w') as out,(private/'stderr.log').open('w') as err:
-  try: result=subprocess.run([claude,'--model','opus','--effort','high','--dangerously-skip-permissions','--print','--output-format','json',prompt],cwd=ROOT,stdout=out,stderr=err,timeout=1200)
+  try: result=subprocess.run([claude,'--model','opus','--effort','high','--dangerously-skip-permissions','--print','--output-format','json',prompt],cwd=ROOT,stdout=out,stderr=err,timeout=1800)
   except subprocess.TimeoutExpired:
    (private/'exit.json').write_text(json.dumps({'returncode':124,'status':'timeout'}));raise
  (private/'exit.json').write_text(json.dumps({'returncode':result.returncode,'completed':datetime.datetime.now(datetime.timezone.utc).isoformat()}))
@@ -70,5 +70,15 @@ with (private/'writer.lock').open('a') as lock:
  response=json.loads((private/'response.json').read_text())
  if response.get('is_error') or not any('opus' in m.lower() for m in response.get('modelUsage',{})):
   raise SystemExit('Actual Opus completion not verified; draft remains unpublished')
+ # Step 2: a fresh Opus session checks the draft and rewrites only what fails.
+ check_prompt=f'''You are the Claude Opus check pass for the {day} daily report of Alexey's public Agent Branches journal. A separate Opus session just wrote website/content/daily/{day}.md, {day}.json and {day}.sharetext.txt. First invoke the daily-writeup skill (.claude/skills/daily-writeup/SKILL.md). Then check the draft against every rule in it and against the facts: open every source the article links or cites, plus {fact_ref} and {standup_ref}, and confirm each claim and number. Also check the story arc, problem/blocker/solution per section, at least one embedded illustration per section (render the page with python3 website/build.py --output into a scratch directory under .local/journal/{day}/ and look at the images), numbers shown as charts, no timestamps or meta, no bold, plain language for a newcomer. If you find problems, fix them yourself by rewriting the affected text, metadata, share text or illustrations, then run full stylint without ignores until it passes. If everything holds, change nothing. Write .local/journal/{day}/check.json with keys problems_found (list of short strings), rewritten (bool) and verdict ("pass" or "fixed"). Same write limits as the writer: only the daily files, website/assets/{day}-*, website/editorial/diagrams/{day}/ and .local/journal/{day}/. No git commits, push, publication or worker launches.'''
+ (private/'check-prompt.txt').write_text(check_prompt)
+ with (private/'check-response.json').open('w') as out,(private/'check-stderr.log').open('w') as err:
+  check=subprocess.run([claude,'--model','opus','--effort','high','--dangerously-skip-permissions','--print','--output-format','json',check_prompt],cwd=ROOT,stdout=out,stderr=err,timeout=1200)
+ if check.returncode:raise SystemExit(check.returncode)
+ checked=json.loads((private/'check-response.json').read_text())
+ if checked.get('is_error') or not any('opus' in m.lower() for m in checked.get('modelUsage',{})):
+  raise SystemExit('Actual Opus check pass not verified; draft remains unpublished')
+ if not (private/'check.json').exists():raise SystemExit('Check pass wrote no check.json; draft remains unpublished')
  subprocess.run(['stylint',str(ROOT/'website/content/daily'/f'{day}.md')],cwd=ROOT,timeout=60,check=True)
- print(json.dumps({'status':'draft_ready_for_evidence_visual_privacy_review','date':day,'actual_models':list(response['modelUsage'])}))
+ print(json.dumps({'status':'written_and_checked_ready_to_publish','date':day,'actual_models':list(response['modelUsage']),'check_models':list(checked['modelUsage']),'check':json.loads((private/'check.json').read_text())}))

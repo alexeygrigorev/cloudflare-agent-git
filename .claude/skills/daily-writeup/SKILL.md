@@ -13,6 +13,15 @@ The daily report is a short story for human readers who don't follow the experim
 - The coordinating agent doesn't write prose itself and doesn't hand the writing to Codex, Gemini, Grok, z.ai or Sonnet. If Opus can't run because of quota or an error, keep the last published article and report the problem. Don't publish a substitute.
 - Other models may check facts, but Opus makes every prose change.
 
+## Two steps, then publish
+
+`python3 website/write_daily.py --date YYYY-MM-DD` runs both steps as separate Claude Opus sessions:
+
+1. Write-up: an Opus session writes the article, metadata, share text and illustrations by following this skill.
+2. Check pass: a fresh Opus session checks the draft against this skill and the sources. It rewrites whatever fails and leaves the rest alone, then records its verdict in `.local/journal/YYYY-MM-DD/check.json`.
+
+After step 2, the article is ready. Principals and heads don't re-review or edit it. The coordinating agent only confirms that both sessions ran on Opus and that `check.json` exists, then runs `python3 website/publish_daily.py YYYY-MM-DD --publish`, commits the daily files and assets, and pushes.
+
 ## Story arc
 
 Every report tells one story, not a list of updates:
