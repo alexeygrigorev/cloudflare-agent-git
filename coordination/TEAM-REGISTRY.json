@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T06:11:05.201776+00:00",
+  "updated_at": "2026-10-05T09:05:00.000000+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -3134,7 +3134,7 @@
           "role": "Daily Journal Correction Preparer",
           "mode": "headless",
           "engine": "shell/codex",
-          "session_id": "5f128723-9c88-466d-a602-d1d6439be03d",
+          "session_id": "5f128723-f851-417f-8ebc-5ff341aaea78",
           "parent_tag": "public-journal-site",
           "workspace": "/home/alexey/git/cloudflare-agent-git",
           "assignment_ack": "Under human directive 5 October 2026, remote Codex session correction-20261005 active for task correction-20261005-private-preparation",
@@ -3142,6 +3142,63 @@
           "owned_paths": [
             ".local/journal/correction-20261005/**",
             "experiment/human-better-git-progress-and-utilization-20261005.txt"
+          ]
+        },
+        {
+          "tag": "daily-journal-codex-2026-10-05-validate",
+          "role": "Daily Journal Independent Reviewer",
+          "mode": "headless",
+          "engine": "shell/codex",
+          "session_id": "6db1430c-a99b-4df2-8c0a-c18c177b0e90",
+          "parent_tag": "public-journal-site",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "assignment_ack": "Independent validation reviewer for 2026-10-05 daily journal report",
+          "task_id": "daily-journal:2026-10-05:validate",
+          "owned_paths": [
+            ".local/journal/remote-preparation/2026-10-05/validate/**"
+          ]
+        },
+        {
+          "tag": "journal-opus-corr-revise",
+          "role": "Daily Journal Opus Revision Writer",
+          "mode": "headless",
+          "engine": "claude",
+          "session_id": "dea14653-aad6-46ae-bc86-24da532bda30",
+          "parent_tag": "public-journal-site",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "assignment_ack": "Same conversation revision of 2026-10-05 daily journal report",
+          "task_id": "correction-20261005-same-opus-revision",
+          "owned_paths": [
+            "website/content/daily/2026-10-05.md",
+            "website/content/daily/2026-10-05.json",
+            "website/content/daily/2026-10-05.sharetext.txt",
+            ".local/journal/correction-2026-10-05/**"
+          ]
+        },
+        {
+          "tag": "correction-facts-reviewer",
+          "role": "Daily Journal Facts and Metrics Reviewer",
+          "mode": "native-harness-subagent",
+          "session_id": "47130865-4b10-4767-821f-18b22370394a",
+          "parent_tag": "antigravity-head",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "assignment_ack": "Independent factual and metrics audit of 2026-10-05 daily journal correction",
+          "task_id": "daily-correction-facts-review",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-DAILY-CORRECTION-20261005-FACTS.md"
+          ]
+        },
+        {
+          "tag": "dispatcher-c2406-reviewer",
+          "role": "FileBus Dispatcher C2406 Adversarial Reviewer",
+          "mode": "native-harness-subagent",
+          "session_id": "0f50c53e-1c31-4b36-8796-4d2097eb3882",
+          "parent_tag": "antigravity-head",
+          "workspace": "/home/alexey/git/cloudflare-agent-git",
+          "assignment_ack": "Adversarial code and test review for FileBus Dispatcher Durable Outbox & Queue Resilience",
+          "task_id": "dispatcher-c2406-adversarial-review",
+          "owned_paths": [
+            "research/antigravity/reviews/REV-FILEBUS-DISPATCHER-C2406.md"
           ]
         },
         {
@@ -4537,6 +4594,135 @@
         "first_tool": "run_command",
         "first_tool_at_utc": "2026-10-05T02:30:00Z",
         "timestamp_verification": "unverified_owner_metadata"
+      }
+    },
+    {
+      "tag": "zcode-route-specialist",
+      "team_id": "coordination",
+      "project_id": "infrastructure",
+      "parent_tag": "antigravity-head",
+      "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+      "mode": "native-harness-subagent",
+      "role": "subagent",
+      "responsibility": "diagnostic-specialist",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "zcode-route-health-diagnosis",
+      "status": "done",
+      "harness_conversation_id": "79e46f7b-9162-4aae-b638-17e90cc737a9",
+      "owned_paths": [
+        "research/antigravity/recovery/REPORT-ZCODE-ROUTE-DIAGNOSIS.md"
+      ],
+      "usage": null,
+      "first_action": {
+        "engine": "antigravity",
+        "first_tool": "run_command",
+        "first_tool_at_utc": "2026-10-05T08:52:10Z",
+        "timestamp_verification": "verified_native_transcript"
+      }
+    },
+    {
+      "tag": "dashboard-tasks-implementer",
+      "team_id": "agent-dashboard",
+      "project_id": "agent-dashboard",
+      "parent_tag": "antigravity-head",
+      "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+      "mode": "native-harness-subagent",
+      "role": "subagent",
+      "responsibility": "implementer",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "private-dashboard-tasks-tracker",
+      "status": "done",
+      "harness_conversation_id": "64c2fff8-c0ea-4343-a619-f69d291920cf",
+      "owned_paths": [
+        "research/antigravity/recovery/dashboard-tasks-tracker-and-usability.patch",
+        "research/antigravity/recovery/REPORT-DASHBOARD-TASKS-USABILITY.md"
+      ],
+      "usage": null,
+      "first_action": {
+        "engine": "antigravity",
+        "first_tool": "run_command",
+        "first_tool_at_utc": "2026-10-05T08:52:10Z",
+        "timestamp_verification": "verified_native_transcript"
+      }
+    },
+    {
+      "tag": "census-auditor",
+      "team_id": "coordination",
+      "project_id": "infrastructure",
+      "parent_tag": "antigravity-head",
+      "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+      "mode": "native-harness-subagent",
+      "role": "subagent",
+      "responsibility": "auditor",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "active-worker-census-c2431",
+      "status": "done",
+      "harness_conversation_id": "a3d4f3f5-c6a7-495f-b9a0-6289b2c69b22",
+      "owned_paths": [
+        ".local/metrics/active_worker_census_20261005.json",
+        "research/antigravity/recovery/REPORT-ACTIVE-WORKER-CENSUS.md"
+      ],
+      "usage": null,
+      "first_action": {
+        "engine": "antigravity",
+        "first_tool": "run_command",
+        "first_tool_at_utc": "2026-10-05T09:01:00Z",
+        "timestamp_verification": "verified_native_transcript"
+      }
+    },
+    {
+      "tag": "cross-computer-retry-worker",
+      "team_id": "agent-coordination",
+      "project_id": "agent-coordination",
+      "parent_tag": "antigravity-head",
+      "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+      "mode": "native-harness-subagent",
+      "role": "subagent",
+      "responsibility": "implementer",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "cross-computer-offline-retry-validation",
+      "status": "done",
+      "harness_conversation_id": "6654f856-7b95-444d-b1a8-9129571c2d99",
+      "owned_paths": [
+        "research/antigravity/recovery/cross_computer_retry.py",
+        "tests/test_cross_computer_offline_retry.py",
+        "research/antigravity/recovery/REPORT-CROSS-COMPUTER-OFFLINE-RETRY.md"
+      ],
+      "usage": null,
+      "first_action": {
+        "engine": "antigravity",
+        "first_tool": "run_command",
+        "first_tool_at_utc": "2026-10-05T08:30:00Z",
+        "timestamp_verification": "verified_native_transcript"
+      }
+    },
+    {
+      "tag": "hourly-exporter-reviewer",
+      "team_id": "agent-dashboard",
+      "project_id": "agent-dashboard",
+      "parent_tag": "antigravity-head",
+      "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
+      "mode": "native-harness-subagent",
+      "role": "subagent",
+      "responsibility": "independent-reviewer",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "task_id": "public-hourly-exporter-audit",
+      "status": "done",
+      "harness_conversation_id": "17481722-d26f-4855-94da-f6cbc827d8e5",
+      "owned_paths": [
+        "research/antigravity/reviews/REV-HOURLY-PUBLIC-EXPORTER.md"
+      ],
+      "usage": null,
+      "first_action": {
+        "engine": "antigravity",
+        "first_tool": "run_command",
+        "first_tool_at_utc": "2026-10-05T08:30:00Z",
+        "timestamp_verification": "verified_native_transcript"
       }
     }
   ]

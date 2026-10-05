@@ -1,0 +1,3465 @@
+diff --git a/src/dashboard/server.py b/src/dashboard/server.py
+index 2a98ae3..c5668e1 100644
+--- a/src/dashboard/server.py
++++ b/src/dashboard/server.py
+@@ -27,9 +27,11 @@ from dashboard.hourly import (
+     parse_iso_timestamp,
+     validate_registry_shape,
+ )
++from dashboard.tasks import load_tasks_payload
+ 
+ DEFAULT_METRICS_DIR = "/home/alexey/git/cloudflare-agent-git/.local/metrics"
+ DEFAULT_TASKS_PATH = "/home/alexey/git/cloudflare-agent-git/coordination/TASKS.json"
++DEFAULT_BACKLOG_PATH = "/home/alexey/git/cloudflare-agent-git/coordination/DELIVERY-BACKLOG.json"
+ DEFAULT_REGISTRY_PATH = "/home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json"
+ 
+ 
+@@ -241,6 +243,39 @@ def _load_features_payload(as_of: datetime.datetime) -> Dict[str, Any]:
+     return result
+ 
+ 
++def _load_tasks_payload(as_of: datetime.datetime, query: Dict[str, List[str]]) -> Dict[str, Any]:
++    tasks_path = os.environ.get("TASKS_JSON_PATH", DEFAULT_TASKS_PATH)
++    backlog_path = os.environ.get("DELIVERY_BACKLOG_PATH", DEFAULT_BACKLOG_PATH)
++    registry_path = os.environ.get("TEAM_REGISTRY_PATH", DEFAULT_REGISTRY_PATH)
++
++    payload = load_tasks_payload(
++        tasks_path=tasks_path,
++        backlog_path=backlog_path,
++        registry_path=registry_path,
++        as_of=as_of,
++    )
++
++    # Optional server-side filtering
++    product_filter = (query.get("product") or [""])[0].strip().lower()
++    state_filter = (query.get("state") or [""])[0].strip().lower()
++    owner_filter = (query.get("owner") or [""])[0].strip().lower()
++
++    if product_filter or state_filter or owner_filter:
++        filtered: List[Dict[str, Any]] = []
++        for t in payload["tasks"]:
++            if product_filter and t["product"].lower() != product_filter:
++                continue
++            if state_filter and t["state"].lower() != state_filter:
++                continue
++            if owner_filter and owner_filter not in t["owner"].lower():
++                continue
++            filtered.append(t)
++        payload["tasks"] = filtered
++        payload["filtered_count"] = len(filtered)
++
++    return payload
++
++
+ class DashboardRequestHandler(BaseHTTPRequestHandler):
+     """Request handler for Agent Dashboard."""
+ 
+@@ -264,6 +299,9 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
+         if path == "/api/features":
+             self._handle_features(query)
+             return
++        if path == "/api/tasks":
++            self._handle_tasks(query)
++            return
+         self._handle_static(path)
+ 
+     def _handle_json(self, data: Any, status: int = 200) -> None:
+@@ -308,6 +346,14 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
+         assert as_of is not None
+         self._handle_json(_load_features_payload(as_of))
+ 
++    def _handle_tasks(self, query: Dict[str, List[str]]) -> None:
++        as_of, err = _parse_as_of(query)
++        if err:
++            self._handle_json({"error": err}, status=400)
++            return
++        assert as_of is not None
++        self._handle_json(_load_tasks_payload(as_of, query))
++
+     def _handle_static(self, path: str) -> None:
+         rel = "index.html" if path in ("/", "/index.html") else path.lstrip("/")
+         static_root = os.path.realpath(_static_dir())
+@@ -349,7 +395,7 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
+   <h1>Autonomous Agent Fleet Operational Dashboard</h1>
+   <p>static/index.html is missing. JSON APIs: <a href="/api/health">/api/health</a>,
+      <a href="/api/hourly">/api/hourly</a>, <a href="/api/usage">/api/usage</a>,
+-     <a href="/api/features">/api/features</a>.</p>
++     <a href="/api/features">/api/features</a>, <a href="/api/tasks">/api/tasks</a>.</p>
+   <p>Source coverage and unknown fields are in the JSON. This fallback does not assert live status.</p>
+ </body>
+ </html>"""
+diff --git a/src/dashboard/tasks.py b/src/dashboard/tasks.py
+new file mode 100644
+index 0000000..c68dfaa
+--- /dev/null
++++ b/src/dashboard/tasks.py
+@@ -0,0 +1,561 @@
++"""
++Task tracking, normalization, and actor categorization for Agent Dashboard.
++Exposes structured task objects and separates fleet actors into persistent coordinators,
++active task workers, completed workers, and idle/blocked sessions.
++"""
++
++from __future__ import annotations
++
++import datetime
++import json
++import os
++import re
++from typing import Any, Dict, List, Optional, Set, Tuple
++
++CANONICAL_TASK_PRODUCTS = (
++    "agent-branches",
++    "agent-dashboard",
++    "quota-launcher",
++    "agent-coordination",
++    "infrastructure",
++)
++
++PRODUCT_ALIASES = {
++    "agent-branches": "agent-branches",
++    "agent_branches": "agent-branches",
++    "ab": "agent-branches",
++    "agent-dashboard": "agent-dashboard",
++    "agent_dashboard": "agent-dashboard",
++    "ad": "agent-dashboard",
++    "dashboard": "agent-dashboard",
++    "quota-launcher": "quota-launcher",
++    "agent-quota-launcher": "quota-launcher",
++    "agent_quota_launcher": "quota-launcher",
++    "launcher": "quota-launcher",
++    "agent-coordination": "agent-coordination",
++    "agent_coordination": "agent-coordination",
++    "cross-computer": "agent-coordination",
++    "cross_computer": "agent-coordination",
++    "coord": "agent-coordination",
++}
++
++VALID_TASK_STATES = ("ready", "in_progress", "review", "blocked", "done")
++
++
++def canonical_task_product(
++    raw_project: Optional[str],
++    raw_team: Optional[str] = None,
++) -> str:
++    """Map project or team ID to canonical task product."""
++    p_str = (raw_project or "").lower().strip()
++    if p_str in PRODUCT_ALIASES:
++        return PRODUCT_ALIASES[p_str]
++    t_str = (raw_team or "").lower().strip()
++    if t_str in PRODUCT_ALIASES:
++        return PRODUCT_ALIASES[t_str]
++    return "infrastructure"
++
++
++def normalize_task_state(status: Optional[str]) -> str:
++    """Normalize raw task status into standard lifecycle state."""
++    s = (status or "").lower().strip()
++    if s in ("done", "completed", "complete", "integrated", "delivered", "accepted"):
++        return "done"
++    if s in ("running", "in_progress", "working", "active"):
++        return "in_progress"
++    if s in ("review", "in_review", "under_review", "reviewing"):
++        return "review"
++    if s in ("blocked", "held", "halted", "waiting"):
++        return "blocked"
++    if s in ("ready", "queued", "backlog", "pending", "unassigned"):
++        return "ready"
++    return "ready"
++
++
++def normalize_priority(
++    raw_priority: Optional[str],
++    task_id: str,
++    state: str,
++    delivery_task_ids: Set[str],
++) -> str:
++    """Determine normalized task priority (critical, high, normal, low)."""
++    if raw_priority:
++        p = str(raw_priority).lower().strip()
++        if p in ("critical", "high", "normal", "low"):
++            return p
++    if state == "blocked":
++        return "critical" if task_id in delivery_task_ids else "high"
++    if task_id in delivery_task_ids:
++        return "high"
++    if state in ("in_progress", "review"):
++        return "high"
++    return "normal"
++
++
++def prettify_id(identifier: str) -> str:
++    """Convert a kebab-case or snake_case identifier to a human-readable title."""
++    parts = re.split(r"[-_]+", identifier.strip())
++    acronyms = {"ab": "Agent Branches", "ad": "Agent Dashboard", "rpc": "RPC", "ssh": "SSH", "cli": "CLI", "mvp": "MVP", "ui": "UI", "api": "API", "json": "JSON"}
++    formatted: List[str] = []
++    for part in parts:
++        lower = part.lower()
++        if lower in acronyms:
++            formatted.append(acronyms[lower])
++        else:
++            formatted.append(part.capitalize())
++    return " ".join(formatted)
++
++
++def format_task_title(
++    task_id: str,
++    raw_title: Optional[str],
++    backlog_source: Optional[Dict[str, Any]],
++) -> str:
++    """Derive human-friendly title for task."""
++    if raw_title and str(raw_title).strip():
++        return str(raw_title).strip()
++    if backlog_source:
++        heading = backlog_source.get("heading") or ""
++        req = backlog_source.get("requirement_summary") or ""
++        first_clause = req.split(";")[0].strip() if req else ""
++        if first_clause and len(first_clause) <= 80:
++            if heading and not first_clause.lower().startswith(heading.lower()):
++                return f"{heading}: {first_clause}"
++            return first_clause
++    return prettify_id(task_id)
++
++
++def format_task_description(
++    task: Dict[str, Any],
++    backlog_source: Optional[Dict[str, Any]],
++) -> str:
++    """Derive comprehensive human-readable description for task."""
++    if task.get("description"):
++        return str(task["description"]).strip()
++    if backlog_source and backlog_source.get("requirement_summary"):
++        return str(backlog_source["requirement_summary"]).strip()
++    if task.get("acceptance"):
++        return str(task["acceptance"]).strip()
++    if task.get("next_action"):
++        return str(task["next_action"]).strip()
++    return f"Task {task.get('id', 'unspecified')}"
++
++
++def categorize_actors(
++    registry_data: Optional[Dict[str, Any]],
++    tasks_by_id: Dict[str, Dict[str, Any]],
++) -> Dict[str, List[Dict[str, Any]]]:
++    """
++    Categorize fleet actors into four disjoint operational categories:
++    1. Persistent Coordinators (Principals, Project Heads, Orchestrators)
++    2. Active Task Workers (currently working/running tasks)
++    3. Ended/Completed Workers (finished runs or completed tasks)
++    4. Idle/Blocked Sessions (idle, queued, or blocked)
++    """
++    actors: Dict[str, Dict[str, Any]] = {}
++    reg = registry_data if isinstance(registry_data, dict) else {}
++
++    # 1. Project Heads and Principals from projects metadata
++    for p in reg.get("projects", []):
++        if not isinstance(p, dict):
++            continue
++        p_id = p.get("id")
++        p_name = p.get("name") or p_id or "Project"
++        head_tag = p.get("head_tag")
++        if head_tag:
++            actors[head_tag] = {
++                "tag": head_tag,
++                "role": "Project Head",
++                "category": "coordinators",
++                "project": canonical_task_product(p_id),
++                "session_id": p.get("head_session_id"),
++                "mode": "interactive",
++                "current_task": None,
++                "status_note": f"Project Head for {p_name}",
++            }
++        for pt in p.get("principal_tags", []):
++            if pt and pt not in actors:
++                actors[pt] = {
++                    "tag": pt,
++                    "role": "Principal Monitor",
++                    "category": "coordinators",
++                    "project": "all",
++                    "session_id": None,
++                    "mode": "interactive",
++                    "current_task": None,
++                    "status_note": "Autonomous Principal Oversight",
++                }
++        po = p.get("principal_owner")
++        if po and po not in actors:
++            actors[po] = {
++                "tag": po,
++                "role": "Principal Monitor",
++                "category": "coordinators",
++                "project": "all",
++                "session_id": None,
++                "mode": "interactive",
++                "current_task": None,
++                "status_note": "Autonomous Principal Oversight",
++            }
++
++    # 2. Excluded Principals & Remote Orchestrators
++    for ep in reg.get("excluded_principals", []):
++        if ep and ep not in actors:
++            actors[ep] = {
++                "tag": ep,
++                "role": "Peer Principal",
++                "category": "coordinators",
++                "project": "all",
++                "session_id": None,
++                "mode": "interactive",
++                "current_task": None,
++                "status_note": "Peer Principal (Monitored)",
++            }
++
++    if "desktop-orchestrator" not in actors:
++        actors["desktop-orchestrator"] = {
++            "tag": "desktop-orchestrator",
++            "role": "Remote Orchestrator",
++            "category": "coordinators",
++            "project": "all",
++            "session_id": None,
++            "mode": "interactive",
++            "current_task": None,
++            "status_note": "Desktop / Remote Orchestration Interface",
++        }
++
++    # Helper to process agent/executor entries
++    def add_worker_entry(entry: Dict[str, Any], is_executor: bool) -> None:
++        tag = entry.get("tag")
++        if not tag or not isinstance(tag, str):
++            return
++
++        role = str(entry.get("role") or ("delivery-executor" if is_executor else "worker"))
++        raw_mode = str(entry.get("mode") or "headless")
++        raw_proj = entry.get("project_id") or entry.get("team_id")
++        proj = canonical_task_product(raw_proj)
++        session_id = entry.get("session_id")
++        task_id = entry.get("task_id")
++
++        # Check if this tag represents a coordinator
++        is_coord = (
++            "principal" in tag.lower()
++            or "head" in tag.lower()
++            or "orchestrator" in tag.lower()
++            or role.lower() in ("coordinator", "principal", "head")
++            or tag in ("public-journal-site", "desktop-orchestrator", "codex-principal", "claude-principal")
++        )
++        if is_coord:
++            if tag not in actors or actors[tag]["category"] != "coordinators":
++                actors[tag] = {
++                    "tag": tag,
++                    "role": role if role != "worker" else "Coordinator",
++                    "category": "coordinators",
++                    "project": proj,
++                    "session_id": session_id,
++                    "mode": raw_mode,
++                    "current_task": task_id,
++                    "status_note": "Persistent Coordinator",
++                }
++            return
++
++        # Determine worker state
++        task = tasks_by_id.get(task_id) if task_id else None
++        tstate = normalize_task_state(task.get("status") or task.get("state")) if task else None
++
++        first_action = entry.get("first_action") if isinstance(entry.get("first_action"), dict) else {}
++        selected = first_action.get("selected") if isinstance(first_action.get("selected"), dict) else {}
++        phase = str(selected.get("phase") or "").lower()
++        reported_state = str(selected.get("reported_state") or "").lower()
++
++        scope = str(entry.get("measurement_scope") or "").lower()
++        is_completed = (
++            "completed" in scope
++            or "ended" in scope
++            or tstate == "done"
++            or "ended_at" in entry
++        )
++        is_active = (
++            (tstate in ("in_progress", "review"))
++            or (phase == "running" and not is_completed)
++            or (reported_state == "working" and not is_completed)
++        )
++        is_blocked = (
++            (tstate == "blocked")
++            or (str(entry.get("assignment_status") or "").lower() == "blocked")
++        )
++
++        if is_active:
++            cat = "active_workers"
++            note = f"Active on task {task_id}" if task_id else "Active executing session"
++        elif is_completed:
++            cat = "completed_workers"
++            note = f"Completed task {task_id}" if task_id else "Completed run"
++        elif is_blocked:
++            cat = "idle_blocked"
++            note = f"Blocked on task {task_id}" if task_id else "Blocked session"
++        else:
++            cat = "idle_blocked"
++            note = f"Queued / idle for {task_id}" if task_id else "Idle session"
++
++        actors[tag] = {
++            "tag": tag,
++            "role": role,
++            "category": cat,
++            "project": proj,
++            "session_id": session_id,
++            "mode": raw_mode,
++            "current_task": task_id,
++            "status_note": note,
++        }
++
++    for a in reg.get("agents", []):
++        if isinstance(a, dict):
++            add_worker_entry(a, is_executor=False)
++    for d in reg.get("delivery_executors", []):
++        if isinstance(d, dict):
++            add_worker_entry(d, is_executor=True)
++
++    result: Dict[str, List[Dict[str, Any]]] = {
++        "coordinators": [],
++        "active_workers": [],
++        "completed_workers": [],
++        "idle_blocked": [],
++    }
++    for item in sorted(actors.values(), key=lambda x: str(x.get("tag", ""))):
++        cat = item["category"]
++        if cat in result:
++            result[cat].append(item)
++        else:
++            result["idle_blocked"].append(item)
++
++    return result
++
++
++def compute_task_summary(
++    tasks: List[Dict[str, Any]],
++    actors: Dict[str, List[Dict[str, Any]]],
++) -> Dict[str, Any]:
++    """Compute numerical summaries and metrics across products, states, and actors."""
++    total = len(tasks)
++    by_product: Dict[str, Dict[str, Any]] = {}
++    for prod in CANONICAL_TASK_PRODUCTS:
++        by_product[prod] = {
++            "total": 0,
++            "done": 0,
++            "in_progress": 0,
++            "review": 0,
++            "blocked": 0,
++            "ready": 0,
++            "completion_pct": 0.0,
++        }
++
++    by_state: Dict[str, int] = {st: 0 for st in VALID_TASK_STATES}
++    by_priority: Dict[str, int] = {"critical": 0, "high": 0, "normal": 0, "low": 0}
++
++    for t in tasks:
++        prod = t["product"]
++        st = t["state"]
++        prio = t["priority"]
++
++        if prod not in by_product:
++            by_product[prod] = {
++                "total": 0,
++                "done": 0,
++                "in_progress": 0,
++                "review": 0,
++                "blocked": 0,
++                "ready": 0,
++                "completion_pct": 0.0,
++            }
++        by_product[prod]["total"] += 1
++        if st in by_product[prod]:
++            by_product[prod][st] += 1
++
++        if st in by_state:
++            by_state[st] += 1
++        else:
++            by_state["ready"] += 1
++
++        if prio in by_priority:
++            by_priority[prio] += 1
++        else:
++            by_priority["normal"] += 1
++
++    for prod_info in by_product.values():
++        p_total = prod_info["total"]
++        p_done = prod_info["done"]
++        prod_info["completion_pct"] = round((p_done / p_total) * 100.0, 1) if p_total > 0 else 0.0
++
++    overall_pct = round((by_state["done"] / total) * 100.0, 1) if total > 0 else 0.0
++
++    return {
++        "total_tasks": total,
++        "overall_completion_pct": overall_pct,
++        "by_product": by_product,
++        "by_state": by_state,
++        "by_priority": by_priority,
++        "actor_counts": {k: len(v) for k, v in actors.items()},
++    }
++
++
++def load_tasks_payload(
++    tasks_path: Optional[str] = None,
++    backlog_path: Optional[str] = None,
++    registry_path: Optional[str] = None,
++    as_of: Optional[datetime.datetime] = None,
++) -> Dict[str, Any]:
++    """
++    Load canonical task data, join with backlog requirements, categorize actors,
++    and return complete task tracker payload with sources and coverage gaps.
++    """
++    coverage_gaps: List[Dict[str, str]] = []
++    sources: Dict[str, Any] = {}
++
++    default_tasks = "/home/alexey/git/cloudflare-agent-git/coordination/TASKS.json"
++    default_backlog = "/home/alexey/git/cloudflare-agent-git/coordination/DELIVERY-BACKLOG.json"
++    default_reg = "/home/alexey/git/cloudflare-agent-git/coordination/TEAM-REGISTRY.json"
++
++    t_path = tasks_path or os.environ.get("TASKS_JSON_PATH", default_tasks)
++    b_path = backlog_path or os.environ.get("DELIVERY_BACKLOG_PATH", default_backlog)
++    r_path = registry_path or os.environ.get("TEAM_REGISTRY_PATH", default_reg)
++
++    # 1. Load TASKS.json
++    raw_tasks_list: List[Dict[str, Any]] = []
++    tasks_readable = bool(t_path and os.path.isfile(t_path) and os.access(t_path, os.R_OK))
++    sources["tasks"] = {"kind": "task-ledger", "path": t_path, "readable": tasks_readable}
++    if tasks_readable:
++        try:
++            with open(t_path, "r", encoding="utf-8") as f:
++                data = json.load(f)
++            if isinstance(data, dict) and isinstance(data.get("tasks"), list):
++                raw_tasks_list = [x for x in data["tasks"] if isinstance(x, dict)]
++            elif isinstance(data, list):
++                raw_tasks_list = [x for x in data if isinstance(x, dict)]
++            else:
++                coverage_gaps.append({"source": t_path, "reason": "invalid JSON schema: expected dict with tasks array"})
++        except Exception as e:
++            coverage_gaps.append({"source": t_path, "reason": f"error reading tasks: {e}"})
++    else:
++        coverage_gaps.append({"source": t_path, "reason": "TASKS.json missing or unreadable"})
++
++    # 2. Load DELIVERY-BACKLOG.json
++    backlog_data: Dict[str, Any] = {}
++    backlog_readable = bool(b_path and os.path.isfile(b_path) and os.access(b_path, os.R_OK))
++    sources["backlog"] = {"kind": "delivery-backlog", "path": b_path, "readable": backlog_readable}
++    if backlog_readable:
++        try:
++            with open(b_path, "r", encoding="utf-8") as f:
++                backlog_data = json.load(f)
++        except Exception as e:
++            coverage_gaps.append({"source": b_path, "reason": f"error reading backlog: {e}"})
++    else:
++        coverage_gaps.append({"source": b_path, "reason": "DELIVERY-BACKLOG.json missing or unreadable"})
++
++    # Map human sources by task_id
++    task_to_human_source: Dict[str, Dict[str, Any]] = {}
++    delivery_task_ids: Set[str] = set()
++    if isinstance(backlog_data, dict):
++        for hs in backlog_data.get("human_sources", []):
++            if isinstance(hs, dict):
++                for tid in hs.get("task_ids", []):
++                    if tid and tid not in task_to_human_source:
++                        task_to_human_source[tid] = hs
++        for dtid in backlog_data.get("new_delivery_task_ids", []):
++            if isinstance(dtid, str):
++                delivery_task_ids.add(dtid)
++
++    # 3. Load TEAM-REGISTRY.json
++    registry_data: Dict[str, Any] = {}
++    reg_readable = bool(r_path and os.path.isfile(r_path) and os.access(r_path, os.R_OK))
++    sources["registry"] = {"kind": "team-registry", "path": r_path, "readable": reg_readable}
++    if reg_readable:
++        try:
++            with open(r_path, "r", encoding="utf-8") as f:
++                registry_data = json.load(f)
++        except Exception as e:
++            coverage_gaps.append({"source": r_path, "reason": f"error reading registry: {e}"})
++    else:
++        coverage_gaps.append({"source": r_path, "reason": "TEAM-REGISTRY.json missing or unreadable"})
++
++    # Build tasks_by_id index for actor categorization
++    tasks_by_id: Dict[str, Dict[str, Any]] = {}
++    for rt in raw_tasks_list:
++        tid = rt.get("id")
++        if tid:
++            tasks_by_id[str(tid)] = rt
++
++    # Categorize fleet actors
++    actors = categorize_actors(registry_data, tasks_by_id)
++
++    # Transform raw tasks into structured task objects
++    structured_tasks: List[Dict[str, Any]] = []
++    for rt in raw_tasks_list:
++        task_id = str(rt.get("id") or "unspecified")
++        hs = task_to_human_source.get(task_id)
++
++        product = canonical_task_product(rt.get("project_id"), rt.get("team_id"))
++        state = normalize_task_state(rt.get("status") or rt.get("state"))
++        priority = normalize_priority(rt.get("priority"), task_id, state, delivery_task_ids)
++
++        title = format_task_title(task_id, rt.get("title"), hs)
++        description = format_task_description(rt, hs)
++        owner = rt.get("owner_tag") or rt.get("executor_tag") or rt.get("worker") or rt.get("principal_owner") or "unassigned"
++        next_action = str(rt.get("next_action") or "")
++
++        blocker_val = rt.get("blocked_on") or rt.get("blocker")
++        if blocker_val is None:
++            blocker = ["Dependency blocked"] if state == "blocked" else []
++        elif isinstance(blocker_val, list):
++            blocker = blocker_val
++        else:
++            blocker = [str(blocker_val)]
++
++        last_update = rt.get("updated_at") or rt.get("accepted_at") or ""
++        evidence = rt.get("evidence_paths") or rt.get("accepted_evidence") or rt.get("acceptance") or []
++
++        structured_tasks.append({
++            "id": task_id,
++            "title": title,
++            "product": product,
++            "state": state,
++            "owner": str(owner),
++            "priority": priority,
++            "description": description,
++            "next_action": next_action,
++            "blocker": blocker,
++            "last_update": str(last_update),
++            "outcome_evidence": evidence,
++            "raw_status": rt.get("status") or rt.get("state") or "",
++            "commit": rt.get("commit"),
++            "tests": rt.get("tests"),
++            "reviewer": rt.get("reviewer") or rt.get("reviewer_tag"),
++            "raw": rt,
++        })
++
++    summary = compute_task_summary(structured_tasks, actors)
++
++    as_of_str = as_of.isoformat() if as_of else datetime.datetime.now(datetime.timezone.utc).isoformat()
++
++    return {
++        "as_of": as_of_str,
++        "tasks": structured_tasks,
++        "actors": actors,
++        "summary": summary,
++        "workflow": {
++            "title": "Agent Fleet Task Lifecycle & Update Workflow",
++            "mode": "honest-read-only-preview",
++            "source_of_truth": "coordination/TASKS.json and coordination/DELIVERY-BACKLOG.json",
++            "principles": [
++                "1. Transparent Read-Only Dashboard: The preview UI is strictly read-only, reflecting ground truth without UI-side write bypasses.",
++                "2. State Transitions: Tasks advance through ready/backlog -> in_progress -> review -> done (or blocked).",
++                "3. First Action Evidence: Claiming a task requires an authenticated aplexer whoami first_action record with PID and owned paths ACK.",
++                "4. Delivery & Review Gate: Transitioning to review requires passing tests and checkpoint commit; transition to done requires independent reviewer sign-off.",
++                "5. Blockers & Continuation: Any stalled or blocked task must record explicit blocked_on dependencies and durable continuation triggers.",
++            ],
++            "agent_cli_command": "Use authenticated aplexer or file updates to coordination/TASKS.json using flock on .local/git.lock.",
++        },
++        "sources": sources,
++        "coverage_gaps": coverage_gaps,
++        "unknown": len(raw_tasks_list) == 0 and not tasks_readable,
++    }
+diff --git a/static/dashboard.css b/static/dashboard.css
+index bf47d38..ae63df3 100644
+--- a/static/dashboard.css
++++ b/static/dashboard.css
+@@ -3,7 +3,9 @@
+   --bg: #0f172a;
+   --bg-soft: #16213a;
+   --card: #1e293b;
++  --card-hover: #24344d;
+   --border: #334155;
++  --border-light: #475569;
+   --ink: #f8fafc;
+   --muted: #94a3b8;
+   --accent: #38bdf8;
+@@ -11,19 +13,23 @@
+   --warn: #fbbf24;
+   --bad: #f87171;
+   --ok: #34d399;
++  --ok-dim: #10b981;
++  --purple: #c084fc;
+ }
+ 
+ * { box-sizing: border-box; }
+ 
+ body {
+   margin: 0;
+-  padding: 2rem clamp(1rem, 4vw, 3rem);
++  padding: 1.5rem clamp(1rem, 3vw, 2.5rem);
+   background: var(--bg);
+   color: var(--ink);
+   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+   line-height: 1.5;
+ }
+ 
++[hidden] { display: none !important; }
++
+ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; }
+ 
+ .page-head {
+@@ -32,61 +38,116 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
+   align-items: flex-start;
+   gap: 1rem;
+   flex-wrap: wrap;
+-  margin-bottom: 1rem;
++  margin-bottom: 0.75rem;
+ }
+ 
+-h1 { color: var(--accent); font-size: 1.8rem; margin: 0 0 0.25rem; }
+-h2 { font-size: 1.2rem; margin: 0 0 0.5rem; }
+-h3 { font-size: 0.95rem; color: var(--muted); margin: 1rem 0 0.5rem; font-weight: 600; }
++h1 { color: var(--accent); font-size: 1.7rem; margin: 0 0 0.25rem; font-weight: 700; }
++h2 { font-size: 1.25rem; margin: 0 0 0.4rem; color: var(--ink); }
++h3 { font-size: 0.95rem; color: var(--muted); margin: 0 0 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
++h4 { font-size: 0.9rem; margin: 0; color: var(--ink); }
+ 
+-.subtitle { color: var(--muted); font-size: 0.95rem; margin: 0; }
++.subtitle { color: var(--muted); font-size: 0.9rem; margin: 0; }
++
++/* Navigation Bar */
++.nav-bar {
++  margin-bottom: 1.25rem;
++  border-bottom: 1px solid var(--border);
++}
++.nav-links {
++  display: flex;
++  gap: 0.5rem;
++  overflow-x: auto;
++}
++.nav-link {
++  display: inline-flex;
++  align-items: center;
++  gap: 0.5rem;
++  padding: 0.65rem 1.1rem;
++  color: var(--muted);
++  text-decoration: none;
++  font-size: 0.95rem;
++  font-weight: 600;
++  border-bottom: 2px solid transparent;
++  transition: color 0.15s, border-color 0.15s;
++  white-space: nowrap;
++}
++.nav-link:hover {
++  color: var(--ink);
++}
++.nav-link.active {
++  color: var(--accent);
++  border-bottom-color: var(--accent);
++}
+ 
+ .badge {
+   display: inline-block;
+   padding: 0.2rem 0.6rem;
+   border-radius: 999px;
+-  font-size: 0.8rem;
++  font-size: 0.75rem;
+   border: 1px solid var(--border);
+   background: var(--bg-soft);
+   color: var(--ink);
+   white-space: nowrap;
++  font-weight: 600;
+ }
+ .badge-pending { color: var(--warn); border-color: var(--warn); }
+ .badge-ok { color: var(--ok); border-color: var(--ok); }
+ .badge-err { color: var(--bad); border-color: var(--bad); }
+ .badge-unknown { color: var(--warn); border-color: var(--warn); }
++.badge-counter { background: var(--border); color: var(--ink); font-size: 0.7rem; padding: 0.1rem 0.45rem; }
++.badge-accent { color: var(--accent); border-color: var(--accent); }
++.badge-secondary { color: var(--purple); border-color: var(--purple); }
++.badge-warn { color: var(--warn); border-color: var(--warn); }
+ 
++/* Controls */
+ .controls { margin-bottom: 1.5rem; }
+-.window-line { margin-bottom: 0.5rem; }
++.window-line { margin-bottom: 0.5rem; font-size: 0.9rem; }
+ .refresh-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+-.refresh-row input {
++.refresh-row input, .filter-group input, .filter-group select {
+   background: var(--bg-soft);
+   color: var(--ink);
+   border: 1px solid var(--border);
+   border-radius: 6px;
+   padding: 0.4rem 0.6rem;
+   font: inherit;
++  font-size: 0.85rem;
++}
++.refresh-row input:focus, .filter-group input:focus, .filter-group select:focus {
++  outline: none;
++  border-color: var(--accent);
+ }
+-.refresh-row button {
++.refresh-row button, .btn-secondary, .btn-small {
+   background: var(--accent-dim);
+   color: #04121f;
+   border: none;
+   border-radius: 6px;
+   padding: 0.45rem 1rem;
+   font: inherit;
++  font-size: 0.85rem;
+   font-weight: 700;
+   cursor: pointer;
++  transition: filter 0.15s;
+ }
+-.refresh-row button:hover { filter: brightness(1.1); }
++.btn-secondary {
++  background: var(--card);
++  color: var(--ink);
++  border: 1px solid var(--border);
++}
++.btn-small {
++  padding: 0.25rem 0.65rem;
++  font-size: 0.75rem;
++}
++.refresh-row button:hover, .btn-secondary:hover, .btn-small:hover { filter: brightness(1.15); }
+ 
+ .muted { color: var(--muted); }
+-.small { font-size: 0.85rem; }
++.small { font-size: 0.82rem; }
+ .note {
+   background: var(--bg-soft);
+   border: 1px solid var(--border);
+   border-left: 4px solid var(--accent);
+   border-radius: 6px;
+   padding: 0.6rem 0.9rem;
++  font-size: 0.88rem;
+ }
+ 
+ .error-banner {
+@@ -95,12 +156,31 @@ h3 { font-size: 0.95rem; color: var(--muted); margin: 1rem 0 0.5rem; font-weight
+   color: #fecaca;
+   border-radius: 6px;
+   padding: 0.6rem 0.9rem;
++  margin-top: 0.5rem;
++}
++
++.panel {
++  background: var(--card);
++  border: 1px solid var(--border);
++  border-radius: 8px;
++  padding: 1.25rem;
++  margin-bottom: 1.5rem;
++}
++
++.panel-head {
++  display: flex;
++  justify-content: space-between;
++  align-items: flex-start;
++  gap: 1rem;
++  flex-wrap: wrap;
++  margin-bottom: 1rem;
+ }
+ 
++/* Overview Grid */
+ .grid {
+   display: grid;
+-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+-  gap: 1.5rem;
++  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
++  gap: 1.25rem;
+   margin-bottom: 1.5rem;
+ }
+ 
+@@ -122,7 +202,7 @@ h3 { font-size: 0.95rem; color: var(--muted); margin: 1rem 0 0.5rem; font-weight
+   padding: 0.35rem 0;
+   border-top: 1px solid var(--border);
+ }
+-.metrics dt { color: var(--muted); }
++.metrics dt { color: var(--muted); font-size: 0.88rem; }
+ .metrics dd { margin: 0; font-weight: 700; color: var(--accent); }
+ .metrics dd.na { color: var(--muted); font-weight: 400; }
+ 
+@@ -131,7 +211,7 @@ h3 { font-size: 0.95rem; color: var(--muted); margin: 1rem 0 0.5rem; font-weight
+   display: flex;
+   align-items: flex-end;
+   gap: 3px;
+-  height: 120px;
++  height: 110px;
+   padding: 0.5rem;
+   background: #090d16;
+   border: 1px solid var(--border);
+@@ -161,19 +241,12 @@ h3 { font-size: 0.95rem; color: var(--muted); margin: 1rem 0 0.5rem; font-weight
+ .x-labels span { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+ .axis-note { margin-top: 0.4rem; }
+ 
+-.panel {
+-  background: var(--card);
+-  border: 1px solid var(--border);
+-  border-radius: 8px;
+-  padding: 1.25rem;
+-  margin-bottom: 1.5rem;
+-}
+-
++/* Table Wrap */
+ .table-wrap { overflow-x: auto; }
+-table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
++table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+ caption { text-align: left; padding-bottom: 0.5rem; }
+ th, td { border: 1px solid var(--border); padding: 0.45rem 0.6rem; text-align: left; }
+-th { background: var(--bg-soft); color: var(--ink); }
++th { background: var(--bg-soft); color: var(--ink); font-weight: 600; }
+ td { color: #e2e8f0; }
+ td.na { color: var(--muted); }
+ 
+@@ -182,4 +255,482 @@ td.na { color: var(--muted); }
+ .feat-list { margin: 0.25rem 0 0; padding-left: 1.2rem; }
+ .feat-list li { margin-bottom: 0.35rem; }
+ 
++/* TASKS TRACKER SECTION */
++.tasks-overall-stat {
++  display: flex;
++  flex-direction: column;
++  align-items: flex-end;
++  background: var(--bg-soft);
++  padding: 0.5rem 1rem;
++  border-radius: 8px;
++  border: 1px solid var(--border);
++}
++.stat-number { font-size: 1.8rem; font-weight: 800; color: var(--ok); line-height: 1; }
++.stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
++
++.tasks-charts-grid {
++  display: grid;
++  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
++  gap: 1.25rem;
++  margin-top: 1rem;
++}
++.graph-card {
++  background: var(--bg-soft);
++  border: 1px solid var(--border);
++  border-radius: 8px;
++  padding: 1rem;
++}
++.svg-chart-wrap {
++  width: 100%;
++  min-height: 150px;
++  display: flex;
++  align-items: center;
++  justify-content: center;
++}
++.donut-legend {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 0.6rem;
++  margin-top: 0.75rem;
++  font-size: 0.78rem;
++}
++.legend-item {
++  display: inline-flex;
++  align-items: center;
++  gap: 0.35rem;
++}
++.legend-dot {
++  width: 10px;
++  height: 10px;
++  border-radius: 50%;
++  display: inline-block;
++}
++
++/* Filter Toolbar */
++.filter-panel { padding: 1rem; margin-bottom: 1.25rem; }
++.filter-row {
++  display: flex;
++  gap: 0.75rem;
++  align-items: flex-end;
++  flex-wrap: wrap;
++}
++.filter-group {
++  display: flex;
++  flex-direction: column;
++  gap: 0.25rem;
++  flex: 1 1 140px;
++}
++.filter-group label {
++  font-size: 0.75rem;
++  color: var(--muted);
++  font-weight: 600;
++  text-transform: uppercase;
++}
++.filter-search-group { flex: 2 1 220px; }
++.filter-actions {
++  display: flex;
++  gap: 0.5rem;
++  align-items: center;
++}
++.view-toggle {
++  display: inline-flex;
++  border: 1px solid var(--border);
++  border-radius: 6px;
++  overflow: hidden;
++}
++.btn-toggle {
++  background: var(--bg-soft);
++  color: var(--muted);
++  border: none;
++  padding: 0.4rem 0.8rem;
++  font-size: 0.82rem;
++  font-weight: 600;
++  cursor: pointer;
++}
++.btn-toggle.active {
++  background: var(--accent);
++  color: #04121f;
++}
++.filter-status-row {
++  margin-top: 0.6rem;
++  display: flex;
++  justify-content: space-between;
++}
++
++/* KANBAN BOARD */
++.kanban-section { margin-bottom: 1.5rem; }
++.kanban-board {
++  display: flex;
++  gap: 1rem;
++  overflow-x: auto;
++  padding-bottom: 1rem;
++  align-items: flex-start;
++}
++.kanban-col {
++  background: var(--card);
++  border: 1px solid var(--border);
++  border-radius: 8px;
++  min-width: 280px;
++  max-width: 320px;
++  flex: 1 0 280px;
++  display: flex;
++  flex-direction: column;
++  max-height: calc(100vh - 220px);
++}
++.kanban-col-head {
++  padding: 0.75rem 0.9rem;
++  border-bottom: 1px solid var(--border);
++  display: flex;
++  align-items: center;
++  gap: 0.5rem;
++  background: var(--bg-soft);
++  border-radius: 8px 8px 0 0;
++}
++.status-dot {
++  width: 10px;
++  height: 10px;
++  border-radius: 50%;
++  display: inline-block;
++  flex-shrink: 0;
++}
++.dot-ready { background: #64748b; }
++.dot-in_progress { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
++.dot-review { background: var(--warn); }
++.dot-blocked { background: var(--bad); box-shadow: 0 0 6px var(--bad); }
++.dot-done { background: var(--ok); }
++
++.kanban-col-head h4 {
++  margin: 0;
++  font-size: 0.88rem;
++  font-weight: 700;
++  flex-grow: 1;
++}
++.col-count {
++  font-size: 0.75rem;
++  font-weight: 700;
++  padding: 0.15rem 0.5rem;
++  background: var(--border);
++  border-radius: 999px;
++  color: var(--ink);
++}
++.kanban-col-body {
++  padding: 0.75rem;
++  overflow-y: auto;
++  display: flex;
++  flex-direction: column;
++  gap: 0.75rem;
++}
++
++/* TASK CARDS */
++.task-card {
++  background: #152238;
++  border: 1px solid var(--border);
++  border-left: 4px solid #64748b;
++  border-radius: 6px;
++  padding: 0.75rem;
++  cursor: pointer;
++  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
++  position: relative;
++}
++.task-card:hover {
++  transform: translateY(-2px);
++  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
++  border-color: var(--border-light);
++}
++.task-card.card-ready { border-left-color: #64748b; }
++.task-card.card-in_progress { border-left-color: var(--accent); }
++.task-card.card-review { border-left-color: var(--warn); }
++.task-card.card-blocked { border-left-color: var(--bad); background: #1c1822; }
++.task-card.card-done { border-left-color: var(--ok); }
++
++.card-top {
++  display: flex;
++  justify-content: space-between;
++  align-items: center;
++  gap: 0.4rem;
++  margin-bottom: 0.4rem;
++  flex-wrap: wrap;
++}
++.card-badges {
++  display: flex;
++  gap: 0.3rem;
++  flex-wrap: wrap;
++}
++.badge-prod {
++  font-size: 0.68rem;
++  padding: 0.1rem 0.4rem;
++  border-radius: 4px;
++  background: var(--bg);
++  border: 1px solid var(--border);
++  color: var(--accent);
++}
++.badge-prio {
++  font-size: 0.68rem;
++  padding: 0.1rem 0.4rem;
++  border-radius: 4px;
++  font-weight: 700;
++  text-transform: uppercase;
++}
++.prio-critical { background: #5a141a; color: #fca5a5; border: 1px solid var(--bad); }
++.prio-high { background: #4a3410; color: #fde68a; border: 1px solid var(--warn); }
++.prio-normal { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
++.prio-low { background: var(--bg); color: var(--muted); opacity: 0.8; }
++
++.task-id-pill {
++  font-family: ui-monospace, monospace;
++  font-size: 0.72rem;
++  color: var(--muted);
++}
++
++.card-title {
++  font-size: 0.92rem;
++  font-weight: 700;
++  margin: 0 0 0.35rem;
++  color: var(--ink);
++  line-height: 1.35;
++}
++.card-desc {
++  font-size: 0.8rem;
++  color: var(--muted);
++  margin: 0 0 0.5rem;
++  display: -webkit-box;
++  -webkit-line-clamp: 2;
++  -webkit-box-orient: vertical;
++  overflow: hidden;
++}
++
++.card-callout {
++  padding: 0.4rem 0.5rem;
++  border-radius: 4px;
++  font-size: 0.78rem;
++  margin-bottom: 0.5rem;
++}
++.callout-next {
++  background: #0d2238;
++  border: 1px solid #0369a1;
++  color: #bae6fd;
++}
++.callout-next strong { color: var(--accent); }
++.callout-blocked {
++  background: #3b171c;
++  border: 1px solid #b91c1c;
++  color: #fecaca;
++}
++.callout-blocked strong { color: var(--bad); }
++.callout-evidence {
++  background: #0a2d21;
++  border: 1px solid #047857;
++  color: #a7f3d0;
++}
++.callout-evidence strong { color: var(--ok); }
++
++.card-foot {
++  display: flex;
++  justify-content: space-between;
++  align-items: center;
++  border-top: 1px solid rgba(255, 255, 255, 0.07);
++  padding-top: 0.4rem;
++  font-size: 0.74rem;
++  color: var(--muted);
++}
++.owner-tag {
++  color: var(--ink);
++  font-weight: 600;
++  display: inline-flex;
++  align-items: center;
++  gap: 0.25rem;
++}
++.owner-dot {
++  width: 6px;
++  height: 6px;
++  border-radius: 50%;
++  background: var(--accent);
++}
++
++/* Details & JSON Modal */
++.modal {
++  position: fixed;
++  top: 0; left: 0; right: 0; bottom: 0;
++  display: flex;
++  align-items: center;
++  justify-content: center;
++  z-index: 1000;
++  padding: 1rem;
++}
++.modal-backdrop {
++  position: absolute;
++  top: 0; left: 0; right: 0; bottom: 0;
++  background: rgba(0, 0, 0, 0.75);
++  backdrop-filter: blur(4px);
++}
++.modal-content {
++  position: relative;
++  background: var(--card);
++  border: 1px solid var(--border-light);
++  border-radius: 10px;
++  max-width: 760px;
++  width: 100%;
++  max-height: 90vh;
++  display: flex;
++  flex-direction: column;
++  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
++  z-index: 10;
++}
++.modal-header {
++  padding: 1.25rem;
++  border-bottom: 1px solid var(--border);
++  display: flex;
++  justify-content: space-between;
++  align-items: flex-start;
++  gap: 1rem;
++}
++.modal-badges { display: flex; gap: 0.4rem; margin-bottom: 0.4rem; }
++.modal-close {
++  background: transparent;
++  border: none;
++  color: var(--muted);
++  font-size: 1.5rem;
++  cursor: pointer;
++  line-height: 1;
++  padding: 0 0.3rem;
++}
++.modal-close:hover { color: var(--ink); }
++.modal-body {
++  padding: 1.25rem;
++  overflow-y: auto;
++  display: flex;
++  flex-direction: column;
++  gap: 1rem;
++}
++.modal-meta-grid {
++  display: grid;
++  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
++  gap: 0.6rem 1rem;
++  margin: 0;
++  background: var(--bg-soft);
++  padding: 0.75rem 1rem;
++  border-radius: 6px;
++  border: 1px solid var(--border);
++}
++.modal-meta-grid dt { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; }
++.modal-meta-grid dd { margin: 0; font-weight: 600; color: var(--ink); font-size: 0.9rem; }
++
++.modal-section h4 {
++  font-size: 0.8rem;
++  color: var(--muted);
++  text-transform: uppercase;
++  margin-bottom: 0.35rem;
++}
++.modal-text {
++  font-size: 0.88rem;
++  line-height: 1.5;
++  margin: 0;
++}
++.modal-next-box {
++  background: #0d2238;
++  border-left: 3px solid var(--accent);
++  padding: 0.6rem 0.8rem;
++  border-radius: 4px;
++}
++.modal-blocker-box {
++  background: #3b171c;
++  border-left: 3px solid var(--bad);
++  padding: 0.6rem 0.8rem;
++  border-radius: 4px;
++  color: #fecaca;
++  font-size: 0.88rem;
++}
++.modal-evidence-box {
++  background: #0a2d21;
++  border-left: 3px solid var(--ok);
++  padding: 0.6rem 0.8rem;
++  border-radius: 4px;
++  color: #a7f3d0;
++  font-size: 0.88rem;
++}
++
++.modal-json-details {
++  border-top: 1px solid var(--border);
++  padding-top: 0.75rem;
++}
++.modal-json-details summary {
++  cursor: pointer;
++  font-size: 0.82rem;
++  color: var(--accent);
++  font-weight: 600;
++}
++.json-actions {
++  display: flex;
++  justify-content: flex-end;
++  margin: 0.5rem 0;
++}
++.modal-json-details pre {
++  background: #080d16;
++  border: 1px solid var(--border);
++  border-radius: 6px;
++  padding: 0.75rem;
++  max-height: 250px;
++  overflow-y: auto;
++  font-size: 0.78rem;
++  color: #93c5fd;
++}
++
++/* Workflow Documentation Card */
++.workflow-card {
++  border-left: 4px solid var(--accent);
++}
++.workflow-list {
++  padding-left: 1.25rem;
++  margin: 0.5rem 0 0;
++  font-size: 0.85rem;
++}
++.workflow-list li { margin-bottom: 0.4rem; }
++
++/* ACTORS SECTION */
++.actor-categories-wrap {
++  display: grid;
++  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
++  gap: 1.25rem;
++}
++.actor-category-card {
++  background: var(--bg-soft);
++  border: 1px solid var(--border);
++  border-radius: 8px;
++  padding: 1rem;
++}
++.actor-cat-head {
++  display: flex;
++  justify-content: space-between;
++  align-items: center;
++  gap: 0.5rem;
++  margin-bottom: 0.25rem;
++}
++.actor-cat-head h3 { margin: 0; color: var(--ink); }
++.actors-list {
++  margin-top: 0.75rem;
++  display: flex;
++  flex-direction: column;
++  gap: 0.5rem;
++  max-height: 400px;
++  overflow-y: auto;
++}
++.actor-item {
++  background: var(--card);
++  border: 1px solid var(--border);
++  border-radius: 6px;
++  padding: 0.6rem 0.8rem;
++  display: flex;
++  flex-direction: column;
++  gap: 0.2rem;
++}
++.actor-item-top {
++  display: flex;
++  justify-content: space-between;
++  align-items: center;
++}
++.actor-tag { font-weight: 700; font-size: 0.85rem; color: var(--accent); }
++.actor-role { font-size: 0.75rem; color: var(--muted); }
++.actor-note { font-size: 0.78rem; color: var(--ink); }
++.actor-sub { font-size: 0.72rem; color: var(--muted); font-family: ui-monospace, monospace; }
++
+ .page-foot { margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+diff --git a/static/dashboard.js b/static/dashboard.js
+index d0bf733..367a7a0 100644
+--- a/static/dashboard.js
++++ b/static/dashboard.js
+@@ -1,9 +1,38 @@
+-/* Agent Dashboard frontend — vanilla JS, fetch-based, no external assets.
+- * Defensive rendering: null/missing fields render as "n/a" or "unknown",
+- * never as 0. API failures leave the static fallback layout in place. */
++/* Agent Dashboard & Task Tracker frontend — vanilla JS, fetch-based, no external assets.
++ * Defensive rendering: null/missing fields render as "n/a" or "unknown", never as 0.
++ * Stable URL hash routing (#overview, #tasks, #actors).
++ */
+ "use strict";
+ 
+ var PROJECT_IDS = ["agent-branches", "agent-dashboard", "quota-launcher", "agent-coordination"];
++var TASK_PRODUCTS = ["agent-branches", "agent-dashboard", "quota-launcher", "agent-coordination", "infrastructure"];
++var TASK_STATES = ["ready", "in_progress", "review", "blocked", "done"];
++
++var STATE_COLORS = {
++  done: "#34d399",
++  in_progress: "#38bdf8",
++  review: "#fbbf24",
++  blocked: "#f87171",
++  ready: "#64748b"
++};
++
++var STATE_LABELS = {
++  done: "Done",
++  in_progress: "In Progress",
++  review: "Review",
++  blocked: "Blocked",
++  ready: "Ready / Backlog"
++};
++
++var cachedTasksPayload = null;
++var currentFilter = {
++  search: "",
++  product: "",
++  state: "",
++  owner: "",
++  priority: "",
++  view: "kanban"
++};
+ 
+ function isNullish(v) {
+   return v === null || v === undefined;
+@@ -24,7 +53,6 @@ function fmtHours(v) {
+ }
+ 
+ function fmtCoverage(v) {
+-  // Coverage may be 0..1 fraction or 0..100 percent; null -> "unknown".
+   if (isNullish(v) || v === "") return { text: "unknown", cls: "na" };
+   var n = Number(v);
+   if (!isFinite(n)) return { text: "unknown", cls: "na" };
+@@ -53,6 +81,13 @@ function fmtTime(v) {
+   return d.toISOString();
+ }
+ 
++function fmtRelativeTime(v) {
++  if (isNullish(v) || v === "") return "n/a";
++  var d = new Date(v);
++  if (isNaN(d.getTime())) return String(v);
++  return d.toISOString().replace("T", " ").replace(/\.\d+Z$/, "Z");
++}
++
+ function shortHourLabel(iso) {
+   var d = new Date(iso);
+   if (isNaN(d.getTime())) return "??:??";
+@@ -94,6 +129,38 @@ function getJSON(url) {
+   });
+ }
+ 
++/* =========================================================================
++ * ROUTING & TABS
++ * ========================================================================= */
++function handleRouting() {
++  var hash = (window.location.hash || "").replace(/^#/, "").toLowerCase();
++  if (hash !== "tasks" && hash !== "actors" && hash !== "overview") {
++    hash = "overview";
++  }
++
++  var tabs = {
++    overview: { nav: document.getElementById("nav-overview"), view: document.getElementById("view-overview") },
++    tasks: { nav: document.getElementById("nav-tasks"), view: document.getElementById("view-tasks") },
++    actors: { nav: document.getElementById("nav-actors"), view: document.getElementById("view-actors") }
++  };
++
++  Object.keys(tabs).forEach(function (k) {
++    var item = tabs[k];
++    if (item.nav) {
++      if (k === hash) item.nav.classList.add("active");
++      else item.nav.classList.remove("active");
++    }
++    if (item.view) {
++      item.view.hidden = (k !== hash);
++    }
++  });
++}
++
++window.addEventListener("hashchange", handleRouting);
++
++/* =========================================================================
++ * HOURLY UTILIZATION RENDERING
++ * ========================================================================= */
+ function renderHourly(data) {
+   var info = document.getElementById("window-info");
+   if (data && (data.window_start || data.window_end || data.as_of)) {
+@@ -105,8 +172,6 @@ function renderHourly(data) {
+   }
+ 
+   var projects = (data && data.projects) || {};
+-
+-  // Top-level or nested unattributed rollup, if the backend provides one.
+   var topUnattrib = null;
+   if (data && !isNullish(data.unattributed_agent_hours)) topUnattrib = data.unattributed_agent_hours;
+   if (projects.unattributed && !isNullish(projects.unattributed.total_agent_hours)) {
+@@ -134,7 +199,6 @@ function renderHourly(data) {
+     renderChart(pid, p.hourly_buckets || []);
+   });
+ 
+-  // Shared identities note — counts are non-additive across projects.
+   var note = document.getElementById("shared-note");
+   var shared = data && data.shared_agent_ids;
+   if (Array.isArray(shared)) {
+@@ -199,7 +263,6 @@ function renderChart(pid, buckets) {
+   labels.setAttribute("aria-hidden", "true");
+   buckets.forEach(function (b, i) {
+     var s = document.createElement("span");
+-    // Label every 6th bucket (plus the final edge) to avoid clutter.
+     if (i % 6 === 0) {
+       s.textContent = shortHourLabel(b ? b.bucket_start : null) + "Z";
+     } else if (i === buckets.length - 1) {
+@@ -212,12 +275,14 @@ function renderChart(pid, buckets) {
+   host.appendChild(labels);
+ }
+ 
++/* =========================================================================
++ * USAGE & FEATURES RENDERING
++ * ========================================================================= */
+ function renderUsage(data) {
+   var body = document.getElementById("usage-body");
+   if (!body) return;
+   body.textContent = "";
+   var projects = data && typeof data === "object" ? data : null;
+-  // Some backends wrap as {projects: {...}}; accept both shapes.
+   if (projects && projects.projects && typeof projects.projects === "object") projects = projects.projects;
+   var keys = projects ? Object.keys(projects) : [];
+   if (keys.length === 0) {
+@@ -315,6 +380,807 @@ function renderFeatures(data) {
+   });
+ }
+ 
++/* =========================================================================
++ * SVG CHARTS & GRAPHICAL SUMMARY
++ * ========================================================================= */
++function renderTasksDonutChart(summary) {
++  var host = document.getElementById("chart-tasks-donut");
++  var legendHost = document.getElementById("donut-legend");
++  if (!host) return;
++  host.textContent = "";
++  if (legendHost) legendHost.textContent = "";
++
++  var byState = (summary && summary.by_state) || {};
++  var total = (summary && summary.total_tasks) || 0;
++
++  if (total <= 0) {
++    host.innerHTML = '<p class="muted">no task data available</p>';
++    return;
++  }
++
++  var size = 160;
++  var strokeWidth = 26;
++  var radius = (size - strokeWidth) / 2;
++  var circumference = 2 * Math.PI * radius;
++  var cx = size / 2;
++  var cy = size / 2;
++
++  var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
++  svg.setAttribute("viewBox", "0 0 " + size + " " + size);
++  svg.setAttribute("width", "160");
++  svg.setAttribute("height", "160");
++
++  var currentOffset = 0;
++
++  TASK_STATES.forEach(function (st) {
++    var count = byState[st] || 0;
++    if (count <= 0) return;
++    var fraction = count / total;
++    var dash = fraction * circumference;
++    var gap = circumference - dash;
++
++    var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
++    circle.setAttribute("cx", String(cx));
++    circle.setAttribute("cy", String(cy));
++    circle.setAttribute("r", String(radius));
++    circle.setAttribute("fill", "transparent");
++    circle.setAttribute("stroke", STATE_COLORS[st] || "#64748b");
++    circle.setAttribute("stroke-width", String(strokeWidth));
++    circle.setAttribute("stroke-dasharray", dash + " " + gap);
++    circle.setAttribute("stroke-dashoffset", String(-currentOffset));
++    circle.setAttribute("transform", "rotate(-90 " + cx + " " + cy + ")");
++
++    var title = document.createElementNS("http://www.w3.org/2000/svg", "title");
++    title.textContent = STATE_LABELS[st] + ": " + count + " (" + Math.round(fraction * 100) + "%)";
++    circle.appendChild(title);
++
++    svg.appendChild(circle);
++    currentOffset += dash;
++  });
++
++  // Center text (Overall completion & Total tasks)
++  var textPct = document.createElementNS("http://www.w3.org/2000/svg", "text");
++  textPct.setAttribute("x", String(cx));
++  textPct.setAttribute("y", String(cy - 2));
++  textPct.setAttribute("text-anchor", "middle");
++  textPct.setAttribute("dominant-baseline", "middle");
++  textPct.setAttribute("fill", "#34d399");
++  textPct.setAttribute("font-size", "22");
++  textPct.setAttribute("font-weight", "800");
++  textPct.textContent = ((summary && summary.overall_completion_pct) || 0) + "%";
++  svg.appendChild(textPct);
++
++  var textSub = document.createElementNS("http://www.w3.org/2000/svg", "text");
++  textSub.setAttribute("x", String(cx));
++  textSub.setAttribute("y", String(cy + 18));
++  textSub.setAttribute("text-anchor", "middle");
++  textSub.setAttribute("fill", "#94a3b8");
++  textSub.setAttribute("font-size", "10");
++  textSub.textContent = total + " tasks";
++  svg.appendChild(textSub);
++
++  host.appendChild(svg);
++
++  // Render legend
++  if (legendHost) {
++    TASK_STATES.forEach(function (st) {
++      var count = byState[st] || 0;
++      var pct = total > 0 ? Math.round((count / total) * 100) : 0;
++      var item = document.createElement("span");
++      item.className = "legend-item";
++      item.innerHTML =
++        '<span class="legend-dot" style="background-color: ' + STATE_COLORS[st] + ';"></span>' +
++        '<span>' + STATE_LABELS[st] + ': <strong>' + count + '</strong> (' + pct + '%)</span>';
++      legendHost.appendChild(item);
++    });
++  }
++}
++
++function renderTasksProductBarChart(summary) {
++  var host = document.getElementById("chart-tasks-products");
++  if (!host) return;
++  host.textContent = "";
++
++  var byProduct = (summary && summary.by_product) || {};
++  var keys = Object.keys(byProduct);
++  if (keys.length === 0) {
++    host.innerHTML = '<p class="muted">no product task breakdown</p>';
++    return;
++  }
++
++  var wrap = document.createElement("div");
++  wrap.style.display = "flex";
++  wrap.style.flexDirection = "column";
++  wrap.style.gap = "0.75rem";
++  wrap.style.width = "100%";
++
++  TASK_PRODUCTS.forEach(function (prod) {
++    var pData = byProduct[prod] || { total: 0, done: 0, in_progress: 0, review: 0, blocked: 0, ready: 0, completion_pct: 0 };
++    var pTotal = pData.total || 0;
++
++    var row = document.createElement("div");
++    row.style.display = "flex";
++    row.style.flexDirection = "column";
++    row.style.gap = "0.2rem";
++
++    var labelRow = document.createElement("div");
++    labelRow.style.display = "flex";
++    labelRow.style.justifyContent = "space-between";
++    labelRow.style.fontSize = "0.78rem";
++
++    var nameSpan = document.createElement("span");
++    nameSpan.innerHTML = '<strong>' + prod + '</strong> <span class="muted">(' + pTotal + ' tasks)</span>';
++
++    var pctSpan = document.createElement("span");
++    pctSpan.style.fontWeight = "700";
++    pctSpan.style.color = pData.completion_pct >= 70 ? "#34d399" : (pData.completion_pct >= 40 ? "#38bdf8" : "#fbbf24");
++    pctSpan.textContent = pData.completion_pct + "% done";
++
++    labelRow.appendChild(nameSpan);
++    labelRow.appendChild(pctSpan);
++    row.appendChild(labelRow);
++
++    // Stacked horizontal bar
++    var barTrack = document.createElement("div");
++    barTrack.style.display = "flex";
++    barTrack.style.height = "12px";
++    barTrack.style.borderRadius = "4px";
++    barTrack.style.overflow = "hidden";
++    barTrack.style.background = "#0f172a";
++    barTrack.style.border = "1px solid #334155";
++
++    if (pTotal > 0) {
++      TASK_STATES.forEach(function (st) {
++        var count = pData[st] || 0;
++        if (count <= 0) return;
++        var pct = (count / pTotal) * 100;
++        var seg = document.createElement("div");
++        seg.style.width = pct + "%";
++        seg.style.height = "100%";
++        seg.style.backgroundColor = STATE_COLORS[st];
++        seg.title = STATE_LABELS[st] + ": " + count + " (" + Math.round(pct) + "%)";
++        barTrack.appendChild(seg);
++      });
++    }
++
++    row.appendChild(barTrack);
++    wrap.appendChild(row);
++  });
++
++  host.appendChild(wrap);
++}
++
++function renderTasksPriorityChart(summary) {
++  var host = document.getElementById("chart-tasks-priority");
++  if (!host) return;
++  host.textContent = "";
++
++  var prios = (summary && summary.by_priority) || {};
++  var total = (summary && summary.total_tasks) || 0;
++
++  var wrap = document.createElement("div");
++  wrap.style.display = "flex";
++  wrap.style.flexDirection = "column";
++  wrap.style.gap = "0.5rem";
++  wrap.style.width = "100%";
++
++  var prioOrder = [
++    { key: "critical", label: "Critical", color: "#f87171" },
++    { key: "high", label: "High", color: "#fbbf24" },
++    { key: "normal", label: "Normal", color: "#38bdf8" },
++    { key: "low", label: "Low", color: "#64748b" }
++  ];
++
++  prioOrder.forEach(function (p) {
++    var count = prios[p.key] || 0;
++    var pct = total > 0 ? (count / total) * 100 : 0;
++
++    var row = document.createElement("div");
++    row.style.display = "flex";
++    row.style.alignItems = "center";
++    row.style.gap = "0.5rem";
++    row.style.fontSize = "0.78rem";
++
++    var label = document.createElement("span");
++    label.style.width = "65px";
++    label.style.color = p.color;
++    label.style.fontWeight = "600";
++    label.textContent = p.label;
++
++    var barWrap = document.createElement("div");
++    barWrap.style.flex = "1";
++    barWrap.style.height = "10px";
++    barWrap.style.background = "#0f172a";
++    barWrap.style.borderRadius = "4px";
++    barWrap.style.overflow = "hidden";
++    barWrap.style.border = "1px solid #334155";
++
++    var fill = document.createElement("div");
++    fill.style.width = pct + "%";
++    fill.style.height = "100%";
++    fill.style.background = p.color;
++    barWrap.appendChild(fill);
++
++    var countSpan = document.createElement("span");
++    countSpan.style.width = "45px";
++    countSpan.style.textAlign = "right";
++    countSpan.style.fontWeight = "700";
++    countSpan.textContent = String(count);
++
++    row.appendChild(label);
++    row.appendChild(barWrap);
++    row.appendChild(countSpan);
++    wrap.appendChild(row);
++  });
++
++  host.appendChild(wrap);
++}
++
++/* =========================================================================
++ * TASK FILTERING & KANBAN RENDERING
++ * ========================================================================= */
++function populateOwnerFilter(tasks) {
++  var select = document.getElementById("task-filter-owner");
++  if (!select) return;
++
++  var currentVal = select.value;
++  var ownersSet = {};
++  (tasks || []).forEach(function (t) {
++    var o = (t && t.owner) || "";
++    if (o) ownersSet[o] = true;
++  });
++
++  var owners = Object.keys(ownersSet).sort();
++  select.innerHTML = '<option value="">All Owners (' + owners.length + ')</option>';
++  owners.forEach(function (o) {
++    var opt = document.createElement("option");
++    opt.value = o;
++    opt.textContent = o;
++    select.appendChild(opt);
++  });
++
++  if (currentVal && ownersSet[currentVal]) {
++    select.value = currentVal;
++  }
++}
++
++function filterTasks(tasks) {
++  if (!Array.isArray(tasks)) return [];
++
++  var q = (currentFilter.search || "").toLowerCase().trim();
++  var prod = currentFilter.product;
++  var state = currentFilter.state;
++  var owner = currentFilter.owner;
++  var prio = currentFilter.priority;
++
++  return tasks.filter(function (t) {
++    if (!t) return false;
++    if (prod && t.product !== prod) return false;
++    if (state && t.state !== state) return false;
++    if (owner && t.owner !== owner) return false;
++    if (prio && t.priority !== prio) return false;
++
++    if (q) {
++      var matchId = (t.id || "").toLowerCase().indexOf(q) !== -1;
++      var matchTitle = (t.title || "").toLowerCase().indexOf(q) !== -1;
++      var matchDesc = (t.description || "").toLowerCase().indexOf(q) !== -1;
++      var matchOwner = (t.owner || "").toLowerCase().indexOf(q) !== -1;
++      var matchNext = (t.next_action || "").toLowerCase().indexOf(q) !== -1;
++      if (!matchId && !matchTitle && !matchDesc && !matchOwner && !matchNext) {
++        return false;
++      }
++    }
++    return true;
++  });
++}
++
++function renderKanbanCard(task) {
++  var card = document.createElement("div");
++  card.className = "task-card card-" + (task.state || "ready");
++  card.setAttribute("role", "button");
++  card.setAttribute("tabindex", "0");
++  card.setAttribute("aria-label", "Task " + task.id + ": " + task.title);
++
++  // Top line: product badge, priority, task ID
++  var top = document.createElement("div");
++  top.className = "card-top";
++
++  var badges = document.createElement("div");
++  badges.className = "card-badges";
++
++  var prodBadge = document.createElement("span");
++  prodBadge.className = "badge-prod";
++  prodBadge.textContent = task.product;
++  badges.appendChild(prodBadge);
++
++  var prioBadge = document.createElement("span");
++  prioBadge.className = "badge-prio prio-" + (task.priority || "normal");
++  prioBadge.textContent = task.priority || "normal";
++  badges.appendChild(prioBadge);
++
++  top.appendChild(badges);
++
++  var idPill = document.createElement("span");
++  idPill.className = "task-id-pill";
++  idPill.textContent = task.id;
++  top.appendChild(idPill);
++
++  card.appendChild(top);
++
++  // Title
++  var title = document.createElement("div");
++  title.className = "card-title";
++  title.textContent = task.title || task.id;
++  card.appendChild(title);
++
++  // Description snippet
++  if (task.description) {
++    var desc = document.createElement("div");
++    desc.className = "card-desc";
++    desc.textContent = task.description;
++    card.appendChild(desc);
++  }
++
++  // State specific callouts
++  if (task.state === "blocked" && task.blocker && task.blocker.length > 0) {
++    var blockBox = document.createElement("div");
++    blockBox.className = "card-callout callout-blocked";
++    var bText = Array.isArray(task.blocker) ? task.blocker.join("; ") : String(task.blocker);
++    blockBox.innerHTML = '<strong>Blocked on:</strong> ' + bText;
++    card.appendChild(blockBox);
++  } else if (task.state === "in_progress" && task.next_action) {
++    var nextBox = document.createElement("div");
++    nextBox.className = "card-callout callout-next";
++    nextBox.innerHTML = '<strong>Next:</strong> ' + task.next_action;
++    card.appendChild(nextBox);
++  } else if (task.state === "done" && task.outcome_evidence && task.outcome_evidence.length > 0) {
++    var evBox = document.createElement("div");
++    evBox.className = "card-callout callout-evidence";
++    var evCount = Array.isArray(task.outcome_evidence) ? task.outcome_evidence.length : 1;
++    evBox.innerHTML = '<strong>Verified:</strong> ' + evCount + ' evidence artifact(s)';
++    card.appendChild(evBox);
++  }
++
++  // Footer: Owner & updated time
++  var foot = document.createElement("div");
++  foot.className = "card-foot";
++
++  var ownerSpan = document.createElement("span");
++  ownerSpan.className = "owner-tag";
++  ownerSpan.innerHTML = '<span class="owner-dot"></span> ' + (task.owner || "unassigned");
++  foot.appendChild(ownerSpan);
++
++  var timeSpan = document.createElement("span");
++  timeSpan.textContent = fmtRelativeTime(task.last_update);
++  foot.appendChild(timeSpan);
++
++  card.appendChild(foot);
++
++  // Click & keyboard handlers to open modal
++  card.addEventListener("click", function () { openTaskModal(task); });
++  card.addEventListener("keydown", function (e) {
++    if (e.key === "Enter" || e.key === " ") {
++      e.preventDefault();
++      openTaskModal(task);
++    }
++  });
++
++  return card;
++}
++
++function renderKanbanBoard(filteredTasks) {
++  var columns = {
++    ready: document.getElementById("col-ready-body"),
++    in_progress: document.getElementById("col-in_progress-body"),
++    review: document.getElementById("col-review-body"),
++    blocked: document.getElementById("col-blocked-body"),
++    done: document.getElementById("col-done-body")
++  };
++
++  var counts = { ready: 0, in_progress: 0, review: 0, blocked: 0, done: 0 };
++
++  TASK_STATES.forEach(function (st) {
++    if (columns[st]) columns[st].textContent = "";
++  });
++
++  filteredTasks.forEach(function (t) {
++    var st = t.state || "ready";
++    if (!columns[st]) st = "ready";
++    counts[st]++;
++    var card = renderKanbanCard(t);
++    columns[st].appendChild(card);
++  });
++
++  TASK_STATES.forEach(function (st) {
++    var countEl = document.getElementById("count-" + st);
++    if (countEl) countEl.textContent = String(counts[st]);
++    if (columns[st] && counts[st] === 0) {
++      var empty = document.createElement("p");
++      empty.className = "muted small";
++      empty.style.textAlign = "center";
++      empty.style.padding = "1rem 0";
++      empty.textContent = "No tasks in " + STATE_LABELS[st];
++      columns[st].appendChild(empty);
++    }
++  });
++}
++
++function renderTasksTable(filteredTasks) {
++  var body = document.getElementById("tasks-table-body");
++  if (!body) return;
++  body.textContent = "";
++
++  if (filteredTasks.length === 0) {
++    var tr = document.createElement("tr");
++    var td = document.createElement("td");
++    td.colSpan = 9;
++    td.className = "muted";
++    td.textContent = "No tasks match the active filters.";
++    tr.appendChild(td);
++    body.appendChild(tr);
++    return;
++  }
++
++  filteredTasks.forEach(function (t) {
++    var tr = document.createElement("tr");
++
++    function cell(txt, cls) {
++      var td = document.createElement("td");
++      td.textContent = txt;
++      if (cls) td.className = cls;
++      return td;
++    }
++
++    var tdId = document.createElement("td");
++    tdId.innerHTML = '<code>' + t.id + '</code>';
++    tr.appendChild(tdId);
++
++    tr.appendChild(cell(t.product, null));
++
++    var tdState = document.createElement("td");
++    tdState.innerHTML = '<span class="badge" style="color:' + STATE_COLORS[t.state] + '; border-color:' + STATE_COLORS[t.state] + ';">' + (STATE_LABELS[t.state] || t.state) + '</span>';
++    tr.appendChild(tdState);
++
++    var tdPrio = document.createElement("td");
++    tdPrio.innerHTML = '<span class="badge-prio prio-' + t.priority + '">' + t.priority + '</span>';
++    tr.appendChild(tdPrio);
++
++    tr.appendChild(cell(t.title || t.id, null));
++    tr.appendChild(cell(t.owner, null));
++
++    var nextOrBlocker = t.state === "blocked" ? (Array.isArray(t.blocker) ? t.blocker.join("; ") : t.blocker) : (t.next_action || "—");
++    tr.appendChild(cell(nextOrBlocker, null));
++
++    tr.appendChild(cell(fmtRelativeTime(t.last_update), null));
++
++    var tdBtn = document.createElement("td");
++    var btn = document.createElement("button");
++    btn.type = "button";
++    btn.className = "btn-small btn-secondary";
++    btn.textContent = "Details";
++    btn.addEventListener("click", function () { openTaskModal(t); });
++    tdBtn.appendChild(btn);
++    tr.appendChild(tdBtn);
++
++    body.appendChild(tr);
++  });
++}
++
++function updateTasksViews() {
++  if (!cachedTasksPayload) return;
++  var allTasks = cachedTasksPayload.tasks || [];
++  var filtered = filterTasks(allTasks);
++
++  var counter = document.getElementById("tasks-filter-counter");
++  if (counter) {
++    counter.textContent = "Showing " + filtered.length + " of " + allTasks.length + " tasks";
++  }
++
++  var kanbanView = document.getElementById("kanban-view");
++  var listView = document.getElementById("tasks-list-view");
++
++  if (currentFilter.view === "kanban") {
++    if (kanbanView) kanbanView.hidden = false;
++    if (listView) listView.hidden = true;
++    renderKanbanBoard(filtered);
++  } else {
++    if (kanbanView) kanbanView.hidden = true;
++    if (listView) listView.hidden = false;
++    renderTasksTable(filtered);
++  }
++}
++
++/* =========================================================================
++ * ACTORS & SESSIONS RENDERING
++ * ========================================================================= */
++function renderActors(payload) {
++  var actors = (payload && payload.actors) || {};
++
++  var cats = [
++    { key: "coordinators", hostId: "actors-coordinators-list", badgeId: "count-actors-coordinators" },
++    { key: "active_workers", hostId: "actors-active-list", badgeId: "count-actors-active" },
++    { key: "completed_workers", hostId: "actors-completed-list", badgeId: "count-actors-completed" },
++    { key: "idle_blocked", hostId: "actors-idle-list", badgeId: "count-actors-idle" }
++  ];
++
++  var totalActors = 0;
++
++  cats.forEach(function (c) {
++    var list = actors[c.key] || [];
++    totalActors += list.length;
++    var host = document.getElementById(c.hostId);
++    var badge = document.getElementById(c.badgeId);
++    if (badge) badge.textContent = String(list.length);
++    if (!host) return;
++    host.textContent = "";
++
++    if (list.length === 0) {
++      host.innerHTML = '<p class="muted small">No actors in this category.</p>';
++      return;
++    }
++
++    list.forEach(function (a) {
++      var item = document.createElement("div");
++      item.className = "actor-item";
++
++      var top = document.createElement("div");
++      top.className = "actor-item-top";
++
++      var tagSpan = document.createElement("span");
++      tagSpan.className = "actor-tag";
++      tagSpan.textContent = a.tag;
++      top.appendChild(tagSpan);
++
++      var roleSpan = document.createElement("span");
++      roleSpan.className = "actor-role";
++      roleSpan.textContent = a.role;
++      top.appendChild(roleSpan);
++
++      item.appendChild(top);
++
++      var note = document.createElement("div");
++      note.className = "actor-note";
++      note.textContent = a.status_note || "Operational";
++      item.appendChild(note);
++
++      var sub = document.createElement("div");
++      sub.className = "actor-sub";
++      var subParts = [];
++      if (a.project) subParts.push("project: " + a.project);
++      if (a.mode) subParts.push("mode: " + a.mode);
++      if (a.session_id) subParts.push("session: " + a.session_id.substring(0, 8) + "…");
++      if (a.current_task) subParts.push("task: " + a.current_task);
++      sub.textContent = subParts.join(" · ");
++      item.appendChild(sub);
++
++      host.appendChild(item);
++    });
++  });
++
++  var navBadge = document.getElementById("nav-actors-badge");
++  if (navBadge) navBadge.textContent = String(totalActors);
++}
++
++/* =========================================================================
++ * MODAL DIALOG
++ * ========================================================================= */
++function openTaskModal(task) {
++  var modal = document.getElementById("task-modal");
++  if (!modal || !task) return;
++
++  var titleEl = document.getElementById("modal-task-title");
++  if (titleEl) titleEl.textContent = task.title || task.id;
++
++  var badgesEl = document.getElementById("modal-badges");
++  if (badgesEl) {
++    badgesEl.innerHTML =
++      '<span class="badge" style="color:' + (STATE_COLORS[task.state] || '#fff') + '; border-color:' + (STATE_COLORS[task.state] || '#fff') + ';">' + (STATE_LABELS[task.state] || task.state) + '</span> ' +
++      '<span class="badge-prod">' + task.product + '</span> ' +
++      '<span class="badge-prio prio-' + (task.priority || 'normal') + '">' + (task.priority || 'normal') + '</span>';
++  }
++
++  setCell("modal-id", { text: task.id });
++  setCell("modal-product", { text: task.product });
++  setCell("modal-state", { text: STATE_LABELS[task.state] || task.state });
++  setCell("modal-priority", { text: task.priority || "normal" });
++  setCell("modal-owner", { text: task.owner || "unassigned" });
++  setCell("modal-update", { text: fmtTime(task.last_update) });
++
++  var descEl = document.getElementById("modal-description");
++  if (descEl) descEl.textContent = task.description || "No description provided.";
++
++  var nextSec = document.getElementById("modal-section-next");
++  var nextEl = document.getElementById("modal-next-action");
++  if (nextSec && nextEl) {
++    if (task.next_action) {
++      nextSec.hidden = false;
++      nextEl.textContent = task.next_action;
++    } else {
++      nextSec.hidden = true;
++    }
++  }
++
++  var blockerSec = document.getElementById("modal-section-blocker");
++  var blockerEl = document.getElementById("modal-blocker");
++  if (blockerSec && blockerEl) {
++    if (task.blocker && task.blocker.length > 0) {
++      blockerSec.hidden = false;
++      var bList = Array.isArray(task.blocker) ? task.blocker.join("; ") : String(task.blocker);
++      blockerEl.textContent = bList;
++    } else {
++      blockerSec.hidden = true;
++    }
++  }
++
++  var evSec = document.getElementById("modal-section-evidence");
++  var evEl = document.getElementById("modal-evidence");
++  if (evSec && evEl) {
++    if (task.outcome_evidence && (Array.isArray(task.outcome_evidence) ? task.outcome_evidence.length > 0 : true)) {
++      evSec.hidden = false;
++      if (Array.isArray(task.outcome_evidence)) {
++        evEl.innerHTML = task.outcome_evidence.map(function (e) { return '<div>• <code>' + e + '</code></div>'; }).join("");
++      } else {
++        evEl.textContent = String(task.outcome_evidence);
++      }
++    } else {
++      evSec.hidden = true;
++    }
++  }
++
++  var reviewSec = document.getElementById("modal-section-review");
++  var reviewEl = document.getElementById("modal-review");
++  if (reviewSec && reviewEl) {
++    var rParts = [];
++    if (task.reviewer) rParts.push("Reviewer: " + task.reviewer);
++    if (task.commit) rParts.push("Commit: " + task.commit);
++    if (task.tests) rParts.push("Tests: " + task.tests);
++    if (rParts.length > 0) {
++      reviewSec.hidden = false;
++      reviewEl.textContent = rParts.join(" · ");
++    } else {
++      reviewSec.hidden = true;
++    }
++  }
++
++  var rawEl = document.getElementById("modal-raw-json");
++  if (rawEl) {
++    rawEl.textContent = JSON.stringify(task.raw || task, null, 2);
++  }
++
++  modal.hidden = false;
++  document.body.style.overflow = "hidden";
++}
++
++function closeTaskModal() {
++  var modal = document.getElementById("task-modal");
++  if (modal) {
++    modal.hidden = true;
++    document.body.style.overflow = "";
++  }
++}
++
++/* =========================================================================
++ * WORKFLOW & SETUP
++ * ========================================================================= */
++function renderWorkflow(workflow) {
++  var list = document.getElementById("workflow-principles-list");
++  if (!list || !workflow || !Array.isArray(workflow.principles)) return;
++  list.innerHTML = "";
++  workflow.principles.forEach(function (p) {
++    var li = document.createElement("li");
++    li.textContent = p;
++    list.appendChild(li);
++  });
++}
++
++function setupEventListeners() {
++  // Modal close handlers
++  var closeBtn = document.getElementById("modal-close-btn");
++  if (closeBtn) closeBtn.addEventListener("click", closeTaskModal);
++
++  var backdrop = document.getElementById("modal-backdrop");
++  if (backdrop) backdrop.addEventListener("click", closeTaskModal);
++
++  window.addEventListener("keydown", function (e) {
++    if (e.key === "Escape") closeTaskModal();
++  });
++
++  var copyBtn = document.getElementById("copy-json-btn");
++  if (copyBtn) {
++    copyBtn.addEventListener("click", function () {
++      var rawEl = document.getElementById("modal-raw-json");
++      if (rawEl && navigator.clipboard) {
++        navigator.clipboard.writeText(rawEl.textContent).then(function () {
++          copyBtn.textContent = "Copied!";
++          setTimeout(function () { copyBtn.textContent = "Copy JSON"; }, 2000);
++        });
++      }
++    });
++  }
++
++  // Filter input listeners
++  var searchInput = document.getElementById("task-search");
++  if (searchInput) {
++    searchInput.addEventListener("input", function (e) {
++      currentFilter.search = e.target.value;
++      updateTasksViews();
++    });
++  }
++
++  var prodSelect = document.getElementById("task-filter-product");
++  if (prodSelect) {
++    prodSelect.addEventListener("change", function (e) {
++      currentFilter.product = e.target.value;
++      updateTasksViews();
++    });
++  }
++
++  var stateSelect = document.getElementById("task-filter-state");
++  if (stateSelect) {
++    stateSelect.addEventListener("change", function (e) {
++      currentFilter.state = e.target.value;
++      updateTasksViews();
++    });
++  }
++
++  var ownerSelect = document.getElementById("task-filter-owner");
++  if (ownerSelect) {
++    ownerSelect.addEventListener("change", function (e) {
++      currentFilter.owner = e.target.value;
++      updateTasksViews();
++    });
++  }
++
++  var prioSelect = document.getElementById("task-filter-priority");
++  if (prioSelect) {
++    prioSelect.addEventListener("change", function (e) {
++      currentFilter.priority = e.target.value;
++      updateTasksViews();
++    });
++  }
++
++  var resetBtn = document.getElementById("task-filter-reset");
++  if (resetBtn) {
++    resetBtn.addEventListener("click", function () {
++      currentFilter.search = "";
++      currentFilter.product = "";
++      currentFilter.state = "";
++      currentFilter.owner = "";
++      currentFilter.priority = "";
++      if (searchInput) searchInput.value = "";
++      if (prodSelect) prodSelect.value = "";
++      if (stateSelect) stateSelect.value = "";
++      if (ownerSelect) ownerSelect.value = "";
++      if (prioSelect) prioSelect.value = "";
++      updateTasksViews();
++    });
++  }
++
++  var toggleKanban = document.getElementById("toggle-kanban");
++  var toggleList = document.getElementById("toggle-list");
++  if (toggleKanban && toggleList) {
++    toggleKanban.addEventListener("click", function () {
++      currentFilter.view = "kanban";
++      toggleKanban.classList.add("active");
++      toggleKanban.setAttribute("aria-pressed", "true");
++      toggleList.classList.remove("active");
++      toggleList.setAttribute("aria-pressed", "false");
++      updateTasksViews();
++    });
++    toggleList.addEventListener("click", function () {
++      currentFilter.view = "list";
++      toggleList.classList.add("active");
++      toggleList.setAttribute("aria-pressed", "true");
++      toggleKanban.classList.remove("active");
++      toggleKanban.setAttribute("aria-pressed", "false");
++      updateTasksViews();
++    });
++  }
++}
++
++/* =========================================================================
++ * MAIN DATA LOADING
++ * ========================================================================= */
+ function setRefreshStatus(text) {
+   var el = document.getElementById("refresh-status");
+   if (el) el.textContent = text;
+@@ -323,6 +1189,8 @@ function setRefreshStatus(text) {
+ function loadAll(asOfISO) {
+   setRefreshStatus("loading…");
+   var hourlyURL = "/api/hourly" + (asOfISO ? "?as_of=" + encodeURIComponent(asOfISO) : "");
++  var tasksURL = "/api/tasks" + (asOfISO ? "?as_of=" + encodeURIComponent(asOfISO) : "");
++
+   var hourlyP = getJSON(hourlyURL).then(
+     function (d) { return { ok: true, data: d }; },
+     function (e) { return { ok: false, error: e }; }
+@@ -335,13 +1203,17 @@ function loadAll(asOfISO) {
+     function (d) { return { ok: true, data: d }; },
+     function (e) { return { ok: false, error: e }; }
+   );
++  var tasksP = getJSON(tasksURL).then(
++    function (d) { return { ok: true, data: d }; },
++    function (e) { return { ok: false, error: e }; }
++  );
+   var healthP = getJSON("/api/health").then(
+     function (d) { return { ok: true, data: d }; },
+     function (e) { return { ok: false, error: e }; }
+   );
+ 
+-  return Promise.all([hourlyP, usageP, featuresP, healthP]).then(function (res) {
+-    var hourly = res[0], usage = res[1], features = res[2], health = res[3];
++  return Promise.all([hourlyP, usageP, featuresP, tasksP, healthP]).then(function (res) {
++    var hourly = res[0], usage = res[1], features = res[2], tasks = res[3], health = res[4];
+ 
+     if (health.ok) {
+       setHealth("badge-ok", "health: ok");
+@@ -357,8 +1229,7 @@ function loadAll(asOfISO) {
+         showError("hourly-error", "Hourly render failed (" + e.message + "); showing fallbacks.");
+       }
+     } else {
+-      showError("hourly-error", "Hourly API unavailable (" + hourly.error.message + "); showing cached fallbacks — not a blank page.");
+-      // Keep static fallback text; still render unknown-state charts once.
++      showError("hourly-error", "Hourly API unavailable (" + hourly.error.message + "); showing cached fallbacks.");
+       try { renderHourly(null); } catch (e) { /* keep fallbacks */ }
+     }
+ 
+@@ -386,12 +1257,41 @@ function loadAll(asOfISO) {
+       try { renderFeatures(null); } catch (e) { /* keep fallbacks */ }
+     }
+ 
++    if (tasks.ok) {
++      showError("tasks-error", null);
++      cachedTasksPayload = tasks.data;
++      try {
++        var summary = tasks.data.summary || {};
++        var overallEl = document.getElementById("tasks-overall-pct");
++        if (overallEl) overallEl.textContent = (summary.overall_completion_pct || 0) + "%";
++
++        var navTasksBadge = document.getElementById("nav-tasks-badge");
++        if (navTasksBadge) navTasksBadge.textContent = String(summary.total_tasks || 0);
++
++        renderTasksDonutChart(summary);
++        renderTasksProductBarChart(summary);
++        renderTasksPriorityChart(summary);
++
++        populateOwnerFilter(tasks.data.tasks || []);
++        updateTasksViews();
++        renderActors(tasks.data);
++        renderWorkflow(tasks.data.workflow);
++      } catch (e) {
++        showError("tasks-error", "Tasks render failed (" + e.message + ").");
++      }
++    } else {
++      showError("tasks-error", "Tasks API unavailable (" + tasks.error.message + "); check server status.");
++    }
++
+     var stamp = new Date().toISOString();
+     setRefreshStatus("updated " + stamp);
+   });
+ }
+ 
+ document.addEventListener("DOMContentLoaded", function () {
++  handleRouting();
++  setupEventListeners();
++
+   var btn = document.getElementById("refresh-btn");
+   var input = document.getElementById("as-of-input");
+   function currentAsOf() {
+diff --git a/static/index.html b/static/index.html
+index a1687be..d2b1afe 100644
+--- a/static/index.html
++++ b/static/index.html
+@@ -3,7 +3,7 @@
+ <head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+-  <title>Agent Fleet Dashboard</title>
++  <title>Agent Fleet Dashboard &amp; Task Tracker</title>
+   <link rel="stylesheet" href="dashboard.css">
+   <script src="dashboard.js" defer></script>
+ </head>
+@@ -11,13 +11,21 @@
+   <header class="page-head">
+     <div>
+       <h1>Autonomous Agent Fleet Operational Dashboard</h1>
+-      <p class="subtitle">Rolling 24-hour utilization (UTC, half-open buckets), usage accounting, and completed features</p>
++      <p class="subtitle">Rolling 24-hour utilization, usage accounting, completed features &amp; fleet task tracker</p>
+     </div>
+     <div class="head-side">
+       <span id="health-status" class="badge badge-pending" role="status">health: checking&hellip;</span>
+     </div>
+   </header>
+ 
++  <nav class="nav-bar" aria-label="Main Navigation">
++    <div class="nav-links">
++      <a href="#overview" class="nav-link active" id="nav-overview">Overview &amp; Metrics</a>
++      <a href="#tasks" class="nav-link" id="nav-tasks">Fleet Tasks Tracker <span id="nav-tasks-badge" class="badge badge-counter">…</span></a>
++      <a href="#actors" class="nav-link" id="nav-actors">Fleet Actors &amp; Sessions <span id="nav-actors-badge" class="badge badge-counter">…</span></a>
++    </div>
++  </nav>
++
+   <section class="controls" aria-label="Refresh controls">
+     <div class="window-line" id="window-info">Window: loading&hellip; (fetching /api/hourly)</div>
+     <div class="refresh-row">
+@@ -26,118 +34,428 @@
+       <button id="refresh-btn" type="button">Refresh</button>
+       <span id="refresh-status" class="muted" role="status">idle</span>
+     </div>
+-    <p id="asof-help" class="muted small">Leave blank for server time. When set, the client passes <code>?as_of=&lt;ISO8601&gt;</code> to <code>/api/hourly</code>.</p>
++    <p id="asof-help" class="muted small">Leave blank for server time. When set, the client passes <code>?as_of=&lt;ISO8601&gt;</code> to APIs.</p>
+     <p id="shared-note" class="note">Shared-agent accounting: counts are non-additive across projects (loading&hellip;).</p>
+     <p id="hourly-error" class="error-banner" hidden></p>
++    <p id="tasks-error" class="error-banner" hidden></p>
+   </section>
+ 
+   <main>
+-    <div class="grid" id="project-grid">
+-      <section class="card" id="agent-branches" aria-label="AgentBranches utilization">
+-        <h2>AgentBranches</h2>
+-        <p class="proj-sub"><code>agent-branches</code> <span id="unknown-agent-branches" class="badge badge-unknown" hidden>unknown</span></p>
+-        <dl class="metrics">
+-          <div><dt>Unique agents</dt><dd id="unique-agent-branches">loading&hellip;</dd></div>
+-          <div><dt>Total agent-hours</dt><dd id="hours-agent-branches">loading&hellip;</dd></div>
+-          <div><dt>Coverage</dt><dd id="coverage-agent-branches">loading&hellip;</dd></div>
+-          <div><dt>Unattributed hours</dt><dd id="unattrib-agent-branches">loading&hellip;</dd></div>
+-        </dl>
+-        <h3>Hourly buckets (UTC, 24 &times; 1h)</h3>
+-        <div class="chart" id="chart-agent-branches" aria-label="Hourly bar chart for agent-branches">
+-          <p class="muted">chart loading&hellip;</p>
++    <!-- VIEW 1: OVERVIEW & HOURLY UTILIZATION -->
++    <div id="view-overview" class="view-panel">
++      <div class="grid" id="project-grid">
++        <section class="card" id="agent-branches" aria-label="AgentBranches utilization">
++          <h2>AgentBranches</h2>
++          <p class="proj-sub"><code>agent-branches</code> <span id="unknown-agent-branches" class="badge badge-unknown" hidden>unknown</span></p>
++          <dl class="metrics">
++            <div><dt>Unique agents</dt><dd id="unique-agent-branches">loading&hellip;</dd></div>
++            <div><dt>Total agent-hours</dt><dd id="hours-agent-branches">loading&hellip;</dd></div>
++            <div><dt>Coverage</dt><dd id="coverage-agent-branches">loading&hellip;</dd></div>
++            <div><dt>Unattributed hours</dt><dd id="unattrib-agent-branches">loading&hellip;</dd></div>
++          </dl>
++          <h3>Hourly buckets (UTC, 24 &times; 1h)</h3>
++          <div class="chart" id="chart-agent-branches" aria-label="Hourly bar chart for agent-branches">
++            <p class="muted">chart loading&hellip;</p>
++          </div>
++          <p class="muted small axis-note">Bars show agent-hours per half-open bucket <code>[start, end)</code> in UTC. Hover/tap a bar for exact bounds.</p>
++        </section>
++
++        <section class="card" id="agent-dashboard" aria-label="Agent Dashboard utilization">
++          <h2>Agent Dashboard</h2>
++          <p class="proj-sub"><code>agent-dashboard</code> <span id="unknown-agent-dashboard" class="badge badge-unknown" hidden>unknown</span></p>
++          <dl class="metrics">
++            <div><dt>Unique agents</dt><dd id="unique-agent-dashboard">loading&hellip;</dd></div>
++            <div><dt>Total agent-hours</dt><dd id="hours-agent-dashboard">loading&hellip;</dd></div>
++            <div><dt>Coverage</dt><dd id="coverage-agent-dashboard">loading&hellip;</dd></div>
++            <div><dt>Unattributed hours</dt><dd id="unattrib-agent-dashboard">loading&hellip;</dd></div>
++          </dl>
++          <h3>Hourly buckets (UTC, 24 &times; 1h)</h3>
++          <div class="chart" id="chart-agent-dashboard" aria-label="Hourly bar chart for agent-dashboard">
++            <p class="muted">chart loading&hellip;</p>
++          </div>
++          <p class="muted small axis-note">Bars show agent-hours per half-open bucket <code>[start, end)</code> in UTC. Hover/tap a bar for exact bounds.</p>
++        </section>
++
++        <section class="card" id="quota-launcher" aria-label="Quota-Aware Launcher utilization">
++          <h2>Quota-Aware Launcher</h2>
++          <p class="proj-sub"><code>quota-launcher</code> <span id="unknown-quota-launcher" class="badge badge-unknown" hidden>unknown</span></p>
++          <dl class="metrics">
++            <div><dt>Unique agents</dt><dd id="unique-quota-launcher">loading&hellip;</dd></div>
++            <div><dt>Total agent-hours</dt><dd id="hours-quota-launcher">loading&hellip;</dd></div>
++            <div><dt>Coverage</dt><dd id="coverage-quota-launcher">loading&hellip;</dd></div>
++            <div><dt>Unattributed hours</dt><dd id="unattrib-quota-launcher">loading&hellip;</dd></div>
++          </dl>
++          <h3>Hourly buckets (UTC, 24 &times; 1h)</h3>
++          <div class="chart" id="chart-quota-launcher" aria-label="Hourly bar chart for quota-launcher">
++            <p class="muted">chart loading&hellip;</p>
++          </div>
++          <p class="muted small axis-note">Bars show agent-hours per half-open bucket <code>[start, end)</code> in UTC. Hover/tap a bar for exact bounds.</p>
++        </section>
++
++        <section class="card" id="agent-coordination" aria-label="Cross-computer Agent Coordination utilization">
++          <h2>Cross-computer Agent Coordination</h2>
++          <p class="proj-sub"><code>agent-coordination</code> <span id="unknown-agent-coordination" class="badge badge-unknown" hidden>unknown</span></p>
++          <dl class="metrics">
++            <div><dt>Unique agents</dt><dd id="unique-agent-coordination">loading&hellip;</dd></div>
++            <div><dt>Total agent-hours</dt><dd id="hours-agent-coordination">loading&hellip;</dd></div>
++            <div><dt>Coverage</dt><dd id="coverage-agent-coordination">loading&hellip;</dd></div>
++            <div><dt>Unattributed hours</dt><dd id="unattrib-agent-coordination">loading&hellip;</dd></div>
++          </dl>
++          <h3>Hourly buckets (UTC, 24 &times; 1h)</h3>
++          <div class="chart" id="chart-agent-coordination" aria-label="Hourly bar chart for agent-coordination">
++            <p class="muted">chart loading&hellip;</p>
++          </div>
++          <p class="muted small axis-note">Bars show agent-hours per half-open bucket <code>[start, end)</code> in UTC. Hover/tap a bar for exact bounds.</p>
++        </section>
++      </div>
++
++      <section class="panel" id="usage-section" aria-label="Usage accounting">
++        <h2>Usage accounting</h2>
++        <p class="muted small">Token fields may be null (shown as <code>n/a</code>, never 0). Quota deltas are tracked separately from cost/tokens. Reasoning tokens are never added to output tokens.</p>
++        <p id="usage-error" class="error-banner" hidden></p>
++        <div class="table-wrap">
++          <table id="usage-table">
++            <caption class="muted">Per-project usage aggregates from <code>/api/usage</code></caption>
++            <thead>
++              <tr>
++                <th scope="col">Project</th>
++                <th scope="col">Events</th>
++                <th scope="col">Input</th>
++                <th scope="col">Output</th>
++                <th scope="col">Cache read</th>
++                <th scope="col">Cache created</th>
++                <th scope="col">Reasoning</th>
++                <th scope="col">Quota delta</th>
++                <th scope="col">Flags</th>
++              </tr>
++            </thead>
++            <tbody id="usage-body">
++              <tr><td colspan="9" class="muted">usage loading&hellip;</td></tr>
++            </tbody>
++          </table>
+         </div>
+-        <p class="muted small axis-note">Bars show agent-hours per half-open bucket <code>[start, end)</code> in UTC. Hover/tap a bar for exact bounds.</p>
+       </section>
+ 
+-      <section class="card" id="agent-dashboard" aria-label="Agent Dashboard utilization">
+-        <h2>Agent Dashboard</h2>
+-        <p class="proj-sub"><code>agent-dashboard</code> <span id="unknown-agent-dashboard" class="badge badge-unknown" hidden>unknown</span></p>
+-        <dl class="metrics">
+-          <div><dt>Unique agents</dt><dd id="unique-agent-dashboard">loading&hellip;</dd></div>
+-          <div><dt>Total agent-hours</dt><dd id="hours-agent-dashboard">loading&hellip;</dd></div>
+-          <div><dt>Coverage</dt><dd id="coverage-agent-dashboard">loading&hellip;</dd></div>
+-          <div><dt>Unattributed hours</dt><dd id="unattrib-agent-dashboard">loading&hellip;</dd></div>
+-        </dl>
+-        <h3>Hourly buckets (UTC, 24 &times; 1h)</h3>
+-        <div class="chart" id="chart-agent-dashboard" aria-label="Hourly bar chart for agent-dashboard">
+-          <p class="muted">chart loading&hellip;</p>
++      <section class="panel" id="features-section" aria-label="Completed features">
++        <h2>Completed features</h2>
++        <p class="muted small">Accepted-task evidence joined to feature completions from <code>/api/features</code>. Repeated reviews/commits are not counted as features.</p>
++        <p id="features-error" class="error-banner" hidden></p>
++        <div id="features-list">
++          <p class="muted">features loading&hellip;</p>
+         </div>
+-        <p class="muted small axis-note">Bars show agent-hours per half-open bucket <code>[start, end)</code> in UTC. Hover/tap a bar for exact bounds.</p>
+       </section>
++    </div>
+ 
+-      <section class="card" id="quota-launcher" aria-label="Quota-Aware Launcher utilization">
+-        <h2>Quota-Aware Launcher</h2>
+-        <p class="proj-sub"><code>quota-launcher</code> <span id="unknown-quota-launcher" class="badge badge-unknown" hidden>unknown</span></p>
+-        <dl class="metrics">
+-          <div><dt>Unique agents</dt><dd id="unique-quota-launcher">loading&hellip;</dd></div>
+-          <div><dt>Total agent-hours</dt><dd id="hours-quota-launcher">loading&hellip;</dd></div>
+-          <div><dt>Coverage</dt><dd id="coverage-quota-launcher">loading&hellip;</dd></div>
+-          <div><dt>Unattributed hours</dt><dd id="unattrib-quota-launcher">loading&hellip;</dd></div>
+-        </dl>
+-        <h3>Hourly buckets (UTC, 24 &times; 1h)</h3>
+-        <div class="chart" id="chart-quota-launcher" aria-label="Hourly bar chart for quota-launcher">
+-          <p class="muted">chart loading&hellip;</p>
++    <!-- VIEW 2: FLEET TASKS TRACKER & KANBAN -->
++    <div id="view-tasks" class="view-panel" hidden>
++      <section class="panel tasks-summary-panel" aria-label="Tasks Graphical Overview">
++        <div class="panel-head">
++          <div>
++            <h2>Fleet Tasks Analytics &amp; Completion Overview</h2>
++            <p class="muted small">Real-time status breakdown across autonomous delivery workstreams and canonical backlogs</p>
++          </div>
++          <div class="tasks-overall-stat">
++            <span class="stat-number" id="tasks-overall-pct">0%</span>
++            <span class="stat-label">Fleet Completion</span>
++          </div>
++        </div>
++
++        <div class="tasks-charts-grid">
++          <!-- Donut Chart: Status Breakdown -->
++          <div class="graph-card">
++            <h3>State Distribution</h3>
++            <div id="chart-tasks-donut" class="svg-chart-wrap" role="img" aria-label="Fleet Task State Donut Chart">
++              <p class="muted">chart loading&hellip;</p>
++            </div>
++            <div id="donut-legend" class="donut-legend"></div>
++          </div>
++
++          <!-- Horizontal Stacked Bars: Products Completion -->
++          <div class="graph-card">
++            <h3>Completion by Product Stream</h3>
++            <div id="chart-tasks-products" class="svg-chart-wrap" role="img" aria-label="Product Completion Stacked Bar Chart">
++              <p class="muted">chart loading&hellip;</p>
++            </div>
++          </div>
++
++          <!-- Activity / Priority Mini Graph -->
++          <div class="graph-card">
++            <h3>Priority &amp; Queue Density</h3>
++            <div id="chart-tasks-priority" class="svg-chart-wrap" role="img" aria-label="Task Priority Breakdown Chart">
++              <p class="muted">chart loading&hellip;</p>
++            </div>
++          </div>
+         </div>
+-        <p class="muted small axis-note">Bars show agent-hours per half-open bucket <code>[start, end)</code> in UTC. Hover/tap a bar for exact bounds.</p>
+       </section>
+ 
+-      <section class="card" id="agent-coordination" aria-label="Cross-computer Agent Coordination utilization">
+-        <h2>Cross-computer Agent Coordination</h2>
+-        <p class="proj-sub"><code>agent-coordination</code> <span id="unknown-agent-coordination" class="badge badge-unknown" hidden>unknown</span></p>
+-        <dl class="metrics">
+-          <div><dt>Unique agents</dt><dd id="unique-agent-coordination">loading&hellip;</dd></div>
+-          <div><dt>Total agent-hours</dt><dd id="hours-agent-coordination">loading&hellip;</dd></div>
+-          <div><dt>Coverage</dt><dd id="coverage-agent-coordination">loading&hellip;</dd></div>
+-          <div><dt>Unattributed hours</dt><dd id="unattrib-agent-coordination">loading&hellip;</dd></div>
+-        </dl>
+-        <h3>Hourly buckets (UTC, 24 &times; 1h)</h3>
+-        <div class="chart" id="chart-agent-coordination" aria-label="Hourly bar chart for agent-coordination">
+-          <p class="muted">chart loading&hellip;</p>
++      <!-- Task Filter Toolbar -->
++      <section class="panel filter-panel" aria-label="Task Filters">
++        <div class="filter-row">
++          <div class="filter-group filter-search-group">
++            <label for="task-search">Search:</label>
++            <input id="task-search" type="search" placeholder="Search tasks by ID, title, owner, next action…">
++          </div>
++
++          <div class="filter-group">
++            <label for="task-filter-product">Product:</label>
++            <select id="task-filter-product">
++              <option value="">All Products (5)</option>
++              <option value="agent-branches">Agent Branches</option>
++              <option value="agent-dashboard">Agent Dashboard</option>
++              <option value="quota-launcher">Quota Launcher</option>
++              <option value="agent-coordination">Agent Coordination</option>
++              <option value="infrastructure">Infrastructure &amp; Runtime</option>
++            </select>
++          </div>
++
++          <div class="filter-group">
++            <label for="task-filter-state">State:</label>
++            <select id="task-filter-state">
++              <option value="">All States (5)</option>
++              <option value="ready">Ready / Backlog</option>
++              <option value="in_progress">In Progress</option>
++              <option value="review">Review</option>
++              <option value="blocked">Blocked</option>
++              <option value="done">Done</option>
++            </select>
++          </div>
++
++          <div class="filter-group">
++            <label for="task-filter-owner">Owner:</label>
++            <select id="task-filter-owner">
++              <option value="">All Owners</option>
++            </select>
++          </div>
++
++          <div class="filter-group">
++            <label for="task-filter-priority">Priority:</label>
++            <select id="task-filter-priority">
++              <option value="">All Priorities</option>
++              <option value="critical">Critical</option>
++              <option value="high">High</option>
++              <option value="normal">Normal</option>
++              <option value="low">Low</option>
++            </select>
++          </div>
++
++          <div class="filter-actions">
++            <button id="task-filter-reset" type="button" class="btn-secondary">Reset</button>
++            <div class="view-toggle" role="radiogroup" aria-label="View toggle">
++              <button id="toggle-kanban" type="button" class="btn-toggle active" aria-pressed="true">Kanban</button>
++              <button id="toggle-list" type="button" class="btn-toggle" aria-pressed="false">List</button>
++            </div>
++          </div>
++        </div>
++
++        <div class="filter-status-row">
++          <span id="tasks-filter-counter" class="muted small">Loading tasks&hellip;</span>
++        </div>
++      </section>
++
++      <!-- Kanban Board View -->
++      <section id="kanban-view" class="kanban-section" aria-label="Kanban Task Board">
++        <div class="kanban-board" id="kanban-board">
++          <!-- 5 Columns: Ready, In Progress, Review, Blocked, Done -->
++          <div class="kanban-col col-ready" data-col="ready">
++            <div class="kanban-col-head">
++              <span class="status-dot dot-ready"></span>
++              <h4>Ready / Backlog</h4>
++              <span class="col-count" id="count-ready">0</span>
++            </div>
++            <div class="kanban-col-body" id="col-ready-body"></div>
++          </div>
++
++          <div class="kanban-col col-in_progress" data-col="in_progress">
++            <div class="kanban-col-head">
++              <span class="status-dot dot-in_progress"></span>
++              <h4>In Progress</h4>
++              <span class="col-count" id="count-in_progress">0</span>
++            </div>
++            <div class="kanban-col-body" id="col-in_progress-body"></div>
++          </div>
++
++          <div class="kanban-col col-review" data-col="review">
++            <div class="kanban-col-head">
++              <span class="status-dot dot-review"></span>
++              <h4>Review</h4>
++              <span class="col-count" id="count-review">0</span>
++            </div>
++            <div class="kanban-col-body" id="col-review-body"></div>
++          </div>
++
++          <div class="kanban-col col-blocked" data-col="blocked">
++            <div class="kanban-col-head">
++              <span class="status-dot dot-blocked"></span>
++              <h4>Blocked</h4>
++              <span class="col-count" id="count-blocked">0</span>
++            </div>
++            <div class="kanban-col-body" id="col-blocked-body"></div>
++          </div>
++
++          <div class="kanban-col col-done" data-col="done">
++            <div class="kanban-col-head">
++              <span class="status-dot dot-done"></span>
++              <h4>Done</h4>
++              <span class="col-count" id="count-done">0</span>
++            </div>
++            <div class="kanban-col-body" id="col-done-body"></div>
++          </div>
++        </div>
++      </section>
++
++      <!-- Categorized List View (alternative) -->
++      <section id="tasks-list-view" class="panel" aria-label="Tasks List View" hidden>
++        <div class="table-wrap">
++          <table id="tasks-table">
++            <thead>
++              <tr>
++                <th scope="col">ID</th>
++                <th scope="col">Product</th>
++                <th scope="col">State</th>
++                <th scope="col">Priority</th>
++                <th scope="col">Title</th>
++                <th scope="col">Owner</th>
++                <th scope="col">Next Action / Blocker</th>
++                <th scope="col">Last Update</th>
++                <th scope="col">Details</th>
++              </tr>
++            </thead>
++            <tbody id="tasks-table-body">
++              <tr><td colspan="9" class="muted">tasks loading&hellip;</td></tr>
++            </tbody>
++          </table>
+         </div>
+-        <p class="muted small axis-note">Bars show agent-hours per half-open bucket <code>[start, end)</code> in UTC. Hover/tap a bar for exact bounds.</p>
++      </section>
++
++      <!-- Agent Update Workflow Documentation Card -->
++      <section class="panel workflow-card" aria-label="Agent Update Workflow">
++        <h3>Autonomous Agent Update Protocol &amp; Task Contract</h3>
++        <p class="muted small">This tracker is a live, transparent, read-only window into canonical coordination files. Autonomous agents update tasks via Git-backed atomic file updates.</p>
++        <ul id="workflow-principles-list" class="workflow-list">
++          <li><strong>Read-Only Dashboard:</strong> Zero UI-side write bypasses; truthful real-time view of <code>coordination/TASKS.json</code>.</li>
++          <li><strong>First Action Verification:</strong> Starting a task requires executing <code>aplexer whoami</code> and recording PID, session ID, and owned paths ACK.</li>
++          <li><strong>Delivery &amp; Review Gate:</strong> Marking a task for review requires passing tests and committed checkpoints; marking done requires independent reviewer sign-off.</li>
++          <li><strong>Durable Continuation:</strong> Blocked tasks must state explicit dependencies and continuation triggers before yielding.</li>
++        </ul>
+       </section>
+     </div>
+ 
+-    <section class="panel" id="usage-section" aria-label="Usage accounting">
+-      <h2>Usage accounting</h2>
+-      <p class="muted small">Token fields may be null (shown as <code>n/a</code>, never 0). Quota deltas are tracked separately from cost/tokens. Reasoning tokens are never added to output tokens.</p>
+-      <p id="usage-error" class="error-banner" hidden></p>
+-      <div class="table-wrap">
+-        <table id="usage-table">
+-          <caption class="muted">Per-project usage aggregates from <code>/api/usage</code></caption>
+-          <thead>
+-            <tr>
+-              <th scope="col">Project</th>
+-              <th scope="col">Events</th>
+-              <th scope="col">Input</th>
+-              <th scope="col">Output</th>
+-              <th scope="col">Cache read</th>
+-              <th scope="col">Cache created</th>
+-              <th scope="col">Reasoning</th>
+-              <th scope="col">Quota delta</th>
+-              <th scope="col">Flags</th>
+-            </tr>
+-          </thead>
+-          <tbody id="usage-body">
+-            <tr><td colspan="9" class="muted">usage loading&hellip;</td></tr>
+-          </tbody>
+-        </table>
+-      </div>
+-    </section>
+-
+-    <section class="panel" id="features-section" aria-label="Completed features">
+-      <h2>Completed features</h2>
+-      <p class="muted small">Accepted-task evidence joined to feature completions from <code>/api/features</code>. Repeated reviews/commits are not counted as features.</p>
+-      <p id="features-error" class="error-banner" hidden></p>
+-      <div id="features-list">
+-        <p class="muted">features loading&hellip;</p>
+-      </div>
+-    </section>
++    <!-- VIEW 3: FLEET ACTORS & SESSIONS -->
++    <div id="view-actors" class="view-panel" hidden>
++      <section class="panel" aria-label="Fleet Actors Inventory">
++        <div class="panel-head">
++          <div>
++            <h2>Autonomous Fleet Actors &amp; Active Sessions</h2>
++            <p class="muted small">Disjoint actor categorization separating persistent coordinators from active, completed, and idle workers</p>
++          </div>
++        </div>
++
++        <div class="actor-categories-wrap">
++          <!-- 1. Persistent Coordinators -->
++          <div class="actor-category-card">
++            <div class="actor-cat-head">
++              <h3>Persistent Coordinators (Principals, Project Heads)</h3>
++              <span class="badge badge-accent" id="count-actors-coordinators">0</span>
++            </div>
++            <p class="muted small">Autonomous principal monitors and project heads leading delivery workstreams</p>
++            <div id="actors-coordinators-list" class="actors-list"></div>
++          </div>
++
++          <!-- 2. Active Task Workers -->
++          <div class="actor-category-card">
++            <div class="actor-cat-head">
++              <h3>Active Task Workers</h3>
++              <span class="badge badge-ok" id="count-actors-active">0</span>
++            </div>
++            <p class="muted small">Workers currently executing tools or implementing owned tasks</p>
++            <div id="actors-active-list" class="actors-list"></div>
++          </div>
++
++          <!-- 3. Ended / Completed Workers -->
++          <div class="actor-category-card">
++            <div class="actor-cat-head">
++              <h3>Ended / Completed Workers</h3>
++              <span class="badge badge-secondary" id="count-actors-completed">0</span>
++            </div>
++            <p class="muted small">Ephemeral workers and subagents that finished their mission checkpoints</p>
++            <div id="actors-completed-list" class="actors-list"></div>
++          </div>
++
++          <!-- 4. Idle / Blocked Sessions -->
++          <div class="actor-category-card">
++            <div class="actor-cat-head">
++              <h3>Idle / Blocked Sessions</h3>
++              <span class="badge badge-warn" id="count-actors-idle">0</span>
++            </div>
++            <p class="muted small">Sessions waiting on dependencies, queued for execution, or parked</p>
++            <div id="actors-idle-list" class="actors-list"></div>
++          </div>
++        </div>
++      </section>
++    </div>
+   </main>
+ 
++  <!-- Collapsible Task Details & JSON Modal -->
++  <div id="task-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-task-title" hidden>
++    <div class="modal-backdrop" id="modal-backdrop"></div>
++    <div class="modal-content">
++      <header class="modal-header">
++        <div>
++          <div id="modal-badges" class="modal-badges"></div>
++          <h2 id="modal-task-title">Task Details</h2>
++        </div>
++        <button id="modal-close-btn" type="button" class="modal-close" aria-label="Close modal">&times;</button>
++      </header>
++
++      <div class="modal-body">
++        <dl class="modal-meta-grid">
++          <div><dt>Task ID</dt><dd><code id="modal-id">-</code></dd></div>
++          <div><dt>Product</dt><dd id="modal-product">-</dd></div>
++          <div><dt>State</dt><dd id="modal-state">-</dd></div>
++          <div><dt>Priority</dt><dd id="modal-priority">-</dd></div>
++          <div><dt>Owner</dt><dd id="modal-owner">-</dd></div>
++          <div><dt>Last Update</dt><dd id="modal-update">-</dd></div>
++        </dl>
++
++        <div class="modal-section">
++          <h4>Requirement &amp; Description</h4>
++          <p id="modal-description" class="modal-text">-</p>
++        </div>
++
++        <div class="modal-section" id="modal-section-next">
++          <h4>Next Action</h4>
++          <p id="modal-next-action" class="modal-text modal-next-box">-</p>
++        </div>
++
++        <div class="modal-section" id="modal-section-blocker" hidden>
++          <h4>Blockers &amp; Dependencies</h4>
++          <div id="modal-blocker" class="modal-blocker-box"></div>
++        </div>
++
++        <div class="modal-section" id="modal-section-evidence" hidden>
++          <h4>Outcome Evidence &amp; Verification</h4>
++          <div id="modal-evidence" class="modal-evidence-box"></div>
++        </div>
++
++        <div class="modal-section" id="modal-section-review" hidden>
++          <h4>Reviewer &amp; Checkpoints</h4>
++          <p id="modal-review" class="modal-text">-</p>
++        </div>
++
++        <details class="modal-json-details">
++          <summary>Technical Payload (JSON)</summary>
++          <div class="json-actions">
++            <button id="copy-json-btn" type="button" class="btn-small">Copy JSON</button>
++          </div>
++          <pre><code id="modal-raw-json">{}</code></pre>
++        </details>
++      </div>
++    </div>
++  </div>
++
+   <footer class="page-foot">
+-    <p class="muted small">Legend: <code>unknown</code> = source reported unknown state; <code>n/a</code> = field was null/missing (never rendered as 0). Buckets are half-open <code>[start, end)</code> in UTC. Per-project agent counts are non-additive when identities are shared.</p>
+-    <noscript><p class="error-banner">JavaScript is disabled: live metrics require fetch to /api/hourly, /api/usage, /api/features. Static layout above is the offline fallback.</p></noscript>
++    <p class="muted small">Legend: <code>unknown</code> = source reported unknown state; <code>n/a</code> = field was null/missing (never rendered as 0). Buckets are half-open <code>[start, end)</code> in UTC. Navigation tabs: <code>#overview</code>, <code>#tasks</code>, <code>#actors</code>.</p>
++    <noscript><p class="error-banner">JavaScript is disabled: live metrics require fetch to /api/hourly, /api/usage, /api/features, /api/tasks. Static layout above is the offline fallback.</p></noscript>
+   </footer>
+ </body>
+ </html>
+diff --git a/tests/test_tasks_endpoint.py b/tests/test_tasks_endpoint.py
+new file mode 100644
+index 0000000..e1077e6
+--- /dev/null
++++ b/tests/test_tasks_endpoint.py
+@@ -0,0 +1,337 @@
++"""
++Unit and integration tests for /api/tasks endpoint and task normalization engine.
++"""
++
++import datetime
++import json
++import os
++import tempfile
++import threading
++import time
++import unittest
++import urllib.error
++import urllib.request
++
++from dashboard.server import run_server
++from dashboard.tasks import (
++    CANONICAL_TASK_PRODUCTS,
++    VALID_TASK_STATES,
++    canonical_task_product,
++    load_tasks_payload,
++    normalize_priority,
++    normalize_task_state,
++)
++
++
++class TestTasksEndpoint(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls):
++        cls.tmp_dir = tempfile.TemporaryDirectory()
++        cls.scratch = cls.tmp_dir.name
++
++        cls.tasks_path = os.path.join(cls.scratch, "test-tasks.json")
++        cls.backlog_path = os.path.join(cls.scratch, "test-backlog.json")
++        cls.registry_path = os.path.join(cls.scratch, "test-registry.json")
++
++        sample_tasks = {
++            "schema_version": 1,
++            "tasks": [
++                {
++                    "id": "task-ab-1",
++                    "project_id": "agent-branches",
++                    "team_id": "agent-branches",
++                    "owner_tag": "ab-worker-1",
++                    "status": "running",
++                    "updated_at": "2026-10-05T08:00:00Z",
++                    "next_action": "Refactoring branches tree",
++                    "blocked_on": [],
++                    "acceptance": "Clean git worktree isolation",
++                },
++                {
++                    "id": "task-ad-1",
++                    "project_id": "agent-dashboard",
++                    "team_id": "agent-dashboard",
++                    "owner_tag": "agent-dashboard-head",
++                    "status": "done",
++                    "updated_at": "2026-10-05T07:30:00Z",
++                    "next_action": "Shipped to preview server",
++                    "blocked_on": [],
++                    "evidence_paths": ["tests/test_server.py"],
++                    "acceptance": "Accepted by independent reviewer",
++                },
++                {
++                    "id": "task-launcher-blocked",
++                    "project_id": "quota-launcher",
++                    "team_id": "quota-launcher",
++                    "owner_tag": "launcher-worker-2",
++                    "status": "blocked",
++                    "updated_at": "2026-10-05T06:00:00Z",
++                    "next_action": "Wait for upstream rate limit reset",
++                    "blocked_on": ["quota-reset-event"],
++                },
++                {
++                    "id": "task-coord-review",
++                    "project_id": "agent-coordination",
++                    "team_id": "agent-coordination",
++                    "owner_tag": "coord-worker-1",
++                    "status": "review",
++                    "updated_at": "2026-10-05T07:00:00Z",
++                    "next_action": "Reviewing SSH RPC batch roundtrip",
++                    "blocked_on": [],
++                    "evidence_paths": ["research/antigravity/recovery/REPORT-CROSS-COMPUTER-OFFLINE-RETRY.md"],
++                },
++                {
++                    "id": "task-infra-ready",
++                    "project_id": "publication",
++                    "team_id": "publication",
++                    "owner_tag": "public-journal-site",
++                    "status": "ready",
++                    "updated_at": "2026-10-05T05:00:00Z",
++                    "next_action": "Draft daily article",
++                    "blocked_on": [],
++                },
++            ],
++        }
++
++        sample_backlog = {
++            "schema_version": 1,
++            "new_delivery_task_ids": ["task-ab-1", "task-ad-1"],
++            "legacy_task_ids": ["task-infra-ready"],
++            "human_sources": [
++                {
++                    "id": "human-source-test-01",
++                    "heading": "Human Instruction 1",
++                    "task_ids": ["task-ab-1"],
++                    "requirement_summary": "Implement clean branch isolation; zero data loss",
++                }
++            ],
++        }
++
++        sample_registry = {
++            "schema_version": 1,
++            "projects": [
++                {
++                    "id": "agent-branches",
++                    "name": "Agent Branches",
++                    "head_tag": "antigravity-head",
++                    "head_session_id": "sess-ab-head",
++                    "principal_tags": ["codex-principal"],
++                },
++                {
++                    "id": "agent-dashboard",
++                    "name": "Agent Dashboard",
++                    "head_tag": "agent-dashboard-head",
++                    "head_session_id": "sess-ad-head",
++                    "principal_tags": ["codex-principal"],
++                },
++            ],
++            "excluded_principals": ["claude-principal"],
++            "agents": [
++                {
++                    "tag": "ab-worker-1",
++                    "role": "worker",
++                    "mode": "headless",
++                    "task_id": "task-ab-1",
++                    "first_action": {"selected": {"phase": "running", "reported_state": "working"}},
++                },
++                {
++                    "tag": "launcher-worker-2",
++                    "role": "worker",
++                    "mode": "headless",
++                    "task_id": "task-launcher-blocked",
++                },
++                {
++                    "tag": "old-completed-worker",
++                    "role": "worker",
++                    "mode": "headless",
++                    "task_id": "task-ad-1",
++                    "measurement_scope": "completed first batch",
++                },
++            ],
++            "delivery_executors": [],
++        }
++
++        with open(cls.tasks_path, "w", encoding="utf-8") as f:
++            json.dump(sample_tasks, f)
++        with open(cls.backlog_path, "w", encoding="utf-8") as f:
++            json.dump(sample_backlog, f)
++        with open(cls.registry_path, "w", encoding="utf-8") as f:
++            json.dump(sample_registry, f)
++
++        cls._env = {
++            "TASKS_JSON_PATH": cls.tasks_path,
++            "DELIVERY_BACKLOG_PATH": cls.backlog_path,
++            "TEAM_REGISTRY_PATH": cls.registry_path,
++        }
++        cls._old_env = {}
++        for k, v in cls._env.items():
++            cls._old_env[k] = os.environ.get(k)
++            os.environ[k] = v
++
++        cls.server = run_server(port=0, host="127.0.0.1")
++        cls.port = cls.server.server_address[1]
++        cls.base = f"http://127.0.0.1:{cls.port}"
++        cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
++        cls.thread.start()
++        time.sleep(0.05)
++
++    @classmethod
++    def tearDownClass(cls):
++        cls.server.shutdown()
++        cls.server.server_close()
++        for k, v in cls._old_env.items():
++            if v is None:
++                os.environ.pop(k, None)
++            else:
++                os.environ[k] = v
++        cls.tmp_dir.cleanup()
++
++    def _get_json(self, path: str):
++        req = urllib.request.Request(self.base + path, headers={"Accept": "application/json"})
++        with urllib.request.urlopen(req) as resp:
++            data = resp.read()
++            return resp.status, json.loads(data.decode("utf-8"))
++
++    def test_canonical_task_product_mapping(self):
++        self.assertEqual(canonical_task_product("agent-branches"), "agent-branches")
++        self.assertEqual(canonical_task_product("agent_branches"), "agent-branches")
++        self.assertEqual(canonical_task_product("ab"), "agent-branches")
++        self.assertEqual(canonical_task_product("agent-dashboard"), "agent-dashboard")
++        self.assertEqual(canonical_task_product("quota-launcher"), "quota-launcher")
++        self.assertEqual(canonical_task_product("agent-quota-launcher"), "quota-launcher")
++        self.assertEqual(canonical_task_product("agent-coordination"), "agent-coordination")
++        self.assertEqual(canonical_task_product("publication"), "infrastructure")
++        self.assertEqual(canonical_task_product(None, "publication"), "infrastructure")
++        self.assertEqual(canonical_task_product(None, "agent-branches"), "agent-branches")
++
++    def test_normalize_task_state(self):
++        self.assertEqual(normalize_task_state("done"), "done")
++        self.assertEqual(normalize_task_state("completed"), "done")
++        self.assertEqual(normalize_task_state("integrated"), "done")
++        self.assertEqual(normalize_task_state("running"), "in_progress")
++        self.assertEqual(normalize_task_state("in_progress"), "in_progress")
++        self.assertEqual(normalize_task_state("review"), "review")
++        self.assertEqual(normalize_task_state("blocked"), "blocked")
++        self.assertEqual(normalize_task_state("held"), "blocked")
++        self.assertEqual(normalize_task_state("ready"), "ready")
++        self.assertEqual(normalize_task_state("queued"), "ready")
++        self.assertEqual(normalize_task_state("unknown-state"), "ready")
++
++    def test_normalize_priority(self):
++        self.assertEqual(normalize_priority("critical", "any", "ready", set()), "critical")
++        self.assertEqual(normalize_priority(None, "task-1", "blocked", {"task-1"}), "critical")
++        self.assertEqual(normalize_priority(None, "task-2", "blocked", set()), "high")
++        self.assertEqual(normalize_priority(None, "task-3", "in_progress", set()), "high")
++        self.assertEqual(normalize_priority(None, "task-4", "ready", set()), "normal")
++
++    def test_api_tasks_endpoint_success(self):
++        status, payload = self._get_json("/api/tasks")
++        self.assertEqual(status, 200)
++        self.assertIn("tasks", payload)
++        self.assertIn("actors", payload)
++        self.assertIn("summary", payload)
++        self.assertIn("workflow", payload)
++        self.assertIn("sources", payload)
++        self.assertIn("coverage_gaps", payload)
++
++        self.assertEqual(len(payload["tasks"]), 5)
++        self.assertEqual(payload["summary"]["total_tasks"], 5)
++        self.assertEqual(payload["summary"]["by_state"]["done"], 1)
++        self.assertEqual(payload["summary"]["by_state"]["in_progress"], 1)
++        self.assertEqual(payload["summary"]["by_state"]["blocked"], 1)
++        self.assertEqual(payload["summary"]["by_state"]["review"], 1)
++        self.assertEqual(payload["summary"]["by_state"]["ready"], 1)
++
++    def test_structured_task_fields(self):
++        _status, payload = self._get_json("/api/tasks")
++        for task in payload["tasks"]:
++            self.assertIn("id", task)
++            self.assertIn("title", task)
++            self.assertIn("product", task)
++            self.assertIn("state", task)
++            self.assertIn("owner", task)
++            self.assertIn("priority", task)
++            self.assertIn("description", task)
++            self.assertIn("next_action", task)
++            self.assertIn("blocker", task)
++            self.assertIn("last_update", task)
++            self.assertIn("outcome_evidence", task)
++
++            self.assertIn(task["product"], CANONICAL_TASK_PRODUCTS)
++            self.assertIn(task["state"], VALID_TASK_STATES)
++            self.assertIn(task["priority"], ("critical", "high", "normal", "low"))
++            self.assertIsInstance(task["blocker"], list)
++
++    def test_actor_categories_separation(self):
++        _status, payload = self._get_json("/api/tasks")
++        actors = payload["actors"]
++        self.assertIn("coordinators", actors)
++        self.assertIn("active_workers", actors)
++        self.assertIn("completed_workers", actors)
++        self.assertIn("idle_blocked", actors)
++
++        coord_tags = [a["tag"] for a in actors["coordinators"]]
++        self.assertIn("antigravity-head", coord_tags)
++        self.assertIn("agent-dashboard-head", coord_tags)
++        self.assertIn("codex-principal", coord_tags)
++        self.assertIn("claude-principal", coord_tags)
++        self.assertIn("desktop-orchestrator", coord_tags)
++
++        active_tags = [a["tag"] for a in actors["active_workers"]]
++        self.assertIn("ab-worker-1", active_tags)
++
++        completed_tags = [a["tag"] for a in actors["completed_workers"]]
++        self.assertIn("old-completed-worker", completed_tags)
++
++        idle_tags = [a["tag"] for a in actors["idle_blocked"]]
++        self.assertIn("launcher-worker-2", idle_tags)
++
++        # Check disjointness across all categories
++        all_tags = []
++        for cat in ("coordinators", "active_workers", "completed_workers", "idle_blocked"):
++            tags = [a["tag"] for a in actors[cat]]
++            for t in tags:
++                self.assertNotIn(t, all_tags, f"Tag {t} appears in multiple actor categories")
++                all_tags.append(t)
++
++    def test_api_tasks_filtering(self):
++        # Product filter
++        _status, payload = self._get_json("/api/tasks?product=agent-dashboard")
++        self.assertEqual(len(payload["tasks"]), 1)
++        self.assertEqual(payload["tasks"][0]["id"], "task-ad-1")
++
++        # State filter
++        _status, payload = self._get_json("/api/tasks?state=blocked")
++        self.assertEqual(len(payload["tasks"]), 1)
++        self.assertEqual(payload["tasks"][0]["id"], "task-launcher-blocked")
++
++        # Owner filter
++        _status, payload = self._get_json("/api/tasks?owner=ab-worker")
++        self.assertEqual(len(payload["tasks"]), 1)
++        self.assertEqual(payload["tasks"][0]["id"], "task-ab-1")
++
++    def test_missing_tasks_file_graceful_handling(self):
++        old = os.environ.get("TASKS_JSON_PATH")
++        os.environ["TASKS_JSON_PATH"] = os.path.join(self.scratch, "nonexistent-tasks.json")
++        try:
++            status, payload = self._get_json("/api/tasks")
++            self.assertEqual(status, 200)
++            self.assertTrue(payload["unknown"])
++            self.assertEqual(len(payload["tasks"]), 0)
++            self.assertTrue(any("nonexistent-tasks.json" in g.get("source", "") for g in payload["coverage_gaps"]))
++        finally:
++            if old is None:
++                os.environ.pop("TASKS_JSON_PATH", None)
++            else:
++                os.environ["TASKS_JSON_PATH"] = old
++
++    def test_documented_agent_workflow(self):
++        _status, payload = self._get_json("/api/tasks")
++        workflow = payload["workflow"]
++        self.assertEqual(workflow["mode"], "honest-read-only-preview")
++        self.assertTrue(len(workflow["principles"]) >= 3)
++        self.assertIn("TASKS.json", workflow["source_of_truth"])
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/tests/test_tasks_ui.py b/tests/test_tasks_ui.py
+new file mode 100644
+index 0000000..d451d40
+--- /dev/null
++++ b/tests/test_tasks_ui.py
+@@ -0,0 +1,141 @@
++"""
++Unit and integration tests for Dashboard Tasks UI assets (HTML, JS, CSS) and static serving.
++"""
++
++import os
++import threading
++import time
++import unittest
++import urllib.request
++
++from dashboard.server import run_server
++
++
++class TestTasksUI(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls):
++        cls.static_dir = os.path.abspath(
++            os.path.join(os.path.dirname(__file__), "..", "static")
++        )
++        cls.html_path = os.path.join(cls.static_dir, "index.html")
++        cls.js_path = os.path.join(cls.static_dir, "dashboard.js")
++        cls.css_path = os.path.join(cls.static_dir, "dashboard.css")
++
++        with open(cls.html_path, "r", encoding="utf-8") as f:
++            cls.html_content = f.read()
++        with open(cls.js_path, "r", encoding="utf-8") as f:
++            cls.js_content = f.read()
++        with open(cls.css_path, "r", encoding="utf-8") as f:
++            cls.css_content = f.read()
++
++        cls.server = run_server(port=0, host="127.0.0.1")
++        cls.port = cls.server.server_address[1]
++        cls.base = f"http://127.0.0.1:{cls.port}"
++        cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
++        cls.thread.start()
++        time.sleep(0.05)
++
++    @classmethod
++    def tearDownClass(cls):
++        cls.server.shutdown()
++        cls.server.server_close()
++
++    def _get(self, path: str):
++        req = urllib.request.Request(self.base + path)
++        with urllib.request.urlopen(req) as resp:
++            return resp.status, resp.headers, resp.read().decode("utf-8")
++
++    def test_html_navigation_tabs(self):
++        self.assertIn('href="#overview"', self.html_content)
++        self.assertIn('href="#tasks"', self.html_content)
++        self.assertIn('href="#actors"', self.html_content)
++        self.assertIn('id="nav-tasks"', self.html_content)
++        self.assertIn('id="nav-tasks-badge"', self.html_content)
++
++    def test_html_tasks_view_structure(self):
++        self.assertIn('id="view-tasks"', self.html_content)
++        self.assertIn('id="tasks-overall-pct"', self.html_content)
++        self.assertIn('id="chart-tasks-donut"', self.html_content)
++        self.assertIn('id="chart-tasks-products"', self.html_content)
++        self.assertIn('id="chart-tasks-priority"', self.html_content)
++
++    def test_html_filter_controls(self):
++        self.assertIn('id="task-search"', self.html_content)
++        self.assertIn('id="task-filter-product"', self.html_content)
++        self.assertIn('id="task-filter-state"', self.html_content)
++        self.assertIn('id="task-filter-owner"', self.html_content)
++        self.assertIn('id="task-filter-priority"', self.html_content)
++        self.assertIn('id="task-filter-reset"', self.html_content)
++        self.assertIn('id="tasks-filter-counter"', self.html_content)
++
++    def test_html_kanban_board_columns(self):
++        self.assertIn('id="kanban-board"', self.html_content)
++        self.assertIn('data-col="ready"', self.html_content)
++        self.assertIn('data-col="in_progress"', self.html_content)
++        self.assertIn('data-col="review"', self.html_content)
++        self.assertIn('data-col="blocked"', self.html_content)
++        self.assertIn('data-col="done"', self.html_content)
++
++    def test_html_modal_dialog(self):
++        self.assertIn('id="task-modal"', self.html_content)
++        self.assertIn('id="modal-raw-json"', self.html_content)
++        self.assertIn('id="copy-json-btn"', self.html_content)
++        self.assertIn('id="modal-close-btn"', self.html_content)
++
++    def test_html_actors_inventory(self):
++        self.assertIn('id="view-actors"', self.html_content)
++        self.assertIn('id="actors-coordinators-list"', self.html_content)
++        self.assertIn('id="actors-active-list"', self.html_content)
++        self.assertIn('id="actors-completed-list"', self.html_content)
++        self.assertIn('id="actors-idle-list"', self.html_content)
++
++    def test_html_agent_workflow_documentation(self):
++        self.assertIn("workflow-card", self.html_content)
++        self.assertIn("Autonomous Agent Update Protocol &amp; Task Contract", self.html_content)
++        self.assertIn("coordination/TASKS.json", self.html_content)
++
++    def test_js_routing_and_api_integration(self):
++        self.assertIn("handleRouting", self.js_content)
++        self.assertIn("/api/tasks", self.js_content)
++        self.assertIn("renderTasksDonutChart", self.js_content)
++        self.assertIn("renderTasksProductBarChart", self.js_content)
++        self.assertIn("renderKanbanBoard", self.js_content)
++        self.assertIn("renderKanbanCard", self.js_content)
++        self.assertIn("openTaskModal", self.js_content)
++        self.assertIn("closeTaskModal", self.js_content)
++        self.assertIn("filterTasks", self.js_content)
++
++    def test_css_styling_rules(self):
++        self.assertIn(".nav-bar", self.css_content)
++        self.assertIn(".kanban-board", self.css_content)
++        self.assertIn(".kanban-col", self.css_content)
++        self.assertIn(".task-card", self.css_content)
++        self.assertIn(".card-done", self.css_content)
++        self.assertIn(".card-in_progress", self.css_content)
++        self.assertIn(".card-blocked", self.css_content)
++        self.assertIn(".modal", self.css_content)
++        self.assertIn(".modal-backdrop", self.css_content)
++        self.assertIn(".actor-category-card", self.css_content)
++
++    def test_server_serves_html_with_tasks_elements(self):
++        status, headers, body = self._get("/")
++        self.assertEqual(status, 200)
++        self.assertIn("text/html", headers.get("Content-Type", ""))
++        self.assertIn("#tasks", body)
++        self.assertIn("kanban-board", body)
++
++    def test_server_serves_js(self):
++        status, headers, body = self._get("/dashboard.js")
++        self.assertEqual(status, 200)
++        self.assertIn("javascript", headers.get("Content-Type", ""))
++        self.assertIn("renderTasksDonutChart", body)
++
++    def test_server_serves_css(self):
++        status, headers, body = self._get("/dashboard.css")
++        self.assertEqual(status, 200)
++        self.assertIn("text/css", headers.get("Content-Type", ""))
++        self.assertIn(".kanban-board", body)
++
++
++if __name__ == "__main__":
++    unittest.main()

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T06:48:35.638093+00:00",
+  "updated_at": "2026-10-05T09:05:00.000000+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -457,7 +457,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-05T07:26:35.459176+00:00",
+      "updated_at": "2026-10-05T08:49:32.181812+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -477,13 +477,14 @@
         "research/codex/runtime-recovery-20261004-1340.md",
         "research/codex/public-update-admission-20261004.md",
         "research/codex/four-project-oversight-20261004-2026.md",
-        "research/codex/busworker-trial-review-20261005.md"
+        "research/codex/busworker-trial-review-20261005.md",
+        "research/codex/morning-review-20261005.md"
       ],
       "blocked_on": [],
-      "next_action": "Verify d698/37 C2392 controller repairs: independent actual verdict/no default approval, exact worker/task/artifact correlation and head ACK, per-run exclusive history. Actual Grok071104 task completed445.31s/55+3 useful tests, approval qualified by signposted prompt. New consumer e37 differs reviewed a30: delta review before numeric publication. C7 new changedpatch handoffaf2-d42d nativeNOTREADY queued; head owns genuine readiness repair.",
+      "next_action": "Coordinate correction of independent6db reviseda373 factual/mobile FAIL and final exact-pin review; scopedSQL metrics accepted37 records/two productive actors minimum, hours/fleet unknown. Heads own real public history/tracker UI executor and independent exporter/retry outcomes; actual ZCode existing-route diagnosis or blocker pending. Canonicalc7/QL/bus scope ACKs required; no root QA or new principal implementation teams.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
-      "continuation_trigger": "ExistingAnt d698/37 completion -> exact negative artifacts/non-author review -> useful admitted model task using authentic own Bus readACK/verdict/reply/headACK -> next head queue. Antaf0 guarded submitted and actualdelegation observed. Pub timer cycles/release owner active; no final while readiness/controller repairs remain."
+      "continuation_trigger": "Actual head-managed exporter/retry completion -> independent review and next useful owned task first action; final Opus candidate -> non-author source/render review -> Pub release. Monitor role/owner gaps and preserve blocked originals; no claim unattended continuation from manual guarded delivery."
     },
     {
       "id": "a09-incumbent-check",
@@ -3269,7 +3270,7 @@
       "acceptance": "Daily report rewritten with requested 24h metrics, 4-product progress, and autonomous wake analysis pursuant to human directive 5 October 2026.",
       "blocked_on": [],
       "executor_ids": [
-        "5f128723-9c88-466d-a602-d1d6439be03d"
+        "5f128723-f851-417f-8ebc-5ff341aaea78"
       ],
       "owned_paths": [
         ".local/journal/correction-20261005",
@@ -3285,6 +3286,288 @@
       "reviewer": "public-journal-site (088a2387)",
       "accepted_at": null,
       "feature_id": null
+    },
+    {
+      "id": "filebus-dispatcher-c2406-outbox-resilience",
+      "project_id": "agent-coordination",
+      "team_id": "agent-coordination",
+      "owner_tag": "antigravity-head",
+      "status": "completed",
+      "updated_at": "2026-10-05T08:39:42.000000+00:00",
+      "next_action": "Execute two actual useful product tasks through hardened dispatcher under canonical admission.",
+      "acceptance": "Durable response outbox (mode 0600), idempotent flush without re-execution, corrupted quarantine, and queue exception resilience verified with 43/43 passing adversarial tests and independent review.",
+      "blocked_on": [],
+      "executor_ids": [
+        "46fdb644-9b58-4e2f-aab3-9be5e1e33337"
+      ],
+      "owned_paths": [
+        "research/antigravity/tooling/self_org/filebus_dispatcher_service.py",
+        "tests/test_filebus_dispatcher_adversarial.py",
+        "research/antigravity/reviews/REV-FILEBUS-DISPATCHER-C2406.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-FILEBUS-DISPATCHER-C2406.md"
+      ],
+      "first_action": "2026-10-05T08:24:00.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "43/43 tests PASS in test_filebus_dispatcher_adversarial.py and test_filebus_dispatcher_service.py; publication guard PASS",
+      "reviewer": "dispatcher-c2406-reviewer (0f50c53e)",
+      "accepted_at": "2026-10-05T08:39:42.000000+00:00",
+      "feature_id": "bus-outbox-resilience"
+    },
+    {
+      "id": "oct5-zai-interval-token-audit",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "antigravity-head",
+      "status": "completed",
+      "updated_at": "2026-10-05T08:33:35.000000+00:00",
+      "next_action": "Supply frozen scoped token figures to daily journal correction and public hourly history exporter.",
+      "acceptance": "Read-only SQLite audit of OpenCode messages in [2026-10-04T07:00:00Z, 2026-10-05T07:00:00Z) yielding 1,086,844 competition tokens across 37 messages; non-project bot excluded.",
+      "blocked_on": [],
+      "executor_ids": [
+        "46fdb644-9b58-4e2f-aab3-9be5e1e33337"
+      ],
+      "owned_paths": [
+        "research/antigravity/tooling/audit_interval_tokens.py",
+        ".local/metrics/oct5-zai-interval-token-audit.json"
+      ],
+      "evidence_paths": [
+        ".local/metrics/oct5-zai-interval-token-audit.json"
+      ],
+      "first_action": "2026-10-05T08:30:00.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "37 messages audited in opencode.db; file mode 0600; non-project sessions excluded",
+      "reviewer": "codex-principal (93cf28f2)",
+      "accepted_at": "2026-10-05T08:34:31.000000+00:00",
+      "feature_id": "token-interval-audit"
+    },
+    {
+      "id": "daily-correction-facts-review",
+      "project_id": "publication",
+      "team_id": "publication",
+      "owner_tag": "antigravity-head",
+      "status": "completed",
+      "updated_at": "2026-10-05T08:38:10.000000+00:00",
+      "next_action": "Provide factual corrections (RPC timing, 1.087M token breakdown, Grok review citation) to publication revision writer.",
+      "acceptance": "Independent factual audit of Opus correction draft in website/content/daily/2026-10-05.md against evidence files, delivering sanitized REV-DAILY-CORRECTION-20261005-FACTS.md (BOUNDED ACCEPTANCE).",
+      "blocked_on": [],
+      "executor_ids": [
+        "47130865-4b10-4767-821f-18b22370394a"
+      ],
+      "owned_paths": [
+        "research/antigravity/reviews/REV-DAILY-CORRECTION-20261005-FACTS.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-DAILY-CORRECTION-20261005-FACTS.md"
+      ],
+      "first_action": "2026-10-05T08:32:01.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "publication guard PASS (exit 0, clean 0 leaks)",
+      "reviewer": "correction-facts-reviewer (47130865)",
+      "accepted_at": "2026-10-05T08:38:10.000000+00:00",
+      "feature_id": "editorial-facts-review"
+    },
+    {
+      "id": "sanitized-public-hourly-exporter",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T08:45:38.000000+00:00",
+      "next_action": "Independent review completed (FULL ACCEPTANCE). Export file integrated with public-journal-site.",
+      "acceptance": "Sanitized public JSON export with 24 Berlin hourly buckets, occupancy vs productive work distinction, token aggregates, and zero private data leaks.",
+      "blocked_on": [],
+      "executor_ids": [
+        "46fdb644-9b58-4e2f-aab3-9be5e1e33337"
+      ],
+      "owned_paths": [
+        "research/antigravity/tooling/export_public_hourly_history.py",
+        "research/antigravity/recovery/public_hourly_history_export.json"
+      ],
+      "evidence_paths": [
+        "research/antigravity/recovery/public_hourly_history_export.json",
+        "research/antigravity/reviews/REV-HOURLY-PUBLIC-EXPORTER.md"
+      ],
+      "first_action": "2026-10-05T08:40:28.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "publication guard PASS (exit 0)",
+      "reviewer": "hourly-exporter-reviewer (17481722)",
+      "accepted_at": "2026-10-05T08:45:38.000000+00:00",
+      "feature_id": "public-hourly-export"
+    },
+    {
+      "id": "cross-computer-offline-retry-validation",
+      "project_id": "agent-coordination",
+      "team_id": "agent-coordination",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T08:49:25.000000+00:00",
+      "next_action": "Full 13-test suite passing. Delivered empirical report and core retry module.",
+      "acceptance": "Deterministic sender outbox queuing during receiver outage, re-attempt on reconnect, read ACK delivery, and crash-resilient completion verified with unit and negative integration tests.",
+      "blocked_on": [],
+      "executor_ids": [
+        "6654f856-7b95-444d-b1a8-9129571c2d99"
+      ],
+      "owned_paths": [
+        "tests/test_cross_computer_offline_retry.py",
+        "research/antigravity/recovery/cross_computer_retry.py",
+        "research/antigravity/recovery/REPORT-CROSS-COMPUTER-OFFLINE-RETRY.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-CROSS-COMPUTER-OFFLINE-RETRY.md"
+      ],
+      "first_action": "2026-10-05T08:42:33.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "13/13 PASS in 1.04s",
+      "reviewer": "antigravity-head",
+      "accepted_at": "2026-10-05T09:05:00.000000+00:00",
+      "feature_id": "offline-retry-validation"
+    },
+    {
+      "id": "ql-c2417-provenance-and-attribution",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "owner_tag": "antigravity-head",
+      "status": "running",
+      "updated_at": "2026-10-05T08:52:10.000000+00:00",
+      "next_action": "Implement Scope 1 provenance fix (reject arbitrary start_json superset, accept native whoami) and Scope 2 24h half-open tiling and default quota-launcher project_id.",
+      "acceptance": "start_json+dummy fails provenance test, genuine rich whoami passes; default project_id quota-launcher and 24 buckets on [as_of-24h, as_of) UTC.",
+      "blocked_on": [],
+      "executor_ids": [
+        "e4035a18-cc9d-4707-a1b8-cdfd4451f714"
+      ],
+      "owned_paths": [
+        "launcher/launch.py",
+        "launcher/report.py",
+        "tests/test_launch.py",
+        "tests/test_report.py"
+      ],
+      "evidence_paths": [
+        "/home/alexey/git/agent-quota-launcher/.local/executor-first-action-c2417.json"
+      ],
+      "first_action": "2026-10-05T08:52:15.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": null,
+      "reviewer": null,
+      "accepted_at": null,
+      "feature_id": "ql-c2417-executor"
+    },
+    {
+      "id": "zcode-route-health-diagnosis",
+      "project_id": "infrastructure",
+      "team_id": "coordination",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T08:52:10.000000+00:00",
+      "next_action": "Execute empirical probe of zcode.cjs and zcodex exec, verify GLM-5.3-Flash auth and quota, and produce diagnostic report.",
+      "acceptance": "Empirical determination of ZCode headless CLI route health, exit codes, json output format, and usability redesign recommendations.",
+      "blocked_on": [],
+      "executor_ids": [
+        "79e46f7b-9162-4aae-b638-17e90cc737a9"
+      ],
+      "owned_paths": [
+        "research/antigravity/recovery/REPORT-ZCODE-ROUTE-DIAGNOSIS.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-ZCODE-ROUTE-DIAGNOSIS.md"
+      ],
+      "first_action": "2026-10-05T08:52:10.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "node zcode.cjs and zcodex exec verified 100% operational",
+      "reviewer": "antigravity-head",
+      "accepted_at": "2026-10-05T09:05:00.000000+00:00",
+      "feature_id": "zcode-route-diagnosis"
+    },
+    {
+      "id": "private-dashboard-tasks-tracker",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T08:52:10.000000+00:00",
+      "next_action": "Implement /api/tasks endpoint and interactive Tasks board with product filters and coordinator vs worker distinction atop 249d086.",
+      "acceptance": "Usable private task tracker on port 8766 consuming TASKS.json and DELIVERY-BACKLOG.json, with board/list, product filters, state columns, and clean tests.",
+      "blocked_on": [],
+      "executor_ids": [
+        "64c2fff8-c0ea-4343-a619-f69d291920cf"
+      ],
+      "owned_paths": [
+        "research/antigravity/recovery/dashboard-tasks-tracker-and-usability.patch",
+        "research/antigravity/recovery/REPORT-DASHBOARD-TASKS-USABILITY.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-DASHBOARD-TASKS-USABILITY.md"
+      ],
+      "first_action": "2026-10-05T08:52:10.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "69/69 PASS (test_tasks_endpoint 9, test_tasks_ui 12, existing 48)",
+      "reviewer": "antigravity-head",
+      "accepted_at": "2026-10-05T09:05:00.000000+00:00",
+      "feature_id": "dashboard-tasks-tracker"
+    },
+    {
+      "id": "active-worker-census-c2431",
+      "project_id": "infrastructure",
+      "team_id": "coordination",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T09:05:00.000000+00:00",
+      "next_action": "Relay 50-worker bottleneck findings to desktop-orchestrator and codex-principal.",
+      "acceptance": "Empirical census of all 50 aplexer panes, deduplicated categories, memory/disk/quota bottleneck analysis toward human 50-agent target.",
+      "blocked_on": [],
+      "executor_ids": [
+        "a3d4f3f5-c6a7-495f-b9a0-6289b2c69b22"
+      ],
+      "owned_paths": [
+        ".local/metrics/active_worker_census_20261005.json",
+        "research/antigravity/recovery/REPORT-ACTIVE-WORKER-CENSUS.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/recovery/REPORT-ACTIVE-WORKER-CENSUS.md"
+      ],
+      "first_action": "2026-10-05T09:01:00.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "Census audit: 50 aplexer panes, 16 competition, 4 categories; host bottlenecks MemAvailable 34.4 GiB, /data 18.9 GiB",
+      "reviewer": "antigravity-head",
+      "accepted_at": "2026-10-05T09:05:00.000000+00:00",
+      "feature_id": "active-worker-census"
+    },
+    {
+      "id": "journal-correction-pixel-review-c2434",
+      "project_id": "website",
+      "team_id": "website",
+      "owner_tag": "antigravity-head",
+      "status": "done",
+      "updated_at": "2026-10-05T09:05:00.000000+00:00",
+      "next_action": "Relay pixel review sign-off to codex-principal and publication coordinator.",
+      "acceptance": "Independent multimodal visual pixel review of hero illustration, workflow diagram, desktop/mobile renders for October 5 correction candidate.",
+      "blocked_on": [],
+      "executor_ids": [
+        "46fdb644-9b58-4e2f-aab3-9be5e1e33337"
+      ],
+      "owned_paths": [
+        "research/antigravity/reviews/REV-DAILY-CORRECTION-20261005-PIXELS.md"
+      ],
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-DAILY-CORRECTION-20261005-PIXELS.md"
+      ],
+      "first_action": "2026-10-05T09:04:00.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "Native multimodal view_file inspection of 6 image/render assets, 0px horizontal scroll overflow on mobile 390px, web fonts loaded",
+      "reviewer": "antigravity-head",
+      "accepted_at": "2026-10-05T09:05:00.000000+00:00",
+      "feature_id": "journal-pixel-review"
     }
   ]
 }
