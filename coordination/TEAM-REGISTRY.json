@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T02:51:00.000000+00:00",
+  "updated_at": "2026-10-05T06:02:51.516353+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -4237,8 +4237,8 @@
     },
     {
       "tag": "self-org-architect",
-      "team_id": "agent-branches",
-      "project_id": "agent-branches",
+      "team_id": "agent-dashboard",
+      "project_id": "agent-dashboard",
       "parent_tag": "antigravity-head",
       "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
       "mode": "native-harness-subagent",
@@ -4246,12 +4246,12 @@
       "responsibility": "architect",
       "provider": "gemini",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
-      "task_id": "sessionless-executor-route-admission",
-      "status": "done",
+      "task_id": "dashboard-visibility-window-c2372",
+      "status": "in_progress",
       "harness_conversation_id": "06ecf158-e51f-411c-89b8-083fc9fb3dd6",
       "owned_paths": [
-        "research/antigravity/tooling/self_org/launcher_bus_bridge.py",
-        "tests/test_launcher_bus_bridge.py"
+        "research/antigravity/recovery/dashboard-unattributed-and-as-of-c2372.patch",
+        "research/antigravity/recovery/REPORT-DASHBOARD-UNATTRIBUTED-AS-OF-C2372.md"
       ],
       "usage": null,
       "first_action": {
@@ -4469,8 +4469,8 @@
     },
     {
       "tag": "hourly-reconciler",
-      "team_id": "a16-runtime-protocol",
-      "project_id": "agent-branches",
+      "team_id": "agent-coordination",
+      "project_id": "agent-coordination",
       "parent_tag": "antigravity-head",
       "parent_session_id": "46fdb644-9b58-4e2f-aab3-9be5e1e33337",
       "mode": "native-harness-subagent",
@@ -4478,11 +4478,11 @@
       "responsibility": "auditor",
       "provider": "gemini",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
-      "task_id": "metrics-collector-activation-c2278",
-      "status": "idle",
+      "task_id": "bus-worker-receive-reply-cycle-c2372",
+      "status": "in_progress",
       "harness_conversation_id": "d6988df9-09a1-44f0-b7bd-7b28018f69a8",
       "owned_paths": [
-        "research/antigravity/recovery/REPORT-METRICS-COLLECTOR-RELOAD-C2278.md"
+        "research/antigravity/reviews/REV-AGENTBUS-WORKER-CYCLE-C2372.md"
       ],
       "usage": null,
       "first_action": {

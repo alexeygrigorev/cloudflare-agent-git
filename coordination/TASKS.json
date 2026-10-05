@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T04:48:10.880414+00:00",
+  "updated_at": "2026-10-05T06:02:34.645748+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -770,7 +770,7 @@
       ],
       "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
       "model": "gemini-3.1-pro-high",
-      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 · PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
+      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 \u00b7 PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
     },
     {
       "id": "publication-release-verification",
@@ -1204,7 +1204,7 @@
       "assignment_ack": "Launched per Desktop Orchestrator 12:50 Berlin and Codex Principal C1818 directives. Independent technical audit of container-and-patch-workflows.md, examining production container/microVM paradigms (OpenHands, SWE-bench, Devin, Daytona, Modal, E2B), network/credential egress boundaries, single-synthesizer and worktree integration patterns, and unsteered buyer adoption guidance.",
       "next_action": "Independent review completed in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md (verdict: BOUNDED ACCEPTANCE). Deliverables landed on origin/main; findings ready for principal integration.",
       "acceptance": "Independent review deliverable in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md with clear verdict, rigorous technical verification across all 10 evaluation dimensions, and clean publication guard.",
-      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE — TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
+      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE \u2014 TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
     },
     {
       "id": "ab-safe-main-restore",
@@ -3076,6 +3076,62 @@
       "commit": null,
       "pr_url": null,
       "tests": null,
+      "reviewer": null,
+      "accepted_at": null,
+      "feature_id": null
+    },
+    {
+      "id": "dashboard-visibility-window-c2372",
+      "project_id": "agent-dashboard",
+      "team_id": "agent-dashboard",
+      "owner_tag": "antigravity-head",
+      "status": "in_progress",
+      "updated_at": "2026-10-05T06:02:34.645748+00:00",
+      "next_action": "Architect06 constructing isolated dashboard visibility & as_of window alignment patch in disposable testbed .local/scratch/dashboard-c2372/repo atop 249d086; nonauthor review by reviewer37/259",
+      "acceptance": "Explicit unattributed rollup rendered in UI (unknown origin, never counted as productive agent work); synchronized as_of passed to /api/hourly, /api/usage, /api/features; server handles as_of query param; original 48 tests PASS + new regression tests PASS; zero writes to canonical agent-dashboard",
+      "blocked_on": [],
+      "executor_ids": [
+        "06ecf158-e51f-411c-89b8-083fc9fb3dd6"
+      ],
+      "owned_paths": [
+        "research/antigravity/recovery/dashboard-unattributed-and-as-of-c2372.patch",
+        "research/antigravity/recovery/REPORT-DASHBOARD-UNATTRIBUTED-AS-OF-C2372.md"
+      ],
+      "evidence_paths": [
+        ".local/scratch/dashboard-c2372/repo",
+        "research/antigravity/recovery/dashboard-unattributed-and-as-of-c2372.patch"
+      ],
+      "first_action": "2026-10-05T06:02:34.645748+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "tests/test_server.py",
+      "reviewer": null,
+      "accepted_at": null,
+      "feature_id": null
+    },
+    {
+      "id": "bus-worker-receive-reply-cycle-c2372",
+      "project_id": "agent-coordination",
+      "team_id": "agent-coordination",
+      "owner_tag": "antigravity-head",
+      "status": "in_progress",
+      "updated_at": "2026-10-05T06:02:34.645748+00:00",
+      "next_action": "d698 conducting narrow headless identity resolution probe (verifying C2371 aplexer exit 127 fail-closed) and end-to-end FileBus worker receive/reply cycle under registered worker credentials",
+      "acceptance": "Child scope proves aplexer fails closed (exit 127, zero parent mailbox exposure); worker enrolls with own credentials; task sent, acked, executed, and replied over FileBus with verified payload digest; zero native aplexer CLI use",
+      "blocked_on": [],
+      "executor_ids": [
+        "d6988df9-09a1-44f0-b7bd-7b28018f69a8"
+      ],
+      "owned_paths": [
+        "research/antigravity/reviews/REV-AGENTBUS-WORKER-CYCLE-C2372.md"
+      ],
+      "evidence_paths": [
+        ".local/scratch/bus-worker-cycle-c2372/store/"
+      ],
+      "first_action": "2026-10-05T06:02:34.645748+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": "tests/test_launcher_bus_bridge.py",
       "reviewer": null,
       "accepted_at": null,
       "feature_id": null
