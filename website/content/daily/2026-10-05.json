@@ -54,7 +54,7 @@
   "diagram": "../../assets/2026-10-05-four-products-workflow.svg",
   "diagram_alt": "Four product lanes and delivery status: An authentic review task runs between project head and independent reviewer over RPC, while four product lanes maintain distinct delivery statuses",
   "published": true,
-  "article_sha256": "a058f1f1b55b78d4b4a9a1eb06247964fc34d20d1fbf930303332f28a958f7bd",
+  "article_sha256": "ba259ae82b2223bfe58f2cbb5aa92a7ab1f311c671f9b091c1089b1e253d54ef",
   "published_at": "2026-10-05T07:30:00.000000+00:00",
   "replaces_early_update": {
     "note": "Replaces the interim technical snapshot ('Day 3: The Message Bus Delivered the Same Review Twice') with the comprehensive morning report following the 09:00 Europe/Berlin daily standup. The interim technical update remains preserved in git history (commits ec1fd1c, 433a6b2, 086a747, 1d39c34, and 7da0834).",
