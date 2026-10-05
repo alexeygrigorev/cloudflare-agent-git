@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T17:54:55.445358+00:00",
+  "updated_at": "2026-10-05T21:17:54.242789+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -79,7 +79,7 @@
           ],
           "launched_by": "zcode-independent 64049aa2",
           "launched_at": "2026-10-03T06:28:00Z",
-          "quota_evidence": "opencode-go route covered by quse go 2026-10-03T08:16CEST 97-98% remaining; gemini CLI admission failed (deprecated) \u2014 fallback recorded",
+          "quota_evidence": "opencode-go route covered by quse go 2026-10-03T08:16CEST 97-98% remaining; gemini CLI admission failed (deprecated) — fallback recorded",
           "first_tool_evidence": "research/zcode/independent/a05-adjudication/WORKLOG.md",
           "parent_team": "a01-harness"
         },
@@ -859,7 +859,7 @@
           "first_tool_evidence": "aplexer whoami --json",
           "memory_cap": "1500M",
           "completed_at": "2026-10-03T20:29:40+00:00",
-          "result": "VERDICT ACCEPT (commit 2f95503): 4 behavior-changing mutants killed (M1 boundary, M2 revocation truthiness, M4 non-zero grace, M5 determinism); equivalent mutant M3 survived (Date.parse produces NaN/finite, never \u00b1Infinity). Vitest 91/91, node 29/29, clean unmasked typecheck."
+          "result": "VERDICT ACCEPT (commit 2f95503): 4 behavior-changing mutants killed (M1 boundary, M2 revocation truthiness, M4 non-zero grace, M5 determinism); equivalent mutant M3 survived (Date.parse produces NaN/finite, never ±Infinity). Vitest 91/91, node 29/29, clean unmasked typecheck."
         },
         {
           "tag": "sb-reviewer-ui",
@@ -4104,23 +4104,38 @@
       "assignment_ack": "01a10d2f-e2ab-7721-8056-64022465e366",
       "resumed_conversation": "245c7bba-9a7b-45c1-87a7-4537f289f9a5",
       "registered_at": "2026-10-05T17:54:55.445358+00:00",
-      "observed_state": "working at17:53UTC",
+      "observed_state": "retired by scoped administrative handoff; history preserved",
       "first_action": "actual native whoami, retained handoff/governance/mailbox reads; startup receipt .local/audit/startup-d78eeba5-7a0a-4b69-8a19-ca9d10b21371.json",
-      "boundaries": "Protected original46 SIGSTOP preserved; useful worker/review/refill not yet verified; principal monitors, heads implement/review."
+      "boundaries": "Protected original46 SIGSTOP preserved; useful worker/review/refill not yet verified; principal monitors, heads implement/review.",
+      "replaced_by": "36751672-c403-4ea8-9f53-9a0466434a37"
+    },
+    {
+      "tag": "ant-head-continuation-resume-20261005",
+      "session_id": "36751672-c403-4ea8-9f53-9a0466434a37",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "project_id": "agent-branches",
+      "assignment_ack": "01a10ddf-8f3d-7fa0-97a8-7b3e5e624682",
+      "resumed_conversation": "ea14b401-20e9-4e48-ab08-d15be08da30d",
+      "registered_at": "2026-10-05T21:17:54.242789+00:00",
+      "first_action": "Genuine native whoami/docs/startup receipt, bootstrap24e1fa04, distinct22e44b40 review, real ql-trial-task-A/B, bridgea6ea21fd",
+      "boundaries": "Principal coordinates; head delegates implementation and independent review. Recurring loaded-runtime/failover acceptance pending. Original46 paused preserved."
     }
   ],
   "projects": [
     {
       "id": "agent-branches",
       "name": "Agent Branches",
-      "head_tag": "ant-head-operational-resume-20261005",
-      "head_session_id": "d78eeba5-7a0a-4b69-8a19-ca9d10b21371",
-      "integration_owner": "ant-head-operational-resume-20261005",
+      "head_tag": "ant-head-continuation-resume-20261005",
+      "head_session_id": "36751672-c403-4ea8-9f53-9a0466434a37",
+      "integration_owner": "ant-head-continuation-resume-20261005",
       "principal_tags": [
         "codex-principal"
       ],
       "monitoring_provenance": "Codex C1637 ACK under human/OPERATING-MODEL",
-      "ownership_state": "Actual recovered interactive head identity, role reads and semantic custody ACK verified; useful product worker/output/independent review pending. Existing limits and leases preserved.",
+      "ownership_state": "Genuine current custody ACK and first implementation/reviewer/real trial observed; recurring supervisor and safe failover runtime acceptance pending. Current20GiB hard/30GiB cleanup policy applies.",
       "head_history": [
         {
           "head_tag": "antigravity-head",
@@ -4136,12 +4151,20 @@
           "integration_owner": "antigravity-head-gemini-recovery",
           "ownership_state": "Genuine current head ACK and first native tools verified; last observed turn ended/idle. New launches/growth held while root below50GiB. Project head owns worker/reviewer delegation; principal monitors big picture, no code review.",
           "head_assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc"
+        },
+        {
+          "head_tag": "ant-head-operational-resume-20261005",
+          "head_session_id": "d78eeba5-7a0a-4b69-8a19-ca9d10b21371",
+          "integration_owner": "ant-head-operational-resume-20261005",
+          "ownership_state": "Actual recovered interactive head identity, role reads and semantic custody ACK verified; useful product worker/output/independent review pending. Existing limits and leases preserved.",
+          "head_assignment_ack": "01a10d2f-e2ab-7721-8056-64022465e366",
+          "resumed_conversation": "245c7bba-9a7b-45c1-87a7-4537f289f9a5"
         }
       ],
       "head_workspace": "/home/alexey/git/cloudflare-agent-git",
-      "head_assignment_ack": "01a10d2f-e2ab-7721-8056-64022465e366",
-      "resumed_conversation": "245c7bba-9a7b-45c1-87a7-4537f289f9a5",
-      "updated_at": "2026-10-05T17:54:55.445358+00:00"
+      "head_assignment_ack": "01a10ddf-8f3d-7fa0-97a8-7b3e5e624682",
+      "resumed_conversation": "ea14b401-20e9-4e48-ab08-d15be08da30d",
+      "updated_at": "2026-10-05T21:17:54.242789+00:00"
     },
     {
       "id": "agent-dashboard",
