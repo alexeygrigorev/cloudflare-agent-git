@@ -6066,15 +6066,18 @@
       "id": "synthesis-agent-branches-20261006011745-4315",
       "project_id": "agent-branches",
       "team_id": "research-synthesis",
-      "status": "queued",
+      "status": "completed",
       "created_at": "2026-10-05T23:17:45.810859+00:00",
-      "updated_at": "2026-10-05T23:17:45.810861+00:00",
+      "updated_at": "2026-10-05T23:35:00.000000+00:00",
       "title": "Concurrency & Race Condition Resilience",
       "scope": "Test pairwise distinct worktrees with actual concurrent conditions. Implement stale-head refusal and exact-SHA receipts with invalidation on main advancement.",
       "acceptance": "Idempotent and reordered events tested safely; receipts deliberately invalidated when main advances.",
       "blocked_on": [],
       "dependencies": [],
-      "evidence_paths": []
+      "evidence_paths": [
+        "prototype/src/core/coordinator.ts",
+        ".local/scratch/agent-branches-concurrency/test_concurrency.py"
+      ]
     },
     {
       "id": "synthesis-agent-coordination-20261006011745-5669",
