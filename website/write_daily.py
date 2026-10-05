@@ -14,7 +14,7 @@ private.mkdir(parents=True,exist_ok=True)
 meta=ROOT/'website/content/daily'/f'{day}.json'
 m=json.loads(meta.read_text()) if meta.exists() else {}
 response=private/'response.json'
-if m.get('published') and response.exists():
+if m.get('published') and not m.get('early_update') and response.exists():
  try:
   runtime=json.loads(response.read_text())
   if not runtime.get('is_error') and any('opus' in str(x).lower() for x in runtime.get('modelUsage', {})):
