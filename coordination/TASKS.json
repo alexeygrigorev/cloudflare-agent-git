@@ -3199,6 +3199,36 @@
       "reviewer": "antigravity-head (46fdb644)",
       "accepted_at": "2026-10-05T07:33:00.000000+00:00",
       "feature_id": null
+    },
+    {
+      "id": "remote-journal-preparation-handoff",
+      "project_id": "publication",
+      "team_id": "publication",
+      "owner_tag": "public-journal-site",
+      "status": "running",
+      "updated_at": "2026-10-05T07:57:00.000000+00:00",
+      "next_action": "Execute remote journal preparation skill and checkpoint private progress under public-journal-site coordination.",
+      "acceptance": "Autonomous daily journal preparation by remote Codex session daily-journal-codex [190fc4a4] pursuant to human directive 5 October 2026.",
+      "blocked_on": [],
+      "executor_ids": [
+        "190fc4a4-fe82-4411-ae1b-124525daeed4"
+      ],
+      "owned_paths": [
+        ".agents/skills/prepare-daily-journal",
+        "experiment/human-remote-journal-preparation-20261005.txt",
+        "AGENTS.md",
+        ".local/journal/remote-preparation-handoff"
+      ],
+      "evidence_paths": [
+        ".local/journal/remote-preparation-handoff"
+      ],
+      "first_action": "2026-10-05T07:57:00.000000+00:00",
+      "commit": null,
+      "pr_url": null,
+      "tests": null,
+      "reviewer": "public-journal-site (088a2387)",
+      "accepted_at": null,
+      "feature_id": null
     }
   ]
 }

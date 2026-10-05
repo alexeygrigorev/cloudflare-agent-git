@@ -42,34 +42,37 @@ Both workflows were executed end-to-end in an isolated disposable workspace, mea
 - **Work Execution:** Copied all 4 real work deliverables, staged with `git add .`, committed with message, and branched to `feature/hardened-filebus-guards`.
 - **Resulting Commit SHA:** `541aafda6f709ed99a180c60c1301ae2259fc84e`
 - **Work Command Count:** **3 commands** (`git add .`, `git commit`, `git checkout -b`)
-- **Execution Wall Time:** **0.018 seconds**
+- **Execution Wall Time:** **0.018 seconds** (commit-only; 0.0431s total including repo init).
 - **Infrastructure Dependencies:** **0 servers** (100% offline local filesystem operations).
 - **Network Roundtrips:** **0 network roundtrips**.
+- **Concurrency Fencing:** Baseline Ordinary Git executed plain branch commit without CAS concurrency protection (`git update-ref` with expected old SHA).
 
 ### 3.2 Agent Branches SDK Workflow
-- **Backend Setup:** Qualified coordinator availability; served local coordinator from [`agent-branches-webhook/prototype`](file:///home/alexey/git/agent-branches-webhook/prototype) on ephemeral loopback port using authenticated `adminToken` and `runnerToken`.
+- **Backend Setup:** Qualified coordinator availability; served local ephemeral component prototype from [`agent-branches-webhook/prototype`](file:///home/alexey/git/agent-branches-webhook/prototype) on ephemeral loopback port using authenticated `adminToken` and `runnerToken`. (Note: coordinator node startup ~0.3s excluded from API wall time).
 - **SDK Connection:** Connected [`AgentBranchesClient`](file:///home/alexey/git/agent-branches-sdk-adoption/agent_branches/client.py) (pinned commit `cbf72e251430491dcc1292ac665daa4e8c05cfa8`).
 - **Task Registration (POST /tasks):** Minted task `task-0001` bound to agent `dogfood-worker-46fdb-0001` and base commit `de3ceb86a94e...`. Cached minted per-task bearer token (`dict`).
-- **Authentication Enforcement:** Verified `GET /tasks/:id` strictly rejects unauthenticated queries (**HTTP 401**) and accepts owner bearer token (**HTTP 200**).
-- **Push Event Notification (POST /events/push):** Recorded commit `541aafda6f70...` on `refs/heads/main` with vector clock `{task-0001: 1}`.
+- **Authentication Enforcement & Disclosure:** In this component prototype run, unauthenticated `GET /tasks/:id` returned HTTP 200 (`unauthenticated_401_verified: false`) because the local prototype runtime did not enforce `requireOwnerOrAdmin` on that route; authenticated reads with the owner bearer token succeeded (**HTTP 200**).
+- **Commit Provenance Enforcement:** Pushing an un-transported local commit SHA before git remote transport failed closed with **HTTP 400 (`commit ... not found in fork`)**, proving the coordinator verifies object existence in git storage.
+- **Push Event Notification (POST /events/push):** Recorded known commit `000000000000...` on `refs/heads/main` with vector clock `{task-0001: 1}` (**HTTP 200**).
 - **Programmatic Checks (POST /checks):** Evaluated checks against current head vector (**HTTP 200**).
 - **Stale Vector Conflict Fencing:** Adversarially evaluated stale vector clock `{task-0001: 0}`; strictly caught and verified **HTTP 409 Conflict (`StaleVectorError`)**.
 - **Runner Status (GET /status):** Queried active heads and agents using runner token (**HTTP 200**).
-- **Total API Roundtrips:** **9 HTTP roundtrips**.
-- **Execution Wall Time:** **0.0667 seconds**.
+- **Total API Roundtrips:** **9 HTTP roundtrips** (including provenance test).
+- **Execution Wall Time:** **0.0667 seconds** across 9 RPC roundtrips.
 
 ---
 
-## 4. In-Depth Comparative Analysis
+## 4. In-Depth Comparative Analysis & Epistemic Limitations
 
-| Dimension | Ordinary Git | Agent Branches SDK |
+| Dimension | Ordinary Git Baseline | Agent Branches SDK Prototype |
 | :--- | :--- | :--- |
-| **Command / Operation Complexity** | **Low (3 commands):** `git add`, `git commit`, `git checkout -b`. Standard, ubiquitous CLI. | **High (7 API calls):** `create_task`, token retrieval, `get_task`, `events/push`, `checks`, vector clock management. |
-| **Network & Infrastructure** | **Zero:** Fully functional offline, zero daemons or ports required. | **Mandatory:** Requires live coordinator server, bearer token storage, and HTTP connectivity. |
-| **Multi-Agent Concurrency Fencing** | **None:** Git local branches do not protect against concurrent overwrites without manual file locks. | **Cryptographic & Semantic:** Per-task bearer tokens + vector clocks strictly prevent silent overwrites via HTTP 409 conflict detection. |
-| **Failure Modes** | **Merge conflicts:** Standard 3-way text conflicts, well-supported by standard Git tooling. | **Authentication & Fencing:** HTTP 401 on expired tokens, HTTP 409 on stale vectors requiring programmatic re-sync. |
-| **Repair & Recovery Effort** | Simple `git checkout`, `git cherry-pick`, or `git rebase`. Unmatched portability and recovery. | Requires re-fetching task state via `get_task`, updating vector clock, and re-submitting push events. |
-| **Epistemic Value in Multi-Agent Swarms** | Excellent storage engine, but blind to agent identity, lifecycle, or task deadlines. | Purpose-built coordination overlay: prevents race conditions between parallel headless workers. |
+| **Command / Operation Complexity** | **Low (3 commands):** `git add`, `git commit`, `git checkout -b`. Standard, ubiquitous CLI. | **High (9 API calls):** `create_task`, token retrieval, `get_task`, provenance rejection, `push`, `status`, `checks`, vector clock management. |
+| **Work Scope & Timings** | **0.018s commit / 0.0431s total:** Local index/tree operations, zero network transport. | **0.0667s API total:** 9 HTTP roundtrips against local prototype server (excludes ~0.3s server startup). |
+| **Network & Infrastructure** | **Zero:** Fully functional offline, zero daemons or ports required. | **Mandatory:** Requires active coordinator server, bearer token storage, and HTTP connectivity. |
+| **Multi-Agent Concurrency Fencing** | **Unprotected in baseline:** Plain branch commit has no fencing; CAS protection in Git requires `git update-ref` with expected old SHA. | **Vector Clocks:** Task bearer tokens + vector clocks enforce conflict detection (**HTTP 409 `StaleVectorError`**), preventing silent overwrites. |
+| **Object Provenance** | **Local:** Any commit can be referenced locally. | **Verified:** Rejects push events for commits not present in the fork repository (**HTTP 400**). |
+| **Failure Modes** | Standard 3-way merge conflicts handled by local Git tools. | HTTP 400 on un-transported commits, HTTP 409 on stale vectors requiring vector resync via `get_status`. |
+| **Epistemic Limitation of Comparison** | Baseline Git run omitted CAS fencing checks; SDK script included adversarial stale vector checks. | Evaluated against ephemeral Node.js component prototype (`runtime.js`), not production Cloudflare Workers with real git wire protocol. |
 
 ---
 
