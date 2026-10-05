@@ -389,6 +389,7 @@ def bridge_ready_task_to_launcher(task, head_owner, spool_dir, ql_db_candidates=
         "timeout": task.get("timeout", 3600),
         "project_id": task.get("project_id") or task.get("team_id"),
         "status": "ready",
+        "model_requirements": task.get("model_requirements") or {"providers": ["antigravity", "zai"]},
     }
     raw_key = json.dumps(payload, sort_keys=True)
     idempotency_key = f"ql-enqueue-{task_id}-" + hashlib.sha256(raw_key.encode()).hexdigest()[:12]
