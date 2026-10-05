@@ -26,7 +26,7 @@ if str(_SUPERVISION_DIR) not in sys.path:
 
 from ack_reconciliation import exact_ack
 from retention import StorageFull, archive_operational, archive_verified, read_archived, storage_guard
-from terminal_consumer import TerminalConsumer
+from terminal_consumer import TerminalConsumer, is_safe_identifier
 
 ROOT = pathlib.Path('/home/alexey/git/cloudflare-agent-git')
 PRIVATE = ROOT / '.local/supervision'
@@ -285,6 +285,155 @@ def active_principals(teams_data=None, spool=None, registry_raw=None):
                 if ptag not in candidates:
                     candidates.append(ptag)
     return [tag for tag in candidates if tag not in excluded]
+
+
+def active_heads(entities=None, spool=None, registry_raw=None):
+    """
+    Dynamically determine active project/team heads from supervision entities
+    and TEAM-REGISTRY.json, honoring exclusion files, status, and environment overrides.
+    """
+    excluded = set()
+    env_ex = os.environ.get('SUPERVISION_EXCLUDE_HEADS', '')
+    if env_ex:
+        for item in env_ex.split(','):
+            if item.strip():
+                excluded.add(item.strip())
+    if spool:
+        for ex_file in (spool / 'excluded-heads.json', spool / 'excluded_heads.json'):
+            if ex_file.exists():
+                try:
+                    loaded = json.loads(ex_file.read_text())
+                    if isinstance(loaded, list):
+                        excluded.update(loaded)
+                    elif isinstance(loaded, dict) and 'excluded' in loaded:
+                        excluded.update(loaded['excluded'])
+                except Exception:
+                    pass
+    if registry_raw and isinstance(registry_raw, dict):
+        if 'excluded_heads' in registry_raw and isinstance(registry_raw['excluded_heads'], list):
+            excluded.update(registry_raw['excluded_heads'])
+        for a in registry_raw.get('agents', []):
+            tag = a.get('tag')
+            if tag and (a.get('status') in ('quiet', 'morning-only', 'paused', 'inactive', 'offline', 'exited') or a.get('active') is False or a.get('supervision_excluded') is True):
+                excluded.add(tag)
+        for t in registry_raw.get('teams', []):
+            for a in t.get('agents', []):
+                tag = a.get('tag')
+                if tag and (a.get('status') in ('quiet', 'morning-only', 'paused', 'inactive', 'offline', 'exited') or a.get('active') is False or a.get('supervision_excluded') is True):
+                    excluded.add(tag)
+        for p in registry_raw.get('projects', []):
+            for a in p.get('agents', []):
+                tag = a.get('tag')
+                if tag and (a.get('status') in ('quiet', 'morning-only', 'paused', 'inactive', 'offline', 'exited') or a.get('active') is False or a.get('supervision_excluded') is True):
+                    excluded.add(tag)
+
+    candidates = set()
+    if entities and isinstance(entities, list):
+        for e in entities:
+            ht = e.get('head_tag')
+            if ht and ht not in ALL_KNOWN_PRINCIPALS and is_safe_identifier(ht):
+                candidates.add(ht)
+    if registry_raw and isinstance(registry_raw, dict):
+        for group in (registry_raw.get('teams', []), registry_raw.get('projects', [])):
+            for item in group:
+                ht = item.get('head_tag')
+                if ht and ht not in ALL_KNOWN_PRINCIPALS and is_safe_identifier(ht):
+                    candidates.add(ht)
+                for a in item.get('agents', []):
+                    if a.get('role') == 'head' and a.get('tag') and a['tag'] not in ALL_KNOWN_PRINCIPALS and is_safe_identifier(a['tag']):
+                        candidates.add(a['tag'])
+
+    return sorted([tag for tag in candidates if tag not in excluded])
+
+
+def get_designated_head_owner(task, entities):
+    """
+    Determine the designated head owner for a task from its explicit fields
+    or matching supervision entity.
+    """
+    head = task.get('head_owner')
+    if head and is_safe_identifier(head) and head not in ALL_KNOWN_PRINCIPALS:
+        return head
+    owner = task.get('owner_tag')
+    if owner and is_safe_identifier(owner) and owner not in ALL_KNOWN_PRINCIPALS:
+        for e in entities:
+            if e.get('head_tag') == owner:
+                return owner
+        if owner.endswith('-head') or 'head' in owner:
+            return owner
+    for e in entities:
+        if task_matches_entity(task, e):
+            ht = e.get('head_tag')
+            if ht and is_safe_identifier(ht) and ht not in ALL_KNOWN_PRINCIPALS:
+                return ht
+    return None
+
+
+def bridge_ready_task_to_launcher(task, head_owner, spool_dir, ql_db_candidates=None):
+    """
+    Bridge a task transitioning to READY with a designated head owner to a durable
+    enqueue event and launcher enqueue rather than keeping it memory-only.
+    Persists durable intent file under .local/supervision/enqueued/{task_id}.json.
+    """
+    spool_dir = pathlib.Path(spool_dir)
+    enqueued_dir = spool_dir / 'enqueued'
+    enqueued_dir.mkdir(parents=True, exist_ok=True)
+    task_id = task['id']
+    enqueue_file = enqueued_dir / f"{task_id}.json"
+
+    payload = {
+        "task_id": task_id,
+        "goal": task.get("title") or task.get("goal") or task_id,
+        "owner": head_owner,
+        "cwd": task.get("workspace") or str(ROOT),
+        "timeout": task.get("timeout", 3600),
+        "project_id": task.get("project_id") or task.get("team_id"),
+        "status": "ready",
+    }
+    raw_key = json.dumps(payload, sort_keys=True)
+    idempotency_key = f"ql-enqueue-{task_id}-" + hashlib.sha256(raw_key.encode()).hexdigest()[:12]
+
+    record = {
+        "task_id": task_id,
+        "head_owner": head_owner,
+        "project_id": payload["project_id"],
+        "idempotency_key": idempotency_key,
+        "status": "enqueued",
+        "enqueued_at": now(),
+        "payload": payload,
+        "launcher_submitted": False,
+    }
+
+    if ql_db_candidates:
+        import sqlite3
+        for ql_db in ql_db_candidates:
+            ql_path = pathlib.Path(ql_db)
+            if ql_path.exists():
+                try:
+                    conn = sqlite3.connect(str(ql_path), timeout=5.0)
+                    with conn:
+                        cur = conn.cursor()
+                        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'")
+                        if cur.fetchone():
+                            cur.execute("SELECT id FROM tasks WHERE id = ? OR idempotency_key = ?", (task_id, idempotency_key))
+                            existing_row = cur.fetchone()
+                            if not existing_row:
+                                payload_str = json.dumps(payload, sort_keys=True)
+                                cur.execute(
+                                    "INSERT INTO tasks (id, idempotency_key, payload, state, created_at, updated_at) "
+                                    "VALUES (?, ?, ?, 'queued', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                                    (task_id, idempotency_key, payload_str),
+                                )
+                                record["launcher_submitted"] = True
+                                record["launcher_db"] = str(ql_path)
+                    conn.close()
+                    if record["launcher_submitted"]:
+                        break
+                except Exception as exc:
+                    record["launcher_error"] = str(exc)
+
+    atomic(enqueue_file, record)
+    return record
 
 
 def now():
@@ -553,9 +702,18 @@ def format_supervision_body(event_key, selected_tasks, entities=None, recent_com
     return prefix + tasks_part + completions_part
 
 
-def idle_episode(active, ready, old, timestamp):
+def idle_episode(active, ready, old, timestamp, threshold=180):
+    """
+    Check if an entity is in an unexplained idle episode beyond SLO (default 180s = 3 minutes).
+    An episode is overdue if:
+    - There is active ready work (active contains ready tasks or active items),
+    - The entity has been observed continuously idle (since is not None),
+    - Elapsed idle duration (timestamp - since) >= threshold (3 minutes),
+    - The entity does NOT have an unacknowledged pending message.
+    """
     since = (old.get('idle_since') if old.get('idle_since') is not None else timestamp) if ready else None
-    overdue = bool(active and since is not None and timestamp - since >= 300 and not old.get('pending'))
+    has_ready = any(t.get('status', 'ready') in ('ready', 'queued') for t in active) if isinstance(active, (list, tuple)) else bool(active)
+    overdue = bool(has_ready and since is not None and (timestamp - since >= threshold) and not old.get('pending'))
     return since, overdue
 
 
@@ -794,7 +952,7 @@ def run():
     consumer = TerminalConsumer(PRIVATE)
 
     while not (PRIVATE / 'stop').exists():
-        report = {'timestamp': now(), 'identity': identity['id'], 'principals': {}, 'errors': [], 'actions': [], 'degraded': False}
+        report = {'timestamp': now(), 'identity': identity['id'], 'principals': {}, 'heads': {}, 'errors': [], 'actions': [], 'degraded': False}
         try:
             report['storage'] = storage_guard(PRIVATE)
             if report['storage']['state'] == 'paused-hard-limit':
@@ -824,12 +982,45 @@ def run():
             report['terminal_consumer_tasks'] = len(consumer.task_states)
             report['ingested_launcher_tasks'] = ingested_launcher_tasks
 
+            # Durable owned READY bridge to launcher enqueue
+            known_task_statuses = memory.get('task_statuses', {})
+            enqueued_dir = PRIVATE / 'enqueued'
+            enqueued_dir.mkdir(parents=True, exist_ok=True)
+            new_task_statuses = {}
+            for t in tasks:
+                tid = t.get('id')
+                if not tid:
+                    continue
+                current_st = t.get('status')
+                new_task_statuses[tid] = current_st
+                prev_st = known_task_statuses.get(tid)
+
+                if current_st in ('ready', 'queued'):
+                    enqueue_record_file = enqueued_dir / f"{tid}.json"
+                    if prev_st not in ('ready', 'queued') or not enqueue_record_file.exists():
+                        head_owner = get_designated_head_owner(t, entities)
+                        if head_owner:
+                            rec = bridge_ready_task_to_launcher(t, head_owner, PRIVATE, ql_db_candidates)
+                            event('task-ready-enqueued', task_id=tid, head_owner=head_owner,
+                                  project_id=t.get('project_id') or t.get('team_id'),
+                                  idempotency_key=rec['idempotency_key'],
+                                  launcher_submitted=rec.get('launcher_submitted', False))
+                            report['actions'].append({
+                                'kind': 'task-ready-enqueued',
+                                'task_id': tid,
+                                'head_owner': head_owner,
+                                'launcher_submitted': rec.get('launcher_submitted', False),
+                            })
+            memory['task_statuses'] = new_task_statuses
+
             # Actionable event filtering
             actionable_events, actionable_digest = consumer.compute_actionable_events(tasks)
             report['actionable_events'] = actionable_events
             report['actionable_digest'] = actionable_digest
             active_tags = active_principals(entities, PRIVATE, registry_full)
             report['active_principals'] = active_tags
+            head_tags = active_heads(entities, PRIVATE, registry_full)
+            report['active_heads'] = head_tags
             sessions = json.loads(command(['aplexer', 'list', '--json']))
             sessions = [x for x in sessions if x.get('workspace') == str(ROOT)]
             same_binary = hashlib.sha256(pathlib.Path(BINARY).read_bytes()).hexdigest() == expected_hash
@@ -902,10 +1093,17 @@ def run():
                     quota = quota_allowed(json.loads(command(['quse', 'codex', '--json'], timeout=30)))
                 count, reason = eligible(item, screen, tag, old, quota)
                 item.update(composer=composer(screen, tag), ready_snapshot_count=count, reason=reason)
-                idle_since, overdue = idle_episode(active, count > 0, old, time.time())
+                principal_entities = [e for e in entities if tag in e.get('principal_tags', []) and not (e.get('conflict') and e['conflict'].get('detected'))]
+                principal_tasks = [t for t in active if any(task_matches_entity(t, e) for e in principal_entities)]
+                idle_since, overdue = idle_episode(principal_tasks or active, count > 0, old, time.time(), threshold=180)
                 item['idle_since'] = idle_since
                 item['unexplained_idle_over_slo'] = overdue
-                episode = int(time.time() // (1800 if tag == 'claude-principal' else 300)) if overdue else old.get('episode', 0)
+                if overdue:
+                    report['degraded'] = True
+                    report['errors'].append(f"principal {tag} unexplained idle-with-READY over SLO ({round(time.time() - idle_since, 1)}s >= 180s)")
+                    event('principal-unexplained-idle-over-slo', principal=tag, session_id=session['id'],
+                          idle_since=idle_since, duration_seconds=round(time.time() - idle_since, 2))
+                episode = int(time.time() // (1800 if tag == 'claude-principal' else 180)) if overdue else old.get('episode', 0)
                 event_key = hashlib.sha256(f'{digest}:{session["id"]}:{episode}'.encode()).hexdigest()[:20]
                 item.update(event_key=event_key, episode=episode)
                 pending = old.get('pending')
@@ -966,7 +1164,7 @@ def run():
                             pending = {'id': envelope.get('id', receipt.get('id')), 'sender_id':identity['id'], 'event': event_key,
                                        'delivery':receipt.get('delivery','inbox'), 'created_at': now()}
                             item['sent_event'] = event_key
-                            item['cooldown_until'] = time.time() + (1800 if tag == 'claude-principal' else 300)
+                            item['cooldown_until'] = time.time() + (1800 if tag == 'claude-principal' else 180)
                             event('request-recorded', principal=tag, message_id=pending['id'], event_key=event_key)
                 else:
                     item['sent_event'] = old.get('sent_event')
@@ -1018,6 +1216,143 @@ def run():
                 item['pending'] = pending
                 report['principals'][tag] = item
                 memory[tag] = item
+
+            for head_tag in head_tags:
+                match = [x for x in sessions if x.get('tag') == head_tag]
+                old = memory.get(head_tag, {})
+                if len(match) != 1:
+                    item = dict(old)
+                    item['event_key'] = digest
+                    item['ready_snapshot_count'] = 0
+                    item['reason'] = 'missing-or-ambiguous-head'
+                    item['alive'] = False
+                    pending = old.get('pending')
+                    if pending:
+                        is_beyond, dur, slo_limit, block_reason = check_pending_slo(
+                            pending, head_tag, item, time.time()
+                        )
+                        if is_beyond:
+                            item['status'] = 'blocked_beyond_slo'
+                            item['blocking_reason'] = block_reason
+                            item['pending_duration_seconds'] = round(dur, 2)
+                            item['retry_slo_seconds'] = slo_limit
+                            report['degraded'] = True
+                            report['errors'].append(f"head {head_tag} pending message {pending['id']} blocked_beyond_slo ({round(dur, 1)}s >= {slo_limit}s): {block_reason}")
+                            event('pending-blocked-beyond-slo', head=head_tag, message_id=pending['id'],
+                                  duration_seconds=round(dur, 2), slo_seconds=slo_limit, blocking_reason=block_reason)
+                        else:
+                            item['status'] = 'pending'
+                        item['pending'] = pending
+                    else:
+                        item['status'] = 'missing'
+                    memory[head_tag] = item
+                    report['heads'][head_tag] = item
+                    continue
+
+                item = {'event_key': digest, 'ready_snapshot_count': 0}
+                session = match[0]
+                pid = session.get('workload_pid')
+                item.update(session_id=session['id'], reported_state=session.get('reported_state'),
+                            alive=bool(pid and pathlib.Path(f'/proc/{pid}').exists()))
+                screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
+                count, reason = eligible(item, screen, head_tag, old, quota=True)
+                item.update(composer=composer(screen, head_tag), ready_snapshot_count=count, reason=reason)
+
+                head_entities = [e for e in entities if e.get('head_tag') == head_tag and not (e.get('conflict') and e['conflict'].get('detected'))]
+                head_active = [t for t in active if t.get('owner_tag') == head_tag or any(task_matches_entity(t, e) for e in head_entities)]
+                head_ready = [t for t in head_active if t.get('status') in ('ready', 'queued')]
+
+                idle_since, overdue = idle_episode(head_ready, count > 0, old, time.time(), threshold=180)
+                item['idle_since'] = idle_since
+                item['unexplained_idle_over_slo'] = overdue
+                item['ready_task_count'] = len(head_ready)
+
+                if overdue:
+                    report['degraded'] = True
+                    report['errors'].append(f"head {head_tag} unexplained idle-with-READY ({round(time.time() - idle_since, 1)}s >= 180s) with {len(head_ready)} ready tasks")
+                    event('head-unexplained-idle-over-slo', head=head_tag, session_id=session['id'],
+                          idle_since=idle_since, duration_seconds=round(time.time() - idle_since, 2),
+                          ready_tasks=[t['id'] for t in head_ready])
+
+                episode = int(time.time() // 180) if overdue else old.get('episode', 0)
+                event_key = hashlib.sha256(f'{digest}:{session["id"]}:{episode}'.encode()).hexdigest()[:20]
+                item.update(event_key=event_key, episode=episode)
+
+                pending = old.get('pending')
+                if old.get('last_request'):
+                    item['last_request'] = old['last_request']
+                if pending:
+                    evidence = exact_ack(pending, session['id'], head_tag, ROOT)
+                    if evidence:
+                        item['last_request'] = {**pending, 'acknowledged_at': now(), 'ack_evidence': evidence}
+                        atomic(PRIVATE / ('native-ack-' + pending['id'] + '.json'), evidence)
+                        event('pending-reconciled-native-ack', head=head_tag, **evidence)
+                        report['actions'].append({'kind': 'pending-reconciled-native-ack', 'head': head_tag, 'message_id': pending['id']})
+                        pending = None
+
+                cooldown = old.get('cooldown_until', 0)
+                if head_ready and not pending and (old.get('sent_event') != event_key) and time.time() >= cooldown:
+                    if item.get('alive'):
+                        task_ids_str = ", ".join(t['id'] for t in head_ready[:5])
+                        body = (
+                            f"SUPERVISION-{event_key}: Head {head_tag} has {len(head_ready)} ready tasks awaiting dispatch: {task_ids_str}. "
+                            "Inspect queues, launch executors, verify first tool output. Update TASKS.json."
+                        )
+                        receipt = recorded_send(BINARY, head_tag, f'{event_key}-{head_tag}', body, PRIVATE, identity['id'], supports_key)
+                        atomic(PRIVATE / f'receipt-{event_key}-{head_tag}.json', receipt)
+                        if receipt.get('delivery') == 'send-uncertain':
+                            report['degraded'] = True
+                            report['uncertain_outcome'] = {'outcome': 'UNKNOWN', 'class': 'send-uncertain', 'head': head_tag, 'event_key': event_key, 'reason': receipt.get('reason')}
+                        envelope = receipt.get('message', receipt)
+                        pending = {'id': envelope.get('id', receipt.get('id')), 'sender_id': identity['id'], 'event': event_key,
+                                   'delivery': receipt.get('delivery', 'inbox'), 'created_at': now()}
+                        item['sent_event'] = event_key
+                        item['cooldown_until'] = time.time() + 180
+                        event('head-request-recorded', head=head_tag, message_id=pending['id'], event_key=event_key)
+                else:
+                    item['sent_event'] = old.get('sent_event')
+                    item['cooldown_until'] = cooldown
+
+                if pending and pending.get('sender_id') != identity['id']:
+                    item['pending_reason'] = 'original sender changed; original recipient ACK/reply required'
+                if may_deliver(pending, identity['id']) and count >= 2:
+                    fresh_screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
+                    if composer(fresh_screen, head_tag) == 'empty':
+                        deliver_args = [BINARY, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json']
+                        result = subprocess.run(deliver_args, capture_output=True, text=True, timeout=20)
+                        deliver_stderr = (result.stderr or '').strip()
+                        if result.returncode and MAILBOX_BUSY.search(deliver_stderr):
+                            raise DeliveryUncertain(deliver_args, deliver_stderr, result.returncode)
+                        try:
+                            outcome = json.loads(result.stdout)
+                        except json.JSONDecodeError:
+                            outcome = {'status': 'delivery-uncertain', 'returncode': result.returncode}
+                        atomic(PRIVATE / f"delivery-{pending['id']}.json", outcome)
+                        status = outcome.get('status', outcome.get('delivery', 'delivery-uncertain'))
+                        pending['delivery'] = status
+                        event('head-delivery-attempt', head=head_tag, message_id=pending['id'], outcome=status)
+                        if status == 'recipient-acked':
+                            item['last_request'] = pending
+                            pending = None
+
+                if pending:
+                    is_beyond, dur, slo_limit, block_reason = check_pending_slo(pending, head_tag, item, time.time())
+                    if is_beyond:
+                        item['status'] = 'blocked_beyond_slo'
+                        item['blocking_reason'] = block_reason
+                        item['pending_duration_seconds'] = round(dur, 2)
+                        item['retry_slo_seconds'] = slo_limit
+                        report['degraded'] = True
+                        report['errors'].append(f"head {head_tag} pending message {pending['id']} blocked_beyond_slo ({round(dur, 1)}s >= {slo_limit}s): {block_reason}")
+                        event('pending-blocked-beyond-slo', head=head_tag, message_id=pending['id'],
+                              duration_seconds=round(dur, 2), slo_seconds=slo_limit, blocking_reason=block_reason)
+                    else:
+                        item['status'] = 'pending'
+                else:
+                    item['status'] = 'ok'
+                item['pending'] = pending
+                report['heads'][head_tag] = item
+                memory[head_tag] = item
             atomic(statepath, memory)
             # Bounded operational receipts; retain every currently unresolved/uncertain request.
             protected = {x.get('pending', {}).get('id') for x in memory.values() if x.get('pending')}
@@ -1035,7 +1370,7 @@ def run():
             record_cycle_failure(report, exc)
             event('error', error=str(exc), degraded=True, observation=report.get('observation'))
         atomic(PRIVATE / 'status.json', report)
-        print(json.dumps({'timestamp': now(), 'degraded': report['degraded'], 'principals': {tag: x.get('reason') for tag,x in report['principals'].items()}, 'errors': report['errors']}), flush=True)
+        print(json.dumps({'timestamp': now(), 'degraded': report['degraded'], 'principals': {tag: x.get('reason') for tag,x in report['principals'].items()}, 'heads': {tag: x.get('reason') for tag,x in report.get('heads', {}).items()}, 'errors': report['errors']}), flush=True)
         for _ in range(60):
             if (PRIVATE / 'stop').exists():
                 return

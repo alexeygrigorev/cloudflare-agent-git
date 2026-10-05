@@ -34,6 +34,11 @@ class SelfReviewProhibitedError(ReceiptValidationError):
     pass
 
 
+class StolenLeaseError(ReceiptValidationError):
+    """Raised when an execution or lease is attempted on an already-claimed or mismatched invocation."""
+    pass
+
+
 def canonical_json_hash(data: Dict[str, Any]) -> str:
     """Return deterministic SHA-256 hex digest of dictionary payload."""
     raw = json.dumps(data, sort_keys=True, separators=(',', ':')).encode('utf-8')
@@ -61,6 +66,19 @@ def is_valid_uuid(val: Any) -> bool:
         return str(parsed).lower() == val.lower()
     except (ValueError, TypeError, AttributeError):
         return False
+
+
+def get_host_boot_id() -> Optional[str]:
+    """Read host boot ID from /proc/sys/kernel/random/boot_id if available."""
+    try:
+        p = pathlib.Path("/proc/sys/kernel/random/boot_id")
+        if p.is_file():
+            val = p.read_text().strip()
+            if is_valid_uuid(val):
+                return val
+    except Exception:
+        pass
+    return None
 
 
 def verify_real_artifact(path_str: str, expected_sha: str) -> bool:
@@ -119,6 +137,16 @@ def extract_native_evidence(
     exec_engine = exec_data.get("engine") or payload_dict.get("provider")
     if not exec_engine or exec_engine not in AUTHORIZED_ENGINES:
         return None
+
+    inv_id = exec_data.get("invocation_id") or payload_dict.get("invocation_id")
+    if inv_id is not None:
+        if not is_safe_identifier(inv_id) or str(inv_id).startswith(("mock-", "synthetic-")):
+            return None
+
+    boot_id = exec_data.get("boot_id") or payload_dict.get("boot_id")
+    if boot_id is not None:
+        if not is_valid_uuid(boot_id):
+            return None
 
     # 2. Genuine first tool validation
     first_tool_raw = payload_dict.get("first_tool_evidence") or payload_dict.get("first_tool")
@@ -197,6 +225,12 @@ def extract_native_evidence(
         "first_tool_evidence": first_tool_dict,
         "completed_at": updated_at,
     }
+    if inv_id is not None:
+        terminal_receipt["invocation_id"] = inv_id
+        terminal_receipt["executor"]["invocation_id"] = inv_id
+    if boot_id is not None:
+        terminal_receipt["boot_id"] = boot_id
+        terminal_receipt["executor"]["boot_id"] = boot_id
 
     review_receipt = {
         "task_id": task_id,
@@ -223,9 +257,12 @@ def validate_terminal_receipt(
     expected_owner: Optional[str] = None,
     registered_sessions: Optional[Set[str]] = None,
     require_first_tool_timestamp: bool = False,
+    expected_invocation_id: Optional[str] = None,
+    expected_boot_id: Optional[str] = None,
 ) -> Tuple[bool, Optional[str], str]:
     """Validate task execution terminal receipt.
 
+    Enforces safe invocation ID and host boot identity checks.
     Returns: (is_valid, error_message, receipt_sha256).
     """
     if not isinstance(receipt, dict):
@@ -298,6 +335,20 @@ def validate_terminal_receipt(
     completed_at = receipt.get("completed_at")
     if not completed_at or not isinstance(completed_at, str):
         return False, "Missing or non-string 'completed_at'", ""
+
+    inv_id = receipt.get("invocation_id") or executor.get("invocation_id")
+    if inv_id is not None:
+        if not is_safe_identifier(inv_id) or str(inv_id).startswith(("mock-", "synthetic-")):
+            return False, f"Invalid or synthetic invocation_id: {inv_id!r}", ""
+        if expected_invocation_id and inv_id != expected_invocation_id:
+            return False, f"Invocation ID mismatch: expected {expected_invocation_id!r}, got {inv_id!r}", ""
+
+    boot_id = receipt.get("boot_id") or executor.get("boot_id")
+    if boot_id is not None:
+        if not is_valid_uuid(boot_id):
+            return False, f"Invalid boot_id: {boot_id!r}", ""
+        if expected_boot_id and str(boot_id).lower() != str(expected_boot_id).lower():
+            return False, f"Boot ID mismatch: expected {expected_boot_id!r}, got {boot_id!r}", ""
 
     receipt_sha = canonical_json_hash(receipt)
     return True, None, receipt_sha
@@ -421,6 +472,8 @@ class TerminalConsumer:
                         "terminal_completed_at": data["completed_at"],
                         "artifacts": data["artifacts"],
                         "first_tool_evidence": data["first_tool_evidence"],
+                        "invocation_id": data.get("invocation_id") or data.get("executor", {}).get("invocation_id"),
+                        "boot_id": data.get("boot_id") or data.get("executor", {}).get("boot_id"),
                         "reviewer": None,
                         "verdict": None,
                         "reviewed_at": None,
@@ -480,9 +533,19 @@ class TerminalConsumer:
 
         return recovered
 
-    def ingest_terminal_receipt(self, receipt: Dict[str, Any]) -> Dict[str, Any]:
+    def ingest_terminal_receipt(
+        self,
+        receipt: Dict[str, Any],
+        expected_invocation_id: Optional[str] = None,
+        expected_boot_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Ingest and validate execution terminal receipt."""
-        ok, err, r_sha = validate_terminal_receipt(receipt, registered_sessions=self.registered_sessions)
+        ok, err, r_sha = validate_terminal_receipt(
+            receipt,
+            registered_sessions=self.registered_sessions,
+            expected_invocation_id=expected_invocation_id,
+            expected_boot_id=expected_boot_id,
+        )
         if not ok:
             raise ReceiptValidationError(f"Invalid terminal receipt: {err}")
 
@@ -493,16 +556,62 @@ class TerminalConsumer:
         if not str(rec_path).startswith(str(self.receipts_dir.resolve())):
             raise ReceiptValidationError(f"Path traversal detected in task_id: {task_id}")
 
-        # Dedup / idempotency: do not clobber existing accepted review state
-        if r_sha in self.processed_receipt_shas and task_id in self.task_states:
-            current_status = self.task_states[task_id].get("status")
-            return {
-                "status": "ingested",
-                "task_id": task_id,
-                "sha256": r_sha,
-                "action_required": "NONE" if current_status == "accepted" else "REVIEW_REQUIRED",
-                "duplicate": True,
-            }
+        inv_id = receipt.get("invocation_id") or receipt.get("executor", {}).get("invocation_id")
+        boot_id = receipt.get("boot_id") or receipt.get("executor", {}).get("boot_id")
+        incoming_sess = receipt.get("executor", {}).get("session_id")
+        incoming_tag = receipt.get("executor", {}).get("tag")
+
+        # Stolen lease and duplicate execution checks against existing task state
+        if task_id in self.task_states:
+            existing_state = self.task_states[task_id]
+            existing_inv = existing_state.get("invocation_id")
+            existing_sess = existing_state.get("executor", {}).get("session_id")
+            existing_tag = existing_state.get("executor", {}).get("tag")
+            existing_status = existing_state.get("status")
+
+            # Stolen lease check: conflicting invocation ID for the same task
+            if existing_inv and inv_id and existing_inv != inv_id:
+                raise StolenLeaseError(
+                    f"Stolen lease detected for task {task_id}: existing invocation {existing_inv!r} != incoming {inv_id!r}"
+                )
+
+            # Stolen lease check: conflicting executor session ID
+            if existing_sess and incoming_sess and existing_sess != incoming_sess:
+                raise StolenLeaseError(
+                    f"Stolen lease detected for task {task_id}: existing executor session {existing_sess!r} != incoming {incoming_sess!r}"
+                )
+
+            # Stolen lease check: conflicting executor tag
+            if existing_tag and incoming_tag and existing_tag != incoming_tag:
+                raise StolenLeaseError(
+                    f"Stolen lease detected for task {task_id}: existing executor tag {existing_tag!r} != incoming {incoming_tag!r}"
+                )
+
+            # Duplicate / transport failure retry with identical receipt SHA
+            if r_sha in self.processed_receipt_shas:
+                return {
+                    "status": "ingested",
+                    "task_id": task_id,
+                    "sha256": r_sha,
+                    "action_required": "NONE" if existing_status == "accepted" else "REVIEW_REQUIRED",
+                    "duplicate": True,
+                }
+
+            # Duplicate / transport failure retry with exact same invocation ID
+            if inv_id and existing_inv and inv_id == existing_inv:
+                return {
+                    "status": "ingested",
+                    "task_id": task_id,
+                    "sha256": r_sha,
+                    "action_required": "NONE" if existing_status == "accepted" else "REVIEW_REQUIRED",
+                    "duplicate": True,
+                }
+
+            # If task is already accepted past review, refuse clobbering by new execution
+            if existing_status == "accepted":
+                raise ReceiptValidationError(
+                    f"Duplicate execution rejected for task {task_id}: task is already accepted past review"
+                )
 
         self.terminal_receipts[task_id] = receipt
         self.processed_receipt_shas.add(r_sha)
@@ -518,6 +627,8 @@ class TerminalConsumer:
             "terminal_completed_at": receipt["completed_at"],
             "artifacts": receipt["artifacts"],
             "first_tool_evidence": receipt["first_tool_evidence"],
+            "invocation_id": inv_id,
+            "boot_id": boot_id,
             "reviewer": None,
             "verdict": None,
             "reviewed_at": None,
@@ -620,10 +731,15 @@ class TerminalConsumer:
         if self.cursor_path.exists():
             try:
                 if self.cursor_path.stat().st_size <= MAX_RECEIPT_SIZE:
-                    return json.loads(self.cursor_path.read_text())
+                    data = json.loads(self.cursor_path.read_text())
+                    if isinstance(data, dict):
+                        data.setdefault("known_task_ids", [])
+                        data.setdefault("known_invocations", {})
+                        data.setdefault("boot_id", None)
+                        return data
             except Exception:
                 pass
-        return {"last_ingested_at": None, "known_task_ids": []}
+        return {"last_ingested_at": None, "known_task_ids": [], "known_invocations": {}, "boot_id": None}
 
     def save_launcher_cursor(self, cursor: Dict[str, Any]) -> None:
         """Atomically persist cursor for launcher state DB ingestion."""
@@ -649,6 +765,7 @@ class TerminalConsumer:
 
         cursor = self.load_launcher_cursor()
         known_task_ids = set(cursor.get("known_task_ids", []))
+        known_invocations = dict(cursor.get("known_invocations", {}))
 
         results = []
         try:
@@ -696,6 +813,14 @@ class TerminalConsumer:
 
             # Anti-self-review check
             if reviewer == owner or reviewer == task_id:
+                continue
+
+            row_inv_id = None
+            if isinstance(payload_dict, dict):
+                row_inv_id = payload_dict.get("invocation_id") or payload_dict.get("executor", {}).get("invocation_id")
+
+            # Validate against stolen lease / conflicting invocation ID
+            if row_inv_id and task_id in known_invocations and known_invocations[task_id] != row_inv_id:
                 continue
 
             # Attempt extraction of genuine native evidence
@@ -763,11 +888,15 @@ class TerminalConsumer:
                 })
 
             new_task_ids.add(task_id)
+            if row_inv_id:
+                known_invocations[task_id] = row_inv_id
             if not max_updated_at or (updated_at and updated_at > max_updated_at):
                 max_updated_at = updated_at
 
         if new_task_ids:
             cursor["known_task_ids"] = sorted(known_task_ids | new_task_ids)
+            cursor["known_invocations"] = known_invocations
+            cursor["boot_id"] = get_host_boot_id()
             cursor["last_ingested_at"] = max_updated_at
             cursor["ingested_count"] = len(cursor["known_task_ids"])
             self.save_launcher_cursor(cursor)
