@@ -1069,6 +1069,281 @@ index fe341dd..160a1cb 100644
 +            table = self._load(self._cursors)
 +            table[mailbox] = message_id
 +            self._save(self._cursors, table)
+diff --git a/coordination/durable.py b/coordination/durable.py
+new file mode 100644
+index 0000000..5b4dadc
+--- /dev/null
++++ b/coordination/durable.py
+@@ -0,0 +1,82 @@
++"""POSIX durable JSON writes for the Agent Bus store.
++
++Trust boundary: directory mode 0700 and file mode 0600 keep other OS users
++off the store. Agents that run as the same OS user share the filesystem and
++can read any file here; they are not mutually hostile principals. Token and
++project checks stop accidental cross-identity use through the API. They do
++not encrypt isolation against a same-user process with store path access.
++"""
++
++from __future__ import annotations
++
++import json
++import os
++from pathlib import Path
++from typing import Any
++
++
++def write_all(fd: int, data: bytes) -> None:
++    """Write the full buffer. A single os.write may return a short count."""
++    view = memoryview(data)
++    while view:
++        written = os.write(fd, view)
++        if written <= 0:
++            raise OSError(f"os.write returned {written}")
++        view = view[written:]
++
++
++def fsync_dir(path: Path) -> None:
++    dir_fd = os.open(os.fspath(path), os.O_RDONLY | os.O_DIRECTORY)
++    try:
++        os.fsync(dir_fd)
++    finally:
++        os.close(dir_fd)
++
++
++def atomic_write_json(path: Path, value: Any, *, mode: int = 0o600) -> None:
++    path = Path(path)
++    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
++    tmp = path.with_name(path.name + ".tmp")
++    payload = json.dumps(value, indent=2, sort_keys=True).encode("utf-8")
++    flags = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
++    if hasattr(os, "O_CLOEXEC"):
++        flags |= os.O_CLOEXEC
++    fd = os.open(tmp, flags, mode)
++    try:
++        write_all(fd, payload)
++        os.fsync(fd)
++    finally:
++        os.close(fd)
++    os.replace(tmp, path)
++    fsync_dir(path.parent)
++
++
++def write_secret_json(path: Path, value: Any) -> None:
++    """Write a credential file and force mode 0600 even if it already existed."""
++    atomic_write_json(path, value, mode=0o600)
++    os.chmod(path, 0o600)
++
++
++class FileLock:
++    def __init__(self, path: Path):
++        self.path = Path(path)
++        self._fd: int | None = None
++
++    def __enter__(self) -> FileLock:
++        import fcntl
++
++        self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
++        flags = os.O_CREAT | os.O_RDWR
++        if hasattr(os, "O_CLOEXEC"):
++            flags |= os.O_CLOEXEC
++        self._fd = os.open(self.path, flags, 0o600)
++        fcntl.flock(self._fd, fcntl.LOCK_EX)
++        return self
++
++    def __exit__(self, *exc: object) -> None:
++        import fcntl
++
++        if self._fd is not None:
++            fcntl.flock(self._fd, fcntl.LOCK_UN)
++            os.close(self._fd)
++            self._fd = None
+diff --git a/coordination/envelope.py b/coordination/envelope.py
+new file mode 100644
+index 0000000..fd2536d
+--- /dev/null
++++ b/coordination/envelope.py
+@@ -0,0 +1,181 @@
++"""Namespaced identities, envelope definitions, and typed RPC framing for FileBus over SSH.
++
++Provides:
++- NamespacedId: Host- and store-scoped identity with URI-safe encoding.
++- RpcRequest & RpcResponse: Structured FileBus remote procedure call framing.
++- TransportState: Separation of transport vs semantic outcomes.
++"""
++
++from __future__ import annotations
++
++from dataclasses import asdict, dataclass, field
++from enum import Enum
++from typing import Any
++import urllib.parse
++from uuid import uuid4
++
++
++class TransportState(str, Enum):
++    RECORDED = "recorded"
++    SEND_RECEIPT = "send_receipt"
++    RECIPIENT_READ_ACK = "recipient_read_ack"
++    SEMANTIC_AGREED = "semantic_agreed"
++    ACTION_COMPLETED = "action_completed"
++
++
++@dataclass(frozen=True)
++class NamespacedId:
++    """
++    Host- and store-qualified agent identity.
++
++    Fields:
++    - host: Remote hostname or SSH target (e.g., '192.168.1.10', 'desktop-hetzner').
++    - store_path: Target FileBus store path (e.g., '/home/alexey/.local/agent_bus', 'C:\\data\\agent_bus').
++    - agent_tag: Logical agent role/identifier (e.g., 'zcode-worker-1').
++    - session_id: Aplexer/runtime session identifier (or '-' if unassociated).
++    - task_id: Concrete task identifier (or '-' if unassociated).
++    """
++
++    host: str
++    store_path: str
++    agent_tag: str
++    session_id: str
++    task_id: str
++
++    def to_dict(self) -> dict[str, str]:
++        return {
++            "host": self.host,
++            "store_path": self.store_path,
++            "agent_tag": self.agent_tag,
++            "session_id": self.session_id,
++            "task_id": self.task_id,
++        }
++
++    @classmethod
++    def from_dict(cls, data: dict[str, Any]) -> NamespacedId:
++        return cls(
++            host=str(data["host"]),
++            store_path=str(data["store_path"]),
++            agent_tag=str(data["agent_tag"]),
++            session_id=str(data.get("session_id", "-")),
++            task_id=str(data.get("task_id", "-")),
++        )
++
++    def encode_uri(self) -> str:
++        """
++        Encode this identity into a URI-safe string scheme.
++        Components are fully percent-encoded (safe against Windows drive letters like C:\\ and path slashes /).
++        Format: nid:<host>:<store_path>:<agent_tag>:<session_id>:<task_id>
++        """
++        parts = [
++            urllib.parse.quote(self.host, safe=""),
++            urllib.parse.quote(self.store_path, safe=""),
++            urllib.parse.quote(self.agent_tag, safe=""),
++            urllib.parse.quote(self.session_id, safe=""),
++            urllib.parse.quote(self.task_id, safe=""),
++        ]
++        return "nid:" + ":".join(parts)
++
++    @classmethod
++    def decode_uri(cls, uri_str: str) -> NamespacedId:
++        """Decode a URI-safe string representation into a NamespacedId."""
++        if not uri_str.startswith("nid:"):
++            raise ValueError(f"Invalid NamespacedId URI scheme (expected prefix 'nid:'): {uri_str}")
++        raw_parts = uri_str[4:].split(":")
++        if len(raw_parts) != 5:
++            raise ValueError(f"Expected 5 parts in NamespacedId URI, got {len(raw_parts)}: {uri_str}")
++        return cls(
++            host=urllib.parse.unquote(raw_parts[0]),
++            store_path=urllib.parse.unquote(raw_parts[1]),
++            agent_tag=urllib.parse.unquote(raw_parts[2]),
++            session_id=urllib.parse.unquote(raw_parts[3]),
++            task_id=urllib.parse.unquote(raw_parts[4]),
++        )
++
++    def to_uri(self) -> str:
++        return self.encode_uri()
++
++    @classmethod
++    def from_uri(cls, uri_str: str) -> NamespacedId:
++        return cls.decode_uri(uri_str)
++
++    def render(self) -> str:
++        """Human-readable string representation."""
++        return f"{self.host}:{self.store_path}#{self.agent_tag}/{self.session_id}/{self.task_id}"
++
++    def __str__(self) -> str:
++        return self.encode_uri()
++
++
++@dataclass
++class RpcRequest:
++    """
++    Typed request envelope for FileBus operations over SSH.
++    """
++
++    op: str
++    request_id: str
++    params: dict[str, Any] = field(default_factory=dict)
++    target: NamespacedId | None = None
++
++    def to_dict(self) -> dict[str, Any]:
++        res: dict[str, Any] = {
++            "op": self.op,
++            "request_id": self.request_id,
++            "params": self.params,
++        }
++        if self.target is not None:
++            res["target"] = self.target.to_dict()
++        return res
++
++    @classmethod
++    def from_dict(cls, data: dict[str, Any]) -> RpcRequest:
++        target = None
++        if "target" in data and data["target"] is not None:
++            target = NamespacedId.from_dict(data["target"])
++        return cls(
++            op=str(data["op"]),
++            request_id=str(data.get("request_id", "")),
++            params=dict(data.get("params", {})),
++            target=target,
++        )
++
++
++@dataclass
++class RpcResponse:
++    """
++    Typed response envelope for FileBus operations over SSH.
++    """
++
++    request_id: str
++    ok: bool
++    result: Any = None
++    error: dict[str, Any] | None = None
++
++    def to_dict(self) -> dict[str, Any]:
++        return {
++            "request_id": self.request_id,
++            "ok": self.ok,
++            "result": self.result,
++            "error": self.error,
++        }
++
++    @classmethod
++    def from_dict(cls, data: dict[str, Any]) -> RpcResponse:
++        raw_ok = data.get("ok")
++        if type(raw_ok) is not bool:
++            raise ValueError(f"RPC response 'ok' field must be a strict boolean, got {type(raw_ok).__name__}")
++        return cls(
++            request_id=str(data.get("request_id", "")),
++            ok=raw_ok,
++            result=data.get("result"),
++            error=data.get("error"),
++        )
++
++
++def new_request_id() -> str:
++    return str(uuid4())
++
++
++def new_idempotency_key(prefix: str = "rpc") -> str:
++    return f"{prefix}-{uuid4()}"
 diff --git a/coordination/errors.py b/coordination/errors.py
 index 29f2413..babab51 100644
 --- a/coordination/errors.py
@@ -1148,6 +1423,675 @@ index 29f2413..babab51 100644
 +        super().__init__(message)
 +        self.reason = reason
 +        self.code = code
+diff --git a/coordination/headless_worker.py b/coordination/headless_worker.py
+new file mode 100644
+index 0000000..8788a59
+--- /dev/null
++++ b/coordination/headless_worker.py
+@@ -0,0 +1,126 @@
++#!/usr/bin/env python3
++"""Independent headless bus worker.
++
++Consumes one bus message, writes a real artifact, then records ACK / accept /
++outcome (with digest) and a reply on the bus. No aplexer executable, PID, or
++APLEXER_* environment is used.
++"""
++
++from __future__ import annotations
++
++import argparse
++import json
++import os
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++if str(ROOT) not in sys.path:
++    sys.path.insert(0, str(ROOT))
++
++from coordination.bus import FileBus
++
++
++def _contained(path: Path, root: Path) -> Path:
++    resolved = path.resolve()
++    root_r = root.resolve()
++    if resolved != root_r and not str(resolved).startswith(str(root_r) + os.sep):
++        raise SystemExit(f"path_outside_allow_root:{path}")
++    return resolved
++
++
++def _cred(path: str) -> dict:
++    return json.loads(Path(path).read_text(encoding="utf-8"))
++
++
++def _review_file(source: Path) -> dict:
++    text = source.read_text(encoding="utf-8")
++    return {
++        "source": str(source),
++        "lines": text.count("\n") + (0 if text.endswith("\n") or not text else 1),
++        "bytes": len(text.encode("utf-8")),
++        "has_filebus": "class FileBus" in text,
++        "has_project_scope": "project_scope" in text,
++        "has_delivered_at": "delivered_at" in text,
++        "has_accepted_at": "accepted_at" in text,
++        "has_write_all": "write_all" in text or "def write_all" in text,
++        "worker": "headless_worker",
++    }
++
++
++def run_once(bus: FileBus, cred: dict, allow_root: Path, timeout: float) -> int:
++    ident = cred["identity_id"]
++    token = cred["token"]
++    items = bus.wait(ident, token, timeout=timeout)
++    if not items:
++        return 2
++    msg = items[0]
++    # ACK last so a crash before outcome still redelivers the unacked message.
++    bus.accept(ident, token, msg.message_id)
++    data = msg.data or {}
++    task = data.get("task") or "write_artifact"
++    artifact = _contained(Path(data["artifact"]), allow_root)
++    artifact.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
++    extra: dict = {"task": task, "worker_id": ident}
++    try:
++        if task == "write_artifact":
++            contents = data.get("contents", msg.body)
++            if isinstance(contents, (dict, list)):
++                payload = json.dumps(contents, indent=2) + "\n"
++            else:
++                payload = str(contents)
++                if not payload.endswith("\n"):
++                    payload += "\n"
++            artifact.write_text(payload, encoding="utf-8")
++            extra["kind"] = "write_artifact"
++        elif task == "review_file":
++            source = Path(data["source"]).resolve()
++            report = _review_file(source)
++            report["artifact"] = str(artifact)
++            artifact.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
++            extra["kind"] = "review_file"
++            extra["source"] = str(source)
++        else:
++            raise ValueError(f"unknown_task:{task}")
++        status = "ok"
++        body = "outcome-ok"
++    except Exception as exc:  # noqa: BLE001 — worker must record failure on the bus
++        status = "error"
++        body = f"outcome-error:{exc}"
++        extra["error"] = str(exc)
++        if not artifact.exists():
++            artifact.write_text(json.dumps({"status": "error", "error": str(exc)}, indent=2) + "\n", encoding="utf-8")
++    completed = bus.complete(
++        ident,
++        token,
++        msg.message_id,
++        status=status,
++        artifact=str(artifact),
++        extra=extra,
++    )
++    bus.reply(
++        sender_id=ident,
++        token=token,
++        message_id=msg.message_id,
++        body=body,
++        data=completed.outcome,
++        idempotency_key=f"{msg.idempotency_key}:outcome",
++    )
++    bus.ack(ident, token, msg.message_id)
++    print(json.dumps({"message_id": msg.message_id, "outcome": completed.outcome}, indent=2))
++    return 0 if status == "ok" else 1
++
++
++def main(argv: list[str] | None = None) -> int:
++    parser = argparse.ArgumentParser(description="Headless Agent Bus worker")
++    parser.add_argument("--store", required=True)
++    parser.add_argument("--cred", required=True)
++    parser.add_argument("--allow-root", required=True)
++    parser.add_argument("--timeout", type=float, default=10.0)
++    args = parser.parse_args(argv)
++    cred = _cred(args.cred)
++    return run_once(FileBus(args.store), cred, Path(args.allow_root), args.timeout)
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/coordination/ssh_rpc.py b/coordination/ssh_rpc.py
+new file mode 100644
+index 0000000..a9d42d5
+--- /dev/null
++++ b/coordination/ssh_rpc.py
+@@ -0,0 +1,531 @@
++"""Typed SSH FileBus RPC Client.
++
++Communicates with a remote FileBus store over SSH using pinned CLI execution
++and safe JSON streams over stdin/stdout (no shell interpolation, no credentials in argv).
++
++Hardened per Codex Principal Directives C2162, C2164, and C2166:
++- Local SSH Option Injection Defense: validates host does not start with '-', passes '--' before host.
++- Remote Shell Escaping (POSIX Scope): shlex.quote applied to all remote arguments for POSIX login shells.
++  Windows remote shells (cmd.exe / PowerShell) remain held out-of-scope.
++- Mandatory StrictHostKeyChecking & BatchMode: enforces -o BatchMode=yes and -o StrictHostKeyChecking=yes
++  (prohibits ambient accept-new or no).
++- Fail-Closed Omission: raw remote stdout and stderr strings are completely omitted from exception
++  messages and attributes to eliminate credential and payload leaks.
++- Decoupled Exception Chaining: raises TransportTimeout and FramingError using `raise ... from None`
++  outside except blocks, preventing traceback leaks via __cause__ / __context__.
++- Strict Correlation & Response Semantics: assert resp.request_id == req.request_id, raise
++  FramingError("request_id_mismatch") from None without printing payload. Strict boolean type on resp.ok.
++- Strict Exit Code Check: non-zero exit codes fail closed with TransportError.
++"""
++
++from __future__ import annotations
++
++from dataclasses import dataclass, field
++import json
++import re
++import shlex
++import subprocess
++from typing import Any, Callable
++
++from coordination.envelope import NamespacedId, RpcRequest, RpcResponse, new_request_id
++from coordination.errors import (
++    AuthError,
++    CoordinationError,
++    FramingError,
++    IdempotencyConflict,
++    TransportError,
++    TransportTimeout,
++)
++
++RunnerFunc = Callable[[list[str], str | None, float], tuple[int, str, str]]
++
++
++def _redact(text: str) -> str:
++    """Redacts tokens, credentials, and message bodies from text strings (utility helper)."""
++    if not text:
++        return ""
++    t = re.sub(
++        r'("(?:token|parent_token|password|secret|body)":\s*")[^"]+(")',
++        r'\1[REDACTED]\2',
++        text,
++    )
++    t = re.sub(r'(token=)[^\s&]+', r'\1[REDACTED]', t)
++    t = re.sub(r'(bearer\s+)[a-zA-Z0-9_\-\.]+', r'\1[REDACTED]', t, flags=re.IGNORECASE)
++    return t
++
++
++def _validate_host(host: str) -> str:
++    """Validates host against SSH option injection (e.g., -oProxyCommand=...)."""
++    if not host or not host.strip():
++        raise ValueError("Host parameter must be non-empty")
++    h = host.strip()
++    if h.startswith("-"):
++        raise ValueError(f"Host parameter must not start with '-': {h}")
++    return h
++
++
++def default_subprocess_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++    """Default execution runner using subprocess.Popen without shell."""
++    try:
++        proc = subprocess.Popen(
++            cmd,
++            stdin=subprocess.PIPE if stdin_data is not None else None,
++            stdout=subprocess.PIPE,
++            stderr=subprocess.PIPE,
++            text=True,
++        )
++        stdout, stderr = proc.communicate(input=stdin_data, timeout=timeout)
++        return proc.returncode, stdout, stderr
++    except subprocess.TimeoutExpired as exc:
++        proc.kill()
++        proc.wait(timeout=2.0)
++        raise exc
++
++
++def _split_option(opt_str: str) -> tuple[str, str]:
++    """Splits an OpenSSH option string on whitespace or '=' into (keyword.lower(), value)."""
++    opt_str = opt_str.strip()
++    if "=" in opt_str:
++        k, v = opt_str.split("=", 1)
++        return k.strip().lower(), v.strip()
++    parts = opt_str.split(None, 1)
++    if len(parts) == 2:
++        return parts[0].strip().lower(), parts[1].strip()
++    if len(parts) == 1:
++        return parts[0].strip().lower(), ""
++    return "", ""
++
++
++def _parse_and_validate_ssh_opts(
++    opts: list[str],
++    allow_custom_proxycommand: bool = False,
++) -> list[str]:
++    """
++    Parses and validates OpenSSH options to prevent option injection and policy bypass.
++
++    Directives (C2162, C2166, C2171):
++    - Normalization: case-insensitive parsing of option keywords and values (e.g. stricthostkeychecking=no, batchmode=no).
++    - Spacing & tokenization: handles attached (-oKey=Val) and detached (-o, Key=Val or -o, Key, Val) forms, spaces around '='.
++    - Strict enforcement: BatchMode=yes and StrictHostKeyChecking=yes are mandatory.
++      Values like 'accept-new', 'no', 'off', 'ask' strictly fail closed with ValueError.
++    - Precedence & duplicate handling: inspects ALL occurrences of options.
++      If conflicting values are present, non-'yes' values fail closed immediately.
++    - Untrusted directive defense: rejects dangerous directives such as ProxyCommand, LocalCommand,
++      and PermitLocalCommand unless explicit custom trust (allow_custom_proxycommand=True) is granted.
++    """
++    normalized_other: list[str] = []
++    seen_options: dict[str, list[str]] = {}
++
++    i = 0
++    while i < len(opts):
++        arg = opts[i]
++        if arg == "-o":
++            if i + 1 >= len(opts):
++                raise ValueError("-o flag requires an option argument")
++            opt_str = opts[i + 1]
++            i += 2
++            k, v = _split_option(opt_str)
++            if not v and i < len(opts) and not opts[i].startswith("-"):
++                k, v = opt_str.strip().lower(), opts[i].strip()
++                i += 1
++        elif arg.startswith("-o"):
++            opt_str = arg[2:].lstrip()
++            i += 1
++            k, v = _split_option(opt_str)
++            if not v and i < len(opts) and not opts[i].startswith("-"):
++                k, v = opt_str.strip().lower(), opts[i].strip()
++                i += 1
++        else:
++            normalized_other.append(arg)
++            i += 1
++            continue
++
++        seen_options.setdefault(k, []).append(v)
++        v_lower = v.lower()
++
++        if k == "stricthostkeychecking":
++            if v_lower != "yes":
++                raise ValueError(
++                    f"StrictHostKeyChecking must be 'yes' (found '{v}'); StrictHostKeyChecking={v} is prohibited"
++                )
++        elif k == "batchmode":
++            if v_lower != "yes":
++                raise ValueError(
++                    f"BatchMode must be 'yes' (found '{v}'); BatchMode={v} is prohibited"
++                )
++        elif k in ("proxycommand", "localcommand", "permitlocalcommand"):
++            if not allow_custom_proxycommand:
++                raise ValueError(
++                    f"OpenSSH directive '{k}' is untrusted and prohibited without explicit custom trust (allow_custom_proxycommand=True)"
++                )
++
++    # Mandatory canonical options: BatchMode=yes and StrictHostKeyChecking=yes
++    out: list[str] = ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes"]
++    for k, vals in seen_options.items():
++        if k not in ("batchmode", "stricthostkeychecking"):
++            for val in vals:
++                out.extend(["-o", f"{k}={val}"])
++    out.extend(normalized_other)
++    return out
++
++
++@dataclass
++class SshFileBusClient:
++    """
++    Typed client for interacting with a remote FileBus store over SSH.
++
++    Guarantees:
++    - Pinned CLI execution: executes python3 <bus_cli_path> --store <store_path> rpc via ssh (argv list, shell=False).
++    - Host option injection defense: validates host does not start with '-', uses '--' before host in argv.
++    - Remote shell escaping: shlex.quote applied to all remote command arguments for POSIX login shells.
++    - Mandatory SSH hardening: enforces -o BatchMode=yes and -o StrictHostKeyChecking=yes.
++    - Zero command-line injection: payloads and tokens are passed strictly via stdin JSON streams.
++    - Zero token leakage in argv: credentials never appear in process argument lists.
++    - Fail-closed omission: completely omits raw stdout/stderr strings from exceptions and attributes.
++    - Decoupled exception chaining: raises with `from None` to avoid leaks via traceback __cause__ / __context__.
++    - Strict exit code check: rc != 0 fails closed with TransportError.
++    - Strict correlation: request_id must match (request_id_mismatch) and ok must be strict bool.
++    - Clean response framing: no arbitrary banner picking.
++    """
++
++    host: str
++    store_path: str
++    bus_cli_path: str = "coordination/bus_cli.py"
++    ssh_binary: str = "ssh"
++    ssh_opts: list[str] = field(
++        default_factory=lambda: [
++            "-o",
++            "BatchMode=yes",
++            "-o",
++            "StrictHostKeyChecking=yes",
++        ]
++    )
++    timeout_sec: float = 30.0
++    allow_custom_proxycommand: bool = False
++    runner: RunnerFunc | None = None
++
++    def __post_init__(self) -> None:
++        self.host = _validate_host(self.host)
++        self.ssh_opts = _parse_and_validate_ssh_opts(
++            self.ssh_opts,
++            allow_custom_proxycommand=self.allow_custom_proxycommand,
++        )
++
++    def _get_runner(self) -> RunnerFunc:
++        return self.runner if self.runner is not None else default_subprocess_runner
++
++    def _execute_rpc(self, req: RpcRequest) -> RpcResponse:
++        """
++        Executes a typed RPC request against the remote FileBus over SSH.
++
++        POSIX Scope Boundary (C2164 / C2166):
++        Remote shell invocation strictly assumes a POSIX-compliant login shell
++        ($SHELL, /bin/sh, /bin/bash, /bin/dash, /bin/zsh). Arguments are escaped
++        using shlex.quote() before remote shell concatenation. Windows remote shells
++        (cmd.exe / PowerShell) have incompatible quoting and remain out-of-scope.
++
++        Decoupled Exception Chaining & Fail-Closed Omission (C2166):
++        Raw remote stdout and stderr strings are completely omitted from exception
++        messages and exception attributes. Subprocess and JSON decode exceptions
++        are decoupled using `raise ... from None` outside except blocks to eliminate
++        leakage via tracebacks (__cause__ and __context__ both None).
++        """
++        remote_cmd_parts = [
++            "python3",
++            shlex.quote(self.bus_cli_path),
++            "--store",
++            shlex.quote(self.store_path),
++            "rpc",
++        ]
++        # Command line uses '--' before host to prevent SSH option injection.
++        # StrictHostKeyChecking=yes and BatchMode=yes are enforced.
++        cmd = [self.ssh_binary] + list(self.ssh_opts) + ["--", self.host] + remote_cmd_parts
++        stdin_payload = json.dumps(req.to_dict())
++        runner = self._get_runner()
++
++        timeout_err: TransportTimeout | None = None
++        coordination_err: CoordinationError | None = None
++        generic_err: TransportError | None = None
++        rc: int = 0
++        stdout: str = ""
++        stderr: str = ""
++
++        try:
++            rc, stdout, stderr = runner(cmd, stdin_payload, self.timeout_sec)
++        except subprocess.TimeoutExpired:
++            # Per C2164 / C2166: Timeout represents an unknown remote state.
++            # Automated mutating retries are prohibited.
++            timeout_err = TransportTimeout(
++                f"SSH RPC timed out after {self.timeout_sec}s",
++                timeout_sec=self.timeout_sec,
++            )
++        except Exception as exc:
++            if isinstance(exc, CoordinationError):
++                coordination_err = exc
++            else:
++                generic_err = TransportError(
++                    "SSH execution failed",
++                    exit_code=None,
++                    code="remote_transport_failed",
++                )
++
++        if timeout_err is not None:
++            raise timeout_err from None
++        if coordination_err is not None:
++            raise coordination_err from None
++        if generic_err is not None:
++            raise generic_err from None
++
++        # Strict exit code check: any non-zero exit code fails closed with TransportError
++        # Per C2166: Raw stdout and stderr are completely omitted.
++        if rc != 0:
++            raise TransportError(
++                f"SSH command failed with exit {rc}",
++                exit_code=rc,
++                code="remote_transport_failed",
++            )
++
++        # Clean response framing check: stdout must parse directly as clean JSON RpcResponse
++        raw_stdout = stdout.strip()
++        if not raw_stdout:
++            raise FramingError(
++                "Remote host returned empty output",
++                reason="empty_output",
++            )
++
++        json_decode_err: FramingError | None = None
++        resp_obj = None
++        try:
++            resp_obj = json.loads(raw_stdout)
++        except json.JSONDecodeError:
++            # Per C2166: Decouple exception chaining with `raise ... from None`
++            # and NEVER embed raw stdout or err.doc in the exception message.
++            json_decode_err = FramingError(
++                "Failed to parse valid RPC response framing from remote host",
++                reason="invalid_json_framing",
++            )
++
++        if json_decode_err is not None:
++            raise json_decode_err from None
++
++        if not isinstance(resp_obj, dict):
++            raise FramingError(
++                f"Expected JSON object in RPC response framing, got {type(resp_obj).__name__}",
++                reason="invalid_json_type",
++            )
++
++        validation_err: FramingError | None = None
++        resp = None
++        try:
++            resp = RpcResponse.from_dict(resp_obj)
++        except ValueError as exc:
++            err_msg = str(exc)
++            if "strict boolean" in err_msg or "boolean" in err_msg:
++                msg = "RPC response 'ok' field must be a strict boolean"
++                reason = "invalid_bool_type"
++            else:
++                msg = "RPC response framing validation failed"
++                reason = "schema_validation_failed"
++            validation_err = FramingError(msg, reason=reason)
++
++        if validation_err is not None:
++            raise validation_err from None
++
++        # Strict correlation check (C2162 / C2166):
++        # If resp.request_id != req.request_id, raise FramingError("request_id_mismatch") from None
++        # without printing the payload.
++        if resp.request_id != req.request_id:
++            raise FramingError(
++                "request_id_mismatch",
++                reason="request_id_mismatch",
++            ) from None
++
++        # Strict boolean check for ok (reject string 'false' or non-boolean truthy values)
++        if type(resp.ok) is not bool:
++            raise FramingError(
++                "RPC response 'ok' field must be a strict boolean",
++                reason="invalid_bool_type",
++            )
++
++        if not resp.ok:
++            err = resp.error or {}
++            err_code = str(err.get("code", "unknown_error"))
++            if err_code in ("auth_failed", "unauthorized", "invalid_token", "permission_denied", "not_recipient"):
++                raise AuthError(
++                    f"Remote authentication error ({err_code})",
++                    reason="remote_auth_rejected",
++                )
++            if err_code == "idempotency_conflict":
++                raise IdempotencyConflict(f"idempotency_conflict:{err_code}")
++            raise CoordinationError(f"Remote FileBus error ({err_code})")
++
++        return resp
++
++    def enroll(
++        self,
++        agent_name: str,
++        device_id: str,
++        project_id: str = "agent-coordination",
++        task_id: str | None = None,
++        parent_id: str | None = None,
++        parent_token: str | None = None,
++    ) -> tuple[str, str]:
++        """
++        Register / enroll an agent identity with the remote FileBus store.
++        Returns: (identity_id, token).
++        """
++        params: dict[str, Any] = {
++            "agent_name": agent_name,
++            "device_id": device_id,
++            "project_id": project_id,
++        }
++        if task_id is not None:
++            params["task_id"] = task_id
++        if parent_id is not None:
++            params["parent_id"] = parent_id
++        if parent_token is not None:
++            params["parent_token"] = parent_token
++
++        req = RpcRequest(
++            op="enroll",
++            request_id=new_request_id(),
++            params=params,
++        )
++        resp = self._execute_rpc(req)
++        result = resp.result or {}
++        return str(result["identity_id"]), str(result["token"])
++
++    def send(
++        self,
++        sender_id: str,
++        token: str,
++        recipient_id: str,
++        body: str,
++        data: dict[str, Any] | None = None,
++        idempotency_key: str | None = None,
++    ) -> str:
++        """
++        Send a message to a recipient identity over the remote FileBus.
++        Returns: message_id.
++        """
++        params: dict[str, Any] = {
++            "sender_id": sender_id,
++            "token": token,
++            "recipient_id": recipient_id,
++            "body": body,
++        }
++        if data is not None:
++            params["data"] = data
++        if idempotency_key is not None:
++            params["idempotency_key"] = idempotency_key
++
++        req = RpcRequest(
++            op="send",
++            request_id=new_request_id(),
++            params=params,
++        )
++        resp = self._execute_rpc(req)
++        result = resp.result or {}
++        return str(result["message_id"])
++
++    def inbox(
++        self,
++        identity_id: str,
++        token: str,
++        unread_only: bool = True,
++    ) -> list[dict[str, Any]]:
++        """
++        Retrieve messages for identity_id from the remote FileBus inbox.
++        Returns: list of message dicts.
++        """
++        params: dict[str, Any] = {
++            "identity_id": identity_id,
++            "token": token,
++            "unread_only": unread_only,
++        }
++        req = RpcRequest(
++            op="inbox",
++            request_id=new_request_id(),
++            params=params,
++        )
++        resp = self._execute_rpc(req)
++        return list(resp.result or [])
++
++    def ack(
++        self,
++        identity_id: str,
++        token: str,
++        message_id: str,
++    ) -> dict[str, Any]:
++        """
++        Acknowledge receipt of a message on the remote FileBus.
++        Returns: updated message public dict.
++        """
++        params: dict[str, Any] = {
++            "identity_id": identity_id,
++            "token": token,
++            "message_id": message_id,
++        }
++        req = RpcRequest(
++            op="ack",
++            request_id=new_request_id(),
++            params=params,
++        )
++        resp = self._execute_rpc(req)
++        return dict(resp.result or {})
++
++    def reply(
++        self,
++        sender_id: str,
++        token: str,
++        message_id: str,
++        body: str,
++        data: dict[str, Any] | None = None,
++        idempotency_key: str | None = None,
++    ) -> str:
++        """
++        Reply to a previously received message on the remote FileBus.
++        Returns: reply message_id.
++        """
++        params: dict[str, Any] = {
++            "sender_id": sender_id,
++            "token": token,
++            "message_id": message_id,
++            "body": body,
++        }
++        if data is not None:
++            params["data"] = data
++        if idempotency_key is not None:
++            params["idempotency_key"] = idempotency_key
++
++        req = RpcRequest(
++            op="reply",
++            request_id=new_request_id(),
++            params=params,
++        )
++        resp = self._execute_rpc(req)
++        result = resp.result or {}
++        return str(result["message_id"])
++
++    def get(
++        self,
++        identity_id: str,
++        token: str,
++        message_id: str,
++    ) -> dict[str, Any]:
++        """
++        Fetch a specific message by ID.
++        Returns: message public dict.
++        """
++        params: dict[str, Any] = {
++            "identity_id": identity_id,
++            "token": token,
++            "message_id": message_id,
++        }
++        req = RpcRequest(
++            op="get",
++            request_id=new_request_id(),
++            params=params,
++        )
++        resp = self._execute_rpc(req)
++        return dict(resp.result or {})
 diff --git a/tests/test_bus.py b/tests/test_bus.py
 index a0267a1..1c71582 100644
 --- a/tests/test_bus.py
@@ -1357,6 +2301,170 @@ index a0267a1..1c71582 100644
 +    msg = bus.send(sender_id=parent.identity_id, token=pt, recipient_id=child.identity_id, body="work")
 +    assert bus.inbox(child.identity_id, ct)[0].message_id == msg.message_id
 +    assert bus.inbox(parent.identity_id, pt) == []
+diff --git a/tests/test_bus_concurrent.py b/tests/test_bus_concurrent.py
+new file mode 100644
+index 0000000..d186c1b
+--- /dev/null
++++ b/tests/test_bus_concurrent.py
+@@ -0,0 +1,39 @@
++"""Concurrent register/send coverage for FileBus flock."""
++
++from __future__ import annotations
++
++from concurrent.futures import ThreadPoolExecutor
++from pathlib import Path
++
++from coordination.bus import FileBus
++
++
++def test_concurrent_register_unique_identities(tmp_path: Path):
++    def one(i: int):
++        return FileBus(tmp_path).register(agent_name=f"a{i}", device_id="d", project_id="p")
++
++    with ThreadPoolExecutor(max_workers=8) as pool:
++        results = list(pool.map(one, range(16)))
++    ids = [ident.identity_id for ident, _token in results]
++    assert len(set(ids)) == 16
++
++
++def test_concurrent_sends_are_all_delivered(tmp_path: Path):
++    bus = FileBus(tmp_path)
++    a, ta = bus.register(agent_name="a", device_id="d", project_id="p")
++    b, tb = bus.register(agent_name="b", device_id="d", project_id="p")
++
++    def send_one(i: int):
++        return FileBus(tmp_path).send(
++            sender_id=a.identity_id,
++            token=ta,
++            recipient_id=b.identity_id,
++            body=str(i),
++            idempotency_key=f"c-{i}",
++        )
++
++    with ThreadPoolExecutor(max_workers=8) as pool:
++        sent = list(pool.map(send_one, range(20)))
++    inbox = bus.inbox(b.identity_id, tb)
++    assert len(inbox) == 20
++    assert {m.message_id for m in inbox} == {m.message_id for m in sent}
+diff --git a/tests/test_bus_crash.py b/tests/test_bus_crash.py
+new file mode 100644
+index 0000000..56665a3
+--- /dev/null
++++ b/tests/test_bus_crash.py
+@@ -0,0 +1,113 @@
++"""Crash, shortwrite, and journal-recovery tests for FileBus."""
++
++from __future__ import annotations
++
++import json
++import os
++from pathlib import Path
++
++import pytest
++
++from coordination.bus import BusError, FileBus
++from coordination.durable import write_all
++
++
++def test_write_retries_shortwrite(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
++    real_write = os.write
++    hits = {"n": 0}
++
++    def partial(fd: int, data: bytes | memoryview) -> int:
++        if hits["n"] == 0 and len(data) > 4:
++            hits["n"] += 1
++            return 3
++        return real_write(fd, data)
++
++    monkeypatch.setattr(os, "write", partial)
++    bus = FileBus(tmp_path)
++    ident, token = bus.register(agent_name="a", device_id="d", project_id="p")
++    assert ident.identity_id
++    assert bus.inbox(ident.identity_id, token) == []
++    assert hits["n"] >= 1
++
++
++def test_write_fsyncs_file_and_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
++    real_fsync = os.fsync
++    real_open = os.open
++    dir_fds: list[int] = []
++    fsync_fds: list[int] = []
++
++    def spy_open(path, flags, *args):
++        fd = real_open(path, flags, *args)
++        if flags & getattr(os, "O_DIRECTORY", 0):
++            dir_fds.append(fd)
++        return fd
++
++    def spy_fsync(fd: int) -> None:
++        fsync_fds.append(fd)
++        return real_fsync(fd)
++
++    monkeypatch.setattr(os, "open", spy_open)
++    monkeypatch.setattr(os, "fsync", spy_fsync)
++    bus = FileBus(tmp_path)
++    dir_fds.clear()
++    fsync_fds.clear()
++    bus.register(agent_name="a", device_id="d", project_id="p")
++    assert dir_fds, "directory fd was never opened for fsync"
++    assert set(dir_fds) & set(fsync_fds)
++
++
++def test_journal_replay_completes_register(tmp_path: Path):
++    ident = {
++        "identity_id": "id-1",
++        "device_id": "d",
++        "project_id": "p",
++        "agent_name": "a",
++        "task_id": None,
++        "parent_id": None,
++        "kind": "bus-agent",
++        "created_at": "2026-10-04T12:00:00Z",
++    }
++    journal = {
++        "writes": [
++            {"path": "identities.json", "value": {"id-1": ident}},
++            {"path": "tokens.json", "value": {"id-1": "tok-1"}},
++        ]
++    }
++    (tmp_path / "journal.json").write_text(json.dumps(journal), encoding="utf-8")
++    bus = FileBus(tmp_path)
++    assert not (tmp_path / "journal.json").exists()
++    assert bus.inbox("id-1", "tok-1") == []
++
++
++def test_orphan_identity_without_token_is_dropped(tmp_path: Path):
++    bus = FileBus(tmp_path)
++    a, ta = bus.register(agent_name="a", device_id="d", project_id="p")
++    identities = json.loads((tmp_path / "identities.json").read_text(encoding="utf-8"))
++    identities["orphan"] = {
++        "identity_id": "orphan",
++        "device_id": "d",
++        "project_id": "p",
++        "agent_name": "ghost",
++        "kind": "bus-agent",
++        "created_at": "2026-10-04T12:00:00Z",
++    }
++    (tmp_path / "identities.json").write_text(json.dumps(identities), encoding="utf-8")
++    restarted = FileBus(tmp_path)
++    with pytest.raises(BusError) as err:
++        restarted.inbox("orphan", "nope")
++    assert err.value.code == "unknown_identity"
++    assert restarted.inbox(a.identity_id, ta) == []
++
++
++def test_write_all_loops_until_complete(monkeypatch: pytest.MonkeyPatch):
++    chunks: list[int] = []
++
++    def stepped(fd: int, data: bytes | memoryview) -> int:
++        n = min(2, len(data))
++        chunks.append(n)
++        return n
++
++    monkeypatch.setattr(os, "write", stepped)
++    write_all(7, b"abcdef")
++    assert sum(chunks) == 6
++    assert chunks == [2, 2, 2]
 diff --git a/tests/test_bus_dogfood.py b/tests/test_bus_dogfood.py
 index e7e7081..90e82ce 100644
 --- a/tests/test_bus_dogfood.py
@@ -1503,3 +2611,1358 @@ index e7e7081..90e82ce 100644
      assert json.loads(_run(store, ["inbox", "--cred", str(a_cred)]).stdout) == []
 +    assert a_id != b_id
 +    assert "APLEXER" not in stdout
+diff --git a/tests/test_bus_scope.py b/tests/test_bus_scope.py
+new file mode 100644
+index 0000000..91936f0
+--- /dev/null
++++ b/tests/test_bus_scope.py
+@@ -0,0 +1,96 @@
++"""Project-scope and same-user trust-boundary tests."""
++
++from __future__ import annotations
++
++import json
++from pathlib import Path
++
++import pytest
++
++from coordination.bus import BusError, FileBus
++
++
++def test_send_rejects_cross_project(tmp_path: Path):
++    bus = FileBus(tmp_path)
++    a, ta = bus.register(agent_name="a", device_id="d", project_id="alpha")
++    b, tb = bus.register(agent_name="b", device_id="d", project_id="beta")
++    with pytest.raises(BusError) as err:
++        bus.send(sender_id=a.identity_id, token=ta, recipient_id=b.identity_id, body="x")
++    assert err.value.code == "project_scope"
++    assert bus.inbox(b.identity_id, tb) == []
++
++
++def test_inbox_hides_other_project_even_if_file_is_planted(tmp_path: Path):
++    bus = FileBus(tmp_path)
++    a, ta = bus.register(agent_name="a", device_id="d", project_id="alpha")
++    b, _tb = bus.register(agent_name="b", device_id="d", project_id="beta")
++    planted = {
++        "m1": {
++            "message_id": "m1",
++            "idempotency_key": "plant",
++            "sender_id": b.identity_id,
++            "recipient_id": a.identity_id,
++            "body": "leak",
++            "data": None,
++            "kind": "note",
++            "reply_to": None,
++            "created_at": "2026-10-04T12:00:00Z",
++            "delivered_at": "2026-10-04T12:00:00Z",
++            "acked_at": None,
++            "accepted_at": None,
++            "outcome": None,
++            "outcome_at": None,
++            "digest": "x",
++        }
++    }
++    (tmp_path / "messages.json").write_text(json.dumps(planted), encoding="utf-8")
++    restarted = FileBus(tmp_path)
++    assert restarted.inbox(a.identity_id, ta) == []
++    with pytest.raises(BusError) as err:
++        restarted.get(a.identity_id, ta, "m1")
++    assert err.value.code == "project_scope"
++
++
++def test_child_project_must_match_parent(tmp_path: Path):
++    bus = FileBus(tmp_path)
++    parent, pt = bus.register(agent_name="head", device_id="d", project_id="alpha")
++    with pytest.raises(BusError) as err:
++        bus.register(
++            agent_name="worker",
++            device_id="d",
++            project_id="beta",
++            parent_id=parent.identity_id,
++            parent_token=pt,
++        )
++    assert err.value.code == "project_scope"
++
++
++def test_queue_and_flush_outbox_after_restart(tmp_path: Path):
++    bus = FileBus(tmp_path)
++    a, ta = bus.register(agent_name="a", device_id="d", project_id="p")
++    b, tb = bus.register(agent_name="b", device_id="d", project_id="p")
++    bus.queue_offline(
++        sender_id=a.identity_id,
++        token=ta,
++        recipient_id=b.identity_id,
++        body="later",
++        idempotency_key="off-1",
++    )
++    assert bus.inbox(b.identity_id, tb) == []
++    restarted = FileBus(tmp_path)
++    sent = restarted.flush_outbox(a.identity_id, ta)
++    assert len(sent) == 1
++    assert sent[0].body == "later"
++    assert sent[0].delivered_at
++    inbox = restarted.inbox(b.identity_id, tb)
++    assert inbox[0].message_id == sent[0].message_id
++    again = restarted.flush_outbox(a.identity_id, ta)
++    assert again == []
++    dup = restarted.send(
++        sender_id=a.identity_id,
++        token=ta,
++        recipient_id=b.identity_id,
++        body="later",
++        idempotency_key="off-1",
++    )
++    assert dup.message_id == sent[0].message_id
+diff --git a/tests/test_headless_task.py b/tests/test_headless_task.py
+new file mode 100644
+index 0000000..7500ed7
+--- /dev/null
++++ b/tests/test_headless_task.py
+@@ -0,0 +1,96 @@
++"""Independent headless worker consumes a real bus task and records outcome."""
++
++from __future__ import annotations
++
++import json
++import os
++import subprocess
++import sys
++from pathlib import Path
++
++from coordination.bus import FileBus
++
++ROOT = Path(__file__).resolve().parents[1]
++WORKER = ROOT / "coordination" / "headless_worker.py"
++
++
++def _clean_env() -> dict[str, str]:
++    env = {k: v for k, v in os.environ.items() if not k.startswith("APLEXER_")}
++    env["PYTHONPATH"] = str(ROOT)
++    return env
++
++
++def test_headless_worker_reviews_source_and_records_outcome(tmp_path: Path):
++    bus = FileBus(tmp_path / "store")
++    parent, pt = bus.register(
++        agent_name="controller",
++        device_id="hetzner-rmthz",
++        project_id="agent-bus",
++        task_id="dispatch",
++    )
++    worker_ident, wt = bus.register(
++        agent_name="review-worker",
++        device_id="hetzner-rmthz",
++        project_id="agent-bus",
++        task_id="review-file",
++        parent_id=parent.identity_id,
++        parent_token=pt,
++    )
++    cred = tmp_path / "worker.json"
++    payload = worker_ident.public()
++    payload["token"] = wt
++    cred.write_text(json.dumps(payload), encoding="utf-8")
++    os.chmod(cred, 0o600)
++    artifact = tmp_path / "review.json"
++    proc = subprocess.Popen(
++        [
++            sys.executable,
++            str(WORKER),
++            "--store",
++            str(tmp_path / "store"),
++            "--cred",
++            str(cred),
++            "--allow-root",
++            str(tmp_path),
++            "--timeout",
++            "15",
++        ],
++        cwd=ROOT,
++        env=_clean_env(),
++        stdout=subprocess.PIPE,
++        stderr=subprocess.PIPE,
++        text=True,
++    )
++    msg = bus.send(
++        sender_id=parent.identity_id,
++        token=pt,
++        recipient_id=worker_ident.identity_id,
++        body="review coordination/bus.py",
++        data={
++            "task": "review_file",
++            "source": str(ROOT / "coordination" / "bus.py"),
++            "artifact": str(artifact),
++        },
++        idempotency_key="headless-review-1",
++    )
++    stdout, stderr = proc.communicate(timeout=20)
++    assert proc.returncode == 0, stderr
++    assert artifact.is_file()
++    report = json.loads(artifact.read_text(encoding="utf-8"))
++    assert report["has_filebus"] is True
++    assert report["has_project_scope"] is True
++    assert report["has_delivered_at"] is True
++    seen = bus.get(parent.identity_id, pt, msg.message_id)
++    assert seen.delivered_at
++    assert seen.acked_at
++    assert seen.accepted_at
++    assert seen.outcome["status"] == "ok"
++    assert seen.outcome["digest"]
++    assert seen.outcome["artifact"] == str(artifact)
++    replies = bus.inbox(parent.identity_id, pt)
++    assert replies[0].reply_to == msg.message_id
++    assert replies[0].data["digest"] == seen.outcome["digest"]
++    worker_out = json.loads(stdout)
++    assert worker_out["message_id"] == msg.message_id
++    assert "APLEXER" not in stdout
++    assert not any(k.startswith("APLEXER_") for k in _clean_env())
+diff --git a/tests/test_ssh_rpc.py b/tests/test_ssh_rpc.py
+new file mode 100644
+index 0000000..7e96f74
+--- /dev/null
++++ b/tests/test_ssh_rpc.py
+@@ -0,0 +1,611 @@
++"""Component test suite for typed SSH FileBus RPC client and envelope.
++
++Tests:
++- NamespacedId structured serialization and URI-safe roundtrip (Windows drive letters, slashes).
++- RpcRequest and RpcResponse serialization.
++- Full FileBus lifecycle over RPC (enroll, send, inbox, ack, reply).
++- Typed replay and idempotency key handling.
++- Negative tests: SSH connection failure (exit 255 -> TransportError).
++- Negative tests: SSH timeout -> TransportTimeout (decoupled chaining from None).
++- Negative tests: Corrupted banner / non-JSON framing -> FramingError (decoupled chaining from None).
++- Negative tests: Authentication failure -> AuthError.
++- Zero credential leakage in command argv.
++- C2162: Host option injection defense (rejects '-' prefix, verifies '--' before host).
++- C2162 / C2164: Remote shell escaping (shlex.quote) for POSIX login shells.
++- C2162 / C2166: Strict correlation check (request_id_mismatch -> FramingError from None).
++- C2162: Strict boolean check (non-bool 'ok' -> FramingError).
++- C2162: Strict exit code check (exit != 0 with valid JSON -> TransportError).
++- C2166: Fail-closed omission (complete omission of stdout/stderr from exception message and attributes).
++- C2166: Decoupled exception chaining (raise from None prevents traceback leakage).
++- C2166: Mandatory SSH options (-o BatchMode=yes, -o StrictHostKeyChecking=yes, rejects accept-new/no).
++"""
++
++from __future__ import annotations
++
++import json
++from pathlib import Path
++import shlex
++import subprocess
++import sys
++import pytest
++
++from coordination.envelope import (
++    NamespacedId,
++    RpcRequest,
++    RpcResponse,
++    TransportState,
++    new_idempotency_key,
++    new_request_id,
++)
++from coordination.errors import (
++    AuthError,
++    FramingError,
++    IdempotencyConflict,
++    TransportError,
++    TransportTimeout,
++)
++from coordination.ssh_rpc import SshFileBusClient, _redact
++
++
++def test_namespaced_id_serialization_and_uri_roundtrip():
++    """Verify NamespacedId serialization and URI encoding across Unix and Windows path variants."""
++    # Case 1: Standard Unix path
++    nid_unix = NamespacedId(
++        host="hetzner-node-1",
++        store_path="/home/alexey/.local/agent_bus",
++        agent_tag="worker-zcode",
++        session_id="sess-42",
++        task_id="task-100",
++    )
++    d = nid_unix.to_dict()
++    assert d["host"] == "hetzner-node-1"
++    assert d["store_path"] == "/home/alexey/.local/agent_bus"
++    assert NamespacedId.from_dict(d) == nid_unix
++
++    uri = nid_unix.encode_uri()
++    assert uri.startswith("nid:")
++    assert "%2F" in uri
++    decoded = NamespacedId.decode_uri(uri)
++    assert decoded == nid_unix
++    assert NamespacedId.from_uri(nid_unix.to_uri()) == nid_unix
++
++    # Case 2: Windows drive letter and backslashes
++    nid_win = NamespacedId(
++        host="windows-dev-box",
++        store_path=r"C:\Users\Alexey\AppData\Local\agent_bus",
++        agent_tag="win-agent",
++        session_id="sess-win",
++        task_id="task-win-01",
++    )
++    win_uri = nid_win.encode_uri()
++    assert "C%3A%5C" in win_uri
++    assert NamespacedId.from_uri(win_uri) == nid_win
++
++    # Case 3: Invalid URI scheme rejected
++    with pytest.raises(ValueError, match="Invalid NamespacedId URI scheme"):
++        NamespacedId.decode_uri("http://example.com/foo")
++
++    with pytest.raises(ValueError, match="Expected 5 parts"):
++        NamespacedId.decode_uri("nid:too:few:parts")
++
++
++def test_rpc_request_response_serialization():
++    """Verify RpcRequest and RpcResponse serialization."""
++    req = RpcRequest(
++        op="send",
++        request_id="req-123",
++        params={"sender_id": "alice", "body": "hello"},
++        target=NamespacedId("h", "/s", "tag", "s1", "t1"),
++    )
++    req_dict = req.to_dict()
++    req_restored = RpcRequest.from_dict(req_dict)
++    assert req_restored.op == "send"
++    assert req_restored.request_id == "req-123"
++    assert req_restored.params["body"] == "hello"
++    assert req_restored.target == req.target
++
++    resp = RpcResponse(
++        request_id="req-123",
++        ok=True,
++        result={"message_id": "msg-999"},
++    )
++    resp_dict = resp.to_dict()
++    resp_restored = RpcResponse.from_dict(resp_dict)
++    assert resp_restored.ok is True
++    assert resp_restored.result["message_id"] == "msg-999"
++
++
++def make_fake_ssh_runner(store_dir: Path, cli_path: Path):
++    """
++    Creates a fake SSH runner that routes remote RPC commands
++    to a local FileBus test store using the actual bus_cli.py.
++    """
++    def runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        assert cmd[0] == "ssh"
++        assert "--" in cmd
++        host_idx = cmd.index("--") + 1
++        assert not cmd[host_idx].startswith("-")
++        assert "python3" in cmd
++        assert "--store" in cmd
++        assert "rpc" in cmd
++
++        # Route locally directly to bus_cli.py rpc
++        exec_cmd = [sys.executable, str(cli_path), "--store", str(store_dir), "rpc"]
++        proc = subprocess.Popen(
++            exec_cmd,
++            stdin=subprocess.PIPE,
++            stdout=subprocess.PIPE,
++            stderr=subprocess.PIPE,
++            text=True,
++        )
++        stdout, stderr = proc.communicate(input=stdin_data, timeout=timeout)
++        return proc.returncode, stdout, stderr
++
++    return runner
++
++
++def test_full_lifecycle_over_rpc(tmp_path: Path):
++    """Test full FileBus lifecycle (enroll, send, inbox, ack, reply) over typed RPC."""
++    store_dir = tmp_path / "bus_store"
++    store_dir.mkdir(parents=True, exist_ok=True)
++    cli_path = Path(__file__).resolve().parents[1] / "coordination" / "bus_cli.py"
++
++    client = SshFileBusClient(
++        host="mock-remote-host",
++        store_path=str(store_dir),
++        bus_cli_path=str(cli_path),
++        runner=make_fake_ssh_runner(store_dir, cli_path),
++    )
++
++    # 1. Enroll Alice
++    id_a, tok_a = client.enroll(
++        agent_name="alice",
++        device_id="dev-hetzner",
++        project_id="proj-distributed",
++        task_id="task-alice-01",
++    )
++    assert id_a and tok_a
++
++    # 2. Enroll Bob
++    id_b, tok_b = client.enroll(
++        agent_name="bob",
++        device_id="dev-desktop",
++        project_id="proj-distributed",
++        task_id="task-bob-01",
++    )
++    assert id_b and tok_b
++
++    # 3. Alice sends message to Bob
++    idem_key = new_idempotency_key("test")
++    msg_id = client.send(
++        sender_id=id_a,
++        token=tok_a,
++        recipient_id=id_b,
++        body="Hello from Alice over SSH FileBus RPC",
++        data={"action": "reconcile", "attempt": 1},
++        idempotency_key=idem_key,
++    )
++    assert msg_id
++
++    # 4. Bob reads inbox
++    inbox_b = client.inbox(identity_id=id_b, token=tok_b, unread_only=True)
++    assert len(inbox_b) == 1
++    received_msg = inbox_b[0]
++    assert received_msg["message_id"] == msg_id
++    assert received_msg["sender_id"] == id_a
++    assert received_msg["body"] == "Hello from Alice over SSH FileBus RPC"
++    assert received_msg["data"] == {"action": "reconcile", "attempt": 1}
++
++    # 5. Bob acks message
++    ack_res = client.ack(identity_id=id_b, token=tok_b, message_id=msg_id)
++    assert ack_res["message_id"] == msg_id
++    assert ack_res["acked_at"] is not None
++
++    # Inbox unread should now be empty
++    inbox_b_after = client.inbox(identity_id=id_b, token=tok_b, unread_only=True)
++    assert len(inbox_b_after) == 0
++
++    # 6. Bob replies to Alice
++    reply_idem = new_idempotency_key("reply")
++    reply_msg_id = client.reply(
++        sender_id=id_b,
++        token=tok_b,
++        message_id=msg_id,
++        body="Acknowledged by Bob over SSH RPC",
++        data={"progress": "completed"},
++        idempotency_key=reply_idem,
++    )
++    assert reply_msg_id
++
++    # 7. Alice checks inbox and sees reply
++    inbox_a = client.inbox(identity_id=id_a, token=tok_a, unread_only=True)
++    assert len(inbox_a) == 1
++    reply_msg = inbox_a[0]
++    assert reply_msg["message_id"] == reply_msg_id
++    assert reply_msg["sender_id"] == id_b
++    assert reply_msg["reply_to"] == msg_id
++    assert reply_msg["body"] == "Acknowledged by Bob over SSH RPC"
++
++
++def test_typed_replay_and_idempotency_keys(tmp_path: Path):
++    """Test idempotency key deduplication and conflict detection over RPC."""
++    store_dir = tmp_path / "bus_store"
++    store_dir.mkdir(parents=True, exist_ok=True)
++    cli_path = Path(__file__).resolve().parents[1] / "coordination" / "bus_cli.py"
++
++    client = SshFileBusClient(
++        host="mock-remote-host",
++        store_path=str(store_dir),
++        bus_cli_path=str(cli_path),
++        runner=make_fake_ssh_runner(store_dir, cli_path),
++    )
++
++    id_a, tok_a = client.enroll(agent_name="agent-a", device_id="dev-a")
++    id_b, tok_b = client.enroll(agent_name="agent-b", device_id="dev-b")
++
++    key = "tx-unique-idempotency-key-01"
++    # First send
++    msg1 = client.send(
++        sender_id=id_a,
++        token=tok_a,
++        recipient_id=id_b,
++        body="Payload 1",
++        idempotency_key=key,
++    )
++
++    # Identical replay returns same message_id
++    msg2 = client.send(
++        sender_id=id_a,
++        token=tok_a,
++        recipient_id=id_b,
++        body="Payload 1",
++        idempotency_key=key,
++    )
++    assert msg1 == msg2
++
++    # Conflicting replay under same key raises IdempotencyConflict
++    with pytest.raises(IdempotencyConflict):
++        client.send(
++            sender_id=id_a,
++            token=tok_a,
++            recipient_id=id_b,
++            body="Conflicting Changed Payload",
++            idempotency_key=key,
++        )
++
++
++def test_negative_ssh_connection_failure():
++    """Negative test: SSH exit 255 raises TransportError with fail-closed stderr omission (C2166)."""
++    def fail_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        return 255, "", "ssh: connect to host unreachable-host port 22: Connection refused\n"
++
++    client = SshFileBusClient(
++        host="unreachable-host",
++        store_path="/dummy/store",
++        runner=fail_runner,
++    )
++
++    with pytest.raises(TransportError) as exc_info:
++        client.enroll("agent", "dev")
++    assert exc_info.value.exit_code == 255
++    # Per C2166: Raw stderr is completely omitted from exception message and attributes
++    assert "Connection refused" not in str(exc_info.value)
++    assert not hasattr(exc_info.value, "stderr")
++    assert exc_info.value.__cause__ is None
++
++
++def test_negative_ssh_timeout():
++    """Negative test: SSH timeout raises TransportTimeout with decoupled chaining (C2166)."""
++    def timeout_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
++
++    client = SshFileBusClient(
++        host="hanging-host",
++        store_path="/dummy/store",
++        timeout_sec=0.5,
++        runner=timeout_runner,
++    )
++
++    with pytest.raises(TransportTimeout) as exc_info:
++        client.inbox("ident", "tok")
++    assert exc_info.value.timeout_sec == 0.5
++    assert "timed out" in str(exc_info.value)
++    # Per C2166: Decoupled exception chaining prevents traceback leak
++    assert exc_info.value.__cause__ is None
++    assert exc_info.value.__context__ is None
++
++
++def test_negative_corrupted_banner_framing():
++    """Negative test: Corrupted banner / non-JSON output raises FramingError with decoupled chaining (C2166)."""
++    def noisy_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        corrupted_stdout = (
++            "=====================================================\n"
++            "Welcome to Ubuntu 24.04 LTS (GNU/Linux 6.8.0-generic)\n"
++            "System load: 0.12, Memory usage: 42%\n"
++            "=====================================================\n"
++            "bash: /some/tool: command not found\n"
++        )
++        return 0, corrupted_stdout, ""
++
++    client = SshFileBusClient(
++        host="noisy-host",
++        store_path="/dummy/store",
++        runner=noisy_runner,
++    )
++
++    with pytest.raises(FramingError) as exc_info:
++        client.ack("ident", "tok", "msg-1")
++    assert "Failed to parse valid RPC response framing" in str(exc_info.value)
++    assert exc_info.value.reason == "invalid_json_framing"
++    # Per C2166: Raw output completely omitted from exception message and attributes
++    assert "Ubuntu" not in str(exc_info.value)
++    assert not hasattr(exc_info.value, "raw_output")
++    assert exc_info.value.__cause__ is None
++    assert exc_info.value.__context__ is None
++
++
++def test_negative_auth_failure(tmp_path: Path):
++    """Negative test: Invalid token or unauthorized operations raise AuthError (C2166)."""
++    store_dir = tmp_path / "bus_store"
++    store_dir.mkdir(parents=True, exist_ok=True)
++    cli_path = Path(__file__).resolve().parents[1] / "coordination" / "bus_cli.py"
++
++    client = SshFileBusClient(
++        host="mock-remote-host",
++        store_path=str(store_dir),
++        bus_cli_path=str(cli_path),
++        runner=make_fake_ssh_runner(store_dir, cli_path),
++    )
++
++    id_a, _ = client.enroll(agent_name="agent-a", device_id="dev-a")
++    id_b, _ = client.enroll(agent_name="agent-b", device_id="dev-b")
++
++    # Invalid token raises AuthError
++    with pytest.raises(AuthError) as exc_info:
++        client.send(
++            sender_id=id_a,
++            token="invalid-bogus-token",
++            recipient_id=id_b,
++            body="Unauthorized message",
++        )
++    assert "auth_failed" in str(exc_info.value)
++    assert exc_info.value.reason == "remote_auth_rejected"
++
++
++def test_zero_credentials_in_command_argv(tmp_path: Path):
++    """Verify that neither tokens, bodies, nor secrets ever appear in process argv."""
++    captured_commands: list[list[str]] = []
++    store_dir = tmp_path / "bus_store"
++    store_dir.mkdir(parents=True, exist_ok=True)
++    cli_path = Path(__file__).resolve().parents[1] / "coordination" / "bus_cli.py"
++    real_runner = make_fake_ssh_runner(store_dir, cli_path)
++
++    def spy_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        captured_commands.append(list(cmd))
++        return real_runner(cmd, stdin_data, timeout)
++
++    client = SshFileBusClient(
++        host="audit-host",
++        store_path=str(store_dir),
++        bus_cli_path=str(cli_path),
++        runner=spy_runner,
++    )
++
++    id_a, tok_a = client.enroll(agent_name="agent-a", device_id="dev-a")
++    secret_body = "HIGHLY_CONFIDENTIAL_PAYLOAD_BODY_777"
++    client.send(
++        sender_id=id_a,
++        token=tok_a,
++        recipient_id=id_a,
++        body=secret_body,
++    )
++
++    assert len(captured_commands) >= 2
++    for cmd in captured_commands:
++        cmd_str = " ".join(cmd)
++        assert tok_a not in cmd_str, f"Token leaked in argv: {cmd_str}"
++        assert secret_body not in cmd_str, f"Secret body leaked in argv: {cmd_str}"
++
++
++# ---------------------------------------------------------------------------
++# C2162 & C2164 Hardening Tests
++# ---------------------------------------------------------------------------
++
++
++def test_c2162_host_option_injection_rejected():
++    """Verify that host starting with '-' is rejected and '--' precedes host in argv."""
++    # Rejects host starting with '-'
++    with pytest.raises(ValueError, match="Host parameter must not start with '-'"):
++        SshFileBusClient(host="-oProxyCommand=touch /tmp/pwned", store_path="/store")
++
++    with pytest.raises(ValueError, match="Host parameter must not start with '-'"):
++        SshFileBusClient(host="-v", store_path="/store")
++
++    # Valid host puts '--' before host in command
++    captured_cmd: list[str] = []
++
++    def capture_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        captured_cmd.extend(cmd)
++        return 0, json.dumps({"request_id": json.loads(stdin_data)["request_id"], "ok": True, "result": {"identity_id": "i1", "token": "t1"}}), ""
++
++    client = SshFileBusClient(host="remote.example.com", store_path="/store", runner=capture_runner)
++    client.enroll("a1", "d1")
++
++    assert "--" in captured_cmd
++    double_dash_idx = captured_cmd.index("--")
++    assert captured_cmd[double_dash_idx + 1] == "remote.example.com"
++
++
++def test_c2162_remote_shell_escaping():
++    """Verify that remote command arguments are quoted with shlex.quote for POSIX login shells."""
++    captured_cmd: list[str] = []
++
++    def capture_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        captured_cmd.extend(cmd)
++        return 0, json.dumps({"request_id": json.loads(stdin_data)["request_id"], "ok": True, "result": {"identity_id": "i1", "token": "t1"}}), ""
++
++    tricky_store = "/data/my store with spaces/bus;rm -rf /"
++    tricky_cli = "/opt/tools/bus cli.py"
++    client = SshFileBusClient(
++        host="remote-box",
++        store_path=tricky_store,
++        bus_cli_path=tricky_cli,
++        runner=capture_runner,
++    )
++    client.enroll("a1", "d1")
++
++    # Command arguments must contain shlex quoted versions
++    assert shlex.quote(tricky_store) in captured_cmd
++    assert shlex.quote(tricky_cli) in captured_cmd
++
++
++def test_c2162_strict_correlation_check():
++    """Verify that request_id mismatch raises FramingError('request_id_mismatch') from None (C2166)."""
++    def mismatch_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        # Return valid JSON but with wrong request_id
++        return 0, json.dumps({"request_id": "completely-wrong-id", "ok": True, "result": {}}), ""
++
++    client = SshFileBusClient(host="mock-host", store_path="/store", runner=mismatch_runner)
++    with pytest.raises(FramingError, match="request_id_mismatch") as exc_info:
++        client.enroll("a1", "d1")
++    assert exc_info.value.reason == "request_id_mismatch"
++    assert exc_info.value.__cause__ is None
++    # Payload must NOT be printed in the exception message
++    assert "completely-wrong-id" not in str(exc_info.value)
++
++
++def test_c2162_strict_boolean_check():
++    """Verify that non-boolean 'ok' values raise FramingError."""
++    def string_bool_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        # Return string "true" instead of bool True
++        req_id = json.loads(stdin_data)["request_id"]
++        return 0, json.dumps({"request_id": req_id, "ok": "true", "result": {}}), ""
++
++    client = SshFileBusClient(host="mock-host", store_path="/store", runner=string_bool_runner)
++    with pytest.raises(FramingError, match="strict boolean"):
++        client.enroll("a1", "d1")
++
++
++def test_c2162_strict_exit_code_check():
++    """Verify that any non-zero exit code fails closed with TransportError even if JSON is present."""
++    def nonzero_with_json_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        req_id = json.loads(stdin_data)["request_id"]
++        # Process output valid JSON but crashed / exited 1
++        return 1, json.dumps({"request_id": req_id, "ok": True, "result": {"identity_id": "i1"}}), "Segmentation fault\n"
++
++    client = SshFileBusClient(host="mock-host", store_path="/store", runner=nonzero_with_json_runner)
++    with pytest.raises(TransportError) as exc_info:
++        client.enroll("a1", "d1")
++    assert exc_info.value.exit_code == 1
++    assert "failed with exit 1" in str(exc_info.value)
++    # Per C2166: stderr is omitted
++    assert "Segmentation fault" not in str(exc_info.value)
++    assert not hasattr(exc_info.value, "stderr")
++
++
++def test_c2162_error_redaction_helper():
++    """Verify utility helper _redact sanitizes tokens and private payloads."""
++    raw = 'Error occurred: {"token": "secret_token_12345", "body": "private_message_text"}'
++    redacted = _redact(raw)
++    assert "secret_token_12345" not in redacted
++    assert "private_message_text" not in redacted
++    assert "[REDACTED]" in redacted
++
++    raw_cli = "ssh failed: token=super_secret_tok123 Authorization: Bearer abcdef12345"
++    redacted_cli = _redact(raw_cli)
++    assert "super_secret_tok123" not in redacted_cli
++    assert "abcdef12345" not in redacted_cli
++
++
++# ---------------------------------------------------------------------------
++# C2166 Specific Tests
++# ---------------------------------------------------------------------------
++
++
++def test_c2166_mandatory_ssh_options():
++    """Verify that SshFileBusClient enforces -o BatchMode=yes and -o StrictHostKeyChecking=yes, rejecting insecure options."""
++    captured_cmd: list[str] = []
++
++    def mock_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        captured_cmd.extend(cmd)
++        req = json.loads(stdin_data or "{}")
++        return 0, json.dumps({"request_id": req["request_id"], "ok": True, "result": {}}), ""
++
++    # Default client includes mandatory options
++    client = SshFileBusClient(host="secure.host", store_path="/store", runner=mock_runner)
++    client.ack("id1", "tok1", "m1")
++
++    cmd_str = " ".join(captured_cmd)
++    assert "-o BatchMode=yes" in cmd_str
++    assert "-o StrictHostKeyChecking=yes" in cmd_str
++
++    # Prohibit ambient accept-new or no
++    with pytest.raises(ValueError, match="StrictHostKeyChecking=accept-new is prohibited"):
++        SshFileBusClient(host="host", store_path="/s", ssh_opts=["-o", "StrictHostKeyChecking=accept-new"])
++
++    with pytest.raises(ValueError, match="StrictHostKeyChecking=no is prohibited"):
++        SshFileBusClient(host="host", store_path="/s", ssh_opts=["-o", "StrictHostKeyChecking=no"])
++
++
++def test_c2166_fail_closed_omission_no_stdout_stderr_leaks():
++    """
++    Verify that raw stdout and stderr are completely omitted from public exception
++    messages and attributes, preventing any leakage of credentials or message bodies.
++    """
++    secret_token = "secret-token-abcdef-99999"
++    secret_body = "SUPER_SECRET_PAYLOAD_BODY_CONFIDENTIAL"
++
++    # Case 1: TransportError from non-zero exit with sensitive stderr
++    def runner_leak_stderr(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        noisy_stderr = f"Fatal crash in worker: token={secret_token}, body={secret_body}\n"
++        return 2, "", noisy_stderr
++
++    client1 = SshFileBusClient(host="remote.box", store_path="/store", runner=runner_leak_stderr)
++    with pytest.raises(TransportError) as exc_info:
++        client1.send(sender_id="s1", token=secret_token, recipient_id="r1", body=secret_body)
++
++    err_str = str(exc_info.value)
++    assert secret_token not in err_str
++    assert secret_body not in err_str
++    assert not hasattr(exc_info.value, "stderr")
++    assert exc_info.value.exit_code == 2
++
++    # Case 2: FramingError from malformed stdout echoing sensitive payload
++    def runner_leak_stdout(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        malformed_stdout = f"Echoing request before crash: token={secret_token} body={secret_body}"
++        return 0, malformed_stdout, ""
++
++    client2 = SshFileBusClient(host="remote.box", store_path="/store", runner=runner_leak_stdout)
++    with pytest.raises(FramingError) as exc_info2:
++        client2.send(sender_id="s1", token=secret_token, recipient_id="r1", body=secret_body)
++
++    framing_err_str = str(exc_info2.value)
++    assert secret_token not in framing_err_str
++    assert secret_body not in framing_err_str
++    assert not hasattr(exc_info2.value, "raw_output")
++
++
++def test_c2166_exception_chaining_decoupled():
++    """Verify that TimeoutExpired and JSONDecodeError do not leak unredacted data via __cause__ or __context__."""
++    # Case 1: TimeoutExpired
++    def timeout_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        exc = subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
++        exc.stdout = "sensitive stdout in timeout exception"
++        exc.stderr = "sensitive stderr in timeout exception"
++        raise exc
++
++    client_timeout = SshFileBusClient(host="remote.box", store_path="/store", timeout_sec=0.1, runner=timeout_runner)
++    with pytest.raises(TransportTimeout) as exc_info:
++        client_timeout.inbox("id1", "tok1")
++    assert exc_info.value.__cause__ is None
++    assert exc_info.value.__context__ is None
++
++    # Case 2: JSONDecodeError
++    def json_err_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        return 0, "Non-JSON with secret: token=super_secret_tok123", ""
++
++    client_json = SshFileBusClient(host="remote.box", store_path="/store", runner=json_err_runner)
++    with pytest.raises(FramingError) as exc_info2:
++        client_json.inbox("id1", "tok1")
++    assert exc_info2.value.__cause__ is None
++    assert exc_info2.value.__context__ is None
+diff --git a/tests/test_ssh_rpc_security.py b/tests/test_ssh_rpc_security.py
+new file mode 100644
+index 0000000..42859a0
+--- /dev/null
++++ b/tests/test_ssh_rpc_security.py
+@@ -0,0 +1,528 @@
++"""Adversarial Security Test Suite for Typed SSH FileBus RPC.
++
++Directives:
++- Codex Principal C2162 / C2164 / C2166.
++- Strict option injection defense (rejects host starting with '-', passes '--' before host).
++- Remote shell metacharacter and argument escaping (shlex.quote for POSIX shells, Windows held).
++- Strict correlation and boolean coercion (string 'false' fails closed, request_id mismatch raises FramingError).
++- Nonzero returncode fails closed with TransportError.
++- Strict known_hosts: -o BatchMode=yes and -o StrictHostKeyChecking=yes present in default SSH arguments.
++- Timeout ambiguity: TransportTimeout preserves ambiguous side-effect (UNKNOWN outcome) with zero auto-retries.
++- Leakage verification across all error paths:
++  * Secret tokens (tok_fake_secret_987654321) and payloads (sensitive_user_body_12345) never leak in str(exc)
++  * Public attributes (code, details, stderr, raw_output) never leak secret material
++  * exc.__cause__ is None (verifying raise ... from None prevents traceback leakage)
++"""
++
++from __future__ import annotations
++
++import json
++from pathlib import Path
++import re
++import shlex
++import subprocess
++import pytest
++
++from coordination.envelope import (
++    NamespacedId,
++    RpcRequest,
++    RpcResponse,
++    new_request_id,
++)
++from coordination.errors import (
++    AuthError,
++    CoordinationError,
++    FramingError,
++    IdempotencyConflict,
++    TransportError,
++    TransportTimeout,
++)
++from coordination.ssh_rpc import SshFileBusClient, _redact, _validate_host
++
++
++FAKE_SECRET_TOKEN = "tok_fake_secret_987654321"
++SENSITIVE_USER_BODY = "sensitive_user_body_12345"
++
++
++# =============================================================================
++# 1. Local SSH Option Injection Defense & Known Hosts
++# =============================================================================
++
++def test_ssh_default_opts_strict_host_key_checking():
++    """Verify that default SSH options enforce BatchMode=yes and StrictHostKeyChecking=yes."""
++    client = SshFileBusClient(host="safe-host.internal", store_path="/path/to/store")
++    assert "-o" in client.ssh_opts
++    assert "BatchMode=yes" in client.ssh_opts
++    assert "StrictHostKeyChecking=yes" in client.ssh_opts
++
++
++def test_ssh_option_normalization_case_and_spacing():
++    """Verify OpenSSH options normalize case-insensitively with varied spacing and tokenization."""
++    # Case variation & whitespace around '='
++    client1 = SshFileBusClient(
++        host="host1",
++        store_path="/store",
++        ssh_opts=["-o", "batchmode = yes", "-o", "stricthostkeychecking = yes"],
++    )
++    assert "-o" in client1.ssh_opts
++    assert "BatchMode=yes" in client1.ssh_opts
++    assert "StrictHostKeyChecking=yes" in client1.ssh_opts
++
++    # Attached form (-oKey=Value)
++    client2 = SshFileBusClient(
++        host="host2",
++        store_path="/store",
++        ssh_opts=["-obatchmode=yes", "-ostricthostkeychecking=yes"],
++    )
++    assert "BatchMode=yes" in client2.ssh_opts
++    assert "StrictHostKeyChecking=yes" in client2.ssh_opts
++
++    # Space-separated keyword and value (-o, Key, Val)
++    client3 = SshFileBusClient(
++        host="host3",
++        store_path="/store",
++        ssh_opts=["-o", "BatchMode", "yes", "-o", "StrictHostKeyChecking", "yes"],
++    )
++    assert "BatchMode=yes" in client3.ssh_opts
++    assert "StrictHostKeyChecking=yes" in client3.ssh_opts
++
++
++def test_ssh_option_rejection_case_and_spacing():
++    """Verify that any non-'yes' value for StrictHostKeyChecking or BatchMode fails closed across all formats."""
++    bypass_attempts = [
++        ["-o", "StrictHostKeyChecking=accept-new"],
++        ["-o", "stricthostkeychecking = accept-new"],
++        ["-o", "StrictHostKeyChecking accept-new"],
++        ["-o", "stricthostkeychecking=no"],
++        ["-o", "STRICTHOSTKEYCHECKING=no"],
++        ["-o", "StrictHostKeyChecking = no"],
++        ["-oStrictHostKeyChecking=no"],
++        ["-o", "StrictHostKeyChecking=off"],
++        ["-o", "StrictHostKeyChecking=ask"],
++        ["-o", "BatchMode=no"],
++        ["-o", "batchmode = no"],
++        ["-oBatchMode=no"],
++        ["-o", "BatchMode no"],
++        ["-o", "BATCHMODE=off"],
++    ]
++    for bad_opts in bypass_attempts:
++        with pytest.raises(ValueError, match="(StrictHostKeyChecking|BatchMode) must be 'yes'"):
++            SshFileBusClient(host="host", store_path="/store", ssh_opts=bad_opts)
++
++
++def test_ssh_duplicate_options_rejection_and_precedence():
++    """Verify that duplicate conflicting options fail closed regardless of order."""
++    conflicting_pairs = [
++        ["-o", "StrictHostKeyChecking=yes", "-o", "StrictHostKeyChecking=no"],
++        ["-o", "StrictHostKeyChecking=no", "-o", "StrictHostKeyChecking=yes"],
++        ["-o", "BatchMode=yes", "-o", "batchmode=no"],
++        ["-o", "batchmode=no", "-o", "BatchMode=yes"],
++    ]
++    for bad_pair in conflicting_pairs:
++        with pytest.raises(ValueError, match="(StrictHostKeyChecking|BatchMode) must be 'yes'"):
++            SshFileBusClient(host="host", store_path="/store", ssh_opts=bad_pair)
++
++    # Duplicate identical valid options normalize cleanly
++    client_dup = SshFileBusClient(
++        host="host",
++        store_path="/store",
++        ssh_opts=["-o", "BatchMode=yes", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes"],
++    )
++    assert client_dup.ssh_opts.count("BatchMode=yes") == 1
++    assert client_dup.ssh_opts.count("StrictHostKeyChecking=yes") == 1
++
++
++def test_ssh_proxycommand_custom_trust():
++    """Verify that ProxyCommand, LocalCommand, and PermitLocalCommand are rejected without custom trust."""
++    untrusted_directives = [
++        ["-o", "ProxyCommand=touch /tmp/pwned"],
++        ["-o", "proxycommand=nc %h %p"],
++        ["-oProxyCommand=whoami"],
++        ["-o", "LocalCommand=id"],
++        ["-o", "PermitLocalCommand=yes"],
++    ]
++    for untrusted in untrusted_directives:
++        with pytest.raises(ValueError, match="is untrusted and prohibited without explicit custom trust"):
++            SshFileBusClient(host="host", store_path="/store", ssh_opts=untrusted)
++
++    # When explicit custom trust is granted, ProxyCommand is permitted
++    trusted_proxy = ["-o", "ProxyCommand=ssh -W %h:%p jumpbox.internal"]
++    client_trusted = SshFileBusClient(
++        host="host",
++        store_path="/store",
++        ssh_opts=trusted_proxy,
++        allow_custom_proxycommand=True,
++    )
++    assert any("proxycommand=ssh -W %h:%p jumpbox.internal" in opt for opt in client_trusted.ssh_opts)
++
++
++def test_ssh_option_injection_host_rejected_at_init():
++    """Verify SshFileBusClient rejects hostnames starting with '-' before process spawn."""
++    malicious_hosts = [
++        "-oProxyCommand=touch /tmp/pwned",
++        "-F/tmp/bad_config",
++        "-i/tmp/id_rsa",
++        " -oProxyCommand=whoami",
++        "---badhost",
++    ]
++    for bad_host in malicious_hosts:
++        with pytest.raises(ValueError, match="must not start with '-'"):
++            SshFileBusClient(host=bad_host, store_path="/path/to/store")
++
++    with pytest.raises(ValueError, match="must be non-empty"):
++        SshFileBusClient(host="", store_path="/path/to/store")
++    with pytest.raises(ValueError, match="must be non-empty"):
++        SshFileBusClient(host="   ", store_path="/path/to/store")
++
++
++def test_ssh_command_argv_includes_double_dash_delimiter():
++    """Verify that SshFileBusClient inserts '--' before host in ssh argv."""
++    captured_cmds: list[list[str]] = []
++
++    def mock_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        captured_cmds.append(cmd)
++        req = json.loads(stdin_data or "{}")
++        resp = RpcResponse(request_id=req.get("request_id", ""), ok=True, result={"ok": True})
++        return 0, json.dumps(resp.to_dict()), ""
++
++    client = SshFileBusClient(
++        host="safe-host.example.com",
++        store_path="/path/to/store",
++        runner=mock_runner,
++    )
++    client.inbox(identity_id="ident-1", token="tok-1")
++
++    assert len(captured_cmds) == 1
++    cmd = captured_cmds[0]
++    assert cmd[0] == "ssh"
++    assert "--" in cmd
++    dash_dash_idx = cmd.index("--")
++    assert cmd[dash_dash_idx + 1] == "safe-host.example.com"
++
++
++# =============================================================================
++# 2. Remote Shell Metacharacter & Argument Escaping (POSIX)
++# =============================================================================
++
++def test_remote_shell_argument_escaping_posix():
++    """
++    Verify that bus_cli_path and store_path containing shell metacharacters
++    (semicolons, subshells, spaces, quotes) are safely quoted with shlex.quote()
++    for POSIX remote login shells ($SHELL/bash/sh).
++    Note (C2164): Windows remote shells (cmd.exe/PowerShell) are HELD pending Windows tests.
++    """
++    captured_cmds: list[list[str]] = []
++
++    def mock_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        captured_cmds.append(cmd)
++        req = json.loads(stdin_data or "{}")
++        resp = RpcResponse(request_id=req.get("request_id", ""), ok=True, result={"identity_id": "i1", "token": "t1"})
++        return 0, json.dumps(resp.to_dict()), ""
++
++    bad_store_path = "/tmp/store; touch /tmp/injected && rm -rf /"
++    bad_cli_path = "coordination/bus cli.py$(id)`whoami`"
++
++    client = SshFileBusClient(
++        host="remote-host",
++        store_path=bad_store_path,
++        bus_cli_path=bad_cli_path,
++        runner=mock_runner,
++    )
++    client.enroll(agent_name="agent-a", device_id="dev-1")
++
++    assert len(captured_cmds) == 1
++    cmd = captured_cmds[0]
++
++    expected_quoted_store = shlex.quote(bad_store_path)
++    expected_quoted_cli = shlex.quote(bad_cli_path)
++
++    assert expected_quoted_cli in cmd
++    assert expected_quoted_store in cmd
++
++    remote_command_str = " ".join(cmd[cmd.index("remote-host") + 1:])
++    parsed_tokens = shlex.split(remote_command_str)
++    assert parsed_tokens[0] == "python3"
++    assert parsed_tokens[1] == bad_cli_path
++    assert parsed_tokens[2] == "--store"
++    assert parsed_tokens[3] == bad_store_path
++    assert parsed_tokens[4] == "rpc"
++
++
++# =============================================================================
++# 3. Strict Correlation & Protocol Failures
++# =============================================================================
++
++def test_strict_correlation_request_id_mismatch_raises_framing_error():
++    """Verify that a remote response returning a different request_id raises FramingError."""
++    def mock_runner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        bogus_resp = {"request_id": "spoofed-request-id-999", "ok": True, "result": {"data": 123}}
++        return 0, json.dumps(bogus_resp), ""
++
++    client = SshFileBusClient(
++        host="remote-host",
++        store_path="/store",
++        runner=mock_runner,
++    )
++    with pytest.raises(FramingError) as exc_info:
++        client.inbox(identity_id="id1", token="tok1")
++    assert exc_info.value.reason == "request_id_mismatch"
++
++
++def test_boolean_coercion_fails_closed():
++    """
++    Verify that string "false", "0", or non-boolean truthy values for 'ok'
++    strictly fail closed and are NOT coerced to True.
++    """
++    def runner_str_false(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        req = json.loads(stdin_data or "{}")
++        resp = {"request_id": req["request_id"], "ok": "false", "result": {"pwn": True}}
++        return 0, json.dumps(resp), ""
++
++    client1 = SshFileBusClient(host="remote-host", store_path="/store", runner=runner_str_false)
++    with pytest.raises(FramingError) as exc_info1:
++        client1.send(sender_id="s1", token="t1", recipient_id="r1", body="hello")
++    assert exc_info1.value.code == "framing_error"
++    assert exc_info1.value.reason in ("schema_validation_failed", "invalid_bool_type")
++
++    def runner_str_zero(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        req = json.loads(stdin_data or "{}")
++        resp = {"request_id": req["request_id"], "ok": "0", "result": {}}
++        return 0, json.dumps(resp), ""
++
++    client2 = SshFileBusClient(host="remote-host", store_path="/store", runner=runner_str_zero)
++    with pytest.raises(FramingError) as exc_info2:
++        client2.inbox(identity_id="i1", token="t1")
++    assert exc_info2.value.code == "framing_error"
++    assert exc_info2.value.reason in ("schema_validation_failed", "invalid_bool_type")
++
++    def runner_int_one(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        req = json.loads(stdin_data or "{}")
++        resp = {"request_id": req["request_id"], "ok": 1, "result": {}}
++        return 0, json.dumps(resp), ""
++
++    client3 = SshFileBusClient(host="remote-host", store_path="/store", runner=runner_int_one)
++    with pytest.raises(FramingError) as exc_info3:
++        client3.ack(identity_id="i1", token="t1", message_id="m1")
++    assert exc_info3.value.code == "framing_error"
++    assert exc_info3.value.reason in ("schema_validation_failed", "invalid_bool_type")
++
++
++def test_non_zero_exit_code_fails_closed_despite_valid_stdout_json():
++    """
++    Verify that if the remote command exits with non-zero (e.g. exit 1 or 127),
++    the client fails closed with TransportError even if stdout contains valid JSON.
++    """
++    def mock_runner_exit_1(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        req = json.loads(stdin_data or "{}")
++        valid_json = json.dumps({"request_id": req["request_id"], "ok": True, "result": "should_be_ignored"})
++        return 1, valid_json, "Process failed unexpectedly: exit 1"
++
++    client = SshFileBusClient(host="remote-host", store_path="/store", runner=mock_runner_exit_1)
++    with pytest.raises(TransportError, match="SSH command failed with exit 1") as exc_info:
++        client.reply(sender_id="s1", token="t1", message_id="m1", body="rep")
++    assert exc_info.value.exit_code == 1
++
++
++def test_preamble_banner_noise_fails_closed():
++    """
++    Verify that dirty stdout framing (preamble noise, multi-object banners)
++    strictly fails closed with FramingError and does not accept rogue JSON lines.
++    """
++    def runner_banner(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        req = json.loads(stdin_data or "{}")
++        noisy_output = (
++            "System is booting...\n"
++            '{"banner": "motd", "ok": true, "request_id": "bogus"}\n'
++            f'{{"request_id": "{req["request_id"]}", "ok": true, "result": {{}}}}\n'
++        )
++        return 0, noisy_output, ""
++
++    client = SshFileBusClient(host="remote-host", store_path="/store", runner=runner_banner)
++    with pytest.raises(FramingError, match="Failed to parse valid RPC response framing"):
++        client.inbox(identity_id="i1", token="t1")
++
++
++# =============================================================================
++# 4. Timeout Semantics: Ambiguous Outcome Preservation
++# =============================================================================
++
++def test_transport_timeout_preserves_ambiguous_outcome_without_auto_retry():
++    """
++    Verify that TransportTimeout raises on subprocess timeout, preserving
++    ambiguous UNKNOWN side-effects with zero automatic mutating retries.
++    """
++    call_count = 0
++
++    def runner_timeout(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        nonlocal call_count
++        call_count += 1
++        raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
++
++    client = SshFileBusClient(host="remote-host", store_path="/store", timeout_sec=1.5, runner=runner_timeout)
++    with pytest.raises(TransportTimeout, match="SSH RPC timed out after 1.5s"):
++        client.send(sender_id="s1", token=FAKE_SECRET_TOKEN, recipient_id="r1", body=SENSITIVE_USER_BODY)
++
++    assert call_count == 1, "Client must NOT perform automatic mutating retries on timeout"
++
++
++# =============================================================================
++# 5. Codex C2166: Leakage Verification Across All Error Paths
++# =============================================================================
++
++def _assert_no_leakage_and_no_cause(exc: Exception):
++    """
++    Asserts that:
++    1. str(exc) does not contain FAKE_SECRET_TOKEN or SENSITIVE_USER_BODY.
++    2. All public attributes (code, details, stderr, raw_output, etc.) do not contain sensitive tokens.
++    3. exc.__cause__ is None (verifying 'raise ... from None' suppresses traceback leakage).
++    """
++    # 1. Check str representation
++    exc_str = str(exc)
++    assert FAKE_SECRET_TOKEN not in exc_str, f"Token leaked in str(exc): {exc_str}"
++    assert SENSITIVE_USER_BODY not in exc_str, f"Payload body leaked in str(exc): {exc_str}"
++
++    # 2. Check public attributes
++    for attr in dir(exc):
++        if attr.startswith("_"):
++            continue
++        val = getattr(exc, attr)
++        if callable(val):
++            continue
++        val_str = json.dumps(val) if isinstance(val, (dict, list)) else str(val)
++        assert FAKE_SECRET_TOKEN not in val_str, f"Token leaked in exc.{attr}: {val_str}"
++        assert SENSITIVE_USER_BODY not in val_str, f"Payload body leaked in exc.{attr}: {val_str}"
++
++    # 3. Check cause suppression
++    assert exc.__cause__ is None, f"exc.__cause__ must be None (found {type(exc.__cause__).__name__})"
++
++
++def test_leakage_path_1_transport_failure_stderr():
++    """Verify transport failure with leaking stderr redacts tokens and sets cause=None."""
++    def runner_leak_stderr(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        noisy_stderr = (
++            f'Remote error: token={FAKE_SECRET_TOKEN} failed with body="{SENSITIVE_USER_BODY}"\n'
++            f'Details: {{"token": "{FAKE_SECRET_TOKEN}", "body": "{SENSITIVE_USER_BODY}"}}'
++        )
++        return 1, "", noisy_stderr
++
++    client = SshFileBusClient(host="remote-host", store_path="/store", runner=runner_leak_stderr)
++    with pytest.raises(TransportError) as exc_info:
++        client.send(sender_id="s1", token=FAKE_SECRET_TOKEN, recipient_id="r1", body=SENSITIVE_USER_BODY)
++
++    _assert_no_leakage_and_no_cause(exc_info.value)
++    assert exc_info.value.code == "remote_transport_failed"
++    assert exc_info.value.exit_code == 1
++
++
++def test_leakage_path_2_subprocess_exception():
++    """Verify unexpected subprocess exceptions redact tokens and set cause=None."""
++    def runner_crash(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        raise OSError(f"Subprocess IO error with token={FAKE_SECRET_TOKEN} and data={SENSITIVE_USER_BODY}")
++
++    client = SshFileBusClient(host="remote-host", store_path="/store", runner=runner_crash)
++    with pytest.raises(TransportError) as exc_info:
++        client.send(sender_id="s1", token=FAKE_SECRET_TOKEN, recipient_id="r1", body=SENSITIVE_USER_BODY)
++
++    _assert_no_leakage_and_no_cause(exc_info.value)
++
++
++def test_leakage_path_3_timeout_expired():
++    """Verify TimeoutExpired preserves no cause and redacts token in traceback."""
++    def runner_timeout(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        # TimeoutExpired can carry output and stderr
++        raise subprocess.TimeoutExpired(
++            cmd=cmd,
++            timeout=timeout,
++            output=f"stdout with {FAKE_SECRET_TOKEN}",
++            stderr=f"stderr with {SENSITIVE_USER_BODY}",
++        )
++
++    client = SshFileBusClient(host="remote-host", store_path="/store", timeout_sec=2.0, runner=runner_timeout)
++    with pytest.raises(TransportTimeout) as exc_info:
++        client.send(sender_id="s1", token=FAKE_SECRET_TOKEN, recipient_id="r1", body=SENSITIVE_USER_BODY)
++
++    _assert_no_leakage_and_no_cause(exc_info.value)
++
++
++def test_leakage_path_4_invalid_framing_json_decode():
++    """Verify JSONDecodeError does not leak unredacted raw doc via __cause__ or raw_output."""
++    def runner_bad_json(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        # Malformed JSON echoing token and body
++        corrupt_stdout = f'{{"echo_token": "{FAKE_SECRET_TOKEN}", "body": "{SENSITIVE_USER_BODY}", incomplete: true'
++        return 0, corrupt_stdout, ""
++
++    client = SshFileBusClient(host="remote-host", store_path="/store", runner=runner_bad_json)
++    with pytest.raises(FramingError) as exc_info:
++        client.send(sender_id="s1", token=FAKE_SECRET_TOKEN, recipient_id="r1", body=SENSITIVE_USER_BODY)
++
++    _assert_no_leakage_and_no_cause(exc_info.value)
++    assert exc_info.value.code == "framing_error"
++    assert exc_info.value.reason == "invalid_json_framing"
++
++
++def test_leakage_path_5_invalid_framing_non_dict_and_value_error():
++    """Verify non-dict response or ValueError on from_dict suppresses cause and redacts."""
++    # Case A: Non-dict
++    def runner_array(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        return 0, json.dumps([FAKE_SECRET_TOKEN, SENSITIVE_USER_BODY]), ""
++
++    client1 = SshFileBusClient(host="remote-host", store_path="/store", runner=runner_array)
++    with pytest.raises(FramingError) as exc_info1:
++        client1.send(sender_id="s1", token=FAKE_SECRET_TOKEN, recipient_id="r1", body=SENSITIVE_USER_BODY)
++    _assert_no_leakage_and_no_cause(exc_info1.value)
++
++    # Case B: ValueError in from_dict (e.g. missing request_id)
++    def runner_missing_req(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        return 0, json.dumps({"echo": FAKE_SECRET_TOKEN, "payload": SENSITIVE_USER_BODY}), ""
++
++    client2 = SshFileBusClient(host="remote-host", store_path="/store", runner=runner_missing_req)
++    with pytest.raises(FramingError) as exc_info2:
++        client2.send(sender_id="s1", token=FAKE_SECRET_TOKEN, recipient_id="r1", body=SENSITIVE_USER_BODY)
++    _assert_no_leakage_and_no_cause(exc_info2.value)
++
++
++def test_leakage_path_6_auth_failure_with_echoed_credentials():
++    """Verify AuthError redacts tokens and bodies in details and message and has cause=None."""
++    def runner_auth_fail(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        req = json.loads(stdin_data or "{}")
++        err_resp = {
++            "request_id": req.get("request_id"),
++            "ok": False,
++            "error": {
++                "code": "auth_failed",
++                "message": f"Invalid credentials supplied: token={FAKE_SECRET_TOKEN}",
++                "token": FAKE_SECRET_TOKEN,
++                "body": SENSITIVE_USER_BODY,
++                "details": {
++                    "token": FAKE_SECRET_TOKEN,
++                    "body": SENSITIVE_USER_BODY,
++                    "nested_leak": f"Bearer {FAKE_SECRET_TOKEN}",
++                },
++            },
++        }
++        return 0, json.dumps(err_resp), ""
++
++    client = SshFileBusClient(host="remote-host", store_path="/store", runner=runner_auth_fail)
++    with pytest.raises(AuthError) as exc_info:
++        client.send(sender_id="s1", token=FAKE_SECRET_TOKEN, recipient_id="r1", body=SENSITIVE_USER_BODY)
++
++    _assert_no_leakage_and_no_cause(exc_info.value)
++    assert exc_info.value.code == "auth_error"
++    assert exc_info.value.reason == "remote_auth_rejected"
++
++
++def test_leakage_path_7_request_id_mismatch():
++    """Verify request_id mismatch raises FramingError without cause or token leakage."""
++    def runner_mismatch(cmd: list[str], stdin_data: str | None, timeout: float) -> tuple[int, str, str]:
++        err_resp = {
++            "request_id": "wrong-request-id",
++            "ok": True,
++            "result": {"echo_token": FAKE_SECRET_TOKEN, "echo_body": SENSITIVE_USER_BODY},
++        }
++        return 0, json.dumps(err_resp), ""
++
++    client = SshFileBusClient(host="remote-host", store_path="/store", runner=runner_mismatch)
++    with pytest.raises(FramingError) as exc_info:
++        client.send(sender_id="s1", token=FAKE_SECRET_TOKEN, recipient_id="r1", body=SENSITIVE_USER_BODY)
++
++    _assert_no_leakage_and_no_cause(exc_info.value)
