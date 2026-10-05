@@ -307,11 +307,8 @@ deadline=$((SECONDS + 5))
 while [ -n "$(ss -H -ltn 'sport = :8766')" ]; do
   if [ $SECONDS -ge $deadline ]; then
     echo "ERROR: Timed out waiting for port 8766 to release after 5s!" >&2
-    echo "Triggering RECOVERY AFTER STOP fallback..." >&2
-    # Fallback restart
-    nohup /usr/bin/python3 /home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py \
-      --loop --serve --interval 60 --port 8766 \
-      >> /home/alexey/git/cloudflare-agent-git/.local/metrics/collector.log 2>&1 &
+    echo "Port 8766 is still occupied. ABORTING to prevent duplicate process or lock collision." >&2
+    echo "Do NOT delete service.lock or spawn a second collector in parallel." >&2
     exit 1
   fi
   sleep 0.5
@@ -320,10 +317,9 @@ echo "Port 8766 successfully released."
 
 echo "=== [4/5] Starting systemd user service ==="
 if ! systemctl --user start "${SERVICE_NAME}"; then
-  echo "ERROR: Failed to start ${SERVICE_NAME}; triggering RECOVERY AFTER STOP..." >&2
-  nohup /usr/bin/python3 /home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py \
-    --loop --serve --interval 60 --port 8766 \
-    >> /home/alexey/git/cloudflare-agent-git/.local/metrics/collector.log 2>&1 &
+  echo "ERROR: Failed to start ${SERVICE_NAME}!" >&2
+  echo "Unit activation failed. Systemd status inspection required." >&2
+  echo "Do NOT force file locks or spawn a second collector until port/lock state is diagnosed." >&2
   exit 1
 fi
 
@@ -338,17 +334,17 @@ print(f'SUCCESS: Service active. Cataloged {sessions} sessions.')
 "
 ```
 
-### 6.4 Demarcated Rollback Semantics (Directive C2328)
-Rollback failure handling is formally split into two distinct operational modes:
+### 6.4 Demarcated Failure Semantics (Directives C2328, C2331)
+Failure handling during any future maintenance is strictly fail-closed:
 
 1. **Mode A: Abort Preserving Incumbent (Pre-Stop Failure):**
    - **Trigger:** Preflight verification fails (PID does not exist, cmdline does not match `collect.py`, cgroup is not `session-8309.scope`, or port 8766 is not bound by target PID).
    - **Action:** Execution halts immediately with exit code `1`.
-   - **State Guarantee:** **No signal is sent to PID `1608645`.** The running collector remains completely untouched, healthy, and operational.
-2. **Mode B: Recovery After Stop (Post-Stop Failure):**
-   - **Trigger:** Incumbent PID `1608645` was sent SIGTERM, but port release exceeds the 5-second deadline, or `systemctl --user start` fails.
-   - **Action:** Stop the failed systemd unit, verify/clean file lock, and relaunch `scripts/metrics/collect.py` directly in the background via CLI fallback (`nohup /usr/bin/python3 ...`).
-   - **State Guarantee:** Restores HTTP telemetry availability within seconds, avoiding prolonged service downtime.
+   - **State Guarantee:** **No signal is sent to incumbent process.** The running collector remains completely untouched, healthy, and operational.
+2. **Mode B: Fail-Closed on Post-Stop Failure:**
+   - **Trigger:** Incumbent PID was sent SIGTERM, but port release exceeds the 5-second deadline, or `systemctl --user start` fails.
+   - **Action:** Immediate halt with non-zero exit code.
+   - **Explicit Non-Guarantee & Recovery Rejection:** We explicitly **reject** any naive guarantee of "automatic recovery within seconds" and explicitly **reject** deleting `service.lock` or launching a parallel background daemon while port/lock ownership is ambiguous or held. If the port remains occupied or the unit fails, the system halts fail-closed for operator inspection without manufacturing competing processes.
 
 ---
 
