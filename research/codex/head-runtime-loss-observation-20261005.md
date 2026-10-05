@@ -19,7 +19,7 @@ The accessible **user service-manager journal**, rather than the kernel journal,
 
 Reproduction: `journalctl --user --since '2026-10-05 17:19:00 UTC' --until '2026-10-05 17:24:00 UTC' -o json --no-pager`, selecting only MESSAGE entries containing the two exact scope UUIDs and emitting the fields above. Avoid broad historical MESSAGE dumps: unit start records can contain private prompts.
 
-The same interval with `journalctl -k` returned no matching OOM/kernel records. Thus kernel victim PID, signal/exit code, memory-cgroup versus global-host OOM, and the exact allocation responsible remain **unknown**. The explicit service-manager OOM receipts establish that a process in each scope was OOM-killed; they do not establish that every native child was killed, or which child triggered pressure.
+The initial unprivileged `journalctl -k` query returned no matching records. A subsequent authorized `sudo -n` kernel query independently confirmed the workload victims and memory-cgroup limit exhaustion; see the supplement below. The initial empty query was an access/coverage limit, not evidence of absent kernel events. It remains unknown which allocation or child activity created the pressure, and whether every native child was killed.
 
 ## Lifecycle and containment
 
@@ -44,4 +44,40 @@ Parent principal states repair will route through the surviving Coordination hea
 
 Bounded existing-owner options: reconcile current live actors and leases first; preserve saved conversations/custody/cursors; recover the ordinary interactive head conversation under fresh disk/provider checks; delegate concrete tasks through the maintained launcher in separately bounded task scopes, or use limited measured native fanout that fits the aggregate head scope. Keep1500MiB/100Tasks ceilings; do not blindly raise limits, kill unknown work, or treat launched/running labels as progress. Recover one owner per scope and verify identity/ownership ACK, first tool/output, separate review and next useful task before claiming repair. Supervisor/Coord survival alone does not establish these acceptance steps.
 
-Next check belongs to the surviving recovery head: obtain actual renewed runtime/cgroup and fresh admission receipts, reconcile former child status and artifacts, independently verify useful completion→review→next-task continuation, then update the principal. Memcg/global trigger, victimPID, and aggregate native-child attribution remain unresolved until stronger receipts exist.
+Next check belongs to the surviving recovery head: obtain actual renewed runtime/cgroup and fresh admission receipts, reconcile former child status and artifacts, independently verify useful completion→review→next-task continuation, then update the principal. The privileged supplement below resolves the memory-cgroup constraint and victim PID. Aggregate native-child attribution and useful continuation acceptance still require stronger receipts.
+
+
+## Independently verified kernel supplement — 17:35 UTC
+
+A root-interface monitor report supplied candidate kernel evidence but copied the QL scope UUID tail incorrectly. This audit independently verified the genuine UUID, rather than accepting the reported string. The monitor message is not a recovery-owner ACK.
+
+Exact source: `sudo -n journalctl -k --since '2026-10-05 17:20:00 UTC' --until '2026-10-05 17:23:00 UTC' -o json --no-pager`; narrow local JSON filtering selected only the exact session prefixes/workload PIDs and memory/OOM messages. All following entries have `_TRANSPORT=kernel`:
+
+| Genuine workload scope | Exact event UTC / realtime microseconds | Confirmed fields |
+|---|---|---|
+| Ant `5e1abcdb-44d3-44c9-ba20-eb21f6235672` | 17:21:03.461991 /1791220863461991 | `memory: usage1536000kB, limit1536000kB, failcnt1144307` (journal spacing omitted here only for compactness). |
+| Ant same scope | 17:21:03.463214 /1791220863463214 | `constraint=CONSTRAINT_MEMCG`; both `oom_memcg` and `task_memcg` equal its genuine full workload scope; task `agy`, pid1751920, uid1000. |
+| Ant same scope | 17:21:03.463233 /1791220863463233 | `Memory cgroup out of memory: Killed process1751920 (agy)`; total-vm4384032kB, anon-rss1089752kB, file-rss130372kB, shmem-rss0kB, pgtables3368kB, oom_score_adj0. |
+| QL `a86056b5-8b6b-403a-9b8f-6f0b49308959` | 17:21:59.639305 /1791220919639305 | memory usage1536000kB, limit1536000kB, failcnt9557664. |
+| QL same scope | 17:21:59.653217 /1791220919653217 | `constraint=CONSTRAINT_MEMCG`; both `oom_memcg` and `task_memcg` equal its genuine full workload scope; task `agy`, pid1626781, uid1000. |
+| QL same scope | 17:21:59.653248 /1791220919653248 | `Memory cgroup out of memory: Killed process1626781 (agy)`; total-vm5803332kB, anon-rss1035684kB, file-rss131904kB, shmem-rss0kB, pgtables3148kB, oom_score_adj0. |
+
+Full common cgroup prefix: `/user.slice/user-1000.slice/user@1000.service/app.slice/aplexer-workload-`, followed by the genuine UUID and `.scope`. These receipts establish **memory-cgroup-constrained OOM kills of the actual former head workloads**, not global-host OOM.1536000kB matches1500MiB. `anon-rss` is a component, not total RSS; failcnt is not a count of separately killed workers. The aggregate native-child contribution and particular allocation responsible remain unknown. Do not raise the ceilings on this evidence alone.
+
+### New QL generation observed
+
+At17:35:58.593479 UTC, read-only native saved-session metadata and `/proc` independently confirmed:
+
+- Native QL identity `750580e1-4089-4884-a04d-a5e85fbe1f1c`, tag `quota-launcher-head-gemini`, phase running.
+- Parent `8d4c026c-b1f9-4cbf-83bf-4f5f82077cab` (surviving Coordination head).
+- Worker113405 present **inside the Coordination workload scope**; workload113462 present inside the new QL own scope.
+- New QL workload limits1572864000bytes/100pids, separate full scope `/user.slice/user-1000.slice/user@1000.service/app.slice/aplexer-workload-750580e1-4089-4884-a04d-a5e85fbe1f1c.scope`.
+
+Parent reports this generation resumed saved conversation962ee79c-665f-43f2-a809-365701243ddf via Coordination; that conversation claim was not independently inspected here. Native worker custody remains coupled to Coordination containment despite separately bounded QL workload. Safe parent-loss recovery/independence, actual renewed owner ACK, first useful action, and completion→review→next-task continuation remain separate acceptance checks. No runtime or native messaging action was performed by this auditor.
+
+
+### Installed recovery-tool capability boundary
+
+Read-only `aplexer start --help` completed successfully after the supplement. It documents workload/session resource flags `--memory`, `--pids`, `--cpu-quota-us`, `--cpu-period-us`, plus engine/profile/workspace/cwd/history/timeout/attach options. It documents **no parent-detach, parent-session selection, worker-cgroup placement, or worker-custody independence flag**. `--fresh` chooses a free tag suffix; it does not establish custody independence and is not a recovery solution by itself. No environment/identity override or launch was attempted.
+
+Therefore this CLI help does not provide a supported direct flag to repair the observed worker-inside-Coordination coupling. The existing recovery owner should retain the restored useful session and separately investigate a verified existing independent launch/custody path, or delegate a bounded tool-gap task. A future independent-custody claim needs actual worker/workload cgroup receipts plus tested parent-loss recovery. Choosing another assumed flag, duplicating the live owner, or raising memory limits is unsupported by this observation.
