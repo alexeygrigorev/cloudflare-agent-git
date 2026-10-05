@@ -5263,9 +5263,9 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T16:44:58.334330+00:00",
+      "updated_at": "2026-10-05T17:03:11.243886+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Ant accepted durable reply-vs-readACK evidence distinction, candidate launcher DB discovery and singleton fencing correction; reviewed existing service activation and repeated useful reviewed model task still required.",
+      "next_action": "Controlled restart to PID 3165652 verified across 3 successive cycles (17:00:24, 17:01:26, 17:02:34 UTC) with degraded=false, errors=[], terminal_consumer_tasks=13. Persistence audit report completed by subagent 07b68137 at research/antigravity/reviews/REV-SUPERVISION-TWO-TICK-PERSISTENCE-AUDIT.md.",
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
@@ -5284,7 +5284,8 @@
         "scripts/supervision/SYSTEMD-MIGRATION-RUNBOOK.md",
         "scripts/supervision/systemd/launch_supervision.sh",
         "research/antigravity/reviews/REV-SUPERVISION-SYSTEMD-MIGRATION-3B99207.md",
-        "research/antigravity/reviews/REV-SUPERVISION-HEAD-INDEPENDENT-MIGRATION-2709C046.md"
+        "research/antigravity/reviews/REV-SUPERVISION-HEAD-INDEPENDENT-MIGRATION-2709C046.md",
+        "research/antigravity/reviews/REV-SUPERVISION-TWO-TICK-PERSISTENCE-AUDIT.md"
       ],
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "reviewer": "quota-launcher-head-gemini (a86056b5-8b6b-403a-9b8f-6f0b49308959) & agent-coordination-head-gemini (8d4c026c-b1f9-4cbf-83bf-4f5f82077cab)",
@@ -5340,8 +5341,8 @@
         "safe_near_term_recovery_step": "Touch .local/supervision/stop for voluntary graceful exit of PID 3265459, verify .local/supervision/service.lock release, and relaunch under persistent systemd user unit pointing to reviewed commit 156752b."
       },
       "service_unit": "supervision.service (enabled, active)",
-      "service_pid": 2045425,
-      "service_session_id": "2709c046-ceff-48f9-9f6c-d05647112fe8",
+      "service_pid": 3165652,
+      "service_session_id": "cd6383e6-5626-4b6a-9409-214e0f8bb899",
       "systemd_migration_reviewed_by": "agent-coordination-head-gemini (8d4c026c-b1f9-4cbf-83bf-4f5f82077cab)",
       "systemd_migration_review_receipt": "01a10ccc-77f3-7da1-8ae4-725bc0eb532b",
       "systemd_migration_verdict": "QUALIFIED_REQUEST_CHANGES",
@@ -5395,11 +5396,20 @@
         "degraded": false,
         "boundary": "Reply recognized by real current service; two-tick and useful unattended review/refill still separate gates"
       },
-      "checkpoint_due": "2026-10-05T16:45:00Z",
+      "checkpoint_due": "2026-10-05T17:15:00Z",
       "responsible_owner": "antigravity-head-gemini-recovery (5e1abcdb-44d3-44c9-ba20-eb21f6235672)",
       "measurable_acceptance_evidence": "Live supervisor 2709c046 status at 16:38:38 UTC shows degraded=false, errors=[], last_request 01a10cec-a5ae ACKed, genuine reply 01a10cec-71ee preserved without synthetic ACKs. KillMode=mixed configured for cgroup singleton fencing.",
       "continuity_repair_owner_ack": "01a10cef-bb98-7d71-8d0f-bc48dd3da34b",
-      "continuity_next_checkpoint": "2026-10-05T16:45:00Z"
+      "continuity_next_checkpoint": "2026-10-05T16:45:00Z",
+      "active_subagents": [
+        {
+          "conversation_id": "07b68137-fa8e-41f9-a49f-24dccf723e2b",
+          "role": "Supervisor Persistence Auditor",
+          "task": "supervision-two-tick-persistence-audit",
+          "artifact": "research/antigravity/reviews/REV-SUPERVISION-TWO-TICK-PERSISTENCE-AUDIT.md",
+          "status": "completed"
+        }
+      ]
     },
     {
       "id": "REMOTE-AUTONOMY-REVIEW-1830",
