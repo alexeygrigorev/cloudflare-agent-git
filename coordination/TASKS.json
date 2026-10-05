@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T16:44:58.334330+00:00",
+  "updated_at": "2026-10-05T17:06:34.678278+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -458,7 +458,7 @@
       "team_id": "oversight",
       "owner_tag": "codex-principal",
       "status": "running",
-      "updated_at": "2026-10-05T11:00:34.102462+00:00",
+      "updated_at": "2026-10-05T17:06:34.678278+00:00",
       "evidence_paths": [
         "coordination/codex.md",
         "research/codex/claude-stop-session-audit.md",
@@ -485,7 +485,7 @@
         "research/codex/active-worker-checkpoint-20261005.md"
       ],
       "blocked_on": [],
-      "next_action": "C2484 13:00Berlin miss: 0covered launcher active/fullfleetUNKNOWN;1c completed-awaiting-Pubreview; Ant Busfixture/dashboardfreshness returned. Ant/Pub original deliveriesNOTREADY preservepending. QLlive owns next scoped dispatch/freshadmission/refill. Next principal independent11:15UTC or earlier ACK/firsttool/completion; no50promise/no ownimplementation.",
+      "next_action": "Close-supervise actual head-owned parallel tasks to verified25; roothuman31 latestroles retainprincipalnonimplementation. CurrentCoordreview11cde97, Antrestart3ticks e9c38db; no activecompletedcount. Nextheadchild firsttools/currentrosters, task20actualstructuredtelemetry and reviewedrefill; dashboardNOTREADY original preserved Antrepair. Manualcontinuation notfullautonomy.",
       "acceptance": "Coverage and actual head/executor output, not another plan-only checkpoint; protected Claude draft remains untouched.",
       "assignment_ack": "ACK by genuine codex-principal93cf HUMAN31: native inbox read, team/source/metrics evidence inspected; heads implement, principal oversees.",
       "continuation_trigger": "Nativeactualhead completion/dependency event -> principal independentreview ofloadedsource/firstmodeltool/output and true activecount -> headnextsafeownedtask. Nextfreshcheckpoint11:00UTC, do not awaitroot; manualguardedPub/Antrecoveries notautowakeacceptance."
@@ -775,7 +775,7 @@
       ],
       "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
       "model": "gemini-3.1-pro-high",
-      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 \u00b7 PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
+      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 · PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
     },
     {
       "id": "publication-release-verification",
@@ -1209,7 +1209,7 @@
       "assignment_ack": "Launched per Desktop Orchestrator 12:50 Berlin and Codex Principal C1818 directives. Independent technical audit of container-and-patch-workflows.md, examining production container/microVM paradigms (OpenHands, SWE-bench, Devin, Daytona, Modal, E2B), network/credential egress boundaries, single-synthesizer and worktree integration patterns, and unsteered buyer adoption guidance.",
       "next_action": "Independent review completed in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md (verdict: BOUNDED ACCEPTANCE). Deliverables landed on origin/main; findings ready for principal integration.",
       "acceptance": "Independent review deliverable in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md with clear verdict, rigorous technical verification across all 10 evaluation dimensions, and clean publication guard.",
-      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE \u2014 TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
+      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE — TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
     },
     {
       "id": "ab-safe-main-restore",
@@ -3823,16 +3823,20 @@
       "project_id": "quota-launcher",
       "owner_tag": "codex-principal",
       "status": "in_progress",
-      "updated_at": "2026-10-05T12:57:15.463876+00:00",
+      "updated_at": "2026-10-05T17:06:34.678278+00:00",
       "source": "experiment/human-enforce-fifty-active-focus-20261005.txt",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md",
         "research/codex/scale-to50-task-slices-20261005.json"
       ],
-      "next_action": "Genuine head68 proposes3workers13:15UTC/10at13:35/25at14:00/50at14:30. Require explicit task allocation and measured resource gates at each stage; first healthy Task1 evidence pending13:00. No achievedcounts inferred; original stages missed.",
-      "actual_covered_active": 1,
-      "actual_as_of": "2026-10-05T12:15:44.343381Z",
-      "measurement_coverage": "maintained launcher task-unit roster; full other fleet unknown"
+      "next_action": "Immediate25 actual concurrentlyuseful model/nativeharness/subagents per humanRAMoverride; head parallel childACK/firsttools/roster required. Desktop returns30min checks afterverified25; longterm50. RAM floor refusal overridden scopedinitiative, allothergates remain. C2626 requests Coord18-30/AntBranches/Dashboard31-41; dashboardoriginalnativeNOTREADY preserved.",
+      "actual_covered_active": 0,
+      "actual_as_of": "2026-10-05T17:06:34.678278+00:00",
+      "measurement_coverage": "maintained agent-task units0; head-owned harness current rosters pending; completed17/auditor and services excluded",
+      "human_policy_sources": [
+        "experiment/human-ram-override-twentyfive-subagents-20261005.txt",
+        "experiment/human-close-supervision-fifty-mixed-providers-20261005.txt"
+      ]
     },
     {
       "id": "scale50-01",
@@ -4739,11 +4743,11 @@
       "id": "scale50-45",
       "team_id": "scale50-intake",
       "project_id": "agent-branches",
-      "owner_tag": "quota-launcher-head",
+      "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": true,
-      "status": "review",
-      "updated_at": "2026-10-05T12:55:46.075294+00:00",
+      "status": "in_progress",
+      "updated_at": "2026-10-05T17:06:34.321161+00:00",
       "title": "SDK batch failed-push semantic independent review",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "latest actual SDKsource pin versus known sequential mutation/retry/stop semantics, negative transientcase",
@@ -4751,8 +4755,16 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-45/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T12:30:00Z",
-      "next_action": "SDK45fix model ended without commit; dirty work privately preserved by new Gemini head68cfdd4d; six reported tests and source review HOLD for iterable/content validation. Canonical Ant source protected. Delegate healthy correction plus distinct reviewer; do not count as active.",
-      "owner_ack_message": "01a10bf9-c5ec-7cd1-b61d-328ad71dfa52"
+      "next_action": "Generate test_failed_push.py and deliver review report FAILED-PUSH-REVIEW.md",
+      "owner_ack_message": "01a10bf9-c5ec-7cd1-b61d-328ad71dfa52",
+      "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
+      "checkpoint_due": "2026-10-05T17:25:00Z",
+      "first_action": "Inspected agent_branches/client.py; testing failed-push semantic candidate handling in test_failed_push.py",
+      "active_subagent": {
+        "conversation_id": "9ef14859-ef6f-41e6-a062-1bb935a40229",
+        "role": "Failed-Push Reviewer",
+        "status": "running"
+      }
     },
     {
       "id": "scale50-46",
@@ -4762,21 +4774,27 @@
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": true,
       "status": "review",
-      "updated_at": "2026-10-05T16:30:45.121474+00:00",
+      "updated_at": "2026-10-05T17:06:34.321161+00:00",
       "title": "SDK auth cold-client route integration validation",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "fresh client actual explicit token/admin/no-token matrix, no inherited warm cache",
       "dependencies": [],
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-46/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
-      "next_action": "Awaiting distinct peer review from quota-launcher-head-gemini or agent-coordination-head-gemini on /home/alexey/git/agent-branches/.local/scale50/scale50-46/COLD-CLIENT-VALIDATION.md",
+      "next_action": "Deliver independent review verdict REV-COLD-CLIENT-ACCEPTANCE.md",
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "assignment_ack": "01a10cba-2d4c-78d3-b64a-64fab9b8e5ea",
-      "first_action": "Executed cold-client auth route matrix validation (validate.py) testing fresh client against mock L1 server across 6 scenarios (explicit token, admin token, unauthenticated 401). All 6 passed.",
+      "first_action": "Inspected validate.py and COLD-CLIENT-VALIDATION.md; conducting independent review of cold-client auth routes",
       "evidence_paths": [
         "/home/alexey/git/agent-branches/.local/scale50/scale50-46/COLD-CLIENT-VALIDATION.md",
         "/home/alexey/git/agent-branches/.local/scale50/scale50-46/validate.py"
-      ]
+      ],
+      "checkpoint_due": "2026-10-05T17:25:00Z",
+      "active_subagent": {
+        "conversation_id": "512468f3-576b-4835-aa41-9f13ba12cd1d",
+        "role": "Cold-Client Reviewer",
+        "status": "running"
+      }
     },
     {
       "id": "scale50-47",
@@ -4802,11 +4820,11 @@
       "id": "scale50-48",
       "team_id": "scale50-intake",
       "project_id": "agent-branches",
-      "owner_tag": "codex-principal",
+      "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": false,
-      "status": "blocked",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "status": "in_progress",
+      "updated_at": "2026-10-05T17:06:34.321161+00:00",
       "title": "Main GitHub mirror source/auth repair",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "ordinaryGit fallback retained, sourceonly mirror authenticated perrepo with actual disposable restore",
@@ -4816,17 +4834,25 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-48/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Complete audit of credential isolation, dry-run push, and ordinary recovery runbook GITHUB-MIRROR-AUDIT.md",
+      "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
+      "checkpoint_due": "2026-10-05T17:25:00Z",
+      "first_action": "Created write scope .local/scale50/scale50-48; verified remotes and auditing auth/sync and ordinary Git recovery paths",
+      "active_subagent": {
+        "conversation_id": "79d98c5b-6df0-4e0f-a873-39cb21b66340",
+        "role": "GitHub Mirror Auditor",
+        "status": "running"
+      }
     },
     {
       "id": "scale50-49",
       "team_id": "scale50-intake",
       "project_id": "agent-branches",
-      "owner_tag": "codex-principal",
+      "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": false,
-      "status": "blocked",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "status": "in_progress",
+      "updated_at": "2026-10-05T17:06:34.321161+00:00",
       "title": "Concurrent artifact provenance collector",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "source pre-branchSHA/binary/OUT_DIR hostsanitization pins each actual consumer operation",
@@ -4836,17 +4862,25 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-49/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Execute test_provenance.py under concurrency and output ARTIFACT-PROVENANCE.md",
+      "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
+      "checkpoint_due": "2026-10-05T17:25:00Z",
+      "first_action": "Created write scope .local/scale50/scale50-49; testing concurrent artifact SHA256 and metadata provenance logging",
+      "active_subagent": {
+        "conversation_id": "5d83a00b-470c-4f56-8858-c7425578080a",
+        "role": "Artifact Provenance Collector",
+        "status": "running"
+      }
     },
     {
       "id": "scale50-50",
       "team_id": "scale50-intake",
       "project_id": "agent-branches",
-      "owner_tag": "codex-principal",
+      "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": false,
-      "status": "blocked",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "status": "in_progress",
+      "updated_at": "2026-10-05T17:06:34.321161+00:00",
       "title": "Stable operation retry/resume first-use",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "actual outer oneeffect across failure/retry/resume, not CJS argumentfixture alone",
@@ -4856,7 +4890,15 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-50/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Execute test_retry_resume.py testing transaction tokens and loop guards, output RETRY-RESUME-REPORT.md",
+      "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
+      "checkpoint_due": "2026-10-05T17:25:00Z",
+      "first_action": "Created write scope .local/scale50/scale50-50; inspecting client retry/resume logic for negative test harness",
+      "active_subagent": {
+        "conversation_id": "d40455c2-27e0-4582-805a-24c2663dd3eb",
+        "role": "Retry-Resume Tester",
+        "status": "running"
+      }
     },
     {
       "id": "scale50-51",
@@ -5139,20 +5181,24 @@
       "proposed_execution_head": "agent-dashboard-head",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-05T15:35:00Z",
+      "updated_at": "2026-10-05T17:06:34.678278+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Exact dedup current active/unknown/ended categories from launcher evidence; readable task recovery and targets; no queued offers or controllers counted as active.",
-      "next_action": "State database records live agent-task-*.service units (currently 0 active). Queued offers, controllers, and unaccepted ready rows are not counted as active.",
+      "next_action": "Collect actual head-owned maintained/model/harness childIDs, firsttools and currentactivity; dedup parentchild sameexecution, exclude completed/controllers/services/coord-only. No25claim. C2626 actualCoordACK01a10d02-9394; Dashboarddeliver01a10d06-73dfNOTREADY oldidle/laterPTY; AntC2628 ownsrepair/alternate read-onlyscopes.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
       "current_observation": {
         "maintained_active_count": 0,
-        "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
-        "root_available_bytes": 50282192896,
-        "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
-        "native_delivery": "verified in-session recovery 2-cycle exit 0"
+        "coverage": "agent-task-* units plus pending actualheadharnessrosters",
+        "root_available_bytes": 54061715456,
+        "observed_at": "2026-10-05T17:03:41Z",
+        "genuine_dispatch_ids": [
+          "01a10d06-7394-7993-8607-7fbd649a03b7",
+          "01a10d06-73df-7df1-8a0d-1e739b04d19e",
+          "01a10d05-eadc-7693-852f-0a3e388924f7"
+        ]
       },
       "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable."
     },
@@ -5217,7 +5263,7 @@
       },
       "next_action": "QL commit a916090 delivers structured stream-json invocation and tool telemetry capture in task-units (187/187 tests pass); commit 8486acf accepted by Coord (8aa6505); commit a916090 submitted to Coord for distinct review. scale50-20 retry held until Coord code acceptance and root disk margin >= 50.5 GiB.",
       "blocked_on": [],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "agent-quota-launcher commit a916090 (launcher/launch.py, launcher/task_units.py, tests/test_telemetry.py)",
         "agent-quota-launcher commit 8486acf (accepted by Coord in REV-QL-8486ACF-TMPDIR-REFILL-REVIEW.md)",
@@ -5242,7 +5288,7 @@
         "root-disk-below-50GiB-floor",
         "waiting-storage-floor-restoration"
       ],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ],
@@ -5269,7 +5315,7 @@
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md",
         "research/antigravity/remote-autonomy-supervisor-contract-20261005.md",
@@ -5424,7 +5470,7 @@
         "root-disk-below-50GiB",
         "end-to-end-model-dispatch-held"
       ],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md",
         "research/antigravity/reviews/REV-SUPERVISION-ANTI-SPOOFING-156752B.md"
@@ -5444,7 +5490,7 @@
       "deadline": "2026-10-05T16:30:00Z",
       "next_action": "Follow backward plan and verify real owner ACK, first tool, pinned evidence and next continuation trigger",
       "blocked_on": [],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ]
