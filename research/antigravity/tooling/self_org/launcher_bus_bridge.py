@@ -1551,7 +1551,7 @@ class ChildModelRuntimeAdapter:
         self,
         task_id: str,
         command_argv: List[str],
-        cwd: Union[str, Path],
+        cwd: Optional[Union[str, Path]] = None,
         timeout_sec: float = 120.0,
         env_vars: Optional[Dict[str, str]] = None,
         requested_memory_mb: int = 1500,
@@ -1561,6 +1561,7 @@ class ChildModelRuntimeAdapter:
         model_requirements: Optional[Dict[str, Any]] = None,
         expected_outputs: Optional[List[Union[str, Path]]] = None,
         is_local_probe: bool = False,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         """
         Executes an explicitly owned, canonically admitted task in a directly verified
@@ -1578,7 +1579,10 @@ class ChildModelRuntimeAdapter:
         - Bounded log streaming (<= 64 KiB)
         - Typed local probes (C2114) with ZERO model quota claim
         """
-        cwd_path = Path(cwd).resolve()
+        cwd_val = cwd if cwd is not None else kwargs.get("cwd_path")
+        if cwd_val is None:
+            raise ResourceAdmissionError("cwd must be provided")
+        cwd_path = Path(cwd_val).resolve()
         workspace_path = self.workspace.resolve()
         unit_nonce = uuid.uuid4().hex[:8]
         clean_task_id = re.sub(r"[^a-zA-Z0-9_]+", "-", task_id).strip("-")[:12].strip("-")
@@ -1595,10 +1599,11 @@ class ChildModelRuntimeAdapter:
             )
 
         # 1. Contained TMPDIR (reject global /tmp)
-        if tmpdir is None:
+        tmpdir_val = tmpdir if tmpdir is not None else kwargs.get("tmpdir_path")
+        if tmpdir_val is None:
             tmpdir_path = workspace_path / ".local" / "tmp"
         else:
-            tmpdir_path = Path(tmpdir).resolve()
+            tmpdir_path = Path(tmpdir_val).resolve()
 
         if "tmp" in tmpdir_path.parts and tmpdir_path != workspace_path / ".local" / "tmp":
             if str(tmpdir_path).startswith("/tmp") or str(tmpdir_path).startswith("/data/tmp"):

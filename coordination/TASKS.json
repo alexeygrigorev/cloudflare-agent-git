@@ -2844,8 +2844,8 @@
         "06ecf158-e51f-411c-89b8-083fc9fb3dd6",
         "259526a9-5deb-47ce-810c-ca5f2da56b68"
       ],
-      "status": "review",
-      "updated_at": "2026-10-05T02:51:00.000000+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-05T03:23:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/recovery/REPORT-SESSIONLESS-EXECUTOR-ROUTE-ADMISSION.md",
@@ -2857,13 +2857,41 @@
         "research/antigravity/recovery/antigravity-launcher-flash-model.patch",
         "research/antigravity/tooling/self_org/launcher_bus_bridge.py",
         "tests/test_launcher_bus_bridge.py",
-        "research/antigravity/reviews/REV-LAUNCHER-CANONICAL-ADMISSION-REPAIR.md"
+        "research/antigravity/reviews/REV-LAUNCHER-CANONICAL-ADMISSION-REPAIR.md",
+        "research/antigravity/reviews/REV-ADMITTED-WORKER-TRIAL.md",
+        "research/antigravity/reviews/REV-WINDOWS-DRIVER-2FD1BE4E.md",
+        "research/antigravity/reviews/archive/REV-WINDOWS-DRIVER-2FD1BE4E-trial1-d93f3707.md",
+        "research/antigravity/recovery/REPORT-EVENT-ADAPTER-CYCLES.md"
       ],
-      "acceptance": "Canonical quota-launcher admission repair, exact store/lock identity, Flash model route binding, multi-mount split-filesystem host admission, and defense-in-depth runtime containment audited under Codex Directives C2261, C2268, C2271, C2277, C2281, C2284, C2291, and C2296. 1) Canonical shared admission repaired in launcher_bus_bridge.py (2ba3ea49) and verified in tests/test_launcher_bus_bridge.py (1d538e1e, 46/46 tests OK in 17.949s); strictly defaults to ~/.config/agent-quota-launcher/state.db and launch.lock; enforces exact canonical store and lock paths for real model routes, rejecting same-folder alternative lock files (other.lock) and non-canonical fixture stores; recognizes legitimate explicit canonical constructor instances (is_test_fixture=False); 2) Quota override rejection: quse_override strictly fails closed on real model routes, requiring fresh canonical fetch_quse(); 3) Split-filesystem admission: os.statvfs verified on cwd_path and tmpdir_path mounts in addition to root /, requiring MIN_DISK_FREE_FLOOR_BYTES (50 GiB + 512 MiB reserve); 4) Exact model binding: recipe --model must strictly match admitted/reserved expected_model; C2281 epistemic boundary noted that Gemini Pro/Flash share single quota pool consumed proportionally; 5) API defense-in-depth sanitization: env_vars TMPDIR/TMP/TEMP must strictly resolve to checked tmpdir_path or fail closed with ResourceAdmissionError; 6) TasksMax=100 enforcement: scope_cmd adds -p TasksMax=100, prelude verifies TasksMax via systemctl (exit 95 on mismatch), receipt records tasks_max=100; 7) Measured tmpdir growth guard: measures initial size before launch, periodic monitoring and completion checks fail closed and clean up if net delta > 512 MiB (MAX_TMPDIR_GROWTH_BYTES); 8) Independently audited and approved with BOUNDED SOURCE ACCEPTANCE by reviewer259 in REV-LAUNCHER-CANONICAL-ADMISSION-REPAIR.md (b973d78e). Authorized ONE useful canonical admitted model worker trial queued. Zero cargo/rustc invocations, canonical repositories strictly read-only.",
+      "acceptance": "Canonical quota-launcher admission repair, exact store/lock identity, Flash/Pro model route binding, multi-mount split-filesystem host admission, and defense-in-depth runtime containment audited under Codex Directives C2261, C2268, C2271, C2277, C2281, C2284, C2291, and C2296 in REV-LAUNCHER-CANONICAL-ADMISSION-REPAIR.md (b973d78e, 46/46 tests OK in 17.949s). Bounded kernel scope containment (TasksMax=100, MemoryMax=1500M, InvocationID verified) and fresh unified Gemini quota admission verified. Autonomous FileBus dogfood cycle, dual deliverable preservation, and runner output-admission repair tracked under dedicated task runner-output-admission-repair. Zero cargo/rustc invocations, canonical repositories strictly read-only.",
       "assignment_ack": "ACK: owned by antigravity-head under Codex C2221/C2224/C2229/C2235/C2238/C2239/C2241/C2242/C2243/C2244/C2245/C2247/C2250. Executed by architect06 and reviewer259.",
-      "acceptance_status": "CANONICAL ADMISSION HARDENING & TASKSMAX=100 AUDITED (C2284/C2291/C2296 BOUNDED SOURCE ACCEPTANCE IN REV b973d78e; 46/46 TESTS OK; MODEL TRIAL AUTHORIZED)",
-      "next_action": "Execute already-authorized ONE useful canonical admitted bus worker trial under fresh unified Gemini quota.",
-      "continuation_trigger": "Execution of canonical admitted bus worker trial."
+      "acceptance_status": "CANONICAL ADMISSION HARDENING & TASKSMAX=100 AUDITED (C2284/C2291/C2296 BOUNDED SOURCE ACCEPTANCE IN REV b973d78e; 46/46 TESTS OK; BOUNDED KERNEL/MODEL ROUTE COMPLETED)",
+      "next_action": "Advance runner-output-admission-repair for complete output-admission negative verification and deliverable routing.",
+      "continuation_trigger": "Execution of runner-output-admission-repair."
+    },
+    {
+      "id": "runner-output-admission-repair",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "owner_tag": "antigravity-head",
+      "executor_ids": [
+        "06ecf158-e51f-411c-89b8-083fc9fb3dd6",
+        "259526a9-5deb-47ce-810c-ca5f2da56b68"
+      ],
+      "status": "completed",
+      "updated_at": "2026-10-05T03:28:00.000000+00:00",
+      "blocked_on": [],
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-ADMITTED-WORKER-TRIAL.md",
+        "research/antigravity/reviews/REV-WINDOWS-DRIVER-2FD1BE4E.md",
+        "research/antigravity/reviews/archive/REV-WINDOWS-DRIVER-2FD1BE4E-trial1-d93f3707.md",
+        "research/antigravity/recovery/REPORT-EVENT-ADAPTER-CYCLES.md"
+      ],
+      "acceptance": "Autonomous FileBus dogfood cycle, dual deliverable preservation, append-only runner repair, and adversarial output-admission negative verification audited under Codex Directives C2299, C2300, C2304, C2306, C2310, C2312, and C2313 in REV-ADMITTED-WORKER-TRIAL.md (SHA256: 241db16f8d1044cc5f07d71320f310d7d6cd25faea50dc90a77e48d6652eed42) against runner script run_admitted_busworker_trial.py (SHA256: 4fab504ea57fa3abfcffc5279770dfef832965a76bdb8cbdb3ce6dd84fea37e3) and test suite test_output_admission_negatives.py (4/4 tests PASS). 1) FileBus dogfood cycle: Head dispatched task a00877e2 under head_cred; worker gemini-3.1-pro-high in systemd scope agent-scope-t-busworker-c6085104.scope (Invocation ID 185ca9328b454142988a149886a5f55e, TasksMax=100, MemoryMax=1500M) autonomously consumed task, issued read-ACK on FileBus (worker_ack_executed_by_controller=false), directly authored review deliverable REV-WINDOWS-DRIVER-2FD1BE4E.md (SHA256: 470a9ee6892fb8f5b452cca6c644151d5cd0dfd990ce5586891d4cee72188d2d, 3560 bytes) via CLI tool write, and autonomously sent completion reply e98f1f5a with genuine unforced verdict REQUEST_CHANGES; Head alone read-ACKed worker reply; 2) Dual deliverable preservation: Trial 1 archived at research/antigravity/reviews/archive/REV-WINDOWS-DRIVER-2FD1BE4E-trial1-d93f3707.md (d93f3707, 5945 bytes, BOUNDED ACCEPTANCE); Trial 2 preserved at research/antigravity/reviews/REV-WINDOWS-DRIVER-2FD1BE4E.md (470a9ee6, 3560 bytes, REQUEST_CHANGES); 3) Append-only runner repair: architect06 refactored runner script eliminating all raw SQL DELETE queries, rmtree wipes, and unlinks; enforced run-scoped unique IDs (run_id/task_id) and isolated directories; 4) Adversarial output-admission testing: reviewer259 verified 4 negative cases: Test A (pre-existing public artifact isolation), Test B (missing new artifact rejection), Test C (wrong-thread reply rejection), Test D (conflicting verdict fail-closed as UNKNOWN_CONFLICT); 5) Re-qualified report status: Base64 padding regex leak verified as active defect; sys.stderr spillage and Windows OpenSSH quoting re-qualified as architectural hypotheses / OS shell resolution questions; 6) Formal independent audit verdict: FULL ACCEPTANCE OF ADMISSION, NATIVE BUS DOGFOOD CYCLE & OUTPUT-ADMISSION ADVERSARIAL REPAIR; DRIVER VERDICT REQUEST_CHANGES RECORDED; PHYSICAL WINDOWS RUNTIME HELD. Zero cargo/rustc invocations, canonical repositories strictly read-only.",
+      "assignment_ack": "ACK: owned by antigravity-head under Codex C2310/C2312/C2313/C2315. Executed by architect06 and reviewer259.",
+      "acceptance_status": "FULL ACCEPTANCE OF ADMISSION, NATIVE BUS DOGFOOD CYCLE & OUTPUT-ADMISSION ADVERSARIAL REPAIR (C2310/C2312/C2313/C2315 ACCEPTED IN REV-ADMITTED-WORKER-TRIAL.md SHA 241db16f; RUNNER 4fab504e; 4/4 NEGATIVE TESTS PASS; DRIVER VERDICT REQUEST_CHANGES; WINDOWS RUNTIME HELD)",
+      "next_action": "Project heads and principals advance Windows diagnostic driver repair (reviewer37) addressing Base64 padding regex leak before desktop trial.",
+      "continuation_trigger": "Independent repair and test of Windows diagnostic driver."
     },
     {
       "id": "dashboard-c7-notready-diagnostic",
