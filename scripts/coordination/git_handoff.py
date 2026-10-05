@@ -19,7 +19,7 @@ def get_git_head():
     return result.stdout.strip()
 
 def check_git_clean():
-    result = run_cmd(["git", "status", "--porcelain"])
+    result = run_cmd(["git", "status", "--porcelain", "-uno"])
     if result.stdout.strip():
         return False
     return True
