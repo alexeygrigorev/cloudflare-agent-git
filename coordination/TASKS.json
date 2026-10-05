@@ -5941,15 +5941,22 @@
       "executor_ids": [
         "8ce01474-96c2-42fe-ac30-54b149b77412"
       ],
-      "status": "in_progress",
+      "status": "done",
       "created_at": "2026-10-05T22:16:55.000000+00:00",
-      "updated_at": "2026-10-05T22:20:00.000000+00:00",
+      "updated_at": "2026-10-05T22:27:00.000000+00:00",
       "scope": "Narrow launcher below-30GiB cleanup task integration: check_disk_pressure sampling, continue eligible jobs >= 20GiB, exactly one deduplicated cleanup task enqueued per episode, fake resource probe tests at 29/30/20 GiB, re-arm on recovery.",
       "first_tool_evidence": {
         "tool_name": "view_file",
         "target": "/home/alexey/git/agent-quota-launcher/launcher/resources.py"
       },
       "resource_bounds": "Simulated disk pressure boundaries: 29 GiB (pressure active, continue eligible + 1 cleanup task), 30 GiB (pressure cleared/re-arm), 20 GiB (hard floor rejection). Zero real disk fill.",
+      "reviewer_tag": "cleanup-reviewer-114d41f8",
+      "reviewer_ids": [
+        "114d41f8-65cd-44c4-9d80-11682bccd149"
+      ],
+      "review_verdict": "ACCEPTED",
+      "review_evidence_path": "research/antigravity/reviews/REV-QL-BELOW30G-CLEANUP-INTEGRATION-20261005.md",
+      "acceptance_evidence": "Commit 4fb1758 in agent-quota-launcher: check_disk_pressure samples cwd and tmpdir; warning zone (20-30GiB) maintains eligible task execution and enqueues exactly 1 bounded cleanup task per episode (disk-pressure-cleanup-<id>); rearm enabled >= 30GiB; hard floor rejects < 20GiB; full pytest passes 206/206; independently reviewed and accepted by 114d41f8 in REV-QL-BELOW30G-CLEANUP-INTEGRATION-20261005.md.",
       "blocked_on": []
     }
   ]
