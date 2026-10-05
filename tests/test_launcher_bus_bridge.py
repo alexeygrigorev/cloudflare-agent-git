@@ -1886,6 +1886,90 @@ class TestLauncherBusBridge(unittest.TestCase):
         self.assertEqual(payload["model"], "none")
         self.assertFalse(payload["model_quota_claimed"])
 
+    # -----------------------------------------------------------------------
+    # Test 33: Contained Scratch TMPDIR in Systemd Scope Non-Model Probe (C2134)
+    # -----------------------------------------------------------------------
+    def test_33_c2134_tmpdir_containment_in_systemd_scope_non_model(self) -> None:
+        """
+        Verify that a non-model probe inside execute_in_verified_systemd_scope:
+        1. Confines TMPDIR strictly to the requested owned scratch directory.
+        2. Child process tempfile.gettempdir() returns the owned scratch directory, NOT /tmp.
+        3. Temporary files created by the child strictly reside in the owned scratch directory.
+        4. Verifies non-model subprocess receipt on disk.
+        """
+        runtime = ChildModelRuntimeAdapter(store=self.store, workspace=self.workspace)
+        task_id = "t-c2134-tmpdir-33"
+
+        probe_py = (
+            "import os, sys, tempfile, json\n"
+            "tmpdir = tempfile.gettempdir()\n"
+            "with tempfile.NamedTemporaryFile(delete=False) as f:\n"
+            "    f.write(b'tmpdir-contained')\n"
+            "    f_path = f.name\n"
+            "receipt = {\n"
+            "    'env_tmpdir': os.environ.get('TMPDIR'),\n"
+            "    'tempfile_dir': tmpdir,\n"
+            "    'sample_file': f_path,\n"
+            "    'is_in_tmp': f_path.startswith('/tmp') or f_path.startswith('/data/tmp'),\n"
+            "}\n"
+            "receipt_path = os.path.join(tmpdir, 'child_tmpdir_receipt.json')\n"
+            "with open(receipt_path, 'w', encoding='utf-8') as rf:\n"
+            "    json.dump(receipt, rf)\n"
+            "print(json.dumps(receipt))\n"
+            "if f_path.startswith('/tmp') or f_path.startswith('/data/tmp'):\n"
+            "    sys.exit(88)\n"
+            "sys.exit(0)\n"
+        )
+
+        probe_cmd = ["python3", "-c", probe_py]
+
+        result = runtime.execute_in_verified_systemd_scope(
+            task_id=task_id,
+            command_argv=probe_cmd,
+            cwd=self.workspace,
+            timeout_sec=30.0,
+            requested_memory_mb=1500,
+            tmpdir=self.owned_tmp,
+            lock_path=self.workspace / ".local" / "test.lock",
+            is_local_probe=True,
+        )
+
+        self.assertEqual(result["returncode"], 0)
+        self.assertTrue(result["is_local_probe"])
+        self.assertFalse(result["model_quota_claimed"])
+        self.assertIn("env_tmpdir", result["stdout_preview"])
+
+        # Parse child receipt from stdout
+        lines = [line.strip() for line in result["stdout_preview"].splitlines() if line.strip().startswith("{")]
+        self.assertTrue(len(lines) > 0, "No JSON line found in stdout_preview")
+        receipt = json.loads(lines[0])
+        self.assertEqual(receipt["env_tmpdir"], str(self.owned_tmp))
+        self.assertEqual(receipt["tempfile_dir"], str(self.owned_tmp))
+        self.assertFalse(receipt["is_in_tmp"])
+        self.assertTrue(receipt["sample_file"].startswith(str(self.owned_tmp)))
+
+        # Verify on-disk temp file created by NamedTemporaryFile
+        sample_path = Path(receipt["sample_file"])
+        self.assertTrue(sample_path.exists())
+        self.assertEqual(sample_path.read_bytes(), b"tmpdir-contained")
+
+        # Verify on-disk child subprocess receipt
+        child_receipt_file = self.owned_tmp / "child_tmpdir_receipt.json"
+        self.assertTrue(child_receipt_file.exists())
+        with open(child_receipt_file, "r", encoding="utf-8") as f:
+            disk_receipt = json.load(f)
+        self.assertEqual(disk_receipt["env_tmpdir"], str(self.owned_tmp))
+        self.assertEqual(disk_receipt["tempfile_dir"], str(self.owned_tmp))
+        self.assertFalse(disk_receipt["is_in_tmp"])
+        self.assertTrue(disk_receipt["sample_file"].startswith(str(self.owned_tmp)))
+
+        # Verify containment prelude receipt on disk
+        containment_receipt = self.owned_tmp / f"containment_verified_{result['unit_name']}.json"
+        self.assertTrue(containment_receipt.exists())
+        with open(containment_receipt, "r", encoding="utf-8") as f:
+            c_receipt = json.load(f)
+        self.assertEqual(c_receipt["unit"], result["unit_name"])
+
 
 if __name__ == "__main__":
     unittest.main()

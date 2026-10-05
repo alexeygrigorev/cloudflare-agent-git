@@ -1489,12 +1489,17 @@ except Exception:
 with open("{receipt_path}", "w", encoding="utf-8") as f:
     json.dump({{"unit": unit, "pid": os.getpid(), "cgroup": cgroup, "memory_max": props.get("MemoryMax"), "invocation_id": props.get("InvocationID")}}, f)
 
+# Enforce contained scratch TMPDIR before execvp into child payload (C2134)
+os.environ["TMPDIR"] = "{tmpdir_path}"
+os.environ["TEMP"] = "{tmpdir_path}"
+os.environ["TMP"] = "{tmpdir_path}"
+
 os.execvp(sys.argv[1], sys.argv[1:])
 """
         prelude_script.write_text(prelude_code, encoding="utf-8")
         prelude_script.chmod(0o700)
 
-        # 5. Construct systemd-run invocation with prelude
+        # 5. Construct systemd-run invocation with prelude and explicit environment bindings
         scope_cmd = [
             "systemd-run",
             "--user",
@@ -1502,6 +1507,9 @@ os.execvp(sys.argv[1], sys.argv[1:])
             "--collect",
             f"--unit={unit_name}",
             "-p", f"MemoryMax={requested_memory_mb}M",
+            "-E", f"TMPDIR={tmpdir_path}",
+            "-E", f"TEMP={tmpdir_path}",
+            "-E", f"TMP={tmpdir_path}",
             "--",
             sys.executable,
             str(prelude_script),
