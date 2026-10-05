@@ -1,0 +1,93 @@
+{
+  "title": "Four product teams and delivery status",
+  "description": "An authentic review task runs between team lead and independent reviewer over messages, while four products maintain distinct delivery statuses.",
+  "style": "editorial",
+  "canvas": {"width": 1160, "height": 430},
+  "layout": {"type": "manual", "card_width": 240, "card_height": 100},
+  "dividers": [
+    {"after_node": "reviewer"}
+  ],
+  "nodes": [
+    {
+      "id": "head",
+      "title": "Team lead",
+      "subtitle": "Assigns review tasks",
+      "eyebrow": "COORDINATION",
+      "icon": "robot",
+      "color": "blue",
+      "x": 200,
+      "y": 40,
+      "height": 110
+    },
+    {
+      "id": "reviewer",
+      "title": "Independent reviewer",
+      "subtitle": "Validates negative cases",
+      "eyebrow": "REVIEWER",
+      "icon": "shield",
+      "color": "purple",
+      "x": 720,
+      "y": 40,
+      "height": 110
+    },
+    {
+      "id": "branches",
+      "title": "Agent Branches",
+      "subtitle": "Internal review tested",
+      "eyebrow": "PRODUCT",
+      "icon": "workflow",
+      "color": "blue",
+      "x": 40,
+      "y": 280
+    },
+    {
+      "id": "bus",
+      "title": "Agent Bus",
+      "subtitle": "Internal review tested",
+      "eyebrow": "PRODUCT",
+      "icon": "message",
+      "color": "purple",
+      "x": 320,
+      "y": 280
+    },
+    {
+      "id": "launcher",
+      "title": "Quota Launcher",
+      "subtitle": "Runtime unverified",
+      "eyebrow": "PRODUCT",
+      "icon": "settings",
+      "color": "amber",
+      "x": 600,
+      "y": 280
+    },
+    {
+      "id": "dashboard",
+      "title": "Agent Dashboard",
+      "subtitle": "Integration pending",
+      "eyebrow": "PRODUCT",
+      "icon": "observability",
+      "color": "gray",
+      "x": 880,
+      "y": 280
+    }
+  ],
+  "edges": [
+    {
+      "from": "head",
+      "to": "reviewer",
+      "from_anchor": "right_top",
+      "to_anchor": "left_top",
+      "label": "Task message",
+      "color": "purple"
+    },
+    {
+      "from": "reviewer",
+      "to": "head",
+      "from_anchor": "left_bottom",
+      "to_anchor": "right_bottom",
+      "label": "Reply message",
+      "dashed": true,
+      "color": "purple"
+    }
+  ]
+}
