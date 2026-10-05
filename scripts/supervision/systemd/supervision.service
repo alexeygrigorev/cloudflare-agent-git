@@ -7,12 +7,14 @@ After=network.target
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/home/alexey/git/cloudflare-agent-git
+UnsetEnvironment=APLEXER_SESSION_ID APLEXER_TAG APLEXER_WORKSPACE
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONPATH=/home/alexey/git/cloudflare-agent-git
 Environment=PATH=/home/alexey/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ExecStart=/home/alexey/git/cloudflare-agent-git/scripts/supervision/systemd/launch_supervision.sh
 ExecStop=/bin/touch /home/alexey/git/cloudflare-agent-git/.local/supervision/stop
 TimeoutStopSec=15s
+KillMode=none
 
 [Install]
 WantedBy=default.target

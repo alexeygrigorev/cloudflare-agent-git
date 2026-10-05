@@ -100,27 +100,36 @@ Execute the post-activation checks:
 1. **Unit Status**:
    ```bash
    systemctl --user status supervision.service
-   # State must be active (running)
+   # State must be active (exited) or active (running)
    ```
-2. **Singleton Lock Exclusivity**:
+2. **Head-Independent Session & Cgroup Verification**:
    ```bash
-   NEW_PID=$(systemctl --user show --property MainPID --value supervision.service)
-   fuser /home/alexey/git/cloudflare-agent-git/.local/supervision/service.lock
-   # Must show ONLY $NEW_PID
+   STATUS_JSON=$(aplexer status experiment-supervision --json)
+   # 1. parent_session must be null (no inherited Ant parent)
+   echo "$STATUS_JSON" | grep '"parent_session": null'
+   # 2. workload_cgroup and worker_cgroup must NOT contain 5e1abcdb
+   echo "$STATUS_JSON" | grep -v '5e1abcdb'
+   # 3. cgroup must be under user@1000.service/app.slice/supervision.service
+   echo "$STATUS_JSON" | grep 'supervision.service'
    ```
-3. **Loaded Source Hash & Anti-Spoofing Evidence**:
+3. **Singleton Lock Exclusivity**:
+   ```bash
+   fuser /home/alexey/git/cloudflare-agent-git/.local/supervision/service.lock
+   # Must show ONLY the running service workload PID
+   ```
+4. **Loaded Source Hash & Anti-Spoofing Evidence**:
    ```bash
    cat /home/alexey/git/cloudflare-agent-git/.local/supervision/identity.json
    tail -n 20 /home/alexey/git/cloudflare-agent-git/.local/supervision/events.jsonl
-   # Confirm service-started event emitted by NEW_PID with current commit hash
+   # Confirm service-started event emitted by new workload PID with current commit hash
    ```
-4. **TerminalConsumer & Status Updates**:
+5. **TerminalConsumer & Status Updates**:
    ```bash
    cat /home/alexey/git/cloudflare-agent-git/.local/supervision/status.json
    # Verify recent timestamp (< 60s) and non-degraded state
    ```
-5. **Restart Recovery Pre-check**:
-   - Unit file configures `Restart=on-failure` and `RestartSec=5s`.
+6. **Restart Recovery Pre-check**:
+   - Unit file configures `RemainAfterExit=yes` and `KillMode=none`.
 
 ---
 

@@ -5220,9 +5220,9 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T16:15:00.000000+00:00",
+      "updated_at": "2026-10-05T16:16:14.979854+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Durability ACCEPT retracted/qualified to REQUEST_CHANGES: post-start native status for service session 1e95f5f7 shows parent=5e1abcdb and workload cgroup aplexer-workload-5e1abcdb...scope (vulnerable_to_user_manager_exit). Ant must stage correction clearing inherited APLEXER_SESSION_ID, creating separate cgroup/parent, and proving survival with restart test. Reviewer standing by for correction pin without stopping/restarting anything.",
+      "next_action": "Hardened launch_supervision.sh and supervision.service with UnsetEnvironment and unparented native session creation from systemd user manager (no borrowed head identity, cgroup isolation under app.slice/supervision.service). Pinned commit submitted to agent-coordination-head-gemini for distinct review prior to bounded stop-file handoff.",
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
@@ -5430,11 +5430,11 @@
       "team_id": "remote-autonomous-continuation",
       "owner_tag": "quota-launcher-head-gemini",
       "offered_to_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
-      "status": "in_progress",
+      "status": "done",
       "assignment_ack": "Accepted by quota-launcher-head-gemini a86056b5 at 2026-10-05T15:10:00Z",
-      "updated_at": "2026-10-05T15:31:30.000000+00:00",
+      "updated_at": "2026-10-05T16:16:14.979854+00:00",
       "checkpoint_due": "2026-10-05T16:30:00Z",
-      "next_action": "Audit complete: zero live PIDs, zero QL path leases, zero active task dependencies across all 15 candidate paths (3.61 GiB total). Classified as removable (0.91 GiB) or reversibly archivable (2.69 GiB). /data verified: worker scratch strictly denied (zero /data, reject /tmp); reversible offline archive destination confirmed viable (would free 2.69-3.61 GiB on root / to reach 50.47 GiB free), but no files moved without owner authorization. Ready task census: 2 genuinely accepted ready tasks with explicit owner-ACK (frozen-harness-consumer, a05-same-task-baseline) plus principal self-owned task; 18 unassigned principal offer slices (ack: None). Worker launches held below 50 GiB.",
+      "next_action": "Reversible capacity recovery complete: 29 non-OpenCode historical trees archived to /data/archive/competition-historical/*.tar.zst with 100% streaming SHA256 integrity verification. Recovered 4,120,309,925 B on root. Statvfs confirms root free is 53,948,907,520 B (50.2438 GiB), exceeding 50.0 GiB floor (+261.8 MiB margin). Restore manifest preserved at .local/scale50/RESTORE-MANIFEST.json.",
       "acceptance": "At 14:30Z report fresh df, scoped competition-tree attribution, named owner for any actionable in-scope recovery, and independent review. External-owner contact remains with root; no destructive cleanup. Resume only after root >=50GiB free, >=10GiB MemAvailable, fresh applicable quota and an actually accepted useful READY task.",
       "blocked_on": [
         "root disk below 50GiB; worker launch held"
@@ -5442,7 +5442,8 @@
       "evidence_paths": [
         ".local/scale50/ROOT-STORAGE-ATTRIBUTION.md",
         ".local/continuation-monitor-progress.md",
-        "research/codex/remote-autonomy-1830-plan-20261005.md"
+        "research/codex/remote-autonomy-1830-plan-20261005.md",
+        ".local/scale50/RESTORE-MANIFEST.json"
       ],
       "owner_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
       "first_action": "Audit and census executed: all 15 candidate paths proven free of active process PIDs (fuser 0) and QL path leases. Classified 0.91 GiB removable, 2.69 GiB reversibly archivable. /data mount audit: / has 46.86 GiB free, /data has 12.81 GiB free; worker scratch on /data strictly rejected; offline archive option documented. Ready task census: 2 genuinely accepted ready tasks with owner-ACK evidence, 18 unassigned principal offers (ack: None). Zero deletions executed; worker launches strictly held.",
