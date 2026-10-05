@@ -5025,22 +5025,23 @@
       "proposed_execution_head": "codex-principal",
       "ownership_ack": false,
       "status": "in_progress",
-      "updated_at": "2026-10-05T15:35:00Z",
+      "updated_at": "2026-10-05T15:56:00Z",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "58sourced distinct slice offers; >=50 genuinely owned executable scopes with headACK needed; no fake ready/duplicatewriters",
-      "next_action": "Audited 58 scale rows: 12 reviewed/accepted (scale50-01..05, 07..09, 14, 15, 16, 45 with head ACK), 14 unaccepted ready offers (scale50-17, 20, 29, 30, 33, 36, 39, 41, 46, 53, 55..58 with ack=None), 32 blocked rows. Checkpoints: Stage 1 (10 tasks, 7.7 GiB RAM) -> Stage 2 (25 tasks, 19.2 GiB RAM) -> Stage 3 (50 tasks, 25.6 GiB RAM at 512M per unit). Gated strictly by root disk >= 50.0 GiB.",
+      "next_action": "Audited 58 scale rows: 12 reviewed/accepted (scale50-01..05, 07..09, 14..16, 45 with verified exit 0 and distinct reviews), 5 ready with real owner ACKs (scale50-17, 20, 29, 30 owned by agent-coordination-head-gemini; scale50-46 owned by antigravity-head-gemini-recovery), 9 unassigned ready offer slices (scale50-33, 36, 39, 41, 53, 55..58 with ack: None), 32 blocked rows. Checkpoints to 16:30Z: Stage 1 (10 workers, 7.68 GiB RAM: 5 acked + 5 needed from offers); Stage 2 (25 workers, 16.25 GiB RAM at 650M ceiling: needs 11 unblocked predecessors); Stage 3 (50 workers: physically impossible without exceeding host RAM floor unless capped at 350M, needs 36 unblocked predecessors). Strictly gated by root disk >= 50.0 GiB (measured: 50,178,809,856 B / 46.73 GiB, deficit: 3.27 GiB; launch held closed).",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
       "current_observation": {
         "maintained_active_count": 0,
-        "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
-        "root_available_bytes": 50282192896,
+        "coverage": "systemctl --user agent-task-* only (0 loaded units); full other fleet unknown",
+        "root_available_bytes": 50178809856,
+        "live_deficit_bytes": 3508281344,
         "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
-        "native_delivery": "verified in-session recovery 2-cycle exit 0"
+        "native_delivery": "provenance audit commit 6437b81; CODE_ACCEPTED_RUNTIME_UNPROVEN recorded; launch gate held closed"
       },
-      "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable."
+      "next_trigger": "Wait for operator authorization of non-OpenCode historical zstd archive to /data (+3.84 GiB restoration) to reach >= 50.0 GiB root floor; upon restoration, admit Stage 1 (10 tasks) with automated refill in wt-refill-runtime."
     },
     {
       "id": "scale50-C-capacity-stages",
@@ -5050,23 +5051,24 @@
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": true,
       "status": "ready",
-      "updated_at": "2026-10-05T15:42:00Z",
+      "updated_at": "2026-10-05T15:56:00Z",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Measured whole descendantRAM/threads/controllers and freshroutes support10 then25 then50; bindingmax/alternative if impossible",
-      "next_action": "Measured host capacity: MemAvailable ~28.7 GiB supports Stage 1 (10 workers, 7.7 GiB) and Stage 2 (25 workers, 19.2 GiB) at 768M MemoryMax; Stage 3 (50 workers) requires 512M ceiling (25.6 GiB total) to preserve >=10 GiB host floor. Hard admission gate: root disk >= 50.0 GiB (currently 46.83 GiB, held).",
+      "next_action": "Measured host capacity: MemAvailable 28.7 GiB, Root Statvfs 46.73 GiB (deficit 3.27 GiB). Stage 1 (10 tasks, 7.68 GiB RAM at 768M) is memory-feasible (leaves 21.0 GiB RAM) but blocked by root disk gate. Stage 2 (25 tasks) requires 650M ceiling (16.25 GiB RAM) to preserve >=10 GiB host floor, plus unblocking 11 predecessor tasks. Stage 3 (50 tasks) is physically impossible at 768M (38.4 GiB > 28.7 GiB MemAvailable) and violates 10 GiB floor at 512M (leaves only 3.1 GiB RAM); requires 350M ceiling (17.5 GiB RAM) plus unblocking 36 tasks. Named accountable owners: QL Head (a86056b5) owning launcher/watch, Coord Head (8d4c026c) owning coordination tasks, Ant (5e1abcdb) owning supervision. No worker launch below 50-GiB floor.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
       "actual_covered_active": 0,
-      "actual_as_of": "2026-10-05T12:15:44.343381Z",
+      "actual_as_of": "2026-10-05T15:56:00Z",
       "measurement_coverage": "maintained launcher task-unit roster; full other fleet unknown",
       "current_observation": {
         "maintained_active_count": 0,
-        "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
-        "root_available_bytes": 50282192896,
+        "coverage": "systemctl --user agent-task-* only (0 loaded units); full other fleet unknown",
+        "root_available_bytes": 50178809856,
+        "live_deficit_bytes": 3508281344,
         "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
-        "native_delivery": "verified in-session recovery 2-cycle exit 0"
+        "native_delivery": "provenance audit commit 6437b81; CODE_ACCEPTED_RUNTIME_UNPROVEN recorded; launch gate held closed"
       },
       "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable.",
       "owner_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
@@ -5081,23 +5083,24 @@
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": true,
       "status": "ready",
-      "updated_at": "2026-10-05T15:42:00Z",
+      "updated_at": "2026-10-05T15:56:00Z",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Automated completion-to-refill single-pass non-LLM watch loop in wt-refill-runtime dispatches next admitted task upon task exit 0 when queue is populated and admission gates pass; head completion callback starts next useful task.",
-      "next_action": "Automated completion-to-refill verified in wt-refill-runtime. Stage 10/25/50 refills proceed automatically upon each task exit 0 when queue is populated and host admission gates (root disk >= 50.0 GiB) pass.",
+      "next_action": "Automated completion-to-refill verified in wt-refill-runtime (commits a35e7ff and e0836bc exit 0, reviewed and ACCEPTED). Dispatch loop in wt-refill-runtime stands ready to refill Stage 10/25/50 automatically upon task exit 0, but is strictly held by admission policy while root free space is 46.73 GiB (<50.0 GiB floor). Accountable owner: quota-launcher-head-gemini (a86056b5). Checkpoint 16:30Z: Maintain launch hold until operator confirms archive remediation.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
       "actual_covered_active": 0,
-      "actual_as_of": "2026-10-05T12:15:44.343381Z",
+      "actual_as_of": "2026-10-05T15:56:00Z",
       "measurement_coverage": "maintained launcher task-unit roster; full other fleet unknown",
       "current_observation": {
         "maintained_active_count": 0,
-        "coverage": "systemctl --user agent-task-* only, fullotherfleet unknown",
-        "root_available_bytes": 50282192896,
+        "coverage": "systemctl --user agent-task-* only (0 loaded units); full other fleet unknown",
+        "root_available_bytes": 50178809856,
+        "live_deficit_bytes": 3508281344,
         "head_execution_ack": "Accepted by quota-launcher-head-gemini a86056b5",
-        "native_delivery": "verified in-session recovery 2-cycle exit 0"
+        "native_delivery": "provenance audit commit 6437b81; CODE_ACCEPTED_RUNTIME_UNPROVEN recorded; launch gate held closed"
       },
       "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable.",
       "owner_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
