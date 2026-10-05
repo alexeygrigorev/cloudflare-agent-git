@@ -2,9 +2,14 @@ import json
 import os
 import pathlib
 import sqlite3
+import sys
 import tempfile
 import time
 import unittest
+
+ql_repo = pathlib.Path('/home/alexey/git/agent-quota-launcher')
+if ql_repo.exists() and str(ql_repo) not in sys.path:
+    sys.path.insert(0, str(ql_repo))
 
 import service
 from terminal_consumer import (
