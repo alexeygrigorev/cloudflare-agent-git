@@ -436,6 +436,58 @@ def bridge_ready_task_to_launcher(task, head_owner, spool_dir, ql_db_candidates=
     return record
 
 
+def drain_launcher_queues(ql_db_candidates, report=None):
+    """
+    Runs watch_loop(drain_args, max_passes=1) with backend="task-units" and
+    wait_for_review="dependencies" for each launcher candidate DB.
+    Catches any exceptions gracefully and records action 'launcher-queue-drained'.
+    """
+    actions = []
+    if not ql_db_candidates:
+        return actions
+
+    ql_repo = pathlib.Path('/home/alexey/git/agent-quota-launcher')
+    if ql_repo.exists() and str(ql_repo) not in sys.path:
+        sys.path.insert(0, str(ql_repo))
+
+    try:
+        from launcher.watch import watch_loop
+    except Exception:
+        watch_loop = None
+
+    from types import SimpleNamespace
+
+    for cand in ql_db_candidates:
+        cand_path = pathlib.Path(cand)
+        config_dir = cand_path.parent if (cand_path.is_file() or cand_path.suffix == '.db') else cand_path
+        action_rec = {
+            'kind': 'launcher-queue-drained',
+            'action': 'launcher-queue-drained',
+            'db': str(cand_path),
+            'status': 'ok',
+        }
+        try:
+            if watch_loop is None:
+                raise RuntimeError("launcher.watch.watch_loop could not be imported")
+
+            drain_args = SimpleNamespace(
+                config_dir=str(config_dir),
+                backend="task-units",
+                wait_for_review="dependencies",
+                once=True,
+            )
+            watch_loop(drain_args, max_passes=1)
+        except Exception as exc:
+            action_rec['status'] = 'error'
+            action_rec['error'] = str(exc)
+
+        actions.append(action_rec)
+        if report is not None and isinstance(report.get('actions'), list):
+            report['actions'].append(action_rec)
+
+    return actions
+
+
 def now():
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
@@ -1012,6 +1064,11 @@ def run():
                                 'launcher_submitted': rec.get('launcher_submitted', False),
                             })
             memory['task_statuses'] = new_task_statuses
+
+            # Continuous launcher queue draining
+            drained_actions = drain_launcher_queues(ql_db_candidates, report=report)
+            for act in drained_actions:
+                event('launcher-queue-drained', db=act.get('db'), status=act.get('status'))
 
             # Actionable event filtering
             actionable_events, actionable_digest = consumer.compute_actionable_events(tasks)

@@ -231,6 +231,47 @@ class TestSupervisorBridge(unittest.TestCase):
             consumer.ingest_terminal_receipt(receipt_stolen_sess)
         self.assertIn("Stolen lease detected", str(ctx.exception))
 
+    def test_drain_launcher_queues_runs_watch_loop_and_records_action(self):
+        """drain_launcher_queues runs watch_loop with backend='task-units' and records action."""
+        from unittest.mock import patch
+        db_path = self.tmp / "test_launcher" / "state.db"
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        report = {"actions": []}
+
+        with patch("launcher.watch.watch_loop") as mock_watch:
+            actions = service.drain_launcher_queues([db_path], report=report)
+
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]["kind"], "launcher-queue-drained")
+        self.assertEqual(actions[0]["status"], "ok")
+        self.assertEqual(actions[0]["db"], str(db_path))
+        self.assertEqual(len(report["actions"]), 1)
+        self.assertEqual(report["actions"][0]["kind"], "launcher-queue-drained")
+
+        mock_watch.assert_called_once()
+        drain_args, kwargs = mock_watch.call_args
+        self.assertEqual(kwargs.get("max_passes"), 1)
+        self.assertEqual(drain_args[0].backend, "task-units")
+        self.assertEqual(drain_args[0].wait_for_review, "dependencies")
+        self.assertEqual(drain_args[0].config_dir, str(db_path.parent))
+
+    def test_drain_launcher_queues_catches_exception_gracefully(self):
+        """drain_launcher_queues catches exceptions and records error status."""
+        from unittest.mock import patch
+        db_path = self.tmp / "test_launcher" / "state.db"
+        report = {"actions": []}
+
+        with patch("launcher.watch.watch_loop", side_effect=RuntimeError("simulated watcher crash")):
+            actions = service.drain_launcher_queues([db_path], report=report)
+
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]["kind"], "launcher-queue-drained")
+        self.assertEqual(actions[0]["status"], "error")
+        self.assertIn("simulated watcher crash", actions[0]["error"])
+        self.assertEqual(len(report["actions"]), 1)
+        self.assertEqual(report["actions"][0]["status"], "error")
+
 
 if __name__ == "__main__":
     unittest.main()
+
