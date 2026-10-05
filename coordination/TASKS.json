@@ -5213,9 +5213,9 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "status": "in_progress",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T15:42:00.000000+00:00",
+      "updated_at": "2026-10-05T15:42:25.429160+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Distinct review of commit 02ac777 resulted in REQUEST_CHANGES due to synthetic evidence in ingest_launcher_db. Followup commit 156752b eliminated all 4 synthetic fields, enforced real task_paths file byte SHA-256 verification, and segregated imported DB tasks (autonomy_acceptance_eligible=False). Verified 79/79 tests pass. Distinct review verdict ACCEPT issued (message 01a10cba-86f3). Launches held under 50-GiB floor.",
+      "next_action": "Anti-spoofing and genuine native evidence extraction delivered on 156752b and ACCEPTED by QL head (receipt 01a10cba-86f3). All 79 supervision tests pass. Gated on host root disk floor (measured free: 50283888640 bytes / 46.8305 GiB < 50 GiB); launches held under 50 GiB floor.",
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
@@ -5227,15 +5227,17 @@
         "scripts/supervision/terminal_consumer.py",
         "scripts/supervision/test_terminal_consumer.py",
         "scripts/supervision/test_failure_recovery.py",
-        "research/antigravity/reviews/REV-SUPERVISION-FAILURE-RECOVERY-530C10C.md"
+        "research/antigravity/reviews/REV-SUPERVISION-FAILURE-RECOVERY-530C10C.md",
+        "research/antigravity/reviews/REV-SUPERVISION-ANTI-SPOOFING-156752B.md"
       ],
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "reviewer": "quota-launcher-head-gemini (a86056b5-8b6b-403a-9b8f-6f0b49308959)",
-      "accepted_at": "2026-10-05T15:20:20Z",
-      "commit": "530c10c",
-      "tests": "79/79 supervision tests pass in 0.92s (scripts/supervision/test_failure_recovery.py, test_terminal_consumer.py, test_service.py)",
+      "accepted_at": "2026-10-05T15:41:53Z",
+      "commit": "156752bf51d718226ba0748fe4ba16c4955f5342",
+      "tests": "79/79 supervision tests pass in 0.92s. Strict anti-spoofing, real artifact SHA verification from SQLite task_paths, UUID validation, and imported-db-accepted segregation verified.",
       "reviewed_commit": "156752bf51d718226ba0748fe4ba16c4955f5342",
-      "verdict": "ACCEPTED"
+      "verdict": "ACCEPTED",
+      "review_receipt": "01a10cba-86f3-74a2-86b6-85ca0cbf1ea2"
     },
     {
       "id": "REMOTE-AUTONOMY-REVIEW-1830",
