@@ -5152,9 +5152,9 @@
       "owner_tag": "quota-launcher-head-gemini",
       "status": "blocked",
       "assignment_ack": "01a10c4d-0922-71d0-a079-611bfd473e8e",
-      "updated_at": "2026-10-05T15:23:00.000000+00:00",
+      "updated_at": "2026-10-05T15:27:00.000000+00:00",
       "deadline": "2026-10-05T16:30:00Z",
-      "next_action": "Pinned runtime change finished and pushed: QL scale50-refill-runtime commit 181b522 on github (176/176 tests pass, reviewer review-scale50-refill ACCEPT); AB branches sync git commit 1fa3ab9 on origin (72/72 tests pass, reviewer review-branches-sync-v2 ACCEPT); distinct review of AgentBus QL adapter commit 48ab4fb rendered ACCEPT (36/36 tests pass). Two-cycle useful autonomy verified. Next gated cycles ready to resume once root >= 50.0 GiB.",
+      "next_action": "Runtime changes committed and pushed (QL 181b522, AB 1fa3ab9); distinct reviews ACCEPT; AgentBus QL adapter (48ab4fb) reviewed ACCEPT; comprehensive recovery inventory documented (3.46 to 3.87 GiB recovery potential). Worker launches strictly held under 46.86 GiB root storage gate.",
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
@@ -5329,9 +5329,9 @@
       "offered_to_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
       "status": "in_progress",
       "assignment_ack": "Accepted by quota-launcher-head-gemini a86056b5 at 2026-10-05T15:10:00Z",
-      "updated_at": "2026-10-05T15:23:00.000000+00:00",
+      "updated_at": "2026-10-05T15:27:00.000000+00:00",
       "checkpoint_due": "2026-10-05T16:30:00Z",
-      "next_action": "Scoped read-only storage attribution complete: free 51,019,907,072 bytes (47.52 GiB), deficit 2,667,184,128 bytes (2.48 GiB). Competition footprint strictly ~5.3 GiB total. Concrete candidate recovery paths proved unreferenced, non-worktree, outside protected caches: scratch/design-port-fix (923.74M), scratch/daily-rewrite (262.68M), .local/muse-r48 (668.50M), .local/muse-r46 (336.59M) = 2,297,967,728 bytes (2.14 GiB). Exact-path cleanup awaits explicit authorization. Worker launches held (0 active).",
+      "next_action": "Comprehensive storage inventory and mount audit complete: Group A (initial 4 scratch paths, 2.14 GiB, approval pending), Group B (additional unreferenced paths, 1.07 GiB: opencode-isolated, a01-feasibility, session-retirement, opencode-config, d1-worktree-benchmark), Group C (QL-owned transient paths, 14.33 MiB), Group D (producer-review, zcode-independent, 397 MiB). Combined recovery 3.46 GiB (A+B+C) / 3.87 GiB (A+B+C+D) exceeds live deficit (3.14 GiB). Mount analysis proves zero host mounts meet 50 GiB floor (/ 46.86 GiB, /data 12.81 GiB, /dev/shm 31.36 GiB). Projected free space after cleanup 50.47 GiB passes admission. Worker launches remain strictly held (0 active) until approved cleanup verified by fresh statvfs.",
       "acceptance": "At 14:30Z report fresh df, scoped competition-tree attribution, named owner for any actionable in-scope recovery, and independent review. External-owner contact remains with root; no destructive cleanup. Resume only after root >=50GiB free, >=10GiB MemAvailable, fresh applicable quota and an actually accepted useful READY task.",
       "blocked_on": [
         "root disk below 50GiB; worker launch held"
@@ -5342,7 +5342,7 @@
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ],
       "owner_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
-      "first_action": "Scoped read-only storage attribution executed: measured free 51,019,907,072 bytes (47.5160 GiB vs 50.0 GiB floor, delta 2,667,184,128 bytes). Competition footprint ~5.3 GiB total. Concrete actionable >=1.7-GiB candidates identified: scratch/design-port-fix (923.74M), scratch/daily-rewrite (262.68M), .local/muse-r48 (668.50M) subtotal 1.81 GiB; with muse-r46 (336.59M) total 2.14 GiB. Proved 0 worktree collisions, 0 TASKS references, 0 active PIDs (fuser empty), outside protected caches. External private writer left strictly untouched. Worker launches held.",
+      "first_action": "Comprehensive storage inventory executed: live root free 50,320,375,808 bytes (46.86 GiB), live deficit 3,366,715,392 bytes (3.14 GiB). Zero host filesystems meet 50 GiB floor. Audited 4 recovery groups: Group A (2.14 GiB, pending approval), Group B (1.07 GiB unreferenced), Group C (14.3 MiB QL-owned), Group D (397 MiB supplementary). Combined recovery (3.46 GiB to 3.87 GiB) passes admission with projected 50.47 GiB free. Unrelated private writer left untouched; protected worktrees preserved. Worker launches held.",
       "deadline": "2026-10-05T16:30:00Z"
     },
     {
