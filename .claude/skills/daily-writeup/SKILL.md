@@ -22,7 +22,15 @@ The daily report is a short story for human readers who don't follow the experim
 
 After step 2, the article is ready. Principals and heads don't re-review or edit it. The coordinating agent only confirms that both sessions ran on Opus and that `check.json` exists, then runs `python3 website/publish_daily.py YYYY-MM-DD --publish`, commits the daily files and assets, and pushes.
 
-The coordinator then sends the laptop orchestrator one message saying the article is ready, with its public link. The laptop orchestrator only shows it to Alexey. It doesn't review, edit or summarise it.
+The coordinator then sends the laptop orchestrator one message with the article's public link and the social summary below. In the morning, the laptop orchestrator shows Alexey the link and the summary, ready to copy. It doesn't review or edit either one.
+
+## Social summary
+
+The Opus writer also drafts a short summary Alexey can post on X and LinkedIn, and the check pass checks it too. Save it privately as `.local/journal/YYYY-MM-DD/social.md`, never in the public repo, because complete social posts aren't published there.
+
+- X: at most 280 characters, counting the link as 23. Give the day's story in two or three short lines, then the article link.
+- LinkedIn: 120 to 200 words in first person. One sentence on what the experiment is, a short list of what worked, an honest sentence on what hasn't, then the link.
+- Same rules as the article: plain words, no bold, no hashtags, no timestamps and no jargon. Run `stylint --ignore bare-url` on the file, because social posts need bare links.
 
 ## Story arc
 
