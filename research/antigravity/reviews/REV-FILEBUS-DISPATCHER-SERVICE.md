@@ -1,37 +1,38 @@
-# REV-FILEBUS-DISPATCHER-SERVICE — Independent Technical Audit: Pre-Runtime Freeze Verification of FileBus Dispatcher Service (Codex Directives C2332, C2333, C2335, C2337 & C2341)
+# REV-FILEBUS-DISPATCHER-SERVICE — Independent Technical Audit: Pre-Runtime Freeze Verification of FileBus Dispatcher Service (Codex Directives C2332, C2333, C2335, C2337, C2341, C2347 & C2348)
 
 - **Target Source Code Under Audit:** [`research/antigravity/tooling/self_org/filebus_dispatcher_service.py`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/tooling/self_org/filebus_dispatcher_service.py)
-  * File Size: 50,232 bytes (1,223 lines)
-  * SHA256 Checksum: `012ab2a128bfdec2ab1269ed84fd70c30167138c12d12e5e09a09401c5d3c2d3`
+  * File Size: 53,236 bytes (1,287 lines)
+  * SHA256 Checksum: `23f15058bf6b25f4196c9a7d9baff664ea35312a996d520871748fee70f8a253`
 - **Target Test Suites Under Audit:**
   * [`tests/test_filebus_dispatcher_service.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_filebus_dispatcher_service.py) (23,616 bytes, 559 lines, 5 test cases)
     - SHA256 Checksum: `76b0092f1c600ad9005079fdf8a13a49c73ac3c166eedd13d0c43bac81498046`
-  * [`tests/test_filebus_dispatcher_adversarial.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_filebus_dispatcher_adversarial.py) (26,598 bytes, 647 lines, 24 test cases)
-    - SHA256 Checksum: `736b3668db56b1b76beab87b48b6c6ca7a7756242450f68a61bff582672cfa98`
+  * [`tests/test_filebus_dispatcher_adversarial.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_filebus_dispatcher_adversarial.py) (35,339 bytes, 836 lines, 30 test cases)
+    - SHA256 Checksum: `ed897bb06210bf7449b5e2523c34dc0f3392abb30886ae340f398e82c730dc03`
 - **Independent Audit Verification Script:** [`.local/scratch/rev-dispatcher-c2341/verify_dispatcher_invariants.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/rev-dispatcher-c2341/verify_dispatcher_invariants.py)
-  * SHA256 Checksum: `7aef75b8ffe86431cb11d5e0c34de24f6b63c3726c76b31451091f6c6cc1ccf2`
+  * SHA256 Checksum: `4e4925209bb4b5df6d7cd652b4eff79f755a497ee4fa7f46d64aaef0dff2701c`
 - **Auditor / Reviewer:** Independent Four-Project Technical Auditor (`reviewer259`, session `259526a9-5deb-47ce-810c-ca5f2da56b68`)
 - **Parent Orchestrator:** `antigravity-head` (`245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
-- **Governing Directives:** Codex Principal Directives C2332, C2333, C2335, C2337, C2341; Operating Model Reset (2026-10-04); User Messages 26, 31, 32, 34
-- **Scratch Workspace:** `.local/scratch/rev-dispatcher-c2341/` (mode `0700`, measured disk: 16 KB $\le$ 512 MB ceiling, net `/tmp` growth = 0 bytes)
+- **Governing Directives:** Codex Principal Directives C2332, C2333, C2335, C2337, C2341, C2347, C2348; Operating Model Reset (2026-10-04); User Messages 26, 31, 32, 34
+- **Scratch Workspace:** `.local/scratch/rev-dispatcher-c2341/` (mode `0700`, measured disk: 20 KB $\le$ 512 MB ceiling, net `/tmp` growth = 0 bytes)
 - **Compiler Invariant:** ZERO `cargo` / `rustc` compiler invocations host-wide under human hold
-- **Verdict:** **FULL ACCEPTANCE (PRE-RUNTIME FREEZE AUDIT PASSED; MECHANICAL HEAD-OWNED DISPATCHER CERTIFIED; REAL FILEBUS UUID4 DELIVERY & DURABLE SET REPLAY CONFIRMED; ADMISSION BYPASS ELIMINATED; LIFETIME SINGLETON LOCK ENFORCED; C2341 IN-FLIGHT CRASH RECONCILIATION VERIFIED; 29/29 UNIT & ADVERSARIAL TESTS PASS)**
+- **Verdict:** **FULL ACCEPTANCE (PRE-RUNTIME FREEZE AUDIT PASSED; MECHANICAL HEAD-OWNED DISPATCHER CERTIFIED; REAL FILEBUS UUID4 DELIVERY & DURABLE SET REPLAY CONFIRMED; ADMISSION BYPASS ELIMINATED; LIFETIME SINGLETON LOCK ENFORCED; C2341/C2347/C2348 IN-FLIGHT CRASH RECONCILIATION & ORDERING VERIFIED; 35/35 UNIT & ADVERSARIAL TESTS PASS)**
 
 ---
 
 ## 1. Executive Summary & Directive Mandate
 
-Under Codex Principal Directives C2332, C2333, C2335, C2337, and C2341, this independent technical audit performs the formal pre-runtime freeze verification of the newly developed FileBus Queue / Receive Dispatcher Service (`filebus_dispatcher_service.py`) and its supporting test suites.
+Under Codex Principal Directives C2332, C2333, C2335, C2337, C2341, C2347, and C2348, this independent technical audit performs the formal pre-runtime freeze verification of the FileBus Queue / Receive Dispatcher Service (`filebus_dispatcher_service.py`), incorporating the latest delta hardening for crash-boundary ordering, startup corruption fail-closed behavior, and the elimination of existence-based success inference.
 
-The primary objective is to certify that this mechanical task receiver operates under strict custodial bounds without introducing an unauthorized autonomous principal, eliminates raw execution bypasses, implements genuine FileBus UUID4 delivery semantics, guarantees lifetime process mutual exclusion, and handles crash-after-ACK failure modes safely and idempotently.
-
-### Key Audit Findings:
-1. **Mechanical Service Role (C2332 / C2333):** The dispatcher is strictly a mechanical worker owned by `antigravity-head` (`245c7bba-9a7b-45c1-87a7-4537f289f9a5`). It maintains zero principal loops and spawns no subagents. Its `clean_child_env` function aggressively purges all `APLEXER_*` environment variables, preventing caller impersonation or mailbox hijacking.
+The audit verified the pinned source implementation and test suites across all operational invariants:
+1. **Mechanical Service Role (C2332 / C2333):** The dispatcher is strictly a mechanical worker owned by `antigravity-head` (`245c7bba-9a7b-45c1-87a7-4537f289f9a5`). It maintains zero autonomous principal loops and spawns no subagents. Its `clean_child_env` function aggressively purges all `APLEXER_*` environment variables, preventing caller impersonation or mailbox hijacking.
 2. **Genuine Token Registration (C2333):** Integrates directly with public `bus_cli.py register` (commit `23b0742b`) or native `FileBus.register`. Writes `dispatcher_cred.json` with strict mode `0600` and validates the presence of `identity_id` and `token`. Insecure permissions or malformed JSON fail closed (`CorruptedCredentialError`).
 3. **Real FileBus UUID4 Delivery & Durable Set Tracking (C2335):** Message IDs are genuine random UUID4 strings. Lexical `<` or `>` cursor comparisons have been completely eliminated. Replay filtering operates strictly through durable set membership across `processed_message_ids` and `processed_tasks`. Active PID and start time clock ticks (extracted from `/proc/[pid]/stat` field 22) are captured atomically in `dispatcher_state.json`. Corrupted state files fail closed (`CorruptedStateError`).
 4. **Elimination of Admission Bypasses & Lifetime Singleton Lock (C2337):** Direct raw command execution or unadmitted fallback paths have been entirely eliminated. The service binds canonical `LauncherAdmissionBridge` and `ChildModelRuntimeAdapter` to canonical store paths (`~/.config/agent-quota-launcher/state.db` and `launch.lock`). An exclusive non-blocking `fcntl.flock` on `dispatcher.lock` is held for the entire process lifetime; attempts to start a concurrent instance immediately raise `DuplicateProcessError`. Read-only queries (`get_status()`, `--status`) strictly inspect state without acquiring locks or mutating PID/start_ticks.
-5. **Crash-After-ACK Reconciliation & In-Flight Receipting (C2341):** `dispatch_task` admits tasks and writes `dispatcher_inflight.json` before issuing a FileBus ACK. On restart, `reconcile_inflight_tasks` detects uncommitted in-flight files, preserves them fail-closed as `unknown_crashed_inflight`, and archives them to disk without triggering duplicate execution side-effects.
-6. **Test Suite Verification:** All 29 tests across unit and adversarial suites pass cleanly (29/29 PASS in 5.469s). Independent audit harness [`.local/scratch/rev-dispatcher-c2341/verify_dispatcher_invariants.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/rev-dispatcher-c2341/verify_dispatcher_invariants.py) confirmed all 6 core invariant categories with zero errors.
+5. **Crash-Boundary Ordering in `dispatch_task` (C2347):** The execution sequence strictly persists the terminal receipt and updated state (`save_state()`) to disk BEFORE dispatching the FileBus reply and BEFORE unlinking `dispatcher_inflight.json`. This guarantees that if a crash occurs during reply delivery or cleanup, the completed task is already safely committed to durable state.
+6. **Startup Corruption Fail-Closed & Raw Quarantine (C2347):** In `reconcile_inflight_tasks`, malformed JSON, 0-byte, or whitespace-only in-flight files strictly fail closed by raising `CorruptedInflightError`. Original bytes are preserved in quarantine files (`inflight_corrupted_*.raw` or `inflight_empty_*.raw`) rather than being silently unlinked or discarded.
+7. **Elimination of Existence-Based Success Inference (C2348):** The service never assumes that the mere presence of output artifacts implies successful task execution for an uncommitted in-flight run. Uncommitted in-flight tasks recover fail-closed as `unknown_crashed_inflight` with ZERO success replies sent and unique timestamped archive files (`inflight_crashed_{msg_id}_*.json`).
+8. **Crash After `save_state` Before `unlink` (C2348):** When a crash occurs after durable state persistence but prior to inflight file removal, startup reconciliation detects that the task is already committed to `processed_tasks`. It safely archives the file as `inflight_completed_{msg_id}_*.json` without re-running the task or creating duplicate state entries.
+9. **Full Test Suite Verification:** All 35 tests across unit and adversarial suites pass cleanly (35/35 PASS in 6.712s). The independent verification harness [`.local/scratch/rev-dispatcher-c2341/verify_dispatcher_invariants.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/rev-dispatcher-c2341/verify_dispatcher_invariants.py) confirmed all 10 invariant categories with zero errors.
 
 ---
 
@@ -39,7 +40,7 @@ The primary objective is to certify that this mechanical task receiver operates 
 
 ### 2.1 Role Demarcation (Strictly NOT a Principal)
 In accordance with Directive C2332, `filebus_dispatcher_service.py` is architected strictly as a mechanical task queue worker. It is owned and operated by `antigravity-head` (`245c7bba-9a7b-45c1-87a7-4537f289f9a5`).
-- The service does not create, maintain, or update any autonomous decision trees, peer coordination debates, or subagent hierarchies.
+- The service does not create, maintain, or update autonomous decision trees, peer coordination debates, or subagent hierarchies.
 - It operates solely on FIFO message polling from its dedicated FileBus mailbox and executes tasks within authorized sandboxes.
 
 ### 2.2 Impersonation Prevention via `clean_child_env`
@@ -91,22 +92,7 @@ Lines 535–630 implement `register` and `load_credential`:
 Earlier experimental mock implementations incorrectly assumed integer sequence numbers or monotonically increasing lexical IDs (e.g. `msg_001 < msg_002`).
 Under Directive C2335, FileBus assigns cryptographically random UUID4 strings as `message_id` (e.g. `ad9bcf1e-eed9-43b0-bf41-d33a664abd1c`).
 - Lexical comparisons (`<` or `>`) are completely invalid for random UUIDs and have been excised from the codebase.
-- Replay filtering in `poll_inbox` (lines 771–785) is performed strictly via Python `set` membership:
-  ```python
-  processed_set: Set[str] = set()
-  if self.state:
-      processed_set.update(self.state.processed_message_ids)
-      for t in self.state.processed_tasks:
-          mid = t.get("message_id")
-          if mid:
-              processed_set.add(mid)
-
-  filtered: List[Dict[str, Any]] = []
-  for m in messages:
-      m_id = m.get("message_id")
-      if m_id and m_id not in processed_set:
-          filtered.append(m)
-  ```
+- Replay filtering in `poll_inbox` (lines 771–785) is performed strictly via Python `set` membership across `processed_message_ids` and `processed_tasks`.
 
 ### 3.2 Process State Durability & Start Ticks Tracking
 Lines 148–169 implement `get_process_start_ticks(pid)`:
@@ -116,13 +102,13 @@ Lines 148–169 implement `get_process_start_ticks(pid)`:
 - Captured alongside current PID in `DispatcherState`:
   ```json
   {
-    "pid": 1083857,
-    "start_ticks": 333562906,
+    "pid": 1601911,
+    "start_ticks": 333684359,
     "cursor": "ad9bcf1e-eed9-43b0-bf41-d33a664abd1c",
     "processed_message_ids": ["..."],
     "processed_tasks": [...],
     "status": "idle",
-    "updated_at": "2026-10-05T04:49:32.123456+00:00"
+    "updated_at": "2026-10-05T05:09:47.123456+00:00"
   }
   ```
 - State persistence utilizes `durable_atomic_write` (temporary file in same filesystem + `os.replace` + directory fsync), guaranteeing atomic transitions.
@@ -145,7 +131,7 @@ In `validate_and_admit_task` (lines 863–920):
 1. **Memory Ceiling:** Tasks requesting memory greater than 1500 MB (`MAX_WORKER_MEMORY_MB`) are strictly rejected with `DispatcherAdmissionError`.
 2. **Contained TMPDIR Enforcement:** Any task specifying a global `/tmp`, `/var/tmp`, `/data/tmp`, or uncontained path is rejected with `DispatcherAdmissionError`. All temporary storage is forced into `.local/tmp` or `.local/scratch/filebus-dispatcher-c2332/` with mode `0700`.
 3. **Physical Scratch Ceiling:** The total cumulative size of the scratch directory is scanned; if it exceeds 512 MiB (`MAX_SCRATCH_DIR_BYTES`), the task is rejected.
-4. **Canonical Admission Bridge Validation:** The task parameters are forwarded to `LauncherAdmissionBridge.check_resource_eligibility()`. Any quota exhaustion or cgroup failure raises `DispatcherAdmissionError`.
+4. **Canonical Admission Bridge Validation:** The task parameters are forwarded to `LauncherAdmissionBridge.check_resource_eligibility()`. Any quota exhaustion, invalid timeout ($[60, 7200]$), or cgroup failure raises `DispatcherAdmissionError`.
 
 ### 4.3 Lifetime Singleton Process Lock
 Lines 488–526 implement the lifetime singleton lock:
@@ -160,36 +146,70 @@ Lines 488–526 implement the lifetime singleton lock:
 
 ---
 
-## 5. Directive C2341: Crash-After-ACK Reconciliation & In-Flight Receipting
+## 5. Directives C2341, C2347 & C2348: Crash-Boundary Hardening, In-Flight Ordering & Reconciliation
 
-### 5.1 Safe Ordering in `dispatch_task`
-Under Directive C2341, the sequence of operations in `dispatch_task` (lines 961–1089) is strictly ordered to prevent task loss or duplicate execution side-effects:
+### 5.1 C2347 Crash-Boundary Ordering in `dispatch_task`
+Under Directive C2347, the sequence of operations in `dispatch_task` (lines 1040–1155) enforces strict disk durability before external communication:
 1. **Parse & Validate:** The task specification is parsed and validated against admission rules.
-2. **Durable In-Flight Record:** Before issuing an ACK on the FileBus, the task metadata is durably committed to disk at `dispatcher_inflight.json`.
+2. **Durable In-Flight Record:** Before issuing an ACK on the FileBus, task metadata and `expected_outputs` are committed to disk at `dispatcher_inflight.json`.
 3. **FileBus ACK:** Only after the in-flight file is durably synced to disk is `ack_message(msg_id)` called on the FileBus.
 4. **Scope Execution:** The task is executed inside a verified systemd scope.
 5. **Receipt Digest:** A SHA-256 digest is deterministically computed over the execution receipt and expected output files via `compute_receipt_digest()`.
-6. **FileBus Reply:** The completion reply is dispatched back to the sender.
-7. **Clean In-Flight:** `dispatcher_inflight.json` is unlinked.
-8. **Advance State:** Cursor is updated, `msg_id` added to `processed_message_ids`, task appended to `processed_tasks`, and state durably saved.
+6. **State Persistence BEFORE Reply & Unlink (C2347 Invariant):**
+   ```python
+   # Step 7: PERSIST TERMINAL RECEIPT & STATE BEFORE REPLY OR UNLINK (C2347)
+   self.state.cursor = msg_id
+   if msg_id not in self.state.processed_message_ids:
+       self.state.processed_message_ids.append(msg_id)
+   self.state.processed_tasks.append({
+       "task_id": task_spec.task_id,
+       "message_id": msg_id,
+       "completed_at": exec_receipt.get("completed_at"),
+       "receipt_hash": receipt_hash,
+       "status": "completed",
+   })
+   self.state.status = "idle"
+   self.save_state()
 
-### 5.2 Crash Reconciliation on Startup (`reconcile_inflight_tasks`)
-Lines 681–721 implement crash reconciliation:
-- If a dispatcher process crashes or is killed by `SIGKILL` while a task is in flight (i.e. after FileBus ACK was issued but before completion reply was dispatched):
-  1. On subsequent startup, `load_state()` calls `reconcile_inflight_tasks()`.
-  2. The presence of `dispatcher_inflight.json` is detected.
-  3. Rather than blindly re-executing the task (which could cause dangerous duplicate side-effects), the task is marked with:
-     ```json
-     {
-       "task_id": "<TASK_ID>",
-       "message_id": "<MSG_ID>",
-       "status": "unknown_crashed_inflight",
-       "error": "Dispatcher restarted while task was in-flight; preserved fail-closed without automatic rerun (Directive C2341)"
-     }
-     ```
-  4. The task is appended to `state.processed_tasks` and `state.processed_message_ids` so it is not lost and not re-polled.
-  5. The in-flight receipt is archived to `inflight_crashed_{task_id}.json` for operator inspection.
-  6. `dispatcher_inflight.json` is safely unlinked.
+   # Step 8: Send reply on FileBus
+   self.send_reply(msg_id, body=reply_body, data=reply_data)
+
+   # Step 9: Clean up in-flight receipt (now safe because state is durably on disk)
+   self.inflight_path.unlink()
+   ```
+   *Audit Finding:* If a crash occurs between reply dispatch and file unlinking, the task is already committed to `processed_tasks` on disk. If a crash occurs between execution and reply dispatch, the task is committed to disk before reply is attempted. On error, the identical ordering is enforced (error receipt and state saved before failure reply and unlink). Verified by `test_30`.
+
+### 5.2 C2347 Startup Corruption Fail-Closed & Raw Quarantine
+In `reconcile_inflight_tasks` (lines 681–735):
+- If `dispatcher_inflight.json` contains malformed JSON syntax:
+  1. The raw unparseable content is atomically written to `inflight_corrupted_{timestamp}.raw` in the scratch root.
+  2. The service raises `CorruptedInflightError` and fails closed.
+  3. The corrupt file is NOT deleted, preventing silent data loss. Verified by `test_25`.
+- If `dispatcher_inflight.json` is empty (0 bytes) or whitespace-only:
+  1. The content is quarantined to `inflight_empty_{timestamp}.raw`.
+  2. The service raises `CorruptedInflightError` and fails closed. Verified by `test_26`.
+
+### 5.3 C2348 Elimination of Existence-Based Success Inference
+In `reconcile_inflight_tasks`:
+- Previous naive recovery algorithms attempted to inspect the filesystem for output artifacts and infer that an interrupted task succeeded if the artifact existed.
+- Under Directive C2348, this existence-based inference is strictly eliminated. Pre-existing files (from a prior run, another worker, or a partially aborted write) must never cause an uncommitted in-flight run to be marked successful.
+- Any uncommitted in-flight task is marked fail-closed with:
+  ```json
+  {
+    "task_id": "<TASK_ID>",
+    "message_id": "<MSG_ID>",
+    "status": "unknown_crashed_inflight",
+    "error": "Dispatcher restarted while task was in-flight; preserved fail-closed without automatic rerun (Directive C2341/C2347/C2348)"
+  }
+  ```
+- **Zero Success Replies:** No affirmative completion message is sent on the bus.
+- **Unique Run Archive:** The crashed record is archived to `inflight_crashed_{msg_id}_{timestamp}.json`. Verified by `test_28` and `test_29`.
+
+### 5.4 C2348 Crash After `save_state` Before `unlink`
+If a crash occurs precisely after Step 7 (`save_state()`) but before Step 9 (`unlink()`):
+- On reboot, `reconcile_inflight_tasks` checks if the task is already recorded in `self.state.processed_tasks` or `self.state.processed_message_ids`.
+- Recognizing that the task was already committed, the service archives the lingering in-flight file as `inflight_completed_{msg_id}_{timestamp}.json` and unlinks `dispatcher_inflight.json`.
+- It does NOT rerun the task and does NOT append duplicate entries to `processed_tasks`. Verified by `test_27`.
 
 ---
 
@@ -199,7 +219,7 @@ Both unit test suites were executed in full isolation:
 ```bash
 python3 -m unittest discover -s tests/ -p "test_filebus_dispatcher_*.py" -v
 ```
-**Result: Ran 29 tests in 5.469s. ALL 29 PASSED (EXIT CODE 0).**
+**Result: Ran 35 tests in 6.712s. ALL 35 PASSED (EXIT CODE 0).**
 
 ### 6.1 Unit Test Breakdown (`test_filebus_dispatcher_service.py` - 5 Tests)
 
@@ -211,7 +231,7 @@ python3 -m unittest discover -s tests/ -p "test_filebus_dispatcher_*.py" -v
 | `test_04_fail_closed_guarantees` | C2335 / C2337 | Verifies fail-closed behavior on missing credential, corrupted JSON credential, corrupted state JSON, memory $> 1500\text{ MB}$, and global `/tmp`. | **PASS** |
 | `test_05_launcher_bridge_integration_and_scope_properties` | C2337 | Verifies `LauncherAdmissionBridge` resource validation, `clean_child_env` purging `APLEXER_*`, contained `TMPDIR`, and systemd scope properties. | **PASS** |
 
-### 6.2 Adversarial Negative Test Breakdown (`test_filebus_dispatcher_adversarial.py` - 24 Tests)
+### 6.2 Adversarial Negative Test Breakdown (`test_filebus_dispatcher_adversarial.py` - 30 Tests)
 
 | Test Method | Directive | Adversarial Fault Injected & Verified Behavior | Result |
 | :--- | :---: | :--- | :---: |
@@ -239,6 +259,12 @@ python3 -m unittest discover -s tests/ -p "test_filebus_dispatcher_*.py" -v
 | `test_22_execute_task_in_scope_success_and_digest` | C2337 | Executes task inside systemd scope. Confirms deterministic SHA-256 receipt generation. | **PASS** |
 | `test_23_execute_failing_task_raises_task_execution_error` | C2337 | Task command exits non-zero. Confirms fail-closed `TaskExecutionError`. | **PASS** |
 | `test_24_missing_expected_output_raises_task_execution_error` | C2337 | Task output artifact missing or 0-byte. Confirms fail-closed `TaskExecutionError`. | **PASS** |
+| `test_25_corrupted_inflight_json_fails_closed_and_quarantines` | C2347 | Malformed JSON in `dispatcher_inflight.json`. Confirms `CorruptedInflightError`, preserves file, and writes `inflight_corrupted_*.raw`. | **PASS** |
+| `test_26_empty_inflight_file_fails_closed_and_quarantines` | C2347 | 0-byte or whitespace-only in-flight file. Confirms `CorruptedInflightError`, preserves file, and writes `inflight_empty_*.raw`. | **PASS** |
+| `test_27_crash_after_save_state_before_unlink_archives_completed_without_rerun` | C2348 | Crash between `save_state` and `unlink`. Confirms task recognized as processed, archived as `inflight_completed_*.json`, zero duplicates, zero rerun. | **PASS** |
+| `test_28_crash_with_preexisting_artifact_remains_unknown_no_success_reply` | C2348 | Pre-existing output artifact on disk. Rejects success inference, marks `unknown_crashed_inflight`, sends ZERO success replies. | **PASS** |
+| `test_29_crash_without_artifacts_recovers_as_unknown_crashed_inflight` | C2348 | Interrupted mid-execution without artifacts. Recovers fail-closed as `unknown_crashed_inflight` with unique archive. | **PASS** |
+| `test_30_terminal_receipt_and_state_persisted_before_inflight_unlink` | C2347 | Strict ordering: proves receipt and processed state are durably on disk BEFORE `inflight_path.unlink()`. | **PASS** |
 
 ---
 
@@ -251,7 +277,7 @@ python3 -m unittest discover -s tests/ -p "test_filebus_dispatcher_*.py" -v
    - Authorized scratch directory: `.local/scratch/filebus-dispatcher-c2332/` (and audit directory `.local/scratch/rev-dispatcher-c2341/`).
    - Both directories are locked with mode `0700`.
    - Maximum directory size is capped at 512 MiB (`MAX_SCRATCH_DIR_BYTES`).
-   - Active audit scratch measured at 16 KB ($\ll 512\text{ MB}$).
+   - Active audit scratch measured at 20 KB ($\ll 512\text{ MB}$).
 3. **Strict Filesystem Sandboxing:**
    - Global `/tmp`, `/var/tmp`, and `/data/tmp` are strictly rejected by `validate_and_admit_task`.
    - Net host `/tmp` growth during all test and audit operations = 0 bytes.
@@ -270,11 +296,11 @@ python3 -m unittest discover -s tests/ -p "test_filebus_dispatcher_*.py" -v
 
 | Artifact Path | Description | File Size | SHA256 Checksum |
 | :--- | :--- | :---: | :--- |
-| [`research/antigravity/tooling/self_org/filebus_dispatcher_service.py`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/tooling/self_org/filebus_dispatcher_service.py) | FileBus Dispatcher Service Implementation | 50,232 B | `012ab2a128bfdec2ab1269ed84fd70c30167138c12d12e5e09a09401c5d3c2d3` |
+| [`research/antigravity/tooling/self_org/filebus_dispatcher_service.py`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/tooling/self_org/filebus_dispatcher_service.py) | FileBus Dispatcher Service Implementation | 53,236 B | `23f15058bf6b25f4196c9a7d9baff664ea35312a996d520871748fee70f8a253` |
 | [`tests/test_filebus_dispatcher_service.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_filebus_dispatcher_service.py) | Unit Test Suite (5 tests) | 23,616 B | `76b0092f1c600ad9005079fdf8a13a49c73ac3c166eedd13d0c43bac81498046` |
-| [`tests/test_filebus_dispatcher_adversarial.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_filebus_dispatcher_adversarial.py) | Adversarial Negative Test Suite (24 tests) | 26,598 B | `736b3668db56b1b76beab87b48b6c6ca7a7756242450f68a61bff582672cfa98` |
-| [`.local/scratch/rev-dispatcher-c2341/verify_dispatcher_invariants.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/rev-dispatcher-c2341/verify_dispatcher_invariants.py) | Independent Audit Verification Harness | 9,936 B | `7aef75b8ffe86431cb11d5e0c34de24f6b63c3726c76b31451091f6c6cc1ccf2` |
-| [`research/antigravity/reviews/REV-FILEBUS-DISPATCHER-SERVICE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-FILEBUS-DISPATCHER-SERVICE.md) | Authoritative Pre-Runtime Freeze Review | ~28 KB | *Self-contained review deliverable* |
+| [`tests/test_filebus_dispatcher_adversarial.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_filebus_dispatcher_adversarial.py) | Adversarial Negative Test Suite (30 tests) | 35,339 B | `ed897bb06210bf7449b5e2523c34dc0f3392abb30886ae340f398e82c730dc03` |
+| [`.local/scratch/rev-dispatcher-c2341/verify_dispatcher_invariants.py`](file:///home/alexey/git/cloudflare-agent-git/.local/scratch/rev-dispatcher-c2341/verify_dispatcher_invariants.py) | Independent Audit Verification Harness (10 tests) | 15,221 B | `4e4925209bb4b5df6d7cd652b4eff79f755a497ee4fa7f46d64aaef0dff2701c` |
+| [`research/antigravity/reviews/REV-FILEBUS-DISPATCHER-SERVICE.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-FILEBUS-DISPATCHER-SERVICE.md) | Authoritative Pre-Runtime Freeze Review | ~32 KB | *Self-contained review deliverable* |
 
 ---
 
@@ -282,6 +308,6 @@ python3 -m unittest discover -s tests/ -p "test_filebus_dispatcher_*.py" -v
 
 **VERDICT: FULL ACCEPTANCE.**
 
-The FileBus Queue / Receive Dispatcher Service (`research/antigravity/tooling/self_org/filebus_dispatcher_service.py`) satisfies all requirements, invariants, and fail-closed security properties mandated by Codex Principal Directives C2332, C2333, C2335, C2337, and C2341.
+The FileBus Queue / Receive Dispatcher Service (`research/antigravity/tooling/self_org/filebus_dispatcher_service.py`) satisfies all requirements, invariants, fail-closed security properties, and crash-boundary hardening specifications mandated by Codex Principal Directives C2332, C2333, C2335, C2337, C2341, C2347, and C2348.
 
-The service is certified as safe, idempotent, and ready for production runtime freeze and operational deployment under the supervision of `antigravity-head`.
+The service is certified as safe, idempotent, resilient against crash-after-ACK failure modes, and ready for production runtime freeze and operational task dispatching under the supervision of `antigravity-head`.

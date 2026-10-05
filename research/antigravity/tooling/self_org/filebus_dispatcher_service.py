@@ -132,6 +132,11 @@ class CorruptedStateError(DispatcherError):
     pass
 
 
+class CorruptedInflightError(DispatcherError):
+    """Raised when in-flight task file is corrupted, malformed, or empty (fails closed)."""
+    pass
+
+
 class DispatcherAdmissionError(DispatcherError):
     """Raised when a task violates memory, tmpdir, or resource admission rules."""
     pass
@@ -317,16 +322,14 @@ class TaskSpecification:
         raw_data = msg.get("data")
         if isinstance(raw_data, dict):
             task_dict = raw_data
+        elif isinstance(msg.get("body"), str) and msg["body"].strip().startswith("{"):
+            try:
+                parsed = json.loads(msg["body"])
+                task_dict = parsed if isinstance(parsed, dict) else msg
+            except Exception:
+                task_dict = msg
         else:
-            body_str = msg.get("body", "")
-            if body_str.strip().startswith("{"):
-                try:
-                    parsed = json.loads(body_str)
-                    task_dict = parsed if isinstance(parsed, dict) else {}
-                except Exception:
-                    task_dict = {}
-            else:
-                task_dict = {}
+            task_dict = msg
 
         task_id = str(task_dict.get("task_id") or msg_id)
         cmd = task_dict.get("command_argv") or task_dict.get("command")
@@ -662,6 +665,7 @@ class FileBusDispatcherService:
                 processed_tasks=[],
                 status="idle",
             )
+            self.reconcile_inflight_tasks()
             self.save_state(self.state)
             return self.state
 
@@ -681,44 +685,94 @@ class FileBusDispatcherService:
 
     def reconcile_inflight_tasks(self) -> None:
         """
-        Reconciles in-flight tasks from a crashed or killed dispatcher process (Directive C2341).
+        Reconciles in-flight tasks from a crashed or killed dispatcher process (Directive C2341 / C2347).
         Preserves fail-closed semantics: does NOT re-run the task automatically to avoid duplicate
         side-effects, preserves UNKNOWN state, inspects for existing correlated receipts, and
         records the task in state so it is not dropped or lost.
+        Fails closed with CorruptedInflightError if the in-flight file is corrupted or empty,
+        preserving original bytes without deletion (Directive C2347).
         """
         if not self.inflight_path.exists():
             return
+
+        if self.state is None:
+            self.load_state()
+            return
+
         try:
             content = self.inflight_path.read_text(encoding="utf-8")
-            if not content.strip():
-                self.inflight_path.unlink(missing_ok=True)
-                return
+        except OSError as exc:
+            raise CorruptedInflightError(f"Cannot read in-flight file {self.inflight_path}: {exc}") from exc
+
+        if not content.strip():
+            quarantine = self.scratch_root / f"inflight_empty_{int(time.time())}.raw"
+            try:
+                durable_atomic_write(quarantine, content)
+            except Exception:
+                pass
+            raise CorruptedInflightError(
+                f"In-flight file {self.inflight_path} is empty (0 bytes/whitespace); preserved fail-closed at {quarantine}"
+            )
+
+        try:
             inflight_data = json.loads(content)
-            task_id = inflight_data.get("task_id", "unknown-inflight")
-            message_id = inflight_data.get("message_id")
-            logger.warning(f"Detected in-flight task {task_id} (msg: {message_id}) from previous run.")
+        except json.JSONDecodeError as exc:
+            quarantine = self.scratch_root / f"inflight_corrupted_{int(time.time())}.raw"
+            try:
+                durable_atomic_write(quarantine, content)
+            except Exception:
+                pass
+            raise CorruptedInflightError(
+                f"In-flight file {self.inflight_path} contains malformed JSON: {exc}; preserved fail-closed at {quarantine}"
+            ) from exc
 
-            already_processed = any(t.get("task_id") == task_id for t in self.state.processed_tasks) if self.state else False
+        if not isinstance(inflight_data, dict):
+            quarantine = self.scratch_root / f"inflight_corrupted_{int(time.time())}.raw"
+            try:
+                durable_atomic_write(quarantine, content)
+            except Exception:
+                pass
+            raise CorruptedInflightError(
+                f"In-flight file {self.inflight_path} is not a JSON object; preserved fail-closed at {quarantine}"
+            )
 
-            if not already_processed and self.state:
-                crashed_entry = {
-                    "task_id": task_id,
-                    "message_id": message_id,
-                    "status": "unknown_crashed_inflight",
-                    "error": "Dispatcher restarted while task was in-flight; preserved fail-closed without automatic rerun (Directive C2341)",
-                    "started_at": inflight_data.get("started_at"),
-                    "recovered_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                }
-                self.state.processed_tasks.append(crashed_entry)
-                if message_id and message_id not in self.state.processed_message_ids:
-                    self.state.processed_message_ids.append(message_id)
-                self.state.status = "recovering-inflight"
+        task_id = inflight_data.get("task_id", "unknown-inflight")
+        message_id = inflight_data.get("message_id", "msg-unknown")
+        logger.warning(f"Detected in-flight task {task_id} (msg: {message_id}) from previous run.")
 
-            archive_path = self.scratch_root / f"inflight_crashed_{task_id}.json"
+        # Check if already recorded in processed state (crash occurred after save_state but before unlink)
+        already_processed = any(
+            t.get("task_id") == task_id or (message_id and t.get("message_id") == message_id)
+            for t in self.state.processed_tasks
+        ) if self.state else False
+
+        if already_processed:
+            archive_path = self.scratch_root / f"inflight_completed_{message_id}_{int(time.time())}.json"
             durable_atomic_write(archive_path, content)
             self.inflight_path.unlink(missing_ok=True)
-        except Exception as exc:
-            logger.error(f"Error reconciling in-flight task: {exc}")
+            return
+
+        # Directive C2348: Remove existence-based success inference. Pre-existing or partial
+        # artifacts must NEVER be treated as successful completion for an uncommitted task.
+        # Interrupted in-flight tasks always fail closed as unknown_crashed_inflight (no rerun, no success reply).
+        if self.state:
+            crashed_entry = {
+                "task_id": task_id,
+                "message_id": message_id,
+                "status": "unknown_crashed_inflight",
+                "error": "Dispatcher restarted while task was in-flight; preserved fail-closed without automatic rerun (Directive C2341/C2347/C2348)",
+                "started_at": inflight_data.get("started_at"),
+                "recovered_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            }
+            self.state.processed_tasks.append(crashed_entry)
+            if message_id and message_id not in self.state.processed_message_ids:
+                self.state.processed_message_ids.append(message_id)
+            self.state.status = "recovering-inflight"
+            self.save_state()
+
+        archive_path = self.scratch_root / f"inflight_crashed_{message_id}_{int(time.time())}.json"
+        durable_atomic_write(archive_path, content)
+        self.inflight_path.unlink(missing_ok=True)
 
     def save_state(self, state: Optional[DispatcherState] = None) -> None:
         """
@@ -989,7 +1043,7 @@ class FileBusDispatcherService:
         # Step 2: Validate admission boundaries BEFORE ACK (Directive C2337)
         self.validate_and_admit_task(task_spec)
 
-        # Step 3: Record durable in-flight receipt (Directive C2337)
+        # Step 3: Record durable in-flight receipt (Directive C2337 / C2341)
         inflight_data = {
             "task_id": task_spec.task_id,
             "message_id": msg_id,
@@ -1000,6 +1054,7 @@ class FileBusDispatcherService:
                 "cwd": str(task_spec.cwd),
                 "requested_memory_mb": task_spec.requested_memory_mb,
                 "timeout_sec": task_spec.timeout_sec,
+                "expected_outputs": [str(p) for p in (task_spec.expected_outputs or [])],
             },
         }
         durable_atomic_write(self.inflight_path, json.dumps(inflight_data, indent=2))
@@ -1043,12 +1098,7 @@ class FileBusDispatcherService:
                 "receipt_hash": receipt_hash,
                 "completed_at": exec_receipt.get("completed_at"),
             }
-            self.send_reply(msg_id, body=reply_body, data=reply_data)
-            try:
-                if self.inflight_path.exists():
-                    self.inflight_path.unlink()
-            except OSError:
-                pass
+            # Step 7a (Error): PERSIST TERMINAL RECEIPT & STATE BEFORE REPLY OR UNLINK (C2347)
             self.state.cursor = msg_id
             if msg_id not in self.state.processed_message_ids:
                 self.state.processed_message_ids.append(msg_id)
@@ -1061,19 +1111,22 @@ class FileBusDispatcherService:
             })
             self.state.status = "error"
             self.save_state()
+
+            # Step 8a (Error): Send failure reply
+            try:
+                self.send_reply(msg_id, body=reply_body, data=reply_data)
+            except Exception as reply_err:
+                logger.warning(f"Error sending failure reply: {reply_err}")
+
+            # Step 9a (Error): Safely unlink inflight file
+            try:
+                if self.inflight_path.exists():
+                    self.inflight_path.unlink()
+            except OSError:
+                pass
             raise
 
-        # Step 7: Send reply on success
-        self.send_reply(msg_id, body=reply_body, data=reply_data)
-
-        # Step 8: Clean up in-flight receipt
-        try:
-            if self.inflight_path.exists():
-                self.inflight_path.unlink()
-        except OSError:
-            pass
-
-        # Step 9: Advance cursor and update state (C2335)
+        # Step 7: PERSIST TERMINAL RECEIPT & STATE BEFORE REPLY OR UNLINK (C2347)
         self.state.cursor = msg_id
         if msg_id not in self.state.processed_message_ids:
             self.state.processed_message_ids.append(msg_id)
@@ -1086,6 +1139,16 @@ class FileBusDispatcherService:
         })
         self.state.status = "idle"
         self.save_state()
+
+        # Step 8: Send reply on FileBus
+        self.send_reply(msg_id, body=reply_body, data=reply_data)
+
+        # Step 9: Clean up in-flight receipt (now safe because state is durably on disk)
+        try:
+            if self.inflight_path.exists():
+                self.inflight_path.unlink()
+        except OSError:
+            pass
 
         return exec_receipt
 

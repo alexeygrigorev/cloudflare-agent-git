@@ -65,6 +65,7 @@ for p in (WORKSPACE, LAUNCHER_REPO, BUS_REPO, COORDINATION_REPO):
 # Strict Direct Import (Directive C2335: ZERO in-test mock fallback)
 from research.antigravity.tooling.self_org.filebus_dispatcher_service import (
     CorruptedCredentialError,
+    CorruptedInflightError,
     CorruptedStateError,
     DispatcherAdmissionError,
     DispatcherError,
@@ -640,6 +641,194 @@ class TestFileBusDispatcherAdversarial(unittest.TestCase):
         )
         with self.assertRaises(TaskExecutionError):
             self.service.execute_task_in_scope(task_spec)
+
+
+    def test_25_corrupted_inflight_json_fails_closed_and_quarantines(self) -> None:
+        """
+        Confirms that malformed JSON in dispatcher_inflight.json fails closed with
+        CorruptedInflightError, does NOT delete the file, and preserves original bytes (C2347).
+        """
+        inflight_file = self.service.inflight_path
+        inflight_file.write_text("{malformed: json; syntax error!!!", encoding="utf-8")
+
+        with self.assertRaises(CorruptedInflightError):
+            self.service.reconcile_inflight_tasks()
+
+        # Confirm original file was not silently deleted
+        self.assertTrue(inflight_file.exists())
+        # Confirm quarantine file was preserved in scratch root
+        quarantined = list(self.service.scratch_root.glob("inflight_corrupted_*.raw"))
+        self.assertGreaterEqual(len(quarantined), 1)
+        self.assertIn("malformed: json", quarantined[0].read_text(encoding="utf-8"))
+
+    def test_26_empty_inflight_file_fails_closed_and_quarantines(self) -> None:
+        """
+        Confirms that a 0-byte or whitespace-only dispatcher_inflight.json fails closed with
+        CorruptedInflightError, does NOT delete the file, and quarantines original bytes (C2347).
+        """
+        inflight_file = self.service.inflight_path
+        inflight_file.write_text("   \n\t  ", encoding="utf-8")
+
+        with self.assertRaises(CorruptedInflightError):
+            self.service.reconcile_inflight_tasks()
+
+        self.assertTrue(inflight_file.exists())
+        quarantined = list(self.service.scratch_root.glob("inflight_empty_*.raw"))
+        self.assertGreaterEqual(len(quarantined), 1)
+
+    def test_27_crash_after_save_state_before_unlink_archives_completed_without_rerun(self) -> None:
+        """
+        Confirms that if crash occurred after save_state but before inflight unlink,
+        reconcile_inflight_tasks detects task already in processed_tasks, archives
+        inflight_completed_{task_id}.json, and safely cleans up without rerun (C2347).
+        """
+        task_id = "adv-task-already-saved"
+        msg_id = str(uuid.uuid4())
+
+        self.service.load_state()
+
+        # Seed state as already processed
+        self.service.state.processed_tasks.append({
+            "task_id": task_id,
+            "message_id": msg_id,
+            "status": "completed",
+            "completed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        })
+        self.service.state.processed_message_ids.append(msg_id)
+        self.service.save_state()
+
+        # Seed lingering inflight file
+        inflight_payload = {
+            "task_id": task_id,
+            "message_id": msg_id,
+            "started_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "status": "in_flight",
+        }
+        self.service.inflight_path.write_text(json.dumps(inflight_payload), encoding="utf-8")
+
+        # Run reconciliation
+        self.service.reconcile_inflight_tasks()
+
+        # Inflight path should now be unlinked
+        self.assertFalse(self.service.inflight_path.exists())
+
+        # Completed archive must exist with unique message_id key
+        completed_archives = list(self.service.scratch_root.glob(f"inflight_completed_{msg_id}_*.json"))
+        self.assertGreaterEqual(len(completed_archives), 1)
+
+        # Task count in processed_tasks must remain 1 (no duplicate entry)
+        matching = [t for t in self.service.state.processed_tasks if t.get("task_id") == task_id]
+        self.assertEqual(len(matching), 1)
+
+    def test_28_crash_with_preexisting_artifact_remains_unknown_no_success_reply(self) -> None:
+        """
+        Confirms that if expected outputs exist on disk prior to or during a crashed run,
+        reconcile_inflight_tasks rejects existence-based success inference, marks the task
+        fail-closed as unknown_crashed_inflight, sends zero success replies, and archives (C2348).
+        """
+        task_id = "adv-task-preexisting-output"
+        msg_id = str(uuid.uuid4())
+        expected_output = self.test_dir / "recovery_artifact.txt"
+        expected_output.write_text("preexisting or partial output payload", encoding="utf-8")
+
+        self.service.load_state()
+
+        inflight_payload = {
+            "task_id": task_id,
+            "message_id": msg_id,
+            "started_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "status": "in_flight",
+            "task_spec": {
+                "expected_outputs": [str(expected_output)],
+            },
+        }
+        self.service.inflight_path.write_text(json.dumps(inflight_payload), encoding="utf-8")
+
+        with patch.object(self.service, "send_reply") as mock_reply:
+            self.service.reconcile_inflight_tasks()
+            # Directive C2348: zero success replies sent
+            mock_reply.assert_not_called()
+
+        self.assertFalse(self.service.inflight_path.exists())
+        crashed_archives = list(self.service.scratch_root.glob(f"inflight_crashed_{msg_id}_*.json"))
+        self.assertGreaterEqual(len(crashed_archives), 1)
+
+        matching = [t for t in self.service.state.processed_tasks if t.get("task_id") == task_id]
+        self.assertEqual(len(matching), 1)
+        self.assertEqual(matching[0]["status"], "unknown_crashed_inflight")
+        self.assertIn(msg_id, self.service.state.processed_message_ids)
+
+    def test_29_crash_without_artifacts_recovers_as_unknown_crashed_inflight(self) -> None:
+        """
+        Confirms that if an in-flight task was interrupted mid-execution without artifacts,
+        reconcile_inflight_tasks marks it fail-closed as unknown_crashed_inflight without rerun (C2341/C2347).
+        """
+        task_id = "adv-task-interrupted"
+        msg_id = str(uuid.uuid4())
+
+        self.service.load_state()
+
+        inflight_payload = {
+            "task_id": task_id,
+            "message_id": msg_id,
+            "started_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "status": "in_flight",
+            "task_spec": {
+                "expected_outputs": [str(self.test_dir / "never_created.txt")],
+            },
+        }
+        self.service.inflight_path.write_text(json.dumps(inflight_payload), encoding="utf-8")
+
+        self.service.reconcile_inflight_tasks()
+
+        self.assertFalse(self.service.inflight_path.exists())
+        crashed_archives = list(self.service.scratch_root.glob(f"inflight_crashed_{msg_id}_*.json"))
+        self.assertGreaterEqual(len(crashed_archives), 1)
+
+        matching = [t for t in self.service.state.processed_tasks if t.get("task_id") == task_id]
+        self.assertEqual(len(matching), 1)
+        self.assertEqual(matching[0]["status"], "unknown_crashed_inflight")
+        self.assertIn(msg_id, self.service.state.processed_message_ids)
+
+    def test_30_terminal_receipt_and_state_persisted_before_inflight_unlink(self) -> None:
+        """
+        Confirms strict ordering: terminal receipt and processed state are durably persisted
+        to disk BEFORE inflight_path is unlinked (C2347).
+        """
+        task_id = "adv-task-ordering-check"
+        msg_id = str(uuid.uuid4())
+
+        self.service.load_state()
+
+        task_msg = {
+            "message_id": msg_id,
+            "sender_id": str(uuid.uuid4()),
+            "task_id": task_id,
+            "command_argv": ["echo", "ordering verified"],
+            "requested_memory_mb": 128,
+            "timeout_sec": 60,
+        }
+
+        real_unlink = self.service.inflight_path.unlink
+        verified_state_before_unlink = []
+
+        def probe_unlink(*args: Any, **kwargs: Any) -> None:
+            # Assert state on disk already has msg_id and task_id
+            state_data = json.loads(self.service.state_path.read_text(encoding="utf-8"))
+            has_msg = msg_id in state_data.get("processed_message_ids", [])
+            has_task = any(t.get("task_id") == task_id for t in state_data.get("processed_tasks", []))
+            verified_state_before_unlink.append((has_msg, has_task))
+            real_unlink(*args, **kwargs)
+
+        with patch.object(self.service, "ack_message", return_value={"acked": True}), \
+             patch.object(self.service, "send_reply", return_value={"replied": True}), \
+             patch.object(Path, "unlink", side_effect=probe_unlink):
+            receipt = self.service.dispatch_task(task_msg)
+
+        self.assertGreaterEqual(len(verified_state_before_unlink), 1)
+        has_msg_before_unlink, has_task_before_unlink = verified_state_before_unlink[0]
+        self.assertTrue(has_msg_before_unlink, "msg_id must be in state_path before inflight unlink")
+        self.assertTrue(has_task_before_unlink, "task_id must be in state_path before inflight unlink")
 
 
 if __name__ == "__main__":
