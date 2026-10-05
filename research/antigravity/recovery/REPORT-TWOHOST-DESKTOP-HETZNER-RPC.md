@@ -154,16 +154,17 @@ bus_cli.py send --cred /path/to/cred.json --to <recipient> ...
 **Operational Resolution**:
 Desktop Root resolved this contradiction by utilizing **authenticated stdin JSON streaming RPC** over native Windows OpenSSH (`ssh.exe`):
 ```powershell
-# Actual Remote Windows OpenSSH Stdin RPC Invocation:
+# Illustrative remote Windows OpenSSH stdin JSON streaming RPC invocation (pending validation):
 $rpc_envelope = @{
     request_id = "req-$([guid]::NewGuid().ToString())"
     op = "send"
-    token = $dpapi_decrypted_token
     params = @{
-        to = "91d2a63b-fe47-4b53-bee8-2ada24259439"
-        idempotency_key = "desktop-root-review-4497403a-v1"
+        sender_id = "01ace831-6d23-4c05-a6df-1a58099aca67"
+        token = $dpapi_decrypted_token
+        recipient_id = "91d2a63b-fe47-4b53-bee8-2ada24259439"
         body = "..."
         data = @{ ... }
+        idempotency_key = "desktop-root-review-4497403a-v1"
     }
 } | ConvertTo-Json -Compress -Depth 10
 

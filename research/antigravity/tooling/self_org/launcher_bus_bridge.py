@@ -1084,6 +1084,36 @@ def validate_route_to_command(
 
 
 MAX_DISK_LOG_BYTES = 65536  # 64 KiB strict cap on disk log files while child runs (C2106)
+MIN_DISK_FREE_FLOOR_BYTES = 50 * (1024 ** 3) + 512 * (1024 ** 2)  # 50 GiB + 512 MiB reserve (C2284)
+MAX_TMPDIR_GROWTH_BYTES = 512 * 1024 * 1024  # 512 MiB net tmpdir growth cap (C2284)
+
+
+def _get_dir_size_bytes(dir_path: Union[str, Path]) -> int:
+    """
+    Recursively calculates the total size in bytes of all files within dir_path (C2284).
+    Safe against non-existent paths, dangling symlinks, and unreadable files.
+    """
+    total = 0
+    p = Path(dir_path)
+    if not p.exists():
+        return 0
+    if p.is_file():
+        try:
+            return p.stat().st_size
+        except OSError:
+            return 0
+    try:
+        for root, _dirs, files in os.walk(str(p)):
+            for f in files:
+                fp = os.path.join(root, f)
+                try:
+                    total += os.lstat(fp).st_size
+                except OSError:
+                    pass
+    except OSError:
+        pass
+    return total
+
 
 def _bounded_pipe_pump(src_pipe, dst_path: Path, max_bytes: int = MAX_DISK_LOG_BYTES) -> None:
     """
@@ -1205,16 +1235,19 @@ class ChildModelRuntimeAdapter:
 
         self.bus_bridge = bus_bridge
 
+    MIN_DISK_FREE_FLOOR_BYTES = MIN_DISK_FREE_FLOOR_BYTES
+    MAX_TMPDIR_GROWTH_BYTES = MAX_TMPDIR_GROWTH_BYTES
+
     @classmethod
     def check_host_admission(
         cls,
         paths_to_check: Optional[List[Union[str, Path]]] = None,
     ) -> Dict[str, Any]:
         """
-        Validates host capacity gates under Codex C2083 and C2277:
+        Validates host capacity gates under Codex C2083, C2277, and C2284:
         - MemAvailable >= 10 GiB floor
-        - Root disk free >= 50 GiB floor
-        - Split-mount / filesystems for target paths (CWD, TMPDIR) >= 50 GiB floor (C2277)
+        - Root disk free >= 50 GiB floor + 512 MiB reserve (C2284)
+        - Split-mount / filesystems for target paths (CWD, TMPDIR) >= 50 GiB floor + 512 MiB reserve (C2277/C2284)
         Fails closed with ResourceAdmissionError if below bounds.
         """
         try:
@@ -1236,18 +1269,18 @@ class ChildModelRuntimeAdapter:
         except OSError as exc:
             raise ResourceAdmissionError(f"Cannot read /proc/meminfo for memory admission: {exc}") from exc
 
-        min_disk_floor = 50 * (1024 ** 3)
+        min_disk_floor = MIN_DISK_FREE_FLOOR_BYTES
         try:
             stat_res = os.statvfs("/")
             disk_free_bytes = stat_res.f_bavail * stat_res.f_frsize
             if disk_free_bytes < min_disk_floor:
                 raise ResourceAdmissionError(
-                    f"Host root disk free {disk_free_bytes / (1024**3):.2f} GiB below 50 GiB floor"
+                    f"Host root disk free {disk_free_bytes / (1024**3):.2f} GiB below 50 GiB floor (+ 512 MiB reserve, C2284)"
                 )
         except OSError as exc:
             raise ResourceAdmissionError(f"Cannot stat root filesystem for disk admission: {exc}") from exc
 
-        # Multi-Mount / Split-Filesystem Host Admission Gates (C2277)
+        # Multi-Mount / Split-Filesystem Host Admission Gates (C2277 / C2284)
         if paths_to_check:
             for p_raw in paths_to_check:
                 p = Path(p_raw).resolve()
@@ -1259,7 +1292,7 @@ class ChildModelRuntimeAdapter:
                     target_disk_free = target_stat.f_bavail * target_stat.f_frsize
                     if target_disk_free < min_disk_floor:
                         raise ResourceAdmissionError(
-                            f"Filesystem for path '{p}' has {target_disk_free / (1024**3):.2f} GiB free below 50 GiB floor (C2277)"
+                            f"Filesystem for path '{p}' has {target_disk_free / (1024**3):.2f} GiB free below 50 GiB floor (+ 512 MiB reserve, C2284)"
                         )
                 except OSError as exc:
                     raise ResourceAdmissionError(
@@ -1571,6 +1604,22 @@ class ChildModelRuntimeAdapter:
             if str(tmpdir_path).startswith("/tmp") or str(tmpdir_path).startswith("/data/tmp"):
                 raise ResourceAdmissionError(f"Contained TMPDIR violation: reject global /tmp path {tmpdir_path}")
 
+        # Directive C2284: Reject divergent TMPDIR/TMP/TEMP in env_vars
+        if env_vars:
+            for k in ("TMPDIR", "TMP", "TEMP"):
+                if k in env_vars:
+                    v = env_vars[k]
+                    try:
+                        resolved_v = Path(v).resolve()
+                    except Exception as exc:
+                        raise ResourceAdmissionError(
+                            f"Divergent temporary directory in env_vars '{k}={v}' does not match checked tmpdir '{tmpdir_path}' (C2284)"
+                        ) from exc
+                    if resolved_v != tmpdir_path.resolve():
+                        raise ResourceAdmissionError(
+                            f"Divergent temporary directory in env_vars '{k}={v}' does not match checked tmpdir '{tmpdir_path}' (C2284)"
+                        )
+
         # Pre-launch negative gate: reject quse_override on real model routes (C2277)
         if not is_local_probe and not self.is_test_fixture and quse_override is not None:
             raise QuotaAdmissionError(
@@ -1686,7 +1735,6 @@ class ChildModelRuntimeAdapter:
             "LANG": os.environ.get("LANG", "en_US.UTF-8"),
             "LC_ALL": os.environ.get("LC_ALL", "en_US.UTF-8"),
             "HOME": str(Path.home()),
-            "TMPDIR": str(tmpdir_path),
         }
         if "XDG_RUNTIME_DIR" in os.environ:
             clean_env["XDG_RUNTIME_DIR"] = os.environ["XDG_RUNTIME_DIR"]
@@ -1696,10 +1744,19 @@ class ChildModelRuntimeAdapter:
             for k, v in env_vars.items():
                 if k.startswith("APLEXER_") or k.startswith("PARENT_") or k.startswith("CLOUDFLARE_"):
                     continue
-                if k == "TMPDIR":
+                if k in ("TMPDIR", "TMP", "TEMP"):
+                    if Path(v).resolve() != tmpdir_path.resolve():
+                        raise ResourceAdmissionError(
+                            f"Divergent temporary directory in env_vars '{k}={v}' does not match checked tmpdir '{tmpdir_path}' (C2284)"
+                        )
                     if str(v).startswith("/tmp") or str(v).startswith("/data/tmp"):
                         raise ResourceAdmissionError(f"Contained TMPDIR violation in env_vars: {v}")
                 clean_env[k] = str(v)
+
+        # Enforce clean_env explicitly sets TMPDIR, TMP, TEMP to checked tmpdir_path (C2284)
+        clean_env["TMPDIR"] = str(tmpdir_path)
+        clean_env["TMP"] = str(tmpdir_path)
+        clean_env["TEMP"] = str(tmpdir_path)
 
         # 4. Pre-Payload Containment Verification Prelude
         receipt_path = tmpdir_path / f"containment_verified_{unit_name}.json"
@@ -1711,7 +1768,7 @@ class ChildModelRuntimeAdapter:
 unit = "{unit_name}"
 req_mem_bytes = "{req_mem_bytes}"
 
-res = subprocess.run(["systemctl", "--user", "show", unit, "-p", "ActiveState", "-p", "MemoryMax", "-p", "ControlGroup", "-p", "InvocationID"], capture_output=True, text=True)
+res = subprocess.run(["systemctl", "--user", "show", unit, "-p", "ActiveState", "-p", "MemoryMax", "-p", "TasksMax", "-p", "ControlGroup", "-p", "InvocationID"], capture_output=True, text=True)
 props = dict(line.split("=", 1) for line in res.stdout.splitlines() if "=" in line)
 
 if props.get("ActiveState") != "active":
@@ -1723,6 +1780,8 @@ if not props.get("InvocationID"):
 cgroup = props.get("ControlGroup", "")
 if not cgroup:
     sys.exit(94)
+if props.get("TasksMax") != "100":
+    sys.exit(95)
 
 # C2106: Inspect /proc/self/cgroup and verify it matches ControlGroup (exit 96)
 self_cgroup = ""
@@ -1754,7 +1813,7 @@ except Exception:
     sys.exit(97)
 
 with open("{receipt_path}", "w", encoding="utf-8") as f:
-    json.dump({{"unit": unit, "pid": os.getpid(), "cgroup": cgroup, "memory_max": props.get("MemoryMax"), "invocation_id": props.get("InvocationID")}}, f)
+    json.dump({{"unit": unit, "pid": os.getpid(), "cgroup": cgroup, "memory_max": props.get("MemoryMax"), "tasks_max": props.get("TasksMax"), "invocation_id": props.get("InvocationID")}}, f)
 
 # Enforce contained scratch TMPDIR before execvp into child payload (C2134)
 os.environ["TMPDIR"] = "{tmpdir_path}"
@@ -1774,6 +1833,7 @@ os.execvp(sys.argv[1], sys.argv[1:])
             "--collect",
             f"--unit={unit_name}",
             "-p", f"MemoryMax={requested_memory_mb}M",
+            "-p", "TasksMax=100",
             "-E", f"TMPDIR={tmpdir_path}",
             "-E", f"TEMP={tmpdir_path}",
             "-E", f"TMP={tmpdir_path}",
@@ -1787,6 +1847,9 @@ os.execvp(sys.argv[1], sys.argv[1:])
         stdout_log.parent.mkdir(parents=True, exist_ok=True)
 
         started_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        # Record initial tmpdir size for measured disk growth guard (C2284)
+        initial_tmp_size = _get_dir_size_bytes(tmpdir_path)
 
         # 6. Spawn process with bounded disk logging (C2106) and Popen failure guard
         out_thread = None
@@ -1834,11 +1897,56 @@ os.execvp(sys.argv[1], sys.argv[1:])
                 )
             raise
 
+        def _check_and_enforce_tmpdir_growth() -> None:
+            current_size = _get_dir_size_bytes(tmpdir_path)
+            delta = current_size - initial_tmp_size
+            if delta > MAX_TMPDIR_GROWTH_BYTES:
+                subprocess.run(["systemctl", "--user", "kill", "--kill-who=all", "--signal=SIGKILL", unit_name], check=False)
+                subprocess.run(["systemctl", "--user", "stop", unit_name], check=False)
+                try:
+                    proc.kill()
+                    proc.wait(timeout=2)
+                except Exception:
+                    pass
+                if out_thread and out_thread.is_alive():
+                    out_thread.join(timeout=1.0)
+                if err_thread and err_thread.is_alive():
+                    err_thread.join(timeout=1.0)
+
+                cleaned_up = verify_unit_cleanup(
+                    unit_name,
+                    expected_cgroup=cached_cgroup,
+                )
+                task_data = self.store.get_task(task_id)
+                current_state = task_data.get("state") if task_data else "running"
+                valid_from = (current_state,) if current_state in ("starting", "running") else ("starting", "running")
+
+                if cleaned_up:
+                    self.store.transition_task(
+                        task_id,
+                        "failed",
+                        valid_from,
+                        reviewer="tmpdir-growth-guard",
+                        reason=f"Tmpdir net growth {delta} bytes exceeds 512 MiB limit ({MAX_TMPDIR_GROWTH_BYTES} bytes); unit confirmed clean",
+                    )
+                else:
+                    self.store.transition_task(
+                        task_id,
+                        "launch-uncertain",
+                        valid_from,
+                        reviewer="tmpdir-growth-guard",
+                        reason=f"Tmpdir net growth {delta} bytes exceeds 512 MiB limit ({MAX_TMPDIR_GROWTH_BYTES} bytes); cleanup unproven, holding resources",
+                    )
+                raise ResourceAdmissionError(
+                    f"Tmpdir net growth {delta} bytes exceeds 512 MiB limit ({MAX_TMPDIR_GROWTH_BYTES} bytes)"
+                )
+
         # Poll up to 3s for unit activation & containment receipt
         verified_active = False
         cached_cgroup: Optional[str] = None
         cached_invocation_id: Optional[str] = None
         for _ in range(30):
+            _check_and_enforce_tmpdir_growth()
             if receipt_path.exists():
                 try:
                     receipt_data = json.loads(receipt_path.read_text(encoding="utf-8"))
@@ -1914,48 +2022,62 @@ os.execvp(sys.argv[1], sys.argv[1:])
                 )
             raise ResourceAdmissionError(f"Scope {unit_name} failed containment verification prelude (exit={rc}, cleaned_up={cleaned_up})")
 
-        # 7. Wait with timeout and authoritative teardown
-        try:
-            returncode = proc.wait(timeout=timeout_sec)
-        except subprocess.TimeoutExpired:
-            # Terminate the entire process tree via systemctl kill --kill-who=all
-            subprocess.run(["systemctl", "--user", "kill", "--kill-who=all", "--signal=SIGKILL", unit_name], check=False)
-            subprocess.run(["systemctl", "--user", "stop", unit_name], check=False)
-            try:
-                proc.kill()
-                proc.wait(timeout=2)
-            except Exception:
-                pass
-            if out_thread and out_thread.is_alive():
-                out_thread.join(timeout=1.0)
-            if err_thread and err_thread.is_alive():
-                err_thread.join(timeout=1.0)
+        # 7. Wait with timeout, tmpdir growth guard, and authoritative teardown (C2284)
+        start_wait = time.time()
+        poll_interval = 0.05
+        returncode = None
+        while True:
+            _check_and_enforce_tmpdir_growth()
 
-            cleaned_up = verify_unit_cleanup(
-                unit_name,
-                expected_cgroup=cached_cgroup,
-            )
-            if cleaned_up:
-                self.store.fail_task(
-                    task_id,
-                    reviewer="systemd-watchdog",
-                    reason=f"Timeout expired ({timeout_sec}s); unit confirmed terminated",
+            rc = proc.poll()
+            if rc is not None:
+                returncode = rc
+                break
+
+            if time.time() - start_wait >= timeout_sec:
+                # Terminate the entire process tree via systemctl kill --kill-who=all
+                subprocess.run(["systemctl", "--user", "kill", "--kill-who=all", "--signal=SIGKILL", unit_name], check=False)
+                subprocess.run(["systemctl", "--user", "stop", unit_name], check=False)
+                try:
+                    proc.kill()
+                    proc.wait(timeout=2)
+                except Exception:
+                    pass
+                if out_thread and out_thread.is_alive():
+                    out_thread.join(timeout=1.0)
+                if err_thread and err_thread.is_alive():
+                    err_thread.join(timeout=1.0)
+
+                cleaned_up = verify_unit_cleanup(
+                    unit_name,
+                    expected_cgroup=cached_cgroup,
                 )
-            else:
-                # Retain uncertain reservation in Store (launch-uncertain holds resources)
-                self.store.transition_task(
-                    task_id,
-                    "launch-uncertain",
-                    ("running",),
-                    reviewer="systemd-watchdog",
-                    reason=f"Timeout expired; unit cleanup unproven, holding resources",
-                )
-            raise TimeoutError(f"Task {task_id} in systemd scope {unit_name} exceeded timeout {timeout_sec}s (cleaned_up={cleaned_up})")
+                if cleaned_up:
+                    self.store.fail_task(
+                        task_id,
+                        reviewer="systemd-watchdog",
+                        reason=f"Timeout expired ({timeout_sec}s); unit confirmed terminated",
+                    )
+                else:
+                    # Retain uncertain reservation in Store (launch-uncertain holds resources)
+                    self.store.transition_task(
+                        task_id,
+                        "launch-uncertain",
+                        ("running",),
+                        reviewer="systemd-watchdog",
+                        reason=f"Timeout expired; unit cleanup unproven, holding resources",
+                    )
+                raise TimeoutError(f"Task {task_id} in systemd scope {unit_name} exceeded timeout {timeout_sec}s (cleaned_up={cleaned_up})")
+
+            time.sleep(poll_interval)
 
         if out_thread and out_thread.is_alive():
             out_thread.join(timeout=2.0)
         if err_thread and err_thread.is_alive():
             err_thread.join(timeout=2.0)
+
+        # Post-execution tmpdir growth check (C2284)
+        _check_and_enforce_tmpdir_growth()
 
         completed_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
         stdout_text = read_bounded_log(stdout_log, max_bytes=65536)

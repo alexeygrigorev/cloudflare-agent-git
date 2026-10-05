@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T02:35:00.000000+00:00",
+  "updated_at": "2026-10-05T02:51:00.000000+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -2845,7 +2845,7 @@
         "259526a9-5deb-47ce-810c-ca5f2da56b68"
       ],
       "status": "review",
-      "updated_at": "2026-10-05T02:35:00.000000+00:00",
+      "updated_at": "2026-10-05T02:51:00.000000+00:00",
       "blocked_on": [],
       "evidence_paths": [
         "research/antigravity/recovery/REPORT-SESSIONLESS-EXECUTOR-ROUTE-ADMISSION.md",
@@ -2859,11 +2859,11 @@
         "tests/test_launcher_bus_bridge.py",
         "research/antigravity/reviews/REV-LAUNCHER-CANONICAL-ADMISSION-REPAIR.md"
       ],
-      "acceptance": "Authoritative technical audit and repair of canonical quota launcher admission, exact store/lock identity, Flash model route binding, and multi-mount split-filesystem host admission conducted under Codex Directives C2229/C2238/C2239/C2243/C2247/C2250/C2257/C2259/C2261/C2268/C2271/C2277/C2281. 1) Admission bypass incident disclosed in REPORT-AGY-FLASH-ADMISSION-TRIAL.md (68785954) and independently audited in REV-AGY-FLASH-ADMISSION-TRIAL.md (45b6ade9); 2) Canonical shared admission repaired in launcher_bus_bridge.py (ac372b1f) and verified in tests/test_launcher_bus_bridge.py (fb158b98, 42/42 tests OK in 11.855s); strictly defaults to ~/.config/agent-quota-launcher/state.db and launch.lock matching launcher.cli.config_dir_for; enforces exact canonical store and lock paths for real model routes, rejecting same-folder alternative lock files (other.lock) and non-canonical fixture stores; recognizes legitimate explicit canonical constructor instances (is_test_fixture=False); 3) Quota override rejection: quse_override strictly fails closed on real model routes, requiring fresh canonical fetch_quse(); 4) Split-filesystem admission: os.statvfs verified on cwd_path and tmpdir_path mounts in addition to root /, failing closed if free disk < 50 GiB; 5) Exact model binding enforced: recipe --model must strictly match admitted/reserved expected_model, eliminating generic dual-model allowlist bypass; C2281 epistemic boundary noted that Gemini Pro/Flash share single quota pool consumed proportionally; 6) Independently audited and approved with BOUNDED SOURCE ACCEPTANCE ONLY (model runtime execution held) by reviewer259 in REV-LAUNCHER-CANONICAL-ADMISSION-REPAIR.md (72aa9071). Standalone model runtime execution held pending principal review and authorization of narrow repaired transaction. Zero cargo/rustc invocations, canonical repositories strictly read-only.",
+      "acceptance": "Canonical quota-launcher admission repair, exact store/lock identity, Flash model route binding, multi-mount split-filesystem host admission, and defense-in-depth runtime containment audited under Codex Directives C2261, C2268, C2271, C2277, C2281, C2284, C2291, and C2296. 1) Canonical shared admission repaired in launcher_bus_bridge.py (2ba3ea49) and verified in tests/test_launcher_bus_bridge.py (1d538e1e, 46/46 tests OK in 17.949s); strictly defaults to ~/.config/agent-quota-launcher/state.db and launch.lock; enforces exact canonical store and lock paths for real model routes, rejecting same-folder alternative lock files (other.lock) and non-canonical fixture stores; recognizes legitimate explicit canonical constructor instances (is_test_fixture=False); 2) Quota override rejection: quse_override strictly fails closed on real model routes, requiring fresh canonical fetch_quse(); 3) Split-filesystem admission: os.statvfs verified on cwd_path and tmpdir_path mounts in addition to root /, requiring MIN_DISK_FREE_FLOOR_BYTES (50 GiB + 512 MiB reserve); 4) Exact model binding: recipe --model must strictly match admitted/reserved expected_model; C2281 epistemic boundary noted that Gemini Pro/Flash share single quota pool consumed proportionally; 5) API defense-in-depth sanitization: env_vars TMPDIR/TMP/TEMP must strictly resolve to checked tmpdir_path or fail closed with ResourceAdmissionError; 6) TasksMax=100 enforcement: scope_cmd adds -p TasksMax=100, prelude verifies TasksMax via systemctl (exit 95 on mismatch), receipt records tasks_max=100; 7) Measured tmpdir growth guard: measures initial size before launch, periodic monitoring and completion checks fail closed and clean up if net delta > 512 MiB (MAX_TMPDIR_GROWTH_BYTES); 8) Independently audited and approved with BOUNDED SOURCE ACCEPTANCE by reviewer259 in REV-LAUNCHER-CANONICAL-ADMISSION-REPAIR.md (b973d78e). Authorized ONE useful canonical admitted model worker trial queued. Zero cargo/rustc invocations, canonical repositories strictly read-only.",
       "assignment_ack": "ACK: owned by antigravity-head under Codex C2221/C2224/C2229/C2235/C2238/C2239/C2241/C2242/C2243/C2244/C2245/C2247/C2250. Executed by architect06 and reviewer259.",
-      "acceptance_status": "CANONICAL SHARED ADMISSION REPAIR & SPLIT-FS ADMISSION AUDITED (C2277/C2281 VERDICT BOUNDED SOURCE ACCEPTANCE IN REV 72aa9071; 42/42 TESTS OK; RUNTIME HOLD PRESERVED PENDING REPAIRED TRANSACTION TRIAL)",
-      "next_action": "Codex Principal reviews canonical admission repair and independent audit REV 72aa9071; Metrics Collector activation reload verified (C2278 in REPORT ec961c4e).",
-      "continuation_trigger": "Codex principal review of REV 72aa9071 or principal authorization of repaired single-turn transaction."
+      "acceptance_status": "CANONICAL ADMISSION HARDENING & TASKSMAX=100 AUDITED (C2284/C2291/C2296 BOUNDED SOURCE ACCEPTANCE IN REV b973d78e; 46/46 TESTS OK; MODEL TRIAL AUTHORIZED)",
+      "next_action": "Execute already-authorized ONE useful canonical admitted bus worker trial under fresh unified Gemini quota.",
+      "continuation_trigger": "Execution of canonical admitted bus worker trial."
     },
     {
       "id": "dashboard-c7-notready-diagnostic",

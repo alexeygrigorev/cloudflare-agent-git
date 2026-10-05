@@ -54,6 +54,9 @@ from research.antigravity.tooling.self_org.launcher_bus_bridge import (
     validate_route_to_command,
     MAX_DISK_LOG_BYTES,
     get_canonical_launcher_paths,
+    MIN_DISK_FREE_FLOOR_BYTES,
+    MAX_TMPDIR_GROWTH_BYTES,
+    _get_dir_size_bytes,
 )
 from research.antigravity.tooling.self_org.child_adapter import ChildAdapter
 from research.antigravity.tooling.self_org.lease_manager import LeaseManager
@@ -2494,6 +2497,274 @@ class TestLauncherBusBridge(unittest.TestCase):
                     is_local_probe=True,
                 )
             self.assertIn("below 50 GiB floor", str(cm.exception))
+
+    # -----------------------------------------------------------------------
+    # Test 43: Directive C2284 Divergent TMPDIR in env_vars Rejected
+    # -----------------------------------------------------------------------
+    def test_43_c2284_divergent_tmpdir_in_env_vars_rejected(self) -> None:
+        """
+        Verify Directive C2284 rejection of divergent temporary directories in env_vars:
+        1. Passing divergent TMPDIR raises ResourceAdmissionError before launch.
+        2. Passing divergent TMP raises ResourceAdmissionError before launch.
+        3. Passing divergent TEMP raises ResourceAdmissionError before launch.
+        4. Matching TMPDIR/TMP/TEMP is admitted and explicitly set in clean_env.
+        """
+        runtime = ChildModelRuntimeAdapter(
+            store=self.store,
+            workspace=self.workspace,
+            lock_path=self.workspace / ".local" / "test.lock",
+            is_test_fixture=True,
+        )
+        divergent_dir = self.workspace / "divergent_tmp"
+        divergent_dir.mkdir(parents=True, exist_ok=True)
+
+        for env_key in ("TMPDIR", "TMP", "TEMP"):
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=f"t43-div-{env_key.lower()}",
+                    command_argv=["echo", "probe"],
+                    cwd=self.workspace,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    env_vars={env_key: str(divergent_dir)},
+                    is_local_probe=True,
+                )
+            self.assertIn(f"Divergent temporary directory in env_vars '{env_key}={divergent_dir}'", str(cm.exception))
+            self.assertIn("does not match checked tmpdir", str(cm.exception))
+
+        # Matching TMPDIR succeeds
+        res = runtime.execute_in_verified_systemd_scope(
+            task_id="t43-matching-tmp",
+            command_argv=["echo", "probe-ok"],
+            cwd=self.workspace,
+            tmpdir=self.owned_tmp,
+            lock_path=self.workspace / ".local" / "test.lock",
+            env_vars={"TMPDIR": str(self.owned_tmp), "TMP": str(self.owned_tmp), "TEMP": str(self.owned_tmp)},
+            is_local_probe=True,
+        )
+        self.assertEqual(res["returncode"], 0)
+
+    # -----------------------------------------------------------------------
+    # Test 44: Directive C2284 Split Filesystem Enforces 50 GiB + 512 MiB Reserve
+    # -----------------------------------------------------------------------
+    def test_44_c2284_split_filesystem_enforces_50gib_plus_512mib_reserve(self) -> None:
+        """
+        Verify Directive C2284 enforcement of 50 GiB + 512 MiB reserve floor:
+        1. Root disk with 50 GiB exactly (below 50 GiB + 512 MiB reserve) fails closed.
+        2. Root disk with 50 GiB + 511 MiB (1 MiB below reserve) fails closed.
+        3. Root disk with 50 GiB + 512 MiB (exact floor) is admitted.
+        4. Split mount with 50 GiB + 256 MiB fails closed.
+        5. Split mount with 50 GiB + 512 MiB is admitted.
+        """
+        orig_statvfs = os.statvfs
+        floor_bytes = 50 * (1024 ** 3) + 512 * (1024 ** 2)
+
+        def make_stat(free_bytes: int):
+            m = MagicMock()
+            m.f_frsize = 1024
+            m.f_bavail = free_bytes // 1024
+            return m
+
+        # Case 1: Root disk exactly 50 GiB (< 50 GiB + 512 MiB)
+        with patch("os.statvfs", return_value=make_stat(50 * (1024 ** 3))):
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                ChildModelRuntimeAdapter.check_host_admission()
+            self.assertIn("below 50 GiB floor (+ 512 MiB reserve, C2284)", str(cm.exception))
+
+        # Case 2: Root disk 50 GiB + 511 MiB (< 50 GiB + 512 MiB)
+        with patch("os.statvfs", return_value=make_stat(floor_bytes - 1024 * 1024)):
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                ChildModelRuntimeAdapter.check_host_admission()
+            self.assertIn("below 50 GiB floor (+ 512 MiB reserve, C2284)", str(cm.exception))
+
+        # Case 3: Root disk exactly 50 GiB + 512 MiB
+        with patch("os.statvfs", return_value=make_stat(floor_bytes)):
+            admission = ChildModelRuntimeAdapter.check_host_admission()
+            self.assertTrue(admission["admitted"])
+
+        # Case 4: Split mount below floor
+        split_path = self.workspace / ".local" / "split_test_44"
+        split_path.mkdir(parents=True, exist_ok=True)
+
+        def mock_split_stat(p_str):
+            p = str(p_str)
+            if "split_test_44" in p:
+                return make_stat(floor_bytes - 256 * (1024 ** 2))
+            return make_stat(60 * (1024 ** 3))
+
+        with patch("os.statvfs", side_effect=mock_split_stat):
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                ChildModelRuntimeAdapter.check_host_admission(paths_to_check=[split_path])
+            self.assertIn(str(split_path), str(cm.exception))
+            self.assertIn("below 50 GiB floor (+ 512 MiB reserve, C2284)", str(cm.exception))
+
+        # Case 5: Split mount at or above floor
+        def mock_split_stat_ok(p_str):
+            p = str(p_str)
+            if "split_test_44" in p:
+                return make_stat(floor_bytes)
+            return make_stat(60 * (1024 ** 3))
+
+        with patch("os.statvfs", side_effect=mock_split_stat_ok):
+            admission = ChildModelRuntimeAdapter.check_host_admission(paths_to_check=[split_path])
+            self.assertTrue(admission["admitted"])
+
+    # -----------------------------------------------------------------------
+    # Test 45: Directive C2284 Measured Tmpdir Growth Guard Enforced
+    # -----------------------------------------------------------------------
+    def test_45_c2284_measured_tmpdir_growth_guard_enforced(self) -> None:
+        """
+        Verify Directive C2284 measured tmpdir growth guard:
+        1. Net tmpdir growth exceeding MAX_TMPDIR_GROWTH_BYTES (512 MiB)
+           triggers immediate termination, cleanup, task failure in Store,
+           and raises ResourceAdmissionError.
+        2. _get_dir_size_bytes accurately measures directory contents recursively.
+        """
+        # Part 1: Direct test of _get_dir_size_bytes helper
+        test_dir = self.workspace / ".local" / "t45_size_test"
+        test_dir.mkdir(parents=True, exist_ok=True)
+        sub_dir = test_dir / "subdir"
+        sub_dir.mkdir(parents=True, exist_ok=True)
+        (test_dir / "file1.bin").write_bytes(b"a" * 2048)
+        (sub_dir / "file2.bin").write_bytes(b"b" * 4096)
+        self.assertEqual(_get_dir_size_bytes(test_dir), 2048 + 4096)
+
+        # Part 2: Runtime growth guard triggering termination and task failure
+        runtime = ChildModelRuntimeAdapter(
+            store=self.store,
+            workspace=self.workspace,
+            lock_path=self.workspace / ".local" / "test.lock",
+            is_test_fixture=True,
+        )
+
+        task_id = "t45-growth-guard-trigger"
+        # Mock _get_dir_size_bytes: first call returns 1000, subsequent call returns 1000 + 600 MiB
+        initial_sz = 1000
+        balloon_sz = initial_sz + 600 * 1024 * 1024
+
+        call_count = 0
+        def mock_size(p):
+            nonlocal call_count
+            call_count += 1
+            if call_count <= 1:
+                return initial_sz
+            return balloon_sz
+
+        with patch("research.antigravity.tooling.self_org.launcher_bus_bridge._get_dir_size_bytes", side_effect=mock_size), \
+             patch("research.antigravity.tooling.self_org.launcher_bus_bridge.verify_unit_cleanup", return_value=True):
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=task_id,
+                    command_argv=["echo", "probe"],
+                    cwd=self.workspace,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    is_local_probe=True,
+                )
+            self.assertIn("Tmpdir net growth", str(cm.exception))
+            self.assertIn("exceeds 512 MiB limit", str(cm.exception))
+
+            task_rec = self.store.get_task(task_id)
+            self.assertIsNotNone(task_rec)
+            self.assertEqual(task_rec["state"], "failed")
+
+        # Part 3: Verify unproven cleanup transitions to launch-uncertain
+        task_id_unc = "t45-growth-guard-uncertain"
+        call_count_unc = 0
+        def mock_size_unc(p):
+            nonlocal call_count_unc
+            call_count_unc += 1
+            if call_count_unc <= 1:
+                return initial_sz
+            return balloon_sz
+
+        with patch("research.antigravity.tooling.self_org.launcher_bus_bridge._get_dir_size_bytes", side_effect=mock_size_unc), \
+             patch("research.antigravity.tooling.self_org.launcher_bus_bridge.verify_unit_cleanup", return_value=False):
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=task_id_unc,
+                    command_argv=["echo", "probe"],
+                    cwd=self.workspace,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    is_local_probe=True,
+                )
+            self.assertIn("exceeds 512 MiB limit", str(cm.exception))
+            task_rec_unc = self.store.get_task(task_id_unc)
+            self.assertEqual(task_rec_unc["state"], "launch-uncertain")
+
+    # -----------------------------------------------------------------------
+    # Test 46: Directive C2291 TasksMax=100 Enforcement and Verification
+    # -----------------------------------------------------------------------
+    def test_46_c2291_tasks_max_100_enforcement_and_verification(self) -> None:
+        """
+        Verify Directive C2291 TasksMax=100 enforcement and verification:
+        1. Scope command includes -p TasksMax=100.
+        2. Prelude queries TasksMax and exits 95 if mismatched or missing.
+        3. Real local probe records tasks_max=100 in containment receipt.
+        """
+        runtime = ChildModelRuntimeAdapter(
+            store=self.store,
+            workspace=self.workspace,
+            lock_path=self.workspace / ".local" / "test.lock",
+            is_test_fixture=True,
+        )
+
+        # 1. Real probe verifies receipt and scope execution
+        task_id = "t46-tasks-max-ok"
+        task_dir_ok = self.workspace / "t46_dir_ok"
+        task_dir_ok.mkdir(parents=True, exist_ok=True)
+        res = runtime.execute_in_verified_systemd_scope(
+            task_id=task_id,
+            command_argv=["echo", "tasks-max-test"],
+            cwd=task_dir_ok,
+            tmpdir=self.owned_tmp,
+            lock_path=self.workspace / ".local" / "test.lock",
+            is_local_probe=True,
+        )
+        self.assertEqual(res["returncode"], 0)
+
+        # Check receipt on disk using the exact returned unit_name
+        receipt_file = self.owned_tmp / f"containment_verified_{res['unit_name']}.json"
+        self.assertTrue(receipt_file.exists(), f"Containment receipt {receipt_file} must exist")
+        receipt_data = json.loads(receipt_file.read_text(encoding="utf-8"))
+        self.assertEqual(receipt_data.get("tasks_max"), "100")
+
+        # 2. Negative test: prelude exit 95 when TasksMax is mismatched or missing
+        task_id_95 = "t46-tasks-max-mismatch-95"
+        task_dir_95 = self.workspace / "t46_dir_95"
+        task_dir_95.mkdir(parents=True, exist_ok=True)
+
+        with patch("research.antigravity.tooling.self_org.launcher_bus_bridge.verify_unit_cleanup", return_value=True), \
+             patch("subprocess.run") as mock_run, \
+             patch("subprocess.Popen") as mock_popen:
+            mock_run.return_value = MagicMock(returncode=0)
+            proc_95 = MagicMock()
+            proc_95.pid = 99995
+            proc_95.poll.return_value = 95
+            proc_95.wait.return_value = 95
+            proc_95.communicate.return_value = ("", "")
+            mock_popen.return_value = proc_95
+
+            with self.assertRaises(ResourceAdmissionError) as cm:
+                runtime.execute_in_verified_systemd_scope(
+                    task_id=task_id_95,
+                    command_argv=["python3", "-c", "pass"],
+                    cwd=task_dir_95,
+                    timeout_sec=10.0,
+                    requested_memory_mb=1500,
+                    tmpdir=self.owned_tmp,
+                    lock_path=self.workspace / ".local" / "test.lock",
+                    is_local_probe=True,
+                )
+            self.assertIn("failed containment verification prelude (exit=95", str(cm.exception))
+            task_rec_95 = self.store.get_task(task_id_95)
+            self.assertEqual(task_rec_95["state"], "failed")
+
+            # Verify scope_cmd passed to Popen contained -p TasksMax=100
+            called_cmd = mock_popen.call_args[0][0]
+            self.assertIn("-p", called_cmd)
+            self.assertIn("TasksMax=100", called_cmd)
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
-# Bounded Metrics Collector Activation/Reload & Two-Posttick Verification Report (Codex Directive C2278)
+# Bounded Metrics Collector Activation/Reload & Two-Posttick Verification Report (Codex Directives C2278 / C2284 / C2285)
 
-- **Date:** 2026-10-05T04:35:00+02:00 (Europe/Berlin)
-- **Governing Directives:** Codex Principal Directive C2278, C2266, C2276; Operating Model (`coordination/OPERATING-MODEL.md`); Authoritative Human Delivery Reset (2026-10-04)
-- **Authority:** Codex Principal Directive C2278 under already-approved source lease; zero additional root approval required
+- **Date:** 2026-10-05T04:42:00+02:00 (Europe/Berlin)
+- **Governing Directives:** Codex Principal Directives C2278, C2284, C2285, C2266, C2276; Operating Model (`coordination/OPERATING-MODEL.md`); Authoritative Human Delivery Reset (2026-10-04)
+- **Authority:** Codex Principal Directive C2278 / C2284 under already-approved source lease; zero additional root approval required
 - **Auditor / Executor:** Independent Metrics & Supervision Auditor (Antigravity Delegate)
 - **Parent Session:** `antigravity-head` (`46fdb644`, conversation ID: `245c7bba-9a7b-45c1-87a7-4537f289f9a5`)
 - **Deliverable Path:** [`research/antigravity/recovery/REPORT-METRICS-COLLECTOR-RELOAD-C2278.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-METRICS-COLLECTOR-RELOAD-C2278.md)
@@ -14,15 +14,19 @@
 
 ## 1. Executive Summary & Directive Authority
 
-Under Codex Principal Directive C2278, a bounded, verified reload and activation of the metrics collector service (`scripts/metrics/collect.py`) was executed to resolve the code generation discrepancy documented in [`REPORT-METRICS-COLLECTOR-COVERAGE-C2266.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-METRICS-COLLECTOR-COVERAGE-C2266.md):
+Under Codex Principal Directive C2278 and author-correction Directive C2284, a bounded, verified reload and activation of the metrics collector service (`scripts/metrics/collect.py`) was executed to resolve the code generation discrepancy documented in [`REPORT-METRICS-COLLECTOR-COVERAGE-C2266.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-METRICS-COLLECTOR-COVERAGE-C2266.md):
 1. **Graceful Teardown of Stale Collector (PID 1640102):** The stale collector process (started `2026-10-04 15:48:59 CEST`, running code from commit [`fc1f6e4`](file:///home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py)) was gracefully terminated via `SIGTERM`. It cleanly exited within 2 seconds, releasing `.local/metrics/service.lock` and freeing TCP port `8766`.
-2. **Activation of Updated Collector (PID 1608645):** The collector was immediately restarted from the current canonical on-disk repository source at commit [`720c90e`](file:///home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py) (which includes the schema and adapter improvements enacted in commit [`256c55f`](file:///home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py)). The new process is owned by user `alexey` (UID 1000) and bound to `127.0.0.1:8766`.
-3. **Two-Posttick Schema Verification:** Two full post-reload polling intervals were observed and verified (Tick 1 at `02:30:21Z`, Tick 2 at `02:31:22Z`, Tick 3 at `02:32:24Z`). Both disk `.local/metrics/latest.json` and HTTP endpoint `http://127.0.0.1:8766/api/latest` confirm **100% emission (213 / 213 sessions)** of the updated schema fields:
+2. **Activation of Updated Collector (PID 1608645):** The collector was restarted from the on-disk repository source at commit [`720c90e`](file:///home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py) (which includes the schema and adapter improvements enacted in commit [`256c55f`](file:///home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py)). The new process is owned by user `alexey` (UID 1000) and bound to `127.0.0.1:8766`.
+   - *Epistemic Demarcation (Directive C2284):* Commit `720c90e` / `256c55f` represents the launch source commit on disk. Once launched into the CPython runtime, in-process loaded bytecode execution is an unverified Python runtime state rather than a cryptographic bytecode digest.
+3. **Two-Posttick Schema Verification & Row Demarcation:** Two full post-reload polling intervals were observed and verified (Tick 1 at `02:30:21Z`, Tick 2 at `02:31:22Z`, Tick 3 at `02:32:24Z`, and subsequent steady state at `02:40:31Z`). Both disk `.local/metrics/latest.json` and HTTP endpoint `http://127.0.0.1:8766/api/latest` confirm **100% emission** of the updated schema fields across all session table rows:
    - `responsibility`
    - `parent_tag`
    - `harness_conversation_id`
    - `mode`
-4. **Data Integrity & Zero Packet Loss:** Programmatic comparison of before and after snapshots verifies complete data preservation. Ongoing interval packets were seamlessly appended to `.local/metrics/snapshots-2026-10-05.jsonl`, and automatic size-bounded rotation to verified `.gz` archives in `retention-manifest.json` operated with zero loss.
+   - *Table Row Demarcation (Directive C2284):* The 213 (and later 217) rows in `latest.json` / `/api/latest` are **registered session table entries** (including completed, historical, dead, idle, and waiting entries from `TEAM-REGISTRY.json` and `aplexer` records). They are **NOT 213 or 217 concurrently productive agents**. Concurrently live agents remain bounded (e.g. 10 `agents_pid_live`, 4 `hook_working`).
+4. **Data Integrity & Sampling Continuity:** Programmatic comparison of before and after snapshots verifies complete data preservation.
+   - *Sampling Pause Demarcation (Directive C2284):* The 6.5s gap between old PID exit (`02:30:15Z`) and new PID startup (`02:30:21Z`) was a brief daemon transition sampling pause during which no sample was recorded. `retention-manifest.json` proves archive integrity for observed samples, **not mathematical whole-history zero loss**.
+5. **Reaffirmation of No Second Reload:** The collector is fully operational, verified clean, and actively serving live metrics. Under Directive C2284, it is explicitly reaffirmed that **NO second reload** is authorized, needed, or permitted.
 
 ---
 
@@ -37,12 +41,12 @@ Prior to issuing any signal or terminating the running process, immutable before
 
 ### Pre-Reload Telemetry Schema Baseline:
 Programmatic inspection of `before/latest.json` confirmed the absence of schema additions:
-- Total sessions: `213`
-- Sessions with `responsibility`: **`0`**
-- Sessions with `parent_tag`: **`0`**
-- Sessions with `harness_conversation_id`: **`0`**
-- Sessions with `mode`: **`0`**
-- Sessions with `missing:` prefix keys in `observation-state.json`: **`197`**
+- Total registered session table rows: `213`
+- Rows with `responsibility`: **`0`**
+- Rows with `parent_tag`: **`0`**
+- Rows with `harness_conversation_id`: **`0`**
+- Rows with `mode`: **`0`**
+- Rows with `missing:` prefix keys in `observation-state.json`: **`197`**
 
 ---
 
@@ -83,9 +87,12 @@ setsid /usr/bin/python3 scripts/metrics/collect.py --loop --serve --interval 60 
 | **Owner / UID** | `alexey` (UID 1000) |
 | **Process State** | `Ssl` (Multi-threaded background daemon, session leader via `setsid`) |
 | **Startup Timestamp** | `2026-10-05T02:30:21.730605+00:00` (`04:30:21 CEST`) |
-| **Loaded Git Source Commit** | [`720c90ecaddde4f41ecb1b21d76bf7a3432c55b8`](file:///home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py) |
+| **Launch Git Source Commit** | [`720c90ecaddde4f41ecb1b21d76bf7a3432c55b8`](file:///home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py) |
 | **Collector Code Generation** | Enacts commit [`256c55f`](file:///home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py) (`responsibility`, `parent_tag`, `harness_conversation_id`, `mode`) |
 | **Binding Verification** | Verified listening on `127.0.0.1:8766` (`TCP`) |
+
+#### Epistemic Demarcation on Loaded Execution (Directive C2284):
+The git commit hash `720c90e` (and underlying feature commit `256c55f`) records the exact source tree checked out on disk when PID 1608645 was spawned. However, once the Python interpreter parses and compiles the script into bytecode, the in-process execution is an **unverified CPython runtime memory state** rather than a cryptographically attested or signed bytecode digest. Attestation of code execution is derived behaviorally from the emitted telemetry schema output, rather than direct memory inspection.
 
 ---
 
@@ -121,13 +128,13 @@ sequenceDiagram
 | **Tick 2 (First Full)** | `2026-10-05T02:31:22.026259+00:00` | $+60.3\text{ s}$ | Completed cleanly |
 | **Tick 3 (Second Full)** | `2026-10-05T02:32:24.599907+00:00` | $+62.5\text{ s}$ | Completed cleanly |
 
-### 5.2 Schema Completeness Verification
-A programmatic query against both the HTTP endpoint and disk store verified the presence of the updated schema fields across all sessions:
+### 5.2 Schema Completeness Verification & Table Row Demarcation (Directive C2284)
+A programmatic query against both the HTTP endpoint and disk store verified the presence of the updated schema fields across all session table entries:
 
 ```python
 # Verification query executed against http://127.0.0.1:8766/api/latest and .local/metrics/latest.json
 HTTP API TIMESTAMP AT: 2026-10-05T02:32:24.599907+00:00
-Total sessions: 213
+Total session table rows: 213
 HTTP API fields:
   responsibility        : 213 / 213 (100.0%)
   parent_tag            : 213 / 213 (100.0%)
@@ -140,6 +147,18 @@ Disk latest.json fields:
   harness_conversation_id: 213 / 213 (100.0%)
   mode                  : 213 / 213 (100.0%)
 ```
+
+#### Epistemic Demarcation on Sampled Rows vs. Active Sessions (Directive C2284):
+The 213 rows (and 217 rows observed at `02:37:30Z` / `02:40:31Z`) serialized in `latest.json` and returned by `/api/latest` represent **table entries in the cumulative session catalog**, which aggregates:
+1. Declared actors from `coordination/TEAM-REGISTRY.json` (including past, completed, and quiet actors)
+2. Retained aplexer sessions from live catalog and disk state
+3. Multi-workspace discovery rows
+
+These rows **MUST NOT be conflated with 213 or 217 concurrently productive or active agents**. As confirmed in the aggregate telemetry block:
+- Concurrently live agent processes (`agents_pid_live`): **`10`**
+- Concurrently working hooks (`agents_hook_working`): **`4`**
+- Unregistered live processes (`unregistered_live`): **`4`**
+- Idle / waiting / dead rows make up the remainder of the session catalog.
 
 ---
 
@@ -155,18 +174,20 @@ Immutable after-images were captured in `.local/scratch/metrics-collector-audit/
 | **`.local/scratch/metrics-collector-audit/after/observation-state.json`** | `2026-10-05 04:32:24 CEST` | `220,045` | `20412d8a1fc269d722832a6658ad1bed53dbe83eafcb624e54e0f924d4398d33` |
 
 ### 6.2 Delta Analysis:
-- **`latest.json`:** Grew from `706,269` to `743,403` bytes ($+37,134\text{ bytes}$), mathematically accounting for the four new keys serialized across all 213 active session structures.
+- **`latest.json`:** Grew from `706,269` to `743,403` bytes ($+37,134\text{ bytes}$), mathematically accounting for the four new keys serialized across all 213 active session table rows.
 - **`observation-state.json`:** Grew from `217,358` to `220,045` bytes ($+2,687\text{ bytes}$), correctly binding harness conversation IDs and updating agent identities under the `256c55f` adapter.
 
-### 6.3 Historical Archive Continuity:
-- The transition between old PID 1640102 (`02:30:15Z`) and new PID 1608645 (`02:30:21Z`) incurred a transition gap of only **$6.5\text{ seconds}$**, smaller than the normal 60-second sampling window.
+### 6.3 Historical Archive Continuity & Demarcation (Directive C2284):
+- The transition between old PID 1640102 (`02:30:15Z`) and new PID 1608645 (`02:30:21Z`) incurred a transition gap of **$6.5\text{ seconds}$**.
+- *Epistemic Demarcation:* This 6.5s gap was a **brief daemon transition sampling pause** during which no metric sample was gathered.
 - The 2.4 MB daily snapshot chunk was verified, rotated, and compressed into `.local/metrics/snapshots-2026-10-05.jsonl.1791167484255787828.gz` (392,780 bytes, uncompressed SHA256: `8470a0cf...`) with exact SHA256 attestation in `.local/metrics/retention-manifest.json`.
-- **Zero data loss occurred** during the reload.
+- The verification in `retention-manifest.json` proves **archive integrity for all observed and rotated samples**, rather than a mathematical proof of whole-history zero loss across the 6.5s transition pause.
 
 ---
 
 ## 7. Audit Verification Receipts & Invariant Sign-Off
 
+- **Reaffirmation of No Second Reload (Directive C2284):** The collector process PID 1608645 is stable, healthy, and emitting complete schema telemetry across all catalog rows. Under Directive C2284, it is explicitly reaffirmed that **NO second reload** is authorized, needed, or permitted.
 - **Publication Guard Verification:**
   ```bash
   python3 research/antigravity/tooling/publication_guard.py \

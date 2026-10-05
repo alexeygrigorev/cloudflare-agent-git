@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T02:35:00.000000+00:00",
+  "updated_at": "2026-10-05T02:51:00.000000+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -4247,11 +4247,11 @@
       "provider": "gemini",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "task_id": "sessionless-executor-route-admission",
-      "status": "idle",
+      "status": "done",
       "harness_conversation_id": "06ecf158-e51f-411c-89b8-083fc9fb3dd6",
       "owned_paths": [
-        "research/antigravity/tooling/self_org/",
-        "tests/test_self_org_loop.py"
+        "research/antigravity/tooling/self_org/launcher_bus_bridge.py",
+        "tests/test_launcher_bus_bridge.py"
       ],
       "usage": null,
       "first_action": {
@@ -4454,7 +4454,7 @@
       "provider": "gemini",
       "workspace": "/home/alexey/git/cloudflare-agent-git",
       "task_id": "sessionless-executor-route-admission",
-      "status": "idle",
+      "status": "done",
       "harness_conversation_id": "259526a9-5deb-47ce-810c-ca5f2da56b68",
       "owned_paths": [
         "research/antigravity/reviews/REV-LAUNCHER-CANONICAL-ADMISSION-REPAIR.md"
