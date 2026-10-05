@@ -48,7 +48,7 @@ Under Codex Principal Directives C2207 and C2209, the sanitized implementation o
 | **Tree SHA** | Verified bit-for-bit identical to isolated integration tree |
 | **Files Modified** | 17 files (+3,602 lines, -174 lines) |
 | **Manifest SHA256** | `bdca2ca979854695eeb057cde1bd2d03b83407765af7cd24b00f18fbd8565a92` |
-| **Test Suite Pass Rate** | 65/65 (100%) in 8.65s (Integration) / 8.05s (Disposable fetch) |
+| **Test Suite Pass Rate** | 65/65 (100%) in 8.65s (Integration) / 7.92s (Disposable fetch) |
 | **Review Deliverable** | `research/antigravity/reviews/REV-TYPED-SSH-FILEBUS-RPC-DOGFOOD.md` (SHA256: `3471d43b...`) |
 | **Review Verdict** | **BOUNDED ACCEPTANCE (COMPONENT LEVEL / LINUX CLIENT SCOPE)** |
 
@@ -132,21 +132,22 @@ for msg in messages:
 ```
 
 ### 4.2 Ordinary Local FileBus CLI Fallback
-The ordinary CLI baseline remains 100% available and functional. It uses `--cred <path>` (pointing to a mode `0600` JSON credential file) to eliminate command-line token exposure:
+The ordinary CLI baseline remains 100% available and functional. It uses `--cred <path>` (which writes and reads a mode `0600` JSON credential file) to eliminate command-line token exposure:
 
 ```bash
-# 1. Enroll identity
-python3 coordination/bus_cli.py --store /path/to/store enroll \
-  --agent-name consumer-agent \
-  --device-id desktop-01 \
-  --project-id agent-coordination \
-  --task-id task-01 > creds.json
-chmod 0600 creds.json
+# 1. Register identity
+# (Writes credentials securely to --cred file with mode 0600; prints metadata JSON to stdout without token)
+python3 coordination/bus_cli.py --store /path/to/store register \
+  --agent consumer-agent \
+  --device desktop-01 \
+  --project agent-coordination \
+  --task task-01 \
+  --cred creds.json
 
 # 2. Check inbox
+# (Default query is unread-only; pass --all if all messages are desired)
 python3 coordination/bus_cli.py --store /path/to/store inbox \
-  --cred creds.json \
-  --unread-only
+  --cred creds.json
 
 # 3. Acknowledge message
 python3 coordination/bus_cli.py --store /path/to/store ack \
@@ -160,6 +161,21 @@ python3 coordination/bus_cli.py --store /path/to/store reply \
   --body "Processed via fallback CLI"
 ```
 
+### 4.3 Isolated CLI Fallback Smoke Test Receipts
+The exact CLI workflow above was empirically verified in `.local/scratch/smoke-cli-fallback/` against `coordination/bus_cli.py`:
+
+```
+$ python3 -c '... [isolated register -> send -> inbox -> ack -> reply -> inbox workflow] ...'
+[OK] Registered Alice: 84c10acf-8dcc-40dc-923c-1dc46f31fb30, cred file mode: 0o600
+[OK] Registered Bob: f9b67a98-f052-4cd3-b9f7-487dd502ae3f, cred file mode: 0o600
+[OK] Sent message Alice -> Bob: 705096d2-d7b5-4151-a8ad-efbc5fc3a448
+[OK] Bob received message in inbox: Hello Bob from fallback CLI
+[OK] Bob ACKed message: acked_at=2026-10-05T01:12:30Z
+[OK] Bob replied: 82287582-cea8-49d7-8978-a059abac1ed7
+[OK] Alice received reply in inbox: Reply from Bob via fallback CLI
+ALL ORDINARY CLI FALLBACK SMOKE CHECKS PASSED PERFECTLY AND CLEANED UP!
+```
+
 ---
 
 ## 5. Epistemic Boundaries & Invariant Compliance
@@ -169,7 +185,7 @@ python3 coordination/bus_cli.py --store /path/to/store reply \
    - Live multi-host network execution across physical machines and remote Windows execution (`cmd.exe`/`powershell.exe`) remain designated **`UNKNOWN/HELD`**.
    - Ambient OpenSSH configuration (`~/.ssh/config`) remains an administrative trust boundary.
 2. **Invariant Compliance**:
-   - Exactly **0** `cargo` / `rustc` invocations host-wide under human hold.
+   - Exactly **0** `cargo` / `rustc` invocations executed in this execution interval under human hold (scoped strictly to own actions and subprocesses).
    - Canonical workspace `/home/alexey/git/agent-bus` was strictly protected and remained read-only throughout.
    - Scratch usage confined to `.local/scratch/` (size < 5 MB $\le$ 512 MB, zero net `/tmp` growth).
    - Published exclusively to new feature branch `feat/typed-ssh-filebus-rpc` on public GitHub remote; canonical `main` was preserved without reset or overwrite.
