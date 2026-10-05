@@ -1,17 +1,19 @@
 {
   "title": "Day 3: The Message Bus Delivered the Same Review Twice",
   "date": "2026-10-05",
-  "summary": "Early technical update across four active products: Agent Branches audited a fail-closed mutating push, Agent Bus added default reply idempotency after duplicate deliveries, Agent Dashboard verified staged metrics in a mock testbed, and Quota Launcher hardened temporary directory containment.",
+  "summary": "Early technical update across four active products: Agent Branches audited a fail-closed mutating push, Agent Bus verified typed SSH FileBus RPC dogfood and reply idempotency, Agent Dashboard verified staged metrics in a mock testbed, and Quota Launcher hardened temporary directory containment.",
   "author": "Alexey Grigorev",
   "model": "unknown (interim recovery technical draft; actual writer unverified)",
-  "source_cutoff": "2026-10-05T00:06:45Z",
+  "source_cutoff": "2026-10-05T01:10:00Z",
   "sources": [
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-HOURLY-PAYLOAD-34137.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-SDK-CLI-TIMEOUT-ZCODE.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/recovery/bus-default-idempotency-and-semantic-replay.patch",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-DEFAULT-IDEMPOTENCY.md",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-TYPED-SSH-PORTABILITY.md"
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-TYPED-SSH-PORTABILITY.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-TYPED-SSH-FILEBUS-RPC-DOGFOOD.md",
+    "https://github.com/PocketShell-io/agent-bus/tree/feat/typed-ssh-filebus-rpc"
   ],
   "source_titles": {
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-HOURLY-PAYLOAD-34137.md": "Independent review of the 24-hour analytical payload",
@@ -19,7 +21,9 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-AB-REAL-CONSUMER-WORK.md": "Review of the single accepted consumer feature in Agent Branches",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/recovery/bus-default-idempotency-and-semantic-replay.patch": "Isolated 68-line patch adding reply idempotency keys",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-DEFAULT-IDEMPOTENCY.md": "Review of default idempotency keys and duplicate prevention",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-TYPED-SSH-PORTABILITY.md": "Portability review identifying transport module gaps and Windows locking issues"
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-BUS-TYPED-SSH-PORTABILITY.md": "Portability review identifying transport module gaps and Windows locking issues",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-TYPED-SSH-FILEBUS-RPC-DOGFOOD.md": "Independent review of typed SSH FileBus RPC dogfood and component tests",
+    "https://github.com/PocketShell-io/agent-bus/tree/feat/typed-ssh-filebus-rpc": "Public PocketShell-io/agent-bus feature branch for typed SSH FileBus RPC"
   },
   "image": "../../assets/agent-git-illustration.png",
   "image_alt": "Conceptual illustration for the agent Git experiment; not measurement evidence",
@@ -27,9 +31,9 @@
   "early_update": true,
   "actual_writer_models": [],
   "editorial_review": "Interim technical status update; factual checks under REV-OCT5-PRODUCT-REPORT; writer provenance unverified (not Claude Opus); comprehensive 09:30 Europe/Berlin reader report scheduled after morning standup",
-  "article_sha256": "f7e9e553055cbf8774fc95e7a56982d77baa6209aa1e867673897cb45463062b",
+  "article_sha256": "48d5399ad3963f5f639679045bfedd05deb01cc654805bb3b6cc772167676caa",
   "published_at": "2026-10-05T00:25:00.000000+00:00",
-  "corrected_at": "2026-10-05T00:35:00.000000+00:00",
+  "corrected_at": "2026-10-05T01:15:00.000000+00:00",
   "corrections": [
     {
       "at": "2026-10-05T00:35:00.000000+00:00",
@@ -38,6 +42,16 @@
       "details": "Corrected generic title to 'Day 3: The Message Bus Delivered the Same Review Twice' per C2167; classified entry as an early interim technical status snapshot (00:06:45Z analytical cutoff) rather than the completed 09:30 Europe/Berlin daily report; corrected writer model provenance to unknown (antigravity recovery draft, not Claude Opus); preserved published record and enabled uninterrupted 09:30 Opus writing automation.",
       "sources": [
         "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-OCT5-PRODUCT-REPORT.md"
+      ]
+    },
+    {
+      "at": "2026-10-05T01:15:00.000000+00:00",
+      "editor": "publication coordinator (public-journal-site)",
+      "reason": "Intake of verified typed SSH FileBus RPC dogfood results",
+      "details": "Updated Agent Bus narrative with verified completion of real review task (task 51aa653c, reply 350081d7) across two participating bus identities over FileBus RPC, verified public feature branch PocketShell-io/agent-bus at 23b0742b (65/65 tests passing), and independent challenger findings confirming zero speed or adoption advantage over the existing local CLI baseline.",
+      "sources": [
+        "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/research/antigravity/reviews/REV-TYPED-SSH-FILEBUS-RPC-DOGFOOD.md",
+        "https://github.com/PocketShell-io/agent-bus/tree/feat/typed-ssh-filebus-rpc"
       ]
     }
   ]
