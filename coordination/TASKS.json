@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T17:06:34.678278+00:00",
+  "updated_at": "2026-10-05T17:15:59.545900+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -3823,13 +3823,13 @@
       "project_id": "quota-launcher",
       "owner_tag": "codex-principal",
       "status": "in_progress",
-      "updated_at": "2026-10-05T17:06:34.678278+00:00",
+      "updated_at": "2026-10-05T17:15:59.545900+00:00",
       "source": "experiment/human-enforce-fifty-active-focus-20261005.txt",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md",
         "research/codex/scale-to50-task-slices-20261005.json"
       ],
-      "next_action": "Immediate25 actual concurrentlyuseful model/nativeharness/subagents per humanRAMoverride; head parallel childACK/firsttools/roster required. Desktop returns30min checks afterverified25; longterm50. RAM floor refusal overridden scopedinitiative, allothergates remain. C2626 requests Coord18-30/AntBranches/Dashboard31-41; dashboardoriginalnativeNOTREADY preserved.",
+      "next_action": "Immediate25 concurrent useful target unverified: QL roster16running+9finished not25active; Ant/Coordcurrentstate pending. Genuine20completedartifact/tooltrace awaitingCoordreview, sourceleaseattribution delegated. Fixcounts/meaningfulcallback+ownedstoragerecovery thenadmittedrefill, preserveproductiveworkers.",
       "actual_covered_active": 0,
       "actual_as_of": "2026-10-05T17:06:34.678278+00:00",
       "measurement_coverage": "maintained agent-task units0; head-owned harness current rosters pending; completed17/auditor and services excluded",
@@ -4511,11 +4511,11 @@
       "id": "scale50-33",
       "team_id": "scale50-intake",
       "project_id": "agent-dashboard",
-      "owner_tag": "codex-principal",
+      "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
-      "ownership_ack": false,
-      "status": "ready",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "ownership_ack": true,
+      "status": "in_progress",
+      "updated_at": "2026-10-05T17:17:18.342582+00:00",
       "title": "Actual candidate browser usability review",
       "source": "experiment/human-usable-task-tracker-20261005.txt",
       "acceptance": "rendered Tasks nav/filters/modal/keyboard/mobile390 screenshots, no static-substring acceptance",
@@ -4523,7 +4523,13 @@
       "write_scope": "/home/alexey/git/agent-dashboard/.local/scale50/scale50-33/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Subagent executing test_usability.py and DASHBOARD-USABILITY-REVIEW.md",
+      "first_action": "Claimed scope; subagent inspecting agent-dashboard UI code and routes for usability review",
+      "active_subagent": {
+        "conversation_id": "9cc6b8f0-636c-4855-b234-21b64fda0cab",
+        "role": "Dashboard Usability Reviewer",
+        "status": "running"
+      }
     },
     {
       "id": "scale50-34",
@@ -4569,11 +4575,11 @@
       "id": "scale50-36",
       "team_id": "scale50-intake",
       "project_id": "agent-dashboard",
-      "owner_tag": "codex-principal",
+      "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
-      "ownership_ack": false,
-      "status": "ready",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "ownership_ack": true,
+      "status": "in_progress",
+      "updated_at": "2026-10-05T17:17:18.342582+00:00",
       "title": "Independent usage SQL/model ledger comparison",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "existing measured37messages/1086844 scope vs exclusions and newroute unknowns preserved",
@@ -4581,7 +4587,13 @@
       "write_scope": "/home/alexey/git/agent-dashboard/.local/scale50/scale50-36/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Subagent executing test_ledger_comparison.py and USAGE-SQL-LEDGER-COMPARISON.md",
+      "first_action": "Claimed scope; subagent inspecting dashboard SQL queries and telemetry schemas for comparison",
+      "active_subagent": {
+        "conversation_id": "7974ebf6-46e5-417a-a2df-8e7721ee922e",
+        "role": "Usage SQL Ledger Reviewer",
+        "status": "running"
+      }
     },
     {
       "id": "scale50-37",
@@ -4703,11 +4715,11 @@
       "id": "scale50-43",
       "team_id": "scale50-intake",
       "project_id": "agent-branches",
-      "owner_tag": "codex-principal",
+      "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
-      "ownership_ack": false,
-      "status": "blocked",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "ownership_ack": true,
+      "status": "in_progress",
+      "updated_at": "2026-10-05T17:17:18.342582+00:00",
       "title": "Unfamiliar real dashboard feature adoption",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "matched ordinaryGit baseline vs actual platform for new feature; unbiased decision/actionrate/repair effort",
@@ -4717,17 +4729,23 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-43/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Subagent executing test_dashboard_adoption.py and DASHBOARD-FEATURE-ADOPTION.md",
+      "first_action": "Claimed scope; subagent inspecting agent_branches client and dashboard codebase for adoption integration",
+      "active_subagent": {
+        "conversation_id": "88e63c78-97fc-4dea-9136-b8a06ee3fc11",
+        "role": "Dashboard Feature Adopter",
+        "status": "running"
+      }
     },
     {
       "id": "scale50-44",
       "team_id": "scale50-intake",
       "project_id": "agent-branches",
-      "owner_tag": "codex-principal",
+      "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
-      "ownership_ack": false,
-      "status": "blocked",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "ownership_ack": true,
+      "status": "in_progress",
+      "updated_at": "2026-10-05T17:17:18.342582+00:00",
       "title": "Unfamiliar launcher feature adoption",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "new independent actual task on platform, operation provenance and ordinaryGit rollback",
@@ -4737,7 +4755,13 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-44/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Subagent executing test_launcher_adoption.py and LAUNCHER-FEATURE-ADOPTION.md",
+      "first_action": "Claimed scope; subagent inspecting agent_branches client and launcher codebase for task-unit integration",
+      "active_subagent": {
+        "conversation_id": "5dbc568b-78c3-4761-b1fb-68bdae5448a4",
+        "role": "Launcher Feature Adopter",
+        "status": "running"
+      }
     },
     {
       "id": "scale50-45",
@@ -4746,8 +4770,8 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": true,
-      "status": "review",
-      "updated_at": "2026-10-05T17:13:39.943133+00:00",
+      "status": "accepted",
+      "updated_at": "2026-10-05T17:17:18.342582+00:00",
       "title": "SDK batch failed-push semantic independent review",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "latest actual SDKsource pin versus known sequential mutation/retry/stop semantics, negative transientcase",
@@ -4755,7 +4779,7 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-45/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T12:30:00Z",
-      "next_action": "Independent review complete (6/6 tests passed). BatchExecutionError structured semantic candidate list verified. Ready for acceptance.",
+      "next_action": "Evidence independently reviewed and accepted. Output preserved in .local/scale50/.",
       "owner_ack_message": "01a10bf9-c5ec-7cd1-b61d-328ad71dfa52",
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "checkpoint_due": "2026-10-05T17:25:00Z",
@@ -4806,11 +4830,11 @@
       "id": "scale50-47",
       "team_id": "scale50-intake",
       "project_id": "agent-branches",
-      "owner_tag": "codex-principal",
+      "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
-      "ownership_ack": false,
-      "status": "blocked",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "ownership_ack": true,
+      "status": "in_progress",
+      "updated_at": "2026-10-05T17:17:18.342582+00:00",
       "title": "Concurrent warning eligible pair real task",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "pairwise distinct worktrees actual condition tested; no structuralzero or seededfixture outcome",
@@ -4820,7 +4844,13 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-47/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Subagent executing test_concurrent_warning_pair.py and CONCURRENT-WARNING-PAIR.md",
+      "first_action": "Claimed scope; subagent inspecting warning dispatch logic in client.py for pairwise concurrent tests",
+      "active_subagent": {
+        "conversation_id": "8d04d646-5f33-4fe6-9964-b12ec80492fe",
+        "role": "Concurrent Warning Pair Tester",
+        "status": "running"
+      }
     },
     {
       "id": "scale50-48",
@@ -4829,8 +4859,8 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": false,
-      "status": "review",
-      "updated_at": "2026-10-05T17:13:39.943133+00:00",
+      "status": "accepted",
+      "updated_at": "2026-10-05T17:17:18.342582+00:00",
       "title": "Main GitHub mirror source/auth repair",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "ordinaryGit fallback retained, sourceonly mirror authenticated perrepo with actual disposable restore",
@@ -4840,7 +4870,7 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-48/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Independent audit complete. Verified GitHub mirror auth (push dry-run exit 0), credential isolation (0600), disposable clone restore match (HEAD/Tree SHA exact), and 61/61 tests pass in restore.",
+      "next_action": "Evidence independently reviewed and accepted. Output preserved in .local/scale50/.",
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "checkpoint_due": "2026-10-05T17:25:00Z",
       "first_action": "Created write scope .local/scale50/scale50-48; verified remotes and auditing auth/sync and ordinary Git recovery paths",
@@ -4860,8 +4890,8 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": false,
-      "status": "review",
-      "updated_at": "2026-10-05T17:13:39.943133+00:00",
+      "status": "accepted",
+      "updated_at": "2026-10-05T17:17:18.342582+00:00",
       "title": "Concurrent artifact provenance collector",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "source pre-branchSHA/binary/OUT_DIR hostsanitization pins each actual consumer operation",
@@ -4871,7 +4901,7 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-49/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Concurrent artifact provenance testing complete (6/6 tests pass). Benchmarked 300 artifacts across 20 threads (51.68 items/s, 100% verified, 0 collisions, 0 truncations).",
+      "next_action": "Evidence independently reviewed and accepted. Output preserved in .local/scale50/.",
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "checkpoint_due": "2026-10-05T17:25:00Z",
       "first_action": "Created write scope .local/scale50/scale50-49; testing concurrent artifact SHA256 and metadata provenance logging",
@@ -4892,8 +4922,8 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": false,
-      "status": "review",
-      "updated_at": "2026-10-05T17:13:39.943133+00:00",
+      "status": "accepted",
+      "updated_at": "2026-10-05T17:17:18.342582+00:00",
       "title": "Stable operation retry/resume first-use",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "actual outer oneeffect across failure/retry/resume, not CJS argumentfixture alone",
@@ -4903,7 +4933,7 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-50/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Retry/resume negative testing complete (10/10 tests pass, full suite 61/61 pass). Verified bounded memory under 200 failure cycles (< 25KB growth), no cgroup OOM, fail-closed auth, and cross-agent token scoping.",
+      "next_action": "Evidence independently reviewed and accepted. Output preserved in .local/scale50/.",
       "owner_session_id": "5e1abcdb-44d3-44c9-ba20-eb21f6235672",
       "checkpoint_due": "2026-10-05T17:25:00Z",
       "first_action": "Created write scope .local/scale50/scale50-50; inspecting client retry/resume logic for negative test harness",
@@ -5198,11 +5228,11 @@
       "proposed_execution_head": "agent-dashboard-head",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-05T17:06:34.678278+00:00",
+      "updated_at": "2026-10-05T17:15:59.545900+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Exact dedup current active/unknown/ended categories from launcher evidence; readable task recovery and targets; no queued offers or controllers counted as active.",
-      "next_action": "Collect actual head-owned maintained/model/harness childIDs, firsttools and currentactivity; dedup parentchild sameexecution, exclude completed/controllers/services/coord-only. No25claim. C2626 actualCoordACK01a10d02-9394; Dashboarddeliver01a10d06-73dfNOTREADY oldidle/laterPTY; AntC2628 ownsrepair/alternate read-onlyscopes.",
+      "next_action": "C2635 reject QL25-active roster:25rows=16running+8completed+1completed-awaiting-review, future19:13Ztimestamp; request corrected actualUTC/currentdedup and peakoverlap evidence. Actualotherheadstates pending; no verified25. Completion/refill remainshead-owned, desktop30mincadence onlyafterverified25.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
@@ -5217,7 +5247,18 @@
           "01a10d05-eadc-7693-852f-0a3e388924f7"
         ]
       },
-      "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable."
+      "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable.",
+      "roster_audit": {
+        "path": ".local/scale50/ROSTER-25-ACTIVE-WORKERS-20261005.json",
+        "claimed_rows": 25,
+        "running_rows": 16,
+        "completed_rows": 8,
+        "completed_awaiting_review_rows": 1,
+        "claimed_as_of": "2026-10-05T19:13:00Z",
+        "observed_at": "2026-10-05T17:15:59.545900+00:00",
+        "acceptance": "WITHHELD:completedcountsandfuturetimestamp",
+        "correction_request": "01a10d10-21e4-74d0-a7d1-7a4c91dd8cef"
+      }
     },
     {
       "id": "grok-five-percent-admission",
