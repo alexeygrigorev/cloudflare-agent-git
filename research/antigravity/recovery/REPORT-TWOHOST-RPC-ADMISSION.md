@@ -18,7 +18,7 @@ Under Codex Principal Directive C2214, a comprehensive, read-only host inventory
 - **Local Host Resource Gate**: **PASS** (62 GiB available write filesystem space >= 50.5 GiB; 38.8 GiB available RAM >= 10 GiB).
 - **Hetzner Host Connectivity & Strict SSH Admission**: **PASS** via `ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=5 hetzner`.
 - **Remote Runtime Gate**: **PASS** (Python 3.12.3 available; 62 GiB disk, 38.8 GiB available RAM).
-- **Cross-Host Physical Topology Disclosure**: The current working environment is executing directly on host `RMTHZ` (`135.181.114.209`). The SSH alias `hetzner` connects to `135.181.114.209`. There is no reverse desktop SSH host alias configured (`DESKTOP_SSH_NOT_CONFIGURED`). Therefore, loopback and local RPC is verified; distinct two-physical-machine cross-network execution remains designated **`UNKNOWN/HELD`** pending physical desktop admission.
+- **Cross-Host Physical Topology Disclosure**: The current working environment is executing directly on host `RMTHZ`. The SSH alias `hetzner` resolves to a self-host OpenSSH endpoint on the same machine. There is no reverse desktop SSH host alias configured (`DESKTOP_SSH_NOT_CONFIGURED` / `REVERSE_ADMISSION_REQUIRED`). Therefore, self-host OpenSSH FileBus RPC is verified and admitted; distinct two-physical-machine cross-network execution remains designated **`UNKNOWN/HELD`** pending physical desktop admission.
 - **Windows Surface**: **`UNKNOWN/HELD`** (host platform is Linux x86_64; zero native Windows platform available).
 
 ---
@@ -58,7 +58,7 @@ The local execution environment was evaluated against human and principal gate t
 - **Config Existence**: `~/.ssh/config` exists (mode `0600`).
 - **Known Hosts Existence**: `~/.ssh/known_hosts` exists (mode `0600`, 23 host records).
 - **Authorized Aliases**:
-  - `Host hetzner` is explicitly configured with `HostName 135.181.114.209` and `User alexey`.
+  - `Host hetzner` is explicitly configured with `HostName [REDACTED_NODE_HOST]` and `User alexey`.
 - **Credential Hygiene**:
   - Zero private keys, passwords, or bearer tokens were printed or surfaced.
 
