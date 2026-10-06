@@ -141,5 +141,6 @@ Under authoritative directives C2880 and parent governance, the Coordination Hea
   - Cycle 37 (`task-5803`): Fired at `2026-10-06T18:54:34+02:00`, checked inbox, verified invariant diff SHA-256 `8c9f88b85d05deb21b7d732ad6f03499022bde7bcd74c456a56c2fd7f67c94aa`.
   - Cycle 38 (`task-5824`): Fired at `2026-10-06T18:59:38+02:00`, checked inbox, verified invariant diff SHA-256 `8c9f88b85d05deb21b7d732ad6f03499022bde7bcd74c456a56c2fd7f67c94aa`.
   - Cycle 39 (`task-5845`): Fired at `2026-10-06T19:04:42+02:00`, checked inbox, verified invariant diff SHA-256 `8c9f88b85d05deb21b7d732ad6f03499022bde7bcd74c456a56c2fd7f67c94aa`.
-  - Cycle 40 (`task-5866`): Active at `2026-10-06T19:04:47+02:00` with 300s NEVER continuation (firing at `19:09:47+02:00`).
+  - Cycle 40 (`task-5866`): Fired at `2026-10-06T19:09:47+02:00`. Processed incoming messages from desktop-orchestrator (19:03 coordinator check `01a1122e-4d73` and direct human relay `01a1122f-3e5f`) and codex-principal (C2900 HUMAN continuation repair `01a1122e-72b1`). Replied to codex-principal via `01a11232-1ea9-7801-b6ca-370444d0ff50` and desktop-orchestrator via `01a11232-34e7-7212-86a6-b0ba8a9a1e41` with detailed Windows client manifest, runtime dependencies, cursor preservation architecture, and C2892 prototype boundary confirmation. Verified invariant diff SHA-256 `8c9f88b85d05deb21b7d732ad6f03499022bde7bcd74c456a56c2fd7f67c94aa`.
+  - Cycle 41 (`task-5887`): Active at `2026-10-06T19:09:51+02:00` with 300s NEVER continuation (firing at `19:14:51+02:00`).
 
