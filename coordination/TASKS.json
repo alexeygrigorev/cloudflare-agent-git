@@ -4453,18 +4453,20 @@
       "owner_tag": "agent-coordination-head-gemini",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": true,
-      "status": "ready",
-      "updated_at": "2026-10-05T15:42:00Z",
+      "status": "accepted",
+      "updated_at": "2026-10-06T01:05:23Z",
       "title": "Public client first-use run instructions",
       "source": "experiment/human-unified-headless-tui-message-bus-adoption-20261005.txt",
       "acceptance": "headless-only plus mixedTUI commands, owncredential hygiene, fallbackGit recoverable",
       "dependencies": [],
       "write_scope": "/home/alexey/git/agent-bus/.local/scale50/scale50-29/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD",
+      "due_checkpoint": "2026-10-05T11:15:00Z",
+      "next_action": "Evidence independently reviewed and accepted in research/antigravity/reviews/REV-SCALE50-29-PUBLIC-CLIENT-RUNBOOK-20261006.md.",
       "owner_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
       "assignment_ack": "8d4c026c-head-acceptance-20261005",
-      "first_action": "Bounded in-session verification of FileBus CLI vocabulary and invariants; zero worker launches while host root disk < 50.0 GiB"
+      "first_action": "Bounded in-session verification of FileBus CLI vocabulary and invariants; zero worker launches while host root disk < 50.0 GiB",
+      "audit_report": "research/antigravity/reviews/REV-SCALE50-29-PUBLIC-CLIENT-RUNBOOK-20261006.md"
     },
     {
       "id": "scale50-30",
@@ -4660,9 +4662,9 @@
       "project_id": "agent-dashboard",
       "owner_tag": "codex-principal",
       "proposed_execution_head": "antigravity-head",
-      "ownership_ack": false,
-      "status": "ready",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "ownership_ack": true,
+      "status": "blocked",
+      "updated_at": "2026-10-06T01:05:52Z",
       "title": "Hourly date/product API filter tests",
       "source": "experiment/human-public-hourly-dashboard-history-20261005.txt",
       "acceptance": "24 half-open buckets, Berlin DST boundaries, unknown hours and product aggregation independent",
@@ -4670,7 +4672,8 @@
       "write_scope": "/home/alexey/git/agent-dashboard/.local/scale50/scale50-39/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Rejected by independent technical auditor in research/antigravity/reviews/REV-SCALE50-39-HOURLY-API-TESTS-20261006.md: vacuous len==24 assertion on empty spans, unexercised DST boundaries, missing HTTP API endpoint tests, and live server.py URL-decoding crash on timezone offset '+'. Remediation required.",
+      "audit_report": "research/antigravity/reviews/REV-SCALE50-39-HOURLY-API-TESTS-20261006.md"
     },
     {
       "id": "scale50-40",
