@@ -317,7 +317,7 @@ class Safety(unittest.TestCase):
     service.recorded_send.__defaults__ = real_defaults
     service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
 
-  def test_check_pending_slo_direct(self):
+ def test_check_pending_slo_direct(self):
     """Test check_pending_slo calculation and precise blocking reasons."""
     t_now = 1000.0
     pending_fresh = {'id': 'm1', 'created_at': '1970-01-01T00:15:00+00:00'} # age = 100s
@@ -335,7 +335,7 @@ class Safety(unittest.TestCase):
     self.assertEqual(dur, 700.0)
     self.assertEqual(slo, 300)
 
-  def test_parse_and_validate_turn_hook_event(self):
+ def test_parse_and_validate_turn_hook_event(self):
     """Test parsing and validation of authoritative turn-boundary hook events."""
     valid_event = {
         'type': 'turn_complete',
@@ -360,5 +360,209 @@ class Safety(unittest.TestCase):
     with self.assertRaises(ValueError):
         service.parse_and_validate_turn_hook_event({**valid_event, 'active_children': 2})
 
+ def test_known_footer_classifier_mismatch_annotates_diagnostic_hold(self):
+    """Test that delivery refusal with footer signature annotates diagnostic_hold and includes it in blocked_beyond_slo escalation."""
+    with tempfile.TemporaryDirectory() as td:
+      tmp = pathlib.Path(td)
+      root = tmp / 'root'
+      (root / 'coordination').mkdir(parents=True)
+      (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps({'teams': [{'id': 'T1', 'principal_tags': ['codex-principal']}]}))
+      (root / 'coordination/TASKS.json').write_text(json.dumps({'tasks': [{'id': 'task-1', 'team_id': 'T1', 'status': 'ready', 'owner_tag': 'codex-principal'}]}))
+      private = tmp / 'private'
+      private.mkdir()
+      bin_dir = tmp / 'bin'
+      bin_dir.mkdir()
+      pinned = bin_dir / 'aplexer'
+      pinned.write_bytes(b'PINNED')
+
+      # Pre-stage a pending message that is already beyond SLO (created 400s ago)
+      # created_at at t=600, current time t=1000 => age=400s >= 300s SLO
+      initial_memory = {
+          'codex-principal': {
+              'event_key': 'ev-1',
+              'session_id': 'sess-codex',
+              'ready_snapshot_count': 2,
+              'pending': {
+                  'id': 'm-hold-1',
+                  'sender_id': 'sup-1',
+                  'sender_tag': 'experiment-supervision',
+                  'recipient_session_id': 'sess-codex',
+                  'recipient_tag': 'codex-principal',
+                  'delivery': 'inbox',
+                  'created_at': '1970-01-01T00:10:00+00:00'  # timestamp 600.0
+              }
+          }
+      }
+      (private / 'state.json').write_text(json.dumps(initial_memory))
+
+      deliver_ret = [{'status': 'not-ready', 'detail': 'recipient composer has an unsubmitted draft in progress (GPT-6.1-Sol medium · Context 43% left...); delivery fail-closed'}]
+      calls = []
+      cycles = [0]
+
+      def fake_cmd(args, timeout=20):
+        words = [a for a in args[1:] if not a.startswith('-')]
+        if words[:1] == ['whoami']:
+          return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-1'})
+        if words[:1] == ['list']:
+          cycles[0] += 1
+          if cycles[0] >= 2:
+            (private / 'stop').write_text('stop')
+          return json.dumps([{'workspace': str(root), 'tag': 'codex-principal', 'id': 'sess-codex', 'reported_state': 'idle', 'workload_pid': str(os.getpid())}])
+        if 'capture' in args:
+          return '› Ask Codex to do anything'
+        if args[0] == 'quse':
+          return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 90}}}})
+        return '{}'
+
+      class R:
+        def __init__(self, rc, out, err=''):
+          self.returncode, self.stdout, self.stderr = rc, out, err
+
+      def fake_run(args, **kw):
+        calls.append(list(args))
+        if 'deliver' in args:
+          return R(0, json.dumps(deliver_ret[0]))
+        return R(0, '{}')
+
+      real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+      real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
+
+      try:
+        service.command = fake_cmd
+        service.subprocess.run = fake_run
+        service.time = type('T', (), {'time': staticmethod(lambda: 1000.0), 'sleep': staticmethod(lambda s: None)})()
+        service.ROOT, service.PRIVATE, service.BINARY = root, private, str(pinned)
+
+        service.run()
+
+        st = json.loads((private / 'state.json').read_text())
+        item = st['codex-principal']
+        self.assertEqual(item.get('diagnostic_hold'), 'known-footer-classifier-mismatch')
+        self.assertEqual(item.get('pending', {}).get('diagnostic_hold'), 'known-footer-classifier-mismatch')
+        self.assertEqual(item.get('status'), 'blocked_beyond_slo')
+        self.assertIn('[diagnostic_hold: known-footer-classifier-mismatch]', item.get('blocking_reason', ''))
+        self.assertEqual(item.get('cooldown_until'), 1300.0)
+
+        status_rep = json.loads((private / 'status.json').read_text())
+        self.assertTrue(status_rep.get('degraded'))
+        escalations = [a for a in status_rep.get('actions', []) if a.get('kind') == 'pending-blocked-beyond-slo-escalation']
+        self.assertTrue(escalations)
+        esc = escalations[0]
+        self.assertEqual(esc['recipient'], 'codex-principal')
+        self.assertEqual(esc['message_id'], 'm-hold-1')
+        self.assertEqual(esc['diagnostic_hold'], 'known-footer-classifier-mismatch')
+        self.assertEqual(esc['recovery_owner'], 'ant-head-never-timer-custody-20261006')
+        self.assertIn('[diagnostic_hold: known-footer-classifier-mismatch]', esc['blocking_reason'])
+      finally:
+        service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
+        service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
+
+ def test_blocked_beyond_slo_applies_backoff_cooldown(self):
+    """Test that blocked_beyond_slo sets 300s cooldown and suppresses subsequent delivery attempts until expired."""
+    with tempfile.TemporaryDirectory() as td:
+      tmp = pathlib.Path(td)
+      root = tmp / 'root'
+      (root / 'coordination').mkdir(parents=True)
+      (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps({'teams': [{'id': 'T1', 'principal_tags': ['codex-principal']}]}))
+      (root / 'coordination/TASKS.json').write_text(json.dumps({'tasks': [{'id': 'task-1', 'team_id': 'T1', 'status': 'ready', 'owner_tag': 'codex-principal'}]}))
+      private = tmp / 'private'
+      private.mkdir()
+      bin_dir = tmp / 'bin'
+      bin_dir.mkdir()
+      pinned = bin_dir / 'aplexer'
+      pinned.write_bytes(b'PINNED')
+
+      # Pre-stage a pending message created 400s ago (age=400 >= 300s SLO)
+      initial_memory = {
+          'codex-principal': {
+              'event_key': 'ev-1',
+              'session_id': 'sess-codex',
+              'ready_snapshot_count': 2,
+              'pending': {
+                  'id': 'm-cool-1',
+                  'sender_id': 'sup-1',
+                  'sender_tag': 'experiment-supervision',
+                  'recipient_session_id': 'sess-codex',
+                  'recipient_tag': 'codex-principal',
+                  'delivery': 'not-ready',
+                  'created_at': '1970-01-01T00:10:00+00:00'  # timestamp 600.0
+              }
+          }
+      }
+      (private / 'state.json').write_text(json.dumps(initial_memory))
+
+      curr_time = [1000.0]
+      calls = []
+      cycles = [0]
+
+      def fake_cmd(args, timeout=20):
+        words = [a for a in args[1:] if not a.startswith('-')]
+        if words[:1] == ['whoami']:
+          return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-1'})
+        if words[:1] == ['list']:
+          cycles[0] += 1
+          if cycles[0] >= 2:
+            (private / 'stop').write_text('stop')
+          return json.dumps([{'workspace': str(root), 'tag': 'codex-principal', 'id': 'sess-codex', 'reported_state': 'idle', 'workload_pid': str(os.getpid())}])
+        if 'capture' in args:
+          return '› Ask Codex to do anything'
+        if args[0] == 'quse':
+          return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 90}}}})
+        return '{}'
+
+      class R:
+        def __init__(self, rc, out, err=''):
+          self.returncode, self.stdout, self.stderr = rc, out, err
+
+      def fake_run(args, **kw):
+        calls.append(list(args))
+        if 'deliver' in args:
+          return R(0, json.dumps({'status': 'not-ready', 'detail': 'composer busy'}))
+        return R(0, '{}')
+
+      real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+      real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
+
+      try:
+        service.command = fake_cmd
+        service.subprocess.run = fake_run
+        service.time = type('T', (), {'time': staticmethod(lambda: curr_time[0]), 'sleep': staticmethod(lambda s: None)})()
+        service.ROOT, service.PRIVATE, service.BINARY = root, private, str(pinned)
+
+        # Cycle 1: at t=1000.0, pending message is blocked beyond SLO. Cooldown should be set to 1300.0
+        service.run()
+
+        st = json.loads((private / 'state.json').read_text())
+        item = st['codex-principal']
+        self.assertEqual(item['status'], 'blocked_beyond_slo')
+        self.assertEqual(item['cooldown_until'], 1300.0)
+
+        # Cycle 2: advance time to 1100.0 (still within cooldown: 1100 < 1300). Delivery should NOT be attempted
+        calls.clear()
+        cycles[0] = 0
+        (private / 'stop').unlink(missing_ok=True)
+        curr_time[0] = 1100.0
+
+        service.run()
+
+        delivers_during_cooldown = [c for c in calls if 'deliver' in c]
+        self.assertEqual(delivers_during_cooldown, [])
+
+        # Cycle 3: advance time to 1301.0 (cooldown expired: 1301 >= 1300). Delivery SHOULD be attempted
+        calls.clear()
+        cycles[0] = 0
+        (private / 'stop').unlink(missing_ok=True)
+        curr_time[0] = 1301.0
+
+        service.run()
+
+        delivers_after_cooldown = [c for c in calls if 'deliver' in c]
+        self.assertTrue(delivers_after_cooldown)
+        self.assertEqual(delivers_after_cooldown[0][3], 'm-cool-1')
+      finally:
+        service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
+        service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
+
 if __name__=='__main__':unittest.main()
+
 
