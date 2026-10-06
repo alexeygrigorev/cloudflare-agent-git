@@ -2017,3 +2017,12 @@ Principal exactSIGTERM oldAnt2689847 at11:44:04 afterfreshsolePID/command/ownsco
 NewAnt7d87f36b-8d02-4b46-8216-98d6dce3f990 genuinecustody01a11107-b9df principalreadACK/reply01a11108-843d. Exactscope explicitBranchesdelivery+AgentBusruntimeadoption; cloudsourceNONE. Actualfirstmodeltools12772handoff/12775nativewhoami11:44:28. Native300s neverpolicy intended but timer/delegates notyetobserved; no autonomousacceptance or actualfirstusefulchild inferred.
 
 AtomicTASKS/TEAM currentmapping corrected onlyBranches/Busruntime twoexistingtasks/projects withprivatebeforeimages; originalc6/365/46history preserved. C2786 assignmentACK nowgenuinecurrentcustody, realadoptionreceiptsretained/broaderdemogateOPEN. Busregistry separatescurrentruntime/adoptionhead7d fromsourceleaseCoord917; no wholeBusrepo/sourcecompetition/servicelease transferred. C2693/watchers formerc6 scopes retained awaitingseparateACK; c7/Coord917/legacy46protectedsourceleases untouched. Newowner nextconditions: realnative never-timerfire/action/rearm and maintainedusefulmodeltaskFIRSTTOOL→artifact→distinct freeverdictreview/refill; no rootclock prerequisite.
+
+
+### Actual C2840 concurrent work and second callbacks 2026-10-06T12:01:51.551270+00:00
+
+PrincipalC2840/root01a11116-7a80: usefulsimultaneousactors11:59:04UTC — Dashboardnative9eeee first11:55:52 insharedhead1500M100 (notseparateworkerunit or independentadmission), BusextractionGemini984181d2 first11:57:56 own768M100. ExactfullUUID/taskmapping pending; no duplicatechildtask/count manufactured. Sources/artifacts independentacceptance pending. ExistingTASKS observationsappend only; no sourcelease transfer or accepted result inferred.
+
+Secondcallback evidence: QL10444fire11:58:19→actualmodelactions→10733NEVERdue12:03:29; Ant13233fire11:59:33→13461NEVERdue12:04:36→owninbox/tasktools. Twoheadcycles are real but do not prove fullHA/absentprincipal usefulintegration. QLloadedcleanup remainsheaddiagnosis/no detachedrepair. Nextownedevents: extractionartifact→distinctfreereview/acceptedpin, readonlyDashboardartifact→review/taskstatsconsumer, loadedcleanup/runtimepostticks and actualheadreview/refill.
+
+Newreview-provenance intake now included via expressly authorized ordinaryGit privateindex checkpoint only; no productCLI execution or adoption claim. ProductBranchesHEAD33271a5d5351ef166ab1c6a9adabf5976a3a06b0 package tree differs from reviewedCLI31e1747, so exactpinnedruntimeguard remainsunresolved ratherthan run mutable source. No peer/source/registry staging.
