@@ -132,6 +132,16 @@ Coord helperd32b4c30-e94f-4c2b-a222-df89258b9a34 genuine firstview_file18:21:44.
 
 At18:25 unitroster contains two cleanupactors12 and79 sharing `.local/tmp/cleanup`, rootworkspace, currentQLowner0f and600s bounds, acrossdifferentmaintainedstores. Cleanup12 inlauncher-configDB started18:24:16UTC, unitMainPID624242/invocation7acd148147334bc0a563549e614e61cc; MemoryMax768MiB. Cleanup79 in.local/stateDB completed-awaiting-review18:25:30UTC and unittheninactive. Both wereactive concurrently in the18:25 roster, so cross-store single-cleanup dedup is not established. Historical cleanup12 failure from10:58 in anotherstore is preserved separately and must not be attributed to this newinvocation. Parent requested admission freeze/dedup ownership without unknown kills. Actual current lower bound1 cleanupunit and1 active nativeCLI helper, but nativehelper scope incident prevents treating its tools as accepted intended Bus work; overallcoverageunknown.
 
+## 600s retry and shared storage concern — 18:30UTC
+
+Fresh same-task C2932 retry nowverified: MainPID691158/zcode-cli692144, invocation011b9e5ffef24f38be84dbff129fe2e6, processstart18:26:08/09UTC; MemoryMax768MiB/TasksMax100, maintainedDBstarting18:26:08 withtimeout600. Actual new CID01a11277-478d-7f71-9d45-52dab70ddb65 turn_context modelglm-5.3-flash, firstexec_command18:26:22.550UTC;29toolcalls, latestTodoWrite18:30:06.257UTC. Both inspected process environments lack APLEXER_SESSION_ID/TAG/WORKSPACE. This is one current useful contained model actor, independent of earlier300s failedinvocation preserved above.
+
+New first_use_report.json written18:29:44.107188UTC, SHA172dda3290359c92a87fd14c52d9919b99ca3f8d150efb17f39089e3c3e8a953, taskC2932/statuscompleted/cli_inspectedtrue. New Bus assignment48ee2e24-2e9b-4608-96b6-e3bd3a06e1a7 dates18:23:16UTC, ACK18:29:17/accept18:29:23. Oldf5e dispatch remains untouched. No Bus outcome/reply or terminal model result observed at firstcheckpoint; artifact claim alone is not independently accepted audit or successorproof.
+
+QL clarification relayed by parent: reviewer139b was a deterministic test runner, not an independent model reviewer. Receipt29 should retain that classification; new real model review is requested, not yet verified here. Distinct plan reviewerc237 remains a claim until actual tools/verdict inspected.
+
+New recoverybackup `.local/recovery/aplexer-fd6fd0ce.bak` measured80009808bytes/mode0444/hashfd6fd0ce218f6256442193e0d078467ad74830615ce87435053d7450a41279bd. Timestamp is preserved originalOct3 mtime, not creation time. Physical measured recoverydirectory584146944bytes (~557MiB); tmp688128, scratch14467072, Bus trial593920, QL tmp2686976: surveyed aggregate602583040bytes (~574.7MiB). This exceeds512MiB if the requested aggregate task/recovery cap includes historical recoverystorage. Policy classification of retained history versus task scratch needs owning-head disposition; do not delete protected recovery/history to fit a report. Parent notified immediately. No backup, deletion, build or source review was performed by helper.
+
 
 ## C2920 capability-audit correction — principal metadata, 6 October 2026
 
@@ -180,3 +190,19 @@ Coord nativechildd32b4c30-e94f-4c2b-a222-df89258b9a34 for existing synthesis-age
 Principal corrective01a11278-b587 requires truthful modeled labels and a head-owned standalone AgentBus transport adapter for Product4: genuine headless clients must exchange messages without APLEXER/session identity dependency. AntAPI coordination01a11278-b6e2 is a request; exact source ownership, QL launch admission and distinct reviewer ACK remain pending. No new dispatch, agreed lease or accepted adapter is invented. Existing head3138 owns the synthesis task, while heads retain implementation and review custody.
 
 Independent runtime metadata finds cleanup12 and79 overlapped on the same scratch across separate stores;79 completed18:25:30,12 was active at that observation. QL owns reconciliation under actualrequest01a11277-2c1e; no unknown process kill or dedup repair is claimed. C2932's600s retry was not observed18:25. Registered receipt29 remains credited with reviewermodel tool provenance unknown. Next principal18:30UTC checkpoint checks exact adapter owner/lease/firsttool and retry/cleanup reconciliation; all broader transport, idlewake and scale gates stay OPEN.
+
+
+## C2942 receipt29 is automated validation, not independent model review
+
+QL genuine01a11279-04bb corrects reviewer139b: it was deterministic Python run_review_tmpdir_default_c2932.py, not a native LLM reviewer. Receipt29 registration therefore proves automated validation only. Earlier DB accepted status remains recorded history, but independent model code review of d68 is OPEN. Principal01a11279-7810 requests a real admitted read-only LLM reviewer on existing t-ql-review-tmpdir-default-c2932; no duplicate code writer or invented review dispatch.
+
+Ant01a11279-0014 reports C2932 resumed PID691158 with600s timeout at18:26:08UTC, fresh907d identity/48ee dispatch; actual firsttool awaits administrative verification. Preserve earlier failed attempt and genuine tools; no successful Bus result/refill or new modelworker count inferred from PID. Standalone Bus API contract is sent to Coord, not accepted implementation. Planrevision2f703/c237/3e733 planning ACCEPT retains Rust hold. Next18:30UTC checkpoint requires actual retry firsttool/result or distinct genuine modelreview. This correction awaits the next meaningful batch, not a status-only publication.
+
+
+## C2943 real retry artifact and Bus ACK — actual18:30UTC checkpoint
+
+Independent runtime metadata verifies resumedPID691158/zcodex692144, invocation011b9e5ffef24f38be84dbff129fe2e6 starting18:26:08UTC; actual glm-5.3-flash CID01a11277-478d-7f71-9d45-52dab70ddb65 firstexec18:26:22.550. Real first_use_report.json appeared18:29:44, SHA172dda3290359c92a87fd14c52d9919b99ca3f8d150efb17f39089e3c3e8a953. Busdispatch48ee ACK18:29:17 and accept18:29:23 are observed. Canonical task currentrunning is restored based on real action; original300s failed attempt remains preserved. No terminal/finalreply/distinctreview was observed asof18:30, so this is real first-use progress, not accepted uptake or autonomous refill.
+
+Principalactualnotes01a1127b-fdfc/fe53 retain next18:35UTC/event follow-up: taskterminal→immutableartifact→distinct modelreview→genuine reply/nextusefulfirsttool. QL139b review remains automated validation only as corrected above. Coord standalone adapter is planned, canonicalintegration/actualworker pending.
+
+Measured newbackup80,009,808B, recovery584,146,944B and total task/recovery602,583,040B (~574.7MiB) require an explicit policy-category disposition; do not claim512MiB compliance. Ant owns ONLY newbackup private StorageBox relocation preservinghistory. This helper moved/deleted nothing or published private paths/credentials. Runtime and broader capacity/wake gates remain OPEN.
