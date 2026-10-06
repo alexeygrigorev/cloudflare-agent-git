@@ -1,0 +1,35 @@
+# Desktop-root chat handoff — 6 October 2026
+
+## Role and custody
+
+The desktop chat is the human–Hetzner interface: relay exact human steering and meaningful outcomes, provide requested browser assistance, and proactively diagnose and carry out bounded communication/custody recovery with verified recipients and received handoffs. Report the problem and concrete steps, owners, evidence and next checkpoint rather than end on a blocker-only status. It is not the team's scheduler, product implementer, code reviewer or routine release approval gate and does not form a product dispatch team. Read [ROLE-CONTRACT](../../coordination/ROLE-CONTRACT.md), [OPERATING-MODEL](../../coordination/OPERATING-MODEL.md), [USER-STEERING](../../coordination/USER-STEERING.md), [RESOURCE-POLICY](../../coordination/RESOURCE-POLICY.md), current [TASKS](../../coordination/TASKS.json) and [principal coordination](../../coordination/codex.md). Latest explicit steering supersedes older defaults.
+
+The [new desktop intake](desktop-role-proactive-intake-20261006.md) records a new desktop chat using the unchanged authorized relay `79ffb8c7`, not a new remote principal. Existing automation remains with the prior chat until an explicit received supervision handoff; no duplicate monitor or inferred custody transfer. Existing C2710 is already accepted and in progress, not a new worker batch. Return actual recovery/owner/readiness evidence by 09:05 Berlin (07:05 UTC); 09:00 stand-up and 09:30 Opus reporting remain separately owned.
+
+Remote principal `93cf28f2-2872-411c-a5da-179e1b83b59f` retains big-picture oversight; existing heads retain product custody, delegate implementation and separate review, and own integration/refill/recovery. Do not create another principal, service or competing writer, or redispatch completed work. The durable registry contains historical mappings; verify current receivers before messaging rather than treating an old head row as live custody. Principal coordination records Ant successor `36751672-c403-4ea8-9f53-9a0466434a37` and genuine custody ACK `01a10ddf-8f3d`; this is historical handoff evidence, not a fresh liveness check.
+
+Preserve original Ant `46fdb644-9b58-4e2f-aab3-9be5e1e33337` SIGSTOP protection and its service descendants; do not resume it into a second writer or kill its group. Claude principal remains stopped with protected draft: never submit it. Existing `4914` supervisor provenance and stale original-sender envelopes require an exact audit, not spoofed ACKs or replacement identities.
+
+## Safe startup checklist for the actual desktop operator
+
+1. Verify native identity against the actual process, workspace and intended role with no identity overrides. If incorrect, stop mailbox mutations and arrange owned repair; do not borrow the principal/head identity. This document's helper has no inherited mailbox authority.
+2. Read the governance and durable records above. Inventory existing sessions/services and current recipient mapping without altering them. Establish exact original pending message IDs, sender, recipient, read/reply correlation and cursor before sending anything.
+3. Read and ACK only messages the operator's own genuine identity is authorized to read and has actually read. Do not ACK for another recipient, forge original-sender state, resend uncertain envelopes or infer execution from delivery/read ACK.
+4. Preserve busy panes, menus and drafts; never force readiness or inject input. Obtain acknowledged custody before a head handover and preserve private history, source checkpoints and pending cursor state.
+5. Relay concrete outcomes or material corrections. Keep remote completion/dependency/failure triggers responsible for work; periodic desktop checks and temporary Luna/manual bootstrap are not permanent scheduling or unattended-wake acceptance.
+
+## Executed evidence and open limits
+
+Principal coordination records a real maintained-launcher dogfood task with first model tools and a distinct reviewer, and later bounded cleanup integration at launcher `4fb17589fe1af031fa79110d78169a4e8fe4fe4f`, reported exact GitHub main match and distinct reviewer `114d41f8-65cd-44c4-9d80-11682bccd149` with 206 tests. Cleanup dry-run had actual model tools and separate safety acceptance (`0f658d52`, report `REV-QL-CLEANUP-DRYRUN-20261005.md`); zero deletions/truncations were reported. This is bounded source/controlled-dry-run evidence, not natural-pressure deletion or whole-team autonomy. These records were read by this documentation helper, not independently reexecuted or product-code-reviewed.
+
+The principal supplied the latest genuine C2710 repair handoffs: Ant `01a10ffd-ae38`, QL `01a10ffd-aedf`, Coordination `01a10ffd-af34`, and desktop reply `01a10ffd-af93`. This helper did not access native mailbox contents. Receiver ACKs, subsequent first actions, exact runtime process/provenance and acceptance must be confirmed by the actual principal/operator; message existence is not execution.
+
+`TASK-CONTINUITY-FAILOVER-AND-WAKE-GATE-C2693` remains OPEN as the continuity acceptance gate. Source implementation is distinct from actual wake; manually triggered head acceptance is distinct from unattended independent review/refill. Useful concurrency, current provider occupancy, fresh quotas, route availability and whole-portfolio coverage require fresh measurements. Never report 25 or 50 as achieved from historical launches, queued jobs or completed helpers.
+
+Current resource policy supersedes historical disk floors: principal interpretation is 20 GiB hard projected-growth floor and 30 GiB deduplicated cleanup warning, with retained aggregate scratch and worker containment. Shared ZAI ceiling stays 26, Codex reserve 15%, Grok freeze <=5%; verify fresh gates and exact model routes. Preserve unrelated work and no-new-spend/no-Rust constraints. This handoff performs no launch, reload, kill or service migration.
+
+## Acceptance and next durable event
+
+The actual desktop successor accepts only the interface role, records its genuine identity and read receipt, inventories exact pending IDs, then acknowledges the handoff to the remote principal through its own mailbox. Acceptance is pending; no new operator identity or custody transfer is invented here.
+
+Next owner is the current Ant head for C2710 continuity repair, coordinated with existing QL and Coordination heads; the remote principal verifies their genuine ACKs and first useful actions. The required durable event is an existing-service/head completion or dependency callback producing a next real task, distinct reviewer outcome and verified release/refill without desktop/principal prompting, plus independently tested wake/failover and cursor recovery for C2693. Record actual process/loaded provenance, original message correlations, artifacts/verdicts and next trigger in the existing tracker. Until those receipts exist, report this gate as open and continue head-owned eligible work rather than replace the scheduler with desktop polling.
