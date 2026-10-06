@@ -16,11 +16,11 @@ if not d.get('worker_alive') or d.get('state') == 'broken':
     echo "Supervisor is down or missing. Restarting..."
     systemctl --user restart supervision.service
 else
-    # Check if status.json is fresh (updated in last 120s)
+    # Check if status.json is fresh (updated in last 600s, accommodating task runs)
     STATUS_AGE=$(stat -c %Y "$REPO_ROOT/.local/supervision/status.json" 2>/dev/null || echo 0)
     NOW=$(date +%s)
-    if [ $((NOW - STATUS_AGE)) -gt 120 ]; then
-        echo "Supervisor is alive but status.json is stale. Restarting..."
+    if [ $((NOW - STATUS_AGE)) -gt 600 ]; then
+        echo "Supervisor is alive but status.json is stale (>600s). Restarting..."
         systemctl --user restart supervision.service
     else
         echo "Supervisor is healthy."
