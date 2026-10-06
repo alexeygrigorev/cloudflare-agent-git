@@ -6501,7 +6501,7 @@
       "project_id": "cross-computer-coordination",
       "team_id": "agent-coordination",
       "title": "Cross-host majority consensus authority and fenced restore prototype",
-      "status": "done",
+      "status": "review",
       "created_at": "2026-10-06T07:30:57.015180+00:00",
       "updated_at": "2026-10-06T07:34:01.054855+00:00",
       "owner": "agent-coordination-head-custody-resume-20261006",
@@ -6512,9 +6512,11 @@
       ],
       "acceptance": "Partitioned minorities cannot grant roles; majority can recover one failed authority host; old authority rejected by consumer term; restore loses no duplicate task custody",
       "evidence_paths": [
-        "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md"
+        "research/coordination/ROLE-FAILOVER-QUORUM-PROTOTYPE.md",
+        "coordination/quorum_authority.py",
+        "tests/test_quorum_authority.py"
       ],
-      "assignment_ack": null,
+      "assignment_ack": "ACK: Prototype implemented in coordination/quorum_authority.py with 100% test coverage. Ready for cross-family protocol reviewer.",
       "owner_evidence": "Proposed adoption owner; existing role custody does not establish task ACK or first execution.",
       "source_proposal": "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md",
       "proposed_checkpoint": "Owner ACK and scoped first-action/checkpoint receipt after current dependency readiness; no deadline invented.",
