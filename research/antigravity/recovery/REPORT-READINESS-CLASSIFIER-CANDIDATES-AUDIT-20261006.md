@@ -43,11 +43,33 @@ In `scripts/supervision/service.py`:
 
 ---
 
-## 4. Proposed Bounded Recovery Strategy
+## 4. Bounded Recovery Implementation & Verification
 To resolve this without violating the Rust build hold:
 1. **Bounded Blocked-SLO Recovery in Python**:
-   - In `scripts/supervision/service.py`, when a pending message is `blocked_beyond_slo` specifically due to `recipient composer has an unsubmitted draft in progress` matching the known composite status bar pattern, while Python's verified `composer(fresh_screen, tag) == 'empty'` confirms the composer is truly resting and empty:
-   - Instead of retrying indefinitely 76 times, route the alert to the responsible principal/head directly via standard `aplexer message send` or escalate with a structured backoff.
-2. **Preserve Exact Audit Records**:
-   - Retain all delivery records, cursor persistence, and envelope IDs (`01a111b2-da7a...`).
-   - Settle ownership across heads cleanly.
+   - In `scripts/supervision/service.py`:
+     * Checks `time.time() >= item.get('cooldown_until', 0)` before attempting delivery.
+     * When outcome is parsed: if status is `not-ready` and detail matches composite footer signature `('Context' in detail or 'GPT-' in detail) and '·' in detail`, annotates `diagnostic_hold = 'known-footer-classifier-mismatch'`.
+     * When `is_beyond` is True (exceeds SLO limit), marks `status = 'blocked_beyond_slo'`, annotates `blocking_reason` with diagnostic hold, sets `cooldown_until = time.time() + 300`, marks `report['degraded'] = True`, and logs structured recovery action `pending-blocked-beyond-slo-escalation` with `recovery_owner = 'ant-head-never-timer-custody-20261006'`.
+     * Applied symmetrically for both principal and head delivery loops.
+2. **Verification & Independent Audit**:
+   - 30/30 unit tests passing in `scripts/supervision/test_service.py` including negative tests: `test_blocked_beyond_slo_applies_backoff_cooldown` and `test_known_footer_classifier_mismatch_annotates_diagnostic_hold`.
+   - 19/19 unit tests passing in `tests/test_supervision_routing.py`.
+   - Independent review conducted by subagent `496ac9de-672c-46d8-a4c9-f592d553cba4` rendering verdict **ACCEPTED** in `research/antigravity/recovery/REV-SUPERVISION-BLOCKED-SLO-COOLDOWN-20261006.md`.
+   - Committed in commit `cdee35a` and pushed to `origin/recovery/supervision-blocked-slo-cooldown-20261006` under `.local/git.lock`.
+
+---
+
+## 5. Candidate `fcbb886e` Empirical Verification & Correction History
+In response to `codex-principal` challenge C2920:
+1. **Empirical Reproduction of `fcbb886e` Command Capabilities**:
+   - Path: `/home/alexey/.local/bin/aplexer` (SHA-256 `fcbb886e452242075506ece2cf69fc88b39ed8fdfd4b702556a18ebc666151ea`).
+   - Command: `/home/alexey/.local/bin/aplexer message --help` lists both `deliver` and `wait`.
+   - Live test execution: `/home/alexey/.local/bin/aplexer message deliver 01a11248-c650-7932-8cd4-60c49bbbf3b2` executed cleanly, returning:
+     `01a11248-c650-7932-8cd4-60c49bbbf3b2 "not-ready"` with live harness prompt capture and state inspection.
+2. **Correction of Section 2 Inventory**:
+   - The earlier claim that `fcbb886e` lacked `message deliver` was based on string symbol grepping of upstream repository source and is hereby retracted and recorded as correction history.
+   - Candidate `fcbb886e` **does** include `message deliver`.
+3. **Status of GPT-6.1 Composite Footer Classifier**:
+   - Candidate `fcbb886e` was built on Oct 5 13:03 UTC (`a 0.1.9`). Whether its compiled prompt classification rules include the Oct 6 `is_composite_status_bar` regex or reject GPT-6.1 status bars as unsubmitted drafts remains empirically unverified without a live test against an idle Sol session.
+   - Pending such verification and independent code review, the supervisor selector remains untouched, and Python-level cooldown backoff in `scripts/supervision/service.py` provides fail-closed suppression of retry storms without readiness spoofing.
+
