@@ -1984,3 +1984,20 @@ TASKS/TEAM reveal five useful allocation options under existing human-linked par
 | AGENTBUS-APLEXER-EXTRACTION-HEADLESS / AgentBus | Antc6 runtimecontractACK01a110ce; Coord917 sourcewritelease. TEAM producthead stillobsolete8d4 nomination; historicalassignmentACK not currentruntime | Headowned actualtwo independently enrolled sessionless modelactors on pinned publicsource: useful task/result/semanticACK, realprocessrestart/replay and distinctreview. Firstworker unknown; no synthetic/Python transport substitution. Trigger: authenticatedmodelFIRSTTOOL->immutableoutput->semanticACK/restartreview and next useful child. |
 
 Important stale administrative defaults: Branches C2786 next_action stilldescribes the alreadyfixed previewbug; Dashboard tasks stillsay headownership unverified despite newer teamACK (specifictaskACK remainsmissing); AgentBus TEAM owner nomination8d4 conflicts with actual Ant runtime/Coordsource split. Findings only here: do not silently transfer leases, redispatch completed work, promote queued proposals, fabricate peeragreement or infer current worker counts. Heads choose executors/independentreview through maintained route, atomically reserve fresh provider/resource capacity, retain20hard/30cleanup/scratch512/perworker1500M100/ZAI26/Codex15/Grok5 and explicitquotaunknown holds. Completion/review/failure callbacks must choose the next owned useful action without routine rootclock dispatch.
+
+
+### C2823 chronology correction 2026-10-06T11:35:33.047961+00:00
+
+Actual reviewer886 start11:23:40/firsttool11:23:42/completion11:25:12 contradicts head11:21claim; report SHA prefix6790 matches administrative verification, fullhash not suppliedhere. Verdict SOURCEACCEPT metadata-lint only; no retrospective11:21 independentchronology accepted. Genuine correctionQLreply01a110fe-c0e0 and desktop01a110fe-c102. New373904c5 firsttool11:30:51 is a realnewactor receipt; cleanup25 stillactual120s and runtimeOPEN, not600s success.
+
+Ant C2822 envelope01a110fd-e0cf native delivery attemptedonce aftertwoemptycaptures but refusedNOTREADY; queuedmessage preserved, no receiverACK/execution inferred. Currentnative timer12657 is nextheadowner trigger, firing/usefulwork notyetverified. Helper exactreviewer886 reportpath remainsUNKNOWN after bounded filenamecheck; actual provided native/admin receipts are cited ratherthan inventing a file path.
+
+
+Dashboard startup date correction: nested TEAM first_action explicitly2026-10-04T11:17:49Z, NOT freshOct6 evidence. Earlier bare11:17:49 table references historicalstartup only; no exactnativeACK envelope is supplied by thatproject object, per-task ACKs remainmissing, and currentheadlivefreshness UNKNOWN. Historicalregistered recipientc7a75f76-1f51-4f14-873e-7a60569838c3/tagagent-dashboard-head/workspaceagent-dashboard must be freshness/custody checked before dispatch. Current genuinelyACKed Antc6 readonlystewardship may reconcile existingchildren and obtain currenttaskACK for dashboard-hourly24h/dashboard-completed-features disjointimmutableoutputs; no impliedc7 productwritelease or freshlaunch. NewQL373 witnessreviewfirst11:30:51 is observed existinghead-owned work, not a principal/helper newreview dispatch.
+
+
+### Critical C2824 timer withdrawal 2026-10-06T11:37:01.379366+00:00
+
+Independent actualnative evidence: Anttimer12657 CANCELLED11:19:58 with EarlyTermination:any on06ee reviewer message. No actualpendingAntwake/rearm at ownC2822 action11:35:19; the prior nextowner-trigger timer12657 claim is explicitly WITHDRAWN. Timer source/runtime gate remainsOPEN. Genuine principalcorrections sent root01a110ff-ba94 andQL01a110ff-bb0e; message delivery is not rearm/execution. Required nextowner event is genuinehead-owned timer/continuation repair with actual rearm and useful follow-on proof; QL373productive review remains independent and must continue ratherthan freeze behind recovery.
+
+Suggested helperreceipt directory `.local/codex/head-evidence-c2823` does not exist at this bounded administrativecheck. No actual helperfilepath/fullreportSHA is invented; principal-provided authenticated observations remain provenance until exact durable receipt is located.
