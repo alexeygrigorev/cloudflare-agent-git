@@ -354,7 +354,7 @@ def get_designated_head_owner(task, entities):
     head = task.get('head_owner')
     if head and is_safe_identifier(head) and head not in ALL_KNOWN_PRINCIPALS:
         return head
-    owner = task.get('owner_tag')
+    owner = task.get('owner_tag') or task.get('owner')
     if owner and is_safe_identifier(owner) and owner not in ALL_KNOWN_PRINCIPALS:
         for e in entities:
             if e.get('head_tag') == owner:
@@ -367,6 +367,29 @@ def get_designated_head_owner(task, entities):
             if ht and is_safe_identifier(ht) and ht not in ALL_KNOWN_PRINCIPALS:
                 return ht
     return None
+
+
+def get_ql_db_candidates(root=None, private=None):
+    """
+    Return candidate launcher databases for ingestion and bridging.
+    When running under a test harness or non-canonical ROOT, avoids touching
+    live production agent-quota-launcher databases unless explicitly overridden.
+    """
+    if root is None:
+        root = ROOT
+    if private is None:
+        private = PRIVATE
+    env_override = os.environ.get('SUPERVISION_QL_DB_PATHS')
+    if env_override:
+        return [pathlib.Path(p.strip()) for p in env_override.split(',') if p.strip()]
+    if pathlib.Path(root).resolve() != pathlib.Path('/home/alexey/git/cloudflare-agent-git').resolve():
+        test_db = pathlib.Path(private) / 'launcher' / 'state.db'
+        return [test_db] if test_db.exists() else []
+    return [
+        pathlib.Path('/home/alexey/git/agent-quota-launcher/.local/launcher-config/state.db'),
+        pathlib.Path('/home/alexey/git/agent-quota-launcher/.local/scale50/wt-gemini-head/.config/ql/state.db'),
+        pathlib.Path('/home/alexey/git/agent-quota-launcher/.local/state.db'),
+    ]
 
 
 def bridge_ready_task_to_launcher(task, head_owner, spool_dir, ql_db_candidates=None):
@@ -404,6 +427,9 @@ def bridge_ready_task_to_launcher(task, head_owner, spool_dir, ql_db_candidates=
         "payload": payload,
         "launcher_submitted": False,
     }
+
+    if ql_db_candidates is None:
+        ql_db_candidates = get_ql_db_candidates(ROOT, spool_dir)
 
     if ql_db_candidates:
         import sqlite3
@@ -665,11 +691,26 @@ def task_event(tasks):
     running = [t for t in active if t.get('status') in ('running', 'in_progress', 'working')]
 
     active_meaningful = sorted(
-        [{k: t.get(k) for k in ('id', 'team_id', 'project_id', 'owner_tag', 'status', 'blocked_on', 'next_action', 'evidence_paths')} for t in active],
+        [{
+            'id': t.get('id'),
+            'team_id': t.get('team_id'),
+            'project_id': t.get('project_id'),
+            'owner_tag': t.get('owner_tag') or t.get('owner'),
+            'status': t.get('status'),
+            'blocked_on': t.get('blocked_on'),
+            'next_action': t.get('next_action'),
+            'evidence_paths': t.get('evidence_paths'),
+        } for t in active],
         key=lambda x: str(x.get('id', ''))
     )
     completed_meaningful = sorted(
-        [{k: t.get(k) for k in ('id', 'team_id', 'project_id', 'owner_tag', 'status')} for t in completed],
+        [{
+            'id': t.get('id'),
+            'team_id': t.get('team_id'),
+            'project_id': t.get('project_id'),
+            'owner_tag': t.get('owner_tag') or t.get('owner'),
+            'status': t.get('status'),
+        } for t in completed],
         key=lambda x: str(x.get('id', ''))
     )
     digest_payload = {
@@ -742,7 +783,7 @@ def format_supervision_body(event_key, selected_tasks, entities=None, recent_com
 
     group_strs = []
     for eid, grp in grouped.items():
-        task_strs = [f"{t['id']} ({t.get('status', 'unknown')}, {t.get('owner_tag', 'unowned')})" for t in grp]
+        task_strs = [f"{t['id']} ({t.get('status', 'unknown')}, {t.get('owner_tag') or t.get('owner') or 'unowned'})" for t in grp]
         group_strs.append(f"[{eid}] " + ", ".join(task_strs))
 
     tasks_part = "; ".join(group_strs)
@@ -964,8 +1005,50 @@ def recorded_send(binary, tag, key, body, spool, sender_id, supports_key, call=c
     return receipt
 
 
-def may_deliver(pending, own_id):
-    return bool(pending and pending.get('id') and pending.get('sender_id') == own_id and pending.get('delivery') in ('inbox','not-ready'))
+def may_deliver(pending, own_id, spool=None, authorized_senders=None):
+    if not (pending and pending.get('id') and pending.get('delivery') in ('inbox', 'not-ready')):
+        return False
+    sender_id = pending.get('sender_id')
+    if not sender_id:
+        return False
+    if sender_id == own_id:
+        return True
+    if authorized_senders and sender_id in authorized_senders:
+        return True
+
+    spool_path = pathlib.Path(spool) if spool is not None else PRIVATE
+    # Check against previous identity in PRIVATE / 'identity.json'
+    ident_path = spool_path / 'identity.json'
+    if ident_path.exists():
+        try:
+            ident_data = json.loads(ident_path.read_text())
+            if ident_data.get('tag') == 'experiment-supervision':
+                if ident_data.get('id') == sender_id:
+                    return True
+                if sender_id in ident_data.get('previous_ids', []):
+                    return True
+        except Exception:
+            pass
+
+    # Allow sender tag 'experiment-supervision' in this workspace
+    if pending.get('sender_tag') == 'experiment-supervision':
+        ws = pending.get('workspace')
+        if not ws or ws == str(ROOT) or ws == str(spool_path.parent.parent):
+            return True
+
+    if pending.get('event'):
+        for rpath in spool_path.glob(f"receipt-{pending['event']}*.json"):
+            try:
+                rdata = json.loads(rpath.read_text())
+                rfrom = rdata.get('from', {})
+                if rfrom.get('tag') == 'experiment-supervision':
+                    rf_ws = rfrom.get('workspace')
+                    if not rf_ws or rf_ws == str(ROOT) or rf_ws == str(spool_path.parent.parent):
+                        return True
+            except Exception:
+                pass
+
+    return False
 
 
 def run():
@@ -979,7 +1062,23 @@ def run():
         raise RuntimeError('real experiment-supervision binding required')
     expected_hash = hashlib.sha256(pathlib.Path(BINARY).read_bytes()).hexdigest()
     supports_key = '--idempotency-key' in command([BINARY, 'message', 'send', '--help'])
-    atomic(PRIVATE / 'identity.json', {k: identity.get(k) for k in ('id', 'tag', 'workspace')})
+    prev_id_file = PRIVATE / 'identity.json'
+    prev_ids = []
+    if prev_id_file.exists():
+        try:
+            prev_data = json.loads(prev_id_file.read_text())
+            if prev_data.get('id') and prev_data.get('id') != identity.get('id'):
+                prev_ids.append(prev_data['id'])
+            if isinstance(prev_data.get('previous_ids'), list):
+                prev_ids.extend([x for x in prev_data['previous_ids'] if x != identity.get('id')])
+        except Exception:
+            pass
+    seen_ids = set()
+    prev_ids_dedup = [x for x in prev_ids if not (x in seen_ids or seen_ids.add(x))]
+    identity_payload = {k: identity.get(k) for k in ('id', 'tag', 'workspace')}
+    if prev_ids_dedup:
+        identity_payload['previous_ids'] = prev_ids_dedup
+    atomic(PRIVATE / 'identity.json', identity_payload)
     manifest = {'path':BINARY, 'sha256':expected_hash, 'selected_at':now(),
            'authority':'root-approved immutable copy of installed production CLI; no all-engine readiness guarantee',
            'supports_idempotency_key':supports_key, 'send_recovery':'native key when available; otherwise crash-safe local intent, ambiguous sends frozen'}
@@ -1015,11 +1114,7 @@ def run():
             tasks = records(ROOT / 'coordination/TASKS.json', 'tasks')
 
             # Ingest receipts and maintained task-unit launcher state
-            ql_db_candidates = [
-                pathlib.Path('/home/alexey/git/agent-quota-launcher/.local/launcher-config/state.db'),
-                pathlib.Path('/home/alexey/git/agent-quota-launcher/.local/scale50/wt-gemini-head/.config/ql/state.db'),
-                pathlib.Path('/home/alexey/git/agent-quota-launcher/.local/state.db'),
-            ]
+            ql_db_candidates = get_ql_db_candidates(ROOT, PRIVATE)
             ingested_launcher_tasks = 0
             for ql_db in ql_db_candidates:
                 if ql_db.exists():
@@ -1081,6 +1176,11 @@ def run():
             report['active_heads'] = head_tags
             sessions = json.loads(command(['aplexer', 'list', '--json']))
             sessions = [x for x in sessions if x.get('workspace') == str(ROOT)]
+            try:
+                import scripts.supervision.failover_integration as failover_integration
+                failover_integration.run_failover_tick(PRIVATE, BINARY, supports_key, identity["id"], command, recorded_send, registry_full, sessions)
+            except Exception as e:
+                event("failover-error", error=str(e))
             same_binary = hashlib.sha256(pathlib.Path(BINARY).read_bytes()).hexdigest() == expected_hash
             if not same_binary:
                 raise RuntimeError('scoped binary changed: re-review and restart service explicitly')
@@ -1141,6 +1241,8 @@ def run():
                     continue
 
                 item = {'event_key': digest, 'ready_snapshot_count': 0}
+                if old.get('diagnostic_hold'):
+                    item['diagnostic_hold'] = old['diagnostic_hold']
                 session = match[0]
                 pid = session.get('workload_pid')
                 item.update(session_id=session['id'], reported_state=session.get('reported_state'),
@@ -1165,6 +1267,8 @@ def run():
                 event_key = hashlib.sha256(f'{digest}:{session["id"]}:{episode}'.encode()).hexdigest()[:20]
                 item.update(event_key=event_key, episode=episode)
                 pending = old.get('pending')
+                if pending and pending.get('diagnostic_hold'):
+                    item['diagnostic_hold'] = pending['diagnostic_hold']
                 if old.get('last_request'):
                     item['last_request'] = old['last_request']
                 if pending:
@@ -1175,6 +1279,29 @@ def run():
                         event('pending-reconciled-native-ack', principal=tag, **evidence)
                         report['actions'].append({'kind':'pending-reconciled-native-ack', 'principal':tag, 'message_id':pending['id']})
                         pending = None
+                    else:
+                        target_recipient_id = pending.get('recipient_session_id') or old.get('session_id')
+                        if not target_recipient_id:
+                            receipt_file = PRIVATE / f"receipt-{pending.get('event')}-{tag}.json"
+                            if receipt_file.exists():
+                                try:
+                                    rdata = json.loads(receipt_file.read_text())
+                                    target_recipient_id = rdata.get('to', {}).get('session_id')
+                                except Exception:
+                                    pass
+                        if target_recipient_id and target_recipient_id != session['id']:
+                            event('pending-superseded-session-change', principal=tag, message_id=pending['id'],
+                                  old_session_id=target_recipient_id, new_session_id=session['id'],
+                                  reason='recipient session changed; previous message addressed to old session superseded')
+                            report['actions'].append({
+                                'kind': 'pending-superseded-session-change',
+                                'principal': tag,
+                                'message_id': pending['id'],
+                                'old_session_id': target_recipient_id,
+                                'new_session_id': session['id']
+                            })
+                            item['last_request'] = {**pending, 'superseded_at': now(), 'superseded_reason': 'recipient-session-change'}
+                            pending = None
 
                 # Determine authoritative and conflicting entities for this principal on every cycle (C1647)
                 principal_entities = [e for e in entities if tag in e.get('principal_tags', []) and not (e.get('conflict') and e['conflict'].get('detected'))]
@@ -1219,18 +1346,23 @@ def run():
                                 report['degraded'] = True
                                 report['uncertain_outcome'] = {'outcome': 'UNKNOWN', 'class': 'send-uncertain', 'principal': tag, 'event_key': event_key, 'reason': receipt.get('reason')}
                             envelope = receipt.get('message', receipt)
-                            pending = {'id': envelope.get('id', receipt.get('id')), 'sender_id':identity['id'], 'event': event_key,
+                            pending = {'id': envelope.get('id', receipt.get('id')), 'sender_id':identity['id'],
+                                       'sender_tag': identity.get('tag', 'experiment-supervision'),
+                                       'recipient_session_id': session['id'], 'recipient_tag': tag,
+                                       'workspace': identity.get('workspace', str(ROOT)), 'event': event_key,
                                        'delivery':receipt.get('delivery','inbox'), 'created_at': now()}
                             item['sent_event'] = event_key
-                            item['cooldown_until'] = time.time() + (1800 if tag == 'claude-principal' else 180)
+                            item['cooldown_until'] = cooldown
                             event('request-recorded', principal=tag, message_id=pending['id'], event_key=event_key)
                 else:
                     item['sent_event'] = old.get('sent_event')
                     item['cooldown_until'] = cooldown
 
-                if pending and pending.get('sender_id') != identity['id']:
+                if pending and not may_deliver(pending, identity['id'], spool=PRIVATE):
                     item['pending_reason'] = 'original sender changed; original recipient ACK/reply required'
-                if may_deliver(pending, identity['id']) and count >= 2:
+                elif item.get('pending_reason') == 'original sender changed; original recipient ACK/reply required':
+                    item.pop('pending_reason', None)
+                if may_deliver(pending, identity['id'], spool=PRIVATE) and count >= 2 and time.time() >= item.get('cooldown_until', 0):
                     # Third immediate check closes most polling races; native command still enforces readiness.
                     fresh_screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
                     if composer(fresh_screen, tag) == 'empty':
@@ -1250,8 +1382,15 @@ def run():
                         status = outcome.get('status', outcome.get('delivery', 'delivery-uncertain'))
                         pending['delivery'] = status
                         event('delivery-attempt', principal=tag, message_id=pending['id'], outcome=status)
+                        if status == 'not-ready':
+                            detail = outcome.get('detail', '')
+                            if ('Context' in detail or 'GPT-' in detail) and '·' in detail:
+                                item['diagnostic_hold'] = 'known-footer-classifier-mismatch'
+                                pending['diagnostic_hold'] = 'known-footer-classifier-mismatch'
                         if status == 'recipient-acked':
                             item['last_request'] = pending
+                            item.pop('diagnostic_hold', None)
+                            item['cooldown_until'] = time.time() + (1800 if tag == 'claude-principal' else 180)
                             pending = None
                         # Submitted stays pending until genuine reply/read ACK, not repeated on timer.
                         # Unknown/uncertain outcomes prohibit automatic retry.
@@ -1259,14 +1398,45 @@ def run():
                 if pending:
                     is_beyond, dur, slo_limit, block_reason = check_pending_slo(pending, tag, item, time.time())
                     if is_beyond:
-                        item['status'] = 'blocked_beyond_slo'
-                        item['blocking_reason'] = block_reason
-                        item['pending_duration_seconds'] = round(dur, 2)
-                        item['retry_slo_seconds'] = slo_limit
-                        report['degraded'] = True
-                        report['errors'].append(f"principal {tag} pending message {pending['id']} blocked_beyond_slo ({round(dur, 1)}s >= {slo_limit}s): {block_reason}")
-                        event('pending-blocked-beyond-slo', principal=tag, message_id=pending['id'],
-                              duration_seconds=round(dur, 2), slo_seconds=slo_limit, blocking_reason=block_reason)
+                        if pending.get('sender_id') != identity['id']:
+                            event('pending-superseded-session-change', principal=tag, message_id=pending['id'],
+                                  old_sender_id=pending.get('sender_id'), new_sender_id=identity['id'],
+                                  session_id=session['id'], duration_seconds=round(dur, 2), slo_seconds=slo_limit,
+                                  reason='prior supervisor pending message stale beyond SLO; superseded')
+                            report['actions'].append({
+                                'kind': 'pending-superseded-session-change',
+                                'principal': tag,
+                                'message_id': pending['id'],
+                                'old_sender_id': pending.get('sender_id'),
+                                'new_sender_id': identity['id'],
+                                'session_id': session['id']
+                            })
+                            item['last_request'] = {**pending, 'superseded_at': now(), 'superseded_reason': 'stale-beyond-slo-sender-change'}
+                            item.pop('diagnostic_hold', None)
+                            pending = None
+                            item['status'] = 'ok'
+                        else:
+                            item['status'] = 'blocked_beyond_slo'
+                            if item.get('diagnostic_hold'):
+                                item['blocking_reason'] = f"{block_reason} [diagnostic_hold: {item['diagnostic_hold']}]"
+                            else:
+                                item['blocking_reason'] = block_reason
+                            item['pending_duration_seconds'] = round(dur, 2)
+                            item['retry_slo_seconds'] = slo_limit
+                            item['cooldown_until'] = time.time() + 300 if time.time() >= cooldown else cooldown
+                            report['degraded'] = True
+                            report['errors'].append(f"principal {tag} pending message {pending['id']} blocked_beyond_slo ({round(dur, 1)}s >= {slo_limit}s): {item['blocking_reason']}")
+                            event('pending-blocked-beyond-slo', principal=tag, message_id=pending['id'],
+                                  duration_seconds=round(dur, 2), slo_seconds=slo_limit, blocking_reason=item['blocking_reason'])
+                            report['actions'].append({
+                                'kind': 'pending-blocked-beyond-slo-escalation',
+                                'recipient': tag,
+                                'message_id': pending['id'],
+                                'duration_seconds': round(dur, 2),
+                                'blocking_reason': item['blocking_reason'],
+                                'diagnostic_hold': item.get('diagnostic_hold'),
+                                'recovery_owner': 'ant-head-never-timer-custody-20261006'
+                            })
                     else:
                         item['status'] = 'pending'
                 else:
@@ -1308,6 +1478,8 @@ def run():
                     continue
 
                 item = {'event_key': digest, 'ready_snapshot_count': 0}
+                if old.get('diagnostic_hold'):
+                    item['diagnostic_hold'] = old['diagnostic_hold']
                 session = match[0]
                 pid = session.get('workload_pid')
                 item.update(session_id=session['id'], reported_state=session.get('reported_state'),
@@ -1317,7 +1489,7 @@ def run():
                 item.update(composer=composer(screen, head_tag), ready_snapshot_count=count, reason=reason)
 
                 head_entities = [e for e in entities if e.get('head_tag') == head_tag and not (e.get('conflict') and e['conflict'].get('detected'))]
-                head_active = [t for t in active if t.get('owner_tag') == head_tag or any(task_matches_entity(t, e) for e in head_entities)]
+                head_active = [t for t in active if ((t.get('owner_tag') or t.get('owner')) == head_tag) or any(task_matches_entity(t, e) for e in head_entities)]
                 head_ready = [t for t in head_active if t.get('status') in ('ready', 'queued')]
 
                 idle_since, overdue = idle_episode(head_ready, count > 0, old, time.time(), threshold=180)
@@ -1337,6 +1509,8 @@ def run():
                 item.update(event_key=event_key, episode=episode)
 
                 pending = old.get('pending')
+                if pending and pending.get('diagnostic_hold'):
+                    item['diagnostic_hold'] = pending['diagnostic_hold']
                 if old.get('last_request'):
                     item['last_request'] = old['last_request']
                 if pending:
@@ -1347,6 +1521,29 @@ def run():
                         event('pending-reconciled-native-ack', head=head_tag, **evidence)
                         report['actions'].append({'kind': 'pending-reconciled-native-ack', 'head': head_tag, 'message_id': pending['id']})
                         pending = None
+                    else:
+                        target_recipient_id = pending.get('recipient_session_id') or old.get('session_id')
+                        if not target_recipient_id:
+                            receipt_file = PRIVATE / f"receipt-{pending.get('event')}-{head_tag}.json"
+                            if receipt_file.exists():
+                                try:
+                                    rdata = json.loads(receipt_file.read_text())
+                                    target_recipient_id = rdata.get('to', {}).get('session_id')
+                                except Exception:
+                                    pass
+                        if target_recipient_id and target_recipient_id != session['id']:
+                            event('pending-superseded-session-change', head=head_tag, message_id=pending['id'],
+                                  old_session_id=target_recipient_id, new_session_id=session['id'],
+                                  reason='recipient session changed; previous message addressed to old session superseded')
+                            report['actions'].append({
+                                'kind': 'pending-superseded-session-change',
+                                'head': head_tag,
+                                'message_id': pending['id'],
+                                'old_session_id': target_recipient_id,
+                                'new_session_id': session['id']
+                            })
+                            item['last_request'] = {**pending, 'superseded_at': now(), 'superseded_reason': 'recipient-session-change'}
+                            pending = None
 
                 cooldown = old.get('cooldown_until', 0)
                 if head_ready and not pending and (old.get('sent_event') != event_key) and time.time() >= cooldown:
@@ -1362,18 +1559,23 @@ def run():
                             report['degraded'] = True
                             report['uncertain_outcome'] = {'outcome': 'UNKNOWN', 'class': 'send-uncertain', 'head': head_tag, 'event_key': event_key, 'reason': receipt.get('reason')}
                         envelope = receipt.get('message', receipt)
-                        pending = {'id': envelope.get('id', receipt.get('id')), 'sender_id': identity['id'], 'event': event_key,
+                        pending = {'id': envelope.get('id', receipt.get('id')), 'sender_id': identity['id'],
+                                   'sender_tag': identity.get('tag', 'experiment-supervision'),
+                                   'recipient_session_id': session['id'], 'recipient_tag': head_tag,
+                                   'workspace': identity.get('workspace', str(ROOT)), 'event': event_key,
                                    'delivery': receipt.get('delivery', 'inbox'), 'created_at': now()}
                         item['sent_event'] = event_key
-                        item['cooldown_until'] = time.time() + 180
+                        item['cooldown_until'] = cooldown
                         event('head-request-recorded', head=head_tag, message_id=pending['id'], event_key=event_key)
                 else:
                     item['sent_event'] = old.get('sent_event')
                     item['cooldown_until'] = cooldown
 
-                if pending and pending.get('sender_id') != identity['id']:
+                if pending and not may_deliver(pending, identity['id'], spool=PRIVATE):
                     item['pending_reason'] = 'original sender changed; original recipient ACK/reply required'
-                if may_deliver(pending, identity['id']) and count >= 2:
+                elif item.get('pending_reason') == 'original sender changed; original recipient ACK/reply required':
+                    item.pop('pending_reason', None)
+                if may_deliver(pending, identity['id'], spool=PRIVATE) and count >= 2 and time.time() >= item.get('cooldown_until', 0):
                     fresh_screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
                     if composer(fresh_screen, head_tag) == 'empty':
                         deliver_args = [BINARY, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json']
@@ -1389,21 +1591,59 @@ def run():
                         status = outcome.get('status', outcome.get('delivery', 'delivery-uncertain'))
                         pending['delivery'] = status
                         event('head-delivery-attempt', head=head_tag, message_id=pending['id'], outcome=status)
+                        if status == 'not-ready':
+                            detail = outcome.get('detail', '')
+                            if ('Context' in detail or 'GPT-' in detail) and '·' in detail:
+                                item['diagnostic_hold'] = 'known-footer-classifier-mismatch'
+                                pending['diagnostic_hold'] = 'known-footer-classifier-mismatch'
                         if status == 'recipient-acked':
                             item['last_request'] = pending
+                            item.pop('diagnostic_hold', None)
+                            item['cooldown_until'] = time.time() + 180
                             pending = None
 
                 if pending:
                     is_beyond, dur, slo_limit, block_reason = check_pending_slo(pending, head_tag, item, time.time())
                     if is_beyond:
-                        item['status'] = 'blocked_beyond_slo'
-                        item['blocking_reason'] = block_reason
-                        item['pending_duration_seconds'] = round(dur, 2)
-                        item['retry_slo_seconds'] = slo_limit
-                        report['degraded'] = True
-                        report['errors'].append(f"head {head_tag} pending message {pending['id']} blocked_beyond_slo ({round(dur, 1)}s >= {slo_limit}s): {block_reason}")
-                        event('pending-blocked-beyond-slo', head=head_tag, message_id=pending['id'],
-                              duration_seconds=round(dur, 2), slo_seconds=slo_limit, blocking_reason=block_reason)
+                        if pending.get('sender_id') != identity['id']:
+                            event('pending-superseded-session-change', head=head_tag, message_id=pending['id'],
+                                  old_sender_id=pending.get('sender_id'), new_sender_id=identity['id'],
+                                  session_id=session['id'], duration_seconds=round(dur, 2), slo_seconds=slo_limit,
+                                  reason='prior supervisor pending message stale beyond SLO; superseded')
+                            report['actions'].append({
+                                'kind': 'pending-superseded-session-change',
+                                'head': head_tag,
+                                'message_id': pending['id'],
+                                'old_sender_id': pending.get('sender_id'),
+                                'new_sender_id': identity['id'],
+                                'session_id': session['id']
+                            })
+                            item['last_request'] = {**pending, 'superseded_at': now(), 'superseded_reason': 'stale-beyond-slo-sender-change'}
+                            item.pop('diagnostic_hold', None)
+                            pending = None
+                            item['status'] = 'ok'
+                        else:
+                            item['status'] = 'blocked_beyond_slo'
+                            if item.get('diagnostic_hold'):
+                                item['blocking_reason'] = f"{block_reason} [diagnostic_hold: {item['diagnostic_hold']}]"
+                            else:
+                                item['blocking_reason'] = block_reason
+                            item['pending_duration_seconds'] = round(dur, 2)
+                            item['retry_slo_seconds'] = slo_limit
+                            item['cooldown_until'] = time.time() + 300 if time.time() >= cooldown else cooldown
+                            report['degraded'] = True
+                            report['errors'].append(f"head {head_tag} pending message {pending['id']} blocked_beyond_slo ({round(dur, 1)}s >= {slo_limit}s): {item['blocking_reason']}")
+                            event('pending-blocked-beyond-slo', head=head_tag, message_id=pending['id'],
+                                  duration_seconds=round(dur, 2), slo_seconds=slo_limit, blocking_reason=item['blocking_reason'])
+                            report['actions'].append({
+                                'kind': 'pending-blocked-beyond-slo-escalation',
+                                'recipient': head_tag,
+                                'message_id': pending['id'],
+                                'duration_seconds': round(dur, 2),
+                                'blocking_reason': item['blocking_reason'],
+                                'diagnostic_hold': item.get('diagnostic_hold'),
+                                'recovery_owner': 'ant-head-never-timer-custody-20261006'
+                            })
                     else:
                         item['status'] = 'pending'
                 else:
