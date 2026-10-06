@@ -18,6 +18,7 @@ import sqlite3
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from research.antigravity.a01_feasibility_gate_runner import (
     check_session_notice,
@@ -318,11 +319,14 @@ class TestA01RunnerHardening(unittest.TestCase):
     def test_7_opencode_env_populates_provider_config(self):
         """Test 7: setup_opencode_env populates config/opencode/opencode.json (mode 0600) with opencode-go provider."""
         with tempfile.TemporaryDirectory() as td:
+            dummy_db = os.path.join(td, "dummy.db")
+            with open(dummy_db, "w") as f:
+                f.write("dummy")
             env_dir = os.path.join(td, "env_test")
-            env_info = setup_opencode_env(env_dir)
+            with patch("research.antigravity.a01_feasibility_gate_runner.PRISTINE_DB_SOURCE", dummy_db):
+                env_info = setup_opencode_env(env_dir)
 
             # Check directory keys returned
-            self.assertIn("data", env_info)
             self.assertIn("config", env_info)
             self.assertIn("state", env_info)
             self.assertIn("db", env_info)

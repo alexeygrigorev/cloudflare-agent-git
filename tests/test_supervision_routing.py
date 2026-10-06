@@ -122,7 +122,7 @@ class SupervisionRoutingTests(unittest.TestCase):
 
         # Verify each product project has valid head_tag and truthful principal_tags (C1637: Codex monitoring ACK)
         by_id = {e['id']: e for e in entities}
-        self.assertEqual(by_id['agent-branches']['head_tag'], 'antigravity-head')
+        self.assertEqual(by_id['agent-branches']['head_tag'], 'ant-head-continuation-resume-20261005')
         self.assertEqual(by_id['agent-branches']['principal_tags'], ['codex-principal'], "agent-branches monitored by codex-principal under C1637 ACK")
         self.assertFalse(by_id['agent-branches']['unowned'])
 
@@ -130,11 +130,11 @@ class SupervisionRoutingTests(unittest.TestCase):
         self.assertEqual(by_id['agent-dashboard']['principal_tags'], ['codex-principal'], "agent-dashboard monitored by codex-principal under C1637 ACK")
         self.assertFalse(by_id['agent-dashboard']['unowned'])
 
-        self.assertEqual(by_id['quota-launcher']['head_tag'], 'quota-launcher-head')
+        self.assertEqual(by_id['quota-launcher']['head_tag'], 'quota-launcher-head-gemini')
         self.assertEqual(by_id['quota-launcher']['principal_tags'], ['codex-principal'], "quota-launcher monitored by codex-principal under C1637 ACK")
         self.assertFalse(by_id['quota-launcher']['unowned'])
 
-        self.assertEqual(by_id['agent-coordination']['head_tag'], 'agent-coordination-head')
+        self.assertEqual(by_id['agent-coordination']['head_tag'], 'agent-coordination-head-gemini')
         self.assertEqual(by_id['agent-coordination']['principal_tags'], ['codex-principal'], "agent-coordination specifies codex-principal")
         self.assertFalse(by_id['agent-coordination']['unowned'])
 

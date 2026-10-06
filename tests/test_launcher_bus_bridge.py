@@ -1012,7 +1012,10 @@ class TestLauncherBusBridge(unittest.TestCase):
 
         self.store.transition_task(task_id, "starting", ("queued",))
         self.store.transition_task(task_id, "launch-uncertain", ("starting",))
-        mem, disk = self.store.get_active_resources(exclude_task_id="other")
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.stdout = '{"status": "running"}'
+            mock_run.return_value.stderr = ''
+            mem, disk = self.store.get_active_resources(exclude_task_id="other")
         self.assertGreaterEqual(mem, 1500)
 
         self.store.transition_task(task_id, "failed", ("launch-uncertain",))
@@ -2241,19 +2244,22 @@ class TestLauncherBusBridge(unittest.TestCase):
         store.transition_task("t38-task-1", "starting", ("queued",), reason="starting")
         store.transition_task("t38-task-1", "stalled", ("starting",), reason="heartbeat missing")
 
-        active_mem, active_disk = store.get_active_resources()
-        self.assertEqual(active_mem, 600)
-        self.assertEqual(active_disk, 1000)
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.stdout = '{"status": "running"}'
+            mock_run.return_value.stderr = ''
+            active_mem, active_disk = store.get_active_resources()
+            self.assertEqual(active_mem, 600)
+            self.assertEqual(active_disk, 1000)
 
-        # Verify check_resources accounts for the active stalled reservation
-        res_ok = check_resources(
-            requested_memory_mb=500,
-            requested_cwd=str(self.workspace),
-            requested_tmpdir=str(self.owned_tmp),
-            active_mem_mb=active_mem,
-            active_disk_mb=active_disk,
-            repo_root=str(self.workspace),
-        )
+            # Verify check_resources accounts for the active stalled reservation
+            res_ok = check_resources(
+                requested_memory_mb=500,
+                requested_cwd=str(self.workspace),
+                requested_tmpdir=str(self.owned_tmp),
+                active_mem_mb=active_mem,
+                active_disk_mb=active_disk,
+                repo_root=str(self.workspace),
+            )
         self.assertTrue(res_ok)
 
         # If active stalled reservation pushes memory below host threshold, check_resources fails
