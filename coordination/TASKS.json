@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T08:26:07.877621+00:00",
+  "updated_at": "2026-10-06T08:29:59.543074+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -6199,7 +6199,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-06T08:26:07.877621+00:00",
+      "updated_at": "2026-10-06T08:29:59.543074+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6334,7 +6334,7 @@
         "current_head": "513eab03-fccb-43e3-bcf0-5649f03b5425"
       },
       "coordination_review_observation": "CurrentCoord9174 head-owned distinctreviewerfirsttool observed nativecaption, two/threehelpers UUIDsunknown; no currentcount inferred.",
-      "continuity_gate": "C2693OPEN",
+      "continuity_gate": "Autonomouscallback/twoabsent usefulcyclesOPEN",
       "desktop_coordination_helper": {
         "actor": "/root/scale50_coordination",
         "parent_chat_id": "01a11004-f49b-7ee1-a01c-49d31e8c7231",
@@ -6372,10 +6372,12 @@
         "source": "Principal-supplied current Product4 head attestation, historical5 not currentcount"
       },
       "latest_maintained_census": {
-        "active": 0,
-        "state": "After review finished; globalREADY unknown",
-        "source": "Principal supplied actual finishedreview census",
-        "observed_at_utc": "2026-10-06T08:21:35.908854+00:00"
+        "active": 1,
+        "worker_pid": 2244128,
+        "controller_pid_excluded": 2242081,
+        "whole_portfolio": "UNKNOWN",
+        "executable_ready": "UNKNOWN",
+        "source": "Principal actual retry/firstmodeltool observations"
       },
       "ql_native_cycles": {
         "timer5517": "Nativecontinuation -> localGitcommit12f9bde",
@@ -6412,7 +6414,8 @@
           "original_c2750_ids": "Preserved queued originals; no ACK or implementation transfer inferred"
         },
         "source": "Actual checkpoint supplied by principal; helper has no native mailbox authority"
-      }
+      },
+      "root_actual_outcome": "01a11054-bd4f-7ef0-8faf-3ab3e794b02d"
     },
     {
       "id": "ROLE-FAILOVER-AUTHORITY-20261006",
@@ -6770,6 +6773,66 @@
         "head_accepted": "2026-10-06T08:15:52Z"
       },
       "acceptance": "Headaccepted distinct source/remote commit verification; no runtime failover/adoption acceptance inferred."
+    },
+    {
+      "id": "ql-review-watcher-b1a191a",
+      "created_at": "2026-10-06T08:27:13Z",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "owner": "quota-launcher-head-custody-resume-20261006",
+      "owner_tag": "quota-launcher-head-custody-resume-20261006",
+      "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "status": "running",
+      "updated_at": "2026-10-06T08:29:59.543074+00:00",
+      "scope": "Distinctread-only source watchercommit b1a191a review; runtime acceptance separate.",
+      "reviewer": "35d129e9-9978-4236-99c4-64f7f938f55a",
+      "model": "gemini-3.1-pro-high",
+      "first_action": {
+        "at_utc": "2026-10-06T08:27:55Z",
+        "tool": "gitshowcommit",
+        "tools_observed": 9,
+        "timer_status_at_utc": "2026-10-06T08:28:03Z"
+      },
+      "launch_attempts": [
+        {
+          "submitted_at_utc": "2026-10-06T08:27:13Z",
+          "run_at_utc": "2026-10-06T08:27:18Z",
+          "controller_pid": 2229461,
+          "failed_at_utc": "2026-10-06T08:27:25Z",
+          "reason": "missingdeclaredscratch, not quota/diskshortage",
+          "exit_proven": "Originalcontrollergone; scratchstat08:27:52UTC"
+        },
+        {
+          "retry_run_at_utc": "2026-10-06T08:27:45Z",
+          "controller_pid": 2242081,
+          "controller_memory_max": "256MiB",
+          "controller_tasks_max": 100,
+          "worker_pid": 2244128,
+          "worker_memory_max": "768MiB",
+          "worker_tasks_max": 100,
+          "worker_slice": "app.slice",
+          "count_controller_as_worker": false
+        }
+      ],
+      "review_verdict": "pending",
+      "existing_artifact_note": ".local/audit/REV-INDEPENDENT-WATCHERS-B1A191A.md timestamp08:26 headwritten; NOT newreviewer evidence.",
+      "acceptance": "Pending actual distinctreviewer verdict/artifact; no runtime acceptance."
+    },
+    {
+      "id": "QL-MISSING-DECLARED-SCRATCH-INTAKE-C2754-20261006",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "status": "queued",
+      "created_at": "2026-10-06T08:29:59.543074+00:00",
+      "updated_at": "2026-10-06T08:29:59.543074+00:00",
+      "owner_tag": "quota-launcher-head-custody-resume-20261006",
+      "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "assignment_ack": null,
+      "scope": "Productintake pending headselection: safely prepare declared task scratch beforeadmission; verify bounds/ownership and adddistinctnegativecases. No fakeacceptedfilelease.",
+      "source_message": "01a11054-0226-7a20-9bea-5720a6cf48c5",
+      "head_read_at_utc": "2026-10-06T08:28:28Z",
+      "first_action": null,
+      "next_action": "Headselects implementer scope/lease, boundedpreparation/admission fix and distinctmissingpath/unsafeownership/budget negative review; no fixdelegate yet."
     }
   ]
 }
