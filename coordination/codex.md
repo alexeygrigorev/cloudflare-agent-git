@@ -1942,3 +1942,12 @@ Actual native continuation: Ant timer11426 fired after its turn ended10:33 and r
 Cleanup duplicateunits3/4 stopped10:33:01/10:33:14, leaving independently observed actor1b2455c0 first10:31:56; a120s cleanup turn/timeout is not validated removal or successful repair. Product ACTIVE localcoverage at10:35 is one distinct reviewer; wholeportfolio and executableREADY remain UNKNOWN. Next owned events: Ant pinned distinct repairverdict and actual preview-safe adoption/rearm, QL one-owner cleanup outcome/removal receipt and useful maintained review/refill. Stage10/25/50 targets remain unachieved.
 
 This additive checkpoint preserves the complete currentremote coordination document as authoritative prefix. All earlier local-only paragraphs and private conflict evidence remain recoverable machine-local; none silently overwrite remote history.
+
+
+### Actual C2804–C2805 evidence 2026-10-06T10:43:02.343562+00:00
+
+Native desktop01a110cc-06a0 supplied a NEW actual ImageGen Oct7 PNG,1714856bytes/SHA238108a88f70103050f18154717705d5102be23182a5f2d0e1ecbfc5def4f6ab. Ant/publication requests01a110cd-5788/57aa await actualassetread, visualreview and integration. Existing accepted publicationtask labels do not approve this new asset. Private asset remains machine-local pending visualacceptance.
+
+QL genuine01a110cc-16e2 reports600s timeout sourcea1e3f845039d8ba0685345e6bb6ec6e7068489f5; earlier120s cleanup SIGKILL freed0bytes/deleted0files, so notsuccess; newer cleanup5 currentruntime outcome pending. Source665 Codex<=6 was a mistaken concurrency interpretation of the human GPT-6LunaMAX model name; principalchallenge01a110cd-5766 awaits headreview, no newcap inferred.
+
+Ant timer11509 fired10:40 while alreadybusy;017aa review browserwaiting and actualBusmodelrefill unproved. QL exactscale50-C-capacity-stages custody ACK recorded; D dispatch-throughput spelling differs from existingdispatch-refill, so no inventedtask/ACK. CurrentAntc6 sourcelease reconciliation requested; legacy46lease untouched. Next receipts: assetvisualacceptance/integration, distinctpreviewrepair verdict/actualsafetest, one-owner cleanup outcome, and maintained usefulmodel/review/refill with freshactualcapacity.
