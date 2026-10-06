@@ -1,0 +1,4 @@
+Date: 2026-10-06, Europe/Berlin
+Source: direct human instruction in desktop coordinator chat 01a11004-f49b-7ee1-a01c-49d31e8c7231
+
+okay document the solution and make sure in 30 miniutes checks that we follow it. agents must report problems and the steps they took to solve them, not blockers
