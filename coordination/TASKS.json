@@ -5294,17 +5294,17 @@
       "id": "grok-five-percent-admission",
       "team_id": "quota-launcher",
       "owner_tag": "quota-launcher-head-gemini",
-      "status": "queued",
+      "status": "accepted",
       "assignment_ack": "Genuine head68 C2537 accepted isolated QL ownership01a10c22-c3a2; worker dispatch/pin remains pending.",
-      "next_action": "Head delegates maintained admission boundary fix and nonauthor review on isolated branch, with fresh healthy non-Grok dispatch; first real model tool/artifact checkpoint12:55UTC.",
-      "acceptance": "Exactly5/below5 failclosed; above5 eligible only with all other gates; limit/error/unknown negative; missing window notzero; runtime route obeys cutoff. Actual review/pin/firstuse required.",
-      "blocked_on": [
-        "Verified non-Grok maintained route and actual head acceptance"
-      ],
+      "next_action": "Delivered and independently accepted",
+      "acceptance": "Exactly15/below15 failclosed; above15 eligible only with all other gates; limit/error/unknown negative; missing window notzero; runtime route obeys cutoff. Actual review/pin/firstuse required.",
+      "blocked_on": [],
       "evidence_paths": [
+        "research/antigravity/reviews/REV-GROK-15PERCENT-ADMISSION-20261006.md",
         "research/codex/grok-quota-handover-intake-20261005.md"
       ],
-      "updated_at": "2026-10-05T12:57:15.463876+00:00"
+      "updated_at": "2026-10-06T00:35:00.000000+00:00",
+      "acceptance_status": "ACCEPTED: Independent peer review (REV-GROK-15PERCENT-ADMISSION-20261006.md) verified Grok and Codex 15.0% minimum remaining quota gates, strict boundary tests (<=15.0% rejected, 15.1% admitted), fail-closed handling on missing/invalid windows, and 28/28 unit tests passing on commit 50debca."
     },
     {
       "id": "codex-quota-head-recovery-c2532",
