@@ -1,0 +1,6 @@
+Desktop-relayed direct human steering, received envelope 01a11300-9527-7aa1-9a9e-0502cd6249ce; human text verbatim:
+
+I have a new dev box - ssh win35. I want you to move some work there, and find a way for hetzner and win35 talk to each other in a secure way without involving you - and not via ssh. i want them to use agent bus for that. aws gate is open on hetzner (btw configure it on win35 too via subagent).
+
+Administrative interpretation (separate from human quote):
+Secure persistent non-SSH Agent Bus transport between Hetzner and win35; SSH discovery/setup allowed, final transport must not be SSH/tunnel. Actual request/readACK/outcome both directions, reconnect/dedup/cursor recovery, useful worker completion/distinct review/refill with desktop absent required. Existing SSH/FileBus acceptance is preserved historical evidence and does not satisfy this new gate. No new spending, duplicate broker/service or Rust hold bypass. AWS setup is exclusively desktop /root/win35_aws_setup; no duplicate installation. Existing Coord/QL/Ant roles are requested scopes, not new ownership ACKs: all original Gemini heads currently individually quota-blocked; recovery head d3b54165 custody ACK pending. Principal actual reply01a11301-7164, next principal checkpoint21:10UTC, not an invented head due.
