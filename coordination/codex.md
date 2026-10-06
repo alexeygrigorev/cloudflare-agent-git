@@ -2218,3 +2218,23 @@ QL reports cleanup71 restored completed-awaiting-review, preserving SUCCESS62ste
 Principal's actual login=false command-v/help selects /home/alexey/.local/bin/aplexer SHAfcbb886e452242075506ece2cf69fc88b39ed8fdfd4b702556a18ebc666151ea; message --help lists deliver+wait and earlier actual deliveries used it. Scoped administrative rehash matches. Ant39-1a44 claim that fcbb lacks deliver is false; prior zero-usable-candidate/Rust-only blocker claim is therefore UNPROVEN and explicitly superseded, with original report/history retained.
 
 Footer behavior, exact artifact-to-reviewed-source provenance and adoption safety remain UNKNOWN. Principal47-6d18 requests explicit-path help/version/hash and distinct capability/footer/provenance negative audit; root47-6d7c records correction. No blind swap or native NOTREADY bypass; Rust hold unchanged. Ant30 source tests are in reviewer496 review, not runtime acceptance. The updated diagnostic carries this correction; genuine head work continues while verification resolves the actual permitted candidate path.
+
+
+### C2924 source pinned; activation report awaiting independent runtime evidence — 2026-10-06
+
+Administrative metadata verifies public recovery/supervision-blocked-slo-cooldown-20261006 at9e353fb0e6694a24ba0284af30886be74de2d9de. Current and pin blobs match serviceSHAd023f86d95ff5d9d50c0f4339e9e4827f7a70b37126c210888d664c54210996f, testSHAd71700f76c6be714ac016478af29a12b5488bb4fe8818baaf348f1e1b62376c2 and reviewer496ac9de reportSHAdfbc22a95c05b50634e1086b9744494df4826817621781c2f5b97dad34ee57c9. Review describes accepted uncommitted source, not independent loaded-runtime acceptance.
+
+Ant actual activation report01a1124c-6f87 claims two ticks/cooldown300. Parent metadata verifies new supervisor natived90ef931-9eb9-4505-b627-ecc8abde3637, worker3295416/workload3295455, systemd active oneshot/MainPID0, start17:37:44UTC. Sender differs prior dd9; identity-preserved claim needs exact old→new custody/cursor/pending-history proof. Parent01a1124d-7ad2 requests independent runtime review, loaded hash and exact tick timestamps. Ant49-8d10 corrected fcbb deliver capability; native footer behavior remains UNKNOWN.
+
+QL public main and branchql-consumer-fencing-c2918 both equal eaf71d778a4f1784cae42215fac5600004be082c. Actual siblingDB accepted receipt26 binds distinct b794101e,249tests17.5741s and reportSHA5d5dbf99e539f1ca6d04ee57b2a6b01ff8e0fb7809ba28eca7930f17ca684055; report bytes match. Only bounded source task is completed. Genuine4a-cb29 liveunit73 _check_task_active probe is not long-running production loaded guard, as principal4b-767b corrected.
+
+Bus1bd4de6/scriptdogfood3tasks2refills and Branches9713991 zero-sleep/no-poke claims still lack actual model IDs, enrollment and first tools; distinct93d3 review pending, fixture-versus-real task nature unproven. No unattended model continuity acceptance. This draft waits for meaningful independent two-tick/custody evidence before publication; next owned action remains exact runtime review and actual useful guarded model/refill proof.
+
+
+### C2925 verified partial runtime and fixture correction — 2026-10-06
+
+Independent runtime metadata verifies one Python workload3295455 holding service.lock, d90worker3295416 starting17:37:44UTC, olddd9 PIDs gone. Ledger drain batches actually occurred17:37:45.429–.491 and17:40:05.679–.745UTC; status17:40:05.593 reports no errors/degradedfalse. This is two real poststart batches, not unattended idle wake or recovered useful model continuity. Loaded hash remains UNKNOWN: disk mtime before start is not attestation. Selector stillfd6.
+
+identity.previous_ids retains olddd9 and principalACK01a11248-c5c5. Publication pending01a11193-b337 was superseded17:39:05 by new01a1124d-cc83; exact changed-sender/custody mapping and owner acceptance remain pending, not assumed preserved. Full acceptance at principal17:40UTC/19:40Berlin checkpoint is MISS/unverified while actual source/native progress remains credited; original overdue history retained.
+
+Bus report at Branches9713991 uses temporaryfixturetask-batch-* Python/tmp artifacts, without real model IDs, Bus enrollment or first tools. Distinct93d3 source fixture review stays bounded, not real sessionless adoption. Genuine correction01a1124f-f71a asks the head to delegate real maintained-launcher sessionless CLI first-use, actual message/genuine receiverACK, friction fix and distinct review. Next owned events are Ant loadedhash/custody/runtime review, a real useful QL integration/refill task, and actual Bus first-use task/ACK/artifact. Publishing this partial evidence does not close wake, continuity or10/25/50 gates.

@@ -68,6 +68,18 @@ Coord parent PID584427 measured VmRSS895004kB,23 threads, cgroup aplexer-workloa
 
 Private evidence pointers: ~/.gemini/antigravity-cli/conversations/{6bd84d9c,d25882ae,e02b7e33 full UUID}.db (read-only queries), parent brain/.system_generated/subagents child JSON records. No private tool arguments or transcript prose is published here.
 
+## Supervisor adoption and callback provenance — 17:41UTC
+
+Independent administrative observation at17:41:16UTC: replacement native supervisor d90ef931-9eb9-4505-b627-ecc8abde3637 worker3295416/workload3295455 both started17:37:44UTC. Old dd9 worker/workload PIDs1337839/1337846 are gone. Exactly one actual Python supervision workload was found; service.lock is held by3295455. systemd service remains active/exited with MainPID0 (oneshot launcher), activation17:37:45UTC; native process evidence, rather than MainPID0 alone, establishes the live workload.
+
+Current disk service.py SHA256 d023f86d95ff5d9d50c0f4339e9e4827f7a70b37126c210888d664c54210996f, mtime17:29:15UTC; test_service.py d71700f76c6be714ac016478af29a12b5488bb4fe8818baaf348f1e1b62376c2, mtime17:28:40UTC. Both predate restart. Loaded Python source-byte/hash attestation is UNKNOWN; disk matches and process chronology do not independently prove loaded bytes.
+
+Actual new-generation ledger records service-started17:37:45.345225UTC, queue-drain batch17:37:45.429254–.491549 and second batch17:40:05.679546–.745185, each three maintained stores/statusok. status17:40:05.593211UTC has d90 identity, no errors/degradedfalse. These establish two observed post-start action batches; they do not establish idle model wake or useful dispatched-worker first tools. Selected native binary stillfd6fd0ce, so the known footer-classifier failure is not repaired by this Python adoption alone.
+
+Identity previous_ids preserves dd9. Principal last_request01a11248-c5c5-7431-a9a1-80f5de028fe9 retains its dd9 sender, exact native ACK evidence at17:37:08.886630UTC and cursor/envelope hashes. Publication old pending01a11193-b337-7ad1-b16b-acd1e15634f2 was superseded17:39:05.562003UTC due old sender afterSLO, with recipient513eab03 unchanged; new publication request01a1124d-cc83-7c03-bb87-fcb94b9e8037 recorded17:40:51.065516UTC. Therefore custody history survives in records, but unchanged preservation of every pending cursor/envelope is not claimed. Head must validate that particular replacement and old cursor custody.
+
+Callback report read as metadata: agent-branches/research/RECEIPT-AGENTBUS-DOGFOOD-CALLBACK-C2913.md dates17:38:49UTC, actorAnt7d87, script agent-bus/scripts/dogfood_completion_callback.py, pins bus1bd4de6 and branches9713991. It reports3 task-batch-* completions/2refills/6kernel events on temporary JSON artifacts under/tmp/dogfood_callback_hm9w16cx. It supplies no model/provider, worker conversation ID, model first-tool timestamp or separate semantic acceptance receipt for those3 tasks. Classify this as deterministic callback fixture evidence, not unattended distinct model/head continuation acceptance. Existing reviewer93d3f9e2-e121-4684-a159-4fa47fa9f936 has31 completed tool steps in its own native SQLite; verdict not inspected. No script source review or test execution was performed by this helper.
+
 
 ## C2920 capability-audit correction — principal metadata, 6 October 2026
 
