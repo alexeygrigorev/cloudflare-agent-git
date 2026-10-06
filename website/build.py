@@ -247,6 +247,7 @@ LATEST_NOTE = note_stamp(REPORTS[0]) if REPORTS else None
 # and concrete milestones are admitted to the public timeline feed. Routine
 # check-ins are excluded from the feed while remaining archived in the repository.
 NOTE_TEXT = {
+    '20261005T0726': ('Model consumed and replied to bus message across test suites', 'An autonomous language model process successfully read and replied to a message on the coordination bus in an end-to-end task, passing 58 integration tests across Python and browser-mock environments while multi-stage acceptance remained unproven.', 'milestone'),
     '20261005T0656': ('Hourly report generator parameterized with explicit UTC cutoff and clock controls', 'The 24-hour metric generator was updated to require an explicit UTC cutoff parameter and reject frozen test clocks in production runs, preventing stale morning timestamps from recurring.', 'decision'),
     '20261005T0556': ('Model review of experiment dashboard uncovered hourly cutoff and group filtering bugs', 'An independent cross-family model review of the dashboard interface revealed that cutoff parameters were restricted to hourly intervals, omitting large unattributed telemetry clusters and misaligning span labels.', 'result'),
     '20261005T0326': ('Test runner cleanup deleted execution history outside database locks', 'A model test runner script deleted previous run stores, credentials, and review rows without acquiring database locks, causing an initial review record to be lost before append-only unique run directories were introduced.', 'failed'),
@@ -597,9 +598,7 @@ def daily_page(d):
     strip = '<div class="stat-strip">'+''.join('<div><span class="stat-n">'+E(n)+'</span><span class="stat-l">'+E(l)+'</span></div>' for n, l in PAIN_STATS)+'</div>'
     prose = re.sub(r'(<p>[^\n]*111\.7 GiB of physical disk[^\n]*</p>)', lambda m: m[1]+strip, prose, count=1)
     spans = []
-    is_opus = any('opus' in str(x).lower() for x in d.get('actual_writer_models', []))
-    writer_badge = 'Written with Claude Opus' if is_opus else 'Early technical update \u00b7 writer unverified'
-    person = '<span class="byline-name">'+E(d.get('author', 'Alexey Grigorev'))+'</span><span class="muted">'+writer_badge+'</span><span class="muted">'+E(long_date(d['date']))+'</span>'
+    person = '<span class="byline-name">'+E(d.get('author', 'Alexey Grigorev'))+'</span><span class="muted">'+E(long_date(d['date']))+'</span>'
     titles = d.get('source_titles', {})
     sources = ''.join('<a class="src" href="'+E(u, quote=True)+'">'+E(source_title(u, titles))+'</a>' for u in d.get('sources', []))
     return ('<article class="article">'+article_head(d['title'], d.get('summary', ''), byline_block(person, spans))
