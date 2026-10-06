@@ -1,0 +1,139 @@
+{
+  "as_of": "2026-10-03T18:11:33+02:00",
+  "subject": "N=3 agent worktrees each running `cargo test`, zero-dep demo crate `shortlinks`",
+  "host": {
+    "kernel": "6.8.0-138-generic",
+    "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "mem_total_bytes": 67343597568,
+    "mem_available_bytes_end": 33005871104,
+    "workload_cgroup": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/aplexer-workload-960f63ce-b916-4df0-bd81-a62d10438e69.scope",
+    "admission_rule": "max 2 concurrent jobs, launch only when MemAvailable >= 10 GiB",
+    "guard": "scripts/guard/build_guard.py --max-growth-mb 1024 --min-free-mb 51200 --timeout 300",
+    "cargo_jobs_flag": "--jobs 2"
+  },
+  "mode_a_naive": {
+    "description": "private cold CARGO_TARGET_DIR per worktree, 3 cargo test in parallel",
+    "batch_wall_s": 0.855,
+    "peak_cgroup_bytes_since_cgroup_creation": "1362915328",
+    "sum_job_max_rss_kb_upper_bound": 427712,
+    "targets_total_bytes": 81064717,
+    "jobs": [
+      {
+        "tag": "naive-j1",
+        "exit_code": "0",
+        "target_bytes": 27021571,
+        "time_v_max_rss_kb": 141080,
+        "time_v_wall": "0:00.79",
+        "guard_line": "GUARD_SUCCESS: baseline=0M peak=27M final=27M growth=27M duration=0.76s exit=0"
+      },
+      {
+        "tag": "naive-j2",
+        "exit_code": "0",
+        "target_bytes": 27021575,
+        "time_v_max_rss_kb": 144888,
+        "time_v_wall": "0:00.84",
+        "guard_line": "GUARD_SUCCESS: baseline=0M peak=27M final=27M growth=27M duration=0.81s exit=0"
+      },
+      {
+        "tag": "naive-j3",
+        "exit_code": "0",
+        "target_bytes": 27021571,
+        "time_v_max_rss_kb": 141744,
+        "time_v_wall": "0:00.84",
+        "guard_line": "GUARD_SUCCESS: baseline=0M peak=27M final=27M growth=27M duration=0.81s exit=0"
+      }
+    ],
+    "incremental_after_small_edit": {
+      "edit": "MAX_LINKS 10_000 -> 20_000 in src/lib.rs (wt-1)",
+      "wall_s": 0.316,
+      "target_bytes_after": 34037803,
+      "job": {
+        "tag": "naive-incr",
+        "exit_code": "0",
+        "target_bytes": 34037803,
+        "time_v_max_rss_kb": 122192,
+        "time_v_wall": "0:00.31",
+        "guard_line": "GUARD_SUCCESS: baseline=27M peak=34M final=34M growth=7M duration=0.27s exit=0"
+      }
+    }
+  },
+  "mode_b_agent_branches": {
+    "description": "one shared warm CARGO_TARGET_DIR for the base commit; jobs admitted max 2 concurrent under 10 GiB MemAvailable budget",
+    "prewarm": {
+      "wall_s": 0.734,
+      "target_bytes_after": 27021867,
+      "job": {
+        "tag": "shared-prewarm",
+        "exit_code": "0",
+        "target_bytes": 27021867,
+        "time_v_max_rss_kb": 145032,
+        "time_v_wall": "0:00.73",
+        "guard_line": "GUARD_SUCCESS: baseline=0M peak=27M final=27M growth=27M duration=0.69s exit=0"
+      }
+    },
+    "batch_wall_s": 0.303,
+    "total_wall_s": 1.037,
+    "peak_cgroup_bytes_since_cgroup_creation": "1362915328",
+    "sum_job_max_rss_kb_upper_bound": 213380,
+    "shared_target_bytes": 27021867,
+    "jobs": [
+      {
+        "tag": "shared-j1",
+        "exit_code": "0",
+        "target_bytes": 0,
+        "time_v_max_rss_kb": 70844,
+        "time_v_wall": "0:00.14",
+        "guard_line": "GUARD_SUCCESS: baseline=27M peak=27M final=27M growth=0M duration=0.11s exit=0"
+      },
+      {
+        "tag": "shared-j2",
+        "exit_code": "0",
+        "target_bytes": 0,
+        "time_v_max_rss_kb": 71040,
+        "time_v_wall": "0:00.14",
+        "guard_line": "GUARD_SUCCESS: baseline=27M peak=27M final=27M growth=0M duration=0.11s exit=0"
+      },
+      {
+        "tag": "shared-j3",
+        "exit_code": "0",
+        "target_bytes": 0,
+        "time_v_max_rss_kb": 71496,
+        "time_v_wall": "0:00.14",
+        "guard_line": "GUARD_SUCCESS: baseline=27M peak=27M final=27M growth=0M duration=0.11s exit=0"
+      }
+    ],
+    "incremental_after_small_edit": {
+      "edit": "MAX_LINKS 10_000 -> 20_000 in src/lib.rs (wt-1)",
+      "wall_s": 0.444,
+      "target_bytes_after": 34038114,
+      "job": {
+        "tag": "shared-incr",
+        "exit_code": "0",
+        "target_bytes": 34038114,
+        "time_v_max_rss_kb": 122440,
+        "time_v_wall": "0:00.43",
+        "guard_line": "GUARD_SUCCESS: baseline=27M peak=34M final=34M growth=7M duration=0.39s exit=0"
+      }
+    }
+  },
+  "target_dirs_inside_rustdemo": {
+    "per_dir_bytes": {
+      "bench/run/naive/wt-1/target": 34037803,
+      "bench/run/naive/wt-2/target": 27021575,
+      "bench/run/naive/wt-3/target": 27021571,
+      "bench/run/shared/warm-target": 34038114,
+      "crate/target": 27017214
+    },
+    "total_bytes": 149136277,
+    "budget_bytes": 3221225472
+  },
+  "caveats": [
+    "Zero-dependency crate: absolute numbers are small; only mode-vs-mode ratios are meaningful here.",
+    "Single run on a shared desktop host: small wall-time differences are noise (batch wall varied 0.87-1.33 s for naive across runs).",
+    "Target-dir budget inventory (target_dirs_inside_rustdemo) excludes transient .harness/scratch verify targets, which are rebuilt per verify-overlap run.",
+    "cargo file-locks the shared build dir: mode-B jobs serialize on cargo's own lock even though up to 2 are admitted; observed wall time reflects that.",
+    "kernel 6.8 cannot reset memory.peak, so cgroup readings are monotonic since cgroup creation and NOT comparable between modes; per-mode comparison uses /usr/bin/time -v max-RSS (per job process tree) and its honest upper-bound sum.",
+    "No extrapolation beyond measured numbers."
+  ]
+}

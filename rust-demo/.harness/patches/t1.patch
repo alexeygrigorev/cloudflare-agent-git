@@ -1,0 +1,110 @@
+From 0ff2497ad29ded6764bca0ddaf88384966817776 Mon Sep 17 00:00:00 2001
+From: zc-rust-lane <zc-rust-lane@agents.local>
+Date: Sat, 3 Oct 2026 17:55:52 +0200
+Subject: [PATCH] t1 reference solution
+
+---
+ src/lib.rs | 39 +++++++++++++++++++++++++++++++--------
+ 1 file changed, 31 insertions(+), 8 deletions(-)
+
+diff --git a/src/lib.rs b/src/lib.rs
+index 388136f..0f56757 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -7,6 +7,7 @@
+ pub mod code;
+ pub mod stats;
+ 
++use std::cell::Cell;
+ use std::collections::HashMap;
+ 
+ pub use code::Code;
+@@ -26,7 +27,7 @@ pub struct ShortLinks {
+ #[derive(Debug)]
+ struct Entry {
+     url: String,
+-    hits: u64,
++    hits: Cell<u64>,
+ }
+ 
+ impl ShortLinks {
+@@ -56,23 +57,26 @@ impl ShortLinks {
+             code.to_base62(),
+             Entry {
+                 url: url.to_string(),
+-                hits: 0,
++                hits: Cell::new(0),
+             },
+         );
+         Some(code)
+     }
+ 
+     /// Resolves a code string (any case, surrounding whitespace tolerated)
+-    /// to the stored URL, or `None` if unknown.
++    /// to the stored URL, or `None` if unknown. Every successful resolve
++    /// counts one hit; unknown codes are not counted.
+     pub fn resolve(&self, code: &str) -> Option<&str> {
+         let key = normalize_code(code);
+-        self.by_code.get(&key).map(|e| e.url.as_str())
++        let entry = self.by_code.get(&key)?;
++        entry.hits.set(entry.hits.get() + 1);
++        Some(entry.url.as_str())
+     }
+ 
+     /// Hit counter for a code string, or `None` if unknown.
+     pub fn hits(&self, code: &str) -> Option<u64> {
+         let key = normalize_code(code);
+-        self.by_code.get(&key).map(|e| e.hits)
++        self.by_code.get(&key).map(|e| e.hits.get())
+     }
+ 
+     /// Number of stored links.
+@@ -87,7 +91,7 @@ impl ShortLinks {
+ 
+     /// Sum of all hit counters.
+     pub fn total_hits(&self) -> u64 {
+-        self.by_code.values().map(|e| e.hits).sum()
++        self.by_code.values().map(|e| e.hits.get()).sum()
+     }
+ 
+     /// Iterator over the canonical (base62) code strings currently stored.
+@@ -131,6 +135,27 @@ mod tests {
+         assert_eq!(links.resolve(&format!("  {raw} ")), Some("https://example.com/x"));
+     }
+ 
++    #[test]
++    fn successful_resolves_count_hits() {
++        let mut links = ShortLinks::new();
++        let code = links.insert("https://example.com/hit");
++        let raw = code.to_base62();
++        assert_eq!(links.resolve(&raw), Some("https://example.com/hit"));
++        assert_eq!(links.resolve(&raw.to_uppercase()), Some("https://example.com/hit"));
++        assert_eq!(links.hits(&raw), Some(2));
++        assert_eq!(links.total_hits(), 2);
++    }
++
++    #[test]
++    fn unknown_resolves_do_not_count() {
++        let mut links = ShortLinks::new();
++        let code = links.insert("https://example.com/quiet");
++        let raw = code.to_base62();
++        assert_eq!(links.resolve("nope-nope"), None);
++        assert_eq!(links.hits(&raw), Some(0));
++        assert_eq!(links.total_hits(), 0);
++    }
++
+     #[test]
+     fn unknown_code_is_none() {
+         let links = ShortLinks::new();
+@@ -143,8 +168,6 @@ mod tests {
+     #[test]
+     fn insert_opt_respects_max_links() {
+         let mut links = ShortLinks::new();
+-        // Shrink the ceiling by filling just below it using a temporary store
+-        // with the real const: use a wrapper that stops after MAX_LINKS.
+         for _ in 0..MAX_LINKS {
+             assert!(links.insert_opt("https://example.com/fill").is_some());
+         }
+-- 
+2.43.0
+

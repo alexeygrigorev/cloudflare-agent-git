@@ -1,0 +1,54 @@
+From 58635ce729b64f04199235426285caf9ec532471 Mon Sep 17 00:00:00 2001
+From: zc-rust-lane <zc-rust-lane@agents.local>
+Date: Sat, 3 Oct 2026 17:55:52 +0200
+Subject: [PATCH] t3 reference solution
+
+---
+ src/stats.rs   |  7 +++++++
+ tests/audit.rs | 19 +++++++++++++++++++
+ 2 files changed, 26 insertions(+)
+ create mode 100644 tests/audit.rs
+
+diff --git a/src/stats.rs b/src/stats.rs
+index c5bbf66..d5dd310 100644
+--- a/src/stats.rs
++++ b/src/stats.rs
+@@ -33,3 +33,10 @@ pub fn top_links(links: &ShortLinks, n: usize) -> Vec<(String, String, u64)> {
+         .map(|(raw, url, hits)| (crate::code::Code::new(raw).to_base62(), url, hits))
+         .collect()
+ }
++
++/// `"code -> url"` audit line for a known code (any case / padding accepted),
++/// `None` for unknown codes.
++pub fn audit_line(links: &ShortLinks, code: &str) -> Option<String> {
++    let url = links.resolve(code)?;
++    Some(format!("{code} -> {url}"))
++}
+diff --git a/tests/audit.rs b/tests/audit.rs
+new file mode 100644
+index 0000000..1eb3f08
+--- /dev/null
++++ b/tests/audit.rs
+@@ -0,0 +1,19 @@
++//! Audit-line helper tests (T3).
++
++use shortlinks::{stats, ShortLinks};
++
++#[test]
++fn audit_line_known_and_unknown() {
++    let mut links = ShortLinks::new();
++    links.insert("https://example.com/audit");
++    assert_eq!(
++        stats::audit_line(&links, "1"),
++        Some("1 -> https://example.com/audit".to_string())
++    );
++    // Normalization still applies on lookup.
++    assert_eq!(
++        stats::audit_line(&links, "  1 "),
++        Some("  1  -> https://example.com/audit".to_string())
++    );
++    assert_eq!(stats::audit_line(&links, "999"), None);
++}
+-- 
+2.43.0
+
