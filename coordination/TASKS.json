@@ -4034,8 +4034,8 @@
       "owner_tag": "quota-launcher-head",
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": true,
-      "status": "review",
-      "updated_at": "2026-10-05T11:33:09.735722+00:00",
+      "status": "accepted",
+      "updated_at": "2026-10-06T00:59:14Z",
       "title": "Readonly provider route adversarial review",
       "source": "experiment/human-fifty-workers-use-agent-launcher-20261005.txt",
       "acceptance": "inspect executable selection vs quota provider/model and enumerate failclosed mismatch cases",
@@ -4043,9 +4043,10 @@
       "write_scope": "/home/alexey/git/agent-quota-launcher/.local/scale50/scale50-09/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Actual18718Bproviderreview delivered16mismatchcases/pins; QLsource06/07/08 disposition/adoptionneeded. Completedworker notactive; onlyGrokdemonstrated.",
+      "next_action": "Evidence independently reviewed and accepted in research/antigravity/reviews/REV-SCALE50-09-ADVERSARIAL-ROUTE-REVIEW-20261006.md.",
       "owner_ack_message": "01a10bc1-de59-7d83-a689-f65edf35d24e",
-      "runtime_evidence": "Principal independent11:11:17UTC actualunit/Inv/PID/freshmodelsource/toolstream verified, terminalmust update state"
+      "runtime_evidence": "Principal independent11:11:17UTC actualunit/Inv/PID/freshmodelsource/toolstream verified, terminalmust update state",
+      "audit_report": "research/antigravity/reviews/REV-SCALE50-09-ADVERSARIAL-ROUTE-REVIEW-20261006.md"
     },
     {
       "id": "scale50-10",
@@ -4134,8 +4135,8 @@
       "owner_tag": "quota-launcher-head",
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": true,
-      "status": "review",
-      "updated_at": "2026-10-05T11:25:07.898889+00:00",
+      "status": "accepted",
+      "updated_at": "2026-10-06T01:05:00Z",
       "title": "Git backup/auth fallback run instructions",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "document proven31b41e SSHrestore and unresolved platformHTTPauth separately, no credentials",
@@ -4143,9 +4144,10 @@
       "write_scope": "/home/alexey/git/agent-quota-launcher/.local/scale50/scale50-14/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Actualnormalworkerexit and privateGitrestore/HTTPauth documentation artifacts received; QL owneracceptance/sourceverification needed, notactive.",
+      "next_action": "Evidence independently reviewed and accepted in research/antigravity/reviews/REV-SCALE50-14-GIT-BACKUP-RUN-INSTRUCTIONS-20261006.md.",
       "owner_ack_message": "01a10bc1-de59-7d83-a689-f65edf35d24e",
-      "runtime_evidence": "Principal independent11:11:17UTC actualunit/Inv/PID/freshmodelsource/toolstream verified, terminalmust update state"
+      "runtime_evidence": "Principal independent11:11:17UTC actualunit/Inv/PID/freshmodelsource/toolstream verified, terminalmust update state",
+      "audit_report": "research/antigravity/reviews/REV-SCALE50-14-GIT-BACKUP-RUN-INSTRUCTIONS-20261006.md"
     },
     {
       "id": "scale50-15",
