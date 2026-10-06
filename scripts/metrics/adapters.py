@@ -89,7 +89,7 @@ def temporal(store,observations,tasks,at):
     state['last_unix']=now;tmp=path.with_suffix('.tmp');tmp.write_text(json.dumps(state));tmp.chmod(0o600);tmp.replace(path)
     return {'first_observed_at':state['first_observed_at'],'conversations':list(state['conversations'].values()),'tokens_since_observer_known':sum(v.get('tokens_since_observer',0) for v in state['conversations'].values()),'task_observed_seconds':state['task_observed_seconds'],'task_transitions_this_sample':events,'limits':'Sampling estimates; state start before observer is unknown; token change covers observer interval, not total experiment expenditure.'}
 
-def archive_history(store,dayfile):
+def archive_history(store,dayfile,max_active_bytes=192*1024*1024,floor_active_bytes=160*1024*1024):
     def digest(handle):
         h=hashlib.sha256();size=0
         while chunk:=handle.read(65536):h.update(chunk);size+=len(chunk)
@@ -110,6 +110,45 @@ def archive_history(store,dayfile):
             with target.open('rb') as compressed:_,compressed_sha=digest(compressed)
             hashes[target.name]={'uncompressed_sha256':source_sha,'uncompressed_bytes':source_size,'sha256':compressed_sha}
             p.unlink() # only verified metrics-owned original; all sample bytes survive in archive
+
+    active_files=[p for p in store.glob('snapshots-*') if p.is_file()]
+    current_active_bytes=sum(p.stat().st_size for p in active_files)
+    if current_active_bytes>max_active_bytes:
+        prefix=dayfile.name.replace('.jsonl','')
+        candidates=sorted([p for p in active_files if p.name.endswith('.gz') and not p.name.startswith(prefix) and not p.name.startswith(dayfile.name)],key=lambda p:p.name)
+        archive_dir=store/'archive'
+        archive_dir.mkdir(parents=True,exist_ok=True)
+        try:os.chmod(archive_dir,0o700)
+        except OSError:pass
+        archive_manifest_path=archive_dir/'manifest.json'
+        try:
+            archive_manifest=json.loads(archive_manifest_path.read_text())
+            if not isinstance(archive_manifest,dict):raise ValueError('invalid manifest')
+            if 'archives' not in archive_manifest or not isinstance(archive_manifest['archives'],list):archive_manifest['archives']=[]
+        except (OSError,ValueError):
+            archive_manifest={'schema_version':1,'archives':[],'policy':'Preserved private archive of closed daily snapshot gzip chunks to maintain active metrics store below 256 MiB cap. Mode 0700/0600 enforced. Zero historical bytes deleted.'}
+        manifest_index={r['file']:idx for idx,r in enumerate(archive_manifest['archives']) if isinstance(r,dict) and 'file' in r}
+        for p in candidates:
+            if current_active_bytes<=floor_active_bytes:break
+            with p.open('rb') as src:size,sha=digest(src)
+            dest=archive_dir/p.name
+            p.replace(dest)
+            try:os.chmod(dest,0o600)
+            except OSError:pass
+            entry={'file':p.name,'bytes':size,'sha256':sha,'mtime_ns':dest.stat().st_mtime_ns,'relocated_at':dt.datetime.now(dt.timezone.utc).isoformat()}
+            if p.name in manifest_index:archive_manifest['archives'][manifest_index[p.name]]=entry
+            else:
+                manifest_index[p.name]=len(archive_manifest['archives'])
+                archive_manifest['archives'].append(entry)
+            current_active_bytes-=size
+        archive_manifest['total_bytes']=sum(r['bytes'] for r in archive_manifest['archives'])
+        archive_manifest['file_count']=len(archive_manifest['archives'])
+        manifest_tmp=archive_dir/'manifest.tmp'
+        manifest_tmp.write_text(json.dumps(archive_manifest,indent=2))
+        try:os.chmod(manifest_tmp,0o600)
+        except OSError:pass
+        manifest_tmp.replace(archive_manifest_path)
+
     archives=[]
     for p in sorted(store.glob('snapshots-*')):
         if not p.is_file():continue

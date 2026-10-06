@@ -49,4 +49,47 @@ class AdapterTests(unittest.TestCase):
    latest={'tasks':[{'id':'t1','owner_tag':'worker','evidence_paths':['result.txt','result.txt','missing.txt','directory']},{'id':'t2','owner_tag':'missing-only','evidence_paths':['absent.txt']} ]};(store/'latest.json').write_text(json.dumps(latest))
    with patch.object(module,'STORE',store),patch.object(module,'ROOT',root):result=module.summarize()
    worker=result['per_tag']['worker'];self.assertEqual(worker['evidence_files_latest'],1);self.assertEqual(worker['evidence_coverage']['status'],'partial');self.assertEqual(worker['evidence_coverage']['unsupported_directory_paths'],['directory']);self.assertEqual(worker['evidence_coverage']['missing_paths'],['missing.txt']);self.assertIsNone(result['per_tag']['missing-only']['evidence_files_latest'])
+ def test_rolling_retention_relocates_old_chunks_below_threshold(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   store=pathlib.Path(tmp)
+   dayfile=store/'snapshots-2026-10-06.jsonl'
+   dayfile.write_bytes(b'{"active":true}\n'*10)
+   old1=store/'snapshots-2026-10-04.jsonl.1.gz';old1.write_bytes(b'A'*400)
+   old2=store/'snapshots-2026-10-05.jsonl.1.gz';old2.write_bytes(b'B'*400)
+   today_gz=store/'snapshots-2026-10-06.jsonl.1.gz';today_gz.write_bytes(b'C'*100)
+   adapters.archive_history(store,dayfile,max_active_bytes=1000,floor_active_bytes=500)
+   archive_dir=store/'archive'
+   self.assertTrue((archive_dir/'snapshots-2026-10-04.jsonl.1.gz').exists())
+   self.assertFalse(old1.exists())
+   self.assertTrue((archive_dir/'snapshots-2026-10-05.jsonl.1.gz').exists())
+   self.assertFalse(old2.exists())
+   manifest_path=archive_dir/'manifest.json'
+   self.assertTrue(manifest_path.exists())
+   manifest=json.loads(manifest_path.read_text())
+   files_in_manifest={r['file'] for r in manifest['archives']}
+   self.assertIn('snapshots-2026-10-04.jsonl.1.gz',files_in_manifest)
+   self.assertIn('snapshots-2026-10-05.jsonl.1.gz',files_in_manifest)
+   self.assertEqual(manifest['total_bytes'],800)
+   self.assertEqual(manifest['file_count'],2)
+   for entry in manifest['archives']:
+    self.assertIn('sha256',entry)
+    self.assertIn('bytes',entry)
+    self.assertIn('mtime_ns',entry)
+    self.assertIn('relocated_at',entry)
+   self.assertEqual(archive_dir.stat().st_mode&0o777,0o700)
+   self.assertEqual(manifest_path.stat().st_mode&0o777,0o600)
+   self.assertEqual((archive_dir/'snapshots-2026-10-04.jsonl.1.gz').stat().st_mode&0o777,0o600)
+   self.assertEqual((archive_dir/'snapshots-2026-10-05.jsonl.1.gz').stat().st_mode&0o777,0o600)
+   self.assertTrue(dayfile.exists())
+   self.assertTrue(today_gz.exists())
+   self.assertFalse((archive_dir/dayfile.name).exists())
+   ret_manifest=json.loads((store/'retention-manifest.json').read_text())
+   active_files=[p for p in store.glob('snapshots-*') if p.is_file()]
+   self.assertEqual(ret_manifest['total_bytes'],sum(p.stat().st_size for p in active_files))
+   self.assertEqual(ret_manifest['total_bytes'],dayfile.stat().st_size+today_gz.stat().st_size)
+   active_names={r['file'] for r in ret_manifest['archives']}
+   self.assertIn(dayfile.name,active_names)
+   self.assertIn(today_gz.name,active_names)
+   self.assertNotIn('snapshots-2026-10-04.jsonl.1.gz',active_names)
+   self.assertNotIn('snapshots-2026-10-05.jsonl.1.gz',active_names)
 if __name__=='__main__':unittest.main()
