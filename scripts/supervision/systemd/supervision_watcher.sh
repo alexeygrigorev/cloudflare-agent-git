@@ -1,0 +1,27 @@
+#!/bin/bash
+set -euo pipefail
+export PATH="/home/alexey/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+
+REPO_ROOT="/home/alexey/git/cloudflare-agent-git"
+cd "$REPO_ROOT"
+
+# Check if experiment-supervision is alive
+if ! python3 -c "
+import subprocess, json
+out = subprocess.check_output(['aplexer', 'status', 'experiment-supervision', '--json'], stderr=subprocess.DEVNULL)
+if not json.loads(out).get('worker_alive'):
+    exit(1)
+" >/dev/null 2>&1; then
+    echo "Supervisor is down or missing. Restarting..."
+    systemctl --user restart supervision.service
+else
+    # Check if status.json is fresh (updated in last 120s)
+    STATUS_AGE=$(stat -c %Y "$REPO_ROOT/.local/supervision/status.json" 2>/dev/null || echo 0)
+    NOW=$(date +%s)
+    if [ $((NOW - STATUS_AGE)) -gt 120 ]; then
+        echo "Supervisor is alive but status.json is stale. Restarting..."
+        systemctl --user restart supervision.service
+    else
+        echo "Supervisor is healthy."
+    fi
+fi
