@@ -1,0 +1,57 @@
+{
+  "title": "Why the wake-up service stopped waking anyone",
+  "description": "After a restart, the wake-up service no longer recognised its own unanswered message. It waited for an answer that could never come and sent nothing new.",
+  "canvas": {
+    "width": 940,
+    "height": 900
+  },
+  "layout": {
+    "type": "ring",
+    "card_width": 270,
+    "card_height": 130
+  },
+  "nodes": [
+    {
+      "id": "pending",
+      "title": "Old message waits",
+      "subtitle": "Sent before the restart",
+      "icon": "message",
+      "color": "purple"
+    },
+    {
+      "id": "sender",
+      "title": "Sender looks new",
+      "subtitle": "The restart changed its name",
+      "icon": "warning",
+      "color": "amber"
+    },
+    {
+      "id": "hold",
+      "title": "Holds new messages",
+      "subtitle": "Until the old one clears",
+      "icon": "queue",
+      "color": "gray"
+    }
+  ],
+  "edges": [
+    {
+      "from": "pending",
+      "to": "sender",
+      "route": "ring"
+    },
+    {
+      "from": "sender",
+      "to": "hold",
+      "route": "ring"
+    },
+    {
+      "from": "hold",
+      "to": "pending",
+      "route": "ring"
+    }
+  ],
+  "center": {
+    "title": "Nobody gets woken",
+    "subtitle": "Lead agents sit idle"
+  }
+}

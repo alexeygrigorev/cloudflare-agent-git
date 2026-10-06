@@ -1,0 +1,1 @@
+Day 4 of my experiment with AI coding agents. In a trial, one task now starts the next with nobody nudging. Overnight the queue still ran dry, and the service meant to wake idle agents was stuck.

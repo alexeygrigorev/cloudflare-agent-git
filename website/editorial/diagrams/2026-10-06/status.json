@@ -1,0 +1,46 @@
+{
+  "title": "Where the experiment stands on day 4",
+  "description": "The task chain works in a trial, and the overnight wake-up broke. Many agents working on one project at the same time hasn't been tried yet.",
+  "canvas": {
+    "width": 1060,
+    "height": 280
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 300,
+    "card_height": 150
+  },
+  "nodes": [
+    {
+      "id": "works",
+      "eyebrow": "WORKS IN A TRIAL",
+      "title": "Task chain",
+      "subtitle": "One task starts the next",
+      "icon": "check",
+      "color": "green",
+      "x": 40,
+      "y": 65
+    },
+    {
+      "id": "broke",
+      "eyebrow": "BROKE OVERNIGHT",
+      "title": "Wake-up service",
+      "subtitle": "Repair waits for a real night",
+      "icon": "warning",
+      "color": "amber",
+      "x": 380,
+      "y": 65
+    },
+    {
+      "id": "untried",
+      "eyebrow": "NOT TRIED YET",
+      "title": "Many agents, one project",
+      "subtitle": "The point of it all",
+      "icon": "robot",
+      "color": "gray",
+      "x": 720,
+      "y": 65
+    }
+  ],
+  "edges": []
+}

@@ -1,0 +1,48 @@
+{
+  "title": "Day 4: One Task Now Starts the Next, but the Night Still Went Quiet",
+  "date": "2026-10-06",
+  "summary": "In a trial, one task now starts the next with no prompt from anyone. Overnight the queue still ran dry, and the service meant to wake idle agents was stuck.",
+  "author": "Alexey Grigorev",
+  "model": "Claude Opus 5.5 (claude-opus-5-5)",
+  "actual_writer_models": [
+    "claude-opus-5-5"
+  ],
+  "source_cutoff": "2026-10-06T07:25:00Z",
+  "source_cutoff_note": "Standup fact packet for 2026-10-05T07:00Z to 2026-10-06T07:00Z plus morning repair and review evidence read through about 07:25 UTC.",
+  "sources": [
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/d4a0456/research/codex/head-runtime-loss-observation-20261005.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/b8aca25/research/codex/continuous-useful-work-repair-20261005.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/ae8dbd6/research/antigravity/reviews/REV-QL-TRIAL-TASK-B-20261005.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1535493/research/antigravity/reviews/REV-AB-SYNC-AUDIT-01-20261005.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/b1fc411/research/antigravity/reviews/REV-SCALE50-53-MOBILE-QA-20261006.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/ee1341d/research/antigravity/reviews/REV-AGENTBRANCHES-SYNC-GIT-INTEGRATION-20261005.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/a73f7f5/research/antigravity/reviews/REV-COORD-NATIVE-CLI-SOURCE-20261005.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/ee1341d/research/antigravity/reviews/REV-QL-C2670-CAPACITY-AND-DOGFOOD-20261005.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/8fbdbfa/research/antigravity/reviews/REV-DASHBOARD-USAGE-ACCOUNTING-20261005.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/c98f46e/research/orchestrator/ROLE-FAILOVER-PROTOCOL-20261006.md"
+  ],
+  "source_titles": {
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/": "Cloudflare's competition to build the next Git platform",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/d4a0456/research/codex/head-runtime-loss-observation-20261005.md": "How two lead agents went over their memory limit",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/b8aca25/research/codex/continuous-useful-work-repair-20261005.md": "The agents' notes on why work stopped after each batch",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/ae8dbd6/research/antigravity/reviews/REV-QL-TRIAL-TASK-B-20261005.md": "Review of the trial where one task started the next",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/1535493/research/antigravity/reviews/REV-AB-SYNC-AUDIT-01-20261005.md": "Review of the queued Agent Branches check the wake-up service started",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/b1fc411/research/antigravity/reviews/REV-SCALE50-53-MOBILE-QA-20261006.md": "Review that rejected a fake pass",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/ee1341d/research/antigravity/reviews/REV-AGENTBRANCHES-SYNC-GIT-INTEGRATION-20261005.md": "Review of the command that copies an agent's work to GitHub",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/a73f7f5/research/antigravity/reviews/REV-COORD-NATIVE-CLI-SOURCE-20261005.md": "Review of the messaging command-line tool",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/ee1341d/research/antigravity/reviews/REV-QL-C2670-CAPACITY-AND-DOGFOOD-20261005.md": "Review of the launcher's shared provider limit",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/8fbdbfa/research/antigravity/reviews/REV-DASHBOARD-USAGE-ACCOUNTING-20261005.md": "Review of how the dashboard counts missing usage",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/c98f46e/research/orchestrator/ROLE-FAILOVER-PROTOCOL-20261006.md": "The agents' plan for taking over a missing agent's role"
+  },
+  "image": "../../assets/agent-git-illustration.png",
+  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "diagram": "../../assets/2026-10-06-status.png",
+  "diagram_svg": "../../assets/2026-10-06-status.svg",
+  "diagram_alt": "The task chain works in a trial and the overnight wake-up broke. Many agents on one project hasn't been tried",
+  "article_sha256": "254b8bad4e4f99d4442a11be51c259b52fbe2c72d9b6f6a435f3350bfd61f5ad",
+  "published": true,
+  "editorial_review": "Evidence, privacy, full stylint and asset checks by publication coordinator (public-journal-site)",
+  "published_at": "2026-10-06T07:45:51.360005+00:00",
+  "updated_at": "2026-10-06T07:45:51.360018+00:00"
+}

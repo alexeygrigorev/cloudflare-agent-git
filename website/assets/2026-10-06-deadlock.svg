@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="900" viewBox="0 0 940 900" role="img" aria-labelledby="title desc">
+  <title id="title">Why the wake-up service stopped waking anyone</title>
+  <desc id="desc">After a restart, the wake-up service no longer recognised its own unanswered message. It waited for an answer that could never come and sent nothing new.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#0f172a" flood-opacity="0.08"/>
+    </filter>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#7c3aed"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2563eb"/></marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#c2410c"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#15803d"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#dc2626"/></marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#64748b"/></marker>
+    <symbol id="icon-message" viewBox="0 0 24 24">
+        <path d="M4 4h16v12H9l-5 4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 9h8M8 13h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </symbol>
+    <symbol id="icon-queue" viewBox="0 0 56 28">
+        <path d="M5 8h46M5 20h46" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M5 8C.3 8 .3 20 5 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <ellipse cx="51" cy="14" rx="3.5" ry="6" fill="currentColor" fill-opacity=".1" stroke="currentColor" stroke-width="1.8"/>
+      </symbol>
+    <symbol id="icon-warning" viewBox="0 0 24 24">
+        <path d="M12 3 2.5 21h19Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.1" fill="currentColor"/>
+      </symbol>
+    <style>
+      text { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172033; }
+      symbol [stroke] { vector-effect: non-scaling-stroke; }
+      .node rect { stroke-width: 2; }
+      .node-boundary rect { stroke-width: 2; stroke-dasharray: 8 8; }
+      .boundary-title { font-size: 16px; font-weight: 750; text-anchor: start; }
+      .node-title { font-weight: 750; text-anchor: middle; }
+      .node-title.icon-copy { text-anchor: start; }
+      .node-subtitle { font-weight: 500; fill: #475569; text-anchor: middle; }
+      .eyebrow { font-weight: 750; letter-spacing: 1px; fill: #475569; text-anchor: middle; }
+      .mention-icon { font-size: 27px; font-weight: 750; text-anchor: middle; }
+      .standalone-mention { font-size: 52px; font-weight: 750; text-anchor: middle; }
+      .icon-node-title { font-size: 16px; font-weight: 750; text-anchor: middle; }
+      .edge { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .edge-label rect { stroke-width: 2; }
+      .edge-label text { font-size: 14px; font-weight: 750; text-anchor: middle; dominant-baseline: central; }
+      .divider { stroke: #cbd5e1; stroke-width: 2; stroke-dasharray: 6 8; stroke-linecap: round; }
+      .center-annotation { fill: #f1f5f9; stroke: none; }
+      .center-title { font-weight: 800; letter-spacing: 0.08em; fill: #334155; text-anchor: middle; }
+      .center-detail { font-weight: 600; fill: #475569; text-anchor: middle; }
+    </style>
+  </defs>
+  <rect width="940" height="900" fill="#ffffff"/>
+
+  <path class="edge" d="M605 222.42A340.64 340.64 0 0 1 793.95 640.48" stroke="#64748b" marker-end="url(#arrow-gray)"/>
+  <path class="edge" d="M716.29 770.48A340.64 340.64 0 0 1 223.71 770.48" stroke="#64748b" marker-end="url(#arrow-gray)"/>
+  <path class="edge" d="M146.05 640.48A340.64 340.64 0 0 1 335 222.42" stroke="#64748b" marker-end="url(#arrow-gray)"/>
+
+  <circle class="center-annotation" cx="470" cy="535.16" r="68"/>
+  <text class="center-title" x="470" y="529.49" font-size="16">Nobody gets woken</text>
+  <text class="center-title" x="470" y="551.49" font-size="16">Lead agents sit idle</text>
+
+  <g class="node node-purple" transform="translate(335 129.52)" filter="url(#shadow)">
+    <rect width="270" height="130" rx="18" fill="#f5f3ff" stroke="#7c3aed"/>
+    <use href="#icon-message" x="27.35" y="35" width="34" height="34" color="#7c3aed"/>
+    <text class="node-title icon-copy" x="69.1" y="57.76" font-size="16">Old message waits</text>
+    <text class="node-subtitle" x="135" y="90" font-size="16">Sent before the restart</text>
+  </g>
+  <g class="node node-amber" transform="translate(630 640.48)" filter="url(#shadow)">
+    <rect width="270" height="130" rx="18" fill="#fff7ed" stroke="#c2410c"/>
+    <use href="#icon-warning" x="32.6" y="35" width="34" height="34" color="#c2410c"/>
+    <text class="node-title icon-copy" x="76.32" y="57.76" font-size="16">Sender looks new</text>
+    <text class="node-subtitle" x="135" y="90" font-size="16">The restart changed its name</text>
+  </g>
+  <g class="node node-gray" transform="translate(40 640.48)" filter="url(#shadow)">
+    <rect width="270" height="130" rx="18" fill="#f8fafc" stroke="#64748b"/>
+    <use href="#icon-queue" x="18.05" y="35" width="34" height="34" color="#64748b"/>
+    <text class="node-title icon-copy" x="63.13" y="57.76" font-size="16">Holds new messages</text>
+    <text class="node-subtitle" x="135" y="90" font-size="16">Until the old one clears</text>
+  </g>
+</svg>

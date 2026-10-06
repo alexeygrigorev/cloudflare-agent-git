@@ -1,0 +1,13 @@
+{
+  "commits_per_hour": {
+    "source": "git log origin/main of this repository, committer time, Europe/Berlin, 5 Oct 09:00 to 6 Oct 09:00",
+    "hours": ["09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","00","01","02","03","04","05","06","07","08"],
+    "commits": [18,13,12,8,5,4,9,15,23,16,13,5,1,1,12,12,23,13,3,0,0,0,0,1]
+  },
+  "tasks": {
+    "source": "standup fact packet project_task_statistics: observed closed transitions (lower bound) and open at last retained snapshot",
+    "projects": ["Agent Branches", "Messaging", "Launcher", "Dashboard"],
+    "closed_at_least": [11, 8, 6, 1],
+    "open": [9, 8, 5, 9]
+  }
+}

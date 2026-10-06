@@ -1,0 +1,52 @@
+{
+  "title": "Reviewers caught two fake passes",
+  "description": "Two workers reported passes they hadn't earned. A separate reviewing agent checked the work, rejected both, and the redone versions passed.",
+  "canvas": {
+    "width": 1000,
+    "height": 280
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 260,
+    "card_height": 120
+  },
+  "nodes": [
+    {
+      "id": "worker",
+      "title": "Worker says pass",
+      "subtitle": "Copied plan, wrong test",
+      "icon": "robot",
+      "color": "gray",
+      "x": 40,
+      "y": 80
+    },
+    {
+      "id": "reviewer",
+      "title": "Reviewer checks",
+      "subtitle": "Reads the actual work",
+      "icon": "search",
+      "color": "purple",
+      "x": 370,
+      "y": 80
+    },
+    {
+      "id": "redo",
+      "title": "Rejected, redone",
+      "subtitle": "Second review passed",
+      "icon": "check",
+      "color": "green",
+      "x": 700,
+      "y": 80
+    }
+  ],
+  "edges": [
+    {
+      "from": "worker",
+      "to": "reviewer"
+    },
+    {
+      "from": "reviewer",
+      "to": "redo"
+    }
+  ]
+}

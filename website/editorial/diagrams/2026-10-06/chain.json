@@ -1,0 +1,17 @@
+{
+  "title": "One task now starts the next",
+  "description": "When a reviewer accepts the first task, the launcher starts the task that was waiting for it, with no new prompt from anyone.",
+  "canvas": {"width": 1300, "height": 280},
+  "layout": {"type": "manual", "card_width": 260, "card_height": 120},
+  "nodes": [
+    {"id": "a", "title": "First task", "subtitle": "Writes its result", "icon": "robot", "color": "amber", "x": 40, "y": 80},
+    {"id": "review", "title": "Review accepted", "subtitle": "By a separate agent", "icon": "check", "color": "green", "x": 360, "y": 80},
+    {"id": "launcher", "title": "Launcher", "subtitle": "Finds the waiting task", "icon": "settings", "color": "purple", "x": 680, "y": 80},
+    {"id": "b", "title": "Second task", "subtitle": "Starts on its own", "icon": "robot", "color": "amber", "x": 1000, "y": 80}
+  ],
+  "edges": [
+    {"from": "a", "to": "review"},
+    {"from": "review", "to": "launcher"},
+    {"from": "launcher", "to": "b"}
+  ]
+}
