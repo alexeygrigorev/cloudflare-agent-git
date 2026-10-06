@@ -108,7 +108,16 @@ export class FakeGitHost implements GitHost {
   }
 
   async log(repo: RepoName, opts?: LogOptions): Promise<CommitMetadata[]> {
-    const commits = [...this.repo(repo).commits].reverse();
+    const all = this.repo(repo).commits;
+    let commits = [...all].reverse();
+    if (opts?.ref && opts.ref !== "HEAD") {
+      const idx = all.findIndex((c) => c.id === opts.ref);
+      if (idx !== -1) {
+        commits = all.slice(0, idx + 1).reverse();
+      } else {
+        commits = [];
+      }
+    }
     const offset = opts?.offset ?? 0;
     return commits.slice(offset, offset + (opts?.limit ?? 50));
   }

@@ -250,4 +250,44 @@ describe("Agent Branches coordinator flow (sidecar-backed)", () => {
     const noRoute = await get("/definitely/not/a/route");
     expect(noRoute.status).toBe(404);
   });
+
+  it("concurrency: push returns exact-SHA receipt and deduplicates idempotently", async () => {
+    const taskRes = await post("/tasks", { agent: "receipt-worker" }, ADMIN_TOKEN);
+    const task = await json<CreatedTask>(taskRes);
+    const commit1 = await sidecarCommit(task.fork.name, "first commit for receipt");
+
+    const pushRes = await post(
+      "/events/push",
+      { agent: task.agentId, fork: task.fork.name, sha: commit1, ref: "refs/heads/main" },
+      task.token.plaintext,
+    );
+    expect(pushRes.status).toBe(200);
+    const pushBody = await json<{
+      accepted: boolean;
+      deduped: boolean;
+      receipt?: { id: string; sha: string; status: string };
+    }>(pushRes);
+    expect(pushBody.accepted).toBe(true);
+    expect(pushBody.deduped).toBe(false);
+    expect(pushBody.receipt).toBeDefined();
+    expect(pushBody.receipt?.id).toBe(`receipt-${task.agentId}-${commit1}`);
+    expect(pushBody.receipt?.status).toBe("valid");
+
+    // Re-push exact same commit
+    const dedupRes = await post(
+      "/events/push",
+      { agent: task.agentId, fork: task.fork.name, sha: commit1, ref: "refs/heads/main" },
+      task.token.plaintext,
+    );
+    expect(dedupRes.status).toBe(200);
+    const dedupBody = await json<{
+      accepted: boolean;
+      deduped: boolean;
+      receipt?: { id: string; sha: string; status: string };
+    }>(dedupRes);
+    expect(dedupBody.accepted).toBe(true);
+    expect(dedupBody.deduped).toBe(true);
+    expect(dedupBody.receipt?.id).toBe(`receipt-${task.agentId}-${commit1}`);
+    expect(dedupBody.receipt?.status).toBe("valid");
+  });
 });
