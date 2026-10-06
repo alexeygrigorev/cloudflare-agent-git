@@ -142,6 +142,18 @@ QL clarification relayed by parent: reviewer139b was a deterministic test runner
 
 New recoverybackup `.local/recovery/aplexer-fd6fd0ce.bak` measured80009808bytes/mode0444/hashfd6fd0ce218f6256442193e0d078467ad74830615ce87435053d7450a41279bd. Timestamp is preserved originalOct3 mtime, not creation time. Physical measured recoverydirectory584146944bytes (~557MiB); tmp688128, scratch14467072, Bus trial593920, QL tmp2686976: surveyed aggregate602583040bytes (~574.7MiB). This exceeds512MiB if the requested aggregate task/recovery cap includes historical recoverystorage. Policy classification of retained history versus task scratch needs owning-head disposition; do not delete protected recovery/history to fit a report. Parent notified immediately. No backup, deletion, build or source review was performed by helper.
 
+## Terminal adoption and real model review — 18:36UTC
+
+C2932 retry is completed-awaiting-review at18:32:16UTC, maintainedreason task-units sibling exit0; stdout genuinely contains turn.completed. Bus assignment48ee outcome18:30:12UTC, replyc33bb274-8f25-4388-8b76-4a6e53bb127b created18:30:23/ACK18:30:52. Artifact remains SHA172dda/mtime18:29:44UTC. This establishes actual completed model→artifact→Bus completion/reply→headACK, independently of prior failed300s attempt; successorcycle acceptance remains separate.
+
+New true LLM reviewer taskt-ql-review-tmpdir-default-c2932 isstarting18:32:23UTC, controller909430, modelPID911701, unitinvocation1b3634d6b0db4a09b2bd35938fd39fe7,768MiB/100tasks/timeout300. Actual ZCodeCID01a1127d-00f1-7cd3-a523-7acb3a67c454 modelglm-5.3-flash, firstexec_command18:32:36.592UTC/latest18:35:29.384UTC. This is real model reviewer execution, unlike deterministic139b; report/verdict stillpending at observation. Current working lowerbound1 contained model reviewer; totalnativecoverage/reserveunknown.
+
+Coord implementer2ec9c0f4-cf38-4631-9680-ede4e21034f5 firsttool18:28:43.679469UTC/latestsend18:33:07.106850UTC. Its independent reviewer7e3c2322-5bd0-48d8-8cec-c30616f59a11 firstview_file18:34:47.536542/latestsend18:36:25.738583UTC,22 actualtools, reportresearch/coordination/REV-AGENT-BUS-TRANSPORT-C2965.md SHA c23360d9674ec968490c8f82e15b45b4664c65b2984e15e5c0e487296e9f9ed2/verdictACCEPT. Current adapter sourcehasha5c5ba1f8dc308c4b941c6ebbdbae0049134c1ee5900217bc76f9a570bf18a4b; currenttest9b3468f3109cc3d9e0f9a40e86d93d4c6f00f0cb71ad6461b0c769f685c851d6 differs earlier reported785d. Head must reconcile pin; no source review performed here.
+
+Ant adoptionreview71c8d700-b645-4803-8e5e-db7eeb1fe660 firsttool18:32:04.000557UTC/latestsend18:34:33.627753UTC,37tools, reportagent-branches/research/REV-BUS-HEADLESS-COMPLETE-C2932.md SHA1d5ceba3158f01a38d0b538d7019e6c6fe1e44efca3658498b03a18f1e7e2baf, verdictACCEPTED and exactsourcepin3dccf8239d3b02fad45b6aaec234650106ba0d6f. These actions establish real reviewer provenance/report metadata; helper did not validate product code or tests. Their latestsend checkpoints cannot be counted as continuing ACTIVE modelturns.
+
+Backup nowexists at /home/alexey/storagebox/build-output/recovery/aplexer-fd6fd0ce.bak,80009808bytes/mode0444/hashfd6matches; localbackupabsent. Surveyed localphysicalaggregate522612736bytes (~498.40MiB), below512MiB by14258176bytes (~13.6MiB). Other tasklanes' totalphysical scratch remains unknown; preserve head-owned sharedbudget checks rather than calling this survey globalclearance. No copies/deletion/build executed by helper.
+
 
 ## C2920 capability-audit correction — principal metadata, 6 October 2026
 
@@ -206,3 +218,12 @@ Independent runtime metadata verifies resumedPID691158/zcodex692144, invocation0
 Principalactualnotes01a1127b-fdfc/fe53 retain next18:35UTC/event follow-up: taskterminal→immutableartifact→distinct modelreview→genuine reply/nextusefulfirsttool. QL139b review remains automated validation only as corrected above. Coord standalone adapter is planned, canonicalintegration/actualworker pending.
 
 Measured newbackup80,009,808B, recovery584,146,944B and total task/recovery602,583,040B (~574.7MiB) require an explicit policy-category disposition; do not claim512MiB compliance. Ant owns ONLY newbackup private StorageBox relocation preservinghistory. This helper moved/deleted nothing or published private paths/credentials. Runtime and broader capacity/wake gates remain OPEN.
+
+
+## C2944 real terminal is awaiting review; original overdue gates retained
+
+Administrative read-only actual ~/.config launcher DB verifies C2932 completed-awaiting-review, updated18:32:16UTC, reason sibling unitexit0 and reviewerNULL. Current canonicaltask is review, preserving original300s failure and subsequent genuinefirsttools. Ant01a1127c-b7dd reports Buscomplete18:30:12, replyc33bb/headACK18:30:52, artifacts65d5/172dda and receipt3dccf82; distinct71c8 launched, modelfirsttool/verdict pending. QL01a1127d-ffcd reports realGLMreview unit911701/controller909430 for source d68; firstmodeltool verification pending. This does not turn deterministic139b into modelreview or establish accepted uptake/refill.
+
+Coord actualACK01a1127c-ac35 owns t-coord-agent-bus-transport-c2958/child2ec9, canonical adapters/agent_bus_client.py and tests/test_agent_bus_client.py. Head01a1127f-33f9 reports prototypea5c5/785d,7tests and distinct7e3reviewer; canonical integration and acceptance remain pending. Ant reports private StorageBox backuphashfd6/localcopyremoved and recovery-only481MiB; actualaggregate/category verification is pending, not assumed512MiB compliance.
+
+Root actual7e-9fff/principalreply7f-6f39 triggers overdue reconciliation: original A/C/D/E/21 14:30UTC due and MISS/unverified live acceptance remain, not erased or assigned a new head-promised deadline. B principal portfolio coordination and genuineQL executable custody remain distinct; no fabricated50READY. Dashboard31 currentc7 ownershipACK remains missing and canonicalsourcelease protected. Next18:40UTC/event condition is real distinct modelreview and headacceptance→genuine reply→useful nextworker firsttool, alongside adapter integration and backupaggregate proof. No10/25/50, unattendedwake or wholeproject closure is claimed.
