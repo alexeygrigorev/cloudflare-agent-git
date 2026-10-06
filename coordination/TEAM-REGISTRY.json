@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T07:07:11.372784+00:00",
+  "updated_at": "2026-10-06T07:34:01.054855+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -3089,7 +3089,7 @@
     {
       "id": "publication",
       "name": "Public journal and website quality",
-      "head_tag": "public-journal-site",
+      "head_tag": "public-journal-site-custody-resume-20261006",
       "principal_tags": [
         "codex-principal",
         "claude-principal"
@@ -3395,7 +3395,312 @@
         "fidelity-repair-executor",
         "independent-visual-reviewer",
         "release-verifier"
-      ]
+      ],
+      "head_history": [
+        {
+          "head_tag": "public-journal-site",
+          "agents": [
+            {
+              "tag": "public-journal-site",
+              "role": "coordinator",
+              "mode": "interactive",
+              "native_identity": "/root/public_journal_site",
+              "parent_identity": "/root",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "actual task accepted; succeeding native harness /root/public_journal_site by clean handoff (01a1006d-6417 / 01a1006d-6d76)",
+              "owned_paths": [
+                "website/editorial",
+                "coordination publication entries",
+                ".local/journal/publication-coordinator/**"
+              ],
+              "session_id": "088a2387-89e4-468b-9ca5-20be7ffec202",
+              "engine": "antigravity",
+              "predecessor_identity": "/root/public_journal_site"
+            },
+            {
+              "tag": "daily-journal-codex",
+              "role": "Daily Journal Preparer",
+              "mode": "headless",
+              "engine": "shell/codex",
+              "session_id": "190fc4a4-fe82-4411-ae1b-124525daeed4",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "Under human directive 5 October 2026, remote Codex session daily-journal-codex active for task remote-journal-preparation-handoff (09:57 Berlin first action)",
+              "task_id": "remote-journal-preparation-handoff",
+              "owned_paths": [
+                ".agents/skills/prepare-daily-journal/**",
+                "experiment/human-remote-journal-preparation-20261005.txt",
+                "AGENTS.md",
+                ".local/journal/remote-preparation-handoff/**"
+              ]
+            },
+            {
+              "tag": "daily-journal-correction-20261005",
+              "role": "Daily Journal Correction Preparer",
+              "mode": "headless",
+              "engine": "shell/codex",
+              "session_id": "5f128723-f851-417f-8ebc-5ff341aaea78",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "Under human directive 5 October 2026, remote Codex session correction-20261005 active for task correction-20261005-private-preparation",
+              "task_id": "correction-20261005-private-preparation",
+              "owned_paths": [
+                ".local/journal/correction-20261005/**",
+                "experiment/human-better-git-progress-and-utilization-20261005.txt"
+              ]
+            },
+            {
+              "tag": "daily-journal-codex-2026-10-05-validate",
+              "role": "Daily Journal Independent Reviewer",
+              "mode": "headless",
+              "engine": "shell/codex",
+              "session_id": "6db1430c-a99b-4df2-8c0a-c18c177b0e90",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "Independent validation reviewer for 2026-10-05 daily journal report",
+              "task_id": "daily-journal:2026-10-05:validate",
+              "owned_paths": [
+                ".local/journal/remote-preparation/2026-10-05/validate/**"
+              ]
+            },
+            {
+              "tag": "journal-opus-corr-revise",
+              "role": "Daily Journal Opus Revision Writer",
+              "mode": "headless",
+              "engine": "claude",
+              "session_id": "dea14653-aad6-46ae-bc86-24da532bda30",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "Same conversation revision of 2026-10-05 daily journal report",
+              "task_id": "correction-20261005-same-opus-revision",
+              "owned_paths": [
+                "website/content/daily/2026-10-05.md",
+                "website/content/daily/2026-10-05.json",
+                "website/content/daily/2026-10-05.sharetext.txt",
+                ".local/journal/correction-2026-10-05/**"
+              ]
+            },
+            {
+              "tag": "correction-facts-reviewer",
+              "role": "Daily Journal Facts and Metrics Reviewer",
+              "mode": "native-harness-subagent",
+              "session_id": "47130865-4b10-4767-821f-18b22370394a",
+              "parent_tag": "antigravity-head",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "Independent factual and metrics audit of 2026-10-05 daily journal correction",
+              "task_id": "daily-correction-facts-review",
+              "owned_paths": [
+                "research/antigravity/reviews/REV-DAILY-CORRECTION-20261005-FACTS.md"
+              ]
+            },
+            {
+              "tag": "dispatcher-c2406-reviewer",
+              "role": "FileBus Dispatcher C2406 Adversarial Reviewer",
+              "mode": "native-harness-subagent",
+              "session_id": "0f50c53e-1c31-4b36-8796-4d2097eb3882",
+              "parent_tag": "antigravity-head",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "Adversarial code and test review for FileBus Dispatcher Durable Outbox & Queue Resilience",
+              "task_id": "dispatcher-c2406-adversarial-review",
+              "owned_paths": [
+                "research/antigravity/reviews/REV-FILEBUS-DISPATCHER-C2406.md"
+              ]
+            },
+            {
+              "tag": "publication-process-reviewer",
+              "role": "independent-process-reviewer",
+              "mode": "native-harness-subagent",
+              "native_identity": "/root/public_journal_site/relay_signup_review",
+              "parent_identity": "/root/public_journal_site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "actual task accepted; no standalone interactive session claimed",
+              "owned_paths": [
+                "website/editorial/QUALITY-REVIEW.md"
+              ]
+            },
+            {
+              "tag": "journal-capture-spec",
+              "role": "prototype-capture-automation",
+              "mode": "automation-script",
+              "session_id": "5a862579-1a2f-4956-9c9a-014ffa12a45c",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "head-authored reference ingestion & contract generator (no model invocation; usage N/A)",
+              "task_id": "publication-reference-packet",
+              "owned_paths": [
+                ".local/journal/capture-spec/**",
+                ".local/journal/design-reference/**"
+              ]
+            },
+            {
+              "tag": "journal-visual-reviewer",
+              "role": "visual-comparison-automation",
+              "mode": "automation-script",
+              "session_id": "676eb72d-c3d6-4fa9-85a0-3b9d2ff05679",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "head-authored candidate vs reference matrix generator (no model invocation; independent verdict withheld; usage N/A)",
+              "task_id": "publication-visual-acceptance",
+              "owned_paths": [
+                ".local/journal/visual-review/**"
+              ]
+            },
+            {
+              "tag": "journal-visual-reviewer-model",
+              "role": "independent-visual-reviewer",
+              "mode": "headless",
+              "engine": "opencode",
+              "model": "opencode-go/muse-spark-1.3-contributor",
+              "session_id": "8c8e8aaf-3b8b-4038-8c07-5be6219de96c",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "genuine independent model visual review completed; verdict FAIL (hero defect) & UNKNOWN (styling harness failure) reported in 01a10083-b62c",
+              "task_id": "publication-visual-acceptance",
+              "owned_paths": [
+                ".local/journal/visual-review/**"
+              ]
+            },
+            {
+              "tag": "journal-fidelity-repair",
+              "role": "fidelity-repair-executor",
+              "mode": "headless",
+              "engine": "opencode",
+              "model": "opencode-go/muse-spark-1.3-contributor",
+              "session_id": "c70a786d-eae6-4d28-a5a9-b03635a509d5",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "implemented reference image-led hero and honest status panel in website/build.py:208 and site.css; rebuilt preview; fixed screenshot harness base path and regenerated 10 candidate screenshots; committed at 7babb95",
+              "task_id": "publication-fidelity-repair",
+              "owned_paths": [
+                "website/build.py",
+                "website/assets/site.css",
+                ".local/journal/fidelity-repair/**",
+                ".local/journal/screenshots/**",
+                ".local/journal/candidate-preview/**"
+              ]
+            },
+            {
+              "tag": "journal-visual-rereviewer",
+              "role": "independent-visual-reviewer",
+              "mode": "headless",
+              "engine": "opencode",
+              "model": "opencode-go/muse-spark-1.3-contributor",
+              "session_id": "bb8e376b-35ed-40a5-aa6b-4df73b62420c",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "independent model visual re-review completed; verdict CONDITIONAL PASS across 5 families and 2 viewports (INDEPENDENT-REVIEW-POST-REPAIR.md) reported in 01a10095-f962",
+              "task_id": "publication-visual-acceptance",
+              "owned_paths": [
+                ".local/journal/visual-review/**"
+              ]
+            },
+            {
+              "tag": "journal-opus-writer-0930",
+              "role": "daily-writer",
+              "mode": "headless",
+              "engine": "claude",
+              "model": "claude-opus-5-5",
+              "session_id": "a0a2179c-9f9a-4347-80d4-ce9d5c5b1cbb",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "writing reader-facing daily report for 2026-10-03 (09:30 Berlin edition) with stylint in Alexey Substack voice from dual-approved canonical standup 377ac4d/dad1d80",
+              "task_id": "daily-2026-10-03",
+              "owned_paths": [
+                "website/content/daily/**",
+                ".local/journal/opus-writer/**"
+              ]
+            },
+            {
+              "tag": "journal-opus-writer-fix",
+              "role": "daily-writer-correction",
+              "mode": "headless",
+              "engine": "claude",
+              "model": "claude-opus-5-5",
+              "session_id": "080ce5c4-7b66-4b62-a1df-ca0eb47f7db7",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "correcting 09:30 daily report per independent fact-check report df9815b and claude-principal instructions; restoring byte-identical pre-cutoff body and appending corrected morning section",
+              "task_id": "daily-2026-10-03",
+              "owned_paths": [
+                "website/content/daily/**",
+                ".local/journal/opus-writer/**"
+              ]
+            },
+            {
+              "tag": "journal-link-audit",
+              "role": "site-link-and-asset-audit",
+              "mode": "headless",
+              "engine": "python-automation",
+              "session_id": "1ba6473a-441f-47cf-8ca1-456cb3c68021",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "verified 35 HTML pages, 1005 links, 79 static assets; 0 broken links, 0 missing assets",
+              "task_id": "publication-link-audit",
+              "owned_paths": [
+                ".local/journal/audits/LINK-AUDIT.md",
+                ".local/journal/audits/link-audit.json"
+              ],
+              "completed_at": "2026-10-03T13:07:00Z",
+              "status": "done"
+            },
+            {
+              "tag": "journal-meta-feed-audit",
+              "role": "site-metadata-and-feed-audit",
+              "mode": "headless",
+              "engine": "python-automation",
+              "session_id": "115c8e4a-9b4e-4f16-86c2-1279dfc8b91a",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "verified 35 HTML pages + feed.xml; 28 RSS items valid with RFC 822 pubDate; 100% metadata pass",
+              "task_id": "publication-meta-feed-audit",
+              "owned_paths": [
+                ".local/journal/audits/META-FEED-AUDIT.md",
+                ".local/journal/audits/meta-feed-audit.json"
+              ],
+              "completed_at": "2026-10-03T13:07:00Z",
+              "status": "done"
+            },
+            {
+              "tag": "journal-viewport-audit",
+              "role": "site-responsive-viewport-audit",
+              "mode": "headless",
+              "engine": "playwright",
+              "session_id": "dcd7b624-7389-493e-ba15-df787e97d193",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "Playwright headless Chromium across 4 viewports (390px, 768px, 1024px, 1440px) x 5 routes (20 tests); 0 horizontal overflow defects; mobile diagram label >=14px verified",
+              "task_id": "publication-viewport-audit",
+              "owned_paths": [
+                ".local/journal/audits/VIEWPORT-AUDIT.md",
+                ".local/journal/audits/viewport-audit.json"
+              ],
+              "completed_at": "2026-10-03T13:08:00Z",
+              "status": "done"
+            },
+            {
+              "tag": "journal-dogfood-scribe",
+              "role": "host-telemetry-and-dogfood-scribe",
+              "mode": "headless",
+              "engine": "python-automation",
+              "session_id": "3af667e1-4560-4966-ba09-2475e7a9307c",
+              "parent_tag": "public-journal-site",
+              "workspace": "/home/alexey/git/cloudflare-agent-git",
+              "assignment_ack": "measured host resources (RAM 35 GiB avail >= 10 GiB guard, NVMe 100G avail); quantified Rust target/ disk bloat (52G codex-rs + 7.5G aplexer); analyzed test queue RAM pressure and git lock contention",
+              "task_id": "publication-dogfood-scribe",
+              "owned_paths": [
+                ".local/journal/audits/DOGFOOD-ANALYSIS.md",
+                ".local/journal/audits/dogfood-analysis.json"
+              ],
+              "completed_at": "2026-10-03T13:07:00Z",
+              "status": "done"
+            }
+          ],
+          "handoff_ack": "01a11014-e0c7-7ba1-b41e-ffcd5751ba67",
+          "at": "2026-10-06T07:30:57.015180+00:00"
+        }
+      ],
+      "head_session_id": "8aea1f4a-1c3c-412a-8cef-2754764cb884",
+      "head_assignment_ack": "01a11014-e0c7-7ba1-b41e-ffcd5751ba67"
     },
     {
       "id": "product-integration",
@@ -3515,7 +3820,10 @@
       "usage": "measured via quse gemini",
       "session_id": "088a2387-89e4-468b-9ca5-20be7ffec202",
       "engine": "antigravity",
-      "predecessor_identity": "/root/public_journal_site"
+      "predecessor_identity": "/root/public_journal_site",
+      "observed_state": "Historical predecessor custody transferred after genuineACK; history retained",
+      "replaced_by": "8aea1f4a-1c3c-412a-8cef-2754764cb884",
+      "updated_at": "2026-10-06T07:30:57.015180+00:00"
     },
     {
       "tag": "relay-signup-review",
@@ -4088,10 +4396,12 @@
       "assignment_ack": "01a10c5b-8461-7fd3-9209-06af1a3f155e",
       "resumed_conversation": "764358a8-1b4e-49c6-845a-9b79bf3ba536",
       "registered_at": "2026-10-05T14:09:31.570422+00:00",
-      "observed_state": "idle-ended-turn",
+      "observed_state": "Retired exact administrative predecessor; historical evidence preserved",
       "first_action": "actual native aplexer whoami and scoped context/inbox tools observed; genuine ACK linked",
       "next_checkpoint": "2026-10-05T14:15:00Z",
-      "boundaries": "Delegate implementers and distinct reviewers; no principal mailbox authority; preserve leases/resources."
+      "boundaries": "Delegate implementers and distinct reviewers; no principal mailbox authority; preserve leases/resources.",
+      "replaced_by": "0a9bee9a-b740-4e64-8eb7-76040968afce",
+      "updated_at": "2026-10-06T07:34:01.054855+00:00"
     },
     {
       "tag": "ant-head-operational-resume-20261005",
@@ -4191,6 +4501,31 @@
       "first_action": null,
       "evidence_level": "Head report only; firsttool/output and independent live census pending",
       "registered_at": "2026-10-06T07:07:11.372784+00:00"
+    },
+    {
+      "session_id": "8aea1f4a-1c3c-412a-8cef-2754764cb884",
+      "tag": "public-journal-site-custody-resume-20261006",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "team_id": "publication",
+      "assignment_ack": "01a11014-e0c7-7ba1-b41e-ffcd5751ba67",
+      "first_action": "Actual identity/inbox tools observed per principal; private124.9MB integritysnapshot",
+      "registered_at": "2026-10-06T07:30:57.015180+00:00"
+    },
+    {
+      "session_id": "0a9bee9a-b740-4e64-8eb7-76040968afce",
+      "tag": "agent-coordination-head-custody-resume-20261006",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "project_id": "agent-coordination",
+      "assignment_ack": "01a11021-9c59-79f0-8f79-51c5003a5032",
+      "resumed_conversation": "764358a8-1b4e-49c6-845a-9b79bf3ba536",
+      "first_action": "Genuine native current custodyACK received perprincipal; subsequent implementationtool pending",
+      "registered_at": "2026-10-06T07:34:01.054855+00:00"
     }
   ],
   "projects": [
@@ -4313,12 +4648,12 @@
     {
       "id": "agent-coordination",
       "name": "Cross-computer Agent Coordination",
-      "head_tag": "agent-coordination-head-gemini",
-      "head_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
+      "head_tag": "agent-coordination-head-custody-resume-20261006",
+      "head_session_id": "0a9bee9a-b740-4e64-8eb7-76040968afce",
       "workspace": "/home/alexey/git/agent-coordination",
-      "integration_owner": "agent-coordination-head",
+      "integration_owner": "agent-coordination-head-custody-resume-20261006",
       "principal_owner": "codex-principal",
-      "ownership_state": "Genuine current head ACK and first native tools verified; last observed turn ended/idle. New launches/growth held while root below50GiB. Project head owns worker/reviewer delegation; principal monitors big picture, no code review.",
+      "ownership_state": "Actual current custody ACK and43ea primaryintegration scope received; execution/first artifact/runtime acceptance separate.",
       "first_action": {
         "schema_version": 1,
         "recorded_at_utc": "2026-10-04T11:41:38Z",
@@ -4421,12 +4756,19 @@
             "principal_handoff_id": "01a106b7-a74b-7b11-bce8-69e6a281782c",
             "environment_correction_id": "01a106bb-0ab2-77f3-8c09-bd4441b053d2"
           }
+        },
+        {
+          "head_tag": "agent-coordination-head-gemini",
+          "head_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
+          "integration_owner": "agent-coordination-head",
+          "ownership_state": "Genuine current head ACK and first native tools verified; last observed turn ended/idle. New launches/growth held while root below50GiB. Project head owns worker/reviewer delegation; principal monitors big picture, no code review.",
+          "head_assignment_ack": "01a10c5b-8461-7fd3-9209-06af1a3f155e"
         }
       ],
       "head_workspace": "/home/alexey/git/cloudflare-agent-git",
-      "head_assignment_ack": "01a10c5b-8461-7fd3-9209-06af1a3f155e",
+      "head_assignment_ack": "01a11021-9c59-79f0-8f79-51c5003a5032",
       "resumed_conversation": "764358a8-1b4e-49c6-845a-9b79bf3ba536",
-      "updated_at": "2026-10-05T14:09:31.570422+00:00",
+      "updated_at": "2026-10-06T07:34:01.054855+00:00",
       "canonical_integration_custody": "Original protected canonical custody not released by silence; current head owns isolated work and requires genuine release/review before integration."
     },
     {

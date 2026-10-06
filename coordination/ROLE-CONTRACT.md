@@ -24,7 +24,9 @@
 | **Implementer Executor** | Scoped assigned task implementation in isolated branch or worktree, bounded unit tests, incremental deliverables. | Commit SHA, test command output, run instructions, explicit handover receipt. | **CANNOT** review its own output.<br>**NO** borrowed head or principal mailbox authority. |
 | **Independent Reviewer Executor** | Adversarial review of exact immutable candidate commit: correctness, negative test cases, security/secret leakage, UX, edge conditions. | Structured review receipt (`task_review_receipt.json`) with verdict (`ACCEPTED` or `REJECTED`), test command run log, exit code, and negative cases tested. | **MUST BE A DISTINCT** actor from the implementer (distinct model turn, subagent, or session).<br>**CANNOT** mutate the candidate code branch.<br>Verdict must be backed by executed tests, not guessed. |
 | **Durable Remote Supervisor** | Ingesting terminal and review receipts, dependency unblocking, quota/resource admission gates, between-turn persistence, deduplicated actionable event notifications. | Exact PID, loaded bytecode SHA, `.local/supervision/service.lock`, actionable event digest, execution cursors. | **NOT** a code reviewer or substitute principal.<br>**NO** duplicate production daemons.<br>**NO** fake readiness or draft prompt injections. |
-| **Desktop Orchestrator / Human Interface** | Interface between user and remote environment, independent goal/resource auditing, daily reader reports. | Faithful transcription of human directives, independent measurement snapshots. | **NOT** a routine task scheduler or per-task approval bottleneck. |
+| **Desktop Orchestrator / Human Interface** | Human–remote interface, faithful steering/outcome relay, proactive bounded communication and custody diagnosis/recovery. | Executed steps/results, actual recipient/received custody, named owner, deadline and evidence; preserve earlier states and exact identities. | **NOT** a routine task scheduler, product implementer, code/article reviewer or per-task approval bottleneck. |
+
+A remote coordinator role may be genuinely enrolled through an explicit received, fenced role/custody handoff; a desktop chat or borrowed identity does not establish that role. Preserve actual owner, generation, pending cursors and protected work before transfer. Permanent product dispatch/refill and supervision remain with acknowledged remote owners. Desktop reports concrete recovery steps rather than blocker-only updates.
 
 ---
 
@@ -40,7 +42,7 @@ Every participant must execute role-appropriate verification before any mutating
    The session startup sequence must read:
    - `AGENTS.md` (project goals, primary rules, resource bounds)
    - `coordination/OPERATING-MODEL.md` (delivery contracts, active products)
-   - `coordination/RESOURCE-POLICY.md` (quotas, provider routing, host floors: 50GiB disk / 10GiB RAM / 512MiB scratch)
+   - `coordination/RESOURCE-POLICY.md` (fresh actual quotas/routes and admission: latest20GiB hard projected-growth disk floor/30GiB cleanup warning; scoped RAM-floor override with continued measurement/worker containment; aggregate512MiB scratch cap, not a required per-job reservation)
    - `coordination/ROLE-CONTRACT.md` (this document)
    - Scoped task handoff specification
 3. **Record Role & Startup Read Receipt**:

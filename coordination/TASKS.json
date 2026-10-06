@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T07:07:11.372784+00:00",
+  "updated_at": "2026-10-06T07:34:01.054855+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -6181,7 +6181,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-06T07:07:11.372784+00:00",
+      "updated_at": "2026-10-06T07:34:01.054855+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6214,8 +6214,7 @@
         "TASK-CONTINUITY-FAILOVER-AND-WAKE-GATE-C2693"
       ],
       "blocked_on": [
-        "delegate-firsttool-and-runtime-continuation-evidence-pending",
-        "coordination-current-ack-pending"
+        "delegate-firsttool-and-runtime-continuation-evidence-pending"
       ],
       "next_action": "Received Ant/QL heads own recovery implementation and distinct review; verify actual firsttools/output and executable READY then review/release/refill. Principal monitors only.",
       "next_trigger": {
@@ -6229,11 +6228,18 @@
       ],
       "acceptance": "Genuine desktop successor role/read receipt and exact pending inventory; head ownership ACK and first useful execution evidence. Runtime wake/failover acceptance remains separate C2693 gate.",
       "next_checkpoint": {
-        "deadline_utc": "2026-10-06T07:05:00Z",
-        "deadline_berlin": "2026-10-06T09:05:00+02:00",
-        "owner": "codex-principal",
-        "return": "Actual recovery owners/ACKs, steps/results, deduplicated current ACTIVE count/coverage and executable READY reserve; C2693 remains open.",
-        "state": "Prior07:05UTC deadline historical; actualcheckpoint recorded, no future timestamp fabricated."
+        "owner": "codex-principal monitoring/publication head delivery",
+        "checks_utc": [
+          {
+            "at": "2026-10-06T07:20:00Z",
+            "required": "publication genuine custodyACK/claim/preparation"
+          },
+          {
+            "at": "2026-10-06T07:30:00Z",
+            "required": "actual Opus writer+checker distinctsession receipts"
+          }
+        ],
+        "state": "Requested deadlines, not observations"
       },
       "latest_supervisor_observation": {
         "as_of_utc": "2026-10-06T06:55:53Z",
@@ -6261,7 +6267,11 @@
           "session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
           "ack": "01a11007-ddf5"
         },
-        "coordination": "Current new custody ACK pending"
+        "coordination": {
+          "session_id": "0a9bee9a-b740-4e64-8eb7-76040968afce",
+          "ack": "01a11021-9c59-79f0-8f79-51c5003a5032",
+          "primary_integration_source": "43ea340"
+        }
       },
       "executed_recovery": {
         "private_backups_mb": [
@@ -6276,8 +6286,247 @@
           "cc225dfc"
         ],
         "delegate_first_tools": "pending",
-        "desktop_automation": "PAUSED latest humaninput; no resume/duplicate monitor"
+        "desktop_automation": "Existing09daily/half-hour ACTIVATED in new desktop via received01a1100d-42d2; earlierPAUSED historical; no newmonitor."
+      },
+      "automation_state_history": [
+        {
+          "state": "PAUSED",
+          "source": "Previous human input snapshot; superseded by received01a1100d-42d2",
+          "recorded_before_supersession": "2026-10-06T07:07:11.372784+00:00"
+        }
+      ],
+      "publication_recovery": {
+        "session_id": "8aea1f4a-1c3c-412a-8cef-2754764cb884",
+        "tag": "public-journal-site-custody-resume-20261006",
+        "first_tools": "actual identity/inbox observed perprincipal",
+        "private_integrity_snapshot_mb": 124.9,
+        "custody_ack": "pending; currentpublicationregistry unchanged"
+      },
+      "fact_coverage": {
+        "path": "research/codex/standup-fact-packet-20261006.json",
+        "last_native_reviewer_observed_utc": "2026-10-06T07:16:00Z",
+        "last_5h35m": "UNKNOWN",
+        "bare_test_proposals": 5,
+        "executable_ready": 0,
+        "contamination": "possible, independentreview pending; not concluded"
       }
+    },
+    {
+      "id": "ROLE-FAILOVER-AUTHORITY-20261006",
+      "project_id": "cross-computer-coordination",
+      "team_id": "agent-coordination",
+      "title": "AgentBus SQLite role failover authority protocol and isolated implementation",
+      "status": "done",
+      "created_at": "2026-10-06T07:30:57.015180+00:00",
+      "updated_at": "2026-10-06T07:34:01.054855+00:00",
+      "owner": "/root/failover_protocol_implementation",
+      "scope": "Finish isolated AgentBus SQLite role authority; repair missed-schedule and restart/fencing negatives; pin commit 43ea3400965e690206f823640173992a9ea0c7b4",
+      "acceptance": "20 meaningful unit tests pass in 10.79s; independent code review accepted by desktop reviewer at exact pin 43ea3400965e690206f823640173992a9ea0c7b4",
+      "evidence_paths": [
+        "/home/alexey/git/agent-coordination-role-failover",
+        "research/orchestrator/ROLE-FAILOVER-PROTOCOL-20261006.md",
+        "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md",
+        "research/orchestrator/ROLE-FAILOVER-REVIEW-20261006.md"
+      ],
+      "assignment_ack": "not inferred; source outcome evidence recorded",
+      "owner_evidence": "Recorded source implementation and independent source-only acceptance, not deployed failover.",
+      "source_proposal": "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md",
+      "proposed_checkpoint": "Owner ACK and scoped first-action/checkpoint receipt after current dependency readiness; no deadline invented.",
+      "reviewer": "/root/failover_protocol_analysis",
+      "commit": "43ea3400965e690206f823640173992a9ea0c7b4",
+      "review_verdict": "ACCEPTED FOR SCOPED SOURCE INTEGRATION",
+      "review_artifact": "research/orchestrator/ROLE-FAILOVER-REVIEW-20261006.md",
+      "acceptance_scope": "Source-only20test independent receipt; runtime adoption/live/hostHA gates open.",
+      "operating_constraints": "Current20GiB hard projected-growth floor; below30GiB continue eligible admission with one bounded deduplicated cleanup actor. Desktop existing automation handoff received; remote useful continuation remains separately unaccepted. Freshprovider/privacy/quota/containment/Rust/spend gates retained.",
+      "owner_tag": "/root/failover_protocol_implementation"
+    },
+    {
+      "id": "ROLE-FAILOVER-SUPERVISOR-ADOPTION-20261006",
+      "project_id": "cross-computer-coordination",
+      "team_id": "agent-coordination",
+      "title": "Agent Coordination head role failover supervisor adoption and bus sync",
+      "status": "queued",
+      "created_at": "2026-10-06T07:30:57.015180+00:00",
+      "updated_at": "2026-10-06T07:34:01.054855+00:00",
+      "owner": "agent-coordination-head-custody-resume-20261006",
+      "owner_session_id": "0a9bee9a-b740-4e64-8eb7-76040968afce",
+      "reviewer": "ant-head-custody-resume-20261006",
+      "scope": "Authority source accepted; wire tick, diagnostic Bus sync and exact semantic response into EXISTING supervisor; attach registered project/subproject coordinator/principal/head slots",
+      "dependencies": [
+        "ROLE-FAILOVER-AUTHORITY-20261006"
+      ],
+      "acceptance": "Real missing coordinator check -> remote standby takeover and actual check outcome; principal loss -> promoted head and gated new-head enrollment; children remain useful",
+      "evidence_paths": [
+        "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md"
+      ],
+      "assignment_ack": null,
+      "owner_evidence": "Proposed adoption owner; existing role custody does not establish task ACK or first execution.",
+      "source_proposal": "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md",
+      "proposed_checkpoint": "Owner ACK and scoped first-action/checkpoint receipt after current dependency readiness; no deadline invented.",
+      "operating_constraints": "Current20GiB hard projected-growth floor; below30GiB continue eligible admission with one bounded deduplicated cleanup actor. Desktop existing automation handoff received; remote useful continuation remains separately unaccepted. Freshprovider/privacy/quota/containment/Rust/spend gates retained.",
+      "owner_tag": "agent-coordination-head-custody-resume-20261006"
+    },
+    {
+      "id": "ROLE-FAILOVER-LAUNCHER-FENCING-20261006",
+      "project_id": "cross-computer-coordination",
+      "team_id": "quota-launcher",
+      "title": "Quota Launcher epoch validation and consumer fencing on role failover",
+      "status": "queued",
+      "created_at": "2026-10-06T07:30:57.015180+00:00",
+      "updated_at": "2026-10-06T07:34:01.054855+00:00",
+      "owner": "quota-launcher-head-custody-resume-20261006",
+      "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "reviewer": "agent-coordination-head-custody-resume-20261006 delegates distinct reviewer (actual actor pending)",
+      "scope": "Accepted authority API and launch-intent schema; validate epoch at durable enqueue effect, dedup intents, fresh provider eligibility, confirm model first tools",
+      "dependencies": [
+        "ROLE-FAILOVER-AUTHORITY-20261006"
+      ],
+      "acceptance": "Concurrent replacement intents produce one real model startup; stale principal cannot enqueue task or update registry after takeover",
+      "evidence_paths": [
+        "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md"
+      ],
+      "assignment_ack": "01a11014-81aa",
+      "owner_evidence": "GenuineQL fencing scope ACK; execution not inferred.",
+      "source_proposal": "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md",
+      "proposed_checkpoint": "Owner ACK and scoped first-action/checkpoint receipt after current dependency readiness; no deadline invented.",
+      "operating_constraints": "Current20GiB hard projected-growth floor; below30GiB continue eligible admission with one bounded deduplicated cleanup actor. Desktop existing automation handoff received; remote useful continuation remains separately unaccepted. Freshprovider/privacy/quota/containment/Rust/spend gates retained.",
+      "owner_tag": "quota-launcher-head-custody-resume-20261006"
+    },
+    {
+      "id": "ROLE-FAILOVER-INDEPENDENT-WATCHERS-20261006",
+      "project_id": "cross-computer-coordination",
+      "team_id": "antigravity",
+      "title": "Dual independent tick sources and external supervisor custody",
+      "status": "queued",
+      "created_at": "2026-10-06T07:30:57.015180+00:00",
+      "updated_at": "2026-10-06T07:34:01.054855+00:00",
+      "owner": "ant-head-custody-resume-20261006",
+      "owner_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+      "reviewer": "agent-coordination-head-custody-resume-20261006 delegates distinct reviewer (actual actor pending)",
+      "scope": "Existing owned supervisor integration; configure at least two enrolled independent tick sources supervised outside principal/head cgroups using existing OS custody",
+      "dependencies": [
+        "ROLE-FAILOVER-SUPERVISOR-ADOPTION-20261006"
+      ],
+      "acceptance": "Stop first watcher: second diagnoses/restarts existing service and continues periodic/standup checks without root; no duplicate daemon",
+      "evidence_paths": [
+        "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md"
+      ],
+      "assignment_ack": null,
+      "owner_evidence": "Ant existing watcher scope ACK retained; exact further task receipt/first execution not inferred.",
+      "source_proposal": "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md",
+      "proposed_checkpoint": "Owner ACK and scoped first-action/checkpoint receipt after current dependency readiness; no deadline invented.",
+      "operating_constraints": "Current20GiB hard projected-growth floor; below30GiB continue eligible admission with one bounded deduplicated cleanup actor. Desktop existing automation handoff received; remote useful continuation remains separately unaccepted. Freshprovider/privacy/quota/containment/Rust/spend gates retained.",
+      "owner_tag": "ant-head-custody-resume-20261006",
+      "owner_custody_ack": "01a11002-b90c"
+    },
+    {
+      "id": "ROLE-FAILOVER-LIVE-ACCEPTANCE-20261006",
+      "project_id": "cross-computer-coordination",
+      "team_id": "agent-coordination",
+      "title": "Role failover live multi-agent runtime acceptance",
+      "status": "queued",
+      "created_at": "2026-10-06T07:30:57.015180+00:00",
+      "updated_at": "2026-10-06T07:34:01.054855+00:00",
+      "owner": "agent-coordination-head-custody-resume-20261006",
+      "reviewer": "ant-head-custody-resume-20261006",
+      "scope": "All process failover tasks above; pause disposable test role at safe checkpoint, preserve children, withhold desktop/principal nudges",
+      "dependencies": [
+        "ROLE-FAILOVER-SUPERVISOR-ADOPTION-20261006",
+        "ROLE-FAILOVER-LAUNCHER-FENCING-20261006",
+        "ROLE-FAILOVER-INDEPENDENT-WATCHERS-20261006"
+      ],
+      "acceptance": "Two useful model completion/semantic peer acceptance/next-first-tool cycles; exact roles/epochs/envelopes/runtime/cursor evidence; no mocks substituted",
+      "evidence_paths": [
+        "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md"
+      ],
+      "assignment_ack": null,
+      "owner_evidence": "Proposed adoption owner; existing role custody does not establish task ACK or first execution.",
+      "source_proposal": "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md",
+      "proposed_checkpoint": "Owner ACK and scoped first-action/checkpoint receipt after current dependency readiness; no deadline invented.",
+      "owner_session_id": "0a9bee9a-b740-4e64-8eb7-76040968afce",
+      "operating_constraints": "Current20GiB hard projected-growth floor; below30GiB continue eligible admission with one bounded deduplicated cleanup actor. Desktop existing automation handoff received; remote useful continuation remains separately unaccepted. Freshprovider/privacy/quota/containment/Rust/spend gates retained.",
+      "owner_tag": "agent-coordination-head-custody-resume-20261006"
+    },
+    {
+      "id": "ROLE-FAILOVER-HOST-QUORUM-INVENTORY-20261006",
+      "project_id": "cross-computer-coordination",
+      "team_id": "agent-coordination",
+      "title": "Cross-host quorum topology and independent witness inventory",
+      "status": "queued",
+      "created_at": "2026-10-06T07:30:57.015180+00:00",
+      "updated_at": "2026-10-06T07:34:01.054855+00:00",
+      "owner": "agent-coordination-head-custody-resume-20261006",
+      "reviewer": "codex-principal architecture/outcome challenger only; no product code review",
+      "scope": "Inventory ONLY existing enrolled authorized computers, availability/permissions, private authenticated backup and independently hosted authority-witness eligibility",
+      "acceptance": "Exact eligible host identities and permissions, at least three independent witnesses or explicit available topology shortage; no guessed credentials, spending or unrelated-host changes",
+      "evidence_paths": [
+        "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md"
+      ],
+      "assignment_ack": null,
+      "owner_evidence": "Proposed adoption owner; existing role custody does not establish task ACK or first execution.",
+      "source_proposal": "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md",
+      "proposed_checkpoint": "Owner ACK and scoped first-action/checkpoint receipt after current dependency readiness; no deadline invented.",
+      "owner_session_id": "0a9bee9a-b740-4e64-8eb7-76040968afce",
+      "operating_constraints": "Current20GiB hard projected-growth floor; below30GiB continue eligible admission with one bounded deduplicated cleanup actor. Desktop existing automation handoff received; remote useful continuation remains separately unaccepted. Freshprovider/privacy/quota/containment/Rust/spend gates retained.",
+      "owner_tag": "agent-coordination-head-custody-resume-20261006"
+    },
+    {
+      "id": "ROLE-FAILOVER-HOST-QUORUM-PROTOTYPE-20261006",
+      "project_id": "cross-computer-coordination",
+      "team_id": "agent-coordination",
+      "title": "Cross-host majority consensus authority and fenced restore prototype",
+      "status": "queued",
+      "created_at": "2026-10-06T07:30:57.015180+00:00",
+      "updated_at": "2026-10-06T07:34:01.054855+00:00",
+      "owner": "agent-coordination-head-custody-resume-20261006",
+      "reviewer": "Distinct cross-family protocol reviewer delegated by head; actor pending",
+      "scope": "Inventory and protocol source; implement authority terms/majority votes/consumer fencing in isolated existing infrastructure test scope, validated read-only backups and fenced restore",
+      "dependencies": [
+        "ROLE-FAILOVER-HOST-QUORUM-INVENTORY-20261006"
+      ],
+      "acceptance": "Partitioned minorities cannot grant roles; majority can recover one failed authority host; old authority rejected by consumer term; restore loses no duplicate task custody",
+      "evidence_paths": [
+        "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md"
+      ],
+      "assignment_ack": null,
+      "owner_evidence": "Proposed adoption owner; existing role custody does not establish task ACK or first execution.",
+      "source_proposal": "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md",
+      "proposed_checkpoint": "Owner ACK and scoped first-action/checkpoint receipt after current dependency readiness; no deadline invented.",
+      "owner_session_id": "0a9bee9a-b740-4e64-8eb7-76040968afce",
+      "operating_constraints": "Current20GiB hard projected-growth floor; below30GiB continue eligible admission with one bounded deduplicated cleanup actor. Desktop existing automation handoff received; remote useful continuation remains separately unaccepted. Freshprovider/privacy/quota/containment/Rust/spend gates retained.",
+      "owner_tag": "agent-coordination-head-custody-resume-20261006"
+    },
+    {
+      "id": "launch-daily-writeup-2026-10-06",
+      "created_at": "2026-10-06T07:32:27.569109+00:00",
+      "project_id": "publication",
+      "team_id": "publication",
+      "owner": "public-journal-site-custody-resume-20261006",
+      "owner_session_id": "8aea1f4a-1c3c-412a-8cef-2754764cb884",
+      "assignment_ack": "01a11014-e0c7-7ba1-b41e-ffcd5751ba67",
+      "status": "in_progress",
+      "updated_at": "2026-10-06T07:32:27.569109+00:00",
+      "scope": "Actual dedicated Opus daily writer followed by distinct checker and publication-owned release; principals do not write/review prose.",
+      "worker_id": "6bc459de-da53-42bc-b4f9-8285f94c9c89",
+      "first_action": {
+        "at_utc": "2026-10-06T07:20:50Z",
+        "model": "claude-opus-5-5",
+        "kind": "actual first model tool",
+        "source": "Genuine publication envelope01a11019-2846 relayed by principal"
+      },
+      "artifact_state": "Draft artifact exists per head report; exact path pending. Writer/check/release pending.",
+      "usage": "UNKNOWN",
+      "commit": null,
+      "checker_receipt": null,
+      "release_receipt": null,
+      "next_checkpoint": {
+        "at_utc": "2026-10-06T07:40:00Z",
+        "kind": "requested checkpoint, not observed execution",
+        "previous_forecast_utc": "2026-10-06T07:30:00Z",
+        "previous_forecast_result": "missed"
+      },
+      "next_action": "Publication head receives writer completion, routes distinct Opus check, then releases only with actual acceptance and deploy evidence.",
+      "acceptance": "Actual writer completion + distinct checker receipt + publication release/deploy evidence; pending."
     }
   ]
 }
