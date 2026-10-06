@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T06:57:14.711460+00:00",
+  "updated_at": "2026-10-06T07:07:11.372784+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -5929,11 +5929,11 @@
       "id": "TASK-CONTINUITY-FAILOVER-AND-WAKE-GATE-C2693",
       "team_id": "remote-autonomous-continuation",
       "project_id": "quota-launcher",
-      "owner_tag": "ant-head-continuation-resume-20261005",
-      "owner_session_id": "36751672-c403-4ea8-9f53-9a0466434a37",
+      "owner_tag": "ant-head-custody-resume-20261006",
+      "owner_session_id": "365d3033-e7f8-4962-98b1-869674578125",
       "status": "in_progress",
       "created_at": "2026-10-05T22:20:00.000000+00:00",
-      "updated_at": "2026-10-05T23:03:00.000000+00:00",
+      "updated_at": "2026-10-06T07:07:11.372784+00:00",
       "scope": "Exact backup session takeover and recurring UI wake delivery: record actual designated backup session (agent-coordination-head-gemini / fallback pool), takeover trigger, fencing receipt, unattended review scheduling without manual head accept, and two live wake outcomes.",
       "designated_backup_session": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab (agent-coordination-head-gemini) / 750580e1 (quota-launcher-head-gemini)",
       "takeover_trigger": "Supervision 3-minute (180s) unexplained idle with ready tasks and unblocked head state (service.py:758, 92 tests passing)",
@@ -5944,8 +5944,16 @@
       "review_artifact": "research/antigravity/reviews/REV-CONTINUITY-FAILOVER-AND-WAKE-GATE-20261005.md",
       "review_verdict": "ACCEPTED",
       "reviewer": "a2398d34-f2dc-4b0c-babf-e3932a2b2d9c",
-      "operational_contract_note": "Maintained in_progress per Desktop Orchestrator C2701 ruling pending live unavailable-head failover event.",
-      "blocked_on": []
+      "operational_contract_note": "Maintained in_progress per Desktop Orchestrator C2701 ruling pending live unavailable-head failover event. Current owner changed after genuine ACK; OPEN/in_progress gate and prior evidence preserved.",
+      "blocked_on": [],
+      "owner_history": [
+        {
+          "owner_session_id": "36751672-c403-4ea8-9f53-9a0466434a37",
+          "owner_tag": "ant-head-continuation-resume-20261005",
+          "handoff_ack": "01a11001-3e94 / 01a11002-b90c",
+          "at": "2026-10-06T07:07:11.372784+00:00"
+        }
+      ]
     },
     {
       "id": "TASK-QL-BELOW30G-CLEANUP-INTEGRATION-C2693",
@@ -6173,7 +6181,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-06T06:57:14.711460+00:00",
+      "updated_at": "2026-10-06T07:07:11.372784+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6206,9 +6214,10 @@
         "TASK-CONTINUITY-FAILOVER-AND-WAKE-GATE-C2693"
       ],
       "blocked_on": [
-        "head-ownership-ack-and-safe-native-continuation-pending"
+        "delegate-firsttool-and-runtime-continuation-evidence-pending",
+        "coordination-current-ack-pending"
       ],
-      "next_action": "Restored native head genuine whoami/read ACK -> head-delegated implementation and distinct review -> first new model tool/artifact and executable READY. Principal verifies outcomes, not code.",
+      "next_action": "Received Ant/QL heads own recovery implementation and distinct review; verify actual firsttools/output and executable READY then review/release/refill. Principal monitors only.",
       "next_trigger": {
         "owner": "current Ant head coordinated with QL/Coordination heads; codex-principal monitors",
         "condition": "Actual administrative recovery result, genuine head identity/read/ownership ACK, then existing completion/dependency event and real new worker first action."
@@ -6223,7 +6232,8 @@
         "deadline_utc": "2026-10-06T07:05:00Z",
         "deadline_berlin": "2026-10-06T09:05:00+02:00",
         "owner": "codex-principal",
-        "return": "Actual recovery owners/ACKs, steps/results, deduplicated current ACTIVE count/coverage and executable READY reserve; C2693 remains open."
+        "return": "Actual recovery owners/ACKs, steps/results, deduplicated current ACTIVE count/coverage and executable READY reserve; C2693 remains open.",
+        "state": "Prior07:05UTC deadline historical; actualcheckpoint recorded, no future timestamp fabricated."
       },
       "latest_supervisor_observation": {
         "as_of_utc": "2026-10-06T06:55:53Z",
@@ -6236,6 +6246,37 @@
         "principal_own_batch_read_acks": 29,
         "old_4914_ack": "not performed",
         "source": "Principal-supplied observation; helper has no mailbox authority."
+      },
+      "last_actual_checkpoint_utc": "2026-10-06T07:07:11.372784+00:00",
+      "accepted_head_owners": {
+        "ant": {
+          "session_id": "365d3033-e7f8-4962-98b1-869674578125",
+          "acks": [
+            "01a11001-3e94",
+            "01a11002-b90c"
+          ],
+          "temporary_integration_ack": "01a11007-682d"
+        },
+        "quota_launcher": {
+          "session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+          "ack": "01a11007-ddf5"
+        },
+        "coordination": "Current new custody ACK pending"
+      },
+      "executed_recovery": {
+        "private_backups_mb": [
+          74.7,
+          51.8
+        ],
+        "scope": "Exact Ant367 andQL750 administrative recovery, histories preserved; no allteam death claim",
+        "ant_first_tools": "native whoami/docs/startup read ACK observed",
+        "delegate_refs": [
+          "8c65c561",
+          "1cd940fb",
+          "cc225dfc"
+        ],
+        "delegate_first_tools": "pending",
+        "desktop_automation": "PAUSED latest humaninput; no resume/duplicate monitor"
       }
     }
   ]

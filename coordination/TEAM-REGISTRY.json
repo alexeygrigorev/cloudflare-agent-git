@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T21:17:54.242789+00:00",
+  "updated_at": "2026-10-06T07:07:11.372784+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -4121,21 +4121,90 @@
       "resumed_conversation": "ea14b401-20e9-4e48-ab08-d15be08da30d",
       "registered_at": "2026-10-05T21:17:54.242789+00:00",
       "first_action": "Genuine native whoami/docs/startup receipt, bootstrap24e1fa04, distinct22e44b40 review, real ql-trial-task-A/B, bridgea6ea21fd",
-      "boundaries": "Principal coordinates; head delegates implementation and independent review. Recurring loaded-runtime/failover acceptance pending. Original46 paused preserved."
+      "boundaries": "Principal coordinates; head delegates implementation and independent review. Recurring loaded-runtime/failover acceptance pending. Original46 paused preserved.",
+      "observed_state": "Retired exact administrative predecessor; history retained, not all prior owners dead.",
+      "replaced_by": "365d3033-e7f8-4962-98b1-869674578125",
+      "updated_at": "2026-10-06T07:07:11.372784+00:00"
+    },
+    {
+      "session_id": "365d3033-e7f8-4962-98b1-869674578125",
+      "tag": "ant-head-custody-resume-20261006",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "project_id": "agent-branches",
+      "assignment_ack": "01a11001-3e94 / 01a11002-b90c",
+      "registered_at": "2026-10-06T07:07:11.372784+00:00",
+      "first_action": "Genuine native custody ACK received; Ant whoami/docs/startup read ACK observed; QL further trace pending."
+    },
+    {
+      "session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "tag": "quota-launcher-head-custody-resume-20261006",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "project_id": "quota-launcher",
+      "assignment_ack": "01a11007-ddf5",
+      "registered_at": "2026-10-06T07:07:11.372784+00:00",
+      "first_action": "Genuine native custody ACK received; Ant whoami/docs/startup read ACK observed; QL further trace pending."
+    },
+    {
+      "native_actor_ref": "8c65c561",
+      "full_native_identity": "pending metadata verification",
+      "role": "worker",
+      "mode": "native_harness_subagent",
+      "parent_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+      "head_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+      "team_id": "ant-head-custody-recovery",
+      "task": "supervisorrepair",
+      "observed_state": "head-reported running",
+      "first_action": null,
+      "evidence_level": "Head report only; firsttool/output and independent live census pending",
+      "registered_at": "2026-10-06T07:07:11.372784+00:00"
+    },
+    {
+      "native_actor_ref": "1cd940fb",
+      "full_native_identity": "pending metadata verification",
+      "role": "worker",
+      "mode": "native_harness_subagent",
+      "parent_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+      "head_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+      "team_id": "ant-head-custody-recovery",
+      "task": "dashboardremediation",
+      "observed_state": "head-reported running",
+      "first_action": null,
+      "evidence_level": "Head report only; firsttool/output and independent live census pending",
+      "registered_at": "2026-10-06T07:07:11.372784+00:00"
+    },
+    {
+      "native_actor_ref": "cc225dfc",
+      "full_native_identity": "pending metadata verification",
+      "role": "worker",
+      "mode": "native_harness_subagent",
+      "parent_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+      "head_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+      "team_id": "ant-head-custody-recovery",
+      "task": "mobileQA",
+      "observed_state": "head-reported running",
+      "first_action": null,
+      "evidence_level": "Head report only; firsttool/output and independent live census pending",
+      "registered_at": "2026-10-06T07:07:11.372784+00:00"
     }
   ],
   "projects": [
     {
       "id": "agent-branches",
       "name": "Agent Branches",
-      "head_tag": "ant-head-continuation-resume-20261005",
-      "head_session_id": "36751672-c403-4ea8-9f53-9a0466434a37",
-      "integration_owner": "ant-head-continuation-resume-20261005",
+      "head_tag": "ant-head-custody-resume-20261006",
+      "head_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+      "integration_owner": "ant-head-custody-resume-20261006",
       "principal_tags": [
         "codex-principal"
       ],
       "monitoring_provenance": "Codex C1637 ACK under human/OPERATING-MODEL",
-      "ownership_state": "Genuine current custody ACK and first implementation/reviewer/real trial observed; recurring supervisor and safe failover runtime acceptance pending. Current20GiB hard/30GiB cleanup policy applies.",
+      "ownership_state": "Genuine received custody ACK; actual delegate firsttools/runtime acceptance pending. Current20GiB hard/30GiB cleanup policy applies.",
       "head_history": [
         {
           "head_tag": "antigravity-head",
@@ -4159,12 +4228,19 @@
           "ownership_state": "Actual recovered interactive head identity, role reads and semantic custody ACK verified; useful product worker/output/independent review pending. Existing limits and leases preserved.",
           "head_assignment_ack": "01a10d2f-e2ab-7721-8056-64022465e366",
           "resumed_conversation": "245c7bba-9a7b-45c1-87a7-4537f289f9a5"
+        },
+        {
+          "head_tag": "ant-head-continuation-resume-20261005",
+          "head_session_id": "36751672-c403-4ea8-9f53-9a0466434a37",
+          "integration_owner": "ant-head-continuation-resume-20261005",
+          "ownership_state": "Genuine current custody ACK and first implementation/reviewer/real trial observed; recurring supervisor and safe failover runtime acceptance pending. Current20GiB hard/30GiB cleanup policy applies.",
+          "head_assignment_ack": "01a10ddf-8f3d-7fa0-97a8-7b3e5e624682"
         }
       ],
       "head_workspace": "/home/alexey/git/cloudflare-agent-git",
-      "head_assignment_ack": "01a10ddf-8f3d-7fa0-97a8-7b3e5e624682",
+      "head_assignment_ack": "01a11001-3e94 / 01a11002-b90c",
       "resumed_conversation": "ea14b401-20e9-4e48-ab08-d15be08da30d",
-      "updated_at": "2026-10-05T21:17:54.242789+00:00"
+      "updated_at": "2026-10-06T07:07:11.372784+00:00"
     },
     {
       "id": "agent-dashboard",
@@ -4193,14 +4269,14 @@
     {
       "id": "quota-launcher",
       "name": "Agent Quota Launcher",
-      "head_tag": "quota-launcher-head-gemini",
-      "head_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
-      "integration_owner": "quota-launcher-head",
+      "head_tag": "quota-launcher-head-custody-resume-20261006",
+      "head_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "integration_owner": "quota-launcher-head-custody-resume-20261006",
       "principal_tags": [
         "codex-principal"
       ],
       "monitoring_provenance": "Codex C1637 ACK under human/OPERATING-MODEL",
-      "ownership_state": "Genuine current head ACK and first native tools verified; last observed turn ended/idle. New launches/growth held while root below50GiB. Project head owns worker/reviewer delegation; principal monitors big picture, no code review.",
+      "ownership_state": "Genuine received custody ACK; actual delegate firsttools/runtime acceptance pending. Current20GiB hard/30GiB cleanup policy applies.",
       "workspace": "/home/alexey/git/agent-quota-launcher",
       "first_action": {
         "path": "/home/alexey/git/agent-quota-launcher/.local/head-first-action.json",
@@ -4219,12 +4295,19 @@
             "at": "2026-10-04T11:08:51Z",
             "tool": "aplexer whoami --json"
           }
+        },
+        {
+          "head_tag": "quota-launcher-head-gemini",
+          "head_session_id": "a86056b5-8b6b-403a-9b8f-6f0b49308959",
+          "integration_owner": "quota-launcher-head",
+          "ownership_state": "Genuine current head ACK and first native tools verified; last observed turn ended/idle. New launches/growth held while root below50GiB. Project head owns worker/reviewer delegation; principal monitors big picture, no code review.",
+          "head_assignment_ack": "01a10c4d-0922-71d0-a079-611bfd473e8e"
         }
       ],
       "head_workspace": "/home/alexey/git/cloudflare-agent-git",
-      "head_assignment_ack": "01a10c4d-0922-71d0-a079-611bfd473e8e",
+      "head_assignment_ack": "01a11007-ddf5",
       "resumed_conversation": "962ee79c-665f-43f2-a809-365701243ddf",
-      "updated_at": "2026-10-05T14:09:31.570422+00:00",
+      "updated_at": "2026-10-06T07:07:11.372784+00:00",
       "canonical_integration_custody": "Original protected canonical custody not released by silence; current head owns isolated work and requires genuine release/review before integration."
     },
     {

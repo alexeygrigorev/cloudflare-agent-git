@@ -27,3 +27,13 @@ Next evidence required: genuine newhead custodyACK, actual delegated firsttool/a
 Private evidence: `.local/recovery/ant-head-custody-20261006/`. No public copy of raw logs, native SQLite content or private task custody is included.
 
 Successor first tools were subsequently observed reading governance and its privatehandoff, processing genuine newprincipal envelope01a11000-cf1a-71d1-9193-b06cac7d1eb8, creating `.local/audit/startup-365d3033.json` at06:57:50UTC and issuing its own current-envelopeACK. Startupreceipt records actual365d/PID3763239/parent93cf. Semanticcustody reply and delegated productfirsttool remain principal/head verification gates; no autonomousproduct acceptance is claimed.
+
+## Subsequent bounded QL recovery
+
+Principal separately assigned administrative recovery of existing QL750. Two freshcaptures showed an empty prompt. Workload113462 was sole member of exact750workloadscope and had nochildren or loadedagent-task/ql-ctl units. Its worker113405 lived in sharedCoord8d4scope alongsideCoord2156730; this was preserved. Installednativekill uses exactworkerRPC and its ownworkload containment, not workerparentplacement. No parent scope was signalled.
+
+The actualopenlog streamed962ee79c-665f-43f2-a809-365701243ddf; its50,626,560-byte nativeDB4849steps ended4848 matching visiblefinalreport. Private snapshot51,792,492bytes passedSQLitequick_check and retainedPTY/session/taskownership. FreshGemini52.97%weekly/99.39%fivehour and~62GiBdisk passed. Exact750 nativeTERM returned signal15/record_removedtrue. Old113462disappeared whileCoord2156730,workingAnt3763239 andprotected560857remained.
+
+Supportedinteractive successor `c597f484-158e-4a7f-b582-9bf6d0c1dd7f`, tag `quota-launcher-head-custody-resume-20261006`, worker3939321/workload3939368, resumesLIVE962ee79c. Its worker now belongs tosession8544 rather thanCoord'sscope; workload has its own1500MiB/100taskcgroup. Actualnativeparent93cf28f2 retained. Private admin evidence `.local/recovery/ql-head-custody-20261006/`.
+
+Principal was informed before07:05UTC checkpoint and owns genuine newrecipient handoff/custodyACKverification. OldC2710QL envelope remains originalrecipient750; helper did not show/ACK/send/deliver or forge routing. Startup scopedheadpriorities include dependency-levelrefill, automaticindependentreviewreceiptrouting, freshprovider routing/validexecutable reserve and realexistingrepaircontracts scale50-41/53, nevercompletedredispatch. Actualfirsttool/ACK/productacceptance are separate subsequentgates.
