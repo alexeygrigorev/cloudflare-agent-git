@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T07:44:06.192190+00:00",
+  "updated_at": "2026-10-06T07:47:51.221772+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -3089,7 +3089,7 @@
     {
       "id": "publication",
       "name": "Public journal and website quality",
-      "head_tag": "public-journal-site-custody-resume-20261006",
+      "head_tag": "public-journal-release-custody-20261006",
       "principal_tags": [
         "codex-principal",
         "claude-principal"
@@ -3697,10 +3697,18 @@
           ],
           "handoff_ack": "01a11014-e0c7-7ba1-b41e-ffcd5751ba67",
           "at": "2026-10-06T07:30:57.015180+00:00"
+        },
+        {
+          "head_tag": "public-journal-site-custody-resume-20261006",
+          "head_session_id": "8aea1f4a-1c3c-412a-8cef-2754764cb884",
+          "integration_owner": null,
+          "head_assignment_ack": "01a11014-e0c7-7ba1-b41e-ffcd5751ba67"
         }
       ],
-      "head_session_id": "8aea1f4a-1c3c-412a-8cef-2754764cb884",
-      "head_assignment_ack": "01a11014-e0c7-7ba1-b41e-ffcd5751ba67"
+      "head_session_id": "513eab03-fccb-43e3-bcf0-5649f03b5425",
+      "head_assignment_ack": "01a1102c-7f11-7af1-8b94-fb6f52742647",
+      "integration_owner": "public-journal-release-custody-20261006",
+      "updated_at": "2026-10-06T07:47:51.221772+00:00"
     },
     {
       "id": "product-integration",
@@ -4512,7 +4520,10 @@
       "team_id": "publication",
       "assignment_ack": "01a11014-e0c7-7ba1-b41e-ffcd5751ba67",
       "first_action": "Actual identity/inbox tools observed per principal; private124.9MB integritysnapshot",
-      "registered_at": "2026-10-06T07:30:57.015180+00:00"
+      "registered_at": "2026-10-06T07:30:57.015180+00:00",
+      "observed_state": "Retired exacthead after writer/check gone and scopeempty; datepipeline receipts preserved",
+      "replaced_by": "513eab03-fccb-43e3-bcf0-5649f03b5425",
+      "updated_at": "2026-10-06T07:47:51.221772+00:00"
     },
     {
       "session_id": "0a9bee9a-b740-4e64-8eb7-76040968afce",
@@ -4560,6 +4571,20 @@
       "resumed_conversation": "764358a8-1b4e-49c6-845a-9b79bf3ba536",
       "registered_at": "2026-10-06T07:44:06.192190+00:00",
       "first_action": "Genuine current custody ACK received perprincipal; no runtimeacceptance inference"
+    },
+    {
+      "session_id": "513eab03-fccb-43e3-bcf0-5649f03b5425",
+      "tag": "public-journal-release-custody-20261006",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "team_id": "publication",
+      "assignment_ack": "01a1102c-7f11-7af1-8b94-fb6f52742647",
+      "registered_at": "2026-10-06T07:47:51.221772+00:00",
+      "resumed_conversation": "ab6ce5b3-964d-4134-b160-0945237fa968",
+      "first_action": "Headbusy verificationcurl/build perprincipal; actual releaseoutcome pending",
+      "private_recovery_note": "Exact121168254B backup; total455.5MB<512; acceptedOpusarticle/assets/receipts preserved/protected e67byteidentical."
     }
   ],
   "projects": [
