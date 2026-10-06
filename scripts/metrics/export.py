@@ -5,7 +5,11 @@ ROOT=pathlib.Path(__file__).resolve().parents[2]; STORE=ROOT/'.local/metrics'
 def summarize():
     totals=collections.defaultdict(lambda:{'snapshots':0,'pid_live_observed_seconds':0,'hook_working_observed_seconds':0,'hook_idle_observed_seconds':0,'cpu_seconds_observed_delta':0,'evidence_files_latest':None})
     conversations={}; previous={}; first=None; last=None; rows=0
-    for file in sorted(STORE.glob('snapshots-*'),key=lambda p:(p.name[:20],p.stat().st_mtime)):
+    archive_dir = STORE / 'archive'
+    all_files = list(STORE.glob('snapshots-*'))
+    if archive_dir.is_dir():
+        all_files.extend(archive_dir.glob('snapshots-*'))
+    for file in sorted(all_files, key=lambda p:(p.name[:20], p.stat().st_mtime)):
         handle=gzip.open(file,'rt') if file.suffix=='.gz' else file.open()
         for line in handle:
             try: snap=json.loads(line); at=datetime.datetime.fromisoformat(snap['at']).timestamp()
