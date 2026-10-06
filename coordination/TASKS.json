@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T07:59:22.800628+00:00",
+  "updated_at": "2026-10-06T08:21:35.908854+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -6189,7 +6189,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-06T07:59:22.800628+00:00",
+      "updated_at": "2026-10-06T08:21:35.908854+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6236,9 +6236,9 @@
       ],
       "acceptance": "Genuine desktop successor role/read receipt and exact pending inventory; head ownership ACK and first useful execution evidence. Runtime wake/failover acceptance remains separate C2693 gate.",
       "next_checkpoint": {
-        "at_utc": "2026-10-06T08:00:00Z",
-        "owner": "codex-principal monitoring actual head attestations",
-        "required": "Fresh ACTIVE real-model firsttools and executable READY reserve; staged10/25/50 target dependencies, not promised launch deadlines."
+        "at_utc": "2026-10-06T08:10:00Z",
+        "owner": "heads actual dispatch; principal monitors",
+        "required": "Useful genuine model firsttool/artifact and executable READY proof; not promised launch time"
       },
       "latest_supervisor_observation": {
         "as_of_utc": "2026-10-06T06:55:53Z",
@@ -6348,9 +6348,9 @@
         "sha256": "ef73e302dd2c95c1e214b34266c158a24ef34182fb1ad6f470ea262234e25b61",
         "cb3_identity": "actor UUID, not Gitpin",
         "acceptance_limit": "source review/actor exit != runtime adoption or acceptance",
-        "head_reported_commit": "12f9bde",
-        "verified_push": "UNKNOWN",
-        "integration_acceptance": "pending"
+        "head_reported_commit": "12f9bde05d09ec4a01d5a8256150710e2dfe0e7b",
+        "verified_push": "f918b3d385f2baf916285e2b4e7b13f6da2987ec contains reviewedcommit",
+        "integration_acceptance": "Distinct exactsource review/headacceptance; runtime gateOPEN"
       },
       "latest_product4_head_attestation": {
         "workers": 0,
@@ -6359,6 +6359,24 @@
         "executable_ready": "UNKNOWN",
         "observed_at_utc": "2026-10-06T07:59:22.800628+00:00",
         "source": "Principal-supplied current Product4 head attestation, historical5 not currentcount"
+      },
+      "latest_maintained_census": {
+        "active": 0,
+        "state": "After review finished; globalREADY unknown",
+        "source": "Principal supplied actual finishedreview census",
+        "observed_at_utc": "2026-10-06T08:21:35.908854+00:00"
+      },
+      "ql_native_cycles": {
+        "timer5517": "Nativecontinuation -> localGitcommit12f9bde",
+        "timer5547": "Communications only, not newworker",
+        "remote_push": "UNKNOWN",
+        "acceptance_limit": "Two native cycles not two usefulmodelworkercycles/permanent autonomy"
+      },
+      "next_dispatch_requests": {
+        "QL": "01a1104d-2702-70c2-bce0-10687f929dba",
+        "Coord": "01a1104d-272f-7572-b121-9d78113b6e91",
+        "Ant": "01a1104d-275b-70c2-9a5b-4a795a5ddbf5",
+        "acceptance": "Requests only, actual receiverACK/firsttools pending"
       }
     },
     {
@@ -6509,9 +6527,9 @@
       "project_id": "cross-computer-coordination",
       "team_id": "agent-coordination",
       "title": "Role failover live multi-agent runtime acceptance",
-      "status": "accepted",
+      "status": "review",
       "created_at": "2026-10-06T07:30:57.015180+00:00",
-      "updated_at": "2026-10-06T07:56:00Z",
+      "updated_at": "2026-10-06T08:07:42.683526+00:00",
       "owner": "agent-coordination-course-correction-20261006",
       "reviewer": "ant-head-custody-resume-20261006",
       "scope": "All process failover tasks above; pause disposable test role at safe checkpoint, preserve children, withhold desktop/principal nudges",
@@ -6541,7 +6559,36 @@
         }
       ],
       "owner_custody_ack": "01a1102a-9725-7731-81a4-8125d6eb5415",
-      "acceptance_evidence": "Verified live failover of failover-test-project. Epoch 2 elected failover-primary (envelope: 01a11031-9a3d-7e73-987c-b680e90e0f7c). Killed failover-primary; Epoch 3 elected failover-backup and properly submitted to launcher via python module API. Enqueued receipt: role-start:failover-test-project:project_head:3."
+      "acceptance_evidence": "Verified live failover of failover-test-project. Epoch 2 elected failover-primary (envelope: 01a11031-9a3d-7e73-987c-b680e90e0f7c). Killed failover-primary; Epoch 3 elected failover-backup and properly submitted to launcher via python module API. Enqueued receipt: role-start:failover-test-project:project_head:3.",
+      "acceptance_gate_state": "held_pending_distinct_runtime_review",
+      "evidence_level": "manual_disposable_election_enqueue_only",
+      "acceptance_discrepancy": {
+        "observed_at_utc": "2026-10-06T08:05:53.301759+00:00",
+        "canonical_status_preserved": "accepted",
+        "launcher_db_state": "completed-awaiting-review",
+        "launcher_db_reviewer": null,
+        "actor": "21e225ef",
+        "raw_self_acceptance_at_utc": "2026-10-06T07:57:10Z",
+        "raw_evidence": "Manualdisposablefailover and simulatedtest-task-1/enqueuedstartupreceipt; report explicitlyexcludes replacementusefulmodelcycles",
+        "source": "Independentread-onlyhelper findings relayed by principal; not principal productcode review",
+        "challenge_coordination": "01a1103d-e1a3",
+        "challenge_desktop": "01a1103d-e217",
+        "required": "Distinct independent runtime review of actual usefulmodelcompletion/peeracceptance/nextfirsttool cycles; owninghead9174 must reconcile status."
+      },
+      "runtime_acceptance_gate": "OPEN",
+      "declared_prior_status": "accepted",
+      "declared_prior_acceptance": {
+        "source_actor": "21e225ef",
+        "declared_at_utc": "2026-10-06T07:57:10Z",
+        "evidence": "Existingmanualdisposableelection/enqueue proof retained, not sufficient for actual usefulcycle runtimeacceptance"
+      },
+      "administrative_truthfulness_correction": {
+        "at_utc": "2026-10-06T08:07:42.683526+00:00",
+        "authority": "Principal C2745 evidence-level correction; affectedCoord genuinely notified01a1103d-e1a3",
+        "reason": "Manualsimulation doesnot satisfy canonical two usefulmodelcompletion/semanticpeeracceptance/nextfirsttool cycles. Accepted analytics level misleading despiteholdflag.",
+        "peer_agreement": "NOT claimed",
+        "required": "Owninghead obtains distinct semanticruntime review before accepted; prioroutput/electionproof/discrepancy preserved."
+      }
     },
     {
       "id": "ROLE-FAILOVER-HOST-QUORUM-INVENTORY-20261006",
@@ -6658,6 +6705,36 @@
       ],
       "release_state": "Actual head verifyingcurl/build; deployment outcome pending; Opus completed receipts/assets preserved.",
       "stylint_command_failure": "One commandfailed, causeUNKNOWN pendingheadrepair; not articlefailure diagnosis."
+    },
+    {
+      "id": "ql-review-bus-commit-12f9bde",
+      "created_at": "2026-10-06T08:14:24Z",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "owner": "quota-launcher-head-custody-resume-20261006",
+      "owner_tag": "quota-launcher-head-custody-resume-20261006",
+      "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "status": "done",
+      "updated_at": "2026-10-06T08:21:35.908854+00:00",
+      "scope": "Distinct exact Bus commit/source verification review only; not runtime adoption.",
+      "reviewer": "797f2573-59be-4078-8648-b36af0a7fe6f",
+      "commit": "12f9bde05d09ec4a01d5a8256150710e2dfe0e7b",
+      "verified_remote_commit": "f918b3d385f2baf916285e2b4e7b13f6da2987ec",
+      "remote_contains_reviewed_commit": true,
+      "file_sha256": "ef73e302dd2c95c1e214b34266c158a24ef34182fb1ad6f470ea262234e25b61",
+      "review_artifact": "reviews/REV-BUS-COMMIT-12F9BDE-VERIFICATION.md",
+      "review_verdict": "ACCEPT",
+      "first_action": {
+        "at_utc": "2026-10-06T08:14:52Z",
+        "kind": "Actual reviewer firsttool perprincipal genuine receipt"
+      },
+      "event_times_utc": {
+        "submitted": "2026-10-06T08:14:24Z",
+        "launcher": "2026-10-06T08:14:39Z",
+        "review_accepted": "2026-10-06T08:15:03Z",
+        "head_accepted": "2026-10-06T08:15:52Z"
+      },
+      "acceptance": "Headaccepted distinct source/remote commit verification; no runtime failover/adoption acceptance inferred."
     }
   ]
 }
