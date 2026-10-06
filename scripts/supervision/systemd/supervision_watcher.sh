@@ -9,7 +9,8 @@ cd "$REPO_ROOT"
 if ! python3 -c "
 import subprocess, json
 out = subprocess.check_output(['aplexer', 'status', 'experiment-supervision', '--json'], stderr=subprocess.DEVNULL)
-if not json.loads(out).get('worker_alive'):
+d = json.loads(out)
+if not d.get('worker_alive') or d.get('state') == 'broken':
     exit(1)
 " >/dev/null 2>&1; then
     echo "Supervisor is down or missing. Restarting..."
