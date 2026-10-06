@@ -265,3 +265,15 @@ Read the [full verbatim fourth-product instruction](human-cross-computer-product
 Full verbatim instruction: experiment/human-cloudflare-budget-20261004.txt. Total Cloudflare/project cloud-service budget is USD5 per month INCLUDING the existing Workers Paid base fee, not USD5 additional allowance or USD5 per product. Existing Hetzner and model subscriptions are the execution baseline; this instruction does not authorize new cloud compute or model purchases. Execute agents on Hetzner/user-owned computers by default. Do not deploy agent execution on Workers/Containers/Workers AI or enable new paid services. Lightweight API/relay/storage use is optional only when aggregate actual existing usage plus proposed usage remains within the total cap with effective preventive bounds. A plan allowance or alert is not a verified hard spending cap. Unknown shared-account usage or unenforceable overage => keep optional cloud use on hold and use Hetzner/SSH; ordinary local product work continues. Do not dismantle unrelated or existing healthy services, downgrade plans, change billing or buy credits.
 
 October5 standup and public report must compare agent execution vs lightweight coordination/storage, show sourced monthly cost calculations/assumptions, shared usage and unknowns, overage scenarios and recommendation. Cloudflare Workers Paid USD5 is a base fee with metered overages, not a guaranteed maximum. The human conditionally permits consideration only within USD5, not a current agent-cloud deployment mandate. Latest preference remains Hetzner execution.
+
+
+## Human instruction — always commit and push documentation, 6 October 2026
+
+Verbatim: "we have to commit these thigns and push - always. add to intructions."
+
+When preserving human instructions, summaries, decisions or requested documentation in this repository, complete the work by committing the owned changes and pushing to the canonical remote. A chat reply or uncommitted file is not completion. Preserve peer changes, stage only owned paths under the Git lock, and verify the push. If commit or push is rejected or fails, report the exact failure and an owned recovery step; never claim the record is preserved in remote Git until verified.
+
+
+## Coordinator handoff and reporting instructions — 6 October 2026
+
+Read the [human-message summary and verbatim intake](human-coordinator-handoff-and-reports-20261006.md). This covers coordinator proactivity, explicit roles, failover, replacement checks and standups, transfer to another coordinator, and restoration of the public reports feed.

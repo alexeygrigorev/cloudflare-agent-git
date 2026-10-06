@@ -159,3 +159,8 @@ Count distinct actual running executions by actor/provider/session/generation, w
 Compute each roster header from the currently ACTIVE deduplicated entries at its actual `as_of` instant; finished actors are excluded too. Convert local times correctly to UTC rather than relabeling them with `Z`, and never use future timestamps. Each head attests its own current child IDs, states and first tools. Historical peaks are separate from current counts and require real start/end receipts proving execution overlap, not a sum of launches or completed tasks.
 
 The 512 MiB scratch/spike cap is a maximum, not a mandatory 512 MiB reservation per tiny job. Heads record an actual bounded task budget and measured before/after growth, keeping aggregate scratch within its retained cap and root disk >= 50 GiB. This clarification changes no other containment, provider, privacy or recovery limit and does not claim achieved concurrency.
+
+
+## Commit and push preserved instructions and documentation — human 6 October 2026
+
+Always commit and push requested human-instruction records, summaries, decisions and documentation changes to the canonical remote. Use the shared Git lock and explicit owned-path staging; preserve peer edits and the shared index. Verify the push before reporting completion. A chat response or uncommitted file is insufficient. Report any failed or rejected commit/push truthfully with a concrete recovery step. Source: experiment/USER-INSTRUCTIONS.md, dated always-commit-and-push instruction.
