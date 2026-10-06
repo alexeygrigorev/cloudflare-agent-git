@@ -1931,3 +1931,14 @@ C2779 genuineAnt01a11091 scoped READONLY custody accepted; head-authored three d
 Principal read/ACK QL01a110a0-6958: accepted c21f implementation/distinct4032626b review is head-attested; artifact SHA0327915415b19d45dd03faa2de41ad561bddaaac15800383c7c023afaffe309c / review93063d1183761c9415df6e54e66a65ca557ecc7b56c177a6b767f05235fb704a retained without product-code review by principal/helper. Timer7115 reportedly fired09:51:38; cancellations6859/6916/6929 were deliberate coalescing, not framework failure;7383 rearmed earlyTermination never. Busy timer work does not prove idle wake.
 
 Ant genuine module release01a1109b-7358 to QL accepted/narrowed01a110a0: launcher/task_units.py plus narrow tests are QL repair custody, first actual repair worker/retry pending. Ant306bc first09:46:53/completed09:49 produced95fd2bb; cited6ffc review final09:42 predates this artifact, so independent acceptance remains unproven (C2784 challenge01a1109f-7c5e). BQL occupancy and disjoint Ant readonly firsttools pending, stage10 unmet; no artificial one-worker cap or inferred ACTIVE counts.
+
+
+### Additive principal evidence checkpoint 2026-10-06T10:36:34.120650+00:00 — C2798–C2801
+
+Actual publication/recovery evidence: allfive tool repositories are PUBLIC by principal GitHub API verification. CLIpreview failure report deb4bc3121b4c49b49bf0d57419d2453bd5130bc is pushed/verified via explicit ordinaryGit fallback, not tooladoption success; unexpected preview publication a48ed777 preserved sharedHEAD/index and1321 peer hashes. Ant narrow repair772ba30d71ba75cf2b129a0c44f62726b5ebcb5b now has head-delegated distinct reviewer017aaefb firsttool10:35:04UTC; verdict/acceptance pending. No principal/helper productcode review or successful retest inferred.
+
+Actual native continuation: Ant timer11426 fired after its turn ended10:33 and realtool11431 read/ACKed the repair request. Timer11509 is due10:40:08; firing/rearm not yet verified. One genuine ended-turn callback/ACK is evidence for that cycle, not two useful unattended completion/review/refill cycles.
+
+Cleanup duplicateunits3/4 stopped10:33:01/10:33:14, leaving independently observed actor1b2455c0 first10:31:56; a120s cleanup turn/timeout is not validated removal or successful repair. Product ACTIVE localcoverage at10:35 is one distinct reviewer; wholeportfolio and executableREADY remain UNKNOWN. Next owned events: Ant pinned distinct repairverdict and actual preview-safe adoption/rearm, QL one-owner cleanup outcome/removal receipt and useful maintained review/refill. Stage10/25/50 targets remain unachieved.
+
+This additive checkpoint preserves the complete currentremote coordination document as authoritative prefix. All earlier local-only paragraphs and private conflict evidence remain recoverable machine-local; none silently overwrite remote history.
