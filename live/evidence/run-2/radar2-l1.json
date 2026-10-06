@@ -1,0 +1,105 @@
+{
+  "contract": "0.1",
+  "vector": {
+    "demo-t1-0001": "0277ae3dcf55d2bf1f51cbadf64f9a9f31aba4ad",
+    "demo-t2-0002": "bcab40db81cd1a381f2bf47d811ee1a649f38bb6",
+    "demo-t3-0003": "e4e6339a4e047d96b9d8f9c5b88deefb76c26e5c"
+  },
+  "policy": {
+    "merge": "git-merge-tree",
+    "tests": {
+      "command": [
+        "/home/alexey/.nvm/versions/node/v24.13.1/bin/node",
+        "--test"
+      ],
+      "budget_s": 120.0
+    }
+  },
+  "coverage": {
+    "pairs_checked": 3,
+    "tests_collected": 0
+  },
+  "results": [
+    {
+      "pair": [
+        "demo-t1-0001",
+        "demo-t2-0002"
+      ],
+      "heads": {
+        "demo-t1-0001": "0277ae3dcf55d2bf1f51cbadf64f9a9f31aba4ad",
+        "demo-t2-0002": "bcab40db81cd1a381f2bf47d811ee1a649f38bb6"
+      },
+      "status": "conflict",
+      "kind": "textual",
+      "evidence": {
+        "conflicting_files": [
+          "src/shortlinks.js"
+        ],
+        "conflict_type": "content_conflict",
+        "details": "Auto-merging src/shortlinks.js\nCONFLICT (content): Merge conflict in src/shortlinks.js\nAuto-merging src/worker.js",
+        "summary": "Auto-merging src/shortlinks.js\nCONFLICT (content): Merge conflict in src/shortlinks.js\nAuto-merging src/worker.js",
+        "files": [
+          "src/shortlinks.js"
+        ]
+      }
+    },
+    {
+      "pair": [
+        "demo-t1-0001",
+        "demo-t3-0003"
+      ],
+      "heads": {
+        "demo-t1-0001": "0277ae3dcf55d2bf1f51cbadf64f9a9f31aba4ad",
+        "demo-t3-0003": "e4e6339a4e047d96b9d8f9c5b88deefb76c26e5c"
+      },
+      "status": "conflict",
+      "kind": "textual",
+      "evidence": {
+        "conflicting_files": [
+          "src/worker.js"
+        ],
+        "conflict_type": "content_conflict",
+        "details": "Auto-merging src/worker.js\nCONFLICT (content): Merge conflict in src/worker.js",
+        "summary": "Auto-merging src/worker.js\nCONFLICT (content): Merge conflict in src/worker.js",
+        "files": [
+          "src/worker.js"
+        ]
+      }
+    },
+    {
+      "pair": [
+        "demo-t2-0002",
+        "demo-t3-0003"
+      ],
+      "heads": {
+        "demo-t2-0002": "bcab40db81cd1a381f2bf47d811ee1a649f38bb6",
+        "demo-t3-0003": "e4e6339a4e047d96b9d8f9c5b88deefb76c26e5c"
+      },
+      "status": "conflict",
+      "kind": "test",
+      "evidence": {
+        "test_command": "/home/alexey/.nvm/versions/node/v24.13.1/bin/node --test",
+        "exit_code": 1,
+        "stdout": "\u2714 test/_helpers.js (51.158452ms)\n\u2716 POST /links/bulk imports every link and returns slugs in order (38.875296ms)\n\u2714 POST /links/bulk with an empty list creates nothing (5.426777ms)\n\u2714 POST /links/bulk rejects a malformed body with 400 (3.266157ms)\n\u2714 POST /links creates a link and returns 201 with the record (51.642939ms)\n\u2714 POST /links rejects a duplicate slug with 409 (1.863097ms)\n\u2714 POST /links rejects a non-http(s) url with 400 (3.362928ms)\n\u2714 POST /links rejects an empty or slashy slug with 400 (1.208617ms)\n\u2714 POST /links rejects a non-JSON body with 400 (0.623989ms)\n\u2714 service.create returns the stored record directly (0.176652ms)\n\u2714 service.create with ttlSeconds stores a future expiresAt (1.064235ms)\n\u2714 service.create rejects a non-numeric ttlSeconds (0.819222ms)\n\u2714 GET /:slug redirects to the stored url with 302 (46.759599ms)\n\u2714 GET /:slug returns 404 for an unknown slug (1.503331ms)\n\u2714 an expired link resolves to 404 (1.215748ms)\n\u2714 POST /links accepts ttlSeconds and keeps permanent links resolving (2.940062ms)\n\u2714 worker exports a default fetch handler (1.522942ms)\n\u2714 unknown routes return 404 JSON (54.54459ms)\n\u2714 GET / returns 404 no-route (0.796221ms)\n\u2139 tests 19\n\u2139 suites 0\n\u2139 pass 18\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 199.917779\n\n\u2716 failing tests:\n\ntest at test/bulk.test.js:5:1\n\u2716 POST /links/bulk imports every link and returns slugs in order (38.875296ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  400 !== 201\n  \n      at TestContext.<anonymous> (file:///tmp/radar_snap_s5pxzgkh/test/bulk.test.js:15:10)\n      at async Test.run (node:internal/test_runner/test:1110:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 400,\n    expected: 201,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+        "stderr": "",
+        "details": "Combined-tree test runner failed with exit code 1\n\u2714 test/_helpers.js (51.158452ms)\n\u2716 POST /links/bulk imports every link and returns slugs in order (38.875296ms)\n\u2714 POST /links/bulk with an empty list creates nothing (5.426777ms)\n\u2714 POST /links/bulk rejects a malformed body with 400 (3.266157ms)\n\u2714 POST /links creates a link and returns 201 with the record (51.642939ms)\n\u2714 POST /links rejects a duplicate slug with 409 (1.863097ms)\n\u2714 POST /links rejects a non-http(s) url with 400 (3.362928ms)\n\u2714 POST /links rejects an empty or slashy slug with 400 (1.208617ms)\n\u2714 POST /links rejects a non-JSON body with 400 (0.623989ms)\n\u2714 service.create returns the stored record directly (0.176652ms)\n\u2714 service.create with ttlSeconds stores a future expiresAt (1.064235ms)\n\u2714 service.create rejects a non-numeric ttlSeconds (0.819222ms)\n\u2714 GET /:slug redirects to the stored url with 302 (46.759599ms)\n\u2714 GET /:slug returns 404 for an unknown slug (1.503331ms)\n\u2714 an expired link resolves to 404 (1.215748ms)\n\u2714 POST /links accepts ttlSeconds and keeps permanent links resolving (2.940062ms)\n\u2714 worker exports a default fetch handler (1.522942ms)\n\u2714 unknown routes return 404 JSON (54.54459ms)\n\u2714 GET / returns 404 no-route (0.796221ms)\n\u2139 tests 19\n\u2139 suites 0\n\u2139 pass 18\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 199.917779\n\n\u2716 failing tests:\n\ntest at test/bulk.test.js:5:1\n\u2716 POST /links/bulk imports every link and returns slugs in order (38.875296ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  400 !== 201\n  \n      at TestContext.<anonymous> (file:///tmp/radar_snap_s5pxzgkh/test/bulk.test.js:15:10)\n      at async Test.run (node:internal/test_runner/test:1110:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 400,\n    expected: 201,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }",
+        "wait_time_seconds": 0.0,
+        "cumulative_children_peak_rss_mb": 60.6,
+        "peak_rss_mb": 60.6,
+        "source": "resource.RUSAGE_CHILDREN.ru_maxrss",
+        "scope": "cumulative_process_children",
+        "mem_available_mb": 31575.9,
+        "reserve_mb": 2048.0,
+        "inflight_mb": 512.0,
+        "effective_available_mb": 29527.9,
+        "psi_some_avg10": 0.18,
+        "concurrency_scope": "process_radar_engine",
+        "summary": "Combined-tree test runner failed with exit code 1\n\u2714 test/_helpers.js (51.158452ms)\n\u2716 POST /links/bulk imports every link and returns slugs in order (38.875296ms)\n\u2714 POST /links/bulk with an empty list creates nothing (5.426777ms)\n\u2714 POST /links/bulk rejects a malformed body with 400 (3.266157ms)\n\u2714 POST /links creates a link and returns 201 with the record (51.642939ms)\n\u2714 POST /links rejects a duplicate slug with 409 (1.863097ms)\n\u2714 POST /links rejects a non-http(s) url with 400 (3.362928ms)\n\u2714 POST /links rejects an empty or slashy slug with 400 (1.208617ms)\n\u2714 POST /links rejects a non-JSON body with 400 (0.623989ms)\n\u2714 service.create returns the stored record directly (0.176652ms)\n\u2714 service.create with ttlSeconds stores a future expiresAt (1.064235ms)\n\u2714 service.create rejects a non-numeric ttlSeconds (0.819222ms)\n\u2714 GET /:slug redirects to the stored url with 302 (46.759599ms)\n\u2714 GET /:slug returns 404 for an unknown slug (1.503331ms)\n\u2714 an expired link resolves to 404 (1.215748ms)\n\u2714 POST /links accepts ttlSeconds and keeps permanent links resolving (2.940062ms)\n\u2714 worker exports a default fetch handler (1.522942ms)\n\u2714 unknown routes return 404 JSON (54.54459ms)\n\u2714 GET / returns 404 no-route (0.796221ms)\n\u2139 tests 19\n\u2139 suites 0\n\u2139 pass 18\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 199.917779\n\n\u2716 failing tests:\n\ntest at test/bulk.test.js:5:1\n\u2716 POST /links/bulk imports every link and returns slugs in order (38.875296ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  400 !== 201\n  \n      at TestContext.<anonymous> (file:///tmp/radar_snap_s5pxzgkh/test/bulk.test.js:15:10)\n      at async Test.run (node:internal/test_runner/test:1110:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 400,\n    expected: 201,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }",
+        "files": [
+          "src/worker.js"
+        ],
+        "test_output_tail": "known slug (1.503331ms)\n\u2714 an expired link resolves to 404 (1.215748ms)\n\u2714 POST /links accepts ttlSeconds and keeps permanent links resolving (2.940062ms)\n\u2714 worker exports a default fetch handler (1.522942ms)\n\u2714 unknown routes return 404 JSON (54.54459ms)\n\u2714 GET / returns 404 no-route (0.796221ms)\n\u2139 tests 19\n\u2139 suites 0\n\u2139 pass 18\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 199.917779\n\n\u2716 failing tests:\n\ntest at test/bulk.test.js:5:1\n\u2716 POST /links/bulk imports every link and returns slugs in order (38.875296ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  400 !== 201\n  \n      at TestContext.<anonymous> (file:///tmp/radar_snap_s5pxzgkh/test/bulk.test.js:15:10)\n      at async Test.run (node:internal/test_runner/test:1110:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 400,\n    expected: 201,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n"
+      }
+    }
+  ]
+}

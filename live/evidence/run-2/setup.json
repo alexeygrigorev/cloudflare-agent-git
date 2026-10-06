@@ -1,0 +1,8 @@
+{
+  "canonical": {
+    "name": "agent-branches-canonical-9ad1bce4",
+    "remote": "http://127.0.0.1:8799/git/agent-branches-canonical-9ad1bce4.git"
+  },
+  "created": false,
+  "seedCommit": "2d03d63d87bd4c70cdb34e25db129cd5639f29a2"
+}

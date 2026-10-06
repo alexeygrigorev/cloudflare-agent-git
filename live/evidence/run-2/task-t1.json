@@ -1,0 +1,83 @@
+{
+  "taskId": "task-0001",
+  "agentId": "demo-t1-0001",
+  "forkName": "agent-branches-canonical-9ad1bce4-demo-t1-0001",
+  "forkRemote": "http://127.0.0.1:8799/git/agent-branches-canonical-9ad1bce4-demo-t1-0001.git",
+  "ref": "refs/heads/main",
+  "createdAt": "2026-10-03T14:50:55.156Z",
+  "baseSha": "2d03d63d87bd4c70cdb34e25db129cd5639f29a2",
+  "intent": "reference solution t1",
+  "testProvenance": null,
+  "base_sha": "2d03d63d87bd4c70cdb34e25db129cd5639f29a2",
+  "agent": {
+    "agentId": "demo-t1-0001",
+    "taskId": "task-0001",
+    "forkName": "agent-branches-canonical-9ad1bce4-demo-t1-0001",
+    "forkRemote": "http://127.0.0.1:8799/git/agent-branches-canonical-9ad1bce4-demo-t1-0001.git",
+    "ref": "refs/heads/main",
+    "head": "543845616b0265b38fb3ef2e81f3c97e5dfc0693",
+    "pushes": 1,
+    "createdAt": "2026-10-03T14:50:55.156Z",
+    "lastPushAt": "2026-10-03T14:53:03.225Z"
+  },
+  "head": "543845616b0265b38fb3ef2e81f3c97e5dfc0693",
+  "pushes": 1,
+  "warnings": [
+    {
+      "id": "warn-2",
+      "pair": [
+        "demo-t1-0001",
+        "demo-t3-0003"
+      ],
+      "headsAtIssue": {
+        "a": "543845616b0265b38fb3ef2e81f3c97e5dfc0693",
+        "b": "e4e6339a4e047d96b9d8f9c5b88deefb76c26e5c"
+      },
+      "reason": "textual",
+      "status": "active",
+      "createdAt": "2026-10-03T14:53:04.460Z",
+      "invalidatedAt": null,
+      "kind": "textual",
+      "evidence": {
+        "conflicting_files": [
+          "src/worker.js"
+        ],
+        "conflict_type": "content_conflict",
+        "details": "Auto-merging src/worker.js\nCONFLICT (content): Merge conflict in src/worker.js",
+        "summary": "Auto-merging src/worker.js\nCONFLICT (content): Merge conflict in src/worker.js",
+        "files": [
+          "src/worker.js"
+        ]
+      },
+      "acks": []
+    },
+    {
+      "id": "warn-1",
+      "pair": [
+        "demo-t1-0001",
+        "demo-t2-0002"
+      ],
+      "headsAtIssue": {
+        "a": "543845616b0265b38fb3ef2e81f3c97e5dfc0693",
+        "b": "bcab40db81cd1a381f2bf47d811ee1a649f38bb6"
+      },
+      "reason": "textual",
+      "status": "active",
+      "createdAt": "2026-10-03T14:53:04.460Z",
+      "invalidatedAt": null,
+      "kind": "textual",
+      "evidence": {
+        "conflicting_files": [
+          "src/shortlinks.js"
+        ],
+        "conflict_type": "content_conflict",
+        "details": "Auto-merging src/shortlinks.js\nCONFLICT (content): Merge conflict in src/shortlinks.js\nAuto-merging src/worker.js",
+        "summary": "Auto-merging src/shortlinks.js\nCONFLICT (content): Merge conflict in src/shortlinks.js\nAuto-merging src/worker.js",
+        "files": [
+          "src/shortlinks.js"
+        ]
+      },
+      "acks": []
+    }
+  ]
+}

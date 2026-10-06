@@ -1,0 +1,112 @@
+From a292e7e1f7aed84017c8977e306984c226cada08 Mon Sep 17 00:00:00 2001
+From: Alexey Grigorev <alexey.s.grigoriev@gmail.com>
+Date: Sat, 3 Oct 2026 15:14:57 +0200
+Subject: [PATCH] T2: object-form create({slug,url,ttlSeconds}) with expiresAt
+ + expiry-aware resolve
+
+---
+ demo-target/src/shortlinks.js    | 11 +++++++++--
+ demo-target/src/worker.js        |  2 +-
+ demo-target/test/create.test.js  | 14 +++++++++++++-
+ demo-target/test/resolve.test.js | 17 +++++++++++++++++
+ 4 files changed, 40 insertions(+), 4 deletions(-)
+
+diff --git a/demo-target/src/shortlinks.js b/demo-target/src/shortlinks.js
+index 289b72d..56d8218 100644
+--- a/demo-target/src/shortlinks.js
++++ b/demo-target/src/shortlinks.js
+@@ -25,11 +25,15 @@ export class ShortlinkService {
+     this.store = store;
+   }
+ 
+-  create(rawSlug, url) {
++  create({ slug: rawSlug, url, ttlSeconds = null } = {}) {
++    if (ttlSeconds !== null && !Number.isFinite(ttlSeconds)) {
++      throw new ValidationError('ttlSeconds must be a number of seconds when provided');
++    }
+     const slug = normalizeSlug(rawSlug);
+     if (!isValidHttpUrl(url)) throw new ValidationError(`url must be an http(s) URL: ${url}`);
+     if (this.store.has(slug)) throw new ConflictError(`slug already exists: ${slug}`);
+-    const record = { slug, url, createdAt: new Date().toISOString() };
++    const expiresAt = ttlSeconds === null ? null : Date.now() + ttlSeconds * 1000;
++    const record = { slug, url, createdAt: new Date().toISOString(), expiresAt };
+     this.store.put(slug, record);
+     return record;
+   }
+@@ -38,6 +42,9 @@ export class ShortlinkService {
+     const slug = normalizeSlug(rawSlug);
+     const record = this.store.get(slug);
+     if (!record) throw new NotFoundError(`no such slug: ${slug}`);
++    if (record.expiresAt !== null && Date.now() > record.expiresAt) {
++      throw new NotFoundError(`link expired: ${slug}`);
++    }
+     return record;
+   }
+ }
+diff --git a/demo-target/src/worker.js b/demo-target/src/worker.js
+index 4d72d04..5df5800 100644
+--- a/demo-target/src/worker.js
++++ b/demo-target/src/worker.js
+@@ -23,7 +23,7 @@ export async function route(request, service) {
+     const body = await request.json().catch(() => null);
+     if (!body || typeof body !== 'object') return json(400, { error: 'invalid JSON body' });
+     try {
+-      const record = service.create(body.slug, body.url);
++      const record = service.create({ slug: body.slug, url: body.url, ttlSeconds: body.ttlSeconds });
+       return json(201, record);
+     } catch (err) {
+       return errorResponse(err);
+diff --git a/demo-target/test/create.test.js b/demo-target/test/create.test.js
+index a946398..95f4aa8 100644
+--- a/demo-target/test/create.test.js
++++ b/demo-target/test/create.test.js
+@@ -42,8 +42,20 @@ test('POST /links rejects a non-JSON body with 400', async () => {
+ 
+ test('service.create returns the stored record directly', () => {
+   const { service } = fresh();
+-  const record = service.create('Blog', 'https://example.com/blog');
++  const record = service.create({ slug: 'Blog', url: 'https://example.com/blog' });
+   assert.equal(record.slug, 'blog');
+   assert.equal(record.url, 'https://example.com/blog');
+   assert.equal(typeof record.createdAt, 'string');
++  assert.equal(record.expiresAt, null);
++});
++
++test('service.create with ttlSeconds stores a future expiresAt', () => {
++  const { service } = fresh();
++  const record = service.create({ slug: 'temp', url: 'https://example.com/t', ttlSeconds: 3600 });
++  assert.equal(record.expiresAt > Date.now(), true);
++});
++
++test('service.create rejects a non-numeric ttlSeconds', () => {
++  const { service } = fresh();
++  assert.throws(() => service.create({ slug: 'x', url: 'https://example.com', ttlSeconds: 'soon' }), /ttlSeconds/);
+ });
+diff --git a/demo-target/test/resolve.test.js b/demo-target/test/resolve.test.js
+index 3faa118..13d29c6 100644
+--- a/demo-target/test/resolve.test.js
++++ b/demo-target/test/resolve.test.js
+@@ -17,3 +17,20 @@ test('GET /:slug returns 404 for an unknown slug', async () => {
+   const body = await res.json();
+   assert.match(body.error, /no such slug/);
+ });
++
++test('an expired link resolves to 404', async () => {
++  const { call } = fresh();
++  await call(postJSON('/links', { slug: 'temp', url: 'https://example.com/t', ttlSeconds: -1 }));
++  const res = await call(get('/temp'));
++  assert.equal(res.status, 404);
++});
++
++test('POST /links accepts ttlSeconds and keeps permanent links resolving', async () => {
++  const { call } = fresh();
++  const created = await call(postJSON('/links', { slug: 'keep', url: 'https://example.com/k', ttlSeconds: 3600 }));
++  assert.equal(created.status, 201);
++  assert.equal((await created.json()).expiresAt > Date.now(), true);
++  await call(postJSON('/links', { slug: 'perm', url: 'https://example.com/p' }));
++  const res = await call(get('/perm'));
++  assert.equal(res.status, 302);
++});
+-- 
+2.43.0
+

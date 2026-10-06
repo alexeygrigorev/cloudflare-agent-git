@@ -1,0 +1,13 @@
+{
+  "accepted": true,
+  "deduped": true,
+  "agent": "demo-t1-0001",
+  "heads": {
+    "demo-t1-0001": "543845616b0265b38fb3ef2e81f3c97e5dfc0693",
+    "demo-t2-0002": "2d03d63d87bd4c70cdb34e25db129cd5639f29a2",
+    "demo-t3-0003": "2d03d63d87bd4c70cdb34e25db129cd5639f29a2"
+  },
+  "invalidatedWarnings": [],
+  "newWarnings": [],
+  "radarChecks": 0
+}

@@ -1,0 +1,83 @@
+{
+  "phase": "final",
+  "passed": 15,
+  "total": 15,
+  "allPassed": true,
+  "assertions": [
+    {
+      "name": "radar2: contract 0.1 payload has 3 pair results",
+      "ok": true,
+      "detail": "n=3"
+    },
+    {
+      "name": "T1-T2 verdict: conflict (textual)",
+      "ok": true,
+      "detail": "status=conflict kind=textual"
+    },
+    {
+      "name": "T2-T3 verdict: conflict (test)",
+      "ok": true,
+      "detail": "status=conflict kind=test"
+    },
+    {
+      "name": "T1-T3 verdict: recorded (expected clean)",
+      "ok": true,
+      "detail": "status=conflict kind=textual"
+    },
+    {
+      "name": "/checks receipt: not stale; every conflicted pair has an active warning",
+      "ok": true,
+      "detail": "stale=False accepted=3 createdWarnings=2 conflictPairs=3 covered=3"
+    },
+    {
+      "name": "status: head vector t1 == pushed sha",
+      "ok": true,
+      "detail": "0277ae3dcf55d2bf1f51cbadf64f9a9f31aba4ad vs 0277ae3d"
+    },
+    {
+      "name": "status: head vector t2 == pushed sha",
+      "ok": true,
+      "detail": "bcab40db81cd1a381f2bf47d811ee1a649f38bb6 vs bcab40db"
+    },
+    {
+      "name": "status: head vector t3 == pushed sha",
+      "ok": true,
+      "detail": "e4e6339a4e047d96b9d8f9c5b88deefb76c26e5c vs e4e6339a"
+    },
+    {
+      "name": "status: active warning for T1-T2",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "status: active warning for T2-T3",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "status: active warnings carry radar conflict reasons",
+      "ok": true,
+      "detail": "3 radar-kinded warnings (reason is the radar kind per CONTRACT v0.1)"
+    },
+    {
+      "name": "stale check after new push rejected 409",
+      "ok": true,
+      "detail": "got 409"
+    },
+    {
+      "name": "409 body names the moved agent (t1)",
+      "ok": true,
+      "detail": "replayed t1=54384561 current=0277ae3d"
+    },
+    {
+      "name": "evidence: UI screenshot exists",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "evidence: /status JSON saved",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

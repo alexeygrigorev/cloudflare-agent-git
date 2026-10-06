@@ -13,3 +13,7 @@ __pycache__/
 scratch/
 local-coordinator-state.json
 /9
+
+# live run state (zc-live-2)
+live/.dev.vars
+live/work/
