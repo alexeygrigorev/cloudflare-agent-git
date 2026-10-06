@@ -6068,19 +6068,22 @@
       "id": "synthesis-agent-branches-20261006011745-4315",
       "project_id": "agent-branches",
       "team_id": "research-synthesis",
-      "status": "remediation_needed",
+      "status": "done",
       "created_at": "2026-10-05T23:17:45.810859+00:00",
-      "updated_at": "2026-10-05T23:35:00.000000+00:00",
+      "updated_at": "2026-10-06T00:23:00.000000+00:00",
       "title": "Concurrency & Race Condition Resilience",
       "scope": "Test pairwise distinct worktrees with actual concurrent conditions. Implement stale-head refusal and exact-SHA receipts with invalidation on main advancement.",
       "acceptance": "Idempotent and reordered events tested safely; receipts deliberately invalidated when main advances.",
       "blocked_on": [],
       "dependencies": [],
       "evidence_paths": [
+        "research/antigravity/reviews/REV-SYNTHESIS-AGENT-BRANCHES-4315-REMEDIATED-20261006.md",
         "research/antigravity/reviews/REV-SYNTHESIS-AGENT-BRANCHES-4315-20261005.md",
+        "prototype/test/node/concurrency.test.ts",
+        "test_concurrency.py",
         "prototype/src/core/coordinator.ts"
       ],
-      "acceptance_status": "REJECTED: Independent peer review (REV-SYNTHESIS-AGENT-BRANCHES-4315-20261005.md) rejected task due to stubbed test_concurrency.py containing empty pass methods with zero assertions, zero TypeScript test coverage for receipts/stale-head coordinator logic, and execution failure."
+      "acceptance_status": "ACCEPTED: Remediated peer review (REV-SYNTHESIS-AGENT-BRANCHES-4315-REMEDIATED-20261006.md) verified exact-SHA receipts, idempotent push deduping, stale-head refusal, and main advancement invalidation with 100% passing test coverage (54/54 node tests, 92/92 vitest tests, 3/3 python SDK tests) on commit e0e9e58."
     },
     {
       "id": "synthesis-agent-coordination-20261006011745-5669",
