@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T07:34:01.054855+00:00",
+  "updated_at": "2026-10-06T07:44:06.192190+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -4525,7 +4525,41 @@
       "assignment_ack": "01a11021-9c59-79f0-8f79-51c5003a5032",
       "resumed_conversation": "764358a8-1b4e-49c6-845a-9b79bf3ba536",
       "first_action": "Genuine native current custodyACK received perprincipal; subsequent implementationtool pending",
-      "registered_at": "2026-10-06T07:34:01.054855+00:00"
+      "registered_at": "2026-10-06T07:34:01.054855+00:00",
+      "observed_state": "Exact administrative predecessor retired; custodyhistory preserved",
+      "replaced_by": "9174f03c-6f49-458f-ab91-dc176c03330a",
+      "updated_at": "2026-10-06T07:44:06.192190+00:00"
+    },
+    {
+      "tag": "failover-primary",
+      "team_id": "failover-test-project",
+      "project_id": "failover-test-project",
+      "role": "project_head",
+      "mode": "headless",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/cloudflare-agent-git/scratch/failover-test"
+    },
+    {
+      "tag": "failover-backup",
+      "team_id": "failover-test-project",
+      "project_id": "failover-test-project",
+      "role": "project_head",
+      "mode": "headless",
+      "provider": "gemini",
+      "workspace": "/home/alexey/git/cloudflare-agent-git/scratch/failover-test"
+    },
+    {
+      "session_id": "9174f03c-6f49-458f-ab91-dc176c03330a",
+      "tag": "agent-coordination-course-correction-20261006",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "project_id": "agent-coordination",
+      "assignment_ack": "01a1102a-9725-7731-81a4-8125d6eb5415",
+      "resumed_conversation": "764358a8-1b4e-49c6-845a-9b79bf3ba536",
+      "registered_at": "2026-10-06T07:44:06.192190+00:00",
+      "first_action": "Genuine current custody ACK received perprincipal; no runtimeacceptance inference"
     }
   ],
   "projects": [
@@ -4648,12 +4682,12 @@
     {
       "id": "agent-coordination",
       "name": "Cross-computer Agent Coordination",
-      "head_tag": "agent-coordination-head-custody-resume-20261006",
-      "head_session_id": "0a9bee9a-b740-4e64-8eb7-76040968afce",
+      "head_tag": "agent-coordination-course-correction-20261006",
+      "head_session_id": "9174f03c-6f49-458f-ab91-dc176c03330a",
       "workspace": "/home/alexey/git/agent-coordination",
-      "integration_owner": "agent-coordination-head-custody-resume-20261006",
+      "integration_owner": "agent-coordination-course-correction-20261006",
       "principal_owner": "codex-principal",
-      "ownership_state": "Actual current custody ACK and43ea primaryintegration scope received; execution/first artifact/runtime acceptance separate.",
+      "ownership_state": "Genuine current custodyACK after exactpredecessor recovery; source artifacts/status preserved, independent headreview/runtime acceptance pending.",
       "first_action": {
         "schema_version": 1,
         "recorded_at_utc": "2026-10-04T11:41:38Z",
@@ -4763,12 +4797,19 @@
           "integration_owner": "agent-coordination-head",
           "ownership_state": "Genuine current head ACK and first native tools verified; last observed turn ended/idle. New launches/growth held while root below50GiB. Project head owns worker/reviewer delegation; principal monitors big picture, no code review.",
           "head_assignment_ack": "01a10c5b-8461-7fd3-9209-06af1a3f155e"
+        },
+        {
+          "head_tag": "agent-coordination-head-custody-resume-20261006",
+          "head_session_id": "0a9bee9a-b740-4e64-8eb7-76040968afce",
+          "integration_owner": "agent-coordination-head-custody-resume-20261006",
+          "ownership_state": "Actual current custody ACK and43ea primaryintegration scope received; execution/first artifact/runtime acceptance separate.",
+          "head_assignment_ack": "01a11021-9c59-79f0-8f79-51c5003a5032"
         }
       ],
       "head_workspace": "/home/alexey/git/cloudflare-agent-git",
-      "head_assignment_ack": "01a11021-9c59-79f0-8f79-51c5003a5032",
+      "head_assignment_ack": "01a1102a-9725-7731-81a4-8125d6eb5415",
       "resumed_conversation": "764358a8-1b4e-49c6-845a-9b79bf3ba536",
-      "updated_at": "2026-10-06T07:34:01.054855+00:00",
+      "updated_at": "2026-10-06T07:44:06.192190+00:00",
       "canonical_integration_custody": "Original protected canonical custody not released by silence; current head owns isolated work and requires genuine release/review before integration."
     },
     {
@@ -4788,6 +4829,13 @@
       "task_id": "AGENTBUS-APLEXER-EXTRACTION-HEADLESS-20261005",
       "next_milestone": "Head ACK and nonoverlapping zcy lanes under fresh gates; real sessionless model task/result/ACK and distinct reviewer evidence.",
       "updated_at": "2026-10-05T14:27:40.182048+00:00"
+    },
+    {
+      "id": "failover-test-project",
+      "name": "Live Failover Acceptance Test",
+      "head_tag": "failover-primary",
+      "workspace": "/home/alexey/git/cloudflare-agent-git/scratch/failover-test",
+      "ownership_state": "disposable test role"
     }
   ],
   "delivery_executors": [
