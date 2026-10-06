@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T07:47:51.221772+00:00",
+  "updated_at": "2026-10-06T07:59:22.800628+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -4585,6 +4585,36 @@
       "resumed_conversation": "ab6ce5b3-964d-4134-b160-0945237fa968",
       "first_action": "Headbusy verificationcurl/build perprincipal; actual releaseoutcome pending",
       "private_recovery_note": "Exact121168254B backup; total455.5MB<512; acceptedOpusarticle/assets/receipts preserved/protected e67byteidentical."
+    },
+    {
+      "actor_identity": "/root/scale50_coordination",
+      "parent_chat_id": "01a11004-f49b-7ee1-a01c-49d31e8c7231",
+      "parent_identity_kind": "desktop_chat, not native aplexer parent",
+      "role": "coordination_helper",
+      "mode": "native_harness_subagent",
+      "team_id": "desktop-coordination",
+      "human_owner_source": "01a1102f-b182-7371-bbcf-e67c50726013",
+      "principal_scope_ack": "01a11031-10f6",
+      "owned_paths": [
+        ".local/scale50/coordinator-subagent-20261006"
+      ],
+      "assignment_state": "Actual oversight acceptance received",
+      "observed_state": "actual startup/first tool UNKNOWN",
+      "first_action": {
+        "kind": "OPERATIONAL-HANDOVER read by principal as first executed supervisory action",
+        "observed_at_utc": "2026-10-06T07:59:22.800628+00:00",
+        "actual_tool_event_timestamp": "UNKNOWN"
+      },
+      "native_aplexer_identity": null,
+      "pid": null,
+      "count_as_active_worker": false,
+      "boundaries": "Coordination evidence only; no product implementation/code QA/dispatch team/inherited mailbox. Existing heads retain implementation/review/refill ownership.",
+      "registered_at": "2026-10-06T07:54:36.121272+00:00",
+      "supervision_owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
+      "oversight_acceptance": "01a11038-a70c-7c93-b926-a4ca89de422f",
+      "in_reply_to": "01a11030-b7ab-7c20-a767-297ed3d88ecc",
+      "desktop_child_wake_restart": "UNPROVEN",
+      "updated_at": "2026-10-06T07:59:22.800628+00:00"
     }
   ],
   "projects": [
