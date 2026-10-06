@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T08:46:42.228032+00:00",
+  "updated_at": "2026-10-06T09:44:15.464580+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -79,7 +79,7 @@
           ],
           "launched_by": "zcode-independent 64049aa2",
           "launched_at": "2026-10-03T06:28:00Z",
-          "quota_evidence": "opencode-go route covered by quse go 2026-10-03T08:16CEST 97-98% remaining; gemini CLI admission failed (deprecated) — fallback recorded",
+          "quota_evidence": "opencode-go route covered by quse go 2026-10-03T08:16CEST 97-98% remaining; gemini CLI admission failed (deprecated) \u2014 fallback recorded",
           "first_tool_evidence": "research/zcode/independent/a05-adjudication/WORKLOG.md",
           "parent_team": "a01-harness"
         },
@@ -859,7 +859,7 @@
           "first_tool_evidence": "aplexer whoami --json",
           "memory_cap": "1500M",
           "completed_at": "2026-10-03T20:29:40+00:00",
-          "result": "VERDICT ACCEPT (commit 2f95503): 4 behavior-changing mutants killed (M1 boundary, M2 revocation truthiness, M4 non-zero grace, M5 determinism); equivalent mutant M3 survived (Date.parse produces NaN/finite, never ±Infinity). Vitest 91/91, node 29/29, clean unmasked typecheck."
+          "result": "VERDICT ACCEPT (commit 2f95503): 4 behavior-changing mutants killed (M1 boundary, M2 revocation truthiness, M4 non-zero grace, M5 determinism); equivalent mutant M3 survived (Date.parse produces NaN/finite, never \u00b1Infinity). Vitest 91/91, node 29/29, clean unmasked typecheck."
         },
         {
           "tag": "sb-reviewer-ui",
@@ -4469,7 +4469,10 @@
       "project_id": "quota-launcher",
       "assignment_ack": "01a11007-ddf5",
       "registered_at": "2026-10-06T07:07:11.372784+00:00",
-      "first_action": "Genuine native custody ACK received; Ant whoami/docs/startup read ACK observed; QL further trace pending."
+      "first_action": "Genuine native custody ACK received; Ant whoami/docs/startup read ACK observed; QL further trace pending.",
+      "custody_state": "retired_after_independently_preserved_manual_restore",
+      "retired_at": "2026-10-06T09:44:15.464580+00:00",
+      "successor_session_id": "0f125477-96a0-4474-b516-bd90ea78872d"
     },
     {
       "native_actor_ref": "8c65c561",
@@ -4660,6 +4663,22 @@
       "observed_state": "Actualmodel firsttool verified at supplied08:45checkpoint",
       "registered_at": "2026-10-06T08:46:42.228032+00:00",
       "scope": "launcher-task-paths-normalization"
+    },
+    {
+      "session_id": "0f125477-96a0-4474-b516-bd90ea78872d",
+      "tag": "ql-head-feedback-custody-20261006",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "project_id": "quota-launcher",
+      "assignment_ack": "01a11097-b4cf-72e2-9de3-c7f3f3a77fa4",
+      "registered_at": "2026-10-06T09:44:15.464580+00:00",
+      "first_action": "Genuine own whoami/handoff/native custody ACK observed; timer6859 armed, firing/rearm/useful next model task unverified",
+      "resumed_from_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "resumed_conversation": "962ee79c-665f-43f2-a809-365701243ddf",
+      "workload_pid": 1265407,
+      "worker_pid": 1265397
     }
   ],
   "projects": [
@@ -4744,14 +4763,14 @@
     {
       "id": "quota-launcher",
       "name": "Agent Quota Launcher",
-      "head_tag": "quota-launcher-head-custody-resume-20261006",
-      "head_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
-      "integration_owner": "quota-launcher-head-custody-resume-20261006",
+      "head_tag": "ql-head-feedback-custody-20261006",
+      "head_session_id": "0f125477-96a0-4474-b516-bd90ea78872d",
+      "integration_owner": "ql-head-feedback-custody-20261006",
       "principal_tags": [
         "codex-principal"
       ],
       "monitoring_provenance": "Codex C1637 ACK under human/OPERATING-MODEL",
-      "ownership_state": "Genuine received custody ACK; actual delegate firsttools/runtime acceptance pending. Current20GiB hard/30GiB cleanup policy applies.",
+      "ownership_state": "Genuine received successor custody ACK; timer6859 armed; useful maintained model task/rearm/runtime gates not accepted. Blanket launcher/** lease NOT accepted.",
       "workspace": "/home/alexey/git/agent-quota-launcher",
       "first_action": {
         "path": "/home/alexey/git/agent-quota-launcher/.local/head-first-action.json",
@@ -4777,10 +4796,16 @@
           "integration_owner": "quota-launcher-head",
           "ownership_state": "Genuine current head ACK and first native tools verified; last observed turn ended/idle. New launches/growth held while root below50GiB. Project head owns worker/reviewer delegation; principal monitors big picture, no code review.",
           "head_assignment_ack": "01a10c4d-0922-71d0-a079-611bfd473e8e"
+        },
+        {
+          "head_tag": "quota-launcher-head-custody-resume-20261006",
+          "head_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+          "integration_owner": "quota-launcher-head-custody-resume-20261006",
+          "ownership_state": "Genuine received custody ACK; actual delegate firsttools/runtime acceptance pending. Current20GiB hard/30GiB cleanup policy applies."
         }
       ],
       "head_workspace": "/home/alexey/git/cloudflare-agent-git",
-      "head_assignment_ack": "01a11007-ddf5",
+      "head_assignment_ack": "01a11097-b4cf-72e2-9de3-c7f3f3a77fa4",
       "resumed_conversation": "962ee79c-665f-43f2-a809-365701243ddf",
       "updated_at": "2026-10-06T07:07:11.372784+00:00",
       "canonical_integration_custody": "Original protected canonical custody not released by silence; current head owns isolated work and requires genuine release/review before integration."

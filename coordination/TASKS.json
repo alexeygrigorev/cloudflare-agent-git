@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T08:55:36.332568+00:00",
+  "updated_at": "2026-10-06T09:44:15.464580+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -775,7 +775,7 @@
       ],
       "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
       "model": "gemini-3.1-pro-high",
-      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 · PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
+      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 \u00b7 PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
     },
     {
       "id": "publication-release-verification",
@@ -1209,7 +1209,7 @@
       "assignment_ack": "Launched per Desktop Orchestrator 12:50 Berlin and Codex Principal C1818 directives. Independent technical audit of container-and-patch-workflows.md, examining production container/microVM paradigms (OpenHands, SWE-bench, Devin, Daytona, Modal, E2B), network/credential egress boundaries, single-synthesizer and worktree integration patterns, and unsteered buyer adoption guidance.",
       "next_action": "Independent review completed in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md (verdict: BOUNDED ACCEPTANCE). Deliverables landed on origin/main; findings ready for principal integration.",
       "acceptance": "Independent review deliverable in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md with clear verdict, rigorous technical verification across all 10 evaluation dimensions, and clean publication guard.",
-      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE — TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
+      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE \u2014 TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
     },
     {
       "id": "ab-safe-main-restore",
@@ -5414,7 +5414,7 @@
       },
       "next_action": "QL commit a916090 delivers structured stream-json invocation and tool telemetry capture in task-units (187/187 tests pass); commit 8486acf accepted by Coord (8aa6505); commit a916090 submitted to Coord for distinct review. scale50-20 retry held until Coord code acceptance and root disk margin >= 50.5 GiB.",
       "blocked_on": [],
-      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "agent-quota-launcher commit a916090 (launcher/launch.py, launcher/task_units.py, tests/test_telemetry.py)",
         "agent-quota-launcher commit 8486acf (accepted by Coord in REV-QL-8486ACF-TMPDIR-REFILL-REVIEW.md)",
@@ -5439,7 +5439,7 @@
         "root-disk-below-50GiB-floor",
         "waiting-storage-floor-restoration"
       ],
-      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ],
@@ -5466,7 +5466,7 @@
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
-      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md",
         "research/antigravity/remote-autonomy-supervisor-contract-20261005.md",
@@ -5621,7 +5621,7 @@
         "root-disk-below-50GiB",
         "end-to-end-model-dispatch-held"
       ],
-      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md",
         "research/antigravity/reviews/REV-SUPERVISION-ANTI-SPOOFING-156752B.md"
@@ -5641,7 +5641,7 @@
       "deadline": "2026-10-05T16:30:00Z",
       "next_action": "Follow backward plan and verify real owner ACK, first tool, pinned evidence and next continuation trigger",
       "blocked_on": [],
-      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ]
@@ -5652,7 +5652,7 @@
       "owner_tag": "ant-head-operational-resume-20261005",
       "status": "completed",
       "assignment_ack": "01a10c50-f233-7fd0-9ab8-c19cfe2b3dbc",
-      "updated_at": "2026-10-05T18:01:50.972427+00:00",
+      "updated_at": "2026-10-06T09:32:29.347170+00:00",
       "next_action": "Integrated into agent-branches main, pushed to origin/main, verified remote SHA 1fa3ab9b91e288a4cabf0eee0477dbfc8fa470e8. Clean checkout demo runbook ready.",
       "deadline": "2026-10-06T07:00:00Z",
       "blocked_on": [],
@@ -5668,7 +5668,25 @@
       "verdict": "ACCEPTED",
       "reviewed_by": "distinct reviewer (INDEPENDENT-REVIEW-V2.md)",
       "remote_sha": "1fa3ab9b91e288a4cabf0eee0477dbfc8fa470e8",
-      "remote_verified": true
+      "remote_verified": true,
+      "checkpoint_history": [
+        {
+          "prior_commit": "1fa3ab9b91e288a4cabf0eee0477dbfc8fa470e8",
+          "prior_tests": "72/72 tests pass in 22.01s (including 11/11 in test_sync_git.py)",
+          "prior_verdict": "ACCEPTED",
+          "at": "2026-10-06T09:32:29.347170+00:00",
+          "scope": "Priorcompletedimplementation preserved; further remediation checkpoint not duplicate task"
+        }
+      ],
+      "latest_remediation_acceptance": {
+        "head_reply": "01a11083-a088-76c0-9403-fc040cdbb962",
+        "remediation_commit": "dc5946e6a06667ee2b1bef567f4c0456b6d91169",
+        "independent_audit_commit": "27d5b8a5c69c809096d94a0db4d0df7e4c35ae38",
+        "tests": "Headreported16sync/79repo",
+        "verdict": "ACCEPT",
+        "adoption_limit": "Isolateddogfooddemo; actualrealnewcomer adoption UNKNOWN",
+        "evidence_source": "Genuineheadoutcome principalreadACK; no principalcodeQA"
+      }
     },
     {
       "id": "ROLE-CONTRACT-STARTUP-20261005",
@@ -5751,7 +5769,7 @@
       "offered_to_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
       "status": "blocked",
       "assignment_ack": "01a10c73-bad4-74e1-a299-60b7b186a8dd-ACKED",
-      "updated_at": "2026-10-05T15:24:00Z",
+      "updated_at": "2026-10-06T09:32:29.347170+00:00",
       "handoff_id": "01a10c73-bad4-74e1-a299-60b7b186a8dd",
       "next_action": "Adapter reviewed and accepted on pin acc9932; worker launches held until root filesystem free space >= 50.0 GiB.",
       "blocked_on": [
@@ -5773,7 +5791,14 @@
       "code_diff": "git diff 5ee5207e..48ab4fb (+831 lines in coordination/ql_task_unit_adapter.py and tests/test_ql_task_unit_adapter.py)",
       "tests": "36/36 passed",
       "reviewer_verdict": "ACCEPT",
-      "receiver_ack": "01a10ca7-e123-7a01-bfba-8647e924a329-ACKED"
+      "receiver_ack": "01a10ca7-e123-7a01-bfba-8647e924a329-ACKED",
+      "full_adoption_gate": "OPEN",
+      "principal_evidence_correction": {
+        "source_receipt": "2c317b6",
+        "evidence_level": "LocalPython syntheticpayload/objectreload; NOTindependentcodingagent/processrestart/exactlyonce",
+        "correction_message": "C2775 01a1108b-e94c",
+        "runtime_adoption": "unaccepted"
+      }
     },
     {
       "id": "AGENTS-FIX-VERIFY-RESUME-20261005",
@@ -6242,7 +6267,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-06T08:55:36.332568+00:00",
+      "updated_at": "2026-10-06T09:32:29.347170+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6315,8 +6340,8 @@
           "new_handoff": "01a11060-edea-71c1-91b6-d5d469627eb6"
         },
         "quota_launcher": {
-          "session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
-          "ack": "01a11007-ddf5"
+          "session_id": "0f125477-96a0-4474-b516-bd90ea78872d",
+          "ack": "01a11097-b4cf-72e2-9de3-c7f3f3a77fa4"
         },
         "coordination": {
           "session_id": "9174f03c-6f49-458f-ab91-dc176c03330a",
@@ -6486,7 +6511,7 @@
         "acceptance": "Busyhead reviewpolling when delivered, NOTidlewake or permanentcallback acceptance",
         "fired_at_utc": "2026-10-06T08:48:14Z",
         "system_delivery_at_utc": "2026-10-06T08:48:15Z",
-        "head_model_activity_utc": "08:48:15–08:48:50"
+        "head_model_activity_utc": "08:48:15\u201308:48:50"
       },
       "ant_distinct_review_observation": {
         "actor": "b3752886-14cd-498a-a5e8-c3f35445f3b8",
@@ -6520,7 +6545,43 @@
       "ql_next_product_request": {
         "message": "01a1106b-7a90-7920-97ba-cd0c0b5a0b9d",
         "ack": "pending"
-      }
+      },
+      "ten_contracts_state": "Preparedonly; headACK/provider/admission pending, NOTexecutableREADY",
+      "ql_current_delivery_guard": {
+        "state": "FreshscreenfeedbackMENU",
+        "input": "none",
+        "rearm": "Noneobserved since08:21; no forcedinput"
+      },
+      "ant_callback_observation": {
+        "timer": "10349",
+        "fired_at_utc": "2026-10-06T09:30:45Z",
+        "part_a_read_at_utc": "2026-10-06T09:30:59Z",
+        "part_b_read_at_utc": "2026-10-06T09:31:03Z",
+        "acceptance_limit": "Actualcontractreads; usefulworkerdispatch andtwoabsentcycles notproved"
+      },
+      "custody_history": [
+        {
+          "quota_launcher": {
+            "session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+            "ack": "01a11007-ddf5"
+          },
+          "superseded_at": "2026-10-06T09:44:15.464580+00:00"
+        }
+      ],
+      "oversight_observations": [
+        {
+          "at_utc": "2026-10-06T09:44:15.464580+00:00",
+          "source": "Genuine QL custodyACK01a11097-b4cf principalreadACK; Ant01a11098; principalC2782",
+          "ql_successor": "0f125477-96a0-4474-b516-bd90ea78872d",
+          "native_timer": "6859 armed; firing/rearming unknown",
+          "scope_limit": "Only old cli/store leases retained; blanket launcher/** NOT accepted, task_units.py+narrowtest release requested Ant pendingACK",
+          "ant_metadata_review_commit": "5e55b5dcfc7750ee5f7a624edb7e590ed63a66d0",
+          "acceptance_limit": "Three head-authored A outputs independently metadata-validated with qualifications; process-only bus not coding-agent adoption",
+          "finished_model_actor": "aa5d68ca first09:40:18 exit0 awaitingreview Gitstatusrouteaudit; finished notACTIVE or substantialadoption",
+          "zai_task_failure": "t-audit-tracker-summary-c2779 missing ZCode executable; notquota; QLrepair proposed awaitingAnt moduleleaseACK",
+          "runtime_gate": "OPEN; no useful model repair task or automatic wake claimed"
+        }
+      ]
     },
     {
       "id": "ROLE-FAILOVER-AUTHORITY-20261006",
@@ -6613,9 +6674,9 @@
       "title": "Quota Launcher epoch validation and consumer fencing on role failover",
       "status": "queued",
       "created_at": "2026-10-06T07:30:57.015180+00:00",
-      "updated_at": "2026-10-06T07:34:01.054855+00:00",
-      "owner": "quota-launcher-head-custody-resume-20261006",
-      "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "updated_at": "2026-10-06T09:44:15.464580+00:00",
+      "owner": "ql-head-feedback-custody-20261006",
+      "owner_session_id": "0f125477-96a0-4474-b516-bd90ea78872d",
       "reviewer": "agent-coordination-head-custody-resume-20261006 delegates distinct reviewer (actual actor pending)",
       "scope": "Accepted authority API and launch-intent schema; validate epoch at durable enqueue effect, dedup intents, fresh provider eligibility, confirm model first tools",
       "dependencies": [
@@ -6630,7 +6691,16 @@
       "source_proposal": "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md",
       "proposed_checkpoint": "Owner ACK and scoped first-action/checkpoint receipt after current dependency readiness; no deadline invented.",
       "operating_constraints": "Current20GiB hard projected-growth floor; below30GiB continue eligible admission with one bounded deduplicated cleanup actor. Desktop existing automation handoff received; remote useful continuation remains separately unaccepted. Freshprovider/privacy/quota/containment/Rust/spend gates retained.",
-      "owner_tag": "quota-launcher-head-custody-resume-20261006"
+      "owner_tag": "ql-head-feedback-custody-20261006",
+      "owner_history": [
+        {
+          "owner": "quota-launcher-head-custody-resume-20261006",
+          "owner_tag": "quota-launcher-head-custody-resume-20261006",
+          "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+          "superseded_at": "2026-10-06T09:44:15.464580+00:00",
+          "new_custody_ack": "01a11097-b4cf-72e2-9de3-c7f3f3a77fa4"
+        }
+      ]
     },
     {
       "id": "ROLE-FAILOVER-INDEPENDENT-WATCHERS-20261006",
@@ -6961,9 +7031,9 @@
       "team_id": "quota-launcher",
       "status": "queued",
       "created_at": "2026-10-06T08:29:59.543074+00:00",
-      "updated_at": "2026-10-06T08:32:55.474336+00:00",
-      "owner_tag": "quota-launcher-head-custody-resume-20261006",
-      "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "updated_at": "2026-10-06T09:44:15.464580+00:00",
+      "owner_tag": "ql-head-feedback-custody-20261006",
+      "owner_session_id": "0f125477-96a0-4474-b516-bd90ea78872d",
       "assignment_ack": null,
       "scope": "Productintake pending headselection: safely prepare declared task scratch beforeadmission; verify bounds/ownership and adddistinctnegativecases. No fakeacceptedfilelease.",
       "source_message": "01a11054-0226-7a20-9bea-5720a6cf48c5",
@@ -6979,7 +7049,17 @@
           "assignment_ack": null,
           "state": "pending headselection/ACK; no duplicateinfrastructureteam"
         }
-      ]
+      ],
+      "owner_history": [
+        {
+          "owner": null,
+          "owner_tag": "quota-launcher-head-custody-resume-20261006",
+          "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+          "superseded_at": "2026-10-06T09:44:15.464580+00:00",
+          "new_custody_ack": "01a11097-b4cf-72e2-9de3-c7f3f3a77fa4"
+        }
+      ],
+      "owner": "ql-head-feedback-custody-20261006"
     },
     {
       "id": "launcher-scratch-path-preparation",
