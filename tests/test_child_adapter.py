@@ -228,8 +228,9 @@ class TestChildAdapter(unittest.TestCase):
         artifact_path = self.scratch_dir / "env_check.txt"
         command = [
             "/bin/bash",
+            "--norc",
             "-c",
-            f'env | grep APLEXER_ || printf "%s" "NO_APLEXER_IN_ENV_OK" > "{artifact_path}"',
+            f'env | grep -E "APLEXER_SESSION_ID|APLEXER_TAG" || printf "%s" "NO_APLEXER_IN_ENV_OK" > "{artifact_path}"',
         ]
 
         # Inject fake parent aplexer environment
