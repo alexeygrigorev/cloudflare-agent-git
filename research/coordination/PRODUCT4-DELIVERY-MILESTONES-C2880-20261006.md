@@ -106,6 +106,28 @@ Under authoritative directives C2880 and parent governance, the Coordination Hea
 
 ---
 
+### Milestone 4: `coord-ql-consumer-fencing` (C2905 / C2911)
+- **Objective**: Implement and independently verify QL consumer fencing, authority epoch validation at mutation/launcher commit (`RoleAuthority.authorize`), head credential rejection (`reject_head_cred_inheritance`), launch intent deduplication via guarded effects (`ql-task:...`), and gated role replacement startup with caller activation verification.
+- **Implementation Scope**:
+  - `coordination/ql_consumer_fencing.py`: +206 insertions (`QLConsumerFencing`, `reject_head_cred_inheritance`, `Fenced`)
+  - `tests/test_ql_consumer_fencing.py`: +439 insertions (6 comprehensive tests covering valid enqueue, deposed principal fencing, deduplication, head.cred rejection, gated replacement, and epoch validation)
+- **Test Results**: 6/6 tests passed in 2.52s; 77/77 full suite tests passed in 15.66s.
+- **Distinct Independent Review**:
+  - **Reviewer**: Subagent `e02b7e33-873c-4e8c-bf69-f28608f4d14f` ("Coord QL Consumer Fencing Reviewer")
+  - **Verdict**: **ACCEPT**
+  - **Report**: [`reviews/REV-COORD-QL-CONSUMER-FENCING-C2905.md`](file:///home/alexey/git/agent-coordination/reviews/REV-COORD-QL-CONSUMER-FENCING-C2905.md) (SHA-256: `46b9eef08a557f317e7c8f489e60976e3c5dcbcdc5ec174bd12f48f1edbd092d`)
+- **Commit & Git Pins**:
+  - **Baseline Parent**: `a2b126f`
+  - **Pinned Implementation & Review Commit**: `db48a5a5a9a75fc6ccfac5a16181ddb3e07a22df`
+  - **Exact Tree Hash**: `54b8d5843023342b6fe09cbd1a7759cb15df533e`
+- **Launcher Verification**:
+  - Launcher Task ID: `t-coord-ql-consumer-fencing-c2905` (`status: accepted`)
+  - Review Task ID: `t-coord-ql-consumer-fencing-review-c2905` (`status: accepted`)
+- **Remote Push**: Pushed to `git@github.com:alexeygrigorev/agent-coordination.git` on branch `codex/role-failover-20261006` (`a2b126f..db48a5a`).
+- **Handoff to QL Head**: Call contract and immutable pin dispatched to `ql-head-feedback-custody-20261006` (`01a11240-9662-7b20-b010-ea9e90ac5e74`) for runtime launcher integration.
+
+---
+
 ## 3. Physical Boundary Status: Windows Desktop Integration
 
 ---
