@@ -2051,3 +2051,12 @@ C2861 headmessages01a1114b-adce/adfb andC2863ready01a1114d-636c/63b8 were genuin
 QL genuine01a11153-8f6e accepts pilotlaunch; independent administrative helper verified maintained t-ql-storagebox-pilot-c2861 GeminiProHigh actor06801160-eb73-4648-bca1-2bef6b6e05b5 firstmodeltool viewing.gitpointer13:07:22UTC. Actualcwd/home/alexey/storagebox/worktrees/ql-pilot-storagebox-20261006, localNVMeGitmetadata throughpointer, remoteTMPDIR; unit3471487/768MiB100/invocation93b8dfe5943f419ba866ed1f7142ec0c. This is realbenchmarkmodelexecution, not productionimplementation or acceptedperformance result. Pilot outcome and distinctreview pending.
 
 Principal meaningfulcompletion→independentreview→measurednext allocation requests01a11154-bb7f(head)/bba8(root) establish nextownercheckpoint, not completion or newadmission. Ant fivePhase2unit claims remain head-reported; actualcross-readmodelstreams/peeragreement unknown. Exactreport2 bodyrecovery pending. Storage doc now distinguishes actualfirsttool from earlier ACK-only phase; no privateconnectioncredentials/hostname/key published. No duplicatepilot/team/source edits by helper.
+
+
+### C2874–C2876 exact scoped tracker reconciliation — 2026-10-06T13:25:17.703313+00:00
+
+CurrentQL0f genuinely accepts C(capacitystages)+D(dispatch/refill) in01a1115b-48ea, checkpoint13:30UTC. AtomicTASKS/TEAM update retains oldDa860/Cownership andhistoricalOct5observations; datedzero/capcounts are notcurrentACTIVE/READY/RSS. Currentowners routeactualreview/refill andremotecheckout elapsedmetrics duringusefulwork. PilotlaunchACK01a11153-8f6e/boundedreceipt9 in01a11158-9d6d recorded; no missing reviewer/source identity or broaderperformanceadoption invented.
+
+PrincipalC2874 requestsA/B/E/12/21/31 IDs01a11160-30a6/316d/3190/31b7 areoffers, notheadACK. C2875 corrected exact12QLdedup versus21Busreply→nextuseful IDsb290/b2ce/b310, no scope silently conflated. C2876 nativeCoord917/C7delivery afterfreshcaptures refusedstrictNOTREADY; messagesremainqueued, no forcedinput/ACK/execution. QL/Antusefulworkcontinues. Latesthuman direction: agents/usefulremote worktrees with elapsedtimings alongside work, notstandalonebenchmark prerequisite. Nextowned event: actualaccepted task/modelFIRSTTOOL→pinnedartifact/distinctreview→measurednext allocation; scopes with missingACK must seekgenuineownership without completedredispatch or countmanufacture.
+
+Registrybeforeimages privatec2876-admin directory retained; this publicationcheckpoint onlyownedcodex/storage researchdocs, notsharedTASKS/TEAM/source files.
