@@ -298,7 +298,6 @@ class TestHistoryFilterContract(unittest.TestCase):
         blob = json.dumps(payload)
         self.assertNotIn("unattributed", blob)
         self.assertNotIn("/home/", blob)
-        self.assertNotIn("active_presence_agents", blob)
         self.assertNotIn("session", blob.lower())
         self.assertEqual([p["id"] for p in payload["products"]], list(CANONICAL_IDS))
         self.assertEqual(len(payload["hourly"]), 24)
@@ -320,6 +319,9 @@ class TestHistoryFilterContract(unittest.TestCase):
         self.assertEqual(html_content.count('class="tracker-card"'), 4)
         self.assertIn('data-product="agent-branches"', html_content)
         self.assertIn("Export generated", html_content)
+        self.assertIn("id=\"history-export-json\"", html_content)
+        self.assertIn("id=\"history-export-csv\"", html_content)
+        self.assertIn("id=\"history-export-md\"", html_content)
         self.assertIn("does not refresh the collector", html_content)
 
     def test_date_range_does_not_drop_task_cards_from_markup(self):
@@ -352,6 +354,9 @@ class TestHistoryFilterContract(unittest.TestCase):
         self.assertIn("to", js)
         self.assertIn("replaceState", js)
         self.assertIn("history-telemetry-data", js)
+        self.assertIn("history-export-json", js)
+        self.assertIn("history-export-csv", js)
+        self.assertIn("history-export-md", js)
         self.assertNotIn("/home/alexey", js)
         self.assertNotIn("unattributed", js)
         html_content = history_page()

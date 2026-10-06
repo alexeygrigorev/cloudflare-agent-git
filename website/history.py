@@ -140,6 +140,9 @@ def public_filter_payload(data: Mapping[str, Any]) -> Dict[str, Any]:
             cell = src.get(pid) or {}
             products[pid] = {
                 "observation_status": cell.get("observation_status") or "unobserved",
+                "coverage_fraction": cell.get("coverage_fraction"),
+                "active_presence_agents": cell.get("active_presence_agents"),
+                "active_working_agents": cell.get("active_working_agents"),
                 "presence_hours": cell.get("presence_hours"),
                 "sampled_working_hours": cell.get("sampled_working_hours"),
                 "tokens": tokens_for_bucket(data, pid, idx),
@@ -650,6 +653,9 @@ def history_page() -> str:
           <span class="history-bound-utc" id="history-to-utc">{E(to_utc)}</span>
         </div>
         <button type="button" class="history-reset" id="history-reset">Reset</button>
+        <button type="button" class="history-reset" id="history-export-json">JSON</button>
+        <button type="button" class="history-reset" id="history-export-csv">CSV</button>
+        <button type="button" class="history-reset" id="history-export-md">Markdown</button>
       </div>
       <p class="history-source">{E(source_stamp)}</p>
       <noscript><p class="history-noscript">Product and hour filters need JavaScript. This page shows the full 24-hour export without them.</p></noscript>

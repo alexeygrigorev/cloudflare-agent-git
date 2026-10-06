@@ -2062,7 +2062,9 @@
       "updated_at": "2026-10-06T00:37:00.000000+00:00",
       "next_action": "Delivered and independently accepted",
       "acceptance": "Realprivatevisibility/mainSHA/remoteclonetree/fsck/platformtaskreceipt; secrets/caches excluded.",
-      "executor_ids": ["d6be5aa1-bc52-4289-bbb8-23b5a23b9e36"],
+      "executor_ids": [
+        "d6be5aa1-bc52-4289-bbb8-23b5a23b9e36"
+      ],
       "owned_paths": [],
       "evidence_paths": [
         "research/antigravity/reviews/REV-COORD-PRIVATE-BACKUP-DOGFOOD-20261006.md"
@@ -4475,8 +4477,8 @@
       "owner_tag": "agent-coordination-head-gemini",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": true,
-      "status": "ready",
-      "updated_at": "2026-10-05T15:42:00Z",
+      "status": "accepted",
+      "updated_at": "2026-10-06T01:20:19.093043+00:00",
       "title": "Scope/credential misuse independent review",
       "source": "experiment/human-cross-computer-product-20261004.txt",
       "acceptance": "existing busauth boundary, sameuser caveat, no helperhead spoof; narrow concrete negatives",
@@ -4486,7 +4488,9 @@
       "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD",
       "owner_session_id": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab",
       "assignment_ack": "8d4c026c-head-acceptance-20261005",
-      "first_action": "Bounded in-session verification of FileBus CLI vocabulary and invariants; zero worker launches while host root disk < 50.0 GiB"
+      "first_action": "Bounded in-session verification of FileBus CLI vocabulary and invariants; zero worker launches while host root disk < 50.0 GiB",
+      "acceptance_evidence": "research/antigravity/reviews/REV-SCALE50-30-SCOPE-CREDENTIAL-REVIEW-20261006.md (18/18 tests passing, busauth boundary evaluated, sameuser caveat verified)",
+      "reviewer": "ant-head-continuation-resume-20261005"
     },
     {
       "id": "scale50-31",
@@ -4702,8 +4706,8 @@
       "owner_tag": "codex-principal",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": false,
-      "status": "ready",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "status": "blocked",
+      "updated_at": "2026-10-06T01:20:19.093043+00:00",
       "title": "Candidate private-service integration plan",
       "source": "experiment/human-usable-task-tracker-20261005.txt",
       "acceptance": "exactcanonical249d086 baseline/rollback/privateport8766 ownership, no livewrites untilc7ACK",
@@ -4711,7 +4715,8 @@
       "write_scope": "/home/alexey/git/agent-dashboard/.local/scale50/scale50-41/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Remediate INTEGRATION-PLAN.md to specify non-destructive rollback branch, 127.0.0.1 loopback only, explicit c7 ACK governance gate, and hourly schema preservation.",
+      "acceptance_evidence": "REJECTED in research/antigravity/reviews/REV-SCALE50-41-INTEGRATION-PLAN-20261006.md (failed baseline rollback safety, 127.0.0.1 binding, c7 ACK milestone condition, and telemetry schema preservation)"
     },
     {
       "id": "scale50-42",
@@ -4991,8 +4996,8 @@
       "owner_tag": "codex-principal",
       "proposed_execution_head": "public-journal-site",
       "ownership_ack": false,
-      "status": "blocked",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "status": "accepted",
+      "updated_at": "2026-10-06T01:20:19.093043+00:00",
       "title": "Download filtered JSON/CSV implementation",
       "source": "experiment/human-public-hourly-dashboard-history-20261005.txt",
       "acceptance": "accepted design2b only; correctly selected product/hour export with privacy/CSV injection controls",
@@ -5002,7 +5007,9 @@
       "write_scope": "/home/alexey/git/cloudflare-agent-git/.local/scale50/scale50-52/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD",
+      "acceptance_evidence": "research/antigravity/reviews/REV-SCALE50-52-DOWNLOAD-FILTERED-EXPORT-20261006.md (24/24 tests passing, client-side JSON/CSV/Markdown export, CSV injection guards)",
+      "reviewer": "ant-head-continuation-resume-20261005"
     },
     {
       "id": "scale50-53",
@@ -5011,8 +5018,8 @@
       "owner_tag": "codex-principal",
       "proposed_execution_head": "public-journal-site",
       "ownership_ack": false,
-      "status": "ready",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "status": "blocked",
+      "updated_at": "2026-10-06T01:20:19.093043+00:00",
       "title": "History filter independent mobile QA",
       "source": "experiment/human-public-hourly-dashboard-history-20261005.txt",
       "acceptance": "actual390/1440 browser controls, no-JS and shareableURL with exact pin; independent of author",
@@ -5020,7 +5027,8 @@
       "write_scope": "/home/alexey/git/cloudflare-agent-git/.local/scale50/scale50-53/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Remediate Playwright script to test ?product= parameter, update screenshots to reflect accurate active/inactive states, clean temporary scope artifacts.",
+      "acceptance_evidence": "REJECTED in research/antigravity/reviews/REV-SCALE50-53-MOBILE-QA-20261006.md (test script tested ?products= instead of ?product=, contradictory report claims, scope violations)"
     },
     {
       "id": "scale50-54",

@@ -451,6 +451,14 @@
   }
 
   function updateEmpty(result) {
+    var btnJson = document.getElementById('history-export-json');
+    var btnCsv = document.getElementById('history-export-csv');
+    var btnMd = document.getElementById('history-export-md');
+    var disable = !!result.emptyReason;
+    if (btnJson) btnJson.disabled = disable;
+    if (btnCsv) btnCsv.disabled = disable;
+    if (btnMd) btnMd.disabled = disable;
+
     if (!emptyEl || !resultsEl) return;
     if (!result.emptyReason) {
       emptyEl.hidden = true;
@@ -544,4 +552,138 @@
 
   page.classList.add('is-enhanced');
   apply(parseQuery(window.location.search), true);
+  var btnJson = document.getElementById('history-export-json');
+  var btnCsv = document.getElementById('history-export-csv');
+  var btnMd = document.getElementById('history-export-md');
+
+  function getExportFilename(state, ext) {
+    var pids = state.products.length === CANONICAL.length ? 'all' : state.products.join('-');
+    var f = state.from.replace(/[:-]/g, '').replace('T', '_').replace('Z', '');
+    var t = state.to.replace(/[:-]/g, '').replace('T', '_').replace('Z', '');
+    return 'hourly-history-' + f + '-' + t + '-' + pids + '.' + ext;
+  }
+
+  function downloadBlob(content, type, filename) {
+    var blob = new Blob([content], { type: type });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 100);
+  }
+
+  function csvEscape(val) {
+    if (val === null || val === undefined) return '';
+    var s = String(val);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1 || s.indexOf('\r') !== -1) {
+      s = '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  function generateJson(state, result) {
+    var exp = {
+      window: payload.window,
+      epistemic_policy: payload.epistemic_policy,
+      filter: {
+        products: state.products,
+        from: state.from,
+        to: state.to,
+        generated_at_utc: payload.generated_at_utc || new Date().toISOString(),
+        exported_at_utc: new Date().toISOString()
+      },
+      products: payload.products.filter(function (p) { return state.products.indexOf(p.id) !== -1; }),
+      hourly: result.buckets.map(function (b) {
+        var copy = {
+          bucket_index: b.bucket_index,
+          bucket_start_utc: b.bucket_start_utc,
+          bucket_end_utc: b.bucket_end_utc,
+          berlin_label: b.berlin_label,
+          products: {}
+        };
+        state.products.forEach(function (pid) {
+          if (b.products && b.products[pid]) {
+            copy.products[pid] = b.products[pid];
+          }
+        });
+        return copy;
+      }),
+      token_attribution: []
+    };
+    if (payload.token_attribution) {
+      payload.token_attribution.forEach(function (row) {
+        if (state.products.indexOf(row.product) !== -1) {
+          var b = hourly[row.bucket_index];
+          if (b && inRange(b, state.from, state.to)) {
+            exp.token_attribution.push(row);
+          }
+        }
+      });
+    }
+    downloadBlob(JSON.stringify(exp, null, 2), 'application/json', getExportFilename(state, 'json'));
+  }
+
+  function generateCsv(state, result) {
+    var cols = [
+      'bucket_index', 'bucket_start_utc', 'bucket_end_utc', 'berlin_label',
+      'product_id', 'product_name', 'observation_status', 'coverage_fraction',
+      'presence_hours', 'sampled_working_hours', 'active_presence_agents', 'active_working_agents'
+    ];
+    var lines = [cols.join(',')];
+    result.buckets.forEach(function (b) {
+      state.products.forEach(function (pid) {
+        var pName = NAMES[pid] || pid;
+        var c = (b.products && b.products[pid]) || {};
+        var row = [
+          b.bucket_index, b.bucket_start_utc, b.bucket_end_utc, b.berlin_label,
+          pid, pName, c.observation_status || 'unobserved',
+          c.coverage_fraction, c.presence_hours, c.sampled_working_hours,
+          c.active_presence_agents, c.active_working_agents
+        ];
+        lines.push(row.map(csvEscape).join(','));
+      });
+    });
+    downloadBlob(lines.join('\r\n'), 'text/csv;charset=utf-8', getExportFilename(state, 'csv'));
+  }
+
+  function generateMd(state, result) {
+    var lines = [
+      '# Filtered Hourly History Export', '',
+      '- **From:** ' + state.from,
+      '- **To:** ' + state.to,
+      '- **Products:** ' + state.products.map(function(id) { return NAMES[id] || id; }).join(', '),
+      '- **Generated:** ' + (payload.generated_at_utc || new Date().toISOString()),
+      '- **Exported:** ' + new Date().toISOString(),
+      ''
+    ];
+    var head = ['Hour'].concat(state.products.map(function(id) { return NAMES[id] || id; }));
+    var sep = ['---'].concat(state.products.map(function() { return '---'; }));
+    lines.push('| ' + head.join(' | ') + ' |');
+    lines.push('| ' + sep.join(' | ') + ' |');
+    result.buckets.forEach(function (b) {
+      var row = [b.berlin_label || ''];
+      state.products.forEach(function (pid) {
+        var c = (b.products && b.products[pid]) || {};
+        if (observedCell(c)) {
+          var ph = Number(c.presence_hours || 0).toFixed(1);
+          var wh = Number(c.sampled_working_hours || 0).toFixed(1);
+          row.push(ph + 'h / ' + wh + 'h');
+        } else {
+          row.push('-');
+        }
+      });
+      lines.push('| ' + row.join(' | ') + ' |');
+    });
+    lines.push('');
+    downloadBlob(lines.join('\n'), 'text/markdown;charset=utf-8', getExportFilename(state, 'md'));
+  }
+
+  if (btnJson) btnJson.addEventListener('click', function() { var s = readControls(); generateJson(s, compute(s)); });
+  if (btnCsv) btnCsv.addEventListener('click', function() { var s = readControls(); generateCsv(s, compute(s)); });
+  if (btnMd) btnMd.addEventListener('click', function() { var s = readControls(); generateMd(s, compute(s)); });
+
 })();
