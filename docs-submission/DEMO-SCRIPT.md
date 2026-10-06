@@ -53,7 +53,7 @@ the ASCII diagram from `prototype/README.md`.
 **On screen:** terminal. First `live/.dev.vars` (tokens redacted), then:
 
 ```sh
-bash live/run-demo.sh > live/run-3.log 2>&1 &
+bash live/run-demo.sh > live/run-3.log 2>&1
 ```
 
 then show the log as it steps through: sidecar health, `wrangler dev`,
