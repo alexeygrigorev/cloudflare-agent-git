@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T09:44:15.464580+00:00",
+  "updated_at": "2026-10-06T09:53:55.196560+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -6267,7 +6267,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-06T09:32:29.347170+00:00",
+      "updated_at": "2026-10-06T09:53:55.196560+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6580,6 +6580,42 @@
           "finished_model_actor": "aa5d68ca first09:40:18 exit0 awaitingreview Gitstatusrouteaudit; finished notACTIVE or substantialadoption",
           "zai_task_failure": "t-audit-tracker-summary-c2779 missing ZCode executable; notquota; QLrepair proposed awaitingAnt moduleleaseACK",
           "runtime_gate": "OPEN; no useful model repair task or automatic wake claimed"
+        },
+        {
+          "at_utc": "2026-10-06T09:53:55.196560+00:00",
+          "source": "Principal genuinely readACKed QL01a110a0-6958; Ant lease01a1109b-7358-73d0-8e31-c1a1889cc7d5; correctionC2784/01a1109f-7c5e",
+          "ql_head_attested_outcome": {
+            "implementer": "c21f (fullUUID unknown)",
+            "distinct_reviewer": "4032626b (fullUUID unknown)",
+            "artifact_sha256": "0327915415b19d45dd03faa2de41ad561bddaaac15800383c7c023afaffe309c",
+            "review_sha256": "93063d1183761c9415df6e54e66a65ca557ecc7b56c177a6b767f05235fb704a",
+            "acceptance": "Head-attested accepted; distinct-review receipt independently observed by principal as relayed, this admin helper did not inspect product code"
+          },
+          "ql_timer": {
+            "head_reported_fired": "7115 at09:51:38UTC",
+            "coalesced_cancelled": [
+              "6859",
+              "6916",
+              "6929"
+            ],
+            "cancellation_cause": "Deliberate head-owned coalescing; not framework failure",
+            "new_rearm": "7383 earlyTermination never; head-attested",
+            "runtime_limit": "Busy continuation is not idle-wake proof"
+          },
+          "ql_repair_custody": {
+            "released_by": "Ant01a1109b-7358",
+            "accepted_by": "QL01a110a0",
+            "scope": "launcher/task_units.py and narrow testpaths explicitly released/narrowed",
+            "execution": "Repair owner accepted; firstworker/retry still pending"
+          },
+          "ant_artifact": {
+            "model": "306bc (fullUUID unknown)",
+            "first_tool_at_utc": "2026-10-06T09:46:53Z",
+            "completed": "09:49UTC",
+            "commit": "95fd2bb",
+            "review_limit": "Cited6ffc final09:42 predates new artifact; independent review UNPROVEN, retain source only"
+          },
+          "scale_state": "BQL occupancy and Ant disjointREADONLY parallel firsttools pending; no artificial one-worker cap; stage10 unmet"
         }
       ]
     },
