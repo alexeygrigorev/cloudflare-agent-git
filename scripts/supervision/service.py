@@ -342,6 +342,9 @@ def active_heads(entities=None, spool=None, registry_raw=None):
                 for a in item.get('agents', []):
                     if a.get('role') == 'head' and a.get('tag') and a['tag'] not in ALL_KNOWN_PRINCIPALS and is_safe_identifier(a['tag']):
                         candidates.add(a['tag'])
+        for a in registry_raw.get('agents', []):
+            if a.get('role') == 'head' and a.get('tag') and a['tag'] not in ALL_KNOWN_PRINCIPALS and is_safe_identifier(a['tag']):
+                candidates.add(a['tag'])
 
     return sorted([tag for tag in candidates if tag not in excluded])
 
