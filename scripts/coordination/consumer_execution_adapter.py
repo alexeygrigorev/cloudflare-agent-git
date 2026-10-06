@@ -3,6 +3,11 @@
 
 Strict admission vs execution state separation, isolated worker unit spawn,
 artifact deliverable provenance, and zero fake ACTIVE state.
+
+Launcher alignment (C3032 follow-up): the default execution runner is
+LauncherRequestRunner, which admits and executes through the maintained
+Agent Quota Launcher request interface and polls status to a terminal
+state. The adapter never synthesizes a success result on its own.
 """
 
 from __future__ import annotations
@@ -13,7 +18,9 @@ import hashlib
 import json
 import logging
 import os
+import subprocess
 import sys
+import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -79,6 +86,120 @@ from coordination.host_interface import (
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_LAUNCHER_ROOT = os.environ.get(
+    "QL_LAUNCHER_ROOT", "/home/alexey/git/agent-quota-launcher"
+)
+DEFAULT_LAUNCHER_CONFIG_DIR = os.environ.get(
+    "QL_LAUNCHER_CONFIG_DIR",
+    os.path.join(os.path.expanduser("~"), ".config", "agent-quota-launcher"),
+)
+LAUNCHER_TERMINAL_STATES = ("accepted", "failed")
+
+
+class LauncherRequestRunner:
+    """Default execution runner backed by the maintained Agent Quota Launcher.
+
+    Supersedes the former synthesized-success fallback: every execution goes
+    through the real launcher request admission/validation/spawn interface
+    and blocks until launcher status reports a terminal launcher state
+    (accepted/failed). Missing goal/cwd, non-zero request exit, unparseable
+    output, a failed launcher task, or a poll-window expiry all raise instead
+    of fabricating success. payload.cwd is required fail-closed; no implicit
+    workspace is ever assumed.
+    """
+
+    def __init__(
+        self,
+        launcher_root: str | Path = DEFAULT_LAUNCHER_ROOT,
+        config_dir: str | Path = DEFAULT_LAUNCHER_CONFIG_DIR,
+        poll_interval_s: float = 10.0,
+        poll_window_s: float = 1800.0,
+        request_timeout_s: float = 120.0,
+        python_executable: str | None = None,
+    ) -> None:
+        self.launcher_root = str(Path(launcher_root).resolve())
+        self.config_dir = str(Path(config_dir).resolve())
+        if not os.path.isdir(self.launcher_root):
+            raise FileNotFoundError(f"launcher root not found: {self.launcher_root}")
+        self.poll_interval_s = float(poll_interval_s)
+        self.poll_window_s = float(poll_window_s)
+        self.request_timeout_s = float(request_timeout_s)
+        self.python_executable = python_executable or sys.executable
+
+    def _run(self, sub_args: list[str], timeout: float) -> dict[str, Any]:
+        cmd = [self.python_executable, "-m", "launcher", "--config-dir", self.config_dir] + sub_args
+        res = subprocess.run(cmd, cwd=self.launcher_root, capture_output=True, text=True, timeout=timeout)
+        if res.returncode != 0:
+            raise RuntimeError(
+                f"launcher {sub_args[0]} exited rc={res.returncode}: "
+                f"{(res.stderr or res.stdout or '').strip()[:400]}"
+            )
+        try:
+            return json.loads(res.stdout)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                f"launcher {sub_args[0]} produced non-JSON output: {res.stdout[:200]}"
+            ) from exc
+
+    def __call__(self, task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        goal = str(payload.get("goal") or payload.get("prompt") or "").strip()
+        if not goal:
+            raise ValueError("launcher runner requires payload.goal or payload.prompt")
+        cwd = payload.get("cwd") or payload.get("target_worktree")
+        if not cwd:
+            raise ValueError(
+                "launcher runner requires payload.cwd (fail-closed, no implicit workspace)"
+            )
+
+        req_args = ["request", "--goal", goal, "--cwd", str(cwd)]
+        profile = payload.get("profile")
+        if profile:
+            req_args += ["--profile", str(profile)]
+        timeout = payload.get("timeout")
+        if timeout:
+            req_args += ["--timeout", str(float(timeout))]
+        for path in payload.get("paths") or []:
+            req_args += ["--paths", str(path)]
+        if payload.get("target_commit"):
+            req_args += ["--target-commit", str(payload["target_commit"])]
+            req_args += ["--target-worktree", str(payload.get("target_worktree") or cwd)]
+
+        request_res = self._run(req_args, timeout=self.request_timeout_s)
+        launcher_task_id = str(request_res.get("task_id") or "")
+        if not launcher_task_id:
+            raise RuntimeError(f"launcher request returned no task_id: {str(request_res)[:200]}")
+
+        deadline = time.monotonic() + self.poll_window_s
+        last_state: str | None = None
+        status_res: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            status_res = self._run(["status", "--id", launcher_task_id], timeout=self.request_timeout_s)
+            last_state = str(status_res.get("state") or "")
+            if last_state in LAUNCHER_TERMINAL_STATES:
+                break
+            time.sleep(self.poll_interval_s)
+
+        if last_state not in LAUNCHER_TERMINAL_STATES:
+            raise RuntimeError(
+                f"launcher task {launcher_task_id} still in state {last_state!r} after "
+                f"{self.poll_window_s:.0f}s poll window"
+            )
+        if last_state == "failed":
+            raise RuntimeError(
+                f"launcher task {launcher_task_id} failed: {str(status_res.get('reason'))[:300]}"
+            )
+        return {
+            "status": "completed",
+            "launcher_task_id": launcher_task_id,
+            "controller_unit": request_res.get("controller_unit"),
+            "profile": request_res.get("profile"),
+            "source_receipt": request_res.get("source_receipt"),
+            "launcher_request": request_res,
+            "launcher_status": status_res,
+            "consumer_task_id": task_id,
+            "executed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+
 
 @dataclass
 class ExecutionUnit:
@@ -94,6 +215,9 @@ class ExecutionUnit:
     artifact_path: str | None = None
     artifact_sha256: str | None = None
     error: str | None = None
+    launcher_task_id: str | None = None
+    controller_unit: str | None = None
+    source_receipt: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if not self.unit_id:
@@ -113,6 +237,7 @@ class ConsumerExecutionAdapter:
         admission: MultiHostAdmission | None = None,
         events_dir: Path | str | None = None,
         artifacts_dir: Path | str | None = None,
+        launcher_runner: Callable[[str, dict[str, Any]], dict[str, Any]] | None = None,
     ) -> None:
         if isinstance(cred, (str, Path)):
             cred_str = str(cred).strip()
@@ -162,6 +287,7 @@ class ConsumerExecutionAdapter:
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         self.units: dict[str, ExecutionUnit] = {}
+        self.launcher_runner = launcher_runner or LauncherRequestRunner()
 
     def admit_task(self, msg: dict[str, Any]) -> ExecutionUnit:
         """Admit task with strict validation and reservation state separation.
@@ -275,7 +401,6 @@ class ConsumerExecutionAdapter:
         """Spawn isolated worker unit, execute task, and write deliverable artifact."""
         unit.state = "running"
         unit.started_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        unit.pid = os.getpid()
 
         emit_host_event(
             event_type="task_spawned",
@@ -292,19 +417,27 @@ class ConsumerExecutionAdapter:
         )
 
         try:
-            if runner_fn is not None:
-                result = runner_fn(unit.task_id, payload)
-            else:
-                result = {
-                    "task_id": unit.task_id,
+            runner = runner_fn if runner_fn is not None else self.launcher_runner
+            result = runner(unit.task_id, payload)
+            if isinstance(result, dict):
+                unit.launcher_task_id = result.get("launcher_task_id") or unit.launcher_task_id
+                unit.controller_unit = result.get("controller_unit") or unit.controller_unit
+                if isinstance(result.get("source_receipt"), dict):
+                    unit.source_receipt = result["source_receipt"]
+            emit_host_event(
+                event_type="task_launched",
+                device_id=unit.device_id,
+                task_id=unit.task_id,
+                details={
                     "unit_id": unit.unit_id,
-                    "device_id": unit.device_id,
                     "action": action,
-                    "payload": payload,
-                    "status": "success",
-                    "executed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "deliverable": f"Artifact deliverable for {unit.task_id}",
-                }
+                    "state": unit.state,
+                    "launcher_task_id": unit.launcher_task_id,
+                    "controller_unit": unit.controller_unit,
+                    "source_receipt": unit.source_receipt,
+                },
+                events_dir=self.events_dir,
+            )
 
             artifact_file = self.artifacts_dir / f"{unit.task_id}.json"
             if isinstance(result, (dict, list)):
