@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T08:29:59.543074+00:00",
+  "updated_at": "2026-10-06T08:34:14.675675+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -6199,7 +6199,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-06T08:29:59.543074+00:00",
+      "updated_at": "2026-10-06T08:34:14.675675+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6334,7 +6334,7 @@
         "current_head": "513eab03-fccb-43e3-bcf0-5649f03b5425"
       },
       "coordination_review_observation": "CurrentCoord9174 head-owned distinctreviewerfirsttool observed nativecaption, two/threehelpers UUIDsunknown; no currentcount inferred.",
-      "continuity_gate": "Autonomouscallback/twoabsent usefulcyclesOPEN",
+      "continuity_gate": "AutonomoususefulcyclesOPEN",
       "desktop_coordination_helper": {
         "actor": "/root/scale50_coordination",
         "parent_chat_id": "01a11004-f49b-7ee1-a01c-49d31e8c7231",
@@ -6373,11 +6373,11 @@
       },
       "latest_maintained_census": {
         "active": 1,
-        "worker_pid": 2244128,
-        "controller_pid_excluded": 2242081,
+        "worker_pid": 2401291,
+        "controller_pid_excluded": 2398901,
         "whole_portfolio": "UNKNOWN",
         "executable_ready": "UNKNOWN",
-        "source": "Principal actual retry/firstmodeltool observations"
+        "source": "Actual08:32:57 firstmodeltool observed perprincipal"
       },
       "ql_native_cycles": {
         "timer5517": "Nativecontinuation -> localGitcommit12f9bde",
@@ -6415,7 +6415,9 @@
         },
         "source": "Actual checkpoint supplied by principal; helper has no native mailbox authority"
       },
-      "root_actual_outcome": "01a11054-bd4f-7ef0-8faf-3ab3e794b02d"
+      "root_actual_outcome": "01a11058-c4c2-70f1-98e4-e8d9ff34d6f4",
+      "review_recovery_state": "RecoveredtechnicalACCEPT plusactualDBheadaccept08:31:26 verified08:32:10; sourceonlyruntimegateOPEN",
+      "next_real_task": "Scratchpreparation actualrunning; distinctreview/leasevalidation and realcompletion-refill next"
     },
     {
       "id": "ROLE-FAILOVER-AUTHORITY-20261006",
@@ -6782,8 +6784,8 @@
       "owner": "quota-launcher-head-custody-resume-20261006",
       "owner_tag": "quota-launcher-head-custody-resume-20261006",
       "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
-      "status": "running",
-      "updated_at": "2026-10-06T08:29:59.543074+00:00",
+      "status": "done",
+      "updated_at": "2026-10-06T08:33:21.052725+00:00",
       "scope": "Distinctread-only source watchercommit b1a191a review; runtime acceptance separate.",
       "reviewer": "35d129e9-9978-4236-99c4-64f7f938f55a",
       "model": "gemini-3.1-pro-high",
@@ -6814,9 +6816,33 @@
           "count_controller_as_worker": false
         }
       ],
-      "review_verdict": "pending",
+      "review_verdict": "ACCEPT",
       "existing_artifact_note": ".local/audit/REV-INDEPENDENT-WATCHERS-B1A191A.md timestamp08:26 headwritten; NOT newreviewer evidence.",
-      "acceptance": "Pending actual distinctreviewer verdict/artifact; no runtime acceptance."
+      "acceptance": "Pending actual distinctreviewer verdict/artifact; no runtime acceptance.",
+      "head_acceptance": "Actual DB headaccepted08:31:26UTC independently verified08:32:10UTC",
+      "model_completed_at_utc": "2026-10-06T08:30:29Z",
+      "launcher_db_state": "completed-awaiting-review",
+      "review_output_recovery": {
+        "reviewer": "35d129e9-9978-4236-99c4-64f7f938f55a",
+        "genuine_output_tools": [
+          43,
+          47
+        ],
+        "output_times_utc": [
+          "2026-10-06T08:29:55Z",
+          "2026-10-06T08:30:14Z"
+        ],
+        "head_rm_f_at_utc": "2026-10-06T08:30:21Z",
+        "issue": "Report deletion/write race; native CodeContent preserved",
+        "restored_observed_at_utc": "2026-10-06T08:31:40Z",
+        "restored_bytes": 3567,
+        "restored_sha256": "7a66839004aaca4381fb8f5acd828ae68b9811cc9c24d67fea28788595c257b2",
+        "verification": "Independent metadatahelper exact equality to savedsteps43/47",
+        "earlier_disk_representation": "7cd1 prefix differs; NOTsame byte SHA",
+        "head_acceptance": "Actual DB08:31:26UTC verified08:32:10UTC; source technicalreview only",
+        "automatic_refill_acceptance": "not established"
+      },
+      "head_accepted_at_utc": "2026-10-06T08:31:26Z"
     },
     {
       "id": "QL-MISSING-DECLARED-SCRATCH-INTAKE-C2754-20261006",
@@ -6824,7 +6850,7 @@
       "team_id": "quota-launcher",
       "status": "queued",
       "created_at": "2026-10-06T08:29:59.543074+00:00",
-      "updated_at": "2026-10-06T08:29:59.543074+00:00",
+      "updated_at": "2026-10-06T08:32:55.474336+00:00",
       "owner_tag": "quota-launcher-head-custody-resume-20261006",
       "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
       "assignment_ack": null,
@@ -6832,7 +6858,73 @@
       "source_message": "01a11054-0226-7a20-9bea-5720a6cf48c5",
       "head_read_at_utc": "2026-10-06T08:28:28Z",
       "first_action": null,
-      "next_action": "Headselects implementer scope/lease, boundedpreparation/admission fix and distinctmissingpath/unsafeownership/budget negative review; no fixdelegate yet."
+      "next_action": "Headselects implementer scope/lease, boundedpreparation/admission fix and distinctmissingpath/unsafeownership/budget negative review; no fixdelegate yet.",
+      "related_feature_intakes": [
+        {
+          "source": "01a11057-10f9-7163-9ce3-9505b1549e8f",
+          "kind": "C2757 immutable actor output/typed extraction schema",
+          "scope": "Preserve actor-owned output; no deleting activewrites; typed extraction/provenance and safe scratch pre-admission",
+          "owner": "QL existinghead",
+          "assignment_ack": null,
+          "state": "pending headselection/ACK; no duplicateinfrastructureteam"
+        }
+      ]
+    },
+    {
+      "id": "launcher-scratch-path-preparation",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "owner": "quota-launcher-head-custody-resume-20261006",
+      "owner_tag": "quota-launcher-head-custody-resume-20261006",
+      "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "status": "running",
+      "created_at": "2026-10-06T08:33:21.052725+00:00",
+      "updated_at": "2026-10-06T08:34:14.675675+00:00",
+      "scope": "Actual headsubmitted substantive launcher resourcehandling+tests scratchpreparation task; exactownedpath metadata/lease requires verification beforeedit claim.",
+      "provider": "Antigravity",
+      "worker_memory_max": "768MiB",
+      "timeout_seconds": 300,
+      "submission_evidence": "Principal verified actual currenthead submission; exactevent timestamp not supplied",
+      "first_action": {
+        "at_utc": "2026-10-06T08:32:57Z",
+        "kind": "Actual firstmodel viewresources.py/test_resources.py"
+      },
+      "reviewer": null,
+      "acceptance": "Independent reviewer and negative tests after realimplementation; not yet assigned or accepted.",
+      "execution_state": "One actualmodelworker running; distinctfixreview not launched/notdone",
+      "related_intake": "QL-MISSING-DECLARED-SCRATCH-INTAKE-C2754-20261006",
+      "worker_id": "eb85270e-2ed0-4b24-adbb-26bc7b91b866",
+      "launch_attempts": [
+        {
+          "manual_submit_at_utc": "2026-10-06T08:31:41Z",
+          "run_at_utc": "2026-10-06T08:32:22Z",
+          "failure": "Same missingtasktmp, failedcontroller not successful outcome"
+        },
+        {
+          "prepared_at_utc": "2026-10-06T08:32:40Z",
+          "retry_at_utc": "2026-10-06T08:32:46Z",
+          "worker_pid": 2401291,
+          "worker_slice": "app.slice",
+          "worker_memory_max": "768MiB",
+          "worker_tasks_max": 100,
+          "controller_pid": 2398901,
+          "controller_memory_max": "256MiB",
+          "controller_tasks_max": 100,
+          "count_controller_as_worker": false
+        }
+      ],
+      "launcher_db_observation": {
+        "state": "starting",
+        "lease_provider": "antigravity",
+        "at_utc": "2026-10-06T08:32:53Z"
+      },
+      "owned_path_metadata_concern": {
+        "representation": "Two ownedpaths stored as onecommajoinedstring",
+        "valid_exact_lease": "UNPROVEN",
+        "overlap": "No actual writerconflict inferred",
+        "head_request": "01a11058-c47f-7a52-ac1f-4bd9eed6b113",
+        "required": "Actualleasecheck and distinct negativeoverlapreview"
+      }
     }
   ]
 }
