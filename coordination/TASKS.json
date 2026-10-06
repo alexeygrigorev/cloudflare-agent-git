@@ -4761,8 +4761,8 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": true,
-      "status": "in_progress",
-      "updated_at": "2026-10-05T17:17:18.342582+00:00",
+      "status": "accepted",
+      "updated_at": "2026-10-06T00:54:17Z",
       "title": "Unfamiliar launcher feature adoption",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "new independent actual task on platform, operation provenance and ordinaryGit rollback",
@@ -4772,13 +4772,9 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-44/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Subagent executing test_launcher_adoption.py and LAUNCHER-FEATURE-ADOPTION.md",
+      "next_action": "Evidence independently reviewed and accepted in research/antigravity/reviews/REV-SCALE50-44-LAUNCHER-ADOPTION-20261006.md. Test suite passing (8/8 OK in agent-branches/.local/scale50/scale50-44/test_launcher_adoption.py).",
       "first_action": "Claimed scope; subagent inspecting agent_branches client and launcher codebase for task-unit integration",
-      "active_subagent": {
-        "conversation_id": "5dbc568b-78c3-4761-b1fb-68bdae5448a4",
-        "role": "Launcher Feature Adopter",
-        "status": "running"
-      }
+      "audit_report": "research/antigravity/reviews/REV-SCALE50-44-LAUNCHER-ADOPTION-20261006.md"
     },
     {
       "id": "scale50-45",
