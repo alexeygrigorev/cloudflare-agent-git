@@ -57,6 +57,10 @@ export interface HttpRequest {
    * single-shot, which is why the signed path parses the raw text itself.
    */
   rawText?(): Promise<string>;
+  /** Best-effort client identity for the invalid-bearer rate limiter
+   * (Worker: cf-connecting-ip; node: socket remote address). Null when the
+   * runtime cannot tell — those callers share one conservative bucket. */
+  clientKey?: string | null;
 }
 
 /** Runtime-agnostic response (adapters serialize body as pretty JSON).
@@ -89,6 +93,9 @@ export interface RouterServices {
    * routes, exactly as before.
    */
   webhookAuth?: WebhookAuthConfig;
+  /** Invalid-bearer rate limiter (C-1441). Optional so minimal rigs stay
+   * valid; every real runtime injects one with clean defaults. */
+  rateLimiter?: BearerRateLimiter;
 }
 
 /**
@@ -220,6 +227,93 @@ function parseJsonBody(raw: string): ParsedBody {
   }
 }
 
+
+/**
+ * Bounded invalid-bearer rate limiter (C-1441): pure, HTTP-free defense
+ * against bearer-guessing floods. Tracks CONSECUTIVE 401 outcomes per
+ * client key; after `maxFailures` failures inside `windowMs` the client is
+ * blocked (the router answers 429 instead of 401) until the window from
+ * the FIRST failure expires. A successful authentication clears the count,
+ * so legitimate clients are never blocked. The tracked-client table is
+ * hard-capped with LRU eviction — a flood of spoofed/unique sources can
+ * evict other attackers' entries but can never grow memory.
+ */
+export interface BearerRateLimiterOptions {
+  /** Tracked-client table cap; the least-recently-seen entry is evicted. */
+  maxEntries?: number;
+  /** Consecutive 401s inside the window that arm the block (default 5). */
+  maxFailures?: number;
+  /** Rolling window for consecutive failures, ms (default 60_000). */
+  windowMs?: number;
+  /** Seconds advertised in the 429 Retry-After header (default 60). */
+  retryAfterSeconds?: number;
+  /** Injectable clock in ms epoch (tests); defaults to Date.now. */
+  now?: () => number;
+}
+
+interface FailureEntry {
+  count: number;
+  firstFailureAt: number;
+}
+
+/** Clients the adapters cannot identify share one conservative bucket. */
+const UNKNOWN_CLIENT_KEY = "unknown";
+
+export class BearerRateLimiter {
+  private readonly entries = new Map<string, FailureEntry>();
+  private readonly maxEntries: number;
+  readonly maxFailures: number;
+  private readonly windowMs: number;
+  readonly retryAfterSeconds: number;
+  private readonly now: () => number;
+
+  constructor(options: BearerRateLimiterOptions = {}) {
+    this.maxEntries = options.maxEntries ?? 500;
+    this.maxFailures = options.maxFailures ?? 5;
+    this.windowMs = options.windowMs ?? 60_000;
+    this.retryAfterSeconds = options.retryAfterSeconds ?? 60;
+    this.now = options.now ?? Date.now;
+  }
+
+  /** Number of tracked clients (never exceeds maxEntries). */
+  get size(): number {
+    return this.entries.size;
+  }
+
+  /**
+   * Record one 401 outcome for the client; true when this failure ARMS the
+   * block (i.e. the request must get 429, not 401). Failures outside the
+   * window restart the count, so sustained-low-and-slow guessing is still
+   * bounded per window.
+   */
+  recordFailure(clientKey: string | null): boolean {
+    const key = clientKey ?? UNKNOWN_CLIENT_KEY;
+    const at = this.now();
+    const existing = this.entries.get(key);
+    const entry =
+      !existing || at - existing.firstFailureAt >= this.windowMs
+        ? { count: 1, firstFailureAt: at }
+        : { count: existing.count + 1, firstFailureAt: existing.firstFailureAt };
+    // Delete + set refreshes recency: Map iteration order is insertion
+    // order, so the OLDEST entry is always first for eviction.
+    this.entries.delete(key);
+    this.entries.set(key, entry);
+    while (this.entries.size > this.maxEntries) {
+      const oldest = this.entries.keys().next();
+      if (oldest.done) {
+        break;
+      }
+      this.entries.delete(oldest.value);
+    }
+    return entry.count > this.maxFailures;
+  }
+
+  /** Successful authentication clears the client's failure count. */
+  recordSuccess(clientKey: string | null): void {
+    this.entries.delete(clientKey ?? UNKNOWN_CLIENT_KEY);
+  }
+}
+
 function json(body: unknown, status = 200): HttpResponse {
   return { status, body, headers: { ...CORS_HEADERS } };
 }
@@ -242,12 +336,53 @@ function deniedOrOk(decision: AuthDecision): HttpResponse | null {
   );
 }
 
+const RATE_LIMITED_BODY = {
+  error: "rate_limited",
+  message: "Too many failed authentication attempts. Please retry later.",
+};
+
+/**
+ * C-1441: shared epilogue of every bearer-auth check. Success clears the
+ * client's failure count; 401 (unauthenticated) failures are counted and —
+ * from the (maxFailures+1)-th consecutive one inside the window — answered
+ * with 429 + Retry-After instead of 401. 403 (valid credential, wrong
+ * agent) and 503 (fail-closed, server misconfig) are neither counted nor
+ * cleared: they are not unauthenticated bearer failures.
+ */
+function authedOutcome(
+  services: RouterServices,
+  request: HttpRequest,
+  decision: AuthDecision,
+): HttpResponse | null {
+  const limiter = services.rateLimiter;
+  if (!limiter) {
+    return deniedOrOk(decision);
+  }
+  if (decision.ok) {
+    limiter.recordSuccess(request.clientKey ?? null);
+    return null;
+  }
+  if (decision.status !== 401) {
+    return deniedOrOk(decision);
+  }
+  if (limiter.recordFailure(request.clientKey ?? null)) {
+    return {
+      status: 429,
+      body: RATE_LIMITED_BODY,
+      headers: { ...CORS_HEADERS, "retry-after": String(limiter.retryAfterSeconds) },
+    };
+  }
+  return deniedOrOk(decision);
+}
+
 async function requireBearer(
   request: HttpRequest,
+  services: RouterServices,
   expected: string | undefined,
   envName: "ADMIN_TOKEN" | "RUNNER_TOKEN",
 ): Promise<HttpResponse | null> {
-  return deniedOrOk(await decideBearer(bearerFrom(request.header("authorization")), expected, envName));
+  const decision = await decideBearer(bearerFrom(request.header("authorization")), expected, envName);
+  return authedOutcome(services, request, decision);
 }
 
 async function requireMutatingAuth(
@@ -255,14 +390,13 @@ async function requireMutatingAuth(
   services: RouterServices,
   opts: { agent?: string | null; allowSidecar?: boolean } = {},
 ): Promise<HttpResponse | null> {
-  return deniedOrOk(
-    await decideMutatingAuth(
-      bearerFrom(request.header("authorization")),
-      services.tokens,
-      opts,
-      (presented) => services.coordinator.credentialAgent(presented),
-    ),
+  const decision = await decideMutatingAuth(
+    bearerFrom(request.header("authorization")),
+    services.tokens,
+    opts,
+    (presented) => services.coordinator.credentialAgent(presented),
   );
+  return authedOutcome(services, request, decision);
 }
 
 /** C1462 Task 1: read endpoints authenticate like everything else; pass
@@ -322,7 +456,7 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
     }
 
     if (method === "POST" && path === "/setup") {
-      const denied = await requireBearer(request, services.tokens.admin, "ADMIN_TOKEN");
+      const denied = await requireBearer(request, services, services.tokens.admin, "ADMIN_TOKEN");
       if (denied) {
         return denied;
       }
@@ -330,7 +464,7 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
     }
 
     if (method === "POST" && path === "/tasks") {
-      const denied = await requireBearer(request, services.tokens.admin, "ADMIN_TOKEN");
+      const denied = await requireBearer(request, services, services.tokens.admin, "ADMIN_TOKEN");
       if (denied) {
         return denied;
       }
@@ -441,7 +575,7 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
     }
 
     if (method === "POST" && path === "/checks") {
-      const denied = await requireBearer(request, services.tokens.runner, "RUNNER_TOKEN");
+      const denied = await requireBearer(request, services, services.tokens.runner, "RUNNER_TOKEN");
       if (denied) {
         return denied;
       }
@@ -551,7 +685,7 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
       // C-1425: token revocation is an admin control — ADMIN_TOKEN only
       // (auth first, so task-id probing is not available to unauthenticated
       // callers), then the task must exist.
-      const denied = await requireBearer(request, services.tokens.admin, "ADMIN_TOKEN");
+      const denied = await requireBearer(request, services, services.tokens.admin, "ADMIN_TOKEN");
       if (denied) {
         return denied;
       }

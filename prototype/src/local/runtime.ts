@@ -46,6 +46,9 @@ function toHttpRequest(request: NodeRequestLike): HttpRequest {
   return {
     method: request.method ?? "GET",
     path: (request.url ?? "/").split("?")[0],
+    // C-1441: the rate limiter keys on the peer address; loopback clients
+    // share one bucket, which is correct for a local runtime.
+    clientKey: request.socket?.remoteAddress ?? null,
     header(name) {
       const value = request.headers[name.toLowerCase()];
       if (Array.isArray(value)) {

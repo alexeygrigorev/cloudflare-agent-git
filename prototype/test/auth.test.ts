@@ -352,3 +352,73 @@ describe("token expiry & revocation gate (C-1422/C-1425)", () => {
     expect(own.status).toBe(200);
   });
 });
+
+describe("bounded invalid-bearer rate limiter (C-1441)", () => {
+  it("returns 429 with Retry-After on the 6th consecutive invalid bearer; valid tokens pass", async () => {
+    // Reset this isolate's failure count: a successful admin auth clears
+    // any 401s earlier tests in this file accumulated for our client key.
+    const reset = await post("/tasks", { agent: "limiter-reset" }, ADMIN);
+    expect(reset.status).toBe(201);
+
+    for (let i = 0; i < 5; i++) {
+      const response = await post("/tasks", { agent: "limiter-abuse" }, `limiter-wrong-token-${i}`);
+      expect(response.status).toBe(401);
+    }
+    const blocked = await post("/tasks", { agent: "limiter-abuse" }, "limiter-wrong-token-5");
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("retry-after")).toBe("60");
+    const blockedText = await blocked.text();
+    expect(JSON.parse(blockedText)).toEqual({
+      error: "rate_limited",
+      message: "Too many failed authentication attempts. Please retry later.",
+    });
+    // The 429 body never echoes the presented (wrong) token.
+    expect(blockedText).not.toContain("limiter-wrong-token-5");
+
+    // A valid credential is never rate limited — and clears the count.
+    const valid = await post("/tasks", { agent: "limiter-legit" }, ADMIN);
+    expect(valid.status).toBe(201);
+
+    // After the success, an invalid bearer is a plain 401 again.
+    const after = await post("/tasks", { agent: "limiter-abuse" }, "limiter-wrong-token-6");
+    expect(after.status).toBe(401);
+  });
+
+  it("spoofed forwarding headers do not bypass the limiter (C-1441 B1, REV-LIMITER M10)", async () => {
+    const postAs = (ip: string | null, xff: string | null, token: string): Promise<Response> => {
+      const headers: Record<string, string> = { "content-type": "application/json" };
+      if (ip) {
+        headers["cf-connecting-ip"] = ip;
+      }
+      if (xff) {
+        headers["x-forwarded-for"] = xff;
+      }
+      headers.authorization = `Bearer ${token}`;
+      return SELF.fetch("http://localhost/setup", { method: "POST", headers, body: "{}" });
+    };
+
+    // (a) One edge-identified client rotating X-Forwarded-For per attempt:
+    // XFF must NOT be the key, so the 6th attempt is 429. A mutant keying
+    // the limiter on XFF would spread these over six buckets and answer
+    // 401 forever — the silent full bypass.
+    for (let i = 0; i < 5; i++) {
+      const response = await postAs("203.0.113.50", `203.0.113.${100 + i}`, "wrong-token");
+      expect(response.status).toBe(401);
+    }
+    const blocked = await postAs("203.0.113.50", "203.0.113.199", "wrong-token");
+    expect(blocked.status).toBe(429);
+
+    // (b) Distinct edge-identified clients are isolated buckets: all stay
+    // 401. A mutant keying on XFF — absent here — would collapse them into
+    // the shared unknown bucket and 429 the 6th instead.
+    for (let i = 0; i < 6; i++) {
+      const isolated = await postAs(`203.0.113.${60 + i}`, null, "wrong-token");
+      expect(isolated.status).toBe(401);
+    }
+
+    // (c) The flood on .50 does not lock out a different edge-identified
+    // client: bucket isolation is real in both directions.
+    const otherClient = await postAs("203.0.113.71", null, "wrong-token");
+    expect(otherClient.status).toBe(401);
+  });
+});

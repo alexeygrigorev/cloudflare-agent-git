@@ -24,6 +24,7 @@ import type {
   UnprocessedPush,
 } from "../../src/ports/githost.js";
 import { ArtifactsPushEvents, JsonPushEvents } from "../../src/ports/push-events.js";
+import { BearerRateLimiter } from "../../src/core/router.js";
 import { MemoryCoordinationStore } from "../../src/local/store.js";
 import type { RouterServices } from "../../src/core/router.js";
 
@@ -194,6 +195,9 @@ export function makeRig(tokens: RouterServices["tokens"] = { admin: "admin-t", r
       tokens,
       pushes: new JsonPushEvents("direct"),
       artifactsEvents: new ArtifactsPushEvents(),
+      // C-1441: real runtimes inject the limiter; the rig does too so the
+      // node suites exercise the same defaults as src/local/main.ts.
+      rateLimiter: new BearerRateLimiter(),
     },
     git,
     core,
@@ -208,6 +212,7 @@ export function neutralRequest(
   path: string,
   body?: unknown,
   token?: string,
+  clientKey?: string | null,
 ): import("../../src/core/router.js").HttpRequest {
   const headers: Record<string, string> = {};
   if (token) {
@@ -223,6 +228,7 @@ export function neutralRequest(
       }
       return body;
     },
+    clientKey: clientKey ?? null,
   };
 }
 

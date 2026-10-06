@@ -12,6 +12,9 @@ declare module "node:http" {
     /** Path with optional query string, e.g. "/status?x=1". */
     url?: string;
     headers: Record<string, string | string[] | undefined>;
+    /** Real IncomingMessage always has this; optional so fakes can omit it
+     * (C-1441: the rate limiter keys on socket.remoteAddress). */
+    socket?: { remoteAddress?: string | undefined };
     on(event: "data", listener: (chunk: Uint8Array | string) => void): void;
     on(event: "end", listener: () => void): void;
     on(event: "error", listener: (error: Error) => void): void;
