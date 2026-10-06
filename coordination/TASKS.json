@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T09:53:55.196560+00:00",
+  "updated_at": "2026-10-06T09:57:04.601358+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -7285,6 +7285,28 @@
       "commit": "350e0e5a0912b03ed896253431902855a296b803",
       "review_report_sha256": "ab284ad473c9ddea32203b84cdd4320a4518684fb14ecd468d78c329275ec6ed",
       "acceptance": "Distinctsource review and verifiedremote; runtimewake separate."
+    },
+    {
+      "id": "BRANCHES-OWNED-PATH-REMOTE-SYNC-INTAKE-C2786-20261006",
+      "project_id": "agent-branches",
+      "team_id": "agent-branches",
+      "status": "queued",
+      "created_at": "2026-10-06T09:57:04.601358+00:00",
+      "updated_at": "2026-10-06T09:57:04.601358+00:00",
+      "proposed_owner_tag": "ant-head-continuation-custody-20261006",
+      "proposed_owner_session_id": "c6ea5473-befb-4264-b048-f9511be90152",
+      "assignment_ack": false,
+      "source_message": "01a110a3-fcf6-7580-aa17-ca53d7f13d89",
+      "human_intake_quote": "also keep an eye what are the things you do around aplexer and if you do something repeatedly it means it should be a feature",
+      "first_internal_user": "Principal owned metadata checkpoint publication while product worktree/index dirty",
+      "scope": "Maintained Agent Branches owned-path remote synchronization; proposed head selects implementation scope, no lease or worker inferred",
+      "acceptance": "Exact disposable remote restore; conflict fail-closed; authorized-path/secret negative cases; peer dirty worktree/index/source and recoverable history preserved; publication versus shared-worktree semantics explicit; pinned distinct independent review",
+      "fallback": "Ordinary Git private-index owned-path replay",
+      "evidence_paths": [
+        "research/codex/maintainer-friction-intake-20261006.md"
+      ],
+      "execution_state": "No head ACK/firstworker/admission observed",
+      "next_action": "Ant genuinely ACKs existing C2786 intake, chooses scoped existing sync-CLI integration and delegates implementer plus distinct reviewer; principal monitors"
     }
   ]
 }
