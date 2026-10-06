@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T08:34:14.675675+00:00",
+  "updated_at": "2026-10-06T08:46:42.228032+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -5947,11 +5947,11 @@
       "id": "TASK-CONTINUITY-FAILOVER-AND-WAKE-GATE-C2693",
       "team_id": "remote-autonomous-continuation",
       "project_id": "quota-launcher",
-      "owner_tag": "ant-head-custody-resume-20261006",
-      "owner_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+      "owner_tag": "ant-head-continuation-custody-20261006",
+      "owner_session_id": "c6ea5473-befb-4264-b048-f9511be90152",
       "status": "in_progress",
       "created_at": "2026-10-05T22:20:00.000000+00:00",
-      "updated_at": "2026-10-06T07:07:11.372784+00:00",
+      "updated_at": "2026-10-06T08:45:18.001740+00:00",
       "scope": "Exact backup session takeover and recurring UI wake delivery: record actual designated backup session (agent-coordination-head-gemini / fallback pool), takeover trigger, fencing receipt, unattended review scheduling without manual head accept, and two live wake outcomes.",
       "designated_backup_session": "8d4c026c-b1f9-4cbf-83bf-4f5f82077cab (agent-coordination-head-gemini) / 750580e1 (quota-launcher-head-gemini)",
       "takeover_trigger": "Supervision 3-minute (180s) unexplained idle with ready tasks and unblocked head state (service.py:758, 92 tests passing)",
@@ -5970,8 +5970,16 @@
           "owner_tag": "ant-head-continuation-resume-20261005",
           "handoff_ack": "01a11001-3e94 / 01a11002-b90c",
           "at": "2026-10-06T07:07:11.372784+00:00"
+        },
+        {
+          "owner": null,
+          "owner_tag": "ant-head-custody-resume-20261006",
+          "owner_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+          "at": "2026-10-06T08:45:18.001740+00:00"
         }
-      ]
+      ],
+      "owner": "ant-head-continuation-custody-20261006",
+      "owner_custody_ack": "01a11060-ba76-79b0-ad9c-b372f4078500"
     },
     {
       "id": "TASK-QL-BELOW30G-CLEANUP-INTEGRATION-C2693",
@@ -6199,7 +6207,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-06T08:34:14.675675+00:00",
+      "updated_at": "2026-10-06T08:46:42.228032+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6266,12 +6274,10 @@
       "last_actual_checkpoint_utc": "2026-10-06T07:07:11.372784+00:00",
       "accepted_head_owners": {
         "ant": {
-          "session_id": "365d3033-e7f8-4962-98b1-869674578125",
-          "acks": [
-            "01a11001-3e94",
-            "01a11002-b90c"
-          ],
-          "temporary_integration_ack": "01a11007-682d"
+          "session_id": "c6ea5473-befb-4264-b048-f9511be90152",
+          "ack": "01a11060-ba76-79b0-ad9c-b372f4078500",
+          "principal_receipt": "01a11061-fca2-7a03-ac60-326ae34c27ea",
+          "new_handoff": "01a11060-edea-71c1-91b6-d5d469627eb6"
         },
         "quota_launcher": {
           "session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
@@ -6372,12 +6378,15 @@
         "source": "Principal-supplied current Product4 head attestation, historical5 not currentcount"
       },
       "latest_maintained_census": {
-        "active": 1,
-        "worker_pid": 2401291,
-        "controller_pid_excluded": 2398901,
+        "as_of_utc": "2026-10-06T08:45:00Z",
+        "covered_active_executors": 2,
+        "actors": [
+          "bf54ef18-7623-4a02-8bbf-c83ef956e3f9",
+          "85b3fa67-a9fd-48d0-8bf2-38008e18ea91"
+        ],
+        "coverage": "NativeAnt+maintainedQL task, notwholeportfolio",
         "whole_portfolio": "UNKNOWN",
-        "executable_ready": "UNKNOWN",
-        "source": "Actual08:32:57 firstmodeltool observed perprincipal"
+        "executable_ready": "UNKNOWN"
       },
       "ql_native_cycles": {
         "timer5517": "Nativecontinuation -> localGitcommit12f9bde",
@@ -6415,9 +6424,36 @@
         },
         "source": "Actual checkpoint supplied by principal; helper has no native mailbox authority"
       },
-      "root_actual_outcome": "01a11058-c4c2-70f1-98e4-e8d9ff34d6f4",
+      "root_actual_outcome": "01a1105b-68d2-7022-b88b-f54a09e7fbf2",
       "review_recovery_state": "RecoveredtechnicalACCEPT plusactualDBheadaccept08:31:26 verified08:32:10; sourceonlyruntimegateOPEN",
-      "next_real_task": "Scratchpreparation actualrunning; distinctreview/leasevalidation and realcompletion-refill next"
+      "next_real_task": "Scratchpreparation actualrunning; distinctreview/leasevalidation and realcompletion-refill next",
+      "administrative_recovery_pending": {
+        "target": "Exact Ant365 interactive custody only",
+        "state": "Otherhelper executing; currentregistry notchanged without genuinesuccessorACK",
+        "planned_backup": "ConsistentSQLite in-memory backup/gziproundtrip estimated16.6MB; full79.76MB wouldleave1.47MB margin",
+        "execution_verification": "Pending freshhelper receipts; estimate not executedclaim",
+        "budget_bytes_max": 536870912,
+        "acceptance_limit": "Manualcustodyrecovery NOTautomaticwake. Restoredhead owns300sschedule/completionrearm/C2710loadedrepair/distinctreviews."
+      },
+      "ant_current_timer_delegate": "pending",
+      "native_delegates_observation": {
+        "actor": "bf54ef18-7623-4a02-8bbf-c83ef956e3f9",
+        "head_session_id": "c6ea5473-befb-4264-b048-f9511be90152",
+        "invoked_at_utc": "2026-10-06T08:43:00Z",
+        "first_tool_at_utc": "2026-10-06T08:43:08Z",
+        "tool_records": 28,
+        "observed_through_utc": "2026-10-06T08:44:55Z",
+        "observed_kind": "supervisiontests",
+        "exact_task_name_scope": "UNKNOWN; recorded under existingC2710 not fabricatednewtask"
+      },
+      "ant_schedule_observation": {
+        "schedule_task_armed_at_utc": "2026-10-06T08:43:08Z",
+        "timer": "9328",
+        "expected_utc": "2026-10-06T08:48:14Z",
+        "earlyTermination": "never",
+        "firing_rearming": "UNKNOWN",
+        "acceptance": "Armed only, not acceptedruntimewake"
+      }
     },
     {
       "id": "ROLE-FAILOVER-AUTHORITY-20261006",
@@ -6536,9 +6572,9 @@
       "title": "Dual independent tick sources and external supervisor custody",
       "status": "review",
       "created_at": "2026-10-06T07:30:57.015180+00:00",
-      "updated_at": "2026-10-06T07:50:04.464892+00:00",
-      "owner": "ant-head-custody-resume-20261006",
-      "owner_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+      "updated_at": "2026-10-06T08:45:18.001740+00:00",
+      "owner": "ant-head-continuation-custody-20261006",
+      "owner_session_id": "c6ea5473-befb-4264-b048-f9511be90152",
       "reviewer": "agent-coordination-head-custody-resume-20261006 delegates distinct reviewer (actual actor pending)",
       "scope": "Existing owned supervisor integration; configure at least two enrolled independent tick sources supervised outside principal/head cgroups using existing OS custody",
       "dependencies": [
@@ -6554,13 +6590,21 @@
       "source_proposal": "research/orchestrator/ROLE-FAILOVER-ADOPTION-20261006.md",
       "proposed_checkpoint": "Owner ACK and scoped first-action/checkpoint receipt after current dependency readiness; no deadline invented.",
       "operating_constraints": "Current20GiB hard projected-growth floor; below30GiB continue eligible admission with one bounded deduplicated cleanup actor. Desktop existing automation handoff received; remote useful continuation remains separately unaccepted. Freshprovider/privacy/quota/containment/Rust/spend gates retained.",
-      "owner_tag": "ant-head-custody-resume-20261006",
-      "owner_custody_ack": "01a11002-b90c",
+      "owner_tag": "ant-head-continuation-custody-20261006",
+      "owner_custody_ack": "01a11060-ba76-79b0-ad9c-b372f4078500",
       "executor_ids": [
         "ce4c715e-d9d8-486e-929e-82895a4335f9"
       ],
       "acceptance_status": "ACCEPTED: Dual independent watchers installed as systemd timers and tested.",
-      "acceptance_limit_note": "Existing completion/status/artifacts preserved. Source-only acceptance does not establish autonomous wake/failover, independently reviewed loadedruntime or hostHA. Actual product code review belongs to head-delegated distinct reviewer."
+      "acceptance_limit_note": "Existing completion/status/artifacts preserved. Source-only acceptance does not establish autonomous wake/failover, independently reviewed loadedruntime or hostHA. Actual product code review belongs to head-delegated distinct reviewer.",
+      "owner_history": [
+        {
+          "owner": "ant-head-custody-resume-20261006",
+          "owner_tag": "ant-head-custody-resume-20261006",
+          "owner_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+          "at": "2026-10-06T08:45:18.001740+00:00"
+        }
+      ]
     },
     {
       "id": "ROLE-FAILOVER-LIVE-ACCEPTANCE-20261006",
@@ -6877,9 +6921,9 @@
       "owner": "quota-launcher-head-custody-resume-20261006",
       "owner_tag": "quota-launcher-head-custody-resume-20261006",
       "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
-      "status": "running",
+      "status": "done",
       "created_at": "2026-10-06T08:33:21.052725+00:00",
-      "updated_at": "2026-10-06T08:34:14.675675+00:00",
+      "updated_at": "2026-10-06T08:46:42.228032+00:00",
       "scope": "Actual headsubmitted substantive launcher resourcehandling+tests scratchpreparation task; exactownedpath metadata/lease requires verification beforeedit claim.",
       "provider": "Antigravity",
       "worker_memory_max": "768MiB",
@@ -6889,9 +6933,9 @@
         "at_utc": "2026-10-06T08:32:57Z",
         "kind": "Actual firstmodel viewresources.py/test_resources.py"
       },
-      "reviewer": null,
+      "reviewer": "f57e0d37-0ab4-4a7f-b6f4-4704bec98b61",
       "acceptance": "Independent reviewer and negative tests after realimplementation; not yet assigned or accepted.",
-      "execution_state": "One actualmodelworker running; distinctfixreview not launched/notdone",
+      "execution_state": "Modelcompleted; no next distinctreviewactor observed",
       "related_intake": "QL-MISSING-DECLARED-SCRATCH-INTAKE-C2754-20261006",
       "worker_id": "eb85270e-2ed0-4b24-adbb-26bc7b91b866",
       "launch_attempts": [
@@ -6914,9 +6958,8 @@
         }
       ],
       "launcher_db_observation": {
-        "state": "starting",
-        "lease_provider": "antigravity",
-        "at_utc": "2026-10-06T08:32:53Z"
+        "state": "completed-awaiting-review",
+        "at_utc": "2026-10-06T08:34:40Z"
       },
       "owned_path_metadata_concern": {
         "representation": "Two ownedpaths stored as onecommajoinedstring",
@@ -6924,7 +6967,101 @@
         "overlap": "No actual writerconflict inferred",
         "head_request": "01a11058-c47f-7a52-ac1f-4bd9eed6b113",
         "required": "Actualleasecheck and distinct negativeoverlapreview"
-      }
+      },
+      "model_completed_at_utc": "2026-10-06T08:34:31Z",
+      "implementer_self_report": "16tests, not independentreview verdict",
+      "review_verdict": "ACCEPT",
+      "head_acceptance": "Genuineheadc59701a1105e-d57e",
+      "commit": "2c58804050ffa43e09b7138fb91a5f396f7885b0",
+      "verified_remote_main": "2c58804050ffa43e09b7138fb91a5f396f7885b0",
+      "head_accepted_at_utc": "2026-10-06T08:38:41Z"
+    },
+    {
+      "id": "ql-review-scratch-path-prep",
+      "created_at": "2026-10-06T08:45:18.001740+00:00",
+      "owner": "quota-launcher-head-custody-resume-20261006",
+      "owner_tag": "quota-launcher-head-custody-resume-20261006",
+      "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "status": "done",
+      "updated_at": "2026-10-06T08:46:42.228032+00:00",
+      "reviewer": "f57e0d37-0ab4-4a7f-b6f4-4704bec98b61",
+      "first_action": {
+        "at_utc": "2026-10-06T08:36:21Z",
+        "kind": "Actual independentnative firsttool verified",
+        "independent_tool_call_records": 11,
+        "head_reported_tools": 22,
+        "head_tool_count_verification": "22notindependentlyverified"
+      },
+      "review_verdict": "ACCEPT",
+      "review_report_sha256": "368a470e7b12b085d8e9de5713bcc8daeca3be8ba8a9d499d701253c4809fe49",
+      "commit": "2c58804050ffa43e09b7138fb91a5f396f7885b0",
+      "verified_remote_main": "2c58804050ffa43e09b7138fb91a5f396f7885b0",
+      "head_acceptance": "Actualheadc597 genuine01a1105e-d57e; do notimport stitchedfakeaccepted_byUUID",
+      "acceptance_scope": "Sourcefix distinctreview and actualremote; autonomousruntime acceptance separate",
+      "head_accepted_at_utc": "2026-10-06T08:38:45Z"
+    },
+    {
+      "id": "PUBLICATION-SOCIAL-SHARE-DEFAULT-20261006",
+      "project_id": "publication",
+      "team_id": "publication",
+      "owner_tag": "public-journal-release-custody-20261006",
+      "owner_session_id": "513eab03-fccb-43e3-bcf0-5649f03b5425",
+      "status": "queued",
+      "created_at": "2026-10-06T08:45:18.001740+00:00",
+      "updated_at": "2026-10-06T08:45:18.001740+00:00",
+      "title": "Default socialsharetext with publication; noautopost",
+      "source_message": "01a1105d-fd4b-7f70-8db4-9a687c838985",
+      "head_request": "01a11060-ee6d-7950-a539-154112031633",
+      "assignment_ack": null,
+      "first_action": null,
+      "acceptance": "PendingpublicationownerACK/evidence; no generation/writer/automation execution claim",
+      "evidence_paths": [
+        "research/codex/publication-social-imagegen-intake-20261006.md"
+      ]
+    },
+    {
+      "id": "PUBLICATION-IMAGEGEN-NEXT-EDITION-20261006",
+      "project_id": "publication",
+      "team_id": "publication",
+      "owner_tag": "public-journal-release-custody-20261006",
+      "owner_session_id": "513eab03-fccb-43e3-bcf0-5649f03b5425",
+      "status": "queued",
+      "created_at": "2026-10-06T08:45:18.001740+00:00",
+      "updated_at": "2026-10-06T08:45:18.001740+00:00",
+      "title": "NEW ImageGen nextedition afterOct6",
+      "source_message": "01a1105d-fd4b-7f70-8db4-9a687c838985",
+      "head_request": "01a11060-ee6d-7950-a539-154112031633",
+      "assignment_ack": null,
+      "first_action": null,
+      "acceptance": "PendingpublicationownerACK/evidence; no generation/writer/automation execution claim",
+      "evidence_paths": [
+        "research/codex/publication-social-imagegen-intake-20261006.md"
+      ]
+    },
+    {
+      "id": "launcher-task-paths-normalization",
+      "created_at": "2026-10-06T08:46:42.228032+00:00",
+      "owner": "quota-launcher-head-custody-resume-20261006",
+      "owner_tag": "quota-launcher-head-custody-resume-20261006",
+      "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "status": "running",
+      "updated_at": "2026-10-06T08:46:42.228032+00:00",
+      "worker_id": "85b3fa67-a9fd-48d0-8bf2-38008e18ea91",
+      "first_action": {
+        "at_utc": "2026-10-06T08:42:06Z",
+        "kind": "Actualfirst modeltool metadata verified"
+      },
+      "worker_pid": 2712290,
+      "worker_memory_max": "768MiB",
+      "worker_tasks_max": 100,
+      "controller_pid_excluded": 2710289,
+      "scope": "Actualheadsubmitted pathnormalization task; exactscopecontract/paths pendingmetadata, not invented.",
+      "reviewer": null,
+      "acceptance": "Pending distinctreview and headacceptance."
     }
   ]
 }

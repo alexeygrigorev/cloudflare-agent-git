@@ -1,0 +1,13 @@
+# Ant administrative snapshot verification — 6 October 2026
+
+Scope: independent administrative integrity and storage check before exact Ant365 custody recovery. This is not product code review, source-database modification, runtime failover acceptance or mailbox authority. Source database and head remained untouched during the verifier's checks; no filesystem database copy or new worker was created by the verifier.
+
+The first manifest retained raw and portable hashes but only one compressed snapshot. The verifier explicitly held recovery pending separate immutable raw and portable artifacts. The administrative owner then preserved both and supplied schema/row-count/digest receipts before any reported stop.
+
+Independently read both compressed artifacts in memory: raw and portable each decompress to79,757,312 bytes. Raw SHA256 `d0186d13c5070a4b8ad609320308a32ec9aaec449cca0f7eec7a19952d1db6e5`; portable SHA256 `c4804e0a7d6a9c9007da284fd9af0a367cf96195ab595ab05c3113027a5cdcd1`. Both match the manifest. Full byte comparison differs only at offsets18/19: raw WAL header2/2, portable rollback header1/1. This normalization is explicitly limited to the separate private portable recovery artifact; the immutable raw artifact remains retained, and no upstream supported-format claim is made.
+
+Portable SQLite memory deserialization returned `quick_check=ok` and byte-identical serialization roundtrip. Seven table counts matched the manifest: steps9264, generation metadata3065, executor metadata49, two metadata tables1 each and two empty tables0. Eleven schema entries were observed. The owner also supplied equal raw/portable logical schema and per-table row digests; the independent complete-byte comparison establishes no payload differences beyond the two declared header bytes. No private rows or transcript content are published.
+
+Fresh measured aggregate `.local/recovery` storage was488,711,355 bytes, below536,870,912-byte limit with48,159,557-byte margin, including both gzip files. Manifest snapshot time was08:38:58UTC. Original/protected status receipts identify exact Ant365 workload3763239 and protected Ant46 workload560857. Status receipts alone do not verify a later process state.
+
+Verdict: **PASS for bounded backup integrity and measured budget only**, delivered to the administrative owner and principal before stop. Fresh sole-PID/empty-prompt/child absence and protected-draft/history/source-patch checks remain the recovery owner's immediate pre/post-operation responsibility. Actual successor custody ACK belongs to the genuinely bound principal, not this helper. Manual administrative recovery does not prove autonomous wake, 300-second rearm, unattended review/refill or C2693 runtime acceptance.
