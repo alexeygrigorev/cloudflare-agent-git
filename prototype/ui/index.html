@@ -21,6 +21,17 @@
       </p>
       <p id="error" class="banner error" hidden></p>
       <p id="status-error" class="banner error" role="alert" hidden></p>
+      <div id="auth" class="banner" hidden>
+        <p id="auth-prompt" class="small" role="status"></p>
+        <form id="auth-form">
+          <label class="small" for="auth-token">Bearer token</label>
+          <input id="auth-token" class="mono" type="password" autocomplete="off" spellcheck="false" placeholder="Paste an admin or task token">
+          <button type="submit" class="primary">Save token &amp; retry</button>
+          <button type="button" id="auth-clear">Clear</button>
+        </form>
+        <p id="auth-status" class="small muted" role="status" aria-live="polite"></p>
+      </div>
+      <p id="auth-forbidden" class="banner error" role="alert" hidden></p>
       <p id="live" class="small muted" role="status" aria-live="polite"></p>
     </header>
 
@@ -93,6 +104,7 @@
   <script src="pair-status.js"></script>
   <script src="view-logic.js"></script>
   <script src="request-guard.js"></script>
+  <script src="auth.js"></script>
   <script src="ui.js"></script>
   <script>AgentBranchesUI.bootIndex();</script>
 </body>

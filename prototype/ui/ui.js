@@ -21,6 +21,7 @@
   var PairLogic = window.AgentBranchesPairStatus;
   var View = window.AgentBranchesViewLogic;
   var Guard = window.AgentBranchesRequestGuard;
+  var Auth = window.AgentBranchesAuth;
 
   /* ---------- live-update state (per page) ---------- */
 
@@ -39,6 +40,35 @@
      whether the /status view currently holds fresh data or a stale error. */
   var genTracker = Guard.createGenTracker();
   var statusFresh = Guard.createStatusFreshness();
+  /* Bearer auth (C1470; server gate C1462 Task 1): the in-memory session
+     copy of the token is authoritative at runtime; localStorage only
+     carries it across reloads — and may be blocked, so every access is
+     wrapped and the page works from session state alone. */
+  var authState = Auth.createAuthState(readStoredToken());
+
+  function readStoredToken() {
+    try {
+      return Auth.getStoredToken(window.localStorage);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function writeStoredToken(raw) {
+    try {
+      return Auth.setStoredToken(window.localStorage, raw);
+    } catch (e) {
+      return { ok: false, token: Auth.normalizeToken(raw) };
+    }
+  }
+
+  function forgetStoredToken() {
+    try {
+      return Auth.clearStoredToken(window.localStorage);
+    } catch (e) {
+      return false;
+    }
+  }
   /* Highlight bookkeeping: which warnings/pushes appeared recently.
      key -> expiry ms. The first successful load only sets the baseline. */
   var prevWarningIds = null;
@@ -125,10 +155,29 @@
 
   /* ---------- data loading ---------- */
 
+  /* Authenticated reads (C1470): fixture/demo reads are static files and go
+     out bare; live reads carry `Authorization: Bearer <token>` when a token
+     is saved. Failures keep the historical message shape and additionally
+     carry `status` + `authKind` ("unauthorized"/"forbidden"/null); a 403
+     also carries the raw `bodyText` so the refusal diagnostic can name the
+     token's owner (never the token itself). */
   function fetchJson(url) {
-    return fetch(url).then(function (r) {
-      if (!r.ok) throw new Error("request failed: HTTP " + r.status + " for " + url);
-      return r.json();
+    var headers = FIXTURE ? {} : Auth.authHeaders(authState.snapshot().token);
+    return fetch(url, { headers: headers }).then(function (r) {
+      if (r.ok) return r.json();
+      if (r.status === 403) {
+        return r.text().then(
+          function (text) {
+            var err = Auth.httpError(r.status, url);
+            err.bodyText = text;
+            throw err;
+          },
+          function () {
+            throw Auth.httpError(r.status, url);
+          }
+        );
+      }
+      throw Auth.httpError(r.status, url);
     });
   }
 
@@ -160,7 +209,22 @@
 
   function showError(el, error, isFixture) {
     el.hidden = false;
-    el.innerHTML = "<strong>Could not load the data.</strong> " + esc(error.message) + esc(loadHint(isFixture));
+    el.innerHTML =
+      "<strong>Could not load the data.</strong> " +
+      esc(error.message) +
+      esc(authErrorHint(error)) +
+      esc(loadHint(isFixture));
+  }
+
+  /* Extra guidance for auth failures: 401 points at the token form, 403
+     carries the owner diagnostic (never the token). Plain text, escaped
+     with the rest. */
+  function authErrorHint(error) {
+    if (!error || !error.authKind) return "";
+    if (error.authKind === "forbidden") {
+      return " " + Auth.describeForbidden(error.bodyText || "", currentTaskId);
+    }
+    return " " + Auth.describeUnauthorized(currentTaskId ? "task " + currentTaskId : "the status overview");
   }
 
   /* Explicit stale-error banner for the /status view (C-1385): while the
@@ -181,6 +245,93 @@
       esc(stale.error.message) + "). What you see may be missing newer changes, " +
       "warnings or pair results — treat safety badges as unknown, not clean, " +
       "until the next successful update." + esc(loadHint(FIXTURE));
+  }
+
+  /* ---------- bearer-token auth UI (C1470) ----------
+     The static markup (#auth form, #auth-prompt, #auth-status,
+     #auth-forbidden) ships in the HTML hidden and empty, so first paint is
+     identical with or without JS (no hydration mismatch): JS only fills
+     prompt text and flips `hidden`. Auth strings are set via textContent —
+     tokens are never rendered. The input is prefilled once at wiring time,
+     so live re-renders never wipe what is being typed. */
+
+  function setAuthViews() {
+    var snap = authState.snapshot();
+    var section = document.getElementById("auth");
+    var prompt = document.getElementById("auth-prompt");
+    var forbidden = document.getElementById("auth-forbidden");
+    if (!section || !prompt || !forbidden) return;
+    if (FIXTURE) {
+      section.hidden = true;
+      forbidden.hidden = true;
+      forbidden.textContent = "";
+      return;
+    }
+    section.hidden = false;
+    if (snap.forbidden) {
+      forbidden.hidden = false;
+      forbidden.textContent = snap.forbidden;
+    } else {
+      forbidden.hidden = true;
+      forbidden.textContent = "";
+    }
+    if (snap.needsToken) {
+      prompt.textContent = Auth.describeUnauthorized(
+        currentTaskId ? "task " + currentTaskId : "the status overview"
+      );
+    } else if (snap.forbidden) {
+      prompt.textContent =
+        "The saved token cannot read this task — see the refusal detail above and replace it below.";
+    } else if (!snap.token) {
+      prompt.textContent =
+        "No access token is saved in this browser yet. Paste a bearer token below to load live data.";
+    } else {
+      prompt.textContent =
+        "A token is saved in this browser. It is sent only as an Authorization header to the configured API.";
+    }
+  }
+
+  function noteAuthStatus(msg) {
+    var status = document.getElementById("auth-status");
+    if (status) status.textContent = msg;
+  }
+
+  function initAuthUI() {
+    var section = document.getElementById("auth");
+    if (!section || section.getAttribute("data-wired")) return;
+    section.setAttribute("data-wired", "true");
+    var form = document.getElementById("auth-form");
+    var input = document.getElementById("auth-token");
+    var clearBtn = document.getElementById("auth-clear");
+    var snap = authState.snapshot();
+    if (input && snap.token && !input.value) input.value = snap.token;
+    if (form) {
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var saved = writeStoredToken(input ? input.value : "");
+        authState.setToken(saved.token);
+        noteAuthStatus(
+          saved.token
+            ? (saved.ok
+              ? "Token saved in this browser. Retrying…"
+              : "This browser blocks storage — the token is kept for this page view only. Retrying…")
+            : "Token cleared."
+        );
+        setAuthViews();
+        doRefresh(false);
+      });
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        forgetStoredToken();
+        authState.clearToken();
+        if (input) input.value = "";
+        noteAuthStatus("Token cleared. Enter a token to load live data.");
+        setAuthViews();
+        doRefresh(false);
+      });
+    }
+    setAuthViews();
   }
 
   /* ---------- live indicator ---------- */
@@ -632,16 +783,19 @@
       );
     }
     if (ev) {
-      var matchesHead = !stale && (!currentHead || !ev.head || ev.head === currentHead);
+      var matchesHead = !currentHead || !ev.head || ev.head === currentHead;
       var passed = ev.exitCode === 0;
+      var resultBadge = stale
+        ? (passed
+          ? "<span class='badge not_checked'>Passed (unconfirmed)</span>"
+          : "<span class='badge unknown'>Failed — exit " + esc(ev.exitCode) + "</span>")
+        : (passed
+          ? "<span class='badge clean'>Passed</span>"
+          : "<span class='badge unknown'>Failed — exit " + esc(ev.exitCode) + "</span>");
       return (
         "<div class='evidence'><dl>" +
         "<dt>Command</dt><dd><code>" + esc(ev.command) + "</code></dd>" +
-        "<dt>Result</dt><dd>" +
-        (passed
-          ? "<span class='badge clean'>Passed</span>"
-          : "<span class='badge unknown'>Failed — exit " + esc(ev.exitCode) + "</span>") +
-        "</dd>" +
+        "<dt>Result</dt><dd>" + resultBadge + "</dd>" +
         "<dt>Tested change</dt><dd>" + shaHtml(ev.head) +
         (stale
           ? " <span class='muted small'>(live status unconfirmed · " + esc(stale.error.message) + ")</span>"
@@ -802,9 +956,18 @@
 
         if (!r.statusResult.ok) {
           /* /status failed: record the error, mark the status view stale with
-             the explicit banner, and never render the page as clean. */
+             the explicit banner, and never render the page as clean. A 401
+             additionally raises the token prompt; a 403 raises the refusal
+             diagnostic — both keep the stale downgrade, so nothing reads as
+             clean while unauthenticated. */
           statusFresh.markStale(r.statusResult.error);
           lastError = r.statusResult.error;
+          if (lastError && lastError.authKind === "unauthorized") {
+            authState.markUnauthorized();
+          } else if (lastError && lastError.authKind === "forbidden") {
+            authState.markForbidden(Auth.describeForbidden(lastError.bodyText || "", currentTaskId));
+          }
+          setAuthViews();
           setStatusErrorView();
           if (currentTaskId && r.task) {
             lastTask = r.task; /* the task story loaded; render it marked stale */
@@ -820,6 +983,8 @@
 
         statusFresh.markFresh();
         lastError = null;
+        authState.markOk();
+        setAuthViews();
         lastStatus = r.statusResult.status;
         if (currentTaskId) lastTask = r.task;
         lastLoadAt = Date.now();
@@ -833,6 +998,13 @@
       function (e) {
         /* A late failure from an already-outdated request is dropped too. */
         if (!genTracker.settle(gen)) return;
+        /* A 401/403 from GET /tasks/:id (task page) updates the auth state
+           before the error propagates to doRefresh for rendering. */
+        if (e && e.authKind === "unauthorized") authState.markUnauthorized();
+        else if (e && e.authKind === "forbidden") {
+          authState.markForbidden(Auth.describeForbidden(e.bodyText || "", currentTaskId));
+        }
+        setAuthViews();
         throw e; /* doRefresh records lastError and shows the load banner */
       }
     );
@@ -845,6 +1017,7 @@
       },
       function (e) {
         lastError = e;
+        setAuthViews();
         if (first && !everRendered) {
           showError(document.getElementById("error"), e, FIXTURE);
         }
@@ -885,8 +1058,13 @@
 
   window.AgentBranchesUI = {
     FIXTURE: FIXTURE,
+    /* Headless-verifiable auth snapshot for tests and operators. */
+    auth: function () {
+      return authState.snapshot();
+    },
     bootIndex: function () {
       if (FIXTURE) document.getElementById("demo-banner").hidden = false;
+      initAuthUI();
       var loading = document.getElementById("loading");
       currentTaskId = null;
       doRefresh(true).then(function () { loading.hidden = true; });
@@ -895,6 +1073,7 @@
     },
     bootTask: function () {
       if (FIXTURE) document.getElementById("demo-banner").hidden = false;
+      initAuthUI();
       var loading = document.getElementById("loading");
       var id = params.get("id");
       if (!id) {

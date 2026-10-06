@@ -17,3 +17,4 @@ local-coordinator-state.json
 # live run state (zc-live-2)
 live/.dev.vars
 live/work/
+.pytest_cache/

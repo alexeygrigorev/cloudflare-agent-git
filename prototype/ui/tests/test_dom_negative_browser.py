@@ -32,8 +32,6 @@ from playwright.sync_api import sync_playwright
 UI_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 default_scratch = os.path.abspath(os.path.join(UI_DIR, "../../.local/scratch"))
 scratch_dir = os.environ.get("TMPDIR", default_scratch)
-os.makedirs(scratch_dir, exist_ok=True)
-os.environ["TMPDIR"] = scratch_dir
 
 CLEAN_STATUS = {
     "agents": [
@@ -150,6 +148,8 @@ class MockServer(socketserver.TCPServer):
 class TestDOMNegativeBrowser(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        os.makedirs(scratch_dir, exist_ok=True)
+        os.environ["TMPDIR"] = scratch_dir
         cls.server = MockServer(("127.0.0.1", 0), MockUIHandler)
         cls.port = cls.server.server_address[1]
         cls.server_thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
@@ -391,9 +391,11 @@ class TestDOMNegativeBrowser(unittest.TestCase):
         self.assertIn("Live status is out of date", err_text)
         self.assertIn("HTTP 503", err_text)
 
-        # CRITICAL DOM NEGATIVE ASSERTION ON TASK VIEW (C-1426):
-        # Historical fact is preserved: Result still displays 'Passed'
-        self.assertIn("Passed", page.locator("#evidence .badge.clean").text_content())
+        # CRITICAL DOM NEGATIVE ASSERTION ON TASK VIEW (C-1426 & C-1460):
+        # 503 Outage: Zero green .badge.clean exist in #evidence, consistent with index.html policy
+        self.assertEqual(page.locator("#evidence .badge.clean").count(), 0, "Zero green clean badges during outage on task view")
+        # Historical fact is preserved: Result displays 'Passed (unconfirmed)' with neutral not_checked badge
+        self.assertIn("Passed (unconfirmed)", page.locator("#evidence .badge.not_checked").text_content())
         # Current head match is unconfirmed during outage
         self.assertIn("live status unconfirmed", page.locator("#evidence").text_content())
         # Current head safety verdict is strictly downgraded to unknown (not safe)
@@ -412,6 +414,12 @@ class TestDOMNegativeBrowser(unittest.TestCase):
 
         page.close()
         self.assertEqual(page_errors, [], f"Page threw unhandled exceptions: {page_errors}")
+
+    def test_05_scratch_directory_pinned(self):
+        """Verify scratch directory path defaults to repo-relative .local/scratch (M6 mutation guard)."""
+        expected_suffix = os.path.join(".local", "scratch")
+        self.assertTrue(default_scratch.endswith(expected_suffix), f"default_scratch {default_scratch} must end with {expected_suffix}")
+        self.assertTrue(os.path.isabs(default_scratch), f"default_scratch {default_scratch} must be absolute")
 
 
 if __name__ == "__main__":
