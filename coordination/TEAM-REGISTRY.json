@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T07:59:22.800628+00:00",
+  "updated_at": "2026-10-06T08:46:42.228032+00:00",
   "resource_note": "Host slice /user.slice/user-1000.slice/session-8309.scope/memory.max is 'max' at kernel level; 1500M is cooperative process budget convention, not isolated cgroup limit.",
   "assignment_status": "initial mapping; heads ACK and maintain delegates; no execution claim from registry alone",
   "excluded_principals": [
@@ -4454,7 +4454,10 @@
       "project_id": "agent-branches",
       "assignment_ack": "01a11001-3e94 / 01a11002-b90c",
       "registered_at": "2026-10-06T07:07:11.372784+00:00",
-      "first_action": "Genuine native custody ACK received; Ant whoami/docs/startup read ACK observed; QL further trace pending."
+      "first_action": "Genuine native custody ACK received; Ant whoami/docs/startup read ACK observed; QL further trace pending.",
+      "observed_state": "Exact predecessor administrativelyretired after boundedindependentbackupPASS; histories/originalenvelopes preserved",
+      "replaced_by": "c6ea5473-befb-4264-b048-f9511be90152",
+      "updated_at": "2026-10-06T08:45:18.001740+00:00"
     },
     {
       "session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
@@ -4615,15 +4618,57 @@
       "in_reply_to": "01a11030-b7ab-7c20-a767-297ed3d88ecc",
       "desktop_child_wake_restart": "UNPROVEN",
       "updated_at": "2026-10-06T07:59:22.800628+00:00"
+    },
+    {
+      "session_id": "c6ea5473-befb-4264-b048-f9511be90152",
+      "tag": "ant-head-continuation-custody-20261006",
+      "role": "project_head",
+      "mode": "interactive",
+      "engine": "antigravity",
+      "workspace": "/home/alexey/git/cloudflare-agent-git",
+      "project_id": "agent-branches",
+      "parent_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
+      "resumed_conversation": "ea14b401-20e9-4e48-ab08-d15be08da30d",
+      "assignment_ack": "01a11060-ba76-79b0-ad9c-b372f4078500",
+      "first_action": {
+        "handoff_read_at_utc": "2026-10-06T08:41:25Z",
+        "whoami_at_utc": "2026-10-06T08:41:31Z"
+      },
+      "workload_pid": 2689847,
+      "worker_pid": 2689805,
+      "memory_max": "1500M",
+      "tasks_max": 100,
+      "registered_at": "2026-10-06T08:45:18.001740+00:00",
+      "current_timer_delegate": "pending"
+    },
+    {
+      "actor_identity": "bf54ef18-7623-4a02-8bbf-c83ef956e3f9",
+      "parent_session_id": "c6ea5473-befb-4264-b048-f9511be90152",
+      "head_session_id": "c6ea5473-befb-4264-b048-f9511be90152",
+      "role": "worker",
+      "mode": "native_harness_subagent",
+      "observed_state": "Actualmodel firsttool verified at supplied08:45checkpoint",
+      "registered_at": "2026-10-06T08:46:42.228032+00:00",
+      "scope": "C2710native repair exacttaskscope pending"
+    },
+    {
+      "actor_identity": "85b3fa67-a9fd-48d0-8bf2-38008e18ea91",
+      "parent_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "head_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "role": "worker",
+      "mode": "headless_modelworker",
+      "observed_state": "Actualmodel firsttool verified at supplied08:45checkpoint",
+      "registered_at": "2026-10-06T08:46:42.228032+00:00",
+      "scope": "launcher-task-paths-normalization"
     }
   ],
   "projects": [
     {
       "id": "agent-branches",
       "name": "Agent Branches",
-      "head_tag": "ant-head-custody-resume-20261006",
-      "head_session_id": "365d3033-e7f8-4962-98b1-869674578125",
-      "integration_owner": "ant-head-custody-resume-20261006",
+      "head_tag": "ant-head-continuation-custody-20261006",
+      "head_session_id": "c6ea5473-befb-4264-b048-f9511be90152",
+      "integration_owner": "ant-head-continuation-custody-20261006",
       "principal_tags": [
         "codex-principal"
       ],
@@ -4659,12 +4704,18 @@
           "integration_owner": "ant-head-continuation-resume-20261005",
           "ownership_state": "Genuine current custody ACK and first implementation/reviewer/real trial observed; recurring supervisor and safe failover runtime acceptance pending. Current20GiB hard/30GiB cleanup policy applies.",
           "head_assignment_ack": "01a10ddf-8f3d-7fa0-97a8-7b3e5e624682"
+        },
+        {
+          "head_tag": "ant-head-custody-resume-20261006",
+          "head_session_id": "365d3033-e7f8-4962-98b1-869674578125",
+          "integration_owner": "ant-head-custody-resume-20261006",
+          "head_assignment_ack": "01a11001-3e94 / 01a11002-b90c"
         }
       ],
       "head_workspace": "/home/alexey/git/cloudflare-agent-git",
-      "head_assignment_ack": "01a11001-3e94 / 01a11002-b90c",
+      "head_assignment_ack": "01a11060-ba76-79b0-ad9c-b372f4078500",
       "resumed_conversation": "ea14b401-20e9-4e48-ab08-d15be08da30d",
-      "updated_at": "2026-10-06T07:07:11.372784+00:00"
+      "updated_at": "2026-10-06T08:45:18.001740+00:00"
     },
     {
       "id": "agent-dashboard",

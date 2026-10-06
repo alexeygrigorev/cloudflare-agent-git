@@ -30,7 +30,7 @@ ORIGIN = 'https://alexeygrigorev.com'
 E = html.escape
 SIGNUP = json.loads((ROOT/'website/signup.json').read_text())
 PROJECTS = json.loads((ROOT/'website/projects.json').read_text())
-ACTIVE_COUNT = sum(not p['status'].lower().startswith('parked') for p in PROJECTS)
+ACTIVE_COUNT = sum('parked' not in p['status'].lower() for p in PROJECTS)
 OPEN_PLACES = max(0, 6 - ACTIVE_COUNT)
 PARKED_COUNT = len(PROJECTS) - ACTIVE_COUNT
 ASSETS = ROOT/'website/assets'
@@ -40,7 +40,7 @@ BACK = '<span class="arr-l" aria-hidden="true">\u2190</span>'
 
 def _mark(shape):
     return (ASSETS/'marks'/(shape+'.svg')).read_text().strip()
-SHAPE = {'A01': 'circle', 'A16': 'square', 'A05': 'triangle', 'A06': 'diamond', 'A10': 'pentagon', 'SLOT6': 'star'}
+SHAPE = {'A01': 'circle', 'A16': 'square', 'A05': 'triangle', 'A06': 'diamond', 'A10': 'pentagon', 'OTHER': 'square', 'SLOT6': 'star'}
 CARD_MARKS = {k: _mark(v) for k, v in SHAPE.items()}
 LOGO_SVG = CARD_MARKS['A01'].replace('aria-label="circle"', 'aria-hidden="true"').replace('role="img" ', '')
 
@@ -301,7 +301,7 @@ def report_title(path):
     return tidy(heading[1]) if heading else 'Orchestrator check-in'
 
 # ---------------------------------------------------------------- page frame
-NAV = [('Journal', ''), ('Hypotheses', 'projects/'), ('Checklist', 'checklist/'), ('Daily report', 'daily/'), ('Field notes', 'reports/'), ('Hourly history', 'history/'), ('Library', 'research/'), ('About', 'experiment/')]
+NAV = [('Journal', ''), ('Hypotheses', 'hypotheses/'), ('Checklist', 'checklist/'), ('Daily report', 'daily/'), ('Field notes', 'reports/'), ('Hourly history', 'history/'), ('Library', 'research/'), ('About', 'experiment/')]
 
 def nav_html(route):
     out = []
@@ -357,7 +357,7 @@ def card(p, with_next=False):
     if with_next:
         first = re.split(r'(?<=[.;])\s', p['test'].strip(), maxsplit=1)[0]
         nxt = '<p class="card-next">Next test: '+E(first)+'</p>'
-    return ('<a class="hyp-card" href="'+BASE+'/projects/'+p['slug']+'/"><span class="card-top"><span class="card-mark" aria-hidden="true">'+CARD_MARKS.get(p['id'], CARD_MARKS['A01'])+'</span><span class="badge">'+tag+'</span></span>'
+    return ('<a class="hyp-card" href="'+BASE+'/hypotheses/'+p['slug']+'/"><span class="card-top"><span class="card-mark" aria-hidden="true">'+CARD_MARKS.get(p['id'], CARD_MARKS['OTHER'])+'</span><span class="badge">'+tag+'</span></span>'
             '<span class="card-head"><span class="card-name">'+E(p['name'])+'</span></span>'
             '<span class="status-line">'+smark(status_kind(p))+'<span>'+E(p['status'])+'</span></span><span class="card-short">'+E(p['summary'])+'</span>'+nxt+'</a>')
 
@@ -427,17 +427,17 @@ def project_page(i, p):
         when = '' if stance == 'latest' else '<span class="ev-when">BEFORE 3 OCT</span>'
         return '<div class="ev-row"><span class="ev-stance"><span class="ev-label">'+mark+'<span>'+STANCE[stance]+'</span></span>'+when+'</span><span class="ev-body"><span class="ev-text">'+E(text)+'</span>'+src_link(rel)+'</span></div>'
     prov = '<span>Provisional idea; no final shortlist has been approved.</span>'+('<span>Status as of '+E(when)+'.</span>' if when else '')
-    return ('<nav class="crumbs" aria-label="Breadcrumb"><a href="'+BASE+'/projects/">Hypotheses</a><span aria-hidden="true">/</span><span>'+E(p['name'])+'</span></nav>'
+    return ('<nav class="crumbs" aria-label="Breadcrumb"><a href="'+BASE+'/hypotheses/">Hypotheses</a><span aria-hidden="true">/</span><span>'+E(p['name'])+'</span></nav>'
             '<div class="proj-head"><div class="proj-title"><h1>'+E(p['name'])+'</h1>'
             '<div class="proj-status">'+smark(status_kind(p), 18)+'<span>'+E(p['status'])+'</span></div><div class="mono-meta">'+prov+'</div></div>'
-            '<figure class="proj-figure"><img src="'+BASE+'/assets/scenes/'+p['slug']+'.svg" width="640" height="320" alt="'+E(p['name'], quote=True)+': conceptual diagram of the hypothesis, not a measured result"><figcaption>'+E(FIGS.get(p['id'], 'FIG. '+p['id']))+'</figcaption></figure></div>'
+            +('<figure class="proj-figure"><img src="'+BASE+'/assets/scenes/'+p['slug']+'.svg" width="640" height="320" alt="'+E(p['name'], quote=True)+': conceptual diagram of the hypothesis, not a measured result"><figcaption>'+E(FIGS.get(p['id'], 'FIG. '+p['id']))+'</figcaption></figure>' if (ASSETS/'scenes'/(p['slug']+'.svg')).exists() else '')+'</div>'
             '<article class="proj-body">'
             '<section class="proj-sec"><h2 class="proj-num">01 \u00b7 PROBLEM</h2><p class="proj-problem">'+E(p['problem'])+'</p>'+('<p class="proj-who">Who: '+E(who)+'</p>' if who else '')+'</section>'
             '<section class="proj-sec"><h2 class="proj-num">02 \u00b7 HYPOTHESIS</h2><p class="proj-lead">'+E(p['idea'])+'</p></section>'
             '<section class="proj-sec"><h2 class="proj-num">03 \u00b7 EVIDENCE SO FAR</h2>'+ev(*ev_rows[0])+('<p class="ev-earlier">Earlier research, from before 3 October 2026, 02:24 UTC. Kept for context; it is not the current status.</p>'+''.join(ev(*e) for e in ev_rows[1:]) if len(ev_rows) > 1 else '')+'</section>'
             '<section class="proj-sec test-box"><h2 class="proj-num">04 \u00b7 NEXT FALSIFICATION TEST</h2><p>'+E(p['test'])+'</p><div class="test-grid"><div><span class="field-label">Status</span><span class="test-strong">'+E(p['status'])+'</span></div><div><span class="field-label">We would drop or park it if</span><span>'+E(p['falsifier'])+'</span></div></div></section>'
             '<section class="proj-sec"><h2 class="proj-num">05 \u00b7 PUBLIC SOURCES</h2>'+''.join(src_link(s, 'src-row') for s in sources)+'</section>'
-            '<div class="prev-next"><a href="'+BASE+'/projects/'+prev['slug']+'/">'+BACK+E(prev['id']+' \u00b7 '+prev['name'])+'</a><a href="'+BASE+'/projects/'+nxt['slug']+'/">'+E(nxt['id']+' \u00b7 '+nxt['name'])+ARROW+'</a></div>'
+            '<div class="prev-next"><a href="'+BASE+'/hypotheses/'+prev['slug']+'/">'+BACK+E(prev['id']+' \u00b7 '+prev['name'])+'</a><a href="'+BASE+'/hypotheses/'+nxt['slug']+'/">'+E(nxt['id']+' \u00b7 '+nxt['name'])+ARROW+'</a></div>'
             '</article>')
 
 def checklist_page():
@@ -637,7 +637,7 @@ def home_page():
             '<div class="hero-grid">'+feature+honest+'</div></section>')
     hyp = ('<section class="hyp-section" aria-labelledby="hyp-title"><div class="section-head"><h2 id="hyp-title">The hypotheses</h2><p>'+str(ACTIVE_COUNT)+' still being tested. '+str(PARKED_COUNT)+' parked. '+str(OPEN_PLACES)+' places open. None selected.<span class="only-phone"> Every idea is provisional.</span> <a href="'+BASE+'/ideas/">Read what all 20 ideas would do'+ARROW+'</a></p></div>'+cards()+'</section>')
     stats = ''.join('<div class="pain-stat"><span class="pain-n">'+E(n)+'</span><span class="pain-l">'+E(l)+'</span></div>' for n, l in PAIN_STATS)
-    pain = ('<section class="pain" aria-labelledby="pain-title"><div class="pain-copy">'+'<h2 id="pain-title">Most of the worktree pile isn\u2019t Git. It\u2019s dependencies.</h2><p>The pain is real and measured. Whether anyone would adopt a product for it is unknown. Package managers that already keep one shared copy of dependencies for many folders may solve it without a new product.</p><a class="read-more-sm" href="'+BASE+'/projects/storage-aware-workspaces/">Read the storage-aware workspaces idea'+ARROW+'</a></div>'
+    pain = ('<section class="pain" aria-labelledby="pain-title"><div class="pain-copy">'+'<h2 id="pain-title">Most of the worktree pile isn\u2019t Git. It\u2019s dependencies.</h2><p>The pain is real and measured. Whether anyone would adopt a product for it is unknown. Package managers that already keep one shared copy of dependencies for many folders may solve it without a new product.</p><a class="read-more-sm" href="'+BASE+'/hypotheses/storage-aware-workspaces/">Read the storage-aware workspaces idea'+ARROW+'</a></div>'
             '<div class="pain-data"><div class="pain-stats">'+stats+'</div><div class="pain-chart"><div class="pain-bar" role="img" aria-label="62.1% of the disk space is dependencies and build output"><span class="pain-fill"></span></div><div class="pain-caps"><span>Dependencies and build output: 69.4 GiB (62.1%)</span><span class="muted">Source code and everything else: about 42 GiB</span></div><div class="status-line pain-unknown">'+smark('unknown')+'<span>Whether this needs a new product: unknown</span></div></div></div></section>')
     admitted = [rp for rp in REPORTS if note_info(rp) is not None]
     fields = ''.join('<a class="row-link field-row" href="'+BASE+'/reports/'+rp.stem+'/"><span class="field-time">'+note_time(rp)+'</span><span class="field-title">'+E(note_info(rp)[0])+'</span></a>' for rp in admitted[:4])
@@ -678,6 +678,11 @@ def main():
         target = output / route / 'index.html'
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(page(title, body, route, description or 'A public experiment in Git, coding agents, and the work between them.', kind), encoding='utf-8')
+    def write_redirect(old, new):
+        url = ORIGIN+BASE+'/'+new
+        target = output / old / 'index.html'
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Moved to Hypotheses</title><meta name="robots" content="noindex"><link rel="canonical" href="'+url+'"><meta http-equiv="refresh" content="0; url='+BASE+'/'+new+'"></head><body><p>This page moved to <a href="'+BASE+'/'+new+'">'+url+'</a>.</p></body></html>', encoding='utf-8')
     shutil.copytree(ASSETS, output/'assets', dirs_exist_ok=True)
     (output/'.nojekyll').write_text('')
     daily = DAILY
@@ -686,9 +691,12 @@ def main():
     write('', LATEST['title'] if LATEST else 'Agent Branches', home_page(), kind='home')
     rows = ''.join('<a class="journal-row" href="'+BASE+'/'+d['route']+'"><span class="journal-title">'+E(d['title'])+'</span><span class="journal-date">'+E(long_date(d['date']))+'</span><span class="journal-summary">'+E(d.get('summary', ''))+'</span><span class="read-more-sm">Read the story'+ARROW+'</span></a>' for d in daily)
     write('daily/', 'Daily journal', '<div class="narrow">'+intro('The daily journal', 'What we tried, what held up, and what changed our minds. Written with Claude Opus, checked against the experiment.', '<a class="read-more-sm" href="'+BASE+'/feed.xml">Subscribe via RSS'+ARROW+'</a>')+'<div class="journal-list">'+(rows or '<p>The first evidence-checked story is being prepared.</p>')+'</div></div>')
-    write('projects/', 'Hypotheses', intro('Ideas with work to do', str(len(PROJECTS))+' directions have pages here: '+str(ACTIVE_COUNT)+' retained for falsification and '+str(PARKED_COUNT)+' parked. Selection and development gates are separate; these are provisional research lanes, not products. Each page states what would change our mind.')+cards(with_next=True))
+    write('hypotheses/', 'Hypotheses', intro('Ideas with work to do', str(len(PROJECTS))+' directions have pages here: '+str(ACTIVE_COUNT)+' retained for falsification and '+str(PARKED_COUNT)+' parked. Selection and development gates are separate; these are provisional research lanes, not products. Each page states what would change our mind.')+cards(with_next=True))
     for i, p in enumerate(PROJECTS):
-        write('projects/'+p['slug']+'/', p['name'], project_page(i, p), p['summary'], 'project')
+        write('hypotheses/'+p['slug']+'/', p['name'], project_page(i, p), p['summary'], 'project')
+    for p in PROJECTS:
+        write_redirect('projects/'+p['slug']+'/', 'hypotheses/'+p['slug']+'/')
+    write_redirect('projects/', 'hypotheses/')
     admitted_reports = [rp for rp in REPORTS if note_info(rp) is not None]
     total_notes = len(admitted_reports)
     total_pages = max(1, (total_notes + PAGE_SIZE - 1) // PAGE_SIZE)
