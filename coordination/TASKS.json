@@ -7307,6 +7307,41 @@
       ],
       "execution_state": "No head ACK/firstworker/admission observed",
       "next_action": "Ant genuinely ACKs existing C2786 intake, chooses scoped existing sync-CLI integration and delegates implementer plus distinct reviewer; principal monitors"
+    },
+    {
+      "id": "t-coord-review-adapter-launcher-align-c3047",
+      "team_id": "coordination",
+      "project_id": "agent-coordination",
+      "parent_task": "t-coord-consumer-exec-adapter-c3032",
+      "owner_tag": "zcode-quota-recovery-head-20261006",
+      "owner_session_id": "d3b54165-2fb8-412c-882e-322c4bfb545f",
+      "status": "running",
+      "scope_note": "SCOPE RELEASED per principal 01a11322-a455: no Coord lease claimed; implementation branch pushed BEFORE narrowing was read and is handed UNMERGED to Coord/Bus owner with its review receipt.",
+      "implementation_branch": "coord-adapter-launcher-align-c3046",
+      "implementation_commit": "3017d4a72b24eb1d17c47a0c5d4ae054a27fc8b0",
+      "implementation_tests": "12 passed in 1.17s (scripts/coordination/test_consumer_execution_adapter.py)",
+      "reviewer_task": "t-coord-review-adapter-launcher-align-c3047",
+      "reviewer_provider": "zai glm-5.3-flash headless zcodex, read-only, bounded 1200s",
+      "dispatched_at_utc": "2026-10-06T21:44Z"
+    },
+    {
+      "id": "t-ql-repair-request-profile-detection-c3048",
+      "team_id": "quota-launcher",
+      "project_id": "quota-launcher",
+      "parent_task": "t-ql-head-request-and-tool-dedup-c3033",
+      "owner_tag": "zcode-quota-recovery-head-20261006",
+      "owner_session_id": "d3b54165-2fb8-412c-882e-322c4bfb545f",
+      "status": "running",
+      "addresses_review": "REV-QL-HEAD-REQUEST-AND-TOOL-DEDUP-C3045-LLM.md sha256 133c79bdea979fc7fa20446672ba46720ca608a3f7e302f6dd92e21bde9e6221 verdict CHANGES_REQUESTED",
+      "repair_items": [
+        "must: resolve_task_bounds must see request-submitted goal (regression test for review probe P3)",
+        "should: request() structured JSON errors for duplicate id and unknown profile; expose --key for idempotent retry",
+        "nice: document step_index uniqueness assumption in parse_tool_events"
+      ],
+      "source_base": "bd8f7ee3b82ac0b9f07a9b1f90880a55a367609f",
+      "provider": "zai glm-5.3-flash headless zcodex via stable main9a9 submit/run",
+      "dispatched_at_utc": "2026-10-06T21:57Z",
+      "next_gate": "distinct independent review of repair commit before acceptance; candidate request dogfood held"
     }
   ]
 }
