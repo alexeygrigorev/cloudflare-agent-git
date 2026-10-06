@@ -9,6 +9,11 @@ Tests:
 - test_unrelated_cursor_isolation_during_execution
 - test_unknown_device_admission_rejection
 - test_cli_execution_once_json
+- test_default_runner_is_launcher_backed_not_synthesized
+- test_launcher_runner_maps_failed_state_to_unit_failure
+- test_launcher_runner_poll_expiry_is_honest_failure
+- test_launcher_runner_fail_closed_missing_params
+- test_launcher_request_nonzero_exit_fails_unit
 """
 
 from __future__ import annotations
@@ -62,8 +67,24 @@ from coordination.host_interface import (
 from scripts.coordination.consumer_execution_adapter import (
     ConsumerExecutionAdapter,
     ExecutionUnit,
+    LauncherRequestRunner,
     main,
 )
+import scripts.coordination.consumer_execution_adapter as adapter_module
+
+
+def _stub_runner(task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "status": "completed",
+        "launcher_task_id": f"t-stub-{task_id}",
+        "controller_unit": f"ql-ctl-t-stub-{task_id}.service",
+        "profile": "model-task",
+        "source_receipt": {"resolved_commit": "f" * 40, "repo_path": "/tmp/stub"},
+    }
+
+
+def _fake_completed_process(returncode: int = 0, stdout: str = "", stderr: str = ""):
+    return subprocess.CompletedProcess(args=[], returncode=returncode, stdout=stdout, stderr=stderr)
 
 
 def test_admission_reservation_state_is_never_fake_active(tmp_path: Path) -> None:
@@ -150,11 +171,15 @@ def test_spawn_worker_unit_executes_and_produces_artifact(tmp_path: Path) -> Non
         unit=unit,
         action="benchmark_run",
         payload=payload,
+        runner_fn=_stub_runner,
     )
 
-    # State transitions to completed
+    # State transitions to completed; pid is no longer the adapter process pid
     assert executed_unit.state == "completed"
-    assert executed_unit.pid == os.getpid()
+    assert executed_unit.pid is None
+    assert executed_unit.launcher_task_id == "t-stub-task-artifact-002"
+    assert executed_unit.controller_unit == "ql-ctl-t-stub-task-artifact-002.service"
+    assert executed_unit.source_receipt["resolved_commit"] == "f" * 40
     assert executed_unit.started_at is not None
     assert executed_unit.completed_at is not None
     assert executed_unit.artifact_path is not None
@@ -171,7 +196,7 @@ def test_spawn_worker_unit_executes_and_produces_artifact(tmp_path: Path) -> Non
     assert len(spawn_events) == 1
     assert spawn_events[0]["task_id"] == "task-artifact-002"
     assert spawn_events[0]["details"]["state"] == "running"
-    assert spawn_events[0]["details"]["pid"] == os.getpid()
+    assert spawn_events[0]["details"]["pid"] is None
 
     completed_events = query_host_events(events_dir=events_dir, event_type="task_completed")
     assert len(completed_events) == 1
@@ -297,7 +322,7 @@ def test_correlated_reply_and_cursor_advancement(tmp_path: Path) -> None:
     msg = unread[0]
 
     unit = adapter.admit_task(msg)
-    adapter.spawn_worker_unit(unit, action="compute", payload=msg["data"])
+    adapter.spawn_worker_unit(unit, action="compute", payload=msg["data"], runner_fn=_stub_runner)
 
     # Send completion reply and advance cursor
     reply_outcome = adapter.send_completion_reply(
@@ -360,12 +385,13 @@ def test_unrelated_cursor_isolation_during_execution(tmp_path: Path) -> None:
     assert len(sentinel_unread_before) == 1
     sentinel_msg_id = sentinel_unread_before[0]["message_id"]
 
-    # 2. Setup consumer adapter
+    # 2. Setup consumer adapter with stubbed launcher runner
     adapter = ConsumerExecutionAdapter(
         store_path=bus_store,
         cred=consumer_cred,
         events_dir=events_dir,
         artifacts_dir=artifacts_dir,
+        launcher_runner=_stub_runner,
     )
 
     # 3. Client sends 3 separate messages to consumer
@@ -433,7 +459,7 @@ def test_unknown_device_admission_rejection(tmp_path: Path) -> None:
     assert events[0]["details"]["error_type"] == "UnknownDevice"
 
 
-def test_cli_execution_once_json(tmp_path: Path) -> None:
+def test_cli_execution_once_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Verifies CLI execution with --once --json flags."""
     bus_store = tmp_path / "bus_store"
     bus_store.mkdir(parents=True, mode=0o700)
@@ -454,6 +480,11 @@ def test_cli_execution_once_json(tmp_path: Path) -> None:
         kind="command",
     )
 
+    class StubRunner:
+        def __call__(self, task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+            return {"status": "completed", "launcher_task_id": f"t-cli-{task_id}"}
+
+    monkeypatch.setattr(adapter_module, "LauncherRequestRunner", StubRunner)
     ret = main([
         "--store", str(bus_store),
         "--cred", str(cred_path),
@@ -471,3 +502,203 @@ def test_cli_execution_once_json(tmp_path: Path) -> None:
     # Verify deliverable artifact was written
     artifact_file = artifacts_dir / "task-cli-001.json"
     assert artifact_file.is_file()
+
+
+def test_default_runner_is_launcher_backed_not_synthesized(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies the default execution path uses launcher request/status; no synthesized success."""
+    bus_store = tmp_path / "bus_store"
+    bus_store.mkdir(parents=True, mode=0o700)
+    events_dir = tmp_path / "events"
+    events_dir.mkdir(parents=True, mode=0o700)
+    artifacts_dir = tmp_path / "artifacts"
+    artifacts_dir.mkdir(parents=True, mode=0o700)
+
+    request_json = json.dumps({
+        "task_id": "t-launcher-1",
+        "controller_unit": "ql-ctl-t-launcher-1.service",
+        "status": "queued-or-starting",
+        "profile": "model-task",
+        "timeout": 600.0,
+        "source_receipt": {"resolved_commit": "a" * 40, "repo_path": "/tmp/wt"},
+    })
+    status_json = json.dumps({"id": "t-launcher-1", "state": "accepted", "reviewer": "rev-1"})
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(list(cmd))
+        if "request" in cmd:
+            return _fake_completed_process(stdout=request_json)
+        if "status" in cmd:
+            return _fake_completed_process(stdout=status_json)
+        raise AssertionError(f"unexpected cmd {cmd}")
+
+    monkeypatch.setattr(adapter_module.subprocess, "run", fake_run)
+
+    consumer_cred, _ = enroll_agent(bus_store, "consumer-agent", device_id="hetzner-rmthz")
+    adapter = ConsumerExecutionAdapter(
+        store_path=bus_store,
+        cred=consumer_cred,
+        events_dir=events_dir,
+        artifacts_dir=artifacts_dir,
+    )
+    assert isinstance(adapter.launcher_runner, LauncherRequestRunner)
+
+    unit = ExecutionUnit(task_id="task-launcher-001", device_id="hetzner-rmthz", state="admitted")
+    adapter.units[unit.unit_id] = unit
+    executed = adapter.spawn_worker_unit(
+        unit=unit,
+        action="compute",
+        payload={"goal": "compute payload", "cwd": str(tmp_path / "wt"), "profile": "model-task"},
+    )
+
+    assert executed.state == "completed"
+    assert executed.pid is None
+    assert executed.launcher_task_id == "t-launcher-1"
+    assert executed.controller_unit == "ql-ctl-t-launcher-1.service"
+    assert executed.source_receipt["resolved_commit"] == "a" * 40
+
+    assert "request" in calls[0]
+    gi = calls[0].index("--goal")
+    assert calls[0][gi + 1] == "compute payload"
+    ci = calls[0].index("--cwd")
+    assert calls[0][ci + 1].endswith("wt")
+    pi = calls[0].index("--profile")
+    assert calls[0][pi + 1] == "model-task"
+    assert "status" in calls[1] and "--id" in calls[1] and "t-launcher-1" in calls[1]
+
+    with open(executed.artifact_path, "r", encoding="utf-8") as f:
+        art = json.load(f)
+    assert art["launcher_status"]["state"] == "accepted"
+    assert art["consumer_task_id"] == "task-launcher-001"
+
+    launched_events = query_host_events(events_dir=events_dir, event_type="task_launched")
+    assert len(launched_events) == 1
+    assert launched_events[0]["details"]["launcher_task_id"] == "t-launcher-1"
+    assert launched_events[0]["details"]["controller_unit"] == "ql-ctl-t-launcher-1.service"
+
+
+def test_launcher_runner_maps_failed_state_to_unit_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies launcher failed state maps to unit failure with a truthful error."""
+    bus_store = tmp_path / "bus_store"
+    bus_store.mkdir(parents=True, mode=0o700)
+    events_dir = tmp_path / "events"
+    events_dir.mkdir(parents=True, mode=0o700)
+    artifacts_dir = tmp_path / "artifacts"
+    artifacts_dir.mkdir(parents=True, mode=0o700)
+
+    request_json = json.dumps({"task_id": "t-launcher-2", "controller_unit": "ql-ctl-2.service", "status": "queued-or-starting"})
+    status_json = json.dumps({"id": "t-launcher-2", "state": "failed", "reason": "admission rejected: no route"})
+
+    def fake_run(cmd, **kwargs):
+        if "request" in cmd:
+            return _fake_completed_process(stdout=request_json)
+        if "status" in cmd:
+            return _fake_completed_process(stdout=status_json)
+        raise AssertionError(f"unexpected cmd {cmd}")
+
+    monkeypatch.setattr(adapter_module.subprocess, "run", fake_run)
+
+    consumer_cred, _ = enroll_agent(bus_store, "consumer-agent", device_id="hetzner-rmthz")
+    adapter = ConsumerExecutionAdapter(
+        store_path=bus_store, cred=consumer_cred,
+        events_dir=events_dir, artifacts_dir=artifacts_dir,
+    )
+    unit = ExecutionUnit(task_id="task-launcher-002", device_id="hetzner-rmthz", state="admitted")
+    adapter.units[unit.unit_id] = unit
+
+    with pytest.raises(RuntimeError, match="failed"):
+        adapter.spawn_worker_unit(
+            unit=unit, action="compute",
+            payload={"goal": "g", "cwd": str(tmp_path)},
+        )
+
+    assert unit.state == "failed"
+    assert unit.artifact_path is None
+    failed_events = query_host_events(events_dir=events_dir, event_type="task_failed")
+    assert len(failed_events) == 1
+    assert "no route" in failed_events[0]["details"]["error"]
+
+
+def test_launcher_runner_poll_expiry_is_honest_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies a non-terminal launcher task at poll-window expiry fails the unit with the last real state."""
+    bus_store = tmp_path / "bus_store"
+    bus_store.mkdir(parents=True, mode=0o700)
+    events_dir = tmp_path / "events"
+    events_dir.mkdir(parents=True, mode=0o700)
+    artifacts_dir = tmp_path / "artifacts"
+    artifacts_dir.mkdir(parents=True, mode=0o700)
+
+    request_json = json.dumps({"task_id": "t-launcher-3", "controller_unit": "ql-ctl-3.service", "status": "queued-or-starting"})
+    status_json = json.dumps({"id": "t-launcher-3", "state": "completed-awaiting-review"})
+
+    def fake_run(cmd, **kwargs):
+        if "request" in cmd:
+            return _fake_completed_process(stdout=request_json)
+        if "status" in cmd:
+            return _fake_completed_process(stdout=status_json)
+        raise AssertionError(f"unexpected cmd {cmd}")
+
+    monkeypatch.setattr(adapter_module.subprocess, "run", fake_run)
+
+    consumer_cred, _ = enroll_agent(bus_store, "consumer-agent", device_id="hetzner-rmthz")
+    adapter = ConsumerExecutionAdapter(
+        store_path=bus_store, cred=consumer_cred,
+        events_dir=events_dir, artifacts_dir=artifacts_dir,
+        launcher_runner=LauncherRequestRunner(
+            launcher_root=tmp_path, poll_interval_s=0.01, poll_window_s=0.3,
+        ),
+    )
+    unit = ExecutionUnit(task_id="task-launcher-003", device_id="hetzner-rmthz", state="admitted")
+    adapter.units[unit.unit_id] = unit
+
+    with pytest.raises(RuntimeError, match="still in state 'completed-awaiting-review'"):
+        adapter.spawn_worker_unit(
+            unit=unit, action="compute",
+            payload={"goal": "g", "cwd": str(tmp_path)},
+        )
+    assert unit.state == "failed"
+
+
+def test_launcher_runner_fail_closed_missing_params(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies missing goal or cwd fails closed before any launcher subprocess is spawned."""
+    def no_spawn(cmd, **kwargs):
+        raise AssertionError("subprocess must not be called for invalid payloads")
+
+    monkeypatch.setattr(adapter_module.subprocess, "run", no_spawn)
+
+    runner = LauncherRequestRunner(launcher_root=tmp_path)
+    with pytest.raises(ValueError, match="goal"):
+        runner("task-x", {})
+    with pytest.raises(ValueError, match="cwd"):
+        runner("task-x", {"goal": "some goal"})
+
+
+def test_launcher_request_nonzero_exit_fails_unit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies a non-zero launcher request exit fails the unit with the captured stderr."""
+    bus_store = tmp_path / "bus_store"
+    bus_store.mkdir(parents=True, mode=0o700)
+    events_dir = tmp_path / "events"
+    events_dir.mkdir(parents=True, mode=0o700)
+    artifacts_dir = tmp_path / "artifacts"
+    artifacts_dir.mkdir(parents=True, mode=0o700)
+
+    def fake_run(cmd, **kwargs):
+        return _fake_completed_process(returncode=1, stdout="", stderr="admission: unknown profile boom")
+
+    monkeypatch.setattr(adapter_module.subprocess, "run", fake_run)
+
+    consumer_cred, _ = enroll_agent(bus_store, "consumer-agent", device_id="hetzner-rmthz")
+    adapter = ConsumerExecutionAdapter(
+        store_path=bus_store, cred=consumer_cred,
+        events_dir=events_dir, artifacts_dir=artifacts_dir,
+    )
+    unit = ExecutionUnit(task_id="task-launcher-004", device_id="hetzner-rmthz", state="admitted")
+    adapter.units[unit.unit_id] = unit
+
+    with pytest.raises(RuntimeError, match="exited rc=1"):
+        adapter.spawn_worker_unit(
+            unit=unit, action="compute",
+            payload={"goal": "g", "cwd": str(tmp_path)},
+        )
+    assert unit.state == "failed"
+    assert "unknown profile boom" in (unit.error or "")

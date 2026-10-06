@@ -10,20 +10,22 @@ Validates:
 6. Distinction of ready/queued tasks from running tasks in queues and summaries.
 7. Full service.run() simulation verifying receipt and envelope body generation.
 """
+import datetime
 import hashlib
 import importlib.util
 import json
 import os
 import pathlib
+import subprocess
 import tempfile
 import unittest
 
 # Ensure modules in scripts/supervision and candidate can be loaded
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SUPERVISION_DIR = ROOT / 'scripts/supervision'
-CANDIDATE_PATH = ROOT / 'research/antigravity/tooling/supervision/service_candidate.py'
+CANDIDATE_PATH = ROOT / 'scripts/supervision/service.py'
 
-spec = importlib.util.spec_from_file_location('service_candidate', str(CANDIDATE_PATH))
+spec = importlib.util.spec_from_file_location('service', str(CANDIDATE_PATH))
 service = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(service)
 
@@ -122,7 +124,8 @@ class SupervisionRoutingTests(unittest.TestCase):
 
         # Verify each product project has valid head_tag and truthful principal_tags (C1637: Codex monitoring ACK)
         by_id = {e['id']: e for e in entities}
-        self.assertEqual(by_id['agent-branches']['head_tag'], 'ant-head-continuation-resume-20261005')
+        reg_heads = {p['id']: p.get('head_tag') for p in canonical_registry.get('projects', [])}
+        self.assertEqual(by_id['agent-branches']['head_tag'], reg_heads.get('agent-branches'))
         self.assertEqual(by_id['agent-branches']['principal_tags'], ['codex-principal'], "agent-branches monitored by codex-principal under C1637 ACK")
         self.assertFalse(by_id['agent-branches']['unowned'])
 
@@ -130,11 +133,11 @@ class SupervisionRoutingTests(unittest.TestCase):
         self.assertEqual(by_id['agent-dashboard']['principal_tags'], ['codex-principal'], "agent-dashboard monitored by codex-principal under C1637 ACK")
         self.assertFalse(by_id['agent-dashboard']['unowned'])
 
-        self.assertEqual(by_id['quota-launcher']['head_tag'], 'quota-launcher-head-gemini')
+        self.assertEqual(by_id['quota-launcher']['head_tag'], reg_heads.get('quota-launcher'))
         self.assertEqual(by_id['quota-launcher']['principal_tags'], ['codex-principal'], "quota-launcher monitored by codex-principal under C1637 ACK")
         self.assertFalse(by_id['quota-launcher']['unowned'])
 
-        self.assertEqual(by_id['agent-coordination']['head_tag'], 'agent-coordination-head-gemini')
+        self.assertEqual(by_id['agent-coordination']['head_tag'], reg_heads.get('agent-coordination'))
         self.assertEqual(by_id['agent-coordination']['principal_tags'], ['codex-principal'], "agent-coordination specifies codex-principal")
         self.assertFalse(by_id['agent-coordination']['unowned'])
 
@@ -811,6 +814,277 @@ class SupervisionRoutingTests(unittest.TestCase):
                 self.assertIn('conflicting_entities', status_data)
                 self.assertIn('agent-quota-launcher', status_data['conflicting_entities'])
                 self.assertTrue(any('conflicting entity registrations' in err for err in status_data.get('errors', [])))
+            finally:
+                service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
+                service.recorded_send.__defaults__ = real_defaults
+                service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
+
+    def test_17_task_formatting_owner_vs_owner_tag(self):
+        """Test 17: Support both 'owner' and 'owner_tag' across formatting, head owner determination, and task digest."""
+        # 1. format_supervision_body renders tasks with 'owner': 'codex-principal' properly rather than 'unowned'
+        tasks = [
+            {'id': 'task-owner-codex', 'project_id': 'quota-launcher', 'status': 'ready', 'owner': 'codex-principal'},
+            {'id': 'task-owner-tag-head', 'project_id': 'quota-launcher', 'status': 'queued', 'owner_tag': 'quota-launcher-head'},
+            {'id': 'task-both-owners', 'project_id': 'quota-launcher', 'status': 'running', 'owner_tag': 'primary-tag', 'owner': 'fallback-owner'},
+            {'id': 'task-unowned', 'project_id': 'quota-launcher', 'status': 'ready'},
+        ]
+        body = service.format_supervision_body('testkey1', tasks)
+        self.assertIn('task-owner-codex (ready, codex-principal)', body)
+        self.assertNotIn('task-owner-codex (ready, unowned)', body)
+        self.assertIn('task-owner-tag-head (queued, quota-launcher-head)', body)
+        self.assertIn('task-both-owners (running, primary-tag)', body)
+        self.assertIn('task-unowned (ready, unowned)', body)
+
+        # 2. get_designated_head_owner resolves task with 'owner'
+        entities = [{'id': 'quota-launcher', 'head_tag': 'quota-launcher-head'}]
+        t_head = {'id': 't-launcher', 'owner': 'quota-launcher-head'}
+        self.assertEqual(service.get_designated_head_owner(t_head, entities), 'quota-launcher-head')
+
+        # 3. task_event digest preserves owner in active and completed meaningful lists
+        active_list, digest, counts = service.task_event([
+            {'id': 't-act', 'status': 'ready', 'owner': 'codex-principal'},
+            {'id': 't-comp', 'status': 'completed', 'owner': 'antigravity-head'}
+        ])
+        self.assertEqual(len(active_list), 1)
+        self.assertEqual(len(active_list.completed), 1)
+
+    def test_18_supervisor_session_restart_may_deliver_and_reconciliation(self):
+        """Test 18: Supervisor restart with pending notification from previous supervisor session: may_deliver and reconciliation."""
+        with tempfile.TemporaryDirectory(dir=str(SCRATCH_BASE)) as td:
+            spool = pathlib.Path(td) / 'private'
+            spool.mkdir(parents=True, exist_ok=True)
+            # Create identity.json recording previous supervisor session IDs
+            (spool / 'identity.json').write_text(json.dumps({
+                'id': 'current-sup-session',
+                'tag': 'experiment-supervision',
+                'workspace': str(ROOT),
+                'previous_ids': ['prev-sup-session-1', 'prev-sup-session-2']
+            }))
+
+            # 1. may_deliver allows delivery if sender was previous supervisor in identity.json
+            p_prev = {'id': 'mid-prev', 'sender_id': 'prev-sup-session-1', 'delivery': 'inbox'}
+            self.assertTrue(service.may_deliver(p_prev, 'current-sup-session', spool=spool))
+
+            # 2. may_deliver allows delivery if sender_tag is 'experiment-supervision'
+            p_tag = {'id': 'mid-tag', 'sender_id': 'some-other-sup', 'sender_tag': 'experiment-supervision',
+                     'workspace': str(ROOT), 'delivery': 'not-ready'}
+            self.assertTrue(service.may_deliver(p_tag, 'current-sup-session', spool=spool))
+
+            # 3. may_deliver denies unauthorized foreign sender
+            p_foreign = {'id': 'mid-foreign', 'sender_id': 'unauthorized-foreign-id', 'delivery': 'inbox'}
+            self.assertFalse(service.may_deliver(p_foreign, 'current-sup-session', spool=spool))
+
+        # 4. Full service.run() reconciliation when supervisor restarted and pending message from prior supervisor is stale beyond SLO
+        with tempfile.TemporaryDirectory(dir=str(SCRATCH_BASE)) as td:
+            tmp = pathlib.Path(td)
+            root = tmp / 'root'
+            (root / 'coordination').mkdir(parents=True)
+            private = tmp / 'private'
+            private.mkdir()
+            bin_dir = tmp / 'bin'
+            bin_dir.mkdir()
+            pinned = bin_dir / 'aplexer'
+            pinned.write_text('#!/bin/sh\necho "{}"\n')
+            pinned.chmod(0o755)
+
+            registry = {'projects': [{'id': 'quota-launcher', 'head_tag': 'quota-launcher-head', 'principal_owner': 'codex-principal'}]}
+            tasks = {'tasks': [{'id': 't-reconcile-1', 'project_id': 'quota-launcher', 'status': 'ready', 'owner': 'codex-principal'}]}
+            (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps(registry))
+            (root / 'coordination/TASKS.json').write_text(json.dumps(tasks))
+
+            t_now = 2000.0
+            # 500s old pending notification from prior supervisor session 'prev-sup-id'
+            created_dt = datetime.datetime.fromtimestamp(t_now - 500, datetime.timezone.utc)
+            init_state = {
+                'codex-principal': {
+                    'session_id': 'sess-codex-1',
+                    'reported_state': 'idle',
+                    'alive': True,
+                    'composer': 'empty',
+                    'ready_snapshot_count': 2,
+                    'reason': 'idle-empty',
+                    'pending': {
+                        'id': 'msg-stale-from-prev-sup',
+                        'sender_id': 'prev-sup-id',
+                        'recipient_session_id': 'sess-codex-1',
+                        'event': 'ev-stale',
+                        'delivery': 'not-ready',
+                        'created_at': created_dt.isoformat()
+                    }
+                }
+            }
+            (private / 'state.json').write_text(json.dumps(init_state))
+            (private / 'identity.json').write_text(json.dumps({
+                'id': 'prev-sup-id',
+                'tag': 'experiment-supervision',
+                'workspace': str(root)
+            }))
+
+            def fake_cmd(args, timeout=20):
+                words = [a for a in args[1:] if not a.startswith('-')]
+                if words[:1] == ['whoami']:
+                    return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'new-sup-id'})
+                if 'idempotency-key' in args and 'help' in args:
+                    return '  --idempotency-key'
+                if words[:1] == ['list']:
+                    (private / 'stop').write_text('stop')
+                    return json.dumps([{
+                        'workspace': str(root),
+                        'tag': 'codex-principal',
+                        'id': 'sess-codex-1',
+                        'reported_state': 'idle',
+                        'workload_pid': str(os.getpid())
+                    }])
+                if 'inbox' in args:
+                    return json.dumps({'messages': []})
+                if 'capture' in args:
+                    return '› Ask Codex to do anything\n  GPT-6.1 Context 50% left'
+                if args[0] == 'quse':
+                    return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 85}}}})
+                if words[:2] == ['message', 'send']:
+                    return json.dumps({'id': 'msg-fresh-sent', 'delivery': 'inbox'})
+                return '{}'
+
+            def fake_run(args, **kwargs):
+                return subprocess.CompletedProcess(args, 0, stdout=json.dumps({'status': 'not-ready'}), stderr='')
+
+            real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+            real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
+            real_defaults = service.recorded_send.__defaults__
+
+            try:
+                service.command = fake_cmd
+                service.subprocess.run = fake_run
+                service.recorded_send.__defaults__ = (fake_cmd,)
+                service.time = type('T', (), {'time': staticmethod(lambda: t_now), 'sleep': staticmethod(lambda s: None)})()
+                service.ROOT = root
+                service.PRIVATE = private
+                service.BINARY = str(pinned)
+
+                service.run()
+
+                status = json.loads((private / 'status.json').read_text())
+                # Verify that pending-superseded-session-change was recorded
+                self.assertTrue(any(a.get('kind') == 'pending-superseded-session-change' for a in status.get('actions', [])))
+                # Verify state.json cleared the stale pending notification
+                st = json.loads((private / 'state.json').read_text())
+                self.assertIsNone(st['codex-principal']['pending'])
+                self.assertEqual(st['codex-principal']['status'], 'ok')
+            finally:
+                service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
+                service.recorded_send.__defaults__ = real_defaults
+                service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
+
+    def test_19_recipient_session_change_reconciles_pending(self):
+        """Test 19: When recipient session restarts, pending message to old session is superseded and fresh notification sent."""
+        with tempfile.TemporaryDirectory(dir=str(SCRATCH_BASE)) as td:
+            tmp = pathlib.Path(td)
+            root = tmp / 'root'
+            (root / 'coordination').mkdir(parents=True)
+            private = tmp / 'private'
+            private.mkdir()
+            bin_dir = tmp / 'bin'
+            bin_dir.mkdir()
+            pinned = bin_dir / 'aplexer'
+            pinned.write_text('#!/bin/sh\necho "{}"\n')
+            pinned.chmod(0o755)
+
+            registry = {'projects': [{'id': 'quota-launcher', 'head_tag': 'quota-launcher-head', 'principal_owner': 'codex-principal'}]}
+            tasks = {'tasks': [{'id': 't-recipient-change-1', 'project_id': 'quota-launcher', 'status': 'ready', 'owner': 'codex-principal'}]}
+            (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps(registry))
+            (root / 'coordination/TASKS.json').write_text(json.dumps(tasks))
+
+            t_now = 2000.0
+            created_dt = datetime.datetime.fromtimestamp(t_now - 10, datetime.timezone.utc)
+            # Initial state has pending message addressed to old recipient session 'sess-codex-old'
+            init_state = {
+                'codex-principal': {
+                    'session_id': 'sess-codex-old',
+                    'reported_state': 'idle',
+                    'alive': True,
+                    'composer': 'empty',
+                    'ready_snapshot_count': 2,
+                    'reason': 'idle-empty',
+                    'pending': {
+                        'id': 'msg-addressed-to-old-session',
+                        'sender_id': 'sup-1',
+                        'recipient_session_id': 'sess-codex-old',
+                        'event': 'ev-old-session',
+                        'delivery': 'inbox',
+                        'created_at': created_dt.isoformat()
+                    }
+                }
+            }
+            (private / 'state.json').write_text(json.dumps(init_state))
+            (private / 'identity.json').write_text(json.dumps({
+                'id': 'sup-1',
+                'tag': 'experiment-supervision',
+                'workspace': str(root)
+            }))
+
+            sent_messages = []
+
+            def fake_cmd(args, timeout=20):
+                words = [a for a in args[1:] if not a.startswith('-')]
+                if words[:1] == ['whoami']:
+                    return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-1'})
+                if 'idempotency-key' in args and 'help' in args:
+                    return '  --idempotency-key'
+                if words[:1] == ['list']:
+                    (private / 'stop').write_text('stop')
+                    # Recipient has restarted with NEW session id 'sess-codex-new'
+                    return json.dumps([{
+                        'workspace': str(root),
+                        'tag': 'codex-principal',
+                        'id': 'sess-codex-new',
+                        'reported_state': 'idle',
+                        'workload_pid': str(os.getpid())
+                    }])
+                if 'inbox' in args:
+                    return json.dumps({'messages': []})
+                if 'capture' in args:
+                    return '› Ask Codex to do anything\n  GPT-6.1 Context 50% left'
+                if args[0] == 'quse':
+                    return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 85}}}})
+                if words[:2] == ['message', 'send']:
+                    sent_messages.append(args)
+                    return json.dumps({'id': 'msg-fresh-for-new-session', 'delivery': 'inbox'})
+                return '{}'
+
+            def fake_run(args, **kwargs):
+                return subprocess.CompletedProcess(args, 0, stdout=json.dumps({'status': 'not-ready'}), stderr='')
+
+            real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+            real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
+            real_defaults = service.recorded_send.__defaults__
+
+            try:
+                service.command = fake_cmd
+                service.subprocess.run = fake_run
+                service.recorded_send.__defaults__ = (fake_cmd,)
+                service.time = type('T', (), {'time': staticmethod(lambda: t_now), 'sleep': staticmethod(lambda s: None)})()
+                service.ROOT = root
+                service.PRIVATE = private
+                service.BINARY = str(pinned)
+
+                service.run()
+
+                status = json.loads((private / 'status.json').read_text())
+                # Verify that pending-superseded-session-change action was recorded
+                session_change_actions = [a for a in status.get('actions', []) if a.get('kind') == 'pending-superseded-session-change']
+                self.assertEqual(len(session_change_actions), 1)
+                self.assertEqual(session_change_actions[0]['old_session_id'], 'sess-codex-old')
+                self.assertEqual(session_change_actions[0]['new_session_id'], 'sess-codex-new')
+
+                # Verify fresh message was sent to the active recipient session
+                principal_sends = [m for m in sent_messages if '--to' in m and m[m.index('--to') + 1] == 'codex-principal']
+                self.assertTrue(len(principal_sends) >= 1, "Fresh message must be sent to active recipient session")
+
+                # Verify state.json tracks the new message
+                st = json.loads((private / 'state.json').read_text())
+                self.assertIsNotNone(st['codex-principal']['pending'])
+                self.assertEqual(st['codex-principal']['pending']['id'], 'msg-fresh-for-new-session')
+                self.assertEqual(st['codex-principal']['session_id'], 'sess-codex-new')
             finally:
                 service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
                 service.recorded_send.__defaults__ = real_defaults

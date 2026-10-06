@@ -5,6 +5,10 @@ import tempfile
 import sys
 from pathlib import Path
 
+repo_root = str(Path(__file__).resolve().parent.parent)
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
 # Insert external module if necessary (simulating what failover_integration.py does)
 sys.path.insert(0, '/home/alexey/git/agent-coordination-role-failover')
 try:

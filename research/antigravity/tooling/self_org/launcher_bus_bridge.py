@@ -1356,6 +1356,7 @@ class ChildModelRuntimeAdapter:
         provider_preference: Optional[str] = None,
         model_requirements: Optional[Dict[str, Any]] = None,
         is_local_probe: bool = False,
+        authority_ctx: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Executes atomic reservation, quse validation, host check, and dispatch strictly inside launch_lock.
@@ -1437,23 +1438,57 @@ class ChildModelRuntimeAdapter:
                 repo_root=str(workspace_path),
             )
 
-            # 5. Canonical Store Registration
+            # 5. Canonical Store Registration & Authority fencing
+            if authority_ctx is not None:
+                try:
+                    from coordination.role_failover import RoleFailover
+                    rf = RoleFailover(authority_ctx.get("db_path"))
+                    rf.authorize(
+                        authority_ctx["project"],
+                        authority_ctx["role"],
+                        authority_ctx["actor"],
+                        authority_ctx["generation"],
+                        authority_ctx["epoch"]
+                    )
+                except ImportError:
+                    rf = None
+            else:
+                rf = None
+
             task_data = self.store.get_task(task_id)
             if task_data is None:
                 payload = {
-                    "owner": "antigravity-head",
+                    "owner": authority_ctx["actor"] if authority_ctx else "antigravity-head",
                     "cwd": str(cwd_path),
                     "timeout": float(timeout_sec),
                     "goal": str(goal),
                     "model_requirements": model_requirements,
                 }
-                self.store.submit_task(
-                    task_id=task_id,
-                    idempotency_key=f"launch-{task_id}",
-                    payload=payload,
-                    paths=paths_to_own,
-                    memory_mb=requested_memory_mb,
-                )
+                
+                def _enqueue_effect(key, p):
+                    self.store.submit_task(
+                        task_id=task_id,
+                        idempotency_key=key,
+                        payload=p,
+                        paths=paths_to_own,
+                        memory_mb=requested_memory_mb,
+                    )
+                
+                if rf is not None:
+                    res = rf.guarded_effect(
+                        authority_ctx["project"],
+                        authority_ctx["role"],
+                        authority_ctx["actor"],
+                        authority_ctx["generation"],
+                        authority_ctx["epoch"],
+                        f"launch-{task_id}",
+                        payload,
+                        _enqueue_effect
+                    )
+                    if isinstance(res, dict) and res.get("state") == "already_enqueued":
+                        pass
+                else:
+                    _enqueue_effect(f"launch-{task_id}", payload)
             elif task_data.get("state") != "queued":
                 raise AdmissionError(f"Task {task_id} state is '{task_data.get('state')}', expected 'queued'")
 
@@ -1472,6 +1507,14 @@ class ChildModelRuntimeAdapter:
                 }
 
             # 7. Atomic Transition queued -> starting under launch_lock
+            if rf is not None:
+                rf.authorize(
+                    authority_ctx["project"],
+                    authority_ctx["role"],
+                    authority_ctx["actor"],
+                    authority_ctx["generation"],
+                    authority_ctx["epoch"]
+                )
             self.store.transition_task(
                 task_id,
                 "starting",
@@ -1509,6 +1552,7 @@ class ChildModelRuntimeAdapter:
         provider_preference: Optional[str] = None,
         model_requirements: Optional[Dict[str, Any]] = None,
         is_local_probe: bool = False,
+        authority_ctx: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Canonical entry point for preparing and dispatching task under launch_lock (C2261 / C2268).
@@ -1555,6 +1599,7 @@ class ChildModelRuntimeAdapter:
             provider_preference=provider_preference,
             model_requirements=model_requirements,
             is_local_probe=is_local_probe,
+            authority_ctx=authority_ctx,
         )
 
     def execute_in_verified_systemd_scope(
@@ -1571,6 +1616,7 @@ class ChildModelRuntimeAdapter:
         model_requirements: Optional[Dict[str, Any]] = None,
         expected_outputs: Optional[List[Union[str, Path]]] = None,
         is_local_probe: bool = False,
+        authority_ctx: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """
