@@ -4849,8 +4849,8 @@
       "owner_tag": "antigravity-head-gemini-recovery",
       "proposed_execution_head": "antigravity-head",
       "ownership_ack": true,
-      "status": "in_progress",
-      "updated_at": "2026-10-05T17:17:18.342582+00:00",
+      "status": "accepted",
+      "updated_at": "2026-10-06T00:34:00.000000+00:00",
       "title": "Concurrent warning eligible pair real task",
       "source": "experiment/human-delivery-reset-20261004.txt",
       "acceptance": "pairwise distinct worktrees actual condition tested; no structuralzero or seededfixture outcome",
@@ -4860,13 +4860,12 @@
       "write_scope": "/home/alexey/git/agent-branches/.local/scale50/scale50-47/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Subagent executing test_concurrent_warning_pair.py and CONCURRENT-WARNING-PAIR.md",
+      "next_action": "Delivered and independently accepted",
       "first_action": "Claimed scope; subagent inspecting warning dispatch logic in client.py for pairwise concurrent tests",
-      "active_subagent": {
-        "conversation_id": "8d04d646-5f33-4fe6-9964-b12ec80492fe",
-        "role": "Concurrent Warning Pair Tester",
-        "status": "running"
-      }
+      "evidence_paths": [
+        "research/antigravity/reviews/REV-SCALE50-47-CONCURRENT-WARNINGS-20261006.md"
+      ],
+      "acceptance_status": "ACCEPTED: Independent peer review (REV-SCALE50-47-CONCURRENT-WARNINGS-20261006.md) verified pairwise distinct worktrees (wt_alpha, wt_beta), dynamic conflict detection, concurrent warning acknowledgment audit trail, clean warning invalidation on non-overlapping push, and CONTRACT v0.1 stale-vector handling with 100% passing tests (7/7 pass)."
     },
     {
       "id": "scale50-48",
