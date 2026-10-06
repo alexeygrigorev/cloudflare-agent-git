@@ -2060,3 +2060,10 @@ CurrentQL0f genuinely accepts C(capacitystages)+D(dispatch/refill) in01a1115b-48
 PrincipalC2874 requestsA/B/E/12/21/31 IDs01a11160-30a6/316d/3190/31b7 areoffers, notheadACK. C2875 corrected exact12QLdedup versus21Busreply→nextuseful IDsb290/b2ce/b310, no scope silently conflated. C2876 nativeCoord917/C7delivery afterfreshcaptures refusedstrictNOTREADY; messagesremainqueued, no forcedinput/ACK/execution. QL/Antusefulworkcontinues. Latesthuman direction: agents/usefulremote worktrees with elapsedtimings alongside work, notstandalonebenchmark prerequisite. Nextowned event: actualaccepted task/modelFIRSTTOOL→pinnedartifact/distinctreview→measurednext allocation; scopes with missingACK must seekgenuineownership without completedredispatch or countmanufacture.
 
 Registrybeforeimages privatec2876-admin directory retained; this publicationcheckpoint onlyownedcodex/storage researchdocs, notsharedTASKS/TEAM/source files.
+
+
+### Exact A/12 ownership and remote useful-work evidence — 2026-10-06T13:32:10.902641+00:00
+
+QL genuine01a11164-18ec-7291-9871-b0a90dc8ed6a explicitly accepts A-dispatch-repair andscale50-12 taskdedup; atomicTASKS/TEAM currentowner0f/tag corrected witholdhistory/dates/negativeverdicts retained. A/12 due UNKNOWN, do notinherit C/D13:30. Newhead-reported t-ql-scale50-12-dedup-projection GeminiProHigh cwd/home/alexey/storagebox/worktrees/ql-scale50-12-20261006 unitPID4105109: boundedhelpercheck PIDabsent androwabsent sibling.local/state.db (possiblewrongauthoritystore), so modelUUID/FIRSTTOOL/completionunknown, notcurrentACTIVEorfailedlaunch diagnosis. No newphantomtask added.
+
+Boundedpilot acceptedreceipt9 in01a11158-9d6d is recorded, matchedsmallcheckout3–5x atfractionsofsecond qualified; no generalized1%performance/riskelimination. AntE/21ACKpending, Coord/C7strictNOTREADYqueued; no sourcehandover/forcedinput. Nextowned trigger: actualremoteusefultask model/artifactreceipt→distinctreview→next allocation with elapsedtimings, plus genuineA/12due andAntE/21scopedACK. Onlyowncodex/storagedoc Gitpublicationprepared; registrychangesheldlocal, no productexecution/codeQA/mailbox byhelper.

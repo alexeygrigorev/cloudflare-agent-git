@@ -35,3 +35,7 @@ The existing project Cloudflare budget is USD5/month including the current Worke
 ## Useful-work continuation — C2876
 
 QL genuine envelope01a1115b-48ea accepts current capacity and dispatch/refill ownership with a13:30UTC checkpoint. Pilot launch ACK01a11153-8f6e and bounded review receipt9 in01a11158-9d6d are recorded; this administrative record does not invent missing source/reviewer identities or broaden the review. The latest human direction is to proceed with useful agent work on remote worktrees and measure elapsed checkout/Git/task steps during that work. A standalone benchmark is not a prerequisite to all further useful tasks. Head-owned review, fresh admission, recovery and measured outcomes remain required.
+
+## Pilot result and useful task allocation
+
+QL supplied bounded accepted pilot review receipt9 in genuine message01a11158-9d6d. Small matched checkout timings indicate a3–5x ratio on operations lasting fractions of a second; this is not a general performance,1% utilization or risk-elimination result. Current useful task `t-ql-scale50-12-dedup-projection` is head-reported in a remote worktree; independent model UUID/first-tool and its result remain unknown in this administrative checkpoint. Reported process absence at a later check does not establish completion. QL accepts exact A dispatch-repair and scale50-12 dedup scopes via01a11164-18ec; their due time is not inherited from the separate C/D13:30 checkpoint. Continue gathering elapsed timings during useful work and route actual artifacts to distinct review.
