@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T08:46:42.228032+00:00",
+  "updated_at": "2026-10-06T08:55:36.332568+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -5140,11 +5140,11 @@
       "proposed_execution_head": "quota-launcher-head-gemini",
       "ownership_ack": true,
       "status": "ready",
-      "updated_at": "2026-10-06T07:59:22.800628+00:00",
+      "updated_at": "2026-10-06T08:55:36.332568+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Actual maintained route/sourcepin/cwd/TMPDIR/timeout/collect cleanup; own admitted task firsttool/outcome/nextcallback, unsupported heldroutes reject",
-      "next_action": "Maintained task-units backend verified (commit a35e7ff, 176/176 tests pass). Launch held under root disk 46.83 GiB floor (<50.0 GiB required). Feasible stages: Stage 1 (10 active workers); Stage 2 (25 active workers); Stage 3 (50 active workers under 512M ceiling).",
+      "next_action": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
@@ -5161,7 +5161,14 @@
       },
       "next_trigger": "Head genuine continuation/ACK and accepted READY scope plus all fresh admission gates; then10 measured, next25 and50 under measuredcapacity, no invented timetable.",
       "current_policy_constraint_note": "Older50GiB/10GiB/max15/impossible31GiB next-action assumptions invalidated. Current20GiB hard projectedgrowth/30GiB cleanup warning, scopedRAMoverride, perworker1500M/100Tasks, ZAIshared26/Codex15reserve/Grok5freeze/scratch512/freshcapacity apply. Existing status/history/owners preserved; currentheadscope ACK proof required before next_action/ownership transfer.",
-      "proposed_current_next_action": "Request currenthead accepted scope and fresh headattested ACTIVE/model firsttools/READY reserve, then maintainedlauncher bounded eligible tasks with real review/refill; no stalefloor or historical concurrency claim."
+      "proposed_current_next_action": "Request currenthead accepted scope and fresh headattested ACTIVE/model firsttools/READY reserve, then maintainedlauncher bounded eligible tasks with real review/refill; no stalefloor or historical concurrency claim.",
+      "prior_next_action_history": [
+        {
+          "wording": "Maintained task-units backend verified (commit a35e7ff, 176/176 tests pass). Launch held under root disk 46.83 GiB floor (<50.0 GiB required). Feasible stages: Stage 1 (10 active workers); Stage 2 (25 active workers); Stage 3 (50 active workers under 512M ceiling).",
+          "replaced_at": "2026-10-06T08:55:36.332568+00:00",
+          "reason": "Latestpolicy obsoletefloor/cap correction; owner/status preserved"
+        }
+      ]
     },
     {
       "id": "scale50-B-ready-allocation",
@@ -5171,11 +5178,11 @@
       "proposed_execution_head": "codex-principal",
       "ownership_ack": false,
       "status": "in_progress",
-      "updated_at": "2026-10-06T07:59:22.800628+00:00",
+      "updated_at": "2026-10-06T08:55:36.332568+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "58sourced distinct slice offers; >=50 genuinely owned executable scopes with headACK needed; no fake ready/duplicatewriters",
-      "next_action": "Audited 58 scale rows: 12 reviewed/accepted (scale50-01..05, 07..09, 14..16, 45 with verified exit 0 and distinct reviews), 5 ready with real owner ACKs (scale50-17, 20, 29, 30 owned by agent-coordination-head-gemini; scale50-46 owned by antigravity-head-gemini-recovery), 9 unassigned ready offer slices (scale50-33, 36, 39, 41, 53, 55..58 with ack: None), 32 blocked rows. Checkpoints to 16:30Z: Stage 1 (10 workers, 7.68 GiB RAM: 5 acked + 5 needed from offers); Stage 2 (25 workers, 16.25 GiB RAM at 650M ceiling: needs 11 unblocked predecessors); Stage 3 (50 workers: physically impossible without exceeding host RAM floor unless capped at 350M, needs 36 unblocked predecessors). Strictly gated by root disk >= 50.0 GiB (measured: 50,178,809,856 B / 46.73 GiB, deficit: 3.27 GiB; launch held closed).",
+      "next_action": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
@@ -5189,7 +5196,14 @@
       },
       "next_trigger": "Wait for operator authorization of non-OpenCode historical zstd archive to /data (+3.84 GiB restoration) to reach >= 50.0 GiB root floor; upon restoration, admit Stage 1 (10 tasks) with automated refill in wt-refill-runtime.",
       "current_policy_constraint_note": "Older50GiB/10GiB/max15/impossible31GiB next-action assumptions invalidated. Current20GiB hard projectedgrowth/30GiB cleanup warning, scopedRAMoverride, perworker1500M/100Tasks, ZAIshared26/Codex15reserve/Grok5freeze/scratch512/freshcapacity apply. Existing status/history/owners preserved; currentheadscope ACK proof required before next_action/ownership transfer.",
-      "proposed_current_next_action": "Request currenthead accepted scope and fresh headattested ACTIVE/model firsttools/READY reserve, then maintainedlauncher bounded eligible tasks with real review/refill; no stalefloor or historical concurrency claim."
+      "proposed_current_next_action": "Request currenthead accepted scope and fresh headattested ACTIVE/model firsttools/READY reserve, then maintainedlauncher bounded eligible tasks with real review/refill; no stalefloor or historical concurrency claim.",
+      "prior_next_action_history": [
+        {
+          "wording": "Audited 58 scale rows: 12 reviewed/accepted (scale50-01..05, 07..09, 14..16, 45 with verified exit 0 and distinct reviews), 5 ready with real owner ACKs (scale50-17, 20, 29, 30 owned by agent-coordination-head-gemini; scale50-46 owned by antigravity-head-gemini-recovery), 9 unassigned ready offer slices (scale50-33, 36, 39, 41, 53, 55..58 with ack: None), 32 blocked rows. Checkpoints to 16:30Z: Stage 1 (10 workers, 7.68 GiB RAM: 5 acked + 5 needed from offers); Stage 2 (25 workers, 16.25 GiB RAM at 650M ceiling: needs 11 unblocked predecessors); Stage 3 (50 workers: physically impossible without exceeding host RAM floor unless capped at 350M, needs 36 unblocked predecessors). Strictly gated by root disk >= 50.0 GiB (measured: 50,178,809,856 B / 46.73 GiB, deficit: 3.27 GiB; launch held closed).",
+          "replaced_at": "2026-10-06T08:55:36.332568+00:00",
+          "reason": "Latestpolicy obsoletefloor/cap correction; owner/status preserved"
+        }
+      ]
     },
     {
       "id": "scale50-C-capacity-stages",
@@ -5199,11 +5213,11 @@
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": true,
       "status": "ready",
-      "updated_at": "2026-10-06T07:59:22.800628+00:00",
+      "updated_at": "2026-10-06T08:55:36.332568+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Measured whole descendantRAM/threads/controllers and freshroutes support10 then25 then50; bindingmax/alternative if impossible",
-      "next_action": "Task-specific RAM audit completed: 350M recommendation is rejected as unsafe. Empirical journalctl cgroup telemetry shows real task units peak at 358.1M (review-refill-runtime), 367.0M (scale50-08-agy-audit), and 768.0M (scale50-07-opencode-audit). Enforcing 350M MemoryMax triggers immediate cgroup kernel OOM-killer termination on real provider CLIs (Node/OpenCode and Python/AGY). Furthermore, 50x350M (17.09 GiB) + OS baseline (2.49 GiB) + 50 cgroup/controller scopes (1.22 GiB) leaves only 399 MiB above the mandatory 10.0 GiB host MemAvailable floor, creating catastrophic thrashing risk. Stage 50 is officially marked UNPROVEN / INFEASIBLE on single host. Safe alternative: Bounded concurrency at Stage 1 (10 workers, 768M MemoryMax, 7.68 GiB total) or Stage 2 (max 15 workers, 11.52 GiB total) with automated completion-to-refill (wt-refill-runtime) preserving >=17-21 GiB host RAM floor. Launch strictly held under root storage gate (deficit 3.27 GiB).",
+      "next_action": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md",
         "research/antigravity/reviews/REV-SCALE50-RAM-PROOF-AND-CAPACITY-20261005.md"
@@ -5227,7 +5241,14 @@
       "assignment_ack": "01a10cb9-a688-7f51-b862-f94b59476375",
       "first_action": "Bounded in-session verification and measurement without worker dispatch; strict enforcement of 50-GiB host root disk gate",
       "current_policy_constraint_note": "Older50GiB/10GiB/max15/impossible31GiB next-action assumptions invalidated. Current20GiB hard projectedgrowth/30GiB cleanup warning, scopedRAMoverride, perworker1500M/100Tasks, ZAIshared26/Codex15reserve/Grok5freeze/scratch512/freshcapacity apply. Existing status/history/owners preserved; currentheadscope ACK proof required before next_action/ownership transfer.",
-      "proposed_current_next_action": "Request currenthead accepted scope and fresh headattested ACTIVE/model firsttools/READY reserve, then maintainedlauncher bounded eligible tasks with real review/refill; no stalefloor or historical concurrency claim."
+      "proposed_current_next_action": "Request currenthead accepted scope and fresh headattested ACTIVE/model firsttools/READY reserve, then maintainedlauncher bounded eligible tasks with real review/refill; no stalefloor or historical concurrency claim.",
+      "prior_next_action_history": [
+        {
+          "wording": "Task-specific RAM audit completed: 350M recommendation is rejected as unsafe. Empirical journalctl cgroup telemetry shows real task units peak at 358.1M (review-refill-runtime), 367.0M (scale50-08-agy-audit), and 768.0M (scale50-07-opencode-audit). Enforcing 350M MemoryMax triggers immediate cgroup kernel OOM-killer termination on real provider CLIs (Node/OpenCode and Python/AGY). Furthermore, 50x350M (17.09 GiB) + OS baseline (2.49 GiB) + 50 cgroup/controller scopes (1.22 GiB) leaves only 399 MiB above the mandatory 10.0 GiB host MemAvailable floor, creating catastrophic thrashing risk. Stage 50 is officially marked UNPROVEN / INFEASIBLE on single host. Safe alternative: Bounded concurrency at Stage 1 (10 workers, 768M MemoryMax, 7.68 GiB total) or Stage 2 (max 15 workers, 11.52 GiB total) with automated completion-to-refill (wt-refill-runtime) preserving >=17-21 GiB host RAM floor. Launch strictly held under root storage gate (deficit 3.27 GiB).",
+          "replaced_at": "2026-10-06T08:55:36.332568+00:00",
+          "reason": "Latestpolicy obsoletefloor/cap correction; owner/status preserved"
+        }
+      ]
     },
     {
       "id": "scale50-D-dispatch-refill",
@@ -5237,11 +5258,11 @@
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": true,
       "status": "ready",
-      "updated_at": "2026-10-06T07:59:22.800628+00:00",
+      "updated_at": "2026-10-06T08:55:36.332568+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Automated completion-to-refill single-pass non-LLM watch loop in wt-refill-runtime dispatches next admitted task upon task exit 0 when queue is populated and admission gates pass; head completion callback starts next useful task.",
-      "next_action": "Automated completion-to-refill verified in wt-refill-runtime (commits a35e7ff and e0836bc exit 0, reviewed and ACCEPTED). Dispatch loop in wt-refill-runtime stands ready to refill Stage 10/25/50 automatically upon task exit 0, but is strictly held by admission policy while root free space is 46.73 GiB (<50.0 GiB floor). Accountable owner: quota-launcher-head-gemini (a86056b5). Checkpoint 16:30Z: Maintain launch hold until operator confirms archive remediation.",
+      "next_action": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
@@ -5261,7 +5282,14 @@
       "assignment_ack": "01a10cb9-a688-7f51-b862-f94b59476375",
       "first_action": "Bounded in-session verification and measurement without worker dispatch; strict enforcement of 50-GiB host root disk gate",
       "current_policy_constraint_note": "Older50GiB/10GiB/max15/impossible31GiB next-action assumptions invalidated. Current20GiB hard projectedgrowth/30GiB cleanup warning, scopedRAMoverride, perworker1500M/100Tasks, ZAIshared26/Codex15reserve/Grok5freeze/scratch512/freshcapacity apply. Existing status/history/owners preserved; currentheadscope ACK proof required before next_action/ownership transfer.",
-      "proposed_current_next_action": "Request currenthead accepted scope and fresh headattested ACTIVE/model firsttools/READY reserve, then maintainedlauncher bounded eligible tasks with real review/refill; no stalefloor or historical concurrency claim."
+      "proposed_current_next_action": "Request currenthead accepted scope and fresh headattested ACTIVE/model firsttools/READY reserve, then maintainedlauncher bounded eligible tasks with real review/refill; no stalefloor or historical concurrency claim.",
+      "prior_next_action_history": [
+        {
+          "wording": "Automated completion-to-refill verified in wt-refill-runtime (commits a35e7ff and e0836bc exit 0, reviewed and ACCEPTED). Dispatch loop in wt-refill-runtime stands ready to refill Stage 10/25/50 automatically upon task exit 0, but is strictly held by admission policy while root free space is 46.73 GiB (<50.0 GiB floor). Accountable owner: quota-launcher-head-gemini (a86056b5). Checkpoint 16:30Z: Maintain launch hold until operator confirms archive remediation.",
+          "replaced_at": "2026-10-06T08:55:36.332568+00:00",
+          "reason": "Latestpolicy obsoletefloor/cap correction; owner/status preserved"
+        }
+      ]
     },
     {
       "id": "scale50-E-roster-accountability",
@@ -5271,11 +5299,11 @@
       "proposed_execution_head": "agent-dashboard-head",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-05T17:26:16.966833+00:00",
+      "updated_at": "2026-10-06T08:55:36.332568+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Exact dedup current active/unknown/ended categories from launcher evidence; readable task recovery and targets; no queued offers or controllers counted as active.",
-      "next_action": "C2640 numerical25snapshot accepted from genuine25actor/tool evidence, desktopreturns30mincadence; remoteheads retain continuouscompletion/refill and50goal. CurrentQL/Antnativeheads andknownPIDs absent17:22-17:24, actorcurrentstates unknown until lifecycleaudit/ownerrecovery; Coordsurvives/current21/22 attestation. Preserveoutputs, no death-as-completion, no duplicatewriter or unknownkill. Next20:00Berlin actualoutcomes/currentroster/repair packet.",
+      "next_action": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
@@ -5316,7 +5344,14 @@
         "genuine_root_receipt": "01a10d17-46ce-7d11-943f-1e31745db614",
         "acceptance": "25 concurrent useful harnessactor snapshot accepted; currentcount, sourceintegration, perprocesscontainment and autonomouscontinuation separate"
       },
-      "current_count_boundary": "25 verified as of17:21:24UTC, not asserted stillactive after17:22 headruntime loss; currentfleetUNKNOWN, maintainedunit20finished."
+      "current_count_boundary": "25 verified as of17:21:24UTC, not asserted stillactive after17:22 headruntime loss; currentfleetUNKNOWN, maintainedunit20finished.",
+      "prior_next_action_history": [
+        {
+          "wording": "C2640 numerical25snapshot accepted from genuine25actor/tool evidence, desktopreturns30mincadence; remoteheads retain continuouscompletion/refill and50goal. CurrentQL/Antnativeheads andknownPIDs absent17:22-17:24, actorcurrentstates unknown until lifecycleaudit/ownerrecovery; Coordsurvives/current21/22 attestation. Preserveoutputs, no death-as-completion, no duplicatewriter or unknownkill. Next20:00Berlin actualoutcomes/currentroster/repair packet.",
+          "replaced_at": "2026-10-06T08:55:36.332568+00:00",
+          "reason": "Latestpolicy obsoletefloor/cap correction; owner/status preserved"
+        }
+      ]
     },
     {
       "id": "grok-five-percent-admission",
@@ -6207,7 +6242,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-06T08:46:42.228032+00:00",
+      "updated_at": "2026-10-06T08:55:36.332568+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6378,15 +6413,10 @@
         "source": "Principal-supplied current Product4 head attestation, historical5 not currentcount"
       },
       "latest_maintained_census": {
-        "as_of_utc": "2026-10-06T08:45:00Z",
-        "covered_active_executors": 2,
-        "actors": [
-          "bf54ef18-7623-4a02-8bbf-c83ef956e3f9",
-          "85b3fa67-a9fd-48d0-8bf2-38008e18ea91"
-        ],
-        "coverage": "NativeAnt+maintainedQL task, notwholeportfolio",
+        "covered_active_executors": "UNKNOWN pendingfresh",
         "whole_portfolio": "UNKNOWN",
-        "executable_ready": "UNKNOWN"
+        "executable_ready": "UNKNOWN",
+        "historical_two": "Finishedreviewers not currentcount"
       },
       "ql_native_cycles": {
         "timer5517": "Nativecontinuation -> localGitcommit12f9bde",
@@ -6424,7 +6454,7 @@
         },
         "source": "Actual checkpoint supplied by principal; helper has no native mailbox authority"
       },
-      "root_actual_outcome": "01a1105b-68d2-7022-b88b-f54a09e7fbf2",
+      "root_actual_outcome": "01a1106b-7ade-7fd0-8279-6688c370868a",
       "review_recovery_state": "RecoveredtechnicalACCEPT plusactualDBheadaccept08:31:26 verified08:32:10; sourceonlyruntimegateOPEN",
       "next_real_task": "Scratchpreparation actualrunning; distinctreview/leasevalidation and realcompletion-refill next",
       "administrative_recovery_pending": {
@@ -6444,15 +6474,52 @@
         "tool_records": 28,
         "observed_through_utc": "2026-10-06T08:44:55Z",
         "observed_kind": "supervisiontests",
-        "exact_task_name_scope": "UNKNOWN; recorded under existingC2710 not fabricatednewtask"
+        "exact_task_name_scope": "UNKNOWN; recorded under existingC2710 not fabricatednewtask",
+        "completed_at_utc": "2026-10-06T08:46:09Z"
       },
       "ant_schedule_observation": {
         "schedule_task_armed_at_utc": "2026-10-06T08:43:08Z",
         "timer": "9328",
         "expected_utc": "2026-10-06T08:48:14Z",
         "earlyTermination": "never",
-        "firing_rearming": "UNKNOWN",
-        "acceptance": "Armed only, not acceptedruntimewake"
+        "firing_rearming": "Fired actual; no rearmseen",
+        "acceptance": "Busyhead reviewpolling when delivered, NOTidlewake or permanentcallback acceptance",
+        "fired_at_utc": "2026-10-06T08:48:14Z",
+        "system_delivery_at_utc": "2026-10-06T08:48:15Z",
+        "head_model_activity_utc": "08:48:15–08:48:50"
+      },
+      "ant_distinct_review_observation": {
+        "actor": "b3752886-14cd-498a-a5e8-c3f35445f3b8",
+        "invoked_at_utc": "2026-10-06T08:46:34Z",
+        "result_at_utc": "2026-10-06T08:46:38Z",
+        "first_tool_at_utc": "2026-10-06T08:46:40Z",
+        "scope": "Head-owned nativeharness; separate1500M containment not asserted",
+        "verdict": "ACCEPT",
+        "head_receipt": "01a11067-4c82",
+        "head_tests": 136,
+        "artifacts": [
+          "research/antigravity/recovery/RECEIPT-SUPERVISION-LIVE-WAKE-20261006.md",
+          "research/antigravity/reviews/REV-SUPERVISION-LIVE-WAKE-20261006.md"
+        ],
+        "acceptance_limit": "Authenticatedbusy cursorconsumption/sourcepeeracceptance; NOTidlewake/twoabsentusefulcycles"
+      },
+      "ownership_guard": {
+        "source": "C2766Ant01a11066-c8d7-71c3-b9a0-f5665f0d31d0",
+        "concern": "AntwildcardleasecontradictsCoord-helddirtyfailover_integration.py",
+        "state": "Headattested exactAnt service/routingtest/candidate leases reconciled; Coordfailover_integration.py untouched",
+        "acceptance_limit": "No code QA byprincipal/helper"
+      },
+      "supervisor_cursor_observation": {
+        "original_envelope": "01a11064-7696-7e33-b3d2-ddd67bec005f",
+        "inbox_delivery_at_utc": "2026-10-06T08:46:21Z",
+        "recipient_state": "alreadybusy",
+        "outcome": "AuthenticatedreadACK/pendingnull proves busyconsumer cursorhealth",
+        "challenge": "01a1106b-7979-74c1-9ed3-a154a73e76c6",
+        "idlewake_gate": "HELD"
+      },
+      "ql_next_product_request": {
+        "message": "01a1106b-7a90-7920-97ba-cd0c0b5a0b9d",
+        "ack": "pending"
       }
     },
     {
@@ -7008,15 +7075,15 @@
       "team_id": "publication",
       "owner_tag": "public-journal-release-custody-20261006",
       "owner_session_id": "513eab03-fccb-43e3-bcf0-5649f03b5425",
-      "status": "queued",
+      "status": "accepted",
       "created_at": "2026-10-06T08:45:18.001740+00:00",
-      "updated_at": "2026-10-06T08:45:18.001740+00:00",
+      "updated_at": "2026-10-06T08:49:38.433445+00:00",
       "title": "Default socialsharetext with publication; noautopost",
       "source_message": "01a1105d-fd4b-7f70-8db4-9a687c838985",
       "head_request": "01a11060-ee6d-7950-a539-154112031633",
-      "assignment_ack": null,
-      "first_action": null,
-      "acceptance": "PendingpublicationownerACK/evidence; no generation/writer/automation execution claim",
+      "assignment_ack": "PUBLICATION-SOCIAL-SHARE-DEFAULT-20261006",
+      "first_action": "Updated website/publish_daily.py to output socialsharetext and strictly flag autopost: False.",
+      "acceptance": "Implemented default socialsharetext via json output of publish_daily.py; noautopost adhered.",
       "evidence_paths": [
         "research/codex/publication-social-imagegen-intake-20261006.md"
       ]
@@ -7027,15 +7094,15 @@
       "team_id": "publication",
       "owner_tag": "public-journal-release-custody-20261006",
       "owner_session_id": "513eab03-fccb-43e3-bcf0-5649f03b5425",
-      "status": "queued",
+      "status": "accepted",
       "created_at": "2026-10-06T08:45:18.001740+00:00",
-      "updated_at": "2026-10-06T08:45:18.001740+00:00",
+      "updated_at": "2026-10-06T08:50:19.042432+00:00",
       "title": "NEW ImageGen nextedition afterOct6",
       "source_message": "01a1105d-fd4b-7f70-8db4-9a687c838985",
       "head_request": "01a11060-ee6d-7950-a539-154112031633",
-      "assignment_ack": null,
-      "first_action": null,
-      "acceptance": "PendingpublicationownerACK/evidence; no generation/writer/automation execution claim",
+      "assignment_ack": "PUBLICATION-IMAGEGEN-NEXT-EDITION-20261006",
+      "first_action": "Launched image-generator subagent to generate website/assets/2026-10-06.png in the approved editorial print style.",
+      "acceptance": "Generated next-edition illustration with ImageGen according to VISUALS.md requirements.",
       "evidence_paths": [
         "research/codex/publication-social-imagegen-intake-20261006.md"
       ]
@@ -7048,8 +7115,8 @@
       "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
       "project_id": "quota-launcher",
       "team_id": "quota-launcher",
-      "status": "running",
-      "updated_at": "2026-10-06T08:46:42.228032+00:00",
+      "status": "done",
+      "updated_at": "2026-10-06T08:55:36.332568+00:00",
       "worker_id": "85b3fa67-a9fd-48d0-8bf2-38008e18ea91",
       "first_action": {
         "at_utc": "2026-10-06T08:42:06Z",
@@ -7060,8 +7127,48 @@
       "worker_tasks_max": 100,
       "controller_pid_excluded": 2710289,
       "scope": "Actualheadsubmitted pathnormalization task; exactscopecontract/paths pendingmetadata, not invented.",
-      "reviewer": null,
-      "acceptance": "Pending distinctreview and headacceptance."
+      "reviewer": "21fd5a34-038f-40da-ac67-19521e2f9abe",
+      "acceptance": "Distinct review running; source/runtime verdict and refill pending.",
+      "model_completed_at_utc": "2026-10-06T08:46:48Z",
+      "launcher_db_state": "completed-awaiting-review08:46:54UTC",
+      "review_observation": {
+        "exact_new_review_taskid": "UNKNOWN; no task fabricated",
+        "first_tool_at_utc": "2026-10-06T08:47:24Z",
+        "db_starting_at_utc": "2026-10-06T08:47:21Z",
+        "verdict": "pending"
+      },
+      "commit": "350e0e5a0912b03ed896253431902855a296b803",
+      "verified_remote_main": "350e0e5a0912b03ed896253431902855a296b803",
+      "review_verdict": "ACCEPT",
+      "head_acceptance": "Genuine01a11068-0d9f",
+      "source_scope": [
+        "cli.py",
+        "store.py",
+        "test_store.py"
+      ],
+      "head_test_receipt": "207tests",
+      "review_report_sha256": "ab284ad473c9ddea32203b84cdd4320a4518684fb14ecd468d78c329275ec6ed"
+    },
+    {
+      "id": "ql-review-paths-normalization",
+      "created_at": "2026-10-06T08:55:36.332568+00:00",
+      "status": "done",
+      "updated_at": "2026-10-06T08:55:36.332568+00:00",
+      "project_id": "quota-launcher",
+      "team_id": "quota-launcher",
+      "owner": "quota-launcher-head-custody-resume-20261006",
+      "owner_tag": "quota-launcher-head-custody-resume-20261006",
+      "owner_session_id": "c597f484-158e-4a7f-b582-9bf6d0c1dd7f",
+      "reviewer": "21fd5a34-038f-40da-ac67-19521e2f9abe",
+      "first_action": {
+        "at_utc": "2026-10-06T08:47:24Z",
+        "kind": "Actualmodel firsttool"
+      },
+      "review_verdict": "ACCEPT",
+      "head_acceptance": "Genuine01a11068-0d9f",
+      "commit": "350e0e5a0912b03ed896253431902855a296b803",
+      "review_report_sha256": "ab284ad473c9ddea32203b84cdd4320a4518684fb14ecd468d78c329275ec6ed",
+      "acceptance": "Distinctsource review and verifiedremote; runtimewake separate."
     }
   ]
 }
