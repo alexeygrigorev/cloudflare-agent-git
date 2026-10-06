@@ -1,5 +1,5 @@
 """Private aggregate adapters; quota is never converted into tokens or cost."""
-import collections, concurrent.futures, datetime as dt, gzip, json, pathlib, subprocess, time, os, hashlib
+import argparse, collections, concurrent.futures, datetime as dt, gzip, hashlib, json, os, pathlib, subprocess, time
 
 def quotas(store):
     path=store/'quotas.json'
@@ -161,3 +161,67 @@ def archive_history(store,dayfile,max_active_bytes=192*1024*1024,floor_active_by
         archives.append({'file':p.name,'bytes':st.st_size,'mtime_ns':st.st_mtime_ns,**record})
     manifest={'archives':archives,'total_bytes':sum(r['bytes'] for r in archives),'policy':'All samples retained; original and decompressed archive SHA256+length must match before replacing owned original. Pending failed archives excluded from export. 256MiB cap preserves existing data.'}
     temp=store/'retention-manifest.tmp';temp.write_text(json.dumps(manifest));temp.chmod(0o600);temp.replace(store/'retention-manifest.json');return manifest
+
+def cli_main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description='Metrics rolling archive retention trigger')
+    root = pathlib.Path(__file__).resolve().parents[2]
+    default_store = root / '.local/metrics' if (root / '.local/metrics').is_dir() else pathlib.Path('.local/metrics')
+    parser.add_argument('--store', default=str(default_store), help="path to metrics store (default: ROOT / '.local/metrics' or current directory '.local/metrics')")
+    parser.add_argument('--dayfile', default=None, help="optional explicit path to today's active dayfile (default: store / ('snapshots-' + dt.date.today().isoformat() + '.jsonl'))")
+    parser.add_argument('--max-active-bytes', type=int, default=192 * 1024 * 1024, help='ceiling in bytes (default: 192*1024*1024)')
+    parser.add_argument('--floor-active-bytes', type=int, default=160 * 1024 * 1024, help='floor target in bytes (default: 160*1024*1024)')
+    parser.add_argument('--force', action='store_true', help='temporarily sets max_active_bytes to 0 so all candidate closed archives from previous days are relocated')
+    parser.add_argument('--dry-run', action='store_true', help='computes what would be moved without mutating files or manifests')
+    parser.add_argument('--json', action='store_true', help='emit machine-readable JSON output')
+
+    args = parser.parse_args(argv)
+    store = pathlib.Path(args.store)
+    dayfile = pathlib.Path(args.dayfile) if args.dayfile else (store / ('snapshots-' + dt.date.today().isoformat() + '.jsonl'))
+    max_active_bytes = 0 if args.force else args.max_active_bytes
+    floor_active_bytes = 0 if args.force else args.floor_active_bytes
+
+    if args.dry_run:
+        active_files = [p for p in store.glob('snapshots-*') if p.is_file()] if store.exists() else []
+        current_active_bytes = sum(p.stat().st_size for p in active_files)
+        prefix = dayfile.name.replace('.jsonl', '')
+        candidates = sorted([p for p in active_files if p.name.endswith('.gz') and not p.name.startswith(prefix) and not p.name.startswith(dayfile.name)], key=lambda p: p.name)
+        candidate_bytes = sum(p.stat().st_size for p in candidates)
+        would_relocate = []
+        would_relocate_bytes = 0
+        if current_active_bytes > max_active_bytes:
+            simulated_bytes = current_active_bytes
+            for p in candidates:
+                if simulated_bytes <= floor_active_bytes:
+                    break
+                would_relocate.append(p.name)
+                sz = p.stat().st_size
+                simulated_bytes -= sz
+                would_relocate_bytes += sz
+        if args.json:
+            print(json.dumps({
+                'status': 'ok',
+                'dry_run': True,
+                'active_bytes': current_active_bytes,
+                'active_files': len(active_files),
+                'candidate_files': [p.name for p in candidates],
+                'candidate_bytes': candidate_bytes,
+                'candidates': [p.name for p in candidates],
+                'would_relocate': would_relocate,
+                'would_relocate_files': would_relocate,
+                'would_relocate_bytes': would_relocate_bytes,
+                'manifest_path': str(store / 'retention-manifest.json'),
+            }))
+        else:
+            print(f"Dry run: {len(candidates)} candidate files ({candidate_bytes} bytes). Active files: {len(active_files)} ({current_active_bytes} bytes). Would relocate: {len(would_relocate)} files ({would_relocate_bytes} bytes).")
+        return 0
+
+    manifest = archive_history(store, dayfile, max_active_bytes=max_active_bytes, floor_active_bytes=floor_active_bytes)
+    if args.json:
+        print(json.dumps({'status': 'ok', 'active_bytes': manifest['total_bytes'], 'active_files': len(manifest['archives']), 'manifest_path': str(store / 'retention-manifest.json')}))
+    else:
+        print(f"Active store: {manifest['total_bytes']} bytes across {len(manifest['archives'])} files. Manifest: {store / 'retention-manifest.json'}")
+    return 0
+
+if __name__ == '__main__':
+    import sys
+    sys.exit(cli_main())

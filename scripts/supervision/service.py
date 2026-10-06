@@ -346,16 +346,122 @@ def active_heads(entities=None, spool=None, registry_raw=None):
     return sorted([tag for tag in candidates if tag not in excluded])
 
 
+OBSOLETE_OWNER_PATTERNS = ('grok', 'claude')
+LEGACY_ANT_TAGS = {
+    'antigravity-head',
+    'antigravity-head-legacy-a16',
+    'ant-head-operational-resume-20261005',
+    'antigravity-head-gemini-recovery',
+    'ant-head-continuation-custody-20261006',
+}
+DORMANT_TEAMS = {'a06-a10', 'a01-harness', 'a05', 'a16-runtime-protocol'}
+ACTIVE_CUSTODY_TAGS_DEFAULT = {
+    'ant-head-never-timer-custody-20261006',
+    'ql-head-feedback-custody-20261006',
+    'coord-917-custody-resume-20261006',
+    'public-journal-release-custody-20261006',
+    'codex-principal',
+    'agent-dashboard-head',
+    'failover-primary',
+}
+
+
+def is_task_eligible_for_supervision(task, sessions=None, active_heads=None, active_principals=None):
+    """
+    Filter out obsolete owners (Grok, stopped Claude, legacy Ant) and ancient running labels
+    from displacing genuine ready tasks in principal/head supervision payloads (C3025).
+
+    Criteria:
+    1. Obsolete / decommissioned owners:
+       - Grok: any owner containing 'grok' (e.g. 'grok-head', 'grok')
+       - Stopped Claude: any owner starting with 'claude' or 'claude-principal'
+         (Claude is a monitoring principal peer, not an implementation worker per user26)
+       - Legacy Ant: 'antigravity-head', 'antigravity-head-legacy-a16',
+         'ant-head-operational-resume-20261005', 'antigravity-head-gemini-recovery',
+         'ant-head-continuation-custody-20261006' (only current active custody session
+         'ant-head-never-timer-custody-20261006' or live running session in sessions is eligible)
+    2. Dormant older research teams:
+       - 'a06-a10', 'a01-harness', 'a05', 'a16-runtime-protocol' (preserved history only,
+         superseded by active delivery reset per human 4 Oct 2026)
+    3. Ancient running labels:
+       - Tasks marked ('running', 'in_progress', 'working') must have an owner in active custody
+         or currently running aplexer sessions. If owner is missing, obsolete, or not actively running,
+         the running label is stale and must not be prioritized as active work.
+    4. Ready / queued tasks:
+       - If owner is specified, it must not be an obsolete/stopped owner. If unowned (None or ''),
+         it is eligible ready work awaiting dispatch.
+    """
+    owner = (task.get('owner_tag') or task.get('owner') or '').strip()
+    status = task.get('status')
+    team = task.get('team_id') or ''
+
+    # 1. Obsolete owner prefix check (Grok, Claude)
+    if any(owner.lower().startswith(p) for p in OBSOLETE_OWNER_PATTERNS):
+        return False
+
+    # 2. Legacy Ant tags check
+    if owner in LEGACY_ANT_TAGS:
+        return False
+
+    # Build active custody set
+    active_custody = set(ACTIVE_CUSTODY_TAGS_DEFAULT)
+    if active_heads:
+        active_custody.update(active_heads)
+    if active_principals:
+        active_custody.update(active_principals)
+    if sessions and isinstance(sessions, list):
+        for s in sessions:
+            if s.get('reported_state') != 'exited':
+                tag = s.get('tag')
+                if tag:
+                    active_custody.add(tag)
+
+    # Sanitize active custody against obsolete tags
+    active_custody = {
+        t for t in active_custody
+        if not any(t.lower().startswith(p) for p in OBSOLETE_OWNER_PATTERNS)
+        and t not in LEGACY_ANT_TAGS
+    }
+
+    # 3. Dormant older research teams:
+    # Preserved research history is suppressed unless the task has been explicitly
+    # reacquired by a confirmed active custody session (reopened lane).
+    if team in DORMANT_TEAMS:
+        if not (owner and owner in active_custody):
+            return False
+
+    # 4. Ancient running labels:
+    # If a task is marked running/in_progress/working, its owner must be in active custody.
+    if status in ('running', 'in_progress', 'working'):
+        if not owner or owner not in active_custody:
+            return False
+
+    # 5. Ready/queued tasks:
+    # If owner is specified, it must not be obsolete or legacy.
+    if status in ('ready', 'queued') and owner:
+        if any(owner.lower().startswith(p) for p in OBSOLETE_OWNER_PATTERNS) or owner in LEGACY_ANT_TAGS:
+            return False
+
+    return True
+
+
 def get_designated_head_owner(task, entities):
     """
     Determine the designated head owner for a task from its explicit fields
     or matching supervision entity.
     """
+    def _is_eligible_head(candidate):
+        if not candidate or not is_safe_identifier(candidate) or candidate in ALL_KNOWN_PRINCIPALS:
+            return False
+        if any(candidate.lower().startswith(p) for p in OBSOLETE_OWNER_PATTERNS) or candidate in LEGACY_ANT_TAGS:
+            return False
+        return True
+
     head = task.get('head_owner')
-    if head and is_safe_identifier(head) and head not in ALL_KNOWN_PRINCIPALS:
+    if _is_eligible_head(head):
         return head
     owner = task.get('owner_tag') or task.get('owner')
-    if owner and is_safe_identifier(owner) and owner not in ALL_KNOWN_PRINCIPALS:
+    if _is_eligible_head(owner):
         for e in entities:
             if e.get('head_tag') == owner:
                 return owner
@@ -364,7 +470,7 @@ def get_designated_head_owner(task, entities):
     for e in entities:
         if task_matches_entity(task, e):
             ht = e.get('head_tag')
-            if ht and is_safe_identifier(ht) and ht not in ALL_KNOWN_PRINCIPALS:
+            if _is_eligible_head(ht):
                 return ht
     return None
 
@@ -613,26 +719,50 @@ def record_cycle_failure(report, exc):
         report['uncertain_outcome'] = exc.uncertain_record()
 
 
-def composer(screen, tag):
+ANSI_ESCAPE = re.compile(r'\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
+
+def strip_ansi(text: str) -> str:
+    return ANSI_ESCAPE.sub('', text)
+
+
+COMPOSER_TAIL_CHROME_RE = re.compile(
+    r'^\s*[─━_=-]+\s*$'
+    r'|.*(?:Context|for shortcuts|auto mode|manage|monitor|agents|tokens|GPT-|Gemini|glm-|usage|workspace|warning|Worked for|Ask Codex)'
+    r'|.*Aplexer awareness bootstrap.*'
+)
+
+DEFAULT_PROMPT_PLACEHOLDERS = {'Ask Codex to do anything', '? for shortcuts'}
+
+
+def composer(screen, tag=None):
     """Last prompt, never transcript prompts; unknown and menus deny input."""
-    lines = screen.splitlines()
-    starts = [(i, re.sub(r'^\s*[›❯]\s*', '', line).strip())
-              for i, line in enumerate(lines) if re.match(r'^\s*[›❯]', line)]
+    clean_screen = strip_ansi(screen)
+
+    if re.search(r'How is Claude doing|Choose|Select|feedback', clean_screen, re.I):
+        return 'menu-or-draft'
+    if re.search(r'Working \(|esc to interrupt|esc interrupt', clean_screen, re.I):
+        return 'busy'
+
+    lines = clean_screen.splitlines()
+    starts = [(i, re.sub(r'^\s*[›❯>]\s*', '', line).strip())
+              for i, line in enumerate(lines) if re.match(r'^\s*(?:[›❯]|>(?:\s|$))', line)]
     if not starts:
         return 'unknown'
+
     index, content = starts[-1]
-    tail = '\n'.join(lines[index + 1:])
-    # A multiline prompt cannot be distinguished safely from arbitrary content.
-    if any(line.strip() and not re.match(r'^\s*[─━]|.*(?:Context|for shortcuts|auto mode|manage|monitor|agents|tokens|GPT-|usage|workspace|warning)', line)
-           for line in lines[index + 1:]):
-        return 'unknown'
-    if re.search(r'How is Claude doing|Choose|Select|feedback', screen, re.I):
-        return 'menu-or-draft'
-    if content and not (tag == 'codex-principal' and content == 'Ask Codex to do anything'):
+
+    for line in lines[index + 1:]:
+        if not line.strip():
+            continue
+        if not COMPOSER_TAIL_CHROME_RE.search(line):
+            return 'unknown'
+
+    if content and content not in DEFAULT_PROMPT_PLACEHOLDERS and not content.startswith('? for shortcuts'):
         return 'draft'
-    if re.search(r'Working \(|esc to interrupt|esc interrupt', screen, re.I):
-        return 'busy'
+
     return 'empty'
+
 
 
 def quota_allowed(data):
@@ -746,12 +876,16 @@ def task_event(tasks):
     )
 
 
-def format_supervision_body(event_key, selected_tasks, entities=None, recent_completions=None):
+def format_supervision_body(event_key, selected_tasks, entities=None, recent_completions=None, is_delta=False, source_pointer='coordination/TASKS.json'):
     """
-    Format supervision envelope body per C1629/C1630.
+    Format supervision envelope body per C1629/C1630/C3003.
     Structures tasks clearly by project/team:
-    SUPERVISION-{event_key}: ... Tasks: [project] task (status, owner); [project2] task2 (status, owner); Recent completions: task3 (done)
+    - Delta mode:
+      SUPERVISION-{event_key}: ... Changed actionable tasks (source: {source_pointer}): [project] task (status, owner); ...
+    - Full/bounded mode:
+      SUPERVISION-{event_key}: ... Tasks: [project] task (status, owner); ...
     """
+    header_label = f"Changed actionable tasks (source: {source_pointer}): " if is_delta else "Tasks: "
     prefix = (
         f'SUPERVISION-{event_key}: User requests autonomous useful execution and clear roles. '
         'Read coordination/TEAM-REGISTRY.json, TASKS.json and SUPERVISION.md. '
@@ -760,7 +894,7 @@ def format_supervision_body(event_key, selected_tasks, entities=None, recent_com
         'Diagnose blockers or arrange acknowledged repair and continue independent work. '
         'Do not create implementation teams yourself, invent busywork, overwrite drafts or bypass quotas. '
         'Reply with task IDs, accepted owners, first evidence, blocked reasons and next check; update TASKS.json with ownership. '
-        'Tasks: '
+        + header_label
     )
 
     if entities is None:
@@ -1270,7 +1404,7 @@ def run():
                 count, reason = eligible(item, screen, tag, old, quota)
                 item.update(composer=composer(screen, tag), ready_snapshot_count=count, reason=reason)
                 principal_entities = [e for e in entities if tag in e.get('principal_tags', []) and not (e.get('conflict') and e['conflict'].get('detected'))]
-                principal_tasks = [t for t in active if any(task_matches_entity(t, e) for e in principal_entities)]
+                principal_tasks = [t for t in active if is_task_eligible_for_supervision(t, sessions=sessions, active_heads=head_tags, active_principals=active_tags) and any(task_matches_entity(t, e) for e in principal_entities)]
                 idle_since, overdue = idle_episode(principal_tasks or active, count > 0, old, time.time(), threshold=180)
                 item['idle_since'] = idle_since
                 item['unexplained_idle_over_slo'] = overdue
@@ -1336,9 +1470,10 @@ def run():
                         for t in active:
                             tid = t.get('id')
                             if tid not in seen_selected:
-                                if any(task_matches_entity(t, e) for e in principal_entities):
-                                    selected.append(t)
-                                    seen_selected.add(tid)
+                                if is_task_eligible_for_supervision(t, sessions=sessions, active_heads=head_tags, active_principals=active_tags):
+                                    if any(task_matches_entity(t, e) for e in principal_entities):
+                                        selected.append(t)
+                                        seen_selected.add(tid)
 
                         if selected:
                             all_completed = getattr(active, 'completed', None)
@@ -1348,11 +1483,38 @@ def run():
                             completed_for_principal.sort(key=lambda t: t.get('completed_at') or t.get('updated_at') or '', reverse=True)
                             recent_completions = completed_for_principal[:5] if completed_for_principal else None
 
+                            # Delta-payload computation (C3003)
+                            last_task_fps = old.get('last_notified_task_fps')
+                            session_changed = bool(old.get('session_id') and old.get('session_id') != session['id'])
+                            current_fps = {t['id']: task_ready_fingerprint(t) for t in selected}
+
+                            if last_task_fps is not None and not session_changed:
+                                changed_tasks = [t for t in selected if current_fps.get(t['id']) != last_task_fps.get(t['id'])]
+                                if changed_tasks:
+                                    payload_tasks = changed_tasks[:10]
+                                    is_delta = True
+                                else:
+                                    payload_tasks = selected[:5]
+                                    is_delta = False
+                            else:
+                                prioritized = sorted(
+                                    selected,
+                                    key=lambda t: 0 if t.get('status') in ('ready', 'queued') else (
+                                        1 if t.get('status') in ('running', 'in_progress', 'working') else (
+                                            2 if t.get('status') == 'blocked' else 3
+                                        )
+                                    )
+                                )
+                                payload_tasks = prioritized[:10]
+                                is_delta = False
+
                             body = format_supervision_body(
                                 event_key=event_key,
-                                selected_tasks=selected,
+                                selected_tasks=payload_tasks,
                                 entities=principal_entities,
-                                recent_completions=recent_completions
+                                recent_completions=recent_completions,
+                                is_delta=is_delta,
+                                source_pointer='coordination/TASKS.json'
                             )
                             # Inbox first, then existing-ID delivery after independent fresh snapshots.
                             receipt = recorded_send(BINARY, tag, f'{event_key}-{tag}', body, PRIVATE, identity['id'], supports_key)
@@ -1368,10 +1530,12 @@ def run():
                                        'workspace': identity.get('workspace', str(ROOT)), 'event': event_key,
                                        'delivery':receipt.get('delivery','inbox'), 'created_at': now()}
                             item['sent_event'] = event_key
+                            item['last_notified_task_fps'] = current_fps
                             item['cooldown_until'] = cooldown
                             event('request-recorded', principal=tag, message_id=pending['id'], event_key=event_key)
                 else:
                     item['sent_event'] = old.get('sent_event')
+                    item['last_notified_task_fps'] = old.get('last_notified_task_fps')
                     item['cooldown_until'] = cooldown
 
                 if pending and not may_deliver(pending, identity['id'], spool=PRIVATE):
@@ -1505,7 +1669,11 @@ def run():
                 item.update(composer=composer(screen, head_tag), ready_snapshot_count=count, reason=reason)
 
                 head_entities = [e for e in entities if e.get('head_tag') == head_tag and not (e.get('conflict') and e['conflict'].get('detected'))]
-                head_active = [t for t in active if ((t.get('owner_tag') or t.get('owner')) == head_tag) or any(task_matches_entity(t, e) for e in head_entities)]
+                head_active = [
+                    t for t in active
+                    if is_task_eligible_for_supervision(t, sessions=sessions, active_heads=head_tags, active_principals=active_tags)
+                    and (((t.get('owner_tag') or t.get('owner')) == head_tag) or any(task_matches_entity(t, e) for e in head_entities))
+                ]
                 head_ready = [t for t in head_active if t.get('status') in ('ready', 'queued')]
 
                 idle_since, overdue = idle_episode(head_ready, count > 0, old, time.time(), threshold=180)

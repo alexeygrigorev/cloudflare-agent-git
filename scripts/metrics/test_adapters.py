@@ -92,4 +92,80 @@ class AdapterTests(unittest.TestCase):
    self.assertIn(today_gz.name,active_names)
    self.assertNotIn('snapshots-2026-10-04.jsonl.1.gz',active_names)
    self.assertNotIn('snapshots-2026-10-05.jsonl.1.gz',active_names)
+ def test_adapters_cli_main_dry_run_and_execution(self):
+  import io, contextlib, datetime as dt
+  with tempfile.TemporaryDirectory() as tmp:
+   store = pathlib.Path(tmp)
+   today_str = dt.date.today().isoformat()
+   dayfile = store / f'snapshots-{today_str}.jsonl'
+   dayfile.write_bytes(b'{"active":true}\n' * 10)
+   old1 = store / 'snapshots-2026-10-04.jsonl.1.gz'
+   old1.write_bytes(b'A' * 400)
+   old2 = store / 'snapshots-2026-10-05.jsonl.1.gz'
+   old2.write_bytes(b'B' * 400)
+   today_gz = store / f'snapshots-{today_str}.jsonl.1.gz'
+   today_gz.write_bytes(b'C' * 200)
+
+   buf = io.StringIO()
+   with contextlib.redirect_stdout(buf):
+    code = adapters.cli_main(['--store', str(store), '--dry-run', '--json'])
+   self.assertEqual(code, 0)
+   dry_out = json.loads(buf.getvalue())
+
+   self.assertEqual(dry_out.get('status'), 'ok')
+   self.assertTrue(dry_out.get('dry_run'))
+   self.assertIsInstance(dry_out.get('active_bytes'), int)
+   self.assertIsInstance(dry_out.get('active_files'), int)
+   self.assertIsInstance(dry_out.get('candidate_files'), list)
+   self.assertIsInstance(dry_out.get('candidate_bytes'), int)
+   self.assertIsInstance(dry_out.get('manifest_path'), str)
+
+   self.assertIn('snapshots-2026-10-04.jsonl.1.gz', dry_out['candidate_files'])
+   self.assertIn('snapshots-2026-10-05.jsonl.1.gz', dry_out['candidate_files'])
+   self.assertNotIn(today_gz.name, dry_out['candidate_files'])
+   self.assertEqual(dry_out['candidate_bytes'], 800)
+   self.assertEqual(dry_out['active_files'], 4)
+   self.assertTrue(old1.exists())
+   self.assertTrue(old2.exists())
+   self.assertTrue(today_gz.exists())
+   self.assertTrue(dayfile.exists())
+   self.assertFalse((store / 'archive').exists())
+   self.assertFalse((store / 'retention-manifest.json').exists())
+
+   buf = io.StringIO()
+   with contextlib.redirect_stdout(buf):
+    self.assertEqual(adapters.cli_main(['--store', str(store), '--dry-run']), 0)
+   self.assertIn('Dry run:', buf.getvalue())
+
+   buf = io.StringIO()
+   with contextlib.redirect_stdout(buf):
+    code = adapters.cli_main(['--store', str(store), '--force', '--json'])
+   self.assertEqual(code, 0)
+   force_out = json.loads(buf.getvalue())
+
+   self.assertEqual(force_out.get('status'), 'ok')
+   self.assertIsInstance(force_out.get('active_bytes'), int)
+   self.assertIsInstance(force_out.get('active_files'), int)
+   self.assertIsInstance(force_out.get('manifest_path'), str)
+   self.assertEqual(force_out['manifest_path'], str(store / 'retention-manifest.json'))
+
+   self.assertFalse(old1.exists())
+   self.assertFalse(old2.exists())
+   archive_dir = store / 'archive'
+   self.assertTrue(archive_dir.is_dir())
+   self.assertTrue((archive_dir / old1.name).exists())
+   self.assertTrue((archive_dir / old2.name).exists())
+   self.assertTrue((archive_dir / 'manifest.json').exists())
+   self.assertTrue(dayfile.exists())
+   self.assertTrue(today_gz.exists())
+   self.assertEqual(force_out['active_files'], 2)
+   self.assertEqual(force_out['active_bytes'], dayfile.stat().st_size + today_gz.stat().st_size)
+   self.assertLess(force_out['active_bytes'], dry_out['active_bytes'])
+   self.assertTrue((store / 'retention-manifest.json').exists())
+
+   buf = io.StringIO()
+   with contextlib.redirect_stdout(buf):
+    self.assertEqual(adapters.cli_main(['--store', str(store)]), 0)
+   self.assertIn('Active store:', buf.getvalue())
 if __name__=='__main__':unittest.main()
+

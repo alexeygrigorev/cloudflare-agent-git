@@ -782,6 +782,457 @@ class Safety(unittest.TestCase):
       f"Field '{key}' change failed to alter task ready fingerprint"
     )
 
-if __name__=='__main__':unittest.main()
+ def test_format_supervision_body_delta_and_bounded(self):
+    """Ensure format_supervision_body correctly handles delta mode and full mode with source pointer."""
+    tasks = [
+      {'id': 'task-a', 'status': 'ready', 'owner_tag': 'head-1', 'project_id': 'proj-1'},
+      {'id': 'task-b', 'status': 'running', 'owner_tag': 'head-2', 'project_id': 'proj-2'},
+    ]
+    # Full mode
+    body_full = service.format_supervision_body('key-1', tasks, is_delta=False)
+    self.assertIn('Tasks: [proj-1] task-a (ready, head-1); [proj-2] task-b (running, head-2)', body_full)
 
+    # Delta mode
+    body_delta = service.format_supervision_body('key-2', tasks[:1], is_delta=True, source_pointer='coordination/TASKS.json')
+    self.assertIn('Changed actionable tasks (source: coordination/TASKS.json): [proj-1] task-a (ready, head-1)', body_delta)
+    self.assertNotIn('task-b', body_delta)
+
+ def test_principal_supervision_delta_payload_bounding(self):
+    """
+    Ensure principal supervision envelopes bound payloads:
+    1. Initial notification sends bounded actionable tasks + pointer.
+    2. Repeated identical tasks tick suppresses resending.
+    3. Changed task sends ONLY the changed actionable task, not the full roster.
+    4. Session restart resets and sends bounded initial task set.
+    """
+    import shutil
+    Path = pathlib.Path
+    tmp = Path(tempfile.mkdtemp())
+    self.addCleanup(lambda: shutil.rmtree(tmp, ignore_errors=True))
+
+    priv = tmp / 'private'
+    priv.mkdir(parents=True, exist_ok=True)
+    coord = tmp / 'coordination'
+    coord.mkdir(parents=True, exist_ok=True)
+    pinned = tmp / 'aplexer'
+    pinned.write_text('#!/bin/sh\nexit 0\n')
+    pinned.chmod(0o755)
+
+    # Generate 25 tasks across projects to simulate a large project roster
+    tasks_data = []
+    for i in range(25):
+      tasks_data.append({
+        'id': f'task-{i:02d}',
+        'status': 'ready' if i < 5 else 'blocked',
+        'owner_tag': 'codex-principal',
+        'project_id': 'agent-branches' if i % 2 == 0 else 'agent-bus',
+        'updated_at': '2026-10-06T12:00:00Z',
+        'blocked_on': [],
+        'next_action': 'execute'
+      })
+
+    with open(coord / 'TASKS.json', 'w') as f:
+      json.dump(tasks_data, f)
+
+    entities_data = [
+      {'id': 'agent-branches', 'principal_tags': ['codex-principal']},
+      {'id': 'agent-bus', 'principal_tags': ['codex-principal']},
+    ]
+    with open(coord / 'TEAM-REGISTRY.json', 'w') as f:
+      json.dump({'projects': entities_data}, f)
+
+    current_sess_id = ['sess-codex-1']
+    sent_bodies = []
+
+    def fake_cmd(args, timeout=20):
+      words = [a for a in args[1:] if not a.startswith('-')]
+      if words[:1] == ['whoami']:
+        return json.dumps({'workspace': str(tmp), 'tag': 'experiment-supervision', 'id': 'sup-1'})
+      if '--help' in args or 'help' in args:
+        return '  --idempotency-key'
+      if words[:1] == ['list']:
+        (priv / 'stop').write_text('stop')
+        return json.dumps([
+          {'workspace': str(tmp), 'tag': 'codex-principal', 'id': current_sess_id[0], 'reported_state': 'idle', 'workload_pid': str(os.getpid())}
+        ])
+      if 'inbox' in args:
+        return json.dumps({'messages': []})
+      if 'capture' in args:
+        return "› Ask Codex to do anything\n  GPT-6.1 Context 50% left"
+      if args[0] == 'quse':
+        return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 85}}}})
+      return '{}'
+
+    def fake_recorded_send(binary, tag, key, body, spool, sender_id, supports_key):
+      sent_bodies.append(body)
+      return {
+        'id': f'msg-{len(sent_bodies)}',
+        'delivery': 'inbox',
+        'body': body
+      }
+
+    real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+    real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
+    real_defaults = service.recorded_send.__defaults__
+    real_recorded_send = service.recorded_send
+    real_composer = service.composer
+
+    t0 = [1000000.0]
+
+    try:
+      service.ROOT = tmp
+      service.PRIVATE = priv
+      service.BINARY = str(pinned)
+      service.command = fake_cmd
+      service.subprocess.run = lambda *a, **k: type('R', (), {'returncode': 0, 'stdout': '{}', 'stderr': ''})()
+      service.recorded_send = fake_recorded_send
+      service.recorded_send.__defaults__ = (fake_cmd,)
+      service.composer = lambda screen, tag: 'empty'
+      service.time = type('T', (), {
+        'time': staticmethod(lambda: t0[0]),
+        'sleep': staticmethod(lambda s: None)
+      })()
+
+      # Step 1: Initial run
+      (priv / 'stop').unlink(missing_ok=True)
+      service.run()
+      self.assertEqual(len(sent_bodies), 1, "Initial cycle should send an envelope")
+      init_body = sent_bodies[0]
+      self.assertIn('Tasks: ', init_body)
+      # Bounded: should contain at most 10 tasks, not all 25
+      task_count_in_body = sum(1 for i in range(25) if f'task-{i:02d} ' in init_body)
+      self.assertLessEqual(task_count_in_body, 10, "Initial envelope must bound tasks to at most 10")
+
+      # Step 2: Simulate ACK of initial message and next cycle with unchanged tasks
+      state_file = priv / 'state.json'
+      with open(state_file) as f:
+        st = json.load(f)
+      # Reconcile pending message as acked
+      st['codex-principal']['pending'] = None
+      with open(state_file, 'w') as f:
+        json.dump(st, f)
+
+      t0[0] += 30.0
+      (priv / 'stop').unlink(missing_ok=True)
+      service.run()
+      self.assertEqual(len(sent_bodies), 1, "Unchanged tasks should NOT send a new envelope")
+
+      # Step 3: Change exactly ONE task (task-03 status changes from ready to running)
+      tasks_data[3]['status'] = 'running'
+      tasks_data[3]['updated_at'] = '2026-10-06T12:05:00Z'
+      with open(coord / 'TASKS.json', 'w') as f:
+        json.dump(tasks_data, f)
+
+      t0[0] += 30.0
+      (priv / 'stop').unlink(missing_ok=True)
+      service.run()
+      self.assertEqual(len(sent_bodies), 2, "Task change should send a delta envelope")
+      delta_body = sent_bodies[1]
+      self.assertIn('Changed actionable tasks (source: coordination/TASKS.json): ', delta_body)
+      self.assertIn('task-03 (running, codex-principal)', delta_body)
+      # Must NOT contain unchanged tasks in the delta list
+      self.assertNotIn('task-00', delta_body)
+      self.assertNotIn('task-01', delta_body)
+      self.assertNotIn('task-02', delta_body)
+
+      # Step 4: Next cycle without changes -> suppressed
+      with open(state_file) as f:
+        st = json.load(f)
+      st['codex-principal']['pending'] = None
+      with open(state_file, 'w') as f:
+        json.dump(st, f)
+
+      t0[0] += 30.0
+      (priv / 'stop').unlink(missing_ok=True)
+      service.run()
+      self.assertEqual(len(sent_bodies), 2, "Unchanged tick after delta should be suppressed")
+
+      # Step 5: Session restart -> new session receives bounded initial set
+      current_sess_id[0] = 'sess-codex-2'
+      t0[0] += 30.0
+      (priv / 'stop').unlink(missing_ok=True)
+      service.run()
+      self.assertEqual(len(sent_bodies), 3, "Session change should trigger fresh bounded envelope")
+      session_body = sent_bodies[2]
+      self.assertIn('Tasks: ', session_body)
+
+    finally:
+      service.ROOT = real_root
+      service.PRIVATE = real_priv
+      service.BINARY = real_bin
+      service.command = real_cmd
+      service.subprocess.run = real_run
+      service.recorded_send = real_recorded_send
+      service.recorded_send.__defaults__ = real_defaults
+      service.composer = real_composer
+      service.time = real_time
+
+
+ def test_is_task_eligible_for_supervision_stale_owner_rejection(self):
+  """
+  Negative tests verifying that obsolete owners (Grok, stopped Claude, legacy Ant)
+  and ancient running labels are rejected, while active custody tasks are accepted (C3025).
+  """
+  from scripts.supervision.service import is_task_eligible_for_supervision
+
+  # Negative 1: Obsolete Grok owners and dormant team a06-a10
+  t_grok_head = {'id': 't-grok-1', 'status': 'running', 'owner': 'grok-head', 'team_id': 'a06-a10'}
+  t_grok_worker = {'id': 't-grok-2', 'status': 'ready', 'owner': 'grok-worker', 'team_id': 'a06-a10'}
+  self.assertFalse(is_task_eligible_for_supervision(t_grok_head), "Grok head must be rejected as obsolete")
+  self.assertFalse(is_task_eligible_for_supervision(t_grok_worker), "Grok worker must be rejected as obsolete")
+
+  # Negative 2: Stopped Claude implementation owner (Claude is monitoring principal only per user26)
+  t_claude_impl = {'id': 't-claude-1', 'status': 'running', 'owner': 'claude-principal', 'project_id': 'agent-branches'}
+  t_claude_ready = {'id': 't-claude-2', 'status': 'ready', 'owner': 'claude-worker', 'project_id': 'agent-branches'}
+  self.assertFalse(is_task_eligible_for_supervision(t_claude_impl), "Claude implementation owner must be rejected")
+  self.assertFalse(is_task_eligible_for_supervision(t_claude_ready), "Claude worker owner must be rejected")
+
+  # Negative 3: Legacy Ant owners (exited / non-active custody sessions)
+  t_ant_legacy = {'id': 't-ant-1', 'status': 'running', 'owner': 'antigravity-head', 'project_id': 'agent-branches'}
+  t_ant_old = {'id': 't-ant-2', 'status': 'in_progress', 'owner': 'ant-head-operational-resume-20261005', 'project_id': 'agent-branches'}
+  self.assertFalse(is_task_eligible_for_supervision(t_ant_legacy), "Legacy antigravity-head must be rejected")
+  self.assertFalse(is_task_eligible_for_supervision(t_ant_old), "Old operational-resume ant session must be rejected")
+
+  # Negative 4: Dormant older research teams (unmaintained / non-reacquired)
+  t_a01 = {'id': 't-a01', 'status': 'ready', 'owner': 'zcode-independent', 'team_id': 'a01-harness'}
+  t_a05 = {'id': 't-a05', 'status': 'ready', 'owner': 'space-bunny-head', 'team_id': 'a05'}
+  self.assertFalse(is_task_eligible_for_supervision(t_a01), "Dormant a01-harness team must be rejected")
+  self.assertFalse(is_task_eligible_for_supervision(t_a05), "Dormant a05 team must be rejected")
+
+  # Positive 2: Reopened lane with genuine active custody owner (C3034)
+  t_reopened_a01 = {'id': 't-reopened-1', 'status': 'running', 'owner': 'ant-head-never-timer-custody-20261006', 'team_id': 'a01-harness'}
+  self.assertTrue(is_task_eligible_for_supervision(t_reopened_a01), "Reopened lane task with genuine active custody owner must be eligible")
+
+  # Negative 5: Ancient running label with unknown / unmaintained owner and fresh unknown alias (fails honest)
+  t_ancient_running = {'id': 't-ancient', 'status': 'running', 'owner': 'nonexistent-session', 'project_id': 'agent-dashboard'}
+  t_unknown_alias = {'id': 't-unknown-alias', 'status': 'running', 'owner': 'fresh-unknown-alias-123', 'project_id': 'agent-branches'}
+  self.assertFalse(is_task_eligible_for_supervision(t_ancient_running), "Ancient running label without active custody owner must be rejected")
+  self.assertFalse(is_task_eligible_for_supervision(t_unknown_alias), "Fresh unknown owner alias must fail honest")
+
+  # Positive 1: Genuine active custody tasks
+  t_branches_active = {'id': 't-branches', 'status': 'in_progress', 'owner': 'ant-head-never-timer-custody-20261006', 'project_id': 'agent-branches'}
+  t_ql_ready = {'id': 't-ql', 'status': 'ready', 'owner': 'ql-head-feedback-custody-20261006', 'project_id': 'quota-launcher'}
+  t_coord_active = {'id': 't-coord', 'status': 'in_progress', 'owner': 'coord-917-custody-resume-20261006', 'project_id': 'agent-coordination'}
+  t_unassigned_ready = {'id': 't-unassigned', 'status': 'queued', 'owner': None, 'project_id': 'agent-dashboard'}
+  self.assertTrue(is_task_eligible_for_supervision(t_branches_active), "Active branches custody task must be eligible")
+  self.assertTrue(is_task_eligible_for_supervision(t_ql_ready), "Active QL custody ready task must be eligible")
+  self.assertTrue(is_task_eligible_for_supervision(t_coord_active), "Active coord custody task must be eligible")
+  self.assertTrue(is_task_eligible_for_supervision(t_unassigned_ready), "Unassigned queued task must be eligible")
+
+ def test_supervision_payload_filters_obsolete_owners_and_ancient_running_labels(self):
+  """
+  Test that the principal supervision payload strictly filters out obsolete Grok,
+  stopped Claude, legacy Ant, and ancient running labels, bounding to genuine active tasks
+  while preserving task history on disk (read-only collector) (C3025).
+  """
+  import shutil
+  td = tempfile.mkdtemp()
+  try:
+   root = pathlib.Path(td) / 'workspace'
+   priv = root / '.local' / 'supervision'
+   coord = root / 'coordination'
+   coord.mkdir(parents=True)
+   priv.mkdir(parents=True)
+
+   pinned = root / 'aplexer'
+   pinned.write_text('#!/bin/sh\nexit 0\n')
+   pinned.chmod(0o755)
+
+   real_root = service.ROOT
+   real_priv = service.PRIVATE
+   real_bin = service.BINARY
+   real_cmd = service.command
+   real_run = service.subprocess.run
+   real_recorded_send = service.recorded_send
+   real_defaults = service.recorded_send.__defaults__
+   real_composer = service.composer
+   real_time = service.time
+
+   sent_envelopes = []
+
+   def fake_send(bin_path, to, key, body, spool=None, sender_id=None, supports_key=True):
+    sent_envelopes.append({'to': to, 'key': key, 'body': body})
+    return {'status': 'inbox', 'id': f'm-filter-{len(sent_envelopes)}', 'delivery': 'inbox'}
+
+   t0 = [1000000.0]
+
+   reg_data = {
+     'teams': [
+       {'id': 'a06-a10', 'name': 'Grok Team', 'head_tag': 'grok-head', 'principal_tags': ['codex-principal']},
+       {'id': 'oversight', 'name': 'Oversight', 'head_tag': 'codex-principal', 'principal_tags': ['codex-principal']},
+     ],
+     'projects': [
+       {'id': 'agent-branches', 'name': 'Agent Branches', 'head_tag': 'ant-head-never-timer-custody-20261006', 'principal_tags': ['codex-principal']},
+       {'id': 'quota-launcher', 'name': 'Quota Launcher', 'head_tag': 'ql-head-feedback-custody-20261006', 'principal_tags': ['codex-principal']},
+       {'id': 'agent-dashboard', 'name': 'Agent Dashboard', 'head_tag': 'agent-dashboard-head', 'principal_tags': ['codex-principal']},
+     ]
+   }
+   with open(coord / 'TEAM-REGISTRY.json', 'w') as f:
+    json.dump(reg_data, f)
+
+   # Populate TASKS.json with a mix of obsolete and genuine tasks
+   tasks_data = [
+     # Obsolete Grok tasks (with ancient running label)
+     {'id': 'task-grok-1', 'status': 'running', 'owner': 'grok-head', 'team_id': 'a06-a10'},
+     {'id': 'task-grok-2', 'status': 'running', 'owner': 'grok-head', 'team_id': 'a06-a10'},
+     # Stopped Claude implementation task
+     {'id': 'task-claude-1', 'status': 'running', 'owner': 'claude-principal', 'project_id': 'agent-branches'},
+     # Legacy Ant tasks
+     {'id': 'task-ant-1', 'status': 'running', 'owner': 'antigravity-head', 'project_id': 'agent-branches'},
+     {'id': 'task-ant-2', 'status': 'running', 'owner': 'antigravity-head', 'project_id': 'agent-branches'},
+     # Ancient running task with dead session
+     {'id': 'task-ancient-1', 'status': 'running', 'owner': 'dead-session-tag', 'project_id': 'agent-dashboard'},
+     # Genuine active custody tasks
+     {'id': 'task-genuine-ready-1', 'status': 'ready', 'owner': 'ql-head-feedback-custody-20261006', 'project_id': 'quota-launcher'},
+     {'id': 'task-genuine-ready-2', 'status': 'queued', 'owner': None, 'project_id': 'agent-dashboard'},
+     {'id': 'task-genuine-active-1', 'status': 'in_progress', 'owner': 'ant-head-never-timer-custody-20261006', 'project_id': 'agent-branches'},
+   ]
+   initial_tasks_json = json.dumps(tasks_data, indent=2)
+   with open(coord / 'TASKS.json', 'w') as f:
+    f.write(initial_tasks_json)
+
+   fake_sessions = [
+     {'id': 'sess-codex', 'tag': 'codex-principal', 'reported_state': 'idle', 'workspace': str(root), 'workload_pid': os.getpid()},
+     {'id': 'sess-ant', 'tag': 'ant-head-never-timer-custody-20261006', 'reported_state': 'running', 'workspace': str(root), 'workload_pid': os.getpid()},
+     {'id': 'sess-ql', 'tag': 'ql-head-feedback-custody-20261006', 'reported_state': 'running', 'workspace': str(root), 'workload_pid': os.getpid()},
+   ]
+
+   def fake_cmd(args, timeout=20):
+    words = [a for a in args[1:] if not a.startswith('-')]
+    if words[:1] == ['whoami']:
+      return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-1'})
+    if '--help' in args or 'help' in args:
+      return '  --idempotency-key'
+    if words[:1] == ['list']:
+      (priv / 'stop').write_text('stop')
+      return json.dumps(fake_sessions)
+    if 'inbox' in args:
+      return json.dumps({'messages': []})
+    if 'capture' in args:
+      return "› Ask Codex to do anything\\n  GPT-6.1 Context 50% left"
+    if args[0] == 'quse':
+      return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 85}}}})
+    return '{}'
+
+   service.ROOT = root
+   service.PRIVATE = priv
+   service.BINARY = str(pinned)
+   service.command = fake_cmd
+   service.subprocess.run = lambda *a, **k: type('R', (), {'returncode': 0, 'stdout': '{}', 'stderr': ''})()
+   service.recorded_send = fake_send
+   service.recorded_send.__defaults__ = (fake_cmd,)
+   service.composer = lambda screen, tag: 'empty'
+   service.time = type('T', (), {
+     'time': staticmethod(lambda: t0[0]),
+     'sleep': staticmethod(lambda s: None)
+   })()
+
+   (priv / 'stop').unlink(missing_ok=True)
+   service.run()
+
+   codex_envelopes = [e for e in sent_envelopes if e['to'] == 'codex-principal']
+   self.assertEqual(len(codex_envelopes), 1, "Exactly 1 supervision envelope should be sent to codex-principal")
+   body = codex_envelopes[0]['body']
+
+   # 1. Verify genuine tasks ARE present in the principal payload
+   self.assertIn('task-genuine-ready-1', body)
+   self.assertIn('task-genuine-ready-2', body)
+   self.assertIn('task-genuine-active-1', body)
+
+   # 2. Verify obsolete / ancient tasks are strictly EXCLUDED from the principal payload
+   self.assertNotIn('task-grok-1', body)
+   self.assertNotIn('task-grok-2', body)
+   self.assertNotIn('task-claude-1', body)
+   self.assertNotIn('task-ant-1', body)
+   self.assertNotIn('task-ant-2', body)
+   self.assertNotIn('task-ancient-1', body)
+
+   # 3. Verify task history is preserved and collector is read-only
+   with open(coord / 'TASKS.json') as f:
+    current_tasks_json = f.read()
+   self.assertEqual(current_tasks_json, initial_tasks_json, "TASKS.json must not be modified by read-only collector")
+
+  finally:
+   service.ROOT = real_root
+   service.PRIVATE = real_priv
+   service.BINARY = real_bin
+   service.command = real_cmd
+   service.subprocess.run = real_run
+   service.recorded_send = real_recorded_send
+   service.recorded_send.__defaults__ = real_defaults
+   service.composer = real_composer
+   service.time = real_time
+   shutil.rmtree(td, ignore_errors=True)
+
+
+class ComposerEvaluationTests(unittest.TestCase):
+ """Unit tests for composer screen evaluation across multi-engine prompts and ANSI formatting."""
+
+ def test_strip_ansi(self):
+  raw = "\x1b[1m›\x1b[m \x1b[2mAsk Codex to do anything\x1b[m"
+  self.assertEqual(service.strip_ansi(raw), "› Ask Codex to do anything")
+
+ def test_composer_zcodex_ansi_escaped_empty(self):
+  screen = "\x1b[1m›\x1b[m \x1b[2mAsk Codex to do anything\x1b[m\n  glm-5.3-flash max"
+  self.assertEqual(service.composer(screen), 'empty')
+  self.assertEqual(service.composer(screen, 'codex-principal'), 'empty')
+  self.assertEqual(service.composer(screen, 'publication513'), 'empty')
+
+ def test_composer_antigravity_ascii_empty(self):
+  screen = ">\n────────────────────────────────────────────────────────────────────────────────\n? for shortcuts   Gemini 3.8 Flash · high"
+  self.assertEqual(service.composer(screen), 'empty')
+  self.assertEqual(service.composer(screen, 'ant-head-readiness-custody-20261007'), 'empty')
+
+ def test_composer_zcodex_with_draft(self):
+  screen = "\x1b[1m›\x1b[m my unfinished command"
+  self.assertEqual(service.composer(screen), 'draft')
+  self.assertEqual(service.composer(screen, 'codex-principal'), 'draft')
+
+ def test_composer_antigravity_with_draft(self):
+  screen = "> my unfinished prompt\n────────────────────────────────────────────────────────────────────────────────"
+  self.assertEqual(service.composer(screen), 'draft')
+  self.assertEqual(service.composer(screen, 'ant-head-readiness-custody-20261007'), 'draft')
+
+ def test_composer_busy_indicator(self):
+  screen = "Working (12s · esc to interrupt)"
+  self.assertEqual(service.composer(screen), 'busy')
+
+ def test_composer_menu_detection(self):
+  screen = "How is Claude doing?"
+  self.assertEqual(service.composer(screen), 'menu-or-draft')
+
+ def test_composer_aplexer_awareness_banner_tolerance(self):
+  screen_scrollback = (
+   "Aplexer awareness bootstrap: session 3273594b\n"
+   ">\n"
+   "────────────────────────────────────────────────────────────────────────────────\n"
+   "? for shortcuts   Gemini 3.8 Flash · high"
+  )
+  self.assertEqual(service.composer(screen_scrollback), 'empty')
+
+  screen_tail = (
+   ">\n"
+   "Aplexer awareness bootstrap: session 3273594b\n"
+   "────────────────────────────────────────────────────────────────────────────────\n"
+   "? for shortcuts   Gemini 3.8 Flash · high"
+  )
+  self.assertEqual(service.composer(screen_tail), 'empty')
+
+  screen_zcodex = (
+   "Aplexer awareness bootstrap: session 513eab03\n"
+   "\x1b[1m›\x1b[m \x1b[2mAsk Codex to do anything\x1b[m\n"
+   "  glm-5.3-flash max"
+  )
+  self.assertEqual(service.composer(screen_zcodex), 'empty')
+
+ def test_composer_unrecognized_tail_returns_unknown(self):
+  screen = ">\nsome unrecognized output from child process"
+  self.assertEqual(service.composer(screen), 'unknown')
+
+ def test_composer_no_prompt_returns_unknown(self):
+  screen = "some text without prompt"
+  self.assertEqual(service.composer(screen), 'unknown')
+
+
+if __name__=='__main__':unittest.main()
 
