@@ -563,6 +563,225 @@ class Safety(unittest.TestCase):
         service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
         service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
 
+ def test_head_ready_delta_tracking_and_deduplication(self):
+  root = pathlib.Path(tempfile.mkdtemp())
+  private = root / 'private'
+  private.mkdir(parents=True, exist_ok=True)
+  pinned = root / 'aplexer'
+  pinned.write_text('#!/bin/sh\nexit 0\n')
+  pinned.chmod(0o755)
+
+  # Write initial team registry and tasks
+  registry = {
+    'teams': [
+      {'id': 'e-branches', 'head_tag': 'agent-branches-head', 'principal_tags': ['codex-principal']}
+    ]
+  }
+  (root / 'coordination').mkdir(parents=True, exist_ok=True)
+  (root / 'coordination' / 'TEAM-REGISTRY.json').write_text(json.dumps(registry))
+
+  tasks = [
+    {'id': 't-task-1', 'owner_tag': 'agent-branches-head', 'status': 'ready', 'type': 'code'}
+  ]
+  (root / 'coordination' / 'TASKS.json').write_text(json.dumps(tasks))
+
+  curr_time = [1000.0]
+  sent_messages = []
+  cycles = [0]
+  current_sess_id = ['sess-head-1']
+
+  def fake_cmd(args, timeout=20):
+    words = [a for a in args[1:] if not a.startswith('-')]
+    if words[:1] == ['whoami']:
+      return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-1'})
+    if words[:1] == ['list']:
+      cycles[0] += 1
+      if cycles[0] >= 1:
+        (private / 'stop').write_text('stop')
+      return json.dumps([
+        {'workspace': str(root), 'tag': 'agent-branches-head', 'id': current_sess_id[0], 'reported_state': 'idle', 'workload_pid': str(os.getpid())}
+      ])
+    if 'capture' in args:
+      return '› \n'
+    if words[:2] == ['message', 'send']:
+      if '--help' in args:
+        return 'Usage: aplexer message send [OPTIONS] [BODY]...\n  --idempotency-key TEXT'
+      body = args[-1]
+      to_tag = args[args.index('--to')+1] if '--to' in args else 'unknown'
+      sent_messages.append({'to': to_tag, 'body': body, 'time': curr_time[0]})
+      mid = f"m-head-{len(sent_messages)}"
+      return json.dumps({'id': mid, 'delivery': 'inbox', 'created_at': '2026-10-06T18:00:00Z', 'body': body})
+    if words[:2] == ['message', 'inbox']:
+      return json.dumps([])
+    return '{}'
+
+  real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+  real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
+  real_defaults = service.recorded_send.__defaults__
+
+  try:
+    service.command = fake_cmd
+    service.recorded_send.__defaults__ = (fake_cmd,)
+    service.subprocess.run = lambda *a, **k: type('R', (), {'returncode': 0, 'stdout': '{}', 'stderr': ''})()
+    service.time = type('T', (), {'time': staticmethod(lambda: curr_time[0]), 'sleep': staticmethod(lambda s: None)})()
+    service.ROOT, service.PRIVATE, service.BINARY = root, private, str(pinned)
+
+    # Stage 1: First appearance of ready task. Overdue episode at t=1200 (1200 - 1000 >= 180s).
+    # Notification should be sent with ready_delta=True.
+    curr_time[0] = 1200.0
+    service.run()
+
+    st = json.loads((private / 'state.json').read_text())
+    head_item = st.get('agent-branches-head', {})
+    self.assertTrue(head_item.get('ready_delta'))
+    self.assertEqual(head_item.get('last_notified_ready_ids'), ['t-task-1'])
+    self.assertIsNotNone(head_item.get('ready_fingerprint'))
+    self.assertEqual(head_item.get('last_notified_ready_fingerprint'), head_item.get('ready_fingerprint'))
+    self.assertEqual(len(sent_messages), 1)
+    self.assertIn('t-task-1', sent_messages[0]['body'])
+
+    # Stage 2: Head ACKs the message (pending cleared). Time advances by 200s (episode changes).
+    # Task set has NOT changed (still identical t-task-1). Repetitive dump should be strictly suppressed.
+    sent_messages.clear()
+    cycles[0] = 0
+    (private / 'stop').unlink(missing_ok=True)
+    # Clear pending in state to simulate ACK reconciliation
+    st['agent-branches-head']['pending'] = None
+    (private / 'state.json').write_text(json.dumps(st))
+    curr_time[0] = 1400.0
+
+    service.run()
+
+    st = json.loads((private / 'state.json').read_text())
+    head_item = st.get('agent-branches-head', {})
+    self.assertFalse(head_item.get('ready_delta'))
+    self.assertTrue(head_item.get('ready_deduped'))
+    self.assertEqual(head_item.get('last_notified_ready_ids'), ['t-task-1'])
+    self.assertEqual(head_item.get('last_notified_ready_fingerprint'), head_item.get('ready_fingerprint'))
+    # Crucial invariant: ZERO repetitive messages sent!
+    self.assertEqual(len(sent_messages), 0)
+
+    # Stage 3: Same t-task-1 ID, but updated failure/status/evidence/next_action (e.g. status='ready', error='executor crash')
+    # Fingerprint changes -> ready_delta is True, escalation message sent even within same 180s episode (1410 // 180 == 1400 // 180 == 7)!
+    tasks[0]['error'] = 'executor crash'
+    tasks[0]['failure_count'] = 1
+    tasks[0]['next_action'] = 'diagnose crash and relaunch'
+    (root / 'coordination' / 'TASKS.json').write_text(json.dumps(tasks))
+    sent_messages.clear()
+    cycles[0] = 0
+    (private / 'stop').unlink(missing_ok=True)
+    curr_time[0] = 1410.0
+
+    service.run()
+
+    st = json.loads((private / 'state.json').read_text())
+    head_item = st.get('agent-branches-head', {})
+    self.assertTrue(head_item.get('ready_delta'))
+    self.assertEqual(head_item.get('last_notified_ready_ids'), ['t-task-1'])
+    self.assertEqual(head_item.get('last_notified_ready_fingerprint'), head_item.get('ready_fingerprint'))
+    self.assertEqual(len(sent_messages), 1)
+    self.assertIn('t-task-1', sent_messages[0]['body'])
+
+    # Stage 4: Session restart (session_id changes to sess-head-2).
+    # ACK previous message, keep identical task -> ready_delta is True due to session change, message sent to new session.
+    current_sess_id[0] = 'sess-head-2'
+    sent_messages.clear()
+    cycles[0] = 0
+    (private / 'stop').unlink(missing_ok=True)
+    st['agent-branches-head']['pending'] = None
+    (private / 'state.json').write_text(json.dumps(st))
+    curr_time[0] = 1800.0
+
+    service.run()
+
+    st = json.loads((private / 'state.json').read_text())
+    head_item = st.get('agent-branches-head', {})
+    self.assertEqual(head_item.get('session_id'), 'sess-head-2')
+    self.assertTrue(head_item.get('ready_delta'))
+    self.assertEqual(len(sent_messages), 1)
+    self.assertIn('t-task-1', sent_messages[0]['body'])
+
+    # Stage 5: A new task 't-task-2' is added to ready tasks.
+    st['agent-branches-head']['pending'] = None
+    (private / 'state.json').write_text(json.dumps(st))
+    tasks.append({'id': 't-task-2', 'owner_tag': 'agent-branches-head', 'status': 'ready', 'type': 'code'})
+    (root / 'coordination' / 'TASKS.json').write_text(json.dumps(tasks))
+    sent_messages.clear()
+    cycles[0] = 0
+    (private / 'stop').unlink(missing_ok=True)
+    curr_time[0] = 2000.0
+
+    service.run()
+
+    st = json.loads((private / 'state.json').read_text())
+    head_item = st.get('agent-branches-head', {})
+    self.assertTrue(head_item.get('ready_delta'))
+    self.assertEqual(head_item.get('last_notified_ready_ids'), ['t-task-1', 't-task-2'])
+    # New notification with updated task set SHOULD be sent
+    self.assertEqual(len(sent_messages), 1)
+    self.assertIn('t-task-1', sent_messages[0]['body'])
+    self.assertIn('t-task-2', sent_messages[0]['body'])
+
+  finally:
+    service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
+    service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
+    service.recorded_send.__defaults__ = real_defaults
+
+ def test_task_ready_fingerprint_sensitivity(self):
+  """Ensure task_ready_fingerprint responds to all meaningful task attributes and ignores non-fingerprinted fields."""
+  base_task = {
+    'id': 'task-100',
+    'status': 'ready',
+    'owner_tag': 'head-1',
+    'updated_at': '2026-10-06T12:00:00Z',
+    'blocked_on': ['dep-1', 'dep-2'],
+    'next_action': 'investigate crash',
+    'evidence_paths': ['evidence/log1.txt'],
+    'failure_count': 0,
+    'error': None,
+    'blocking_reason': None,
+    'acceptance_status': 'in_progress',
+    'description': 'do work'
+  }
+  base_fp = service.task_ready_fingerprint(base_task)
+
+  # 1. Non-monitored field changes (description) -> fingerprint identical
+  modified = dict(base_task, description='completely different text')
+  self.assertEqual(service.task_ready_fingerprint(modified), base_fp)
+
+  # 2. Blocked_on reordering -> fingerprint identical
+  reordered_deps = dict(base_task, blocked_on=['dep-2', 'dep-1'])
+  self.assertEqual(service.task_ready_fingerprint(reordered_deps), base_fp)
+
+  # 3. Evidence_paths reordering -> fingerprint identical
+  reordered_ev = dict(base_task, evidence_paths=['evidence/log2.txt', 'evidence/log1.txt'])
+  base_with_ev = dict(base_task, evidence_paths=['evidence/log1.txt', 'evidence/log2.txt'])
+  self.assertEqual(service.task_ready_fingerprint(reordered_ev), service.task_ready_fingerprint(base_with_ev))
+
+  # 4. Each sensitive attribute change causes fingerprint change
+  sensitive_changes = [
+    ('status', 'blocked'),
+    ('owner_tag', 'head-2'),
+    ('owner', 'head-alt'),
+    ('updated_at', '2026-10-06T12:05:00Z'),
+    ('blocked_on', ['dep-3']),
+    ('next_action', 'restart worker'),
+    ('evidence_paths', ['evidence/err.log']),
+    ('failure_count', 1),
+    ('error', 'OOM killed'),
+    ('blocking_reason', 'missing credentials'),
+    ('acceptance_status', 'failed')
+  ]
+  for key, val in sensitive_changes:
+    changed_task = dict(base_task, **{key: val})
+    if key == 'owner':
+      changed_task.pop('owner_tag', None)
+    self.assertNotEqual(
+      service.task_ready_fingerprint(changed_task),
+      base_fp,
+      f"Field '{key}' change failed to alter task ready fingerprint"
+    )
+
 if __name__=='__main__':unittest.main()
 
 

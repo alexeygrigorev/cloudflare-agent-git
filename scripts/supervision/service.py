@@ -1051,6 +1051,22 @@ def may_deliver(pending, own_id, spool=None, authorized_senders=None):
     return False
 
 
+def task_ready_fingerprint(t):
+    return {
+        'id': t.get('id'),
+        'status': t.get('status'),
+        'owner_tag': t.get('owner_tag') or t.get('owner'),
+        'updated_at': t.get('updated_at'),
+        'blocked_on': sorted(t.get('blocked_on', [])) if isinstance(t.get('blocked_on'), list) else t.get('blocked_on'),
+        'next_action': t.get('next_action'),
+        'evidence_paths': sorted(t.get('evidence_paths', [])) if isinstance(t.get('evidence_paths'), list) else t.get('evidence_paths'),
+        'failure_count': t.get('failure_count'),
+        'error': t.get('error'),
+        'blocking_reason': t.get('blocking_reason'),
+        'acceptance_status': t.get('acceptance_status'),
+    }
+
+
 def run():
     os.chdir(ROOT)
     PRIVATE.mkdir(parents=True, exist_ok=True)
@@ -1546,30 +1562,49 @@ def run():
                             pending = None
 
                 cooldown = old.get('cooldown_until', 0)
-                if head_ready and not pending and (old.get('sent_event') != event_key) and time.time() >= cooldown:
+                ready_fps = [task_ready_fingerprint(t) for t in sorted(head_ready, key=lambda x: str(x.get('id')))]
+                ready_fingerprint = hashlib.sha256(json.dumps(ready_fps, sort_keys=True).encode()).hexdigest()[:20]
+                head_event_key = hashlib.sha256(f'{digest}:{session["id"]}:{episode}:{ready_fingerprint}'.encode()).hexdigest()[:20]
+                item.update(event_key=head_event_key)
+
+                last_notified_fp = old.get('last_notified_ready_fingerprint')
+                session_changed = bool(old.get('session_id') and old.get('session_id') != session['id'])
+                ready_delta = bool(head_ready) and ((last_notified_fp is None) or session_changed or (ready_fingerprint != last_notified_fp))
+
+                item['ready_task_ids'] = [t['id'] for t in head_ready]
+                item['ready_fingerprint'] = ready_fingerprint
+                item['ready_delta'] = ready_delta
+
+                if head_ready and not pending and ready_delta and (old.get('sent_event') != head_event_key) and time.time() >= cooldown:
                     if item.get('alive'):
                         task_ids_str = ", ".join(t['id'] for t in head_ready[:5])
                         body = (
-                            f"SUPERVISION-{event_key}: Head {head_tag} has {len(head_ready)} ready tasks awaiting dispatch: {task_ids_str}. "
+                            f"SUPERVISION-{head_event_key}: Head {head_tag} has {len(head_ready)} ready tasks awaiting dispatch: {task_ids_str}. "
                             "Inspect queues, launch executors, verify first tool output. Update TASKS.json."
                         )
-                        receipt = recorded_send(BINARY, head_tag, f'{event_key}-{head_tag}', body, PRIVATE, identity['id'], supports_key)
-                        atomic(PRIVATE / f'receipt-{event_key}-{head_tag}.json', receipt)
+                        receipt = recorded_send(BINARY, head_tag, f'{head_event_key}-{head_tag}', body, PRIVATE, identity['id'], supports_key)
+                        atomic(PRIVATE / f'receipt-{head_event_key}-{head_tag}.json', receipt)
                         if receipt.get('delivery') == 'send-uncertain':
                             report['degraded'] = True
-                            report['uncertain_outcome'] = {'outcome': 'UNKNOWN', 'class': 'send-uncertain', 'head': head_tag, 'event_key': event_key, 'reason': receipt.get('reason')}
+                            report['uncertain_outcome'] = {'outcome': 'UNKNOWN', 'class': 'send-uncertain', 'head': head_tag, 'event_key': head_event_key, 'reason': receipt.get('reason')}
                         envelope = receipt.get('message', receipt)
                         pending = {'id': envelope.get('id', receipt.get('id')), 'sender_id': identity['id'],
                                    'sender_tag': identity.get('tag', 'experiment-supervision'),
                                    'recipient_session_id': session['id'], 'recipient_tag': head_tag,
-                                   'workspace': identity.get('workspace', str(ROOT)), 'event': event_key,
+                                   'workspace': identity.get('workspace', str(ROOT)), 'event': head_event_key,
                                    'delivery': receipt.get('delivery', 'inbox'), 'created_at': now()}
-                        item['sent_event'] = event_key
+                        item['sent_event'] = head_event_key
+                        item['last_notified_ready_fingerprint'] = ready_fingerprint
+                        item['last_notified_ready_ids'] = [t['id'] for t in head_ready]
                         item['cooldown_until'] = cooldown
-                        event('head-request-recorded', head=head_tag, message_id=pending['id'], event_key=event_key)
+                        event('head-request-recorded', head=head_tag, message_id=pending['id'], event_key=head_event_key, ready_tasks=[t['id'] for t in head_ready])
                 else:
                     item['sent_event'] = old.get('sent_event')
+                    item['last_notified_ready_fingerprint'] = old.get('last_notified_ready_fingerprint') if head_ready else None
+                    item['last_notified_ready_ids'] = old.get('last_notified_ready_ids', []) if head_ready else []
                     item['cooldown_until'] = cooldown
+                    if head_ready and not ready_delta:
+                        item['ready_deduped'] = True
 
                 if pending and not may_deliver(pending, identity['id'], spool=PRIVATE):
                     item['pending_reason'] = 'original sender changed; original recipient ACK/reply required'
