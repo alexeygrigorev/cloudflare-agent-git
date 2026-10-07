@@ -1,0 +1,4275 @@
+{
+  "as_of_utc": "2026-10-07T09:14:48.636000+00:00",
+  "source_tasks_sha256": "f32da295c120bb115240c11268a7f2c9ffd9b3e5076a625bc3a32de4f63d8edc",
+  "source_backlog_sha256": "73a714ae3ef36d21e90959538de243201230a1009f40daa2235e3d467d5d561b",
+  "unique_tasks": 291,
+  "backlog_references": 91,
+  "additional_backlog_tasks": 0,
+  "represented_issues": 239,
+  "migration_status": "in_progress",
+  "destinations_verified_public": [
+    "alexeygrigorev/agent-branches",
+    "alexeygrigorev/agent-dashboard",
+    "alexeygrigorev/agent-quota-launcher",
+    "alexeygrigorev/agent-coordination",
+    "PocketShell-io/agent-bus"
+  ],
+  "cutover": "not_performed",
+  "issues": [
+    {
+      "legacy_id": "AGENTBRANCHES-CLI-DEMO-20261006",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 40,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/40",
+      "state": "CLOSED",
+      "legacy_status": "completed",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "AGENTS-FIX-VERIFY-RESUME-20261005",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 91,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/91",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "continuation-runtime",
+      "labels": [
+        "migration:legacy-task",
+        "project:continuation-runtime",
+        "type:recovery",
+        "status:review",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "BRANCHES-OWNED-PATH-REMOTE-SYNC-INTAKE-C2786-20261006",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 44,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/44",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:documentation",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "HEAD-RECOVERY-QL-ANT-OOM-20261005",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 37,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/37",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:recovery",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "PUBLICATION-IMAGEGEN-NEXT-EDITION-20261006",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 97,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/97",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "PUBLICATION-SOCIAL-SHARE-DEFAULT-20261006",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 96,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/96",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "QL-MISSING-DECLARED-SCRATCH-INTAKE-C2754-20261006",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 44,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/44",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:documentation",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "RECOVERY-INDEPENDENT-EVIDENCE-20261005",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 92,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/92",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "continuation-runtime",
+      "labels": [
+        "migration:legacy-task",
+        "project:continuation-runtime",
+        "type:recovery",
+        "status:review",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "RECOVERY-REPORTING-CUSTODY-C2710-20261006",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 94,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/94",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "continuation-runtime",
+      "labels": [
+        "migration:legacy-task",
+        "project:continuation-runtime",
+        "type:recovery",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "REMOTE-AUTONOMY-BUS-1830",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 84,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/84",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:blocked",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "REMOTE-AUTONOMY-LAUNCHER-1830",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 83,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/83",
+      "state": "OPEN",
+      "legacy_status": "ready",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "REMOTE-AUTONOMY-PRINCIPAL-1830",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 87,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/87",
+      "state": "OPEN",
+      "legacy_status": "ready",
+      "project": "continuation-runtime",
+      "labels": [
+        "migration:legacy-task",
+        "project:continuation-runtime",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "REMOTE-AUTONOMY-REVIEW-1830",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 86,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/86",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "REMOTE-AUTONOMY-SUPERVISOR-1830",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 85,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/85",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "REPORT-ROLE-STRUCTURE-20261006",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 89,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/89",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:documentation",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "REPORT-TASK-TRACKER-SUMMARY-20261006",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 90,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/90",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:documentation",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "ROLE-CONTRACT-STARTUP-20261005",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 88,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/88",
+      "state": "CLOSED",
+      "legacy_status": "completed",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:documentation",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "TASK-ALL4-REPOS-SANITIZATION-AUDIT-C2696",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 93,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/93",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "TASK-CONTINUITY-FAILOVER-AND-WAKE-GATE-C2693",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 40,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/40",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:recovery",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "TASK-CONTINUOUS-REFILL-SUPERVISOR-C2679",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 39,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/39",
+      "state": "CLOSED",
+      "legacy_status": "completed",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "TASK-QL-BELOW30G-CLEANUP-INTEGRATION-C2693",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 41,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/41",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ZAI-SHARED-CONCURRENCY-26-20261005",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 38,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/38",
+      "state": "CLOSED",
+      "legacy_status": "completed",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "a05-requirement-audit",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 41,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/41",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "a05-same-task-baseline",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 34,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/34",
+      "state": "OPEN",
+      "legacy_status": "ready",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "a06-advisory-consumer-adoption",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 18,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/18",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "a07-demand-gate",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 49,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/49",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "a09-external-report-verify",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 31,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/31",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:documentation",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "a09-incumbent-check",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 30,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/30",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "a18-demand-scout",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 47,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/47",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:review",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "ab-real-consumer-work",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 5,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/5",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ab-safe-main-restore",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 4,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/4",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ab-sdk-push-batch-robust-retry",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 18,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/18",
+      "state": "CLOSED",
+      "legacy_status": "completed",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ab-standalone-private-source-project",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 12,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/12",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "active-worker-census-c2431",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 71,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/71",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "infrastructure",
+      "labels": [
+        "migration:legacy-task",
+        "project:infrastructure",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ad-b1-backend-repair",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 6,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/6",
+      "state": "CLOSED",
+      "legacy_status": "integrated",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:recovery",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ad-b2-unattributed-provenance",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 18,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/18",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "ad-f1-frontend-static",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 7,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/7",
+      "state": "CLOSED",
+      "legacy_status": "integrated",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ad-p1-oct5-morning-payload",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 9,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/9",
+      "state": "CLOSED",
+      "legacy_status": "delivered",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ad-r1-scaffold-review",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 8,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/8",
+      "state": "CLOSED",
+      "legacy_status": "complete",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "agent-branches-l1-base",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 1,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/1",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "agent-branches-l2-client",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 2,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/2",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "agent-branches-l3-radar",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 3,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/3",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "agent-branches-sdk-dogfood-c2395",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 30,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/30",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "auth-matrix-integration",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 3,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/3",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "bus-exactpin-review",
+      "repo": "alexeygrigorev/agent-coordination",
+      "number": 9,
+      "url": "https://github.com/alexeygrigorev/agent-coordination/issues/9",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-coordination",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-coordination",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "canonical-launcher-model-runtime",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 24,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/24",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "canonical-launcher-model-runtime-c2106",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 25,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/25",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "cch-c2786-restore-impl-04",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 46,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/46",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:review",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "cch-c2786-restore-review-01",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 45,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/45",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:review",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "cgroup-nesting-and-transient-units-c2441",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 10,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/10",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "claude-evidence-integration",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 32,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/32",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "cloud-total-budget-monitor",
+      "repo": "alexeygrigorev/agent-coordination",
+      "number": 8,
+      "url": "https://github.com/alexeygrigorev/agent-coordination/issues/8",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "agent-coordination",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-coordination",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "codex-quota-head-recovery-c2532",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 82,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/82",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:recovery",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "container-and-patch-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 65,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/65",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "container-and-patch-workflows",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 64,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/64",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "coord-dashboard-launcher-hosts",
+      "repo": "alexeygrigorev/agent-coordination",
+      "number": 5,
+      "url": "https://github.com/alexeygrigorev/agent-coordination/issues/5",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-coordination",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-coordination",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "coord-desktop-hetzner-test",
+      "repo": "alexeygrigorev/agent-coordination",
+      "number": 4,
+      "url": "https://github.com/alexeygrigorev/agent-coordination/issues/4",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-coordination",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-coordination",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "coord-durable-retry-ack",
+      "repo": "alexeygrigorev/agent-coordination",
+      "number": 2,
+      "url": "https://github.com/alexeygrigorev/agent-coordination/issues/2",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "agent-coordination",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-coordination",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "coord-independent-review",
+      "repo": "alexeygrigorev/agent-coordination",
+      "number": 7,
+      "url": "https://github.com/alexeygrigorev/agent-coordination/issues/7",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "agent-coordination",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-coordination",
+        "type:review",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "coord-native-cli-source",
+      "repo": "alexeygrigorev/agent-coordination",
+      "number": 3,
+      "url": "https://github.com/alexeygrigorev/agent-coordination/issues/3",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-coordination",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-coordination",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "coord-native-ssh-mvp",
+      "repo": "alexeygrigorev/agent-coordination",
+      "number": 1,
+      "url": "https://github.com/alexeygrigorev/agent-coordination/issues/1",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "agent-coordination",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-coordination",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "coord-private-backup-dogfood",
+      "repo": "alexeygrigorev/agent-coordination",
+      "number": 6,
+      "url": "https://github.com/alexeygrigorev/agent-coordination/issues/6",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "agent-coordination",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-coordination",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "correction-20261005-private-preparation",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 68,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/68",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "cross-machine-social-research",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 9,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/9",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:documentation",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "daily-correction-facts-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 69,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/69",
+      "state": "CLOSED",
+      "legacy_status": "completed",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "daily-project-progress-20261005",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 5,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/5",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "dashboard-44-snapshot-review",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 10,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/10",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "dashboard-c7-notready-diagnostic",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 17,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/17",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:review",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "dashboard-canonical-integration-readiness",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 15,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/15",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "dashboard-completed-features",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 3,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/3",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "dashboard-hourly24h",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 1,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/1",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "dashboard-private-project",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 4,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/4",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "dashboard-staged-consumer-delivery-audit",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 14,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/14",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "dashboard-staged-consumer-review",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 12,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/12",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "dashboard-tasks-candidate-review-c2477",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 24,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/24",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "dashboard-usage-accounting",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 2,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/2",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "dashboard-visibility-window-c2372",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 19,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/19",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "delivery-intake-reconciliation",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 6,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/6",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:documentation",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "demo-provenance-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 16,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/16",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "desktop-channel-crossworkspace",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 3,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/3",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "distribution-runbook-check",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 17,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/17",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "facade-implementation",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 54,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/54",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:review",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "fifty-active-workers-launcher-orchestration",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 14,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/14",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "foremerge-demand-verification",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 58,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/58",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "fork-replay-negative-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 25,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/25",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "frozen-harness-consumer",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 26,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/26",
+      "state": "OPEN",
+      "legacy_status": "ready",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "grok-capacity-continuation-diagnosis",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 31,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/31",
+      "state": "CLOSED",
+      "legacy_status": "completed",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "grok-five-percent-admission",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 81,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/81",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "host-root-storage-floor-diagnosis-20261005",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 36,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/36",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "hourly-24h-consumer-artifact",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 16,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/16",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "hourly-24h-four-product-payload",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 11,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/11",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "hourly-24h-four-product-payload-reconciliation",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 13,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/13",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "human-request-outcome-process-20261007",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 99,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/99",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:documentation",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "human-tracker-availability-agents-commits-20261007",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 98,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/98",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:documentation",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "incumbent-premerge-and-buyer-workflow",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 62,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/62",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "incumbent-premerge-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 63,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/63",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "independent-project-challenge",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 7,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/7",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "journal-correction-pixel-review-c2434",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 72,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/72",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "label-binding-residual-repair",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 33,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/33",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:recovery",
+        "status:review",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "launch-daily-writeup-2026-10-06",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 95,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/95",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "launcher-bus-bridge-review",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 23,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/23",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "launcher-native-lifecycle",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 2,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/2",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "launcher-quota-resource-gates",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 1,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/1",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:operations",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "launcher-scratch-path-preparation",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 45,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/45",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "launcher-task-paths-normalization",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 47,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/47",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "live-review-ui",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 57,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/57",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:review",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "metrics-collect-conversation-scope",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 7,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/7",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "continuation-runtime",
+      "labels": [
+        "migration:legacy-task",
+        "project:continuation-runtime",
+        "type:operations",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "metrics-collect-negative-repro",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 10,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/10",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "continuation-runtime",
+      "labels": [
+        "migration:legacy-task",
+        "project:continuation-runtime",
+        "type:recovery",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "metrics-collect-repro-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 14,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/14",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "continuation-runtime",
+      "labels": [
+        "migration:legacy-task",
+        "project:continuation-runtime",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "metrics-collector-activation-c2278",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 29,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/29",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:operations",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "metrics-collector-lifecycle-binding",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 8,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/8",
+      "state": "CLOSED",
+      "legacy_status": "completed",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:operations",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "metrics-opencode-message-usage",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 40,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/40",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "continuation-runtime",
+      "labels": [
+        "migration:legacy-task",
+        "project:continuation-runtime",
+        "type:operations",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "multiworkspace-collector-extension",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 14,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/14",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "native-cross-host-roundtrip",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 10,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/10",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "native-producer-source-correction",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 66,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/66",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "oct5-product-report-draft",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 28,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/28",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:documentation",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "oct5-zai-interval-token-audit",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 20,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/20",
+      "state": "CLOSED",
+      "legacy_status": "completed",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "pinned-independent-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 27,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/27",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "portfolio-mandatory-dogfood-20261006",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 41,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/41",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "primary-coordinator-bootstrap-smoke",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 9,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/9",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "principal-continuous-coverage",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 29,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/29",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "continuation-runtime",
+      "labels": [
+        "migration:legacy-task",
+        "project:continuation-runtime",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "principal-scale-to50-operational-plan",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 16,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/16",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "prior-research-integration",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 11,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/11",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:documentation",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "private-dashboard-tasks-tracker-candidate",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 22,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/22",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "private-dashboard-tasks-tracker-canonical-adoption",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 23,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/23",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:blocked",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "private-lineage-audit",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 5,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/5",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "prompt-ready-lifecycle",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 21,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/21",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:blocked",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "prospective-review-task",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 23,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/23",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "publication-credential-guard",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 4,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/4",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "publication-dogfood-scribe",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 53,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/53",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "publication-fidelity-repair",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 44,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/44",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:recovery",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "publication-link-audit",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 50,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/50",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "publication-meta-feed-audit",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 51,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/51",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "publication-quality-process-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 42,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/42",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "publication-reference-packet",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 43,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/43",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "publication-release-verification",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 46,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/46",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "publication-viewport-audit",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 52,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/52",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "publication-visual-acceptance",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 45,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/45",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ql-4c2bfec-independent-review",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 4,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/4",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ql-c2417-provenance-and-attribution",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 9,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/9",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "ql-first-action-bypass-review",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 5,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/5",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ql-review-bus-commit-12f9bde",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 42,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/42",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ql-review-paths-normalization",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 48,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/48",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ql-review-scratch-path-prep",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 46,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/46",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "ql-review-watcher-b1a191a",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 43,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/43",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "quota-launcher-filebus-backend-review-c2443",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 11,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/11",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "raw-sdk-integration-smoke",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 11,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/11",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "raw-sdk-smoke-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 13,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/13",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "readiness-producer-repair-spec",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 8,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/8",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:recovery",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "recoverable-task-handoff",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 24,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/24",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:recovery",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "relay-owner-provisioning",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 38,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/38",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "relay-pattern-independent-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 36,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/36",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "relay-signup-browser-flow",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 37,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/37",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "remote-journal-preparation-handoff",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 67,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/67",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "research-selection-gates",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 8,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/8",
+      "state": "OPEN",
+      "legacy_status": "queued",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:documentation",
+        "status:queued",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "reviewed-worker-deployment",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 55,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/55",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:review",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "runbook-seed-lease-7aa-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 6,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/6",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "runner-output-admission-repair",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 7,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/7",
+      "state": "CLOSED",
+      "legacy_status": "completed",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:recovery",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "runtime-one-effect",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 2,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/2",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "safe-autonomous-continuation",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 22,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/22",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:blocked",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "sanitized-public-hourly-exporter",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 21,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/21",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "scale50-01",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 17,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/17",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:review",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-02",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 18,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/18",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:review",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-03",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 19,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/19",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:review",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-04",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 20,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/20",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:review",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-05",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 21,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/21",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:review",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-06",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 22,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/22",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-07",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 23,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/23",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:review",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-08",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 24,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/24",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:review",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-09",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 25,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/25",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:p1",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "scale50-10",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 26,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/26",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-11",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 27,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/27",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-12",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 28,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/28",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-13",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 29,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/29",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-14",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 30,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/30",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:p1",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "scale50-15",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 31,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/31",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:review",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-31",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 25,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/25",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-32",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 26,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/26",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-33",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 27,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/27",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:in-progress",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-34",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 28,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/28",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-35",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 29,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/29",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-36",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 30,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/30",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:in-progress",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-37",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 31,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/31",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-38",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 32,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/32",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-39",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 33,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/33",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-40",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 34,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/34",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-41",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 35,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/35",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-42",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 36,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/36",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-43",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 32,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/32",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:in-progress",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-44",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 33,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/33",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:p1",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "scale50-45",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 34,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/34",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:p1",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "scale50-46",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 35,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/35",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:p1",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "scale50-47",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 36,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/36",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:p1",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "scale50-48",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 37,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/37",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:p1",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "scale50-49",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 38,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/38",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:p1",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "scale50-50",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 39,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/39",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:p1",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "scale50-51",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 73,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/73",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-52",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 74,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/74",
+      "state": "CLOSED",
+      "legacy_status": "accepted",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:p1",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "scale50-53",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 75,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/75",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-54",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 76,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/76",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:blocked",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-55",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 77,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/77",
+      "state": "OPEN",
+      "legacy_status": "ready",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:queued",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-56",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 78,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/78",
+      "state": "OPEN",
+      "legacy_status": "ready",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:queued",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-57",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 79,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/79",
+      "state": "OPEN",
+      "legacy_status": "ready",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:queued",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-58",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 80,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/80",
+      "state": "OPEN",
+      "legacy_status": "ready",
+      "project": "publication",
+      "labels": [
+        "migration:legacy-task",
+        "project:publication",
+        "type:feature",
+        "status:queued",
+        "priority:p1",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-A-dispatch-repair",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 32,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/32",
+      "state": "OPEN",
+      "legacy_status": "ready",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:recovery",
+        "status:queued",
+        "priority:p0",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-B-ready-allocation",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 33,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/33",
+      "state": "OPEN",
+      "legacy_status": "in_progress",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:in-progress",
+        "priority:p0",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-C-capacity-stages",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 34,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/34",
+      "state": "OPEN",
+      "legacy_status": "ready",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:queued",
+        "priority:p0",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-D-dispatch-refill",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 35,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/35",
+      "state": "OPEN",
+      "legacy_status": "ready",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:queued",
+        "priority:p0",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "scale50-E-roster-accountability",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 37,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/37",
+      "state": "OPEN",
+      "legacy_status": "ready",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:operations",
+        "status:queued",
+        "priority:p0",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "sdk-ack-auth-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 15,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/15",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "self-org-architecture-remediation",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 19,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/19",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "self-org-c2106-independent-challenge",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 26,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/26",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "self-org-custody-prerequisites",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 20,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/20",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "self-org-live-model-runtime",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 21,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/21",
+      "state": "OPEN",
+      "legacy_status": "held",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:blocked",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "self-org-sdk-consumer-trial",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 27,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/27",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "service-controlled-reload-c1600",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 16,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/16",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "sessionless-executor-route-admission",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 6,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/6",
+      "state": "CLOSED",
+      "legacy_status": "completed",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "standup-2026-10-04",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 12,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/12",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "submission-documentation",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 56,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/56",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "supervision-classifier-offline-repro",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 13,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/13",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:operations",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "supervision-exact-ack-reconciliation",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 39,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/39",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "continuation-runtime",
+      "labels": [
+        "migration:legacy-task",
+        "project:continuation-runtime",
+        "type:operations",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "supervision-routing-repair",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 17,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/17",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:recovery",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "supervision-slo-hook-candidate",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 15,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/15",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:operations",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "synthesis-agent-branches-20261006011745-4315",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 43,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/43",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "synthesis-agent-branches-20261006011745-7444",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 42,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/42",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "t-continuation-runtime-collector-c3111",
+      "repo": "alexeygrigorev/agent-dashboard",
+      "number": 38,
+      "url": "https://github.com/alexeygrigorev/agent-dashboard/issues/38",
+      "state": "OPEN",
+      "legacy_status": "review",
+      "project": "agent-dashboard",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-dashboard",
+        "type:feature",
+        "status:review",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "t-ql-repair-request-profile-detection-c3048",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 49,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/49",
+      "state": "OPEN",
+      "legacy_status": "running",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:recovery",
+        "status:in-progress",
+        "priority:unspecified",
+        "evidence:needs-audit"
+      ]
+    },
+    {
+      "legacy_id": "task-units-api-signature-repair-c2451",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 13,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/13",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:recovery",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "task-units-workingdirectory-repair-c2465",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 15,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/15",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:recovery",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "tmp-growth-attribution",
+      "repo": "alexeygrigorev/agent-branches",
+      "number": 22,
+      "url": "https://github.com/alexeygrigorev/agent-branches/issues/22",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-branches",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-branches",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "transient-unit-model-execution-c2444",
+      "repo": "alexeygrigorev/agent-quota-launcher",
+      "number": 12,
+      "url": "https://github.com/alexeygrigorev/agent-quota-launcher/issues/12",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "agent-quota-launcher",
+      "labels": [
+        "migration:legacy-task",
+        "project:agent-quota-launcher",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "unfamiliar-adopter-t1",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 59,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/59",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "uprt-concurrent-gate",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 60,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/60",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "uprt-concurrent-gate-review",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 61,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/61",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:review",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "warning-lifecycle-transition",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 19,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/19",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "website-relay-email-signup",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 35,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/35",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "worktree-user-task",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 28,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/28",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record",
+        "routing:needs-reconciliation"
+      ]
+    },
+    {
+      "legacy_id": "zcode-route-health-diagnosis",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 70,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/70",
+      "state": "CLOSED",
+      "legacy_status": "done",
+      "project": "infrastructure",
+      "labels": [
+        "migration:legacy-task",
+        "project:infrastructure",
+        "type:feature",
+        "status:legacy-closed",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "closure:legacy-record"
+      ]
+    },
+    {
+      "legacy_id": "zcodex-retry-design",
+      "repo": "alexeygrigorev/cloudflare-agent-git",
+      "number": 20,
+      "url": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/20",
+      "state": "OPEN",
+      "legacy_status": "blocked",
+      "project": "portfolio",
+      "labels": [
+        "migration:legacy-task",
+        "project:portfolio",
+        "type:feature",
+        "status:blocked",
+        "priority:unspecified",
+        "evidence:needs-audit",
+        "routing:needs-reconciliation"
+      ]
+    }
+  ],
+  "open": 107,
+  "closed_legacy": 132,
+  "cutover_followup": "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/48"
+}
