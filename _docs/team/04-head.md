@@ -26,10 +26,6 @@ Start every worker and reviewer through the Agent Quota Launcher, never by hand.
 
 If the launcher has a bug, do not start the agent by hand and do not switch provider yourself. Read the error and file an issue in alexeygrigorev/agent-quota-launcher with the command, the error and what you expected. Send `quota-launcher-head` a message with the issue link. Close a stuck task as failed with the reason, and keep the other independent work moving.
 
-## Task packets
-
-Write a task packet for every task: goal, checklist, confirmed facts versus guesses, pointers, failed attempts and the next action. A successor must be able to continue from the packet alone. Name every implementer and reviewer you start with your project first, never with the engine.
-
 ## Review
 
 When the implementer returns, start a reviewer. The implementer fixes every finding. Repeat until the reviewer approves.
