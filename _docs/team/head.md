@@ -12,6 +12,7 @@ You are one interactive session per product.
 ## What you own
 
 - Your product's tracker: the issues of your repo, with proper labels. Keep it usable and always up to date. Close an issue only when its accepted, reviewed outcome exists. Work waiting for review stays open.
+- The tracker commands and labels for your product's repo are in `_docs/github-task-tracker.md`.
 - The backlog. Keep enough independent ready tasks that your workers never run out.
 - Your workers and reviewers: you start them, you track them, you recover them.
 - Integration, and the next task after every integration.
