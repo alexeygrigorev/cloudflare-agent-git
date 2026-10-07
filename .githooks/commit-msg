@@ -1,3 +1,6 @@
 #!/bin/sh
-# Rejects commit hashes and non-conventional subjects; see scripts/checks/commit-message.sh.
-exec "$(git rev-parse --show-toplevel)/scripts/checks/commit-message.sh" "$1"
+# Message guard first, then every scripts/checks/*.sh on the staged diff. They run here rather than
+# in pre-commit so the Principal-Override trailer is visible. Enable with scripts/install-hooks.sh.
+top=$(git rev-parse --show-toplevel)
+"$top/scripts/checks/commit-message.sh" "$1" || exit 1
+COMMIT_MSG_FILE=$1 exec "$top/scripts/checks/run-all.sh" staged

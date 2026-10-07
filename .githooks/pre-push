@@ -16,6 +16,9 @@ $(git log --format=%B "$range" 2>/dev/null | grep '^Principal-Override:')"
     refs/heads/main|refs/heads/history|refs/tags/*) ;;
     *) echo "pre-push: refusing $remote_ref: push straight to main (no branches or pull requests)" >&2; bad=1 ;;
   esac
+  if [ "$remote_ref" = refs/heads/main ] && [ "$remote_sha" != "$zero" ]; then
+    "$(git rev-parse --show-toplevel)/scripts/checks/run-all.sh" range "$range" || bad=1
+  fi
   if [ "$remote_ref" = refs/heads/main ]; then
     if git log --format=%s "$range" 2>/dev/null | grep -Eq '^Merge (pull request|branch|remote-tracking branch)'; then
       echo "pre-push: refusing: range contains a merge commit (PR-style flow); rebase instead" >&2
