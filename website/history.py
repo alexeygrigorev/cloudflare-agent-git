@@ -6,9 +6,8 @@ Presents sanitized hourly metrics, visual charts/graphs, epistemic boundaries,
 and active per-product task tracking without exposing private session IDs,
 usernames, internal task UUIDs, or raw transcripts.
 
-Client-side product chips and half-open Berlin hour bounds follow
-research/antigravity/recovery/REPORT-HISTORY-FILTERS.md. JavaScript off keeps
-the full 24h / four-product snapshot.
+Client-side product chips use half-open Berlin hour bounds. JavaScript off
+keeps the full 24h / four-product snapshot.
 """
 
 from __future__ import annotations
@@ -23,7 +22,6 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent.parent
 EXPORT_PATH = ROOT / "website" / "assets" / "data" / "public_hourly_history.json"
-BACKUP_EXPORT_PATH = ROOT / "research" / "antigravity" / "recovery" / "public_hourly_history_export.json"
 
 BASE = "/cloudflare-agent-git"
 BERLIN = ZoneInfo("Europe/Berlin")
@@ -64,9 +62,7 @@ def load_telemetry_data() -> Dict[str, Any]:
             return json.loads(EXPORT_PATH.read_text(encoding="utf-8"))
         except Exception:
             pass
-    if BACKUP_EXPORT_PATH.exists():
-        return json.loads(BACKUP_EXPORT_PATH.read_text(encoding="utf-8"))
-    raise FileNotFoundError(f"Telemetry export not found at {EXPORT_PATH} or {BACKUP_EXPORT_PATH}")
+    raise FileNotFoundError(f"Telemetry export not found at {EXPORT_PATH}")
 
 
 def parse_utc(value: Optional[str]) -> Optional[datetime]:
@@ -853,8 +849,7 @@ def history_page() -> str:
         <p class="source-line">
           <strong>Machine-readable sources:</strong>
           <a href="/cloudflare-agent-git/assets/data/public_hourly_history.json" target="_blank">Sanitized Hourly Telemetry JSON</a> &middot;
-          <a href="https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/coordination/TASKS.json" target="_blank">Canonical TASKS.json</a> &middot;
-          <a href="https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/coordination/DELIVERY-BACKLOG.json" target="_blank">Delivery Backlog</a>
+          <a href="https://github.com/alexeygrigorev/cloudflare-agent-git/issues" target="_blank">GitHub issues (task tracker)</a>
         </p>
       </div>
     </section>
