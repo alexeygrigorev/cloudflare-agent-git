@@ -26,4 +26,4 @@ Agents talk to each other over the agents bus, on one computer or across several
 
 - Messages to the founder are rare, and every one costs us. Send one only for spending money, new accounts or keys, the contest entry, social media posts or his own product decisions. Come with concrete options and say what has already been done.
 - Status, problems and results reach him through the daily standup and the report, without him asking.
-- His messages are saved verbatim in `_docs/founder-journal/messages/` on the day they arrive.
+- His messages are saved verbatim in that day's file in `_docs/founder-journal/` on the day they arrive.

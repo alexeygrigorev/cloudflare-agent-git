@@ -2,7 +2,7 @@
 
 What went wrong in this project, newest first, in plain words. Each entry says what happened, what we changed, and where the evidence is.
 
-Evidence links point to the git tag `pre-cleanup-20261007`, the last state before the documentation cleanup (`git show pre-cleanup-20261007:<path>`). Once the `history` branch exists, the full incident log will be at `git show history:INCIDENTS.md`. Your own words are in [messages/](messages/), and older wording saved from agent documents is in [messages/rescued/](messages/rescued/).
+Evidence links point to the git tag `pre-cleanup-20261007`, the last state before the documentation cleanup (`git show pre-cleanup-20261007:<path>`). Once the `history` branch exists, the full incident log will be at `git show history:INCIDENTS.md`. Your own words, including older wording saved from agent documents, are in the day files of this folder, one file per day.
 
 
 ## 1. The documentation itself became the problem (7 October)
@@ -11,7 +11,7 @@ Agents wrote a new document or a new dated section for almost every event. Rules
 A first trim cut ten documents from 18,769 words to about 6,200, but the repo still held hundreds of files of journals, heartbeats and research.
 We also had tests that only checked the text of documents.
 **Changed:** a single `_docs/` folder, research consolidated into one file, incidents kept out of the working context, doc-only tests deleted, no PRs and focused commits pushed straight to main.
-Evidence: [DOCUMENT-TRIM-20261007.md](https://github.com/alexeygrigorev/cloudflare-agent-git/blob/pre-cleanup-20261007/research/orchestrator/DOCUMENT-TRIM-20261007.md), [your messages of 7 October](messages/).
+Evidence: [DOCUMENT-TRIM-20261007.md](https://github.com/alexeygrigorev/cloudflare-agent-git/blob/pre-cleanup-20261007/research/orchestrator/DOCUMENT-TRIM-20261007.md), [your messages of 7 October](2026-10-07.md).
 
 ## 2. Your requests were scattered and some were nearly lost (7 October)
 
@@ -47,7 +47,7 @@ Evidence: [continuation-oom-recovery-c3123-20261007.md](https://github.com/alexe
 The supervisor tried to wake the principal 28 times, and every attempt was refused as "not ready" because it mistook the prompt footer for an unsent draft. Its escalation went to a head that was already dead, and two heads were killed for running out of memory during the gap.
 Watchers kept running all night without producing any work. You asked: "I see that you're idle again. why?" You also said the heads should start a new principal, and none did.
 **Changed:** a missing principal now means starting a fresh principal session, not promoting a head. A wake-up has to produce a real action, and the backup has to survive the agent it watches.
-Evidence: [continuation-gap-runtime-20261007.md](https://github.com/alexeygrigorev/cloudflare-agent-git/blob/pre-cleanup-20261007/research/codex/continuation-gap-runtime-20261007.md), [continuation-gap-recovery-20261007.md](https://github.com/alexeygrigorev/cloudflare-agent-git/blob/pre-cleanup-20261007/research/codex/continuation-gap-recovery-20261007.md), [rescued messages](messages/rescued/20261007-idle-again-start-new-principal.txt).
+Evidence: [continuation-gap-runtime-20261007.md](https://github.com/alexeygrigorev/cloudflare-agent-git/blob/pre-cleanup-20261007/research/codex/continuation-gap-runtime-20261007.md), [continuation-gap-recovery-20261007.md](https://github.com/alexeygrigorev/cloudflare-agent-git/blob/pre-cleanup-20261007/research/codex/continuation-gap-recovery-20261007.md), [rescued messages](2026-10-07.md).
 
 ## 7. A head's own timer died with it (7 October)
 
@@ -131,7 +131,7 @@ Evidence: `experiment/human-headless-permissions-task-tracker-intake-20261005.tx
 One build setting forced a full Rust dependency rebuild. The build ran out of memory and used about 15 GB of disk, and another build grew by 12 GB.
 On 5 October free disk dropped below our own launch floor, and that floor then blocked new agents.
 **Changed:** a stop on full rebuilds (incremental builds only). You lowered the launch floor: "launch floor of 50 is too tight", and below 30 GB a cleanup agent is started while launches continue.
-Evidence: [coordination/claude.md](https://github.com/alexeygrigorev/cloudflare-agent-git/blob/pre-cleanup-20261007/coordination/claude.md) (line 190), [rescued message](messages/rescued/20261005-disk-launch-floor.txt).
+Evidence: [coordination/claude.md](https://github.com/alexeygrigorev/cloudflare-agent-git/blob/pre-cleanup-20261007/coordination/claude.md) (line 190), [rescued message](2026-10-05.md).
 
 ## 19. An agent was killed by our own instructions (3 October)
 
@@ -156,7 +156,7 @@ Evidence: `experiment/human-delivery-reset-20261004.txt`, `experiment/human-bett
 
 When you stopped the Claude principal session, "many other aplexer sessions died with it." When the principal went idle, the whole system stopped: "you and the principal are the single source of failure."
 **Changed:** a failover design with no single point of failure, so another agent takes over a role that disappears. Work runs on the remote server, not on the laptop.
-Evidence: [rescued message](messages/rescued/20261003-stopped-principal-sessions-died.txt), `experiment/human-self-organization-20261004.txt`, `experiment/human-role-failover-protocol-20261006.txt`.
+Evidence: [rescued message](2026-10-03.md), `experiment/human-self-organization-20261004.txt`, `experiment/human-role-failover-protocol-20261006.txt`.
 
 ## 23. "Independent workers" that were the head's own scripts (3 October)
 

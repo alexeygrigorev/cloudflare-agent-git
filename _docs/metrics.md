@@ -48,5 +48,5 @@ These are the things we track. Every number is measured, never estimated, and an
 - Private live dashboard: the collector serves it on port 8766, bound to localhost on Hetzner. Open it from your computer with `ssh -N -L 8766:127.0.0.1:8766 hetzner` and then http://127.0.0.1:8766/. It shows agents by role, task states, idle and stale counts, host load and free disk, token usage and provider quota readings.
 - Agent Dashboard: the product in `~/git/agent-dashboard` (GitHub alexeygrigorev/agent-dashboard) turns those observations into the hourly history, usage accounting and accepted-feature tracking per project and per team.
 - Public site: the hourly history is published as charts at https://alexeygrigorev.com/cloudflare-agent-git/history/, built by `website/history.py`. It shows sanitized summaries only.
-- Tasks: counted from the GitHub issues of each project. Commits: counted from git. Founder messages: counted from the files in `_docs/founder-journal/messages/`.
+- Tasks: counted from the GitHub issues of each project. Commits: counted from git. Founder messages: counted from the `## ` entries in the day files of `_docs/founder-journal/`.
 

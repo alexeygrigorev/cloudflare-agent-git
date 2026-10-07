@@ -5,7 +5,7 @@ description: Prepare and verify this project's daily public journal on remote Co
 
 Remote Codex owns evidence collection, preparation, visual acquisition and acceptance, review coordination, publication checks, metadata, deployment verification and recovery. The publication coordinator remains accountable for independent acceptance and release; reviewers remain distinct actual agents. Desktop issues commands and observes, bridging a missing authenticated browser or ImageGen capability only. Neither desktop nor either principal is a routine prep executor or QA approval dependency. Claude Opus writes the prose; preserve Claude principal's protected draft.
 
-Read the latest entries of `_docs/founder-journal/journal.md`, the recent GitHub issues and the agents bus history FIRST, then AGENTS.md and `_docs/way-of-working.md`. The writing, visual, design-review, publishing and signup rules live in the writer role file, `_docs/team/writer.md`; read it in full and don't copy its rules here. Paths are repository-relative.
+Read the latest day files in `_docs/founder-journal/`, the recent GitHub issues and the agents bus history FIRST, then AGENTS.md and `_docs/way-of-working.md`. The writing, visual, design-review, publishing and signup rules live in the writer role file, `_docs/team/writer.md`; read it in full and don't copy its rules here. Paths are repository-relative.
 
 ## Dispatch and admission
 
