@@ -26,6 +26,12 @@ No source lease is granted by this table. Listed proposed extensions require gen
 
 ## Release proof, not just source proof
 
+### Subsequent genuine operating adoption
+
+Principal response `01a114e4-91f7-7443-adce-c99fe4bc248d` accepts the state obligations as an operating pilot, explicitly not installed enforcement. It challenges the5-minute ACK assumption because existing head wake intervals differ, recommends event-driven obligations with <=60s due scans in the existing supervisor, requires actual operation receipts for deterministic tasks and maintained first tools for model tasks, and makes progress checkpoints task-specific with advance accepted computation exceptions. The timing discussion does not waive protected readiness or erase original misses.
+
+Response `01a114ea-371b-7cb1-b125-19caebf8ab92` ACKs the tracker/activity request and reports guarded canonical publication `7e026f91`, selective per-ID reconciliation and updated existing task mappings. That commit is verified fetched and preserved in the later research commit `494ffc2`; the latter adds only the new multi-host research intake to the latest279 rows. Full semantic coverage and deployed tracker/metric acceptance remain open. Root detected and recovered two missing intake rows from maintained private snapshots; responsible write/sync path is still unknown. HTTP200 with a stale05:45:51UTC snapshot while the canonical file contains280 rows is a freshness failure routed to current owners, not healthy availability.
+
 For each control retain reviewed commit/artifact hash, exact installed binary/module/config/store path, loaded version evidence, test actor/generation/epoch, terminal outcome and independent acceptance. On-disk edits or a restart alone are insufficient. Compare all active writers and entry points; a guarded helper cannot enforce callers that bypass it.
 
 Required acceptance cases, delegated through the existing heads and independent reviewers:
