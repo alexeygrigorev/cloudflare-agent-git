@@ -1,0 +1,10 @@
+[Unit]
+Description=Regular ping to the principal
+
+[Timer]
+OnBootSec=5min
+OnUnitInactiveSec=10min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

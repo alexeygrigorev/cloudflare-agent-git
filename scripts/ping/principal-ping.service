@@ -1,0 +1,9 @@
+[Unit]
+Description=Ping the principal session and recover it after consecutive misses
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/git/cloudflare-agent-git
+# Optional: PRINCIPAL_RECOVERY_CMD, PRINCIPAL_ALERT_CMD, PRINCIPAL_TAG
+EnvironmentFile=-%h/.config/principal-ping.env
+ExecStart=%h/git/cloudflare-agent-git/scripts/ping/principal-ping.py --live
