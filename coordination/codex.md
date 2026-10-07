@@ -2679,3 +2679,8 @@ Principal00:40 commitment was missed through03:39 genuinegapreport. Bounded same
 ## Continuous Operations received custody
 
 Actual Antcfdc startup03:43:21/firsttool03:43:32/ownwhoami03:43:38 now has genuine receivedACK77-8f11@03:45:42/principal78-4040. ScopedC3110 research/antigravity+scripts/supervision only; protectedmainleases unchanged. Manualrecoverynotautofailover. [Continuous Operations](continuous-operations/README.md) ownerstatusupdated; implementationfirsttool/headdeadlinepending, native835aa reviewcontainmentUNKNOWN. Requireinstalledidlepositive/protectednegatives+fencedtakeover/twousefulabsencecycles, no duplicateelection.
+
+
+## Continuation Runtime process and outcome metrics
+
+Latesthuman naming Continuation Runtime supersedes ContinuousOperations; oldhub URLsredirect/historyretained. Newcanonical [hub](continuation-runtime/README.md), [TASK-FLOW](continuation-runtime/TASK-FLOW.md), [METRICS](continuation-runtime/METRICS.md) define partialcurrentenforcement, canonicalacceptedresolveduniqueIDs, alignedproject-windowagents/commits/taskstats and unknownhistoricaltimestamps. AntC3110 scopedACKretained; Dashboard/publicimplementation ownerACKpending, no totals/installation/sourceleases invented. Intake research/codex/continuation-runtime-process-metrics-intake-20261007.md; heads own code/QA/integration.

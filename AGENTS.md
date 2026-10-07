@@ -1,8 +1,8 @@
 # Cloudflare agent Git competition
 
-## Continuous Operations startup navigation
+## Continuation Runtime startup navigation
 
-Principals and heads read [Continuous Operations](coordination/continuous-operations/README.md) at startup alongside the existing role and resource contracts. Use its current status, plan, decisions and evidence index to distinguish implemented source, runtime acceptance and unresolved work; record actual custody and first action rather than treating a documented plan as completion.
+Principals and heads read [Continuation Runtime](coordination/continuation-runtime/README.md) at startup alongside the existing role and resource contracts. Use its current status, plan, decisions and evidence index to distinguish implemented source, runtime acceptance and unresolved work; record actual custody and first action rather than treating a documented plan as completion.
 
 ## Scale-50 solution follow-through — human 6 October 2026
 
