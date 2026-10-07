@@ -28,3 +28,13 @@ Endpoint modelCID1815d789, Gemini3.1ProHigh, first completed tool05:48:22.372790
 Current HTTP task array is282, verified against the current tracker; latest06:01:35/PID2028408. `collect.py` source matchesc610. Actual loaded collector-module identity remains unproved. Row totals are not useful actor totals or accepted outcomes.
 
 Principal refined notifications are01a114f6-419a Bus,01a114f6-41be Ant and01a114f6-41e1 root. Ant fresh idle/empty capture followed by strict delivery of the original01a114f4-a2fb around06:05 returned NOTREADY with later-PTY contradiction; original stays pending, no override/retry/spoof. Existing task30147 timer nominal06:06:39 needs exact callback/first-tool proof; timer presence alone is not acceptance. No tracker rows/statuses changed in this follow-up.
+
+## Expected-filename correction and current timeline
+
+The earlier expected-report absence was a filename error, not proof of absent implementation evidence. Endpoint candidate `e1e8e50fc828f4d65060707bce0c0b4c31d6372e` has actual PRIVATE IMPLEMENTATION-LOG.md (9278B, SHA32814edff9bf9a777b9ce179d1c84169459290f1af0626b6369d59200a29e60b) and DEPLOY-NOTES.md (2834B, SHA98a2b5389bd0e025fd5306f39b181ea33d594a1a3a820101d1e21acafe066a48). The earlier failed runtime classification remains separate from artifact existence; no private contents are published.
+
+Actual independent review01b actor3eccfca2 first completed tool06:04:21.877995; store row FAILED06:04:58. Authored APPROVED report is3523B, SHA25e3bd0093d93997214ec7039962c67aded467f0ada1217bc228df96f3a42ddf, mtime06:05:32. No acceptance receipt; exact reconciliation cause remains unknown. A report written after failed classification is not silently promoted into accepted runtime.
+
+Timer30147 really fired06:06:39 → exact callback30151 DONE06:06:40.317749 → first tool30153 DONE06:06:44.091461 reading requests. This is a third live-head cycle, not absent-principal recovery. Original Busf7-9b8e strict delivery06:10 returned NOTREADY/laterPTY after fresh idle capture; original remains queued without injection or retry. Antfb-8b5d request and active06:10 source/test edits are head work, not principal code review.
+
+Bounded06:09 census sampled one principal and one productive head, zero product workers and zero verified READY in the sampled store; wider fleet is unknown. Collector four registered-live/eight unregistered-live/zero fresh hooks do not establish useful worker totals. Existing06:15 checkpoint remains; new scope ACKs and renewed endpoint promise remain pending.

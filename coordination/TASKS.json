@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-07T06:06:13.159987+00:00",
+  "updated_at": "2026-10-07T06:11:10.315102+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -5122,7 +5122,7 @@
       "proposed_execution_head": "public-journal-site",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-07T05:47:40.596048+00:00",
+      "updated_at": "2026-10-07T06:11:10.315102+00:00",
       "title": "Independent four-product task intake reconciliation",
       "source": "experiment/human-usable-task-tracker-20261005.txt",
       "acceptance": "exacthuman ask-to-task/owner/adoption status gaps, no false done or dropped requests",
@@ -5143,6 +5143,12 @@
           "field": "next_action",
           "prior": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD",
           "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T06:11:10.315102+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-07T05:47:40.596048+00:00",
+          "source": "C3120 scoped metadata overlay"
         }
       ],
       "administrative_observations": [
@@ -5152,6 +5158,13 @@
           "evidence": "Existing tracker capability source-only/ready label is not fresh executable admission.53-source coverage audit and latest human tracker intake linked; current readiness/slots UNKNOWN.",
           "source": "principal supplied genuine native messages; independent win35_execution_evidence metadata",
           "qualification": "Administrative evidence, no product QA/installed enforcement/lease transfer"
+        },
+        {
+          "at": "2026-10-07T06:11:10.315102+00:00",
+          "checkpoint": "C3122 exact current timeline",
+          "evidence": "Bounded06:09 sampledstore0productworkers/0verifiedREADY; globalcoverageUNKNOWN. No admission slots inferred from taskrow/PID labels. Parentreviewacceptance vs executionFAILED and wrong expectedfilename correction require evidence-aware task transitions.",
+          "source": "principal genuine messages and win35_execution_evidence independent administrative metadata",
+          "qualification": "No status/owner/ACK change, no product QA/runtime deployment acceptance"
         }
       ],
       "administrative_top_field_history": [
@@ -6401,7 +6414,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-07T05:47:40.596048+00:00",
+      "updated_at": "2026-10-07T06:11:10.315102+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6770,6 +6783,12 @@
           "field": "next_action",
           "prior": "Received Ant/QL heads own recovery implementation and distinct review; verify actual firsttools/output and executable READY then review/release/refill. Principal monitors only.",
           "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T06:11:10.315102+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-07T05:47:40.596048+00:00",
+          "source": "C3120 scoped metadata overlay"
         }
       ],
       "administrative_observations": [
@@ -6787,6 +6806,13 @@
           "evidence": "Ant directdb-b98f/dd-962b ACKs read-only QL bounded failure-case review and23-ID ledger investigation; current source/main leases unchanged. Actual current ledger280 vs earlier300 preserved separately, overwrite actor/time UNKNOWN.",
           "source": "principal supplied genuine native messages; independent win35_execution_evidence metadata",
           "qualification": "Administrative evidence, no product QA/installed enforcement/lease transfer"
+        },
+        {
+          "at": "2026-10-07T06:11:10.315102+00:00",
+          "checkpoint": "C3122 exact current timeline",
+          "evidence": "Anttimer30147 genuinely expired06:06:39 -> callback30151DONE06:06:40.317749 -> firstmodeltool30153DONE06:06:44.091461. Third live-head continuation cycle, not absentprincipal/deadhead recovery. NewAntfb-8b5d request/readscreen06:10 and terminaltest edits are observed headwork, not principalQA or scoped acceptance. Existing06:15 checkpoint retained.",
+          "source": "principal genuine messages and win35_execution_evidence independent administrative metadata",
+          "qualification": "No status/owner/ACK change, no product QA/runtime deployment acceptance"
         }
       ],
       "administrative_top_field_history": [
@@ -7610,10 +7636,17 @@
           "evidence": "Principal correctione1-789c: absent SSH alias is bootstrap observation, not nonSSH product dependency. Bus327 owns secure endpoint/auth configuration; desktop one accepted bootstrap only. Owner endpoint due unknown.",
           "source": "principal supplied genuine native messages; independent win35_execution_evidence metadata",
           "qualification": "Administrative evidence, no product QA/installed enforcement/lease transfer"
+        },
+        {
+          "at": "2026-10-07T06:11:10.315102+00:00",
+          "checkpoint": "C3122 exact current timeline",
+          "evidence": "Endpoint candidatee1e8e50fc828f4d65060707bce0c0b4c31d6372e has actual private IMPLEMENTATION-LOG.md9278B/SHA32814edff9bf9a777b9ce179d1c84169459290f1af0626b6369d59200a29e60b and DEPLOY-NOTES.md2834B/SHA98a2b5389bd0e025fd5306f39b181ea33d594a1a3a820101d1e21acafe066a48. Earlier expectedfilename wrong; no accepted deployment. Review01b3ecc first06:04:21.877995, rowFAILED06:04:58, later APPROVED reportSHA25e3bd0093d93997214ec7039962c67aded467f0ada1217bc228df96f3a42ddf3523B/mtime06:05:32; no acceptance receipt/exactcause unknown. Originalf7-9b8e NOTREADY06:10 remainsqueued; no new scopeACK.",
+          "source": "principal genuine messages and win35_execution_evidence independent administrative metadata",
+          "qualification": "No status/owner/ACK change, no product QA/runtime deployment acceptance"
         }
       ],
       "next_action": "Bus owner establishes verified secure nonSSH endpoint/auth configuration and gives actual checkpoint; desktop performs one accepted bootstrap after reviewed inputs; preserve no localhost-to-HTTPS inference.",
-      "updated_at": "2026-10-07T05:47:40.596048+00:00",
+      "updated_at": "2026-10-07T06:11:10.315102+00:00",
       "history": [
         {
           "ts": "2026-10-07T05:33:00Z",
@@ -7633,6 +7666,12 @@
           "at": "2026-10-07T05:47:40.596048+00:00",
           "field": "updated_at",
           "prior": "2026-10-07T05:26:39.037688+00:00",
+          "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T06:11:10.315102+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-07T05:47:40.596048+00:00",
           "source": "C3120 scoped metadata overlay"
         }
       ],
@@ -7711,7 +7750,24 @@
         "resolved_credit": "notgrantedfromheadstatuslabel"
       },
       "next_action": "Headreturns exactcollector source/review/runtime window acceptance and currentresolved-event timestamps/unknowns; Dashboard/publicowners ACK integration before peerwrites.",
-      "updated_at": "2026-10-07T05:23:03.568784+00:00"
+      "updated_at": "2026-10-07T06:11:10.315102+00:00",
+      "administrative_publication_prior_fields": [
+        {
+          "at": "2026-10-07T06:11:10.315102+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-07T05:23:03.568784+00:00",
+          "source": "C3120 scoped metadata overlay"
+        }
+      ],
+      "administrative_observations": [
+        {
+          "at": "2026-10-07T06:11:10.315102+00:00",
+          "checkpoint": "C3122 exact current timeline",
+          "evidence": "Bounded06:09 evidence: sampled1principal+1productivehead,0productworkers/0verifiedREADY; fleetUNKNOWN. Collector4registeredlive/8unregisteredlive/freshhooks0 are process/hook observations, not usefulworker census; loadedcollector module unknown.",
+          "source": "principal genuine messages and win35_execution_evidence independent administrative metadata",
+          "qualification": "No status/owner/ACK change, no product QA/runtime deployment acceptance"
+        }
+      ]
     },
     {
       "id": "bus-win35-disc01-security-review-01",
