@@ -44,3 +44,7 @@ The head integrates/repairs existing43ea and guarded180wake sources through scop
 ## Process and measurement
 
 Continuation Runtime is both software and the operating process that moves an owned task through execution, independent review, acceptance and useful refill. [Task flow](TASK-FLOW.md) specifies current partial enforcement and required gates. [Metrics](METRICS.md) defines resolved-task throughput and aligned project-window activity, without counting queued labels or awaiting-review work as success. Dashboard/public integration is proposed pending the actual owners’ ACKs; principals coordinate, heads delegate code/QA/integration.
+
+## Daily intake and writing checklist
+
+Use [REQUIREMENTS](REQUIREMENTS.md) for every human continuation directive and [IDEAS](IDEAS.md) for researched-agent suggestions, with source/time/status/decision/ownerACK/evidence/nextaction. Every daily standup includes their progress and decisions. The writing agent must read and copy the entire literal [DAILY-REPORT-CHECKLIST](DAILY-REPORT-CHECKLIST.md) into the private checked-edition packet and dedicated Opus request, then verify coverage against the final article. Those registers and checklist are process contracts, not proof of deployed enforcement, accepted ownership or completed runtime work.
