@@ -1,4 +1,4 @@
-import importlib.util,pathlib,unittest,tempfile,json,os
+import importlib.util,pathlib,unittest,tempfile,json,os,subprocess
 spec=importlib.util.spec_from_file_location('service',pathlib.Path(__file__).with_name('service.py'))
 service=importlib.util.module_from_spec(spec);spec.loader.exec_module(service)
 class Safety(unittest.TestCase):
@@ -1211,14 +1211,14 @@ class Safety(unittest.TestCase):
 
   adapters_py = root / 'scripts' / 'metrics' / 'adapters.py'
   if adapters_py.is_file():
-   res_cli = service.subprocess.run(['python3', str(adapters_py), '--json'], capture_output=True, text=True)
-   self.assertEqual(res_cli.returncode, 0)
+   res_cli = subprocess.run(['python3', str(adapters_py), '--json'], capture_output=True, text=True, cwd=str(root))
+   self.assertEqual(res_cli.returncode, 0, f"adapters.py --json failed: {res_cli.stderr}\nstdout: {res_cli.stdout}")
    parsed = json.loads(res_cli.stdout)
    self.assertEqual(parsed.get('status'), 'ok')
    self.assertIn('active_bytes', parsed)
 
-  res_live = service.subprocess.run(['bash', str(watcher_path)], capture_output=True, text=True)
-  self.assertEqual(res_live.returncode, 0)
+  res_live = subprocess.run(['bash', str(watcher_path)], capture_output=True, text=True, cwd=str(root))
+  self.assertEqual(res_live.returncode, 0, f"watcher failed: {res_live.stderr}\nstdout: {res_live.stdout}")
   self.assertIn('Supervisor is healthy.', res_live.stdout)
 
  def test_delivery_diagnostic_hold_cooldown(self):
