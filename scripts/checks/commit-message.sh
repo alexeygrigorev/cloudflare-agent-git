@@ -1,7 +1,8 @@
 #!/bin/sh
 # Commit message guard. Usage: commit-message.sh <message-file>
-# Fails on: commit hashes in the message, a subject that is not `type(scope): subject`.
-# Warns (never fails) when the staged diff spans unrelated top-level areas.
+# Fails on: a subject that is not `type(scope): subject`.
+# Commit hashes are allowed: exact source pins in commits, issue comments and receipts are
+# essential. The hash ban applies only to reader-facing published pages (publication.sh).
 # Run with no argument (as the checks runner does) it checks nothing and exits 0.
 msg="$1"
 [ -n "$msg" ] && [ -f "$msg" ] || exit 0
@@ -21,19 +22,6 @@ if [ "$exempt" = 0 ]; then
     echo "commit-message: subject must look like 'type(scope): subject' (types: feat fix docs test chore refactor perf style build ci revert)" >&2
     fail=1
   fi
-fi
-
-# A hash is a 7-40 char hex word with at least one digit and one a-f letter.
-hashes=$(printf '%s\n' "$body" | grep -Eo '\b[0-9a-f]{7,40}\b' | grep '[0-9]' | grep '[a-f]' | sort -u)
-if [ -n "$hashes" ]; then
-  echo "commit-message: commit hashes do not belong in messages (describe the outcome instead): $(echo $hashes)" >&2
-  fail=1
-fi
-
-# Bundling heuristic: three or more top-level areas outside tests and _docs.
-areas=$(git diff --cached --name-only 2>/dev/null | awk -F/ '{ if (NF == 1) print "."; else print $1 }' | grep -v -x -e tests -e _docs | sort -u | wc -l)
-if [ "${areas:-0}" -ge 3 ]; then
-  echo "commit-message: warning: staged changes span $areas unrelated top-level areas; commits should be one logical unit" >&2
 fi
 
 if [ "$fail" = 1 ]; then

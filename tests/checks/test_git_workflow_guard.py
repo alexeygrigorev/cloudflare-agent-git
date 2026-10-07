@@ -29,12 +29,8 @@ class CommitMessage(unittest.TestCase):
     def test_rejects_free_form_subject(self):
         self.assertEqual(msg_check("update stuff\n").returncode, 1)
 
-    def test_rejects_hash(self):
-        r = msg_check("fix(x): revert d10c3aa regression\n")
-        self.assertEqual(r.returncode, 1)
-        self.assertIn("hashes", r.stderr)
-
-    def test_words_and_numbers_are_not_hashes(self):
+    def test_hashes_are_allowed_as_source_pins(self):
+        self.assertEqual(msg_check("fix(x): revert d10c3aa regression\n").returncode, 0)
         self.assertEqual(msg_check("docs(x): defaced facade 20261007 deadbeef\n").returncode, 0)
 
     def test_override_env_and_trailer_log_reason(self):
