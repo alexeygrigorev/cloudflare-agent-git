@@ -103,36 +103,28 @@
 
 ### The tracker
 
-- Tasks and issues are tracked in GitHub issues; the old tasks move there with proper labels.
-- The issues are public, plain GitHub issues, with no GitHub Project.
-- Each project has its own tracker, owned by its team. The principal owns the high-level tasks, and those are issues in this repository.
-- The trackers are `alexeygrigorev/agent-branches`, `agent-dashboard`, `agent-quota-launcher`, `agent-coordination`, `PocketShell-io/agent-bus`, and `alexeygrigorev/cloudflare-agent-git` for the principal's work.
-- The tracker must be usable, visible to the founder and always available. Without one we forget things.
+- Track tasks in plain, public GitHub issues with proper labels, and no GitHub Project.
+- Each product's tracker is the issues of its GitHub repo (section 1), owned by its team. The principal owns the high-level tasks, as issues in this repo.
+- The tracker is usable, visible to the founder and always available.
 - Now and then, go back through all of the founder's messages and point out what we are not doing yet.
-- Every founder request becomes an issue, so nothing he asked for gets lost.
 - A principal dependency issue links to the product issue; the same task is never copied into two trackers.
 - An issue closes only when its accepted, reviewed outcome exists. Work waiting for review stays open, and a failed acceptance reopens the issue.
 - An issue assignment does not grant edit rights and does not prove the owner accepted the task.
-- The everyday tracker commands live in `_docs/process/github-task-tracker.md`, and the sanitized map from old IDs to issues lives in `_docs/task-tracker/`.
+- The everyday tracker commands are in `_docs/process/github-task-tracker.md`, and the map from old task IDs to issues is in `_docs/task-tracker/`.
 
 ### Claims and coordination
 
+- The agents bus is the message system agents use to talk to each other, on one computer or across several, in headless and interactive sessions alike.
+- A claim is a note on the agents bus saying which files an agent is editing, so two agents don't edit the same thing.
 - Agents claim what they are editing on the agents bus. Claims are never written into documents.
-- Agents talk through the agents bus, which serves headless and interactive sessions alike and works across computers.
-- Hetzner and Win35 talk to each other directly and securely over the agents bus, not over SSH and not through the desktop.
 
 ### The head loop
 
 - The head picks a ready task and starts a worker for it through the maintained Agent Quota Launcher.
 - A reviewer on a different model checks the result, the worker fixes every finding, and the loop repeats until the reviewer approves. Then the head integrates and starts the next ready task at once.
-- Workers and reviewers that run as separate sessions (external agents) are started through the launcher, never by hand. A head may also use its own built-in subagents for small pieces; those count as active when they do real work.
+- Workers and reviewers that run as separate sessions (external agents) are started through the launcher, never by hand. A head may also use its own built-in subagents for small pieces; those count as active when they do work.
 - Workers start headless with permission prompts skipped; only principals, heads and a few chosen sessions run in a normal interactive UI.
-- Heads run many workers in parallel, directly or as external sessions. Seeing how parallel work struggles is part of the point of the project.
-- There is no fixed cap on team size. Run as many workers as there are real independent tasks and capacity, and never invent work to raise the count.
-- Use z.ai agents through zcodex for most implementation.
-- Once the ideas converge, build small prototypes and use them in our own development straight away.
-- Every project has its own GitHub repo, and our tool stays in sync with GitHub. Main development happens through our own tool, and GitHub is the backup.
-- The Cloudflare integration sits behind a facade so we can switch platforms later.
+- There is no fixed cap on team size. Run as many workers as there are independent tasks and capacity, and never invent work to raise the count.
 
 ## 5. Git workflow
 
@@ -141,7 +133,8 @@
 - Make small, focused commits, one per logical change, never one big commit.
 - Before pushing, run `git pull --rebase origin main`, and retry if another push got there first.
 - Stage only the paths you changed. Never reset, stash, rebase away or overwrite someone else's work, and in a shared dirty checkout, work in your own worktree.
-- Don't write tests for docs. Tests test code.
+- Don't write tests for docs.
+- Main development happens through our own tool, which stays in sync with GitHub; GitHub is the backup.
 - Keep an ordinary Git recovery path that does not depend on our prototype: mirror main to an independent remote now and then, and check that a fresh checkout restores it.
 - Never delete existing worktrees or dirty or unmerged work; cleanup touches only disposable scratch with a known owner.
 - Count commits per repository by unique SHA, hour by hour. Commits are activity, not accepted results.
