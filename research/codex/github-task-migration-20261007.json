@@ -1,0 +1,19 @@
+{
+  "as_of_utc": "2026-10-07T09:14:48.636000+00:00",
+  "source_tasks_sha256": "f32da295c120bb115240c11268a7f2c9ffd9b3e5076a625bc3a32de4f63d8edc",
+  "source_backlog_sha256": "73a714ae3ef36d21e90959538de243201230a1009f40daa2235e3d467d5d561b",
+  "unique_tasks": 291,
+  "backlog_references": 91,
+  "additional_backlog_tasks": 0,
+  "represented_issues": 0,
+  "migration_status": "in_progress",
+  "destinations_verified_public": [
+    "alexeygrigorev/agent-branches",
+    "alexeygrigorev/agent-dashboard",
+    "alexeygrigorev/agent-quota-launcher",
+    "alexeygrigorev/agent-coordination",
+    "PocketShell-io/agent-bus"
+  ],
+  "cutover": "not_performed",
+  "issues": []
+}
