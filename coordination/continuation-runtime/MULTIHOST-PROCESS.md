@@ -4,7 +4,7 @@ Read [design research](../../research/orchestrator/MULTIHOST-AUTONOMY-DESIGN-202
 
 ## One obligation, replaceable execution
 
-Use the GitHub issues tracker and event authority, maintained supervisor, Agent Quota Launcher, AgentBus and product heads. Keep task history and obligations independent of model context/host process. Principals plan across teams, heads decompose and integrate, independently owned workers execute, distinct reviewers assess pinned results. The root follows through and delivers outcomes; ordinary dispatch/repair must continue without it.
+Use the GitHub issues trackers (one per project, owned by its team; the principal's high-level tasks in this repository) and event authority, maintained supervisor, Agent Quota Launcher, AgentBus and product heads. Keep task history and obligations independent of model context/host process. Principals plan across teams, heads decompose and integrate, independently owned workers execute, distinct reviewers assess pinned results. The root follows through and delivers outcomes; ordinary dispatch/repair must continue without it.
 
 ```mermaid
 flowchart LR

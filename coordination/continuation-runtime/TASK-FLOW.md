@@ -1,6 +1,6 @@
 # Continuation Runtime task flow
 
-This is a process contract alongside [AGENTS](../../AGENTS.md), [roles](../ROLE-CONTRACT.md), [operating model](../OPERATING-MODEL.md) and the GitHub issues tracker (legacy ledger: [TASKS.json](../TASKS.json)). Current enforcement is **partial**: task contracts, actual model firsttools, terminal states and distinct reviews exist, but stale labels, multiple stores, manual acceptance and missed refill/recovery remain documented failures. Writing this contract does not prove launcher/dashboard/supervisor enforcement.
+This is a process contract alongside [AGENTS](../../AGENTS.md), [roles](../ROLE-CONTRACT.md), [operating model](../OPERATING-MODEL.md) and the GitHub issues trackers (per-project, team-owned; principal high-level tasks in this repository) (legacy ledger: [TASKS.json](../TASKS.json)). Current enforcement is **partial**: task contracts, actual model firsttools, terminal states and distinct reviews exist, but stale labels, multiple stores, manual acceptance and missed refill/recovery remain documented failures. Writing this contract does not prove launcher/dashboard/supervisor enforcement.
 
 ## State transitions and durable evidence
 

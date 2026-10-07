@@ -45,7 +45,7 @@ Only two are live: [coordination/codex.md](coordination/codex.md) and [coordinat
 - [experiment/events.jsonl](experiment/events.jsonl): one JSON event per line; `tail -5`.
 
 ## 5. Where to look for ...
-- Tasks and issues: GitHub issues of alexeygrigorev/cloudflare-agent-git. Legacy ledgers being migrated into them: [coordination/TASKS.json](coordination/TASKS.json) (282 tasks, inconsistent statuses; query it, do not read it) and [DELIVERY-BACKLOG.json](coordination/DELIVERY-BACKLOG.json) (maps human requests to tasks). Issues are public; private evidence stays outside them.
+- Tasks and issues: GitHub issues. Each project has its own tracker owned by its team; the principal's high-level tasks are issues in alexeygrigorev/cloudflare-agent-git. Legacy ledgers being migrated into them: [coordination/TASKS.json](coordination/TASKS.json) (282 tasks, inconsistent statuses; query it, do not read it) and [DELIVERY-BACKLOG.json](coordination/DELIVERY-BACKLOG.json) (maps human requests to tasks). Issues are public; private evidence stays outside them.
   `python3 -c "import json;[print(t['id'],t['status'],t['owner_tag']) for t in json.load(open('coordination/TASKS.json'))['tasks'] if t['status'] in ('running','in_progress','review','ready')]"`
 - Who is editing what: coordinated on the agents bus, never in documents. [TEAM-REGISTRY.json](coordination/TEAM-REGISTRY.json) lists the team roster and may lag.
 - Rules: AGENTS.md, ROLE-CONTRACT, OPERATING-MODEL, RESOURCE-POLICY. On conflict the newest verbatim human file wins.
