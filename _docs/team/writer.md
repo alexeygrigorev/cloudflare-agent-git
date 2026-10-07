@@ -104,6 +104,7 @@ If a section cannot say what problem it is about, cut it.
 - Art tells the story, not a measurement. Label conceptual art, give charts units, and never draw products, uptake or savings that are not proven.
 - Project markers (circle, square, triangle, diamond, pentagon) tell ideas apart, not maturity. Caption project diagrams as proposed.
 - Alt text says what the picture shows, and status is never shown by colour alone. In the rendered page, check labels, arrows and crop.
+- Site design iterations use Claude Design at claude.ai/design, and each product gets its own landing section on the site. The approved Claude Design export is the reference. A design change stays in preview until a reviewer other than the implementer has compared it with the reference, side by side, on desktop and mobile.
 
 ## Handoffs and fact packets
 
