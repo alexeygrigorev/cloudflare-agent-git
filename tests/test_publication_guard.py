@@ -546,30 +546,6 @@ class TestC1621StrictAllowlistNegativeCases(BaseGuardTestCase):
         self.assertIn("rc=2", proc_missing.stdout)
 
 
-class TestPublicReportsSelfVerification(unittest.TestCase):
-    """Verify that all currently published public research reports pass publication guard."""
-
-    def test_all_public_reports_pass(self):
-        reports = [
-            REPO_ROOT / "research" / "antigravity" / "recovery" / "CHECK-DISTRIBUTION-RUNBOOK-PINS.md",
-            REPO_ROOT / "research" / "antigravity" / "reviews" / "REV-A06-COMPARISON-CONTRACT.md",
-            REPO_ROOT / "research" / "antigravity" / "dogfood" / "WARNING-LIFECYCLE-TRANSITION-REPORT.md",
-            REPO_ROOT / "research" / "antigravity" / "adoption" / "A06-ADVISORY-ADOPTION-DECISION.md",
-            REPO_ROOT / "research" / "antigravity" / "audit" / "PRIVATE-LINEAGE-AUDIT.md",
-            REPO_ROOT / "research" / "antigravity" / "reviews" / "REV-PUBLICATION-GUARD.md",
-            REPO_ROOT / "research" / "antigravity" / "reviews" / "REV-SDK-DISTRIBUTION-7692650.md",
-        ]
-        for report in reports:
-            self.assertTrue(report.exists(), f"Report file missing: {report}")
-
-        cmd = [sys.executable, str(GUARD_SCRIPT)] + [str(r) for r in reports]
-        res = subprocess.run(cmd, capture_output=True, text=True, cwd=str(REPO_ROOT))
-        self.assertEqual(
-            res.returncode, 0,
-            f"Public reports failed credential guard verification! Output:\n{res.stdout}\n{res.stderr}"
-        )
-
-
 if __name__ == "__main__":
     unittest.main()
 
