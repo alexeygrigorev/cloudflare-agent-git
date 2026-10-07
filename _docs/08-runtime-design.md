@@ -2,7 +2,7 @@
 
 The continuation runtime is how useful agent work keeps moving without the founder stepping in. It is both an operating process and the software that enforces it: the trackers, the maintained supervisor, the Agent Quota Launcher, the agents bus and the project heads. The founder asks once. The system records the request, keeps a named owner accountable through execution, review and recovery, and delivers the accepted result. Over time the founder's role shrinks to the daily standup. This is the target design. A rule written here proves nothing until it passes the acceptance below.
 
-The rules and their sources are in [04-way-of-working.md](04-way-of-working.md), which wins on any conflict; this document explains how the runtime carries them out.
+The rules and their sources are in [03-way-of-working.md](03-way-of-working.md), which wins on any conflict; this document explains how the runtime carries them out.
 
 ## Roles
 
@@ -15,7 +15,7 @@ Each role:
 - Supervisor and collector: configured mechanical transitions, due checks, routing and observations. Never: gives model verdicts, fabricates custody or readiness, grants source permissions.
 - Root (coordinator): takes the founder's requests, delivers results to the founder, follows every request through, recovers failed custody, runs the periodic checks on Win35 and Hetzner. Never: holds product edit scope, acts as scheduler, routine reviewer or release approver.
 
-Principals and heads may launch as many workers as useful tasks and current resource gates allow; there is no fixed team cap. Heads keep their context and orchestrate; workers do the work. Principals check each other at agreed checkpoints. Agents may invent better ways of working and challenge the founder, inside the safety gates. Every actor reads AGENTS.md, [04-way-of-working.md](04-way-of-working.md), its hand-off and its task contract at startup and records that it did.
+Principals and heads may launch as many workers as useful tasks and current resource gates allow; there is no fixed team cap. Heads keep their context and orchestrate; workers do the work. Principals check each other at agreed checkpoints. Agents may invent better ways of working and challenge the founder, inside the safety gates. Every actor reads AGENTS.md, [03-way-of-working.md](03-way-of-working.md), its hand-off and its task contract at startup and records that it did.
 
 Edit-scope claims are made on the agents bus, never written into documents.
 
@@ -159,7 +159,7 @@ Tracker availability means a usable page and API, fresh data from the canonical 
 
 ## Resources and safety
 
-The resources section of [04-way-of-working.md](04-way-of-working.md#9-resources) holds the numbers: disk floor, scratch, memory caps, provider reserves, the shared z.ai ceiling and the USD 5 monthly cloud budget. The runtime applies the current version and takes a fresh reading before every launch; an unknown reading means no launch. Each model worker runs in its own contained unit, not as an uncontrolled child inside a head, and more agents without measured topology and memory can reduce useful throughput. A provider fallback is a new admitted attempt, never a silent substitution. Cleanup never deletes dirty worktrees, active leases, history or unknown-owner paths. Secrets and raw logs stay machine-local.
+The resources section of [03-way-of-working.md](03-way-of-working.md#9-resources) holds the numbers: disk floor, scratch, memory caps, provider reserves, the shared z.ai ceiling and the USD 5 monthly cloud budget. The runtime applies the current version and takes a fresh reading before every launch; an unknown reading means no launch. Each model worker runs in its own contained unit, not as an uncontrolled child inside a head, and more agents without measured topology and memory can reduce useful throughput. A provider fallback is a new admitted attempt, never a silent substitution. Cleanup never deletes dirty worktrees, active leases, history or unknown-owner paths. Secrets and raw logs stay machine-local.
 
 ## Acceptance
 
@@ -181,7 +181,7 @@ Passing them is a first demonstration. The target is 50 active agents now; steps
 
 ## Founder delivery and reporting
 
-Root shows a finished standup labelled unpublished, and a published article with its verified live URL and a short share-ready summary. Every daily report includes the continuation runtime's progress, checked against a literal checklist: requirements and agent ideas with status, implemented versus planned, and wake, refill and failover results including failures. The separate article about this way of working waits until the founder accepts [04-way-of-working.md](04-way-of-working.md). Then Claude Opus writes it with fresh ImageGen art, editable diagrams and independent review.
+Root shows a finished standup labelled unpublished, and a published article with its verified live URL and a short share-ready summary. Every daily report includes the continuation runtime's progress, checked against a literal checklist: requirements and agent ideas with status, implemented versus planned, and wake, refill and failover results including failures. The separate article about this way of working waits until the founder accepts [03-way-of-working.md](03-way-of-working.md). Then Claude Opus writes it with fresh ImageGen art, editable diagrams and independent review.
 
 ## Open specifics
 

@@ -421,7 +421,7 @@ def library_page():
         ('Evidence', 'Pain reported by developers and maintainers.', [('Evidence ledger', 'research/evidence-ledger.md'), ('Hacker News evidence', 'research/claude/hn-evidence.md'), ('Maintainer review evidence', 'research/claude/maintainer-review-evidence.md'), ('Codex evidence (Reddit, coordination)', 'research/codex/evidence.md'), ('Social evidence', 'research/orchestrator/social-evidence.md')]),
         ('Competitors and feasibility', 'What already exists, and what Artifacts can actually do.', [('Workflows and competitors', 'research/claude/workflows-competitors.md'), ('Engineering feasibility', 'research/codex/engineering-feasibility.md'), ('Pro investigations, integrated', 'research/codex/pro-integration-round-1.md')]),
         ('Debate', 'Rejection arguments and responses.', [('Debate folder', 'research/debate/'), ('Retained lanes review, 23:24', 'research/codex/retained-lanes-review-2324.md'), ('Open disagreements', 'research/debate/codex-open-disagreements.md')]),
-        ('How the experiment runs', 'Rules, instructions and resource limits.', [('How the agents work', 'AGENTS.md'), ('Way of working', '_docs/04-way-of-working.md'), ('User instructions', '_docs/founder-journal/2026-10-02.md'), ('Founder journal', '_docs/founder-journal/')]),
+        ('How the experiment runs', 'Rules, instructions and resource limits.', [('How the agents work', 'AGENTS.md'), ('Way of working', '_docs/03-way-of-working.md'), ('User instructions', '_docs/founder-journal/2026-10-02.md'), ('Founder journal', '_docs/founder-journal/')]),
     ]
     def lib_row(title, rel):
         return '<a class="lib-item" href="'+public_source(rel)+'"><span class="lib-title">'+E(title)+'</span><span class="lib-path">'+E(rel)+'</span></a>'
