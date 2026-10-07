@@ -2,6 +2,15 @@
 
 Agents talk to each other over the agents bus, on one computer or across several, in headless and interactive sessions alike. Everything you need from another agent goes through it. Never type into another agent's session, and never write to a busy screen, a menu or a draft.
 
+## Who talks to whom
+
+- Root talks to the principal and the heads.
+- The principal talks to root and the heads.
+- A head talks to the principal, root and its own implementers and reviewers.
+- An implementer or a reviewer talks only to its head.
+- Between root and the others, most messages are status updates.
+- When root sees that something is absent, it tells the principal and resolves it. When the principal sees that something is absent, it tells root and resolves it. For an absent principal or head, resolving it means running `scripts/recover-agent <tag>`, described in `_docs/05-recovery.md`.
+
 ## Sending and receiving
 
 - Every agent has a tag, which is its name on the bus. `a whoami --json` shows yours.
