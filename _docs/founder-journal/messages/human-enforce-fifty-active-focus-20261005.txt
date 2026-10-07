@@ -1,3 +1,0 @@
-Direct human instruction, October 5, 2026. Verbatim:
-
-from what I see the agents report less than 50 without the actual steps to get to that number. we should enforce it. make sure it's the focus

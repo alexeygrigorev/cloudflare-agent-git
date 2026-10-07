@@ -1,3 +1,0 @@
-Human instruction, 7 October 2026, verbatim:
-
-let's now go though all the docs. suggest a new structure - I want to clear the bloat

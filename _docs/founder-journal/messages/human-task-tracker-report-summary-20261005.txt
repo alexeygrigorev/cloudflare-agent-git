@@ -1,3 +1,0 @@
-Direct human instruction, 5 October 2026, verbatim:
-
-I also want to see a summary from the task tracker in the report, how many tasks were created, still open and closed. + a short overview of the closed tasks in each project

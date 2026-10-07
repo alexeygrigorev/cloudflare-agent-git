@@ -1,3 +1,0 @@
-Rescued verbatim human text. Source: coordination/GITHUB-TASK-TRACKER.md:3 (commit 7a0b82c).
-
-let's use github as a task tracker - have a subagent move all the tasks there with proper tags

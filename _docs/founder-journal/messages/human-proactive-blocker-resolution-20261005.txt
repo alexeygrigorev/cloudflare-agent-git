@@ -1,3 +1,0 @@
-Direct human instruction October5 verbatim:
-
-if the agents see a blocker they should be proactive in resolving it. not just "oh here's a block" - resolve it. always. don't wait for me to tell you that

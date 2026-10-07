@@ -1,3 +1,0 @@
-Direct human instruction October5 verbatim:
-
-the goal is to get the process going on that side and eventually switch off coordination here. it's just a nudge to keep the agents working but dont make the subagent here the permanent solution. let's agree that by 18:30 the agents are running ocmpletely automonously (we can have a durable supervisor there if we need)

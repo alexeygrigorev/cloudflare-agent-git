@@ -1,3 +1,0 @@
-Rescued verbatim human text. Source: coordination/continuation-runtime/REQUIREMENTS.md:37 (commit 7a0b82c; CR-R006, supplied by the principal, earlier in that chat).
-
-pay attention to all my directives and the anaysis that came from the laptop agent

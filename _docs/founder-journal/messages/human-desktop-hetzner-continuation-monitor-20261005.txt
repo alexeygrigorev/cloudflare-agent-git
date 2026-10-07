@@ -1,3 +1,0 @@
-Direct human instruction October5 verbatim:
-
-so let's optimize this, this should be happening independently. start a subagent that will monitor it here and on hetzner side. don't let them sit idle

@@ -1,5 +1,0 @@
-Human instruction, 7 October 2026, verbatim:
-
-also research the best designs to make autonomous agentic systems that work across different computes. we have all the tech for that but we're missing the process
-
-Canonical intake: human-multihost-autonomy-design-research-20261007. Root owns research, documentation and coordination. Existing heads own implementation and independent acceptance. Compare designs and document a concrete operating process using maintained tools; do not equate component availability with deployed multi-host autonomy.

@@ -1,5 +1,0 @@
-Direct human instructions, 5 October 2026, verbatim:
-
-your task is monitor the progress and see the big picture, coordinate heads and so on. the heads then do more low level stuff
-
-please make sure it's documented clearly and included in tomorrows report

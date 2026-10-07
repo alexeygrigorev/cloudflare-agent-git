@@ -1,5 +1,0 @@
-Rescued verbatim human text. Source: research/codex/continuity-scheduler-design-20261005.md:9 (commit 7a0b82c; relayed by the desktop principal).
-
-launch floor of 50 is too tight
-
-after 30 we still launch agents but also get a cleanup agent to free space

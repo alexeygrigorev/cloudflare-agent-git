@@ -1,3 +1,0 @@
-Human instruction, 7 October 2026, verbatim:
-
-each project will have a separate task tracker. the team will be reponsible for owning it. the principal will be reponsible for the high-level taks and it's tasks will be in this repo

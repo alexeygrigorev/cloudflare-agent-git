@@ -1,3 +1,0 @@
-Direct human instruction October5 verbatim:
-
-this project should run with a very high degree of autonomy

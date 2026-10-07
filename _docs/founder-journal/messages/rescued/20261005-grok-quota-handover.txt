@@ -1,3 +1,0 @@
-Rescued verbatim human text. Source: research/codex/grok-quota-handover-intake-20261005.md:3 (commit 7a0b82c).
-
-grok is nearly 0% so let's not start new grok sessions. when it's 5% or less let's not use them and swithc to another agent. if it's a prinicpal or haed, orchestrate a handover when it's nearing 5%

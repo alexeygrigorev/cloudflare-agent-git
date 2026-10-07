@@ -1,3 +1,0 @@
-Rescued verbatim human text. Source: research/orchestrator/TASK-TRACKER-SELECTION-20261007.md:5 (uncommitted working-tree file in the shared checkout, not in any commit).
-
-can we use a differnt task tracker instead of json - you aren't going to look at it like that anyways. we need a more convenient tracker. think what you will need from the tracker to make sure we progress and find a suitable tracker for your needs

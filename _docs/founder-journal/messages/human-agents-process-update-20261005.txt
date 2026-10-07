@@ -1,3 +1,0 @@
-Direct human instruction October5, verbatim:
-
-also modify the process in AGENTS.md to make it easier next time based on what we discussed

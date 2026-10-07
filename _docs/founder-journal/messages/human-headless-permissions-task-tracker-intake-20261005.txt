@@ -1,3 +1,0 @@
-Direct human instruction, October 5, 2026. Verbatim:
-
-another thing: we need to start agents with the skip-permissions mode. a grok session was waiting for an approval. it's better to start in headless mode as I requested earlier, only some sessins should be started in TUI. Also I asked for using a task tracker and didn't see any of that- what's the status on that. without a task tracker we will forget things. Make sure you go though all my intake and emphasise it one more time so we check things we're not doing yet

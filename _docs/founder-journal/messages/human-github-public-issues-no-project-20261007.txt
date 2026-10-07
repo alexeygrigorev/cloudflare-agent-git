@@ -1,5 +1,0 @@
-Human instruction, 7 October 2026, verbatim:
-
-let's keep it public. I don't need to use project - just normal issues.
-
-Scope: reports the human's answer on GitHub issue tracking. The tracker is plain GitHub issues in the public repository, with no GitHub Project. Private evidence stays outside public issues.

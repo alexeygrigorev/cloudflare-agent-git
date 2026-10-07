@@ -1,3 +1,0 @@
-Rescued verbatim human text. Source: coordination/codex.md:894 (commit 7a0b82c).
-
-make sure we run as many agents as we can

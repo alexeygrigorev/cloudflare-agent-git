@@ -1,3 +1,0 @@
-Rescued verbatim human text. Source: research/codex/maintainer-friction-intake-20261006.md:5 (commit 7a0b82c).
-
-also keep an eye what are the things you do around aplexer and if you do something repeatedly it means it should be a feature

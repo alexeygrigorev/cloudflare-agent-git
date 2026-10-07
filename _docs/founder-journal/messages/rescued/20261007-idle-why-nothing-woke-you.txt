@@ -1,3 +1,0 @@
-Rescued verbatim human text. Source: coordination/continuation-runtime/REQUIREMENTS.md:29 (commit 7a0b82c; CR-R004, supplied by the principal).
-
-you have been idle for quite some time. why nothing has woken you up? didn't we discuss to have a system for that? what's the status on having this system? why did heads not try to appoint a new head when they notice that you're not active?

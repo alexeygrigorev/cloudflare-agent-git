@@ -1,3 +1,0 @@
-Direct human instruction, 5 October 2026, verbatim:
-
-something like branches sync git would sycn all the changes to git

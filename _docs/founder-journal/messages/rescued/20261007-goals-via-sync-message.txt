@@ -1,3 +1,0 @@
-Rescued verbatim human text. Source: coordination/GITHUB-TASK-TRACKER.md:55 (commit 7a0b82c).
-
-you can set goals by sending the sync message

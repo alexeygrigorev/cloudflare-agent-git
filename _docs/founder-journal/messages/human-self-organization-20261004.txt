@@ -1,1 +1,0 @@
-looks like you were off. think of a way to have this periodic checks outside and keeping the system running. the principal wasn't doing anything and it stopped, so you and the principal are the single source of failure. have agents on the other end think how to make the system self-organized without the single point of failure 

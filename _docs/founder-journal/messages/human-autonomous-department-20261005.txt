@@ -1,7 +1,0 @@
-Direct human instruction, October 5, 2026. Verbatim:
-
-And I also want to make sure that you are documenting my requests, right? So all the requests that I am sending, because we have this log or head. So I want you to keep using them, because I want to know what kind of things I ask. So with time, I want my involvement to go down and your involvement to go up, right? So the fewer comments I send to you, the better it is. So my goal is to have a fully autonomous department, multiple teams that are working on the same goal, on achieving the same goal, and they have a way to coordinate things, so I don't need to be involved. And with me, we will just have daily stand-ups.
-
-Immediately preceding direct human instruction, verbatim:
-
-no need to watch it. they will report back when they are ready

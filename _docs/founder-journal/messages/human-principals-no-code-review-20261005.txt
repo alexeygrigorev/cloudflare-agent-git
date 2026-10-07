@@ -1,3 +1,0 @@
-Direct human instruction, 5 October 2026, verbatim:
-
-principals don't review code. they delegate it to heads who lauch subagents fo rthat. you have too much work for that and you will become the bottleneck if you check eveyrthing yourself. find the team structure and have clearly defined roles what principal is what heads are and make sure that they read these docs when they start the session

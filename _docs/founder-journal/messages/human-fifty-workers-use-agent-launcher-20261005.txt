@@ -1,3 +1,0 @@
-Direct human instruction, October 5, 2026. Verbatim:
-
-use the agent laucher we discussed yesterday for that.

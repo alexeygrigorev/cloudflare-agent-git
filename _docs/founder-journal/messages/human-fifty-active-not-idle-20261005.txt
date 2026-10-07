@@ -1,3 +1,0 @@
-Direct human instruction, October 5, 2026. Verbatim:
-
-50 ACTIVE agents not started and idle agents. so we should know from our dashboard who is active and who is not.

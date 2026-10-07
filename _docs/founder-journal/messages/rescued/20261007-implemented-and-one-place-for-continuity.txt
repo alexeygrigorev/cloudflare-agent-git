@@ -1,3 +1,0 @@
-Rescued verbatim human text. Source: coordination/continuation-runtime/REQUIREMENTS.md:17 (commit 7a0b82c; CR-R001, supplied by the principal).
-
-tell me what we have already implemented and what you will implement to make sure it doesn't happen again. also let's put together all the documentation and plans and ideas about making this system run continuously without my involvement in one place. how should we can this approach? where will we put the documents? so later we can refer to the ideas and decisions from here

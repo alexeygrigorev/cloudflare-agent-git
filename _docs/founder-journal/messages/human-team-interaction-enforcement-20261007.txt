@@ -1,5 +1,0 @@
-Human steering, 7 October 2026, verbatim:
-
-we also have a team definition and rules of interation and it doesn't seem to be enforced anywhere
-
-Canonical task: human-team-interaction-enforcement-20261007. Audit and enforce the existing team/role/interaction contract through maintained tools and current genuine owners. Root owns evidence, coordination and follow-through; heads retain scoped implementation and distinct review. A role document or registry label is not runtime enforcement.

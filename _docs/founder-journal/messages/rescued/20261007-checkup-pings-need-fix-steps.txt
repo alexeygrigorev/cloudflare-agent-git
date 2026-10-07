@@ -1,3 +1,0 @@
-Rescued verbatim human text. Source: coordination/TASKS.json:8102 field human_request_verbatim (uncommitted working-tree change in the shared checkout at HEAD 04e3719, not in any commit; recorded by desktop-orchestrator).
-
-but I mean with the pings - all I see is report of problems but no clear steps of what you will do to fix it. but we have talked about it. I want you to update the prompt for the regular checkups they are now too bloated and not focued at all at what really matters

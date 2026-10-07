@@ -1,3 +1,0 @@
-Rescued verbatim human text. Source: research/codex/publication-social-imagegen-intake-20261006.md:5 (commit 7a0b82c; desktop-relayed to the principal).
-
-give me a short summary for the social media - and it should be the default behaviour. for the next report, I also want to see a new illutration generated with imagegen - claude shuld know how to use codex for imagegen

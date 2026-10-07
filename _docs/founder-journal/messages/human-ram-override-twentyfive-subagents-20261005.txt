@@ -1,3 +1,0 @@
-ignore ram - just run the agents
-
-once you help them get to 25 then you sleep and wake up eveyr 30 minutes like perviously. make sure we're conuting correctly - the subagents we run also count

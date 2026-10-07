@@ -1,3 +1,0 @@
-Rescued verbatim human text. Source: coordination/TASKS.json:8138 field human_request_verbatim (uncommitted working-tree change in the shared checkout at HEAD 04e3719, not in any commit; recorded by desktop-orchestrator).
-
-also review these documents - they feel very bloated. trim them to make them useful and describe why exactly you need to look at these documents.

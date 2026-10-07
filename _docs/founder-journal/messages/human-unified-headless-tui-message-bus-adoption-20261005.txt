@@ -1,3 +1,0 @@
-Direct human instruction, October 5, 2026. Verbatim:
-
-for headless mode we need a message bus that lets us communicate with headless and TUI sessions together and yesterday I asked to implement one - what's the status? I didn't see it in the report. I expect you to start using this asap.
