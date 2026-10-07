@@ -2689,3 +2689,8 @@ Latesthuman naming Continuation Runtime supersedes ContinuousOperations; oldhub 
 ## C3120 Win35 actual execution accountability
 
 Desktopc2-74e4 humansteering read/ACKed, principalBusrequestc5-ace1/sourceleaseunchanged and exactDNS followupc6-8004/rootc6-afa3 executed. Independentactualouterexec05:09:11/05:10:46 journalwrites confirmed despite displayedmodeldenial; actualprobe255 cannotresolvewin35/noSSHalias, nothostoffline/authfault/noexecution. Sourcepins2016/826f are cloudflareNOTagent-bus; physicaldeployment/adoptionOPEN/newBussemanticACKpending. Antc5-fd73 strictdeliverNOTREADYlaterPTY retained,33TASKSrunning/11ready notactor/admissions;29141callbackpending. [Owned C3120 evidence](../research/codex/win35-execution-recovery-c3120-20261007.md) preservesexactrelayedhumanquote and nextowner/actualprobe/result limits; no registerownershipinferred.
+
+
+## C3120 received Bus custody and physical route
+
+Genuine BusACKc7-3387 nativeverified retains327lease/no successor; DNS255 locatorfailure acknowledged, physicaltaskdue<=30min AFTERrealdeviceinput/securityreviewpending. Principalc7-9c62/desktopc7-9c8b choose existingdesktopWin35 reviewedoutboundbootstrap+human-authorizedsyncc7-107a, no newSSH/helperbypass/duplicateinstructions. DesktopphysicalACK/result+secureHTTPSendpointpending/local8788notpublicdeployment. Outerjournalexec effectsproved/modeldenialproducerunknown; currentauthoredadoptionnotold21:58discovery. [C3120 evidence](../research/codex/win35-execution-recovery-c3120-20261007.md) preservesupdatedboundedprivateaudit/reference/publiclimitations.
