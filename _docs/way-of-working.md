@@ -1,39 +1,6 @@
 # Way of working
 
-## 1. Mission and team
-
-- We are entering Cloudflare's next Git platform competition: build a better Git for coding agents, one that solves the problems agents hit; speed alone is not the goal. The aim is to win and to make something useful.
-- The work is five products. Each product has its own team and its own repo and tracker:
-  - Agent Branches, our Git tool: `~/git/agent-branches`, GitHub `alexeygrigorev/agent-branches`.
-  - Agent Dashboard: `~/git/agent-dashboard`, GitHub `alexeygrigorev/agent-dashboard`.
-  - Agent Quota Launcher: `~/git/agent-quota-launcher`, GitHub `alexeygrigorev/agent-quota-launcher`.
-  - Agent Coordination, agents talking across computers: `~/git/agent-coordination`, GitHub `alexeygrigorev/agent-coordination`.
-  - Agent Bus, the message bus, separate from aplexer: `~/git/agent-bus`, GitHub `PocketShell-io/agent-bus`.
-- This repo, `~/git/cloudflare-agent-git` (GitHub `alexeygrigorev/cloudflare-agent-git`), holds the portfolio-level docs and the principal's tasks.
-- The team is a self-running department of AI agents that coordinate among themselves. The founder joins only for daily standups.
-- Build in public. Once ideas converge, build small prototypes and use our own tools for our own work straight away.
-- Agent Branches solves the founder's own pain: every worktree copies the whole workspace and fills the disk, worst of all with Rust builds. The product must not be Rust-focused.
-- Agent Branches needs a CLI the founder can demo, including a `branches sync git` style command that syncs everything to Git.
-- The Cloudflare integration sits behind a facade so we can switch platforms later.
-
-## 2. Roles and accountability
-
-- Founder (Alexey, the human): accountable for goals, money, accounts, the final contest entry and the daily standup. Never babysits agents or chases status.
-- Root (coordinator): one interactive session on Win35. It is the founder's interface and follows every request through to a delivered result. It monitors and repairs stalled work on Win35 and Hetzner, coordinates Hetzner from Win35, runs useful work of its own, and uses the browser when a task needs it. It never writes product code, reviews every page or approves routine work.
-- Principal: one interactive session, or two peers. Accountable for the big picture across all teams: coverage, priorities, dependencies, challenges, course correction and high-level issues. It coordinates the heads. It never implements or reviews product code and never runs its own execution team.
-- Head: one interactive session per product. Accountable for its product's tracker, backlog, workers, reviewers, integration and next task. It is never the only worker and never accepts its own work.
-- Team: each product's head plus the workers and reviewers it starts.
-- Worker: a short-lived agent that does one scoped task (code, research or tests) and exits. It usually runs headless, without a terminal window. It never accepts or reviews its own output.
-- Reviewer: a distinct agent on a different model. It gives a verdict on the exact version under review and never changes the thing it reviews.
-- Supervisor: a mechanical service, not a model. It handles wake-ups, due checks and safe message delivery, and never makes judgments or approves work.
-- Writer: Claude Opus. It writes the daily report prose and nothing else.
-- The principal and heads keep long-lived context.
-- The principal does not do the work: simple ad hoc requests go to a subagent, and substantial work goes to a head, which runs as many zcodex workers as the work allows.
-- Heads orchestrate: they split work into independent tasks, run many workers in parallel, and delegate review to separate reviewer agents.
-- If there are two principals, they check each other periodically, and root checks them from outside.
-- Every agent reads this document at startup and knows its role before it acts. An agent's role is the one its launch prompt assigns.
-
-## 3. Autonomy requirements
+## Autonomy requirements
 
 ### Nonstop, proactive work
 
@@ -99,7 +66,7 @@
 - Hard design questions get several subagents looking from different angles.
 - A running process, a busy screen or a label is not proof of work. Unknown numbers stay unknown.
 
-## 4. How work flows
+## How work flows
 
 ### The tracker
 
@@ -126,7 +93,7 @@
 - Workers start headless with permission prompts skipped; only principals, heads and a few chosen sessions run in a normal interactive UI.
 - There is no fixed cap on team size. Run as many workers as there are independent tasks and capacity, and never invent work to raise the count.
 
-## 5. Git workflow
+## Git workflow
 
 - No pull requests: commit and push straight to main.
 - Always commit and push requested docs and records. A chat reply or an uncommitted file is not done; verify the push before reporting.
@@ -139,7 +106,7 @@
 - Never delete existing worktrees or dirty or unmerged work; cleanup touches only disposable scratch with a known owner.
 - Count commits per repository by unique SHA, hour by hour. Commits are activity, not accepted results.
 
-## 6. Resources
+## Resources
 
 Numbers here are rules, never measurements. Take fresh readings before every launch, and never reuse a balance or sample quoted in a document or an old report.
 
@@ -176,7 +143,7 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 - Messaging between agents costs close to nothing. Prefer the simplest design over metered storage.
 - No purchases, credits, billing changes, new paid services or AWS compute.
 
-## 7. Documentation rules
+## Documentation rules
 
 - All documentation lives in `_docs/`. Names there are lowercase kebab-case.
 - This document is the one policy document, and holds the mission in section 1.
@@ -190,7 +157,7 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 - Journals are not appended in the repo. The agents bus is the log, and private or long evidence goes in git-ignored `.local/`.
 - Never delete a file to tidy up without first pushing a tag that keeps it readable.
 
-## 8. Public journal and editorial rules
+## Public journal and editorial rules
 
 - Follow the `daily-writeup` skill (`.claude/skills/daily-writeup/SKILL.md`) for the daily article; it wins wherever another editorial rule disagrees.
 
@@ -236,7 +203,7 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 - Capture visitors' emails through Relay, the same way as the PocketShell site, with double opt-in and no stored addresses or tokens.
 - Claude Opus 5.5 writes the article about this way of working, with illustrations and diagrams, only after the founder accepts this document.
 
-## 9. Runtime and continuation design
+## Runtime and continuation design
 
 - The continuation runtime keeps work moving without the founder: a process plus the software that enforces it (the trackers, the supervisor, the launcher, the agents bus and the heads). Its design is in `_docs/runtime-design.md`.
 - A rule counts as installed only once it passes its acceptance test.
@@ -274,7 +241,7 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 - The runtime is accepted only after two useful cycles (task, review, accepted, next task started) with both root and principal absent, plus recovery from worker, reviewer and host failures.
 - Each undecided runtime or process item is an issue in this repo (issues 100 and 101) with a named owner.
 
-## 10. Security and privacy
+## Security and privacy
 
 - The repo and the issue trackers are public.
 - Secrets, keys, tokens, host addresses, quota balances, private paths, personal data, raw logs, raw transcripts, private dashboards and private evidence never go into the repo, issues, reports, the site or prompts.
