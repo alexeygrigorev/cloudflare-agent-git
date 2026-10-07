@@ -257,3 +257,41 @@ Facts were checked against the sources. Anything the sources do not state direct
 - **Root cause:** The seed commit copied only two directories. The merge combined two branches made before the restore.
 - **What was changed:** The launcher was restored at the root with an independent review. The fallback that masked the failure was ruled a violation.
 - **Sources:** `research/antigravity/recovery/REPAIR-SEED-CLI-COMPLETENESS.md`, `research/antigravity/reviews/REV-SEED-CLI-ACDDFA7.md`, `research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md`
+
+### 30. Website deployed on every push despite a design hold
+
+- **Date:** 2026-10-03, morning.
+- **What happened:** A live homepage check failed on layout drift. The publish workflow was building and deploying the site on every push to main, although the design was marked "held".
+- **Root cause:** As stated: the design hold "was documentation, not an enforced production gate".
+- **What was changed:** Commit `48e698d` removed the push triggers from the workflow. Manual dispatch and release-tag deploys remain.
+- **Sources:** `coordination/codex.md`, `research/codex/oversight-human31.md`
+
+### 31. Muse head killed for memory; a Rust build blew through its disk cap; mailbox watches ran out
+
+- **Date:** 2026-10-03, early morning to about 10:11 UTC.
+- **What happened:**
+  - The Muse head reached its 2 GiB memory limit and was killed twice.
+  - A shared Rust build target grew far beyond its 512 MiB growth cap, and free root disk fell from 132 to 116 GiB between checks.
+  - Native `message wait` started failing with "Too many open files", because 125 of the 128 allowed inotify instances were in use.
+- **Root cause:** Parallel child processes inside the Muse head's memory limit (stated as suspected). The shared build target had no enforced growth limit. Many agent CLI processes each held inotify watches.
+- **What was changed:** Parallel workers start as separate sessions with their own caps. Further compilation was held, and a build guard was added. Agents fell back to polling the inbox instead of waiting. Nothing was killed or deleted, and no kernel limits were changed.
+- **Sources:** `research/claude/standup-2026-10-03.md`, `research/orchestrator/heartbeat-20261003T0224.md`, `research/codex/oversight-human31.md`, `research/antigravity/INOTIFY-RESOURCE-DIAGNOSIS.md`, `coordination/antigravity.md`
+
+### 32. Duplicate executions: one tool call, two side effects
+
+- **Date:** First reported 2026-10-02 around 21:24 UTC. Related duplicates on the bus on 4 and 5 Oct.
+- **What happened:** In the zcodex runtime one model tool call produced two durable effects within the same second. Later, on 2026-10-04 at 23:27:48 and 23:27:49 UTC, the message bus delivered two byte-identical replies for one review result.
+- **Root cause:** For zcodex, the default path started the inner ZCode CLI in auto-approve mode while the outer Codex runtime also ran the same streamed calls. For the bus, when no idempotency key was given the bus generated a random one, so de-duplication never matched. What triggered the second bus send is stated as unknown.
+- **What was changed:** A spawn-mode fix for zcodex was merged; at the time the installed binary had not been updated. The bus now derives reply keys from target, sender and content hash (bus commit `f91901d`). A review accepted it as bounded. No exactly-once guarantee is claimed.
+- **Sources:** `research/orchestrator/heartbeat-20261002T2154.md`, `research/codex/oversight-human31.md`, `research/antigravity/recovery/REPORT-BUS-REPLY-IDEMPOTENCY-DIAGNOSIS.md`, `research/antigravity/reviews/REV-BUS-DEFAULT-IDEMPOTENCY.md`
+
+### 33. First-day startup stalls and wrong session identity
+
+- **Date:** 2026-10-02, evening.
+- **What happened:**
+  - The root disk was 98% full when the experiment started.
+  - The Muse and Space Bunny sessions produced zero-byte logs for 30 minutes and were stopped.
+  - Tools started by the Codex principal loaded a saved shell snapshot that carried another session's identity, so native messaging was withheld until this was fixed.
+- **Root cause:** The free provider route for Muse and Bunny had no auth entry, so the CLI waited; the recovery note says local init was never the blocker. The identity problem came from stale declarations in the shell snapshot.
+- **What was changed:** Muse and Bunny moved to the authenticated provider route. The principal resumed the same saved conversation with the shell snapshot disabled, and its identity was verified with real messages.
+- **Sources:** `research/orchestrator/heartbeat-20261002T1850.md`, `coordination/opencode-recovery.md`, `coordination/INTERACTIVE-SESSIONS.md`
