@@ -2684,3 +2684,8 @@ Actual Antcfdc startup03:43:21/firsttool03:43:32/ownwhoami03:43:38 now has genui
 ## Continuation Runtime process and outcome metrics
 
 Latesthuman naming Continuation Runtime supersedes ContinuousOperations; oldhub URLsredirect/historyretained. Newcanonical [hub](continuation-runtime/README.md), [TASK-FLOW](continuation-runtime/TASK-FLOW.md), [METRICS](continuation-runtime/METRICS.md) define partialcurrentenforcement, canonicalacceptedresolveduniqueIDs, alignedproject-windowagents/commits/taskstats and unknownhistoricaltimestamps. AntC3110 scopedACKretained; Dashboard/publicimplementation ownerACKpending, no totals/installation/sourceleases invented. Intake research/codex/continuation-runtime-process-metrics-intake-20261007.md; heads own code/QA/integration.
+
+
+## C3120 Win35 actual execution accountability
+
+Desktopc2-74e4 humansteering read/ACKed, principalBusrequestc5-ace1/sourceleaseunchanged and exactDNS followupc6-8004/rootc6-afa3 executed. Independentactualouterexec05:09:11/05:10:46 journalwrites confirmed despite displayedmodeldenial; actualprobe255 cannotresolvewin35/noSSHalias, nothostoffline/authfault/noexecution. Sourcepins2016/826f are cloudflareNOTagent-bus; physicaldeployment/adoptionOPEN/newBussemanticACKpending. Antc5-fd73 strictdeliverNOTREADYlaterPTY retained,33TASKSrunning/11ready notactor/admissions;29141callbackpending. [Owned C3120 evidence](../research/codex/win35-execution-recovery-c3120-20261007.md) preservesexactrelayedhumanquote and nextowner/actualprobe/result limits; no registerownershipinferred.
