@@ -1,0 +1,3 @@
+Rescued verbatim human text. Source: coordination/continuation-runtime/REQUIREMENTS.md:33 (commit 7a0b82c; CR-R005, supplied by the principal, earlier in that chat).
+
+I need you to think about the system where the work continuous. launch subagents here to think about it (as simple.codex subagents) from different angles and then implement it. have a period check that pings you to wake up and check status. have the same for heads. have backup plans for situations where you or one of the heads became unavailable because usage limits or downtime

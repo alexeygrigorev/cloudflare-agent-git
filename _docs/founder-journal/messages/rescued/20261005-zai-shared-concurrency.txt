@@ -1,0 +1,5 @@
+Rescued verbatim human text. Source: research/codex/zai-shared-concurrency-intake-20261005.md:5-7 (commit 7a0b82c; relayed by the principal).
+
+zai is reporting rate limiting. how many zai agents are we running in parallel? check this project and projects outside to know the total
+
+we will use this number as the max number of concurrent sessions for zai

@@ -1,0 +1,5 @@
+Rescued verbatim human text. Source: research/codex/maintained-launcher-capacity-intake-20261005.md:5-7 (commit 7a0b82c; speech-to-text dictation).
+
+so what's cats need to you to use is not this but the project that we have for spawning remember Spalding agents remember this this tool that we have so we should incorporate it in the tool and the hats would just simply request the tool to spawn an agent for them and that's all there it needs so what we can do is if we don't have this tool or it's not visible yet to push it to the state where it is and it is done so before that stock market but after it's done start using the tool so let's push
+
+so in addition to being quarter aware the tool would also know how many agents are also running right now off certain kind I need can decide capacity of the engine what to run and what not to

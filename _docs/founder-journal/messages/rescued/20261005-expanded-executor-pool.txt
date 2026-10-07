@@ -1,0 +1,7 @@
+Rescued verbatim human text. Source: research/codex/expanded-executor-pool-intake-20261005.md:5-9 (commit 7a0b82c; relayed by the principal).
+
+we can run agy and codex got Luna 6 max as executors too
+
+we can also throw in sonnet 5.5
+
+with all in as executors plus muse 1.3 we can hit 50 concurrent agents

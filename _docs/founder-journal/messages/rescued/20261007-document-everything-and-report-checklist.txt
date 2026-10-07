@@ -1,0 +1,3 @@
+Rescued verbatim human text. Source: coordination/continuation-runtime/REQUIREMENTS.md:25 (commit 7a0b82c; CR-R003, supplied by the principal).
+
+everything I say now or said before about the continuation runtime and process should be documentrdd and also the suggestions from agents that I asked to research and come up with ideas we should save them too in one place and see where we are. make sure to include that in the standup report every day. let's have a checklist of things to be included in the report based on my previous input and have it in the instructions for the writing agent. it should be a literal checklist that the agent can use to check off items

@@ -1,0 +1,3 @@
+Rescued verbatim human text. Source: coordination/continuation-runtime/REQUIREMENTS.md:21 (commit 7a0b82c; CR-R002, supplied by the principal).
+
+yes I like the name continuation runtime this is how I'll refer to it. but also process not only runtime. how are we enforcing that the tasks from the task tracker are flowing through? we also need to Have a metric that shows activity. we already measure number of active agents and number of commits. let's also measure the number of tasks resolved. all that should be in the dashboard and also we include that in our public website

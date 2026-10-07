@@ -1,0 +1,15 @@
+Rescued verbatim human text. Source: research/codex/continuation-fresh-principal-intake-20261007.md:44-56 (commit 7a0b82c; also REQUIREMENTS.md:449-461; supplied by the principal).
+
+so I need you to appoint a head that will be reponsible for implementing it. let's pick codex for that task
+
+the claude agent (48718d76-be9e-43cb-aeee-a3d14358ab4e) that was supposed to start 5 tasks also was waiting for the ping. the current system is seriously broken
+
+I asked you to start claude with /goal but you dind’t do it -why?
+
+or maube I’m looking at the wrong agent?
+
+Ant replied but the reply was asycn and it didn’t wake up the agent. so we need to have this in design too
+
+the docs agent is working with docs
+
+codex and claude can use /goal, others might not so we need a way to supervise them
