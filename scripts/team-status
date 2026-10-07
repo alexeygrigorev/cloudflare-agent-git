@@ -14,15 +14,27 @@ HEADS = (
     "bus-head",
 )
 
-METRICS = (
-    "active agents (target 50)",
-    "idle time of principals and heads (target 0)",
-    "resolved tasks today (target 200)",
-    "tasks created today (target 250)",
-    "commits today (target 2000)",
-    "founder messages today",
-    "cloud cost this month (target at most USD 5)",
-    "free disk",
+# The targets are the ones in _docs/06-metrics.md. Keep the two in step.
+# Each entry is (metric, target).
+TARGETS = (
+    ("active agents", "50 working at the same time"),
+    ("idle time of principals and heads with ready work", "0"),
+    ("founder messages", "only for the founder-only decisions"),
+    ("founder reminders and manual rescues", "0"),
+    ("cloud cost this month", "at most USD 5"),
+    ("free disk on the root disk", "at least 20 GiB"),
+    ("memory per worker", "at most 1500M"),
+    ("resolved tasks per day", "200 across all projects"),
+    ("resolved tasks per day, continuation runtime", "50"),
+    ("resolved tasks per day, Agent Branches", "40"),
+    ("resolved tasks per day, Quota Launcher", "30"),
+    ("resolved tasks per day, Agent Coordination", "30"),
+    ("resolved tasks per day, Agent Dashboard", "25"),
+    ("resolved tasks per day, Agent Bus", "25"),
+    ("tasks created per day", "250"),
+    ("commits per day", "2000 across all repositories"),
+    ("features done per week", "100 across all products"),
+    ("tokens used", "no target is set"),
 )
 
 
@@ -30,8 +42,8 @@ def main():
     print("team-status is not implemented yet. See issue 103.")
     print()
     print("Metrics:")
-    for name in METRICS:
-        print(f"  {name}: unknown")
+    for name, target in TARGETS:
+        print(f"  {name}: unknown (target: {target})")
     print()
     print("Heads:")
     for tag in HEADS:
