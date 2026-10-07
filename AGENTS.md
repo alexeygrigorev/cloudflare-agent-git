@@ -1,5 +1,9 @@
 # Cloudflare agent Git competition
 
+## Continuous Operations startup navigation
+
+Principals and heads read [Continuous Operations](coordination/continuous-operations/README.md) at startup alongside the existing role and resource contracts. Use its current status, plan, decisions and evidence index to distinguish implemented source, runtime acceptance and unresolved work; record actual custody and first action rather than treating a documented plan as completion.
+
 ## Scale-50 solution follow-through — human 6 October 2026
 
 Follow [SCALE50-RECOVERY-PLAN](coordination/SCALE50-RECOVERY-PLAN.md), accepted by the human and recorded verbatim in [the latest instruction](experiment/human-scale50-solution-followthrough-20261006.txt). Every existing 30-minute coordinator check compares the five repair streams and due tracker checkpoints with actual outcomes. Agents report problems together with diagnosis and mitigation already executed, evidence/results, independent verification and resumed work, current owner and next action/checkpoint; a blocker-only report is insufficient. Principals and heads proactively resolve or hand off problems and continue independent useful work between desktop checks. Preserve current ownership ACKs, all resource/privacy/identity/review gates and existing services; no duplicate scheduler, watcher or writer. The requested scale coordination helper uses GPT-6 Luna at max effort, not Sol.
