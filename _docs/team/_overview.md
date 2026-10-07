@@ -16,9 +16,12 @@ Each of the five products has its own team, repo and tracker. A team is the head
 - Implementer. A short-lived agent that builds one scoped task and exits. See implementer.md.
 - Reviewer. A distinct agent on a different model. It reads the change, runs and tests it, and gives a verdict on the exact version under review. It never changes what it reviews, other than adding tests. See reviewer.md.
 
-## Services and writing
+## Services
 
 - Supervisor. A mechanical service, not a model. It handles wake-ups, due checks and safe message delivery, and never makes judgments or approves work.
+
+## Writing
+
 - Writer. Writes the daily report and nothing else. See writer.md.
 
 ## How they fit together
