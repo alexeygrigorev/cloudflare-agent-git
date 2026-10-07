@@ -70,14 +70,12 @@
 
 ### The tracker
 
-- Track tasks in plain, public GitHub issues with proper labels, and no GitHub Project.
-- Each product's tracker is the issues of its GitHub repo (section 1), owned by its team. The principal owns the high-level tasks, as issues in this repo.
+- Every project uses the issues of its own GitHub repo for tracking, with proper labels and no GitHub Project. The project's team owns its tracker. The principal owns the high-level tasks, as issues in this repo.
 - The tracker is usable, visible to the founder and always available.
 - Now and then, go back through all of the founder's messages and point out what we are not doing yet.
 - A principal dependency issue links to the product issue; the same task is never copied into two trackers.
 - An issue closes only when its accepted, reviewed outcome exists. Work waiting for review stays open, and a failed acceptance reopens the issue.
 - An issue assignment does not grant edit rights and does not prove the owner accepted the task.
-- The everyday tracker commands are in `_docs/process/github-task-tracker.md`, and the map from old task IDs to issues is in `_docs/task-tracker/`.
 
 ### Claims and coordination
 
@@ -159,7 +157,7 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 
 ## Public journal and editorial rules
 
-- Follow `_docs/team/writer.md` for the daily article; it wins wherever another editorial rule disagrees.
+- Follow the `daily-writeup` skill (`.claude/skills/daily-writeup/SKILL.md`) for the daily article; it wins wherever another editorial rule disagrees.
 
 ### Who does what
 
