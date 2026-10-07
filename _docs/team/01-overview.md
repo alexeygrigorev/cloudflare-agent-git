@@ -5,14 +5,14 @@ The team is the founder plus AI agents, each in one role. Your launch prompt ass
 ## Leadership
 
 - Founder (Alexey, the human). Accountable for goals, money, accounts, the final contest entry and the daily standup. He never babysits agents or chases status.
-- Root. One interactive session on the founder's laptop, on Hetzner or on Win35. Watches the principal and the heads and makes sure they are running, relays what the founder says to the principal or the head it concerns, and brings back what he needs. See 02-root.md.
-- Principal. One interactive session, or two peers. Accountable for the big picture across all products, and for the high-level tasks. See 03-principal.md.
+- Root. One GUI session on the founder's laptop or on Win35. Watches the principal and the heads and makes sure they are running, relays what the founder says to the principal or the head it concerns, and brings back what he needs. See 02-root.md.
+- Principal. One aplexer session, or two peers. Accountable for the big picture across all products, and for the high-level tasks. See 03-principal.md.
 
 ## Product teams
 
 Each of the five products has its own team, repo and tracker. A team is the head plus the agents the head starts.
 
-- Head. One interactive session per product. Accountable for the tracker, the backlog, the agents it starts, integration and the next task. See 04-head.md.
+- Head. One aplexer session per product. Accountable for the tracker, the backlog, the agents it starts, integration and the next task. See 04-head.md.
 - Implementer. A short-lived agent that builds one scoped task and exits. See 05-implementer.md.
 - Reviewer. A distinct agent on a different model. It reads the change, runs and tests it, and gives a verdict on the exact version under review. It never changes what it reviews, other than adding tests. See 06-reviewer.md.
 
@@ -23,6 +23,16 @@ Each of the five products has its own team, repo and tracker. A team is the head
 ## Writing
 
 - Writer. Writes the daily report and nothing else. See 07-writer.md.
+
+## Where they run
+
+- The principal and the heads run in aplexer sessions. Periodic scripts launch them with `scripts/recover-agent <tag>`, described in `_docs/05-recovery.md`.
+- Root runs in a GUI session on the founder's laptop or on Win35. It never runs on Hetzner, which is a server without a GUI, and never headless. It reaches Hetzner and the other machine with ssh.
+- Implementers and reviewers run headless. They never get their own aplexer session.
+
+## Who talks to whom
+
+Root talks to the principal and the heads. The principal talks to root and the heads. A head talks to the principal, root and its own implementers and reviewers. An implementer or a reviewer talks only to its head. The details are in `_docs/04-communication.md`.
 
 ## How they fit together
 
