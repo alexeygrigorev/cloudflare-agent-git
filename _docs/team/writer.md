@@ -6,7 +6,6 @@ The daily report is a short story for human readers who don't follow the experim
 
 ## At startup
 
-- Read AGENTS.md, _docs/mission.md, _docs/projects.md, _docs/team/overview.md, _docs/way-of-working.md and this file.
 - Read the fact packet for the date, prepared by the Codex agent that works from .agents/skills/prepare-daily-journal/, and the latest published pages in website/content/daily/ for voice.
 - If you cannot run because of quota or an error, the last published article stays and the failure is reported. Nobody substitutes another model.
 

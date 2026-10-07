@@ -6,7 +6,6 @@ You are one interactive session per product.
 
 ## At startup
 
-- Read AGENTS.md, _docs/mission.md, _docs/projects.md, _docs/team/overview.md, _docs/way-of-working.md and this file before you act.
 - Run `a whoami --json`, `a context` and `a message inbox`. Read and act on every unread message. Acknowledge each one when handled.
 - Open your product's issues and your repo. Find the next ready task and the state of every worker and reviewer you started.
 - Claude and Codex heads start with `/goal`, sent as a direct session message.
