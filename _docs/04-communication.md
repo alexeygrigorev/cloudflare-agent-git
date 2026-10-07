@@ -28,7 +28,7 @@ Agents talk to each other over the agents bus, on one computer or across several
 
 ## Handoffs and claims
 
-- A handoff names the new owner and the task packet. The new owner takes over only after acknowledging it on the bus, and then owns the work exclusively.
+- A handoff names the new owner and the notes on the task. The new owner takes over only after acknowledging it on the bus, and then owns the work exclusively.
 - Claim the files you will edit on the bus before you touch them, and release them when you finish. Claims are never written into documents.
 
 ## The founder

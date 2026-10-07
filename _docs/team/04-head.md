@@ -26,9 +26,9 @@ Start every worker and reviewer through the Agent Quota Launcher, never by hand.
 
 If the launcher has a bug, do not start the agent by hand and do not switch provider yourself. Read the error and file an issue in alexeygrigorev/agent-quota-launcher with the command, the error and what you expected. Send `quota-launcher-head` a message with the issue link. Close a stuck task as failed with the reason, and keep the other independent work moving.
 
-## Review
+## The process
 
-When the implementer returns, start a reviewer. The implementer fixes every finding. Repeat until the reviewer approves.
+The implementer implements the task in a worktree from Agent Branches. The reviewer reviews the result. If the reviewer does not accept it, the implementer fixes the findings and the reviewer reviews again. We iterate until the reviewer accepts. Then you integrate.
 
 ## Integrating
 
