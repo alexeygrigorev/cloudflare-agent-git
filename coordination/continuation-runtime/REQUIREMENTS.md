@@ -423,3 +423,21 @@ Oct3 20:18 CEST dictated text and its explicitly flagged interpretation remain i
 ### Coverage and remaining provenance gaps
 
 This bounded register inventories **50** human-text files, one coordinator human-summary file, the early numbered/direct-principal instruction log, current enacted steering/policies and six latest literal direct-chat statements supplied by the principal. Agent evidence/recommendations are indexed in IDEAS. It does not claim all historical chat messages, screenshots, laptop-local sources or private engine histories have been recovered. Earlier requirement wording found only in an enacted policy is labelled policy/interpretation, not reconstructed verbatim. Latest wake timing thresholds are principal repair-contract details, not fabricated quotes. Relevant unlocated authored laptop analysis, exact current-chat message IDs/times, historical closed-task acceptance times and loaded runtime provenance remain explicit gaps. Next intake owner is the principal; preserve new originals and map them to these stable IDs without deleting older failures or supersession history.
+
+## CR-R029 — latest fresh-principal correction, 7 October 2026
+
+Direct-chat supplied by the genuine principal; precise human utterance wall times unavailable. Literal statements:
+
+> I see that you’re idle again. why? didn’t we discuss a way to address it?
+
+> something should be waking you up and it wasn’t.
+
+> if it happens the heads should elect a new principal and this didn’t happen either
+
+> by elect I mean start a new one - it’ll be easier than promoting a head to a principal
+
+**Supersession:** election means a fresh normal interactive principal session after verified unavailable role, not promoting a project head. This supersedes HS-039's older promotion clause and the promotion interpretation of CR-R004/024; those originals remain historical. Heads retain project scope. Current active principal is not to be duplicated.
+
+**State:** requested clarification/documented; executed autonomous runtime acceptance OPEN. Existing Ant supervision source owner implements through external maintained-launcher tasks and distinct review; principals coordinate. A stale recovery tag, candidate event, source test or repeated live-head timer is not a verified fresh principal start.
+
+**Acceptance:** monitored three-minute wake/original safe message and accepted semantic deadline; then fresh-provider/resource admission, durable whole-role intake/cursors/history/private drafts, exclusive principal epoch fencing, actual new actor identity/ACK/useful coordination, protected project leases and two useful absent-principal/head cycles. Busy/draft/currently responsive/duplicate/stale-epoch negatives must pass; no forced input or silent source transfer. [Detailed intake and observed missed runtime](../../research/codex/continuation-fresh-principal-intake-20261007.md). Include this requirement and progress/failed gates in each daily Continuation Runtime section. No TASKS status or owner acceptance is created by this documentation entry.
