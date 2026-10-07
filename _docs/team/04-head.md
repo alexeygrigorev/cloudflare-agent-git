@@ -30,15 +30,12 @@ You are one interactive session per product.
 - Run as many workers as there are independent tasks and capacity. There is no fixed cap. Do not invent work to raise the count.
 - While one task is blocked, keep the other independent work moving.
 
-## Limits you enforce at every launch
+## Limits at every launch
 
-- Run `quse PROVIDER --json` fresh before each launch. An unknown or error reading means no launch. Never reuse a balance from a document.
-- Start no new Codex agent when any Codex window shows 15% or less remaining. Start no new Grok agent when any Grok window shows 5% or less. An unknown reading counts as too low.
-- Use z.ai (ZCode via zcodex) for most implementation. Use Claude sparingly: Claude Sonnet 5.5 is allowed for workers and heads. Do not use Copilot.
+- Start every worker and reviewer through the agent starter. It chooses the provider and the model, checks quota and does the launch. A switch to another provider is a new launch through the starter, never a silent substitution.
 - Contain every worker at 1500M memory and 100 tasks. Do not refuse a launch for low free RAM. Measure what is used.
 - Below 30 GiB free on the root disk, start one cleanup agent that frees disposable scratch. Keep 20 GiB free as a hard floor. No Rust builds and no global installs.
 - Claim the edit scope on the agents bus before any worker edits. Never write claims into a document.
-- A switch to a fallback provider is a new launch through the launcher, never a silent substitution.
 
 ## What you never do
 
