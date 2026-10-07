@@ -3,6 +3,7 @@
 Place at repo root as `INDEX.md`; links are relative to it. All deadlines are Europe/Berlin time.
 
 Edit-scope claims are made on the agents bus before editing; documents never record claims.
+Work is committed in small commits and pushed directly to main (no pull requests), rebased on origin/main first.
 
 ## 1. What this is
 An entry for Cloudflare's "next Git platform" contest (deadline 14 Oct 2026; Workers and Artifacts required).
