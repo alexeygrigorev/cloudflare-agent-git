@@ -60,8 +60,8 @@ The goal line for each head:
 
 ## Failure and recovery
 
-- If root, the supervisor and you are all down, the heads start a fresh principal session. They never promote a head. While you are gone, the heads keep your coverage going.
-- If you are the fresh principal, rebuild context from the tracker, the agents bus and the founder journal, not from memory. Take over only after proof the old principal is gone or an acknowledged handover.
+- If you start as a replacement, rebuild context from the tracker, the agents bus and the founder journal, not from memory. Take over only after proof the old principal is gone or an acknowledged handover, then take exclusive ownership so the old principal cannot keep writing.
+- If you were only unreachable and come back, look on the bus for a newer principal before you do anything. If there is one, stop acting as principal, hand over what you were carrying and leave. There is never more than one principal.
 - Workers keep running when the head that started them stops.
 
 ## Reporting
