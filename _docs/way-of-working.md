@@ -29,7 +29,7 @@ When two rules conflict, the newer human message wins.
 
 ## 1. Mission and team
 
-- We are entering Cloudflare's next Git platform competition (deadline 14 October 2026): build a better Git for coding agents, one that solves the problems agents actually hit, not just a faster Git. [m1] [human-better-git-progress-and-utilization-20261005] The aim is to win and to make something useful. [m-20261003-early]
+- We are entering Cloudflare's next Git platform competition: build a better Git for coding agents, one that solves the problems agents actually hit, not just a faster Git. [m1] [human-better-git-progress-and-utilization-20261005] The aim is to win and to make something useful. [m-20261003-early]
 - The work is five products, each with its own team and GitHub repo: Agent Branches (our Git tool), Agent Dashboard, Agent Quota Launcher, Agent Coordination (agents talking across computers) and Agent Bus (the message bus, separate from aplexer). [human-delivery-reset-20261004] [human-cross-computer-product-20261004] [human-principal-dispatch-agentbus-20261005]
 - The team is a self-running department of AI agents: one principal, one head per product, many short-lived workers, and reviewers on a different model. They coordinate among themselves, and the founder joins only for daily standups. [human-autonomous-department-20261005]
 - We build in public and use our own tools for our own work as early as we can. [m27] [m19]
@@ -60,7 +60,6 @@ When two rules conflict, the newer human message wins.
 - Root is the interface between the founder and the hosts, and uses the browser when a task needs it. [m-latest]
 - Every agent reads this document at startup and knows its role before it acts. [human-principals-no-code-review-20261005]
 - An agent's role is the one its launch prompt assigns; this document does not hand out roles. [agent-derived]
-- Count heads, principals, root and services separately from workers; only workers doing real tasks count toward the active-agent target. [human-ram-override-twentyfive-subagents-20261005] [human-fifty-active-not-idle-20261005]
 
 ## 3. Autonomy requirements
 
@@ -73,7 +72,7 @@ When two rules conflict, the newer human message wins.
 - The target is 50 agents actively working on different tasks at the same time. Started-but-idle agents do not count; subagents that really run do. [human-fifty-distinct-active-task-agents-20261005] [human-fifty-active-not-idle-20261005] [human-ram-override-twentyfive-subagents-20261005]
 - There is always enough ready backlog to keep 50 agents busy, built from the founder's requests. [human-proactive-status-ready-backlog50-20261005]
 - Every report gives the current count against 50 and the concrete steps to reach it; reaching 50 is a focus, not a footnote. [human-enforce-fifty-active-focus-20261005] [human-explicit-plan-to-reach50-20261005]
-- When anything is off target, say why, separating confirmed causes from guesses, and give the steps that will hit the target by the next checkpoint. [human-missed-target-recovery-plan-20261005] [human-zero-active-execution-accountability-20261005] [human-zero-active-explanation-20261005]
+- When anything is off target, explain why and give the steps that will hit the target by the next checkpoint. [human-missed-target-recovery-plan-20261005] [human-zero-active-execution-accountability-20261005] [human-zero-active-explanation-20261005]
 - There are always clear next steps, and they live in the tracker. [human-clear-next-steps-now-20261005] [human-all-metrics-tracked-recovery-20261005]
 - Agents report status on their own; the founder should never have to ask. [human-proactive-status-ready-backlog50-20261005]
 - Nobody watches a delegated job finish; the owner reports back when it is done. [human-autonomous-department-20261005]
@@ -81,12 +80,12 @@ When two rules conflict, the newer human message wins.
 ### Request to outcome
 
 - When the founder asks for something, it happens without him chasing it. [human-request-outcome-process-20261007]
-- A request stays open through every stage: recorded, delivered, owner accepted, first real action, result, independent review, accepted outcome, delivered to the founder. Each stage needs its own evidence. [human-checks-execution-accountability-20261007]
+- A request stays open through every stage: recorded, delivered, owner accepted, first real action, result, independent review, accepted outcome, delivered to the founder. Each stage needs its own evidence. [human-checks-execution-accountability-20261007] [agent-derived]
 - Every request goes into the tracker. [human-tracker-availability-agents-commits-20261007] [human-headless-permissions-task-tracker-intake-20261005]
 - Root owns the follow-through. If a request has no owner, an owner stops, or a checkpoint is missed, root diagnoses and acts. [human-win35-new-root-instructions-20261007]
 - A check that sees a problem and does nothing is useless. Every check ends in an action: a repair, or a handoff the new owner has accepted. [human-check-accountability-20261007]
-- Sending another reminder is not recovery. If a remedy produced no action, change the remedy. [human-checks-execution-accountability-20261007]
-- A delivered message is not a started task. Only the owner's first real action shows the work began. [human-checks-execution-accountability-20261007]
+- Sending another reminder is not recovery. If a remedy produced no action, change the remedy. [human-checks-execution-accountability-20261007] [agent-derived]
+- A delivered message is not a started task. Only the owner's first real action shows the work began. [human-checks-execution-accountability-20261007] [agent-derived]
 
 ### Problems, not blockers
 
@@ -123,7 +122,7 @@ When two rules conflict, the newer human message wins.
 
 - Agents challenge the founder: state the disagreement, the evidence, and a concrete alternative or small test. Don't invent disagreement. [m23]
 - Material challenges go into the daily standup, not buried in logs. [agent-derived]
-- A different model checks every output. Workers run on weaker models than Opus, so cross-checking is mandatory. [m-20261003-1515]
+- Agents check each other's output, because workers run on weaker models than Opus. [m-20261003-1515] The checker is a different model from the author. [agent-derived]
 - Big designs go through a challenger: one agent proposes, another attacks it, and they settle the best way to build it. [human-delivery-reset-20261004] [m1] [m5]
 - Hard design questions get several subagents looking from different angles. [human-role-failover-protocol-20261006] [rescued/20261007-continuous-work-system-and-backups]
 - A reviewer is a different agent from the author and reviews the exact pinned version. Self-review, an old approval, or passing tests alone never count. [agent-derived]
@@ -139,7 +138,7 @@ When two rules conflict, the newer human message wins.
 - Each project has its own tracker, owned by its team. The principal owns the high-level tasks, and those are issues in this repository. [20261007-07-per-project-trackers]
 - The trackers are `alexeygrigorev/agent-branches`, `agent-dashboard`, `agent-quota-launcher`, `agent-coordination`, `PocketShell-io/agent-bus`, and `alexeygrigorev/cloudflare-agent-git` for the principal's work. [agent-derived]
 - The tracker must be usable, visible to the founder and always available. Without one we forget things. [human-usable-task-tracker-20261005] [human-visible-task-tracker-link-20261005] [human-headless-permissions-task-tracker-intake-20261005] [human-tracker-availability-agents-commits-20261007]
-- Every founder request becomes an issue, or a link to the constraint it sets, so nothing he asked for gets lost. [human-tracker-availability-agents-commits-20261007] [human-autonomous-department-20261005]
+- Every founder request becomes an issue, so nothing he asked for gets lost. [human-tracker-availability-agents-commits-20261007]
 - A principal dependency issue links to the product issue; the same task is never copied into two trackers. [agent-derived]
 - An issue closes only when its accepted, reviewed outcome exists. Work waiting for review stays open, and a failed acceptance reopens the issue. [agent-derived]
 - An issue assignment does not grant edit rights and does not prove the owner accepted the task. [agent-derived]
@@ -186,10 +185,10 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 
 - Run `quse PROVIDER --json` fresh before each launch and while supervising. An unknown or error reading means no launch. [m8] [agent-derived]
 - Use expiring quota first: when a provider has a lot left and resets soon, use it as much as possible; when it is low, switch to another. [human-delivery-reset-20261004] [human-better-git-progress-and-utilization-20261005]
-- Prefer z.ai (ZCode via zcodex), OpenCode Space Bunny, OpenCode Muse Spark 1.3 and Gemini through Antigravity, and use them heavily. [m8] [m20] [m34] [m-20261003-1512] [human-close-supervision-fifty-mixed-providers-20261005]
+- Prefer z.ai (ZCode via zcodex), OpenCode Space Bunny, OpenCode Muse Spark 1.3, Gemini through Antigravity, and Grok while its quota lasts, and use them heavily. [m8] [m20] [m34] [m-20261003-1512] [human-close-supervision-fifty-mixed-providers-20261005]
 - Use Codex and Claude sparingly. Start no new Codex agent once any Codex window shows 15% or less remaining. [m8] [m9] [m-20261003-1512]
-- Start no new Grok agent when any window shows 5% or less remaining, or the reading is unknown, and hand work over to a healthy provider before then. [agent-derived]
-- z.ai has one shared ceiling of 26 live sessions across all hosts and projects, not 26 each. [agent-derived]
+- Start no new Grok agent when any window shows 5% or less remaining. A Grok principal or head hands over to a healthy provider before it gets there. [rescued/20261005-grok-quota-handover] An unknown reading counts as too low. [agent-derived]
+- z.ai has one shared ceiling across all hosts and projects, not one per project: the measured total of parallel sessions (26 on 5 October). [rescued/20261005-zai-shared-concurrency]
 - ZCode was free from 17:00 to 03:00 Berlin while its campaign ran. Check that the campaign is still live and that you are on the right model before treating any time as free. [m34] [m-20261003-2017]
 - Copilot quota drains in one session, so don't bother with it. [human-delivery-reset-20261004]
 - When one service hits its quota, plan around it and move work to a healthy provider; don't park the whole direction. [human-idle-heads-quota-rebalance-20261005]
@@ -199,12 +198,12 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 
 ### Host limits
 
-- For the push to 50 agents, don't refuse a launch because free RAM is low. Measure the memory actually used instead. [human-ram-override-twentyfive-subagents-20261005]
+- For the push to 50 agents, don't refuse a launch because free RAM is low. [human-ram-override-twentyfive-subagents-20261005] Measure the memory actually used instead. [agent-derived]
 - Contain every worker separately at 1500M memory and 100 tasks. One cap on a head does not contain the workers under it. [agent-derived]
-- Keep the root disk at or above 20 GiB free after counting the growth already promised to running jobs. Below 30 GiB, one cleanup agent at a time frees disposable scratch. [rescued/20261005-disk-launch-floor]
+- Below 30 GiB free on the root disk, keep launching but start one cleanup agent that frees disposable scratch. [rescued/20261005-disk-launch-floor] The hard floor of 20 GiB free, after counting growth promised to running jobs, is the agents' own limit. [agent-derived]
 - Scratch for spikes is capped at 512 MiB in total, and each job budgets what it actually grows. [agent-derived]
 - RAM, not disk, is what breaks when many tests run in parallel; plan test fan-out with that in mind. [m-20261003-dictation]
-- No Rust builds and no global installs until build budgets are proven. [m-20261003-dictation] [agent-derived]
+- No Rust builds and no global installs until build budgets are proven. [agent-derived]
 - Agents run on Hetzner, Win35 and the founder's own computers, which is why he rented Hetzner. [human-cloudflare-budget-20261004] [human-win35-new-root-instructions-20261007]
 
 ### Spending
@@ -241,7 +240,7 @@ The full rules for the daily article are in the `daily-writeup` skill (`.claude/
 - A Codex agent on the remote host prepares each edition from a project skill (`.agents/skills/prepare-daily-journal/`). Root only gives the command and checks it happened. [human-remote-journal-preparation-20261005]
 - The publication coordinator owns site design, code, release and rollback. Implementers never approve their own visual changes. [m-latest] [agent-derived]
 - Quality checks are built into the process; root is not the reviewer. [m-latest]
-- Root shows the founder the published link and a short summary he can share. Nothing is posted to social media automatically. [agent-derived]
+- Root shows the founder the published link and, by default, a short summary he can share on social media. [rescued/20261006-social-summary-and-imagegen] Nothing is posted automatically. [agent-derived]
 
 ### When and what to publish
 
@@ -259,7 +258,7 @@ The full rules for the daily article are in the `daily-writeup` skill (`.claude/
 
 - Write for someone who has never seen the repo: open by saying what the experiment is, then tell one story. [m-20261003-2018] [agent-derived]
 - No jargon, internal codes, hashes, paths, session IDs or team role words in visible text. Explain each technical term once. [m-20261003-2018]
-- Every section has an illustration: ImageGen art for the story, and editable diagram-creator diagrams for explanations. [m-20261003-2018] [m27]
+- The write-up is illustrated, not just text: ImageGen art for the story, and editable diagram-creator diagrams for explanations. [m-20261003-2018] [m27]
 - No timestamps, correction notes, writing-process meta, quota percentages or token breakdowns in the article. [agent-derived]
 - Count contributors by real identity, with evidence of work. Never count process IDs or role names, and say which coverage is unknown. [agent-derived]
 
@@ -282,10 +281,10 @@ The continuation runtime is how work keeps moving without the founder: a process
 
 ### Lifecycle and evidence
 
-- Every request moves through: captured → owner accepted → launched with a first real action → result → review by a different agent → accepted → integrated and delivered → next task. Each step needs its own proof. [human-checks-execution-accountability-20261007] [human-request-outcome-process-20261007]
+- Every request moves through: captured → owner accepted → launched with a first real action → result → review by a different agent → accepted → integrated and delivered → next task. Each step needs its own proof. [human-request-outcome-process-20261007] [agent-derived]
 - Each step records the task, attempt, actor, host, parent, time and evidence. Failed attempts and missed deadlines stay visible; nothing is backdated. [agent-derived]
 - Saving a task state and the notification it owes happen together and survive a crash. A lost receipt is checked against the real effect before any retry. [agent-derived]
-- The main outcome measure is unique tasks accepted in a window. Also measure active agents, tasks resolved and commits, and show all of them in the dashboard and on the public site. [rescued/20261007-continuation-runtime-name-and-tasks-metric] [human-tracker-availability-agents-commits-20261007]
+- Measure tasks resolved, next to active agents and commits, and show all of them in the dashboard and on the public site. [rescued/20261007-continuation-runtime-name-and-tasks-metric] [human-tracker-availability-agents-commits-20261007] A resolved task is counted once, when its outcome is accepted. [agent-derived]
 
 ### Wake, deadlines and failover
 
@@ -299,7 +298,7 @@ The continuation runtime is how work keeps moving without the founder: a process
 
 ### Enforcement
 
-- Tools deny forbidden actions at the point where they happen: no self-review, no writing outside the claimed scope, no stale owner, no acceptance without a distinct review. Missing evidence means no. [human-team-interaction-enforcement-20261007]
+- The team rules are enforced, not just written. [human-team-interaction-enforcement-20261007] Tools deny forbidden actions where they happen: no self-review, no writing outside the claimed scope, no stale owner, no acceptance without a distinct review. Missing evidence means no. [agent-derived]
 - Required hand-offs (assignment, review, repair, refill, delivery) become tracked obligations with an owner and a due time. [human-team-interaction-enforcement-20261007] [agent-derived]
 - Once a scope is accepted, the maintained path lets work proceed with no routine principal approval. [agent-derived]
 - Agents running as the same OS user can bypass tool checks through the shell; that limit is recorded, not hidden. [agent-derived]
@@ -307,7 +306,7 @@ The continuation runtime is how work keeps moving without the founder: a process
 ### Many computers
 
 - Research and use proven designs for agent systems spread across computers; the process matters as much as the parts. [human-multihost-autonomy-design-research-20261007]
-- Hetzner and Win35 share one task authority and one pool of provider quota. Both hosts connect outbound over the authenticated agents bus, so neither needs inbound access. SSH is only for setup and recovery. [human-agentbus-purpose-correction-20261007] [human-win35-agentbus-nonssh-20261006]
+- Hetzner and Win35 share one pool of provider quota. [rescued/20261005-zai-shared-concurrency] Both hosts connect outbound over the authenticated agents bus, so neither needs inbound access; SSH is only for setup and recovery. [human-agentbus-purpose-correction-20261007] [human-win35-agentbus-nonssh-20261006]
 - The repo on Win35 is kept up to date. [human-win35-new-root-instructions-20261007]
 - A task packet carries everything a successor needs: goal, checklist, confirmed facts versus guesses, pointers, failed attempts and next action. Context is rebuilt from the packet, never assumed to move. [agent-derived]
 - During a network split, only work authorized in advance and isolated continues. Nothing integrates until the hosts reconnect and reconcile. [agent-derived]
@@ -315,12 +314,12 @@ The continuation runtime is how work keeps moving without the founder: a process
 ### Acceptance
 
 - The runtime is accepted only after two useful cycles (task → review → accepted → next task started) with both root and principal absent, plus recovery from worker, reviewer and host failures. [human-hetzner-autonomy-deadline-1830-20261005] [agent-derived]
-- Scale goes 10 → 25 → 50 active agents only with real backlog and measured results at each stage. [human-scale50-solution-followthrough-20261006] [agent-derived]
+- The target is 50 active agents now. [human-fifty-fix-and-run-outcomes-20261005] Steps of 10, 25 and 50 are how we measure progress toward it, never a reason to stop launching. [agent-derived]
 - The detailed runtime items still open are listed in section 11; each gets a principal issue in this repository with a named owner. [agent-derived]
 
 ## 10. Security and privacy
 
-- The repo is public under the MIT license, and so are the issue trackers. [m1] [20261007-05-public-plain-issues]
+- The repo is public, and so are the issue trackers. [m1] [20261007-05-public-plain-issues]
 - Secrets, keys, tokens, host addresses, quota balances, raw transcripts, private dashboards and private evidence never go into the repo, issues, reports or prompts. [agent-derived]
 - Private evidence stays outside the public tree, in git-ignored `.local/` on the host or in a private store. Public issues carry only sanitized summaries. [20261007-05-public-plain-issues] [agent-derived]
 - Keys and access come from the laptop agent. They are passed as a file with mode 600 on the target machine, never in a message. [m1] [m-20261003-early] [agent-derived]
