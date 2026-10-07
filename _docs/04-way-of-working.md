@@ -16,7 +16,7 @@ The principal owns the follow-through: if a request has no owner, an owner stops
 
 There is no single point of failure: the laptop, root, the principal, each head, each provider and each service has a named recovery path, and workers keep running when the head or principal that started them stops. Root runs a check every 30 minutes and a standup check every day, on the hosts and never in a desktop chat, so they keep running when the desktop is off. When an agent stops responding, peers send a sync message and inspect its state before deciding it is gone. Something must wake an idle agent, including on a late reply from another agent, and agents that can go offline from usage limits or downtime need a backup.
 
-Who watches and restarts whom is in `_docs/recovery.md`. Root watches the principal and the heads, the principal starts the heads, and a mechanical supervisor restarts root or the principal when they stop responding. Whoever starts a Claude or Codex agent sends it `/goal`. A takeover needs proof the old owner is gone or a handover it acknowledged on the agents bus, and takes exclusive ownership so the old owner cannot keep writing.
+Who watches and restarts whom is in `_docs/06-recovery.md`. Root watches the principal and the heads, the principal starts the heads, and a mechanical supervisor restarts root or the principal when they stop responding. Whoever starts a Claude or Codex agent sends it `/goal`. A takeover needs proof the old owner is gone or a handover it acknowledged on the agents bus, and takes exclusive ownership so the old owner cannot keep writing.
 
 ## 4. Review and challenge
 
