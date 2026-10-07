@@ -53,7 +53,7 @@ If a section can't say what problem it's about, cut it.
 
 ## Task tracker section
 
-Every report has a short section on the task tracker. A chart shows how many tasks were created, how many are still open and how many were closed. Below it, give one or two plain sentences per project on what the closed tasks delivered. Take the numbers from the tracker owner's summary in the fact packet. Cancelled tasks don't count as closed, and tasks that are queued, in review or blocked count as open. If the summary is missing, say the numbers aren't available yet instead of guessing.
+Every report has a short section on the task tracker. A chart shows how many tasks were created, how many are still open and how many were closed. Below it, give one or two plain sentences per project on what the closed tasks delivered. Take the numbers from the GitHub issues (created, open and closed), as summarized in the fact packet. Cancelled tasks don't count as closed, and tasks that are queued, in review or blocked count as open. If the summary is missing, say the numbers aren't available yet instead of guessing.
 
 ## What stays out
 

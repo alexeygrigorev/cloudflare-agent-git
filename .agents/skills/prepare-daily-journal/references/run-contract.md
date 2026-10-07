@@ -30,7 +30,3 @@ If the current remote session has no authorized callable ImageGen, write a singl
 ## Publishing and recovery
 
 Before `publish_daily --publish`, verify current publisher does not attribute review to desktop or replace original publication timestamps; request bounded owner repair if necessary. Follow QUALITY.md acceptance, explicit-path shared Git lock commits, source push and existing Pages CI. Pin prior good release and verify live build metadata/assets; a source push alone is not deployment success. Scoped revert/redeploy preserves peer work and private archives. An already good published DATE is a read-only run, never an automatic republish.
-
-## Mandatory checked-edition packet
-
-The remote preparation executor and writing agent read `coordination/continuation-runtime/DAILY-REPORT-CHECKLIST.md`, REQUIREMENTS.md and IDEAS.md on every edition. Include an exact copy of all literal `- [ ]` items in the private DATE packet, actual checked_at/source window and item evidence/unknowns; pass it with the current factual/requirement/idea decision extracts to genuine Claude Opus. Independent final verification checks actual article coverage and retained acceptance limits before release. Unchecked/unknown substantive project gates stay open; explicit unknown coverage does not resolve them. Link the checked private packet in the release receipt without publishing rawlogs/privateidentities. Reuse existing automation and ownership; no duplicatewriter.
