@@ -51,3 +51,15 @@ Genuine own-identity ACK `01a11535-bca9` binds Sonnet5.5 (`claude-sonnet-5-5`) a
 Primary native transcript tool_result9 at07:13:30.370UTC actually read TASKS283; tool_result10 at07:13:34.774UTC actually contacted Ant through35-dfad for launcher config/custody. These are useful head startup actions, not external implementer/reviewer firsttools or283 useful workers. The head's next07:18 checkpoint is launcher route, narrow source custody and actual worker firsttool or an executed named repair.
 
 No automated idle delivery, installed hook repair, actual external worker or all-head adoption is proved by this manual activation. Prior missing-hooks and failed deliveries remain history. No tracker/source lease or peer files were changed by this administrative publication.
+
+## Actual route/config checkpoint; execution route not yet accepted
+
+Genuine head36-3232 acknowledges candidate observations: launcher HEADd3a4276 and a capacity.py179 Sonnet-worker route whose actual availability is **unverified**. The interactive head's observed Sonnet5.5 model is separate from an external task provider/model route; neither proves the other.
+
+Head38-8a57 found three existing stores: user `~/.config/agent-quota-launcher/state.db`, repo `.local/state.db`, and repo `.local/launcher-config/state.db`. Authoritative task/config store remains unknown for the new task. Existing `t-branches-sync-sessionless-bus` shows ACCEPTED in the first two; preserve the bounded historical status/evidence instead of duplicating C2786 dispatch. Current Ant source custody and exact launcher handle/config remain pending. The head wrote a physical custody document, but no immutable Git pin is verified by this administrative checkpoint.
+
+Genuine scoped head receipts36-72b1/38-3b19/39-9c43 and actual first-tool/document/contract-read evidence are positive. They do not establish an external worker, accepted task loop across every head, a Sonnet external adapter, or source/main ownership.
+
+At07:16, principal fresh idle/empty Ant capture followed by safe delivery of ORIGINAL31-9ea1 returned native NOTREADY: reported idle1791356913732 versus later PTY activity1791357333020. Original remains preserved without forced input. Ant's existing07:35 timer does not meet a five-minute request pilot by itself. Principal asked root for the actual authoritative store through39-9d04; genuine request exists but ACK is unproved. Waiting for a head message is not productive-worker evidence.
+
+Next durable action remains the head's07:18 route/custody/external first-tool-or-named-repair checkpoint; fallback07:30 is pending, not configured automatic wake or an accepted SLA. Principal/owner resolves the store and supported adapter through existing routes, avoids duplicate work and returns concrete execution/admission or owned repair evidence. Preserve all old ACKs, failed deliveries and source leases.
