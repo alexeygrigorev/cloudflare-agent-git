@@ -732,7 +732,7 @@ def strip_ansi(text: str) -> str:
 COMPOSER_TAIL_CHROME_RE = re.compile(
     r'^\s*[─━_=-]+\s*$'
     r'|.*(?:Context|for shortcuts|auto mode|manage|monitor|agents|tokens|GPT-|Gemini|glm-|usage|workspace|warning|Worked for|Ask Codex)'
-    r'|.*Aplexer awareness bootstrap.*'
+    r'|.*(?:Aplexer awareness|Before editing files|Declare your work|Check peer mail|participate in \d+ workspace|Workspace coordination|git:\s*worktree|you:\s*\S+|peers\s*\(\d+\)|shared paths|peer-provided data).*'
 )
 
 DEFAULT_PROMPT_PLACEHOLDERS = {'Ask Codex to do anything', '? for shortcuts'}
@@ -1387,8 +1387,41 @@ def run():
                         else:
                             item['status'] = 'pending'
                         item['pending'] = pending
+                        if not item.get('alive', True) or dur > 2 * slo_limit:
+                            item['failover_candidate'] = True
+                            failover_reason = f"leader {tag} role vacancy: {'un-alive (confirmed dead)' if not item.get('alive', True) else f'unACKed beyond 2x SLO ({round(dur, 1)}s > {2 * slo_limit}s)'}; candidate 43ea trigger condition met"
+                            event('failover-candidate-action',
+                                  role='principal',
+                                  role_vacancy=True,
+                                  entity=tag,
+                                  principal=tag,
+                                  message_id=pending['id'],
+                                  duration_seconds=round(dur, 2),
+                                  slo_seconds=slo_limit,
+                                  alive=item.get('alive', True),
+                                  trigger_condition='un-alive' if not item.get('alive', True) else 'blocked_beyond_2x_slo',
+                                  candidate_pin='43ea3400965e690206f823640173992a9ea0c7b4',
+                                  candidate='43ea',
+                                  reason=failover_reason)
+                            report['actions'].append({
+                                'kind': 'failover-candidate-action',
+                                'role': 'principal',
+                                'role_vacancy': True,
+                                'entity': tag,
+                                'recipient': tag,
+                                'principal': tag,
+                                'message_id': pending['id'],
+                                'duration_seconds': round(dur, 2),
+                                'slo_seconds': slo_limit,
+                                'alive': item.get('alive', True),
+                                'trigger_condition': 'un-alive' if not item.get('alive', True) else 'blocked_beyond_2x_slo',
+                                'candidate_pin': '43ea3400965e690206f823640173992a9ea0c7b4',
+                                'candidate': '43ea',
+                                'reason': failover_reason
+                            })
                     else:
                         item['status'] = 'missing'
+                        item.pop('failover_candidate', None)
                     memory[tag] = item
                     report['principals'][tag] = item
                     continue
@@ -1396,6 +1429,8 @@ def run():
                 item = {'event_key': digest, 'ready_snapshot_count': 0}
                 if old.get('diagnostic_hold'):
                     item['diagnostic_hold'] = old['diagnostic_hold']
+                if old.get('failover_candidate'):
+                    item['failover_candidate'] = old['failover_candidate']
                 session = match[0]
                 pid = session.get('workload_pid')
                 item.update(session_id=session['id'], reported_state=session.get('reported_state'),
@@ -1545,7 +1580,7 @@ def run():
                     item['pending_reason'] = 'original sender changed; original recipient ACK/reply required'
                 elif item.get('pending_reason') == 'original sender changed; original recipient ACK/reply required':
                     item.pop('pending_reason', None)
-                if may_deliver(pending, identity['id'], spool=PRIVATE) and count >= 2 and time.time() >= item.get('cooldown_until', 0):
+                if may_deliver(pending, identity['id'], spool=PRIVATE) and count >= 2 and time.time() >= item.get('cooldown_until', 0) and not item.get('failover_candidate'):
                     # Third immediate check closes most polling races; native command still enforces readiness.
                     fresh_screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
                     if composer(fresh_screen, tag) == 'empty':
@@ -1567,12 +1602,18 @@ def run():
                         event('delivery-attempt', principal=tag, message_id=pending['id'], outcome=status)
                         if status == 'not-ready':
                             detail = outcome.get('detail', '')
-                            if ('Context' in detail or 'GPT-' in detail) and '·' in detail:
+                            if (('Context' in detail or 'GPT-' in detail) and '·' in detail) or re.search(
+                                r'Aplexer awareness|Before editing files|Declare your work|Check peer mail|participate in \d+ workspace|Workspace coordination|worktree|peers|shared paths|peer-provided data',
+                                detail
+                            ):
                                 item['diagnostic_hold'] = 'known-footer-classifier-mismatch'
                                 pending['diagnostic_hold'] = 'known-footer-classifier-mismatch'
+                            if item.get('diagnostic_hold') == 'known-footer-classifier-mismatch':
+                                item['cooldown_until'] = time.time() + 180
                         if status == 'recipient-acked':
                             item['last_request'] = pending
                             item.pop('diagnostic_hold', None)
+                            item.pop('failover_candidate', None)
                             item['cooldown_until'] = time.time() + (1800 if tag == 'claude-principal' else 180)
                             pending = None
                         # Submitted stays pending until genuine reply/read ACK, not repeated on timer.
@@ -1596,6 +1637,7 @@ def run():
                             })
                             item['last_request'] = {**pending, 'superseded_at': now(), 'superseded_reason': 'stale-beyond-slo-sender-change'}
                             item.pop('diagnostic_hold', None)
+                            item.pop('failover_candidate', None)
                             pending = None
                             item['status'] = 'ok'
                         else:
@@ -1606,7 +1648,7 @@ def run():
                                 item['blocking_reason'] = block_reason
                             item['pending_duration_seconds'] = round(dur, 2)
                             item['retry_slo_seconds'] = slo_limit
-                            item['cooldown_until'] = time.time() + 300 if time.time() >= cooldown else cooldown
+                            item['cooldown_until'] = max(item.get('cooldown_until', 0), time.time() + 300 if time.time() >= cooldown else cooldown)
                             report['degraded'] = True
                             report['errors'].append(f"principal {tag} pending message {pending['id']} blocked_beyond_slo ({round(dur, 1)}s >= {slo_limit}s): {item['blocking_reason']}")
                             event('pending-blocked-beyond-slo', principal=tag, message_id=pending['id'],
@@ -1620,10 +1662,75 @@ def run():
                                 'diagnostic_hold': item.get('diagnostic_hold'),
                                 'recovery_owner': 'ant-head-never-timer-custody-20261006'
                             })
+                            if not item.get('alive', True) or dur > 2 * slo_limit:
+                                item['failover_candidate'] = True
+                                failover_reason = f"leader {tag} role vacancy: {'un-alive (confirmed dead)' if not item.get('alive', True) else f'unACKed beyond 2x SLO ({round(dur, 1)}s > {2 * slo_limit}s)'}; candidate 43ea trigger condition met"
+                                event('failover-candidate-action',
+                                      role='principal',
+                                      role_vacancy=True,
+                                      entity=tag,
+                                      principal=tag,
+                                      message_id=pending['id'],
+                                      duration_seconds=round(dur, 2),
+                                      slo_seconds=slo_limit,
+                                      alive=item.get('alive', True),
+                                      trigger_condition='un-alive' if not item.get('alive', True) else 'blocked_beyond_2x_slo',
+                                      candidate_pin='43ea3400965e690206f823640173992a9ea0c7b4',
+                                      candidate='43ea',
+                                      reason=failover_reason)
+                                report['actions'].append({
+                                    'kind': 'failover-candidate-action',
+                                    'role': 'principal',
+                                    'role_vacancy': True,
+                                    'entity': tag,
+                                    'recipient': tag,
+                                    'principal': tag,
+                                    'message_id': pending['id'],
+                                    'duration_seconds': round(dur, 2),
+                                    'slo_seconds': slo_limit,
+                                    'alive': item.get('alive', True),
+                                    'trigger_condition': 'un-alive' if not item.get('alive', True) else 'blocked_beyond_2x_slo',
+                                    'candidate_pin': '43ea3400965e690206f823640173992a9ea0c7b4',
+                                    'candidate': '43ea',
+                                    'reason': failover_reason
+                                })
                     else:
                         item['status'] = 'pending'
+                        if not item.get('alive', True):
+                            item['failover_candidate'] = True
+                            failover_reason = f"leader {tag} role vacancy: un-alive (confirmed dead); candidate 43ea trigger condition met"
+                            event('failover-candidate-action',
+                                  role='principal',
+                                  role_vacancy=True,
+                                  entity=tag,
+                                  principal=tag,
+                                  message_id=pending['id'],
+                                  duration_seconds=round(dur, 2),
+                                  slo_seconds=slo_limit,
+                                  alive=item.get('alive', True),
+                                  trigger_condition='un-alive',
+                                  candidate_pin='43ea3400965e690206f823640173992a9ea0c7b4',
+                                  candidate='43ea',
+                                  reason=failover_reason)
+                            report['actions'].append({
+                                'kind': 'failover-candidate-action',
+                                'role': 'principal',
+                                'role_vacancy': True,
+                                'entity': tag,
+                                'recipient': tag,
+                                'principal': tag,
+                                'message_id': pending['id'],
+                                'duration_seconds': round(dur, 2),
+                                'slo_seconds': slo_limit,
+                                'alive': item.get('alive', True),
+                                'trigger_condition': 'un-alive',
+                                'candidate_pin': '43ea3400965e690206f823640173992a9ea0c7b4',
+                                'candidate': '43ea',
+                                'reason': failover_reason
+                            })
                 else:
                     item['status'] = 'ok'
+                    item.pop('failover_candidate', None)
                 item['pending'] = pending
                 report['principals'][tag] = item
                 memory[tag] = item
@@ -1654,8 +1761,41 @@ def run():
                         else:
                             item['status'] = 'pending'
                         item['pending'] = pending
+                        if not item.get('alive', True) or dur > 2 * slo_limit:
+                            item['failover_candidate'] = True
+                            failover_reason = f"leader {head_tag} role vacancy: {'un-alive (confirmed dead)' if not item.get('alive', True) else f'unACKed beyond 2x SLO ({round(dur, 1)}s > {2 * slo_limit}s)'}; candidate 43ea trigger condition met"
+                            event('failover-candidate-action',
+                                  role='head',
+                                  role_vacancy=True,
+                                  entity=head_tag,
+                                  head=head_tag,
+                                  message_id=pending['id'],
+                                  duration_seconds=round(dur, 2),
+                                  slo_seconds=slo_limit,
+                                  alive=item.get('alive', True),
+                                  trigger_condition='un-alive' if not item.get('alive', True) else 'blocked_beyond_2x_slo',
+                                  candidate_pin='43ea3400965e690206f823640173992a9ea0c7b4',
+                                  candidate='43ea',
+                                  reason=failover_reason)
+                            report['actions'].append({
+                                'kind': 'failover-candidate-action',
+                                'role': 'head',
+                                'role_vacancy': True,
+                                'entity': head_tag,
+                                'recipient': head_tag,
+                                'head': head_tag,
+                                'message_id': pending['id'],
+                                'duration_seconds': round(dur, 2),
+                                'slo_seconds': slo_limit,
+                                'alive': item.get('alive', True),
+                                'trigger_condition': 'un-alive' if not item.get('alive', True) else 'blocked_beyond_2x_slo',
+                                'candidate_pin': '43ea3400965e690206f823640173992a9ea0c7b4',
+                                'candidate': '43ea',
+                                'reason': failover_reason
+                            })
                     else:
                         item['status'] = 'missing'
+                        item.pop('failover_candidate', None)
                     memory[head_tag] = item
                     report['heads'][head_tag] = item
                     continue
@@ -1663,6 +1803,8 @@ def run():
                 item = {'event_key': digest, 'ready_snapshot_count': 0}
                 if old.get('diagnostic_hold'):
                     item['diagnostic_hold'] = old['diagnostic_hold']
+                if old.get('failover_candidate'):
+                    item['failover_candidate'] = old['failover_candidate']
                 session = match[0]
                 pid = session.get('workload_pid')
                 item.update(session_id=session['id'], reported_state=session.get('reported_state'),
@@ -1781,7 +1923,7 @@ def run():
                     item['pending_reason'] = 'original sender changed; original recipient ACK/reply required'
                 elif item.get('pending_reason') == 'original sender changed; original recipient ACK/reply required':
                     item.pop('pending_reason', None)
-                if may_deliver(pending, identity['id'], spool=PRIVATE) and count >= 2 and time.time() >= item.get('cooldown_until', 0):
+                if may_deliver(pending, identity['id'], spool=PRIVATE) and count >= 2 and time.time() >= item.get('cooldown_until', 0) and not item.get('failover_candidate'):
                     fresh_screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
                     if composer(fresh_screen, head_tag) == 'empty':
                         deliver_args = [BINARY, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json']
@@ -1799,12 +1941,18 @@ def run():
                         event('head-delivery-attempt', head=head_tag, message_id=pending['id'], outcome=status)
                         if status == 'not-ready':
                             detail = outcome.get('detail', '')
-                            if ('Context' in detail or 'GPT-' in detail) and '·' in detail:
+                            if (('Context' in detail or 'GPT-' in detail) and '·' in detail) or re.search(
+                                r'Aplexer awareness|Before editing files|Declare your work|Check peer mail|participate in \d+ workspace|Workspace coordination|worktree|peers|shared paths|peer-provided data',
+                                detail
+                            ):
                                 item['diagnostic_hold'] = 'known-footer-classifier-mismatch'
                                 pending['diagnostic_hold'] = 'known-footer-classifier-mismatch'
+                            if item.get('diagnostic_hold') == 'known-footer-classifier-mismatch':
+                                item['cooldown_until'] = time.time() + 180
                         if status == 'recipient-acked':
                             item['last_request'] = pending
                             item.pop('diagnostic_hold', None)
+                            item.pop('failover_candidate', None)
                             item['cooldown_until'] = time.time() + 180
                             pending = None
 
@@ -1826,6 +1974,7 @@ def run():
                             })
                             item['last_request'] = {**pending, 'superseded_at': now(), 'superseded_reason': 'stale-beyond-slo-sender-change'}
                             item.pop('diagnostic_hold', None)
+                            item.pop('failover_candidate', None)
                             pending = None
                             item['status'] = 'ok'
                         else:
@@ -1836,7 +1985,7 @@ def run():
                                 item['blocking_reason'] = block_reason
                             item['pending_duration_seconds'] = round(dur, 2)
                             item['retry_slo_seconds'] = slo_limit
-                            item['cooldown_until'] = time.time() + 300 if time.time() >= cooldown else cooldown
+                            item['cooldown_until'] = max(item.get('cooldown_until', 0), time.time() + 300 if time.time() >= cooldown else cooldown)
                             report['degraded'] = True
                             report['errors'].append(f"head {head_tag} pending message {pending['id']} blocked_beyond_slo ({round(dur, 1)}s >= {slo_limit}s): {item['blocking_reason']}")
                             event('pending-blocked-beyond-slo', head=head_tag, message_id=pending['id'],
@@ -1850,10 +1999,75 @@ def run():
                                 'diagnostic_hold': item.get('diagnostic_hold'),
                                 'recovery_owner': 'ant-head-never-timer-custody-20261006'
                             })
+                            if not item.get('alive', True) or dur > 2 * slo_limit:
+                                item['failover_candidate'] = True
+                                failover_reason = f"leader {head_tag} role vacancy: {'un-alive (confirmed dead)' if not item.get('alive', True) else f'unACKed beyond 2x SLO ({round(dur, 1)}s > {2 * slo_limit}s)'}; candidate 43ea trigger condition met"
+                                event('failover-candidate-action',
+                                      role='head',
+                                      role_vacancy=True,
+                                      entity=head_tag,
+                                      head=head_tag,
+                                      message_id=pending['id'],
+                                      duration_seconds=round(dur, 2),
+                                      slo_seconds=slo_limit,
+                                      alive=item.get('alive', True),
+                                      trigger_condition='un-alive' if not item.get('alive', True) else 'blocked_beyond_2x_slo',
+                                      candidate_pin='43ea3400965e690206f823640173992a9ea0c7b4',
+                                      candidate='43ea',
+                                      reason=failover_reason)
+                                report['actions'].append({
+                                    'kind': 'failover-candidate-action',
+                                    'role': 'head',
+                                    'role_vacancy': True,
+                                    'entity': head_tag,
+                                    'recipient': head_tag,
+                                    'head': head_tag,
+                                    'message_id': pending['id'],
+                                    'duration_seconds': round(dur, 2),
+                                    'slo_seconds': slo_limit,
+                                    'alive': item.get('alive', True),
+                                    'trigger_condition': 'un-alive' if not item.get('alive', True) else 'blocked_beyond_2x_slo',
+                                    'candidate_pin': '43ea3400965e690206f823640173992a9ea0c7b4',
+                                    'candidate': '43ea',
+                                    'reason': failover_reason
+                                })
                     else:
                         item['status'] = 'pending'
+                        if not item.get('alive', True):
+                            item['failover_candidate'] = True
+                            failover_reason = f"leader {head_tag} role vacancy: un-alive (confirmed dead); candidate 43ea trigger condition met"
+                            event('failover-candidate-action',
+                                  role='head',
+                                  role_vacancy=True,
+                                  entity=head_tag,
+                                  head=head_tag,
+                                  message_id=pending['id'],
+                                  duration_seconds=round(dur, 2),
+                                  slo_seconds=slo_limit,
+                                  alive=item.get('alive', True),
+                                  trigger_condition='un-alive',
+                                  candidate_pin='43ea3400965e690206f823640173992a9ea0c7b4',
+                                  candidate='43ea',
+                                  reason=failover_reason)
+                            report['actions'].append({
+                                'kind': 'failover-candidate-action',
+                                'role': 'head',
+                                'role_vacancy': True,
+                                'entity': head_tag,
+                                'recipient': head_tag,
+                                'head': head_tag,
+                                'message_id': pending['id'],
+                                'duration_seconds': round(dur, 2),
+                                'slo_seconds': slo_limit,
+                                'alive': item.get('alive', True),
+                                'trigger_condition': 'un-alive',
+                                'candidate_pin': '43ea3400965e690206f823640173992a9ea0c7b4',
+                                'candidate': '43ea',
+                                'reason': failover_reason
+                            })
                 else:
                     item['status'] = 'ok'
+                    item.pop('failover_candidate', None)
                 item['pending'] = pending
                 report['heads'][head_tag] = item
                 memory[head_tag] = item
