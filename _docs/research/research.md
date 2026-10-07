@@ -4,20 +4,28 @@
 
 The contest asks for a Git platform for coding agents on Cloudflare Workers and Artifacts, with several agents changing code at the same time. We wanted to know which problem in that space is common, painful and not yet solved, and whether our tool would make a measurable difference. We wrote 20 candidate approaches, scored each on originality, visible concurrency and demo clarity, and gave each a written rule for when to drop it. Then we tested the strongest ones with live coding agents and kept only what survived.
 
-## The 20 approaches
+## The 20 directions
 
-The approaches fall into six groups: early conflict warnings and merged-state checks between agents, review aids that show intent and risk instead of raw diffs, storage and workspace savings, parallel attempts at one task, durable handoff between agents, and safety features such as path claims, quarantine, undo and receipts that a side effect ran once.
-
-What happened to the ones that mattered:
-
-- A01, the live integration radar that trial-merges every agent's latest work, became the core of Agent Branches. It lost its place as the main research claim after the fair pair test showed no difference between agents.
-- A14, a preview URL per agent, was folded into A01 because an ordinary control did as well.
-- A06, review cards, stays a hypothesis. The pain is documented but no run showed a benefit, and existing review products already cover most of it.
-- A16, lazy workspaces that save disk, was parked. Its bar was 50 percent savings for two tasks and the best run reached 47.76 percent. The bar was not moved.
-- A05, several attempts at one task, was parked after its one task ended in a tie.
-- A10, durable handoff, was parked because cold restarts worked from plain Git.
-- A18, multi-repo change sets, was parked because Pact can-i-deploy already covers it.
-- The rest were never shortlisted, mostly for low originality or because an existing product already does them.
+- A01 Live integration radar. Know within seconds when two live agents' work stops composing. Became the core of Agent Branches. It lost its place as the main research claim after the fair pair test showed no difference between agents.
+- A02 Lease-bound claims. Stop two agents from doing overlapping work by checking claims when work lands. Never shortlisted. Foremerge already specifies this protocol.
+- A03 Merged-state gate with intent reapplication. When a candidate breaks the combined state, regenerate it on the fresh base. Parked until a fixture shows it beats a merge queue.
+- A04 Semantic contract sentinel. Catch breakages that merge cleanly but break a caller. Parked. Running the full tests on the merged state would catch most of the same cases.
+- A05 Fork tournament. Run several attempts at one task, compare by behaviour and land one. Parked after its one task ended in a tie.
+- A06 Change-story review queue. Review intent and risk instead of raw diffs. Stays a hypothesis. The pain is documented but no run showed a benefit, and existing review products cover most of it.
+- A07 Maintainer inbound quarantine. Accept agent contributions without paying review cost for low-quality ones. Parked.
+- A08 Independent reviewer panel on push. Catch bugs before humans review. Never shortlisted for low originality.
+- A09 Exact-SHA verification receipts. Show what was tested, on which exact commit and by whom. Narrowed to exactly-once publication receipts. Parked until its kill test runs.
+- A10 Durable handoff. The next agent resumes with the plan, the decisions and the exact base. Parked because cold restarts worked from plain Git.
+- A11 Merge decision ledger. Answer why the code is the way it is and what was rejected. Never shortlisted.
+- A12 Quarantine forks with capability tokens. Make destructive agent Git operations impossible on canonical history. Parked.
+- A13 Session undo across forks. See and revert everything one agent session did. Parked with a reopen test.
+- A14 Preview per agent. Each agent change gets its own live URL and its own data. Folded into A01 because an ordinary control did as well.
+- A15 Push-triggered fast verification. Run only the affected tests on every push. Never shortlisted for low originality.
+- A16 Lazy agent workspaces that save disk. Give each agent a workspace whose cost follows what it changes. Parked. The bar was 50 percent savings for two tasks and the best run reached 47.76 percent. The bar was not moved.
+- A17 Fork-is-the-task board. No separate tracker, because claiming a task is forking. Never shortlisted. The pain evidence was weak.
+- A18 Multi-repo change sets with recovery. One intent changes several repos and lands in dependency order. Parked because Pact can-i-deploy already covers it.
+- A19 Maintenance swarm with batch landing. Let 10 to 50 agents each take one maintenance item and land compatible ones together. Parked and folded into A01 as a batch mode.
+- A20 Earned autonomy per agent. Let low-risk changes from agents with a good record land automatically. Never shortlisted. The pain evidence was weak.
 
 ## Experiments that changed our mind
 
