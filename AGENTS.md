@@ -1,5 +1,15 @@
 # Cloudflare agent Git competition
 
+## Start here
+
+AGENTS.md is the single agent-instruction file (CLAUDE.md was removed on 7 Oct 2026 per [human instruction](experiment/human-docs-consolidation-agents-md-only-20261007.txt)). Documentation map: [INDEX.md](INDEX.md).
+
+- Read AGENTS.md, [BRIEF.md](BRIEF.md) and [coordination/USER-STEERING.md](coordination/USER-STEERING.md) at startup.
+- Your role is the one explicitly assigned by your current launch prompt; this file does not turn any engine into the Claude principal.
+- Respect separate ownership of files, claims and leases.
+- Claude and Codex integrate selection; every engine independently challenges the task and validates evidence.
+- The latest direct user instruction supersedes earlier stop conditions.
+
 ## Request-to-outcome follow-through — human 7 October 2026
 
 Read the [request contract](coordination/continuation-runtime/REQUEST-TO-OUTCOME.md), [enforcement ledger](coordination/continuation-runtime/ENFORCEMENT.md) and [research](research/orchestrator/REQUEST-OUTCOME-RESEARCH-20261007.md). Root owns follow-through; the principal owns continuous recovery and heads own execution/independent review. A request remains open through genuine ownership, actual first action, accepted outcome and human delivery. Misses require executed diagnosis/repair or acknowledged handoff and resumed-work proof, not another reminder. Reuse existing tracker/launcher/supervisor/Bus; the ledger distinguishes required controls from incomplete installed enforcement. Proposed timing thresholds are not adopted timers. Preserve all current gates and source leases.
