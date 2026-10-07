@@ -15,8 +15,8 @@
 ## Before mutation
 
 1. Verify genuine identity: native `aplexer whoami --json`, enrolled scoped Bus identity, or actual harness child plus parent. Never borrow `--from` or another session's binding.
-2. Read AGENTS.md, this contract, OPERATING-MODEL.md, RESOURCE-POLICY.md and the scoped handoff. Record role, task, parent, owned paths, docs/version and read timestamp privately in `.local/audit/startup-<id>.json`.
-3. Declare actual work scope through the supported work-join path. A registry entry or document does not grant another owner's source lease.
+2. Read AGENTS.md, this contract, OPERATING-MODEL.md, RESOURCE-POLICY.md and the scoped handoff. Record role, task, parent, edit scope, docs/version and read timestamp privately in `.local/audit/startup-<id>.json`.
+3. Declare actual work scope through the supported work-join path. A registry entry or document does not grant another owner's edit-scope claim.
 4. Preserve active work, protected drafts, exact pending messages, private histories and ordinary Git recovery.
 
 ## Acceptance and custody

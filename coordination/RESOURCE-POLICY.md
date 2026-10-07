@@ -24,7 +24,7 @@
 
 The20GiB floor is the principal's adopted interpretation of the human's “50 is too tight” and “after30...cleanup” steering. It supersedes older50GiB references; the scoped RAM override supersedes the older10GiB free-RAM refusal only for this initiative.
 
-Cleanup requires attributable disposable scratch/cache, no active process/write/lease, retained recovery/evidence, before/after bytes and an owner/checkpoint. Never delete existing worktrees, dirty/unmerged work, private histories, unrelated data or unknown-owner paths. Unknown ownership requires a scoped escalation, not deletion.
+Cleanup requires attributable disposable scratch/cache, no active process/write/edit-scope claim, retained recovery/evidence, before/after bytes and an owner/checkpoint. Never delete existing worktrees, dirty/unmerged work, private histories, unrelated data or unknown-owner paths. Unknown ownership requires a scoped escalation, not deletion.
 
 ## Time-sensitive campaign
 
@@ -34,6 +34,6 @@ The GLM-5.3-Flash notice described paid Coding Plan/ZCode3.10+ eligibility,17:00
 
 Cloudflare/project cloud-service total is USD5/month INCLUDING the existing base plan. Metered allowances/alerts are not a hard cap. No agent execution on Workers/Containers/WorkersAI; execute on authorized Hetzner/user computers. Optional relay/storage remains held without actual aggregate usage and preventive overage bounds. No purchases, billing changes, model credits, new paid services or unrelated infrastructure changes.
 
-Use genuine enrolled identity, received owned scope and safe busy/draft/unknown guards. Preserve exact pending envelopes; reconcile uncertain effects before retry. No borrowed binding, forced readiness, credential copying or unauthenticated endpoints. Dirty ~/git/aplexer/global binaries and peer work are protected; use isolated reviewed source under acknowledged lease. SSH is authorized bootstrap/recovery, not final native cross-host acceptance. Preserve ordinary Git fallback; no secrets/raw transcripts/private dashboards in public Git or reports.
+Use genuine enrolled identity, received edit-scope claim on the agents bus and safe busy/draft/unknown guards. Preserve exact pending envelopes; reconcile uncertain effects before retry. No borrowed binding, forced readiness, credential copying or unauthenticated endpoints. Dirty ~/git/aplexer/global binaries and peer work are protected; use isolated reviewed source under acknowledged lease. SSH is authorized bootstrap/recovery, not final native cross-host acceptance. Preserve ordinary Git fallback; no secrets/raw transcripts/private dashboards in public Git or reports.
 
 Human provenance: experiment/USER-INSTRUCTIONS.md messages20/21/22/26/32/34; [RAM/count override](../experiment/human-ram-override-twentyfive-subagents-20261005.txt); [Cloudflare boundary](../experiment/human-cloudflare-budget-20261004.txt); research/codex/zai-shared-concurrency-intake-20261005.md, expanded-executor-pool-intake-20261005.md and maintained-launcher-capacity-intake-20261005.md. Current owners and measured acceptance belong in tasks, not this policy.
