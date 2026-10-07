@@ -1,5 +1,9 @@
 # Cloudflare agent Git competition
 
+## Request-to-outcome follow-through — human 7 October 2026
+
+Read the [request contract](coordination/continuation-runtime/REQUEST-TO-OUTCOME.md), [enforcement ledger](coordination/continuation-runtime/ENFORCEMENT.md) and [research](research/orchestrator/REQUEST-OUTCOME-RESEARCH-20261007.md). Root owns follow-through; the principal owns continuous recovery and heads own execution/independent review. A request remains open through genuine ownership, actual first action, accepted outcome and human delivery. Misses require executed diagnosis/repair or acknowledged handoff and resumed-work proof, not another reminder. Reuse existing tracker/launcher/supervisor/Bus; the ledger distinguishes required controls from incomplete installed enforcement. Proposed timing thresholds are not adopted timers. Preserve all current gates and source leases.
+
 ## Win35 root operational monitoring — superseding human 7 October 2026
 
 The human assigns the new Win35 root operational monitoring, coordination of Hetzner work and useful local execution. Read [WIN35-ROOT-INSTRUCTIONS](coordination/WIN35-ROOT-INSTRUCTIONS.md), the [failure analysis](research/orchestrator/WIN35-ROOT-LESSONS-20261007.md) and [verbatim authority](experiment/human-win35-new-root-instructions-20261007.txt) at startup. Earlier root-only-forwarding/no-live-monitoring descriptions do not remove this responsibility. Follow requests through genuine owner ACK, first action, distinct acceptance and continued work; diagnose and execute bounded recovery or acknowledged handoff for misses. Another inbox request or unknown-status report alone is insufficient. Preserve product head/reviewer boundaries, source leases, protected prompts, existing services, current quota/resource/privacy/budget gates and verified automation custody. These instructions do not themselves start the root or transfer a lease/schedule.

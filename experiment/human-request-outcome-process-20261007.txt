@@ -1,0 +1,5 @@
+Human instruction, 7 October 2026, verbatim:
+
+so I want a process where I ask for something to happen and it happens, and I don't bug you. I want you to have a thougrough research about it and have a clearly documented process - corrdinate it with the principal and show me how exactly it's going to be enforced
+
+Scope: thorough primary-source research and existing-system audit, coordination with the genuine principal, a canonical documented process and an exact enforcement/acceptance plan. Research or a policy commit is not installed enforcement. Reuse existing maintained services/owners; no duplicate scheduler or workflow platform is authorized by this request.

@@ -16,6 +16,8 @@ Continuation Runtime is the approach for keeping useful agent work moving withou
 
 ## Start here
 
+- [Request to outcome](REQUEST-TO-OUTCOME.md): the human's 7 October follow-through contract, transition obligations and recovery responsibility.
+- [Enforcement ledger](ENFORCEMENT.md): existing controls, concrete gaps, genuine coordination receipts and live acceptance required before claiming enforcement.
 - [Plan](PLAN.md): concrete owners, dependencies, acceptance and fallbacks.
 - [Decisions](DECISIONS.md): authority, proposed choices and unresolved tradeoffs.
 - [Evidence](EVIDENCE.md): human intake, prior plans, incidents and corrections.
