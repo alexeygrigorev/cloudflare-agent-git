@@ -8,7 +8,7 @@ Root restores the principal; the principal owns head recovery, and heads own the
 
 ## Required controls and installed evidence
 
-The target is one durable supervisor using the maintained tracker, launcher and bus, with recoverable ownership and workers that survive coordinator death. This target does not certify an installed guardian, periodic launcher or unattended recovery path.
+The target is one durable supervisor using the maintained tracker, launcher and bus, with recoverable ownership and workers that survive coordinator death. What the supervisor does today is in [supervision](07-supervision.md). This target does not certify an installed guardian, periodic launcher or unattended recovery path.
 
 Inspection on 7 October found `scripts/recover-agent` absent and `scripts/team-status` a placeholder. Recheck deployed source and its accepted contract before use; do not prescribe either as working automation from a document alone. The manual native saved-conversation route in the runbooks restored actual principals/heads, including independently placed worker and model processes. Each future run still requires fresh admission, genuine custody and useful-action verification.
 
