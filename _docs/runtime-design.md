@@ -6,14 +6,12 @@ The rules and their sources are in [way-of-working.md](way-of-working.md), which
 
 ## Roles
 
-| Role | Does | Never does |
-|---|---|---|
-| Principal | Plans priorities across teams, assigns scoped work through heads, monitors outcomes and flow, challenges evidence, coordinates hand-offs, keeps the high-level tracker | Implements product code, personally reviews code, runs its own execution team, takes over a head's protected scope |
-| Head | Interactive orchestrator for one project. Breaks goals into tasks, launches implementers and reviewers, accepts reviewed results, integrates within its edit scope, refills and recovers | Reviews its own work, invents workers, acts on unreceived scope, becomes the default sole implementer |
-| Worker (executor) | Implements and tests one assigned task and hands back a pinned result | Accepts its own result, mutates other tasks, works outside delegated paths |
-| Independent reviewer | Inspects a pinned candidate, runs the relevant checks, returns a free verdict | Changes the candidate, reviews its own output, accepts unpinned artifacts |
-| Supervisor and collector | Configured mechanical transitions, due checks, routing and observations | Gives model verdicts, fabricates custody or readiness, grants source permissions |
-| Root (coordinator) | Takes the founder's requests, delivers results to the founder, follows every request through, recovers failed custody, runs the periodic checks on Win35 and Hetzner | Holds product edit scope, acts as scheduler, routine reviewer or release approver |
+- Principal: plans priorities across teams, assigns scoped work through heads, monitors outcomes and flow, challenges evidence, coordinates hand-offs, keeps the high-level tracker. Never: implements product code, personally reviews code, runs its own execution team, takes over a head's protected scope.
+- Head: interactive orchestrator for one project. Breaks goals into tasks, launches implementers and reviewers, accepts reviewed results, integrates within its edit scope, refills and recovers. Never: reviews its own work, invents workers, acts on unreceived scope, becomes the default sole implementer.
+- Worker (executor): implements and tests one assigned task and hands back a pinned result. Never: accepts its own result, mutates other tasks, works outside delegated paths.
+- Independent reviewer: inspects a pinned candidate, runs the relevant checks, returns a free verdict. Never: changes the candidate, reviews its own output, accepts unpinned artifacts.
+- Supervisor and collector: configured mechanical transitions, due checks, routing and observations. Never: gives model verdicts, fabricates custody or readiness, grants source permissions.
+- Root (coordinator): takes the founder's requests, delivers results to the founder, follows every request through, recovers failed custody, runs the periodic checks on Win35 and Hetzner. Never: holds product edit scope, acts as scheduler, routine reviewer or release approver.
 
 Principals and heads may launch as many workers as useful tasks and current resource gates allow; there is no fixed team cap. Heads keep their context and orchestrate; workers do the work. Principals check each other at agreed checkpoints. Agents may invent better ways of working and challenge the founder, inside the safety gates. Every actor reads AGENTS.md, [way-of-working.md](way-of-working.md), its hand-off and its task contract at startup and records that it did.
 
@@ -37,15 +35,13 @@ flowchart LR
   R --> C
 ```
 
-| Transition | Proof required | If missing |
-|---|---|---|
-| Request → captured | Stable ID, exact source and time, acceptance criteria, mapping to constraints or supersessions | Reconcile intake without losing existing rows or history |
-| Captured → owned | Current owner's ACK, scope, dependencies, next action, due time and recovery trigger | Resolve custody or get a received hand-off. Assignment is not ACK |
-| Owned → executing | Fresh admission and a task-bound first model tool call or deterministic operation receipt | Diagnose dispatch. A launch or a process ID is not useful work |
-| Executing → review | Pinned artifact, terminal result, relevant tests run | Preserve failures and route a repair |
-| Review → accepted | Distinct reviewer, exact digest, the task's own criteria | Repair or get the missing review. No self-review or bypass |
-| Accepted → delivered | Required integration or release verified; the result shown to the founder | Keep the delivery obligation open. A draft link is not a published URL |
-| Accepted → next action | Durable successor obligation and an actual first action on it | Persist an owned refill recovery |
+- Request → captured: requires stable ID, exact source and time, acceptance criteria, mapping to constraints or supersessions. If missing: reconcile intake without losing existing rows or history.
+- Captured → owned: requires current owner's ACK, scope, dependencies, next action, due time and recovery trigger. If missing: resolve custody or get a received hand-off. Assignment is not ACK.
+- Owned → executing: requires fresh admission and a task-bound first model tool call or deterministic operation receipt. If missing: diagnose dispatch. A launch or a process ID is not useful work.
+- Executing → review: requires pinned artifact, terminal result, relevant tests run. If missing: preserve failures and route a repair.
+- Review → accepted: requires distinct reviewer, exact digest, the task's own criteria. If missing: repair or get the missing review. No self-review or bypass.
+- Accepted → delivered: requires the required integration or release verified, and the result shown to the founder. If missing: keep the delivery obligation open. A draft link is not a published URL.
+- Accepted → next action: requires durable successor obligation and an actual first action on it. If missing: persist an owned refill recovery.
 
 Every transition records task and attempt, actor, host, real parent, generation and epoch, time, predecessor and evidence digest. Failed attempts, original missed deadlines and reopen reasons stay visible. A parent request closes only when all its criteria are met and delivered, or the founder cancels or supersedes it. Delivery, read ACK, ownership acceptance, first action, artifact acceptance, deployment and founder delivery are separate events. Delegating or sending a message never discharges the sender's obligation.
 
