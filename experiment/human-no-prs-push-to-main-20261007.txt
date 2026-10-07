@@ -1,0 +1,5 @@
+Human instruction, 7 October 2026, verbatim:
+
+I don't want PRs, we push directly to main
+
+Scope: no pull requests; work is committed and pushed directly to main.
