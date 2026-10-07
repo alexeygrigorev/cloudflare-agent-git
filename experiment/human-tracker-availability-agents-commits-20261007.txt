@@ -1,0 +1,5 @@
+Human instruction, 7 October 2026, verbatim:
+
+make sure all my requests are stored in the tracker, this tracker is always available, and we're tacking the process though the tasks, track the number of running agents, and the number of commits we're making
+
+Canonical intake task: human-tracker-availability-agents-commits-20261007. Root owns intake and follow-through; genuine principal/heads retain product implementation, independent review and existing source leases. Track source-to-task coverage, process transitions, private tracker availability/freshness/recovery, current useful agent counts with coverage, and per-repository deduplicated commit statistics. This record does not establish complete reconciliation or installed enforcement.
