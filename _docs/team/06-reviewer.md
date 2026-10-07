@@ -29,3 +29,7 @@ You check the result of one task and give a verdict on the exact version under r
 
 - Report to your head: the commit you reviewed, the verdict, every criterion with pass, fail or unknown, the evidence for each, the tests you pushed and anything you could not check and why.
 - After the implementer fixes your findings, review the new exact commit again. An approval of an old version does not carry over.
+
+## Verdict record
+
+The verdict is an issue comment with one line: `Review: approved|changes-requested sha=<sha> reviewer=<agent>/<model>`. The sha is the exact commit reviewed, at least 7 characters, and the last verdict for a sha wins. The author's commits carry the trailer `Agent: <agent>/<model>`. `scripts/guards/review_gate.py <range> --issue <n>` fails a commit with no verdict on its exact sha, a self-review, a reviewer on the author's model or a latest verdict of changes requested. The principal can override a gate with `PRINCIPAL_OVERRIDE=<reason>`, and the reason is logged.
