@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-06T09:57:04.601358+00:00",
+  "updated_at": "2026-10-07T05:26:39.037688+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -775,7 +775,7 @@
       ],
       "assignment_ack": "Launched independent non-author re-check session 430beef8 (agy CLI, Gemini 3.1 Pro). Verified view_file inspection of canonical-desktop-project.png and canonical-mobile-project.png.",
       "model": "gemini-3.1-pro-high",
-      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 \u00b7 PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
+      "acceptance_status": "ACCEPTED (PASS) for website tree d1172e704dd5b151e53cb8a1e82ff5916f982992. Heading authority resolved under User Freedom 22 and QUALITY.md: project landings use numbered mono eyebrows (01 · PROBLEM) matching Agent-Git-Lab.dc.html; daily reports use plain sentence-case headings per WORKFLOW.md. Diagram labels >= 14 CSS px verified (14.96px), pre-existing SVG clipping resolved, hero compacting above-the-fold verified, 0 horizontal overflow. Headless Chromium browser probe passed (RC0, 0 query leak)."
     },
     {
       "id": "publication-release-verification",
@@ -1209,7 +1209,7 @@
       "assignment_ack": "Launched per Desktop Orchestrator 12:50 Berlin and Codex Principal C1818 directives. Independent technical audit of container-and-patch-workflows.md, examining production container/microVM paradigms (OpenHands, SWE-bench, Devin, Daytona, Modal, E2B), network/credential egress boundaries, single-synthesizer and worktree integration patterns, and unsteered buyer adoption guidance.",
       "next_action": "Independent review completed in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md (verdict: BOUNDED ACCEPTANCE). Deliverables landed on origin/main; findings ready for principal integration.",
       "acceptance": "Independent review deliverable in research/antigravity/reviews/REV-CONTAINER-AND-PATCH-WORKFLOWS.md with clear verdict, rigorous technical verification across all 10 evaluation dimensions, and clean publication guard.",
-      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE \u2014 TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
+      "acceptance_status": "BOUNDED ACCEPTANCE: Independent review completed by container-patch-reviewer (cfdf7858). Verdict: BOUNDED ACCEPTANCE — TECHNICAL REALITY CONFIRMED; DISCONFIRMING DEMAND HYPOTHESES VALIDATED; OPERATIONAL BOUNDS & PATCH EXTENSION PREREQUISITES FORMALIZED. Verified: (1) Production reality confirmed across OpenHands, SWE-bench, Devin, Daytona, Modal, and E2B (zero remote Git Smart HTTP daemon usage); (2) Enterprise InfoSec egress lockdowns (SOC2/ISO27001) and zero-trust credential containment validated; (3) Single-Synthesizer and local worktree swarm patterns confirmed; (4) Addressable market for Agent Branches severely bounded; (5) Technical bounds formalized (git-extended binary/mode diffs, out-of-band JSONL trajectory logging, monorepo snapshot caching, and local worktree host scaling limits). Publication guard clean (exit 0)."
     },
     {
       "id": "ab-safe-main-restore",
@@ -5140,11 +5140,11 @@
       "proposed_execution_head": "quota-launcher-head-gemini",
       "ownership_ack": true,
       "status": "ready",
-      "updated_at": "2026-10-06T08:55:36.332568+00:00",
+      "updated_at": "2026-10-07T05:23:03.568784+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Actual maintained route/sourcepin/cwd/TMPDIR/timeout/collect cleanup; own admitted task firsttool/outcome/nextcallback, unsupported heldroutes reject",
-      "next_action": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
+      "next_action": "Reconcile actual launcherhandle/config/store and currentC3110/C3111 runtime evidence with acknowledgedheads; preserveoldfailure/protectedmain, no repeated guesseddefaults.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
@@ -5168,7 +5168,33 @@
           "replaced_at": "2026-10-06T08:55:36.332568+00:00",
           "reason": "Latestpolicy obsoletefloor/cap correction; owner/status preserved"
         }
-      ]
+      ],
+      "administrative_publication_prior_fields": [
+        {
+          "at": "2026-10-07T05:26:39.037688+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-06T08:55:36.332568+00:00",
+          "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T05:26:39.037688+00:00",
+          "field": "next_action",
+          "prior": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
+          "source": "C3120 scoped metadata overlay"
+        }
+      ],
+      "administrative_top_field_history": [
+        {
+          "recorded_at": "2026-10-07T05:23:03.568784+00:00",
+          "source": "Desktop07:18ack/nativecd-db5f administrativefreshnessrepair",
+          "prior_next_action": "Ant3b advances the two actual maintained tasks through the managed CLI; verify loaded store and guard receipt, provider terminal, distinct QA and successor. Loaded guard/runtime acceptance remains open; QL0f main ownership protected.",
+          "prior_updated_at": "2026-10-07T00:31:26.215714+00:00",
+          "old_monitoring_due_retained": "2026-10-07T00:40:00Z"
+        }
+      ],
+      "current_checkpoint_observed_at": "2026-10-07T05:23:03.568784+00:00",
+      "current_monitor_due_state": "Principal nextmonitor commitment not provided; historicaldue retained, not invented",
+      "current_actor_ready_evidence": "UNKNOWN;33running/11ready labels explicitly notcensus/admittedslots"
     },
     {
       "id": "scale50-B-ready-allocation",
@@ -5213,11 +5239,11 @@
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": true,
       "status": "ready",
-      "updated_at": "2026-10-06T08:55:36.332568+00:00",
+      "updated_at": "2026-10-07T05:23:03.568784+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Measured whole descendantRAM/threads/controllers and freshroutes support10 then25 then50; bindingmax/alternative if impossible",
-      "next_action": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
+      "next_action": "Obtain freshactualquota/sharedoccupiedreservedproviderbounds/currentusefulactorcoverage before stageadmission;33/11TASKSlabels are not currentcapacity.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md",
         "research/antigravity/reviews/REV-SCALE50-RAM-PROOF-AND-CAPACITY-20261005.md"
@@ -5248,7 +5274,33 @@
           "replaced_at": "2026-10-06T08:55:36.332568+00:00",
           "reason": "Latestpolicy obsoletefloor/cap correction; owner/status preserved"
         }
-      ]
+      ],
+      "administrative_publication_prior_fields": [
+        {
+          "at": "2026-10-07T05:26:39.037688+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-06T08:55:36.332568+00:00",
+          "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T05:26:39.037688+00:00",
+          "field": "next_action",
+          "prior": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
+          "source": "C3120 scoped metadata overlay"
+        }
+      ],
+      "administrative_top_field_history": [
+        {
+          "recorded_at": "2026-10-07T05:23:03.568784+00:00",
+          "source": "Desktop07:18ack/nativecd-db5f administrativefreshnessrepair",
+          "prior_next_action": "Reconcile fresh exact CLI occupancy26 against D3 claimed28 and actual reservations/account route before new admission. Postlaunch quota/occupancy is not prelaunch clearance; ZAI26 shared ceiling remains.",
+          "prior_updated_at": "2026-10-07T00:31:26.215714+00:00",
+          "old_monitoring_due_retained": "2026-10-07T00:40:00Z"
+        }
+      ],
+      "current_checkpoint_observed_at": "2026-10-07T05:23:03.568784+00:00",
+      "current_monitor_due_state": "Principal nextmonitor commitment not provided; historicaldue retained, not invented",
+      "current_actor_ready_evidence": "UNKNOWN;33running/11ready labels explicitly notcensus/admittedslots"
     },
     {
       "id": "scale50-D-dispatch-refill",
@@ -5258,11 +5310,11 @@
       "proposed_execution_head": "quota-launcher-head",
       "ownership_ack": true,
       "status": "ready",
-      "updated_at": "2026-10-06T08:55:36.332568+00:00",
+      "updated_at": "2026-10-07T05:23:03.568784+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Automated completion-to-refill single-pass non-LLM watch loop in wt-refill-runtime dispatches next admitted task upon task exit 0 when queue is populated and admission gates pass; head completion callback starts next useful task.",
-      "next_action": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
+      "next_action": "Owningheads verify actualterminal→distinctQA→disjointnextworker with source/admission receipts; currentWin35bootstrap depends on secureconfig/deviceACK, no olddiscoveryrerun.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
@@ -5289,7 +5341,33 @@
           "replaced_at": "2026-10-06T08:55:36.332568+00:00",
           "reason": "Latestpolicy obsoletefloor/cap correction; owner/status preserved"
         }
-      ]
+      ],
+      "administrative_publication_prior_fields": [
+        {
+          "at": "2026-10-07T05:26:39.037688+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-06T08:55:36.332568+00:00",
+          "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T05:26:39.037688+00:00",
+          "field": "next_action",
+          "prior": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
+          "source": "C3120 scoped metadata overlay"
+        }
+      ],
+      "administrative_top_field_history": [
+        {
+          "recorded_at": "2026-10-07T05:23:03.568784+00:00",
+          "source": "Desktop07:18ack/nativecd-db5f administrativefreshnessrepair",
+          "prior_next_action": "On actual task completion, owning head launches distinct pinned QA, accepts bounded evidence, then starts a disjoint useful successor. Current C3088/C3090 terminal and full refill gate remain unproved.",
+          "prior_updated_at": "2026-10-07T00:31:26.215714+00:00",
+          "old_monitoring_due_retained": "2026-10-07T00:40:00Z"
+        }
+      ],
+      "current_checkpoint_observed_at": "2026-10-07T05:23:03.568784+00:00",
+      "current_monitor_due_state": "Principal nextmonitor commitment not provided; historicaldue retained, not invented",
+      "current_actor_ready_evidence": "UNKNOWN;33running/11ready labels explicitly notcensus/admittedslots"
     },
     {
       "id": "scale50-E-roster-accountability",
@@ -5299,11 +5377,11 @@
       "proposed_execution_head": "agent-dashboard-head",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-06T08:55:36.332568+00:00",
+      "updated_at": "2026-10-07T05:23:03.568784+00:00",
       "priority": "critical",
       "source": "experiment/human-all-metrics-tracked-recovery-20261005.txt",
       "acceptance": "Exact dedup current active/unknown/ended categories from launcher evidence; readable task recovery and targets; no queued offers or controllers counted as active.",
-      "next_action": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
+      "next_action": "Reconcile currentdedup usefulactor/task/source outcomes from actualevents and updateviews; original14:30MISSES/expired05:13headpromise remain, no labelcounts.",
       "evidence": [
         "research/codex/scale-to50-plan-20261005.md"
       ],
@@ -5351,7 +5429,33 @@
           "replaced_at": "2026-10-06T08:55:36.332568+00:00",
           "reason": "Latestpolicy obsoletefloor/cap correction; owner/status preserved"
         }
-      ]
+      ],
+      "administrative_publication_prior_fields": [
+        {
+          "at": "2026-10-07T05:26:39.037688+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-06T08:55:36.332568+00:00",
+          "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T05:26:39.037688+00:00",
+          "field": "next_action",
+          "prior": "Current acknowledgedhead uses maintainedlauncher substantive owned tasks, fresh actualprovider quota/live/reserved concurrency and realmodel firsttools. Admission20GiB hard projectedgrowth; below30GiB one bounded cleanupactor while eligibleworkcontinues; scopedRAMoverride/perworker1500M100/scratch512/ZAI26/Codex15reserve/Grok5freeze retained. Verify executableREADY, distinctreview/refill and actual10/25/50 stage evidence; no achievedcount or newownership inferred.",
+          "source": "C3120 scoped metadata overlay"
+        }
+      ],
+      "administrative_top_field_history": [
+        {
+          "recorded_at": "2026-10-07T05:23:03.568784+00:00",
+          "source": "Desktop07:18ack/nativecd-db5f administrativefreshnessrepair",
+          "prior_next_action": "Track the two maintained actors from primary tool/unit evidence as dated observations; reconcile controller/head/worker categories and terminal states. Wholefleet/reserve unknown; retain original14:30 MISSES and protected Dashboard source.",
+          "prior_updated_at": "2026-10-07T00:31:26.215714+00:00",
+          "old_monitoring_due_retained": "2026-10-07T00:40:00Z"
+        }
+      ],
+      "current_checkpoint_observed_at": "2026-10-07T05:23:03.568784+00:00",
+      "current_monitor_due_state": "Principal nextmonitor commitment not provided; historicaldue retained, not invented",
+      "current_actor_ready_evidence": "UNKNOWN;33running/11ready labels explicitly notcensus/admittedslots"
     },
     {
       "id": "grok-five-percent-admission",
@@ -5414,7 +5518,7 @@
       },
       "next_action": "QL commit a916090 delivers structured stream-json invocation and tool telemetry capture in task-units (187/187 tests pass); commit 8486acf accepted by Coord (8aa6505); commit a916090 submitted to Coord for distinct review. scale50-20 retry held until Coord code acceptance and root disk margin >= 50.5 GiB.",
       "blocked_on": [],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "agent-quota-launcher commit a916090 (launcher/launch.py, launcher/task_units.py, tests/test_telemetry.py)",
         "agent-quota-launcher commit 8486acf (accepted by Coord in REV-QL-8486ACF-TMPDIR-REFILL-REVIEW.md)",
@@ -5439,7 +5543,7 @@
         "root-disk-below-50GiB-floor",
         "waiting-storage-floor-restoration"
       ],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ],
@@ -5466,7 +5570,7 @@
       "blocked_on": [
         "root-disk-below-50GiB"
       ],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md",
         "research/antigravity/remote-autonomy-supervisor-contract-20261005.md",
@@ -5621,7 +5725,7 @@
         "root-disk-below-50GiB",
         "end-to-end-model-dispatch-held"
       ],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md",
         "research/antigravity/reviews/REV-SUPERVISION-ANTI-SPOOFING-156752B.md"
@@ -5641,7 +5745,7 @@
       "deadline": "2026-10-05T16:30:00Z",
       "next_action": "Follow backward plan and verify real owner ACK, first tool, pinned evidence and next continuation trigger",
       "blocked_on": [],
-      "acceptance": "Repeated useful reviewed A\u2192B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
+      "acceptance": "Repeated useful reviewed A→B cycles without desktop/helper dispatch plus verified durable service/cursor/quota/failure/safety evidence. Source/mocks/transport-only do not satisfy full autonomy.",
       "evidence_paths": [
         "research/codex/remote-autonomy-1830-plan-20261005.md"
       ]
@@ -6267,7 +6371,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-06T09:53:55.196560+00:00",
+      "updated_at": "2026-10-07T05:23:03.568784+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6511,7 +6615,7 @@
         "acceptance": "Busyhead reviewpolling when delivered, NOTidlewake or permanentcallback acceptance",
         "fired_at_utc": "2026-10-06T08:48:14Z",
         "system_delivery_at_utc": "2026-10-06T08:48:15Z",
-        "head_model_activity_utc": "08:48:15\u201308:48:50"
+        "head_model_activity_utc": "08:48:15–08:48:50"
       },
       "ant_distinct_review_observation": {
         "actor": "b3752886-14cd-498a-a5e8-c3f35445f3b8",
@@ -6616,6 +6720,24 @@
             "review_limit": "Cited6ffc final09:42 predates new artifact; independent review UNPROVEN, retain source only"
           },
           "scale_state": "BQL occupancy and Ant disjointREADONLY parallel firsttools pending; no artificial one-worker cap; stage10 unmet"
+        }
+      ],
+      "administrative_publication_prior_fields": [
+        {
+          "at": "2026-10-07T05:26:39.037688+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-06T09:53:55.196560+00:00",
+          "source": "C3120 scoped metadata overlay"
+        }
+      ],
+      "administrative_observations": [
+        {
+          "recorded_at": "2026-10-07T05:23:03.568784+00:00",
+          "source": "Primarydesktopcd-db5f ACK/currentheadad-5a96",
+          "C3120": "ActualDNSlocatorfailure/outerexecution/storecorrection/desktopphysicalclonefirstaction; receiver/modeladoptionOPEN",
+          "C3110_due": "Originalhead05:13verified expired/fullruntimegateunproven",
+          "tracker_freshness": "topA/C/D/E refreshed without sourceowner/census claim",
+          "protected_source_leases": "unchanged"
         }
       ]
     },
@@ -7342,6 +7464,191 @@
       "provider": "zai glm-5.3-flash headless zcodex via stable main9a9 submit/run",
       "dispatched_at_utc": "2026-10-06T21:57Z",
       "next_gate": "distinct independent review of repair commit before acceptance; candidate request dogfood held"
+    },
+    {
+      "id": "bus-win35-nonssh-disc-01",
+      "project_id": "agent-bus",
+      "team_id": "agent-bus",
+      "status": "review",
+      "owner_tag": "zcode-bus-win35-recovery-head-20261006-resume",
+      "owner_session_id": "3273594b-3244-45f6-87af-a6a72af7acb4",
+      "actual_execution_observation": {
+        "as_of": "2026-10-06T22:01:47.493487+00:00",
+        "created_at": "2026-10-06T21:57:53Z",
+        "started_at": "2026-10-06T21:57:59Z",
+        "worker_pid": 3631172,
+        "invocation": "b5376f438ec742cb9a1e26fc768b73fc",
+        "cid": "01a11339-3c05-73d0-a024-35aaaf506fe3",
+        "actual_runtime_model": "glm-5.3-flash",
+        "first_exec": "2026-10-06T21:58:54.931Z",
+        "calls": 8,
+        "latest_call": "2026-10-06T22:00:08.723Z",
+        "memory_current_bytes": 379551744,
+        "tasks_current": 40,
+        "head_2200_firsttool_target": "met",
+        "canonical_binding_gaps": [
+          "kind",
+          "provider",
+          "model",
+          "target_commit",
+          "source_receipt"
+        ],
+        "profile": "default2400s",
+        "source_binding_or_acceptance": "unproved",
+        "principal_request": "01a1133b-9d42",
+        "scope": "readonly discovery; no mainlease"
+      },
+      "actual_capture_observation": {
+        "observed_at": "2026-10-06T22:10:51.846787+00:00",
+        "path": ".local/codex/bus-win35-resume-3273594b/disc-01-result.md",
+        "bytes": 87574,
+        "mtime": "2026-10-06T22:00:27.247329Z",
+        "sha256": "cd28280c6caed2c88d56e7a966fe19fec2d4c9cca0984bc9fb00e744e39a3806",
+        "paired_exec": "2026-10-06T22:00:27.195Z",
+        "method": "shellcat/sedredirect",
+        "evidence_level": "captured discovery evidence not authoredfinalfindings/sourcebinding/review",
+        "terminal": "unobserved",
+        "prior_artifact_unknown": "Write-onlyscan falseinference corrected",
+        "principal_effectinspection_request": "01a11344-1716"
+      },
+      "actual_terminal_observation": {
+        "model_completed_at": "2026-10-06T22:18:10.244Z",
+        "DB": "completed-awaiting-review",
+        "capture_observed_bf351_source": true,
+        "immutable_admission_receipt": "unknown",
+        "security_review": "pending",
+        "not_current_ACTIVE": true
+      },
+      "administrative_observations": [
+        {
+          "at": "2026-10-06T22:40:42.668246+00:00",
+          "actual_readonly_coverage_ACK": "01a1135f-c4f9",
+          "temporary_reviewer_coordinator": "ant-head-readiness-custody-20261007",
+          "principal_narrow_acceptance": "01a1135f-f1e0",
+          "Bus_notification": "01a1135f-f362",
+          "scope": "existing disc-01 artifact bf351f4 read-only; no rerun/sourcehandover",
+          "reviewer_firsttool": "pending",
+          "maintainer_receipt": "pending"
+        },
+        {
+          "recorded_at": "2026-10-07T05:23:03.568784+00:00",
+          "source": "Native desktop01a114cd-db5f created1791350397; genuineprincipalactiontrace",
+          "desktop_scope_ack": "existingauthenticatedWin35SSH narrowphysicalbootstrap assistance",
+          "source_sync": "desktopattested cleanWindowsclone main/head/origin8845fce6795eba7b23f0e6c3f4c0cbbea7d4dc0c, physicalfirstaction notreceiver/modelruntime",
+          "Bus_owner": "327 retained c7-3387 genuineACK",
+          "dependency": "exactreviewedinvocation/source/authdeviceconfig+deployedsecureendpoint stillrequired; localhost8788 !=HTTPS",
+          "physical_acceptance": "OPEN",
+          "owner_due": "<=30min AFTER realdeviceinput only",
+          "principal_store_correction": "cd-4c9b exactlauncherconfig/store recovered; olddisc01 notrerun",
+          "runtime_census": "UNKNOWN no33running/11readycredit"
+        },
+        {
+          "at": "2026-10-07T05:26:39.037688+00:00",
+          "checkpoint": "C3120 direct route follow-up",
+          "source": "01a114d1-a803 / principal reply 01a114d3-6c0f",
+          "evidence": "Bus acknowledged existing route; <=30 minutes remains conditional on real device input. Raw timer-job guard requested; URL/config and physical device result unverified. Security reviewer checked c702 actual bytes against stale cd282 payload; no verdict."
+        }
+      ],
+      "next_action": "Bus327 provides exact reviewed secret-free outbound receiver invocation/config and verified secure endpoint via private owned handoff. Existing desktop SSH route ACKed narrow bootstrap; obtain actual physical result, then conditional30-minute useful task/review/successor. Preserve source lease and old discovery; do not rerun completeddisc01.",
+      "updated_at": "2026-10-07T05:26:39.037688+00:00"
+    },
+    {
+      "id": "t-supervision-idle-wake-and-failover-c3110",
+      "project_id": "agent-coordination",
+      "team_id": "oversight",
+      "created_at": "2026-10-07T03:48:15.574829+00:00",
+      "status": "in_progress",
+      "source": "Genuine Ant custody77-8f11 / root78-4040 and human Continuous Operations request",
+      "owner": "ant-head-gap-recovery-20261007",
+      "owner_tag": "ant-head-gap-recovery-20261007",
+      "owner_session_id": "cfdc18a9-0946-4770-8aee-cf50a35bfaa7",
+      "assignment_ack": "01a11477-8f11-7cf2-8efb-5b7d82143746",
+      "updated_at": "2026-10-07T05:23:03.568784+00:00",
+      "owned_paths": [
+        "research/antigravity/**",
+        "scripts/supervision/**"
+      ],
+      "scope": "Integrate/repair existing guarded180 wake and reviewed43ea failover; not duplicate scheduler/election",
+      "first_head_tool_at": "2026-10-07T03:43:32Z",
+      "native_whoami_at": "2026-10-07T03:43:38Z",
+      "delegate_first_tools": "announced repair/reviewer descriptions not exact verified IDs; no3workers claim",
+      "acceptance": "installed-path safeidle positive with busy/draft/unknown negatives; executed fenced takeover after two missed semantic checks; genuine recipientACK and two useful absencecycles; independent reviewer",
+      "next_action": "Current Antcfdc returns installed matrix exactpositive submission/message IDs/semantic modelaction, protectedbusy/draft/unknown negatives, loadedpin and repeated completion-review-successor. Sourceaccepted claims remain bounded; actuallatePTYNOTREADY/pendingrequest preserved.",
+      "protected_main_leases": "Coord/QL/Bus/Dashboard unchanged",
+      "runtime_acceptance": "OPEN; headsource/runtimeclaims not installedpositiveproof",
+      "head_promised_due": "2026-10-07T05:13:00Z",
+      "checkpoint_history": [
+        {
+          "due_at_utc": "2026-10-07T05:13:00Z",
+          "display_due": "07:13CEST",
+          "source": "ORIGINALnativehead01a114ad-5a96 fromcfdc todesktop; head_duefield",
+          "recorded_at": "2026-10-07T05:23:03.568784+00:00",
+          "outcome": "Expired; fullinstalledpositive/negative/failoveracceptance unverified, sourcework credited separately"
+        }
+      ],
+      "head_due_source": "01a114ad-5a96-7191-ae4a-fbbbd45319a7",
+      "administrative_observations": [
+        {
+          "recorded_at": "2026-10-07T05:23:03.568784+00:00",
+          "source": "GenuineAntc5-2e88/principalc5-fd73",
+          "head_claimed_tests": "54supervision/72metrics",
+          "claimed_runtime": "reload1e1c/PID3603036 requiresprimaryloaded/tick/receiververification",
+          "native_delivery": "principaloneattemptc5-fd73NOTREADYlaterPTY; no submission",
+          "33_running_11_ready": "TASKSlabels not usefulactors/admittedslots",
+          "timer29141": "conditionnever callback/semantictool stillrequiresproof"
+        }
+      ]
+    },
+    {
+      "id": "t-continuation-runtime-collector-c3111",
+      "project_id": "agent-dashboard",
+      "team_id": "oversight",
+      "status": "review",
+      "created_at": "2026-10-07T05:23:03.568784+00:00",
+      "source": "Genuine head01a1147b-9741 collectoracceptance / humanContinuationRuntimemetrics",
+      "owner": "ant-head-gap-recovery-20261007",
+      "owner_tag": "ant-head-gap-recovery-20261007",
+      "owner_session_id": "cfdc18a9-0946-4770-8aee-cf50a35bfaa7",
+      "assignment_ack": "01a1147b-9741-7ca3-bbdf-41396d492a8f",
+      "current_evidence_qualification": {
+        "source_pin_claim": "905b592247085707c1c05a00bee95d155a1ea299 headreported",
+        "tests_claim": "72metrics headreported",
+        "scope": "narrowcollector eventwindows/acceptedtaskaccounting/freshnesscoverage, coordinateDashboard/publicintegration before sourcewrites",
+        "independent_installed_runtime": "notverifiedinthisadminstep",
+        "dashboard_c7_source_lease": "protected nottransferred",
+        "resolved_credit": "notgrantedfromheadstatuslabel"
+      },
+      "next_action": "Headreturns exactcollector source/review/runtime window acceptance and currentresolved-event timestamps/unknowns; Dashboard/publicowners ACK integration before peerwrites.",
+      "updated_at": "2026-10-07T05:23:03.568784+00:00"
+    },
+    {
+      "id": "bus-win35-disc01-security-review-01",
+      "project_id": "agent-bus",
+      "team_id": "agent-bus",
+      "status": "running",
+      "created_at": "2026-10-07T05:23:34.917935+00:00",
+      "owner": "zcode-bus-win35-recovery-head-20261006-resume",
+      "owner_tag": "zcode-bus-win35-recovery-head-20261006-resume",
+      "owner_session_id": "3273594b-3244-45f6-87af-a6a72af7acb4",
+      "source": "Independentadminverified actualmaintainedlaunch receipt/rootownedBuslane",
+      "actual_execution": {
+        "native_session": "633cc548",
+        "parent": "327",
+        "worker_pid": 985135,
+        "workload_pid": 985177,
+        "invocation": "3991b9bd2fa4420cb08ff9e1f0f2a853",
+        "bounds": "independent1500M100scope",
+        "provider_model": "Gemini3.1ProHigh",
+        "actor_id": "37f65842-3b7f-4955-a2da-19333f712447",
+        "first_tool": "run_commandDONE observed in stream; exactwalltimestampUNKNOWN",
+        "source_artifact_sha": "c702066c85e51ac5e9d5b3f262fda35d2aad73910366409e8d55423137b30b46",
+        "payload_prior_sha": "cd2828 superseded actualbytes observed",
+        "initial_failure": "double--modeERROR preserved; notcustodyacceptance",
+        "verdict": "PENDING",
+        "Windowsdeployment": "NOT_PROVEN"
+      },
+      "next_action": "Busowner verifies reviewer report bound actualc702 bytes and independentverdict; separate secureendpoint/devicebootstrap stillrequired, no oldcompletedtaskrerun.",
+      "updated_at": "2026-10-07T05:23:34.917935+00:00"
     }
   ]
 }

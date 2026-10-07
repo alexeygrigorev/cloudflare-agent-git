@@ -2694,3 +2694,10 @@ Desktopc2-74e4 humansteering read/ACKed, principalBusrequestc5-ace1/sourceleaseu
 ## C3120 received Bus custody and physical route
 
 Genuine BusACKc7-3387 nativeverified retains327lease/no successor; DNS255 locatorfailure acknowledged, physicaltaskdue<=30min AFTERrealdeviceinput/securityreviewpending. Principalc7-9c62/desktopc7-9c8b choose existingdesktopWin35 reviewedoutboundbootstrap+human-authorizedsyncc7-107a, no newSSH/helperbypass/duplicateinstructions. DesktopphysicalACK/result+secureHTTPSendpointpending/local8788notpublicdeployment. Outerjournalexec effectsproved/modeldenialproducerunknown; currentauthoredadoptionnotold21:58discovery. [C3120 evidence](../research/codex/win35-execution-recovery-c3120-20261007.md) preservesupdatedboundedprivateaudit/reference/publiclimitations.
+
+
+## C3120 actual desktop ACK and tracker followthrough
+
+Nativeprimary desktopcd-db5f@07:18Berlin ACKs existingauthenticatedWindowsSSH narrowbootstrap, physicalcleanclone8845fce desktopattested/notreceiverdeployment. Antoriginalad-5a96 verifies05:13UTCheadpromise nowexpired/fullruntimeunverified; collector7b-9741 actualnarrowACKregisteredonce. CanonicalWin35/C3110/C3111/A/C/D/E/C2710 CAS refreshed without IDs/MISSES/sourceowner loss;33/11labels notactorslots. Exactlauncherrecipe correctioncd-4c9b preserved; oldcompleteddisc01 no rerun; maintainer savedhandle/configreceipt plannedACKpending. [C3120 evidence](../research/codex/win35-execution-recovery-c3120-20261007.md) includesphysicalrouteACK, secureendpoint/deviceinput dependency and actualactions, no newroot or QLmaintransfer.
+
+C3120 direct follow-up: genuine Bus route ACK `01a114d1-a803` was received; principal reply `01a114d3-6c0f` requires guarded continuation before a new raw timer ping. Device-input-dependent 30-minute commitment remains conditional. Endpoint/config and Windows receiver effects remain unverified; security review has actual first action, no accepted verdict. Ant timer rearm is observed, callback causality remains unverified.
