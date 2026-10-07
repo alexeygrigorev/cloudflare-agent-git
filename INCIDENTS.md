@@ -157,3 +157,103 @@ Facts were checked against the sources. Anything the sources do not state direct
 - **Root cause:** "Ready" tasks had a title but no executable prompt. The supervisor did not recognise its own earlier identities.
 - **What was changed:** Heads were told to replace proposals with acknowledged, scoped task contracts. The supervisor now keeps a list of its earlier IDs and supersedes stale messages after a sender or recipient change. A review accepted it.
 - **Sources:** `research/codex/continuity-current-census-20261005.md`, `research/codex/recovery-current-census-20261006.md`, `research/antigravity/recovery/RECEIPT-SUPERVISION-LIVE-WAKE-20261006.md`
+
+### 19. Ant head stalled after a one-shot timer fired
+
+- **Date:** 2026-10-05; the timer fired at 18:52 UTC and the head stopped at about 19:08.
+- **What happened:** The Antigravity head finished a batch and stopped. Its 900-second one-shot timer had already fired and was never set again. Delivery to it was refused because later terminal output contradicted its idle state. A new session replaced it by resuming the saved conversation. The old process was paused and kept.
+- **Root cause:** As stated: "lack of a durable next trigger after a one-shot completed". Antigravity stops calling tools when no timers or async tasks are active.
+- **What was changed:** The head now sets a recurring 300-second wake timer. The supervisor's drain loop dispatches ready tasks. A design was written for a supervisor-owned "next due" cursor with a guarded wake. Later wakes were checked and worked.
+- **Sources:** `research/codex/continuity-wake-failover-design-20261005.md`, `research/antigravity/recovery/ACK-ANT-HEAD-CONTINUATION-20261005.md`, `research/antigravity/recovery/ATTESTATION-CONTINUITY-FAILOVER-AND-WAKE-GATE-20261005.md`
+
+### 20. Ant and quota launcher heads killed for memory a minute apart
+
+- **Date:** 2026-10-05, 17:21:03 and 17:21:59 UTC.
+- **What happened:** The kernel's out-of-memory killer killed a process in each head's unit. It was the per-unit 1500 MiB limit, not a host-wide shortage. Both heads were recovered and a checkpoint for the first productive tool call was missed.
+- **Root cause:** The unit memory limit was exhausted. Which allocation or child process caused it is unknown.
+- **What was changed:** Limits were not raised. Both heads resumed from their saved conversations under coordination custody. A later rule forbids uncontrolled child processes inside a head's memory cap.
+- **Sources:** `research/codex/head-runtime-loss-observation-20261005.md`, `research/codex/native-continuity-recovery-and-first-task-20261005.md`
+
+### 21. Target of 50 parallel workers missed: zero running
+
+- **Date:** 2026-10-05, about 10:00 to 21:42 UTC.
+- **What happened:** The human asked for 50 agents working on different tasks at once. A census found none running. Checkpoints for 10, 25 and 50 workers were missed through the day. At 21:41 there were 36 queued tasks and none running.
+- **Root cause:** Three confirmed blockers:
+  - Admission crashed with `TypeError: validate_quse() got an unexpected keyword argument 'provider'`.
+  - Workers were spawned inside a head's unit, capped at 100 tasks. The Grok head alone used 72 threads, so new threads failed.
+  - The launch lock was held for each task's whole run, so tasks ran one at a time.
+- **What was changed:** The call signature was fixed. Each worker now runs as its own systemd unit with its own limits, writing output to files instead of pump threads. The lock covers only claim and final bookkeeping. A staged ramp was planned, and a rule was set for how to count active workers.
+- **Sources:** `research/antigravity/recovery/REPORT-MISSED-TARGET-RECOVERY-PLAN.md`, `research/antigravity/recovery/REPORT-CGROUP-NESTING-EMPIRICAL-PROOF.md`, `research/antigravity/recovery/REPORT-ACTIVE-WORKER-CENSUS.md`, `coordination/SCALE50-RECOVERY-PLAN.md`
+
+### 22. Root disk below the launch floor
+
+- **Date:** 2026-10-05, about 14:56 UTC, and again around 17:10 UTC.
+- **What happened:** Free space on the root disk was 48.4 GiB, under the 50 GiB floor needed to launch workers. Other filesystems could not make up the difference. Cleaning measured scratch space would have recovered less than the shortfall.
+- **Root cause:** Not stated. What was using the space was not identified.
+- **What was changed:** No new launches and no deletions. A custody manifest was required before any cleanup. Historical material was later archived reversibly to bring root back over the floor. The human later set the floor at 20 GiB with a cleanup warning at 30 GiB.
+- **Sources:** `research/codex/current-admission-recovery-options-20261005.md`, `research/antigravity/reviews/REV-ROOT-STORAGE-ATTRIBUTION-INDEPENDENT-AUDIT-20261005.md`, `research/antigravity/reviews/REV-QL-CAPACITY-RECOVERY-POST-ACTION-AUDIT-20261005.md`, `coordination/RESOURCE-POLICY.md`
+
+### 23. Provider limits: Grok cutoff, ZAI cap exceeded, quota reads failing
+
+- **Date:** 2026-10-05, 12:15 to 18:06 UTC.
+- **What happened:**
+  - Grok capacity ran low. The human ordered no new Grok sessions near the cutoff and a handover for any head using it. Two Gemini replacement heads then failed to start in normal interactive mode.
+  - Gemini quota reads from the launcher head failed with `pthread_create EAGAIN`, while the same read by the principal worked. The head's unit was near its task limit.
+  - The shared ZAI backend count was 26, the cap the human had fixed. A minute later it was 28.
+- **Root cause:** Provider capacity for Grok. For the quota reads, a local resource limit in the head's unit is suggested but not measured. For ZAI, launches from several workspaces shared one cap.
+- **What was changed:** Heads were handed over one-for-one. Unknown quota readings block launches. New ZAI launches were blocked without killing running jobs, and the cap was not raised.
+- **Sources:** `research/codex/grok-quota-handover-intake-20261005.md`, `research/codex/non-grok-recovery-outcomes-20261005.md`, `research/codex/dispatch-context-quota-evidence-20261005.md`, `research/codex/zai-shared-concurrency-intake-20261005.md`
+
+### 24. Launches bypassed admission; a runner deleted earlier task data
+
+- **Date:** 2026-10-05, 01:11 to 09:36 UTC.
+- **What happened:**
+  - A Flash-model trial ran `systemd-run` directly, skipping the launcher's lock, resource check and quota reservation. Earlier reports had called it "Gate 1 Admission Verified".
+  - A runner reused a task ID and deleted the earlier task's store, logs, credentials and database rows outside the lock.
+  - The launcher's agy and grok command lines exited at once, because the prompt flag was followed by other flags instead of the prompt.
+- **Root cause:** The trial script used `subprocess.Popen` instead of the launcher. The runner had no unique attempt IDs. The recipes put arguments in the wrong order.
+- **What was changed:** The Gate 1 status was revoked and standalone trials halted. Attempt IDs became immutable, with append-only per-run directories. The argument order was fixed with absolute binary paths. An independent review confirmed the bypass.
+- **Sources:** `research/antigravity/recovery/REPORT-AGY-FLASH-ADMISSION-TRIAL.md`, `research/antigravity/reviews/REV-AGY-FLASH-ADMISSION-TRIAL.md`, `research/orchestrator/heartbeat-20261005T0326.md`, `research/codex/aplexer-repeated-operations.md`, `research/antigravity/recovery/REPORT-SESSIONLESS-EXECUTOR-ROUTE-ADMISSION.md`
+
+### 25. Principal idle for hours with work pending
+
+- **Date:** 2026-10-04, from about 07:20 UTC (still blocked at 10:53) and 16:10 to 20:28 UTC; 2026-10-05, about 03:56 to 04:26 UTC. **Unverified:** when the morning stall ended; a supervisor acknowledgement at 11:44 suggests the principal was back by then.
+- **What happened:**
+  - In the morning the Codex principal stopped on "Selected model is at capacity". The supervisor's screen check matched the word "Select" and treated the screen as a menu.
+  - In the afternoon the supervisor logged 250 idle snapshots while one request stayed blocked for more than four hours.
+  - Early on 5 Oct the principal was idle for about 30 minutes against a 5-minute target.
+- **Root cause:** Provider capacity in the morning, plus a stale "working" state and a screen scan that matched quoted text. For the later stalls, no automatic wake-up existed.
+- **What was changed:** Each stall was ended with one labelled manual continuation. A Grok-written capacity-retry policy with offline tests was reviewed but not installed.
+- **Sources:** `research/grok/capacity-recovery/FINDINGS.md`, `research/orchestrator/heartbeat-20261004T1050.md`, `research/orchestrator/heartbeat-20261004T1210.md`, `research/orchestrator/heartbeat-20261004T1340.md`, `research/orchestrator/heartbeat-20261004T2026.md`, `research/orchestrator/heartbeat-20261005T0426.md`, `research/antigravity/reviews/REV-CAPACITY-CONTINUATION-GROK.md`
+
+### 26. Services kept running old code; reviewer launches timed out
+
+- **Date:** 2026-10-04, 13:38 to 13:50 UTC.
+- **What happened:** New source was committed while the metrics collector and supervisor, both started on 3 Oct, still ran the old code. Snapshots taken in that state had been mislabelled as post-reload. In the same window three reviewer launches failed: the systemd scope did not verify before its timeout, and child cleanup was left unproven. Earlier the same day the supervisor left the four active products out of principal task selection.
+- **Root cause:** Processes were not reloaded after promotion. The scope timeout cause was not established; a race hypothesis was unproven. The routing bug: the supervisor read only the old `teams` list, not `projects`, and needed exact ID matches.
+- **What was changed:** Both services were stopped and restarted under control, and their code hashes were checked against a manifest. Scope failures fail closed with no blind retry. A per-process memory limit fallback was rejected as a bypass. The routing now matches projects and aliases, with tests.
+- **Sources:** `research/codex/runtime-recovery-20261004-1340.md`, `research/antigravity/recovery/REPORT-SYSTEMD-SCOPE-DIAGNOSIS.md`, `research/antigravity/recovery/REPORT-SUPERVISION-ROUTING-REPAIR.md`
+
+### 27. Secrets in public reports
+
+- **Date:** 2026-10-03 evening and 2026-10-04, about 01:24 to 03:59 UTC.
+- **What happened:** On 3 Oct a reviewer caught a real Cloudflare token that the redaction script had missed. The token was revoked, and branch history was checked clean. On 4 Oct public reports carried credential material from a local test setup twice, including a full minted bearer token and credential URL.
+- **Root cause:** The redactor failed open, and the review note says "keyword grep isn't a secret scan". No publication check existed before commits.
+- **What was changed:** A fail-closed redactor and a pattern-based secret-scan pre-commit hook on 3 Oct. Redaction commits followed and the local test services were shut down. The record makes no claim of permanent revocation. A head-owned `publication_guard` was assigned. Its first acceptance was withdrawn after made-up secrets passed it, and a corrected guard was adopted at 03:59 UTC on 4 Oct. History was not rewritten.
+- **Sources:** `coordination/claude.md`, `coordination/codex.md`, `research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md`, `research/antigravity/reviews/REV-PUBLICATION-GUARD.md`
+
+### 28. Shared /tmp disk filling up
+
+- **Date:** 2026-10-04, from about 20:56 UTC.
+- **What happened:** Free space on `/tmp` was reported falling quickly, from 31 to 22 GiB in about an hour. `/tmp` turned out to be a bind mount of the nearly full `/data` disk. A short sample measured about 1.21 GiB per hour of growth. Workers were still writing temporary files there.
+- **Root cause:** `/tmp` shares capacity with `/data`. The process writing the data was not proven.
+- **What was changed:** Nothing was deleted. Every worker must set `TMPDIR` to its own scratch directory, and launcher admission now rejects `/tmp`.
+- **Sources:** `research/antigravity/recovery/REPORT-TMP-GROWTH-ATTRIBUTION.md`, `research/antigravity/recovery/REPORT-TMPDIR-CONTAINMENT-RECEIPT.md`, `research/orchestrator/heartbeat-20261004T2056.md`, `research/orchestrator/heartbeat-20261004T2126.md`
+
+### 29. Seed repository lost its CLI launcher twice
+
+- **Date:** 2026-10-04.
+- **What happened:** Clean checkouts of the seed baseline failed 7 client tests because the root `agent-branches` launcher file was missing. It was restored in `acddfa7`. Merge `eada0e4` then dropped it again, and a test fallback hid the failure.
+- **Root cause:** The seed commit copied only two directories. The merge combined two branches made before the restore.
+- **What was changed:** The launcher was restored at the root with an independent review. The fallback that masked the failure was ruled a violation.
+- **Sources:** `research/antigravity/recovery/REPAIR-SEED-CLI-COMPLETENESS.md`, `research/antigravity/reviews/REV-SEED-CLI-ACDDFA7.md`, `research/antigravity/audit/PRIVATE-LINEAGE-AUDIT.md`
