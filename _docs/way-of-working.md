@@ -147,33 +147,33 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 
 - Run `quse PROVIDER --json` fresh before each launch and while supervising. An unknown or error reading means no launch.
 - Use expiring quota first: when a provider has a lot left and resets soon, use it as much as possible; when it is low, switch to another.
-- The launcher records usage statistics so we can see how usage changes and make its choices smarter, and it is built to be useful outside this project.
-- Prefer z.ai (ZCode via zcodex), OpenCode Space Bunny, OpenCode Muse Spark 1.3, Gemini through Antigravity, and Grok while its quota lasts, and use them heavily.
-- Use Claude sparingly. Codex GPT-6 Luna at max effort and Claude Sonnet 5.5 are allowed executors. Start no new Codex agent once any Codex window shows 15% or less remaining.
+- The launcher records usage statistics so its choices get smarter, and it is built to be useful outside this project.
+- Use z.ai (ZCode via zcodex) for most implementation, and use it, OpenCode Space Bunny, OpenCode Muse Spark 1.3, Gemini through Antigravity and Grok (while its quota lasts) heavily.
+- Use Claude sparingly: Claude Opus only for the daily write-up; Claude Sonnet 5.5 is allowed for workers and heads. Codex GPT-6 Luna at max effort is an allowed executor.
+- Start no new Codex agent once any Codex window shows 15% or less remaining.
 - Start no new Grok agent when any window shows 5% or less remaining. A Grok principal or head hands over to a healthy provider before it gets there. An unknown reading counts as too low.
-- z.ai has one shared ceiling across all hosts and projects, not one per project: the measured total of parallel sessions (26 on 5 October).
-- ZCode was free from 17:00 to 03:00 Berlin while its campaign ran. Check that the campaign is still live and that you are on the right model before treating any time as free.
-- Copilot quota drains in one session, so don't bother with it.
-- When one service hits its quota, plan around it and move work to a healthy provider; don't park the whole direction.
-- The monitoring helper runs on GPT-6 Luna at max effort to save usage. It does not count as a worker.
-- Claude Opus is used only for the daily write-up; Sonnet 5.5 is allowed for workers and heads. Check the exact model and route, and never substitute one silently.
-- Launch through the maintained launcher, never through an ad hoc provider shortcut. Switching to a fallback provider is a new launch through the launcher.
+- z.ai has one shared ceiling across all hosts and projects, not one per project: the measured total of parallel sessions.
+- ZCode is free from 17:00 to 03:00 Berlin only while its campaign runs. Check that the campaign is still live and that you are on the right model before treating any time as free.
+- Don't use Copilot.
+- When one service hits its quota, move work to a healthy provider; don't park the whole direction.
+- The monitoring helper runs on GPT-6 Luna at max effort. It does not count as a worker.
+- Check the model and route of every launch. Switching to a fallback provider is a new launch through the launcher, never an ad hoc shortcut or a silent substitution.
 
 ### Host limits
 
-- For the push to 50 agents, don't refuse a launch because free RAM is low. Measure the memory actually used instead.
+- Don't refuse a launch because free RAM is low; measure the memory used instead.
 - Contain every worker separately at 1500M memory and 100 tasks. One cap on a head does not contain the workers under it.
-- Below 30 GiB free on the root disk, keep launching but start one cleanup agent that frees disposable scratch. The hard floor of 20 GiB free, after counting growth promised to running jobs, is the agents' own limit.
-- Scratch for spikes is capped at 512 MiB in total, and each job budgets what it actually grows.
+- Below 30 GiB free on the root disk, keep launching but start one cleanup agent that frees disposable scratch. Keep a hard floor of 20 GiB free, after counting growth promised to running jobs.
+- Scratch for spikes is capped at 512 MiB in total, and each job budgets what it grows.
 - RAM, not disk, is what breaks when many tests run in parallel; plan test fan-out with that in mind.
 - No Rust builds and no global installs until build budgets are proven.
-- Agents run on Hetzner, Win35 and the founder's own computers, which is why he rented Hetzner.
+- Agents run on Hetzner, Win35 and the founder's own computers.
 
 ### Spending
 
 - The whole Cloudflare and cloud budget is USD 5 a month, including the Workers Paid base fee.
-- No agent execution on Cloudflare Workers, Containers or Workers AI. Light relay or storage use is allowed only with measured usage and a real bound on overage.
-- Messaging between agents should cost close to nothing. Prefer the simplest design over metered storage.
+- No agent execution on Cloudflare Workers, Containers or Workers AI. Light relay or storage use is allowed only with measured usage and a bound on overage.
+- Messaging between agents costs close to nothing. Prefer the simplest design over metered storage.
 - No purchases, credits, billing changes, new paid services or AWS compute.
 
 ## 7. Documentation rules
