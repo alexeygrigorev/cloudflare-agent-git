@@ -1933,6 +1933,59 @@ class RestingStateContradictionPrecheckTests(unittest.TestCase):
      service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
      service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
 
+ def test_source_manifest_and_change_detection(self):
+  """Verify that service startup creates source-manifest.json and exits if source changes on disk."""
+  with tempfile.TemporaryDirectory() as td:
+   tmp = pathlib.Path(td)
+   root = tmp / 'root'
+   root.mkdir(parents=True)
+   (root / 'coordination').mkdir(parents=True)
+   (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps({'teams': [{'id': 'T1', 'principal_tags': ['codex-principal']}]}))
+   (root / 'coordination/TASKS.json').write_text(json.dumps({'tasks': []}))
+   private = tmp / 'private'
+   private.mkdir()
+   bin_dir = tmp / 'bin'
+   bin_dir.mkdir()
+   pinned = bin_dir / 'aplexer'
+   pinned.write_bytes(b'PINNED')
+
+   def fake_cmd(args, timeout=20):
+     words = [a for a in args[1:] if not a.startswith('-')]
+     if words[:1] == ['whoami']:
+       return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-test-src'})
+     if words[:1] == ['list']:
+       (private / 'stop').write_text('stop')
+       return '[]'
+     if words[:1] == ['inbox']:
+       return '[]'
+     return '{}'
+
+   real_cmd, real_root, real_priv, real_bin = service.command, service.ROOT, service.PRIVATE, service.BINARY
+   try:
+     service.command = fake_cmd
+     service.ROOT, service.PRIVATE, service.BINARY = root, private, str(pinned)
+
+     service.run()
+
+     manifest_file = private / 'source-manifest.json'
+     self.assertTrue(manifest_file.exists(), "source-manifest.json must be created at startup")
+     data = json.loads(manifest_file.read_text())
+     self.assertIn('service_path', data)
+     self.assertIn('service_sha256', data)
+     self.assertEqual(len(data['service_sha256']), 64)
+     self.assertIn('loaded_at', data)
+     self.assertEqual(data.get('authority'), 'canonical supervision runtime source proof')
+
+     events_file = private / 'events.jsonl'
+     self.assertTrue(events_file.exists())
+     events = [json.loads(line) for line in events_file.read_text().splitlines() if line.strip()]
+     start_event = [e for e in events if e.get('kind') == 'service-started'][0]
+     self.assertIn('service_sha256', start_event)
+     self.assertEqual(start_event['service_sha256'], data['service_sha256'])
+   finally:
+     service.command, service.ROOT, service.PRIVATE, service.BINARY = real_cmd, real_root, real_priv, real_bin
+
 
 if __name__=='__main__':unittest.main()
+
 

@@ -1254,6 +1254,21 @@ def run():
            'authority':'root-approved immutable copy of installed production CLI; no all-engine readiness guarantee',
            'supports_idempotency_key':supports_key, 'send_recovery':'native key when available; otherwise crash-safe local intent, ambiguous sends frozen'}
     atomic(PRIVATE / 'binary-manifest.json', manifest)
+
+    # Source manifest for Python supervision runtime
+    service_path = pathlib.Path(__file__).resolve()
+    expected_source_hash = hashlib.sha256(service_path.read_bytes()).hexdigest()
+    failover_path = service_path.parent / 'failover_integration.py'
+    expected_failover_hash = hashlib.sha256(failover_path.read_bytes()).hexdigest() if failover_path.exists() else None
+    source_manifest = {
+        'service_path': str(service_path),
+        'service_sha256': expected_source_hash,
+        'failover_path': str(failover_path) if failover_path.exists() else None,
+        'failover_sha256': expected_failover_hash,
+        'loaded_at': now(),
+        'authority': 'canonical supervision runtime source proof'
+    }
+    atomic(PRIVATE / 'source-manifest.json', source_manifest)
     statepath = PRIVATE / 'state.json'
     memory = json.loads(statepath.read_text()) if statepath.exists() else {}
 
@@ -1270,7 +1285,8 @@ def run():
             handle.write(json.dumps({'timestamp': now(), 'kind': kind, **fields}) + '\n')
 
     if storage_guard(PRIVATE)['state'] != 'paused-hard-limit':
-        event('service-started', session_id=identity['id'], binary_sha256=expected_hash)
+        event('service-started', session_id=identity['id'], binary_sha256=expected_hash,
+              service_sha256=expected_source_hash, failover_sha256=expected_failover_hash)
 
     consumer = TerminalConsumer(PRIVATE)
 
@@ -1346,15 +1362,24 @@ def run():
             head_tags = active_heads(entities, PRIVATE, registry_full)
             report['active_heads'] = head_tags
             sessions = json.loads(command(['aplexer', 'list', '--json']))
+            same_source = hashlib.sha256(service_path.read_bytes()).hexdigest() == expected_source_hash
+            if not same_source:
+                sys.exit(42)
+            if failover_path.exists() and expected_failover_hash:
+                same_failover = hashlib.sha256(failover_path.read_bytes()).hexdigest() == expected_failover_hash
+                if not same_failover:
+                    sys.exit(42)
             sessions = [x for x in sessions if x.get('workspace') == str(ROOT)]
             try:
+                import importlib
                 import scripts.supervision.failover_integration as failover_integration
+                importlib.reload(failover_integration)
                 failover_integration.run_failover_tick(PRIVATE, BINARY, supports_key, identity["id"], command, recorded_send, registry_full, sessions)
             except Exception as e:
                 event("failover-error", error=str(e))
             same_binary = hashlib.sha256(pathlib.Path(BINARY).read_bytes()).hexdigest() == expected_hash
             if not same_binary:
-                raise RuntimeError('scoped binary changed: re-review and restart service explicitly')
+                sys.exit(42)
             # Replies are inspected before ACK; arbitrary reply text is never executable.
             inbox = json.loads(command([BINARY, 'message', 'inbox', '--json']))
             atomic(PRIVATE / 'inbox.json', inbox)

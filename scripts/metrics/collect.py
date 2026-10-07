@@ -790,7 +790,7 @@ def _collect():
         except Exception:
             agent_ws = ROOT
 
-        registered_paths = sorted({rel for task in owned for rel in task.get('evidence_paths', [])})
+        registered_paths = sorted({rel for task in owned for rel in (task.get('evidence_paths') or [])})
         coverage = {
             'registered_distinct_paths': len(registered_paths),
             'missing_paths': [],
@@ -867,7 +867,7 @@ def _collect():
             'proc_start_ticks': ps.get('start_ticks'),
             'usage': usage,
             'tasks': [
-                {'id': t.get('id'), 'status': t.get('status'), 'updated_at': t.get('updated_at'), 'blocked_on': t.get('blocked_on', []), 'next_action': t.get('next_action')}
+                {'id': t.get('id'), 'status': t.get('status'), 'updated_at': t.get('updated_at'), 'blocked_on': t.get('blocked_on') or [], 'next_action': t.get('next_action')}
                 for t in owned
             ],
             'evidence': evidence,

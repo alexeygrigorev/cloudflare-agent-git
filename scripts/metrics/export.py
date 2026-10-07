@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Export PRIVATE aggregate observation history, never raw transcripts."""
-import argparse, collections, datetime, json, pathlib, gzip
+import argparse, collections, datetime, json, pathlib, gzip, subprocess
 ROOT=pathlib.Path(__file__).resolve().parents[2]; STORE=ROOT/'.local/metrics'
 def summarize():
     totals=collections.defaultdict(lambda:{'snapshots':0,'pid_live_observed_seconds':0,'hook_working_observed_seconds':0,'hook_idle_observed_seconds':0,'cpu_seconds_observed_delta':0,'evidence_files_latest':None})
@@ -35,7 +35,7 @@ def summarize():
     latest=json.loads((STORE/'latest.json').read_text()) if (STORE/'latest.json').exists() else {}
     tasks=latest.get('tasks',[])
     for tag,value in totals.items():
-        registered=sorted({rel for task in tasks if task.get('owner_tag')==tag for rel in task.get('evidence_paths',[])})
+        registered=sorted({rel for task in tasks if task.get('owner_tag')==tag for rel in (task.get('evidence_paths') or [])})
         observed={};missing=[];unsupported=[];outside=[]
         for rel in registered:
             path=(ROOT/rel).resolve()
@@ -70,6 +70,21 @@ def parse_window_seconds(val, ref_dt):
         return float(s)
     return float(val)
 
+def parse_iso_datetime(as_of):
+    if as_of is None:
+        return datetime.datetime.now(datetime.timezone.utc)
+    if isinstance(as_of, str):
+        s = as_of.strip()
+        if s.endswith('Z'):
+            s = s[:-1] + '+00:00'
+        dt = datetime.datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=datetime.timezone.utc)
+        return dt
+    if isinstance(as_of, datetime.datetime):
+        return as_of if as_of.tzinfo is not None else as_of.replace(tzinfo=datetime.timezone.utc)
+    return datetime.datetime.now(datetime.timezone.utc)
+
 def summarize_resolved_tasks(tasks=None, tasks_path=None, window_seconds=None, as_of=None, project=None, root_dir=None) -> dict:
     root_dir_path = pathlib.Path(root_dir).resolve() if root_dir else ROOT
     if tasks is None:
@@ -84,19 +99,7 @@ def summarize_resolved_tasks(tasks=None, tasks_path=None, window_seconds=None, a
     elif not isinstance(tasks, list):
         tasks = []
 
-    if as_of is None:
-        as_of_dt = datetime.datetime.now(datetime.timezone.utc)
-    elif isinstance(as_of, str):
-        s = as_of.strip()
-        if s.endswith('Z'):
-            s = s[:-1] + '+00:00'
-        as_of_dt = datetime.datetime.fromisoformat(s)
-        if as_of_dt.tzinfo is None:
-            as_of_dt = as_of_dt.replace(tzinfo=datetime.timezone.utc)
-    elif isinstance(as_of, datetime.datetime):
-        as_of_dt = as_of if as_of.tzinfo is not None else as_of.replace(tzinfo=datetime.timezone.utc)
-    else:
-        as_of_dt = datetime.datetime.now(datetime.timezone.utc)
+    as_of_dt = parse_iso_datetime(as_of)
 
     parsed_window = parse_window_seconds(window_seconds, as_of_dt)
 
@@ -284,10 +287,158 @@ def summarize_resolved_tasks(tasks=None, tasks_path=None, window_seconds=None, a
         'by_owner': dict(sorted(by_owner.items())),
     }
 
+DEFAULT_COMPETITION_REPOS = [
+    ('cloudflare-agent-git', ROOT),
+    ('agent-branches', ROOT.parent / 'agent-branches'),
+    ('agent-dashboard', ROOT.parent / 'agent-dashboard'),
+    ('agent-quota-launcher', ROOT.parent / 'agent-quota-launcher'),
+    ('agent-bus', ROOT.parent / 'agent-bus'),
+]
+
+def summarize_running_agents(store_dir=STORE, as_of=None, latest_data=None):
+    """Summarize currently observed live running agents, distinguishing registered vs unregistered."""
+    if latest_data is None:
+        latest_path = pathlib.Path(store_dir) / 'latest.json'
+        latest_data = json.loads(latest_path.read_text()) if latest_path.exists() else {}
+
+    ref_dt = parse_iso_datetime(as_of)
+    aggregate = latest_data.get('aggregate', {})
+    sessions = latest_data.get('sessions', [])
+
+    live_sessions = [s for s in sessions if s.get('pid_live')]
+    unregistered_live = [s for s in live_sessions if s.get('unregistered')]
+    registered_live = [s for s in live_sessions if not s.get('unregistered')]
+
+    by_role = collections.defaultdict(int)
+    by_provider = collections.defaultdict(int)
+    by_team = collections.defaultdict(int)
+    by_state = collections.defaultdict(int)
+
+    seen_ids = set()
+    dedup_actors = []
+
+    for s in live_sessions:
+        sid = s.get('id') or s.get('tag')
+        if sid and sid not in seen_ids:
+            seen_ids.add(sid)
+            dedup_actors.append(sid)
+
+        role = s.get('role') or 'unknown'
+        by_role[role] += 1
+
+        team = s.get('team_id') or 'unassigned'
+        by_team[team] += 1
+
+        state = s.get('reported_state') or 'unknown'
+        by_state[state] += 1
+
+        engine = s.get('engine') or 'unknown'
+        by_provider[engine] += 1
+
+    active_working = sum(1 for s in live_sessions if s.get('reported_state') == 'working')
+    idle_waiting = sum(1 for s in live_sessions if s.get('reported_state') in ('idle', 'waiting'))
+
+    unregistered_count = len(unregistered_live) if unregistered_live else aggregate.get('unregistered_live', 0)
+    total_running_agents = max(len(live_sessions), len(registered_live) + unregistered_count)
+
+    return {
+        'as_of': ref_dt.isoformat(),
+        'total_running_agents': total_running_agents,
+        'registered_live_count': len(registered_live),
+        'unregistered_live_count': unregistered_count,
+        'active_working_count': active_working,
+        'idle_waiting_count': idle_waiting,
+        'deduplicated_agent_ids': sorted(dedup_actors),
+        'by_role': dict(sorted(by_role.items())),
+        'by_provider': dict(sorted(by_provider.items())),
+        'by_team': dict(sorted(by_team.items())),
+        'by_state': dict(sorted(by_state.items())),
+        'aggregate_summary': aggregate,
+        'limits': [
+            'Running agent counts are sampled point-in-time process/PTY observations, not verified continuous progress.',
+            'Unregistered processes indicate external or untracked workers outside TEAM-REGISTRY.json.',
+            'Reported working states require fresh activity validation before crediting as productive output.'
+        ]
+    }
+
+def summarize_commits(window_seconds=86400, as_of=None, repos=None):
+    """Summarize reachable git commits across core competition repositories within a time window."""
+    parsed_window = parse_window_seconds(window_seconds, datetime.datetime.now(datetime.timezone.utc))
+    if parsed_window is None:
+        parsed_window = 86400.0
+
+    ref_dt = parse_iso_datetime(as_of)
+    window_start_dt = ref_dt - datetime.timedelta(seconds=parsed_window)
+    window_start_iso = window_start_dt.isoformat()
+
+    target_repos = repos if repos is not None else DEFAULT_COMPETITION_REPOS
+    berlin_tz = datetime.timezone(datetime.timedelta(hours=2))
+
+    per_repo = {}
+    all_unique_shas = set()
+
+    for name, path in target_repos:
+        r_path = pathlib.Path(path).resolve()
+        if not (r_path / '.git').exists():
+            continue
+
+        cmd = [
+            'git', '-C', str(r_path), 'log',
+            f'--since={window_start_iso}',
+            '--format=%H|%an|%ae|%aI|%s'
+        ]
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            lines = [l.strip() for l in res.stdout.splitlines() if l.strip()]
+        except Exception:
+            lines = []
+
+        repo_shas = set()
+        hourly_berlin = collections.defaultdict(int)
+        latest_sha = None
+
+        for line in lines:
+            parts = line.split('|', 4)
+            if len(parts) >= 4:
+                sha, author, email, commit_iso = parts[0], parts[1], parts[2], parts[3]
+                if sha not in repo_shas:
+                    repo_shas.add(sha)
+                    all_unique_shas.add(sha)
+                    if latest_sha is None:
+                        latest_sha = sha
+                    try:
+                        c_dt = datetime.datetime.fromisoformat(commit_iso).astimezone(berlin_tz)
+                        hour_str = c_dt.strftime('%Y-%m-%d %H:00 CEST')
+                        hourly_berlin[hour_str] += 1
+                    except Exception:
+                        pass
+
+        per_repo[name] = {
+            'path': str(r_path),
+            'unique_commit_count': len(repo_shas),
+            'hourly_berlin': dict(sorted(hourly_berlin.items())),
+            'latest_commit_sha': latest_sha
+        }
+
+    return {
+        'as_of': ref_dt.isoformat(),
+        'window_seconds': parsed_window,
+        'window_start': window_start_iso,
+        'total_unique_commits': len(all_unique_shas),
+        'per_repo': per_repo,
+        'limits': [
+            'Reachable commits from repository working heads within the specified time window.',
+            'Hourly breakdown is projected in Europe/Berlin time (CEST, UTC+2).',
+            'Commit counts represent revision history progress, not independently accepted project outcomes.'
+        ]
+    }
+
 if __name__=='__main__':
-    ap = argparse.ArgumentParser(description="Export PRIVATE aggregate observation history and resolved tasks.")
+    ap = argparse.ArgumentParser(description="Export PRIVATE aggregate observation history, resolved tasks, running agents, and commits.")
     ap.add_argument('--output', help="Path to write output file (must be in .local/metrics)")
     ap.add_argument('--resolved-tasks', action='store_true', help="Run and output Continuation Runtime resolved tasks summary")
+    ap.add_argument('--running-agents', action='store_true', help="Run and output live running agents summary")
+    ap.add_argument('--commits', action='store_true', help="Run and output reachable commit metrics across competition repositories")
     ap.add_argument('--window', default=None, help="Window in seconds or shorthand ('30m', '24h', 'all')")
     ap.add_argument('--project', default=None, help="Project name filter")
     ap.add_argument('--as-of', default=None, help="ISO-8601 UTC timestamp")
@@ -327,6 +478,47 @@ if __name__=='__main__':
             print(f"  Evidence coverage:      {cov_pct:.1f}% ({cov['verified_count']} verified, {cov['missing_count']} missing)")
             print(f"  By project:             {json.dumps(result['by_project'])}")
             print(f"  By owner:               {json.dumps(result['by_owner'])}")
+    elif args.running_agents:
+        result = summarize_running_agents(as_of=args.as_of)
+        if args.output:
+            path = pathlib.Path(args.output).resolve()
+            if STORE.resolve() not in path.parents:
+                raise SystemExit('export must stay in private .local/metrics')
+            path.write_text(json.dumps(result, indent=2))
+            path.chmod(0o600)
+            print(str(path))
+        elif args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            print("Running Agents Summary:")
+            print(f"  As of:                  {result['as_of']}")
+            print(f"  Total running:          {result['total_running_agents']}")
+            print(f"  Registered live:        {result['registered_live_count']}")
+            print(f"  Unregistered live:      {result['unregistered_live_count']}")
+            print(f"  Active working:         {result['active_working_count']}")
+            print(f"  Idle/waiting:           {result['idle_waiting_count']}")
+            print(f"  By role:                {json.dumps(result['by_role'])}")
+            print(f"  By provider:            {json.dumps(result['by_provider'])}")
+            print(f"  By team:                {json.dumps(result['by_team'])}")
+    elif args.commits:
+        result = summarize_commits(window_seconds=args.window, as_of=args.as_of)
+        if args.output:
+            path = pathlib.Path(args.output).resolve()
+            if STORE.resolve() not in path.parents:
+                raise SystemExit('export must stay in private .local/metrics')
+            path.write_text(json.dumps(result, indent=2))
+            path.chmod(0o600)
+            print(str(path))
+        elif args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            print("Competition Repositories Commit Metrics:")
+            print(f"  As of:                  {result['as_of']}")
+            print(f"  Window (seconds):       {result['window_seconds']}")
+            print(f"  Window start:           {result['window_start']}")
+            print(f"  Total unique commits:   {result['total_unique_commits']}")
+            for repo, data in result['per_repo'].items():
+                print(f"    - {repo}: {data['unique_commit_count']} commits (latest: {data['latest_commit_sha'][:8] if data['latest_commit_sha'] else 'none'})")
     else:
         result = summarize()
         if args.output:

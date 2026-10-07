@@ -15,6 +15,8 @@ from scripts.metrics.export import (
     STORE,
     parse_window_seconds,
     summarize_resolved_tasks,
+    summarize_running_agents,
+    summarize_commits,
 )
 
 
@@ -370,6 +372,65 @@ class TestResolvedTasksFileLoading(unittest.TestCase):
         res = summarize_resolved_tasks(as_of="2026-10-07T04:00:00Z", window_seconds="all")
         self.assertGreater(res["resolved_task_count"], 100)
         self.assertIn("PUBLICATION-SOCIAL-SHARE-DEFAULT-20261006", res["resolved_unique_task_ids"])
+
+
+class TestRunningAgentsAndCommits(unittest.TestCase):
+    """Test running agents and commit metrics collectors and CLI."""
+
+    def test_summarize_running_agents_synthetic(self):
+        fake_latest = {
+            "aggregate": {"unregistered_live": 2},
+            "sessions": [
+                {"id": "s1", "tag": "head-1", "role": "head", "team_id": "T1", "engine": "antigravity", "pid_live": True, "reported_state": "working"},
+                {"id": "s2", "tag": "worker-1", "role": "executor", "team_id": "T1", "engine": "codex", "pid_live": True, "reported_state": "idle"},
+                {"id": "s3", "tag": "worker-2", "role": "executor", "team_id": "T2", "engine": "zcodex", "pid_live": False, "reported_state": "idle"},
+                {"id": "s4", "tag": "anon-1", "role": "unknown", "team_id": "unregistered", "engine": "shell", "pid_live": True, "unregistered": True, "reported_state": "working"},
+            ]
+        }
+        res = summarize_running_agents(as_of="2026-10-07T05:00:00Z", latest_data=fake_latest)
+        self.assertEqual(res["total_running_agents"], 3)
+        self.assertEqual(res["registered_live_count"], 2)
+        self.assertEqual(res["unregistered_live_count"], 1)
+        self.assertEqual(res["active_working_count"], 2)
+        self.assertEqual(res["idle_waiting_count"], 1)
+        self.assertEqual(res["by_role"], {"executor": 1, "head": 1, "unknown": 1})
+        self.assertEqual(res["by_provider"], {"antigravity": 1, "codex": 1, "shell": 1})
+        self.assertEqual(res["by_team"], {"T1": 2, "unregistered": 1})
+        self.assertEqual(res["deduplicated_agent_ids"], ["s1", "s2", "s4"])
+
+    def test_summarize_commits_synthetic_repo(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo_dir = pathlib.Path(td) / "test_repo"
+            repo_dir.mkdir()
+            subprocess.run(["git", "init"], cwd=str(repo_dir), capture_output=True, check=True)
+            subprocess.run(["git", "config", "user.name", "Test Agent"], cwd=str(repo_dir), capture_output=True, check=True)
+            subprocess.run(["git", "config", "user.email", "agent@test.local"], cwd=str(repo_dir), capture_output=True, check=True)
+            (repo_dir / "file.txt").write_text("commit 1")
+            subprocess.run(["git", "add", "."], cwd=str(repo_dir), capture_output=True, check=True)
+            subprocess.run(["git", "commit", "-m", "first commit"], cwd=str(repo_dir), capture_output=True, check=True)
+            (repo_dir / "file.txt").write_text("commit 2")
+            subprocess.run(["git", "add", "."], cwd=str(repo_dir), capture_output=True, check=True)
+            subprocess.run(["git", "commit", "-m", "second commit"], cwd=str(repo_dir), capture_output=True, check=True)
+
+            res = summarize_commits(window_seconds=86400, repos=[("test_repo", repo_dir)])
+            self.assertEqual(res["total_unique_commits"], 2)
+            self.assertIn("test_repo", res["per_repo"])
+            self.assertEqual(res["per_repo"]["test_repo"]["unique_commit_count"], 2)
+            self.assertIsNotNone(res["per_repo"]["test_repo"]["latest_commit_sha"])
+
+    def test_cli_running_agents_and_commits(self):
+        script = ROOT / "scripts/metrics/export.py"
+        # Test --running-agents --json
+        p1 = subprocess.run([sys.executable, str(script), "--running-agents", "--json"], capture_output=True, text=True, check=True)
+        d1 = json.loads(p1.stdout)
+        self.assertIn("total_running_agents", d1)
+        self.assertIn("registered_live_count", d1)
+
+        # Test --commits --json --window 24h
+        p2 = subprocess.run([sys.executable, str(script), "--commits", "--window", "24h", "--json"], capture_output=True, text=True, check=True)
+        d2 = json.loads(p2.stdout)
+        self.assertIn("total_unique_commits", d2)
+        self.assertIn("per_repo", d2)
 
 
 if __name__ == "__main__":
