@@ -1,5 +1,9 @@
 # Cloudflare agent Git competition
 
+## Win35 root operational monitoring — superseding human 7 October 2026
+
+The human assigns the new Win35 root operational monitoring, coordination of Hetzner work and useful local execution. Read [WIN35-ROOT-INSTRUCTIONS](coordination/WIN35-ROOT-INSTRUCTIONS.md), the [failure analysis](research/orchestrator/WIN35-ROOT-LESSONS-20261007.md) and [verbatim authority](experiment/human-win35-new-root-instructions-20261007.txt) at startup. Earlier root-only-forwarding/no-live-monitoring descriptions do not remove this responsibility. Follow requests through genuine owner ACK, first action, distinct acceptance and continued work; diagnose and execute bounded recovery or acknowledged handoff for misses. Another inbox request or unknown-status report alone is insufficient. Preserve product head/reviewer boundaries, source leases, protected prompts, existing services, current quota/resource/privacy/budget gates and verified automation custody. These instructions do not themselves start the root or transfer a lease/schedule.
+
 ## Continuation Runtime startup navigation
 
 Principals and heads read [Continuation Runtime](coordination/continuation-runtime/README.md) at startup alongside the existing role and resource contracts. Use its current status, plan, decisions and evidence index to distinguish implemented source, runtime acceptance and unresolved work; record actual custody and first action rather than treating a documented plan as completion.

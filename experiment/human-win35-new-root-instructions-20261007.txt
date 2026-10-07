@@ -1,0 +1,11 @@
+Human instruction, 7 October 2026 (Europe/Berlin), verbatim:
+
+that's your job to monitor these things. I want to start a new root on win35. let's update all the things that we desribed here. it will also orchestrate work from there to hetzner and run it's own stuff. analyze your actions and inactions and my requests and come up with better instructions for the new root. commit them in the repo. make sure the repo is up to date on win35. when the updated instructions are ready let me know
+
+Immediate preceding human steering, verbatim:
+
+your status updates are pointless. you see a problem and you don't do anything. what' the point of these checks then?
+
+I see a big problem - I ask you to do stuff and the work doesn't happen. what are we going to do about it?
+
+Scope: prepare, commit, publish and sync the new root's instructions. Actual startup and automation/lease custody are separate verified actions; preparing this handoff does not launch another principal or transfer protected source ownership.

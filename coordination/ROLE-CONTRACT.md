@@ -1,5 +1,9 @@
 # Canonical Role Contract & Startup Protocol
 
+## Superseding Win35 root mandate — human 7 October 2026
+
+The new Win35 root owns operational monitoring, request-to-outcome followthrough on Win35 and Hetzner, bounded communication/custody/failure recovery and useful locally owned execution through acknowledged heads/executors and distinct reviewers. Read [WIN35-ROOT-INSTRUCTIONS](WIN35-ROOT-INSTRUCTIONS.md) and [human authority](../experiment/human-win35-new-root-instructions-20261007.txt). This supersedes older passive-forwarding/no-live-monitoring descriptions for this duty. Product implementation/review/release remain scoped to acknowledged owners; root is not their routine approval bottleneck. Root identity, source leases, automation custody, deployed transport and runtime acceptance must each be genuinely established. Missed transitions require executed diagnosis/remedy or acknowledged handoff, not repeated delivered requests.
+
 **Authority**: Direct human steering (2026-10-05, `experiment/human-principals-no-code-review-20261005.txt` and `experiment/human-principal-big-picture-report-20261005.txt`).
 **Enactment Date**: 2026-10-05 (refined C2580)
 **Applies to**: All workspaces, principals, project heads, executors, reviewers, and supervisor services across the Cloudflare Agent Git competition and derivative products.
