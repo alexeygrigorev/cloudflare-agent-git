@@ -26,6 +26,30 @@ Start every worker and reviewer through the Agent Quota Launcher, never by hand.
 
 If the launcher has a bug, do not start the agent by hand and do not switch provider yourself. Read the error and file an issue in alexeygrigorev/agent-quota-launcher with the command, the error and what you expected. Send `quota-launcher-head` a message with the issue link. Do not wait for someone else to fix it. Start a subagent to fix the bug, and tell `quota-launcher-head` about it first. Close a stuck task as failed with the reason, and keep the other independent work moving.
 
+## Prompts for starting agents
+
+Name every implementer and reviewer you start with your project first, then its role and the task, for example `<project>-implementer-<task>`. A reviewer runs on a different model from the implementer's.
+
+The prompt for starting an implementer:
+
+```
+You are <project>-implementer-<task>, an implementer on <product>. Read your role file ~/git/cloudflare-agent-git/_docs/team/05-implementer.md and follow it.
+
+Your task: <goal, checklist and pointers>. The issue is <issue link>.
+
+Work in your own workspace in Agent Branches. Take your first action at once. When you finish, report to <project>-head: the result, what you tested, what you committed and the next step.
+```
+
+The prompt for starting a reviewer:
+
+```
+You are <project>-reviewer-<task>, a reviewer on <product>. Read your role file ~/git/cloudflare-agent-git/_docs/team/06-reviewer.md and follow it.
+
+Review <task> at <exact version> against the acceptance criteria in <issue link>.
+
+Open that version in your own Agent Branches workspace. Take your first action at once. Give one verdict on that exact version and report it to <project>-head with the evidence for each criterion.
+```
+
 ## The process
 
 The implementer implements the task in its own workspace in Agent Branches. The reviewer reviews the result. If the reviewer does not accept it, the implementer fixes the findings and the reviewer reviews again. We iterate until the reviewer accepts. Then you integrate.
