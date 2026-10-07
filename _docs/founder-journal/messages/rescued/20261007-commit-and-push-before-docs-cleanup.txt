@@ -1,0 +1,3 @@
+Rescued verbatim human text. Source: coordination/TASKS.json:8146 field human_followthrough_verbatim (uncommitted working-tree change in the shared checkout at HEAD 04e3719, not in any commit; recorded by desktop-orchestrator).
+
+okay make sure it's all commited  and pushed, I'll work with another agent on hetzner to clean the documentation mess
