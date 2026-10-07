@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+"""Print the important metrics and the status of each head.
+
+Stub. The real script is described in
+https://github.com/alexeygrigorev/cloudflare-agent-git/issues/103
+"""
+import sys
+
+HEADS = (
+    "branches-head",
+    "dashboard-head",
+    "quota-launcher-head",
+    "coordination-head",
+    "bus-head",
+)
+
+METRICS = (
+    "active agents (target 50)",
+    "idle time of principals and heads (target 0)",
+    "resolved tasks today (target 200)",
+    "tasks created today (target 250)",
+    "commits today (target 2000)",
+    "founder messages today",
+    "cloud cost this month (target at most USD 5)",
+    "free disk",
+)
+
+
+def main():
+    print("team-status is not implemented yet. See issue 103.")
+    print()
+    print("Metrics:")
+    for name in METRICS:
+        print(f"  {name}: unknown")
+    print()
+    print("Heads:")
+    for tag in HEADS:
+        print(f"  {tag}: unknown")
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
