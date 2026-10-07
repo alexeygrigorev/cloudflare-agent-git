@@ -26,7 +26,7 @@ Each of the five products has its own team, repo and tracker. A team is the head
 
 ## Where they run
 
-- The principal and the heads run in aplexer sessions. Periodic scripts launch them with `scripts/recover-agent <tag>`, described in `_docs/05-recovery.md`.
+- The principal and the heads run in aplexer sessions. When one is missing, root or the principal restarts it by hand with the runbooks in `_docs/05-recovery.md`; automatic launching is tracked in issue 102.
 - Root runs in a GUI session on the founder's laptop or on Win35. It never runs on Hetzner, which is a server without a GUI, and never headless. It reaches Hetzner and the other machine with ssh.
 - Implementers and reviewers run headless. They never get their own aplexer session.
 

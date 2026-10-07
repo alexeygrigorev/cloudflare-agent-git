@@ -2,7 +2,7 @@
 
 What went wrong in this project, newest first, in plain words. Each entry says what happened, what we changed, and where the evidence is.
 
-Evidence links point to the git tag `pre-cleanup-20261007`, the last state before the documentation cleanup (`git show pre-cleanup-20261007:<path>`). Once the `history` branch exists, the full incident log will be at `git show history:INCIDENTS.md`. Your own words, including older wording saved from agent documents, are in the day files of this folder, one file per day.
+Evidence links point to the git tag `pre-cleanup-20261007`, the last state before the documentation cleanup. A path written in backticks, such as `experiment/...`, `coordination/...` or `research/...`, is no longer in the tree: read it with `git show pre-cleanup-20261007:<path>`. The full incident log is on the `history` branch: `git show history:INCIDENTS.md`. Your own words, including older wording saved from agent documents, are in the day files of this folder, one file per day.
 
 
 ## 1. The documentation itself became the problem (7 October)
@@ -10,14 +10,14 @@ Evidence links point to the git tag `pre-cleanup-20261007`, the last state befor
 Agents wrote a new document or a new dated section for almost every event. Rules were repeated in many places, and no agent could read everything at startup.
 A first trim cut ten documents from 18,769 words to about 6,200, but the repo still held hundreds of files of journals, heartbeats and research.
 We also had tests that only checked the text of documents.
-**Changed:** a single `_docs/` folder, research consolidated into one file, incidents kept out of the working context, doc-only tests deleted, no PRs and focused commits pushed straight to main.
+**Changed:** documentation moved into one `_docs/` folder (older folders such as `coordination/` are being removed), research consolidated into one file, incidents kept out of the working context, doc-only tests deleted, no PRs and focused commits pushed straight to main.
 Evidence: [DOCUMENT-TRIM-20261007.md](https://github.com/alexeygrigorev/cloudflare-agent-git/blob/pre-cleanup-20261007/research/orchestrator/DOCUMENT-TRIM-20261007.md), [your messages of 7 October](2026-10-07.md).
 
 ## 2. Your requests were scattered and some were nearly lost (7 October)
 
 Your messages were stored in the experiment folder, in USER-INSTRUCTIONS, in agent intake notes and in requirement registers. An audit found that only 17 of 51 dated request files were referenced by any task.
 23 of your messages existed only as quotes inside agent documents that were about to be deleted.
-**Changed:** your messages now live in this founder journal, one file per message, verbatim with typos. The 23 quoted messages were saved to `messages/rescued/`.
+**Changed:** your messages now live in this founder journal, one file per day with a timestamped entry per message, verbatim with typos. The 23 quoted messages were saved into the day files they belong to.
 Evidence: [HUMAN-REQUEST-COVERAGE-AUDIT-20261007.md](https://github.com/alexeygrigorev/cloudflare-agent-git/blob/pre-cleanup-20261007/research/orchestrator/HUMAN-REQUEST-COVERAGE-AUDIT-20261007.md) (lines 123-147).
 
 ## 3. The task tracker was a JSON file nobody could use (5-7 October)

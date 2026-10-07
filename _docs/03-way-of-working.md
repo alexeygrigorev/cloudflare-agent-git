@@ -42,7 +42,7 @@ The agents bus is the message system agents use to talk to each other, on one co
 
 ## 8. Git
 
-Work happens in Agent Branches, our own tool. We do not use git worktrees or git branches. We push to Git only when work is accepted, straight to main with no pull requests, in small, focused commits, one per logical change, never one big commit. Verify the push before reporting. A chat reply or an uncommitted file is not done. Never reset, stash or overwrite someone else's work, and never delete someone else's dirty or unmerged work. Cleanup touches only disposable scratch with a known owner. Do not write tests for docs.
+Work happens in Agent Branches, our own tool. Agents do not keep long-lived git branches or scratch worktrees; the only branch we keep is `history`, and anything an agent creates is removed once its work is on main or in a tag. We push to Git only when work is accepted, straight to main with no pull requests, in small, focused commits, one per logical change, never one big commit. Verify the push before reporting. A chat reply or an uncommitted file is not done. Never reset, stash or overwrite someone else's work, and never delete someone else's dirty or unmerged work. Cleanup touches only disposable scratch with a known owner. Do not write tests for docs.
 
 Main development happens through our own tool and stays in sync with GitHub, which is the backup. Keep an ordinary Git recovery path that does not depend on our prototype by mirroring main to an independent remote now and then and checking that a fresh checkout restores it. Count commits per repository by unique SHA. Commits are activity, not accepted results.
 
