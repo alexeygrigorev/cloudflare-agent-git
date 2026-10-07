@@ -2674,3 +2674,8 @@ Antgenuine8e-572f delivers supervisionreviewblobcce7b460/metrics3be7be74,46/45te
 ## Continuation gap recovery — 2026-10-07T03:42:14.736375+00:00
 
 Principal00:40 commitment was missed through03:39 genuinegapreport. Bounded same saved Ant normalinteractive handoff/launch recipe prepared; freshGemini5h100/weekly34.91, oldknownPIDsabsent/presencelockfree during03:41:28check. No launch/custodyACK or autonomousfailover acceptance claimed. OOMcategoryevidence attributedpendingexactjournal; preserve1500M100head and separate maintaineddelegateunits. [Recovery evidence](../research/codex/continuation-gap-recovery-20261007.md) names executed preparation, principal logistics and next actual successorACK→workerfirsttool→independentreview event.
+
+
+## Continuous Operations received custody
+
+Actual Antcfdc startup03:43:21/firsttool03:43:32/ownwhoami03:43:38 now has genuine receivedACK77-8f11@03:45:42/principal78-4040. ScopedC3110 research/antigravity+scripts/supervision only; protectedmainleases unchanged. Manualrecoverynotautofailover. [Continuous Operations](continuous-operations/README.md) ownerstatusupdated; implementationfirsttool/headdeadlinepending, native835aa reviewcontainmentUNKNOWN. Requireinstalledidlepositive/protectednegatives+fencedtakeover/twousefulabsencecycles, no duplicateelection.
