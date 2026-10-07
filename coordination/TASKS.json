@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-07T05:47:40.596048+00:00",
+  "updated_at": "2026-10-07T05:50:40.278659+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -7858,6 +7858,33 @@
           "updated_at": "2026-10-07T05:41:25.491409+00:00"
         }
       ]
+    },
+    {
+      "id": "human-multihost-autonomy-design-research-20261007",
+      "project_id": "agent-coordination",
+      "team_id": "oversight",
+      "title": "Research and document reliable multi-computer autonomous agent operating designs",
+      "source": "experiment/human-multihost-autonomy-design-research-20261007.txt",
+      "human_request_verbatim": "also research the best designs to make autonomous agentic systems that work across different computes. we have all the tech for that but we're missing the process",
+      "owner_tag": "desktop-orchestrator",
+      "owner_session_id": "79ffb8c7-3f32-46ee-bd60-423a255ebbae",
+      "ownership_ack": true,
+      "status": "in_progress",
+      "created_at": "2026-10-07T05:45:12.010469+00:00",
+      "updated_at": "2026-10-07T05:45:12.010469+00:00",
+      "scope": "Root primary research/process documentation and principal coordination; heads retain implementation/review/source leases",
+      "first_action": "Read current process/evidence; browsed primary agent-harness, durable execution, task-protocol and distributed coordination sources",
+      "acceptance": "Primary-source design comparison, explicit recommended existing-tool operating process and partition/recovery/handoff/independent-acceptance tests, canonical docs committed and Win35 synced; genuine principal challenge/adoption recorded separately from installed proof",
+      "next_action": "Research/docs reviewed and published; principal challenges recommended multi-host operating design and maps existing implementation owners/tasks/dues. Installed acceptance remains separate.",
+      "due_checkpoint": "2026-10-07T06:00:00Z",
+      "due_scope": "Root monitoring checkpoint, not head implementation promise",
+      "next_trigger": "Existing active coordinator automation and returned principal outcomes",
+      "evidence": [
+        "research/orchestrator/MULTIHOST-AUTONOMY-DESIGN-20261007.md",
+        "coordination/continuation-runtime/MULTIHOST-PROCESS.md"
+      ]
     }
-  ]
+  ],
+  "generation": 1,
+  "content_sha256": "d4f26c99674b8b8f33b92d82c0dffda2d9179e6663af2362041a828dce8a680b"
 }
