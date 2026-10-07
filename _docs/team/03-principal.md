@@ -41,6 +41,10 @@ Check [installed recovery status](../05-recovery.md); do not assume `scripts/rec
 What each project works toward is written in `AGENTS.md` in the project's own folder. Start each head in its project folder so it reads that file first.
 
 
+## Overriding a guard
+
+You are the only role that may override a repo guard. Use a `Principal-Override: <reason>` trailer in the commit message, or `PRINCIPAL_OVERRIDE=<reason>` on push, and give a real reason. The override is logged and shown as a CI warning. How the checks work is in [way of working](../03-way-of-working.md), section 12.
+
 ## Watching the metrics
 
 Inspect actual launcher, tracker, process and owner evidence at every check and turn boundary. `scripts/team-status` was a placeholder when inspected on 7 October; verify its deployed implementation and acceptance before relying on it. What each metric means and its target are in _docs/06-metrics.md.
