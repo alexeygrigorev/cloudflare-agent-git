@@ -2016,14 +2016,29 @@ def run():
                 item.update(event_key=head_event_key)
 
                 last_notified_fp = old.get('last_notified_ready_fingerprint')
+                effective_old_sent = old.get('sent_event')
                 session_changed = bool(old.get('session_id') and old.get('session_id') != session['id'])
+
+                # Re-arm if prior request was superseded or head is in unexplained idle beyond SLO with cooldown expired and no pending message
+                has_superseded = bool(
+                    (old.get('last_request') and old['last_request'].get('superseded_at')) or
+                    (item.get('last_request') and item['last_request'].get('superseded_at'))
+                )
+                rearm = bool(
+                    head_ready and not pending and (time.time() >= cooldown) and
+                    (has_superseded or old.get('unexplained_idle_over_slo'))
+                )
+                if rearm:
+                    last_notified_fp = None
+                    effective_old_sent = None
+
                 ready_delta = bool(head_ready) and ((last_notified_fp is None) or session_changed or (ready_fingerprint != last_notified_fp))
 
                 item['ready_task_ids'] = [t['id'] for t in head_ready]
                 item['ready_fingerprint'] = ready_fingerprint
                 item['ready_delta'] = ready_delta
 
-                if head_ready and not pending and ready_delta and (old.get('sent_event') != head_event_key) and time.time() >= cooldown:
+                if head_ready and not pending and ready_delta and (effective_old_sent != head_event_key) and time.time() >= cooldown:
                     if item.get('alive'):
                         task_ids_str = ", ".join(t['id'] for t in head_ready[:5])
                         body = (

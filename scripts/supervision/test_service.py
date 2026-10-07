@@ -722,6 +722,47 @@ class Safety(unittest.TestCase):
     self.assertIn('t-task-1', sent_messages[0]['body'])
     self.assertIn('t-task-2', sent_messages[0]['body'])
 
+    # Stage 6: Prior request was superseded (superseded_at is set in last_request) and pending is None.
+    # Tasks are unchanged -> re-arm should trigger (ready_delta is True), sending fresh notification!
+    sent_messages.clear()
+    cycles[0] = 0
+    (private / 'stop').unlink(missing_ok=True)
+    st['agent-branches-head']['pending'] = None
+    st['agent-branches-head']['last_request'] = {
+        'id': 'msg-superseded-1',
+        'superseded_at': '2026-10-07T10:00:00Z',
+        'superseded_reason': 'recipient-session-change'
+    }
+    (private / 'state.json').write_text(json.dumps(st))
+    curr_time[0] = 2200.0
+
+    service.run()
+
+    st = json.loads((private / 'state.json').read_text())
+    head_item = st.get('agent-branches-head', {})
+    self.assertTrue(head_item.get('ready_delta'))
+    self.assertEqual(len(sent_messages), 1)
+    self.assertIn('t-task-1', sent_messages[0]['body'])
+
+    # Stage 7: Stale head with unexplained_idle_over_slo=True in old state, pending cleared, cooldown expired.
+    # Even without task change, re-arm should trigger, preventing permanent starvation.
+    sent_messages.clear()
+    cycles[0] = 0
+    (private / 'stop').unlink(missing_ok=True)
+    st['agent-branches-head']['pending'] = None
+    st['agent-branches-head']['last_request'] = None
+    st['agent-branches-head']['unexplained_idle_over_slo'] = True
+    st['agent-branches-head']['cooldown_until'] = 2200.0
+    (private / 'state.json').write_text(json.dumps(st))
+    curr_time[0] = 2400.0
+
+    service.run()
+
+    st = json.loads((private / 'state.json').read_text())
+    head_item = st.get('agent-branches-head', {})
+    self.assertTrue(head_item.get('ready_delta'))
+    self.assertEqual(len(sent_messages), 1)
+
   finally:
     service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
     service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
