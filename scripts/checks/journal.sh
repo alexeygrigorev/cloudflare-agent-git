@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Founder journal rules (_docs/03-way-of-working.md): day files are YYYY-MM-DD.md,
-# append-only, entries start with "## HH:MM" (Europe/Berlin), timestamps never
-# decrease within a file and are not in the future. failures.md is free-form.
+# append-only, entries start with "## HH:MM" (Europe/Berlin) and are not in the
+# future. Duplicate HH:MM headings are legal. An out-of-order timestamp is only a
+# warning (late reconstructed intake must not be blocked). failures.md is free-form.
 #
 #   journal.sh [--staged]        staged diff (pre-commit; default)
 #   journal.sh --range A..B      every non-merge commit in a pushed range (CI)
@@ -30,7 +31,12 @@ cd "$(git rev-parse --show-toplevel)" || exit 2
 NOW="${JOURNAL_NOW:-$(TZ=Europe/Berlin date '+%F %H:%M')}"
 fail=0
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-say() { echo "journal: $1" >&2; fail=1; }
+say() {
+  case "$1" in
+    *"warning: "*) echo "journal: $1" >&2 ;;
+    *) echo "journal: $1" >&2; fail=1 ;;
+  esac
+}
 
 day_name_ok() {
   local b="$1" d
@@ -45,7 +51,7 @@ entry_rules() {
     /^## / {
       if ($0 !~ /^## ([01][0-9]|2[0-3]):[0-5][0-9]$/) { printf "%d\tentry heading must be \"## HH:MM\": %s\n", NR, $0; next }
       t = substr($0, 4, 5)
-      if (prev != "" && t < prev) printf "%d\ttimestamp %s is earlier than previous %s\n", NR, t, prev
+      if (prev != "" && t < prev) printf "%d\twarning: timestamp %s is earlier than previous %s (allowed for late intake)\n", NR, t, prev
       if (date " " t > now) printf "%d\ttimestamp %s %s is in the future (now %s)\n", NR, date, t, now
       prev = t; next
     }

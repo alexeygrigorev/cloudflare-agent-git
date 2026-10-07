@@ -22,7 +22,9 @@ t "all clean" 0 S --all
 printf '\n## 11:00\n\nmore\n' >> $J; git add $J
 t "append ok" 0 S --staged; reset
 printf '\n## 09:30\n\nold time\n' >> $J; git add $J
-t "decreasing timestamp" 1 S --staged; reset
+t "decreasing timestamp only warns" 0 S --staged; reset
+printf '\n## 10:00\n\nduplicate heading\n' >> $J; git add $J
+t "duplicate heading legal" 0 S --staged; reset
 printf '\n## 12:30\n\nfuture\n' >> $J; git add $J
 t "future timestamp" 1 S --staged; reset
 printf '\n## noon\n\nbad\n' >> $J; git add $J
@@ -41,11 +43,13 @@ t "failures.md allowed" 0 S --staged; git commit -qm f
 # range mode
 base=$(git rev-parse HEAD)
 printf '\n## 08:00\n\nearly\n' >> $J; git commit -qam "bad order"
-t "range bad" 1 S --range "$base..HEAD"
-git commit -q --amend -m "bad order
+t "range out-of-order only warns" 0 S --range "$base..HEAD"
+printf '\n## 12:45\n\nfuture\n' >> $J; git commit -qam "future"
+t "range future fails" 1 S --range "$base..HEAD"
+git commit -q --amend -m "future
 
 Principal-Override: test"
 t "range trailer" 0 S --range "$base..HEAD"
-# --all catches existing violations
+# --all catches existing violations (future entries) but not ordering
 t "all dirty" 1 S --all
 echo "pass=$pass fail=$failed"; [ "$failed" = 0 ]
