@@ -2137,6 +2137,79 @@ class RestingStateContradictionPrecheckTests(unittest.TestCase):
     finally:
       temp.cleanup()
 
+  def test_process_due_callbacks_recipient_epoch_match(self):
+    temp = tempfile.TemporaryDirectory()
+    try:
+      spool = pathlib.Path(temp.name)
+      cb_file = spool / 'due_callbacks.json'
+      cb_file.write_text(json.dumps({
+        'callbacks': [
+          {
+            'id': 'test-cb-epoch-match',
+            'recipient_tag': 'test-head',
+            'recipient_session_id': 'sess-epoch-1',
+            'recipient_epoch': 1791350000000,
+            'due_at': '2026-10-07T00:00:00Z',
+            'prompt': 'Epoch matches',
+            'delivered': False,
+          }
+        ]
+      }))
+      sessions = [
+        {'id': 'sess-epoch-1', 'tag': 'test-head', 'created_at_ms': 1791350000000, 'workload_pid': os.getpid(), 'reported_state': 'idle'}
+      ]
+      sent = []
+      def fake_send(bin, tag, key, body, sp, s_id, supports_key):
+        sent.append((tag, key, body))
+        return {'delivery': 'inbox', 'id': 'msg-epoch-ok'}
+
+      delivered = service.process_due_callbacks(
+        spool, '/bin/true', 'sup-id', True, lambda *_: '', fake_send, sessions
+      )
+      self.assertEqual(delivered, ['test-cb-epoch-match'])
+      self.assertEqual(len(sent), 1)
+      data = json.loads(cb_file.read_text())
+      self.assertTrue(data['callbacks'][0]['delivered'])
+    finally:
+      temp.cleanup()
+
+  def test_process_due_callbacks_recipient_epoch_mismatch_rejected(self):
+    temp = tempfile.TemporaryDirectory()
+    try:
+      spool = pathlib.Path(temp.name)
+      cb_file = spool / 'due_callbacks.json'
+      cb_file.write_text(json.dumps({
+        'callbacks': [
+          {
+            'id': 'test-cb-epoch-mismatch',
+            'recipient_tag': 'test-head',
+            'recipient_session_id': 'sess-epoch-1',
+            'recipient_epoch': 1791359999999,
+            'due_at': '2026-10-07T00:00:00Z',
+            'prompt': 'Stale generation epoch',
+            'delivered': False,
+          }
+        ]
+      }))
+      # Session created_at_ms does not match expected recipient_epoch
+      sessions = [
+        {'id': 'sess-epoch-1', 'tag': 'test-head', 'created_at_ms': 1791350000000, 'workload_pid': os.getpid(), 'reported_state': 'idle'}
+      ]
+      sent = []
+      def fake_send(bin, tag, key, body, sp, s_id, supports_key):
+        sent.append((tag, key, body))
+        return {'delivery': 'inbox', 'id': 'msg-epoch-fail'}
+
+      delivered = service.process_due_callbacks(
+        spool, '/bin/true', 'sup-id', True, lambda *_: '', fake_send, sessions
+      )
+      self.assertEqual(delivered, [])
+      self.assertEqual(len(sent), 0)
+      data = json.loads(cb_file.read_text())
+      self.assertFalse(data['callbacks'][0]['delivered'])
+    finally:
+      temp.cleanup()
+
 
 if __name__=='__main__':unittest.main()
 

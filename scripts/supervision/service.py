@@ -677,6 +677,13 @@ def process_due_callbacks(spool, binary, identity_id, supports_key, command, rec
             if not (pid and pathlib.Path(f'/proc/{pid}').exists()):
                 continue
 
+            # Epoch / generation validation: reject stale generations
+            expected_epoch = cb.get('recipient_epoch')
+            if expected_epoch is not None:
+                sess_epoch = sess.get('created_at_ms') or sess.get('epoch')
+                if sess_epoch != expected_epoch:
+                    continue
+
             # Readiness & resting-state check: protect busy/working/draft states
             reported_state = sess.get('reported_state')
             if reported_state in ('busy', 'working', 'draft', 'menu-or-draft'):
