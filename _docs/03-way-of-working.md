@@ -34,6 +34,8 @@ The head picks a ready task and starts a worker for it through the Agent Quota L
 
 Workers and reviewers start headless with permission prompts skipped, never in their own aplexer session, and talk only to their head. Principals and heads run in aplexer sessions, and root runs in a GUI session. There is no fixed cap on team size: run as many workers as there are independent tasks and capacity, and never invent work to raise the count.
 
+Besides the standing heads, there are sometimes situational heads: heads started for one specific situation, such as a recovery, an incident or a one-off push. For each situational head we keep the state of its work and of its task: what it was assigned, what it has done and where it stands now. The head writes this state down as it goes, so that if it stops, another head can resume or take over the work from the record and not from guesswork.
+
 ## 7. The agents bus and claims
 
 The agents bus is the message system agents use to talk to each other, on one computer or across several, in headless and interactive sessions alike. Before editing, an agent claims what it is editing on the bus. A claim is a note saying which files an agent is working on, so two agents do not edit the same thing. Claims are never written into documents.
