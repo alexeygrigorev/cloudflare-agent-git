@@ -31,3 +31,11 @@ Principal sends the exact reviewed HEAD-TASK-LOOP version/digest to each existin
 Heads request actual external implementer and distinct reviewer through the maintained launcher, return task/source admission receipts, native/provider actor, unit/invocation, first-tool and immutable artifact hashes; use the same loop for repair. On successful integration, head selects the next disjoint ready contract and durably arms its own continuation/independent recovery path. Missing gates produce an owned diagnosis/mitigation/checkpoint and independent useful work, not a raw-CLI or built-in-agent bypass.
 
 Principal monitors the first real task through reviewer acceptance and the next useful task, challenges mismatched receipts and source-only claims, and keeps desktop/reporting updated without becoming an implementation/review worker. Scope clarification for “our git” and genuine new-head adoption/custody receipts remain outstanding; no new head/project/source owner is silently accepted by this note.
+
+## Missing startup hooks: direct finding, activation still pending
+
+Principal's read-only `aplexer init --check --engine claude --json` returned exit1 around07:08UTC with installed:false/action:absent. Both checked Claude settings locations lacked SessionStart/UserPromptSubmit/PostToolUse hooks. No configuration was changed and no secret value was printed. This is an actual missing-hooks finding, not proof that it is the sole cause of all NOTREADY observations.
+
+The human-created c771 head had two fresh empty captures and no native Claude transcript at07:07/07:08; no genuine head ACK is verified. Original activation2e-123e stays preserved. Principal routed remediation to existing busy Ant1c with genuine `01a11531-9ea1` and notified root through `01a11531-9f2c`, including the published external-launcher policy and canonical guard intake/custody request. An acknowledged implementation task row is not yet proved.
+
+Launcher/head setup acceptance requires real hook/harness event, correct own native identity, required reads, semantic head ACK and actual useful action. Hook-file presence alone cannot establish startup execution. Do not create a duplicate head, force input, invent custody or mark the runtime accepted while that proof is pending. This administrative evidence publication proceeds without treating silence as approval.
