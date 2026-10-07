@@ -1,0 +1,5 @@
+Human instruction, 7 October 2026, verbatim:
+
+pull and see if documentation changed. CLAUDE.md should be gone, only AGENTS.md should be there. let's follow your plan. the imput from me should be saved and tracket
+
+Scope: documentation consolidation. CLAUDE.md is removed so AGENTS.md is the single agent-instruction file, and a root INDEX.md maps the documentation. This instruction is saved verbatim here so it is tracked.
