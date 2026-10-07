@@ -18,3 +18,7 @@ local-coordinator-state.json
 live/.dev.vars
 live/work/
 .pytest_cache/
+
+# launcher stream output at repo root (live under .local/telemetry/)
+/*-telemetry.jsonl
+/*.jsonl
