@@ -1,0 +1,5 @@
+Human instruction, 7 October 2026, verbatim:
+
+each project will have a separate task tracker. the team will be reponsible for owning it. the principal will be reponsible for the high-level taks and it's tasks will be in this repo
+
+Scope: each project has its own separate task tracker owned by that project's team (head and team). The principal owns the high-level tasks, which live as issues in this repository.
