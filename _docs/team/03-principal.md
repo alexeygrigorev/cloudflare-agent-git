@@ -59,6 +59,15 @@ When a number is off, fix the cause:
 Say in your report which number was off and what you did.
 
 
+## Regular ping and automatic recovery
+
+Target state: a timer pings you regularly, you must acknowledge, and after N consecutive misses (default 3) automatic recovery starts through the configured recovery executor (`recover-agent` once it exists, otherwise `scripts/recovery/bootstrap.py` behind the quota gate). If recovery fails, an alert is raised. The executor belongs to the recovery heads; the ping only calls it.
+
+- `scripts/ping/principal-ping.py` sends a bus message with a unique `ping-...` nonce to the tag (default `codex-principal`, `--tag` or `PRINCIPAL_TAG`). Only when you are idle it also types a short ping into your session with `aplexer send <tag> --enter`. Ack it by replying on the bus with a message that contains the nonce.
+- Misses are counted in `.local/ping/<tag>.json`. At the threshold it runs `PRINCIPAL_RECOVERY_CMD` (the tag is in `PRINCIPAL_TAG`). If that is unset it prints `recovery command not configured` and runs `PRINCIPAL_ALERT_CMD` if set. Recovery is skipped while you are alive and busy, while another recovery holds the lock, during the cool-down (`--cooldown`, 900s) and after `--max-retries` (3) attempts without an ack; an exhausted or failed recovery raises the alert.
+- It is a dry run unless you pass `--live`. Tests: `python3 tests/test_principal_ping.py` (fake `aplexer`, never types into a real session).
+- Schedule: copy `scripts/ping/principal-ping.service` and `.timer` to `~/.config/systemd/user/`, put the env vars in `~/.config/principal-ping.env`, then `systemctl --user daemon-reload && systemctl --user enable --now principal-ping.timer`. Not installed yet. Alternative: a `t jobs` regular ping (see the regular-ping skill) that runs the script with `--live`.
+
 ## Delegating work
 
 Launch headless subagents for ad hoc work, such as resolving a blocker, and for watching that blocker until it is resolved. You do not have to do the work yourself. Send substantial work to a head, which starts as many workers as the work allows through the agent starter.
