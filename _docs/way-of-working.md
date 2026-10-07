@@ -159,7 +159,7 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 
 ## Public journal and editorial rules
 
-- Follow the `daily-writeup` skill (`.claude/skills/daily-writeup/SKILL.md`) for the daily article; it wins wherever another editorial rule disagrees.
+- Follow `_docs/team/writer.md` for the daily article; it wins wherever another editorial rule disagrees.
 
 ### Who does what
 
