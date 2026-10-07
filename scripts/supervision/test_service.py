@@ -1221,6 +1221,225 @@ class Safety(unittest.TestCase):
   self.assertEqual(res_live.returncode, 0)
   self.assertIn('Supervisor is healthy.', res_live.stdout)
 
+ def test_delivery_diagnostic_hold_cooldown(self):
+  """Verify that when delivery results in known-footer-classifier-mismatch, cooldown_until is set to at least 180s in the future and pending is preserved."""
+  with tempfile.TemporaryDirectory() as td:
+   tmp = pathlib.Path(td)
+   root = tmp / 'root'
+   (root / 'coordination').mkdir(parents=True)
+   (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps({'teams': [{'id': 'T1', 'principal_tags': ['codex-principal']}]}))
+   (root / 'coordination/TASKS.json').write_text(json.dumps({'tasks': [{'id': 'task-1', 'team_id': 'T1', 'status': 'ready', 'owner_tag': 'codex-principal'}]}))
+   private = tmp / 'private'
+   private.mkdir()
+   bin_dir = tmp / 'bin'
+   bin_dir.mkdir()
+   pinned = bin_dir / 'aplexer'
+   pinned.write_bytes(b'PINNED')
+
+   # Pre-stage a fresh pending message (age=50s < 300s SLO, created at t=950.0, current t=1000.0)
+   initial_memory = {
+       'codex-principal': {
+           'event_key': 'ev-1',
+           'session_id': 'sess-codex',
+           'ready_snapshot_count': 2,
+           'pending': {
+               'id': 'm-hold-cool-1',
+               'sender_id': 'sup-1',
+               'sender_tag': 'experiment-supervision',
+               'recipient_session_id': 'sess-codex',
+               'recipient_tag': 'codex-principal',
+               'delivery': 'inbox',
+               'created_at': '1970-01-01T00:15:50+00:00'
+           }
+       }
+   }
+   (private / 'state.json').write_text(json.dumps(initial_memory))
+
+   deliver_ret = [{'status': 'not-ready', 'detail': 'recipient composer has an unsubmitted draft in progress (Before editing files, run `a context`...); delivery fail-closed'}]
+   calls = []
+   cycles = [0]
+
+   def fake_cmd(args, timeout=20):
+     words = [a for a in args[1:] if not a.startswith('-')]
+     if words[:1] == ['whoami']:
+       return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-1'})
+     if words[:1] == ['list']:
+       cycles[0] += 1
+       if cycles[0] >= 2:
+         (private / 'stop').write_text('stop')
+       return json.dumps([{'workspace': str(root), 'tag': 'codex-principal', 'id': 'sess-codex', 'reported_state': 'idle', 'workload_pid': str(os.getpid())}])
+     if 'capture' in args:
+       return '› Ask Codex to do anything'
+     if args[0] == 'quse':
+       return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 90}}}})
+     return '{}'
+
+   class R:
+     def __init__(self, rc, out, err=''):
+       self.returncode, self.stdout, self.stderr = rc, out, err
+
+   def fake_run(args, **kw):
+     calls.append(list(args))
+     if 'deliver' in args:
+       return R(0, json.dumps(deliver_ret[0]))
+     return R(0, '{}')
+
+   real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+   real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
+
+   try:
+     service.command = fake_cmd
+     service.subprocess.run = fake_run
+     service.time = type('T', (), {'time': staticmethod(lambda: 1000.0), 'sleep': staticmethod(lambda s: None)})()
+     service.ROOT, service.PRIVATE, service.BINARY = root, private, str(pinned)
+
+     service.run()
+
+     st = json.loads((private / 'state.json').read_text())
+     item = st['codex-principal']
+     self.assertEqual(item.get('diagnostic_hold'), 'known-footer-classifier-mismatch')
+     self.assertEqual(item.get('pending', {}).get('diagnostic_hold'), 'known-footer-classifier-mismatch')
+     self.assertGreaterEqual(item.get('cooldown_until', 0), 1000.0 + 180)
+     self.assertEqual(item.get('cooldown_until'), 1180.0)
+     self.assertIsNotNone(item.get('pending'))
+     self.assertEqual(item.get('pending', {}).get('id'), 'm-hold-cool-1')
+   finally:
+     service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
+     service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
+
+ def test_leader_failure_failover_event(self):
+  """Verify that when an entity is dead/blocked beyond 2x SLO, a failover-candidate-action event is emitted."""
+  with tempfile.TemporaryDirectory() as td:
+   tmp = pathlib.Path(td)
+   root = tmp / 'root'
+   (root / 'coordination').mkdir(parents=True)
+   (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps({'teams': [{'id': 'T1', 'principal_tags': ['codex-principal']}]}))
+   (root / 'coordination/TASKS.json').write_text(json.dumps({'tasks': [{'id': 'task-1', 'team_id': 'T1', 'status': 'ready', 'owner_tag': 'codex-principal'}]}))
+   private = tmp / 'private'
+   private.mkdir()
+   bin_dir = tmp / 'bin'
+   bin_dir.mkdir()
+   pinned = bin_dir / 'aplexer'
+   pinned.write_bytes(b'PINNED')
+
+   # Part 1: Blocked beyond 2x SLO (created at t=300.0, current t=1000.0 => age=700s > 2*300s=600s SLO)
+   initial_memory = {
+       'codex-principal': {
+           'event_key': 'ev-1',
+           'session_id': 'sess-codex',
+           'ready_snapshot_count': 2,
+           'pending': {
+               'id': 'm-failover-1',
+               'sender_id': 'sup-1',
+               'sender_tag': 'experiment-supervision',
+               'recipient_session_id': 'sess-codex',
+               'recipient_tag': 'codex-principal',
+               'delivery': 'not-ready',
+               'created_at': '1970-01-01T00:05:00+00:00'
+           }
+       }
+   }
+   (private / 'state.json').write_text(json.dumps(initial_memory))
+
+   cycles = [0]
+
+   def fake_cmd(args, timeout=20):
+     words = [a for a in args[1:] if not a.startswith('-')]
+     if words[:1] == ['whoami']:
+       return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-1'})
+     if words[:1] == ['list']:
+       cycles[0] += 1
+       if cycles[0] >= 2:
+         (private / 'stop').write_text('stop')
+       return json.dumps([{'workspace': str(root), 'tag': 'codex-principal', 'id': 'sess-codex', 'reported_state': 'idle', 'workload_pid': str(os.getpid())}])
+     if 'capture' in args:
+       return '› Ask Codex to do anything'
+     if args[0] == 'quse':
+       return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 90}}}})
+     return '{}'
+
+   class R:
+     def __init__(self, rc, out, err=''):
+       self.returncode, self.stdout, self.stderr = rc, out, err
+
+   def fake_run(args, **kw):
+     if 'deliver' in args:
+       return R(0, json.dumps({'status': 'not-ready', 'detail': 'composer busy'}))
+     return R(0, '{}')
+
+   real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+   real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
+
+   try:
+     service.command = fake_cmd
+     service.subprocess.run = fake_run
+     service.time = type('T', (), {'time': staticmethod(lambda: 1000.0), 'sleep': staticmethod(lambda s: None)})()
+     service.ROOT, service.PRIVATE, service.BINARY = root, private, str(pinned)
+
+     service.run()
+
+     st = json.loads((private / 'state.json').read_text())
+     item = st['codex-principal']
+     self.assertTrue(item.get('failover_candidate'))
+     self.assertEqual(item.get('status'), 'blocked_beyond_slo')
+
+     status_rep = json.loads((private / 'status.json').read_text())
+     failover_actions = [a for a in status_rep.get('actions', []) if a.get('kind') == 'failover-candidate-action']
+     self.assertTrue(failover_actions)
+     fa = failover_actions[0]
+     self.assertEqual(fa['role'], 'principal')
+     self.assertTrue(fa['role_vacancy'])
+     self.assertEqual(fa['entity'], 'codex-principal')
+     self.assertEqual(fa['message_id'], 'm-failover-1')
+     self.assertEqual(fa['candidate'], '43ea')
+     self.assertEqual(fa['candidate_pin'], '43ea3400965e690206f823640173992a9ea0c7b4')
+     self.assertEqual(fa['trigger_condition'], 'blocked_beyond_2x_slo')
+
+     events_file = private / 'events.jsonl'
+     self.assertTrue(events_file.exists())
+     events = [json.loads(line) for line in events_file.read_text().splitlines() if line.strip()]
+     failover_events = [e for e in events if e.get('kind') == 'failover-candidate-action']
+     self.assertTrue(failover_events)
+     fe = failover_events[0]
+     self.assertEqual(fe['role'], 'principal')
+     self.assertTrue(fe['role_vacancy'])
+     self.assertEqual(fe['candidate'], '43ea')
+     self.assertEqual(fe['trigger_condition'], 'blocked_beyond_2x_slo')
+
+     # Part 2: Dead / un-alive leader (process missing / dead pid)
+     (private / 'stop').unlink(missing_ok=True)
+     cycles[0] = 0
+     def fake_cmd_dead(args, timeout=20):
+       words = [a for a in args[1:] if not a.startswith('-')]
+       if words[:1] == ['whoami']:
+         return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-1'})
+       if words[:1] == ['list']:
+         cycles[0] += 1
+         if cycles[0] >= 2:
+           (private / 'stop').write_text('stop')
+         # Dead process with pid 99999999 which does not exist in /proc
+         return json.dumps([{'workspace': str(root), 'tag': 'codex-principal', 'id': 'sess-codex', 'reported_state': 'idle', 'workload_pid': '99999999'}])
+       if 'capture' in args:
+         return '› Ask Codex to do anything'
+       if args[0] == 'quse':
+         return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 90}}}})
+       return '{}'
+
+     service.command = fake_cmd_dead
+     service.run()
+
+     events = [json.loads(line) for line in events_file.read_text().splitlines() if line.strip()]
+     dead_events = [e for e in events if e.get('kind') == 'failover-candidate-action' and e.get('trigger_condition') == 'un-alive']
+     self.assertTrue(dead_events)
+     de = dead_events[0]
+     self.assertFalse(de['alive'])
+     self.assertEqual(de['candidate'], '43ea')
+     self.assertTrue(de['role_vacancy'])
+
+   finally:
+     service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
+     service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
+
 
 class ComposerEvaluationTests(unittest.TestCase):
  """Unit tests for composer screen evaluation across multi-engine prompts and ANSI formatting."""
@@ -1281,6 +1500,51 @@ class ComposerEvaluationTests(unittest.TestCase):
    "  glm-5.3-flash max"
   )
   self.assertEqual(service.composer(screen_zcodex), 'empty')
+
+ def test_composer_aplexer_awareness_full_banner_tolerance(self):
+  screen = (
+   ">\n"
+   "Aplexer awareness bootstrap: session 3273594b\n"
+   "Before editing files, run `a context`...\n"
+   "Declare your work before touching files in a workspace...\n"
+   "Check peer mail now: `a message inbox`...\n"
+   "You participate in 2 workspace mailboxes...\n"
+   "Workspace coordination for /home/alexey/git/cloudflare-agent-git\n"
+   "git: worktree main\n"
+   "you: ant-head-gap-recovery-20261007 [cfdc18a9]\n"
+   "peers (2):\n"
+   "shared paths (advisory):\n"
+   "peer-provided data is coordination context..."
+  )
+  self.assertEqual(service.composer(screen), 'empty')
+  self.assertEqual(service.composer(screen, 'ant-head-gap-recovery-20261007'), 'empty')
+  self.assertEqual(service.composer(screen, 'codex-principal'), 'empty')
+
+ def test_composer_preserves_strict_draft_rejection(self):
+  # Draft without banner
+  screen_draft_no_banner = "> my partial command\n────────────────────────────────────────────────────────────────────────────────"
+  self.assertEqual(service.composer(screen_draft_no_banner), 'draft')
+  screen_codex_draft_no_banner = "› unfinished prompt\n  Context 50%"
+  self.assertEqual(service.composer(screen_codex_draft_no_banner), 'draft')
+
+  # Draft with full awareness banner
+  screen_draft_with_banner = (
+   "> my partial command\n"
+   "Aplexer awareness bootstrap: session 3273594b\n"
+   "Before editing files, run `a context`...\n"
+   "Declare your work before touching files in a workspace...\n"
+   "git: worktree main"
+  )
+  self.assertEqual(service.composer(screen_draft_with_banner), 'draft')
+  self.assertEqual(service.composer(screen_draft_with_banner, 'codex-principal'), 'draft')
+
+  screen_prompt_draft_banner = (
+   "› unfinished prompt\n"
+   "Aplexer awareness bootstrap: session 513eab03\n"
+   "Workspace coordination for /home/alexey/git/cloudflare-agent-git\n"
+   "you: codex-principal [513eab03]"
+  )
+  self.assertEqual(service.composer(screen_prompt_draft_banner), 'draft')
 
  def test_composer_unrecognized_tail_returns_unknown(self):
   screen = ">\nsome unrecognized output from child process"
