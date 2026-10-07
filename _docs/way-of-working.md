@@ -13,6 +13,13 @@ Every rule is in force now. Each ends with a tag, and a tag is a file name (with
 
 When two rules conflict, the newer human message wins.
 
+Words used here:
+
+- **Agents bus**: the message system the agents use to talk to each other, on one computer or across several. We are building it as the Agent Bus product; until it carries everything, aplexer (the current terminal-session tool) fills in.
+- **Claim**: a note on the agents bus saying which files an agent is editing, so two agents don't edit the same thing.
+- **Headless**: an agent that runs without a terminal window, doing one task and exiting.
+- **First real action**: the owner's first tool call or file change on a task. A delivered message or a busy screen is not one.
+
 ## Contents
 
 1. [Mission and team](#1-mission-and-team)
@@ -68,15 +75,13 @@ When two rules conflict, the newer human message wins.
 - The project runs with a very high degree of autonomy. The founder's involvement should go down over time, and fewer messages from him means we are doing better. [human-high-autonomy-default-20261005] [human-autonomous-department-20261005]
 - Agents work 24/7 and stay busy. When a turn ends, the agent arranges its next action and whatever will wake it again. [human-better-git-progress-and-utilization-20261005] [m2] [m31]
 - While working, agents keep checking that their approach is still viable. [m2]
-- No agent waits to be checked. Each one drives its next useful step itself. [m18]
-- An idle principal or head with ready work is a failure to fix at once, not a state to report. [human-idle-heads-quota-rebalance-20261005] [human-principal-still-idle-20261005]
+- No agent waits to be checked; each drives its next useful step itself. An idle principal or head with ready work is a failure to fix at once, not a state to report. [m18] [human-idle-heads-quota-rebalance-20261005] [human-principal-still-idle-20261005]
 - The target is 50 agents actively working on different tasks at the same time. Started-but-idle agents do not count; subagents that really run do. [human-fifty-distinct-active-task-agents-20261005] [human-fifty-active-not-idle-20261005] [human-ram-override-twentyfive-subagents-20261005]
 - There is always enough ready backlog to keep 50 agents busy, built from the founder's requests. [human-proactive-status-ready-backlog50-20261005]
 - Every report gives the current count against 50 and the concrete steps to reach it; reaching 50 is a focus, not a footnote. [human-enforce-fifty-active-focus-20261005] [human-explicit-plan-to-reach50-20261005]
 - When anything is off target, explain why and give the steps that will hit the target by the next checkpoint. [human-missed-target-recovery-plan-20261005] [human-zero-active-execution-accountability-20261005] [human-zero-active-explanation-20261005]
 - There are always clear next steps, and they live in the tracker. [human-clear-next-steps-now-20261005] [human-all-metrics-tracked-recovery-20261005]
-- Agents report status on their own; the founder should never have to ask. [human-proactive-status-ready-backlog50-20261005]
-- Nobody watches a delegated job finish; the owner reports back when it is done. [human-autonomous-department-20261005]
+- Agents report status on their own; the founder should never have to ask. Nobody watches a delegated job finish; the owner reports back when it is done. [human-proactive-status-ready-backlog50-20261005] [human-autonomous-department-20261005]
 
 ### Request to outcome
 
@@ -90,8 +95,7 @@ When two rules conflict, the newer human message wins.
 
 ### Problems, not blockers
 
-- A blocker report alone is not a finished task. Agents resolve blockers themselves, every time, without waiting for the founder. [human-proactive-blocker-resolution-20261005]
-- Report the problem, the steps already taken, the result and the next step: "we saw X and fixed it like this". [human-fifty-fix-and-run-outcomes-20261005] [human-coordinator-handoff-and-reports-20261006] [human-scale50-solution-followthrough-20261006]
+- Agents resolve blockers themselves, every time, without waiting for the founder, and report the problem, the steps taken, the result and the next step: "we saw X and fixed it like this". A blocker report alone is not a finished task. [human-proactive-blocker-resolution-20261005] [human-fifty-fix-and-run-outcomes-20261005] [human-scale50-solution-followthrough-20261006]
 - If a tool such as aplexer gets in the way, fix or improve the tool instead of reporting that it does not work. [m13] [m17] [human-cross-computer-product-20261004]
 - Anything an agent does around aplexer by hand again and again should become an aplexer feature. [rescued/20261006-repeated-aplexer-work-should-be-a-feature]
 - While one task is blocked, the owner keeps other independent work moving. [agent-derived]
@@ -101,9 +105,8 @@ When two rules conflict, the newer human message wins.
 
 - No single point of failure: the laptop, root, principal, each head, each provider and each service has a named recovery path. [human-autonomous-failure-recovery-20261005] [human-self-organization-20261004] [human-role-failover-protocol-20261006]
 - Workers keep running when the head or principal that started them stops. [rescued/20261003-stopped-principal-sessions-died]
-- Periodic checks and standups run on the hosts, not in one desktop chat, and keep running when the desktop is off. [human-self-organization-20261004] [human-role-failover-protocol-20261006] [human-hetzner-autonomy-deadline-1830-20261005]
 - Any suitable host agent can act as coordinator. The coordinator's job is periodic checks and standup checks. [human-role-failover-protocol-20261006]
-- Root, on Win35, runs a check every 30 minutes and a standup check every day. The checks run from the host root, not from a desktop chat, and every check ends in an action. [human-scale50-solution-followthrough-20261006] [human-win35-new-root-instructions-20261007] [m1]
+- Root, on Win35, runs a check every 30 minutes and a standup check every day. Checks run on the hosts, not in a desktop chat, keep running when the desktop is off, and every check ends in an action. [human-self-organization-20261004] [human-scale50-solution-followthrough-20261006] [human-win35-new-root-instructions-20261007]
 - When an agent stops responding, peers send a sync message and inspect its real state before deciding it is gone. [human-role-failover-protocol-20261006]
 - If the principal is gone, the heads start a fresh principal session; they do not promote a head. [rescued/20261007-idle-again-start-new-principal]
 - If a head is gone, the principal or the peers start a new head for that project. [human-role-failover-protocol-20261006]
@@ -111,7 +114,7 @@ When two rules conflict, the newer human message wins.
 - Something must wake an idle agent. A late reply from another agent must wake its recipient too. [rescued/20261007-idle-again-start-new-principal] [rescued/20261007-appoint-codex-head-goal-and-async-wake]
 - Plan backups for agents that go offline from usage limits or downtime. [rescued/20261007-continuous-work-system-and-backups]
 - Desktop helpers are temporary nudges. The lasting solution runs on the hosts, with a durable supervisor if needed. [human-hetzner-autonomy-deadline-1830-20261005] [human-desktop-hetzner-continuation-monitor-20261005]
-- A takeover needs proof the old owner is really gone and an exclusive handover, so two agents never own the same work. [agent-derived]
+- A takeover needs proof the old owner is really gone, or a handover it acknowledged on the bus, so two agents never own the same work. [agent-derived]
 
 ### Who may act without asking
 
@@ -129,7 +132,7 @@ When two rules conflict, the newer human message wins.
 - Agents check each other's output, because workers run on weaker models than Opus. [m-20261003-1515] The checker is a different model from the author. [agent-derived]
 - Big designs go through a challenger: one agent proposes, another attacks it, and they settle the best way to build it. [human-delivery-reset-20261004] [m1] [m5]
 - Hard design questions get several subagents looking from different angles. [human-role-failover-protocol-20261006] [rescued/20261007-continuous-work-system-and-backups]
-- A reviewer is a different agent from the author and reviews the exact pinned version. Self-review, an old approval, or passing tests alone never count. [agent-derived]
+- A reviewer is a different agent from the author and reviews the exact version under review. Self-review, an old approval, or passing tests alone never count. [agent-derived]
 - Written rules are not enough: the tools must enforce the roles and the hand-offs. [human-team-interaction-enforcement-20261007]
 - A running process, a busy screen or a label is not proof of work. Unknown numbers stay unknown. [agent-derived]
 
@@ -154,7 +157,6 @@ When two rules conflict, the newer human message wins.
 - Agents claim what they are editing on the agents bus. Claims are never written into documents. [20261007-02-no-file-claims-in-docs] [20261007-03-docs-target-state]
 - Agents talk through the agents bus, which serves headless and interactive sessions alike and works across computers. [human-unified-headless-tui-message-bus-adoption-20261005] [human-principal-dispatch-agentbus-20261005] [human-cross-computer-product-20261004]
 - Hetzner and Win35 talk to each other directly and securely over the agents bus, not over SSH and not through the desktop. [human-win35-agentbus-nonssh-20261006] [human-agentbus-purpose-correction-20261007]
-- Never take over another agent's claimed scope without a handoff that agent has acknowledged on the bus. [agent-derived]
 
 ### The head loop
 
@@ -199,7 +201,7 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 - When one service hits its quota, plan around it and move work to a healthy provider; don't park the whole direction. [human-idle-heads-quota-rebalance-20261005]
 - The monitoring helper runs on GPT-6 Luna at max effort to save usage. It does not count as a worker. [human-luna-max-monitor-20261005] [human-scale50-solution-followthrough-20261006]
 - Claude Opus is used only for the daily write-up; Sonnet 5.5 is allowed for workers and heads. [m-20261003-2018] [rescued/20261005-expanded-executor-pool] [rescued/20261007-sonnet-head-full-dictation] Check the exact model and route, and never substitute one silently. [agent-derived]
-- Launch through the maintained launcher, never through an ad hoc provider shortcut. A fallback provider is a new admitted attempt. [human-fifty-workers-use-agent-launcher-20261005] [agent-derived]
+- Launch through the maintained launcher, never through an ad hoc provider shortcut. Switching to a fallback provider is a new launch through the launcher. [human-fifty-workers-use-agent-launcher-20261005] [agent-derived]
 
 ### Host limits
 
@@ -228,8 +230,8 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 - The founder journal in `_docs/founder-journal/` is the one place for the founder's messages and for failures. Every message is saved verbatim, one file per message, the same day it arrives, and never edited afterwards. [20261007-11-founder-journal-for-messages] [20261007-01-docs-pull-agents-md-only] [m4]
 - `failures.md` in the founder journal records process failures and their lessons in plain words, newest first. [20261007-11-founder-journal-for-messages]
 - Decisions, plans and the ideas agents researched at the founder's request are kept in one place, so we can refer back to them. [rescued/20261007-implemented-and-one-place-for-continuity] [rescued/20261007-document-everything-and-report-checklist] Decisions go into this document and ideas into the research file. [agent-derived]
-- All research lives in one file, `_docs/research.md`; a new finding edits a section and never adds a file. [20261007-09-consolidated-research-separate-incidents]
-- Incident stories live on the separate `history` branch, out of the working tree and out of agents' context. [20261007-09-consolidated-research-separate-incidents]
+- All research lives in one file, `_docs/research/research.md`; a new finding edits a section and never adds a file. [20261007-09-consolidated-research-separate-incidents]
+- Incident stories are kept apart, out of the working tree and out of agents' context. [20261007-09-consolidated-research-separate-incidents] They live on the `history` branch. [agent-derived]
 - No dated reports in the tree. Verdicts, receipts and incidents are issue comments. Dated files are allowed only for founder messages, published daily pages and their assets, and the tracker migration map in `_docs/task-tracker/`. [agent-derived] (The map exception settles a clash between two agent rules; the founder has not ruled on it.)
 - Journals are not appended in the repo. The agents bus is the log, and private or long evidence goes in git-ignored `.local/`. [agent-derived]
 - Never delete a file to tidy up without a tag that keeps it readable. Removed material stays at an archive tag. [agent-derived]
@@ -337,9 +339,20 @@ The continuation runtime is how work keeps moving without the founder: a process
 
 - How edit-scope claims work on the agents bus (claim, release, hand-off, expiry), and the date aplexer claims stop. [20261007-02-no-file-claims-in-docs]
 - The issue schema and labels: one template for task, owner, acceptance and evidence links, and one label set across all six trackers. [20261007-04-principal-github-issues]
-- The `TASKS.json` migration: reader cutover (issue #48), then retiring `TASKS.json`, `TEAM-REGISTRY.json` and `DELIVERY-BACKLOG.json`. [20261007-07-per-project-trackers]
+- Retiring the old JSON task files (`TASKS.json`, `TEAM-REGISTRY.json`, `DELIVERY-BACKLOG.json`) once every tool reads the issues instead. [20261007-07-per-project-trackers]
 - The private-evidence store: where long or private evidence lives, who can read it, and how a public issue points to it. [20261007-05-public-plain-issues]
 - Where the product code sits relative to `_docs/`. [20261007-14-single-docs-folder]
 - Response-time targets for an owner to accept, take a first action and show progress (5, 10 and 15 minutes were proposed). [agent-derived]
 - Whether to add a pre-push check of the repo layout (new top-level paths, edits to founder messages). It would be a layout check, not a test of docs, and needs the founder's yes first. [agent-derived]
-- Runtime items, each to become a principal issue with an owner: (1) store state and its notification together; (2) route every tracker writer through the guarded writer with identity, scope and ownership checks; (3) wire ownership fencing into the ordinary launcher commands; (4) require a distinct review on every accept path; (5) make the task-end handler check owner and scope; (6) a safe idle wake that passes the busy, draft and unknown tests; (7) late replies wake the recipient; (8) a guardian that survives the agent, plus `/goal` at Claude startup; (9) a live failover test; (10) a due scan every 60 seconds or less, squared with the 3-minute wake; (11) per-task review dependencies instead of a global stop; (12) a retry and back-off policy; (13) separate worker units from capped heads; (14) one secure, non-SSH cross-computer cycle with offline replay; (15) remove the single task authority as a failure point; (16) queue backups with a restore test; (17) task metrics on the dashboard and site from one definition; (18) hourly commit metrics per repository; (19) tracker availability targets, checked from Win35; (20) map every founder message to an issue; (21) prove the pressure hooks and retention work; (22) find the laptop agent's own written analysis; (23) link the role rules to the head loop; (24) decide whether to restrict the shell bypass. [agent-derived]
+### Runtime items
+
+Each becomes a principal issue with a named owner. [agent-derived]
+
+1. Wake-ups: a safe idle wake that never types into busy screens or drafts; late replies wake the recipient; a guardian that outlives the agent; `/goal` at Claude startup; a due scan every minute that fits the 3-minute wake.
+2. Ownership: every tracker write checks who is writing and what they own; the launcher and the task-end step check the same; every accept needs a distinct review.
+3. Failover: a task state and the notification it owes saved together; a live failover test; no single task store as a failure point; queue backups with a restore test; bounded retries with provider back-off.
+4. Many computers: one secure, non-SSH cycle between hosts that survives a host going offline.
+5. Resources: separate memory caps for workers and heads; proof that the disk and memory guards work.
+6. Metrics: tasks, commits and tracker availability measured hourly from one definition and shown on the dashboard and site; tracker availability checked from Win35.
+7. Coverage: every founder message mapped to an issue; the laptop agent's written analysis found and read [rescued/20261007-all-directives-and-laptop-analysis]; the role rules tied to the head loop; per-task review waits instead of a global stop.
+8. Limits: decide whether to restrict agents bypassing tool checks through the shell.
