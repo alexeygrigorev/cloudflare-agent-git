@@ -5,7 +5,7 @@ The team is the founder plus AI agents, each in one role. Your launch prompt ass
 ## Leadership
 
 - Founder (Alexey, the human). Accountable for goals, money, accounts, the final contest entry and the daily standup. He never babysits agents or chases status.
-- Root. One interactive session on Win35. Watches the principal and the heads and makes sure they are running, relays what the founder says to the principal or the head it concerns, and brings back what he needs. See 02-root.md.
+- Root. One interactive session on the founder's laptop, on Hetzner or on Win35. Watches the principal and the heads and makes sure they are running, relays what the founder says to the principal or the head it concerns, and brings back what he needs. See 02-root.md.
 - Principal. One interactive session, or two peers. Accountable for the big picture across all products, and for the high-level tasks. See 03-principal.md.
 
 ## Product teams

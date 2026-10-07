@@ -13,7 +13,7 @@ Each role:
 - Worker (executor): implements and tests one assigned task and hands back a pinned result. Never: accepts its own result, mutates other tasks, works outside delegated paths.
 - Independent reviewer: inspects a pinned candidate, runs the relevant checks, returns a free verdict. Never: changes the candidate, reviews its own output, accepts unpinned artifacts.
 - Supervisor and collector: configured mechanical transitions, due checks, routing and observations. Never: gives model verdicts, fabricates custody or readiness, grants source permissions.
-- Root (coordinator): takes the founder's requests, delivers results to the founder, follows every request through, recovers failed custody, runs the periodic checks on Win35 and Hetzner. Never: holds product edit scope, acts as scheduler, routine reviewer or release approver.
+- Root: watches the principal and the heads and keeps them running, relays what the founder says to them and brings back what he needs. It runs on the founder's laptop, on Hetzner or on Win35. Never: holds product edit scope, acts as scheduler, routine reviewer or release approver.
 
 Principals and heads may launch as many workers as useful tasks and current resource gates allow; there is no fixed team cap. Heads keep their context and orchestrate; workers do the work. Principals check each other at agreed checkpoints. Agents may invent better ways of working and challenge the founder, inside the safety gates. Every actor reads AGENTS.md, [03-way-of-working.md](03-way-of-working.md), its hand-off and its task contract at startup and records that it did.
 
@@ -75,7 +75,7 @@ The head reports its scope ACK, launcher store, task SHA, implementer and review
 ## Deadlines, wake and recovery
 
 - Response objectives (proposed, not yet agreed): owner ACK within 5 minutes, first action within 10, first progress within 15. Longer work agrees a checkpoint in advance. Original misses stay visible.
-- The maintained supervisor owns event, dependency and failure handling plus a bounded due scan (target: at most every 60 seconds). Root's 30-minute check on Win35 is oversight and recovery, not a dispatch clock. One existing supervisor; no second scheduler, watcher or writer.
+- The maintained supervisor owns event, dependency and failure handling plus a bounded due scan (target: at most every 60 seconds). Root's 30-minute check is oversight and recovery, not a dispatch clock. One existing supervisor; no second scheduler, watcher or writer.
 - A stalled or capacity-exhausted principal or head gets a safe wake after about 3 minutes. Delivery requires proven idle readiness: two fresh safe observations and an immediate recheck, bound to the current generation. Busy, draft, menu, unknown or quota-error states block injection; pending input and founder drafts are never overwritten.
 - An asynchronous reply to an agent (a dependency answer, a peer message) must actually wake the recipient so it reads the reply and acts. An inbox ACK while busy is not submission to an idle prompt.
 - Agents that support a native goal mechanism (Claude Code and Codex `/goal`) start with it, sent as a direct message to an idle prompt (see [principal](team/03-principal.md)); an inbox copy does not activate it. Every provider, with or without it, is also covered by an independent provider-neutral guardian that survives the agent's death.
