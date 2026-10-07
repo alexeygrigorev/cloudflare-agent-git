@@ -68,7 +68,48 @@ A02, A11, A15 and A20 have no disposition note of their own beyond never enterin
 
 ## 3. Experiment results
 
-(pending)
+### 3.1 A01 fair pair: a null result
+
+Question: does an agent that can see a peer's unfinished work do better than one that only meets it at completion? Grok ran one registered pair on 2 Oct (commits `7ef2269`, `2f4681c`): two arms (completion-time, live), each with two real `zcodex` writers on complementary reader and writer tasks (`research/grok/a01-fair-results.md`).
+
+- Every role's first product commit already passed the task check and the composition oracle. Source repair was zero in all four roles; no warning notice was recorded (`research/grok/a01-fair-results.md`).
+- The live arm did see the peer's later-committed bytes before its own commit. That changed nothing (`research/grok/a01-fair-results.md`).
+- Codex replayed the live arm independently: all eight checks exit 0, including the combined tree, and nothing changed after the first source commit (`research/codex/a01-live-independent-replay.json`).
+- Decision D-G25: "null separation" (`research/grok/a01-fair-results.md`). Claude proposed and Codex accepted dropping A01's primary status (`research/consensus.md`).
+
+The earlier pilot, D-G23, does not count as evidence: its prompts differed between arms beyond the warning, and the notice arm "passed" by not doing the task (`research/debate/codex-a01-pilot-review.md`, `research/evidence-ledger.md`). The outside literature agrees the hazard is real but rare: one study found cross-agent pairs in only 0.5% of co-active pairs (`research/evidence-ledger.md`, theme T1).
+
+### 3.2 G3: do capable agents break each other on disjoint files? Two negatives
+
+Space Bunny gave two `zcodex` executors separate tasks on separate files, with no oracle and no hint that the other task existed (`research/space-bunny/g3-no-symbol-overlap/results-real-agents.md`).
+
+- **Round 1 (shared cache contract):** base, A, B and A+B all pass. Swapping in a deliberately broken B made A+B fail, so the test could catch the bug; the agents simply did not write it. Agent B avoided it by explicitly modelling a memoizing cache, which it inferred from base files it had to read (`research/space-bunny/g3-no-symbol-overlap/results-real-agents.md`).
+- **Round 2 (contract hidden in a third-party file):** again all four pass (`research/space-bunny/g3-non-discoverable/results-real-agents.md`).
+- **The confound:** both rounds' briefs pointed at the behaviour that mattered, so neither tested whether agents find the coupling unaided. The author therefore refused to invoke his own pre-registered conclusion (`research/space-bunny/g3-non-discoverable/results-real-agents.md`). A neutral-brief rerun was planned but never launched (`research/space-bunny/g3-signposting-comparison-plan.md`, status "PLAN ONLY").
+
+What it means: agents reason correctly about a contract when told it matters. Any demo that seeds such a conflict shows a capability, not a rate (`research/space-bunny/g3-no-symbol-overlap/results-real-agents.md`).
+
+### 3.3 A06 review cards: no measured benefit
+
+- **First real decision (N=1):** the reviewer approved the change at confidence 80 both before and after reading the change-story card. The card itself had a wrong number (3.0 s where the source says 1000 ms), and two of the reviewer's card findings were later corrected or withdrawn (`research/muse/a06-phase-b-record.md`).
+- **Two-format pilot:** both arms reached REJECT, the known right answer. The "card is cheaper" reading (5 vs 14 tool calls) was withdrawn because the card arm was barred from raw sources the other arm used, and the packet changed mid-experiment. It was a calibration, not an efficacy test (`research/muse/a06-pilot-adoption/analysis.md`).
+- **Grok's adoption decision** on a ZCode runner rejected its claim of "0 eligible warnings"; the corrected runner now reports "unknown" (`research/grok/a06-adoption-decision.md`). The same note found CodeRabbit already ships layered review and stale-snapshot refusal, and named the one difference left to test: a card that records what it does *not* guarantee (`research/grok/a06-adoption-decision.md`).
+- **Antigravity's operational review** of the advisory stack scored it CONDITIONAL (6.8/10): useful for multi-agent pipelines, not to be mandated for ordinary maintenance (`research/antigravity/adoption/A06-ADVISORY-ADOPTION-DECISION.md`).
+
+### 3.4 Storage (A16): real pain, ordinary tools nearly as good
+
+- **The founder's host** (read-only scan): 472 linked worktrees, 111.7 GiB physical. Dependency and build directories are 62.1% of that; copied Python `.venv` folders alone are 57.3 GiB across 215 dirs. 264 worktrees (82.4 GiB summed) sit on commits already in `origin/main`, so cleanup is the bigger lever (`research/claude/u7-real-worktree-measurement.md`).
+- **Ordinary pnpm** already shares installs: two trees sum to 458.984 MiB but occupy 229.617 MiB, about 49.97% less (`research/codex/package-storage-validation.md`).
+- **The gate kept failing:** 42.37% and 36.05% (uv hardlink and symlink), 48.17% (clean state), and finally 47.76% against an ordinary-clone arm at 47.38%, all under the >50% bar (`research/evidence-ledger.md`, `research/antigravity/r8-worktree-d1-benchmark.md`).
+- **A real hazard found:** an in-place write through a shared uv cache leaked into the other task (`research/antigravity/evidence.md`, E-A040). Three earlier "measurements" (E-A035 to E-A037) were hypothetical arithmetic and were retracted (`research/evidence-ledger.md`).
+
+### 3.5 Duplicate execution and handoff
+
+- **Inner duplicate:** the installed `zcodex` ran each shell call twice (count 2 per operation); the patched mode ran it once (`research/antigravity/r8-dupexec-count-verification.md`). A live append probe confirmed 2 marker lines before and 1 after (`research/antigravity/r9-runtime-single-effect-verification.md`).
+- **Outer retries remain:** a separate trace under the patched mode showed the model re-issuing the same command about 16 s later, both runs exiting 0. Verdict of record: "no exactly-once claim" (`research/antigravity/r9-runtime-single-effect-verification.md`).
+- **Cost of finding out:** one debug build grew the disk by about 12.26 GB, a resource violation; builds were frozen (`research/antigravity/r9-runtime-single-effect-verification.md`).
+- **Incidence can't be read from logs:** inner duplicates never reach rollout logs. 159 quick identical re-issues across 147 rollouts were traced to tool-signature rejections, polling and ordinary re-runs (`research/antigravity/r11-real-duplicate-incidence.md`).
+- **Handoff (A10):** a cold worker recovered the next action from plain Git in 27 s; a second applied a 2104-byte interrupted patch onto a moved base and passed 39/39 and 37/37 tests with no repair. Both are N=1 and the second's start time is unknown (`research/shortlist-6.md`).
 
 ## 4. Demand and competitor map
 
