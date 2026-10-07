@@ -140,7 +140,7 @@ Platform limits to design around: 1 GB per repo, 32 MB per blob, push over proto
 
 ## 6. Adoption and dogfood findings
 
-- **Single agent: use plain Git.** Same tree hash, 16/16 tests in both; plain worktree 0.200 s and 7 commands, Agent Branches 1.143 s and 15 (5.7x). verdict: decline for single-actor work (`research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md`).
+- **Single agent: use plain Git.** Same tree hash, 16/16 tests in both; plain worktree 0.200 s and 7 commands, Agent Branches 1.143 s and 15 (5.7x). Verdict: decline for single-actor work (`research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md`).
 - **Concurrent refactor (scripted patches):** a post-merge-CI baseline let 1 defect reach `main`; the radar flagged it before landing in 0.539 s, at 6.41 s vs 1.84 s wall time and about 155 MB of daemons (`research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md`). Any pre-merge check would catch the same failure (`research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md`).
 - **"Adoption confirmed" was an overclaim,** relabelled "workflow transport confirmed": the work was two doc lines in separate files (`research/antigravity/adoption/REAL-FORK-ADOPTION-REPORT.md`).
 - **Real use found real gaps:** a `push_batch` patch loses the accepted prefix on a mid-batch failure (`research/antigravity/dogfood/NEWCOMER-ADOPTION-DECISION-7DE6836.md`); the CLI lacked a per-task token (`research/antigravity/dogfood/REPORT-SDK-PACKAGED-FIRSTUSE.md`); Node needs about 1.46 GB of virtual address space, so cap RSS, not `ulimit -v` (`research/antigravity/adoption/REPORT-REALNODE-SIDECAR-PILOT.md`).
