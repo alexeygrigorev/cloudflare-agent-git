@@ -1,63 +1,37 @@
 # Way of working
 
-This is the one document that says how this project works, end to end. It holds the mission, the roles, the autonomy rules, how work flows, and the rules for git, resources, documentation, the public journal, the runtime and security. It replaces the separate policy files for now; we decide later whether to split it.
-
-Every rule is in force now. When two rules conflict, the newer human message wins.
-
-Words used here:
-
-- **Agents bus**: the message system the agents use to talk to each other, on one computer or across several. We are building it as the Agent Bus product; until it carries everything, aplexer (the current terminal-session tool) fills in.
-- **Claim**: a note on the agents bus saying which files an agent is editing, so two agents don't edit the same thing.
-- **Headless**: an agent that runs without a terminal window, doing one task and exiting.
-- **First real action**: the owner's first tool call or file change on a task. A delivered message or a busy screen is not one.
-
-## Contents
-
-1. [Mission and team](#1-mission-and-team)
-2. [Roles and accountability](#2-roles-and-accountability)
-3. [Autonomy requirements](#3-autonomy-requirements)
-4. [How work flows](#4-how-work-flows)
-5. [Git workflow](#5-git-workflow)
-6. [Resources](#6-resources)
-7. [Documentation rules](#7-documentation-rules)
-8. [Public journal and editorial rules](#8-public-journal-and-editorial-rules)
-9. [Runtime and continuation design](#9-runtime-and-continuation-design)
-10. [Security and privacy](#10-security-and-privacy)
-11. [Open specifics still to define](#11-open-specifics-still-to-define)
-
 ## 1. Mission and team
 
-- We are entering Cloudflare's next Git platform competition: build a better Git for coding agents, one that solves the problems agents actually hit, not just a faster Git. The aim is to win and to make something useful.
-- The work is five products, each with its own team and GitHub repo: Agent Branches (our Git tool), Agent Dashboard, Agent Quota Launcher, Agent Coordination (agents talking across computers) and Agent Bus (the message bus, separate from aplexer).
-- The team is a self-running department of AI agents: one principal, one head per product, many short-lived workers, and reviewers on a different model. They coordinate among themselves, and the founder joins only for daily standups.
-- We build in public and use our own tools for our own work as early as we can.
-- The founder's own pain point is that every worktree copies the whole workspace and fills the disk, worst of all with Rust builds; the product must not be Rust-focused.
+- We are entering Cloudflare's next Git platform competition: build a better Git for coding agents, one that solves the problems agents hit; speed alone is not the goal. The aim is to win and to make something useful.
+- The work is five products. Each product has its own team and its own repo and tracker:
+  - Agent Branches, our Git tool: `~/git/agent-branches`, GitHub `alexeygrigorev/agent-branches`.
+  - Agent Dashboard: `~/git/agent-dashboard`, GitHub `alexeygrigorev/agent-dashboard`.
+  - Agent Quota Launcher: `~/git/agent-quota-launcher`, GitHub `alexeygrigorev/agent-quota-launcher`.
+  - Agent Coordination, agents talking across computers: `~/git/agent-coordination`, GitHub `alexeygrigorev/agent-coordination`.
+  - Agent Bus, the message bus, separate from aplexer: `~/git/agent-bus`, GitHub `PocketShell-io/agent-bus`.
+- This repo, `~/git/cloudflare-agent-git` (GitHub `alexeygrigorev/cloudflare-agent-git`), holds the portfolio-level docs and the principal's tasks.
+- The team is a self-running department of AI agents that coordinate among themselves. The founder joins only for daily standups.
+- Build in public. Once ideas converge, build small prototypes and use our own tools for our own work straight away.
+- Agent Branches solves the founder's own pain: every worktree copies the whole workspace and fills the disk, worst of all with Rust builds. The product must not be Rust-focused.
 - Agent Branches needs a CLI the founder can demo, including a `branches sync git` style command that syncs everything to Git.
+- The Cloudflare integration sits behind a facade so we can switch platforms later.
 
 ## 2. Roles and accountability
 
-| Role | Who | Accountable for | Never does |
-|---|---|---|---|
-| Founder | Alexey, the human | Goals, money, accounts, final contest entry, daily standup | Babysitting agents or chasing status |
-| Root (coordinator) | One interactive session, now on Win35 | The human's interface; follows every request through to a delivered result; monitors and repairs stalled work on Win35 and Hetzner | Writing product code, reviewing every page, approving routine work |
-| Principal | One interactive session (or two peers) | The big picture across all teams: coverage, priorities, dependencies, challenges, course correction, high-level issues | Implementing or reviewing product code; running its own execution team |
-| Head | One interactive session per product | Its product's tracker, backlog, workers, reviewers, integration and next task | Being the only worker; accepting its own work |
-| Worker | Short-lived task agent, usually headless | One scoped task: code, research or tests, then exit | Accepting or reviewing its own output |
-| Reviewer | A distinct agent, on a different model | A verdict on the exact version under review | Changing the thing it reviews |
-| Supervisor | A mechanical service, not a model | Wake-ups, due checks, safe message delivery | Making judgments or approving work |
-| Writer | Claude Opus | Daily report prose | Anything outside the report |
-
-- The principal and heads keep long-lived context; they start workers that finish a task and exit. This is the main working pattern.
-- The principal watches progress and the big picture and coordinates heads; heads do the lower-level work through their teams.
-- The principal does not do the work: simple ad hoc requests go to a subagent, substantial work goes to a head, which runs as many zcodex workers as the work allows. This is the playbook for all substantial work.
-- Principals do not review code. Heads delegate review to separate reviewer agents, so the principal never becomes the bottleneck.
-- Heads are orchestrators for their direction: they split work into independent tasks and run many workers in parallel.
-- Every product has a head running in a normal interactive session; workers may run headless.
+- Founder (Alexey, the human): accountable for goals, money, accounts, the final contest entry and the daily standup. Never babysits agents or chases status.
+- Root (coordinator): one interactive session on Win35. It is the founder's interface and follows every request through to a delivered result. It monitors and repairs stalled work on Win35 and Hetzner, coordinates Hetzner from Win35, runs useful work of its own, and uses the browser when a task needs it. It never writes product code, reviews every page or approves routine work.
+- Principal: one interactive session, or two peers. Accountable for the big picture across all teams: coverage, priorities, dependencies, challenges, course correction and high-level issues. It coordinates the heads. It never implements or reviews product code and never runs its own execution team.
+- Head: one interactive session per product. Accountable for its product's tracker, backlog, workers, reviewers, integration and next task. It is never the only worker and never accepts its own work.
+- Team: each product's head plus the workers and reviewers it starts.
+- Worker: a short-lived agent that does one scoped task (code, research or tests) and exits. It usually runs headless, without a terminal window. It never accepts or reviews its own output.
+- Reviewer: a distinct agent on a different model. It gives a verdict on the exact version under review and never changes the thing it reviews.
+- Supervisor: a mechanical service, not a model. It handles wake-ups, due checks and safe message delivery, and never makes judgments or approves work.
+- Writer: Claude Opus. It writes the daily report prose and nothing else.
+- The principal and heads keep long-lived context.
+- The principal does not do the work: simple ad hoc requests go to a subagent, and substantial work goes to a head, which runs as many zcodex workers as the work allows.
+- Heads orchestrate: they split work into independent tasks, run many workers in parallel, and delegate review to separate reviewer agents.
 - If there are two principals, they check each other periodically, and root checks them from outside.
-- Root monitors operations, coordinates Hetzner from Win35, and runs useful work of its own.
-- Root is the interface between the founder and the hosts, and uses the browser when a task needs it.
-- Every agent reads this document at startup and knows its role before it acts.
-- An agent's role is the one its launch prompt assigns; this document does not hand out roles.
+- Every agent reads this document at startup and knows its role before it acts. An agent's role is the one its launch prompt assigns.
 
 ## 3. Autonomy requirements
 
