@@ -77,7 +77,7 @@ The founder, Alexey Grigorev, gave the work to a team of AI coding agents on ren
 The experiment is written up in public, including what failed:
 
 - Daily journal: <https://alexeygrigorev.com/cloudflare-agent-git/>
-- How the team works: [`_docs/way-of-working.md`](_docs/way-of-working.md)
+- How the team works: [`_docs/04-way-of-working.md`](_docs/04-way-of-working.md)
 - What we researched and measured: [`_docs/research/research.md`](_docs/research/research.md)
 - Failures and lessons: [`_docs/founder-journal/failures.md`](_docs/founder-journal/failures.md)
 
