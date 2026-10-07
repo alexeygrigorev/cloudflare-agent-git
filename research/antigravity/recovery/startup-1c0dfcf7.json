@@ -1,0 +1,29 @@
+{
+  "session_id": "1c0dfcf7-3431-4c7b-bec3-8412c09e1ac1",
+  "tag": "ant-head-oom-recovery-c3123-20261007",
+  "role": "project_head",
+  "mode": "native_aplexer",
+  "parent_session_id": null,
+  "pid": 3236223,
+  "task_id": "continuation-runtime-metrics-and-supervision",
+  "owned_paths": [
+    "research/antigravity/recovery/**",
+    "research/antigravity/reviews/**",
+    "scripts/supervision/**",
+    "scripts/metrics/**"
+  ],
+  "docs_read": [
+    "AGENTS.md",
+    "coordination/OPERATING-MODEL.md",
+    "coordination/RESOURCE-POLICY.md",
+    "coordination/ROLE-CONTRACT.md",
+    "coordination/SCALE50-RECOVERY-PLAN.md",
+    "coordination/continuation-runtime/README.md",
+    "coordination/continuation-runtime/REQUEST-TO-OUTCOME.md",
+    "coordination/continuation-runtime/ENFORCEMENT.md",
+    "coordination/continuation-runtime/COMPREHENSIVE-DESIGN.md",
+    "coordination/continuation-runtime/TEAM-INTERACTION-ENFORCEMENT.md",
+    "coordination/continuation-runtime/DAILY-REPORT-CHECKLIST.md"
+  ],
+  "read_acknowledged_at": "2026-10-07T06:34:00Z"
+}

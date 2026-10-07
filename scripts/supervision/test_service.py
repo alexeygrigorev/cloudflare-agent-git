@@ -2030,6 +2030,113 @@ class RestingStateContradictionPrecheckTests(unittest.TestCase):
     finally:
       temp.cleanup()
 
+  def test_process_due_callbacks_recipient_session_id_match(self):
+    temp = tempfile.TemporaryDirectory()
+    try:
+      spool = pathlib.Path(temp.name)
+      cb_file = spool / 'due_callbacks.json'
+      cb_file.write_text(json.dumps({
+        'callbacks': [
+          {
+            'id': 'test-cb-exact',
+            'recipient_tag': 'test-head',
+            'recipient_session_id': 'sess-exact-123',
+            'due_at': '2026-10-07T00:00:00Z',
+            'prompt': 'Exact recipient prompt',
+            'delivered': False,
+          }
+        ]
+      }))
+      sessions = [
+        {'id': 'sess-exact-123', 'tag': 'test-head', 'workload_pid': os.getpid(), 'reported_state': 'idle'}
+      ]
+      sent = []
+      def fake_send(bin, tag, key, body, sp, s_id, supports_key):
+        sent.append((tag, key, body))
+        return {'delivery': 'inbox', 'id': 'msg-exact-1'}
+
+      delivered = service.process_due_callbacks(
+        spool, '/bin/true', 'sup-id', True, lambda *_: '', fake_send, sessions
+      )
+      self.assertEqual(delivered, ['test-cb-exact'])
+      self.assertEqual(len(sent), 1)
+      self.assertEqual(sent[0][0], 'test-head')
+      data = json.loads(cb_file.read_text())
+      self.assertTrue(data['callbacks'][0]['delivered'])
+    finally:
+      temp.cleanup()
+
+  def test_process_due_callbacks_tag_reassignment_rejected(self):
+    temp = tempfile.TemporaryDirectory()
+    try:
+      spool = pathlib.Path(temp.name)
+      cb_file = spool / 'due_callbacks.json'
+      cb_file.write_text(json.dumps({
+        'callbacks': [
+          {
+            'id': 'test-cb-stolen',
+            'recipient_tag': 'test-head',
+            'recipient_session_id': 'sess-legit-owner',
+            'due_at': '2026-10-07T00:00:00Z',
+            'prompt': 'Should not deliver to imposter',
+            'delivered': False,
+          }
+        ]
+      }))
+      # Tag 'test-head' is present, but session ID is 'sess-imposter'
+      sessions = [
+        {'id': 'sess-imposter', 'tag': 'test-head', 'workload_pid': os.getpid(), 'reported_state': 'idle'}
+      ]
+      sent = []
+      def fake_send(bin, tag, key, body, sp, s_id, supports_key):
+        sent.append((tag, key, body))
+        return {'delivery': 'inbox', 'id': 'msg-fail'}
+
+      delivered = service.process_due_callbacks(
+        spool, '/bin/true', 'sup-id', True, lambda *_: '', fake_send, sessions
+      )
+      self.assertEqual(delivered, [])
+      self.assertEqual(len(sent), 0)
+      data = json.loads(cb_file.read_text())
+      self.assertFalse(data['callbacks'][0]['delivered'])
+    finally:
+      temp.cleanup()
+
+  def test_process_due_callbacks_resting_state_guard(self):
+    temp = tempfile.TemporaryDirectory()
+    try:
+      spool = pathlib.Path(temp.name)
+      cb_file = spool / 'due_callbacks.json'
+      cb_file.write_text(json.dumps({
+        'callbacks': [
+          {
+            'id': 'test-cb-busy',
+            'recipient_tag': 'test-head',
+            'due_at': '2026-10-07T00:00:00Z',
+            'prompt': 'Should wait until resting state',
+            'delivered': False,
+          }
+        ]
+      }))
+      # Session is alive but actively working / busy
+      sessions = [
+        {'id': 'sess-busy', 'tag': 'test-head', 'workload_pid': os.getpid(), 'reported_state': 'working'}
+      ]
+      sent = []
+      def fake_send(bin, tag, key, body, sp, s_id, supports_key):
+        sent.append((tag, key, body))
+        return {'delivery': 'inbox', 'id': 'msg-busy'}
+
+      delivered = service.process_due_callbacks(
+        spool, '/bin/true', 'sup-id', True, lambda *_: '', fake_send, sessions
+      )
+      self.assertEqual(delivered, [])
+      self.assertEqual(len(sent), 0)
+      data = json.loads(cb_file.read_text())
+      self.assertFalse(data['callbacks'][0]['delivered'])
+    finally:
+      temp.cleanup()
+
 
 if __name__=='__main__':unittest.main()
 

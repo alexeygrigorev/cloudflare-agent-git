@@ -659,16 +659,32 @@ def process_due_callbacks(spool, binary, identity_id, supports_key, command, rec
             continue
         if now_ts >= due_ts:
             target_tag = cb.get('recipient_tag')
-            matching = [s for s in sessions if s.get('tag') == target_tag]
+            expected_session_id = cb.get('recipient_session_id')
+
+            # Anti-tag-reassignment check:
+            # If expected_session_id is declared, reject any session where tag matches but session_id differs.
+            if target_tag and expected_session_id:
+                reassigned = [s for s in sessions if s.get('tag') == target_tag and s.get('id') != expected_session_id]
+                if reassigned:
+                    # Tag was rebound to a different session; reject delivery to imposter
+                    continue
+
+            matching = [s for s in sessions if (not target_tag or s.get('tag') == target_tag) and (not expected_session_id or s.get('id') == expected_session_id)]
             if not matching:
                 continue
             sess = matching[0]
             pid = sess.get('workload_pid')
             if not (pid and pathlib.Path(f'/proc/{pid}').exists()):
                 continue
+
+            # Readiness & resting-state check: protect busy/working/draft states
+            reported_state = sess.get('reported_state')
+            if reported_state in ('busy', 'working', 'draft', 'menu-or-draft'):
+                continue
+
             prompt = cb.get('prompt', '')
             cb_id = cb.get('id', 'anon-due')
-            receipt = recorded_send(binary, target_tag, f"due-{cb_id}", prompt, spool, identity_id, supports_key)
+            receipt = recorded_send(binary, target_tag or sess.get('tag'), f"due-{cb_id}", prompt, spool, identity_id, supports_key)
             atomic(spool / f"receipt-due-{cb_id}.json", receipt)
             cb['delivered'] = True
             cb['delivered_at'] = now()
