@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Tests for scripts/checks/journal.sh in throwaway git repos.
+set -u
+SCRIPT="$(cd "$(dirname "$0")/../.." && pwd)/scripts/checks/journal.sh"
+export JOURNAL_NOW="2026-10-07 12:00" GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
+unset PRINCIPAL_OVERRIDE
+W=$(mktemp -d); trap 'rm -rf "$W"' EXIT
+cd "$W" && git init -q . && mkdir -p _docs/founder-journal
+J=_docs/founder-journal/2026-10-07.md
+printf '# 7 October 2026\n\n## 09:00\n\nhello\n\n## 10:00\n\nworld\n' > $J
+git add -A && git commit -qm base
+pass=0; failed=0
+t() { # name expected_rc cmd...
+  local n="$1" want="$2"; shift 2
+  "$@" >/dev/null 2>&1; local rc=$?
+  if [ "$rc" = "$want" ]; then pass=$((pass+1)); else failed=$((failed+1)); echo "FAIL: $n (rc=$rc want $want)"; fi
+}
+reset() { git reset -q --hard HEAD; }
+S() { "$SCRIPT" "$@"; }
+
+t "all clean" 0 S --all
+printf '\n## 11:00\n\nmore\n' >> $J; git add $J
+t "append ok" 0 S --staged; reset
+printf '\n## 09:30\n\nold time\n' >> $J; git add $J
+t "decreasing timestamp" 1 S --staged; reset
+printf '\n## 12:30\n\nfuture\n' >> $J; git add $J
+t "future timestamp" 1 S --staged; reset
+printf '\n## noon\n\nbad\n' >> $J; git add $J
+t "bad heading" 1 S --staged; reset
+sed -i 's/hello/HELLO/' $J; git add $J
+t "modified line" 1 S --staged
+t "override env" 0 env PRINCIPAL_OVERRIDE=because "$SCRIPT" --staged
+echo "x" > "$W/msg"; t "no trailer" 1 S --staged --message-file "$W/msg"
+printf 'x\n\nPrincipal-Override: fix typo\n' > "$W/msg"; t "trailer" 0 S --staged --message-file "$W/msg"; reset
+git rm -q $J
+t "delete" 1 S --staged; reset
+echo x > _docs/founder-journal/notes.md; git add -A
+t "bad file name" 1 S --staged; reset; rm -f _docs/founder-journal/notes.md
+echo x > _docs/founder-journal/failures.md; git add -A
+t "failures.md allowed" 0 S --staged; git commit -qm f
+# range mode
+base=$(git rev-parse HEAD)
+printf '\n## 08:00\n\nearly\n' >> $J; git commit -qam "bad order"
+t "range bad" 1 S --range "$base..HEAD"
+git commit -q --amend -m "bad order
+
+Principal-Override: test"
+t "range trailer" 0 S --range "$base..HEAD"
+# --all catches existing violations
+t "all dirty" 1 S --all
+echo "pass=$pass fail=$failed"; [ "$failed" = 0 ]
