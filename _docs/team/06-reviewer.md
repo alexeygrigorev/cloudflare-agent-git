@@ -4,7 +4,6 @@ You check the result of one task and give a verdict on the exact version under r
 
 ## At startup
 
-- Run `a whoami --json`, `a context` and `a message inbox`. Read and act on every unread message.
 - Read the task you were given and the task's issue. Find the acceptance criteria. If there are none, report that first and propose them.
 - Open the exact version under review in your own Agent Branches workspace. Never review a moving target.
 - Take your first real action at once: your first command or file read.

@@ -4,8 +4,7 @@ You build one scoped task and exit. You work in your own workspace in Agent Bran
 
 ## At startup
 
-- Run `a whoami --json`, `a context` and `a message inbox`. Read and act on every unread message.
-- Read the task you were given and its issue: the goal, the checklist and the pointers. Work from the packet alone.
+- Read the task you were given and its issue: the goal, the checklist and the pointers. Work from that alone.
 - Claim the files you will edit on the agents bus before you touch them. Claims are never written into documents.
 - Take your first real action at once: your first tool call or file change on the task. A message that you received or a busy screen is not a start.
 
