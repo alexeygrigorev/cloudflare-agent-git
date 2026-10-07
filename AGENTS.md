@@ -4,8 +4,7 @@
 
 AGENTS.md is the single agent-instruction file (CLAUDE.md was removed on 7 Oct 2026 per [human instruction](_docs/founder-journal/messages/human-docs-consolidation-agents-md-only-20261007.txt)).
 
-- Read AGENTS.md, then [_docs/mission.md](_docs/mission.md), [_docs/projects.md](_docs/projects.md), [_docs/team/overview.md](_docs/team/overview.md) and [_docs/way-of-working.md](_docs/way-of-working.md) at startup.
-- Then read your role file in `_docs/team/`: `root.md`, `principal.md`, `head.md` or `writer.md`.
+- Read your role file in `_docs/team/`: `root.md`, `principal.md`, `head.md` or `writer.md`. The team rules are in [_docs/way-of-working.md](_docs/way-of-working.md).
 - Your role is the one explicitly assigned by your current launch prompt; this file does not turn any engine into the Claude principal.
 - Respect separate ownership: claim the edit scope on the agents bus before editing; documents never record claims.
 - No pull requests: commit in small commits, rebase on origin/main and push directly to main.
