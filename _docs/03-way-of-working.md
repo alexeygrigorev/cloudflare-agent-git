@@ -40,7 +40,7 @@ The agents bus is the message system agents use to talk to each other, on one co
 
 ## 8. Git
 
-No pull requests: commit and push straight to main in small, focused commits, one per logical change, never one big commit. Before pushing run `git pull --rebase origin main` and retry if another push got there first, and verify the push before reporting. A chat reply or an uncommitted file is not done. Stage only the paths you changed, never reset, stash or overwrite someone else's work, and in a shared dirty checkout work in your own worktree. Never delete existing worktrees or dirty or unmerged work. Cleanup touches only disposable scratch with a known owner. Do not write tests for docs.
+No pull requests: commit and push straight to main through Agent Branches, our own tool, in small, focused commits, one per logical change, never one big commit. Plain Git is the fallback, and with plain Git run `git pull --rebase origin main` before pushing and retry if another push got there first. Verify the push before reporting. A chat reply or an uncommitted file is not done. Stage only the paths you changed, never reset, stash or overwrite someone else's work, and in a shared dirty checkout work in your own worktree. Never delete existing worktrees or dirty or unmerged work. Cleanup touches only disposable scratch with a known owner. Do not write tests for docs.
 
 Main development happens through our own tool and stays in sync with GitHub, which is the backup. Keep an ordinary Git recovery path that does not depend on our prototype by mirroring main to an independent remote now and then and checking that a fresh checkout restores it. Count commits per repository by unique SHA. Commits are activity, not accepted results.
 

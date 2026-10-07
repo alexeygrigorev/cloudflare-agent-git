@@ -13,7 +13,7 @@ You build one scoped task and exit. A head started you through the Agent Quota L
 
 - Work in your own worktree, never in a shared dirty checkout. Stage only the paths you changed.
 - Build exactly what the task asks. Do not add features, refactor unrelated code or widen the scope.
-- Commit in small focused commits, one per logical change, and push straight to main. Before pushing run `git pull --rebase origin main` and retry if another push got there first. Open no pull requests. Verify the push before you report.
+- Commit in small focused commits, one per logical change, and push straight to main through Agent Branches. Use plain Git only as a fallback. Open no pull requests. Verify the push before you report.
 - Write tests for real code and never for docs. Run them before you report.
 - Stay inside your limits: 1500M memory and 100 tasks. Do no Rust builds and no global installs.
 - If something blocks you, work around it, fix it or find another independent part of the task. Do not stop at a blocker report.

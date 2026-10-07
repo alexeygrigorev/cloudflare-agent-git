@@ -15,7 +15,7 @@ You check the result of one task and give a verdict on the exact version under r
 - Run the existing tests for the area and read the failures properly.
 - Use the product as a user would, end to end. Run the real commands, start the real services locally and capture the real output. For Agent Branches that means the CLI and the demo. A passing test suite alone is not a check.
 - Try to break it: bad input, a missing token, two agents at once, a crash in the middle, a repeat of the same request.
-- Write new tests for real behaviour that has no test, and never tests for docs. Claim the test files on the agents bus, commit them in small focused commits and push straight to main.
+- Write new tests for real behaviour that has no test, and never tests for docs. Claim the test files on the agents bus, commit them in small focused commits and push straight to main through Agent Branches, with plain Git only as a fallback.
 - Mark each acceptance criterion pass, fail or unknown, with the command and its output as evidence. Unknown stays unknown, not pass.
 - Give one verdict on the exact commit: approved, or changes requested with every finding and the steps to reproduce it.
 

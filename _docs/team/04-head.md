@@ -27,7 +27,7 @@ You are the head of a specified product. Each product has its own team, its own 
 - Start a worker for it through the maintained Agent Quota Launcher. Workers and reviewers that run as separate sessions are never started by hand. You may use your own built-in subagents for small pieces.
 - Workers and reviewers start headless with permission prompts skipped, never in their own aplexer session.
 - When the worker returns, start a reviewer on a different model. The worker fixes every finding. Repeat until the reviewer approves.
-- Integrate by committing and pushing straight to main in small, focused commits. Before pushing run `git pull --rebase origin main`. Open no pull requests.
+- Integrate by committing and pushing straight to main through Agent Branches in small, focused commits. Use plain Git only as a fallback. Open no pull requests.
 - Start the next ready task at once. Do not wait to be told.
 - Run as many workers as there are independent tasks and capacity. There is no fixed cap. Do not invent work to raise the count.
 - While one task is blocked, keep the other independent work moving.
