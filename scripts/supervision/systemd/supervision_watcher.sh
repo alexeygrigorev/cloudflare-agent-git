@@ -26,3 +26,8 @@ else
         echo "Supervisor is healthy."
     fi
 fi
+
+# Automated metrics rolling retention under 192 MiB pressure
+if [ -f "$REPO_ROOT/scripts/metrics/adapters.py" ]; then
+    python3 "$REPO_ROOT/scripts/metrics/adapters.py" --json >/dev/null 2>&1 || true
+fi

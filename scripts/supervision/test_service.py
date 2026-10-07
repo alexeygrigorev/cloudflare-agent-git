@@ -1164,6 +1164,63 @@ class Safety(unittest.TestCase):
    service.time = real_time
    shutil.rmtree(td, ignore_errors=True)
 
+ def test_supervision_watcher_metrics_hook(self):
+  root = pathlib.Path(__file__).resolve().parents[2]
+  watcher_path = root / 'scripts/supervision/systemd/supervision_watcher.sh'
+  self.assertTrue(watcher_path.is_file(), f"Watcher script not found at {watcher_path}")
+
+  syntax_check = service.subprocess.run(['bash', '-n', str(watcher_path)], capture_output=True, text=True)
+  self.assertEqual(syntax_check.returncode, 0, f"Watcher syntax check failed: {syntax_check.stderr}")
+
+  content = watcher_path.read_text(encoding='utf-8')
+  self.assertIn('# Automated metrics rolling retention under 192 MiB pressure', content)
+  self.assertIn('python3 "$REPO_ROOT/scripts/metrics/adapters.py" --json >/dev/null 2>&1 || true', content)
+
+  with tempfile.TemporaryDirectory() as tmpdir:
+   tmp_root = pathlib.Path(tmpdir)
+   adapters_dir = tmp_root / 'scripts' / 'metrics'
+   adapters_dir.mkdir(parents=True)
+   mock_adapters = adapters_dir / 'adapters.py'
+   marker = tmp_root / 'hook_invoked.txt'
+
+   mock_adapters.write_text(
+    f"import sys, pathlib\npathlib.Path({repr(str(marker))}).write_text(' '.join(sys.argv[1:]))\nsys.exit(0)\n"
+   )
+   hook_cmd = (
+    f'REPO_ROOT="{tmp_root}"\n'
+    'if [ -f "$REPO_ROOT/scripts/metrics/adapters.py" ]; then\n'
+    '    python3 "$REPO_ROOT/scripts/metrics/adapters.py" --json >/dev/null 2>&1 || true\n'
+    'fi\n'
+   )
+   res = service.subprocess.run(['bash', '-c', hook_cmd], capture_output=True, text=True)
+   self.assertEqual(res.returncode, 0)
+   self.assertTrue(marker.exists())
+   self.assertEqual(marker.read_text().strip(), '--json')
+
+   marker.unlink()
+   mock_adapters.write_text(
+    f"import sys, pathlib\npathlib.Path({repr(str(marker))}).write_text('failed')\nsys.exit(1)\n"
+   )
+   res_fail = service.subprocess.run(['bash', '-c', hook_cmd], capture_output=True, text=True)
+   self.assertEqual(res_fail.returncode, 0)
+   self.assertTrue(marker.exists())
+
+   mock_adapters.unlink()
+   res_missing = service.subprocess.run(['bash', '-c', hook_cmd], capture_output=True, text=True)
+   self.assertEqual(res_missing.returncode, 0)
+
+  adapters_py = root / 'scripts' / 'metrics' / 'adapters.py'
+  if adapters_py.is_file():
+   res_cli = service.subprocess.run(['python3', str(adapters_py), '--json'], capture_output=True, text=True)
+   self.assertEqual(res_cli.returncode, 0)
+   parsed = json.loads(res_cli.stdout)
+   self.assertEqual(parsed.get('status'), 'ok')
+   self.assertIn('active_bytes', parsed)
+
+  res_live = service.subprocess.run(['bash', str(watcher_path)], capture_output=True, text=True)
+  self.assertEqual(res_live.returncode, 0)
+  self.assertIn('Supervisor is healthy.', res_live.stdout)
+
 
 class ComposerEvaluationTests(unittest.TestCase):
  """Unit tests for composer screen evaluation across multi-engine prompts and ANSI formatting."""
