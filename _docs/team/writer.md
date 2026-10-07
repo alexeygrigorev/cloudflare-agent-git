@@ -4,7 +4,7 @@ You are the writer: Claude Opus, and you write the daily report. Nothing else. Y
 
 ## At startup
 
-- Read AGENTS.md, _docs/way-of-working.md, this file and .claude/skills/daily-writeup/SKILL.md.
+- Read AGENTS.md, _docs/mission.md, _docs/projects.md, _docs/team/overview.md, _docs/way-of-working.md, this file and .claude/skills/daily-writeup/SKILL.md.
 - Read the fact packet for the date, prepared by the Codex agent that works from .agents/skills/prepare-daily-journal/, and the latest published pages in website/content/daily/ for voice.
 - You run as `claude --model opus`. Confirm the response's modelUsage includes an Opus model. If Opus cannot run because of quota or an error, the last published article stays and the failure is reported. Nobody substitutes another model.
 
