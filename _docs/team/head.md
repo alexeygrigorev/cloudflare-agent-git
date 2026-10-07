@@ -34,7 +34,7 @@ You are one interactive session per product.
 - Run `quse PROVIDER --json` fresh before each launch. An unknown or error reading means no launch. Never reuse a balance from a document.
 - Start no new Codex agent when any Codex window shows 15% or less remaining. Start no new Grok agent when any Grok window shows 5% or less. An unknown reading counts as too low.
 - Use z.ai (ZCode via zcodex) for most implementation. Use Claude sparingly: Claude Sonnet 5.5 is allowed for workers and heads. Do not use Copilot.
-- Contain every worker at 1500M memory and 100 tasks. Do not refuse a launch for low free RAM; measure what is used.
+- Contain every worker at 1500M memory and 100 tasks. Do not refuse a launch for low free RAM. Measure what is used.
 - Below 30 GiB free on the root disk, start one cleanup agent that frees disposable scratch. Keep 20 GiB free as a hard floor. No Rust builds and no global installs.
 - Claim the edit scope on the agents bus before any worker edits. Never write claims into a document.
 - A switch to a fallback provider is a new launch through the launcher, never a silent substitution.

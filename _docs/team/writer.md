@@ -120,6 +120,6 @@ Agents' handoffs often ask the report to include observation windows, agent coun
 
 ## If something fails
 
-- If a draft fails the check, keep the partial output and the last good publication. Report the failure; do not publish a substitute.
+- If a draft fails the check, keep the partial output and the last good publication. Report the failure. Do not publish a substitute.
 - If you restart mid-day, read the fact packet and .local/journal/YYYY-MM-DD/ first and continue from the last saved step.
 - Do not write the article about how the team works until the founder accepts _docs/way-of-working.md.

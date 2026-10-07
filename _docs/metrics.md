@@ -1,6 +1,6 @@
 # Metrics
 
-These are the things we track. Every number is measured, never estimated, and an unknown number stays unknown, not zero. The same definitions feed the dashboard, the daily report and the public site. Raw transcripts, credentials and private identifiers stay private; public views show sanitized summaries.
+These are the things we track. Every number is measured, never estimated, and an unknown number stays unknown, not zero. The same definitions feed the dashboard, the daily report and the public site. Raw transcripts, credentials and private identifiers stay private. Public views show sanitized summaries.
 
 ## Outcome
 
@@ -23,7 +23,7 @@ These are the things we track. Every number is measured, never estimated, and an
 ## Activity
 
 - Commits: unique SHAs per repository, in hourly Berlin-time buckets and over a rolling 24 hours, by committer time. Merges are counted separately and mirrors once. Commits are activity, not accepted results.
-- Task transitions: age of created, executing, in review, accepted, delivered and reopened tasks; recovery latency.
+- Task transitions: age of created, executing, in review, accepted, delivered and reopened tasks. Recovery latency.
 - Time: observed hook time is an observation, not productive or billable time.
 
 ## Cost and usage
