@@ -36,6 +36,8 @@ Workers and reviewers start headless with permission prompts skipped, never in t
 
 Besides the standing heads, there are sometimes situational heads: heads started for one specific situation, such as a recovery, an incident or a one-off push. For each situational head we keep the state of its work and of its task: what it was assigned, what it has done and where it stands now. The head writes this state down as it goes, so that if it stops, another head can resume or take over the work from the record and not from guesswork.
 
+A head never goes idle waiting: it either has a promised synchronous reply from its principal or a wake job, as described in [keeping heads moving](04-communication.md#keeping-heads-moving).
+
 ## 7. The agents bus and claims
 
 The agents bus is the message system agents use to talk to each other, on one computer or across several, in headless and interactive sessions alike. Before editing, an agent claims what it is editing on the bus. A claim is a note saying which files an agent is working on, so two agents do not edit the same thing. Claims are never written into documents.
