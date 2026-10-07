@@ -125,7 +125,51 @@ Agent Branches needs a CLI the founder can demo, including a `branches sync git`
 
 ## 4. How work flows
 
+### The tracker
+
+- Tasks and issues are tracked in GitHub issues; the old tasks move there with proper labels. [human-github-issues-tracking-20261007] [github-task-tracker-quote]
+- The issues are public, plain GitHub issues, with no GitHub Project. [human-github-public-issues-no-project-20261007]
+- Each project has its own tracker, owned by its team. The principal owns the high-level tasks, and those are issues in this repository. [human-per-project-trackers-20261007]
+- The trackers are `alexeygrigorev/agent-branches`, `agent-dashboard`, `agent-quota-launcher`, `agent-coordination`, `PocketShell-io/agent-bus`, and `alexeygrigorev/cloudflare-agent-git` for the principal's work. [agent-derived]
+- The tracker must be usable, visible to the founder and always available. Without one we forget things. [human-usable-task-tracker-20261005] [human-visible-task-tracker-link-20261005] [human-headless-permissions-task-tracker-intake-20261005] [human-tracker-availability-agents-commits-20261007]
+- Every founder request becomes an issue, or a link to the constraint it sets, so nothing he asked for gets lost. [human-tracker-availability-agents-commits-20261007] [human-autonomous-department-20261005]
+- A principal dependency issue links to the product issue; the same task is never copied into two trackers. [agent-derived]
+- An issue closes only when its accepted, reviewed outcome exists. Work waiting for review stays open, and a failed acceptance reopens the issue. [agent-derived]
+- An issue assignment does not grant edit rights and does not prove the owner accepted the task. [agent-derived]
+- The legacy ledgers (`TASKS.json`, `TEAM-REGISTRY.json`, `DELIVERY-BACKLOG.json`) stay in place until the readers switch over to issues, which issue #48 tracks. Creating an issue is not that switch. [agent-derived]
+- The everyday tracker commands live in `_docs/process/github-task-tracker.md`, and the sanitized map from old IDs to issues lives in `_docs/task-tracker/`. [agent-derived]
+
+### Claims and coordination
+
+- Agents claim what they are editing on the agents bus. Claims are never written into documents. [human-no-file-claims-in-docs-agents-bus-20261007] [human-docs-target-state-not-current-20261007]
+- Agents talk through the agents bus, which serves headless and interactive sessions alike and works across computers. [human-unified-headless-tui-message-bus-adoption-20261005] [human-principal-dispatch-agentbus-20261005] [human-cross-computer-product-20261004]
+- Hetzner and Win35 talk to each other directly and securely over the agents bus, not over SSH and not through the desktop. [human-win35-agentbus-nonssh-20261006] [human-agentbus-purpose-correction-20261007]
+- Never take over another agent's claimed scope without a handoff that agent has acknowledged on the bus. [agent-derived]
+
+### The head loop
+
+- The head picks a ready task and starts a worker for it through the maintained Agent Quota Launcher. [human-fifty-workers-use-agent-launcher-20261005] [human-delivery-reset-20261004]
+- A reviewer on a different model checks the result, the worker fixes every finding, and the loop repeats until the reviewer approves. Then the head integrates and starts the next ready task at once. [relayed-head-task-loop] [m-20261003-1515]
+- Workers and reviewers are external tasks admitted by the launcher, not the head's built-in subagents. [relayed-head-task-loop]
+- Workers start headless with permission prompts skipped; only principals, heads and a few chosen sessions run in a normal interactive UI. [human-headless-permissions-task-tracker-intake-20261005] [m21]
+- Heads run many workers in parallel, directly or as external sessions. Seeing how parallel work struggles is part of the point of the project. [m-20261003-dictation] [m32]
+- There is no fixed cap on team size. Run as many workers as there are real independent tasks and capacity, and never invent work to raise the count. [m26] [m32]
+- Use z.ai agents through zcodex for most implementation. [m8] [m-20261003-1512]
+- Once the ideas converge, build small prototypes and use them in our own development straight away. [m19] [m-20261003-1533]
+- Every project has its own GitHub repo, and our tool stays in sync with GitHub. Main development happens through our own tool, and GitHub is the backup. [human-delivery-reset-20261004] [human-github-sync-tools-20261005]
+- The Cloudflare integration sits behind a facade so we can switch platforms later. [m-20261003-1925]
+
 ## 5. Git workflow
+
+- No pull requests: commit and push straight to main. [human-no-prs-push-to-main-20261007]
+- Always commit and push requested docs and records. A chat reply or an uncommitted file is not done; verify the push before reporting. [human-coordinator-handoff-and-reports-20261006]
+- Make small, focused commits, one per logical change, never one big commit. [human-focused-commits-20261007]
+- Before pushing, run `git pull --rebase origin main`, and retry if another push got there first. [agent-derived]
+- Stage only the paths you changed. Never reset, stash, rebase away or overwrite someone else's work, and in a shared dirty checkout, work in your own worktree. [agent-derived]
+- Don't write tests for docs. Tests test code. [human-no-doc-tests-20261007]
+- Keep an ordinary Git recovery path that does not depend on our prototype: mirror main to an independent remote now and then, and check that a fresh checkout restores it. [m19] [human-delivery-reset-20261004]
+- Never delete existing worktrees or dirty or unmerged work; cleanup touches only disposable scratch with a known owner. [agent-derived]
+- Count commits per repository by unique SHA, hour by hour. Commits are activity, not accepted results. [human-tracker-availability-agents-commits-20261007]
 
 ## 6. Resources
 
