@@ -2,8 +2,8 @@
 
 Root restores the principal; the principal owns head recovery, and heads own their workers' recovery. Restore the existing owner and useful work without competing writers. The founder starts model root in a desktop GUI; a remote mechanical mailbox is its communication channel, not another model root.
 
-- [Root → principal](recovery/principal.md): host/custody discovery, mailbox recovery, vacancy proof, fresh admission, saved-conversation resume and verified useful action.
-- [Principal → head](recovery/head.md): independently placed interactive recovery, parallel scoped agents, preserved workers and resumed project work.
+- [Root → principal](../recovery/principal.md): host/custody discovery, mailbox recovery, vacancy proof, fresh admission, saved-conversation resume and verified useful action.
+- [Principal → head](../recovery/head.md): independently placed interactive recovery, parallel scoped agents, preserved workers and resumed project work.
 - [Root startup](team/02-root.md): concise priorities, existing check custody and human delivery.
 
 ## Required controls and installed evidence

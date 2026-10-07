@@ -9,7 +9,7 @@ Agents talk to each other over the agents bus, on one computer or across several
 - A head talks to the principal, root and its own implementers and reviewers.
 - An implementer or a reviewer talks only to its head.
 - Between root and the others, most messages are status updates.
-- Root restores an unavailable principal using [principal recovery](recovery/principal.md); the principal restores heads using [head recovery](recovery/head.md) and reports outcomes to root. Reuse scoped remote recovery agents for independent work. Delivery is not recovery: require custody, actual useful action and a next checkpoint. Check [installed recovery status](05-recovery.md) before assuming a helper exists.
+- Root restores an unavailable principal using [principal recovery](../recovery/principal.md); the principal restores heads using [head recovery](../recovery/head.md) and reports outcomes to root. Reuse scoped remote recovery agents for independent work. Delivery is not recovery: require custody, actual useful action and a next checkpoint. Check [installed recovery status](05-recovery.md) before assuming a helper exists.
 
 ## Sending and receiving
 

@@ -4,7 +4,7 @@ Root restores the principal's useful work, then hands remote execution and head 
 
 Success means genuine custody, an actual first useful action, a next checkpoint and durable continuation, followed through to an accepted outcome. A send receipt, live process, active goal or healthy supervisor is not that outcome. Preserve busy panes, menus, human drafts, unknown readiness, quota holds and peer work. Never borrow an identity or start a duplicate writer.
 
-Follow [communication](../04-communication.md), [resources, claims and review](../03-way-of-working.md), and the [recovery status](../05-recovery.md). Operational identities, saved conversation IDs, raw logs, quotas and evidence remain private in ignored `.local/`; public trackers carry sanitized results.
+Follow [communication](../_docs/04-communication.md), [resources, claims and review](../_docs/03-way-of-working.md), and the [recovery status](../_docs/05-recovery.md). Operational identities, saved conversation IDs, raw logs, quotas and evidence remain private in ignored `.local/`; public trackers carry sanitized results.
 
 ## Establish the actual host and bound channel
 

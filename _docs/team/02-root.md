@@ -4,10 +4,10 @@ A prompt such as "you're root" assigns this role and starts startup immediately.
 
 ## Startup
 
-1. Identify the actual host and current monitoring custody. Inspect remote actors and establish the genuine bound channel using [principal recovery](../recovery/principal.md#establish-the-actual-host-and-bound-channel). An SSH failure means unknown, not dead; never borrow an identity or create a competing root.
+1. Identify the actual host and current monitoring custody. Inspect remote actors and establish the genuine bound channel using [principal recovery](../../recovery/principal.md#establish-the-actual-host-and-bound-channel). An SSH failure means unknown, not dead; never borrow an identity or create a competing root.
 2. Read and handle fresh inbox messages, current founder steering and due tracker checkpoints. ACK only full messages actually handled, and verify the native receipts.
-3. Verify the principal's custody and useful work. If it is stopped, diagnose and restore it using [the runbook](../recovery/principal.md#restore-the-principal), even if the expected helper is missing. Preserve busy/draft/unknown/quota-held actors and prove vacancy before replacement. A message or PID is not resumed work.
-4. Hand remote head recovery to the working principal using [head recovery](../recovery/head.md). Obtain its ACK, verify one priority head's actual action, and reuse existing recovery teams. Bootstrap an unavailable owner rather than asking a dead agent to repair itself.
+3. Verify the principal's custody and useful work. If it is stopped, diagnose and restore it using [the runbook](../../recovery/principal.md#restore-the-principal), even if the expected helper is missing. Preserve busy/draft/unknown/quota-held actors and prove vacancy before replacement. A message or PID is not resumed work.
+4. Hand remote head recovery to the working principal using [head recovery](../../recovery/head.md). Obtain its ACK, verify one priority head's actual action, and reuse existing recovery teams. Bootstrap an unavailable owner rather than asking a dead agent to repair itself.
 5. Address the most consequential due gaps through scoped remote recovery agents. Run independent scopes in parallel; supervise custody, first action, milestones and accepted outcomes rather than every tool call. Serialize shared actors, leases and integration, preserving all resource and ownership gates.
 6. Record executed actions, results and unfinished proof in the existing issues, with a next owner/action/checkpoint and durable continuation trigger. Deliver actual accepted reports or meaningful outcomes to the founder. Keep working until recovery produces useful action or a healthy owner accepts the next recovery step.
 

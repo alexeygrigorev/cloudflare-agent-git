@@ -63,7 +63,7 @@ class Hygiene(unittest.TestCase):
     def test_accepts(self):
         for p in ["AGENTS.md", "README.md", "LICENSE", "_docs/new-doc.md", "_docs/founder-journal/2026-10-08.md",
                   "website/content/daily/2026-10-08.md", ".agents/skills/x/SKILL.md", "scripts/tool.py",
-                  "sub/README.md", "tests/fixtures/a.jsonl"]:
+                  "sub/README.md", "tests/fixtures/a.jsonl", "recovery/principal.md", "recovery/head.md"]:
             with self.subTest(p):
                 self.assertAccepted(p)
                 sh(self.tmp, "git", "rm", "-q", "--cached", "-f", p)

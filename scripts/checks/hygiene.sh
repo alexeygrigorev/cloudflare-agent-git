@@ -19,6 +19,8 @@ DOC_EXEMPT=(
   ".claude/"      # agent tool configuration
   ".github/"      # issue and PR templates
   "tests/"        # test fixtures
+  "recovery/principal.md"  # human-requested location
+  "recovery/head.md"       # human-requested location
 )
 # Where a dated file name is legitimate.
 DATED_OK=(
