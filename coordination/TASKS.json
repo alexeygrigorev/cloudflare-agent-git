@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-07T05:26:39.037688+00:00",
+  "updated_at": "2026-10-07T05:47:40.596048+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -5122,7 +5122,7 @@
       "proposed_execution_head": "public-journal-site",
       "ownership_ack": false,
       "status": "ready",
-      "updated_at": "2026-10-05T11:08:41.406834+00:00",
+      "updated_at": "2026-10-07T05:47:40.596048+00:00",
       "title": "Independent four-product task intake reconciliation",
       "source": "experiment/human-usable-task-tracker-20261005.txt",
       "acceptance": "exacthuman ask-to-task/owner/adoption status gaps, no false done or dropped requests",
@@ -5130,7 +5130,37 @@
       "write_scope": "/home/alexey/git/cloudflare-agent-git/.local/scale50/scale50-58/ only; isolated source branch AFTER head lease for implementation; no canonical writes",
       "priority": "high",
       "due_checkpoint": "2026-10-05T11:15:00Z",
-      "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD"
+      "next_action": "Existing tracker owner must bind request IDs to actual execution/accepted outcomes and available canonical UI; no duplicate jobs or done-from-labels.",
+      "administrative_publication_prior_fields": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-05T11:08:41.406834+00:00",
+          "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "field": "next_action",
+          "prior": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD",
+          "source": "C3120 scoped metadata overlay"
+        }
+      ],
+      "administrative_observations": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "checkpoint": "request-outcome adoption / source coverage",
+          "evidence": "Existing tracker capability source-only/ready label is not fresh executable admission.53-source coverage audit and latest human tracker intake linked; current readiness/slots UNKNOWN.",
+          "source": "principal supplied genuine native messages; independent win35_execution_evidence metadata",
+          "qualification": "Administrative evidence, no product QA/installed enforcement/lease transfer"
+        }
+      ],
+      "administrative_top_field_history": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "next_action": "Principal allocation offer; actual head must ACK exact scope and register runtime before executing. Existing launcher only. existing launcher task-units demonstrated Grok4.6; fresh quota per child. Other providers only after actual supported route verification; installed native ZCode HELD",
+          "updated_at": "2026-10-05T11:08:41.406834+00:00"
+        }
+      ]
     },
     {
       "id": "scale50-A-dispatch-repair",
@@ -6371,7 +6401,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-07T05:23:03.568784+00:00",
+      "updated_at": "2026-10-07T05:47:40.596048+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6406,7 +6436,7 @@
       "blocked_on": [
         "delegate-firsttool-and-runtime-continuation-evidence-pending"
       ],
-      "next_action": "Received Ant/QL heads own recovery implementation and distinct review; verify actual firsttools/output and executable READY then review/release/refill. Principal monitors only.",
+      "next_action": "Existing Ant guard owner validates23 local-only histories against current registry and per-ID evidence; restore/export only scoped approved records. Principal fixed unread scan; independent outcomes/endpoint/recovery remain open.",
       "next_trigger": {
         "owner": "QL currenthead coordinates intake; existing Ant/Coord roles retained; principal monitors",
         "condition": "QL native diagnosis -> substantive intakecontract -> maintainedworker FIRSTTOOL/artifact -> distinctreview and release/refill",
@@ -6728,6 +6758,18 @@
           "field": "updated_at",
           "prior": "2026-10-06T09:53:55.196560+00:00",
           "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-07T05:23:03.568784+00:00",
+          "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "field": "next_action",
+          "prior": "Received Ant/QL heads own recovery implementation and distinct review; verify actual firsttools/output and executable READY then review/release/refill. Principal monitors only.",
+          "source": "C3120 scoped metadata overlay"
         }
       ],
       "administrative_observations": [
@@ -6738,6 +6780,20 @@
           "C3110_due": "Originalhead05:13verified expired/fullruntimegateunproven",
           "tracker_freshness": "topA/C/D/E refreshed without sourceowner/census claim",
           "protected_source_leases": "unchanged"
+        },
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "checkpoint": "request-outcome adoption / source coverage",
+          "evidence": "Ant directdb-b98f/dd-962b ACKs read-only QL bounded failure-case review and23-ID ledger investigation; current source/main leases unchanged. Actual current ledger280 vs earlier300 preserved separately, overwrite actor/time UNKNOWN.",
+          "source": "principal supplied genuine native messages; independent win35_execution_evidence metadata",
+          "qualification": "Administrative evidence, no product QA/installed enforcement/lease transfer"
+        }
+      ],
+      "administrative_top_field_history": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "next_action": "Received Ant/QL heads own recovery implementation and distinct review; verify actual firsttools/output and executable READY then review/release/refill. Principal monitors only.",
+          "updated_at": "2026-10-07T05:23:03.568784+00:00"
         }
       ]
     },
@@ -7547,16 +7603,44 @@
           "checkpoint": "C3120 direct route follow-up",
           "source": "01a114d1-a803 / principal reply 01a114d3-6c0f",
           "evidence": "Bus acknowledged existing route; <=30 minutes remains conditional on real device input. Raw timer-job guard requested; URL/config and physical device result unverified. Security reviewer checked c702 actual bytes against stale cd282 payload; no verdict."
+        },
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "checkpoint": "request-outcome adoption / source coverage",
+          "evidence": "Principal correctione1-789c: absent SSH alias is bootstrap observation, not nonSSH product dependency. Bus327 owns secure endpoint/auth configuration; desktop one accepted bootstrap only. Owner endpoint due unknown.",
+          "source": "principal supplied genuine native messages; independent win35_execution_evidence metadata",
+          "qualification": "Administrative evidence, no product QA/installed enforcement/lease transfer"
         }
       ],
-      "next_action": "Bus327 provides exact reviewed secret-free outbound receiver invocation/config and verified secure endpoint via private owned handoff. Existing desktop SSH route ACKed narrow bootstrap; obtain actual physical result, then conditional30-minute useful task/review/successor. Preserve source lease and old discovery; do not rerun completeddisc01.",
-      "updated_at": "2026-10-07T05:26:39.037688+00:00",
+      "next_action": "Bus owner establishes verified secure nonSSH endpoint/auth configuration and gives actual checkpoint; desktop performs one accepted bootstrap after reviewed inputs; preserve no localhost-to-HTTPS inference.",
+      "updated_at": "2026-10-07T05:47:40.596048+00:00",
       "history": [
         {
           "ts": "2026-10-07T05:33:00Z",
           "actor": "bus-win35-resume-head-3273594b",
           "event": "C3120 route adopted; Bus327 custody retained",
           "detail": "independent security review dispatched via launcher9a9: bus-win35-disc01-security-review-01 (gemini-3.1-pro-high@antigravity, distinct route vs zai discovery worker), submitted 05:19Z first-tool 05:21Z, report .local/codex/bus-win35-resume-3273594b/REV-BUS-DISC01-SECURITY-20261007.md; desktop secret-free receiver invocation sent 01a114d1-a831 (receiver.py@826f5d9 --once vs verified 2016f679 adapter URL, device-local 0600 creds); principal reply 01a114d1-a803; durable wake timer bus327-wake-3273594b.timer (30min idle-gated, transient, remove: systemctl --user stop bus327-wake-3273594b.timer) installed 05:26Z; due: reviewer verdict + launcher accept at next checkpoint, bidirectional win35 gate <=30min after desktop device receipt"
+        }
+      ],
+      "administrative_publication_prior_fields": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "field": "next_action",
+          "prior": "Bus327 provides exact reviewed secret-free outbound receiver invocation/config and verified secure endpoint via private owned handoff. Existing desktop SSH route ACKed narrow bootstrap; obtain actual physical result, then conditional30-minute useful task/review/successor. Preserve source lease and old discovery; do not rerun completeddisc01.",
+          "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-07T05:26:39.037688+00:00",
+          "source": "C3120 scoped metadata overlay"
+        }
+      ],
+      "administrative_top_field_history": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "next_action": "Bus327 provides exact reviewed secret-free outbound receiver invocation/config and verified secure endpoint via private owned handoff. Existing desktop SSH route ACKed narrow bootstrap; obtain actual physical result, then conditional30-minute useful task/review/successor. Preserve source lease and old discovery; do not rerun completeddisc01.",
+          "updated_at": "2026-10-07T05:26:39.037688+00:00"
         }
       ]
     },
@@ -7633,7 +7717,7 @@
       "id": "bus-win35-disc01-security-review-01",
       "project_id": "agent-bus",
       "team_id": "agent-bus",
-      "status": "running",
+      "status": "failed",
       "created_at": "2026-10-07T05:23:34.917935+00:00",
       "owner": "zcode-bus-win35-recovery-head-20261006-resume",
       "owner_tag": "zcode-bus-win35-recovery-head-20261006-resume",
@@ -7655,8 +7739,125 @@
         "verdict": "PENDING",
         "Windowsdeployment": "NOT_PROVEN"
       },
-      "next_action": "Busowner verifies reviewer report bound actualc702 bytes and independentverdict; separate secureendpoint/devicebootstrap stillrequired, no oldcompletedtaskrerun.",
-      "updated_at": "2026-10-07T05:23:34.917935+00:00"
+      "next_action": "Head reconciles native report/actor-death outcome and addresses negative findings through owned team; no accepted Windows deployment or source closure inferred.",
+      "updated_at": "2026-10-07T05:47:40.596048+00:00",
+      "administrative_publication_prior_fields": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "field": "status",
+          "prior": "running",
+          "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "field": "next_action",
+          "prior": "Busowner verifies reviewer report bound actualc702 bytes and independentverdict; separate secureendpoint/devicebootstrap stillrequired, no oldcompletedtaskrerun.",
+          "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-07T05:23:34.917935+00:00",
+          "source": "C3120 scoped metadata overlay"
+        }
+      ],
+      "administrative_observations": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "checkpoint": "request-outcome adoption / source coverage",
+          "evidence": "Independent administrative evidence:633cc maintained reviewer report4767B SHAb9c1d143ab443d62978359b97eb42f51d06e0aca33e10775fd3fd9c619725f5a CHANGES_REQUESTED/COMPLETE; canonical storeFAILED05:22:51 actor-death reconciliation. Preserved report is not accepted execution.",
+          "source": "principal supplied genuine native messages; independent win35_execution_evidence metadata",
+          "qualification": "Administrative evidence, no product QA/installed enforcement/lease transfer"
+        }
+      ],
+      "administrative_top_field_history": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "next_action": "Busowner verifies reviewer report bound actualc702 bytes and independentverdict; separate secureendpoint/devicebootstrap stillrequired, no oldcompletedtaskrerun.",
+          "updated_at": "2026-10-07T05:23:34.917935+00:00"
+        }
+      ],
+      "administrative_status_history": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "prior_status": "running",
+          "cause": "actual failed canonical actor-death reconciliation with negative preserved report"
+        }
+      ]
+    },
+    {
+      "id": "human-tracker-availability-agents-commits-20261007",
+      "status": "in_progress",
+      "owner_tag": "desktop-orchestrator",
+      "team_id": "oversight",
+      "next_action": "Validate per-requirement candidate/supersession links; existing collector/Dashboard owners implement availability, useful actor and unique commit measurements with actual scoped ACKs.",
+      "acceptance": "Every recorded human ask mapped to canonical tasks or explicit supersession, source and ownerACK visible; private tracker availability/freshness and restart/offline recovery independently accepted; dedup current useful actors with host/generation/coverage; hourly per-repository SHA commit counts alongside accepted tasks; actual installed evidence and human usable tracker link",
+      "acceptance_status": null,
+      "reviewer_tag": null,
+      "evidence_paths": null,
+      "blocked_on": null,
+      "assignment_ack": null,
+      "updated_at": "2026-10-07T05:47:40.596048+00:00",
+      "recovery_observation": {
+        "at": "2026-10-07T05:46:03.109719+00:00",
+        "cause": "Previously observed rows absent after source checkout HEAD changed; writer/path not confirmed",
+        "executed_action": "Restore exact scoped missing root intake record from maintained private metrics snapshot; preserve all current IDs",
+        "snapshot": "snapshots-2026-10-07.jsonl",
+        "verification": "Check served API after collector refresh; do not wholesale replace ledger"
+      },
+      "administrative_observations": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "checkpoint": "request-outcome adoption / source coverage",
+          "evidence": "Source53-file audit:17 literal task references,31 thematic candidates,5 parent/policy gaps; not34 confirmed missing requests. Genuine relayed human source01a114de-7fc3 stored verbatim in experiment file; human walltime unavailable.",
+          "source": "principal supplied genuine native messages; independent win35_execution_evidence metadata",
+          "qualification": "Administrative evidence, no product QA/installed enforcement/lease transfer"
+        }
+      ],
+      "administrative_top_field_history": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "next_action": "Principal/head genuine custody and canonical mapping reconciliation; root verifies returned ownerACK, task references, implementation first action, tracker access and independently accepted metric/recovery outcomes",
+          "updated_at": "2026-10-07T05:42:51.908091+00:00"
+        }
+      ]
+    },
+    {
+      "id": "human-request-outcome-process-20261007",
+      "status": "in_progress",
+      "owner_tag": "desktop-orchestrator",
+      "team_id": "oversight",
+      "next_action": "Existing Ant supervision owner must ACK/enforce event/due scan with distinct source/runtime review; 10/30-minute timers cannot guarantee five-minute ACK.",
+      "acceptance": "Thorough researched canonical process shown to human plus genuine principal adoption/challenge and actual owned mechanical-enforcement task mappings; no source/policy/runtime evidence conflation",
+      "acceptance_status": null,
+      "reviewer_tag": null,
+      "evidence_paths": null,
+      "blocked_on": null,
+      "assignment_ack": null,
+      "updated_at": "2026-10-07T05:47:40.596048+00:00",
+      "recovery_observation": {
+        "at": "2026-10-07T05:46:03.109719+00:00",
+        "cause": "Previously observed rows absent after source checkout HEAD changed; writer/path not confirmed",
+        "executed_action": "Restore exact scoped missing root intake record from maintained private metrics snapshot; preserve all current IDs",
+        "snapshot": "snapshots-2026-10-07.jsonl",
+        "verification": "Check served API after collector refresh; do not wholesale replace ledger"
+      },
+      "administrative_observations": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "checkpoint": "request-outcome adoption / source coverage",
+          "evidence": "Principal adopted operating 5/10/15-minute pilot through genuine01a114e4-91f7; event/due <=60s supervisor scan proposed, not installed. Fixed-turn-start/all-unread intake correction executed by principal after skipped d0-9822/d3-0439; late ACKs e1-786f/e4-91f7 retained.",
+          "source": "principal supplied genuine native messages; independent win35_execution_evidence metadata",
+          "qualification": "Administrative evidence, no product QA/installed enforcement/lease transfer"
+        }
+      ],
+      "administrative_top_field_history": [
+        {
+          "at": "2026-10-07T05:47:40.596048+00:00",
+          "next_action": "Receive genuine principal adoption/challenge and existing implementation task mappings/current ownerACK/dues; follow installed/live acceptance as separate implementation obligations",
+          "updated_at": "2026-10-07T05:41:25.491409+00:00"
+        }
+      ]
     }
   ]
 }
