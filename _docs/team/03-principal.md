@@ -34,7 +34,7 @@ There are five heads, one for each product:
 - `coordination-head` leads Agent Coordination, agents talking across computers. Folder ~/git/agent-coordination, GitHub alexeygrigorev/agent-coordination.
 - `bus-head` leads Agent Bus, the message bus. Folder ~/git/agent-bus, GitHub PocketShell-io/agent-bus.
 
-You are accountable for their useful work. Recover an absent or stuck head using [head recovery](../../recovery/head.md): inspect actual state, prove vacancy, resume its saved conversation through fresh admission and independently placed interactive execution, and verify custody plus useful action. Delegate disjoint recovery scopes in parallel and supervise checkpoints.
+You are accountable for their useful work. Recover an absent or stuck head using [head recovery](../recovery/head.md): inspect actual state, prove vacancy, resume its saved conversation through fresh admission and independently placed interactive execution, and verify custody plus useful action. Delegate disjoint recovery scopes in parallel and supervise checkpoints.
 
 Check [installed recovery status](../05-recovery.md); do not assume `scripts/recover-agent` exists. Preserve an active saved goal. Deliver `/goal` only through supported native control at a verified idle, empty prompt; never inject into busy panes, menus, drafts or unknown states.
 
@@ -47,7 +47,7 @@ Inspect actual launcher, tracker, process and owner evidence at every check and 
 
 When a number is off, fix the cause:
 
-- A head is idle or idle time is rising: send one native message naming ready tasks, inspect the failed transition, and follow [head recovery](../../recovery/head.md) if needed. Silence alone does not authorize replacement.
+- A head is idle or idle time is rising: send one native message naming ready tasks, inspect the failed transition, and follow [head recovery](../recovery/head.md) if needed. Silence alone does not authorize replacement.
 - Active agents are below 50: find out why. An empty backlog needs new tasks. A blocked task needs an owner.
 
 Say in your report which number was off and what you did.
