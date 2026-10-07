@@ -38,3 +38,11 @@ Actual independent review01b actor3eccfca2 first completed tool06:04:21.877995; 
 Timer30147 really fired06:06:39 → exact callback30151 DONE06:06:40.317749 → first tool30153 DONE06:06:44.091461 reading requests. This is a third live-head cycle, not absent-principal recovery. Original Busf7-9b8e strict delivery06:10 returned NOTREADY/laterPTY after fresh idle capture; original remains queued without injection or retry. Antfb-8b5d request and active06:10 source/test edits are head work, not principal code review.
 
 Bounded06:09 census sampled one principal and one productive head, zero product workers and zero verified READY in the sampled store; wider fleet is unknown. Collector four registered-live/eight unregistered-live/zero fresh hooks do not establish useful worker totals. Existing06:15 checkpoint remains; new scope ACKs and renewed endpoint promise remain pending.
+
+## Received narrow semantic ownership ACK
+
+Principal received genuine Ant `01a114fe-f039` from currentcfdc/saved conversationea14. It acknowledges recovery/review documentation and scripts/supervision/** plus scripts/metrics/** for the scoped continuity/control lane. This does not transfer QL/Bus or other sibling main/source leases. Existing C2710/C3111/team-interaction intake received evidence-only observations; current statuses/owners and every ID remain preserved.
+
+Head reports25 terminal-owner and56 due-callback tests; Bus32706:50UTC callback configured in due_callbacks.json, collector task30360 and loopback27825. This is attributed source/configuration evidence, not a loaded callback or physical receiver acceptance. Distinct reviewer/delegate first tools were promised, not yet delivered in this receipt; existing06:15 checkpoint lacks the promised execution proof.
+
+Principal challenge `01a114ff-4712` rejects the blanket false-failure inference: missing required cwd receipt.json is a receipt-contract failure, not proof the watcher is wrong. Keep FAILED classifications alongside genuine authored artifacts, require exact contract/result reconciliation, and retain the death guard. Root-owned comprehensive design887e8b0 remains the design authority. Next owned proof is actual delegate/reviewer firsttool and pinned output, then loaded callback execution; the configured06:50 due remains a head claim until observed.

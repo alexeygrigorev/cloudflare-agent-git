@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-07T06:11:10.315102+00:00",
+  "updated_at": "2026-10-07T06:15:06.493439+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -6414,7 +6414,7 @@
       "title": "C2710 recovery reporting and desktop custody handoff",
       "status": "in_progress",
       "created_at": "2026-10-06T06:55:45.726026+00:00",
-      "updated_at": "2026-10-07T06:11:10.315102+00:00",
+      "updated_at": "2026-10-07T06:15:06.493439+00:00",
       "owner": "codex-principal",
       "owner_session_id": "93cf28f2-2872-411c-a5da-179e1b83b59f",
       "scope": "Principal operational monitoring, head coordination and reporting; no product implementation or personal code review. Existing C2693 remains open, not a duplicate implementation assignment.",
@@ -6789,6 +6789,12 @@
           "field": "updated_at",
           "prior": "2026-10-07T05:47:40.596048+00:00",
           "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T06:15:06.493439+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-07T06:11:10.315102+00:00",
+          "source": "C3120 scoped metadata overlay"
         }
       ],
       "administrative_observations": [
@@ -6813,6 +6819,24 @@
           "evidence": "Anttimer30147 genuinely expired06:06:39 -> callback30151DONE06:06:40.317749 -> firstmodeltool30153DONE06:06:44.091461. Third live-head continuation cycle, not absentprincipal/deadhead recovery. NewAntfb-8b5d request/readscreen06:10 and terminaltest edits are observed headwork, not principalQA or scoped acceptance. Existing06:15 checkpoint retained.",
           "source": "principal genuine messages and win35_execution_evidence independent administrative metadata",
           "qualification": "No status/owner/ACK change, no product QA/runtime deployment acceptance"
+        },
+        {
+          "at": "2026-10-07T06:15:06.493439+00:00",
+          "source": "genuine Ant01a114fe-f039 received by principal; principal challenge01a114ff-4712",
+          "actual_owner_scope_ack": {
+            "actor": "cfdc18a9-0946-4770-8aee-cf50a35bfaa7",
+            "saved_conversation": "ea14b401-20e9-4e48-ab08-d15be08da30d",
+            "paths": [
+              "research/antigravity/recovery/**",
+              "research/antigravity/reviews/**",
+              "scripts/supervision/**",
+              "scripts/metrics/**"
+            ],
+            "qualification": "continuity/control scoped lane only; no sibling main/source lease transfer"
+          },
+          "head_reported": "25 terminal-owner and56 due-callback tests; existing supervisor callback for Bus32706:50UTC in due_callbacks.json, collector task30360, loopback27825. Source configuration is not loaded runtime evidence.",
+          "correction": "Missing required cwd receipt.json is receipt-contract failure, not demonstrated false watcher failure. Preserve FAILED and actual artifacts; no weakened death gate.",
+          "next_proof": "Distinct delegates/reviewer firsttool promised but not delivered; existing06:15 checkpoint unverified. Need actual identities/firsttool, pinned review and loaded callback evidence."
         }
       ],
       "administrative_top_field_history": [
@@ -7750,22 +7774,53 @@
         "resolved_credit": "notgrantedfromheadstatuslabel"
       },
       "next_action": "Headreturns exactcollector source/review/runtime window acceptance and currentresolved-event timestamps/unknowns; Dashboard/publicowners ACK integration before peerwrites.",
-      "updated_at": "2026-10-07T06:11:10.315102+00:00",
+      "updated_at": "2026-10-07T06:15:06.493439+00:00",
       "administrative_publication_prior_fields": [
         {
           "at": "2026-10-07T06:11:10.315102+00:00",
           "field": "updated_at",
           "prior": "2026-10-07T05:23:03.568784+00:00",
           "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T06:15:06.493439+00:00",
+          "field": "updated_at",
+          "prior": "2026-10-07T06:11:10.315102+00:00",
+          "source": "C3120 scoped metadata overlay"
+        },
+        {
+          "at": "2026-10-07T06:15:06.493439+00:00",
+          "field": "administrative_observations",
+          "prior": [
+            {
+              "at": "2026-10-07T06:11:10.315102+00:00",
+              "checkpoint": "C3122 exact current timeline",
+              "evidence": "Bounded06:09 evidence: sampled1principal+1productivehead,0productworkers/0verifiedREADY; fleetUNKNOWN. Collector4registeredlive/8unregisteredlive/freshhooks0 are process/hook observations, not usefulworker census; loadedcollector module unknown.",
+              "source": "principal genuine messages and win35_execution_evidence independent administrative metadata",
+              "qualification": "No status/owner/ACK change, no product QA/runtime deployment acceptance"
+            }
+          ],
+          "source": "C3120 scoped metadata overlay"
         }
       ],
       "administrative_observations": [
         {
-          "at": "2026-10-07T06:11:10.315102+00:00",
-          "checkpoint": "C3122 exact current timeline",
-          "evidence": "Bounded06:09 evidence: sampled1principal+1productivehead,0productworkers/0verifiedREADY; fleetUNKNOWN. Collector4registeredlive/8unregisteredlive/freshhooks0 are process/hook observations, not usefulworker census; loadedcollector module unknown.",
-          "source": "principal genuine messages and win35_execution_evidence independent administrative metadata",
-          "qualification": "No status/owner/ACK change, no product QA/runtime deployment acceptance"
+          "at": "2026-10-07T06:15:06.493439+00:00",
+          "source": "genuine Ant01a114fe-f039 received by principal; principal challenge01a114ff-4712",
+          "actual_owner_scope_ack": {
+            "actor": "cfdc18a9-0946-4770-8aee-cf50a35bfaa7",
+            "saved_conversation": "ea14b401-20e9-4e48-ab08-d15be08da30d",
+            "paths": [
+              "research/antigravity/recovery/**",
+              "research/antigravity/reviews/**",
+              "scripts/supervision/**",
+              "scripts/metrics/**"
+            ],
+            "qualification": "continuity/control scoped lane only; no sibling main/source lease transfer"
+          },
+          "head_reported": "25 terminal-owner and56 due-callback tests; existing supervisor callback for Bus32706:50UTC in due_callbacks.json, collector task30360, loopback27825. Source configuration is not loaded runtime evidence.",
+          "correction": "Missing required cwd receipt.json is receipt-contract failure, not demonstrated false watcher failure. Preserve FAILED and actual artifacts; no weakened death gate.",
+          "next_proof": "Distinct delegates/reviewer firsttool promised but not delivered; existing06:15 checkpoint unverified. Need actual identities/firsttool, pinned review and loaded callback evidence."
         }
       ]
     },
