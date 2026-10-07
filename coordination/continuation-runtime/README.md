@@ -16,6 +16,7 @@ Continuation Runtime is the approach for keeping useful agent work moving withou
 
 ## Start here
 
+- [Team and interaction enforcement](TEAM-INTERACTION-ENFORCEMENT.md): operation permissions, required handoffs/review/recovery obligations and concrete source/caller gaps.
 - [Multi-host process](MULTIHOST-PROCESS.md) and [design research](../../research/orchestrator/MULTIHOST-AUTONOMY-DESIGN-20261007.md): durable ownership, host execution, context handoff and safe partition recovery.
 - [Request to outcome](REQUEST-TO-OUTCOME.md): the human's 7 October follow-through contract, transition obligations and recovery responsibility.
 - [Enforcement ledger](ENFORCEMENT.md): existing controls, concrete gaps, genuine coordination receipts and live acceptance required before claiming enforcement.

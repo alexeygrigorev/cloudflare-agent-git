@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-07T05:50:40.278659+00:00",
+  "updated_at": "2026-10-07T05:56:33.345319+00:00",
   "tasks": [
     {
       "id": "runtime-one-effect",
@@ -7883,8 +7883,32 @@
         "research/orchestrator/MULTIHOST-AUTONOMY-DESIGN-20261007.md",
         "coordination/continuation-runtime/MULTIHOST-PROCESS.md"
       ]
+    },
+    {
+      "id": "human-team-interaction-enforcement-20261007",
+      "project_id": "agent-coordination",
+      "team_id": "oversight",
+      "title": "Audit and enforce current team definitions and interaction rules at actual operation boundaries",
+      "source": "experiment/human-team-interaction-enforcement-20261007.txt",
+      "human_request_verbatim": "we also have a team definition and rules of interation and it doesn't seem to be enforced anywhere",
+      "owner_tag": "desktop-orchestrator",
+      "owner_session_id": "79ffb8c7-3f32-46ee-bd60-423a255ebbae",
+      "ownership_ack": true,
+      "status": "in_progress",
+      "created_at": "2026-10-07T05:53:23.703253+00:00",
+      "updated_at": "2026-10-07T05:53:23.703253+00:00",
+      "scope": "Root enforcement audit/documentation/followthrough; existing heads implement and independently review; protected source leases retained",
+      "first_action": "Read current registry/role/operating contracts and searched actual supervisor/delivery enforcement callers; distinct read-only audit delegated",
+      "acceptance": "Team/role/interaction requirements map to explicit required operation gates, current ownerACK/taskIDs/dues and existing implementation entrypoints; code/loaded/liveproof separated; genuine head-owned repairs and negative runtime acceptance tracked, no duplicate service",
+      "next_action": "Audit membership/parent/custody/scope/epoch and review separation at launch/message/state/review/integration; principal obtains existing ownerACK and control implementation mapping",
+      "due_checkpoint": "2026-10-07T06:00:00Z",
+      "due_scope": "Root monitoring checkpoint, not implementation promise",
+      "next_trigger": "Existing active thirty-minute coordinator plus genuine returned outcomes",
+      "evidence": [
+        "coordination/continuation-runtime/TEAM-INTERACTION-ENFORCEMENT.md"
+      ]
     }
   ],
-  "generation": 1,
-  "content_sha256": "d4f26c99674b8b8f33b92d82c0dffda2d9179e6663af2362041a828dce8a680b"
+  "generation": 2,
+  "content_sha256": "70123d052903e49280f5ed228d96f732493c789097d363d2dcf8e27b4564af2c"
 }
