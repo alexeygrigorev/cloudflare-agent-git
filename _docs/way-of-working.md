@@ -37,32 +37,32 @@
 
 ### Nonstop, proactive work
 
-- The project runs with a very high degree of autonomy. The founder's involvement should go down over time, and fewer messages from him means we are doing better.
+- Run with as little founder involvement as possible; fewer messages from him means we are doing better.
 - Agents work 24/7 and stay busy. When a turn ends, the agent arranges its next action and whatever will wake it again.
 - While working, agents keep checking that their approach is still viable.
 - No agent waits to be checked; each drives its next useful step itself. An idle principal or head with ready work is a failure to fix at once, not a state to report.
-- The target is 50 agents actively working on different tasks at the same time. Started-but-idle agents do not count; subagents that really run do.
-- There is always enough ready backlog to keep 50 agents busy, built from the founder's requests.
-- Every report gives the current count against 50 and the concrete steps to reach it; reaching 50 is a focus, not a footnote.
+- The target is 50 agents actively working on different tasks at the same time. Started-but-idle agents do not count; subagents that run do. Steps of 10, 25 and 50 measure progress toward it and are never a reason to stop launching.
+- Keep enough ready backlog, built from the founder's requests, to keep 50 agents busy.
+- Every report gives the count against 50 and the concrete steps to reach it, as a main item.
 - When anything is off target, explain why and give the steps that will hit the target by the next checkpoint.
 - There are always clear next steps, and they live in the tracker.
-- Agents report status on their own; the founder should never have to ask. Nobody watches a delegated job finish; the owner reports back when it is done.
+- Agents report status on their own; the founder never has to ask. Nobody watches a delegated job finish; the owner reports back when it is done.
 
 ### Request to outcome
 
 - When the founder asks for something, it happens without him chasing it.
-- A request stays open through every stage: recorded, delivered, owner accepted, first real action, result, independent review, accepted outcome, delivered to the founder. Each stage needs its own evidence.
-- Every request goes into the tracker.
+- Every request becomes a tracker issue.
+- A request stays open through every stage: recorded, delivered to the owner, owner accepted, first real action, result, review by a different agent, accepted outcome, integrated and delivered to the founder, then the next task. Each stage needs its own evidence.
+- The first real action is the owner's first tool call or file change on the task. A delivered message is not a started task.
 - Root owns the follow-through. If a request has no owner, an owner stops, or a checkpoint is missed, root diagnoses and acts.
-- A check that sees a problem and does nothing is useless. Every check ends in an action: a repair, or a handoff the new owner has accepted.
+- Every check ends in an action: a repair, or a handoff the new owner has accepted.
 - Sending another reminder is not recovery. If a remedy produced no action, change the remedy.
-- A delivered message is not a started task. Only the owner's first real action shows the work began.
 
 ### Problems, not blockers
 
-- Agents resolve blockers themselves, every time, without waiting for the founder, and report the problem, the steps taken, the result and the next step: "we saw X and fixed it like this". A blocker report alone is not a finished task.
+- Agents resolve blockers themselves without waiting for the founder, and report the problem, the steps taken, the result and the next step: "we saw X and fixed it like this". A blocker report alone is not a finished task.
 - If a tool such as aplexer gets in the way, fix or improve the tool instead of reporting that it does not work.
-- Anything an agent does around aplexer by hand again and again should become an aplexer feature.
+- Anything an agent does around aplexer by hand again and again becomes an aplexer feature.
 - While one task is blocked, the owner keeps other independent work moving.
 - Never report an unresolved problem as fixed, and never invent progress to meet a deadline.
 
@@ -70,23 +70,23 @@
 
 - No single point of failure: the laptop, root, principal, each head, each provider and each service has a named recovery path.
 - Workers keep running when the head or principal that started them stops.
-- Any suitable host agent can act as coordinator. The coordinator's job is periodic checks and standup checks.
-- Root, on Win35, runs a check every 30 minutes and a standup check every day. Checks run on the hosts, not in a desktop chat, keep running when the desktop is off, and every check ends in an action.
-- When an agent stops responding, peers send a sync message and inspect its real state before deciding it is gone.
-- If the principal is gone, the heads start a fresh principal session; they do not promote a head.
+- Any suitable host agent can act as coordinator; the coordinator runs the periodic checks and standup checks.
+- Root runs a check every 30 minutes and a standup check every day. Checks run on the hosts, never in a desktop chat or desktop helper, and keep running when the desktop is off.
+- When an agent stops responding, peers send a sync message and inspect its state before deciding it is gone.
+- After two missed checks, the principal counts as gone and the heads start a fresh principal session; they never promote a head. While it is absent, the heads keep its coverage going. A responsive principal is never duplicated.
 - If a head is gone, the principal or the peers start a new head for that project.
 - If the periodic checks stop arriving, the agents start a new root, for example on Hetzner.
+- A takeover needs proof the old owner is gone, or a handover it acknowledged on the agents bus, and takes exclusive ownership so the old owner can't keep writing.
 - Something must wake an idle agent. A late reply from another agent must wake its recipient too.
 - Plan backups for agents that go offline from usage limits or downtime.
-- Desktop helpers are temporary nudges. The lasting solution runs on the hosts, with a durable supervisor if needed.
-- A takeover needs proof the old owner is really gone, or a handover it acknowledged on the bus, so two agents never own the same work.
 
 ### Who may act without asking
 
 - Everyone acts within their role without asking. No hand-holding, and no routine approval to scale useful work.
 - Agents may invent better ways of working even if they contradict the founder's suggestions. Record what changed and judge it by results.
+- When two rules conflict, the newer human message wins.
 - Heads choose the providers, workspace layout and headless or interactive mode for their tasks.
-- The founder is needed only for: spending money, new accounts or keys, submitting the contest entry, posting to social media, and product decisions that are truly his.
+- The founder is needed only for: spending money, new accounts or keys, submitting the contest entry, posting to social media, and product decisions that are his.
 - For keys and access, ask the laptop agent first, not the founder.
 - Before taking a question to the founder, prepare concrete options and say what has already been done.
 
@@ -94,11 +94,9 @@
 
 - Agents challenge the founder: state the disagreement, the evidence, and a concrete alternative or small test. Don't invent disagreement.
 - Material challenges go into the daily standup, not buried in logs.
-- Agents check each other's output, because workers run on weaker models than Opus. The checker is a different model from the author.
+- Every output is reviewed by a different agent, on a different model from its author, on the exact version under review. Self-review, an old approval, or passing tests alone never count.
 - Big designs go through a challenger: one agent proposes, another attacks it, and they settle the best way to build it.
 - Hard design questions get several subagents looking from different angles.
-- A reviewer is a different agent from the author and reviews the exact version under review. Self-review, an old approval, or passing tests alone never count.
-- Written rules are not enough: the tools must enforce the roles and the hand-offs.
 - A running process, a busy screen or a label is not proof of work. Unknown numbers stay unknown.
 
 ## 4. How work flows
