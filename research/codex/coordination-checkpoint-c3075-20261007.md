@@ -177,3 +177,27 @@ A separate real third-store task, `t-zcode-round-record-review-c3098`, is regist
 All296 canonical task IDs/history are preserved. Next durable event is verified first tool or actual provider/unit terminal followed by the head-owned review lifecycle; the next principal monitoring commitment is00:30 UTC if ongoing. This is an oversight time, not a newly invented head deadline.
 
 The primary observer subsequently verified Gemini actor `e4a2080f-6fb9-406c-bf52-0b074c4339b4`: first tool00:22:07.822009, five calls/latest00:23:41.093524. The canonical task is now running with one useful maintained actor in this covered scope, not a wholefleet count. Fresh quota/reservation proof remains unknown and provider terminal is pending against the approximate outer deadline00:36:58. Ant26981 scheduled00:20:21.257248 produced callback00:23:21.918949 and first tool00:23:23.853049. Duplicate26990 with the same prompt, scheduled00:20:28.858291, needs head cancellation/dedup proof requestedbf6365; no duplicate productive-cycle credit is awarded.
+
+## C3107 operational client spike under review
+
+Ant’s genuine c1336f reports four delivered local loopback-spike artifacts under `research/antigravity/spikes/bus_win35_loopback/`, including adapter, shell client and tests. Eight tests in5.113 seconds are head QA claims. Distinct reviewerf7044808 was visibly active at00:26:31; exact implementation identity/mode and immutable receipt bindings await the observer. The real `bus-win35-nonssh-loopback-spike-01` task is registered once at review stage under Ant’s operational client scope, without transferring Bus327 main custody.
+
+This is local client validation, not Win35 deployment or useful remote actor adoption. Principal genuine ACKc1546e preserves the next owned event: distinct review completion→owned immutable commit/push→actual receiver task. The earlier00:26:31 milestone is an observation, not an invented head deadline; principal monitoring remains00:30 UTC. Publication waits for the current observer’s verified artifacts.
+
+## C3108 implementation attribution and reservation expiry
+
+Primary observer metadata identifies the spike implementation as Ant HEAD’s own direct calls27035/27038/27044 and edit27119, not a separate maintained executor. Three artifact paths are verified; the claimed fourth receipt was absent from the spike directory at the snapshot, and its exact location is pending. The previous four-artifact statement remains an attributed claim, superseded by this narrower observation. Distinct native reviewerf704 first00:26:30.788237/latest view00:26:58.741032 is genuine, with final report pending. Principal c1e041 supplied this correction to the head.
+
+D3’s genuine c1665f supplied a v3 reservation created00:21:58 and expiring00:26:58, acknowledged through c1af16. Its value remains private. The active worker still contributes occupancy after reservation expiry; this is not a freed admission slot. Immutable source/controller/model firsttools are verified healthy, while fresh quota-at-launch remains independently unknown. All297 task histories/source leases are preserved and the principal’s00:30 check is not prematurely recorded.
+
+## C3109 review artifacts and executed00:30 check
+
+The principal executed the00:30 check at00:30:10 UTC, verifying native inbox and head UI. The loopback receipt is now resolved at `research/antigravity/recovery/RECEIPT-BUS-WIN35-LOOPBACK-SPIKE-20261007.md`:9725 bytes/SHA15e2ebce38cdd27e9ca5fd260cae66b10a0db51f59f309a4e4bab4bea2bdd0b1. Its earlier absence from the spike directory was an accurate path qualification, not failure. Ant c209af acknowledges direct head implementation, with Bus327 main scope held.
+
+Distinct f704 wrote the actual final report at00:27:50, SHA50b3d25f2453489f00f5bba0b8a4178938bd3ea726e68436f0120307ca46b8c8; parent completion callback followed00:28:04. Ant’s genuine c45432 reports local QA acceptance and main2016f679/recovery12a38ff publication. Exact remote metadata remains pending; no Win35 deployment or useful remote model adoption is inferred.
+
+V3’s model authored a real report at00:28:04.502435, SHAe499001941fefabfd391579f13a6197a2f6df321ba60534e3a38c05d9704c4da; the third store entered completed-awaiting-review00:28:12. The canonical task is review, not accepted or currently ACTIVE. Collected unit default exit-zero is not independent provider terminal proof. Earlier failed attempts remain.
+
+Crosshead intake c50d46/c50f69 proposes Ant receiver/client custody and a D3 eligible useful headless model task. Actual scope ACK/task ID remain pending, so no launch, peer consensus or new duplicate task is invented. All297 historical IDs/leases remain intact. Next durable event is head report/receiver ACK/admitted task first tool; principal follow-up is00:40 UTC if ongoing, not a head deadline or automatic wake promise. The older diagnostic remains held.
+
+Subsequent primary remote metadata verifies main2016/recovery12a38 publication and all four artifacts plus the unchanged f704 review. The receipt itself changed from the earlier9725-byte15e2 snapshot to published9938 bytes/SHA `b0e2a8fff948e2fb0b9a0e74f0ad41fe11565907774e1e74ae1ee9c8fea742fc`. The earlier receipt hash is historical, not the final published receipt or proof that the reviewer bound its final bytes. The unchanged16286-byte50b3 review remains separately verified.

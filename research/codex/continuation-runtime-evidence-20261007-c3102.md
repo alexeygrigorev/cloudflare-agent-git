@@ -50,3 +50,28 @@ Actual stdout binds model conversation `e4a2080f-6fb9-406c-bf52-0b074c4339b4`, f
 
 Ant scheduled26981 at00:20:21.257248/180s/any, then separately scheduled26990 at00:20:28.858291 with the same callback: “Check on aplexer inbox, verify Bus327 loopback spike coordination status, and resume useful independent work.” Actual callback26997 at00:23:21.918949 references26981. This records two schedule requests rather than inventing a single timer; scheduler cancellation/deduplication of26990 was not established.
 First subsequent head tool26999 was run_command at2026-10-07T00:23:23.853049+00:00, status3.
+
+## Addendum — 00:27 UTC loopback provenance
+
+The loopback spike implementation is directly attributable to Ant head write-to-file steps27035/27038/27044 and subsequent replace-file-content calls through27119. It is head implementation, not evidence of a separately delegated implementer or maintained task-unit execution. Three files existed in the claimed spike directory at this snapshot: adapter.py15,405 bytes/SHA5637cf8c16e6e59c6e7838714512d7c0dcce2fe6c59e9be09e1ab6355a08ce85; test_loopback_spike.py15,627 bytes/SHA4b4cb37dea8961b413ebde85078a273374a9cdfe6eb6786db1380157969fff7c; client.sh3,508 bytes/SHA3e69b73aacb86baa39d6db39c3108bb8e22e513cb45d54a51dfea9789a276be1. The claimed receipt was not present in that directory.
+
+Distinct native reviewerf7044808-6b7e-48db-a9ad-675d2737a563, parent Ant/spawn27128, first completed run00:26:30.788237 and latest completed view00:26:58.741032. No report write existed at that snapshot. Source acceptance and physical/non-SSH adoption are not inferred.
+Existing maintained v3 latest recovered tool metadata: {'idx': 29, 'status': 3, 'time': '2026-10-07T00:27:08.880871+00:00', 'tool': 'run_command'}. No final outcome is inferred.
+
+The receipt is present at the separate recovery path `research/antigravity/recovery/RECEIPT-BUS-WIN35-LOOPBACK-SPIKE-20261007.md`: 9,725 bytes/SHA-25615e2ebce38cdd27e9ca5fd260cae66b10a0db51f59f309a4e4bab4bea2bdd0b1. Its absence from the spike directory is a path correction, not a missing deliverable.
+
+## Addendum — 00:30 UTC report and terminal checkpoint
+
+Loopback reviewerf7044808 wrote `research/antigravity/reviews/REV-BUS-WIN35-NONSSH-LOOPBACK-SPIKE-20261007.md` at00:27:50.131117, 16,286 bytes/SHA-25650b3d25f2453489f00f5bba0b8a4178938bd3ea726e68436f0120307ca46b8c8. Its final observed send-message completed00:28:02.980030; actual Ant parent callback27218 arrived00:28:04.020395. This proves distinct reviewer artifact and handback, not helper endorsement of its code verdict.
+
+Maintained v3 actor e4a2080f wrote `research/zcode/REV-RECOVERY-ROUND-RECORD-C3098.md` at00:28:04.502435, 2,450 bytes/SHA-256e499001941fefabfd391579f13a6197a2f6df321ba60534e3a38c05d9704c4da. Store transition00:28:12 is completed-awaiting-review, reason task-units sibling unit exit0. Both exact units are now collected/not-found: default ExecMainStatus0 on those missing units is not used as independent terminal proof. Existing stdout remains bound to actor CID and includes a success/result marker; whole final-provider semantics were not inferred from the marker alone. No current ACTIVE worker is inferred from the now-ended task. Head owns result acceptance and the next useful successor.
+
+## Addendum — loopback publication metadata
+
+Read-only Git object comparison of claimed main2016f679323795f7878dda0f8f476cb321ff1045 and recovery12a38ffbfd3a4695e4d3e6139658844f78370852 establishes the following byte metadata. Four implementation/receipt artifacts and the separate independent review are counted separately; no code review or ancestry conclusion is implied. Cross-head next-task custody remains pending until genuine ACK.
+
+- `research/antigravity/spikes/bus_win35_loopback/adapter.py`: main 15405 bytes/SHA-256 `5637cf8c16e6e59c6e7838714512d7c0dcce2fe6c59e9be09e1ab6355a08ce85`; identical recovery bytes: True.
+- `research/antigravity/spikes/bus_win35_loopback/client.sh`: main 3508 bytes/SHA-256 `3e69b73aacb86baa39d6db39c3108bb8e22e513cb45d54a51dfea9789a276be1`; identical recovery bytes: True.
+- `research/antigravity/spikes/bus_win35_loopback/test_loopback_spike.py`: main 15627 bytes/SHA-256 `4b4cb37dea8961b413ebde85078a273374a9cdfe6eb6786db1380157969fff7c`; identical recovery bytes: True.
+- `research/antigravity/recovery/RECEIPT-BUS-WIN35-LOOPBACK-SPIKE-20261007.md`: main 9938 bytes/SHA-256 `b0e2a8fff948e2fb0b9a0e74f0ad41fe11565907774e1e74ae1ee9c8fea742fc`; identical recovery bytes: True.
+- `research/antigravity/reviews/REV-BUS-WIN35-NONSSH-LOOPBACK-SPIKE-20261007.md`: main 16286 bytes/SHA-256 `50b3d25f2453489f00f5bba0b8a4178938bd3ea726e68436f0120307ca46b8c8`; identical recovery bytes: True.
