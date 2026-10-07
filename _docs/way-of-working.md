@@ -178,51 +178,48 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 
 ## 7. Documentation rules
 
-- All documentation lives in one folder, `_docs/`. `BRIEF.md`, `SUBMISSION.md` and `INDEX.md` are removed, and the mission is in section 1 here.
-- Names under `_docs/` are lowercase kebab-case, never all caps.
-- This document is the one policy document for now. We split it later if that makes sense.
-- Docs describe the target state, how things should be, not their history or the current workarounds.
-- `AGENTS.md` stays at the root: a short pointer to this document plus the start-here steps. `CLAUDE.md` is gone. `README.md` stays at the root too.
-- The founder journal in `_docs/founder-journal/` is the one place for the founder's messages and for failures. Every message is saved verbatim, one file per message, the same day it arrives, and never edited afterwards.
-- `failures.md` in the founder journal records process failures and their lessons in plain words, newest first.
-- Decisions, plans and the ideas agents researched at the founder's request are kept in one place, so we can refer back to them. Decisions go into this document and ideas into the research file.
-- All research lives in one file, `_docs/research/research.md`; a new finding edits a section and never adds a file.
-- Incident stories are kept apart, out of the working tree and out of agents' context. They live on the `history` branch.
-- No dated reports in the tree. Verdicts, receipts and incidents are issue comments. Dated files are allowed only for founder messages, published daily pages and their assets, and the tracker migration map in `_docs/task-tracker/`.
+- All documentation lives in `_docs/`. Names there are lowercase kebab-case.
+- This document is the one policy document, and holds the mission in section 1.
+- Docs describe the target state, how things should be, not their history or workarounds.
+- `AGENTS.md` stays at the root: a short pointer to this document plus the start-here steps. `README.md` stays at the root too. There is no `CLAUDE.md`.
+- The founder journal in `_docs/founder-journal/` is the one place for the founder's messages and for failures. Save every message verbatim, one file per message, the same day it arrives, and never edit it afterwards.
+- `_docs/founder-journal/failures.md` records process failures and their lessons in plain words, newest first.
+- Decisions and plans go into this document. Ideas agents researched go into the one research file, `_docs/research/research.md`; a new finding edits a section and never adds a file.
+- Incident stories live on the `history` branch, out of the working tree.
+- No dated reports in the tree. Verdicts, receipts and incidents are issue comments. Dated files are allowed only for founder messages, published daily pages and their assets, and the tracker map in `_docs/task-tracker/`.
 - Journals are not appended in the repo. The agents bus is the log, and private or long evidence goes in git-ignored `.local/`.
-- Never delete a file to tidy up without a tag that keeps it readable. Removed material stays at an archive tag.
+- Never delete a file to tidy up without first pushing a tag that keeps it readable.
 
 ## 8. Public journal and editorial rules
 
-The full rules for the daily article are in the `daily-writeup` skill (`.claude/skills/daily-writeup/SKILL.md`), and the skill wins wherever another editorial rule disagrees with it.
+- Follow the `daily-writeup` skill (`.claude/skills/daily-writeup/SKILL.md`) for the daily article; it wins wherever another editorial rule disagrees.
 
 ### Who does what
 
-- We build in public: a website with regular reports and one reader-facing daily report.
+- Run a website with regular reports and one reader-facing daily report.
 - Claude Opus writes every daily article and makes every prose change, using stylint and the founder's Substack voice. Other models may only check facts. If Opus can't run, keep the last published article and report the failure.
-- A Codex agent on the remote host prepares each edition from a project skill (`.agents/skills/prepare-daily-journal/`). Root only gives the command and checks it happened.
-- The publication coordinator owns site design, code, release and rollback. Implementers never approve their own visual changes.
-- Quality checks are built into the process; root is not the reviewer.
+- A Codex agent on the remote host prepares each edition from the project skill in `.agents/skills/prepare-daily-journal/`. Root only gives the command and checks it happened.
+- The publication coordinator owns site design, code, release and rollback. Quality checks are built into the publishing process.
 - Root shows the founder the published link and, by default, a short summary he can share on social media. Nothing is posted automatically.
 
 ### When and what to publish
 
 - The daily standup is at 09:00 Berlin and the article at 09:30, covering the previous 24 hours.
 - A report goes out every day. When little happened, say so plainly and briefly.
-- Each daily report covers every product separately: what was done, what failed, and what is next, with the work itself described, not just numbers.
-- Every open founder request shows up in the report with its current state, so he can see a trace of each one.
-- Include metrics from the dashboard: agents run, tokens used, features done, broken down by hour per project and per team. Measured numbers only; unknown stays unknown.
+- Each daily report covers every product separately: what was done, what failed, and what is next, with the work itself described in words as well as numbers.
+- Every open founder request shows up in the report with its state.
+- Include metrics from the dashboard: agents run, tokens used, features done, broken down by hour per project and per team. Measured numbers only.
 - Include a task tracker summary: tasks created, open and closed, plus a short overview of the closed tasks in each project.
 - Every daily report includes progress on the continuation runtime, checked against a literal checklist that the writing agent ticks off.
 - Statistics sit inside the report, never in its title.
 - The public website shows the dashboard numbers as history broken down by hour, with readable charts.
-- The public reports feed at alexeygrigorev.com/cloudflare-agent-git/reports/ must keep updating.
+- The public reports feed at alexeygrigorev.com/cloudflare-agent-git/reports/ keeps updating.
 
 ### Writing for readers
 
 - Write for someone who has never seen the repo: open by saying what the experiment is, then tell one story.
 - No jargon, internal codes, hashes, paths, session IDs or team role words in visible text. Explain each technical term once.
-- The write-up is illustrated, not just text: ImageGen art for the story, and editable diagram-creator diagrams for explanations.
+- Illustrate the write-up: ImageGen art for the story, and editable diagram-creator diagrams for explanations.
 - No timestamps, correction notes, writing-process meta or quota percentages in the article. Tokens used do appear, in the metrics.
 - Count contributors by real identity, with evidence of work. Never count process IDs or role names, and say which coverage is unknown.
 
@@ -235,9 +232,9 @@ The full rules for the daily article are in the `daily-writeup` skill (`.claude/
 
 ### Publishing and signup
 
-- The site is built by CI from the public repo to GitHub Pages. Never publish private paths, quota readings, raw logs, keys or personal data.
-- Visitors' emails are captured through Relay, the same way as the PocketShell site, with double opt-in and no stored addresses or tokens.
-- The article about this way of working is written by Claude Opus 5.5, with illustrations and diagrams, only after the founder accepts this document.
+- CI builds the site from the public repo to GitHub Pages.
+- Capture visitors' emails through Relay, the same way as the PocketShell site, with double opt-in and no stored addresses or tokens.
+- Claude Opus 5.5 writes the article about this way of working, with illustrations and diagrams, only after the founder accepts this document.
 
 ## 9. Runtime and continuation design
 
