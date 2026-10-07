@@ -16,6 +16,8 @@ Continuation Runtime is the approach for keeping useful agent work moving withou
 
 ## Start here
 
+- [Comprehensive process design for human review](COMPREHENSIVE-DESIGN.md): consolidated principal/root comparison, responsibilities, multi-host lifecycle, enforcement gaps, metrics, rollout and live acceptance. Review and iteration precede the requested genuine Opus 5.5 illustrated article.
+
 - [Team and interaction enforcement](TEAM-INTERACTION-ENFORCEMENT.md): operation permissions, required handoffs/review/recovery obligations and concrete source/caller gaps.
 - [Multi-host process](MULTIHOST-PROCESS.md) and [design research](../../research/orchestrator/MULTIHOST-AUTONOMY-DESIGN-20261007.md): durable ownership, host execution, context handoff and safe partition recovery.
 - [Request to outcome](REQUEST-TO-OUTCOME.md): the human's 7 October follow-through contract, transition obligations and recovery responsibility.

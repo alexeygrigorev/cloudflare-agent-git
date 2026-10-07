@@ -1,0 +1,6 @@
+Human instruction, 7 October 2026. Exact occurrence time is unavailable in the conversation export; recorded during the desktop coordination turn after 06:00 UTC.
+
+I already asked the principal to work on this too so you need to compare notes and then based on it create a comprehensive document that describes it. I will review it and we will iterate. then I want you to have opus 5.5 create an article about it with illustations and diagrams that describe the process and how we're going to enforce it.
+
+Canonical task: human-comprehensive-process-review-opus-article-20261007.
+Required sequence: genuine principal comparison -> consolidated human-review document -> human review and iteration -> accepted version -> verified actual Opus 5.5 article with fresh illustrations and diagrams. Article creation has not started. No automatic publication or social posting is authorized by this request.
