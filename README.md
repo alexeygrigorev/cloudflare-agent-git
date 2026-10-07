@@ -40,7 +40,7 @@ More and more people run several coding agents on one repository at once. Two th
 - The documented Artifacts API cannot fork at an arbitrary commit, so the real mode forks the default branch and records where it started.
 - The checker is trusted, not sandboxed, and it only looks at pairs of agents.
 
-**What our own tests found.** When two real agents worked side by side, seeing each other's unfinished work changed nothing: neither broke the other ([research §3.1](_docs/research/research.md#31-a01-fair-pair-a-null-result)). Outside studies agree that such clashes are real but rare. For a single agent, plain Git is simpler and faster. The demo uses tasks designed to overlap, so it shows what the tool can detect, not how often clashes happen.
+**What our own tests found.** When two real agents worked side by side, seeing each other's unfinished work changed nothing: neither broke the other ([research](_docs/research/research.md#experiments-that-changed-our-mind)). Outside studies agree that such clashes are real but rare. For a single agent, plain Git is simpler and faster. The demo uses tasks designed to overlap, so it shows what the tool can detect, not how often clashes happen.
 
 ## Try it
 
