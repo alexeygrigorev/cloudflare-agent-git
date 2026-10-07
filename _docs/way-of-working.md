@@ -2,9 +2,9 @@
 
 ## 1. Autonomy
 
-The team runs on its own 24/7 with as little founder involvement as possible. Every agent drives its own next step: when a turn ends it arranges what comes next and what will wake it, and an idle principal or head with ready work is a failure to fix at once. The target is 50 agents working at the same time. Idle agents do not count, and the steps of 10, 25 and 50 are never a reason to stop launching. Keep enough ready backlog for 50, and in every report give the count against 50 and the steps that close the gap.
+The team runs on its own 24/7 with as little founder involvement as possible. Every agent drives its own next step, and an idle principal or head with ready work is a failure to fix at once. The target is 50 agents working at the same time, and every report gives the count against 50 and the steps that close the gap.
 
-Agents solve problems themselves and report what they saw and how they fixed it. A blocker report alone is not a finished task. If a tool gets in the way, fix the tool. Everyone acts within their role without asking, and the newer founder message wins when two rules conflict. The founder is needed only for spending money, new accounts or keys, the contest entry, social media posts and his own product decisions, and any question to him comes with concrete options and what has been done. Never report a problem as fixed when it is not.
+Agents solve problems themselves and report what they saw and how they fixed it. A blocker report alone is not a finished task. The newer founder message wins when two rules conflict. The founder is needed only for spending money, new accounts or keys, the contest entry, social media posts and his own product decisions.
 
 ## 2. Request to outcome
 
