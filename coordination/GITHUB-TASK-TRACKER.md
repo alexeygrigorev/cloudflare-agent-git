@@ -30,6 +30,18 @@ Before claiming work, record current owner/lease, owned paths, dependencies and 
 
 Close new tasks only after the required outcome and review evidence exists. Include source/artifact/review digests and integration or runtime proof where the contract requires it. Completed-awaiting-review remains open. Reopen failed acceptance instead of concealing it. Preserve the original deadline, missed checks, failures and changed scope in the issue history.
 
+## Labels
+
+Migration provisions these labels in each destination as needed:
+
+- `project:agent-branches`, `project:agent-dashboard`, `project:agent-quota-launcher`, `project:agent-coordination`, `project:agent-bus`; principal scopes also use `project:portfolio`, `project:publication`, `project:continuation-runtime` and `project:infrastructure`.
+- `type:feature`, `type:review`, `type:recovery`, `type:operations`, `type:documentation`.
+- `status:queued`, `status:in-progress`, `status:review`, `status:blocked`, `status:legacy-closed`.
+- `priority:p0` maps explicit critical priority; `priority:p1` maps explicit high priority; `priority:unspecified` preserves missing priority.
+- `migration:legacy-task`, `evidence:needs-audit` and, for historical closed declarations, `closure:legacy-record`.
+
+Project and type classification describe routing, not fresh ownership acceptance. Keep the stable legacy marker when editing or transferring an issue.
+
 ## Migration and statistics
 
 Retain TASKS.json and DELIVERY-BACKLOG.json as original snapshots; creating issues does not silently cut over installed readers, collectors or services. The migration manifest maps stable legacy IDs to destination issue URLs. Each body carries `tracker-migration:v1 legacy-id=...`; reruns reuse that marker and never create another issue for the same ID. Backlog references are reconciled against the unique task union.
@@ -45,7 +57,7 @@ The human requested documentation of the synchronous control mechanism: “you c
 The authorized session owner first verifies the current session/tag and a genuinely empty, idle command boundary with no protected human draft or menu. Use the guarded session path, for example:
 
 ```sh
-ap message send --to CURRENT_TAG --pane --raw --or-inbox '/goal Concrete bounded outcome'
+aplexer message send --to CURRENT_TAG --pane --raw --or-inbox '/goal Concrete bounded outcome'
 ```
 
 `--raw` preserves slash-command interpretation. Inspect the actual delivery result and then the native goal-active indicator. Inbox fallback, NOTREADY, delivery alone or a quoted `/goal` is not activation. Defer at a busy or draft-protected boundary; never use an unguarded send to bypass readiness. Preserve existing work and the original queued message. The administrative migration helper does not send commands to a pane.
