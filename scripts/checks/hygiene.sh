@@ -26,6 +26,7 @@ DOC_EXEMPT=(
 DATED_OK=(
   "_docs/founder-journal/"   # one YYYY-MM-DD.md per day
   "website/content/daily/"   # the one daily report per day
+  "website/assets/"          # dated diagram specs are site assets, named for the day they illustrate
   "tests/"                   # fixtures
 )
 
