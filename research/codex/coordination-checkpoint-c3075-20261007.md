@@ -125,3 +125,17 @@ Third-store C3091 was reconciled FAILED at00:03:04 UTC after actor death. A600-s
 C3090 reviewer38412f98 wrote its real report at23:58:08, hashb22ff750, with complete32bc source binding administratively verified. Final disposition and loaded lifecycle acceptance remain open. Ant also reports C3098 hook implementation/47tests and separate b5fca QA; primary artifact/task identities are pending, so no fabricated task or accepted outcome is registered.
 
 The diagnostic helper detected that older evidence sections had disappeared before its latest append. The current diagnostic was preserved privately without overwriting or removing any bytes. Writer/cause are unknown and that file’s publication is held pending exact provenance-based recovery. This separate checkpoint preserves the verified corrections; it does not claim all diagnostic history survived. The principal’s next monitoring commitment remains00:10 UTC.
+
+## C3100 monitor and isolated review submission
+
+The principal executed the00:10 UTC monitoring check and genuine corrections/replies b054e8,b0e74f,b1a098. The next owned check is00:20 UTC, not a head-approved delivery deadline. Original misses and protected source/main owners remain.
+
+D3 b181e0 now genuinely acknowledges the original C3091 FAILED state, while describing a foreground rc124/120-second run without controller. Cause and author verification are pending; this does not erase the earlier actor-death reconciliation. A real separate `t-zcode-qa-c3091-v2` submission is registered once in the third isolated store, key `zcode-recovery-head-c3091-qa-review-v2`, with claimed ZAI/no-fallback/legacy-background route. Actual admission, controller, immutable source and actor first tool remain unverified; queued registration is not review approval.
+
+Ant b099d3 accepts narrowly scoped Branches operational adoption without a source/main lease transfer. C3098 source563a007, distinct b5fca review964538e4 and C3097 static reviewer2531/report418a292c are attributed reported evidence under observer verification;47 tests are head-reported. Loaded scheduling/eviction and service32bc lifecycle acceptance remain open. The diagnostic publication hold continues, with current bytes and missing-history evidence preserved.
+
+## C3101 installed watcher metadata and remaining effect gate
+
+The administrative observer verified existing watcher instances1/2 execute the same1275-byte script, hash18486ed1, bound to the distinct review. Actual journals show exit0 at00:02:44,00:03:44,00:04:44 and latest00:09:44. Implementer a2d’s first tool was00:00:46; distinct b5fca first00:03:52.846815/report12915B hash964538e4 and2531 first00:03:53.257928/report15528B hash418a292c have actual final reports. This closes the bounded source/installed-scheduler metadata check; hook effect, cap crossing and runtime idle wake remain open.
+
+D3v2’s third-store row actually entered STARTING at00:08:43 on a claimed ZAI900-second route, but immutable source receipt, named managed unit and first model actor remain absent. The canonical queued qualification remains truthful. Genuine corrective head messages b25687/b256c1 and the next principal00:20 check are recorded without inventing a peer deadline. A newly visible native Branches reviewer has not yet supplied an exact verified identity. Original failures,295 task IDs and protected leases remain preserved. The diagnostic stays on publication hold.
