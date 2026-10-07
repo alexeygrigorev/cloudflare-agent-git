@@ -287,6 +287,8 @@ The full rules for the daily article are in the `daily-writeup` skill (`.claude/
 
 The continuation runtime is how work keeps moving without the founder: a process plus the software that enforces it (the trackers, the supervisor, the launcher, the agents bus and the heads). [rescued/20261007-continuation-runtime-name-and-tasks-metric] Everything here is the target design. A rule counts as installed only once it passes its acceptance test. [agent-derived]
 
+The full design is in [runtime-design.md](runtime-design.md).
+
 ### Lifecycle and evidence
 
 - Every request moves through: captured → owner accepted → launched with a first real action → result → review by a different agent → accepted → integrated and delivered → next task. Each step needs its own proof. [human-request-outcome-process-20261007] [agent-derived]
