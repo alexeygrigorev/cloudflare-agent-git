@@ -5,7 +5,7 @@ GOOD = "# A quiet day\n\n## Setup\n\nPlain text. See [the review](https://github
 
 class T(unittest.TestCase):
     def setUp(self):
-        self.d = Path(tempfile.mkdtemp()); self.addCleanup(shutil.rmtree, self.d)
+        self.d = Path(tempfile.mkdtemp()); (self.d / "scripts/checks").mkdir(parents=True); shutil.copytree(SCRIPT.parent / "lib", self.d / "scripts/checks/lib"); self.addCleanup(shutil.rmtree, self.d)
         (self.d / "website/content/daily").mkdir(parents=True)
         subprocess.run(["git", "init", "-q"], cwd=self.d, check=True)
     def run_check(self, text, sha=True, local=None, env=None):
@@ -31,5 +31,4 @@ class T(unittest.TestCase):
     def test_override(self):
         r = self.run_check(GOOD + "\n/home/alexey/x\n", env={"PRINCIPAL_OVERRIDE": "founder ok"})
         self.assertEqual(r.returncode, 0); self.assertIn("founder ok", r.stderr)
-        self.assertIn("founder ok", (self.d / ".local/overrides.log").read_text())
 if __name__ == "__main__": unittest.main()

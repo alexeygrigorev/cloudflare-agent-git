@@ -7,13 +7,9 @@
 set -u
 ROOT="${PUBLICATION_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 cd "$ROOT" || exit 2
-reason="${PRINCIPAL_OVERRIDE:-}"
-[ -z "$reason" ] && reason=$(git log -1 --format=%B 2>/dev/null | sed -n 's/^Principal-Override: *//p' | head -1)
-if [ -n "$reason" ]; then
-  echo "publication check skipped by principal override: $reason" >&2
-  mkdir -p .local && echo "$(date -u +%FT%TZ) publication-override $reason" >> .local/overrides.log
-  exit 0
-fi
+# shellcheck source=lib/principal-override.sh
+. "$ROOT/scripts/checks/lib/principal-override.sh"
+principal_override publication "$(git log -1 --format=%B 2>/dev/null)" && exit 0
 pages=("$@")
 if [ ${#pages[@]} -eq 0 ]; then
   mapfile -t pages < <({ git diff --name-only HEAD; git diff --name-only HEAD~1 HEAD; } 2>/dev/null | grep -E '^website/content/daily/[0-9-]+\.md$' | sort -u)
