@@ -24,7 +24,7 @@ You are the head of a specified product. Each product has its own team, its own 
 
 Start every worker and reviewer through the Agent Quota Launcher, never by hand. How to use it is described in ~/git/agent-quota-launcher/README.md. Read it each time you start agents, because the commands can change. A reviewer is a task like any other, with a different model from the implementer's.
 
-If the launcher has a bug, do not start the agent by hand and do not switch provider yourself. Read the error and file an issue in alexeygrigorev/agent-quota-launcher with the command, the error and what you expected. Send `quota-launcher-head` a message with the issue link. You may start a subagent to fix the bug, but tell `quota-launcher-head` about it first. Close a stuck task as failed with the reason, and keep the other independent work moving.
+If the launcher has a bug, do not start the agent by hand and do not switch provider yourself. Read the error and file an issue in alexeygrigorev/agent-quota-launcher with the command, the error and what you expected. Send `quota-launcher-head` a message with the issue link. Do not wait for someone else to fix it. Start a subagent to fix the bug, and tell `quota-launcher-head` about it first. Close a stuck task as failed with the reason, and keep the other independent work moving.
 
 ## The process
 
