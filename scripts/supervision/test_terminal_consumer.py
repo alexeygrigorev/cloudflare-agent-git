@@ -1,5 +1,6 @@
 """Tests for TerminalConsumer and receipt validation."""
 
+import copy
 import json
 import pathlib
 import tempfile
@@ -760,6 +761,20 @@ class TestTerminalConsumer(unittest.TestCase):
         unblocked = self.consumer.reconcile_and_unblock_tasks(dependent_tasks)
         self.assertEqual(unblocked, [])
         self.assertEqual(dependent_tasks[0]["status"], "blocked")
+
+    def test_ingest_terminal_receipt_expected_owner_match(self):
+        """Verify that matching expected_owner successfully ingests terminal receipt."""
+        receipt = copy.deepcopy(self.terminal_receipt)
+        res = self.consumer.ingest_terminal_receipt(receipt, expected_owner="worker-A")
+        self.assertEqual(res["status"], "ingested")
+        self.assertEqual(res["action_required"], "REVIEW_REQUIRED")
+
+    def test_ingest_terminal_receipt_expected_owner_mismatch(self):
+        """Verify that mismatched expected_owner raises ReceiptValidationError."""
+        receipt = copy.deepcopy(self.terminal_receipt)
+        with self.assertRaises(ReceiptValidationError) as cm:
+            self.consumer.ingest_terminal_receipt(receipt, expected_owner="rogue-imposter-owner")
+        self.assertIn("Task owner mismatch", str(cm.exception))
 
 
 if __name__ == "__main__":

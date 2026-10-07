@@ -328,6 +328,8 @@ def active_heads(entities=None, spool=None, registry_raw=None):
                     excluded.add(tag)
 
     candidates = set()
+    # Explicitly ensure active Bus327 recovery head is supervised
+    candidates.add('zcode-bus-win35-recovery-head-20261006-resume')
     if entities and isinstance(entities, list):
         for e in entities:
             ht = e.get('head_tag')
@@ -366,6 +368,7 @@ ACTIVE_CUSTODY_TAGS_DEFAULT = {
     'codex-principal',
     'agent-dashboard-head',
     'failover-primary',
+    'zcode-bus-win35-recovery-head-20261006-resume',
 }
 
 
@@ -626,6 +629,55 @@ def drain_launcher_queues(ql_db_candidates, report=None):
 
 def now():
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+
+def process_due_callbacks(spool, binary, identity_id, supports_key, command, recorded_send, sessions):
+    """Process durable scheduled due callbacks without separate timers or schedulers."""
+    cb_path = spool / 'due_callbacks.json'
+    if not cb_path.exists():
+        return []
+    try:
+        data = json.loads(cb_path.read_text())
+    except Exception:
+        return []
+    callbacks = data.get('callbacks', [])
+    now_ts = time.time()
+    updated = False
+    delivered_list = []
+    for cb in callbacks:
+        if cb.get('delivered'):
+            continue
+        due_at_str = cb.get('due_at')
+        if not due_at_str:
+            continue
+        try:
+            dt_obj = datetime.datetime.fromisoformat(due_at_str)
+            if dt_obj.tzinfo is None:
+                dt_obj = dt_obj.replace(tzinfo=datetime.timezone.utc)
+            due_ts = dt_obj.timestamp()
+        except Exception:
+            continue
+        if now_ts >= due_ts:
+            target_tag = cb.get('recipient_tag')
+            matching = [s for s in sessions if s.get('tag') == target_tag]
+            if not matching:
+                continue
+            sess = matching[0]
+            pid = sess.get('workload_pid')
+            if not (pid and pathlib.Path(f'/proc/{pid}').exists()):
+                continue
+            prompt = cb.get('prompt', '')
+            cb_id = cb.get('id', 'anon-due')
+            receipt = recorded_send(binary, target_tag, f"due-{cb_id}", prompt, spool, identity_id, supports_key)
+            atomic(spool / f"receipt-due-{cb_id}.json", receipt)
+            cb['delivered'] = True
+            cb['delivered_at'] = now()
+            cb['receipt_id'] = receipt.get('message', receipt).get('id')
+            updated = True
+            delivered_list.append(cb_id)
+    if updated:
+        atomic(cb_path, data)
+    return delivered_list
 
 
 def atomic(path, value):
@@ -1370,6 +1422,10 @@ def run():
                 if not same_failover:
                     sys.exit(42)
             sessions = [x for x in sessions if x.get('workspace') == str(ROOT)]
+            # Process durable scheduled due callbacks
+            due_delivered = process_due_callbacks(PRIVATE, BINARY, identity["id"], supports_key, command, recorded_send, sessions)
+            for cb_id in due_delivered:
+                event("due-callback-delivered", callback_id=cb_id)
             try:
                 import importlib
                 import scripts.supervision.failover_integration as failover_integration

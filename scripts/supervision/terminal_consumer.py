@@ -536,12 +536,14 @@ class TerminalConsumer:
     def ingest_terminal_receipt(
         self,
         receipt: Dict[str, Any],
+        expected_owner: Optional[str] = None,
         expected_invocation_id: Optional[str] = None,
         expected_boot_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Ingest and validate execution terminal receipt."""
         ok, err, r_sha = validate_terminal_receipt(
             receipt,
+            expected_owner=expected_owner,
             registered_sessions=self.registered_sessions,
             expected_invocation_id=expected_invocation_id,
             expected_boot_id=expected_boot_id,

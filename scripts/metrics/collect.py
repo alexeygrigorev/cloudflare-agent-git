@@ -774,9 +774,12 @@ def _collect():
 
         ps = proc(s.get('workload_pid'))
         state = s.get('reported_state')
-        stamp = s.get('reported_state_at_ms', s.get('state_reported_at_ms'))
-        if not stamp:
-            stamp = s.get('last_activity_ms')
+        state_stamp = s.get('reported_state_at_ms', s.get('state_reported_at_ms'))
+        act_stamp = s.get('last_activity_ms') or s.get('updated_at_ms')
+        if state == 'working' and act_stamp:
+            stamp = max(state_stamp or 0, act_stamp)
+        else:
+            stamp = state_stamp or act_stamp
         age = max(0, now - stamp / 1000) if isinstance(stamp, (int, float)) else None
         owned = [t for t in tasks if t.get('owner_tag') == item.get('tag')]
         role = item.get('role', 'unknown')

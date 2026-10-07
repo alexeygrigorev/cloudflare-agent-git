@@ -1985,6 +1985,51 @@ class RestingStateContradictionPrecheckTests(unittest.TestCase):
    finally:
      service.command, service.ROOT, service.PRIVATE, service.BINARY = real_cmd, real_root, real_priv, real_bin
 
+  def test_process_due_callbacks(self):
+    temp = tempfile.TemporaryDirectory()
+    try:
+      spool = pathlib.Path(temp.name)
+      cb_file = spool / 'due_callbacks.json'
+      cb_file.write_text(json.dumps({
+        'callbacks': [
+          {
+            'id': 'test-cb-1',
+            'recipient_tag': 'test-head',
+            'due_at': '2026-10-07T00:00:00Z',
+            'prompt': 'Test prompt',
+            'delivered': False,
+          }
+        ]
+      }))
+      sessions = [
+        {'id': 'sess-1', 'tag': 'test-head', 'workload_pid': os.getpid()}
+      ]
+      sent = []
+      def fake_send(bin, tag, key, body, sp, s_id, supports_key):
+        sent.append((tag, key, body))
+        return {'delivery': 'inbox', 'id': 'msg-123'}
+
+      delivered = service.process_due_callbacks(
+        spool, '/bin/true', 'sup-id', True, lambda *_: '', fake_send, sessions
+      )
+      self.assertEqual(delivered, ['test-cb-1'])
+      self.assertEqual(len(sent), 1)
+      self.assertEqual(sent[0][0], 'test-head')
+      self.assertEqual(sent[0][1], 'due-test-cb-1')
+
+      # Verify persisted delivered state
+      data = json.loads(cb_file.read_text())
+      self.assertTrue(data['callbacks'][0]['delivered'])
+      self.assertIn('delivered_at', data['callbacks'][0])
+
+      # Second pass should not redeliver
+      delivered2 = service.process_due_callbacks(
+        spool, '/bin/true', 'sup-id', True, lambda *_: '', fake_send, sessions
+      )
+      self.assertEqual(delivered2, [])
+    finally:
+      temp.cleanup()
+
 
 if __name__=='__main__':unittest.main()
 
