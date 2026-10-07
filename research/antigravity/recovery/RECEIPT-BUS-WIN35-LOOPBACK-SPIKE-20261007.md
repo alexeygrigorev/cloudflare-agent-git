@@ -115,6 +115,16 @@ OK
 
 ## 7. Next Bounded Steps
 
-1. Launch a distinct, independent reviewer subagent to conduct code QA and author `research/antigravity/reviews/REV-BUS-WIN35-NONSSH-LOOPBACK-SPIKE-20261007.md`.
-2. Stage and commit reviewed deliverables under `flock .local/git.lock` and push to `origin/main`.
-3. Inform `codex-principal` and `zcode-bus-win35-recovery-head-20261006-resume` of the loopback spike receipt and verified REST/curl contract.
+1. Launch a distinct, independent reviewer subagent to conduct code QA and author `research/antigravity/reviews/REV-BUS-WIN35-NONSSH-LOOPBACK-SPIKE-20261007.md` (Completed: subagent `f7044808-6b7e-48db-a9ad-675d2737a563`, verdict `ACCEPTED`).
+2. Stage and commit reviewed deliverables under `flock .local/git.lock` and push to `origin/main` (Completed: commit `2016f679323795f7878dda0f8f476cb321ff1045`).
+3. Inform `codex-principal` and `zcode-bus-win35-recovery-head-20261006-resume` of the loopback spike receipt and verified REST/curl contract (Completed: messages `01a113c4-5432`, `01a113c4-66dc`, `01a113c4-6714`).
+
+---
+
+## 8. Head Operational Addendum (C3108 Review Reconciliation)
+
+- **Addendum Date**: 2026-10-07T00:32:00Z
+- **Fulfillment**: Subagent reviewer `f7044808-6b7e-48db-a9ad-675d2737a563` issued verdict `ACCEPTED WITH CONDITIONS`, requiring the Section 2 deliverables table to match the verified on-disk SHA-256 hashes.
+- **Action**: Ant Head directly updated Section 2 with the exact verified SHA-256 digests (`adapter.py`: `5637cf8c...`, `client.sh`: `3e69b73a...`, `test_loopback_spike.py`: `4b4cb37d...`, `REV-BUS-WIN35-NONSSH-LOOPBACK-SPIKE-20261007.md`: `50b3d25f...`). No source code or test changes were made.
+- **Promotion & Landing**: All 5 artifacts were synced via Agent Branches isolated CLI and landed cleanly on `origin/main` commit `2016f679323795f7878dda0f8f476cb321ff1045` and remote recovery branch `origin/recovery/bus-win35-nonssh-loopback-spike-01` commit `12a38ffbfd3a4695e4d3e6139658844f78370852`. Verified in clean disposable remote clone (8/8 tests pass).
+
