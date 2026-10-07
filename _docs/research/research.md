@@ -152,11 +152,61 @@ Platform limits to design around: 1 GB per repo, 32 MB per blob, push over proto
 
 ## 7. Lessons
 
-(pending)
+1. **Instrument the harness before trusting a result.** In G3 the first composition copied B's whole tree over A's work, so A+B "passed" for the wrong reason; only a liveness probe caught it (`research/space-bunny/g3-no-symbol-overlap/results-real-agents.md`).
+2. **Give both arms the same information.** The A01 pilot gave the arms different prompts and oracle access (`research/debate/codex-a01-pilot-review.md`); the A06 pilot barred one arm from raw sources (`research/muse/a06-pilot-adoption/analysis.md`). Both had to be thrown out as comparisons.
+3. **A brief can leak the answer.** Both G3 briefs named the behaviour that mattered, which voided the pre-registered conclusion (`research/space-bunny/g3-non-discoverable/results-real-agents.md`).
+4. **Label models as models, and keep one denominator.** Three storage "measurements" were arithmetic and were retracted; an early "~80%" figure mixed per-directory sums with a physical union and became 62.1% (`research/evidence-ledger.md`, `research/claude/u7-real-worktree-measurement.md`).
+5. **Do not move the bar after the result.** A16's 50% gate stayed at 50%, and a run at N=3 just to turn it green was refused (`research/shortlist-6.md`, `research/codex/retained-lanes-review-2324.md`).
+6. **Preserve evidence before a rerun.** A second A01 feasibility attempt overwrote the first attempt's database rows, so the cause of its failure is unknown (`research/antigravity/r12-a01-loss-inventory-and-diagnosis.md`).
+7. **Relabel an overclaim in the open.** "Adoption confirmed" became "workflow transport confirmed" (`research/antigravity/adoption/REAL-FORK-ADOPTION-REPORT.md`); "the card is cheaper" was withdrawn (`research/muse/a06-pilot-adoption/analysis.md`).
+8. **Budget the machine.** One diagnostic build added about 12.26 GB (`research/antigravity/r9-runtime-single-effect-verification.md`).
+9. **Agreement is an explicit act.** Read receipts, a third engine's vote or silence are not consent; only matching signoffs count (`research/consensus.md`, `research/debate/codex-open-disagreements.md`).
+10. **Tests must be able to fail.** Most negative reviews in section 8 found tests that pass whatever the code does: surviving mutants, an empty-input "pass", a file with zero assertions.
 
 ## 8. Review verdicts by family, and the 22 negative verdicts
 
-(pending)
+Antigravity ran most independent reviews and audits: 226 documents (222 in `research/antigravity/reviews/`, 1 in its `archive/`, 3 in `research/antigravity/audit/`), next to 10 reviewer launch prompts and 1 receipt file. Grouped by file name (our grouping; counts verified with `git ls-tree` at the tag):
+
+| Family | Reviews | Negative |
+|---|---|---|
+| Agent bus, file bus, typed SSH, Windows client, fleet trials | 40 | 4 |
+| Dashboard, hourly export, daily reports, review UI | 38 | 4 |
+| Quota launcher and capacity | 34 | 2 |
+| Supervision and continuation runtime | 32 | 4 |
+| Product adoption, runbooks, demos | 27 | 3 |
+| SDK, webhook auth, publication guard | 24 | 2 |
+| Scale-to-50 task audits | 15 | 3 |
+| Metrics collector and task tracker | 13 | 0 |
+| Audits (repo sanitization, credential lineage, retry lineage) | 3 | 0 |
+
+**The 22 reviews that opened with a negative verdict** (REJECT, REQUEST_CHANGES or a confirmed critical defect), each read in full at the verdict line. All paths are under `research/antigravity/reviews/`.
+
+| Review | Why | Later |
+|---|---|---|
+| `REV-BUS-EXACTPIN-BB8DCAD.md` | Legacy pin lacks the successor's durability fixes | |
+| `REV-BUS-TYPED-SSH-PORTABILITY.md` | POSIX-only imports and manifest gaps block Windows | |
+| `REV-WINDOWS-DRIVER-2FD1BE4E.md` | Redaction regex can leak Base64 bearer tokens | |
+| `REV-SYNTHESIS-AGENT-BRANCHES-4315-20261005.md` | Test file stubbed with `pass`, zero assertions | |
+| `REV-L4-UI-3568780.md` | The named guard is dead code; a green "clean" badge shows during an outage | Accepted in `REV-L4-UI-99C3C97.md` |
+| `REV-L4-DOM-NEGATIVE.md` | The fix double-escapes text; "zero clean badges" claim not literally true | |
+| `REV-L6-CA16-REVIEW.md` | Worklog quarantine misses 2 of 3 files; no regression tests | |
+| `REV-REPORT-ROLE-STRUCTURE-20261006.md` | Omits the rule that principals do not review code | |
+| `REV-QL-FIRST-ACTION-BYPASS.md` | Any marker file bypasses the first-action check; schema whitelisting rejected as a pseudo-fix | |
+| `REV-SYSTEMD-SCOPE-CONTAINMENT-C2087.md` | Direct-scope baseline fails the failure-pattern audit | Refactored adapter verified in the same review |
+| `REV-SUPERVISION-C14B474.md` | Inverted premise: the "fallback" binary removes the fail-closed draft guard | |
+| `REV-LIMITER-321FEB5.md` | Spoofable-header mutants survive all tests; a "window edge" test is 15 s off | |
+| `REV-READINESS-CORRECTION.md` | Proposed producer fixes have serious failure modes | |
+| `REV-READINESS-PRODUCER-REPAIR-SPEC.md` | Brittle engine-name coupling, PID-recycling risk, no draft protection | |
+| `REV-DEMO-RUNBOOK-HARNESS.md` | Four validation defects; mutants survive | Re-review accepted in the same file |
+| `REV-FORK-ADOPTION-FCD7985.md` | "Adoption" overclaimed; no stale-push case; plaintext tokens left in scratch | Report relabelled |
+| `REV-RUNBOOK-SEED-LEASE-4C6FDD5.md` | README confuses the sidecar token with a write token; placeholders do not run | |
+| `REV-SDK-PUSH-BATCH-7DE6836.md` | No proof of one effect per batch, no atomic batch | |
+| `REV-WEBHOOK-AUTH-F3F06D2.md` | A replayed nonce returns 401 instead of 409 | |
+| `REV-SCALE50-39-HOURLY-API-TESTS-20261006.md` | "Fake pass": asserts only list length on empty input | |
+| `REV-SCALE50-41-INTEGRATION-PLAN-20261006.md` | No `127.0.0.1` binding, plus a proxy loophole | Accepted after remediation |
+| `REV-SCALE50-53-MOBILE-QA-20261006.md` | Wrong query parameter, a pass the author's own log contradicts, 60+ tracked files modified | Accepted after remediation |
+
+An earlier machine-made list of "22 negatives" (a cleanup draft, never committed) was wrong on 9 entries, mostly ACCEPT verdicts that mention "fail-closed" or a prior rejection, and missed 9 real ones; the list above replaces it. A separate negative finding sits in a capacity review: 50 concurrent task units on one host is "UNPROVEN and INFEASIBLE" (`research/antigravity/reviews/REV-SCALE50-RAM-PROOF-AND-CAPACITY-20261005.md`).
 
 ## 9. Where the raw evidence is
 
