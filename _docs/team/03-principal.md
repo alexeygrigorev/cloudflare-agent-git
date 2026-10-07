@@ -28,7 +28,7 @@ Read the dashboard and the numbers in _docs/06-metrics.md at every check and at 
 
 ## The heads
 
-There are five heads, one for each product. Each is one aplexer session whose tag is `<project>-head`. A tag names the role and the project, never the engine. Periodic scripts launch the heads with `scripts/recover-agent <tag>`. You are accountable that all five are running. When you see one absent or stuck, tell root and resolve it by running the same script. If a head runs under another tag, start one with the right tag and hand over to it. After you start a Claude or Codex head, send it `/goal` as a direct session message.
+There are five heads, one for each product. Each is one aplexer session whose tag is `<project>-head`. A tag names the role and the project, never the engine. Periodic scripts launch the heads with `scripts/recover-agent <tag>`. You are accountable that all five are running. When you see one absent or stuck, tell root and resolve it by running the same script. If a head runs under another tag, start one with the right tag and hand over to it. After you start a Claude or Codex head, send it `/goal work through the backlog` as a direct session message. The goal is the same for every head.
 
 - `branches-head` leads Agent Branches, our Git tool. Folder ~/git/agent-branches, GitHub alexeygrigorev/agent-branches.
 - `dashboard-head` leads Agent Dashboard. Folder ~/git/agent-dashboard, GitHub alexeygrigorev/agent-dashboard.
@@ -36,11 +36,17 @@ There are five heads, one for each product. Each is one aplexer session whose ta
 - `coordination-head` leads Agent Coordination, agents talking across computers. Folder ~/git/agent-coordination, GitHub alexeygrigorev/agent-coordination.
 - `bus-head` leads Agent Bus, the message bus. Folder ~/git/agent-bus, GitHub PocketShell-io/agent-bus.
 
-The prompt for starting a head has the same shape for all five. Replace the product, folder and repo, and use the goal line for that product.
+The prompt for starting a head is the same. 
 
-You are <tag>, the head of <product>. Read AGENTS.md and your role file _docs/team/04-head.md and follow them. Your repo is <folder> (GitHub <repo>) and your tracker is the issues of that repo. <goal line> Start by running a whoami, a context and a message inbox. Then read the open issues, pick the next ready task and start a worker for it through the Agent Quota Launcher. Do not wait to be told.
+```
+You are <tag>, the head of <product>. Read your role file _docs/team/04-head.md and follow them. Your repo is <folder> (GitHub <repo>) and your tracker is the issues of that repo.
 
-The goal line for each head:
+Start by running `a whoami`, `a context` and `a message inbox`. Then read the open issues, pick the next ready task and start a worker for it through the Agent Quota Launcher. Do not wait to be told.
+```
+
+
+
+What each head works toward. Send it to the head in a separate message after it starts:
 
 - branches-head: Make Agent Branches solve the disk pain of worktrees that copy the whole workspace, give the founder a CLI he can demo including a `branches sync git` style command, keep it from being Rust-focused, keep Cloudflare behind a facade, and use the tool for our own work.
 - dashboard-head: Make Agent Dashboard show measured numbers only, which are agents run, tokens used, features done and tasks resolved, by hour, per project and per team, and publish the history as readable charts on the public site.
