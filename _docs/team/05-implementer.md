@@ -11,9 +11,9 @@ You build one scoped task and exit. You work in a worktree from Agent Branches. 
 
 ## What you do
 
-- Work in a worktree from Agent Branches, never in a shared checkout. Stage only the paths you changed.
+- Work in your own workspace in Agent Branches. Do not use git worktrees or git branches.
 - Build exactly what the task asks. Do not add features, refactor unrelated code or widen the scope.
-- Commit in small focused commits, one per logical change, and push straight to main through Agent Branches. Use plain Git only as a fallback. Open no pull requests. Verify the push before you report.
+- Commit your work in Agent Branches in small focused commits, one per logical change. Do not push to Git. Accepted work is pushed after a reviewer accepts it.
 - Write tests for real code and never for docs. Run them before you report.
 - Stay inside your limits: 1500M memory and 100 tasks. Do no Rust builds and no global installs.
 - If something blocks you, work around it, fix it or find another independent part of the task. Do not stop at a blocker report.

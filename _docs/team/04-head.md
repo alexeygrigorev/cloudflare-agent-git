@@ -32,7 +32,7 @@ The implementer implements the task in a worktree from Agent Branches. The revie
 
 ## Integrating
 
-Integrate by committing and pushing straight to main through Agent Branches in small, focused commits. Use plain Git only as a fallback. Open no pull requests.
+Integrate when the reviewer accepts. Push the accepted work to Git, straight to main, in small, focused commits. It is the only time we push to Git. Open no pull requests.
 
 ## Keeping the team busy
 
