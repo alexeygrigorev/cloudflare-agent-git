@@ -94,6 +94,19 @@ class SecretsCheckTest(unittest.TestCase):
         self.stage(".env.example", "X=\n")
         self.assertEqual(self.scan().returncode, 0)
 
+    def test_loopback_and_test_values_allowed_but_real_ones_not(self):
+        self.stage("a.sh", 'curl http://admin:hunter22@localhost:8787/x\ntoken = "' + "test-token-" + "a" * 20 + '"\n')
+        self.assertEqual(self.scan().returncode, 0)
+        self.assert_flags("b.sh", 'curl http://admin:hunter22@db.prod.net/x\n', "credential-url")
+
+    def test_value_allow_file_needs_reason(self):
+        self.write("scripts/checks/secrets.allow-values", "intranet\\.corp   # sanctioned host\nbadhost\\.corp\n")
+        self.stage("c.sh", "curl http://u:hunter22@intranet.corp/x\ncurl http://u:hunter22@badhost.corp/x\n")
+        r = self.scan()
+        self.assertEqual(r.returncode, 1)
+        self.assertNotIn("c.sh:1:", r.stderr)
+        self.assertIn("c.sh:2: credential-url", r.stderr)
+
     def test_placeholders_ok(self):
         self.stage("a.sh", 'curl -H "Authorization: Bearer $TOKEN" https://user:${PASS}@example.com\n')
         self.assertEqual(self.scan().returncode, 0)

@@ -12,11 +12,22 @@
 #
 # Output never contains the matched value: only "path:line: kind". Exit 1 on any finding.
 #
+# Detection vs prevention: CI scanning only DETECTS a leak after it was pushed to
+# the public repo; the local pre-commit/pre-push hooks PREVENT it. Hooks can be
+# bypassed, so a CI finding means: remove the data, rotate the secret, report.
+#
 # Allowlist: scripts/checks/secrets.allowlist, one rule per line:
 #     <kind> <path-glob>   # mandatory reason
 # kind is one of the kinds printed below or "*"; path-glob uses shell patterns
 # (case syntax, so * crosses slashes). A single line can also carry the marker
 # "secrets-allow: <reason>" to be skipped. Every exception needs a reason.
+#
+# Value allowlist: for the loose kinds (credential-url, generic-secret-assignment,
+# bearer-token) a match is dropped when the matched text itself is an intended public
+# host/URL, a loopback or test value, or an obvious placeholder (built-in list below),
+# or matches an ERE in scripts/checks/secrets.allow-values (`<ERE>   # reason`, reason
+# required). Code examples: add the marker "secrets-allow: <reason>" on the line.
+# Strong provider keys and private paths/emails are never value-allowlisted.
 #
 # Principal override: PRINCIPAL_OVERRIDE=<reason> in the environment, or a
 # "Principal-Override: <reason>" trailer on a commit in the --pushed/--range
@@ -40,7 +51,7 @@ while [ $# -gt 0 ]; do
     --pushed) mode=pushed ;;
     --all) mode=all ;;
     --range) mode=range; range=${2:-}; shift ;;
-    -h|--help) sed -n '2,31p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,42p' "$0"; exit 0 ;;
     *) echo "secrets: unknown argument $1" >&2; exit 2 ;;
   esac
   shift
@@ -91,10 +102,29 @@ private-email	alexey\.s\.grigoriev@
 P
 }
 
+# Matched text that is intended and harmless: loopback/test hosts, placeholders, public docs hosts.
+builtin_safe='(localhost|127\.[0-9]+\.[0-9]+\.[0-9]+|0\.0\.0\.0|\[::1\]|[.]test([/:]|$)|[.]invalid([/:]|$)|[.]example([/:]|$)|your[-_]|<[^>]*>|\$[{(]?[A-Za-z_]|dummy|fake|placeholder|changeme|redacted|0123456789abcdef|test[-_]?(token|key|secret|password))'
+valuefile="scripts/checks/secrets.allow-values"
+safe_re="$builtin_safe"
+if [ -f "$valuefile" ]; then
+  extra=$(sed -n 's/[[:space:]][[:space:]]*#[[:space:]][[:space:]]*[^[:space:]].*$//p' "$valuefile" | grep -v '^[[:space:]]*#' | grep -v '^[[:space:]]*$' | paste -sd'|')
+  [ -n "$extra" ] && safe_re="$safe_re|($extra)"
+fi
+value_allow_kind() { case $1 in credential-url|generic-secret-assignment|bearer-token) return 0 ;; esac; return 1; }
+
 findings="$tmp/findings"; : > "$findings"
 while IFS="$(printf '\t')" read -r kind re; do
   [ -n "$kind" ] || continue
-  LC_ALL=C grep -E -e "$re" "$lines" | grep -v 'secrets-allow:' | cut -f1,2 | sed "s/\$/	$kind/" >> "$findings"
+  if value_allow_kind "$kind"; then
+    LC_ALL=C grep -E -e "$re" "$lines" | grep -v 'secrets-allow:' | while IFS="$(printf '\t')" read -r lp ln content; do
+      # keep the finding unless every matched piece is a safe value
+      if printf '%s\n' "$content" | LC_ALL=C grep -Eo -e "$re" | grep -Eiv -e "$safe_re" | grep -q .; then
+        printf '%s\t%s\t%s\n' "$lp" "$ln" "$kind"
+      fi
+    done >> "$findings"
+  else
+    LC_ALL=C grep -E -e "$re" "$lines" | grep -v 'secrets-allow:' | cut -f1,2 | sed "s/\$/	$kind/" >> "$findings"
+  fi
 done <<EOF2
 $(patterns)
 EOF2
