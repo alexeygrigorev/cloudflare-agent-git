@@ -5,6 +5,8 @@ ROOT=pathlib.Path(__file__).resolve().parent.parent
 p=argparse.ArgumentParser();p.add_argument('date');p.add_argument('--response');p.add_argument('--reviewer',default=None);p.add_argument('--publish',action='store_true');a=p.parse_args()
 day=datetime.date.fromisoformat(a.date).isoformat();folder=ROOT/'website/content/daily'
 article=folder/f'{day}.md';metadata=folder/f'{day}.json';text=article.read_text();m=json.loads(metadata.read_text())
+check=ROOT/'.local/journal'/day/'check.json'
+assert check.is_file() and json.loads(check.read_text()).get('verdict') in ('pass','fixed'),'missing or failed check.json; run the check pass first'
 response=pathlib.Path(a.response) if a.response else ROOT/'.local/journal'/day/'response.json'
 runtime=json.loads(response.read_text())
 assert not runtime.get('is_error') and runtime.get('subtype')=='success','writer did not complete successfully'
@@ -17,6 +19,7 @@ for pattern in [r'(?i)(?:sk-ant-|ghp_|github_pat_|sk-proj-)[A-Za-z0-9_-]{12,}',r
 images=re.findall(r'!\[[^]]*\]\(([^)]+)\)',text);assert images,'missing supporting visual'
 for image in images:
  path=(article.parent/image).resolve();assert path.is_relative_to(ROOT/'website/assets') and path.is_file(),f'missing or unsafe asset: {image}'
+subprocess.run([str(ROOT/'scripts/checks/publication.sh'),str(article)],cwd=ROOT,timeout=60,check=True)
 subprocess.run(['stylint',str(article)],cwd=ROOT,timeout=60,check=True)
 share=folder/f'{day}.sharetext.txt';assert len(share.read_text().strip())<=350
 if a.publish:
