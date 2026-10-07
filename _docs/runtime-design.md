@@ -159,7 +159,7 @@ Tracker availability means a usable page and API, fresh data from the canonical 
 
 ## Resources and safety
 
-The resources section of [way-of-working.md](way-of-working.md#resources) holds the numbers: disk floor, scratch, memory caps, provider reserves, the shared z.ai ceiling and the USD 5 monthly cloud budget. The runtime applies the current version and takes a fresh reading before every launch; an unknown reading means no launch. Each model worker runs in its own contained unit, not as an uncontrolled child inside a head, and more agents without measured topology and memory can reduce useful throughput. A provider fallback is a new admitted attempt, never a silent substitution. Cleanup never deletes dirty worktrees, active leases, history or unknown-owner paths. Secrets and raw logs stay machine-local.
+The resources section of [way-of-working.md](way-of-working.md#9-resources) holds the numbers: disk floor, scratch, memory caps, provider reserves, the shared z.ai ceiling and the USD 5 monthly cloud budget. The runtime applies the current version and takes a fresh reading before every launch; an unknown reading means no launch. Each model worker runs in its own contained unit, not as an uncontrolled child inside a head, and more agents without measured topology and memory can reduce useful throughput. A provider fallback is a new admitted attempt, never a silent substitution. Cleanup never deletes dirty worktrees, active leases, history or unknown-owner paths. Secrets and raw logs stay machine-local.
 
 ## Acceptance
 
