@@ -7,6 +7,7 @@ AGENTS.md is the single agent-instruction file (CLAUDE.md was removed on 7 Oct 2
 - Read AGENTS.md, [BRIEF.md](BRIEF.md) and [coordination/USER-STEERING.md](coordination/USER-STEERING.md) at startup.
 - Your role is the one explicitly assigned by your current launch prompt; this file does not turn any engine into the Claude principal.
 - Respect separate ownership: claim the edit scope on the agents bus before editing; documents never record claims.
+- No pull requests: commit in small commits, rebase on origin/main and push directly to main.
 - Claude and Codex integrate selection; every engine independently challenges the task and validates evidence.
 - The latest direct user instruction supersedes earlier stop conditions.
 

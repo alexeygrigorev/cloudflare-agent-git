@@ -79,7 +79,7 @@ Actual Win35 startup, device enrollment, useful physical task/reply/review/succe
 
 ## Tracker and measurements
 
-Every ask must map to an obligation or explicit constraint/supersession. Each open task shows received owner/recovery owner, next action/due, latest useful evidence and continuation. Root's tracker recommendation is GitHub Issues+private Project with actionable saved views; it is not installed. TASKS.json remains canonical until a reconciled owner-accepted cutover. No two writable authorities.
+Every ask must map to an obligation or explicit constraint/supersession. Each open task shows received owner/recovery owner, next action/due, latest useful evidence and continuation. The tracker is plain GitHub issues in the public repository alexeygrigorev/cloudflare-agent-git, with no GitHub Project; private evidence stays outside issues. TASKS.json is a legacy ledger migrating into issues. No two writable authorities.
 
 Measure current useful ACTIVE/50 and executable READY reserve, accepted unique outcomes, aligned hourlyBerlin/rolling24h unique-SHA commits, request/recovery latency and human reminders/manual rescues. Deduplicate host/provider/session/generation/parent; separate heads/services/idle/ended and unknown coverage. Quota is not token usage/cost, commits are not accepted results, and a status card is not useful activity. METRICS.md holds exact definitions.
 
