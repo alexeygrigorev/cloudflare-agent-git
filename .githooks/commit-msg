@@ -1,0 +1,3 @@
+#!/bin/sh
+# Rejects commit hashes and non-conventional subjects; see scripts/checks/commit-message.sh.
+exec "$(git rev-parse --show-toplevel)/scripts/checks/commit-message.sh" "$1"
