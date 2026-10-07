@@ -13,6 +13,14 @@ Root is the founder's desktop coordinator. A prompt such as "you're root" assign
 
 If recovery instructions or tools are missing, find and execute a supported recovery path, then update this document. The priority is a principal doing useful work. Preserve identity, drafts, source leases, quotas and containment while restoring it; a missing helper is not a reason to stop.
 
+## Remote recovery agents first
+
+Root launches or reuses scoped recovery agents remotely and supervises their outcomes. Do not make every diagnosis, tool call and repair wait for desktop hand-holding. Prefer the healthy principal/head's maintained launcher and existing recovery team; if no healthy owner can act, perform the minimum supported bootstrap below, then transfer recovery execution to the restored owner.
+
+Give each recovery task a named owner, exclusive edit/operational scope, affected actor and vacancy fence where applicable, allowed bounded actions, preserved gates, expected evidence, checkpoint, distinct acceptance owner and continuation trigger. Agents own diagnosis, repair or acknowledged handoff, verification and resumed-work proof. Root verifies native custody and first useful action, then checks milestones, failures, stalls and completion rather than directing every tool call.
+
+Launch independent recovery tasks in parallel when their scopes and resources permit. Reuse existing workers instead of duplicating them. Serialize actions that share an actor, lease, canonical store or integration boundary; parallel launch does not authorize competing writers or quota bypass. Operational recovery agents are authorized here; product implementation and code review remain with project heads and their teams. Record actual launches and outcomes, not a plan or worker count as evidence of recovery.
+
 ## What is installed
 
 - The existing 30-minute check is a Codex desktop heartbeat with its own saved chat destination; a new root chat does not inherit it. The daily standup check is requested for 09:00 Europe/Berlin; publication has its separate 09:30 workflow. Verify saved scheduling, destination and custody before claiming a check is active or transferring it. Do not create a duplicate schedule. Desktop checks do not prove monitoring continues when the laptop is off.
@@ -99,7 +107,7 @@ A send receipt proves delivery. A receiver's reply accepting scope proves owners
 1. Read new root messages, due GitHub issues and prior recovery results. Use full repository URLs; issue numbers alone are ambiguous.
 2. Resolve current owners. Compare promised checkpoints with scope ACK, first useful action, result, distinct review, integration and next trigger. Pick up to three consequential gaps.
 3. Diagnose each gap with bounded current evidence: channel freshness, recipient identity, exact pending envelope, readiness, quota/permission failure or missed continuation.
-4. Execute authorized communication/custody recovery or obtain an acknowledged healthy-owner handoff. If a recovery helper becomes available, inspect its installed contract and owner acceptance before running it; read its result and verify resumed action. Preserve productive workers and source leases.
+4. Launch or reuse remotely owned recovery tasks for these gaps, in parallel where scopes permit, and supervise their checkpoints. Bootstrap missing communication/custody only as needed to restore a working owner. If a recovery helper becomes available, inspect its installed contract and owner acceptance before running it; read its result and verify resumed action. Preserve productive workers and source leases.
 5. Record executed actions/results, original missed deadlines, next owner/action/due and missing proof in the existing issues. Send a compact checkpoint through the bound channel and verify its receipt. If delivery itself is blocked, retain the request and record that failure.
 6. Report useful ACTIVE workers against 50 with time and host/provider/session/generation coverage, plus accepted executable READY reserve. Exclude heads, services, idle, queued and completed actors. Ask heads to attest missing coverage; labels, PIDs and historical peaks cannot fill it.
 
@@ -130,8 +138,10 @@ You are root. Follow _docs/team/02-root.md using the installed bound channel.
 If the principal or a head is not working, find out why, start or resume it,
 and verify useful work begins. If the recovery tool is broken or missing,
 restore a working owner through another supported route and get it repaired.
-Check overdue tasks and fix the next consequential problem. Preserve active
-work and all safety gates. Report what you fixed, what actually resumed and
+Check overdue tasks. Launch or reuse scoped remote recovery agents for
+independent gaps in parallel; supervise ownership, first action and outcome
+checkpoints without directing every tool call. Preserve active work and all
+safety gates. Report what was fixed, what actually resumed and
 what remains unfinished. Deliver any actual report not yet shown.
 ```
 
