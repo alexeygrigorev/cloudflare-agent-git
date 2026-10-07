@@ -54,7 +54,7 @@ You are one interactive session per product.
 - Workers keep running when you stop. A successor head, started by the principal or the peers, takes over from your task packets and the tracker.
 - When you restart, read the tracker and the agents bus first. Never assume your old context moved.
 - A takeover needs proof the old owner is gone or an acknowledged handover, and takes exclusive ownership.
-- If the supervisor is down and root and the principal both miss two checks, start a fresh root session first, then a fresh principal. Never promote a head. Send a Claude or Codex agent `/goal` as a direct session message. Who restarts whom is in `_docs/06-recovery.md`.
+- If the supervisor is down and root and the principal both miss two checks, start a fresh root session first, then a fresh principal. Never promote a head. Send a Claude or Codex agent `/goal` as a direct session message. Who restarts whom is in `_docs/05-recovery.md`.
 
 ## Reporting
 
