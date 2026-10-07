@@ -6,6 +6,8 @@ The rules and their sources are in [way-of-working.md](way-of-working.md), which
 
 ## Roles
 
+Each role:
+
 - Principal: plans priorities across teams, assigns scoped work through heads, monitors outcomes and flow, challenges evidence, coordinates hand-offs, keeps the high-level tracker. Never: implements product code, personally reviews code, runs its own execution team, takes over a head's protected scope.
 - Head: interactive orchestrator for one project. Breaks goals into tasks, launches implementers and reviewers, accepts reviewed results, integrates within its edit scope, refills and recovers. Never: reviews its own work, invents workers, acts on unreceived scope, becomes the default sole implementer.
 - Worker (executor): implements and tests one assigned task and hands back a pinned result. Never: accepts its own result, mutates other tasks, works outside delegated paths.
@@ -34,6 +36,8 @@ flowchart LR
   H --> R
   R --> C
 ```
+
+Each transition needs its proof:
 
 - Request → captured: requires stable ID, exact source and time, acceptance criteria, mapping to constraints or supersessions. If missing: reconcile intake without losing existing rows or history.
 - Captured → owned: requires current owner's ACK, scope, dependencies, next action, due time and recovery trigger. If missing: resolve custody or get a received hand-off. Assignment is not ACK.
@@ -86,28 +90,28 @@ Rules alone don't stop violations. Two separate mechanisms are needed: disallowe
 
 Each consequential operation carries a trusted actor binding: native or enrolled identity, host, session and generation, role, team and real parent, task and attempt, current scope ACK and epoch, allowed action and resource, policy version and evidence. Identity comes from the bound process or enrollment, never from a caller-supplied label or borrowed sender ID. A parent's scope does not automatically pass to its child. Default deny: missing, contradictory or expired evidence denies the action and opens a recovery obligation. Check again at dispatch, write and integration time. Read-only discovery and other authorized work stay available. The validator is small, shared and built into existing tools (as in OWASP and NIST SP 800-162). It is not a new IAM service.
 
-| Boundary | Must enforce |
-|---|---|
-| Intake, tracker writes, checkouts | Stable IDs and history, compare-and-swap, scope and epoch, valid transitions, on every writer and sync path |
-| Assignment and bus | Notification obligation stored with state; genuine recipient, scope, stable intent, dedup, task-action permission |
-| Launcher admission | One loaded config, store and controller; fresh quota and shared reservations; current ownership; first-action evidence |
-| Review and acceptance | Exact artifact and criteria; a distinct executed review at every CLI and API entry point |
-| Terminal and refill | Task, invocation, owner and generation bound; durable successor or recovery obligation |
-| Due and failover | ACK, action, review and delivery dues; protected readiness; target-side fencing |
-| Source versus runtime | Reviewed artifact plus the actually loaded module, binary, config and store |
-| Cross-computer work | Reviewed HTTPS endpoint and enrollment, device-local secrets, scoped action, reconnect reconciliation |
-| Integration, publication, delivery | Current edit-scope claim, reviewed revision and assets, actual release and shown result |
+Each boundary must enforce:
 
-| Event | Obligation and owner | Done when |
-|---|---|---|
-| Assignment | Sender keeps custody until the recipient ACKs scope | Recipient's next real action |
-| Delegation | Head records child, parent, team, task, paths, admission, due | Child's task-bound first action |
-| Worker terminal | Head routes a pinned review, keeps other work moving | Distinct reviewer verdict |
-| Review rejection | Head and executor own a bounded repair | Correction, re-review, resumed work |
-| Acceptance | Integration and successor obligations held separately | Integrated revision and next first action |
-| Stall or failure | Current recovery owner acts or hands off | Cause, action taken, verification, next owner and due |
-| Principal or head absence | Reviewed fenced backup custody | Exclusive epoch, successor ACK, useful continuation |
-| Founder outcome | Root keeps the delivery obligation | Result shown, or verified published URL and summary |
+- Intake, tracker writes, checkouts: Stable IDs and history, compare-and-swap, scope and epoch, valid transitions, on every writer and sync path.
+- Assignment and bus: Notification obligation stored with state; genuine recipient, scope, stable intent, dedup, task-action permission.
+- Launcher admission: One loaded config, store and controller; fresh quota and shared reservations; current ownership; first-action evidence.
+- Review and acceptance: Exact artifact and criteria; a distinct executed review at every CLI and API entry point.
+- Terminal and refill: Task, invocation, owner and generation bound; durable successor or recovery obligation.
+- Due and failover: ACK, action, review and delivery dues; protected readiness; target-side fencing.
+- Source versus runtime: Reviewed artifact plus the actually loaded module, binary, config and store.
+- Cross-computer work: Reviewed HTTPS endpoint and enrollment, device-local secrets, scoped action, reconnect reconciliation.
+- Integration, publication, delivery: Current edit-scope claim, reviewed revision and assets, actual release and shown result.
+
+Each event creates an obligation with an owner:
+
+- Assignment: Sender keeps custody until the recipient ACKs scope. Done when: Recipient's next real action.
+- Delegation: Head records child, parent, team, task, paths, admission, due. Done when: Child's task-bound first action.
+- Worker terminal: Head routes a pinned review, keeps other work moving. Done when: Distinct reviewer verdict.
+- Review rejection: Head and executor own a bounded repair. Done when: Correction, re-review, resumed work.
+- Acceptance: Integration and successor obligations held separately. Done when: Integrated revision and next first action.
+- Stall or failure: Current recovery owner acts or hands off. Done when: Cause, action taken, verification, next owner and due.
+- Principal or head absence: Reviewed fenced backup custody. Done when: Exclusive epoch, successor ACK, useful continuation.
+- Founder outcome: Root keeps the delivery obligation. Done when: Result shown, or verified published URL and summary.
 
 Once a valid scope is accepted, the maintained path permits the work automatically under fresh gates; there is no routine principal approval. Exceptions come only from explicit founder instructions, recorded and bounded. Agents running as the same operating-system user can bypass tool gates through the shell; that boundary is recorded, not hidden. Startup read receipts prove access, not comprehension.
 
@@ -120,15 +124,15 @@ Win35 and Hetzner share one task authority and one pool of provider reservations
 - A task packet holds stable request, task and attempt IDs, acceptance, dependencies, owner and backup with epoch, host eligibility, workspace and pinned base, edit scope, model fit, admission and reservation, reviewer and integration contract, due checkpoints and a durable trigger. Workers claim through the authoritative path; an expired claim never silently returns to ready.
 - Context hand-off: the successor gets the goal and checklist, confirmed facts versus hypotheses, source, artifact and review pointers, failed attempts and repairs, dependencies, intent receipts and the next action with checkpoint, never credentials. The successor verifies its own identity, source, epoch, scope and environment. Model context is rebuilt from the packet; a live conversation does not migrate.
 
-| Failure | Immediate action | Resume when |
-|---|---|---|
-| Missing ACK or first action | Diagnose identity, readiness, route and pending envelopes; get received backup custody | A safe current recipient acts |
-| Worker or reviewer disappears | Preserve artifacts, check lifecycle and epoch; reassign only after fencing | Exclusive scope, fresh gates, new first action |
-| Host disconnect | Keep cursor and outbox; continue only pre-authorized isolated work | Reconnect reconciles intents, effects and epoch before replay |
-| Shared authority unavailable | Read-only last-known tracker, authorized isolated work, local evidence | Authority recovered and reconciled; never a second offline writer |
-| Lost receipt after an effect | Query the receipt or target state | Same idempotency contract or a verified compensating action |
-| Stalled plan, repeated route failure | Compare plan with progress, bound attempts, pick an alternative or decompose | Resumed useful progress |
-| Tracker lost rows or stale checkout | Recover from durable evidence, keep current IDs, find the bypassing writer | Every writer and checkout path preserves obligations |
+Each failure gets an immediate action:
+
+- Missing ACK or first action: Diagnose identity, readiness, route and pending envelopes; get received backup custody. Resume when: A safe current recipient acts.
+- Worker or reviewer disappears: Preserve artifacts, check lifecycle and epoch; reassign only after fencing. Resume when: Exclusive scope, fresh gates, new first action.
+- Host disconnect: Keep cursor and outbox; continue only pre-authorized isolated work. Resume when: Reconnect reconciles intents, effects and epoch before replay.
+- Shared authority unavailable: Read-only last-known tracker, authorized isolated work, local evidence. Resume when: Authority recovered and reconciled; never a second offline writer.
+- Lost receipt after an effect: Query the receipt or target state. Resume when: Same idempotency contract or a verified compensating action.
+- Stalled plan, repeated route failure: Compare plan with progress, bound attempts, pick an alternative or decompose. Resume when: Resumed useful progress.
+- Tracker lost rows or stale checkout: Recover from durable evidence, keep current IDs, find the bypassing writer. Resume when: Every writer and checkout path preserves obligations.
 
 Offline work needs a grant issued in advance: isolated edit scope, permitted local effects, expiry and already reserved capacity. Offline, there is no renewal, no new shared claim, no external effect and no canonical integration. Unknown quota stops new model admission. A resumed old generation can't write after a fenced successor. Two computers don't make a quorum; the design declares its single-authority limit and this safe degraded mode, and buys no new infrastructure.
 
@@ -138,16 +142,16 @@ Trackers are plain public GitHub issues, without a GitHub Project. Each project'
 
 The primary outcome is unique accepted resolved task IDs in a stated window, counted once at the owning head's acceptance event with a bound distinct review. Work awaiting review, labels, failed or cancelled attempts, duplicates and open parents are excluded. Reopens are recorded separately. Historical times that are unknown stay unknown.
 
-| Metric | Definition |
-|---|---|
-| Tasks created | Unique IDs with a real creation event in the window |
-| Open tasks | Unresolved IDs at a stated time, by status |
-| Resolved tasks | Unique accepted IDs in the window, with a short per-project overview |
-| Active agents | Deduplicated useful executors with recent first-tool, progress or terminal evidence; heads, services, controllers, queued and ended excluded; unknown coverage keeps the count unknown, not zero |
-| Ready reserve | Accepted executable ready contracts, against the target of 50 active |
-| Commits | Unique SHAs per repository in hourly Berlin buckets and rolling 24 hours, committer timestamp, merges separate, mirrors counted once |
-| Transitions | Age of created, executing, review, accepted, delivered and reopened tasks; recovery latency; founder reminders and manual rescues |
-| Provider usage | Measured tokens and cost only; quota percentages are not usage |
+Metric definitions:
+
+- Tasks created: Unique IDs with a real creation event in the window.
+- Open tasks: Unresolved IDs at a stated time, by status.
+- Resolved tasks: Unique accepted IDs in the window, with a short per-project overview.
+- Active agents: Deduplicated useful executors with recent first-tool, progress or terminal evidence; heads, services, controllers, queued and ended excluded; unknown coverage keeps the count unknown, not zero.
+- Ready reserve: Accepted executable ready contracts, against the target of 50 active.
+- Commits: Unique SHAs per repository in hourly Berlin buckets and rolling 24 hours, committer timestamp, merges separate, mirrors counted once.
+- Transitions: Age of created, executing, review, accepted, delivered and reopened tasks; recovery latency; founder reminders and manual rescues.
+- Provider usage: Measured tokens and cost only; quota percentages are not usage.
 
 Windows are rolling 24 hours, calendar day with time zone, and 30 minutes, each with start, end and data time. The same contract feeds the dashboard and the public site. Public views show sanitized summaries; raw transcripts, credentials and private identifiers stay private.
 
