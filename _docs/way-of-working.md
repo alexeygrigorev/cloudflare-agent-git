@@ -51,7 +51,7 @@ When two rules conflict, the newer human message wins.
 
 - The principal and heads keep long-lived context; they start workers that finish a task and exit. This is the main working pattern. [human-context-heads-task-workers-20261005]
 - The principal watches progress and the big picture and coordinates heads; heads do the lower-level work through their teams. [human-principal-big-picture-report-20261005]
-- The principal does not do the work: simple ad hoc requests go to a subagent, substantial work goes to a head. [human-principal-dispatch-agentbus-20261005]
+- The principal does not do the work: simple ad hoc requests go to a subagent, substantial work goes to a head, which runs as many zcodex workers as the work allows. This is the playbook for all substantial work. [human-principal-dispatch-agentbus-20261005]
 - Principals do not review code. Heads delegate review to separate reviewer agents, so the principal never becomes the bottleneck. [human-principals-no-code-review-20261005]
 - Heads are orchestrators for their direction: they split work into independent tasks and run many workers in parallel. [m32] [m-20261003-dictation]
 - Every product has a head running in a normal interactive session; workers may run headless. [m21]
@@ -67,6 +67,7 @@ When two rules conflict, the newer human message wins.
 
 - The project runs with a very high degree of autonomy. The founder's involvement should go down over time, and fewer messages from him means we are doing better. [human-high-autonomy-default-20261005] [human-autonomous-department-20261005]
 - Agents work 24/7 and stay busy. When a turn ends, the agent arranges its next action and whatever will wake it again. [human-better-git-progress-and-utilization-20261005] [m2] [m31]
+- While working, agents keep checking that their approach is still viable. [m2]
 - No agent waits to be checked. Each one drives its next useful step itself. [m18]
 - An idle principal or head with ready work is a failure to fix at once, not a state to report. [human-idle-heads-quota-rebalance-20261005] [human-principal-still-idle-20261005]
 - The target is 50 agents actively working on different tasks at the same time. Started-but-idle agents do not count; subagents that really run do. [human-fifty-distinct-active-task-agents-20261005] [human-fifty-active-not-idle-20261005] [human-ram-override-twentyfive-subagents-20261005]
@@ -92,12 +93,14 @@ When two rules conflict, the newer human message wins.
 - A blocker report alone is not a finished task. Agents resolve blockers themselves, every time, without waiting for the founder. [human-proactive-blocker-resolution-20261005]
 - Report the problem, the steps already taken, the result and the next step: "we saw X and fixed it like this". [human-fifty-fix-and-run-outcomes-20261005] [human-coordinator-handoff-and-reports-20261006] [human-scale50-solution-followthrough-20261006]
 - If a tool such as aplexer gets in the way, fix or improve the tool instead of reporting that it does not work. [m13] [m17] [human-cross-computer-product-20261004]
+- Anything an agent does around aplexer by hand again and again should become an aplexer feature. [rescued/20261006-repeated-aplexer-work-should-be-a-feature]
 - While one task is blocked, the owner keeps other independent work moving. [agent-derived]
 - Never report an unresolved problem as fixed, and never invent progress to meet a deadline. [agent-derived]
 
 ### Recovery and failover
 
 - No single point of failure: the laptop, root, principal, each head, each provider and each service has a named recovery path. [human-autonomous-failure-recovery-20261005] [human-self-organization-20261004] [human-role-failover-protocol-20261006]
+- Workers keep running when the head or principal that started them stops. [rescued/20261003-stopped-principal-sessions-died]
 - Periodic checks and standups run on the hosts, not in one desktop chat, and keep running when the desktop is off. [human-self-organization-20261004] [human-role-failover-protocol-20261006] [human-hetzner-autonomy-deadline-1830-20261005]
 - Any suitable host agent can act as coordinator. The coordinator's job is periodic checks and standup checks. [human-role-failover-protocol-20261006]
 - Root, on Win35, runs a check every 30 minutes and a standup check every day. The checks run from the host root, not from a desktop chat, and every check ends in an action. [human-scale50-solution-followthrough-20261006] [human-win35-new-root-instructions-20261007] [m1]
@@ -139,6 +142,7 @@ When two rules conflict, the newer human message wins.
 - Each project has its own tracker, owned by its team. The principal owns the high-level tasks, and those are issues in this repository. [20261007-07-per-project-trackers]
 - The trackers are `alexeygrigorev/agent-branches`, `agent-dashboard`, `agent-quota-launcher`, `agent-coordination`, `PocketShell-io/agent-bus`, and `alexeygrigorev/cloudflare-agent-git` for the principal's work. [agent-derived]
 - The tracker must be usable, visible to the founder and always available. Without one we forget things. [human-usable-task-tracker-20261005] [human-visible-task-tracker-link-20261005] [human-headless-permissions-task-tracker-intake-20261005] [human-tracker-availability-agents-commits-20261007]
+- Now and then, go back through all of the founder's messages and point out what we are not doing yet. [human-headless-permissions-task-tracker-intake-20261005]
 - Every founder request becomes an issue, so nothing he asked for gets lost. [human-tracker-availability-agents-commits-20261007]
 - A principal dependency issue links to the product issue; the same task is never copied into two trackers. [agent-derived]
 - An issue closes only when its accepted, reviewed outcome exists. Work waiting for review stays open, and a failed acceptance reopens the issue. [agent-derived]
@@ -185,6 +189,7 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 
 - Run `quse PROVIDER --json` fresh before each launch and while supervising. An unknown or error reading means no launch. [m8] [agent-derived]
 - Use expiring quota first: when a provider has a lot left and resets soon, use it as much as possible; when it is low, switch to another. [human-delivery-reset-20261004] [human-better-git-progress-and-utilization-20261005]
+- The launcher records usage statistics so we can see how usage changes and make its choices smarter, and it is built to be useful outside this project. [human-delivery-reset-20261004]
 - Prefer z.ai (ZCode via zcodex), OpenCode Space Bunny, OpenCode Muse Spark 1.3, Gemini through Antigravity, and Grok while its quota lasts, and use them heavily. [m8] [m20] [m34] [m-20261003-1512] [human-close-supervision-fifty-mixed-providers-20261005]
 - Use Claude sparingly. Codex GPT-6 Luna at max effort and Claude Sonnet 5.5 are allowed executors. Start no new Codex agent once any Codex window shows 15% or less remaining. [m8] [m9] [rescued/20261005-expanded-executor-pool]
 - Start no new Grok agent when any window shows 5% or less remaining. A Grok principal or head hands over to a healthy provider before it gets there. [rescued/20261005-grok-quota-handover] An unknown reading counts as too low. [agent-derived]
@@ -222,6 +227,7 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 - `AGENTS.md` stays at the root: a short pointer to this document plus the start-here steps. `CLAUDE.md` is gone. [20261007-01-docs-pull-agents-md-only] `README.md` stays at the root too. [relayed: founder decision passed on by the orchestrator on 7 October; no message file]
 - The founder journal in `_docs/founder-journal/` is the one place for the founder's messages and for failures. Every message is saved verbatim, one file per message, the same day it arrives, and never edited afterwards. [20261007-11-founder-journal-for-messages] [20261007-01-docs-pull-agents-md-only] [m4]
 - `failures.md` in the founder journal records process failures and their lessons in plain words, newest first. [20261007-11-founder-journal-for-messages]
+- Decisions, plans and the ideas agents researched at the founder's request are kept in one place, so we can refer back to them. [rescued/20261007-implemented-and-one-place-for-continuity] [rescued/20261007-document-everything-and-report-checklist] Decisions go into this document and ideas into the research file. [agent-derived]
 - All research lives in one file, `_docs/research.md`; a new finding edits a section and never adds a file. [20261007-09-consolidated-research-separate-incidents]
 - Incident stories live on the separate `history` branch, out of the working tree and out of agents' context. [20261007-09-consolidated-research-separate-incidents]
 - No dated reports in the tree. Verdicts, receipts and incidents are issue comments. Dated files are allowed only for founder messages, published daily pages and their assets, and the tracker migration map in `_docs/task-tracker/`. [agent-derived] (The map exception settles a clash between two agent rules; the founder has not ruled on it.)
@@ -246,7 +252,8 @@ The full rules for the daily article are in the `daily-writeup` skill (`.claude/
 - The daily standup is at 09:00 Berlin and the article at 09:30, covering the previous 24 hours. [m2] [agent-derived]
 - A report goes out every day. When little happened, say so plainly and briefly. [m27] [m2]
 - Each daily report covers every product separately: what was done, what failed, and what is next, with the work itself described, not just numbers. [human-better-git-progress-and-utilization-20261005] [human-delivery-reset-20261004]
-- Include metrics from the dashboard: agents run, tokens used, features done, broken down by hour per project. Measured numbers only; unknown stays unknown. [human-delivery-reset-20261004] [human-better-git-progress-and-utilization-20261005]
+- Every open founder request shows up in the report with its current state, so he can see a trace of each one. [human-better-git-progress-and-utilization-20261005]
+- Include metrics from the dashboard: agents run, tokens used, features done, broken down by hour per project and per team. Measured numbers only; unknown stays unknown. [human-delivery-reset-20261004] [m31]
 - Include a task tracker summary: tasks created, open and closed, plus a short overview of the closed tasks in each project. [human-task-tracker-report-summary-20261005]
 - Every daily report includes progress on the continuation runtime, checked against a literal checklist that the writing agent ticks off. [rescued/20261007-document-everything-and-report-checklist]
 - Statistics sit inside the report, never in its title. [agent-derived]
