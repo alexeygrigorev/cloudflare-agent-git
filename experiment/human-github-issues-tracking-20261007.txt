@@ -1,0 +1,5 @@
+Human instruction, 7 October 2026, verbatim:
+
+I also asked the principal to use github for tracking issues
+
+Scope: reports a request the human made directly to the principal; the original wording to the principal is not in this session. GitHub issues are the tracker for tasks and issues.
