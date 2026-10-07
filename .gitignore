@@ -22,3 +22,6 @@ live/work/
 # launcher stream output at repo root (live under .local/telemetry/)
 /*-telemetry.jsonl
 /*.jsonl
+
+# generated site output (built by CI)
+/docs/
