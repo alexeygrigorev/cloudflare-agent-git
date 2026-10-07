@@ -39,20 +39,12 @@ There are five heads, one for each product. Each is one aplexer session whose ta
 The prompt for starting a head is the same. 
 
 ```
-You are <tag>, the head of <product>. Read your role file _docs/team/04-head.md and follow them. Your repo is <folder> (GitHub <repo>) and your tracker is the issues of that repo.
+You are <tag>, the head of <product>. Read your role file ~/git/cloudflare-agent-git/_docs/team/04-head.md and follow it. Your repo is <folder> (GitHub <repo>) and your tracker is the issues of that repo.
 
 Start by running `a whoami`, `a context` and `a message inbox`. Then read the open issues, pick the next ready task and start a worker for it through the Agent Quota Launcher. Do not wait to be told.
 ```
 
-
-
-What each head works toward. Send it to the head in a separate message after it starts:
-
-- branches-head: Make Agent Branches solve the disk pain of worktrees that copy the whole workspace, give the founder a CLI he can demo including a `branches sync git` style command, keep it from being Rust-focused, keep Cloudflare behind a facade, and use the tool for our own work.
-- dashboard-head: Make Agent Dashboard show measured numbers only, which are agents run, tokens used, features done and tasks resolved, by hour, per project and per team, and publish the history as readable charts on the public site.
-- quota-launcher-head: Make the Agent Quota Launcher start every worker and reviewer, check quota before each launch, route work to a provider that has quota left, and record usage statistics so its choices get smarter and it is useful outside this project.
-- coordination-head: Make Agent Coordination let agents on Hetzner and Win35 talk directly and securely over the agents bus, share one pool of provider quota, and recover from a network split without SSH.
-- bus-head: Make Agent Bus the message bus that agents use on one computer or across several, with claims and near-zero messaging cost, separate from aplexer.
+What each project works toward is written in `AGENTS.md` in the project's own folder. Start each head in its project folder so it reads that file first.
 
 ## Delegating work
 
