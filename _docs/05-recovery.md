@@ -14,7 +14,7 @@ This says who watches whom and who restarts whom, so that nothing depends on a s
 
 ## How a restart works
 
-- Before restarting anyone, send it a sync message and inspect its state. An agent that answers is never replaced.
+- Restarts go through one script, `scripts/recover-agent <tag>`. Root runs it, and the supervisor runs the same script when it detects inactivity or no response. It sends a sync message, inspects the agent's state, nudges an idle agent, and restarts a silent one through the launcher with `/goal`. An agent that answers is never replaced.
 - Whoever starts a Claude or Codex agent sends it `/goal` as a direct session message.
 - A replacement takes over only after proof the old agent is gone or an acknowledged handover. It takes exclusive ownership so the old agent cannot keep writing.
 - A replacement rebuilds its context from the tracker, the agents bus and the founder journal, not from memory.
