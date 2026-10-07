@@ -81,3 +81,9 @@ A ghost suggestion is not entered input, but visible text alone does not establi
 Keep unknown, busy, menu and actual-draft states protected. Before automated guardian adoption, the responsible head must obtain distinct negative-case review covering real drafts, empty buffers, ghost suggestions, busy tools, stale state and differing provider behavior. Use genuine current pane/harness evidence; never infer a writable boundary from an old screenshot or a label.
 
 The earlier migration-checkpoint goal-unverified notes above are historical observations. Subsequent actual principal goal creation and a native Claude goal-active indicator are recorded in the [coverage issue](https://github.com/alexeygrigorev/cloudflare-agent-git/issues/29). Those current-session positives do not prove async wake, guardian survival or autonomous fresh-principal recovery.
+
+## Legacy task JSON retirement
+
+The human requested deletion after migration on 7 October 2026. A fresh live check at 12:16:53 UTC verified all 291 legacy issue mappings and all 91 backlog references. `coordination/DELIVERY-BACKLOG.json` is retired from main; the immutable migration snapshot and Git history retain its provenance. The legacy manual backlog validator requires an archived three-ledger snapshot and is no longer a current-tracker validation command.
+
+`coordination/TASKS.json` temporarily remains a compatibility input, not the authoritative task tracker: the installed active metrics collector and supervision reader still consume it. Its deletion follows the actual loaded reader cutover in [issue #48](https://github.com/alexeygrigorev/cloudflare-agent-git/issues/48#issuecomment-6037726326). Do not delete it into an empty-metrics fallback. TEAM registry, private state and configuration are outside this task-ledger cleanup. This paragraph supersedes the earlier blanket snapshot-retention wording for the retired backlog; it does not claim runtime cutover or owner acceptance.
