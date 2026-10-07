@@ -113,15 +113,42 @@ What it means: agents reason correctly about a contract when told it matters. An
 
 ## 4. Demand and competitor map
 
-(pending)
+**Pain is documented, prevalence is not.** The evidence ledger indexes first-hand reports by theme: 70 Hacker News items, 52 maintainer items, 65 workflow and competitor items, 29 Codex items, among others. It warns that inclusion "does not establish prevalence" (`research/evidence-ledger.md`). The strongest themes were integrating parallel agent work (structural, but rare: see 3.1), review burden (most volume, most crowded remedies) and worktree disk use (first-hand founder pain, measured in 3.4) (`research/evidence-ledger.md`).
+
+| Our idea | Who already does it | What is left |
+|---|---|---|
+| Warn agents early (A01) | Collide ships live, agent-consumed collision warnings over MCP (`declare_intent`, `check_collisions`). Its published numbers are vendor token metrics; nobody reproduced anything (`research/space-bunny/competitor-wip-verification-round2.md`) | Collide shows no evidence of running a combined test on two unfinished trees. "Warn early" alone is no longer novel (same file) |
+| Catch combined breakage (A01) | GitHub PR merge refs, merge queues, GitLab merge trains and Bors run the same merge-then-test oracle before landing (`research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md`) | Only the timing: a push-time warning can save a long agent run. Pairwise checks grow quadratically, 190 pairs at 20 agents (same file) |
+| Pre-code intent claims (A02) | Foremerge: local-first, one SQLite store, self-declared scopes that can miss each other; no benchmark of its benefit (`research/antigravity/demand/foremerge-firsthand-verification.md`) | Multi-machine coordination is out of its scope (same file) |
+| Review cards (A06) | CodeRabbit layered review and stale-snapshot refusal, Copilot review, Graphite (`research/evidence-ledger.md` T3, `research/grok/a06-adoption-decision.md`) | Recording what a review does not guarantee (`research/grok/a06-adoption-decision.md`) |
+| Storage (A16) | pnpm shared store, ArtifactFS lazy hydration (`research/evidence-ledger.md` T7) | Remote workspaces, unmeasured (`research/shortlist-6.md`) |
+| Best-of-N (A05), handoff (A10) | Cursor best-of-n, Agent HQ; Entire checkpoint refs and resume (`research/claude/workflows-competitors.md`) | Merging attempts back, which best-of-n "does not" do (same file) |
+| Exactly-once side effects (A09) | At least 7 guard products launched Feb to Oct 2026, plus idempotency keys and durable execution; none is keyed to Git refs (`research/evidence-ledger.md` T11) | A narrow gap at Git-ref publication (same file) |
+
+**Demand limits, from Antigravity's market reads.** Production agents mostly run in disposable containers and hand back a patch, with no Git credentials inside the sandbox; locked-down egress and token risk confine a remote agent-branch server to a narrow niche (`research/antigravity/demand/container-and-patch-workflows.md`). These are desk analyses: buyer willingness to pay "remains unproven" (`research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md`). A hosted orchestrator, Terragon, shut down on 2026-02-09 (`research/claude/workflows-competitors.md`).
 
 ## 5. Architecture invariants
 
-(pending)
+These held across every candidate and carried into the product (`research/shortlist-6.md`, "Shared implementation", unless noted):
+
+1. One Artifacts fork per task. An agent's token writes only its own fork; a token's time limit is not path or ref enforcement.
+2. One canonical publisher. It rechecks the exact head, uses non-force updates and rejects stale receipts.
+3. Platform events arrive after the push, may repeat and may arrive out of order. Deduplicate them and treat them as observations, never as a pre-push guard (also `research/evidence-ledger.md` T9).
+4. Merges and tests run in an external runner, because the Artifacts binding has no merge, diff or ref-write API (`research/claude/workflows-competitors.md`).
+5. Changing the baseline tests needs independent approval. A candidate agent never approves its own tests.
+6. A receipt names base, candidate, merged and deployed SHAs, tree, policy, environment and runner. It attests that a run happened, not that the code is correct.
+7. An unchecked or inconclusive state is never shown as safe (`SUBMISSION.md`); missing data fails closed to "unknown" (`research/antigravity/reviews/REV-L3-ATTESTATION-CONTRACT.md`).
+8. Mutations are idempotent: stable operation ids, check before acting, verify outcomes rather than trusting reported output (`research/evidence-ledger.md` T11).
+
+Platform limits to design around: 1 GB per repo, 32 MB per blob, push over protocol v1 only (`research/evidence-ledger.md` T9).
 
 ## 6. Adoption and dogfood findings
 
-(pending)
+- **Single agent: use plain Git.** Same task, same resulting tree hash, 16/16 tests in both: ordinary worktree 0.200 s over 7 commands, Agent Branches 1.143 s over 15 commands (5.7x). Verdict: DECLINE for single-actor work (`research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md`).
+- **Concurrent refactor (scripted patches):** a baseline with only post-merge CI let 1 defect reach `main`; the radar flagged it before landing in 0.539 s. Total wall time 1.84 s vs 6.41 s, and about 155 MB of extra daemons (`research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md`). Any standard pre-merge check would have caught the same failure (`research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md`).
+- **"Adoption confirmed" was an overclaim.** The first real fork run was relabelled "workflow transport confirmed": the work was two doc lines in separate files, and runner results are stored as claims (`research/antigravity/adoption/REAL-FORK-ADOPTION-REPORT.md`).
+- **Real use found real gaps:** a newcomer requested changes to a `push_batch` patch because a mid-batch failure loses the accepted prefix (`research/antigravity/dogfood/NEWCOMER-ADOPTION-DECISION-7DE6836.md`); the packaged SDK was CONDITIONAL, missing a per-task token on the CLI (`research/antigravity/dogfood/REPORT-SDK-PACKAGED-FIRSTUSE.md`); Node needs about 1.46 GB of virtual address space, so limit memory by RSS or cgroup, not `ulimit -v` (`research/antigravity/adoption/REPORT-REALNODE-SIDECAR-PILOT.md`).
+- **Scripted personas are not users.** Some dogfood reports say so explicitly (`research/antigravity/dogfood/CONSUMER-NEWCOMER-DECISION-OBSERVATION.md`).
 
 ## 7. Lessons
 
