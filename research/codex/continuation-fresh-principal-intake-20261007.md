@@ -36,3 +36,31 @@ The configured old recovery-owner tag is absent in a current read-only session-f
 Use the existing supervisor/failover/election implementation and protected owners; integrate/repair its missing execution rather than building a second scheduler. Required next owner event is Ant's named external launcher implementer/reviewer and a pinned repair/loaded recovery trial. Current source ownership is retained; new implementation task IDs and checkpoints require genuine head receipts, not invented promises in this intake.
 
 See [updated requirement register](../../coordination/continuation-runtime/REQUIREMENTS.md), [head task loop](../../coordination/continuation-runtime/HEAD-TASK-LOOP.md) and [OOM recovery evidence](continuation-oom-recovery-c3123-20261007.md). The root-owned comprehensive design remains authoritative; this note clarifies the latest human acceptance contract.
+
+## Latest implementation appointment, goal omission and async wake requirement
+
+Direct-chat supplied by principal,7October2026; literal spellings retained and exact human wall timestamps unavailable:
+
+> so I need you to appoint a head that will be reponsible for implementing it. let's pick codex for that task
+
+> the claude agent (48718d76-be9e-43cb-aeee-a3d14358ab4e) that was supposed to start 5 tasks also was waiting for the ping. the current system is seriously broken
+
+> I asked you to start claude with /goal but you dind’t do it -why?
+
+> or maube I’m looking at the wrong agent?
+
+> Ant replied but the reply was asycn and it didn’t wake up the agent. so we need to have this in design too
+
+> the docs agent is working with docs
+
+> codex and claude can use /goal, others might not so we need a way to supervise them
+
+Implementation head appointment is executed: fresh normal interactive Codex head9ff98922-1279-4022-a0f1-00780eb60394/tagcodex-continuation-runtime-head-20261007, observed GPT6.1Sol/medium UI. Existing launch-codex.sh quota guard admitted it with weekly94% and secondaryreadingABSENT recorded; this is a head, not a claim of new executor availability. Genuine own startup/ACK8a-6e47 and implementation contract8b-dd9a08:47:30 are received. Ant retains supervision/service source custody until a genuine handoff; no duplicate principal or product implementation worker is inferred.
+
+Head requests8c-69c9/8e-21f7 cover async dependency reply→wake→ACK/useful action, safe busy/draft deferral, and fresh successor after missed semantic deadline. Principals monitor; documentation helper remains administrative, not product implementer/reviewer. All execution/review tasks still use the maintained external launcher.
+
+Principal acknowledged startup omitted Claude /goal. Current Claude487 (tagclaude) holds a protected human draft; do not submit it or restart its productive work. Goal activation remains unverified and a safe head-owned correction is pending. Existing Ant reply07:34 persisted in inbox but did not prove wake. In contrast, a background monitor completion08:47:30.970 triggered actual Claude model turn08:47:34.034 (transcript69/70): positive background-shell notification, not proof that Ant's asynchronous message wakes the head.
+
+A real maintained taskcch-c2786-restore-impl-02/Gemini session285ce222 is head-reported; partial firstaction/report/owned temporary script is not terminal acceptance. Missing model_requirements/wrongtmpdir failures remain preserved. Five actual independently bound task IDs are not yet verified.
+
+[Official Claude Code /goal documentation](https://code.claude.com/docs/en/goal) describes session-scoped continuation, restored active goals on resume, error-related pause/clear behavior and capped idle check-ins. Background shell completion can start a turn. These mechanisms depend on the session and can pause; they are not a head-death-surviving guardian. Native goals should be enabled and verified where actually supported; the human's Codex/Claude goal statement does not independently verify every installed provider/version. An independently surviving existing guardian must supervise every provider, including goal-paused/error/dead-head states, with safe original-message delivery and fenced fresh-principal recovery. No new competing service is authorized by this requirement.

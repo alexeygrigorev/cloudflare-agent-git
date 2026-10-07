@@ -441,3 +441,25 @@ Direct-chat supplied by the genuine principal; precise human utterance wall time
 **State:** requested clarification/documented; executed autonomous runtime acceptance OPEN. Existing Ant supervision source owner implements through external maintained-launcher tasks and distinct review; principals coordinate. A stale recovery tag, candidate event, source test or repeated live-head timer is not a verified fresh principal start.
 
 **Acceptance:** monitored three-minute wake/original safe message and accepted semantic deadline; then fresh-provider/resource admission, durable whole-role intake/cursors/history/private drafts, exclusive principal epoch fencing, actual new actor identity/ACK/useful coordination, protected project leases and two useful absent-principal/head cycles. Busy/draft/currently responsive/duplicate/stale-epoch negatives must pass; no forced input or silent source transfer. [Detailed intake and observed missed runtime](../../research/codex/continuation-fresh-principal-intake-20261007.md). Include this requirement and progress/failed gates in each daily Continuation Runtime section. No TASKS status or owner acceptance is created by this documentation entry.
+
+## CR-R030 — appointed implementation head, native goals and async guardian
+
+Latest literal human instructions, direct-chat supplied by principal7October2026; exact utterance timestamps unknown:
+
+> so I need you to appoint a head that will be reponsible for implementing it. let's pick codex for that task
+
+> the claude agent (48718d76-be9e-43cb-aeee-a3d14358ab4e) that was supposed to start 5 tasks also was waiting for the ping. the current system is seriously broken
+
+> I asked you to start claude with /goal but you dind’t do it -why?
+
+> or maube I’m looking at the wrong agent?
+
+> Ant replied but the reply was asycn and it didn’t wake up the agent. so we need to have this in design too
+
+> the docs agent is working with docs
+
+> codex and claude can use /goal, others might not so we need a way to supervise them
+
+**Owner/status:** normal interactive Codex implementation head is started and genuine scope/startup ACK received; actual product implementation executor remains unverified. Principal coordinates, docs helper only documents. Ant service/source custody requires genuine handoff. External maintained-launcher implementer/distinct reviewer repair loop remains mandatory.
+
+**Acceptance:** native goal where verified supported plus independently surviving provider-neutral guardian for ALL providers; async dependency reply must produce actual correct head wake/readACK/useful tool, with busy/draft deferral, missed-deadline recovery and exclusive fresh-principal epoch. Source tests or ordinary background shell completion do not prove async inbox wake or head-death recovery. Claude startup /goal was omitted, current activation unverified; preserve productive worker/human draft. Five named tasks and accepted outcomes are not invented. [Exact evidence/intake](../../research/codex/continuation-fresh-principal-intake-20261007.md). [Official Claude /goal limits](https://code.claude.com/docs/en/goal) support keeping the surviving guardian; installed Codex/provider goal support needs its own evidence. Every daily Continuation Runtime section reports current installation/acceptance and pending proof.
