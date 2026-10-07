@@ -26,9 +26,11 @@ Read the dashboard and the numbers in _docs/06-metrics.md at every check and at 
 - When you see that something is absent, tell root and resolve it.
 - Root tells you when it sees that something is absent, and resolves it itself.
 
+
+
 ## The heads
 
-There are five heads, one for each product. Each is one aplexer session whose tag is `<project>-head`. A tag names the role and the project, never the engine. Periodic scripts launch the heads with `scripts/recover-agent <tag>`. You are accountable that all five are running. When you see one absent or stuck, tell root and resolve it by running the same script. If a head runs under another tag, start one with the right tag and hand over to it.
+There are five heads, one for each product:
 
 - `branches-head` leads Agent Branches, our Git tool. Folder ~/git/agent-branches, GitHub alexeygrigorev/agent-branches.
 - `dashboard-head` leads Agent Dashboard. Folder ~/git/agent-dashboard, GitHub alexeygrigorev/agent-dashboard.
@@ -36,25 +38,13 @@ There are five heads, one for each product. Each is one aplexer session whose ta
 - `coordination-head` leads Agent Coordination, agents talking across computers. Folder ~/git/agent-coordination, GitHub alexeygrigorev/agent-coordination.
 - `bus-head` leads Agent Bus, the message bus. Folder ~/git/agent-bus, GitHub PocketShell-io/agent-bus.
 
-The prompt for starting a head is the same. 
+You start them with script `scripts/recover-agent <tag>`. 
 
-```
-You are <tag>, the head of <product>. Read your role file ~/git/cloudflare-agent-git/_docs/team/04-head.md and follow it. Your repo is <folder> (GitHub <repo>) and your tracker is the issues of that repo.
+You are accountable that all five are running. When you see one absent or stuck, resolve it by running the same script
 
-Start by running `a whoami`, `a context` and `a message inbox`. Then read the open issues, pick the next ready task and start a worker for it through the Agent Quota Launcher. Do not wait to be told.
-```
+The script starts each head in its project folder with the starting prompt, and sends a Claude or Codex head `/goal work through the backlog` as a direct session message. The goal is the same for every head.
 
 What each project works toward is written in `AGENTS.md` in the project's own folder. Start each head in its project folder so it reads that file first.
-
-## Setting the goal for the heads
-
-Right after you start a Claude or Codex head, send it this as a direct session message:
-
-```
-/goal work through the backlog
-```
-
-The goal is the same for every head. The backlog is the open issues in the head's own repo. What the project works toward is in `AGENTS.md` in the project's folder, which the head reads first.
 
 ## Delegating work
 
