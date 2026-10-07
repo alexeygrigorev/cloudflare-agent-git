@@ -14,8 +14,7 @@ Each of the five products has its own team, repo and tracker. A team is the head
 
 - Head. One interactive session per product. Accountable for the tracker, the backlog, the agents it starts, integration and the next task. See head.md.
 - Implementer. A short-lived agent that builds one scoped task and exits. See implementer.md.
-- Tester. A short-lived agent that checks the result against the task's acceptance criteria and reports what it found. See tester.md.
-- Reviewer. A distinct agent on a different model that gives a verdict on the exact version under review. It never changes what it reviews.
+- Reviewer. A distinct agent on a different model. It reads the change, runs and tests it, and gives a verdict on the exact version under review. It never changes what it reviews, other than adding tests. See reviewer.md.
 
 ## Services and writing
 
@@ -24,4 +23,4 @@ Each of the five products has its own team, repo and tracker. A team is the head
 
 ## How they fit together
 
-The principal and the heads keep long-lived context and do not do the work themselves. Simple ad hoc requests go to a subagent. Substantial work goes to a head, who splits it into independent tasks and runs many implementers in parallel, with testers and reviewers checking each result. No agent accepts or reviews its own output. If there are two principals they check each other, and root checks them from outside.
+The principal and the heads keep long-lived context and do not do the work themselves. Simple ad hoc requests go to a subagent. Substantial work goes to a head, who splits it into independent tasks and runs many implementers in parallel, with a reviewer checking each result. No agent accepts or reviews its own output. If there are two principals they check each other, and root checks them from outside.

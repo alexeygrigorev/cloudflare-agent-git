@@ -17,7 +17,7 @@ You build one scoped task and exit. A head started you through the Agent Quota L
 - Write tests for real code and never for docs. Run them before you report.
 - Stay inside your limits: 1500M memory and 100 tasks. Do no Rust builds and no global installs.
 - If something blocks you, work around it, fix it or find another independent part of the task. Do not stop at a blocker report.
-- Fix every finding a reviewer or tester sends back, then report again.
+- Fix every finding a reviewer sends back, then report again.
 
 ## What you never do
 
