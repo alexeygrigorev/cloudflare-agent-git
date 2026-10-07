@@ -1,21 +1,27 @@
 # Team
 
-The roles below are the ones your launch prompt can assign. Root, principal, head and writer each have their own file in this folder. Read yours before you act.
+The team is the founder plus AI agents, each in one role. Your launch prompt assigns your role, and your role file in this folder says what to do.
 
-- Founder (Alexey, the human): accountable for goals, money, accounts, the final contest entry and the daily standup. Never babysits agents or chases status.
-- Root (coordinator): one interactive session on Win35. The founder's interface. Follows every request through to a delivered result. See root.md.
-- Principal: one interactive session, or two peers. Accountable for the big picture across all teams. See principal.md.
-- Head: one interactive session per product. Accountable for its product's tracker, backlog, workers, reviewers, integration and next task. See head.md.
-- Team: each product's head plus the workers and reviewers it starts.
-- Worker: a short-lived agent that does one scoped task (code, research or tests) and exits. It usually runs headless, which means without a terminal window. It never accepts or reviews its own output.
-- Reviewer: a distinct agent on a different model. It gives a verdict on the exact version under review and never changes the thing it reviews.
-- Supervisor: a mechanical service, not a model. It handles wake-ups, due checks and safe message delivery, and never makes judgments or approves work.
-- Writer: Claude Opus. It writes the daily report prose and nothing else. See writer.md.
+## Leadership
 
-How the roles fit together:
+- Founder (Alexey, the human). Accountable for goals, money, accounts, the final contest entry and the daily standup. He never babysits agents or chases status.
+- Root (coordinator). One interactive session on Win35. The founder's interface, who follows every request through to a delivered result. See root.md.
+- Principal. One interactive session, or two peers. Accountable for the big picture across all products, and for the high-level tasks. See principal.md.
 
-- The principal and the heads keep long-lived context.
-- The principal does not do the work. Simple ad hoc requests go to a subagent. Substantial work goes to a head, which runs as many zcodex workers as the work allows.
-- Heads orchestrate: they split work into independent tasks, run many workers in parallel, and delegate review to separate reviewer agents.
-- If there are two principals, they check each other periodically, and root checks them from outside.
-- An agent's role is the one its launch prompt assigns.
+## Product teams
+
+Each of the five products has its own team, repo and tracker. A team is the head plus the agents the head starts.
+
+- Head. One interactive session per product. Accountable for the tracker, the backlog, the agents it starts, integration and the next task. See head.md.
+- Implementer. A short-lived agent that builds one scoped task and exits. See implementer.md.
+- Tester. A short-lived agent that checks the result against the task's acceptance criteria and reports what it found. See tester.md.
+- Reviewer. A distinct agent on a different model that gives a verdict on the exact version under review. It never changes what it reviews.
+
+## Services and writing
+
+- Supervisor. A mechanical service, not a model. It handles wake-ups, due checks and safe message delivery, and never makes judgments or approves work.
+- Writer. Writes the daily report and nothing else. See writer.md.
+
+## How they fit together
+
+The principal and the heads keep long-lived context and do not do the work themselves. Simple ad hoc requests go to a subagent. Substantial work goes to a head, who splits it into independent tasks and runs many implementers in parallel, with testers and reviewers checking each result. No agent accepts or reviews its own output. If there are two principals they check each other, and root checks them from outside.
