@@ -160,6 +160,7 @@ def archive_history(store,dayfile,max_active_bytes=192*1024*1024,floor_active_by
             record={'sha256':sha}
         archives.append({'file':p.name,'bytes':st.st_size,'mtime_ns':st.st_mtime_ns,**record})
     manifest={'archives':archives,'total_bytes':sum(r['bytes'] for r in archives),'policy':'All samples retained; original and decompressed archive SHA256+length must match before replacing owned original. Pending failed archives excluded from export. 256MiB cap preserves existing data.'}
+    store.mkdir(parents=True, exist_ok=True)
     temp=store/'retention-manifest.tmp';temp.write_text(json.dumps(manifest));temp.chmod(0o600);temp.replace(store/'retention-manifest.json');return manifest
 
 def cli_main(argv=None) -> int:
