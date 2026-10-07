@@ -15,11 +15,6 @@ import uiSrc from "../ui/ui.js?raw";
 import indexHtml from "../ui/index.html?raw";
 import taskHtml from "../ui/task.html?raw";
 
-declare module "*?raw" {
-  const src: string;
-  export default src;
-}
-
 const require = createRequire(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Auth: any = require("../ui/auth.js");
