@@ -16,7 +16,7 @@ The principal owns the follow-through: if a request has no owner, an owner stops
 
 There is no single point of failure: the laptop, root, the principal, each head, each provider and each service has a named recovery path, and workers keep running when the head or principal that started them stops. Root runs a check every 30 minutes and a standup check every day, on the hosts and never in a desktop chat, so they keep running when the desktop is off. When an agent stops responding, peers send a sync message and inspect its state before deciding it is gone. Something must wake an idle agent, including on a late reply from another agent, and agents that can go offline from usage limits or downtime need a backup.
 
-Who watches and restarts whom is in `_docs/05-recovery.md`. Root watches the principal and the heads, the principal starts the heads, and a mechanical supervisor restarts root or the principal when they stop responding. Whoever starts a Claude or Codex agent sends it `/goal`. A takeover needs proof the old owner is gone or a handover it acknowledged on the agents bus, and takes exclusive ownership so the old owner cannot keep writing.
+Who watches and restarts whom is in `_docs/05-recovery.md`. Periodic scripts launch the principal and the heads. Root watches the principal and the heads, and when root or the principal sees one absent, it tells the other and runs the same script to bring it back. The principal is accountable that the five heads are running. Root runs in a GUI session on the founder's laptop or on Win35, never on Hetzner, and reaches the other machines with ssh. A mechanical supervisor restarts root or the principal when they stop responding. Whoever starts a Claude or Codex agent sends it `/goal`. A takeover needs proof the old owner is gone or a handover it acknowledged on the agents bus, and takes exclusive ownership so the old owner cannot keep writing.
 
 ## 4. Review and challenge
 
@@ -32,7 +32,7 @@ An issue closes only when its accepted, reviewed outcome exists. Work waiting fo
 
 The head picks a ready task and starts a worker for it through the Agent Quota Launcher. A reviewer on a different model checks the result, the worker fixes every finding, and this repeats until the reviewer approves. Then the head integrates and starts the next ready task at once. Workers and reviewers that run as separate sessions are always started through the launcher, never by hand. A head may use its own built-in subagents for small pieces, and they count as active when they do work.
 
-Workers start headless with permission prompts skipped. Only principals, heads and a few chosen sessions run in a normal interactive UI. There is no fixed cap on team size: run as many workers as there are independent tasks and capacity, and never invent work to raise the count.
+Workers and reviewers start headless with permission prompts skipped, never in their own aplexer session, and talk only to their head. Principals and heads run in aplexer sessions, and root runs in a GUI session. There is no fixed cap on team size: run as many workers as there are independent tasks and capacity, and never invent work to raise the count.
 
 ## 7. The agents bus and claims
 
