@@ -1,28 +1,19 @@
 # Recovery
 
-This says who watches whom and who restarts whom, so that nothing depends on a single agent staying up.
+Root restores the principal; the principal owns head recovery, and heads own their workers' recovery. Restore the existing owner and useful work without competing writers. The founder starts model root in a desktop GUI; a remote mechanical mailbox is its communication channel, not another model root.
 
-## The chain
+- [Root → principal](../recovery/principal.md): host/custody discovery, mailbox recovery, vacancy proof, fresh admission, saved-conversation resume and verified useful action.
+- [Principal → head](../recovery/head.md): independently placed interactive recovery, parallel scoped agents, preserved workers and resumed project work.
+- [Root startup](team/02-root.md): concise priorities, existing check custody and human delivery.
 
-- The founder starts root in a GUI session on his laptop or on Win35. Root never runs on Hetzner, which is a server without a GUI. It reaches Hetzner and the other machine with ssh.
-- Periodic scripts launch the principal and the five heads in aplexer sessions. Each run calls `scripts/recover-agent <tag>` for the principal and for every head, so one that is missing comes back on the next run (issue 102).
-- Root watches the principal and the heads. Every 30 minutes, and once a day for the standup, it checks that each one is running and not idle with ready work. Every check leaves a record on the agents bus.
-- When root sees that the principal or a head is absent, it tells the principal and resolves it by running `scripts/recover-agent <tag>`. When the principal sees that a head is absent, it tells root and resolves it the same way.
-- The principal is accountable that all five heads are running.
-- A mechanical process restarts root and the principal when they cannot restart each other. The supervisor watches root's check records. When they stop for two checks, it restarts root through the Agent Quota Launcher. When the principal stops responding and root has not restarted it, the supervisor restarts the principal the same way.
-- The supervisor runs as a system service that the host restarts. It never makes judgments and never approves work.
-- If the supervisor is also down, the heads start a fresh root first and then a fresh principal. This is the last resort, and a head never promotes itself to principal or root.
+## Required controls and installed evidence
 
-## How a restart works
+The target is one durable supervisor using the maintained tracker, launcher and bus, with recoverable ownership and workers that survive coordinator death. This target does not certify an installed guardian, periodic launcher or unattended recovery path.
 
-- Restarts go through one script, `scripts/recover-agent <tag>`. The periodic scripts run it, root and the principal run it, and the supervisor runs the same script when it detects inactivity or no response. It sends a sync message, inspects the agent's state, nudges an idle agent, and restarts a silent one through the launcher with `/goal`. An agent that answers is never replaced.
-- Whoever starts a Claude or Codex agent sends it `/goal` as a direct session message.
-- A replacement takes over only after proof the old agent is gone or an acknowledged handover. It takes exclusive ownership so the old agent cannot keep writing.
-- A replacement rebuilds its context from the tracker, the agents bus and the founder journal, not from memory.
-- If the old agent comes back, it looks on the bus for a newer one before doing anything. If there is one, it stops acting in that role, hands over what it was carrying and leaves. There is never more than one root and never more than one principal.
-- Workers keep running when the head or principal that started them stops. Implementers and reviewers run headless, never in their own aplexer session.
+Inspection on 7 October found `scripts/recover-agent` absent and `scripts/team-status` a placeholder. Recheck deployed source and its accepted contract before use; do not prescribe either as working automation from a document alone. The manual native saved-conversation route in the runbooks restored actual principals/heads, including independently placed worker and model processes. Each future run still requires fresh admission, genuine custody and useful-action verification.
 
-## What root tells the founder
+Recovery implementation and acceptance remain tracked in [issue 102](https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102). A supervisor tick, live process, goal, native timer or successful manual resume does not establish unattended death recovery. Source review and runtime recovery cycles need distinct evidence; never close that obligation from a documentation change.
 
-- When something has to be restarted, root says what stopped, what was restarted and what the new agent is doing, in the next report.
-- Root brings back what the founder needs, such as the link to the published post and the summary he can share. Nothing is posted automatically.
+Use existing schedules only after verifying their saved destination, custody and next trigger. A fresh desktop chat inherits none of these, and a desktop check does not prove laptop-off coverage. Preserve the requested standup and publication owners; create no duplicate scheduler, watcher or writer.
+
+Every recovery records diagnosis, bounded action or acknowledged handoff, actual first action, distinct acceptance, resumed work and next owner/action/checkpoint. Raw identities, transcripts, logs and balances stay private; public issues receive sanitized outcomes. Resource, draft, identity, edit-scope, review and ordinary Git recovery gates remain in [way of working](03-way-of-working.md).

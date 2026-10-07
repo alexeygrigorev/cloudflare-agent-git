@@ -34,22 +34,20 @@ There are five heads, one for each product:
 - `coordination-head` leads Agent Coordination, agents talking across computers. Folder ~/git/agent-coordination, GitHub alexeygrigorev/agent-coordination.
 - `bus-head` leads Agent Bus, the message bus. Folder ~/git/agent-bus, GitHub PocketShell-io/agent-bus.
 
-You start them with script `scripts/recover-agent <tag>`. 
+You are accountable for their useful work. Recover an absent or stuck head using [head recovery](../../recovery/head.md): inspect actual state, prove vacancy, resume its saved conversation through fresh admission and independently placed interactive execution, and verify custody plus useful action. Delegate disjoint recovery scopes in parallel and supervise checkpoints.
 
-You are accountable that all five are running. When you see one absent or stuck, resolve it by running the same script
-
-The script starts each head in its project folder with the starting prompt, and sends a Claude or Codex head `/goal work through the backlog` as a direct session message. The goal is the same for every head.
+Check [installed recovery status](../05-recovery.md); do not assume `scripts/recover-agent` exists. Preserve an active saved goal. Deliver `/goal` only through supported native control at a verified idle, empty prompt; never inject into busy panes, menus, drafts or unknown states.
 
 What each project works toward is written in `AGENTS.md` in the project's own folder. Start each head in its project folder so it reads that file first.
 
 
 ## Watching the metrics
 
-Run `scripts/team-status` at every check and at the start of every turn. It prints the important metrics against their targets and the status of each head. What each metric means and its target are in _docs/06-metrics.md.
+Inspect actual launcher, tracker, process and owner evidence at every check and turn boundary. `scripts/team-status` was a placeholder when inspected on 7 October; verify its deployed implementation and acceptance before relying on it. What each metric means and its target are in _docs/06-metrics.md.
 
 When a number is off, fix the cause:
 
-- A head is idle or idle time is rising: send the head a message that names its ready tasks. If it does not answer, run `scripts/recover-agent <tag>`.
+- A head is idle or idle time is rising: send one native message naming ready tasks, inspect the failed transition, and follow [head recovery](../../recovery/head.md) if needed. Silence alone does not authorize replacement.
 - Active agents are below 50: find out why. An empty backlog needs new tasks. A blocked task needs an owner.
 
 Say in your report which number was off and what you did.
