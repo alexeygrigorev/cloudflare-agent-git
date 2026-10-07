@@ -26,7 +26,7 @@ The diagram is a target process, not an installed topology. No new scheduler/ser
 
 ## Task packet and claim
 
-Before dispatch, record stable request/task/attempt IDs, source and acceptance, dependency IDs, current owner/backup identity and epoch, host eligibility, workspace/pinned base, owned paths, tool/model fit, actual fresh admission and account reservation, reviewer/integration contract, due checkpoints and durable trigger. A worker claims through the authoritative maintained path; scheduling receipt is separate from first useful action. Expired/offline claims do not silently become READY.
+Before dispatch, record stable request/task/attempt IDs, source and acceptance, dependency IDs, current owner/backup identity and epoch, host eligibility, workspace/pinned base, edit scope, tool/model fit, actual fresh admission and account reservation, reviewer/integration contract, due checkpoints and durable trigger. A worker claims through the authoritative maintained path; scheduling receipt is separate from first useful action. Expired/offline claims do not silently become READY.
 
 Each host registers genuine device/session/generation, supported tools and containment, current health and private evidence pointers. Capability advertisements are not admission receipts. Account quotas and occupancy are shared across computers. Windows-specific controls must be proved; Linux service assumptions cannot be copied as Windows acceptance.
 
@@ -42,7 +42,7 @@ Model context can be reconstructed from the durable packet/events. Preserve reco
 2. Head creates substantive disjoint task contracts and accepted READY reserve, then compatible host executors claim work under maintained launcher and fresh gates. Keep reviews parallel when ownership/dependencies allow.
 3. Worker reports real first action/progress and terminal artifact with task/host/session/generation. A final model turn is only an attempt checkpoint.
 4. Terminal success creates a durable independent review obligation. Rejection creates owned repair; another eligible independent task continues meanwhile.
-5. Owning head accepts the exact reviewed result and integrates within its lease. Commit hashes/artifact outcomes are recorded; source acceptance and deployed/useful adoption remain separate.
+5. Owning head accepts the exact reviewed result and integrates within its edit-scope claim. Commit hashes/artifact outcomes are recorded; source acceptance and deployed/useful adoption remain separate.
 6. Acceptance creates a durable successor obligation. The maintained path verifies next useful model first action; failure persists recovery owner/due. Root delivers the requested outcome or verified public report without a human reminder.
 
 Required implementation: task APIs must reject invalid state/evidence/epoch, and deployed AgentBus must authenticate scoped endpoints/devices and preserve exact envelopes/read ACK/semantic acceptance/task outcome separately. These complete installed guarantees are not yet proved. Prefer outbound connections from user computers to the reviewed reachable endpoint; direct inbound access or a Hetzner SSH alias is not necessary for that design. Optional protocol interoperability does not itself install persistence, security or autonomy.
@@ -61,7 +61,7 @@ Required implementation: task APIs must reject invalid state/evidence/epoch, and
 
 Host liveness, role lease, execution progress and semantic acceptance are different signals. Never declare takeover merely from an expired timer. Require current exclusive epoch validated by the dispatch/write target and genuine successor scope ACK; source-main leases stay protected. Two computers alone do not establish quorum-based highly available authority. Declare the initial single-authority limitation and safe degraded mode; do not add an unapproved quorum service or buy infrastructure.
 
-Offline work requires an explicit pre-issued bounded grant: isolated owned paths, permitted local effects, expiry and already reserved shared capacity. No offline renewal, new shared claim, external mutable effect or canonical integration is allowed. Expired/unverifiable authority or unknown quota stops affected dispatch; retain artifacts and continue only independently authorized work whose gates remain verifiable. An offline model may produce isolated artifacts under the grant but cannot assume its epoch still owns shared resources; reconciliation and current-epoch validation precede integration. This degraded mode is limited useful execution, not uninterrupted global autonomy.
+Offline work requires an explicit pre-issued bounded grant: isolated edit scope, permitted local effects, expiry and already reserved shared capacity. No offline renewal, new shared claim, external mutable effect or canonical integration is allowed. Expired/unverifiable authority or unknown quota stops affected dispatch; retain artifacts and continue only independently authorized work whose gates remain verifiable. An offline model may produce isolated artifacts under the grant but cannot assume its epoch still owns shared resources; reconciliation and current-epoch validation precede integration. This degraded mode is limited useful execution, not uninterrupted global autonomy.
 
 ## Enforce through existing owned work
 

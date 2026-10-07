@@ -2,7 +2,7 @@
 
 ## Current recovery gate
 
-The principal owns the03:39 gap diagnosis and fresh logistical admission. An Ant successor is proposed to coordinate existing authorized repair work, **pending its genuine native identity/custody ACK**. Keep old histories, current task IDs/MISSES and all protected QL/Coord/Bus/Dashboard/publication leases. No blanket repo transfer. The exact private same-conversation command and gate receipt are prepared; no launch is implied here.
+The principal owns the03:39 gap diagnosis and fresh logistical admission. An Ant successor is proposed to coordinate existing authorized repair work, **pending its genuine native identity/custody ACK**. Keep old histories, current task IDs/MISSES and all protected QL/Coord/Bus/Dashboard/publication edit-scope claims. No blanket repo transfer. The exact private same-conversation command and gate receipt are prepared; no launch is implied here.
 
 | Work/dependency | Accountable role | Next concrete action | Independent acceptance / fallback |
 |---|---|---|---|
@@ -29,6 +29,6 @@ The principal executed the prepared manual Ant recovery at03:43:21 UTC, normal i
 
 ## Received custody update —2026-10-07
 
-The prior pending-owner state is now superseded by the principal’s genuine received ACK `01a11477-8f11-7cf2-8efb-5b7d82143746`, created03:45:42 UTC, and acceptance `01a11478-4040`. Ant native `cfdc18a9-0946-4770-8aee-cf50a35bfaa7` owns `t-supervision-idle-wake-and-failover-c3110` with scoped `research/antigravity/**` and `scripts/supervision/**`; Coord/QL/Bus/Dashboard protected source/main leases remain unchanged. Actual startup firsttool03:43:32/ownwhoami03:43:38 is verified. This is manually restored genuine custody, not automatic failover acceptance.
+The prior pending-owner state is now superseded by the principal’s genuine received ACK `01a11477-8f11-7cf2-8efb-5b7d82143746`, created03:45:42 UTC, and acceptance `01a11478-4040`. Ant native `cfdc18a9-0946-4770-8aee-cf50a35bfaa7` owns `t-supervision-idle-wake-and-failover-c3110` with scoped `research/antigravity/**` and `scripts/supervision/**`; Coord/QL/Bus/Dashboard protected source/main edit-scope claims remain unchanged. Actual startup firsttool03:43:32/ownwhoami03:43:38 is verified. This is manually restored genuine custody, not automatic failover acceptance.
 
 The head integrates/repairs existing43ea and guarded180wake sources through scoped delegates and separate review. Regex-only source tests are insufficient: require installed-path safe idle positive plus busy/draft/unknown negatives, fenced takeover after two missed semantic checks, genuine received ownership and two useful absent-principal cycles. Native reviewer835aa9c2 first03:45:59 is observed; its containment is UNKNOWN, so it is not credited as a separately managed1500M worker and no three-worker fanout is claimed. Verify topology/RSS or use separate maintainedunits before further child expansion. Head-declared delivery deadline and actual repair-implementer firsttool remain pending.

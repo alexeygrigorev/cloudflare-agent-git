@@ -4,7 +4,7 @@ Latest human correction, principal relay7October2026. This adapts [PocketShell's
 
 ## Roles and required startup reads
 
-The head is a normal interactive orchestrator. A human-created Claude Code head `c7718c33` displays Sonnet5.5 in its normal UI; its “our git” source scope remains unassigned until clarified and genuinely ACKed. Activation/handoffs are queued; no first-tool or adopted loop is inferred from the UI. Current heads retain their existing source leases. Principals coordinate scope, resource coverage and outcome evidence; they do not implement product code, personally review it or run a private product execution team.
+The head is a normal interactive orchestrator. A human-created Claude Code head `c7718c33` displays Sonnet5.5 in its normal UI; its “our git” source scope remains unassigned until clarified and genuinely ACKed. Activation/handoffs are queued; no first-tool or adopted loop is inferred from the UI. Current heads retain their existing edit-scope claims. Principals coordinate scope, resource coverage and outcome evidence; they do not implement product code, personally review it or run a private product execution team.
 
 Every head/executor/reviewer reads AGENTS.md, ROLE-CONTRACT.md, OPERATING-MODEL.md, RESOURCE-POLICY.md, its scoped handoff, the task/source contract and this loop. Record actual read receipts rather than assuming a template's presence proves compliance. The head also reads applicable PocketShell role/loop/briefing sections; project-specific verification replaces Android-specific checks.
 
@@ -12,7 +12,7 @@ Implementers and independent reviewers are **external execution tasks through th
 
 ## Per-task contract and evidence states
 
-1. **Intake/scoping:** Preserve human source and taskID; define acceptance criteria, non-goals, actual internal user, source repo/full SHA/tree, workspace, exact owned paths, integration owner, lease epoch, dependencies, generous bounded timeout, tiny scratch estimate and recovery path. Unknown/missing owner ACK is not ready.
+1. **Intake/scoping:** Preserve human source and taskID; define acceptance criteria, non-goals, actual internal user, source repo/full SHA/tree, workspace, exact edit scope, integration owner, lease epoch, dependencies, generous bounded timeout, tiny scratch estimate and recovery path. Unknown/missing owner ACK is not ready.
 2. **Ready/queued/admitted:** Head ACKs the owned contract. Fresh quota, account/individual limits, actual occupancy, host and aggregate scratch checks plus genuine reservation/source validation permit launch; queued/starting/PID labels alone are not running.
 3. **Running:** Capture actual external provider/native actor, head/parent/team, mode/model/version, taskID, launcher invocation/unit and FIRST completed useful model tool. Keep private logs and incremental outputs; do not publish auth or full raw transcripts.
 4. **Completed-awaiting-review:** Require actual provider terminal result and artifact hashes; preserve explicit unit exit unknown if collected. A head-authored postmortem after timeout, model narrative, or default collected-unit status cannot replace worker completion. Failed/cancelled work keeps its actual history; useful partial artifacts remain separate.
@@ -23,7 +23,7 @@ Implementers and independent reviewers are **external execution tasks through th
 
 ## Isolation, recovery and continuation
 
-Keep issue-scoped implementer/reviewer workspaces and explicit non-overlapping paths. Sequential handoff on overlapping paths requires genuine custody; a stopped parent or old registry label is not a new lease. Preserve peer dirty/index/HEAD bytes, private beforeimages and ordinary independently recoverable Git. Do not restore, stash/rebase or delete peer work as a routine integration shortcut. Source/main authority and operational head custody are separate.
+Keep issue-scoped implementer/reviewer workspaces and explicit non-overlapping paths. Sequential handoff on overlapping paths requires genuine custody; a stopped parent or old registry label is not a new edit-scope claim. Preserve peer dirty/index/HEAD bytes, private beforeimages and ordinary independently recoverable Git. Do not restore, stash/rebase or delete peer work as a routine integration shortcut. Source/main authority and operational head custody are separate.
 
 No-work idle means no independent executable eligible contract remains after reconciliation; report inventory/coverage and a durable dependency trigger. Blocked means a named task has a failed gate/dependency: owner records diagnosis, bounded mitigation already executed, independent verification criteria, resume route and next checkpoint. Continue other eligible disjoint work. Stale escalating notifications must lead to an actual recovery action by the owner, not endless repeats.
 

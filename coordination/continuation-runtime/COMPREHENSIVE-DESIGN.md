@@ -65,7 +65,7 @@ At a miss, the received recovery owner executes diagnosis, repair/workaround or 
 | Launcher admission | Authoritative loaded config/store/controller, fresh quota/shared reservations, bounded task/workspace and first-action evidence |
 | Terminal/review/acceptance | Task/invocation/owner binding; immutable artifact, distinct actual reviewer and semantic criteria at every CLI/API entry point |
 | Refill/due/recovery | Durable outstanding successor/repair obligation; safe readiness and received fenced successor, not successful exit alone |
-| Bus/integration/release | Enrolled identity and task-action permission, exact IDs/cursors, current source lease and accepted release evidence |
+| Bus/integration/release | Enrolled identity and task-action permission, exact IDs/cursors, current edit-scope claim and accepted release evidence |
 
 Existing guards/validators/source fixes provide selective controls, not comprehensive production coverage. Each release needs exact installed module/binary/config/store evidence and independent live acceptance. Unrestricted same-user shell/file access can bypass tool boundaries; retain that explicit limitation. This proposal does not authorize global ACL changes, another broker or duplicate watcher.
 
@@ -95,7 +95,7 @@ Example: for a Win35 useful-task request, Bus owns reviewed endpoint/config and 
 
 ## Limits, review and article
 
-ROLE-CONTRACT and RESOURCE-POLICY retain privacy, genuine identity, source leases, drafts/dirty work, independent review, quotas/shared reservations, process containment, current disk/scratch rules, initiative RAM override, Rust/global-install hold, ordinary Git fallback and totalUSD5Cloudflare boundary. No purchases, automatic contest entry, duplicate services/writers, fake work or arbitrary provider split.
+ROLE-CONTRACT and RESOURCE-POLICY retain privacy, genuine identity, edit-scope claims, drafts/dirty work, independent review, quotas/shared reservations, process containment, current disk/scratch rules, initiative RAM override, Rust/global-install hold, ordinary Git fallback and totalUSD5Cloudflare boundary. No purchases, automatic contest entry, duplicate services/writers, fake work or arbitrary provider split.
 
 **Article NOT STARTED.** Human review/iteration must accept an exact design version first. Then existing publication custody coordinates actual verified Opus 5.5, fresh ImageGen in the approved style, editable lifecycle/host/recovery diagrams and distinct factual/editorial/rendered review with full stylint. No model substitution or automatic publication/social post. Deliver a reviewed draft; published release needs its verified live URL and short share-ready summary. Routine daily reporting continues independently.
 

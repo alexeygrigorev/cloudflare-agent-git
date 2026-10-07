@@ -1,6 +1,6 @@
 # Enforcing team roles and interaction obligations
 
-Authority: [human steering](../../experiment/human-team-interaction-enforcement-20261007.txt), [role contract](../ROLE-CONTRACT.md), [operating model](../OPERATING-MODEL.md), [team registry](../TEAM-REGISTRY.json). Read [request process](REQUEST-TO-OUTCOME.md) and [multi-host process](MULTIHOST-PROCESS.md). **Current status: selective source controls, no demonstrated comprehensive production enforcement.** This is a concrete implementation/acceptance contract, not a new team, policy service or granted source lease.
+Authority: [human steering](../../experiment/human-team-interaction-enforcement-20261007.txt), [role contract](../ROLE-CONTRACT.md), [operating model](../OPERATING-MODEL.md), [team registry](../TEAM-REGISTRY.json). Read [request process](REQUEST-TO-OUTCOME.md) and [multi-host process](MULTIHOST-PROCESS.md). **Current status: selective source controls, no demonstrated comprehensive production enforcement.** This is a concrete implementation/acceptance contract, not a new team, policy service or granted edit-scope claim.
 
 ## Diagnosis
 
@@ -24,7 +24,7 @@ The audit is read-only and ran no product tests or deployments. Results refer to
 
 ## Trusted operation contract
 
-Each consequential operation must present a trusted actor binding plus resource-specific authority: actual native/enrolled identity, host/session/generation, role/team/real parent, request/task/attempt, current scope ACK/lease epoch, allowed action/resource/owned paths, policy version and evidence. Validate identity from the bound process/enrollment, not a caller-supplied role label, environment alias or borrowed sender ID. A parent's scope does not automatically grant its child every permission.
+Each consequential operation must present a trusted actor binding plus resource-specific authority: actual native/enrolled identity, host/session/generation, role/team/real parent, request/task/attempt, current scope ACK/lease epoch, allowed action/resource/edit scope, policy version and evidence. Validate identity from the bound process/enrollment, not a caller-supplied role label, environment alias or borrowed sender ID. A parent's scope does not automatically grant its child every permission.
 
 Required rule: allow an action only when current verified identity, delegated scope, resource ownership, valid epoch and operation prerequisites authorize it. Missing/contradictory/expired evidence denies the affected action and creates an owned recovery obligation. Recheck at dispatch, write and integration time; a launch-time check alone cannot fence later stale activity. Keep read-only discovery and independently authorized useful work available.
 
@@ -34,9 +34,9 @@ This design follows [OWASP authorization guidance](https://cheatsheetseries.owas
 
 | Role | Authorized process actions within received scope | Required denied boundary |
 |---|---|---|
-| Root | Capture intake, research/process docs, monitor, bounded recovery, authorized local tasks/browser capability and human delivery | No inherited product source lease, routine personal product QA/release bottleneck or borrowed principal identity |
+| Root | Capture intake, research/process docs, monitor, bounded recovery, authorized local tasks/browser capability and human delivery | No inherited product edit-scope claim, routine personal product QA/release bottleneck or borrowed principal identity |
 | Principal | Plan priorities, assign scoped work through heads, monitor/challenge outcomes, coordinate cross-team handoffs and administrative tracker updates | No routine product implementation or personal product-code review; no automatic transfer of protected head leases |
-| Head | Decompose tasks, delegate/register actual children, choose eligible routes, accept distinct review, integrate within source lease and own refill/recovery | No self-review, fabricated workers, unreceived peer scope, duplicate writer or default sole implementation replacing its team |
+| Head | Decompose tasks, delegate/register actual children, choose eligible routes, accept distinct review, integrate within edit-scope claim and own refill/recovery | No self-review, fabricated workers, unreceived peer scope, duplicate writer or default sole implementation replacing its team |
 | Executor | Implement/test assigned task, produce pinned result and hand it back | No own-result acceptance, reviewer identity, peer task mutation, principal mailbox or undelegated paths |
 | Independent reviewer | Inspect pinned candidate, execute relevant checks and return independent verdict | No candidate mutation, own-output review, another actor's receipt or unpinned artifact acceptance |
 | Supervisor/collector | Perform specifically configured mechanical transitions, due checks, routing and observations under service authority | No model verdict, fabricated role/custody/readiness, automatic source-main permission or silent overwrite |
@@ -60,7 +60,7 @@ Apply task-specific adopted deadlines and event-driven due scans in the existing
 
 ## Repair routing and acceptance
 
-Principal coordinates current owner ACKs and canonical task mappings. Extend existing C2710/guard reconciliation for identity/transition writer coverage; QL fencing/acceptance/refill lanes for normal launcher callers; Ant C3110 for actual readiness/epoch/due/recovery; Bus C3120 for scoped cross-host action authority; existing Dashboard/collector for violations and obligation age. Cross-product leases remain protected. This mapping is proposed scope until owners accept; the root intake task remains open through actual coordination and outcomes.
+Principal coordinates current owner ACKs and canonical task mappings. Extend existing C2710/guard reconciliation for identity/transition writer coverage; QL fencing/acceptance/refill lanes for normal launcher callers; Ant C3110 for actual readiness/epoch/due/recovery; Bus C3120 for scoped cross-host action authority; existing Dashboard/collector for violations and obligation age. Cross-product edit-scope claims remain protected. This mapping is proposed scope until owners accept; the root intake task remains open through actual coordination and outcomes.
 
 Separate implementer and reviewer through existing heads. Require a permission matrix exercised on actual ordinary entry points: direct CLI/API bypass, stale or fabricated role/parent, unACKed scope, wrong team/project/paths, old epoch, self-review, mutated artifact, invalid transition and source checkout dropping obligations. Preserve positive legitimate delegation and parallel work, protected busy/draft/unknown negatives, independent review and recovery with principal/root absent. Record exact source/installed/config/store pins, loaded controls, actor/evidence and verdict; source tests alone do not establish runtime enforcement.
 

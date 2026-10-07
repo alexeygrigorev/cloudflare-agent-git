@@ -6,7 +6,7 @@ This is a process contract alongside [AGENTS](../../AGENTS.md), [roles](../ROLE-
 
 | Transition | Required evidence and owner | Hold/recovery behavior |
 |---|---|---|
-| Proposed→claimed | Genuine current head/worker identity and received scopeACK; substantive intake-linked goal, owned paths, immutable source, current lease epoch, reviewer contract, checkpoint and fresh admission | UnACKed proposals stay proposals. Lease/source/main silence never grants ownership |
+| Proposed→claimed | Genuine current head/worker identity and received scopeACK; substantive intake-linked goal, edit scope, immutable source, current lease epoch, reviewer contract, checkpoint and fresh admission | UnACKed proposals stay proposals. Lease/source/main silence never grants ownership |
 | Claimed→executing | Maintained task/controller invocation, exact provider/model/source receipt/workspace, actual model firsttool timestamp and bounded process/resource admission | PID/queued/running label alone is not execution. Head diagnoses missing firsttool and selects verified alternative work |
 | Executing→terminal awaitingreview | Actual provider terminal/artifact digest, source tree/commit, result/exit/timeout provenance, preserved logs privately, cleaned bounded owned units | Collectedunit defaultzero/partial output/head prose cannot substitute for provider success. Failed/cancelled attempts remain separate |
 | Awaitingreview→independent outcome | Distinct actual reviewer identity/firsttool, pinned artifact/source digest and freely chosen verdict; negative cases and immutable review hash | Self/stale/reused/forced/automated-only review cannot be counted as independent model QA. Source-test acceptance does not prove loaded runtime |
@@ -18,6 +18,6 @@ Every event binds taskID, actor/session/invocation, lease epoch/current owner, o
 
 ## Ownership and implementation
 
-Ant’s received C3110 supervision scope owns its runtime repair lane. Launcher, Dashboard and publication source/integration remain with their actually acknowledged owners. Dashboard/public task-flow enforcement and metric tasks are proposed pending their genuine owners’ ACKs; this document does not extend Ant’s source lease. Heads delegate implementers and separate reviewers. Principals monitor events, dependencies and acceptance truth, not product code.
+Ant’s received C3110 supervision scope owns its runtime repair lane. Launcher, Dashboard and publication source/integration remain with their actually acknowledged owners. Dashboard/public task-flow enforcement and metric tasks are proposed pending their genuine owners’ ACKs; this document does not extend Ant’s edit-scope claim. Heads delegate implementers and separate reviewers. Principals monitor events, dependencies and acceptance truth, not product code.
 
 The required independent acceptance includes exact-current-owner/stale-owner/PID-reuse/generation/duplicate/cancel/reopen negatives, protected draft/busy/unknown readiness, actual terminal→distinctQA→useful successor, and verified recovery after both principal and desktop are absent. Existing services, safety gates and ordinary Git recovery remain; no duplicate scheduler.

@@ -6,13 +6,13 @@
 |---|---|---|
 | Intake/task writers/checkouts | Stable IDs/history, CAS, scope/epoch and valid transitions | Guard helper exists; all writers/checkout and semantic authorization need proof. Principal coordinates tracker/reconciliation owner. |
 | Assignment/Bus | Persist notification obligation; genuine recipient, scope, stable intent and dedup | Durable messages exist; atomic state/outbox and task-action authorization remain to prove. Existing Bus/supervisor. |
-| Launcher | One loaded config/store/controller, fresh quota/reservations, current ownership and first action | Ordinary callers/fencing and conflicting stores need acceptance. Existing QL source lease. |
+| Launcher | One loaded config/store/controller, fresh quota/reservations, current ownership and first action | Ordinary callers/fencing and conflicting stores need acceptance. Existing QL edit-scope claim. |
 | Review/acceptance | Exact artifact and task criteria, distinct executed review at every entry point | Normal CLI/API bypass must be negatively tested. Existing head and distinct reviewer. |
 | Terminal/refill | Task/invocation/owner/generation binding; durable successor or recovery obligation | Optional bindings and refill errors cannot silently pass. Existing QL/supervisor owners. |
 | Due/failover | ACK/action/review/delivery dues, bounded recovery, protected readiness and target-side fencing | Source fixes and callbacks do not prove safe recipient wake or absent-root cycles. Current received Ant/supervisor custody. |
 | Source/runtime | Reviewed artifact plus actual loaded module/binary/config/store | Manifest/reload work exists; source equality/restart alone insufficient. Existing runtime owner. |
 | Physical cross-host work | Reviewed HTTPS/enrollment, device-local secrets, scoped action, reconnect/cursor reconciliation | Host-local transport/source sync insufficient. Existing Bus/Win35 owners. |
-| Integration/publication/delivery | Received source lease, reviewed exact revision/assets, actual release and shown result | No implicit main or approval from readiness. Existing integration/publication owner; root delivers. |
+| Integration/publication/delivery | Received edit-scope claim, reviewed exact revision/assets, actual release and shown result | No implicit main or approval from readiness. Existing integration/publication owner; root delivers. |
 
 ## Required acceptance
 
