@@ -1,0 +1,17 @@
+{
+  "intake_timestamp": "2026-10-08T01:40:00+02:00",
+  "source_file": ".local/audit/root-recovery-01a116c6/desktop-metrics-inventory.json",
+  "source_authority": "Root private audit record (read-only intake; original beforeimage preserved)",
+  "reconciled_keys": {
+    "host_scope": "desktop",
+    "checked_at": "2026-10-07T21:28:17.8824344Z",
+    "records_count": 5,
+    "models_represented": [
+      "gpt-6.1-sol",
+      "gpt-6-luna"
+    ],
+    "partial_cumulative_observed_saved_conversation_tokens": 461557251
+  },
+  "accounting_classification": "partial cumulative observed saved-conversation tokens across native Codex desktop rollouts; strictly not verified whole-experiment consumption, billable API spend, or completed throughput",
+  "privacy_boundary": "retained as private engineering audit metadata; zero raw prompts, system prompts, or conversation transcripts exported"
+}
