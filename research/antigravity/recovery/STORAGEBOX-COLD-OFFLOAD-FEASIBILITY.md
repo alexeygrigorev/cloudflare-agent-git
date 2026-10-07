@@ -1,15 +1,15 @@
 # Feasibility & Execution Report: StorageBox Cold-Tier Offload and Metrics Coverage Reconciliation
 
 **Date**: 2026-10-08T01:36:00+02:00 (23:36 UTC)  
-**Author**: Ant Integration HEAD (`ant-integration-head-recovery`, aplexer session `c69a9f51`)  
-**Task Unit**: `agent-task-t-metrics-storagebox-cold-offload-01.service` (CID `11cb4e3b-ab95-4a1b-92ac-3aebfab7a935`, model `gemini-3.1-pro-high`)  
+**Author**: Coordinated by Ant Integration HEAD (`ant-integration-head-recovery`, aplexer session `c69a9f51`, engine `antigravity`, model `gemini-3.8-flash-high`)  
+**Task Unit / Materializer**: `agent-task-t-metrics-storagebox-cold-offload-01.service` (CID `11cb4e3b-ab95-4a1b-92ac-3aebfab7a935`, model `gemini-3.1-pro-high`)  
 **Scope**: `research/antigravity/recovery/STORAGEBOX-COLD-OFFLOAD-FEASIBILITY.md`
 
 ---
 
 ## 1. Executive Summary
 
-To reconcile the documented `256 MiB` (`268,435,456` bytes) aggregate store limit for `.local/metrics` without deleting historical telemetry, we designed, verified, and executed a zero-deletion two-phase cold offload protocol targeting the Hetzner StorageBox mount at `/home/alexey/storagebox/agent-archives`.
+To reconcile the documented `256 MiB` (`268,435,456` bytes) aggregate store limit for `.local/metrics` without deleting historical telemetry, we designed, verified, and executed a verified relocation protocol with remote retention (local unlinking post-verification) targeting the Hetzner StorageBox mount at `/home/alexey/storagebox/agent-archives`.
 
 - **Pre-offload state**: Local `.local/metrics` was `555,541,714` bytes (~530 MiB active + archive), exceeding the 256 MiB cap.
 - **Offload execution**: 1,018 historical snapshot chunks totaling `346,514,928` bytes (330.46 MiB) were safely transferred to `/home/alexey/storagebox/agent-archives/metrics-cold-tier/`.
@@ -19,13 +19,13 @@ To reconcile the documented `256 MiB` (`268,435,456` bytes) aggregate store limi
   - `archive_bytes`: `26,320,679` (~25.1 MiB)
   - `total_store_bytes`: `209,313,245` (~199.6 MiB, well below the 256 MiB ceiling)
   - `aggregate_over_cap`: `false` (verified via `scripts/metrics/adapters.py --json`)
-- **Historical data loss**: Exactly **0 bytes** deleted. 100% of historical data is preserved and accessible across local active and remote cold tiers.
+- **Historical data retention**: Exactly **0 relocated bytes** lost; local unlinking occurred strictly post-verification. 100% of relocated historical data is preserved and accessible in the remote cold tier. All 1,018 archived chunks matching the manifest proves archived-byte integrity for `.local/metrics/archive/` at relocation time, not complete historical hourly/team coverage across every prior collector source or historical outage window prior to relocation.
 
 ---
 
 ## 2. Cold Tier Offload Protocol (Two-Phase Copy-Verify-Unlink)
 
-The relocation protocol adheres strictly to the zero-deletion invariant:
+The relocation protocol adheres strictly to verified relocation with remote retention (local unlinking post-verification):
 
 ```
 [Local Archive]                         [StorageBox Cold Tier]
@@ -78,7 +78,7 @@ The relocation protocol adheres strictly to the zero-deletion invariant:
 | **Archive Bytes** | 372,960,386 | 26,320,679 | N/A | **PASS** |
 | **Total Store Bytes** | 555,541,714 | 209,313,245 | <= 256 MiB (268,435,456) | **PASS (< 256 MiB)** |
 | **Aggregate Over Cap** | `true` | `false` | `false` | **RESOLVED** |
-| **Historical Data Loss** | 0 bytes | 0 bytes | 0 bytes | **PASS (100% preserved)** |
+| **Historical Data Retention** | 0 bytes relocated lost | 0 bytes relocated lost | 0 bytes lost post-verify | **PASS (verified relocation)** |
 
 Verification command:
 ```bash
@@ -107,8 +107,10 @@ In accordance with principal guidance and audit records in `.local/audit/root-re
 ## 5. Lifecycle & Store Verification
 
 - Task ID: `t-metrics-storagebox-cold-offload-01`
-- Model: `gemini-3.1-pro-high` (Antigravity executor)
-- CID: `11cb4e3b-ab95-4a1b-92ac-3aebfab7a935`
+- Materializer Model: `gemini-3.1-pro-high` (Antigravity executor)
+- Materializer CID: `11cb4e3b-ab95-4a1b-92ac-3aebfab7a935`
+- Coordinating Head: Ant Integration HEAD (`c69a9f51`, `gemini-3.8-flash-high`)
+- Model Diversity Qualification: Distinct model versions verified (`gemini-3.1-pro-high` executor vs `gemini-3.8-flash-high` head/reviewer); distinct underlying architecture is not established by model names alone.
 - Transient Systemd Service: `agent-task-t-metrics-storagebox-cold-offload-01.service` (Exit 0)
 - Store Registration: `/home/alexey/git/agent-quota-launcher/.local/launcher-config/state.db`
-- Reviewer Verdict: Accepted by Ant Integration HEAD.
+- Reviewer Verdict: Accepted by Ant Integration HEAD and distinct-model reviewer.

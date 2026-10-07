@@ -15,7 +15,7 @@ In response to principal checkpoint guidance (`01a118be-a2bf-7101`), an exhausti
 - **Byte Size Integrity Match**: **1,018 / 1,018 (346,514,928 bytes total, 0 size mismatches)**
 - **Cryptographic SHA256 Verification**: **1,018 / 1,018 (100% exact match, 0 mismatches)**
 - **Verification Duration**: 3.05 seconds over parallel streaming threads.
-- **Verification Invariant**: 100% of historical telemetry from 2026-10-03 through 2026-10-07 is intact and retrievable in the remote cold tier.
+- **Verification Invariant**: 100% of relocated historical snapshot chunks (346,514,928 bytes across 1,018 chunks) are intact and retrievable in the remote cold tier. All 1,018 archived chunks matching manifest proves archived-byte integrity for `.local/metrics/archive/` at relocation time, not complete historical hourly/team coverage across every prior collector source or historical outage window prior to relocation.
 
 ---
 
@@ -36,7 +36,7 @@ for chunk_name, meta in manifest.items():
 - **Total Remote Volume**: 1,018 gzip files
 - **Total Payload Size**: 346,514,928 bytes (~330.46 MiB)
 - **Local Retained Tier**: 209,634,156 bytes (~199.9 MiB, compliant with local <= 256 MiB ceiling)
-- **Aggregate All-Tier Retention**: **556,149,084 bytes (~530.4 MiB)** across active local + remote cold tiers, providing continuous 24h+ coverage without gaps.
+- **Aggregate All-Tier Retention**: **556,149,084 bytes (~530.4 MiB)** across active local + remote cold tiers, providing continuous 24h+ coverage across retained archives.
 
 ---
 
@@ -44,7 +44,7 @@ for chunk_name, meta in manifest.items():
 
 1. **Local-Tier vs All-Tier Retention**:
    - The local store size of ~209.6 MiB establishes **local-tier compliance** under the 256 MiB ceiling.
-   - All-tier retention retains all historical records without permanent data loss.
+   - Verified relocation with remote retention preserves all relocated historical records without permanent data loss. Local unlinking occurred strictly post-verification.
 2. **Reviewer Status**:
    - The preliminary review (`t-metrics-storagebox-review-01`, Gemini 3.1 Pro) established independent-actor corroboration.
-   - Distinct-model review (`t-metrics-storagebox-distinct-review-02`) is being executed using distinct architecture (`gemini-3.8-flash-high`) under systemd cgroup containment.
+   - Distinct-model review (`t-metrics-storagebox-distinct-review-02`) executed under `gemini-3.8-flash-high`. Distinct model versions (`gemini-3.1-pro-high` vs `gemini-3.8-flash-high`) are verified across distinct sessions; distinct underlying architecture is not established by model names alone.
