@@ -10,7 +10,7 @@ Agents solve problems themselves and report what they saw and how they fixed it.
 
 When the founder asks for something it happens without him chasing it. Every request becomes a tracker issue and stays open through every stage: recorded, delivered to the owner, owner accepted, first real action, result, review by a different agent, accepted outcome, integrated and delivered to the founder, then the next task. Each stage needs its own evidence. The first real action is the owner's first tool call or file change. A delivered message is not a started task.
 
-Root owns the follow-through: if a request has no owner, an owner stops or a checkpoint is missed, root diagnoses and acts. Every check ends in an action, either a repair or a handoff the new owner accepted. Another reminder is not recovery. If a remedy produced no action, change the remedy. Agents report status on their own and nobody watches a delegated job finish: the owner reports back.
+The principal owns the follow-through: if a request has no owner, an owner stops or a checkpoint is missed, the principal diagnoses and acts. Root relays the request to the principal or the head it concerns and keeps them running. Every check ends in an action, either a repair or a handoff the new owner accepted. Another reminder is not recovery. If a remedy produced no action, change the remedy. Agents report status on their own and nobody watches a delegated job finish. The owner reports back.
 
 ## 3. Recovery and failover
 
