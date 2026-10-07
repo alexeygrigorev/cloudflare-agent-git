@@ -18,3 +18,13 @@ Measure unique useful model actors with first-tool/current coverage, deduplicate
 Next owned event: Bus/Ant outcome or the principal06:15UTC checkpoint. The earlier secure-endpoint06:50 head promise preceded these failures and needs a renewed owner promise; it is not silently changed into an acceptance deadline. Exact actor/pin/report bindings and actual physical receiver results remain pending.
 
 See the [Continuation Runtime hub](../../coordination/continuation-runtime/README.md), [source coverage audit](request-outcome-coverage-audit-20261007.md) and [Win35 execution evidence](win35-execution-recovery-c3120-20261007.md). Product implementation and independent code review remain with the heads.
+
+## Exact acceptance and runtime follow-up
+
+Independent administrative receipt verification: endpoint review03 has receiptID2, `verified_independent_acceptance`, with actual reviewer V3c0f96dcb matching source `b736b61`. Parent accepted05:51:06; reviewer runtime FAILED05:46:03. The valid independent review receipt and failed reviewer runtime are separate facts; neither silently repairs the other.
+
+Endpoint modelCID1815d789, Gemini3.1ProHigh, first completed tool05:48:22.372790;141 steps through final05:54:11. Task FAILED05:54:24 because the expected report was missing. This is preserved useful execution evidence, not current ACTIVE, deployment or endpoint acceptance. Bus working-screen preparation of model_requirements and scoped `-01b` submission is not an accepted launch; new scope ACKs remain pending.
+
+Current HTTP task array is282, verified against the current tracker; latest06:01:35/PID2028408. `collect.py` source matchesc610. Actual loaded collector-module identity remains unproved. Row totals are not useful actor totals or accepted outcomes.
+
+Principal refined notifications are01a114f6-419a Bus,01a114f6-41be Ant and01a114f6-41e1 root. Ant fresh idle/empty capture followed by strict delivery of the original01a114f4-a2fb around06:05 returned NOTREADY with later-PTY contradiction; original stays pending, no override/retry/spoof. Existing task30147 timer nominal06:06:39 needs exact callback/first-tool proof; timer presence alone is not acceptance. No tracker rows/statuses changed in this follow-up.
