@@ -1,0 +1,30 @@
+#!/bin/sh
+# We push straight to main. Branch and PR-style pushes are rejected.
+# Sanctioned without override: refs/tags/*, refs/heads/history, and deleting a remote ref.
+# Override: principal only, PRINCIPAL_OVERRIDE=<reason> or a Principal-Override: trailer on a pushed commit.
+. "$(git rev-parse --show-toplevel)/scripts/checks/lib/principal-override.sh"
+trailers=""
+zero=0000000000000000000000000000000000000000
+bad=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -n "$remote_ref" ] || continue
+  [ "$local_sha" = "$zero" ] && continue
+  if [ "$remote_sha" = "$zero" ]; then range="$local_sha"; else range="$remote_sha..$local_sha"; fi
+  trailers="$trailers
+$(git log --format=%B "$range" 2>/dev/null | grep '^Principal-Override:')"
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/history|refs/tags/*) ;;
+    *) echo "pre-push: refusing $remote_ref: push straight to main (no branches or pull requests)" >&2; bad=1 ;;
+  esac
+  if [ "$remote_ref" = refs/heads/main ]; then
+    if git log --format=%s "$range" 2>/dev/null | grep -Eq '^Merge (pull request|branch|remote-tracking branch)'; then
+      echo "pre-push: refusing: range contains a merge commit (PR-style flow); rebase instead" >&2
+      bad=1
+    fi
+  fi
+done
+if [ "$bad" = 1 ]; then
+  principal_override pre-push "$trailers" && exit 0
+  exit 1
+fi
+exit 0
