@@ -100,6 +100,7 @@ When two rules conflict, the newer human message wins.
 - No single point of failure: the laptop, root, principal, each head, each provider and each service has a named recovery path. [human-autonomous-failure-recovery-20261005] [human-self-organization-20261004] [human-role-failover-protocol-20261006]
 - Periodic checks and standups run on the hosts, not in one desktop chat, and keep running when the desktop is off. [human-self-organization-20261004] [human-role-failover-protocol-20261006] [human-hetzner-autonomy-deadline-1830-20261005]
 - Any suitable host agent can act as coordinator. The coordinator's job is periodic checks and standup checks. [human-role-failover-protocol-20261006]
+- Root, on Win35, runs a check every 30 minutes and a standup check every day. The checks run from the host root, not from a desktop chat, and every check ends in an action. [human-scale50-solution-followthrough-20261006] [human-win35-new-root-instructions-20261007] [m1]
 - When an agent stops responding, peers send a sync message and inspect its real state before deciding it is gone. [human-role-failover-protocol-20261006]
 - If the principal is gone, the heads start a fresh principal session; they do not promote a head. [rescued/20261007-idle-again-start-new-principal]
 - If a head is gone, the principal or the peers start a new head for that project. [human-role-failover-protocol-20261006]
@@ -142,7 +143,6 @@ When two rules conflict, the newer human message wins.
 - A principal dependency issue links to the product issue; the same task is never copied into two trackers. [agent-derived]
 - An issue closes only when its accepted, reviewed outcome exists. Work waiting for review stays open, and a failed acceptance reopens the issue. [agent-derived]
 - An issue assignment does not grant edit rights and does not prove the owner accepted the task. [agent-derived]
-- The legacy ledgers (`TASKS.json`, `TEAM-REGISTRY.json`, `DELIVERY-BACKLOG.json`) stay in place until the readers switch over to issues, which issue #48 tracks. Creating an issue is not that switch. [agent-derived]
 - The everyday tracker commands live in `_docs/process/github-task-tracker.md`, and the sanitized map from old IDs to issues lives in `_docs/task-tracker/`. [agent-derived]
 
 ### Claims and coordination
@@ -156,7 +156,7 @@ When two rules conflict, the newer human message wins.
 
 - The head picks a ready task and starts a worker for it through the maintained Agent Quota Launcher. [human-fifty-workers-use-agent-launcher-20261005] [human-delivery-reset-20261004]
 - A reviewer on a different model checks the result, the worker fixes every finding, and the loop repeats until the reviewer approves. Then the head integrates and starts the next ready task at once. [rescued/20261007-sonnet-head-full-dictation] [m-20261003-1515]
-- Workers and reviewers are external tasks admitted by the launcher, not the head's built-in subagents. [rescued/20261007-sonnet-head-full-dictation]
+- Workers and reviewers that run as separate sessions (external agents) are started through the launcher, never by hand. A head may also use its own built-in subagents for small pieces; those count as active when they do real work. [rescued/20261007-sonnet-head-use-agent-launcher] [m26] [human-ram-override-twentyfive-subagents-20261005]
 - Workers start headless with permission prompts skipped; only principals, heads and a few chosen sessions run in a normal interactive UI. [human-headless-permissions-task-tracker-intake-20261005] [m21]
 - Heads run many workers in parallel, directly or as external sessions. Seeing how parallel work struggles is part of the point of the project. [m-20261003-dictation] [m32]
 - There is no fixed cap on team size. Run as many workers as there are real independent tasks and capacity, and never invent work to raise the count. [m26] [m32]
@@ -186,14 +186,14 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 - Run `quse PROVIDER --json` fresh before each launch and while supervising. An unknown or error reading means no launch. [m8] [agent-derived]
 - Use expiring quota first: when a provider has a lot left and resets soon, use it as much as possible; when it is low, switch to another. [human-delivery-reset-20261004] [human-better-git-progress-and-utilization-20261005]
 - Prefer z.ai (ZCode via zcodex), OpenCode Space Bunny, OpenCode Muse Spark 1.3, Gemini through Antigravity, and Grok while its quota lasts, and use them heavily. [m8] [m20] [m34] [m-20261003-1512] [human-close-supervision-fifty-mixed-providers-20261005]
-- Use Codex and Claude sparingly. Start no new Codex agent once any Codex window shows 15% or less remaining. [m8] [m9] [m-20261003-1512]
+- Use Claude sparingly. Codex GPT-6 Luna at max effort and Claude Sonnet 5.5 are allowed executors. Start no new Codex agent once any Codex window shows 15% or less remaining. [m8] [m9] [rescued/20261005-expanded-executor-pool]
 - Start no new Grok agent when any window shows 5% or less remaining. A Grok principal or head hands over to a healthy provider before it gets there. [rescued/20261005-grok-quota-handover] An unknown reading counts as too low. [agent-derived]
 - z.ai has one shared ceiling across all hosts and projects, not one per project: the measured total of parallel sessions (26 on 5 October). [rescued/20261005-zai-shared-concurrency]
 - ZCode was free from 17:00 to 03:00 Berlin while its campaign ran. Check that the campaign is still live and that you are on the right model before treating any time as free. [m34] [m-20261003-2017]
 - Copilot quota drains in one session, so don't bother with it. [human-delivery-reset-20261004]
 - When one service hits its quota, plan around it and move work to a healthy provider; don't park the whole direction. [human-idle-heads-quota-rebalance-20261005]
 - The monitoring helper runs on GPT-6 Luna at max effort to save usage. It does not count as a worker. [human-luna-max-monitor-20261005] [human-scale50-solution-followthrough-20261006]
-- Claude Opus is used only for the daily write-up. Sonnet workers are allowed; check the exact model and route, and never substitute one silently. [m-20261003-2018] [agent-derived]
+- Claude Opus is used only for the daily write-up; Sonnet 5.5 is allowed for workers and heads. [m-20261003-2018] [rescued/20261005-expanded-executor-pool] [rescued/20261007-sonnet-head-full-dictation] Check the exact model and route, and never substitute one silently. [agent-derived]
 - Launch through the maintained launcher, never through an ad hoc provider shortcut. A fallback provider is a new admitted attempt. [human-fifty-workers-use-agent-launcher-20261005] [agent-derived]
 
 ### Host limits
@@ -219,14 +219,13 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 - Names under `_docs/` are lowercase kebab-case, never all caps. [20261007-15-no-all-caps-in-docs]
 - This document is the one policy document for now. We split it later if that makes sense. [relayed: no message file; the founder asked in the 7 October session for "one big document" for policy, and that message was not saved]
 - Docs describe the target state, how things should be, not their history or the current workarounds. [20261007-03-docs-target-state]
-- `AGENTS.md` stays at the root as a short pointer to this document, because agent tools look for it there. `CLAUDE.md` is gone. [20261007-01-docs-pull-agents-md-only] [agent-derived]
+- `AGENTS.md` stays at the root: a short pointer to this document plus the start-here steps. `CLAUDE.md` is gone. [20261007-01-docs-pull-agents-md-only] `README.md` stays at the root too. [relayed: founder decision passed on by the orchestrator on 7 October; no message file]
 - The founder journal in `_docs/founder-journal/` is the one place for the founder's messages and for failures. Every message is saved verbatim, one file per message, the same day it arrives, and never edited afterwards. [20261007-11-founder-journal-for-messages] [20261007-01-docs-pull-agents-md-only] [m4]
 - `failures.md` in the founder journal records process failures and their lessons in plain words, newest first. [20261007-11-founder-journal-for-messages]
 - All research lives in one file, `_docs/research.md`; a new finding edits a section and never adds a file. [20261007-09-consolidated-research-separate-incidents]
 - Incident stories live on the separate `history` branch, out of the working tree and out of agents' context. [20261007-09-consolidated-research-separate-incidents]
-- No dated reports in the tree. Verdicts, receipts and incidents are issue comments. The only dated files are founder messages, published daily pages and their assets. [agent-derived]
+- No dated reports in the tree. Verdicts, receipts and incidents are issue comments. Dated files are allowed only for founder messages, published daily pages and their assets, and the tracker migration map in `_docs/task-tracker/`. [agent-derived] (The map exception settles a clash between two agent rules; the founder has not ruled on it.)
 - Journals are not appended in the repo. The agents bus is the log, and private or long evidence goes in git-ignored `.local/`. [agent-derived]
-- A regrowth guard (`scripts/check_repo_shape.py`) runs in CI and before push, and fails on new top-level paths, dated files, edits to founder messages and oversized docs. [agent-derived]
 - Never delete a file to tidy up without a tag that keeps it readable. Removed material stays at an archive tag. [agent-derived]
 
 ## 8. Public journal and editorial rules
@@ -245,7 +244,7 @@ The full rules for the daily article are in the `daily-writeup` skill (`.claude/
 ### When and what to publish
 
 - The daily standup is at 09:00 Berlin and the article at 09:30, covering the previous 24 hours. [m2] [agent-derived]
-- Publish only when something concrete changed: a result, a failure, a decision or a milestone. No placeholder or routine-status pages. [agent-derived]
+- A report goes out every day. When little happened, say so plainly and briefly. [m27] [m2]
 - Each daily report covers every product separately: what was done, what failed, and what is next, with the work itself described, not just numbers. [human-better-git-progress-and-utilization-20261005] [human-delivery-reset-20261004]
 - Include metrics from the dashboard: agents run, tokens used, features done, broken down by hour per project. Measured numbers only; unknown stays unknown. [human-delivery-reset-20261004] [human-better-git-progress-and-utilization-20261005]
 - Include a task tracker summary: tasks created, open and closed, plus a short overview of the closed tasks in each project. [human-task-tracker-report-summary-20261005]
@@ -259,7 +258,7 @@ The full rules for the daily article are in the `daily-writeup` skill (`.claude/
 - Write for someone who has never seen the repo: open by saying what the experiment is, then tell one story. [m-20261003-2018] [agent-derived]
 - No jargon, internal codes, hashes, paths, session IDs or team role words in visible text. Explain each technical term once. [m-20261003-2018]
 - The write-up is illustrated, not just text: ImageGen art for the story, and editable diagram-creator diagrams for explanations. [m-20261003-2018] [m27]
-- No timestamps, correction notes, writing-process meta, quota percentages or token breakdowns in the article. [agent-derived]
+- No timestamps, correction notes, writing-process meta or quota percentages in the article. [agent-derived] Tokens used do appear, in the metrics. [human-delivery-reset-20261004]
 - Count contributors by real identity, with evidence of work. Never count process IDs or role names, and say which coverage is unknown. [agent-derived]
 
 ### Visual system
@@ -288,7 +287,6 @@ The continuation runtime is how work keeps moving without the founder: a process
 
 ### Wake, deadlines and failover
 
-- Target response times: an owner accepts within 5 minutes, takes a first action within 10, and shows progress within 15. Longer work agrees its checkpoint up front. These are targets until installed. [agent-derived]
 - One existing supervisor handles events, dependencies, failures and a frequent due scan. There is never a second scheduler, watcher or writer. [agent-derived]
 - A stalled principal or head is woken after about 3 minutes, and only when it is truly idle. Busy screens, menus, unknown states and human drafts are never typed into. [rescued/20261007-idle-again-start-new-principal] [agent-derived]
 - Claude and Codex start with `/goal`, sent as a direct session message. Every agent, including those without `/goal`, is also watched by a guardian that survives the agent's death. [rescued/20261007-appoint-codex-head-goal-and-async-wake] [rescued/20261007-goals-via-sync-message]
@@ -334,5 +332,7 @@ The continuation runtime is how work keeps moving without the founder: a process
 - The issue schema and labels: one template for task, owner, acceptance and evidence links, and one label set across all six trackers. [20261007-04-principal-github-issues]
 - The `TASKS.json` migration: reader cutover (issue #48), then retiring `TASKS.json`, `TEAM-REGISTRY.json` and `DELIVERY-BACKLOG.json`. [20261007-07-per-project-trackers]
 - The private-evidence store: where long or private evidence lives, who can read it, and how a public issue points to it. [20261007-05-public-plain-issues]
-- Where `AGENTS.md`, `README.md` and the product code sit relative to `_docs/`, and whether a dated migration map is allowed under `_docs/`. [20261007-14-single-docs-folder]
+- Where the product code sits relative to `_docs/`. [20261007-14-single-docs-folder]
+- Response-time targets for an owner to accept, take a first action and show progress (5, 10 and 15 minutes were proposed). [agent-derived]
+- Whether to add a pre-push check of the repo layout (new top-level paths, edits to founder messages). It would be a layout check, not a test of docs, and needs the founder's yes first. [agent-derived]
 - Runtime items, each to become a principal issue with an owner: (1) store state and its notification together; (2) route every tracker writer through the guarded writer with identity, scope and ownership checks; (3) wire ownership fencing into the ordinary launcher commands; (4) require a distinct review on every accept path; (5) make the task-end handler check owner and scope; (6) a safe idle wake that passes the busy, draft and unknown tests; (7) late replies wake the recipient; (8) a guardian that survives the agent, plus `/goal` at Claude startup; (9) a live failover test; (10) a due scan every 60 seconds or less, squared with the 3-minute wake; (11) per-task review dependencies instead of a global stop; (12) a retry and back-off policy; (13) separate worker units from capped heads; (14) one secure, non-SSH cross-computer cycle with offline replay; (15) remove the single task authority as a failure point; (16) queue backups with a restore test; (17) task metrics on the dashboard and site from one definition; (18) hourly commit metrics per repository; (19) tracker availability targets, checked from Win35; (20) map every founder message to an issue; (21) prove the pressure hooks and retention work; (22) find the laptop agent's own written analysis; (23) link the role rules to the head loop; (24) decide whether to restrict the shell bypass. [agent-derived]
