@@ -159,6 +159,9 @@ mem_guard() {
 ADMIN_AUTH=(-H "Authorization: Bearer $ADMIN_TOKEN" -H "content-type: application/json")
 SIDECAR_AUTH=(-H "Authorization: Bearer $SIDECAR_TOKEN")
 RUNNER_AUTH=(-H "Authorization: Bearer $RUNNER_TOKEN" -H "content-type: application/json")
+# GET /status and GET /tasks/:id are token-gated since contract 0.1.3 (READ AUTH):
+# /status takes ADMIN or RUNNER or any agent token; /tasks/:id is owner-or-admin.
+STATUS_AUTH=(-H "Authorization: Bearer $RUNNER_TOKEN")
 
 mint_token() { # repo scope -> plaintext on stdout
   curl -sf -X POST "$SIDECAR/api/repos/$1/tokens" "${SIDECAR_AUTH[@]}" \
@@ -181,7 +184,8 @@ else
   wait_for "$SIDECAR/api/health" sidecar 30 -H "Authorization: Bearer $SIDECAR_TOKEN"
 fi
 
-if assert_port_or_service "$WORKER_PORT" "$WORKER/status" wrangler-dev; then
+if assert_port_or_service "$WORKER_PORT" "$WORKER/status" wrangler-dev \
+    "${STATUS_AUTH[@]}"; then
   :
 else
   log "starting wrangler dev on :${WORKER_PORT}"
@@ -193,7 +197,7 @@ else
     --var LOCAL_ARTIFACTS_URL:'$SIDECAR' \
     --var LOCAL_ARTIFACTS_TOKEN:'$SIDECAR_TOKEN' \
     --var RADAR_IMPL:silent"
-  wait_for "$WORKER/status" wrangler-dev 180
+  wait_for "$WORKER/status" wrangler-dev 180 "${STATUS_AUTH[@]}"
 fi
 
 # ---------- 2. canonical repo seeded from demo-target (L1 documented flow) ----------
@@ -405,9 +409,10 @@ fi
 if step_done assert-1; then
   log "skip: assertions 1"
 else
-  curl -sf "$WORKER/status" > "$EVIDENCE/status-1.json"
+  curl -sf "$WORKER/status" "${STATUS_AUTH[@]}" > "$EVIDENCE/status-1.json"
   for t in t1 t2 t3; do
     curl -sf "$WORKER/tasks/$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['taskId'])" "$STATE/task-$t.json")" \
+      "${ADMIN_AUTH[@]}" \
       > "$EVIDENCE/task-$t.json" || true
   done
   python3 "$LIVE/assertions.py" phase1 \
@@ -458,19 +463,35 @@ if step_done ui; then
   log "skip: ui evidence"
 else
   log "capturing /status + UI screenshots (index + task page)"
-  curl -sf "$WORKER/status" > "$EVIDENCE/status.json"
-  if assert_port_or_service "$UI_PORT" "http://127.0.0.1:$UI_PORT/index.html" ui-server; then
+  curl -sf "$WORKER/status" "${STATUS_AUTH[@]}" > "$EVIDENCE/status.json"
+  # The UI reads /status and /tasks/:id with a bearer token kept in the
+  # browser's localStorage. A throwaway copy of prototype/ui (under the
+  # untracked live/work/) gets a seed page that stores the admin token and
+  # then redirects to the real page, so the headless screenshot is signed in
+  # (instead of the "paste a token" prompt). The token never reaches a tracked file.
+  UI_DIR="$WORK/ui-shot"
+  rm -rf "$UI_DIR"; mkdir -p "$UI_DIR"; cp -a "$ROOT/prototype/ui/." "$UI_DIR/"
+  umask 077
+  cat > "$UI_DIR/seed.html" <<SEED
+<!doctype html><meta charset="utf-8"><title>seed</title>
+<script>
+try { localStorage.setItem("agent-branches-auth-token", "$ADMIN_TOKEN"); } catch (e) {}
+location.replace(location.hash.slice(1));
+</script>
+SEED
+  umask 022
+  if assert_port_or_service "$UI_PORT" "http://127.0.0.1:$UI_PORT/seed.html" ui-server; then
     :
   else
     start_bg "$LIVE/ui-server.log" "$STATE/ui.pid" http.server \
-      bash -c "cd '$ROOT/prototype/ui' && exec python3 -m http.server '$UI_PORT' --bind 127.0.0.1"
-    wait_for "http://127.0.0.1:$UI_PORT/index.html" ui-server 30
+      bash -c "cd '$UI_DIR' && exec python3 -m http.server '$UI_PORT' --bind 127.0.0.1"
+    wait_for "http://127.0.0.1:$UI_PORT/seed.html" ui-server 30
   fi
   CHROME="$HOME/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell"
   "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,1100 \
     --virtual-time-budget=15000 \
     --screenshot="$EVIDENCE/ui-index.png" \
-    "http://127.0.0.1:$UI_PORT/index.html?api=http://127.0.0.1:$WORKER_PORT" \
+    "http://127.0.0.1:$UI_PORT/seed.html#index.html?api=http://127.0.0.1:$WORKER_PORT" \
     > "$LIVE/screenshot.log" 2>&1 || echo "WARN: index screenshot failed (see live/screenshot.log)"
   # Task page too (run-2 only screenshotted the index): the change story of the
   # agent whose task carries the T2 test conflict.
@@ -479,7 +500,7 @@ else
   "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,1400 \
     --virtual-time-budget=15000 \
     --screenshot="$EVIDENCE/ui-task-$TASK2_ID.png" \
-    "http://127.0.0.1:$UI_PORT/task.html?id=$TASK2_ID&api=http://127.0.0.1:$WORKER_PORT" \
+    "http://127.0.0.1:$UI_PORT/seed.html#task.html?id=$TASK2_ID&api=http://127.0.0.1:$WORKER_PORT" \
     > "$LIVE/screenshot.log" 2>&1 || echo "WARN: task screenshot failed (see live/screenshot.log)"
   # Badge check: run the UI's own pair-status decision on the live /status so
   # assertions can pin what the badges show (conflict vs clean vs not checked).
@@ -490,7 +511,7 @@ fi
 # ---------- 10. final assertions ----------
 
 mem_guard
-curl -sf "$WORKER/status" > "$EVIDENCE/status.json"
+curl -sf "$WORKER/status" "${STATUS_AUTH[@]}" > "$EVIDENCE/status.json"
 python3 "$LIVE/assertions.py" final \
   --live "$LIVE" --evidence "$EVIDENCE" --state "$STATE" --status status.json \
   --result-out "$EVIDENCE/result.json" | tee "$EVIDENCE/summary.txt"
