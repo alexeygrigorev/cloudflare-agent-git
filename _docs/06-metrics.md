@@ -45,12 +45,17 @@ These are the things we track. Every number is measured, never estimated, and an
 ## Targets
 
 - Active agents: 50 working at the same time.
-- Idle time: zero for a principal or head that has ready work. An idle principal or head with ready work is a failure to fix at once. Idle time overall is what we bring down.
+- Idle time: the target is zero idle time for principals and heads. An idle principal or head with ready work is a failure to fix at once. Idle time overall is what we bring down.
 - Founder messages: only for spending money, new accounts or keys, the contest entry, social media posts and his own product decisions. Any other message from him is a miss.
 - Founder reminders and manual rescues: zero.
 - Cloud cost: at most USD 5 a month.
 - Free disk on the root disk: at least 20 GiB, with a cleanup agent started below 30 GiB. Memory per worker: at most 1500M.
-- Resolved tasks, tasks created, features done, commits and tokens used: no target is set yet. Watch the trend and report it.
+- Resolved tasks: 200 a day across all projects.
+- Resolved tasks per product: 50 a day for the continuation runtime, 40 for Agent Branches, 30 for Quota Launcher, 30 for Agent Coordination, 25 for Agent Dashboard and 25 for Agent Bus.
+- Tasks created: 250 a day, so every one of the 50 agents always has a ready task waiting.
+- Commits: 2,000 a day across all repositories.
+- Features done: 100 a week across all products.
+- Tokens used: no target is set until every running agent reports its token use.
 
 ## Where they are tracked
 
