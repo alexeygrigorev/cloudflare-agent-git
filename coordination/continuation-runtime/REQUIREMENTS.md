@@ -38,7 +38,7 @@ These quotations were supplied by the genuine principal from its available **sam
 
 | ID | Accountable owner / state | Evidence / next obligation |
 |---|---|---|
-| CR-R001 | Principal documentation; documentation delivered locally, remote publication pending | This hub and linked older documents; governance publisher commits/pushes explicit owned paths and verifies remote. No runtime guarantee from documentation. |
+| CR-R001 | Principal documentation; documentation delivered locally, remote publication pending | This hub and linked older documents; governance publisher commits/pushes explicit paths and verifies remote. No runtime guarantee from documentation. |
 | CR-R002 | Principals coordinate; QL/Coordination/Dashboard/publication heads own their scoped implementations; partial/dependency | [TASK-FLOW](TASK-FLOW.md), [METRICS](METRICS.md); genuine Dashboard/publication implementation ACKs pending. Enforce actual transitions and canonical accepted-resolution events, then independent source/runtime QA. |
 | CR-R003 | Principal evidence intake + publication coordinator/remote journal executor; register delivered, daily adoption pending | This register and IDEAS; install the literal checklist below in the actual writing-agent instructions through acknowledged ownership and verify the next daily report. This file alone is not that installation. |
 | CR-R004 | Principal oversight and current Ant C3110 head; diagnosed/partial | [Gap runtime](../../research/codex/continuation-gap-runtime-20261007.md), [governance](../../research/codex/continuation-gap-governance-20261007.md); guarded wake refused, obsolete escalation custody, subsequent head-scope OOM. Actual loaded election cause remains unknown. Owed00:40UTC principal check recorded MISS. |

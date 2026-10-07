@@ -4,7 +4,7 @@ Use this map to make a decision, not to reread the experiment's history. Current
 
 | Document | Why it is needed | When to consult it |
 |---|---|---|
-| TASKS.json and TEAM-REGISTRY.json | Find the obligation, due checkpoint and genuine current owner. Registry labels alone do not prove custody or activity. | Every check: select actionable/due tasks and their owners; do not dump the whole ledger. Remain canonical until an accepted tracker cutover. |
+| GitHub issues; legacy TASKS.json; TEAM-REGISTRY.json | Find the obligation, due checkpoint and genuine current owner. Registry labels alone do not prove custody or activity. | Every check: select actionable/due tasks and their owners; do not dump the whole ledger. GitHub issues are the tracker; TASKS.json is a legacy ledger being migrated. |
 | [ROLE-CONTRACT.md](ROLE-CONTRACT.md) | Decide who may execute, review, recover or release, and whose handoff is required. | Startup; role/custody change; authority uncertainty. Recurring checks verify the current compact contract. |
 | [OPERATING-MODEL.md](OPERATING-MODEL.md) | Decide the next operation after completion, failure or a dependency. | Startup and changes; stalled flow or cross-team handoff. |
 | [USER-STEERING.md](USER-STEERING.md) | Establish current goals and explicit overrides without replaying old instructions. | Every check and new human instruction; follow linked verbatim sources when wording matters. |

@@ -22,7 +22,7 @@ Use task-specific adopted checkpoints. Legacy5-minute idle/completion and20-minu
 
 ## Storage, adoption and measurement
 
-TASKS.json is currently canonical; use its guarded CAS/history writer and `.local/task-registry.lock`, preserving every other row. TEAM-REGISTRY records actual received custody. DELIVERY-BACKLOG is an intake audit, not proof of fulfillment. A tracker migration needs explicit authority cutover, preserved IDs/history and in-flight reconciliation.
+GitHub issues of alexeygrigorev/cloudflare-agent-git are the tracker for tasks and issues. TASKS.json and DELIVERY-BACKLOG.json are legacy ledgers being migrated: they keep their guarded CAS/history writer and `.local/task-registry.lock`, every other row is preserved, and IDs/history/in-flight state carry over to issues. TEAM-REGISTRY records actual received custody. DELIVERY-BACKLOG is an intake audit, not proof of fulfillment.
 
 Keep ordinary Git fallback and lightweight independent source checkpoints, with a disposable restore test. Adopt Agent Branches in real isolated development only where verified. Preserve dirty peer code; do not copy dependencies/caches/workspaces for backups or delete existing worktrees.
 
