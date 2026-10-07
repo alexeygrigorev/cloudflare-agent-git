@@ -1,5 +1,5 @@
 """Private aggregate adapters; quota is never converted into tokens or cost."""
-import argparse, collections, concurrent.futures, datetime as dt, gzip, hashlib, json, os, pathlib, subprocess, time
+import argparse, collections, concurrent.futures, datetime as dt, fcntl, gzip, hashlib, json, os, pathlib, subprocess, time
 
 def quotas(store):
     path=store/'quotas.json'
@@ -90,13 +90,78 @@ def temporal(store,observations,tasks,at):
     return {'first_observed_at':state['first_observed_at'],'conversations':list(state['conversations'].values()),'tokens_since_observer_known':sum(v.get('tokens_since_observer',0) for v in state['conversations'].values()),'task_observed_seconds':state['task_observed_seconds'],'task_transitions_this_sample':events,'limits':'Sampling estimates; state start before observer is unknown; token change covers observer interval, not total experiment expenditure.'}
 
 def archive_history(store,dayfile,max_active_bytes=192*1024*1024,floor_active_bytes=160*1024*1024):
+    store.mkdir(parents=True,exist_ok=True)
+    # Exclusive store-wide lock: concurrent collectors previously raced here and
+    # orphaned .archive-*.pending chunks; every mutation below is serialized.
+    with (store/'.archive_history.lock').open('a') as lock:
+        fcntl.flock(lock,fcntl.LOCK_EX)
+        return _archive_history_locked(store,dayfile,max_active_bytes,floor_active_bytes)
+
+def _archive_history_locked(store,dayfile,max_active_bytes,floor_active_bytes):
     def digest(handle):
         h=hashlib.sha256();size=0
         while chunk:=handle.read(65536):h.update(chunk);size+=len(chunk)
         return size,h.hexdigest()
+    def dir_bytes(path):
+        total=0
+        try:entries=list(path.iterdir())
+        except OSError:return total
+        for p in entries:
+            try:
+                if p.is_file():total+=p.stat().st_size
+            except OSError:pass
+        return total
+    def load_archive_manifest(archive_dir):
+        try:
+            archive_manifest=json.loads((archive_dir/'manifest.json').read_text())
+            if not isinstance(archive_manifest,dict):raise ValueError('invalid manifest')
+            if 'archives' not in archive_manifest or not isinstance(archive_manifest['archives'],list):archive_manifest['archives']=[]
+        except (OSError,ValueError):
+            archive_manifest={'schema_version':1,'archives':[],'policy':'Preserved private archive of closed daily snapshot gzip chunks to keep the active metrics store bounded. Mode 0700/0600 enforced. Zero historical bytes deleted; orphan pending chunks are reconciled, never removed.'}
+        return archive_manifest
+    def write_archive_manifest(archive_dir,archive_manifest):
+        archive_manifest['total_bytes']=sum(r.get('bytes',0) for r in archive_manifest['archives'] if isinstance(r,dict))
+        archive_manifest['file_count']=len(archive_manifest['archives'])
+        manifest_tmp=archive_dir/'manifest.tmp'
+        manifest_tmp.write_text(json.dumps(archive_manifest,indent=2))
+        try:os.chmod(manifest_tmp,0o600)
+        except OSError:pass
+        manifest_tmp.replace(archive_dir/'manifest.json')
+    def upsert_archive_entry(archive_manifest,entry):
+        for idx,row in enumerate(archive_manifest['archives']):
+            if isinstance(row,dict) and row.get('file')==entry['file']:archive_manifest['archives'][idx]=entry;return
+        archive_manifest['archives'].append(entry)
     try:previous={r['file']:r for r in json.loads((store/'retention-manifest.json').read_text()).get('archives',[])}
     except (OSError,ValueError):previous={}
     hashes={}
+    archive_dir=store/'archive'
+    archive_manifest=None
+    # Reconcile orphan .archive-*.pending / *.pending chunks left by crashed or
+    # racing pre-lock runs: verify gzip integrity, relocate valid chunks into
+    # archive/ and record them; invalid chunks stay on disk, nothing is deleted.
+    pending_files=sorted({*store.glob('.archive-*.pending'),*store.glob('*.pending')},key=lambda p:p.name)
+    reconciled_pending=0;invalid_pending=[]
+    for p in pending_files:
+        try:
+            with p.open('rb') as compressed:_,compressed_sha=digest(compressed)
+            with gzip.open(p,'rb') as decoded:uncompressed_size,uncompressed_sha=digest(decoded)
+        except (OSError,EOFError,ValueError):
+            invalid_pending.append(p.name);continue
+        if archive_manifest is None:
+            archive_dir.mkdir(parents=True,exist_ok=True)
+            try:os.chmod(archive_dir,0o700)
+            except OSError:pass
+            archive_manifest=load_archive_manifest(archive_dir)
+        base=p.name[len('.archive-'):] if p.name.startswith('.archive-') else p.name
+        standard=base[:-len('.pending')] if base.endswith('.pending') else base
+        dest=archive_dir/standard
+        if dest.exists():dest=archive_dir/(standard[:-3]+'.'+str(time.time_ns())+'.gz')
+        p.replace(dest)
+        try:os.chmod(dest,0o600)
+        except OSError:pass
+        upsert_archive_entry(archive_manifest,{'file':dest.name,'bytes':dest.stat().st_size,'sha256':compressed_sha,'uncompressed_sha256':uncompressed_sha,'uncompressed_bytes':uncompressed_size,'mtime_ns':dest.stat().st_mtime_ns,'relocated_at':dt.datetime.now(dt.timezone.utc).isoformat(),'reconciled_from':p.name})
+        reconciled_pending+=1
+    if archive_manifest is not None:write_archive_manifest(archive_dir,archive_manifest)
     for p in store.glob('snapshots-*.jsonl'):
         if p!=dayfile or p.stat().st_size>=2*1024*1024:
             target=store/(p.name+'.'+str(time.time_ns())+'.gz');pending=store/('.archive-'+target.name+'.pending')
@@ -112,22 +177,17 @@ def archive_history(store,dayfile,max_active_bytes=192*1024*1024,floor_active_by
             p.unlink() # only verified metrics-owned original; all sample bytes survive in archive
 
     active_files=[p for p in store.glob('snapshots-*') if p.is_file()]
-    current_active_bytes=sum(p.stat().st_size for p in active_files)
+    # Every regular file in the store counts toward thresholds, including
+    # dotfiles, locks and any leftover pending chunks; archived history is
+    # measured separately so nothing escapes the cap accounting.
+    current_active_bytes=dir_bytes(store)
     if current_active_bytes>max_active_bytes:
         prefix=dayfile.name.replace('.jsonl','')
         candidates=sorted([p for p in active_files if p.name.endswith('.gz') and not p.name.startswith(prefix) and not p.name.startswith(dayfile.name)],key=lambda p:p.name)
-        archive_dir=store/'archive'
         archive_dir.mkdir(parents=True,exist_ok=True)
         try:os.chmod(archive_dir,0o700)
         except OSError:pass
-        archive_manifest_path=archive_dir/'manifest.json'
-        try:
-            archive_manifest=json.loads(archive_manifest_path.read_text())
-            if not isinstance(archive_manifest,dict):raise ValueError('invalid manifest')
-            if 'archives' not in archive_manifest or not isinstance(archive_manifest['archives'],list):archive_manifest['archives']=[]
-        except (OSError,ValueError):
-            archive_manifest={'schema_version':1,'archives':[],'policy':'Preserved private archive of closed daily snapshot gzip chunks to maintain active metrics store below 256 MiB cap. Mode 0700/0600 enforced. Zero historical bytes deleted.'}
-        manifest_index={r['file']:idx for idx,r in enumerate(archive_manifest['archives']) if isinstance(r,dict) and 'file' in r}
+        if archive_manifest is None:archive_manifest=load_archive_manifest(archive_dir)
         for p in candidates:
             if current_active_bytes<=floor_active_bytes:break
             with p.open('rb') as src:size,sha=digest(src)
@@ -135,19 +195,9 @@ def archive_history(store,dayfile,max_active_bytes=192*1024*1024,floor_active_by
             p.replace(dest)
             try:os.chmod(dest,0o600)
             except OSError:pass
-            entry={'file':p.name,'bytes':size,'sha256':sha,'mtime_ns':dest.stat().st_mtime_ns,'relocated_at':dt.datetime.now(dt.timezone.utc).isoformat()}
-            if p.name in manifest_index:archive_manifest['archives'][manifest_index[p.name]]=entry
-            else:
-                manifest_index[p.name]=len(archive_manifest['archives'])
-                archive_manifest['archives'].append(entry)
+            upsert_archive_entry(archive_manifest,{'file':p.name,'bytes':size,'sha256':sha,'mtime_ns':dest.stat().st_mtime_ns,'relocated_at':dt.datetime.now(dt.timezone.utc).isoformat()})
             current_active_bytes-=size
-        archive_manifest['total_bytes']=sum(r['bytes'] for r in archive_manifest['archives'])
-        archive_manifest['file_count']=len(archive_manifest['archives'])
-        manifest_tmp=archive_dir/'manifest.tmp'
-        manifest_tmp.write_text(json.dumps(archive_manifest,indent=2))
-        try:os.chmod(manifest_tmp,0o600)
-        except OSError:pass
-        manifest_tmp.replace(archive_manifest_path)
+        write_archive_manifest(archive_dir,archive_manifest)
 
     archives=[]
     for p in sorted(store.glob('snapshots-*')):
@@ -159,10 +209,14 @@ def archive_history(store,dayfile,max_active_bytes=192*1024*1024,floor_active_by
             with p.open('rb') as file:_,sha=digest(file)
             record={'sha256':sha}
         archives.append({'file':p.name,'bytes':st.st_size,'mtime_ns':st.st_mtime_ns,**record})
-    manifest={'archives':archives,'total_bytes':sum(r['bytes'] for r in archives),'policy':'All samples retained; original and decompressed archive SHA256+length must match before replacing owned original. Pending failed archives excluded from export. 256MiB cap preserves existing data.'}
+    if archive_manifest is None and archive_dir.is_dir():archive_manifest=load_archive_manifest(archive_dir)
+    archive_bytes=sum(p.stat().st_size for p in archive_dir.glob('*') if p.is_file() and p.name!='manifest.json') if archive_dir.is_dir() else 0
+    active_bytes=dir_bytes(store)
+    total_store_bytes=active_bytes+archive_bytes
+    cap_bytes=268435456
+    manifest={'archives':archives,'total_bytes':sum(r['bytes'] for r in archives),'active_bytes':active_bytes,'archive_bytes':archive_bytes,'total_store_bytes':total_store_bytes,'cap_bytes':cap_bytes,'aggregate_over_cap':total_store_bytes>cap_bytes,'aggregate_retention_status':'unresolved' if total_store_bytes>cap_bytes else 'compliant','aggregate_retention_reason':'Aggregate store bytes exceed documented 256MiB cap; historical chunks preserved without deletion pending authorized cold offload/storagebox relocation.' if total_store_bytes>cap_bytes else 'Store bytes within 256MiB cap.','orphan_pending_reconciled':reconciled_pending,'orphan_pending_invalid':len(invalid_pending),'orphan_pending_invalid_files':invalid_pending,'policy':'All samples retained; original and decompressed archive SHA256+length must match before replacing owned original. Orphan pending chunks are reconciled under an exclusive store lock and never deleted; invalid chunks stay on disk. total_bytes covers active snapshot files; active_bytes covers every regular store file; the 256MiB aggregate cap is reported truthfully, never enforced by deleting history.'}
     store.mkdir(parents=True, exist_ok=True)
     temp=store/'retention-manifest.tmp';temp.write_text(json.dumps(manifest));temp.chmod(0o600);temp.replace(store/'retention-manifest.json');return manifest
-
 def cli_main(argv=None) -> int:
     parser = argparse.ArgumentParser(description='Metrics rolling archive retention trigger')
     root = pathlib.Path(__file__).resolve().parents[2]
@@ -218,7 +272,7 @@ def cli_main(argv=None) -> int:
 
     manifest = archive_history(store, dayfile, max_active_bytes=max_active_bytes, floor_active_bytes=floor_active_bytes)
     if args.json:
-        print(json.dumps({'status': 'ok', 'active_bytes': manifest['total_bytes'], 'active_files': len(manifest['archives']), 'manifest_path': str(store / 'retention-manifest.json')}))
+        print(json.dumps({'status': 'ok', 'active_bytes': manifest['total_bytes'], 'active_files': len(manifest['archives']), 'archive_bytes': manifest['archive_bytes'], 'total_store_bytes': manifest['total_store_bytes'], 'aggregate_over_cap': manifest['aggregate_over_cap'], 'manifest_path': str(store / 'retention-manifest.json')}))
     else:
         print(f"Active store: {manifest['total_bytes']} bytes across {len(manifest['archives'])} files. Manifest: {store / 'retention-manifest.json'}")
     return 0

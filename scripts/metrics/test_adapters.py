@@ -167,5 +167,49 @@ class AdapterTests(unittest.TestCase):
    with contextlib.redirect_stdout(buf):
     self.assertEqual(adapters.cli_main(['--store', str(store)]), 0)
    self.assertIn('Active store:', buf.getvalue())
+ def test_concurrent_archive_history_multiprocess(self):
+  import multiprocessing
+  def worker(store_str, dayfile_str):
+   s = pathlib.Path(store_str); d = pathlib.Path(dayfile_str)
+   adapters.archive_history(s, d, max_active_bytes=1000, floor_active_bytes=500)
+  with tempfile.TemporaryDirectory() as tmp:
+   store = pathlib.Path(tmp)
+   dayfile = store / 'snapshots-2026-10-06.jsonl'
+   dayfile.write_bytes(b'{"active":true}\n' * 10)
+   for i in range(10):
+    (store / f'snapshots-2026-10-0{i%5}.jsonl.{i}.gz').write_bytes(b'D' * 200)
+   p1 = multiprocessing.Process(target=worker, args=(str(store), str(dayfile)))
+   p2 = multiprocessing.Process(target=worker, args=(str(store), str(dayfile)))
+   p1.start(); p2.start()
+   p1.join(); p2.join()
+   self.assertEqual(p1.exitcode, 0)
+   self.assertEqual(p2.exitcode, 0)
+   self.assertEqual(len(list(store.glob('*.pending'))), 0)
+   manifest = json.loads((store / 'retention-manifest.json').read_text())
+   self.assertIn('active_bytes', manifest)
+ def test_archive_history_lock_contention_blocks(self):
+  import fcntl, time, threading
+  with tempfile.TemporaryDirectory() as tmp:
+   store = pathlib.Path(tmp)
+   dayfile = store / 'snapshots-2026-10-06.jsonl'
+   dayfile.write_bytes(b'{"active":true}\n' * 10)
+   (store / 'snapshots-2026-10-05.jsonl.1.gz').write_bytes(b'D' * 200)
+   lock_file = store / '.archive_history.lock'
+   lock_file.touch()
+   acquired = threading.Event()
+   def hold():
+    with open(lock_file, 'a') as f:
+     fcntl.flock(f, fcntl.LOCK_EX)
+     acquired.set()
+     time.sleep(0.3)
+     fcntl.flock(f, fcntl.LOCK_UN)
+   t = threading.Thread(target=hold)
+   t.start()
+   acquired.wait()
+   t0 = time.time()
+   adapters.archive_history(store, dayfile)
+   elapsed = time.time() - t0
+   t.join()
+   self.assertGreaterEqual(elapsed, 0.25)
 if __name__=='__main__':unittest.main()
 
