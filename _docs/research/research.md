@@ -26,7 +26,7 @@ Claude wrote and scored the 20 approaches on 2 Oct 2026 (contest score out of 10
 | A02 | Lease-bound path claims, enforced when work lands | 70 | Never shortlisted; Foremerge already specifies this protocol |
 | A03 | Merged-state gate that re-runs a failed task on the fresh base | 80 | Parked in v2 with a reopen test |
 | A04 | Semantic contract sentinel for shared APIs | 75 | Parked in v2 with a reopen test |
-| A05 | Fork tournament: N attempts at one task, compare by behaviour, land one | 85 | Provisionally parked (`research/shortlist-6.md`); the one real task was adjudicated a **TIE** (`research/zcode/independent/a05-adjudication/VERDICT.md`) |
+| A05 | Fork tournament: N attempts at one task, compare by behaviour, land one | 85 | Provisionally parked (`research/shortlist-6.md`); the one real task was adjudicated a **tie** (`research/zcode/independent/a05-adjudication/VERDICT.md`) |
 | A06 | Change-story review queue: review intent and risk, not raw diffs | 65 | Kept as a hypothesis; real pain, no shown benefit (`research/shortlist-6.md`) |
 | A07 | Maintainer inbound quarantine: no human sees a contribution until a reproducer passes | 75 | Parked in v2; a later demand scout gave no verdict (`research/zcode/independent/a07-demand-gate/findings-draft.md`) |
 | A08 | Independent AI reviewer panel on every push | 50 | "Likely feature of A06" |
@@ -47,7 +47,7 @@ Claude wrote and scored the 20 approaches on 2 Oct 2026 (contest score out of 10
 
 **How the shortlist moved.** Claude's first six (A01, A05, A07, A14, A13, A19) were replaced by a v2 six (A01, A14, A16, A05, A06, A10) (`research/approaches-20.md`). Codex owned the shortlist file. Its last version, draft 10, keeps only **two research hypotheses, A01 (demoted) and A06**, leaves **four product places unfilled**, folds A14 into A01, and parks A16, A10 and A05 (`research/shortlist-6.md`).
 
-**Nothing was ever signed.** The agreed procedure was: freeze the file, each lead engine hashes the exact bytes and sends `SIGNOFF <sha256>`, and any later edit voids it. No SIGNOFF is recorded (`research/consensus.md`). Antigravity once declared "final consensus" on its own six; Codex rejected that because it lacked both leads' approval (`research/consensus.md`). In round 1 the two leads also disagreed on the primary build: Claude favoured an A01-led six, Codex a provisional A14 build (`research/debate/codex-open-disagreements.md`).
+**Nothing was ever signed.** The agreed procedure was: freeze the file, each lead engine hashes the exact bytes and sends `SIGNOFF <sha256>`, and any later edit voids it. No sign-off is recorded (`research/consensus.md`). Antigravity once declared "final consensus" on its own six; Codex rejected that because it lacked both leads' approval (`research/consensus.md`). In round 1 the two leads also disagreed on the primary build: Claude favoured an A01-led six, Codex a provisional A14 build (`research/debate/codex-open-disagreements.md`).
 
 **The gate every lane had to pass.** At least two real coding agents working at the same time, an Artifacts fork-and-push lifecycle, runnable open source, and a 5 to 10 minute demo. "Scripts pretending to be agents do not satisfy that gate" (`research/shortlist-6.md`). No candidate passed it during the research phase (`research/shortlist-6.md`).
 
@@ -57,7 +57,7 @@ Claude wrote and scored the 20 approaches on 2 Oct 2026 (contest score out of 10
 |---|---|---|
 | A01 | Kill if, on 10 replayed pairs, it flags real conflicts earlier than PR time in under half, or agents ignore warnings (`research/approaches-20.md`). Drop primary status without an outcome or time advantage over worktrees plus completion-time tests (`research/shortlist-6.md`) | Primary withdrawn (3.1). Reopen only with a pre-registered neutral task family where the hazard occurs naturally (`research/approaches-20.md`) |
 | A16 | >40% fewer physical bytes than sparse worktrees plus pnpm (`research/approaches-20.md`); env-sharing gate >50% whole-footprint savings at two tasks (`research/shortlist-6.md`) | Failed (3.4); the bar was not moved (`research/shortlist-6.md`) |
-| A05 | At least 3 of 5 outcome wins plus a review advantage; park if equal at higher cost (`research/shortlist-6.md`) | One task, a TIE; parked as a portfolio decision, not a falsification (`research/shortlist-6.md`) |
+| A05 | At least 3 of 5 outcome wins plus a review advantage; park if equal at higher cost (`research/shortlist-6.md`) | One task, a tie; parked as a portfolio decision, not a falsification (`research/shortlist-6.md`) |
 | A06 | Blind seeded-bug test: ≥30% shorter review, equal catch rate (`research/shortlist-6.md`) | Never run as designed; other runs showed no benefit (3.3) |
 | A10 | Beat plan file plus Entire resume plus git log on five restart tasks (`research/approaches-20.md`) | Parked after two cold restarts worked (3.5) |
 | A14 | Fold into A01 if plain `wrangler` plus Workers Previews does the workflow in ten minutes (`research/shortlist-6.md`) | Folded: isolation and the ordinary control both passed (`research/shortlist-6.md`) |
@@ -82,16 +82,16 @@ Space Bunny gave two `zcodex` executors separate tasks on separate files, no ora
 
 - **Round 1 (shared cache contract):** base, A, B and A+B all pass. A deliberately broken B made A+B fail, so the test could catch the bug; the agents just did not write it. Agent B avoided it by modelling the cache it inferred from base files (`research/space-bunny/g3-no-symbol-overlap/results-real-agents.md`).
 - **Round 2 (contract hidden in a third-party file):** again all four pass (`research/space-bunny/g3-non-discoverable/results-real-agents.md`).
-- **The confound:** both briefs pointed at the behaviour that mattered, so neither tested unaided discovery; the author declined to invoke his pre-registered conclusion (`research/space-bunny/g3-non-discoverable/results-real-agents.md`). A neutral-brief rerun stayed "PLAN ONLY" (`research/space-bunny/g3-signposting-comparison-plan.md`).
+- **The confound:** both briefs pointed at the behaviour that mattered, so neither tested unaided discovery; the author declined to invoke his pre-registered conclusion (`research/space-bunny/g3-non-discoverable/results-real-agents.md`). A neutral-brief rerun stayed a plan only (`research/space-bunny/g3-signposting-comparison-plan.md`).
 
 Meaning: agents handle a contract when told it matters; a demo that seeds such a conflict shows a capability, not a rate (`research/space-bunny/g3-no-symbol-overlap/results-real-agents.md`).
 
 ### 3.3 A06 review cards: no measured benefit
 
-- **First real decision (N=1):** APPROVE at confidence 80 before and after reading the card. The card had a wrong number (3.0 s; the source says 1000 ms), and two of the reviewer's card findings were later corrected or withdrawn (`research/muse/a06-phase-b-record.md`).
-- **Two-format pilot:** both arms reached the known answer, REJECT. "Card is cheaper" (5 vs 14 tool calls) was withdrawn: the card arm was barred from raw sources and the packet changed mid-run. A calibration, not an efficacy test (`research/muse/a06-pilot-adoption/analysis.md`).
+- **First real decision (N=1):** approved at confidence 80 before and after reading the card. The card had a wrong number (3.0 s; the source says 1000 ms), and two of the reviewer's card findings were later corrected or withdrawn (`research/muse/a06-phase-b-record.md`).
+- **Two-format pilot:** both arms reached the known answer, reject. "Card is cheaper" (5 vs 14 tool calls) was withdrawn: the card arm was barred from raw sources and the packet changed mid-run. A calibration, not an efficacy test (`research/muse/a06-pilot-adoption/analysis.md`).
 - **Grok's adoption decision** rejected a ZCode runner's "0 eligible warnings" claim; the corrected runner reports "unknown". It also found CodeRabbit already ships layered review, leaving one difference to test: a card that records what it does *not* guarantee (`research/grok/a06-adoption-decision.md`).
-- **Antigravity's operational review** scored the advisory stack CONDITIONAL (6.8/10): not for ordinary maintenance (`research/antigravity/adoption/A06-ADVISORY-ADOPTION-DECISION.md`).
+- **Antigravity's operational review** scored the advisory stack conditional (6.8/10): not for ordinary maintenance (`research/antigravity/adoption/A06-ADVISORY-ADOPTION-DECISION.md`).
 
 ### 3.4 Storage (A16): real pain, ordinary tools nearly as good
 
@@ -140,7 +140,7 @@ Platform limits to design around: 1 GB per repo, 32 MB per blob, push over proto
 
 ## 6. Adoption and dogfood findings
 
-- **Single agent: use plain Git.** Same tree hash, 16/16 tests in both; plain worktree 0.200 s and 7 commands, Agent Branches 1.143 s and 15 (5.7x). DECLINE for single-actor work (`research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md`).
+- **Single agent: use plain Git.** Same tree hash, 16/16 tests in both; plain worktree 0.200 s and 7 commands, Agent Branches 1.143 s and 15 (5.7x). verdict: decline for single-actor work (`research/antigravity/adoption/REPORT-UNFAMILIAR-ADOPTER-T1.md`).
 - **Concurrent refactor (scripted patches):** a post-merge-CI baseline let 1 defect reach `main`; the radar flagged it before landing in 0.539 s, at 6.41 s vs 1.84 s wall time and about 155 MB of daemons (`research/antigravity/adoption/REPORT-UPRT-CONCURRENT-GATE.md`). Any pre-merge check would catch the same failure (`research/antigravity/demand/incumbent-premerge-and-buyer-workflow.md`).
 - **"Adoption confirmed" was an overclaim,** relabelled "workflow transport confirmed": the work was two doc lines in separate files (`research/antigravity/adoption/REAL-FORK-ADOPTION-REPORT.md`).
 - **Real use found real gaps:** a `push_batch` patch loses the accepted prefix on a mid-batch failure (`research/antigravity/dogfood/NEWCOMER-ADOPTION-DECISION-7DE6836.md`); the CLI lacked a per-task token (`research/antigravity/dogfood/REPORT-SDK-PACKAGED-FIRSTUSE.md`); Node needs about 1.46 GB of virtual address space, so cap RSS, not `ulimit -v` (`research/antigravity/adoption/REPORT-REALNODE-SIDECAR-PILOT.md`).
@@ -175,7 +175,7 @@ The independent reviews and audits kept under `research/antigravity/` number 226
 | Metrics collector and task tracker | 13 | 0 |
 | Audits (repo sanitization, credential lineage, retry lineage) | 3 | 0 |
 
-**The 22 reviews that opened with a negative verdict** (REJECT, REQUEST_CHANGES or a confirmed critical defect), each checked at its verdict line; paths under `research/antigravity/reviews/`:
+**The 22 reviews that opened with a negative verdict** (reject, request changes, or a confirmed critical defect), each checked at its verdict line; paths under `research/antigravity/reviews/`:
 
 | Review | Why | Later |
 |---|---|---|
@@ -202,7 +202,7 @@ The independent reviews and audits kept under `research/antigravity/` number 226
 | `REV-SCALE50-41-INTEGRATION-PLAN-20261006.md` | No `127.0.0.1` binding, plus a proxy loophole | Accepted after remediation |
 | `REV-SCALE50-53-MOBILE-QA-20261006.md` | Wrong query parameter, a pass the author's own log contradicts, 60+ tracked files modified | Accepted after remediation |
 
-An earlier machine-made list of "22 negatives" (a cleanup draft, never committed) was wrong on 9 entries, mostly ACCEPT verdicts that mention "fail-closed" or a prior rejection, and missed 9 real ones; the list above replaces it. A separate negative finding sits in a capacity review: 50 concurrent task units on one host is "UNPROVEN and INFEASIBLE" (`research/antigravity/reviews/REV-SCALE50-RAM-PROOF-AND-CAPACITY-20261005.md`).
+An earlier machine-made list of "22 negatives" (a cleanup draft, never committed) was wrong on 9 entries, mostly acceptances that mention "fail-closed" or a prior rejection, and missed 9 real ones; the list above replaces it. A separate negative finding sits in a capacity review: 50 concurrent task units on one host is "unproven and infeasible" (`research/antigravity/reviews/REV-SCALE50-RAM-PROOF-AND-CAPACITY-20261005.md`).
 
 ## 9. Where the raw evidence is
 
