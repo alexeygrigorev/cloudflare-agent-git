@@ -22,7 +22,7 @@ Each of the five products has its own team, repo and tracker. A team is the head
 
 ## Writing
 
-- Writer. Writes the daily report and nothing else. See writer.md.
+- Writer. Writes the daily report and nothing else. See 07-writer.md.
 
 ## How they fit together
 

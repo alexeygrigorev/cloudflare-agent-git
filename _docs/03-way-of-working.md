@@ -58,7 +58,7 @@ Incident stories live on the `history` branch. There are no dated reports in the
 
 ## 11. Public journal
 
-The team runs a website with one reader-facing daily report. The daily standup is at 09:00 Berlin and the article at 09:30, covering the previous 24 hours. A report goes out every day, and when little happened it says so briefly. A Codex agent on the remote host prepares each edition, the writer writes it following `_docs/team/writer.md`, the publication coordinator owns site design, code, release and rollback, and CI builds the site from the public repo to GitHub Pages.
+The team runs a website with one reader-facing daily report. The daily standup is at 09:00 Berlin and the article at 09:30, covering the previous 24 hours. A report goes out every day, and when little happened it says so briefly. A Codex agent on the remote host prepares each edition, the writer writes it following `_docs/team/07-writer.md`, the publication coordinator owns site design, code, release and rollback, and CI builds the site from the public repo to GitHub Pages.
 
 Root shows the founder the published link and a short summary he can share on social media. Nothing is posted automatically. Visitors' emails are captured through Relay with double opt-in and no stored addresses or tokens. The article about this way of working is written only after the founder accepts this document.
 
