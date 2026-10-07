@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
-"""Print the important metrics and the status of each head.
+"""Print the important metrics and the status of each head (issue 103).
 
-Stub. The real script is described in
-https://github.com/alexeygrigorev/cloudflare-agent-git/issues/103
+Read-only. Exit 0 all on target, 1 something off, 2 data unreadable.
+A metric with no data prints "unknown", never zero. Data: aplexer snapshot,
+git, gh issues. Metrics without a reader here stay unknown.
 """
+import datetime
+import json
+import shutil
+import subprocess
 import sys
+import time
 
 HEADS = (
     "branches-head",
@@ -38,17 +44,87 @@ TARGETS = (
 )
 
 
+MEASURED = ("free disk on the root disk", "tasks created per day", "commits per day")
+
+
+def run(cmd, timeout=30):
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=True)
+        return r.stdout
+    except Exception:
+        return None
+
+
+def today():
+    return datetime.date.today().isoformat()
+
+
+def count_issues(field):
+    out = run(["gh", "issue", "list", "--state", "all", "--limit", "500",
+               "--json", "createdAt,closedAt"])
+    if out is None:
+        return None
+    return sum(1 for i in json.loads(out) if (i.get(field) or "").startswith(today()))
+
+
+def commits_today():
+    out = run(["git", "log", "--since=midnight", "--oneline", "origin/main"])
+    return None if out is None else len(out.splitlines())
+
+
+def sessions():
+    out = run(["aplexer", "snapshot"])
+    return None if out is None else json.loads(out)
+
+
+def head_status(tag, snap):
+    mine = [s for s in snap if s.get("tag") == tag or str(s.get("tag", "")).startswith(tag + "-")]
+    live = [s for s in mine if s.get("state") == "running" and s.get("worker_alive")]
+    if not live:
+        return f"{tag}: not running (stopped or absent)"
+    s = max(live, key=lambda x: x.get("last_activity_ms", 0))
+    idle = s.get("reported_state") in ("idle", "waiting")
+    since = (time.time() * 1000 - s.get("reported_state_at_ms", 0)) / 60000
+    last = (time.time() * 1000 - s.get("last_activity_ms", 0)) / 60000
+    state = f"idle for {since:.0f} min" if idle else "working"
+    return (f"{tag}: running, {state}, last activity {last:.0f} min ago, "
+            "open/ready issues unknown, workers unknown")
+
+
+def fmt(v):
+    return "unknown" if v is None else str(v)
+
+
 def main():
-    print("team-status is not implemented yet. See issue 103.")
-    print()
+    snap = sessions()
+    if snap is None:
+        print("team-status: cannot read aplexer sessions")
+        return 2
+    off = []
+    free = shutil.disk_usage("/").free / 1024 ** 3
     print("Metrics:")
+    print(f"  free disk on the root disk: {free:.1f} GiB (target: at least 20 GiB)")
+    if free < 20:
+        off.append("free disk")
+    for name, val, target in (
+        ("resolved tasks today (issues closed)", count_issues("closedAt"), 200),
+        ("tasks created today (issues opened)", count_issues("createdAt"), 250),
+        ("commits today on origin/main", commits_today(), 2000),
+    ):
+        print(f"  {name}: {fmt(val)} (target: {target})")
+        if val is None or val < target:
+            off.append(name)
     for name, target in TARGETS:
-        print(f"  {name}: unknown (target: {target})")
-    print()
+        if name not in MEASURED:
+            print(f"  {name}: unknown (target: {target})")
     print("Heads:")
     for tag in HEADS:
-        print(f"  {tag}: unknown")
-    return 2
+        line = head_status(tag, snap)
+        print("  " + line)
+        if "not running" in line or "idle for" in line:
+            off.append(tag)
+    print("Off target: " + (", ".join(dict.fromkeys(off)) if off else "nothing"))
+    return 1 if off else 0
 
 
 if __name__ == "__main__":
