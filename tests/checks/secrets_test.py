@@ -20,6 +20,7 @@ class SecretsCheckTest(unittest.TestCase):
         self.repo = Path(tempfile.mkdtemp(prefix="secrets_test_"))
         self.addCleanup(shutil.rmtree, self.repo, ignore_errors=True)
         (self.repo / "scripts" / "checks").mkdir(parents=True)
+        shutil.copytree(SCRIPT.parent / "lib", self.repo / "scripts" / "checks" / "lib")
         shutil.copy(SCRIPT, self.repo / "scripts" / "checks" / "secrets.sh")
         self.git("init", "-q")
         self.git("config", "user.email", "t@example.invalid")
@@ -128,7 +129,7 @@ class SecretsCheckTest(unittest.TestCase):
         r = self.scan(env={"PRINCIPAL_OVERRIDE": "audited fixture"})
         self.assertEqual(r.returncode, 0)
         self.assertIn("audited fixture", r.stderr)
-        self.assertIn("audited fixture", (self.repo / ".local" / "principal-overrides.log").read_text())
+        self.assertIn("audited fixture", (self.repo / ".git" / "principal-override.log").read_text())
 
     def test_trailer_override_in_range(self):
         self.write("p.txt", "/home/" + "alexey\n")

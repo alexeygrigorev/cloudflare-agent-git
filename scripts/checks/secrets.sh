@@ -21,7 +21,7 @@
 # Principal override: PRINCIPAL_OVERRIDE=<reason> in the environment, or a
 # "Principal-Override: <reason>" trailer on a commit in the --pushed/--range
 # commits, lets the check pass. Findings are still listed and the reason is
-# logged to stderr and appended to .local/principal-overrides.log.
+# logged via scripts/checks/lib/principal-override.sh (shared by all checks).
 #
 # Private hostnames, personal emails and other host-specific terms are not
 # listed in this public file. Put extra extended regexes, one per line, in
@@ -134,19 +134,16 @@ sort -u "$findings" | while IFS="$(printf '\t')" read -r p n k; do
   echo "$p:$n: $k"
 done > "$tmp/out"
 if [ -s "$tmp/out" ]; then
-  reason=${PRINCIPAL_OVERRIDE:-}
-  if [ -z "$reason" ]; then
-    case $mode in
-      range) rr=$range ;;
-      pushed) rr="${base:-origin/main}..HEAD" ;;
-      *) rr="" ;;
-    esac
-    [ -n "$rr" ] && reason=$(git log --format='%(trailers:key=Principal-Override,valueonly,unfold)' "$rr" 2>/dev/null | grep -v '^$' | head -1)
-  fi
-  if [ -n "$reason" ]; then
+  case $mode in
+    range) rr=$range ;;
+    pushed) rr="${base:-origin/main}..HEAD" ;;
+    *) rr="" ;;
+  esac
+  msgs=""; [ -n "$rr" ] && msgs=$(git log --format=%B "$rr" 2>/dev/null)
+  # shellcheck source=lib/principal-override.sh
+  . "$(dirname "$0")/lib/principal-override.sh"
+  if principal_override secrets "$msgs"; then
     sed 's/^/secrets: overridden: /' "$tmp/out" >&2
-    echo "secrets: PRINCIPAL OVERRIDE honoured, reason: $reason" >&2
-    mkdir -p .local 2>/dev/null && printf '%s\tsecrets\t%s findings\t%s\n' "$(date -u +%FT%TZ)" "$(wc -l < "$tmp/out")" "$reason" >> .local/principal-overrides.log
     exit 0
   fi
   cat "$tmp/out" >&2
