@@ -11,6 +11,19 @@ Root is the founder's desktop coordinator. This chat runs on the laptop; Win35 i
 
 ## Start or resume
 
+### Running `a` on Hetzner
+
+`a` and `aplexer` are installed on Hetzner. From desktop PowerShell, put the remote command after `ssh`; the quotes keep its arguments together:
+
+```powershell
+ssh hetzner 'a list --json'
+ssh hetzner 'a capture codex-principal --screen --plain'
+```
+
+The first command lists the current sessions. Confirm the tag in that list before using the second; substitute its full current ID if the tag is ambiguous. These are read-only commands executed on Hetzner, not local desktop commands.
+
+For an interactive remote shell, run `ssh hetzner`, then `a list --json` at the remote prompt, and `exit` to return. That SSH shell is not an agent session: `a whoami --json` failed there during verification. Root's inbox/send/reply/ACK operations therefore run in the already bound mailbox worker below, not by setting an identity in the SSH shell.
+
 1. Run `hostname` locally. Check Hetzner with `ssh -o BatchMode=yes -o ConnectTimeout=10 hetzner hostname`; check Win35 with the same command using `win35`. A failed connection means unknown, not dead.
 2. Run `ssh hetzner 'aplexer list --json'`. Resolve current principal, head and root IDs, tags and workspaces. Read custody messages before acting if another root appears; do not create a competing root.
 3. Read `ssh hetzner 'cat ~/git/cloudflare-agent-git/.local/orchestrator-channel-identity.json'`. Require tag `desktop-orchestrator` and this root's previously verified ID. The bound worker checks its native identity at startup. If the binding is missing or mismatched, stop sends/ACKs and arrange recovery with the current principal.
