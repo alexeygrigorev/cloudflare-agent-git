@@ -647,6 +647,32 @@ def _collect():
                 choice = disk
                 resolution = 'registered completed session on disk'
 
+        # Sessionless systemd unit / workload_pid fallback
+        if choice is None or resolution == 'missing':
+            unit_pid = item.get('workload_pid')
+            unit_name = item.get('unit_name')
+            if not unit_pid and unit_name:
+                try:
+                    out = subprocess.check_output(
+                        ['systemctl', '--user', 'show', '-p', 'MainPID', '--value', unit_name],
+                        text=True, stderr=subprocess.DEVNULL
+                    ).strip()
+                    if out.isdigit() and int(out) > 0:
+                        unit_pid = int(out)
+                except Exception:
+                    pass
+            if unit_pid and proc(unit_pid).get('alive'):
+                choice = {
+                    'id': item.get('task_id') or item.get('tag') or f'unit-{unit_pid}',
+                    'tag': item.get('tag'),
+                    'workload_pid': unit_pid,
+                    'engine': item.get('engine') or (item.get('provider', '').split('/')[0] if item.get('provider') else 'systemd-unit'),
+                    'workspace': expected_ws,
+                    'reported_state': 'working' if 'running' in str(item.get('state_observation', '')) else 'idle',
+                    'reported_state_at_ms': int(time.time() * 1000),
+                }
+                resolution = f'sessionless unit {unit_name or unit_pid}'
+
         if choice:
             seen.add(choice['id'])
             if not item.get('workspace') and choice.get('workspace'):
