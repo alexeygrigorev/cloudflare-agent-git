@@ -188,13 +188,6 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 - No timestamps, correction notes, writing-process meta or quota percentages in the article. Tokens used do appear, in the metrics.
 - Count contributors by real identity, with evidence of work. Never count process IDs or role names, and say which coverage is unknown.
 
-### Visual system
-
-- All diagrams and illustrations share one style: the flat editorial print look of `website/assets/agent-git-illustration.png`, with paper `#fcfcf8`, ink `#1c2027`, cobalt `#2455ed` and orange `#ef7134`.
-- Design iterations use Claude Design at claude.ai/design. Each product gets its own landing section on the site.
-- The approved Claude Design export is the reference. A design change stays in preview until a reviewer other than the implementer has compared it with the reference, side by side, on desktop and mobile.
-- Art tells the story, not a measurement: never draw products, uptake or savings that aren't proven.
-
 ### Publishing and signup
 
 - CI builds the site from the public repo to GitHub Pages.
