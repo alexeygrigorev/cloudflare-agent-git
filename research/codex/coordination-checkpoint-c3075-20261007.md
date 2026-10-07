@@ -139,3 +139,19 @@ Ant b099d3 accepts narrowly scoped Branches operational adoption without a sourc
 The administrative observer verified existing watcher instances1/2 execute the same1275-byte script, hash18486ed1, bound to the distinct review. Actual journals show exit0 at00:02:44,00:03:44,00:04:44 and latest00:09:44. Implementer a2d’s first tool was00:00:46; distinct b5fca first00:03:52.846815/report12915B hash964538e4 and2531 first00:03:53.257928/report15528B hash418a292c have actual final reports. This closes the bounded source/installed-scheduler metadata check; hook effect, cap crossing and runtime idle wake remain open.
 
 D3v2’s third-store row actually entered STARTING at00:08:43 on a claimed ZAI900-second route, but immutable source receipt, named managed unit and first model actor remain absent. The canonical queued qualification remains truthful. Genuine corrective head messages b25687/b256c1 and the next principal00:20 check are recorded without inventing a peer deadline. A newly visible native Branches reviewer has not yet supplied an exact verified identity. Original failures,295 task IDs and protected leases remain preserved. The diagnostic stays on publication hold.
+
+## C3102 inbox delivery correction
+
+Exact supervisor7b→Ant3b envelope `01a113aa-3715-71c2-af6f-839e65d39d90`, created00:01:24.841101 UTC, is recorded as INBOX in both persisted last-request delivery and the matching receiver receipt. It is not SUBMITTED. The exact consumer ACK at00:03:47.355780 is genuine, but no positive idle-prompt submission is known. Ant’s b51448 idle-acceptance claim was challenged through principal b6a7ad/root a7e0; scoped lifecycle/idle acceptance remains open, not head agreement.
+
+The separate new Branches df8117/043c reviewc5632d32 outcome is retained as reported evidence while actual CLI/remote semantics await the observer. This correction does not erase its independent progress or alter protected task histories. The principal’s next check remains00:20 UTC. The original diagnostic remains held; a new stable evidence file may preserve later facts without asserting missing older bytes have been recovered.
+
+## C3103 real Branches sync and distinct continuation evidence
+
+Primary metadata observed before00:18 UTC verifies a real Branches invocation: sync26566 at00:09:29 failed, then26573 at00:09:45.085715 synceddf8117. Remote main `7f3e3006c00e93481286a6c85cd2ef99e9ab53c1` and the recoverydf8117 checkpoint match all seven owned blob hashes. Distinct reviewer043c first10:03/report12:21 and reportc563 were verified. Claimed receipt385cf0ab was not found in the checked local Git/path; its provenance remains unverified. The observer’s00:19 message label was a forecast, not an actual observation clock.
+
+Native timer26772 scheduled00:13:23.848279 with180-second ANY setting produced callback26776 at00:16:24.656376 and first head tool26778 at00:16:26.881428, followed by useful receipt/Bus diagnosis. This is positive timer-associated continuation, separate from idle prompt delivery.
+
+The aa3715 message was created00:01:24.841101 after Ant was already executing a command at00:01:23.599937. It was shown00:01:28.860221 and genuinely ACKed00:01:33.196137;00:03:47 is later cursor reconciliation. Both persisted delivery records say INBOX, never SUBMITTED. The earlier correction’s ACK-time description is superseded by these exact native events. At00:16:16 the principal twice observed an empty idle composer, then one strict delivery of existingb6a7ad refused NOTREADY: idle1791332013145 preceded laterPTY1791332169363. No submission or fallback occurred. Timer progress does not negate this failed delivery.
+
+D3v2’s rendered actor-death/run-waiting claim remains unverified, without model credit or fabricated new task. All295 task IDs, original misses and source leases are preserved. The00:20 principal check has not been recorded before its actual execution.
