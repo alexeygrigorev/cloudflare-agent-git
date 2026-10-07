@@ -16,6 +16,7 @@ These are the things we track. Every number is measured, never estimated, and an
 
 ## Agents
 
+- Idle time: how long each principal and head sits idle, as a total per agent per day and as the longest single stretch. This is what we want to bring down. An agent waiting on a worker or reviewer that is running is not idle.
 - Active agents: deduplicated useful workers with recent first-tool, progress or terminal evidence, counted against the target of 50. Heads, services, controllers, queued and ended agents are excluded. If coverage is unknown the count is unknown.
 - Agents run: distinct agents by real identity with evidence of work (commits, tests, reviews), never process IDs or role names. Report a minimum and say which coverage is unknown.
 - Ready reserve: accepted, executable, ready tasks, against the backlog needed to keep 50 busy.
