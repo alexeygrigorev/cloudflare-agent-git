@@ -4,7 +4,7 @@ import { ADMIN_TOKEN, RUNNER_TOKEN, sidecarCommit } from "./helpers.js";
 
 /**
  * C1474 real fork adoption loop, automated for CI (live counterpart:
- * research/antigravity/adoption/REAL-FORK-ADOPTION-REPORT.md, run of
+ * https://github.com/alexeygrigorev/cloudflare-agent-git/blob/research-archive-20261007/research/antigravity/adoption/REAL-FORK-ADOPTION-REPORT.md, run of
  * 2026-10-04 against src/local on this checkout). The full agent
  * workflow a real executor performs: create tasks -> hold fork +
  * per-task write token -> advance the fork -> push report under the

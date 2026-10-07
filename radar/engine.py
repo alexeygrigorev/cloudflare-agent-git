@@ -20,8 +20,8 @@ Strict Invariants:
 - Git merge-tree syntax uses --merge-base=<base>.
 
 Reference:
-- research/antigravity/agent-branches/CONTRACT-L2-L3.md
-- research/claude/spike-a01-merge-matrix.md
+- https://github.com/alexeygrigorev/cloudflare-agent-git/blob/research-archive-20261007/research/antigravity/agent-branches/CONTRACT-L2-L3.md
+- https://github.com/alexeygrigorev/cloudflare-agent-git/blob/research-archive-20261007/research/claude/spike-a01-merge-matrix.md
 """
 
 from __future__ import annotations
