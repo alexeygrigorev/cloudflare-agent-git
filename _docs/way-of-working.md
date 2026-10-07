@@ -173,7 +173,55 @@ Agent Branches needs a CLI the founder can demo, including a `branches sync git`
 
 ## 6. Resources
 
+Numbers here are rules, never measurements. Take fresh readings before every launch, and never reuse a balance or sample quoted in a document or an old report. [agent-derived]
+
+### Provider routing
+
+- Run `quse PROVIDER --json` fresh before each launch and while supervising. An unknown or error reading means no launch. [m8] [agent-derived]
+- Use expiring quota first: when a provider has a lot left and resets soon, use it as much as possible; when it is low, switch to another. [human-delivery-reset-20261004] [human-better-git-progress-and-utilization-20261005]
+- Prefer z.ai (ZCode via zcodex), OpenCode Space Bunny, OpenCode Muse Spark 1.3 and Gemini through Antigravity, and use them heavily. [m8] [m20] [m34] [m-20261003-1512] [human-close-supervision-fifty-mixed-providers-20261005]
+- Use Codex and Claude sparingly. Start no new Codex agent once any Codex window shows 15% or less remaining. [m8] [m9] [m-20261003-1512]
+- Start no new Grok agent when any window shows 5% or less remaining, or the reading is unknown, and hand work over to a healthy provider before then. [agent-derived]
+- z.ai has one shared ceiling of 26 live sessions across all hosts and projects, not 26 each. [agent-derived]
+- ZCode was free from 17:00 to 03:00 Berlin while its campaign ran. Check that the campaign is still live and that you are on the right model before treating any time as free. [m34] [m-20261003-2017]
+- Copilot quota drains in one session, so don't bother with it. [human-delivery-reset-20261004]
+- When one service hits its quota, plan around it and move work to a healthy provider; don't park the whole direction. [human-idle-heads-quota-rebalance-20261005]
+- The monitoring helper runs on GPT-6 Luna at max effort to save usage. It does not count as a worker. [human-luna-max-monitor-20261005] [human-scale50-solution-followthrough-20261006]
+- Claude Opus is used only for the daily write-up. Sonnet workers are allowed; check the exact model and route, and never substitute one silently. [m-20261003-2018] [agent-derived]
+- Launch through the maintained launcher, never through an ad hoc provider shortcut. A fallback provider is a new admitted attempt. [human-fifty-workers-use-agent-launcher-20261005] [agent-derived]
+
+### Host limits
+
+- For the push to 50 agents, don't refuse a launch because free RAM is low. Measure the memory actually used instead. [human-ram-override-twentyfive-subagents-20261005]
+- Contain every worker separately at 1500M memory and 100 tasks. One cap on a head does not contain the workers under it. [agent-derived]
+- Keep the root disk at or above 20 GiB free after counting the growth already promised to running jobs. Below 30 GiB, one cleanup agent at a time frees disposable scratch. [relayed-disk-steering]
+- Scratch for spikes is capped at 512 MiB in total, and each job budgets what it actually grows. [agent-derived]
+- RAM, not disk, is what breaks when many tests run in parallel; plan test fan-out with that in mind. [m-20261003-dictation]
+- No Rust builds and no global installs until build budgets are proven. [m-20261003-dictation] [agent-derived]
+- Agents run on Hetzner, Win35 and the founder's own computers, which is why he rented Hetzner. [human-cloudflare-budget-20261004] [human-win35-new-root-instructions-20261007]
+
+### Spending
+
+- The whole Cloudflare and cloud budget is USD 5 a month, including the Workers Paid base fee. [human-cloudflare-budget-20261004] [m-20261003-1733]
+- No agent execution on Cloudflare Workers, Containers or Workers AI. Light relay or storage use is allowed only with measured usage and a real bound on overage. [human-cloudflare-budget-20261004]
+- Messaging between agents should cost close to nothing. Prefer the simplest design over metered storage. [human-better-git-progress-and-utilization-20261005]
+- No purchases, credits, billing changes, new paid services or AWS compute. [human-cloudflare-budget-20261004] [human-win35-agentbus-nonssh-20261006]
+
 ## 7. Documentation rules
+
+- All documentation lives in one folder, `_docs/`. `BRIEF.md`, `SUBMISSION.md` and `INDEX.md` are removed, and the mission is in section 1 here. [human-one-docs-folder-20261007]
+- Names under `_docs/` are lowercase kebab-case, never all caps. [human-docs-lowercase-names-20261007]
+- This document is the one policy document for now. We split it later if that makes sense. [human-one-way-of-working-doc-20261007]
+- Docs describe the target state, how things should be, not their history or the current workarounds. [human-docs-target-state-not-current-20261007]
+- `AGENTS.md` stays at the root as a short pointer to this document, because agent tools look for it there. `CLAUDE.md` is gone. [human-docs-consolidation-agents-md-only-20261007] [agent-derived]
+- The founder journal in `_docs/founder-journal/` is the one place for the founder's messages and for failures. Every message is saved verbatim, one file per message, the same day it arrives, and never edited afterwards. [human-founder-journal-20261007] [human-docs-consolidation-agents-md-only-20261007] [m4]
+- `failures.md` in the founder journal records process failures and their lessons in plain words, newest first. [human-founder-journal-20261007]
+- All research lives in one file, `_docs/research.md`; a new finding edits a section and never adds a file. [human-research-consolidated-incidents-separate-20261007]
+- Incident stories live on the separate `history` branch, out of the working tree and out of agents' context. [human-research-consolidated-incidents-separate-20261007]
+- No dated reports in the tree. Verdicts, receipts and incidents are issue comments. The only dated files are founder messages, published daily pages and their assets. [agent-derived]
+- Journals are not appended in the repo. The agents bus is the log, and private or long evidence goes in git-ignored `.local/`. [agent-derived]
+- A regrowth guard (`scripts/check_repo_shape.py`) runs in CI and before push, and fails on new top-level paths, dated files, edits to founder messages and oversized docs. [agent-derived]
+- Never delete a file to tidy up without a tag that keeps it readable. Removed material stays at an archive tag. [agent-derived]
 
 ## 8. Public journal and editorial rules
 
