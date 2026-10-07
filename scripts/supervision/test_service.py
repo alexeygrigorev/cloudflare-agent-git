@@ -1555,5 +1555,384 @@ class ComposerEvaluationTests(unittest.TestCase):
   self.assertEqual(service.composer(screen), 'unknown')
 
 
+class RestingStateContradictionPrecheckTests(unittest.TestCase):
+ """Unit tests for resting-state contradiction pre-screening and fail-closed detail handling."""
+
+ def test_check_resting_state_contradicted_logic(self):
+  """Verify check_resting_state_contradicted handling of contradicted, non-contradicted, grace period, missing keys, and invalid types."""
+  # 1. Contradicted cases (last_activity_ms > reported_state_at_ms + idle_grace_ms)
+  self.assertTrue(service.check_resting_state_contradicted({
+      'last_activity_ms': 2000,
+      'reported_state_at_ms': 500,
+  }))
+  # Production timestamps from dashboard c7a75f76
+  self.assertTrue(service.check_resting_state_contradicted({
+      'last_activity_ms': 1791344984723,
+      'reported_state_at_ms': 1791175745376,
+  }))
+  # Production timestamps from publication 513eab03
+  self.assertTrue(service.check_resting_state_contradicted({
+      'last_activity_ms': 1791345253896,
+      'reported_state_at_ms': 1791273064167,
+  }))
+  # String numeric representations
+  self.assertTrue(service.check_resting_state_contradicted({
+      'last_activity_ms': '1791344984723',
+      'reported_state_at_ms': '1791175745376',
+  }))
+
+  # 2. Non-contradicted cases (PTY activity before or at reported idle)
+  self.assertFalse(service.check_resting_state_contradicted({
+      'last_activity_ms': 1000,
+      'reported_state_at_ms': 2000,
+  }))
+  self.assertFalse(service.check_resting_state_contradicted({
+      'last_activity_ms': 1000,
+      'reported_state_at_ms': 1000,
+  }))
+
+  # 3. Grace period tests
+  # Default grace period (1000ms):
+  # Exactly at grace boundary (2000 == 1000 + 1000) -> not contradicted
+  self.assertFalse(service.check_resting_state_contradicted({
+      'last_activity_ms': 2000,
+      'reported_state_at_ms': 1000,
+  }))
+  # 1ms over grace boundary (2001 > 1000 + 1000) -> contradicted
+  self.assertTrue(service.check_resting_state_contradicted({
+      'last_activity_ms': 2001,
+      'reported_state_at_ms': 1000,
+  }))
+  # Custom grace period
+  self.assertFalse(service.check_resting_state_contradicted({
+      'last_activity_ms': 1500,
+      'reported_state_at_ms': 1000,
+  }, idle_grace_ms=500))
+  self.assertTrue(service.check_resting_state_contradicted({
+      'last_activity_ms': 1501,
+      'reported_state_at_ms': 1000,
+  }, idle_grace_ms=500))
+  self.assertFalse(service.check_resting_state_contradicted({
+      'last_activity_ms': 1000,
+      'reported_state_at_ms': 1000,
+  }, idle_grace_ms=0))
+  self.assertTrue(service.check_resting_state_contradicted({
+      'last_activity_ms': 1001,
+      'reported_state_at_ms': 1000,
+  }, idle_grace_ms=0))
+
+  # 4. Missing timestamps / keys
+  self.assertFalse(service.check_resting_state_contradicted({}))
+  self.assertFalse(service.check_resting_state_contradicted({'last_activity_ms': 2000}))
+  self.assertFalse(service.check_resting_state_contradicted({'reported_state_at_ms': 1000}))
+  self.assertFalse(service.check_resting_state_contradicted({'last_activity_ms': None, 'reported_state_at_ms': 1000}))
+  self.assertFalse(service.check_resting_state_contradicted({'last_activity_ms': 2000, 'reported_state_at_ms': None}))
+  self.assertFalse(service.check_resting_state_contradicted({'last_activity_ms': None, 'reported_state_at_ms': None}))
+
+  # 5. Invalid types safely return False
+  self.assertFalse(service.check_resting_state_contradicted(None))
+  self.assertFalse(service.check_resting_state_contradicted([]))
+  self.assertFalse(service.check_resting_state_contradicted('invalid-session-dict'))
+  self.assertFalse(service.check_resting_state_contradicted(12345))
+  self.assertFalse(service.check_resting_state_contradicted({
+      'last_activity_ms': 'not-numeric',
+      'reported_state_at_ms': 1000,
+  }))
+  self.assertFalse(service.check_resting_state_contradicted({
+      'last_activity_ms': 2000,
+      'reported_state_at_ms': 'not-numeric',
+  }))
+  self.assertFalse(service.check_resting_state_contradicted({
+      'last_activity_ms': [2000],
+      'reported_state_at_ms': 1000,
+  }))
+  self.assertFalse(service.check_resting_state_contradicted({
+      'last_activity_ms': 2000,
+      'reported_state_at_ms': {'nested': 1000},
+  }))
+  self.assertFalse(service.check_resting_state_contradicted({
+      'last_activity_ms': 2000,
+      'reported_state_at_ms': 1000,
+  }, idle_grace_ms='not-numeric-grace'))
+
+ def test_delivery_precheck_resting_state_contradiction(self):
+  """Verify that resting-state contradiction precheck suppresses delivery, sets diagnostic_hold and 180s cooldown, and clears hold upon recovery."""
+  with tempfile.TemporaryDirectory() as td:
+   tmp = pathlib.Path(td)
+   root = tmp / 'root'
+   (root / 'coordination').mkdir(parents=True)
+   registry = {
+       'teams': [
+           {'id': 'T1', 'principal_tags': ['codex-principal']},
+           {'id': 'T2', 'head_tag': 'agent-branches-head', 'principal_tags': ['codex-principal']}
+       ]
+   }
+   (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps(registry))
+   tasks = [
+       {'id': 'task-1', 'team_id': 'T1', 'status': 'ready', 'owner_tag': 'codex-principal'},
+       {'id': 'task-2', 'team_id': 'T2', 'status': 'ready', 'owner_tag': 'agent-branches-head'}
+   ]
+   (root / 'coordination/TASKS.json').write_text(json.dumps(tasks))
+   private = tmp / 'private'
+   private.mkdir()
+   bin_dir = tmp / 'bin'
+   bin_dir.mkdir()
+   pinned = bin_dir / 'aplexer'
+   pinned.write_bytes(b'PINNED')
+
+   # Pre-stage pending messages ready for delivery for both principal and head
+   initial_memory = {
+       'codex-principal': {
+           'event_key': 'ev-1',
+           'session_id': 'sess-codex',
+           'ready_snapshot_count': 2,
+           'pending': {
+               'id': 'm-precheck-princ',
+               'sender_id': 'sup-1',
+               'sender_tag': 'experiment-supervision',
+               'recipient_session_id': 'sess-codex',
+               'recipient_tag': 'codex-principal',
+               'delivery': 'inbox',
+               'created_at': '1970-01-01T00:15:50+00:00'
+           }
+       },
+       'agent-branches-head': {
+           'event_key': 'ev-head-1',
+           'session_id': 'sess-head',
+           'ready_snapshot_count': 2,
+           'pending': {
+               'id': 'm-precheck-head',
+               'sender_id': 'sup-1',
+               'sender_tag': 'experiment-supervision',
+               'recipient_session_id': 'sess-head',
+               'recipient_tag': 'agent-branches-head',
+               'delivery': 'inbox',
+               'created_at': '1970-01-01T00:15:50+00:00'
+           }
+       }
+   }
+   (private / 'state.json').write_text(json.dumps(initial_memory))
+
+   session_data = {
+       'codex': {
+           'workspace': str(root), 'tag': 'codex-principal', 'id': 'sess-codex',
+           'reported_state': 'idle', 'workload_pid': str(os.getpid()),
+           'last_activity_ms': 1791344984723, 'reported_state_at_ms': 1791175745376
+       },
+       'head': {
+           'workspace': str(root), 'tag': 'agent-branches-head', 'id': 'sess-head',
+           'reported_state': 'idle', 'workload_pid': str(os.getpid()),
+           'last_activity_ms': 1791345253896, 'reported_state_at_ms': 1791273064167
+       }
+   }
+
+   calls = []
+   cycles = [0]
+   curr_time = [1000.0]
+
+   def fake_cmd(args, timeout=20):
+     words = [a for a in args[1:] if not a.startswith('-')]
+     if words[:1] == ['whoami']:
+       return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-1'})
+     if words[:1] == ['list']:
+       cycles[0] += 1
+       if cycles[0] >= 2:
+         (private / 'stop').write_text('stop')
+       return json.dumps([session_data['codex'], session_data['head']])
+     if 'capture' in args:
+       return '› Ask Codex to do anything\n'
+     if args[0] == 'quse':
+       return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 90}}}})
+     return '{}'
+
+   class R:
+     def __init__(self, rc, out, err=''):
+       self.returncode, self.stdout, self.stderr = rc, out, err
+
+   def fake_run(args, **kw):
+     calls.append(list(args))
+     if 'deliver' in args:
+       return R(0, json.dumps({'status': 'recipient-acked'}))
+     return R(0, '{}')
+
+   real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+   real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
+
+   try:
+     service.command = fake_cmd
+     service.subprocess.run = fake_run
+     service.time = type('T', (), {'time': staticmethod(lambda: curr_time[0]), 'sleep': staticmethod(lambda s: None)})()
+     service.ROOT, service.PRIVATE, service.BINARY = root, private, str(pinned)
+
+     # Cycle 1: Precheck triggers contradiction hold for both principal and head
+     service.run()
+
+     delivers = [c for c in calls if 'deliver' in c]
+     self.assertEqual(delivers, [], "Delivery must be suppressed when resting state contradiction is detected")
+
+     st = json.loads((private / 'state.json').read_text())
+     princ_item = st['codex-principal']
+     self.assertEqual(princ_item.get('diagnostic_hold'), 'resting-state-contradicted-by-pty')
+     self.assertEqual(princ_item.get('pending', {}).get('diagnostic_hold'), 'resting-state-contradicted-by-pty')
+     self.assertEqual(princ_item.get('cooldown_until'), 1180.0)
+
+     head_item = st['agent-branches-head']
+     self.assertEqual(head_item.get('diagnostic_hold'), 'resting-state-contradicted-by-pty')
+     self.assertEqual(head_item.get('pending', {}).get('diagnostic_hold'), 'resting-state-contradicted-by-pty')
+     self.assertEqual(head_item.get('cooldown_until'), 1180.0)
+
+     events_file = private / 'events.jsonl'
+     self.assertTrue(events_file.exists())
+     events = [json.loads(line) for line in events_file.read_text().splitlines() if line.strip()]
+
+     p_events = [e for e in events if e.get('kind') == 'delivery-precheck-held']
+     self.assertTrue(p_events)
+     self.assertEqual(p_events[0]['principal'], 'codex-principal')
+     self.assertEqual(p_events[0]['message_id'], 'm-precheck-princ')
+     self.assertEqual(p_events[0]['reason'], 'resting-state-contradicted-by-pty')
+     self.assertEqual(p_events[0]['last_activity_ms'], 1791344984723)
+     self.assertEqual(p_events[0]['reported_state_at_ms'], 1791175745376)
+
+     h_events = [e for e in events if e.get('kind') == 'head-delivery-precheck-held']
+     self.assertTrue(h_events)
+     self.assertEqual(h_events[0]['head'], 'agent-branches-head')
+     self.assertEqual(h_events[0]['message_id'], 'm-precheck-head')
+     self.assertEqual(h_events[0]['reason'], 'resting-state-contradicted-by-pty')
+     self.assertEqual(h_events[0]['last_activity_ms'], 1791345253896)
+     self.assertEqual(h_events[0]['reported_state_at_ms'], 1791273064167)
+
+     # Cycle 2: Recovery - session reports fresh state, cooldown expires, hold cleared and delivery succeeds
+     (private / 'stop').unlink(missing_ok=True)
+     cycles[0] = 0
+     curr_time[0] = 1200.0  # past 1180.0 cooldown
+     # Update reported_state_at_ms so it is newer than last_activity_ms
+     session_data['codex']['reported_state_at_ms'] = 1791344999999
+     session_data['head']['reported_state_at_ms'] = 1791345999999
+
+     service.run()
+
+     delivers_recovered = [c for c in calls if 'deliver' in c]
+     self.assertTrue(len(delivers_recovered) >= 2, "Deliveries must proceed after resting state recovers")
+
+     st_recovered = json.loads((private / 'state.json').read_text())
+     self.assertIsNone(st_recovered['codex-principal'].get('diagnostic_hold'))
+     self.assertIsNone(st_recovered['agent-branches-head'].get('diagnostic_hold'))
+   finally:
+     service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
+     service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
+
+ def test_delivery_not_ready_resting_state_contradiction_detail(self):
+  """Verify that Rust deliver failure detail mentioning contradicted resting state or subsequent PTY activity sets diagnostic_hold and 180s cooldown."""
+  with tempfile.TemporaryDirectory() as td:
+   tmp = pathlib.Path(td)
+   root = tmp / 'root'
+   (root / 'coordination').mkdir(parents=True)
+   (root / 'coordination/TEAM-REGISTRY.json').write_text(json.dumps({'teams': [{'id': 'T1', 'principal_tags': ['codex-principal']}]}))
+   (root / 'coordination/TASKS.json').write_text(json.dumps({'tasks': [{'id': 'task-1', 'team_id': 'T1', 'status': 'ready', 'owner_tag': 'codex-principal'}]}))
+   private = tmp / 'private'
+   private.mkdir()
+   bin_dir = tmp / 'bin'
+   bin_dir.mkdir()
+   pinned = bin_dir / 'aplexer'
+   pinned.write_bytes(b'PINNED')
+
+   initial_memory = {
+       'codex-principal': {
+           'event_key': 'ev-1',
+           'session_id': 'sess-codex',
+           'ready_snapshot_count': 2,
+           'pending': {
+               'id': 'm-rust-failclosed',
+               'sender_id': 'sup-1',
+               'sender_tag': 'experiment-supervision',
+               'recipient_session_id': 'sess-codex',
+               'recipient_tag': 'codex-principal',
+               'delivery': 'inbox',
+               'created_at': '1970-01-01T00:15:50+00:00'
+           }
+       }
+   }
+   (private / 'state.json').write_text(json.dumps(initial_memory))
+
+   deliver_ret = [{
+       'status': 'not-ready',
+       'detail': 'recipient reported idle at 1791175745376ms, but subsequent PTY activity contradicted resting state; delivery fail-closed'
+   }]
+   calls = []
+   cycles = [0]
+
+   def fake_cmd(args, timeout=20):
+     words = [a for a in args[1:] if not a.startswith('-')]
+     if words[:1] == ['whoami']:
+       return json.dumps({'workspace': str(root), 'tag': 'experiment-supervision', 'id': 'sup-1'})
+     if words[:1] == ['list']:
+       cycles[0] += 1
+       if cycles[0] >= 2:
+         (private / 'stop').write_text('stop')
+       # Non-contradicted timestamps in aplexer list so precheck passes
+       return json.dumps([{
+           'workspace': str(root), 'tag': 'codex-principal', 'id': 'sess-codex',
+           'reported_state': 'idle', 'workload_pid': str(os.getpid()),
+           'last_activity_ms': 1000, 'reported_state_at_ms': 2000
+       }])
+     if 'capture' in args:
+       return '› Ask Codex to do anything\n'
+     if args[0] == 'quse':
+       return json.dumps({'codex': {'status': 'ok', 'windows': {'7d': {'percent_remaining': 90}}}})
+     return '{}'
+
+   class R:
+     def __init__(self, rc, out, err=''):
+       self.returncode, self.stdout, self.stderr = rc, out, err
+
+   def fake_run(args, **kw):
+     calls.append(list(args))
+     if 'deliver' in args:
+       return R(0, json.dumps(deliver_ret[0]))
+     return R(0, '{}')
+
+   real_cmd, real_run, real_time = service.command, service.subprocess.run, service.time
+   real_root, real_priv, real_bin = service.ROOT, service.PRIVATE, service.BINARY
+
+   try:
+     service.command = fake_cmd
+     service.subprocess.run = fake_run
+     service.time = type('T', (), {'time': staticmethod(lambda: 1000.0), 'sleep': staticmethod(lambda s: None)})()
+     service.ROOT, service.PRIVATE, service.BINARY = root, private, str(pinned)
+
+     # Part 1: Full contradiction detail
+     service.run()
+
+     delivers = [c for c in calls if 'deliver' in c]
+     self.assertTrue(delivers, "Delivery attempt was made")
+
+     st = json.loads((private / 'state.json').read_text())
+     item = st['codex-principal']
+     self.assertEqual(item.get('diagnostic_hold'), 'resting-state-contradicted-by-pty')
+     self.assertEqual(item.get('pending', {}).get('diagnostic_hold'), 'resting-state-contradicted-by-pty')
+     self.assertEqual(item.get('cooldown_until'), 1180.0)
+
+     # Part 2: Alternative detail phrasing with 'subsequent PTY activity'
+     deliver_ret[0] = {
+         'status': 'not-ready',
+         'detail': 'subsequent PTY activity observed after reported state; delivery fail-closed'
+     }
+     item['cooldown_until'] = 0  # reset cooldown
+     (private / 'state.json').write_text(json.dumps({'codex-principal': item}))
+     (private / 'stop').unlink(missing_ok=True)
+     cycles[0] = 0
+
+     service.run()
+
+     st2 = json.loads((private / 'state.json').read_text())
+     item2 = st2['codex-principal']
+     self.assertEqual(item2.get('diagnostic_hold'), 'resting-state-contradicted-by-pty')
+     self.assertEqual(item2.get('pending', {}).get('diagnostic_hold'), 'resting-state-contradicted-by-pty')
+     self.assertEqual(item2.get('cooldown_until'), 1180.0)
+   finally:
+     service.command, service.subprocess.run, service.time = real_cmd, real_run, real_time
+     service.ROOT, service.PRIVATE, service.BINARY = real_root, real_priv, real_bin
+
+
 if __name__=='__main__':unittest.main()
 

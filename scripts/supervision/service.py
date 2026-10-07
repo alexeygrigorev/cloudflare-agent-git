@@ -1204,6 +1204,24 @@ def task_ready_fingerprint(t):
     }
 
 
+def check_resting_state_contradicted(session: dict, idle_grace_ms: int = 1000) -> bool:
+    """
+    Check if recipient session's resting state is contradicted by subsequent PTY activity.
+    Matches Rust native message_deferred check:
+    last_activity_ms > reported_state_at_ms + IDLE_GRACE_MS
+    """
+    if not isinstance(session, dict):
+        return False
+    last_activity = session.get('last_activity_ms')
+    reported_state_at = session.get('reported_state_at_ms')
+    if last_activity is None or reported_state_at is None:
+        return False
+    try:
+        return int(last_activity) > int(reported_state_at) + int(idle_grace_ms)
+    except (ValueError, TypeError):
+        return False
+
+
 def run():
     os.chdir(ROOT)
     PRIVATE.mkdir(parents=True, exist_ok=True)
@@ -1581,43 +1599,56 @@ def run():
                 elif item.get('pending_reason') == 'original sender changed; original recipient ACK/reply required':
                     item.pop('pending_reason', None)
                 if may_deliver(pending, identity['id'], spool=PRIVATE) and count >= 2 and time.time() >= item.get('cooldown_until', 0) and not item.get('failover_candidate'):
-                    # Third immediate check closes most polling races; native command still enforces readiness.
-                    fresh_screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
-                    if composer(fresh_screen, tag) == 'empty':
-                        deliver_args = [BINARY, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json']
-                        result = subprocess.run(deliver_args, capture_output=True, text=True, timeout=20)
-                        deliver_stderr = (result.stderr or '').strip()
-                        if result.returncode and MAILBOX_BUSY.search(deliver_stderr):
-                            # Exactly one invocation; pending stays unreconciled with outcome UNKNOWN.
-                            raise DeliveryUncertain(deliver_args, deliver_stderr, result.returncode)
-                        try:
-                            outcome = json.loads(result.stdout)
-                        except json.JSONDecodeError:
-                            outcome = {'status': 'delivery-uncertain', 'returncode': result.returncode}
-                        # Fail-closed safety: no fallback to binaries lacking composer draft detection.
-                        # Refusal from reviewed binary is preserved verbatim in delivery audit evidence.
-                        atomic(PRIVATE / f"delivery-{pending['id']}.json", outcome)
-                        status = outcome.get('status', outcome.get('delivery', 'delivery-uncertain'))
-                        pending['delivery'] = status
-                        event('delivery-attempt', principal=tag, message_id=pending['id'], outcome=status)
-                        if status == 'not-ready':
-                            detail = outcome.get('detail', '')
-                            if (('Context' in detail or 'GPT-' in detail) and '·' in detail) or re.search(
-                                r'Aplexer awareness|Before editing files|Declare your work|Check peer mail|participate in \d+ workspace|Workspace coordination|worktree|peers|shared paths|peer-provided data',
-                                detail
-                            ):
-                                item['diagnostic_hold'] = 'known-footer-classifier-mismatch'
-                                pending['diagnostic_hold'] = 'known-footer-classifier-mismatch'
-                            if item.get('diagnostic_hold') == 'known-footer-classifier-mismatch':
-                                item['cooldown_until'] = time.time() + 180
-                        if status == 'recipient-acked':
-                            item['last_request'] = pending
+                    if check_resting_state_contradicted(session):
+                        item['diagnostic_hold'] = 'resting-state-contradicted-by-pty'
+                        pending['diagnostic_hold'] = 'resting-state-contradicted-by-pty'
+                        item['cooldown_until'] = time.time() + 180
+                        event('delivery-precheck-held', principal=tag, message_id=pending['id'], reason='resting-state-contradicted-by-pty', last_activity_ms=session.get('last_activity_ms'), reported_state_at_ms=session.get('reported_state_at_ms'))
+                    else:
+                        if item.get('diagnostic_hold') == 'resting-state-contradicted-by-pty':
                             item.pop('diagnostic_hold', None)
-                            item.pop('failover_candidate', None)
-                            item['cooldown_until'] = time.time() + (1800 if tag == 'claude-principal' else 180)
-                            pending = None
-                        # Submitted stays pending until genuine reply/read ACK, not repeated on timer.
-                        # Unknown/uncertain outcomes prohibit automatic retry.
+                            pending.pop('diagnostic_hold', None)
+                        # Third immediate check closes most polling races; native command still enforces readiness.
+                        fresh_screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
+                        if composer(fresh_screen, tag) == 'empty':
+                            deliver_args = [BINARY, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json']
+                            result = subprocess.run(deliver_args, capture_output=True, text=True, timeout=20)
+                            deliver_stderr = (result.stderr or '').strip()
+                            if result.returncode and MAILBOX_BUSY.search(deliver_stderr):
+                                # Exactly one invocation; pending stays unreconciled with outcome UNKNOWN.
+                                raise DeliveryUncertain(deliver_args, deliver_stderr, result.returncode)
+                            try:
+                                outcome = json.loads(result.stdout)
+                            except json.JSONDecodeError:
+                                outcome = {'status': 'delivery-uncertain', 'returncode': result.returncode}
+                            # Fail-closed safety: no fallback to binaries lacking composer draft detection.
+                            # Refusal from reviewed binary is preserved verbatim in delivery audit evidence.
+                            atomic(PRIVATE / f"delivery-{pending['id']}.json", outcome)
+                            status = outcome.get('status', outcome.get('delivery', 'delivery-uncertain'))
+                            pending['delivery'] = status
+                            event('delivery-attempt', principal=tag, message_id=pending['id'], outcome=status)
+                            if status == 'not-ready':
+                                detail = outcome.get('detail', '')
+                                if 'contradicted resting state' in detail or 'subsequent PTY activity' in detail:
+                                    item['diagnostic_hold'] = 'resting-state-contradicted-by-pty'
+                                    pending['diagnostic_hold'] = 'resting-state-contradicted-by-pty'
+                                    item['cooldown_until'] = time.time() + 180
+                                elif (('Context' in detail or 'GPT-' in detail) and '·' in detail) or re.search(
+                                    r'Aplexer awareness|Before editing files|Declare your work|Check peer mail|participate in \d+ workspace|Workspace coordination|worktree|peers|shared paths|peer-provided data',
+                                    detail
+                                ):
+                                    item['diagnostic_hold'] = 'known-footer-classifier-mismatch'
+                                    pending['diagnostic_hold'] = 'known-footer-classifier-mismatch'
+                                if item.get('diagnostic_hold') == 'known-footer-classifier-mismatch':
+                                    item['cooldown_until'] = time.time() + 180
+                            if status == 'recipient-acked':
+                                item['last_request'] = pending
+                                item.pop('diagnostic_hold', None)
+                                item.pop('failover_candidate', None)
+                                item['cooldown_until'] = time.time() + (1800 if tag == 'claude-principal' else 180)
+                                pending = None
+                            # Submitted stays pending until genuine reply/read ACK, not repeated on timer.
+                            # Unknown/uncertain outcomes prohibit automatic retry.
 
                 if pending:
                     is_beyond, dur, slo_limit, block_reason = check_pending_slo(pending, tag, item, time.time())
@@ -1924,37 +1955,50 @@ def run():
                 elif item.get('pending_reason') == 'original sender changed; original recipient ACK/reply required':
                     item.pop('pending_reason', None)
                 if may_deliver(pending, identity['id'], spool=PRIVATE) and count >= 2 and time.time() >= item.get('cooldown_until', 0) and not item.get('failover_candidate'):
-                    fresh_screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
-                    if composer(fresh_screen, head_tag) == 'empty':
-                        deliver_args = [BINARY, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json']
-                        result = subprocess.run(deliver_args, capture_output=True, text=True, timeout=20)
-                        deliver_stderr = (result.stderr or '').strip()
-                        if result.returncode and MAILBOX_BUSY.search(deliver_stderr):
-                            raise DeliveryUncertain(deliver_args, deliver_stderr, result.returncode)
-                        try:
-                            outcome = json.loads(result.stdout)
-                        except json.JSONDecodeError:
-                            outcome = {'status': 'delivery-uncertain', 'returncode': result.returncode}
-                        atomic(PRIVATE / f"delivery-{pending['id']}.json", outcome)
-                        status = outcome.get('status', outcome.get('delivery', 'delivery-uncertain'))
-                        pending['delivery'] = status
-                        event('head-delivery-attempt', head=head_tag, message_id=pending['id'], outcome=status)
-                        if status == 'not-ready':
-                            detail = outcome.get('detail', '')
-                            if (('Context' in detail or 'GPT-' in detail) and '·' in detail) or re.search(
-                                r'Aplexer awareness|Before editing files|Declare your work|Check peer mail|participate in \d+ workspace|Workspace coordination|worktree|peers|shared paths|peer-provided data',
-                                detail
-                            ):
-                                item['diagnostic_hold'] = 'known-footer-classifier-mismatch'
-                                pending['diagnostic_hold'] = 'known-footer-classifier-mismatch'
-                            if item.get('diagnostic_hold') == 'known-footer-classifier-mismatch':
-                                item['cooldown_until'] = time.time() + 180
-                        if status == 'recipient-acked':
-                            item['last_request'] = pending
+                    if check_resting_state_contradicted(session):
+                        item['diagnostic_hold'] = 'resting-state-contradicted-by-pty'
+                        pending['diagnostic_hold'] = 'resting-state-contradicted-by-pty'
+                        item['cooldown_until'] = time.time() + 180
+                        event('head-delivery-precheck-held', head=head_tag, message_id=pending['id'], reason='resting-state-contradicted-by-pty', last_activity_ms=session.get('last_activity_ms'), reported_state_at_ms=session.get('reported_state_at_ms'))
+                    else:
+                        if item.get('diagnostic_hold') == 'resting-state-contradicted-by-pty':
                             item.pop('diagnostic_hold', None)
-                            item.pop('failover_candidate', None)
-                            item['cooldown_until'] = time.time() + 180
-                            pending = None
+                            pending.pop('diagnostic_hold', None)
+                        fresh_screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
+                        if composer(fresh_screen, head_tag) == 'empty':
+                            deliver_args = [BINARY, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json']
+                            result = subprocess.run(deliver_args, capture_output=True, text=True, timeout=20)
+                            deliver_stderr = (result.stderr or '').strip()
+                            if result.returncode and MAILBOX_BUSY.search(deliver_stderr):
+                                raise DeliveryUncertain(deliver_args, deliver_stderr, result.returncode)
+                            try:
+                                outcome = json.loads(result.stdout)
+                            except json.JSONDecodeError:
+                                outcome = {'status': 'delivery-uncertain', 'returncode': result.returncode}
+                            atomic(PRIVATE / f"delivery-{pending['id']}.json", outcome)
+                            status = outcome.get('status', outcome.get('delivery', 'delivery-uncertain'))
+                            pending['delivery'] = status
+                            event('head-delivery-attempt', head=head_tag, message_id=pending['id'], outcome=status)
+                            if status == 'not-ready':
+                                detail = outcome.get('detail', '')
+                                if 'contradicted resting state' in detail or 'subsequent PTY activity' in detail:
+                                    item['diagnostic_hold'] = 'resting-state-contradicted-by-pty'
+                                    pending['diagnostic_hold'] = 'resting-state-contradicted-by-pty'
+                                    item['cooldown_until'] = time.time() + 180
+                                elif (('Context' in detail or 'GPT-' in detail) and '·' in detail) or re.search(
+                                    r'Aplexer awareness|Before editing files|Declare your work|Check peer mail|participate in \d+ workspace|Workspace coordination|worktree|peers|shared paths|peer-provided data',
+                                    detail
+                                ):
+                                    item['diagnostic_hold'] = 'known-footer-classifier-mismatch'
+                                    pending['diagnostic_hold'] = 'known-footer-classifier-mismatch'
+                                if item.get('diagnostic_hold') == 'known-footer-classifier-mismatch':
+                                    item['cooldown_until'] = time.time() + 180
+                            if status == 'recipient-acked':
+                                item['last_request'] = pending
+                                item.pop('diagnostic_hold', None)
+                                item.pop('failover_candidate', None)
+                                item['cooldown_until'] = time.time() + 180
+                                pending = None
 
                 if pending:
                     is_beyond, dur, slo_limit, block_reason = check_pending_slo(pending, head_tag, item, time.time())
