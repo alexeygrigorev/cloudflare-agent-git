@@ -35,8 +35,9 @@ inserting a route at the same anchor.
 
 ## Scene 2 — The idea in one screen (1:00–1:45)
 
-**On screen:** `SUBMISSION.md`'s architecture diagram (mermaid rendered), or
-the ASCII diagram from `prototype/README.md`.
+**On screen:** the workflow diagram from `README.md`
+(`website/assets/2026-10-04-agent-branches-workflow.png`), or the ASCII
+diagram from `prototype/README.md`.
 
 **Voice-over:**
 
@@ -186,4 +187,5 @@ latency line.
 | Stale gate | `live/evidence/run-3/stale-409.json` |
 | Real Artifacts | `artifacts-spike/RESULTS.md` (branch `proto/artifacts-spike`) |
 
-Full reproduction: `SUBMISSION.md` §"Try it locally" (`bash live/run-demo.sh`).
+Full reproduction: `live/README.md` §"Exact commands" (`bash live/run-demo.sh`);
+quick checks in `README.md` §"Try it".
