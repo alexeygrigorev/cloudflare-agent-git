@@ -1,93 +1,28 @@
-# Canonical Role Contract & Startup Protocol
+# Roles and startup
 
-## Superseding Win35 root mandate — human 7 October 2026
+**Why read this:** determine authority before acting or transferring custody. Read at startup, on role changes and when a handoff is uncertain. Current recipients come from live evidence and the tracker, not identities embedded in documentation.
 
-The new Win35 root owns operational monitoring, request-to-outcome followthrough on Win35 and Hetzner, bounded communication/custody/failure recovery and useful locally owned execution through acknowledged heads/executors and distinct reviewers. Read [WIN35-ROOT-INSTRUCTIONS](WIN35-ROOT-INSTRUCTIONS.md) and [human authority](../experiment/human-win35-new-root-instructions-20261007.txt). This supersedes older passive-forwarding/no-live-monitoring descriptions for this duty. Product implementation/review/release remain scoped to acknowledged owners; root is not their routine approval bottleneck. Root identity, source leases, automation custody, deployed transport and runtime acceptance must each be genuinely established. Missed transitions require executed diagnosis/remedy or acknowledged handoff, not repeated delivered requests.
+| Role | Owns | Required evidence / boundary |
+|---|---|---|
+| Desktop coordinator | Human intake/delivery, recurring oversight, bounded communication and custody recovery | Executed diagnosis/result and received handoff. No routine product implementation, code/article QA or per-task dispatch/approval. |
+| Principal | Team coverage, challenges, dependencies, repair ownership and operational course correction | Current head ACKs, first actions, accepted outcomes and next triggers. Assign implementation and product code review through heads. |
+| Project head | Useful backlog, delegates, provider choice, acceptance, integration/recovery and refill | Register actual workers/parents/scopes; verify first action and distinct review; start next work without waiting for desktop. |
+| Executor | Scoped implementation/research/tests | Pinned artifact, test results and terminal receipt; no inherited mailbox authority or self-review. |
+| Independent reviewer | Exact candidate and negative cases | Distinct actor, pinned verdict and executed checks; does not mutate the candidate. |
+| Maintained supervisor | Durable events, due obligations, safe notifications/recovery | Loaded identity/version/store and actual cycles; not a model reviewer or principal. |
+| Publication owner/writer | Existing report workflow, independent editorial/visual review, release/recovery | Genuine authorized Opus prose and accepted assets; root supplies unavailable browser/ImageGen capability and delivers the result. |
 
-**Authority**: Direct human steering (2026-10-05, `experiment/human-principals-no-code-review-20261005.txt` and `experiment/human-principal-big-picture-report-20261005.txt`).
-**Enactment Date**: 2026-10-05 (refined C2580)
-**Applies to**: All workspaces, principals, project heads, executors, reviewers, and supervisor services across the Cloudflare Agent Git competition and derivative products.
+## Before mutation
 
----
+1. Verify genuine identity: native `aplexer whoami --json`, enrolled scoped Bus identity, or actual harness child plus parent. Never borrow `--from` or another session's binding.
+2. Read AGENTS.md, this contract, OPERATING-MODEL.md, RESOURCE-POLICY.md and the scoped handoff. Record role, task, parent, owned paths, docs/version and read timestamp privately in `.local/audit/startup-<id>.json`.
+3. Declare actual work scope through the supported work-join path. A registry entry or document does not grant another owner's source lease.
+4. Preserve active work, protected drafts, exact pending messages, private histories and ordinary Git recovery.
 
-## 1. Human Steering Mandate (Verbatim)
+## Acceptance and custody
 
-> "principals don't review code. they delegate it to heads who lauch subagents fo rthat. you have too much work for that and you will become the bottleneck if you check eveyrthing yourself. find the team structure and have clearly defined roles what principal is what heads are and make sure that they read these docs when they start the session"
->
-> "your task is monitor the progress and see the big picture, coordinate heads and so on. the heads then do more low level stuff"
-> "please make sure it's documented clearly and included in tomorrows report"
+Executor completion requires a terminal receipt. The head obtains a distinct review of the exact immutable artifact, with test command/results and negative cases, before accepting the scoped result. Required integration, deployment and human delivery are separate obligations. A self-review, caller-supplied reviewer name or old approval cannot close a new candidate.
 
----
+Recovery needs verified current readiness, received successor scope and target-side epoch fencing. Missing/unknown state is not ready; busy/draft/menu/quota uncertainty stays protected. Source sync does not start a new root or transfer automation custody. Keep the existing desktop 30-minute automation until an explicit verified handoff.
 
-## 2. Role Taxonomy & Strict Boundaries
-
-| Role | Core Ownership | Required Evidence & Handshake | Absolute Boundaries |
-|---|---|---|---|
-| **Principal** (Codex, Claude) | Strategic priorities, high-level architecture, cross-team dependency resolution, quota/provider allocation, monitoring delivery & truthfulness, human communication. | Pinned head ACKs, task outcomes, independent reviewer verdicts, verified remote SHAs, truthfulness audits. | **NO** product code implementation.<br>**NO** personal product code review or running test harnesses.<br>**NO** routine approval queues for routine commits/merges. |
-| **Interactive Project Head** (Antigravity, QL Head, Coord Head) | Domain backlog decomposition, workspace/file lease allocation, executor & independent reviewer launches, execution triage & repair, final acceptance, canonical integration release & GitHub sync. | Actual worker first tool/action receipts, separate independent reviewer verdicts with commit pins, clean integration test runs, verified remote SHAs. | **DO NOT** default to sole coder.<br>**DO NOT** equate delivery or receiver ACK with semantic acceptance.<br>**DO NOT** allow executors to review their own work. |
-| **Implementer Executor** | Scoped assigned task implementation in isolated branch or worktree, bounded unit tests, incremental deliverables. | Commit SHA, test command output, run instructions, explicit handover receipt. | **CANNOT** review its own output.<br>**NO** borrowed head or principal mailbox authority. |
-| **Independent Reviewer Executor** | Adversarial review of exact immutable candidate commit: correctness, negative test cases, security/secret leakage, UX, edge conditions. | Structured review receipt (`task_review_receipt.json`) with verdict (`ACCEPTED` or `REJECTED`), test command run log, exit code, and negative cases tested. | **MUST BE A DISTINCT** actor from the implementer (distinct model turn, subagent, or session).<br>**CANNOT** mutate the candidate code branch.<br>Verdict must be backed by executed tests, not guessed. |
-| **Durable Remote Supervisor** | Ingesting terminal and review receipts, dependency unblocking, quota/resource admission gates, between-turn persistence, deduplicated actionable event notifications. | Exact PID, loaded bytecode SHA, `.local/supervision/service.lock`, actionable event digest, execution cursors. | **NOT** a code reviewer or substitute principal.<br>**NO** duplicate production daemons.<br>**NO** fake readiness or draft prompt injections. |
-| **Desktop Orchestrator / Human Interface** | Human–remote interface, faithful steering/outcome relay, proactive bounded communication and custody diagnosis/recovery. | Executed steps/results, actual recipient/received custody, named owner, deadline and evidence; preserve earlier states and exact identities. | **NOT** a routine task scheduler, product implementer, code/article reviewer or per-task approval bottleneck. |
-
-A remote coordinator role may be genuinely enrolled through an explicit received, fenced role/custody handoff; a desktop chat or borrowed identity does not establish that role. Preserve actual owner, generation, pending cursors and protected work before transfer. Permanent product dispatch/refill and supervision remain with acknowledged remote owners. Desktop reports concrete recovery steps rather than blocker-only updates.
-
----
-
-## 3. Mandatory Startup Contract by Session Type
-
-Every participant must execute role-appropriate verification before any mutating file action:
-
-1. **Identity Verification by Session Mode**:
-   - **Interactive Principals and Heads**: Verify genuine native aplexer identity (`aplexer whoami --json`). Never forge or inherit identity via `--from`.
-   - **Sessionless Model Bus Workers**: Use genuinely enrolled scoped Bus identity (`NamespacedId`: `{device_id}/{workspace}/{agent_tag}/{session}/{task_id}`).
-   - **Native Harness Helpers / Subagents**: Record real child subagent/thread identity and parent session ID; helpers operate within delegated task scopes and have no inherited mailbox authority.
-2. **Read Canonical Governance Documents**:
-   The session startup sequence must read:
-   - `AGENTS.md` (project goals, primary rules, resource bounds)
-   - `coordination/OPERATING-MODEL.md` (delivery contracts, active products)
-   - `coordination/RESOURCE-POLICY.md` (fresh actual quotas/routes and admission: latest20GiB hard projected-growth disk floor/30GiB cleanup warning; scoped RAM-floor override with continued measurement/worker containment; aggregate512MiB scratch cap, not a required per-job reservation)
-   - `coordination/ROLE-CONTRACT.md` (this document)
-   - Scoped task handoff specification
-3. **Record Role & Startup Read Receipt**:
-   The session records a structured startup receipt in `.local/audit/startup-<id>.json`:
-   ```json
-   {
-     "session_id": "SESSION-OR-BUS-ID",
-     "tag": "EXACT-TAG",
-     "role": "principal | project_head | implementer | reviewer | supervisor",
-     "mode": "native_aplexer | bus_sessionless | harness_subagent",
-     "parent_session_id": "PARENT-ID-IF-SUBAGENT-OR-NULL",
-     "pid": 12345,
-     "task_id": "ASSIGNED-TASK-ID",
-     "owned_paths": ["scoped/**"],
-     "docs_read": [
-       "AGENTS.md",
-       "coordination/OPERATING-MODEL.md",
-       "coordination/RESOURCE-POLICY.md",
-       "coordination/ROLE-CONTRACT.md"
-     ],
-     "read_acknowledged_at": "2026-10-05T14:00:00Z"
-   }
-   ```
-4. **Declare Work Scope**:
-   Interactive sessions declare scopes via `aplexer work join <workspace> --task "<task_id>" --mode <edit|read|review> --paths "<paths>"` before file modifications.
-
----
-
-## 4. Distinct Review Gate Protocol
-
-No task may be marked `accepted` or `completed` in `TASKS.json` or supervisor state without an independent review receipt:
-
-1. **Implementer Completion**:
-   Implementer runs tests, commits to isolated branch, writes `task_terminal_receipt.json`, and notifies Project Head.
-2. **Reviewer Dispatch**:
-   Project Head dispatches an **independent reviewer** (distinct subagent, process, or session).
-3. **Review Execution**:
-   Reviewer checks the exact commit pin, runs unit tests, runs negative tests (bad input, secrets, push failures, conflicts).
-4. **Structured Receipt Generation**:
-   Reviewer generates `task_review_receipt.json`:
-   - If `ACCEPTED` with exit code 0 and verified checks -> Head integrates and pushes to GitHub.
-   - If `REJECTED` -> Head dispatches an implementer for repair.
-5. **Supervisor Ingestion**:
-   Supervisor ingests both receipts, validates that the reviewer is distinct from the executor, and unblocks dependent tasks.
+These are required controls, not a claim every entry point enforces them. See [ENFORCEMENT](continuation-runtime/ENFORCEMENT.md) for acceptance proof. Human source: [role/dispatch steering](../experiment/human-principal-dispatch-agentbus-20261005.txt), [Win35 mandate](WIN35-ROOT-INSTRUCTIONS.md); earlier full contract remains in Git history.
