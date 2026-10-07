@@ -225,7 +225,91 @@ Numbers here are rules, never measurements. Take fresh readings before every lau
 
 ## 8. Public journal and editorial rules
 
+The full rules for the daily article are in the `daily-writeup` skill (`.claude/skills/daily-writeup/SKILL.md`), and the skill wins wherever another editorial rule disagrees with it. [m-20261003-2018] [agent-derived]
+
+### Who does what
+
+- We build in public: a website with regular reports and one reader-facing daily report. [m27]
+- Claude Opus writes every daily article and makes every prose change, using stylint and the founder's Substack voice. Other models may only check facts. If Opus can't run, keep the last published article and report the failure. [m27] [m-20261003-2018]
+- A Codex agent on the remote host prepares each edition from a project skill (`.agents/skills/prepare-daily-journal/`). Root only gives the command and checks it happened. [human-remote-journal-preparation-20261005]
+- The publication coordinator owns site design, code, release and rollback. Implementers never approve their own visual changes. [m-latest] [agent-derived]
+- Quality checks are built into the process; root is not the reviewer. [m-latest]
+- Root shows the founder the published link and a short summary he can share. Nothing is posted to social media automatically. [agent-derived]
+
+### When and what to publish
+
+- The daily standup is at 09:00 Berlin and the article at 09:30, covering the previous 24 hours. [m2] [agent-derived]
+- Publish only when something concrete changed: a result, a failure, a decision or a milestone. No placeholder or routine-status pages. [agent-derived]
+- Each daily report covers every product separately: what was done, what failed, and what is next, with the work itself described, not just numbers. [human-better-git-progress-and-utilization-20261005] [human-delivery-reset-20261004]
+- Include metrics from the dashboard: agents run, tokens used, features done, broken down by hour per project. Measured numbers only; unknown stays unknown. [human-delivery-reset-20261004] [human-better-git-progress-and-utilization-20261005]
+- Include a task tracker summary: tasks created, open and closed, plus a short overview of the closed tasks in each project. [human-task-tracker-report-summary-20261005]
+- Every daily report includes progress on the continuation runtime, checked against a literal checklist that the writing agent ticks off. [relayed-cr-r003]
+- Statistics sit inside the report, never in its title. [agent-derived]
+- The public website shows the dashboard numbers as history broken down by hour, with readable charts. [human-public-hourly-dashboard-history-20261005] [human-zcode-dashboard-usability-20261005]
+- The public reports feed at alexeygrigorev.com/cloudflare-agent-git/reports/ must keep updating. [human-coordinator-handoff-and-reports-20261006]
+
+### Writing for readers
+
+- Write for someone who has never seen the repo: open by saying what the experiment is, then tell one story. [m-20261003-2018] [agent-derived]
+- No jargon, internal codes, hashes, paths, session IDs or team role words in visible text. Explain each technical term once. [m-20261003-2018]
+- Every section has an illustration: ImageGen art for the story, and editable diagram-creator diagrams for explanations. [m-20261003-2018] [m27]
+- No timestamps, correction notes, writing-process meta, quota percentages or token breakdowns in the article. [agent-derived]
+- Count contributors by real identity, with evidence of work. Never count process IDs or role names, and say which coverage is unknown. [agent-derived]
+
+### Visual system
+
+- All diagrams and illustrations share one style: the flat editorial print look of `website/assets/agent-git-illustration.png`, with paper `#fcfcf8`, ink `#1c2027`, cobalt `#2455ed` and orange `#ef7134`. [m28] [m29]
+- Design iterations use Claude Design at claude.ai/design. Each product gets its own landing section on the site. [m29] [m30]
+- The approved Claude Design export is the reference. A design change stays in preview until a reviewer other than the implementer has compared it with the reference, side by side, on desktop and mobile. [m-latest] [agent-derived]
+- Art tells the story, not a measurement: never draw products, uptake or savings that aren't proven. [agent-derived]
+
+### Publishing and signup
+
+- The site is built by CI from the public repo to GitHub Pages. Never publish private paths, quota readings, raw logs, keys or personal data. [m27] [agent-derived]
+- Visitors' emails are captured through Relay, the same way as the PocketShell site, with double opt-in and no stored addresses or tokens. [m33] [agent-derived]
+- The article about this way of working is written by Claude Opus 5.5, with illustrations and diagrams, only after the founder accepts this document. [human-comprehensive-process-review-opus-article-20261007]
+
 ## 9. Runtime and continuation design
+
+The continuation runtime is how work keeps moving without the founder: a process plus the software that enforces it (the trackers, the supervisor, the launcher, the agents bus and the heads). [relayed-cr-r002] Everything here is the target design. A rule counts as installed only once it passes its acceptance test. [agent-derived]
+
+### Lifecycle and evidence
+
+- Every request moves through: captured → owner accepted → launched with a first real action → result → review by a different agent → accepted → integrated and delivered → next task. Each step needs its own proof. [human-checks-execution-accountability-20261007] [human-request-outcome-process-20261007]
+- Each step records the task, attempt, actor, host, parent, time and evidence. Failed attempts and missed deadlines stay visible; nothing is backdated. [agent-derived]
+- Saving a task state and the notification it owes happen together and survive a crash. A lost receipt is checked against the real effect before any retry. [agent-derived]
+- The main outcome measure is unique tasks accepted in a window. Also measure active agents, tasks resolved and commits, and show all of them in the dashboard and on the public site. [relayed-cr-r002] [human-tracker-availability-agents-commits-20261007]
+
+### Wake, deadlines and failover
+
+- Target response times: an owner accepts within 5 minutes, takes a first action within 10, and shows progress within 15. Longer work agrees its checkpoint up front. These are targets until installed. [agent-derived]
+- One existing supervisor handles events, dependencies, failures and a frequent due scan. There is never a second scheduler, watcher or writer. [agent-derived]
+- A stalled principal or head is woken after about 3 minutes, and only when it is truly idle. Busy screens, menus, unknown states and human drafts are never typed into. [relayed-cr-r029] [agent-derived]
+- Claude and Codex start with `/goal`, sent as a direct session message. Every agent, including those without `/goal`, is also watched by a guardian that survives the agent's death. [relayed-cr-r030] [github-task-tracker-quote]
+- After two missed checks, the failover path starts a fresh principal, or a new head for a project, only after confirming the old one is gone and taking exclusive ownership so the old one can't keep writing. [relayed-cr-r029] [human-role-failover-protocol-20261006]
+- Heads keep the principal's coverage going while it is absent; a responsive principal is never duplicated. [relayed-cr-r004] [agent-derived]
+- Retries are bounded and respect the provider's back-off. An uncertain delivery is never blindly resent. [agent-derived]
+
+### Enforcement
+
+- Tools deny forbidden actions at the point where they happen: no self-review, no writing outside the claimed scope, no stale owner, no acceptance without a distinct review. Missing evidence means no. [human-team-interaction-enforcement-20261007]
+- Required hand-offs (assignment, review, repair, refill, delivery) become tracked obligations with an owner and a due time. [human-team-interaction-enforcement-20261007] [agent-derived]
+- Once a scope is accepted, the maintained path lets work proceed with no routine principal approval. [agent-derived]
+- Agents running as the same OS user can bypass tool checks through the shell; that limit is recorded, not hidden. [agent-derived]
+
+### Many computers
+
+- Research and use proven designs for agent systems spread across computers; the process matters as much as the parts. [human-multihost-autonomy-design-research-20261007]
+- Hetzner and Win35 share one task authority and one pool of provider quota. Both hosts connect outbound over the authenticated agents bus, so neither needs inbound access. SSH is only for setup and recovery. [human-agentbus-purpose-correction-20261007] [human-win35-agentbus-nonssh-20261006]
+- The repo on Win35 is kept up to date. [human-win35-new-root-instructions-20261007]
+- A task packet carries everything a successor needs: goal, checklist, confirmed facts versus guesses, pointers, failed attempts and next action. Context is rebuilt from the packet, never assumed to move. [agent-derived]
+- During a network split, only work authorized in advance and isolated continues. Nothing integrates until the hosts reconnect and reconcile. [agent-derived]
+
+### Acceptance
+
+- The runtime is accepted only after two useful cycles (task → review → accepted → next task started) with both root and principal absent, plus recovery from worker, reviewer and host failures. [human-hetzner-autonomy-deadline-1830-20261005] [agent-derived]
+- Scale goes 10 → 25 → 50 active agents only with real backlog and measured results at each stage. [human-scale50-solution-followthrough-20261006] [agent-derived]
+- The 24 detailed open items (outbox, guarded writers, launcher fencing, review gate on every accept, safe idle wake, async wake, guardian, live failover test, due scan, retry policy, worker containment, the secure cross-computer cycle, single-authority risk, backups, metrics, tracker availability, request reconciliation and others) are each tracked as a principal issue in this repository. [agent-derived]
 
 ## 10. Security and privacy
 
