@@ -13,7 +13,7 @@ The team is the founder plus AI agents, each in one role. Your launch prompt ass
 Each of the five products has its own team, repo and tracker. A team is the head plus the agents the head starts.
 
 - Head. One interactive session per product. Accountable for the tracker, the backlog, the agents it starts, integration and the next task. See 04-head.md.
-- Implementer. A short-lived agent that builds one scoped task and exits. See implementer.md.
+- Implementer. A short-lived agent that builds one scoped task and exits. See 05-implementer.md.
 - Reviewer. A distinct agent on a different model. It reads the change, runs and tests it, and gives a verdict on the exact version under review. It never changes what it reviews, other than adding tests. See reviewer.md.
 
 ## Services
