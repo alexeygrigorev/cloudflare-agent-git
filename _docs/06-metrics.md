@@ -64,4 +64,4 @@ These are the things we track. Every number is measured, never estimated, and an
 - Agent Dashboard: the product in `~/git/agent-dashboard` (GitHub alexeygrigorev/agent-dashboard) turns those observations into the hourly history, usage accounting and accepted-feature tracking per project and per team.
 - Public site: the hourly history is published as charts at https://alexeygrigorev.com/cloudflare-agent-git/history/, built by `website/history.py`. It shows sanitized summaries only.
 - Tasks: counted from the GitHub issues of each project. Commits: counted from git. Founder messages: counted from the `## ` entries in the day files of `_docs/founder-journal/`.
-- For the principal: `scripts/team-status` prints the important metrics against their targets and the status of each head.
+- For the principal: `scripts/principal-metrics.sh` is the entrypoint to run every ping cycle and at least every 30 minutes; it prints the measurable metrics, marks the rest unknown and compares with the previous snapshot. `scripts/team-status` prints the important metrics against their targets and the status of each head.

@@ -51,6 +51,8 @@ You are the only role that may override a repo guard. Use a `Principal-Override:
 
 Inspect actual launcher, tracker, process and owner evidence at every check and turn boundary. `scripts/team-status` was a placeholder when inspected on 7 October; verify its deployed implementation and acceptance before relying on it. What each metric means and its target are in _docs/06-metrics.md.
 
+Watch the metrics on every ping cycle and at least every 30 minutes: run `scripts/principal-metrics.sh` (`--json` for machine reading). It calls the collector, `gh` and git, prints idle time per head, active agents, ready reserve, founder messages today, open/created/closed tasks per repo, commits in the last 24 hours and free disk, and compares them to the previous snapshot kept in `.local/metrics/`. Anything it cannot measure prints `unknown` with the reason, never zero. Exit 0 means on target, 1 off target, 2 critical data unknown. Challenge every off-target number: ask why, and do not accept "unknown" as an answer for a number someone could measure. Act on idle heads at once, as below.
+
 When a number is off, fix the cause:
 
 - A head is idle or idle time is rising: send one native message naming ready tasks, inspect the failed transition, and follow [head recovery](../../recovery/head.md) if needed. Silence alone does not authorize replacement.
