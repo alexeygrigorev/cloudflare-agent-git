@@ -7550,7 +7550,15 @@
         }
       ],
       "next_action": "Bus327 provides exact reviewed secret-free outbound receiver invocation/config and verified secure endpoint via private owned handoff. Existing desktop SSH route ACKed narrow bootstrap; obtain actual physical result, then conditional30-minute useful task/review/successor. Preserve source lease and old discovery; do not rerun completeddisc01.",
-      "updated_at": "2026-10-07T05:26:39.037688+00:00"
+      "updated_at": "2026-10-07T05:26:39.037688+00:00",
+      "history": [
+        {
+          "ts": "2026-10-07T05:33:00Z",
+          "actor": "bus-win35-resume-head-3273594b",
+          "event": "C3120 route adopted; Bus327 custody retained",
+          "detail": "independent security review dispatched via launcher9a9: bus-win35-disc01-security-review-01 (gemini-3.1-pro-high@antigravity, distinct route vs zai discovery worker), submitted 05:19Z first-tool 05:21Z, report .local/codex/bus-win35-resume-3273594b/REV-BUS-DISC01-SECURITY-20261007.md; desktop secret-free receiver invocation sent 01a114d1-a831 (receiver.py@826f5d9 --once vs verified 2016f679 adapter URL, device-local 0600 creds); principal reply 01a114d1-a803; durable wake timer bus327-wake-3273594b.timer (30min idle-gated, transient, remove: systemctl --user stop bus327-wake-3273594b.timer) installed 05:26Z; due: reviewer verdict + launcher accept at next checkpoint, bidirectional win35 gate <=30min after desktop device receipt"
+        }
+      ]
     },
     {
       "id": "t-supervision-idle-wake-and-failover-c3110",

@@ -79,7 +79,7 @@
           ],
           "launched_by": "zcode-independent 64049aa2",
           "launched_at": "2026-10-03T06:28:00Z",
-          "quota_evidence": "opencode-go route covered by quse go 2026-10-03T08:16CEST 97-98% remaining; gemini CLI admission failed (deprecated) \u2014 fallback recorded",
+          "quota_evidence": "opencode-go route covered by quse go 2026-10-03T08:16CEST 97-98% remaining; gemini CLI admission failed (deprecated) — fallback recorded",
           "first_tool_evidence": "research/zcode/independent/a05-adjudication/WORKLOG.md",
           "parent_team": "a01-harness"
         },
@@ -859,7 +859,7 @@
           "first_tool_evidence": "aplexer whoami --json",
           "memory_cap": "1500M",
           "completed_at": "2026-10-03T20:29:40+00:00",
-          "result": "VERDICT ACCEPT (commit 2f95503): 4 behavior-changing mutants killed (M1 boundary, M2 revocation truthiness, M4 non-zero grace, M5 determinism); equivalent mutant M3 survived (Date.parse produces NaN/finite, never \u00b1Infinity). Vitest 91/91, node 29/29, clean unmasked typecheck."
+          "result": "VERDICT ACCEPT (commit 2f95503): 4 behavior-changing mutants killed (M1 boundary, M2 revocation truthiness, M4 non-zero grace, M5 determinism); equivalent mutant M3 survived (Date.parse produces NaN/finite, never ±Infinity). Vitest 91/91, node 29/29, clean unmasked typecheck."
         },
         {
           "tag": "sb-reviewer-ui",
@@ -5531,6 +5531,14 @@
         "first_tool_at_utc": "2026-10-05T09:28:00Z",
         "timestamp_verification": "verified_native_transcript"
       }
+    }
+  ],
+  "notes": [
+    {
+      "ts": "2026-10-07T05:33:00Z",
+      "actor": "bus-win35-resume-head-3273594b",
+      "event": "bus327 delegation and wake registered",
+      "detail": "delegate bus-win35-disc01-security-review-01 (gemini antigravity, parent 3273594b, launcher9a9) + self-wake timer bus327-wake-3273594b.timer owned by 3273594b"
     }
   ]
 }
