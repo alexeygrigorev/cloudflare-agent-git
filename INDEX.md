@@ -11,26 +11,21 @@ A team of AI agents on a rented Hetzner server ran research and is building thre
 Terms: a *principal* is a top-level Claude or Codex agent that supervises but does not code; a *head* runs one product and launches workers; *Win35* is the human's own Windows laptop agent; an *ACK* means "message read", not "work done".
 
 ## 2. Read these first
-1. [AGENTS.md](AGENTS.md), its "Start here" block at the top: read AGENTS.md, BRIEF.md and USER-STEERING.md; your role comes from your launch prompt; respect separate ownership; the latest user instruction wins. CLAUDE.md was removed on 7 Oct per [human instruction](experiment/human-docs-consolidation-agents-md-only-20261007.txt); AGENTS.md is the only agent-instruction file.
+1. [AGENTS.md](AGENTS.md), its "Start here" block at the top: read AGENTS.md, BRIEF.md and USER-STEERING.md; your role comes from your launch prompt; respect separate ownership; the latest user instruction wins. CLAUDE.md was removed on 7 Oct per [human instruction](experiment/human-docs-consolidation-agents-md-only-20261007.txt); AGENTS.md is the only agent-instruction file. The rulebook is 42 KB: read headings only; newest (7 Oct) rules are at the very top and very bottom.
 2. [BRIEF.md](BRIEF.md): the original 2 Oct mission (20 approaches, shortlist of 6).
 3. [README.md](README.md): run and test the prototype.
 4. [SUBMISSION.md](SUBMISSION.md): contest write-up (3 Oct).
-5. [AGENTS.md](AGENTS.md) (rulebook, 42 KB; item 1 covers its top block). Read headings only. Newest (7 Oct) rules are at the very top and very bottom; the middle is older.
-6. [REQUEST-TO-OUTCOME.md](coordination/continuation-runtime/REQUEST-TO-OUTCOME.md) and [ENFORCEMENT.md](coordination/continuation-runtime/ENFORCEMENT.md): a request stays open until it has an owner, a first action, an accepted result and delivery to the human. AGENTS.md says read these first.
-7. [coordination/USER-STEERING.md](coordination/USER-STEERING.md): human steering up to 4 Oct only.
-8. Human authority, newest first: `experiment/human-*-20261007.txt` (10 files, all tracked, including the docs-consolidation instruction and the three agentbus/check-accountability files moved here from `research/orchestrator/`). Then [USER-INSTRUCTIONS.md](experiment/USER-INSTRUCTIONS.md) (messages 1-34, to ~3 Oct). [EXPERIMENT.md](experiment/EXPERIMENT.md) is the original 2 Oct design, not current status.
-9. [coordination/OPERATING-MODEL.md](coordination/OPERATING-MODEL.md): who is accountable, the four products, task flow (5 Oct).
-10. [coordination/ROLE-CONTRACT.md](coordination/ROLE-CONTRACT.md): role definitions and startup checklist.
-11. [coordination/RESOURCE-POLICY.md](coordination/RESOURCE-POLICY.md): which AI providers, quota cutoffs (e.g. stop launching Codex at 15% left).
-12. [coordination/WIN35-ROOT-INSTRUCTIONS.md](coordination/WIN35-ROOT-INSTRUCTIONS.md): 7 Oct mandate for the Win35 agent (monitor, follow requests to results, push to 50 workers).
-13. [website/editorial/QUALITY.md](website/editorial/QUALITY.md) and [WORKFLOW.md](website/editorial/WORKFLOW.md): public site and daily report rules.
+5. [coordination/READING-GUIDE.md](coordination/READING-GUIDE.md): what to read when, for the coordination documents (roles, operating model, human decisions in USER-STEERING, resource policy, request-to-outcome, enforcement), with the per-check procedure. Start there for "what do I read for this decision".
+6. Human authority, newest first: `experiment/human-*-20261007.txt` (13 files, all tracked, including the three 7 Oct docs instructions (consolidation, no file claims, target state), the GitHub issues request and the three agentbus/check-accountability files moved here from `research/orchestrator/`). Then [USER-INSTRUCTIONS.md](experiment/USER-INSTRUCTIONS.md) (messages 1-34, to ~3 Oct). [EXPERIMENT.md](experiment/EXPERIMENT.md) is the original 2 Oct design, not current status.
+7. [coordination/WIN35-ROOT-INSTRUCTIONS.md](coordination/WIN35-ROOT-INSTRUCTIONS.md): 7 Oct mandate for the Win35 agent (monitor, follow requests to results, push to 50 workers).
+8. [website/editorial/QUALITY.md](website/editorial/QUALITY.md) and [WORKFLOW.md](website/editorial/WORKFLOW.md): public site and daily report rules.
 
-Reference only (if the `codex/concise-coordination-docs-20261007` branch merges, `coordination/READING-GUIDE.md` becomes the shorter per-check reading map for the coordination documents; it is not on main yet, so it is not linked): [SCALE50-RECOVERY-PLAN.md](coordination/SCALE50-RECOVERY-PLAN.md), [SUPERVISION.md](coordination/SUPERVISION.md), [continuation-runtime/README.md](coordination/continuation-runtime/README.md) ([HEAD-TASK-LOOP.md](coordination/continuation-runtime/HEAD-TASK-LOOP.md) there is new and still changing).
+Reference only: [SCALE50-RECOVERY-PLAN.md](coordination/SCALE50-RECOVERY-PLAN.md), [SUPERVISION.md](coordination/SUPERVISION.md), [continuation-runtime/README.md](coordination/continuation-runtime/README.md) ([HEAD-TASK-LOOP.md](coordination/continuation-runtime/HEAD-TASK-LOOP.md) there is new and still changing).
 
 ## 3. Directory map
 Live (edited 6-7 Oct):
 - `scripts/`, `coordination/`, `experiment/` (append-only; never archive), `website/` (public journal source), `.agents/skills/prepare-daily-journal/`.
-- `research/codex/` (140), `orchestrator/` (87), `antigravity/` (482), `zcode/` (62), `coordination/` (27).
+- `research/codex/` (140), `orchestrator/` (89), `antigravity/` (482), `zcode/` (62), `coordination/` (27).
 - `docs/`: generated by `website/build.py` for GitHub Pages (per WORKFLOW.md). Do not hand-edit.
 
 Frozen (real last work 3-6 Oct; the 5 Oct commit date is a bulk commit):
@@ -49,9 +44,8 @@ Only two are live: [coordination/codex.md](coordination/codex.md) and [coordinat
 - [experiment/events.jsonl](experiment/events.jsonl): one JSON event per line; `tail -5`.
 
 ## 5. Where to look for ...
-- Tasks: [coordination/TASKS.json](coordination/TASKS.json), 282 tasks, inconsistent statuses (done/completed; running/in_progress). Query it, do not read it:
+- Tasks and issues: GitHub issues of alexeygrigorev/cloudflare-agent-git. Legacy ledgers being migrated into them: [coordination/TASKS.json](coordination/TASKS.json) (282 tasks, inconsistent statuses; query it, do not read it) and [DELIVERY-BACKLOG.json](coordination/DELIVERY-BACKLOG.json) (maps human requests to tasks).
   `python3 -c "import json;[print(t['id'],t['status'],t['owner_tag']) for t in json.load(open('coordination/TASKS.json'))['tasks'] if t['status'] in ('running','in_progress','review','ready')]"`
-  [DELIVERY-BACKLOG.json](coordination/DELIVERY-BACKLOG.json) maps human requests to tasks.
 - Who is editing what: coordinated on the agents bus, never in documents. [TEAM-REGISTRY.json](coordination/TEAM-REGISTRY.json) lists the team roster and may lag.
 - Rules: AGENTS.md, ROLE-CONTRACT, OPERATING-MODEL, RESOURCE-POLICY. On conflict the newest verbatim human file wins.
 - Results: [live/evidence/](live/evidence/) (36/36 assertions), [artifacts-spike/RESULTS.md](artifacts-spike/RESULTS.md), [research/consensus.md](research/consensus.md).
