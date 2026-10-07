@@ -28,7 +28,7 @@ If the launcher has a bug, do not start the agent by hand and do not switch prov
 
 ## The process
 
-The implementer implements the task in a worktree from Agent Branches. The reviewer reviews the result. If the reviewer does not accept it, the implementer fixes the findings and the reviewer reviews again. We iterate until the reviewer accepts. Then you integrate.
+The implementer implements the task in its own workspace in Agent Branches. The reviewer reviews the result. If the reviewer does not accept it, the implementer fixes the findings and the reviewer reviews again. We iterate until the reviewer accepts. Then you integrate.
 
 ## Integrating
 
