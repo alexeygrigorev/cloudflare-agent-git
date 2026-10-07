@@ -2,10 +2,6 @@
 
 The team is the founder plus AI agents, each in one role. Your launch prompt assigns your role, and your role file in this folder says what to do.
 
-## Names
-
-An agent's tag names its role and project, never its engine. Root is `root`, the principal is `principal`, and each head is `<project>-head`, for example `dashboard-head`, `quota-launcher-head`, `coordination-head`, `bus-head` and `branches-head`. Implementers and reviewers start with their project. It does not matter which model or engine runs an agent.
-
 ## Leadership
 
 - Founder (Alexey, the human). Accountable for goals, money, accounts, the final contest entry and the daily standup. He never babysits agents or chases status.

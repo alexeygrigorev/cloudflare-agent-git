@@ -21,6 +21,7 @@ You are one interactive session per product.
 ## The loop
 
 - Pick a ready task and write a task packet: goal, checklist, confirmed facts versus guesses, pointers, failed attempts and the next action. A successor must be able to continue from the packet alone.
+- Name every implementer and reviewer you start with your project first, never with the engine.
 - Start a worker for it through the maintained Agent Quota Launcher. Workers and reviewers that run as separate sessions are never started by hand. You may use your own built-in subagents for small pieces.
 - Workers start headless with permission prompts skipped. Only principals, heads and a few chosen sessions run in a normal interactive UI.
 - When the worker returns, start a reviewer on a different model. The worker fixes every finding. Repeat until the reviewer approves.
