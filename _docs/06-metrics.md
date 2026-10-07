@@ -42,6 +42,16 @@ These are the things we track. Every number is measured, never estimated, and an
 - Rolling 24 hours, calendar day with its time zone, and 30 minutes. Every number shows its start, end and the time the data was read.
 - Hourly history per project and per team, shown with readable charts on the dashboard and the public site.
 
+## Targets
+
+- Active agents: 50 working at the same time.
+- Idle time: zero for a principal or head that has ready work. An idle principal or head with ready work is a failure to fix at once. Idle time overall is what we bring down.
+- Founder messages: only for spending money, new accounts or keys, the contest entry, social media posts and his own product decisions. Any other message from him is a miss.
+- Founder reminders and manual rescues: zero.
+- Cloud cost: at most USD 5 a month.
+- Free disk on the root disk: at least 20 GiB, with a cleanup agent started below 30 GiB. Memory per worker: at most 1500M.
+- Resolved tasks, tasks created, features done, commits and tokens used: no target is set yet. Watch the trend and report it.
+
 ## Where they are tracked
 
 - Collector: `scripts/metrics/collect.py` in this repo takes a metadata-only observation of the fleet every minute and keeps the data private, in `.local/metrics/` on the host. It runs as a service on the Hetzner host.
