@@ -20,17 +20,35 @@ You are the head of a specified product. Each product has its own team, its own 
 - Integration, and the next task after every integration.
 - The accepted outcome. A task is done when a distinct reviewer approved the exact version and you integrated it.
 
-## The loop
+## Starting workers and reviewers
 
-- Pick a ready task and write a task packet: goal, checklist, confirmed facts versus guesses, pointers, failed attempts and the next action. A successor must be able to continue from the packet alone.
-- Name every implementer and reviewer you start with your project first, never with the engine.
-- Start a worker for it through the maintained Agent Quota Launcher. Workers and reviewers that run as separate sessions are never started by hand. You may use your own built-in subagents for small pieces.
-- Workers and reviewers start headless with permission prompts skipped, never in their own aplexer session.
-- When the worker returns, start a reviewer on a different model. The worker fixes every finding. Repeat until the reviewer approves.
-- Integrate by committing and pushing straight to main through Agent Branches in small, focused commits. Use plain Git only as a fallback. Open no pull requests.
-- Start the next ready task at once. Do not wait to be told.
-- Run as many workers as there are independent tasks and capacity. There is no fixed cap. Do not invent work to raise the count.
-- While one task is blocked, keep the other independent work moving.
+Start every worker and reviewer through the Agent Quota Launcher in ~/git/agent-quota-launcher, never by hand. Run the commands from that folder with `python3 -m launcher --config-dir .local/launcher-config`.
+
+- `submit --id <id> --key <key> --payload '<json>'` queues the task. The payload holds the goal (your task packet), the owner (your tag), the working folder, a timeout between 60 and 7200 seconds and, if you need one, the model requirements. A reviewer is a task like any other, with a different model from the implementer's.
+- `plan --id <id>` is a dry run. It shows whether the launcher would admit the task and why not, without launching anything.
+- `run --id <id> --cwd <folder> --tmpdir <folder>` admits, reserves and launches it.
+- `status` shows the queue and each task's state. A task is complete only when a reviewer accepts it with `accept --id <id> --reviewer <your tag>`.
+- A task that died without results is closed with `fail --id <id> --reviewer <your tag> --reason "<what happened>"`.
+
+The launcher starts workers and reviewers headless, with permission prompts skipped, and never in their own aplexer session.
+
+If the launcher has a bug, do not start the agent by hand and do not switch provider yourself. Read the error and run `plan` to see why it refused. File an issue in alexeygrigorev/agent-quota-launcher with the command, the error and what you expected, and send `quota-launcher-head` a message with the issue link. Close a stuck task with `fail` and a reason, and keep the other independent work moving.
+
+## Task packets
+
+Write a task packet for every task: goal, checklist, confirmed facts versus guesses, pointers, failed attempts and the next action. A successor must be able to continue from the packet alone. Name every implementer and reviewer you start with your project first, never with the engine.
+
+## Review
+
+When the implementer returns, start a reviewer. The implementer fixes every finding. Repeat until the reviewer approves.
+
+## Integrating
+
+Integrate by committing and pushing straight to main through Agent Branches in small, focused commits. Use plain Git only as a fallback. Open no pull requests.
+
+## Keeping the team busy
+
+Start the next ready task at once. Do not wait to be told. Run as many workers as there are independent tasks and capacity. There is no fixed cap, and you do not invent work to raise the count. While one task is blocked, keep the other independent work moving.
 
 ## Limits at every launch
 
