@@ -31,7 +31,7 @@ inserting a route at the same anchor.
 > gibibytes. This is the problem Agent Branches solves."
 
 **Evidence on screen (cite briefly in a corner caption):**
-`research/claude/dogfood-resource-evidence.md`.
+[dogfood-resource-evidence.md (archive tag)](https://github.com/alexeygrigorev/cloudflare-agent-git/blob/research-archive-20261007/research/claude/dogfood-resource-evidence.md).
 
 ## Scene 2 — The idea in one screen (1:00–1:45)
 
@@ -179,13 +179,13 @@ latency line.
 
 | Beat | File/command shown |
 | --- | --- |
-| Problem numbers | `research/claude/dogfood-resource-evidence.md` |
+| Problem numbers | [dogfood-resource-evidence.md (archive tag)](https://github.com/alexeygrigorev/cloudflare-agent-git/blob/research-archive-20261007/research/claude/dogfood-resource-evidence.md) |
 | Tasks + intents | `demo-target/TASKS.md`; `live/evidence/run-3/result.json` |
 | Pushes + head vector | `live/evidence/run-3/status.json` |
 | Conflict verdicts | `live/evidence/run-3/summary.txt` lines 1–7 |
 | Review UI | `live/evidence/run-3/ui-index.png`, `ui-task-task-0002.png`, `ui-pairs.json` |
 | Stale gate | `live/evidence/run-3/stale-409.json` |
-| Real Artifacts | `artifacts-spike/RESULTS.md` (branch `proto/artifacts-spike`) |
+| Real Artifacts | `artifacts-spike/RESULTS.md` (on main) |
 
 Full reproduction: `live/README.md` §"Exact commands" (`bash live/run-demo.sh`);
 quick checks in `README.md` §"Try it".
