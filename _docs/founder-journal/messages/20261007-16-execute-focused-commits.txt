@@ -1,0 +1,3 @@
+Human instruction, 7 October 2026, verbatim:
+
+okay, execute. make focused commits

@@ -1,0 +1,3 @@
+Human instruction, 7 October 2026, verbatim:
+
+my messages sholdn't be saved in experiments - there should be a clear place where we keep them. along with failures. maybe we have a founder journal or something like that

@@ -1,0 +1,3 @@
+Human instruction, 7 October 2026, verbatim:
+
+pull and see if documentation changed. CLAUDE.md should be gone, only AGENTS.md should be there. let's follow your plan. the imput from me should be saved and tracket

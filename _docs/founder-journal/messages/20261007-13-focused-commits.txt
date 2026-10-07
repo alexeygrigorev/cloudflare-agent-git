@@ -1,0 +1,3 @@
+Human instruction, 7 October 2026, verbatim:
+
+not in one commit - let's make focused commits.

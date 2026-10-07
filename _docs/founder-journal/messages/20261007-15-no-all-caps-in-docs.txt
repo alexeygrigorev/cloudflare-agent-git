@@ -1,0 +1,3 @@
+Human instruction, 7 October 2026, verbatim:
+
+let's not use all caps for _docs.

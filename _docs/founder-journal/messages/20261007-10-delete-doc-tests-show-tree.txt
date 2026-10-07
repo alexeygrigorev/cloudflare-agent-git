@@ -1,0 +1,3 @@
+Human instruction, 7 October 2026, verbatim:
+
+these tests can be deleted. if we need them we can recover them from git. there's no need for tests that test docs. I want to see the tree. please show me. also separately show me files you fill delete

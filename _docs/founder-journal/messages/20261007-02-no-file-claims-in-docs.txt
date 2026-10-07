@@ -1,0 +1,3 @@
+Human instruction, 7 October 2026, verbatim:
+
+we shouldn't keep claims to files in documentation -we use aplexer for that (but this should be moved to agents bus asap - relay this to the principal)

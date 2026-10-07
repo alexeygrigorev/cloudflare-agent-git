@@ -1,0 +1,3 @@
+Human instruction, 7 October 2026, verbatim:
+
+BRIEF.md  SUBMISSION.md - remove. INDEX remove. have one folder _docs and under these folder shpw me the new structure for docs only

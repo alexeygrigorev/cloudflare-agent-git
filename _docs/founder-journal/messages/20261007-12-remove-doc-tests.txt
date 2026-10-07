@@ -1,0 +1,3 @@
+Human instruction, 7 October 2026, verbatim:
+
+we don't need tests for testing docs. if yo ufind any - remove them
