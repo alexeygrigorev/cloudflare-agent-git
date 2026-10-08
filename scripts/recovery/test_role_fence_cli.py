@@ -158,6 +158,38 @@ class AdapterTests(unittest.TestCase):
         with self.assertRaises(PermissionError):
             handle(self.config, {**request, "action": "arbitrary-dispatch"})
 
+    def test_server_owned_admission_refresh_and_partition_hold(self):
+        from datetime import datetime, timezone
+        self.config["operations"].append({"role": "root", "name": "root-admission",
+            "transport": "native-channel", "read_only": True, "payload": {}, "timeout": 5,
+            "idempotency_contract": "key-durable-v1"})
+        request = {**self.request, "op": "admission_refresh"}
+        def native(owner, message, timeout):
+            return {"v": 1, "state": "completed", "key": message["key"], "evidence": {
+                "admission": {"actor": owner.actor, "host": "TEST", "generation": owner.generation,
+                    "ready": True, "draft": False, "quota_ok": True,
+                    "observed_at": datetime.now(timezone.utc).isoformat()}}}
+        with sqlite3.connect(self.a.path) as db:
+            db.execute("UPDATE agents SET seen=0 WHERE id='native-A'")
+        self.assertEqual(handle(self.config, request, native)["result"]["admission"], "eligible")
+        with sqlite3.connect(self.a.path) as db:
+            self.assertEqual(db.execute("SELECT priority FROM agents WHERE id='native-A'").fetchone()[0], 0)
+        def unavailable(*args):
+            raise ConnectionError("TEST partition")
+        with self.assertRaises(ConnectionError):
+            handle(self.config, {**request, "ready": True, "quota_ok": True}, unavailable)
+        with sqlite3.connect(self.a.path) as db:
+            row = db.execute("SELECT ready,draft,quota,priority FROM agents WHERE id='native-A'").fetchone()
+        self.assertEqual(row, (0, 1, 0, 0))
+        def malformed(owner, message, timeout):
+            result = native(owner, message, timeout)
+            result["evidence"]["admission"]["quota_ok"] = "unknown"
+            return result
+        with self.assertRaises(PermissionError):
+            handle(self.config, request, malformed)
+        with sqlite3.connect(self.a.path) as db:
+            self.assertEqual(db.execute("SELECT ready,draft,quota,priority FROM agents WHERE id='native-A'").fetchone(), (0, 1, 0, 0))
+
     def test_real_fixed_sink_and_durable_receipt(self):
         self.assertEqual(handle(self.config, self.request)["status"], "ok")
         self.assertEqual(handle(self.config, self.request)["result"]["state"], "already_enqueued")

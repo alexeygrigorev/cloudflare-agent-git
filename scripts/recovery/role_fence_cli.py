@@ -13,6 +13,7 @@ import sqlite3
 import stat
 import subprocess
 import sys
+import uuid
 from datetime import datetime, timezone
 
 from role_fence import CoordinatorFence, Owner
@@ -203,6 +204,35 @@ def handle(config, request, channel_dispatch=None):
     op = request["op"]
     if op == "inspect":
         result = authority.role_state(owner.project, owner.role)
+    elif op == "admission_refresh":
+        # Eligibility comes only from the reviewed authenticated host consumer.
+        # This read-only probe must also work before a candidate owns a lease.
+        operation = owner.role + "-admission"
+        entry = next((e for e in config["operations"] if (e["role"], e["name"]) == (owner.role, operation)), None)
+        binding = config["bindings"][owner.actor]
+        if entry is None or entry.get("read_only") is not True or entry.get("transport") != "native-channel":
+            raise PermissionError("reviewed read-only native admission operation required")
+        validate, effect = fence.operations[(owner.role, operation)]
+        if validate({}) is not True:
+            raise PermissionError("fixed empty admission payload required")
+        with authority._tx() as db:
+            priority = db.execute("SELECT priority FROM agents WHERE id=?", (owner.actor,)).fetchone()[0]
+        try:
+            observed = effect("admission:" + str(uuid.uuid4()), {}, owner)
+            admission = observed["evidence"]["admission"]
+            if observed.get("state") not in ("ok", "completed") or any(type(admission.get(k)) is not bool for k in ("ready", "draft", "quota_ok")):
+                raise PermissionError("unknown native admission remains held")
+            if (admission.get("actor"), admission.get("host"), admission.get("generation")) != (owner.actor, binding["host"], owner.generation):
+                raise PermissionError("native admission binding mismatch")
+            age = (datetime.now(timezone.utc) - datetime.fromisoformat(admission["observed_at"].replace("Z", "+00:00"))).total_seconds()
+            if not 0 <= age <= 30:
+                raise PermissionError("fresh native admission evidence required")
+            authority.observe(owner.actor, binding["host"], owner.generation,
+                ready=admission["ready"], draft=admission["draft"], quota_ok=admission["quota_ok"], priority=priority)
+            result = {"admission": "eligible" if admission["ready"] and not admission["draft"] and admission["quota_ok"] else "held"}
+        except Exception:
+            authority.observe(owner.actor, binding["host"], owner.generation, ready=False, draft=True, quota_ok=False, priority=priority)
+            raise
     elif op == "acquire":
         result = authority.tick(owner.project, owner.role)
         result["read_only"] = (result.get("holder"), result.get("generation")) != (
