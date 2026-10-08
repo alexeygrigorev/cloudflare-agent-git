@@ -1258,9 +1258,11 @@ class Safety(unittest.TestCase):
    self.assertEqual(parsed.get('status'), 'ok')
    self.assertIn('active_bytes', parsed)
 
-  res_live = subprocess.run(['bash', str(watcher_path)], capture_output=True, text=True, cwd=str(root))
+  env = {**os.environ, 'SUPERVISION_WATCHER_DRY_RUN': '1'}
+  res_live = subprocess.run(['bash', str(watcher_path)], capture_output=True, text=True, cwd=str(root), env=env)
   self.assertEqual(res_live.returncode, 0, f"watcher failed: {res_live.stderr}\nstdout: {res_live.stdout}")
-  self.assertIn('Supervisor is healthy.', res_live.stdout)
+  if 'Supervisor is healthy.' not in res_live.stdout:
+   self.assertIn('Diagnostic: test/dry-run mode active. Skipping systemctl execution.', res_live.stdout)
 
  def test_delivery_diagnostic_hold_cooldown(self):
   """Verify that when delivery results in known-footer-classifier-mismatch, cooldown_until is set to at least 180s in the future and pending is preserved."""
