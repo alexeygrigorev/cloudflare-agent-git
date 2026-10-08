@@ -37,13 +37,13 @@ The following target artifacts were evaluated, independently inspected, and cryp
 | Artifact | File Path | SHA-256 Checksum |
 | :--- | :--- | :--- |
 | **Execution Receipt** | [`research/antigravity/recovery/RECEIPT-METRICS-BLIND-EVENT-02.json`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-METRICS-BLIND-EVENT-02.json) | `9ec9d5ff4b8976f97168b075c6d0bae007851426674e71b73f774a8f36e5eea4` |
-| **Launcher Worker Stdout** | `/home/alexey/git/agent-quota-launcher/.local/launcher-config/t-metrics-blind-event-collector-02-stdout.log` | `ff20df6abe26b59f548038a035030fc67aee17d5157a7c043837c1c28a76b5c2` |
-| **Worker Transcript (Full)** | `~/.gemini/antigravity-cli/brain/b80c1699-d231-4591-960e-9b77c9688548/.system_generated/logs/transcript_full.jsonl` | `5c84d14210dfeb55bc5f8997ff2efbb0c7324c43cb9ea71ad869094fe5b6a7ee` |
+| **Launcher Worker Stdout** | `[PRIVATE_LAUNCHER_CONFIG]/t-metrics-blind-event-collector-02-stdout.log` | `ff20df6abe26b59f548038a035030fc67aee17d5157a7c043837c1c28a76b5c2` |
+| **Worker Transcript (Full)** | `[PRIVATE_STORE]/logs/b80c1699/transcript_full.jsonl` | `[MASKED_PRIVATE_TRANSCRIPT_SHA256]` |
 | **Multi-Workspace Test Suite** | [`tests/test_collect_multiworkspace.py`](file:///home/alexey/git/cloudflare-agent-git/tests/test_collect_multiworkspace.py) | `494ad40b5d7685f8a8795f725eada7868fad67e0a89fa74479ed2acc07564d7b` |
 | **Metrics Collector Script** | [`scripts/metrics/collect.py`](file:///home/alexey/git/cloudflare-agent-git/scripts/metrics/collect.py) | `0ad2172373509c5eb6c618c61eaac2cdace9239bbb2dc23ad3f2681cdcf5056e` |
 | **Bus Messages Store** | `.local/bus_store/messages.json` | `3eec325e2359daeb4d89ff14a8e0b8973df8907f4de0eded136f4673befd994f` |
 | **Bus Transport CLI** | [`scripts/coordination/agent_bus_transport.py`](file:///home/alexey/git/cloudflare-agent-git/scripts/coordination/agent_bus_transport.py) | `a5c5ba1f8dc308c4b941c6ebbdbae0049134c1ee5900217bc76f9a570bf18a4b` |
-| **Worker Credentials** | `.local/bus_store/credentials/model-worker-03.cred.json` | `e15771a4416aa8a43c38ba7f7f475dc978dd695e3e316bd6c2b04150d4afaca2` |
+| **Worker Credentials** | `[PRIVATE_BUS_CREDENTIALS]/model-worker-03.cred.json` | `[MASKED_PRIVATE_CREDENTIAL_SHA256]` |
 
 ---
 
@@ -56,13 +56,13 @@ The execution trace from `/home/alexey/git/agent-quota-launcher/.local/launcher-
 1. **Step 0 (`03:02:37Z` / `05:02:37 CEST`)**: Task received via launcher stdin.
 2. **Step 2 (`03:02:47Z`)**: Worker makes initial attempt:
    ```bash
-   chmod 0600 .local/bus_store/credentials/model-worker-03.cred.json && python3 scripts/coordination/agent_bus_transport.py ack
+   chmod 0600 [PRIVATE_BUS_CREDENTIALS]/model-worker-03.cred.json && python3 scripts/coordination/agent_bus_transport.py ack
    ```
    Command exits with error: `--cred/-c, --message-id/-m/--msg-id required`.
-3. **Step 4 (`03:02:50Z`)**: Worker invokes `view_file` on `/home/alexey/git/cloudflare-agent-git/.local/bus_store/messages.json` to inspect the inbox and discover incoming event `f85b6e13-af50-49c7-b593-03c0bcf421ae`.
+3. **Step 4 (`03:02:50Z`)**: Worker invokes `view_file` on `.local/bus_store/messages.json` to inspect the inbox and discover incoming event `f85b6e13-af50-49c7-b593-03c0bcf421ae`.
 4. **Step 6 (`03:02:57Z`)**: Worker invokes read-ACK:
    ```bash
-   python3 scripts/coordination/agent_bus_transport.py ack -c .local/bus_store/credentials/model-worker-03.cred.json -m f85b6e13-af50-49c7-b593-03c0bcf421ae
+   python3 scripts/coordination/agent_bus_transport.py ack -c [PRIVATE_BUS_CREDENTIALS]/model-worker-03.cred.json -m f85b6e13-af50-49c7-b593-03c0bcf421ae
    ```
    - Standard output confirms success:
      ```json
@@ -100,7 +100,7 @@ In this iteration, both the launcher SQLite task payload in `state.db` and the S
 #### Launcher Task Payload Audit (SQLite `state.db` & Step 0 Input)
 ```
 FileBus Blind Event-Driven Metrics Verification:
-Step 1: Connect to FileBus store (.local/bus_store) with worker credentials (.local/bus_store/credentials/model-worker-03.cred.json, mode 0600).
+Step 1: Connect to FileBus store (.local/bus_store) with worker credentials ([PRIVATE_BUS_CREDENTIALS]/model-worker-03.cred.json, mode 0600).
 Step 2: Poll inbox for incoming event message and issue read-ACK via python3 scripts/coordination/agent_bus_transport.py ack BEFORE executing any other tools.
 Step 3: Parse the event data payload from .local/bus_store/messages.json to discover the dynamically specified target_test_suite and target_script.
 Step 4: Execute Tool 1: run_command pytest on the dynamically discovered target_test_suite.
@@ -221,7 +221,7 @@ The reply message is strictly correlated to the trigger event with symmetric sen
    - Crucially, the model did **not** hallucinate a message ID, did not skip the ACK requirement, and did not proceed directly to running tests. Instead, it inspected `messages.json` at Step 4, extracted the authentic message ID, and completed the ACK at Step 6 prior to running tests. This confirms robust autonomous fault-recovery under strict protocol ordering.
 
 2. **Credential Mode & Storage Isolation**:
-   - `.local/bus_store/credentials/model-worker-03.cred.json` was verified to have file permissions `0600` (`-rw-------`).
+   - Worker credentials `[PRIVATE_BUS_CREDENTIALS]/model-worker-03.cred.json` were verified to have file permissions `0600` (`-rw-------`).
    - The worker executed under its own dedicated identity (`3cd642e7-2166-4c7b-b674-48fc48936032`) without inheriting or accessing credentials from peer sessions.
 
 3. **Receipt Data Fidelity**:
