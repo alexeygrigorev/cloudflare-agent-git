@@ -998,6 +998,7 @@ class Safety(unittest.TestCase):
       self.assertIn('Tasks: ', session_body)
 
     finally:
+      os.chdir(real_root)
       service.ROOT = real_root
       service.PRIVATE = real_priv
       service.BINARY = real_bin
@@ -1194,6 +1195,7 @@ class Safety(unittest.TestCase):
    self.assertEqual(current_tasks_json, initial_tasks_json, "TASKS.json must not be modified by read-only collector")
 
   finally:
+   os.chdir(real_root)
    service.ROOT = real_root
    service.PRIVATE = real_priv
    service.BINARY = real_bin
