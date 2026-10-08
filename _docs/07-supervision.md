@@ -53,6 +53,19 @@ Consequences: the audit sends the agent a bus message quoting the rule and the e
 
 How to run it: `scripts/ping/wake-audit.py` is a dry-run that prints what it would send. `--live` sends and logs. `--read-only` prints only the line `wake coverage: N of M waiting agents covered`, which is also in `scripts/principal-metrics.sh`. A template for a 15-minute systemd timer is in the `wake-audit` unit files in `scripts/ping/` (not installed). If the installed aplexer has no `wake` command, the audit prints that the rule cannot be enforced, exits with code 3, and sends nothing: that is a standing unenforced state until aplexer wake is installed.
 
+## Claims expire after 30 minutes
+
+A claim says "I am editing these paths". It is a declaration made with `aplexer work join` (task, scopes, mode edit or read), plus any sessionless claim kept on the file bus. A claim is only worth something while someone is actually working under it, so every claim has a 30 minute lifetime.
+
+- The rule. A claim not renewed for more than 30 minutes is EXPIRED. The clock is the declaration's `updated_at_ms`. The limit can be changed with `CLAIM_TTL_MINUTES`, and the default is 30.
+- Renewing. The holder re-runs `aplexer work join` with the same scopes, which sets `updated_at_ms` to now. Nothing else renews a claim. For a file bus claim the equivalent is to write the claim again. A holder who is done runs `aplexer work leave`.
+- What expired means. It stops blocking others: the claims check shows it as a warning and lets their commit pass. It also stops authorizing its holder: a commit that touches files covered only by the holder's own expired claim fails with `claim expired N min ago: re-run aplexer work join to reclaim`.
+- Who is reminded. `scripts/ping/claims-audit.py` lists every declaration with its age and marks the expired ones. With `--live` it sends each holder that is still running the message "your claim expired; reclaim with aplexer work join or release with aplexer work leave", at most once per holder per 30 minutes. The default is a dry-run that sends nothing and changes nothing.
+- File bus claims. The audit reads them only when a local store is readable. Otherwise it prints `FileBus claims: no reader, expiry unenforced`, and those claims keep their old behaviour until the owners of aplexer add native expiry.
+- Exceptions. A declaration in read mode never blocks anyone, so its age does not matter. `PRINCIPAL_OVERRIDE` still passes the commit check, with its reason logged.
+
+Target state: aplexer itself expires claims (a native 30 minute lifetime, a `work renew` command, an EXPIRED state in `aplexer context`, and a refusal of overlapping scopes when the other claim is still live). Until then the claims check and the audit enforce the rule from outside.
+
 ## How it maps to these docs
 
 - Supervisor. It is the service in the [team overview](team/01-overview.md): wake-ups, due checks and safe delivery, with no judgment and no approvals. It is the one supervisor that [way of working](03-way-of-working.md) section 12 asks for.
