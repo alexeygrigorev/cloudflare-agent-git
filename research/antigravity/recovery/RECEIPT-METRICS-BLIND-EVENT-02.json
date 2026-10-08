@@ -1,0 +1,65 @@
+{
+  "receipt_version": "1.0",
+  "receipt_type": "RECEIPT_METRICS_BLIND_EVENT_02",
+  "task_id": "probe-metrics-blind-38bf50b3",
+  "executed_at": "2026-10-08T05:03:06+02:00",
+  "status": "PASS",
+  "all_checks_passed": true,
+  "worker_process": {
+    "agent_name": "model-worker-03",
+    "identity_id": "3cd642e7-2166-4c7b-b674-48fc48936032",
+    "credential_file": "/home/alexey/git/cloudflare-agent-git/.local/bus_store/credentials/model-worker-03.cred.json",
+    "credential_mode": "0o600"
+  },
+  "event_message_received": {
+    "message_id": "f85b6e13-af50-49c7-b593-03c0bcf421ae",
+    "sender_id": "2e7ca50c-12f7-40ae-a36e-33b967147e60",
+    "kind": "event"
+  },
+  "reply_message_dispatched": {
+    "message_id": "593f2a56-2582-4586-af64-45578099d8cc",
+    "reply_to": "f85b6e13-af50-49c7-b593-03c0bcf421ae"
+  },
+  "two_tools_executed": {
+    "tool_1": "pytest tests/test_collect_multiworkspace.py -v",
+    "tool_1_status": "PASS",
+    "tool_2": "view_file scripts/metrics/collect.py",
+    "tool_2_status": "PASS"
+  },
+  "verification_checks": {
+    "worker_credential_mode_and_isolation": {
+      "status": "PASS",
+      "file_mode": "0o600"
+    },
+    "event_message_received": {
+      "status": "PASS",
+      "event_message_id": "f85b6e13-af50-49c7-b593-03c0bcf421ae",
+      "sender_id": "2e7ca50c-12f7-40ae-a36e-33b967147e60",
+      "kind": "event",
+      "delivered_at": "2026-10-08T03:02:24Z"
+    },
+    "worker_read_ack": {
+      "status": "PASS",
+      "event_message_id": "f85b6e13-af50-49c7-b593-03c0bcf421ae",
+      "ack_success": true
+    },
+    "tool_1_unit_test_execution": {
+      "status": "PASS",
+      "tool": "run_command / pytest",
+      "returncode": 0,
+      "passed": true
+    },
+    "tool_2_script_inspection": {
+      "status": "PASS",
+      "tool": "view_file",
+      "target": "scripts/metrics/collect.py"
+    },
+    "worker_correlated_reply": {
+      "status": "PASS",
+      "reply_message_id": "593f2a56-2582-4586-af64-45578099d8cc",
+      "reply_to": "f85b6e13-af50-49c7-b593-03c0bcf421ae",
+      "sender_id": "3cd642e7-2166-4c7b-b674-48fc48936032",
+      "recipient_id": "2e7ca50c-12f7-40ae-a36e-33b967147e60"
+    }
+  }
+}
