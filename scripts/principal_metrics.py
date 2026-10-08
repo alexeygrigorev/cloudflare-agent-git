@@ -239,6 +239,16 @@ def numbers(m):
     return n
 
 
+def wake_coverage_line():
+    """Read-only call of scripts/ping/wake-audit.py; its own line, or unknown with the reason."""
+    out, err = run([sys.executable, os.path.join(ROOT, "scripts/ping/wake-audit.py"), "--read-only"])
+    if err:  # exit 3 (wake unavailable) also lands here; the audit prints the reason itself
+        r = subprocess.run([sys.executable, os.path.join(ROOT, "scripts/ping/wake-audit.py"), "--read-only"],
+                           capture_output=True, text=True, cwd=ROOT)
+        return (r.stdout.strip().splitlines() or [f"wake coverage: unknown: {err}"])[0]
+    return out.strip().splitlines()[0]
+
+
 def render(doc, prev):
     m, lines = doc["metrics"], []
     old = numbers(prev["metrics"]) if prev else {}
@@ -270,6 +280,7 @@ def render(doc, prev):
                          f"{'idle %.0f min' % (s / 60) if s else 'no idle stretch observed'}")
     show("active agents", m["active_agents"], "active_agents", " (target 50)")
     show("ready reserve", m["ready_reserve"], "ready_reserve", " (target: enough to keep 50 busy)")
+    lines.append("  " + wake_coverage_line())
     lines.append("Founder:")
     show("founder messages today", m["founder_messages_today"], "founder_messages_today")
     lines.append("Tasks per repo (open / created today / closed today):")
