@@ -239,6 +239,50 @@ class AdapterTests(unittest.TestCase):
         handle(self.config, request)  # Extra request fields cannot override trusted config.
         self.assertEqual(self.count.read_text(), "1")
 
+    def proxy_fixture(self):
+        # Isolated accepted-provider receipt fixture, not native runtime evidence.
+        owner = {k: self.request[k] for k in ("project", "role", "actor", "generation", "epoch")}
+        durable_sink(self.config["sink_journal"], "fixture-tool", {
+            "owner": owner, "operation": "root-model-evidence"}, lambda: {
+            "state": "completed", "evidence": {"model": {"native_actor": "native-A", "thread_id": "TEST-CID"}}})
+        self.config["operations"] += [{"role": "root", "name": name,
+            "transport": "managed-proxy", "timeout": 1} for name in (
+            "root-principal-send", "root-principal-report-ack")]
+        class Proxy:
+            def __init__(self): self.calls = []
+            def dispatch(self, owner, key, cid, kind, body, timeout):
+                self.calls.append(("send", owner, cid, kind, body))
+                return {"state": "completed", "deliveries": [{"native_receipt": {"id": "TEST-native-message"}}]}
+            def read_reports(self, owner): return [{"id": "TEST-report", "reply_to": "TEST-native-message"}]
+            def dispatch_ack(self, owner, key, message_id, timeout):
+                if message_id != "TEST-report": raise PermissionError("unrelated message")
+                self.calls.append(("ack", message_id))
+                return {"state": "completed", "acknowledged_native_message": message_id}
+        return Proxy()
+
+    def test_managed_proxy_delivery_bound_to_accepted_model_and_epoch(self):
+        proxy = self.proxy_fixture()
+        request = {**self.request, "op": "bus_send", "action": "principal-ping",
+            "model_thread_id": "TEST-CID", "ping_kind": "root-check", "body": "Useful checkpoint"}
+        result = handle(self.config, request, proxy=proxy)
+        self.assertEqual(result["result"]["deliveries"][0]["native_receipt"]["id"], "TEST-native-message")
+        for replacement in ({"model_thread_id": "wrong-CID"}, {"body": "x" * 2049}, {"ping_kind": "arbitrary"}):
+            with self.assertRaises((PermissionError, ValueError)):
+                handle(self.config, {**request, **replacement, "key": str(replacement)}, proxy=proxy)
+        self.assertEqual(len(proxy.calls), 1)
+        reports = handle(self.config, {**self.request, "op": "bus_inbox"}, proxy=proxy)
+        self.assertEqual(reports["result"]["proxy_reports"][0]["id"], "TEST-report")
+        ack = {**self.request, "op": "bus_ack", "action": "principal-report", "key": "TEST-ack", "message_id": "TEST-report"}
+        handle(self.config, ack, proxy=proxy)
+        with self.assertRaises(PermissionError):
+            handle(self.config, {**ack, "key": "TEST-unrelated", "message_id": "human-message"}, proxy=proxy)
+        fence = CoordinatorFence(self.a, lambda *_: True, {}, lambda *_: True)
+        fence.handback(None, Owner("TEST", "root", "native-A", "session-A", 1),
+            Owner("TEST", "root", "native-B", "session-B", 2), {"checkpoint": "TEST-C", "ack": "TEST-A"})
+        for stale in (request, ack):
+            with self.assertRaises(Fenced): handle(self.config, stale, proxy=proxy)
+        self.assertEqual(len(proxy.calls), 2)
+
     def test_missing_authority_never_creates_local_fallback(self):
         self.config["authority_db"] = str(self.p / "absent.db")
         with self.assertRaises(PermissionError):

@@ -6,6 +6,7 @@ real readiness/admission evidence. The existing healthy Bus listener is untouche
 """
 import argparse
 import hashlib
+import importlib.util
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
@@ -216,7 +217,8 @@ class Handler(BaseHTTPRequestHandler):
                         if self.server.channels.channels.get(binding) is channel:
                             self.server.channels.channels.pop(binding)
                 return
-            response = handle(config, request, self.server.channels.dispatch, private_delivery=True)
+            response = handle(config, request, self.server.channels.dispatch, private_delivery=True,
+                              proxy=getattr(self.server, "proxy", None))
         except ModelCustodyPending:
             self.send(200, {"v": 1, "status": "pending", "reason": "model_thread_ack_and_first_tool_pending"})
             return
@@ -226,14 +228,39 @@ class Handler(BaseHTTPRequestHandler):
         self.send(200, response)
 
 
+def load_proxy(config_path, config):
+    if config.get("proxy_enabled") is not True:
+        return None
+    profile = private_json(Path(config_path).parent / "proxy.private.json")
+    source = pinned_file(profile["helper_path"], profile["helper_sha256"])
+    directory = Path(profile["directory"])
+    if directory != Path(config_path).parent / "managed-proxy" or directory.is_symlink():
+        raise PermissionError("fixed owner-private managed proxy directory required")
+    expected = profile["expected_native"]
+    if set(expected) != {"id", "tag", "workspace"} or not all(isinstance(v, str) and v for v in expected.values()):
+        raise PermissionError("genuine bound native proxy identity required")
+    targets = profile["targets"]
+    if (not isinstance(targets, list) or not 1 <= len(targets) <= 8
+            or any(not isinstance(t, str) or not 1 <= len(t) <= 128 for t in targets)
+            or len(set(targets)) != len(targets)):
+        raise PermissionError("fixed unique native recipient allowlist required")
+    spec = importlib.util.spec_from_file_location("win35_root_proxy", source)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    proxy = module.ManagedProxy(directory, expected, tuple(targets))
+    proxy.revoke_pending()  # Shared native effect mutex BEFORE any role/election request.
+    return proxy
+
+
 def serve(config_path):
     config = private_json(config_path)
     # Missing store must remain a hold; serving never initializes implicitly.
     if not Path(config["authority_db"]).is_file() or not Path(config["sink_journal"]).is_file():
         raise PermissionError("canonical authority has not been initialized")
+    proxy = load_proxy(config_path, config)
     from role_fence_cli import build
     from role_fence_enrollment import reconcile_successors
-    authority, _ = build(config)
+    authority, _ = build(config, proxy=proxy)
     reconcile_successors(config_path, authority)
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
@@ -243,6 +270,7 @@ def serve(config_path):
     server = ThreadingHTTPServer((config["listen_host"], config["listen_port"]), Handler)
     server.config_path = config_path
     server.channels = NativeChannels()
+    server.proxy = proxy
     server.socket = context.wrap_socket(server.socket, server_side=True)
     server.serve_forever(poll_interval=0.5)
 

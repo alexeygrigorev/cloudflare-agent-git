@@ -69,7 +69,27 @@ def pinned_file(path, digest):
     return p
 
 
-def build(config, channel_dispatch=None):
+def active_model(config, owner):
+    """Read immutable accepted evidence; caller must already hold a role guard."""
+    with sqlite3.connect(Path(config["authority_db"]).as_uri() + "?mode=ro", uri=True) as db:
+        row = db.execute("SELECT first_action FROM activation_receipts WHERE project=? AND role=? AND epoch=?", (owner.project, owner.role, owner.epoch)).fetchone()
+    if not row:
+        raise PermissionError("actual model custody required")
+    with sqlite3.connect(config["sink_journal"]) as db:
+        receipt = db.execute("SELECT body,result FROM sink_receipts WHERE key=?", (row[0],)).fetchone()
+    if not receipt or not receipt[1]:
+        raise PermissionError("actual model receipt unavailable")
+    intent, result = json.loads(receipt[0]), json.loads(receipt[1])
+    expected_owner = dict(zip(("project", "role", "actor", "generation", "epoch"), owner.args()))
+    model = result.get("evidence", {}).get("model", {})
+    if (intent.get("owner") != expected_owner or intent.get("operation") != owner.role + "-model-evidence"
+            or result.get("state") not in ("ok", "completed") or model.get("native_actor") != owner.actor
+            or not isinstance(model.get("thread_id"), str) or not 1 <= len(model["thread_id"]) <= 128):
+        raise PermissionError("exact accepted model CID required")
+    return model["thread_id"]
+
+
+def build(config, channel_dispatch=None, proxy=None):
     source = pinned_file(config["authority_source"], config["authority_sha256"])
     source_root = source.parents[1]
     sys.path.insert(0, str(source_root))
@@ -119,6 +139,31 @@ def build(config, channel_dispatch=None):
         raise PermissionError("owner-provisioned private sink journal required")
     for entry in config.get("operations", []):
         role, name = entry["role"], entry["name"]
+        if entry.get("transport") == "managed-proxy":
+            if role != "root" or name not in ("root-principal-send", "root-principal-report-ack") or type(entry["timeout"]) is not int or not 1 <= entry["timeout"] <= 30:
+                raise PermissionError("fixed managed proxy operation required")
+            timeout = entry["timeout"]
+            if name == "root-principal-send":
+                def validate(p):
+                    return (isinstance(p, dict) and set(p) == {"model_thread_id", "ping_kind", "body"}
+                        and p["ping_kind"] in ("root-check", "root-standup-ping", "root-writeup-ping")
+                        and isinstance(p["body"], str) and 1 <= len(p["body"]) <= 2048)
+            else:
+                def validate(p):
+                    return isinstance(p, dict) and set(p) == {"message_id"} and isinstance(p["message_id"], str) and 1 <= len(p["message_id"]) <= 128
+            def effect(key, payload, owner, name=name, timeout=timeout):
+                if proxy is None:
+                    raise ConnectionError("managed native proxy unavailable")
+                native_owner = dict(zip(("project", "role", "actor", "generation", "epoch"), owner.args()))
+                message = {"v": 1, "key": key, "operation": name, "owner": native_owner, "payload": payload}
+                if name == "root-principal-send":
+                    if payload["model_thread_id"] != active_model(config, owner):
+                        raise PermissionError("actual active model CID mismatch")
+                    return durable_sink(journal, key, message, lambda: proxy.dispatch(native_owner, key,
+                        payload["model_thread_id"], payload["ping_kind"], payload["body"], timeout=timeout))
+                return durable_sink(journal, key, message, lambda: proxy.dispatch_ack(native_owner, key, payload["message_id"], timeout=timeout))
+            operations[(role, name)] = (validate, effect)
+            continue
         if entry.get("transport") == "native-channel":
             if role not in ("root", "principal") or not 1 <= entry["timeout"] <= 60:
                 raise ValueError("fixed bounded native channel operation required")
@@ -194,10 +239,10 @@ def build(config, channel_dispatch=None):
     return authority, fence
 
 
-def handle(config, request, channel_dispatch=None, *, private_delivery=False):
+def handle(config, request, channel_dispatch=None, *, private_delivery=False, proxy=None):
     if request.get("v") != 1:
         raise ValueError("request version required")
-    authority, fence = build(config, channel_dispatch)
+    authority, fence = build(config, channel_dispatch, proxy)
     owner = Owner(*(request[k] for k in ("project", "role", "actor", "generation", "epoch")))
     credential = request["credential"]
     fence._identity(credential, owner)
@@ -363,9 +408,24 @@ def handle(config, request, channel_dispatch=None, *, private_delivery=False):
         bus = FileBus(config["bus_store"])
         result = {"messages": [m.public() if hasattr(m, "public") else m.__dict__ for m in
             bus.inbox(credential["identity_id"], credential["token"], unread_only=True)][:20]}
+        if proxy is not None and owner.role == "root" and not config["bindings"][owner.actor].get("retired"):
+            activation = authority.activation(*owner.args())
+            if not activation.get("role_ack") or not activation.get("first_action"):
+                raise PermissionError("active root custody required for managed reports")
+            result["proxy_reports"] = proxy.read_reports(dict(zip(("project", "role", "actor", "generation", "epoch"), owner.args())))
+    elif op == "bus_ack":
+        if request.get("action") != "principal-report" or owner.role != "root":
+            raise PermissionError("only managed principal reports may be handled")
+        result = fence.execute(credential, owner, request["key"], "root-principal-report-ack", {"message_id": request["message_id"]})
     elif op == "bus_send":
         from coordination.bus import FileBus
         action = request["action"]
+        if action == "principal-ping":
+            if owner.role != "root":
+                raise PermissionError("only managed root principal pings are installed")
+            result = fence.execute(credential, owner, request["key"], "root-principal-send", {
+                "model_thread_id": request["model_thread_id"], "ping_kind": request["ping_kind"], "body": request["body"]})
+            return {"v": 1, "status": "pending" if result.get("state") == "uncertain" else "ok", "result": result}
         if action not in ("role-ack", "handover-checkpoint", "handover-ack"):
             raise PermissionError("only own semantic role signals allowed")
         if action == "role-ack":

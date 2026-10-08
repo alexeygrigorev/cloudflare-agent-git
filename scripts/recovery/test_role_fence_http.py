@@ -17,13 +17,38 @@ from unittest.mock import patch
 import coordination.role_failover as dependency
 from coordination.bus import FileBus
 from coordination.role_failover import RoleAuthority
-from role_fence_http import initialize, NativeChannel, NativeChannels, Handler
+from role_fence_http import initialize, NativeChannel, NativeChannels, Handler, load_proxy
 from role_fence import CoordinatorFence, Owner
 from test_role_fence_cli import sha
 import test_role_fence_cli as cli_tests
 
 
 class HTTPAdapterTests(unittest.TestCase):
+    def test_fixed_proxy_profile_pin_and_startup_revocation(self):
+        with tempfile.TemporaryDirectory() as temp:
+            p = Path(temp)
+            helper = p / "helper.py"
+            helper.write_text("class ManagedProxy:\n def __init__(self,directory,expected,targets): self.directory=directory; self.targets=targets; self.revoked=False\n def revoke_pending(self): self.revoked=True\n")
+            profile = {"directory": str(p / "managed-proxy"), "helper_path": str(helper),
+                "helper_sha256": sha(helper), "expected_native": {"id": "TEST-native", "tag": "TEST-root", "workspace": "TEST"},
+                "targets": ["TEST-principal"]}
+            path = p / "proxy.private.json"
+            def write():
+                path.write_text(json.dumps(profile)); path.chmod(0o600)
+            write()
+            proxy = load_proxy(p / "authority.json", {"proxy_enabled": True})
+            self.assertTrue(proxy.revoked)
+            self.assertEqual(proxy.targets, ("TEST-principal",))
+            for targets in ("caller-target", [], ["TEST", "TEST"]):
+                profile["targets"] = targets; write()
+                with self.assertRaises(PermissionError): load_proxy(p / "authority.json", {"proxy_enabled": True})
+            profile["targets"] = ["TEST-principal"]
+            profile["helper_sha256"] = "0" * 64; write()
+            with self.assertRaises(PermissionError): load_proxy(p / "authority.json", {"proxy_enabled": True})
+            profile["helper_sha256"] = sha(helper)
+            profile["directory"] = str(p / "untrusted"); write()
+            with self.assertRaises(PermissionError): load_proxy(p / "authority.json", {"proxy_enabled": True})
+
     def test_one_canonical_init_no_ready_quota_assertion(self):
         with tempfile.TemporaryDirectory() as temp:
             p = Path(temp)
