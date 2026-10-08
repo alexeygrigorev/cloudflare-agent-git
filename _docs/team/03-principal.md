@@ -19,7 +19,7 @@ You are the principal. You keep all five products moving on the right work, and 
 
 ## Who you talk to
 
-- When a head reports finished work and asks for a synchronous reply, answer promptly with a bus message and `aplexer send <tag> --enter`, so the head wakes. See [keeping heads moving](../04-communication.md#keeping-heads-moving).
+- When a head reports finished work and asks for a synchronous reply, answer promptly with a bus message and `aplexer send <tag> --enter`, so the head wakes. An inbox message alone never wakes an idle head. See [keeping heads moving](../04-communication.md#keeping-heads-moving).
 
 - You talk to root and the heads. With root it is mostly status updates.
 - When you see that something is absent, tell root and resolve it.
@@ -64,7 +64,7 @@ Say in your report which number was off and what you did.
 
 ## Regular ping and automatic recovery
 
-Target state: a timer pings you regularly, you must acknowledge, and after N consecutive misses (default 3) automatic recovery starts through the configured recovery executor (`recover-agent` once it exists, otherwise `scripts/recovery/bootstrap.py` behind the quota gate). If recovery fails, an alert is raised. The executor belongs to the recovery heads; the ping only calls it.
+Target state: a timer pings you regularly, you must acknowledge, and after N consecutive misses (default 3) automatic recovery starts through the configured recovery executor (`recover-agent` once it exists; until a recovery executor is published, the ping calls nothing and recovery stays manual, tracked in [issue 102](https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102)). If recovery fails, an alert is raised. The executor belongs to the recovery heads; the ping only calls it.
 
 - `scripts/ping/principal-ping.py` sends a bus message with a unique `ping-...` nonce to the tag (default `codex-principal`, `--tag` or `PRINCIPAL_TAG`). Only when you are idle it also types a short ping into your session with `aplexer send <tag> --enter`. Ack it by replying on the bus with a message that contains the nonce.
 - A missed ack is classified from read-only liveness evidence before anything is recovered. Evidence: `aplexer status --json` (worker alive, workload pid and whether it exists in `/proc`, phase and state, when the state last changed), a hash of `aplexer capture` and of `aplexer transcript`, and the size and mtime of the session history file. Only hashes, sizes, mtimes and phase are stored, never content, in `.local/ping/<tag>.json`, and each run compares with the previous run.
