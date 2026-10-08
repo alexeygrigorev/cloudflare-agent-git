@@ -918,7 +918,7 @@ class TerminalConsumer:
         events = []
 
         # 1. Unblocked / Ready tasks requiring worker dispatch
-        ready_tasks = [t for t in tasks if t.get("status") == "ready"]
+        ready_tasks = [t for t in tasks if t.get("status") in ("ready", "queued")]
         for t in ready_tasks:
             events.append({
                 "type": "TASK_READY",
@@ -928,21 +928,47 @@ class TerminalConsumer:
             })
 
         # 2. Completed execution tasks awaiting independent review
+        seen_actionable_ids = set()
         for t_id, st in self.task_states.items():
             if st.get("status") == "completed-awaiting-review":
+                seen_actionable_ids.add(t_id)
                 events.append({
                     "type": "REVIEW_REQUIRED",
                     "task_id": t_id,
                     "project_id": st.get("project_id"),
-                    "executor_tag": st.get("executor", {}).get("tag"),
+                    "executor_tag": st.get("executor", {}).get("tag") if isinstance(st.get("executor"), dict) else st.get("executor"),
                     "summary": f"Task {t_id} completed execution; distinct review required",
                 })
             elif st.get("status") == "rejected-needs-repair":
+                seen_actionable_ids.add(t_id)
                 events.append({
                     "type": "TASK_REJECTED",
                     "task_id": t_id,
                     "project_id": st.get("project_id"),
-                    "reviewer_tag": st.get("reviewer", {}).get("tag"),
+                    "reviewer_tag": st.get("reviewer", {}).get("tag") if isinstance(st.get("reviewer"), dict) else st.get("reviewer"),
+                    "summary": f"Task {t_id} rejected by reviewer; repair required",
+                })
+
+        for t in tasks:
+            t_id = t.get("id")
+            if not t_id or t_id in seen_actionable_ids:
+                continue
+            if t.get("status") == "completed-awaiting-review":
+                seen_actionable_ids.add(t_id)
+                events.append({
+                    "type": "REVIEW_REQUIRED",
+                    "task_id": t_id,
+                    "project_id": t.get("project_id") or t.get("team_id"),
+                    "executor_tag": t.get("executor_tag") or t.get("owner_tag") or t.get("owner"),
+                    "summary": f"Task {t_id} completed execution; distinct review required",
+                })
+            elif t.get("status") == "rejected-needs-repair":
+                seen_actionable_ids.add(t_id)
+                events.append({
+                    "type": "TASK_REJECTED",
+                    "task_id": t_id,
+                    "project_id": t.get("project_id") or t.get("team_id"),
+                    "reviewer_tag": t.get("reviewer_tag") or t.get("reviewer"),
                     "summary": f"Task {t_id} rejected by reviewer; repair required",
                 })
 

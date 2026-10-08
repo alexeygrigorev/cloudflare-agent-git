@@ -481,6 +481,32 @@ def get_designated_head_owner(task, entities):
     return None
 
 
+def is_task_for_head(task, head_tag, head_entities, entities=None, all_heads=None):
+    """
+    Determine if a task dictionary or state belongs to head_tag:
+    - Explicit head_owner matches
+    - owner_tag or owner matches head_tag
+    - get_designated_head_owner matches head_tag
+    - matches any supervision entity for that head
+    - if only one head is active and task is unowned/unassigned, falls to that head
+    """
+    if not task or not isinstance(task, dict):
+        return False
+    if task.get('head_owner') == head_tag:
+        return True
+    owner = task.get('owner_tag') or task.get('owner')
+    if owner == head_tag:
+        return True
+    if entities and get_designated_head_owner(task, entities) == head_tag:
+        return True
+    if any(task_matches_entity(task, e) for e in head_entities):
+        return True
+    if all_heads and len(all_heads) == 1 and all_heads[0] == head_tag:
+        if not owner or owner == head_tag:
+            return True
+    return False
+
+
 def get_ql_db_candidates(root=None, private=None):
     """
     Return candidate launcher databases for ingestion and bridging.
@@ -1952,7 +1978,7 @@ def run():
                 head_active = [
                     t for t in active
                     if is_task_eligible_for_supervision(t, sessions=sessions, active_heads=head_tags, active_principals=active_tags)
-                    and (((t.get('owner_tag') or t.get('owner')) == head_tag) or any(task_matches_entity(t, e) for e in head_entities))
+                    and is_task_for_head(t, head_tag, head_entities, entities, head_tags)
                 ]
                 head_ready = [t for t in head_active if t.get('status') in ('ready', 'queued')]
 
@@ -2010,12 +2036,72 @@ def run():
                             pending = None
 
                 cooldown = old.get('cooldown_until', 0)
+
+                # Filter actionable events from TerminalConsumer matching this head
+                task_by_id = {t.get('id'): t for t in tasks if isinstance(t, dict) and t.get('id')}
+                head_actionable_events = []
+                seen_actionable_keys = set()
+
+                for ev in actionable_events:
+                    ev_type = ev.get('type')
+                    ev_tid = ev.get('task_id')
+                    if not ev_tid:
+                        continue
+                    t_obj = task_by_id.get(ev_tid)
+                    if not t_obj and ev_tid in consumer.task_states:
+                        st = consumer.task_states[ev_tid]
+                        t_obj = {
+                            'id': ev_tid,
+                            'project_id': st.get('project_id'),
+                            'owner_tag': st.get('executor', {}).get('tag') if isinstance(st.get('executor'), dict) else st.get('executor'),
+                            'head_owner': st.get('head_owner'),
+                        }
+                    if not t_obj:
+                        t_obj = {'id': ev_tid, 'project_id': ev.get('project_id')}
+
+                    if is_task_for_head(t_obj, head_tag, head_entities, entities, head_tags):
+                        key = (ev_type, ev_tid)
+                        if key not in seen_actionable_keys:
+                            seen_actionable_keys.add(key)
+                            head_actionable_events.append(dict(ev))
+
+                # Include all head_ready tasks as TASK_READY actionable events if not already present
+                for t in head_ready:
+                    tid = t.get('id')
+                    if tid:
+                        key = ('TASK_READY', tid)
+                        if key not in seen_actionable_keys:
+                            seen_actionable_keys.add(key)
+                            head_actionable_events.append({
+                                'type': 'TASK_READY',
+                                'task_id': tid,
+                                'project_id': t.get('project_id') or t.get('team_id'),
+                                'summary': f"Task {tid} ready for model execution dispatch",
+                            })
+
                 ready_fps = [task_ready_fingerprint(t) for t in sorted(head_ready, key=lambda x: str(x.get('id')))]
-                ready_fingerprint = hashlib.sha256(json.dumps(ready_fps, sort_keys=True).encode()).hexdigest()[:20]
-                head_event_key = hashlib.sha256(f'{digest}:{session["id"]}:{episode}:{ready_fingerprint}'.encode()).hexdigest()[:20]
+                actionable_fps = [
+                    {
+                        'type': e.get('type'),
+                        'task_id': e.get('task_id'),
+                        'project_id': e.get('project_id'),
+                        'executor_tag': e.get('executor_tag'),
+                        'reviewer_tag': e.get('reviewer_tag'),
+                        'summary': e.get('summary'),
+                    }
+                    for e in sorted(head_actionable_events, key=lambda x: (str(x.get('type')), str(x.get('task_id'))))
+                ]
+                fingerprint_payload = {
+                    'ready': ready_fps,
+                    'actionable': actionable_fps,
+                }
+                actionable_fingerprint = hashlib.sha256(json.dumps(fingerprint_payload, sort_keys=True).encode()).hexdigest()[:20]
+                ready_fingerprint = actionable_fingerprint
+                head_event_key = hashlib.sha256(f'{digest}:{session["id"]}:{episode}:{actionable_fingerprint}'.encode()).hexdigest()[:20]
                 item.update(event_key=head_event_key)
 
-                last_notified_fp = old.get('last_notified_ready_fingerprint')
+                has_actionable = bool(head_ready or head_actionable_events)
+                last_notified_fp = old.get('last_notified_actionable_fingerprint') or old.get('last_notified_ready_fingerprint')
                 effective_old_sent = old.get('sent_event')
                 session_changed = bool(old.get('session_id') and old.get('session_id') != session['id'])
 
@@ -2025,31 +2111,58 @@ def run():
                     (item.get('last_request') and item['last_request'].get('superseded_at'))
                 )
                 rearm = bool(
-                    head_ready and not pending and (time.time() >= cooldown) and
+                    has_actionable and not pending and (time.time() >= cooldown) and
                     (has_superseded or old.get('unexplained_idle_over_slo'))
                 )
                 if rearm:
                     last_notified_fp = None
                     effective_old_sent = None
 
-                ready_delta = bool(head_ready) and ((last_notified_fp is None) or session_changed or (ready_fingerprint != last_notified_fp))
+                actionable_delta = bool(has_actionable) and ((last_notified_fp is None) or session_changed or (actionable_fingerprint != last_notified_fp))
+                ready_delta = actionable_delta
 
                 item['ready_task_ids'] = [t['id'] for t in head_ready]
                 item['ready_fingerprint'] = ready_fingerprint
+                item['actionable_fingerprint'] = actionable_fingerprint
                 item['ready_delta'] = ready_delta
+                item['actionable_delta'] = actionable_delta
+                item['actionable_events'] = head_actionable_events
+                item['actionable_task_ids'] = sorted(list(set([t['id'] for t in head_ready] + [e['task_id'] for e in head_actionable_events if e.get('task_id')])))
 
-                if head_ready and not pending and ready_delta and (effective_old_sent != head_event_key) and time.time() >= cooldown:
+                if has_actionable and not pending and actionable_delta and (effective_old_sent != head_event_key) and time.time() >= cooldown:
                     if item.get('alive'):
-                        task_ids_str = ", ".join(t['id'] for t in head_ready[:5])
+                        ready_events = [e for e in head_actionable_events if e.get('type') == 'TASK_READY']
+                        review_events = [e for e in head_actionable_events if e.get('type') == 'REVIEW_REQUIRED']
+                        rejected_events = [e for e in head_actionable_events if e.get('type') == 'TASK_REJECTED']
+
+                        ready_ids = [t['id'] for t in head_ready]
+                        for e in ready_events:
+                            if e.get('task_id') and e['task_id'] not in ready_ids:
+                                ready_ids.append(e['task_id'])
+                        review_ids = [e['task_id'] for e in review_events if e.get('task_id')]
+                        rejected_ids = [e['task_id'] for e in rejected_events if e.get('task_id')]
+
+                        summary_parts = []
+                        if ready_ids:
+                            summary_parts.append(f"{len(ready_ids)} ready for dispatch ({', '.join(ready_ids[:5])})")
+                        if review_ids:
+                            summary_parts.append(f"{len(review_ids)} awaiting review ({', '.join(review_ids[:5])})")
+                        if rejected_ids:
+                            summary_parts.append(f"{len(rejected_ids)} rejected needing repair ({', '.join(rejected_ids[:5])})")
+
+                        transitions_summary = "; ".join(summary_parts) if summary_parts else "none"
+
                         body = (
-                            f"SUPERVISION-{head_event_key}: Head {head_tag} has {len(head_ready)} ready tasks awaiting dispatch: {task_ids_str}. "
-                            "Inspect queues, launch executors, verify first tool output. Update TASKS.json."
+                            f"SUPERVISION-{head_event_key}: Head {head_tag} has actionable transitions: {transitions_summary}. "
+                            "Inspect queues, launch executors or reviewers, verify first tool output. Update TASKS.json."
                         )
                         receipt = recorded_send(BINARY, head_tag, f'{head_event_key}-{head_tag}', body, PRIVATE, identity['id'], supports_key)
                         atomic(PRIVATE / f'receipt-{head_event_key}-{head_tag}.json', receipt)
                         if receipt.get('delivery') == 'send-uncertain':
                             report['degraded'] = True
                             report['uncertain_outcome'] = {'outcome': 'UNKNOWN', 'class': 'send-uncertain', 'head': head_tag, 'event_key': head_event_key, 'reason': receipt.get('reason')}
+                            item['diagnostic_hold'] = 'send-uncertain'
+                            item['cooldown_until'] = max(item.get('cooldown_until', 0), time.time() + 60)
                         envelope = receipt.get('message', receipt)
                         pending = {'id': envelope.get('id', receipt.get('id')), 'sender_id': identity['id'],
                                    'sender_tag': identity.get('tag', 'experiment-supervision'),
@@ -2057,17 +2170,26 @@ def run():
                                    'workspace': identity.get('workspace', str(ROOT)), 'event': head_event_key,
                                    'delivery': receipt.get('delivery', 'inbox'), 'created_at': now()}
                         item['sent_event'] = head_event_key
-                        item['last_notified_ready_fingerprint'] = ready_fingerprint
+                        item['last_notified_ready_fingerprint'] = actionable_fingerprint
+                        item['last_notified_actionable_fingerprint'] = actionable_fingerprint
                         item['last_notified_ready_ids'] = [t['id'] for t in head_ready]
-                        item['cooldown_until'] = cooldown
-                        event('head-request-recorded', head=head_tag, message_id=pending['id'], event_key=head_event_key, ready_tasks=[t['id'] for t in head_ready])
+                        item['last_notified_actionable_ids'] = item['actionable_task_ids']
+                        item['cooldown_until'] = max(item.get('cooldown_until', 0), cooldown)
+                        event('head-request-recorded', head=head_tag, message_id=pending['id'], event_key=head_event_key,
+                              ready_tasks=[t['id'] for t in head_ready],
+                              actionable_events=[e.get('type') for e in head_actionable_events])
                 else:
                     item['sent_event'] = old.get('sent_event')
-                    item['last_notified_ready_fingerprint'] = old.get('last_notified_ready_fingerprint') if head_ready else None
+                    item['last_notified_ready_fingerprint'] = old.get('last_notified_ready_fingerprint') if has_actionable else None
+                    item['last_notified_actionable_fingerprint'] = old.get('last_notified_actionable_fingerprint') if has_actionable else None
                     item['last_notified_ready_ids'] = old.get('last_notified_ready_ids', []) if head_ready else []
                     item['cooldown_until'] = cooldown
-                    if head_ready and not ready_delta:
+                    if has_actionable and not actionable_delta:
                         item['ready_deduped'] = True
+                        item['actionable_deduped'] = True
+
+                if pending and item.get('composer') in ('draft', 'menu-or-draft', 'busy'):
+                    item['cooldown_until'] = max(item.get('cooldown_until', 0), time.time() + 60)
 
                 if pending and not may_deliver(pending, identity['id'], spool=PRIVATE):
                     item['pending_reason'] = 'original sender changed; original recipient ACK/reply required'
@@ -2084,7 +2206,8 @@ def run():
                             item.pop('diagnostic_hold', None)
                             pending.pop('diagnostic_hold', None)
                         fresh_screen = command(['aplexer', 'capture', session['id'], '--screen', '--plain'])
-                        if composer(fresh_screen, head_tag) == 'empty':
+                        fresh_kind = composer(fresh_screen, head_tag)
+                        if fresh_kind == 'empty':
                             deliver_args = [BINARY, 'message', 'deliver', pending['id'], '--workspace', str(ROOT), '--json']
                             result = subprocess.run(deliver_args, capture_output=True, text=True, timeout=20)
                             deliver_stderr = (result.stderr or '').strip()
@@ -2110,6 +2233,10 @@ def run():
                                 ):
                                     item['diagnostic_hold'] = 'known-footer-classifier-mismatch'
                                     pending['diagnostic_hold'] = 'known-footer-classifier-mismatch'
+                                else:
+                                    item['diagnostic_hold'] = item.get('diagnostic_hold') or 'delivery-not-ready'
+                                    pending['diagnostic_hold'] = pending.get('diagnostic_hold') or 'delivery-not-ready'
+                                    item['cooldown_until'] = max(item.get('cooldown_until', 0), time.time() + 180)
                                 if item.get('diagnostic_hold') == 'known-footer-classifier-mismatch':
                                     item['cooldown_until'] = time.time() + 180
                             if status == 'recipient-acked':
@@ -2118,6 +2245,9 @@ def run():
                                 item.pop('failover_candidate', None)
                                 item['cooldown_until'] = time.time() + 180
                                 pending = None
+                        else:
+                            item['cooldown_until'] = max(item.get('cooldown_until', 0), time.time() + 60)
+                            event('head-delivery-held-composer', head=head_tag, message_id=pending['id'], composer=fresh_kind)
 
                 if pending:
                     is_beyond, dur, slo_limit, block_reason = check_pending_slo(pending, head_tag, item, time.time())
