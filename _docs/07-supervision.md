@@ -34,6 +34,25 @@ It never types into a busy screen, a menu or a human draft. It sends only when t
 - To change it, treat it like product code: a head owns the change, a different agent on a different model reviews the exact version, and the service is restarted on purpose afterwards. Any edit to `service.py` makes the running copy exit at its next pass. Tests are in `scripts/supervision/`, for example `python3 scripts/supervision/test_service.py`.
 - Who runs it: it runs by itself. The principal that owns recovery keeps it alive and acts on what it reports. Root checks that it is alive. A systemd unit and watcher in `scripts/supervision/systemd/` restart it, and the migration runbook next to them is the plan for that. Recovery status is in [recovery](05-recovery.md): a live supervisor is not proof that unattended recovery works.
 
+## Waiting requires a wake
+
+Whoever waits sets a wake, so nobody sleeps forever on something that already arrived. The wake is an aplexer timer that types a prompt into the agent's own session every 15 or 30 minutes. `scripts/ping/wake-audit.py` checks the rule, reminds, and escalates.
+
+The rules, each one is checked by the audit:
+
+- Who. Every head and principal session. Shell and service sessions are exempt, and so is the audit itself. An agent that is busy (any state other than idle or waiting) is exempt.
+- Waiting means: the session has been idle or waiting for more than 5 minutes and is blocked on something outside itself: a reply, a review, a build, CI, another agent, quota, or a human.
+- A waiting agent MUST have an active wake before it ends its turn: `aplexer wake set --every 15m --text '<what I wait for>'`, or for a one-off `aplexer wake set --once --in 30m`. The interval MUST be 30 minutes or less, and the wake must still be alive at the next audit (15 minutes from now).
+- The wake prompt MUST make the agent check its inbox and the thing it waits for, then do exactly one of three things: continue the work, re-arm the wake, or run `aplexer wake off`.
+- The agent MUST turn the wake off (`aplexer wake off`) when the wait is over, or when it has nothing left to wait for.
+- Evidence the audit reads: `aplexer list --json` for the state and its age, and `aplexer wake list --all --json` for the wake (interval, active, expiry). The audit changes nothing in either.
+
+Classes: `WAITING-WITH-WAKE` (fine), `WAITING-NO-WAKE` (violation), `WAKE-TOO-SLOW` (a wake exists but its interval is over 30 minutes; violation), `BUSY` (ignored), `UNKNOWN` (state or wake data unreadable; reported, never counted as a violation).
+
+Consequences: the audit sends the agent a bus message quoting the rule and the exact command, and tells its principal. It sends at most one reminder per agent per 30 minutes. After 3 consecutive violating audits it escalates to the principal, and to root (`desktop-orchestrator`) when the violator is the principal. Everything is logged in `.local/ping/wake-audit.log`.
+
+How to run it: `scripts/ping/wake-audit.py` is a dry-run that prints what it would send. `--live` sends and logs. `--read-only` prints only the line `wake coverage: N of M waiting agents covered`, which is also in `scripts/principal-metrics.sh`. A template for a 15-minute systemd timer is in the `wake-audit` unit files in `scripts/ping/` (not installed). If the installed aplexer has no `wake` command, the audit prints that the rule cannot be enforced, exits with code 3, and sends nothing: that is a standing unenforced state until aplexer wake is installed.
+
 ## How it maps to these docs
 
 - Supervisor. It is the service in the [team overview](team/01-overview.md): wake-ups, due checks and safe delivery, with no judgment and no approvals. It is the one supervisor that [way of working](03-way-of-working.md) section 12 asks for.
