@@ -26,6 +26,8 @@ Each of the five products has its own team, repo and tracker. A team is the head
 
 ## Where they run
 
+When Codex shows the known “Folder access” menu for this project, verify the actual owned session, current prompt and exact authorized workspace, then accept “Trust and continue” using supported native control without asking the human again. Do not leave startup blocked solely on this authorized menu. This permission covers that project trust prompt; preserve normal handling for unknown folders, drafts and busy panes, and all identity, election, quota and resource gates.
+
 - The principal and the heads run in aplexer sessions. When one is missing, root or the principal restarts it by hand with the runbooks in `_docs/05-recovery.md`; automatic launching is tracked in issue 102.
 - Root runs in a GUI session on the founder's laptop or on Win35. It never runs on Hetzner, which is a server without a GUI, and never headless. It reaches Hetzner and the other machine with ssh.
 - Implementers and reviewers run headless. They never get their own aplexer session.
