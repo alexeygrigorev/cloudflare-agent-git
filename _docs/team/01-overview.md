@@ -22,7 +22,7 @@ Each of the five products has its own team, repo and tracker. A team is the head
 
 ## Writing
 
-- Writer. Writes the daily report and nothing else. See 07-writer.md.
+- Writer. The existing dedicated Claude Opus writer owns the daily report and every prose change. Root contacts it directly for requests, corrections, progress and delivery; the publication coordinator retains review, release and recovery. Reuse the current article and writer, with the existing privacy, quota and edit-scope gates. See 07-writer.md.
 
 ## Where they run
 
@@ -32,7 +32,7 @@ Each of the five products has its own team, repo and tracker. A team is the head
 
 ## Who talks to whom
 
-Root talks to the principal and the heads. The principal talks to root and the heads. A head talks to the principal, root and its own implementers and reviewers. An implementer or a reviewer talks only to its head. The details are in `_docs/04-communication.md`.
+Root talks to the principal, the heads and the dedicated Opus writer. Root and the writer communicate directly about write-ups; principal operational reports are supplied when needed, without a mandatory routing or approval step. The principal talks to root and the heads. A head talks to the principal, root and its own implementers and reviewers. An implementer or a reviewer talks only to its head. The details are in `_docs/04-communication.md`.
 
 ## How they fit together
 
