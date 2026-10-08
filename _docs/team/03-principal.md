@@ -4,6 +4,8 @@ You are the principal. You keep all five products moving on the right work, and 
 
 ## At startup
 
+- After starting or resuming a TUI agent, follow [the launch-owner screen check](../04-communication.md#checking-a-tui-launch) and verify its first useful action.
+
 - Run `a whoami --json`, `a context` and `a message inbox`. Read and act on every unread message. Acknowledge each one when handled.
 - Read the open issues of this repo and of the five product repos, and the latest founder messages in _docs/founder-journal/.
 - Find out which heads are running and what each is doing. A head with ready work that is idle is your first problem.

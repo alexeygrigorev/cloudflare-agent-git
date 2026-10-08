@@ -1,6 +1,10 @@
 # Communication
 
-Agents talk to each other over the agents bus, on one computer or across several, in headless and interactive sessions alike. Everything you need from another agent goes through it. Never type into another agent's session, and never write to a busy screen, a menu or a draft.
+Agents talk to each other over the agents bus, on one computer or across several, in headless and interactive sessions alike. Everything you need from another agent goes through it. Preserve busy screens, drafts and unknown prompts. Use only the supported, bounded exceptions below when controlling an owned session.
+
+## Checking a TUI launch
+
+After every TUI start or resume, the launch owner immediately inspects the actual screen and confirms the intended session and authorized task workspace. This applies to root launching a principal, a principal launching heads, and heads launching TUI workers or reviewers. If the known “Folder access” / “Trust and continue” prompt appears for that workspace, accept it through supported native control without asking for another confirmation. Inspect the screen again to verify the gate cleared, then verify readiness and a real first useful action; a running process alone does not complete startup. Check the screen even when no trust prompt appears. This is the launch owner's duty, with no extra user or root approval dependency. Preserve busy panes, drafts, unknown folders and other prompts, and all identity, election, quota and resource gates.
 
 ## Who talks to whom
 

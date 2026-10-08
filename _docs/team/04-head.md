@@ -10,6 +10,8 @@ You are the head of a specified product. Each product has its own team, its own 
 
 ## At startup
 
+- After starting or resuming a TUI agent, follow [the launch-owner screen check](../04-communication.md#checking-a-tui-launch) and verify its first useful action.
+
 - Run `a whoami --json`, `a context` and `a message inbox`. Read and act on every unread message. Acknowledge each one when handled.
 - Open your product's issues and your repo. Find the next ready task and the state of every worker and reviewer you started.
 

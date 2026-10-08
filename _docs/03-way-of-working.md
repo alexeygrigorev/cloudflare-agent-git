@@ -32,7 +32,7 @@ An issue closes only when its accepted, reviewed outcome exists. Work waiting fo
 
 ## 6. The head loop
 
-The head picks a ready task and starts a worker for it through the Agent Quota Launcher. A reviewer on a different model checks the result, the worker fixes every finding, and this repeats until the reviewer approves. Then the head integrates and starts the next ready task at once. Workers and reviewers that run as separate sessions are always started through the launcher, never by hand. A head may use its own built-in subagents for small pieces, and they count as active when they do work.
+The head picks a ready task and starts a worker for it through the Agent Quota Launcher. Every TUI launch or resume owner follows [the post-launch screen check](04-communication.md#checking-a-tui-launch). A reviewer on a different model checks the result, the worker fixes every finding, and this repeats until the reviewer approves. Then the head integrates and starts the next ready task at once. Workers and reviewers that run as separate sessions are always started through the launcher, never by hand. A head may use its own built-in subagents for small pieces, and they count as active when they do work.
 
 Workers and reviewers start headless with permission prompts skipped, never in their own aplexer session, and talk only to their head. Principals and heads run in aplexer sessions, and root runs in a GUI session. There is no fixed cap on team size: run as many workers as there are independent tasks and capacity, and never invent work to raise the count.
 
