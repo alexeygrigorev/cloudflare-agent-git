@@ -1,0 +1,9 @@
+[Unit]
+Description=Audit that waiting heads and principals have a wake of 30 minutes or less
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/git/cloudflare-agent-git
+# Exit 1 (violations) and 3 (wake unavailable) are findings, not unit failures.
+SuccessExitStatus=1 3
+ExecStart=%h/git/cloudflare-agent-git/scripts/ping/wake-audit.py --live
