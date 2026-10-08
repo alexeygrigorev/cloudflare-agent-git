@@ -101,3 +101,9 @@ For a threaded reply, use `"op":"reply"` and `"reply_to":"FULL_MESSAGE_ID"` inst
 For read-and-handled ACKs, merge full IDs into the JSON array in `.local/orchestrator-ack.json`, preserving IDs already pending. Replace it atomically. Verify submitted IDs disappear from that queue and from the next fresh unread inbox. Failed IDs remain pending.
 
 A send receipt proves delivery. A receiver's reply accepting scope proves ownership. A tool or artifact proves action. Distinct review, integration and runtime evidence prove their own later stages. Keep raw inboxes, identities and operational details private.
+
+## Fresh periodic accountability checks
+
+Root delegates every periodic check to a fresh GPT-6 Luna subagent at max effort with no inherited conversation history, following [the focused check contract](README.md). Root supervises actual results and preserves the existing continuation; this creates no additional scheduler or watcher. The delegate may only recover a stuck, dead or idle-with-ready-work principal, then hands technical repairs and head recovery back to the useful principal.
+
+Unresolved or recurring failures stay open. Within existing claims, protected-state and fresh admission/resource gates, require the principal to change ineffective remedies and execute bounded diagnosis/repair, or obtain a healthy owner's acknowledged handoff with actual first action and resumed work. A reminder, new deadline, ACK, handoff or manual resume alone is not resolution. Follow actual results, distinct acceptance and continued work, with an owner, next action/checkpoint and durable trigger. Protected state, unknown admission or an external decision retains a named dependency owner and next evidence check while independent ready work continues.
