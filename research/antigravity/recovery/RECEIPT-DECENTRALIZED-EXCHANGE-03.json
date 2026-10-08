@@ -1,0 +1,42 @@
+{
+  "receipt_version": "1.0",
+  "receipt_type": "RECEIPT_DECENTRALIZED_EXCHANGE_03",
+  "task_id": "t-bus-decentralized-model-exchange-03",
+  "finalized_at": "2026-10-08T02:22:27Z",
+  "status": "PASS",
+  "exchange_completed": true,
+  "initiator_endpoint": {
+    "agent_name": "initiator-endpoint-03",
+    "identity_id": "2e7ca50c-12f7-40ae-a36e-33b967147e60",
+    "pid": 3087805,
+    "credential_file": "/home/alexey/git/cloudflare-agent-git/.local/bus_store/credentials/initiator-endpoint-03.cred.json"
+  },
+  "worker_endpoint": {
+    "agent_name": "model-worker-03",
+    "identity_id": "3cd642e7-2166-4c7b-b674-48fc48936032",
+    "credential_file": "/home/alexey/git/cloudflare-agent-git/.local/bus_store/credentials/model-worker-03.cred.json",
+    "worker_receipt_exists": true
+  },
+  "protocol_flow": {
+    "step_1_probe_dispatched": true,
+    "step_2_worker_read_acked": true,
+    "step_3_worker_two_tools_executed": true,
+    "step_4_worker_reply_dispatched": true,
+    "step_5_initiator_read_acked": true
+  },
+  "reply_message": {
+    "message_id": "a2b4e117-8cb0-4c19-ba07-4421d241d0ae",
+    "reply_to": "cd42d7fd-3c9e-4131-af42-d03c01344b40",
+    "data": {
+      "operation": "PROBE_RESPONSE_03",
+      "protocol": "FileBus",
+      "timestamp": "2026-10-08T02:22:14Z",
+      "tool_1_status": "PASS",
+      "tool_2_status": "PASS",
+      "worker": "model-worker-03",
+      "worker_pid": 3078050,
+      "zero_head_tokens": true
+    },
+    "delivered_at": "2026-10-08T02:22:14Z"
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "receipt_version": "1.0",
+  "receipt_type": "RECEIPT_WORKER_ENDPOINT_03",
+  "task_id": "t-bus-decentralized-model-exchange-03",
+  "executed_at": "2026-10-08T02:22:14Z",
+  "status": "PASS",
+  "all_checks_passed": true,
+  "worker_process": {
+    "agent_name": "model-worker-03",
+    "identity_id": "3cd642e7-2166-4c7b-b674-48fc48936032",
+    "pid": 3078050,
+    "credential_file": "/home/alexey/git/cloudflare-agent-git/.local/bus_store/credentials/model-worker-03.cred.json",
+    "credential_mode": "0o600",
+    "credential_sha256": "e15771a4416aa8a43c38ba7f7f475dc978dd695e3e316bd6c2b04150d4afaca2",
+    "separate_process_boundary": true
+  },
+  "probe_message_received": {
+    "message_id": "cd42d7fd-3c9e-4131-af42-d03c01344b40",
+    "sender_id": "2e7ca50c-12f7-40ae-a36e-33b967147e60",
+    "kind": "probe"
+  },
+  "reply_message_dispatched": {
+    "message_id": "a2b4e117-8cb0-4c19-ba07-4421d241d0ae",
+    "reply_to": "cd42d7fd-3c9e-4131-af42-d03c01344b40",
+    "idempotency_key": "reply-decentralized-03-1092d7f5"
+  },
+  "two_tools_executed": {
+    "tool_1": "view_file / json_inspect on RECEIPT-INITIATOR-PROBE-03.json",
+    "tool_1_status": "PASS",
+    "tool_2": "pytest tests/test_sessionless_model_enrollment.py -v",
+    "tool_2_status": "PASS"
+  },
+  "verification_checks": {
+    "worker_credential_mode_and_isolation": {
+      "status": "PASS",
+      "file_mode": "0o600",
+      "tokens_distinct": true,
+      "zero_inheritance": true
+    },
+    "initiator_probe_received": {
+      "status": "PASS",
+      "probe_message_id": "cd42d7fd-3c9e-4131-af42-d03c01344b40",
+      "sender_id": "2e7ca50c-12f7-40ae-a36e-33b967147e60",
+      "kind": "probe",
+      "delivered_at": "2026-10-08T02:19:53Z"
+    },
+    "worker_read_ack": {
+      "status": "PASS",
+      "probe_message_id": "cd42d7fd-3c9e-4131-af42-d03c01344b40",
+      "ack_success": true
+    },
+    "tool_1_initiator_probe_receipt_inspection": {
+      "status": "PASS",
+      "tool": "view_file / json_inspect",
+      "target": "/home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/RECEIPT-INITIATOR-PROBE-03.json",
+      "details": {
+        "initiator_pid": 3006814,
+        "dispatched_at": "2026-10-08T02:19:53Z",
+        "probe_idempotency_key": "probe-decentralized-03-b5c86721"
+      }
+    },
+    "tool_2_unit_test_execution": {
+      "status": "PASS",
+      "tool": "run_command / pytest",
+      "duration_seconds": 4.48,
+      "returncode": 0,
+      "passed": true
+    },
+    "negative_foreign_worker_rejection": {
+      "status": "PASS",
+      "rejected": true,
+      "error_code": "not_recipient"
+    },
+    "negative_forged_token_rejection": {
+      "status": "PASS",
+      "rejected": true,
+      "error_code": "auth_failed"
+    },
+    "worker_correlated_reply": {
+      "status": "PASS",
+      "reply_message_id": "a2b4e117-8cb0-4c19-ba07-4421d241d0ae",
+      "reply_to": "cd42d7fd-3c9e-4131-af42-d03c01344b40",
+      "sender_id": "3cd642e7-2166-4c7b-b674-48fc48936032",
+      "recipient_id": "2e7ca50c-12f7-40ae-a36e-33b967147e60"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "receipt_version": "1.0",
+  "receipt_type": "RECEIPT_INITIATOR_PROBE_DELIVERY",
+  "task_id": "RECEIPT-INITIATOR-PROBE-03",
+  "dispatched_at": "2026-10-08T02:19:53Z",
+  "status": "PASS",
+  "initiator_process": {
+    "agent_name": "initiator-endpoint-03",
+    "identity_id": "2e7ca50c-12f7-40ae-a36e-33b967147e60",
+    "pid": 3006814,
+    "credential_file": "/home/alexey/git/cloudflare-agent-git/.local/bus_store/credentials/initiator-endpoint-03.cred.json",
+    "credential_mode": "0o600",
+    "credential_sha256": "488f08ef73df6312f6089c8f8a295846502e269adcb90ef1f3746abd6965e74a"
+  },
+  "target_recipient": {
+    "agent_name": "model-worker-03",
+    "identity_id": "3cd642e7-2166-4c7b-b674-48fc48936032",
+    "credential_file": "/home/alexey/git/cloudflare-agent-git/.local/bus_store/credentials/model-worker-03.cred.json",
+    "credential_mode": "0o600",
+    "credential_sha256": "e15771a4416aa8a43c38ba7f7f475dc978dd695e3e316bd6c2b04150d4afaca2"
+  },
+  "probe_message": {
+    "message_id": "cd42d7fd-3c9e-4131-af42-d03c01344b40",
+    "idempotency_key": "probe-decentralized-03-b5c86721",
+    "kind": "probe",
+    "messages_file": "/home/alexey/git/cloudflare-agent-git/.local/bus_store/messages.json",
+    "delivered_at": "2026-10-08T02:19:53Z",
+    "token_isolation": {
+      "initiator_token_distinct": true,
+      "worker_token_distinct": true,
+      "zero_inheritance": true
+    }
+  }
+}
