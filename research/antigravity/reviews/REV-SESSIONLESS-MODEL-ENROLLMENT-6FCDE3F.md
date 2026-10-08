@@ -17,12 +17,11 @@
 - **Review of Source**: `run_sessionless_model_enrollment.py` establishes the "head" initiator (`ant-head-initiator`, ID `ae6e...`) and the "worker" receiver (`model-worker-01`, ID `5a1ef421...`).
 - **Custody Assessment**: The tokens generated are distinct and written separately to disk (the worker credential has mode `0o600`). However, the script instantiates both the initiator and the receiver within the *same* Python runtime execution. While the generated credentials are cryptographically independent, process-level custody is shared because a single Python test/helper script memory-space handles both actors to produce the receipt. True independent custody (as requested by principal review feedback in `orchestrator-inbox.json`) will require distinct processes communicating over the bus rather than a single script orchestrating both sides of the handshake.
 
-## 4. Verify Zero Leakage of Sensitive Credentials or Parent Tokens
+## 4. Verify Zero Credential Inheritance & Aplexer Isolation
 - **Environment and Inheritance Isolation**: The code employs deliberate pollution tests (`APLEXER_SESSION_ID=forbidden...`) and uses `reject_head_cred_inheritance` to actively reject synthetic leaks.
 - **Verification**: The generated receipt proves successful isolation:
   - `tokens_are_distinct`: `true`
-  - `head_token_sha256`: `d60418afcf520a0a57a5cc300cbf6c261ac8ff0e57c74e27e24f8ca01a7ee581`
-  - `worker_token_sha256`: `0c4cc861cf91a0495a9dff4e77b4f173b6a7bdbc20938f46e6f27d13242f5733`
   - `head_cred_inheritance_guard_verified`: `true`
   - `ambient_aplexer_session_ignored`: `true`
-- **Result**: Zero leakage confirmed. The worker token does not inherit the parent orchestrator token, and the sessionless boundary correctly strips all ambient aplexer session IDs (`session_id: null`).
+- **Result**: Zero credential inheritance confirmed. The worker token does not inherit the parent orchestrator token, and the sessionless boundary correctly strips all ambient aplexer session IDs (`session_id: null`). Process secrecy proof remains distinct from equality testing.
+

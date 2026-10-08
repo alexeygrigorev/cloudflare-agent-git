@@ -16,15 +16,11 @@
     "rendered_namespaced_id": "linux-worker-01/agent-bus/model-worker-01/-/task-model-worker-handshake-01",
     "credential_file": "/home/alexey/git/cloudflare-agent-git/.local/bus_store/credentials/model-worker-01.cred.json",
     "credential_mode": "0o600",
-    "credential_sha256": "eae299c437c8d9ab5afc00a38998ac0e0c8d7748842f1f2c451fe19ab474ee8e",
-    "token_sha256": "0c4cc861cf91a0495a9dff4e77b4f173b6a7bdbc20938f46e6f27d13242f5733",
-    "token_masked": "d742...[REDACTED]...fcfb"
+    "credential_sha256": "eae299c437c8d9ab5afc00a38998ac0e0c8d7748842f1f2c451fe19ab474ee8e"
   },
   "zero_token_inheritance_proof": {
     "head_agent": "ant-head-readiness-custody-20261007",
     "head_identity_id": "ae6e2841-8ef0-419a-92fa-f5e623354e0b",
-    "head_token_sha256": "d60418afcf520a0a57a5cc300cbf6c261ac8ff0e57c74e27e24f8ca01a7ee581",
-    "worker_token_sha256": "0c4cc861cf91a0495a9dff4e77b4f173b6a7bdbc20938f46e6f27d13242f5733",
     "tokens_are_distinct": true,
     "ambient_aplexer_session_ignored": true,
     "head_cred_inheritance_guard_verified": true
@@ -57,8 +53,6 @@
     },
     "distinct_token_no_head_inheritance": {
       "status": "PASS",
-      "worker_token_sha256": "0c4cc861cf91a0495a9dff4e77b4f173b6a7bdbc20938f46e6f27d13242f5733",
-      "head_token_sha256": "d60418afcf520a0a57a5cc300cbf6c261ac8ff0e57c74e27e24f8ca01a7ee581",
       "tokens_distinct": true,
       "zero_head_tokens_inherited": true
     },
