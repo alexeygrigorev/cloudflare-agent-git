@@ -11,6 +11,8 @@ import threading
 import urllib.request
 import urllib.error
 import hashlib
+import http.client
+import sqlite3
 from http.server import ThreadingHTTPServer
 from unittest.mock import patch
 
@@ -175,6 +177,38 @@ class HTTPAdapterTests(unittest.TestCase):
                 headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, context=client, timeout=5) as reply:
                 return json.load(reply)
+        # The genuine premodel capsule connects before acquiring a lease.
+        # Only its mTLS/enrolled read-only inspect handshake may omit epoch.
+        handshake = {**fixture.request, "op": "inspect"}
+        handshake.pop("epoch")
+        def channel_status(request):
+            connection = http.client.HTTPSConnection("127.0.0.1", server.server_address[1], context=client, timeout=5)
+            response = None
+            try:
+                connection.request("POST", "/v1/native-channel", json.dumps(request), {"Content-Type": "application/json"})
+                response = connection.getresponse()
+                if response.status == 101:
+                    self.assertEqual(response.version, 11)  # Exact cached native consumer contract.
+                return response.status
+            finally:
+                if response is not None:
+                    response.close()
+                connection.close()
+        def custody_rows():
+            with sqlite3.connect(fixture.a.path) as db:
+                return [db.execute("SELECT * FROM " + table).fetchall()
+                        for table in ("roles", "actions", "activation_receipts")]
+        before_handshake = custody_rows()
+        self.assertEqual(channel_status(handshake), 101)
+        self.assertEqual(custody_rows(), before_handshake)
+        for wrong in ({"actor": "native-B"}, {"generation": "forged"}, {"op": "acquire"},
+                      {"v": 2}, {"epoch": None}, {"epoch": True}, {"epoch": 0}, {"epoch": "1"}):
+            self.assertEqual(channel_status({**handshake, **wrong}), 403)
+        for route in ("/v1/role-control", "/v1/sink-proof"):
+            with self.assertRaises(urllib.error.HTTPError):
+                post(route, handshake)
+        self.assertEqual(custody_rows(), before_handshake)
+        self.assertFalse(fixture.count.exists())
         with self.assertRaises(urllib.error.HTTPError):
             post("/v1/role-control", {**fixture.request, "argv": ["untrusted"]})
         with self.assertRaises(urllib.error.HTTPError):

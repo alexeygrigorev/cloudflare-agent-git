@@ -159,7 +159,7 @@ class AdapterTests(unittest.TestCase):
             handle(self.config, {**request, "action": "arbitrary-dispatch"})
 
     def test_server_owned_admission_refresh_and_partition_hold(self):
-        from datetime import datetime, timezone
+        from datetime import datetime, timezone, timedelta
         self.config["operations"].append({"role": "root", "name": "root-admission",
             "transport": "native-channel", "read_only": True, "payload": {}, "timeout": 5,
             "idempotency_contract": "key-durable-v1"})
@@ -174,6 +174,20 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(handle(self.config, request, native)["result"]["admission"], "eligible")
         with sqlite3.connect(self.a.path) as db:
             self.assertEqual(db.execute("SELECT priority FROM agents WHERE id='native-A'").fetchone()[0], 0)
+        def shifted(seconds):
+            def callback(owner, message, timeout):
+                result = native(owner, message, timeout)
+                result["evidence"]["admission"]["observed_at"] = (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat()
+                return result
+            return callback
+        self.assertEqual(handle(self.config, request, shifted(.5))["result"]["admission"], "eligible")
+        with sqlite3.connect(self.a.path) as db:
+            self.assertEqual(db.execute("SELECT ready,draft,quota,priority FROM agents WHERE id='native-A'").fetchone(), (1, 0, 1, 0))
+        for seconds in (2, -31):
+            with self.assertRaises(PermissionError):
+                handle(self.config, request, shifted(seconds))
+            with sqlite3.connect(self.a.path) as db:
+                self.assertEqual(db.execute("SELECT ready,draft,quota,priority FROM agents WHERE id='native-A'").fetchone(), (0, 1, 0, 0))
         def unavailable(*args):
             raise ConnectionError("TEST partition")
         with self.assertRaises(ConnectionError):

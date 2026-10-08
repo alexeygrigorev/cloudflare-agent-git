@@ -138,6 +138,8 @@ def initialize(config):
 
 
 class Handler(BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"  # Native upgrade consumer requires this exact wire version.
+
     def log_message(self, *args):
         pass  # No request/token/raw native logs in public or terminal output.
 
@@ -158,8 +160,8 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError("bounded fixed request required")
             self.connection.settimeout(65)
             request = json.loads(self.rfile.read(length))
-            if request.get("v") != 1 or type(request.get("epoch")) is not int or request["epoch"] < 1:
-                raise ValueError("exact version and fencing epoch required")
+            if request.get("v") != 1:
+                raise ValueError("exact version required")
             if any(k in request for k in ("argv", "authority_db", "bus_store", "ready", "quota_ok", "config")):
                 raise PermissionError("client cannot override server custody or execution route")
             config = private_json(self.server.config_path)
@@ -171,6 +173,16 @@ class Handler(BaseHTTPRequestHandler):
                              request.get("project"), request.get("credential", {}).get("identity_id")) == (
                     s["actor"], s["role"], s["project"], s["bus_identity"]) for s in scopes):
                 raise PermissionError("certificate/native actor scope mismatch")
+            # An initial native connection precedes election. Its authenticated
+            # inspect context has no lease or mutation rights; preserve the
+            # genuine premodel capsule's supported epoch-less handshake.
+            if self.path == "/v1/native-channel":
+                if request.get("op") != "inspect":
+                    raise PermissionError("read-only native handshake required")
+                if "epoch" not in request:
+                    request = {**request, "epoch": 1}
+            if type(request.get("epoch")) is not int or request["epoch"] < 1:
+                raise ValueError("positive actual fencing epoch required")
             if self.path == "/v1/sink-proof":
                 # The issuer's authenticated role transaction is still held.
                 # Do not acquire another DB write lock here and deadlock it.

@@ -303,7 +303,9 @@ def handle(config, request, channel_dispatch=None, *, private_delivery=False, pr
             if (admission.get("actor"), admission.get("host"), admission.get("generation")) != (owner.actor, binding["host"], owner.generation):
                 raise PermissionError("native admission binding mismatch")
             age = (datetime.now(timezone.utc) - datetime.fromisoformat(admission["observed_at"].replace("Z", "+00:00"))).total_seconds()
-            if not 0 <= age <= 30:
+            # Observed Win35/authority clock skew is subsecond. Admit at most
+            # one future second; retain the 30-second age and live callback bounds.
+            if not -1 <= age <= 30:
                 raise PermissionError("fresh native admission evidence required")
             authority.observe(owner.actor, binding["host"], owner.generation,
                 ready=admission["ready"], draft=admission["draft"], quota_ok=admission["quota_ok"], priority=priority)
