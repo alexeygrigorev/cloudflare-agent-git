@@ -165,9 +165,10 @@ class Handler(BaseHTTPRequestHandler):
             cert = self.connection.getpeercert(binary_form=True)
             fingerprint = hashlib.sha256(cert).hexdigest()
             scope = config["tls_clients"].get(fingerprint)
-            if not scope or (request.get("actor"), request.get("role"),
-                             request.get("project"), request.get("credential", {}).get("identity_id")) != (
-                    scope["actor"], scope["role"], scope["project"], scope["bus_identity"]):
+            scopes = scope.get("actors", [scope]) if scope else []
+            if not any((request.get("actor"), request.get("role"),
+                             request.get("project"), request.get("credential", {}).get("identity_id")) == (
+                    s["actor"], s["role"], s["project"], s["bus_identity"]) for s in scopes):
                 raise PermissionError("certificate/native actor scope mismatch")
             if self.path == "/v1/sink-proof":
                 # The issuer's authenticated role transaction is still held.
@@ -181,7 +182,7 @@ class Handler(BaseHTTPRequestHandler):
                 credential = request["credential"]
                 ident = bus._auth(credential["identity_id"], credential["token"])
                 binding = config["bindings"].get(request["actor"])
-                if not binding or (ident["device_id"], ident["project_id"], request["generation"], request["role"], request["project"]) != (
+                if not binding or binding.get("retired") or (ident["device_id"], ident["project_id"], request["generation"], request["role"], request["project"]) != (
                         binding["host"], binding["project"], binding["generation"], binding["role"], binding["project"]):
                     raise PermissionError("canonical native binding required")
                 if not self.server.channels.authorize_sink(request):
@@ -215,7 +216,7 @@ class Handler(BaseHTTPRequestHandler):
                         if self.server.channels.channels.get(binding) is channel:
                             self.server.channels.channels.pop(binding)
                 return
-            response = handle(config, request, self.server.channels.dispatch)
+            response = handle(config, request, self.server.channels.dispatch, private_delivery=True)
         except ModelCustodyPending:
             self.send(200, {"v": 1, "status": "pending", "reason": "model_thread_ack_and_first_tool_pending"})
             return
@@ -230,6 +231,10 @@ def serve(config_path):
     # Missing store must remain a hold; serving never initializes implicitly.
     if not Path(config["authority_db"]).is_file() or not Path(config["sink_journal"]).is_file():
         raise PermissionError("canonical authority has not been initialized")
+    from role_fence_cli import build
+    from role_fence_enrollment import reconcile_successors
+    authority, _ = build(config)
+    reconcile_successors(config_path, authority)
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(config["tls"]["server_cert"], config["tls"]["server_key"])

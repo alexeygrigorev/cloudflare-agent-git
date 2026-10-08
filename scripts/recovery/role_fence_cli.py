@@ -194,7 +194,7 @@ def build(config, channel_dispatch=None):
     return authority, fence
 
 
-def handle(config, request, channel_dispatch=None):
+def handle(config, request, channel_dispatch=None, *, private_delivery=False):
     if request.get("v") != 1:
         raise ValueError("request version required")
     authority, fence = build(config, channel_dispatch)
@@ -202,8 +202,41 @@ def handle(config, request, channel_dispatch=None):
     credential = request["credential"]
     fence._identity(credential, owner)
     op = request["op"]
+    if config["bindings"][owner.actor].get("retired") and op not in ("inspect", "bus_inbox", "successor_status"):
+        raise PermissionError("retired native actor is read-only")
     if op == "inspect":
         result = authority.role_state(owner.project, owner.role)
+    elif op in ("recovery_successor", "successor_status"):
+        from role_fence_enrollment import enroll_successor, successor_key
+        if not private_delivery:
+            raise PermissionError("successor credentials require the scoped private mTLS transport")
+        if owner.role != "root":
+            raise PermissionError("only managed new root succession is installed")
+        key = successor_key(owner)
+        if op == "successor_status":
+            record = config.get("successors", {}).get(key)
+            if not record or record.get("predecessor_owner") != dict(zip(("project", "role", "actor", "generation", "epoch"), owner.args())):
+                raise PermissionError("exact recorded successor unavailable")
+            with authority._tx() as db:
+                row = db.execute("SELECT host,generation FROM agents WHERE id=?", (record["actor"],)).fetchone()
+            if row is None:
+                result = {"state": "uncertain", "reason": "owner_server_startup_reconciliation_required"}
+            elif (row["host"], row["generation"]) != (config["bindings"][record["actor"]]["host"], record["generation"]):
+                raise PermissionError("recorded successor authority conflict")
+            else:
+                result = record
+            return {"v": 1, "status": "pending" if result.get("state") == "uncertain" else "ok", "result": result}
+        if op == "recovery_successor":
+            fence.execute(credential, owner, key, "root-native-successor", {})
+        with sqlite3.connect(config["sink_journal"]) as db:
+            row = db.execute("SELECT body,result FROM sink_receipts WHERE key=?", (key,)).fetchone()
+        if not row or not row[1]:
+            raise PermissionError("original successor operation remains uncertain")
+        intent, receipt = json.loads(row[0]), json.loads(row[1])
+        if intent != {"v": 1, "key": key, "operation": "root-native-successor",
+                "owner": dict(zip(("project", "role", "actor", "generation", "epoch"), owner.args())), "payload": {}}:
+            raise PermissionError("exact durable native successor intent required")
+        result = enroll_successor(CANONICAL_CONFIG, authority, owner, receipt)
     elif op == "admission_refresh":
         # Eligibility comes only from the reviewed authenticated host consumer.
         # This read-only probe must also work before a candidate owns a lease.

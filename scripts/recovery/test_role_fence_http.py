@@ -168,6 +168,26 @@ class HTTPAdapterTests(unittest.TestCase):
                     break
                 time.sleep(0.001)
             self.assertEqual(post("/v1/sink-proof", proof_request)["status"], "ok")
+            # Same pinned host certificate may admit only an internally enrolled
+            # actual successor; retirement denies an already-pending old proof.
+            from role_fence_enrollment import enroll_successor, successor_key
+            successor_actor = "049058cd-d750-40ad-acab-c702e3019cad"
+            receipt = {"v": 1, "key": successor_key(Owner("TEST", "root", "native-A", "session-A", 1)), "owner": owner, "operation": "root-native-successor",
+                "payload": {}, "state": "completed", "evidence": {"successor": {
+                    "actor": successor_actor, "host": "TEST", "generation": "win32:99:123456789",
+                    "whoami": {"id": successor_actor, "tag": "win35-root-capsule-TEST2"},
+                    "root_tag": "win35-root-capsule-TEST2", "kernel": {"pid": 99, "creation_filetime": 123456789},
+                    "predecessor_owner": owner, "owned_model_exit": {"verified_dead": True, "owner": owner}}}}
+            enrolled = enroll_successor(profile, fixture.a, Owner("TEST", "root", "native-A", "session-A", 1), receipt)
+            with self.assertRaises(urllib.error.HTTPError):
+                post("/v1/sink-proof", proof_request)
+            with self.assertRaises(urllib.error.HTTPError):
+                post("/v1/role-control", fixture.request)
+            successor_request = {**fixture.request, "op": "inspect", "actor": successor_actor,
+                "generation": enrolled["generation"], "credential": enrolled["credential"]}
+            self.assertEqual(post("/v1/role-control", successor_request)["status"], "ok")
+            with self.assertRaises(urllib.error.HTTPError):
+                post("/v1/role-control", {**successor_request, "generation": "caller-random"})
             # Rollback does not extend the authority's native callback deadline.
             with patch("role_fence_http.time.time", return_value=1):
                 with self.assertRaises(TimeoutError):
