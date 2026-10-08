@@ -3,8 +3,8 @@
 - **Receipt ID:** Store Receipt #49
 - **Target Task:** `t-dashboard-c0313-readiness-diagnostic-02`
 - **Review Task:** `t-dashboard-c0313-readiness-review-02`
-- **Author Task Worker:** `gemini-3.1-pro-high` (Conversation: `3b2dcf70-a329-4333-ada1-2c392924c24c`)
-- **Reviewer Model:** `gemini-3.8-flash-high` (Conversation: `81cc736f-80c3-4312-b3fe-f5cd31b22eb1`)
+- **Author Task Worker:** `gemini-3.1-pro-high` (Conversation Fingerprint: `conv-3b2dcf70...` [private provenance retained])
+- **Reviewer Model:** `gemini-3.8-flash-high` (Conversation Fingerprint: `conv-81cc736f...` [private provenance retained])
 - **Audit Report Path:** [`research/antigravity/recovery/REPORT-DASHBOARD-READINESS-AUDIT-02.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/recovery/REPORT-DASHBOARD-READINESS-AUDIT-02.md)
 - **Audit Report SHA-256:** `44947cb5a8094ef1caac168d637f1830b32ccab29cdf88532e7651a42368298c`
 - **Review Report Path:** [`research/antigravity/reviews/REV-DASHBOARD-READINESS-AUDIT-02.md`](file:///home/alexey/git/cloudflare-agent-git/research/antigravity/reviews/REV-DASHBOARD-READINESS-AUDIT-02.md)
@@ -37,5 +37,5 @@
 - [x] **Zero Production Daemon Reloads:** Canonical `supervision.service` PID `3698862` (baseline `ca5ea38`) and `experiment-metrics.service` PID `4168827` remained running continuously with zero reloads.
 - [x] **Zero Raw Terminal Injections:** No `a send` keystrokes or synthetic inputs were typed into `agent-dashboard-head` session `6ef7413b`.
 - [x] **Zero Identity Spoofing:** No external synthetic `a state-report` was invoked.
-- [x] **Message Retained in Mailbox:** Original message `01a1197f-d3b0` remains securely preserved on disk in `/home/alexey/.local/state/aplexer/messages/03c9ec4101be7a25620818707fb14ec7/msgs/`.
+- [x] **Message Retained in Mailbox:** Original message `01a1197f-d3b0` remains securely preserved on disk in `<aplexer-mailbox>/msgs/` (mailbox fingerprint `mbox-03c9ec41...`).
 - [x] **Strict Model Diversity:** Author `gemini-3.1-pro-high` vs Reviewer `gemini-3.8-flash-high`.
