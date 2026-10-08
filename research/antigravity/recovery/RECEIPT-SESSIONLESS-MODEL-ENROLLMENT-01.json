@@ -1,0 +1,121 @@
+{
+  "receipt_version": "1.0",
+  "receipt_type": "RECEIPT_SESSIONLESS_MODEL_ENROLLMENT",
+  "task_id": "RECEIPT-SESSIONLESS-MODEL-ENROLLMENT-01",
+  "executed_at": "2026-10-08T01:58:00Z",
+  "status": "PASS",
+  "all_checks_passed": true,
+  "total_checks": 12,
+  "target_store": "/home/alexey/git/cloudflare-agent-git/.local/bus_store",
+  "worker_enrollment": {
+    "agent_name": "model-worker-01",
+    "identity_id": "5a1ef421-6da2-4519-adb3-d0cb48683cc0",
+    "device_id": "linux-worker-01",
+    "project_id": "agent-bus",
+    "session_id": null,
+    "rendered_namespaced_id": "linux-worker-01/agent-bus/model-worker-01/-/task-model-worker-handshake-01",
+    "credential_file": "/home/alexey/git/cloudflare-agent-git/.local/bus_store/credentials/model-worker-01.cred.json",
+    "credential_mode": "0o600",
+    "credential_sha256": "eae299c437c8d9ab5afc00a38998ac0e0c8d7748842f1f2c451fe19ab474ee8e",
+    "token_sha256": "0c4cc861cf91a0495a9dff4e77b4f173b6a7bdbc20938f46e6f27d13242f5733",
+    "token_masked": "d742...[REDACTED]...fcfb"
+  },
+  "zero_token_inheritance_proof": {
+    "head_agent": "ant-head-readiness-custody-20261007",
+    "head_identity_id": "ae6e2841-8ef0-419a-92fa-f5e623354e0b",
+    "head_token_sha256": "d60418afcf520a0a57a5cc300cbf6c261ac8ff0e57c74e27e24f8ca01a7ee581",
+    "worker_token_sha256": "0c4cc861cf91a0495a9dff4e77b4f173b6a7bdbc20938f46e6f27d13242f5733",
+    "tokens_are_distinct": true,
+    "ambient_aplexer_session_ignored": true,
+    "head_cred_inheritance_guard_verified": true
+  },
+  "message_exchange": {
+    "handshake_message_id": "dddb44a9-6b38-4ad5-b4e6-8deb121025c0",
+    "handshake_idempotency_key": "handshake-probe-80e90cf5477b",
+    "handshake_delivered_at": "2026-10-08T01:57:59Z",
+    "handshake_acked_at": "2026-10-08T01:57:59Z",
+    "reply_message_id": "a09c7980-5831-4cdd-ba96-f13e84f90397",
+    "reply_idempotency_key": "handshake-reply-2929e1f24872",
+    "reply_delivered_at": "2026-10-08T01:57:59Z",
+    "reply_to": "dddb44a9-6b38-4ad5-b4e6-8deb121025c0",
+    "exchange_status": "DELIVERED_ACKED_AND_REPLIED"
+  },
+  "verification_checks": {
+    "credential_file_mode_0600": {
+      "status": "PASS",
+      "path": "/home/alexey/git/cloudflare-agent-git/.local/bus_store/credentials/model-worker-01.cred.json",
+      "actual_mode": "0o600",
+      "expected_mode": "0o600"
+    },
+    "sessionless_identity_null_session_id": {
+      "status": "PASS",
+      "agent_name": "model-worker-01",
+      "identity_id": "5a1ef421-6da2-4519-adb3-d0cb48683cc0",
+      "session_id": null,
+      "expected_session_id": null,
+      "aplexer_session_ignored": true
+    },
+    "distinct_token_no_head_inheritance": {
+      "status": "PASS",
+      "worker_token_sha256": "0c4cc861cf91a0495a9dff4e77b4f173b6a7bdbc20938f46e6f27d13242f5733",
+      "head_token_sha256": "d60418afcf520a0a57a5cc300cbf6c261ac8ff0e57c74e27e24f8ca01a7ee581",
+      "tokens_distinct": true,
+      "zero_head_tokens_inherited": true
+    },
+    "head_cred_inheritance_guard": {
+      "status": "PASS",
+      "worker_cred_clean": true,
+      "negative_synthetic_leak_caught": true
+    },
+    "namespaced_id_renders_dash": {
+      "status": "PASS",
+      "rendered": "linux-worker-01/agent-bus/model-worker-01/-/task-model-worker-handshake-01",
+      "session_id": null,
+      "expected_session_delimiter": "/-/"
+    },
+    "handshake_dispatch": {
+      "status": "PASS",
+      "message_id": "dddb44a9-6b38-4ad5-b4e6-8deb121025c0",
+      "sender_id": "ae6e2841-8ef0-419a-92fa-f5e623354e0b",
+      "recipient_id": "5a1ef421-6da2-4519-adb3-d0cb48683cc0",
+      "delivered_at": "2026-10-08T01:57:59Z"
+    },
+    "worker_inbox_poll": {
+      "status": "PASS",
+      "messages_found": 1,
+      "target_message_found": true
+    },
+    "worker_read_ack_and_cursor_advancement": {
+      "status": "PASS",
+      "message_id": "dddb44a9-6b38-4ad5-b4e6-8deb121025c0",
+      "ack_call_result": true,
+      "unread_cleared": true,
+      "acked_at": "2026-10-08T01:57:59Z"
+    },
+    "worker_correlated_reply": {
+      "status": "PASS",
+      "reply_message_id": "a09c7980-5831-4cdd-ba96-f13e84f90397",
+      "correlated_reply_to": "dddb44a9-6b38-4ad5-b4e6-8deb121025c0",
+      "sender_id": "5a1ef421-6da2-4519-adb3-d0cb48683cc0",
+      "recipient_id": "ae6e2841-8ef0-419a-92fa-f5e623354e0b"
+    },
+    "head_reply_ingest_and_ack": {
+      "status": "PASS",
+      "reply_message_id": "a09c7980-5831-4cdd-ba96-f13e84f90397",
+      "head_received_reply": true,
+      "head_ack_success": true
+    },
+    "negative_foreign_worker_ack_rejection": {
+      "status": "PASS",
+      "rejected": true,
+      "error_code": "not_recipient",
+      "expected_code": "not_recipient"
+    },
+    "negative_forged_token_rejection": {
+      "status": "PASS",
+      "rejected": true,
+      "error_code": "auth_failed",
+      "expected_code": "auth_failed"
+    }
+  }
+}
