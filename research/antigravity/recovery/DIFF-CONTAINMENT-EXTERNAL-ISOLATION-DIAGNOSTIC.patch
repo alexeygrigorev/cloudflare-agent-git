@@ -1,0 +1,58 @@
+diff --git a/scripts/supervision/systemd/supervision_watcher.sh b/scripts/supervision/systemd/supervision_watcher.sh
+index 6af071c..534c595 100755
+--- a/scripts/supervision/systemd/supervision_watcher.sh
++++ b/scripts/supervision/systemd/supervision_watcher.sh
+@@ -1,6 +1,11 @@
+ #!/bin/bash
+ set -euo pipefail
+-export PATH="/home/alexey/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
++# Preserve inherited PATH ahead of default system directories so that external test harnesses
++# can safely shadow or mock binaries (such as systemctl) via PATH without being overridden.
++DEFAULT_SYSTEM_PATH="/home/alexey/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
++export PATH="${SUPERVISION_WATCHER_PATH_OVERRIDE:-${PATH:+$PATH:}$DEFAULT_SYSTEM_PATH}"
++
++SYSTEMCTL_BIN="${SUPERVISION_SYSTEMCTL_BIN:-systemctl}"
+ 
+ REPO_ROOT="/home/alexey/git/cloudflare-agent-git"
+ cd "$REPO_ROOT"
+@@ -10,7 +15,7 @@ function restart_supervision() {
+         echo "Diagnostic: test/dry-run mode active. Skipping systemctl execution."
+         exit 0
+     fi
+-    systemctl --user restart supervision.service
++    "$SYSTEMCTL_BIN" --user restart supervision.service
+ }
+ 
+ # Check if experiment-supervision is alive
+diff --git a/scripts/supervision/test_service.py b/scripts/supervision/test_service.py
+index cacf37a..b775e3c 100644
+--- a/scripts/supervision/test_service.py
++++ b/scripts/supervision/test_service.py
+@@ -1264,6 +1264,27 @@ class Safety(unittest.TestCase):
+   if 'Supervisor is healthy.' not in res_live.stdout:
+    self.assertIn('Diagnostic: test/dry-run mode active. Skipping systemctl execution.', res_live.stdout)
+ 
++  # Hermetic external isolation test: verify that even when all cooperative flags
++  # (SUPERVISION_WATCHER_DRY_RUN, SUPERVISION_TEST_MODE, PYTEST_CURRENT_TEST) are completely UNSET,
++  # external isolation via prepended PATH / SUPERVISION_SYSTEMCTL_BIN prevents calling host systemctl.
++  with tempfile.TemporaryDirectory() as mock_dir:
++   mock_bin = pathlib.Path(mock_dir)
++   mock_log = mock_bin / 'mock_systemctl.log'
++   mock_systemctl = mock_bin / 'systemctl'
++   mock_systemctl.write_text(f"#!/bin/bash\necho \"MOCK_SYSTEMCTL called with: $@\" >> {mock_log}\nexit 0\n")
++   mock_systemctl.chmod(0o755)
++
++   clean_env = {k: v for k, v in os.environ.items() if k not in ('SUPERVISION_WATCHER_DRY_RUN', 'SUPERVISION_TEST_MODE', 'PYTEST_CURRENT_TEST')}
++   clean_env['PATH'] = f"{mock_bin}:{clean_env.get('PATH', '')}"
++   clean_env['SUPERVISION_SYSTEMCTL_BIN'] = str(mock_systemctl)
++
++   res_isolated = subprocess.run(['bash', str(watcher_path)], capture_output=True, text=True, cwd=str(root), env=clean_env)
++   self.assertEqual(res_isolated.returncode, 0, f"isolated watcher failed: {res_isolated.stderr}\nstdout: {res_isolated.stdout}")
++   if 'Supervisor is healthy.' not in res_isolated.stdout:
++    self.assertTrue(mock_log.is_file(), "mock_systemctl log should exist if restart was triggered")
++    log_content = mock_log.read_text()
++    self.assertIn("MOCK_SYSTEMCTL called with: --user restart supervision.service", log_content)
++
+  def test_delivery_diagnostic_hold_cooldown(self):
+   """Verify that when delivery results in known-footer-classifier-mismatch, cooldown_until is set to at least 180s in the future and pending is preserved."""
+   with tempfile.TemporaryDirectory() as td:
