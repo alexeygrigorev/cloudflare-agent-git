@@ -1,0 +1,41 @@
+{
+  "status": "PASS",
+  "tests_run": 6,
+  "all_passed": true,
+  "details": {
+    "test_sessionless_enrollment_no_aplexer": {
+      "status": "PASS",
+      "identity_id": "139705c0-7253-4f1a-bb6b-cb8318020b5d",
+      "session_id": null,
+      "agent_name": "sessionless-executor-01"
+    },
+    "test_credential_file_mode_0600": {
+      "status": "PASS",
+      "mode": "0o600",
+      "expected": "0o600",
+      "path": "/tmp/tmpal6q5lyr/bus/credentials/sessionless-executor-01.cred.json"
+    },
+    "test_namespaced_id_renders_dash_for_sessionless": {
+      "status": "PASS",
+      "rendered": "linux-worker/cloudflare-agent-git/worker-alice/-/task-alice",
+      "session_id": null
+    },
+    "test_negative_foreign_worker_ack_rejection": {
+      "status": "PASS",
+      "rejected": true,
+      "error_code": "not_recipient",
+      "expected_error": "not_recipient"
+    },
+    "test_negative_forged_token_rejection": {
+      "status": "PASS",
+      "rejected": true,
+      "error_code": "auth_failed",
+      "expected_error": "auth_failed"
+    },
+    "test_reject_head_cred_inheritance": {
+      "status": "PASS",
+      "payloads_tested": 4,
+      "all_rejected": true
+    }
+  }
+}
