@@ -12,6 +12,9 @@ a = sys.argv[1:]
 open(d + "/calls", "a").write(" ".join(a) + "\n")
 if a[0] == "status":
     s = os.environ.get("FAKE_STATE", "idle")
+    if s == "absent":
+        sys.stderr.write("a: no session tagged 'codex-principal' in ~/git/x; run `a` to list sessions\n")
+        sys.exit(1)
     if s == "dead":
         sys.exit(1)
     if os.environ.get("FAKE_STATUS_RAW"):
@@ -190,6 +193,60 @@ class PingTest(unittest.TestCase):
         env = dict(FAKE_STATE="dead", PRINCIPAL_RECOVERY_CMD="false", PRINCIPAL_ALERT_CMD=f"touch {marker}")
         self.run_ping("--live", **env)
         self.assertTrue(marker.exists())
+
+    def test_absent_session_alerts_clearly_and_counts_toward_recovery(self):
+        alert, marker = self.t / "alert", self.t / "rec"
+        env = dict(FAKE_STATE="absent", PRINCIPAL_ALERT_CMD=f"echo \"$PING_ALERT_MESSAGE\" >> {alert}")
+        r = self.run_ping("--live", **env)
+        self.assertIn("ABSENT", r.stdout)
+        self.assertIn("principal session does not exist", alert.read_text())
+        self.assertIn("no PRINCIPAL_RECOVERY_CMD", alert.read_text())
+        self.assertNotIn("--enter", self.calls())
+        self.assertNotIn("message send", self.calls())
+        self.assertEqual(self.state()["misses"], 1)
+        self.assertEqual(self.state()["last_class"], "ABSENT")
+        # with an executor it recovers at once
+        env = dict(FAKE_STATE="absent", PRINCIPAL_RECOVERY_CMD=f"touch {marker}")
+        r = self.run_ping("--live", **env)
+        self.assertTrue(marker.exists(), r.stdout)
+        self.assertIn("RECOVERY DECISION: ABSENT", r.stdout)
+
+    def test_absent_never_stuck_from_stale_state(self):
+        env = dict(FAKE_STATE="busy")
+        self.run_ping("--live", **env)
+        self.stuck_state(last_change_ts=5000, busy_since=9000)
+        st = self.state()
+        st["stuck_alert_ts"] = time.time() - 5000
+        (self.t / "state" / "codex-principal.json").write_text(json.dumps(st))
+        r = self.run_ping("--live", FAKE_STATE="absent")
+        self.assertIn("ABSENT", r.stdout)
+        self.assertNotIn("STUCK", r.stdout.replace("principal codex-principal: ABSENT", ""))
+        st = self.state()
+        self.assertEqual(st["last_class"], "ABSENT")
+        for k in ("evidence", "busy_since", "stuck_alert_ts"):
+            self.assertNotIn(k, st)
+
+    def test_alerts_rate_limited_per_class_but_never_suppressed(self):
+        alert = self.t / "alert"
+        env = dict(FAKE_STATE="absent", PRINCIPAL_ALERT_CMD=f"echo x >> {alert}")
+        for _ in range(3):
+            r = self.run_ping("--live", **env)
+        self.assertEqual(alert.read_text().count("x"), 1)
+        self.assertIn("suppressed by rate limit", r.stdout)
+        st = self.state()
+        st["alerts"]["ABSENT"] -= 1801  # window over: alerts again
+        (self.t / "state" / "codex-principal.json").write_text(json.dumps(st))
+        self.run_ping("--live", **env)
+        self.assertEqual(alert.read_text().count("x"), 2)
+        # a different class is not rate-limited by ABSENT
+        self.run_ping("--live", FAKE_STATE="idle", FAKE_STATUS_RAW="not json", **{k: v for k, v in env.items() if k != "FAKE_STATE"})
+        self.assertEqual(alert.read_text().count("x"), 3)
+
+    def test_absent_dry_run_changes_nothing(self):
+        r = self.run_ping(FAKE_STATE="absent")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("ABSENT", r.stdout)
+        self.assertFalse((self.t / "state").exists())
 
     def test_lock_held_skips(self):
         import fcntl

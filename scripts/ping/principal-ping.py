@@ -17,15 +17,21 @@ def env_int(name, default):
         return default
 
 
-def aplexer(args, timeout=30):
+def aplexer_full(args, timeout=30):
     try:
         p = subprocess.run(["aplexer", *args], capture_output=True, text=True, timeout=timeout)
-        return p.returncode, p.stdout
+        return p.returncode, p.stdout, p.stderr
     except (OSError, subprocess.TimeoutExpired):
-        return 127, ""
+        return 127, "", ""
+
+
+def aplexer(args, timeout=30):
+    rc, out, _ = aplexer_full(args, timeout)
+    return rc, out
 
 
 DEAD, PROGRESSING, STUCK, IDLE, UNKNOWN = "DEAD", "ALIVE-PROGRESSING", "STUCK", "IDLE-NOT-ACKING", "UNKNOWN"
+ABSENT = "ABSENT"  # aplexer has no session with this tag at all
 
 
 def digest(text):
@@ -35,9 +41,12 @@ def digest(text):
 def collect(tag):
     """Read-only liveness evidence: hashes, sizes, mtimes, phase. Never stores content."""
     ev = {"ts": time.time()}
-    rc, out = aplexer(["status", tag, "--json"])
+    rc, out, err = aplexer_full(["status", tag, "--json"])
     if rc == 127:
         ev["unknown"] = "aplexer cannot be run"
+        return ev
+    if rc != 0 and "no session" in (err + out).lower():
+        ev["absent"] = f"principal session does not exist: aplexer has no session tagged {tag!r}"
         return ev
     if rc != 0:
         ev["gone"] = f"aplexer status exited {rc}: session not found or failed"
@@ -76,6 +85,8 @@ PROGRESS_KEYS = ("capture_hash", "transcript_hash", "transcript_size", "history_
 def classify(ev, prev, st, a, now=None):
     """Return (class, reason). Pure: no I/O besides the clock."""
     now = now or time.time()
+    if ev.get("absent"):
+        return ABSENT, ev["absent"]
     if ev.get("gone"):
         return DEAD, ev["gone"]
     if ev.get("unknown"):
@@ -160,8 +171,18 @@ def save_state(path, st):
     path.write_text(json.dumps(st, indent=1))
 
 
-def alert(msg, live):
+def alert(msg, live, st=None, key=None, state_path=None, window=1800):
+    """Run the alert hook. With st/key, send at most one alert per key per window (never zero)."""
     cmd = os.environ.get("PRINCIPAL_ALERT_CMD")
+    if st is not None and key:
+        last = st.setdefault("alerts", {}).get(key, 0)
+        if time.time() - last < window:
+            print(f"alert suppressed by rate limit ({key}: next in {int(last + window - time.time())}s): {msg}")
+            return
+        if live:
+            st["alerts"][key] = time.time()
+            if state_path:
+                save_state(state_path, st)
     print("ALERT: " + msg)
     if cmd and live:
         subprocess.run(cmd, shell=True, env={**os.environ, "PING_ALERT_MESSAGE": msg}, timeout=60)
@@ -172,7 +193,8 @@ def alert(msg, live):
 def recover(a, st, cls, reason, state_dir, state_path, live):
     print(f"RECOVERY DECISION: {cls}: {reason}")
     if st["attempts"] >= a.max_retries:
-        alert(f"principal {a.tag} unresponsive ({cls}); recovery retries exhausted ({st['attempts']})", live)
+        alert(f"principal {a.tag} unresponsive ({cls}); recovery retries exhausted ({st['attempts']})",
+              live, st, f"{cls}:exhausted", state_path, a.alert_window)
         return
     wait = st["last_recovery"] + a.cooldown - time.time()
     if wait > 0:
@@ -181,7 +203,8 @@ def recover(a, st, cls, reason, state_dir, state_path, live):
     cmd = os.environ.get("PRINCIPAL_RECOVERY_CMD")
     if not cmd:
         print("recovery command not configured")
-        alert(f"principal {a.tag} needs recovery ({cls}: {reason}) and no PRINCIPAL_RECOVERY_CMD is set", live)
+        alert(f"principal {a.tag} needs recovery ({cls}: {reason}) and no PRINCIPAL_RECOVERY_CMD is set",
+              live, st, cls, state_path, a.alert_window)
         return
     if not live:
         print(f"dry-run: would run recovery: {cmd}")
@@ -208,7 +231,13 @@ def recover(a, st, cls, reason, state_dir, state_path, live):
         except subprocess.TimeoutExpired:
             rc = 124
         if rc != 0:
-            alert(f"recovery of {a.tag} failed with exit {rc}", live)
+            alert(f"recovery of {a.tag} failed with exit {rc}", live, st, f"{cls}:failed", state_path, a.alert_window)
+
+
+def alert_absent(a, st, reason, state_path, live):
+    """The principal session is missing: alert on every run, rate-limited per window, never silent."""
+    tail = "" if os.environ.get("PRINCIPAL_RECOVERY_CMD") else "; no PRINCIPAL_RECOVERY_CMD is set, so nothing will recover it"
+    alert(f"principal {a.tag} ABSENT: {reason}. Recovery needed{tail}", live, st, ABSENT, state_path, a.alert_window)
 
 
 def wait_ack(a, nonce, seconds):
@@ -230,10 +259,13 @@ def assess(a, st):
 def commit_evidence(st, ev, cls):
     """Persist the snapshot and the change/busy clocks (hashes, mtimes, phase only)."""
     prev = st.get("evidence")
-    if "ts" in ev and not ev.get("unknown") and not ev.get("gone"):
+    if "ts" in ev and not ev.get("unknown") and not ev.get("gone") and not ev.get("absent"):
         if prev is None or any(prev.get(k) != ev.get(k) for k in PROGRESS_KEYS):
             st["last_change_ts"] = ev["ts"]
         st["evidence"] = ev
+    if cls == ABSENT:  # drop stale evidence so a missing session can never be judged from old state
+        for k in ("evidence", "last_change_ts", "stuck_alert_ts"):
+            st.pop(k, None)
     if cls in (PROGRESSING, STUCK):
         st.setdefault("busy_since", time.time())
     else:
@@ -258,6 +290,8 @@ def main(argv=None):
                    help="working with no PTY/transcript change this long means STUCK")
     p.add_argument("--stuck-grace", type=int, default=env_int("PING_STUCK_GRACE", 900),
                    help="seconds between the STUCK alert and recovery")
+    p.add_argument("--alert-window", type=int, default=env_int("PING_ALERT_WINDOW", 1800),
+                   help="at most one identical-class alert per this many seconds (never fully suppressed)")
     p.add_argument("--recheck", type=float, default=float(os.environ.get("PING_RECHECK", 5)),
                    help="seconds before the confirming re-check of DEAD")
     p.add_argument("--interval", type=int, default=env_int("PING_INTERVAL", 600),
@@ -276,29 +310,32 @@ def main(argv=None):
     text = f"Regular ping {nonce}. Reply on the bus with a message containing {nonce}."
     keys = f"Ping {nonce}: reply on the bus with {nonce}"
     if not a.live:
-        if cls != DEAD:
+        if cls not in (DEAD, ABSENT):
             print(f"dry-run: would send bus ping {nonce}")
             if ev.get("reported_state") == "idle":
                 print("dry-run: would type the ping into the idle session (aplexer send --enter)")
         print(f"dry-run: would wait up to {a.timeout}s for ack, record the evidence snapshot in {state_path}; "
               f"if no ack: {cls} -> " + {
-                  DEAD: "re-check once, then recover now", PROGRESSING: "not a miss, defer the deadline",
+                  DEAD: "re-check once, then recover now",
+                  ABSENT: "re-check once, alert 'session does not exist' (at most once per alert window), recover now", PROGRESSING: "not a miss, defer the deadline",
                   STUCK: "alert, recover after the grace", UNKNOWN: "alert, never recover",
                   IDLE: f"retry send-keys once, then recover after {a.threshold} misses"}[cls])
-        if cls == DEAD or (cls == IDLE and st["misses"] + 1 >= a.threshold):
+        if cls in (DEAD, ABSENT) or (cls == IDLE and st["misses"] + 1 >= a.threshold):
+            if cls == ABSENT:
+                alert_absent(a, {**st}, reason, state_path, False)
             recover(a, {**st}, cls, reason, state_dir, state_path, False)
         return 0
-    if cls != DEAD:
+    if cls not in (DEAD, ABSENT):
         aplexer(["message", "send", "--to", a.tag, "--kind", "note", text])
         if ev.get("reported_state") == "idle":
             aplexer(["send", a.tag, keys, "--enter"])
-    if cls != DEAD and wait_ack(a, nonce, a.timeout):
+    if cls not in (DEAD, ABSENT) and wait_ack(a, nonce, a.timeout):
         return got_ack(a, st, state_path, collect(a.tag))
     ev, cls, reason = assess(a, st)
-    if cls == DEAD:
+    if cls in (DEAD, ABSENT):
         time.sleep(a.recheck)
         ev2, c2, r2 = assess(a, st)
-        if c2 == DEAD:
+        if c2 == cls:
             reason += "; confirmed by re-check"
         else:
             print(f"confirming re-check disagrees: {c2}: {r2}")
@@ -312,7 +349,12 @@ def main(argv=None):
     commit_evidence(st, ev, cls)
     print(f"no ack: {cls}: {reason}")
     rc = 1
-    if cls == DEAD:
+    if cls == ABSENT:
+        st["misses"] += 1
+        save_state(state_path, st)
+        alert_absent(a, st, reason, state_path, True)
+        recover(a, st, cls, reason, state_dir, state_path, True)
+    elif cls == DEAD:
         st["misses"] += 1
         save_state(state_path, st)
         recover(a, st, cls, reason, state_dir, state_path, True)
@@ -334,7 +376,8 @@ def main(argv=None):
         if not first:
             st["stuck_alert_ts"] = time.time()
             save_state(state_path, st)
-            alert(f"principal {a.tag} looks STUCK: {reason}; recovery in {a.stuck_grace}s if it does not recover", True)
+            alert(f"principal {a.tag} looks STUCK: {reason}; recovery in {a.stuck_grace}s if it does not recover",
+                  True, st, STUCK, state_path, a.alert_window)
         elif time.time() - first >= a.stuck_grace:
             recover(a, st, cls, f"{reason}; grace {a.stuck_grace}s after alert expired", state_dir, state_path, True)
         else:
@@ -342,7 +385,7 @@ def main(argv=None):
     else:
         st["unknown_runs"] = st.get("unknown_runs", 0) + 1
         save_state(state_path, st)
-        alert(f"principal {a.tag} liveness UNKNOWN ({reason}); not recovering", True)
+        alert(f"principal {a.tag} liveness UNKNOWN ({reason}); not recovering", True, st, UNKNOWN, state_path, a.alert_window)
     if cls != STUCK and "stuck_alert_ts" in st:
         st.pop("stuck_alert_ts")
         save_state(state_path, st)
