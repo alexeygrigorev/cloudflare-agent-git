@@ -1210,7 +1210,7 @@ class Safety(unittest.TestCase):
   watcher_path = root / 'scripts/supervision/systemd/supervision_watcher.sh'
   self.assertTrue(watcher_path.is_file(), f"Watcher script not found at {watcher_path}")
 
-  syntax_check = service.subprocess.run(['bash', '-n', str(watcher_path)], capture_output=True, text=True)
+  syntax_check = subprocess.run(['bash', '-n', str(watcher_path)], capture_output=True, text=True)
   self.assertEqual(syntax_check.returncode, 0, f"Watcher syntax check failed: {syntax_check.stderr}")
 
   content = watcher_path.read_text(encoding='utf-8')
@@ -1233,7 +1233,7 @@ class Safety(unittest.TestCase):
     '    python3 "$REPO_ROOT/scripts/metrics/adapters.py" --json >/dev/null 2>&1 || true\n'
     'fi\n'
    )
-   res = service.subprocess.run(['bash', '-c', hook_cmd], capture_output=True, text=True)
+   res = subprocess.run(['bash', '-c', hook_cmd], capture_output=True, text=True)
    self.assertEqual(res.returncode, 0)
    self.assertTrue(marker.exists())
    self.assertEqual(marker.read_text().strip(), '--json')
@@ -1242,12 +1242,12 @@ class Safety(unittest.TestCase):
    mock_adapters.write_text(
     f"import sys, pathlib\npathlib.Path({repr(str(marker))}).write_text('failed')\nsys.exit(1)\n"
    )
-   res_fail = service.subprocess.run(['bash', '-c', hook_cmd], capture_output=True, text=True)
+   res_fail = subprocess.run(['bash', '-c', hook_cmd], capture_output=True, text=True)
    self.assertEqual(res_fail.returncode, 0)
    self.assertTrue(marker.exists())
 
    mock_adapters.unlink()
-   res_missing = service.subprocess.run(['bash', '-c', hook_cmd], capture_output=True, text=True)
+   res_missing = subprocess.run(['bash', '-c', hook_cmd], capture_output=True, text=True)
    self.assertEqual(res_missing.returncode, 0)
 
   adapters_py = root / 'scripts' / 'metrics' / 'adapters.py'
@@ -2254,6 +2254,96 @@ class RestingStateContradictionPrecheckTests(unittest.TestCase):
       temp.cleanup()
 
 
+class LauncherAdmissionAndBridgeRegression(unittest.TestCase):
+  """Regression tests for launcher admission routing and bridge_ready_task_to_launcher."""
+
+  def test_bridge_ready_task_populates_model_requirements(self):
+    with tempfile.TemporaryDirectory() as temp_dir:
+      spool = pathlib.Path(temp_dir)
+      task = {
+        'id': 'task-test-bridge-01',
+        'title': 'Test Ready Task without model_requirements',
+        'workspace': str(spool),
+        'project_id': 'test-project',
+      }
+      rec = service.bridge_ready_task_to_launcher(task, 'test-head-owner', spool, ql_db_candidates=[])
+      self.assertEqual(rec['task_id'], 'task-test-bridge-01')
+      self.assertEqual(rec['head_owner'], 'test-head-owner')
+      # Verify default model_requirements are populated to prevent zero-weight ranking failure
+      self.assertIn('model_requirements', rec['payload'])
+      self.assertEqual(rec['payload']['model_requirements'], {'providers': ['antigravity', 'zai']})
+
+      # Test explicit model_requirements preservation
+      task_explicit = {
+        'id': 'task-test-bridge-02',
+        'title': 'Test Ready Task with explicit model',
+        'workspace': str(spool),
+        'project_id': 'test-project',
+        'model_requirements': {'models': ['gemini-3.1-pro-high']},
+      }
+      rec_explicit = service.bridge_ready_task_to_launcher(task_explicit, 'test-head-owner', spool, ql_db_candidates=[])
+      self.assertEqual(rec_explicit['payload']['model_requirements'], {'models': ['gemini-3.1-pro-high']})
+
+  def test_admission_ranking_requires_model_requirements(self):
+    """Verify that omission of model_requirements yields task_fit=None and weight=0.0,
+    while presence of model_requirements yields positive candidate selection weight."""
+    import os, sys
+    ql_repo = pathlib.Path(os.path.expanduser('~/git/agent-quota-launcher'))
+    if ql_repo.exists() and str(ql_repo) not in sys.path:
+      sys.path.insert(0, str(ql_repo))
+
+    try:
+      from launcher.admission import validate_quse
+      from launcher.ranking import select_candidate
+    except ImportError:
+      self.skipTest("agent-quota-launcher not importable")
+
+    # Synthetic quse data with healthy gemini and zai routes
+    quse_mock = {
+      'gemini': {
+        'status': 'ok',
+        'windows': {
+          '5h': {'percent_remaining': 50.0, 'reset_at': '2026-10-08T12:00:00Z'},
+          '7d': {'percent_remaining': 50.0, 'reset_at': '2026-10-15T12:00:00Z'},
+        }
+      },
+      'zai': {
+        'status': 'ok',
+        'windows': {
+          '5h': {'percent_remaining': 80.0, 'reset_at': '2026-10-08T12:00:00Z'},
+          '7d': {'percent_remaining': 80.0, 'reset_at': '2026-10-15T12:00:00Z'},
+        }
+      },
+      'codex': {
+        'status': 'ok',
+        'windows': {
+          '5h': {'percent_remaining': None, 'reset_at': None},
+          '7d': {'percent_remaining': 50.0, 'reset_at': '2026-10-15T12:00:00Z'},
+        }
+      }
+    }
+
+    # Case 1: Without model_requirements, routes are valid but task_fit is None
+    routes_none, rejections = validate_quse(quse_mock, task_requirements=None)
+    self.assertIn('codex', rejections)
+    for r in routes_none:
+      self.assertIsNone(r['task_fit'])
+    chosen_none, prov_none = select_candidate(routes_none, seed=42)
+    self.assertIsNone(chosen_none)
+    for c in prov_none['candidates']:
+      self.assertEqual(c['weight'], 0.0)
+      self.assertIn("unknown task_fit/health", c['reason'])
+
+    # Case 2: With model_requirements, routes resolve task_fit=1.0 and non-zero weight
+    routes_req, _ = validate_quse(quse_mock, task_requirements={'providers': ['antigravity', 'zai']})
+    for r in routes_req:
+      self.assertEqual(r['task_fit'], 1.0)
+    chosen_req, prov_req = select_candidate(routes_req, seed=42)
+    self.assertIsNotNone(chosen_req)
+    self.assertIn(chosen_req['provider'], ('antigravity', 'zai'))
+
+
 if __name__=='__main__':unittest.main()
+
 
 
