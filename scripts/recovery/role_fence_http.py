@@ -153,7 +153,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         try:
-            if self.path not in ("/v1/role-control", "/v1/native-channel", "/v1/sink-proof"):
+            if self.path not in ("/v1/role-control", "/v1/native-channel", "/v1/sink-proof", "/v1/host-recovery"):
                 raise PermissionError("fixed route required")
             length = int(self.headers.get("Content-Length", "0"))
             if not 1 <= length <= 65536 or self.headers.get("Transfer-Encoding"):
@@ -167,6 +167,13 @@ class Handler(BaseHTTPRequestHandler):
             config = private_json(self.server.config_path)
             cert = self.connection.getpeercert(binary_form=True)
             fingerprint = hashlib.sha256(cert).hexdigest()
+            if self.path == "/v1/host-recovery":
+                wire = getattr(self.server, "host_recovery", None)
+                if wire is None:
+                    raise PermissionError("fixed host recovery is not installed")
+                result = wire.handle(request, fingerprint)
+                self.send(200, {"v": 1, "status": "ok", "result": result})
+                return
             scope = config["tls_clients"].get(fingerprint)
             scopes = scope.get("actors", [scope]) if scope else []
             if not any((request.get("actor"), request.get("role"),
@@ -198,6 +205,14 @@ class Handler(BaseHTTPRequestHandler):
                 if not binding or binding.get("retired") or (ident["device_id"], ident["project_id"], request["generation"], request["role"], request["project"]) != (
                         binding["host"], binding["project"], binding["generation"], binding["role"], binding["project"]):
                     raise PermissionError("canonical native binding required")
+                # Recheck the same core guard at the final effect boundary.
+                # The issuer holds its write transaction; a read-only second
+                # connection avoids recursively acquiring that lock.
+                import sqlite3
+                with sqlite3.connect(Path(config["authority_db"]).as_uri()+"?mode=ro", uri=True) as db:
+                    db.row_factory = sqlite3.Row
+                    self.server.authority._valid(db, *[request[k] for k in
+                        ("project", "role", "actor", "generation", "epoch")])
                 if not self.server.channels.authorize_sink(request):
                     raise PermissionError("callback is no longer live/current")
                 self.send(200, {"v": 1, "status": "ok", "key": request["key"],
@@ -264,6 +279,25 @@ def load_proxy(config_path, config):
     return proxy
 
 
+def load_host_recovery(config_path, config, authority):
+    entry = config.get("host_recovery")
+    if entry is None:
+        return None
+    # This private installed profile fixes every source and credential boundary.
+    # Neither a request nor a client proof flag can enable this route.
+    plan_path = pinned_file(entry["plan_path"], entry["plan_sha256"])
+    plan = private_json(plan_path)
+    source = pinned_file(entry["source_path"], entry["source_sha256"])
+    producer = pinned_file(plan["producer_source_path"], plan["guardian"]["source_sha256"])
+    if not producer.is_file() or plan["scope"] != "fixed-host-caretaker":
+        raise PermissionError("fixed reviewed producer required")
+    spec = importlib.util.spec_from_file_location("installed_host_recovery", source)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module.HostRecoveryWire(authority, config_path, plan)
+
+
 def serve(config_path):
     config = private_json(config_path)
     # Missing store must remain a hold; serving never initializes implicitly.
@@ -283,6 +317,8 @@ def serve(config_path):
     server.config_path = config_path
     server.channels = NativeChannels()
     server.proxy = proxy
+    server.authority = authority
+    server.host_recovery = load_host_recovery(config_path, config, authority)
     server.socket = context.wrap_socket(server.socket, server_side=True)
     server.serve_forever(poll_interval=0.5)
 
