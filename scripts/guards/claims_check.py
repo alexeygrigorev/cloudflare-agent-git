@@ -3,7 +3,7 @@
 
 Reads `aplexer context --json` (or --context FILE). PRINCIPAL_OVERRIDE=<reason> logs and passes.
 """
-import argparse, json, os, re, subprocess, sys
+import argparse, json, os, re, subprocess, sys, time
 
 
 def glob_re(g):
@@ -22,21 +22,58 @@ def match(path, scopes):
     return any(glob_re(s).match(path) for s in scopes)
 
 
-def evaluate(files, ctx):
+def ttl_minutes():
+    try:
+        return float(os.environ.get("CLAIM_TTL_MINUTES", "30"))
+    except ValueError:
+        return 30.0
+
+
+def age_minutes(d, now_ms):
+    """Minutes since the declaration was last renewed; None when it has no timestamp."""
+    ts = d.get("updated_at_ms")
+    if not isinstance(ts, (int, float)):
+        return None
+    return max(0.0, (now_ms - ts) / 60000)
+
+
+def is_expired(d, now_ms, ttl):
+    a = age_minutes(d, now_ms)
+    return a is not None and a > ttl
+
+
+def evaluate(files, ctx, now_ms=None, ttl=None):
+    """A declaration not renewed (updated_at_ms) within the TTL is EXPIRED: it neither
+    blocks others nor authorizes its holder. Renew by re-running `aplexer work join`."""
     ws = ctx.get("workspace")
+    now_ms = now_ms if now_ms is not None else int(time.time() * 1000)
+    ttl = ttl if ttl is not None else ttl_minutes()
     you = ctx.get("you", {}).get("declaration") or {}
     own = you.get("scopes", [])
     errs, warns = [], []
+    own_expired = bool(own) and is_expired(you, now_ms, ttl)
     if not own:
         warns.append("this session has no declared claim; declare scopes on the bus before editing")
+    seen_expired = set()
     for f in files:
-        if own and not match(f, own):
+        if own_expired:
+            if match(f, own):
+                errs.append(f"{f}: claim expired {age_minutes(you, now_ms):.0f} min ago: re-run aplexer work join to reclaim")
+            else:
+                errs.append(f"{f}: outside own claim")
+        elif own and not match(f, own):
             errs.append(f"{f}: outside own claim")
         for peer in ctx.get("peers", []):
             if peer.get("session", {}).get("state") in ("broken", "failed", "stopped"):
                 continue
             for d in peer.get("declarations", []):
-                if d.get("stale") or d.get("workspace") != ws:
+                if d.get("stale") or d.get("workspace") != ws or d.get("mode") == "read":
+                    continue
+                if is_expired(d, now_ms, ttl):
+                    key = (peer["session"].get("tag"), tuple(d.get("scopes", [])))
+                    if key not in seen_expired and match(f, d.get("scopes", [])):
+                        seen_expired.add(key)
+                        warns.append(f"{f}: claim of {key[0]} expired {age_minutes(d, now_ms):.0f} min ago; not blocking")
                     continue
                 if match(f, d.get("scopes", [])):
                     msg = f"{f}: claimed by live session {peer['session'].get('tag')}"

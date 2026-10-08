@@ -19,6 +19,25 @@ class Claims(unittest.TestCase):
         self.assertTrue(C.evaluate(["b/x"], ctx([], [("p", "running", ["b/**"], False)]))[0])
     def test_stale_and_dead_ignored(self):
         self.assertEqual(C.evaluate(["b/x"], ctx(["b/**"], [("p", "running", ["b/**"], True), ("q", "failed", ["b/**"], False)]))[1], [])
+    def test_expiry(self):
+        now = 10_000_000_000
+        def c(own_age, peer_age, peer_mode="edit"):
+            return {"workspace": "/w",
+                    "you": {"declaration": {"scopes": ["a/**"], "updated_at_ms": now - own_age * 60000}},
+                    "peers": [{"session": {"tag": "p", "state": "running"},
+                               "declarations": [{"workspace": "/w", "scopes": ["a/**"], "stale": False, "mode": peer_mode,
+                                                 "updated_at_ms": now - peer_age * 60000}]}]}
+        ev = lambda x: C.evaluate(["a/x"], x, now_ms=now, ttl=30)
+        self.assertEqual(ev(c(5, 100))[0], [])                      # expired peer does not block
+        self.assertTrue(any("expired" in w for w in ev(c(5, 100))[1]))
+        self.assertTrue(ev(c(5, 5))[1])                              # live peer, shared: warning
+        e = ev(c(45, 5))[0]                                          # own expired: no authority
+        self.assertTrue(e and "claim expired 45 min ago: re-run aplexer work join to reclaim" in e[0])
+        self.assertEqual(ev(c(29, 5))[0], [])                        # within TTL
+        self.assertEqual(ev(c(5, 5, "read"))[1], [])                 # read-mode declarations do not block
+        no_ts = {"workspace": "/w", "you": {"declaration": {"scopes": ["a/**"]}}, "peers": []}
+        self.assertEqual(ev(no_ts)[0], [])                           # no timestamp: not expired
+
     def test_override(self):
         f = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False); json.dump(ctx(["a/**"], []), f); f.close()
         env = dict(os.environ)
@@ -32,6 +51,25 @@ class Claims(unittest.TestCase):
     def test_script_skips_in_ci(self):
         r = subprocess.run(["bash", str(R/"scripts/checks/claims.sh")], env={**os.environ, "CI": "1"}, capture_output=True, text=True)
         self.assertEqual(r.returncode, 0)
+
+class ClaimsAudit(unittest.TestCase):
+    def test_dry_run_flags_expired_and_never_sends(self):
+        now = 10_000_000_000
+        d = lambda age: {"workspace": "/w", "mode": "edit", "scopes": ["a/**"], "updated_at_ms": now - age * 60000}
+        c = {"you": {"session": {"tag": "me", "state": "running"}, "declaration": d(100)},
+             "peers": [{"session": {"tag": "old", "state": "running"}, "declarations": [d(90)]},
+                       {"session": {"tag": "new", "state": "running"}, "declarations": [d(2)]}]}
+        with tempfile.TemporaryDirectory() as t:
+            p = Path(t) / "ctx.json"; p.write_text(json.dumps(c))
+            r = subprocess.run([sys.executable, str(R / "scripts/ping/claims-audit.py"), "--context", str(p),
+                                "--now-ms", str(now), "--local-dir", t],
+                               capture_output=True, text=True, env={**os.environ, "CLAIM_TTL_MINUTES": "30"})
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("DRY-RUN would send to old", r.stdout)
+            self.assertNotIn("to new", r.stdout)
+            self.assertIn("FileBus claims: no reader, expiry unenforced", r.stdout)
+            self.assertEqual(os.listdir(t), ["ctx.json"])
+
 
 SHA = "a" * 40
 class Review(unittest.TestCase):
