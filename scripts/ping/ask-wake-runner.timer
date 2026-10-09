@@ -1,0 +1,10 @@
+[Unit]
+Description=Ask wake runner every 5 minutes (template, not installed)
+
+[Timer]
+OnBootSec=5min
+OnUnitInactiveSec=5min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

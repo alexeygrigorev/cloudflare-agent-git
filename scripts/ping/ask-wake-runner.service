@@ -1,0 +1,7 @@
+[Unit]
+Description=Wake sessions that left a principal question open past its deadline (template, not installed)
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/git/cloudflare-agent-git
+ExecStart=%h/git/cloudflare-agent-git/scripts/ping/ask-wake-runner.py --live
