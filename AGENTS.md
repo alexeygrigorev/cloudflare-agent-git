@@ -20,7 +20,7 @@ This applies to projects that opted in with a `.follows-principal-process` file 
 - Arm the wake with the exact command printed by `scripts/ping/ask-ledger.py wake-command <id>` (aplexer wake). If aplexer wake is not installed, run `scripts/ping/ask-ledger.py wake-armed <id>` instead; `scripts/ping/ask-wake-runner.py` then wakes you.
 - Never end a turn with an open question and no armed wake.
 - On wake: check for the answer, check the principal is alive (restart it per `recovery/principal.md` if not), otherwise proceed on the best option and inform the principal.
-- Details: [_docs/team/08-turn-end.md](_docs/team/09-turn-end.md).
+- Details: [_docs/team/08-turn-end.md](_docs/team/08-turn-end.md).
 
 ## Request-to-outcome follow-through — human 7 October 2026
 
