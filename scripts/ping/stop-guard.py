@@ -84,10 +84,16 @@ def decide(hook_input, now):
                 wake = aplexer_wake_active()
                 if wake or marker_has(sess, q["id"]):
                     continue
-                reason = (f"open question to {q['to']} asked at {L.iso(q['asked_at'])}: arm a wake in <=20 minutes "
-                          f"with the standard prompt. Run this (aplexer 0.1.10 has no wake command: use the session's own "
-                          f"cron/schedule tool with the same prompt instead): {L.wake_command(q)} ; "
-                          f"prompt: {L.wake_prompt(q)} ; then run ask-ledger.py wake-armed {q['id']}")
+                if L.wake_available():
+                    reason = (f"open question to {q['to']} asked at {L.iso(q['asked_at'])}: arm a wake in <=20 minutes "
+                              f"with the standard prompt. Run: {L.wake_command(q)} ; "
+                              f"prompt: {L.wake_prompt(q)} ; then run ask-ledger.py wake-armed {q['id']}")
+                else:
+                    reason = (f"open question to {q['to']} asked at {L.iso(q['asked_at'])}: arm a wake in <=20 minutes. "
+                              f"`aplexer wake` is not installed (0.1.10), so arm the interim self-ping, a detached process that types the "
+                              f"standard wake prompt into your own session at the deadline when it is idle at an empty prompt "
+                              f"(not cron, not a scheduler): {L.wake_command(q)} ; it writes the wake-armed marker itself; "
+                              f"`answer` or `proceed` cancels it. Prompt it will type: {L.wake_prompt(q, off=False)}")
             n = counts.get(q["id"], 0)
             if n >= MAX_BLOCKS:
                 log(f"allowing stop for {q['id']} after {n} blocks")

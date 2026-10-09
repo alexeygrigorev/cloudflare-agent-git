@@ -139,15 +139,24 @@ def evaluate(L, adir, sess, waiting):
 
 
 def reminder_text(L, sess, ids, kind):
-    fallback = ("If `aplexer wake` is not available, use your engine's own scheduler/cron tool with the same prompt "
-                "instead, then record it.")
+    have_wake = L.wake_available()
+    fallback = ("" if have_wake else
+                "`aplexer wake` is not installed here, so this is the interim self-ping: a detached process that types the wake "
+                "prompt into your own session at the deadline (only when it is idle at an empty prompt); `answer` or `proceed` cancels it. ")
     if kind == "question":
         data = L.load(sess)
         q = data["questions"][ids[0]]
         cmd = L.wake_command(q)
+        done = (f"Then run: scripts/ping/ask-ledger.py wake-armed {ids[0]} . " if have_wake else
+                "It writes the wake-armed marker itself; do not run wake-armed. ")
         return (f"Reminder: you are ending your turn with an open question ({', '.join(ids)}) and no wake armed. "
-                f"Arm one now (<=20 minutes): {cmd} . {fallback} Then run: scripts/ping/ask-ledger.py wake-armed {ids[0]} . "
+                f"Arm one now (<=20 minutes): {cmd} . {fallback}{done}"
                 f"If you already have an answer, run scripts/ping/ask-ledger.py answer {ids[0]}.")
+    if not have_wake:
+        return ("Reminder: you are about to wait on an unresolved dependency but no wake is armed, and `aplexer wake` is not installed. "
+                "Register the wait as a question with a default (scripts/ping/ask-ledger.py ask <to> <id> --text ... --default ... --live), "
+                "then arm the interim self-ping it prints (scripts/ping/ask-ledger.py wake-fallback <id> --in 20m --live). "
+                "If you are not actually waiting, ignore this.")
     return ("Reminder: you are about to wait on an unresolved dependency but no wake is armed. Arm one now, for example: "
             "aplexer wake set --every 20m --text 'Wake: check the dependency you are waiting for; if it is resolved continue, "
             "otherwise proceed with your best judgement and say so'. " + fallback +

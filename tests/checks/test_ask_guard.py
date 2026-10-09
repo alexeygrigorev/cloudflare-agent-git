@@ -73,6 +73,8 @@ class WakePrompt(Base):
     def test_command_quoting_with_apostrophes(self):
         import shlex
         self.ask_q("use the founder's \"safe\" option; don't $(touch x)")
+        self.assertIn("wake-fallback q1 --in 20m --live", self.led("wake-command", "q1").stdout)  # no `wake` in this fake aplexer
+        self.env["ASK_WAKE_AVAILABLE"] = "1"
         out = self.led("wake-command", "q1").stdout.strip()
         argv = shlex.split(out)
         self.assertEqual(argv[:6], ["aplexer", "wake", "set", "--once", "--in", "20m"])
@@ -88,10 +90,13 @@ class WakePrompt(Base):
     def test_guard_reasons_print_prompt_and_command(self):
         self.ask_q("it's fine")
         r = self.guard()["reason"]
-        self.assertIn("aplexer wake set --once --in 20m --text", r)
+        self.assertIn("wake-fallback q1 --in 20m --live", r)  # fake aplexer has no `wake`: interim self-ping, not cron
+        self.assertNotIn("cron", r.replace("not cron", ""))
         self.assertIn("Wake: check the answer to question q1", r)
         self.assertIn("restart it", r)
         self.assertIn("0.1.10", r)
+        self.env["ASK_WAKE_AVAILABLE"] = "1"
+        self.assertIn("aplexer wake set --once --in 20m --text", self.guard()["reason"])
         self.age("q1", 1300)
         r = self.guard()["reason"]
         self.assertIn("deadline passed", r)

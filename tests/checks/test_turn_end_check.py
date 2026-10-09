@@ -43,10 +43,18 @@ class Base(unittest.TestCase):
 class Reminder(Base):
     def test_reminds_with_exact_command_and_fallback(self):
         self.ask_q()
-        out = self.run_check()
+        out = self.run_check(env={"ASK_WAKE_AVAILABLE": "1"})
         self.assertIn("aplexer wake set", out)
         self.assertIn("ask-ledger.py wake-armed q1", out)
-        self.assertIn("scheduler/cron tool", out)
+
+    def test_without_aplexer_wake_instructs_interim_fallback_not_cron(self):
+        self.ask_q()
+        out = self.run_check()  # the fake aplexer has no `wake` subcommand
+        self.assertIn("ask-ledger.py wake-fallback q1 --in 20m --live", out)
+        self.assertNotIn("aplexer wake set", out)
+        self.assertNotIn("cron", out)
+        self.assertNotIn("scheduler", out.replace("not a scheduler", ""))
+        self.assertIn("interim", out)
 
     def test_formats(self):
         self.ask_q()
