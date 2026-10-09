@@ -8,12 +8,17 @@
   wake-armed <id>     the asker armed its own timer (marker file read by stop-guard.py)
   due                 open questions whose deadline passed
   proceed <id> --note N   mark proceeded on best judgement; print the message for the principal
+  rebuild             reconstruct open questions from the bus (aplexer message log --json) after a lost ledger
   status
+
+A corrupt or unreadable ledger fails loudly (exit 1) and is moved to <name>.corrupt-<ts>; it is never read as empty.
+Open-question cap per asker: ASK_MAX_OPEN (default 3); `ask --force --reason R` overrides.
+A late answer (after `proceed`) is recorded as status answered-after-proceeding; the principal's answer overrides.
 
 Ledger: <repo>/.local/ask/<session>.json (git-ignored). Session = ASK_SESSION, APLEXER_TAG,
 CLAUDE_SESSION_ID or "default". Override the directory with ASK_DIR. Sending is dry-run unless --live.
 """
-import argparse, hashlib, json, os, re, shlex, subprocess, sys, time
+import argparse, hashlib, json, os, re, shlex, shutil, subprocess, sys, time
 from datetime import datetime, timezone
 
 FOOTER = ("Reply by typing the answer into my session (aplexer send <tag> --enter) AND a bus message; "
@@ -42,11 +47,26 @@ def path(sess=None, ext="json"):
 
 
 def load(sess=None):
+    p = path(sess)
     try:
-        with open(path(sess)) as f:
-            return json.load(f)
-    except (OSError, ValueError):
+        with open(p) as f:
+            d = json.load(f)
+        if not isinstance(d, dict) or not isinstance(d.get("questions"), dict):
+            raise ValueError("not a ledger object with a 'questions' map")
+        return d
+    except FileNotFoundError:
         return {"questions": {}}
+    except (OSError, ValueError) as e:
+        bad = f"{p}.corrupt-{int(time.time())}"
+        try:
+            shutil.copy2(p, bad)
+            os.replace(p, bad)
+            where = f"moved to {bad}"
+        except OSError as e2:
+            where = f"could not be moved ({e2})"
+        raise SystemExit(f"ask-ledger: ledger {p} is corrupt or unreadable ({e}); {where}. "
+                         f"Open questions were NOT read as empty. Run `ask-ledger.py rebuild` to reconstruct them from the bus, "
+                         f"or inspect the saved copy.")
 
 
 def save(data, sess=None):
@@ -80,6 +100,15 @@ def cmd_ask(a, now):
     if a.id in data["questions"]:
         raise SystemExit(f"question id {a.id} already exists")
     wait = parse_wait(a.wait)
+    cap = int(os.environ.get("ASK_MAX_OPEN", "3") or 3)
+    n_open = sum(1 for x in data["questions"].values() if x["status"] == "open")
+    if n_open >= cap:
+        if not a.force:
+            raise SystemExit(f"batch your questions: {n_open} are already open (cap {cap}, env ASK_MAX_OPEN); "
+                             "combine them into one, or pass --force --reason R")
+        if not a.reason:
+            raise SystemExit("--force needs --reason R")
+        print(f"cap override ({n_open} open): {a.reason}")
     q = {"id": a.id, "to": a.to, "text": a.text, "text_hash": hashlib.sha256(a.text.encode()).hexdigest()[:16],
          "default": a.default, "asked_at": now, "deadline": now + wait, "wait_s": wait, "status": "open"}
     data["questions"][a.id] = q
@@ -129,6 +158,11 @@ def cmd_wake_command(a, now):
 
 def cmd_answer(a, now):
     d = load(); q = need(d, a.id)
+    if q["status"] == "proceeded":
+        q["status"], q["answered_at"], q["late_surfaced"] = "answered-after-proceeding", now, False
+        save(d)
+        print("late answer: review the decision taken and reconcile; principal answer overrides")
+        return 0
     q["status"], q["answered_at"] = "answered", now
     save(d); print(f"{a.id} answered"); return 0
 
@@ -153,11 +187,56 @@ def cmd_due(a, now):
 
 def cmd_proceed(a, now):
     d = load(); q = need(d, a.id)
-    if q["status"] == "answered":
+    if q["status"].startswith("answered"):
         raise SystemExit(f"{a.id} was answered; do not proceed on the default")
     q["status"], q["proceeded_at"], q["note"] = "proceeded", now, a.note
     save(d)
     print(f"to {q['to']}: no answer after 20 min; proceeding with {q['default']}; tell me to change ({a.note})")
+    return 0
+
+
+def _find_messages(j):
+    if isinstance(j, list):
+        return j
+    if isinstance(j, dict):
+        for k in ("messages", "log", "items"):
+            if isinstance(j.get(k), list):
+                return j[k]
+    return []
+
+
+def cmd_rebuild(a, now):
+    try:
+        r = subprocess.run(["aplexer", "message", "log", "--json"], capture_output=True, text=True, timeout=60)
+        if r.returncode:
+            raise RuntimeError(r.stderr.strip() or f"exit {r.returncode}")
+        msgs = _find_messages(json.loads(r.stdout))
+    except Exception as e:
+        print(f"rebuild impossible: cannot read the bus ({e}); re-ask the open questions by hand", file=sys.stderr)
+        return 1
+    sess = session()
+    d = load(); found = 0
+    for m in msgs:
+        if not isinstance(m, dict):
+            continue
+        text = str(m.get("text") or m.get("body") or m.get("content") or m.get("message") or "")
+        sender = str(m.get("from") or m.get("sender") or m.get("from_tag") or "")
+        mm = re.match(r"\[question ([^\]\s]+)\] (.*?)\n", text + "\n", re.S)
+        if not mm or sender != sess or mm.group(1) in d["questions"]:
+            continue
+        dm = re.search(r"proceed with: (.*)$", text, re.S)
+        wm = re.search(r"I check again in (\w+)", text)
+        wait = parse_wait(wm.group(1)) if wm else 1200
+        t = m.get("ts") or m.get("created_at") or m.get("timestamp")
+        asked = int(t / 1000 if isinstance(t, (int, float)) and t > 1e11 else t) if isinstance(t, (int, float)) else now
+        d["questions"][mm.group(1)] = {"id": mm.group(1), "to": str(m.get("to") or m.get("recipient") or "?"), "text": mm.group(2),
+            "text_hash": hashlib.sha256(mm.group(2).encode()).hexdigest()[:16], "default": (dm.group(1).strip() if dm else "unknown"),
+            "asked_at": asked, "deadline": asked + wait, "wait_s": wait, "status": "open", "rebuilt": True}
+        found += 1
+    if found:
+        save(d)
+    print(f"rebuild: {found} open question(s) reconstructed from the bus for session {sess}; "
+          "answered ones are not detectable, check with `status` and `answer` as needed")
     return 0
 
 
@@ -176,17 +255,18 @@ def main(argv=None, now=None):
     x = s.add_parser("ask"); x.add_argument("to"); x.add_argument("id"); x.add_argument("--text", required=True)
     x.add_argument("--default", required=True, help="best-judgement action if nobody answers"); x.add_argument("--wait", default="20m")
     x.add_argument("--live", action="store_true")
+    x.add_argument("--force", action="store_true", help="exceed the ASK_MAX_OPEN cap (needs --reason)"); x.add_argument("--reason")
     s.add_parser("wake-prompt").add_argument("id")
     x = s.add_parser("wake-command"); x.add_argument("id"); x.add_argument("--every")
     x.add_argument("--once", action="store_true"); x.add_argument("--in", dest="once_in")
     for n in ("answer", "wake-armed"):
         s.add_parser(n).add_argument("id")
     x = s.add_parser("proceed"); x.add_argument("id"); x.add_argument("--note", required=True)
-    s.add_parser("due"); s.add_parser("status")
+    s.add_parser("due"); s.add_parser("status"); s.add_parser("rebuild")
     a = p.parse_args(argv)
     fn = {"ask": cmd_ask, "answer": cmd_answer, "wake-armed": cmd_wake_armed,
           "wake-prompt": cmd_wake_prompt, "wake-command": cmd_wake_command, "due": cmd_due,
-          "proceed": cmd_proceed, "status": cmd_status}[a.cmd]
+          "proceed": cmd_proceed, "rebuild": cmd_rebuild, "status": cmd_status}[a.cmd]
     return fn(a, int(now if now is not None else time.time()))
 
 
