@@ -72,6 +72,20 @@ A claim says "I am editing these paths". It is a declaration made with `aplexer 
 
 Target state: aplexer itself expires claims (a native 30 minute lifetime, a `work renew` command, an EXPIRED state in `aplexer context`, and a refusal of overlapping scopes when the other claim is still live). Until then the claims check and the audit enforce the rule from outside.
 
+## Asking the principal: answer or proceed after 20 minutes
+
+Target state. An agent that needs a decision asks its principal, never the founder. The process is the same everywhere:
+
+- The question states the best-judgement default: what the asker will do if nobody answers. It goes to the principal on the bus with the footer "Reply by typing the answer into my session (aplexer send <tag> --enter) AND a bus message; I check again in 20 minutes and then proceed with: <default>".
+- The principal answers directly in the asker's session (send keys) and also by bus message. The asker treats either as the answer.
+- Before the asker ends its tool-call loop it arms a wake or timer for 20 minutes (`aplexer wake set --once --in 20m`, or the session's own cron or schedule tool). An open question with no timer is a failure, because nobody will come back to it.
+- At the deadline with no answer, the asker proceeds on its best judgement and tells the principal ("no answer after 20 min; proceeding with <default>; tell me to change"). The principal can reverse it.
+- Reversible versus irreversible. The default must be reversible. For anything irreversible, public, spending money or granting access, the default is the safe one: do nothing and report. Silence never counts as approval for those.
+
+How it is enforced. `scripts/ping/ask-ledger.py` records each question in a git-ignored ledger (`.local/ask/<session>.json`) with its deadline and default, and has `ask`, `answer`, `wake-armed`, `due`, `proceed` and `status`. Sending is a dry run unless `--live`. `scripts/ping/stop-guard.py` is a Claude Code Stop hook: it blocks the agent from stopping while a question is open with no timer armed, or while a deadline has passed unhandled, and gives up after 3 blocks per question so it can never loop forever.
+
+Installing it in a project. Run `scripts/ping/install-ask-guard.sh <project-dir>`; it adds the Stop hook to `<project-dir>/.claude/settings.json` (project scope, existing keys kept, safe to repeat). A project that follows this process has an empty `.follows-principal-process` file at its root, and `scripts/checks/ask-guard.sh` then fails if the hook entry or the ledger tools are missing. Projects without the file are not checked. The settings file may stay local (not committed); CI then checks only the tools.
+
 ## How it maps to these docs
 
 - Supervisor. It is the service in the [team overview](team/01-overview.md): wake-ups, due checks and safe delivery, with no judgment and no approvals. It is the one supervisor that [way of working](03-way-of-working.md) section 12 asks for.
