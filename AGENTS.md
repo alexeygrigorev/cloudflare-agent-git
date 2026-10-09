@@ -11,6 +11,17 @@ AGENTS.md is the single agent-instruction file (CLAUDE.md was removed on 7 Oct 2
 - Claude and Codex integrate selection; every engine independently challenges the task and validates evidence.
 - The latest direct user instruction supersedes earlier stop conditions.
 
+## End of every turn
+
+This applies to projects that opted in with a `.follows-principal-process` file in the workspace root; elsewhere ignore it.
+
+- If you asked the principal anything, or wait on anything, do this before you end the turn.
+- Register it: `scripts/ping/ask-ledger.py ask <to> <id> --text ... --default ... --live`.
+- Arm the wake with the exact command printed by `scripts/ping/ask-ledger.py wake-command <id>` (aplexer wake). If aplexer wake is not installed, run `scripts/ping/ask-ledger.py wake-armed <id>` instead; `scripts/ping/ask-wake-runner.py` then wakes you.
+- Never end a turn with an open question and no armed wake.
+- On wake: check for the answer, check the principal is alive (restart it per `recovery/principal.md` if not), otherwise proceed on the best option and inform the principal.
+- Details: [_docs/team/08-turn-end.md](_docs/team/09-turn-end.md).
+
 ## Request-to-outcome follow-through — human 7 October 2026
 
 Read the [request-to-outcome rules](_docs/03-way-of-working.md#2-request-to-outcome) and the [enforcement section](_docs/03-way-of-working.md#12-runtime-and-enforcement). Root owns follow-through; the principal owns continuous recovery and heads own execution/independent review. A request remains open through genuine ownership, actual first action, accepted outcome and human delivery. Misses require executed diagnosis/repair or acknowledged handoff and resumed-work proof, not another reminder. Reuse existing tracker/launcher/supervisor/Bus; the ledger distinguishes required controls from incomplete installed enforcement. Proposed timing thresholds are not adopted timers. Preserve all current gates and edit-scope claims.

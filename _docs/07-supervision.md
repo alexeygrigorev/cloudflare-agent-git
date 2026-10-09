@@ -88,6 +88,8 @@ How it is enforced. `scripts/ping/ask-ledger.py` records each question in a git-
 
 Installing it in a project. Run `scripts/ping/install-ask-guard.sh <project-dir>`; it adds the Stop hook to `<project-dir>/.claude/settings.json` (project scope, existing keys kept, safe to repeat). A project that follows this process has an empty `.follows-principal-process` file at its root, and `scripts/checks/ask-guard.sh` then fails if the hook entry or the ledger tools are missing. Projects without the file are not checked. The settings file may stay local (not committed); CI then checks only the tools.
 
+The end-of-turn wake that works on every engine is described in [end of turn](team/08-turn-end.md).
+
 ## How it maps to these docs
 
 - Supervisor. It is the service in the [team overview](team/01-overview.md): wake-ups, due checks and safe delivery, with no judgment and no approvals. It is the one supervisor that [way of working](03-way-of-working.md) section 12 asks for.
