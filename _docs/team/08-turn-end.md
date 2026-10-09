@@ -26,6 +26,6 @@ The agent checks whether the answer came. If not, it checks that the principal i
 | Codex, zcodex | AGENTS.md | aplexer wake, runner |
 | OpenCode | AGENTS.md | aplexer wake, runner |
 | Grok | AGENTS.md | aplexer wake, runner |
-| Gemini, Antigravity | GEMINI.md by default; AGENTS.md when configured | aplexer wake, runner |
+| Gemini, Antigravity | AGENTS.md (configure it to read AGENTS.md) | aplexer wake, runner |
 
-Claude reads AGENTS.md too, so there is no gap and no CLAUDE.md is needed. Gemini and Antigravity read GEMINI.md by default and AGENTS.md if their context file name is configured; this is unverified in this repo. The runner wakes any engine that forgets, because it needs nothing from the engine.
+AGENTS.md is the only instruction file in this organization's projects, for every engine. If an engine needs configuration to read it, configure it to read AGENTS.md. The runner wakes any engine that forgets, because it needs nothing from the engine.
