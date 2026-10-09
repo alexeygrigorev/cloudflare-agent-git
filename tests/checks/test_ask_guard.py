@@ -55,6 +55,49 @@ class Ledger(Base):
         self.assertIn("answered", self.led("status").stdout)
 
 
+class WakePrompt(Base):
+    def ask_q(self, default):
+        r = self.led("ask", "principal", "q1", "--text", "x?", "--default", default)
+        self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_prompt_single_line_with_restart_if_dead(self):
+        self.ask_q("do nothing\nand report")
+        p = self.led("wake-prompt", "q1").stdout.strip()
+        self.assertEqual(len(p.splitlines()), 1)
+        for t in ("Wake: check the answer to question q1 from principal", "aplexer status principal",
+                  "scripts/ping/principal-ping.py", "restart it", "recovery/principal.md", "PRINCIPAL_RECOVERY_CMD",
+                  "desktop-orchestrator", "ask again once", "proceed with the best option: do nothing and report",
+                  "ask-ledger.py proceed q1", "aplexer wake off"):
+            self.assertIn(t, p)
+
+    def test_command_quoting_with_apostrophes(self):
+        import shlex
+        self.ask_q("use the founder's \"safe\" option; don't $(touch x)")
+        out = self.led("wake-command", "q1").stdout.strip()
+        argv = shlex.split(out)
+        self.assertEqual(argv[:6], ["aplexer", "wake", "set", "--once", "--in", "20m"])
+        self.assertEqual(argv[6], "--text")
+        self.assertEqual(len(argv), 8)
+        self.assertEqual(argv[7], self.led("wake-prompt", "q1").stdout.strip())
+        self.assertIn("founder's", argv[7])
+        every = shlex.split(self.led("wake-command", "q1", "--every", "20m").stdout.strip())
+        self.assertEqual(every[3:5], ["--every", "20m"])
+        self.assertNotEqual(self.led("wake-command", "q1", "--every", "20m", "--once").returncode, 0)
+        self.assertNotEqual(self.led("wake-prompt", "nope").returncode, 0)
+
+    def test_guard_reasons_print_prompt_and_command(self):
+        self.ask_q("it's fine")
+        r = self.guard()["reason"]
+        self.assertIn("aplexer wake set --once --in 20m --text", r)
+        self.assertIn("Wake: check the answer to question q1", r)
+        self.assertIn("restart it", r)
+        self.assertIn("0.1.10", r)
+        self.age("q1", 1300)
+        r = self.guard()["reason"]
+        self.assertIn("deadline passed", r)
+        self.assertIn("restart it", r)
+
+
 class Guard(Base):
     def test_no_questions_allows(self):
         self.assertIsNone(self.guard())

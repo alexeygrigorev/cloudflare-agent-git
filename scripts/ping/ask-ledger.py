@@ -3,6 +3,8 @@
 
   ask <to> <id> --text T --default D [--wait 20m] [--live]
   answer <id>         the principal answered
+  wake-prompt <id>    print the standard single-line wake prompt for a question
+  wake-command <id> [--every 20m | --once --in 20m]   print the full `aplexer wake set` command
   wake-armed <id>     the asker armed its own timer (marker file read by stop-guard.py)
   due                 open questions whose deadline passed
   proceed <id> --note N   mark proceeded on best judgement; print the message for the principal
@@ -11,7 +13,7 @@
 Ledger: <repo>/.local/ask/<session>.json (git-ignored). Session = ASK_SESSION, APLEXER_TAG,
 CLAUDE_SESSION_ID or "default". Override the directory with ASK_DIR. Sending is dry-run unless --live.
 """
-import argparse, hashlib, json, os, re, subprocess, sys, time
+import argparse, hashlib, json, os, re, shlex, subprocess, sys, time
 from datetime import datetime, timezone
 
 FOOTER = ("Reply by typing the answer into my session (aplexer send <tag> --enter) AND a bus message; "
@@ -92,8 +94,37 @@ def cmd_ask(a, now):
             return 1
     else:
         print("dry-run (use --live to send): " + " ".join(cmd[:5]) + " <body>\n" + body)
-    print(f"recorded {a.id}; deadline {iso(q['deadline'])}; now arm a wake <= {a.wait} then run: ask-ledger.py wake-armed {a.id}")
+    print(f"recorded {a.id}; deadline {iso(q['deadline'])}; now arm a wake <= {a.wait} (get the command: ask-ledger.py wake-command {a.id}) then run: ask-ledger.py wake-armed {a.id}")
     return 0
+
+
+def wake_prompt(q):
+    flat = lambda t: " ".join(str(t).split())
+    return (f"Wake: check the answer to question {q['id']} from {flat(q['to'])} (inbox and anything typed into this session). "
+            f"If no answer: check the principal is alive (aplexer status {flat(q['to'])}; run scripts/ping/principal-ping.py to classify it); "
+            "if it is absent or dead restart it by the documented route (recovery/principal.md, or the configured PRINCIPAL_RECOVERY_CMD) "
+            "or alert root (desktop-orchestrator) if you cannot, then ask again once; "
+            f"if still no answer proceed with the best option: {flat(q['default'])}, inform the principal, "
+            f"run scripts/ping/ask-ledger.py proceed {q['id']}, then aplexer wake off.")
+
+
+def wake_command(q, every=None, once_in=None):
+    timer = ["--every", every] if every else ["--once", "--in", once_in or "20m"]
+    return " ".join(["aplexer", "wake", "set", *timer, "--text", shlex.quote(wake_prompt(q))])
+
+
+def cmd_wake_prompt(a, now):
+    print(wake_prompt(need(load(), a.id))); return 0
+
+
+def cmd_wake_command(a, now):
+    if a.every and a.once:
+        raise SystemExit("use --every or --once, not both")
+    if a.every:
+        parse_wait(a.every)
+    if a.once_in:
+        parse_wait(a.once_in)
+    print(wake_command(need(load(), a.id), a.every, a.once_in)); return 0
 
 
 def cmd_answer(a, now):
@@ -145,12 +176,16 @@ def main(argv=None, now=None):
     x = s.add_parser("ask"); x.add_argument("to"); x.add_argument("id"); x.add_argument("--text", required=True)
     x.add_argument("--default", required=True, help="best-judgement action if nobody answers"); x.add_argument("--wait", default="20m")
     x.add_argument("--live", action="store_true")
+    s.add_parser("wake-prompt").add_argument("id")
+    x = s.add_parser("wake-command"); x.add_argument("id"); x.add_argument("--every")
+    x.add_argument("--once", action="store_true"); x.add_argument("--in", dest="once_in")
     for n in ("answer", "wake-armed"):
         s.add_parser(n).add_argument("id")
     x = s.add_parser("proceed"); x.add_argument("id"); x.add_argument("--note", required=True)
     s.add_parser("due"); s.add_parser("status")
     a = p.parse_args(argv)
-    fn = {"ask": cmd_ask, "answer": cmd_answer, "wake-armed": cmd_wake_armed, "due": cmd_due,
+    fn = {"ask": cmd_ask, "answer": cmd_answer, "wake-armed": cmd_wake_armed,
+          "wake-prompt": cmd_wake_prompt, "wake-command": cmd_wake_command, "due": cmd_due,
           "proceed": cmd_proceed, "status": cmd_status}[a.cmd]
     return fn(a, int(now if now is not None else time.time()))
 

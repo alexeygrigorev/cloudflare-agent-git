@@ -71,14 +71,17 @@ def decide(hook_input, now):
                 continue
             if q["deadline"] <= now:
                 reason = (f"deadline passed for question {q['id']} to {q['to']}: proceed with your best judgement "
-                          f"({q['default']}) and inform the principal (ask-ledger.py proceed {q['id']} --note ...)")
+                          f"({q['default']}) and inform the principal (ask-ledger.py proceed {q['id']} --note ...). "
+                          f"If the principal never answered, first check it is alive and restart it if dead; "
+                          f"standard prompt: {L.wake_prompt(q)}")
             else:
                 wake = aplexer_wake_active()
                 if wake or marker_has(sess, q["id"]):
                     continue
                 reason = (f"open question to {q['to']} asked at {L.iso(q['asked_at'])}: arm a wake in <=20 minutes "
-                          f"(aplexer wake set --once --in 20m, or the session's cron/schedule tool) "
-                          f"then run ask-ledger.py wake-armed {q['id']}")
+                          f"with the standard prompt. Run this (aplexer 0.1.10 has no wake command: use the session's own "
+                          f"cron/schedule tool with the same prompt instead): {L.wake_command(q)} ; "
+                          f"prompt: {L.wake_prompt(q)} ; then run ask-ledger.py wake-armed {q['id']}")
             n = counts.get(q["id"], 0)
             if n >= MAX_BLOCKS:
                 log(f"allowing stop for {q['id']} after {n} blocks")
