@@ -11,7 +11,7 @@ cd "$here/../.." || exit 2
 check_parse_args "$@"
 
 # Root files that may be added. Everything else belongs in a directory.
-ROOT_ALLOW=" AGENTS.md README.md LICENSE .gitignore "
+ROOT_ALLOW=" AGENTS.md README.md LICENSE .gitignore .follows-principal-process "
 # Directories whose docs are not repo documentation. Each needs a reason.
 DOC_EXEMPT=(
   "website/"      # the published site: page content and templates
