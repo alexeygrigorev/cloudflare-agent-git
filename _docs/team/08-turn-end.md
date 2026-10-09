@@ -57,3 +57,28 @@ Installation is per project, never in user-global config: `scripts/ping/install-
 | OpenCode | `.opencode/plugin/turn-end-check.js` on `session.idle` | plugin API verified from the installed global plugin, project path not exercised |
 
 Where a hook is missing or does not fire, the wake runner and wake audit remain the backstop.
+
+## Incoming-message hook
+
+A session that has unread messages from peers must read and act on them, without asking first. The instruction alone is forgotten, so `scripts/ping/inbox-guard.py` checks for it.
+
+What it does: it runs `aplexer message inbox --json` for the calling session. If there are unread messages it prints a prompt that lists, per message, the sender, the first eight characters of the id and a subject (the first line of the body, cut to 60 characters, long token-like strings masked). It never prints a full body. The prompt tells the agent to run `aplexer message inbox`, read the messages and act on them now, and acknowledge or reply when done.
+
+Opt-in: it acts only in a project carrying `.follows-principal-process`. Anywhere else it prints nothing and writes nothing.
+
+Loop guard: state per session and message id in `.local/inbox/<session>.json`. Each id is prompted at most 3 times, at least 10 minutes apart; after that it stays silent and logs once to `.local/inbox/guard.log`. An id is forgotten when it is no longer unread. In its Stop form it never blocks when the hook input says `stop_hook_active` is true. It fails open: a missing aplexer, a failing command, bad JSON or a 5 second timeout produces no output and exit 0.
+
+Two ways to run it, so every engine is covered:
+
+- Hook form: `inbox-guard.py --format claude-prompt` as a UserPromptSubmit hook, and `--format claude-stop` as a Stop hook, for Claude. Codex and zcodex take the Stop form from `.codex/hooks.json`. Register both with `scripts/ping/install-turn-end-hooks.sh <project-dir> --with-inbox`; this is off by default, idempotent, project scope only, and `--check --with-inbox` reports each engine.
+- Engine-neutral form: `scripts/ping/ask-wake-runner.py --inbox` (add `--live` to act). For each running session in an opted-in workspace that is idle or waiting and shows an empty prompt, and that has unread messages, it types one line with `aplexer send <workspace>:<tag> ... --enter`. It uses the same loop guard and never types into a busy session or over a draft. It needs nothing from the engine.
+
+| Engine | Incoming-message mechanism | Status |
+| --- | --- | --- |
+| Claude | UserPromptSubmit and Stop hooks, runner | tested with a fake aplexer; not yet installed in any live settings |
+| Codex, zcodex | Stop hook in `.codex/hooks.json`, runner | tested with a fake aplexer; the real hook run is not exercised |
+| Gemini, Antigravity, OpenCode, Grok | runner only (`--inbox`) | tested with a fake aplexer; no hook form |
+
+Not verified: the `aplexer message inbox --json` shape was read from a live inbox (a list of objects with `id`, `from.tag`, `body`, `created_at`); behaviour of the real UserPromptSubmit hook in Claude Code is not exercised. The hook and runner are not installed in live settings or timers; installing them needs the principal.
+
+To disable it: a principal removes the `inbox-guard.py` entries from the project's hook files (`.claude/settings.json`, `.codex/hooks.json`), stops running the runner with `--inbox`, or removes the `.follows-principal-process` marker to take the whole project out of scope. Deleting `.local/inbox/` resets the loop guard.
