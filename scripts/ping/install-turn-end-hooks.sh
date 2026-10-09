@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Install or check the end-of-turn "is the wake armed" hook (scripts/ping/turn-end-check.py) in ONE project.
-#   install-turn-end-hooks.sh <project-dir> [--engine claude|codex|zcodex|gemini|opencode|all] [--check] [--join]
+#   install-turn-end-hooks.sh <project-dir> [--engine claude|codex|zcodex|gemini|opencode|all] [--check] [--join] [--with-inbox]
+# --with-inbox additionally registers (or, with --check, checks) the incoming-message hook scripts/ping/inbox-guard.py:
+# claude gets UserPromptSubmit + Stop entries, codex/zcodex a Stop entry; gemini and opencode have no verified hook
+# format for it and report status=unsupported (ask-wake-runner.py --inbox covers every engine).
 # Project scope only: every write stays under <project-dir>; user-global engine configs are never touched.
 # Opt-in: the project must carry .follows-principal-process. Without it, install refuses (exit 4) unless --join
 # is given, which creates the marker first. --check on a markerless project reports "not in scope" and exits 0.
@@ -11,11 +14,13 @@ import json, os, sys
 self_path, *argv = sys.argv[1:]
 check_script = os.path.join(os.path.dirname(os.path.abspath(self_path)), "turn-end-check.py")
 ENGINES = ["claude", "codex", "zcodex", "gemini", "opencode"]
-proj = None; engine = "all"; check = False; join = False
+proj = None; engine = "all"; check = False; join = False; with_inbox = False
+inbox_script = os.path.join(os.path.dirname(os.path.abspath(self_path)), "inbox-guard.py")
 it = iter(argv)
 for a in it:
     if a == "--engine": engine = next(it, "")
     elif a == "--check": check = True
+    elif a == "--with-inbox": with_inbox = True
     elif a == "--join": join = True
     elif a.startswith("-"): sys.exit(f"unknown option {a}")
     elif proj is None: proj = a
@@ -34,8 +39,19 @@ def inside(p):
 def cmd(fmt):
     return f"[ -f {check_script} ] && python3 {check_script} --format {fmt} || exit 0"  # a missing script never blocks
 
-def has_entry(d, event):
-    return any("turn-end-check.py" in h.get("command", "") for e in d.get("hooks", {}).get(event, []) for h in e.get("hooks", []))
+def has_entry(d, event, script="turn-end-check.py"):
+    return any(script in h.get("command", "") for e in d.get("hooks", {}).get(event, []) for h in e.get("hooks", []))
+
+# engine -> [(event, inbox-guard --format)]; engines not listed have no verified hook format for inbox-guard
+INBOX_EVENTS = {"claude": [("UserPromptSubmit", "claude-prompt"), ("Stop", "claude-stop")],
+                "codex": [("Stop", "claude-stop")], "zcodex": [("Stop", "claude-stop")]}
+
+def inbox_cmd(fmt):
+    return f"[ -f {inbox_script} ] && python3 {inbox_script} --format {fmt} || exit 0"
+
+def inbox_installed(e):
+    d = load(os.path.join(proj, paths(e)))
+    return bool(d) and all(has_entry(d, ev, "inbox-guard.py") for ev, _ in INBOX_EVENTS[e])
 
 def load(p):
     try:
@@ -106,6 +122,24 @@ if not os.path.isfile(marker):
     open(marker, "a").close()
     print(f"turn-end-hooks: --join: created {marker}; this project now follows the principal process")
 
+def install_inbox(e):
+    p = os.path.join(proj, paths(e))
+    if e not in INBOX_EVENTS:
+        print(f"engine={e} inbox=unsupported (no verified hook format; use ask-wake-runner.py --inbox)"); return
+    if not inside(p):
+        print(f"engine={e} inbox=refused (path escapes project)"); return
+    d = load(p)
+    if d is None:
+        print(f"engine={e} inbox=refused ({paths(e)} is not valid JSON; left untouched)"); return
+    changed = False
+    for ev, fmt in INBOX_EVENTS[e]:
+        if not has_entry(d, ev, "inbox-guard.py"):
+            d.setdefault("hooks", {}).setdefault(ev, []).append({"hooks": [{"type": "command", "command": inbox_cmd(fmt)}]})
+            changed = True
+    if changed:
+        write_json(p, d)
+    print(f"engine={e} inbox=installed ({paths(e)})")
+
 missing = 0
 for e in engines:
     if check:
@@ -114,6 +148,15 @@ for e in engines:
         missing += not ok
     else:
         install(e)
+    if with_inbox:
+        if e not in INBOX_EVENTS:
+            print(f"engine={e} inbox=unsupported (no verified hook format; use ask-wake-runner.py --inbox)")
+        elif check:
+            ok = inbox_installed(e)
+            print(f"engine={e} inbox={'installed' if ok else 'missing'} ({paths(e)})")
+            missing += not ok
+        else:
+            install_inbox(e)
 if check and missing:
     sys.exit(3)
 if not check:
