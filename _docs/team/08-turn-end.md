@@ -14,7 +14,9 @@ The instruction lives in AGENTS.md, so the agent sets the wake up itself at the 
 
 1. The aplexer wake. The agent registers the question with `scripts/ping/ask-ledger.py ask`, then runs the command printed by `scripts/ping/ask-ledger.py wake-command <id>`. aplexer brings the session back when the timer fires. This works on every engine once aplexer wake is installed.
 2. The wake runner. Until then, and as a backstop, the agent runs `scripts/ping/ask-ledger.py wake-armed <id>`. `scripts/ping/ask-wake-runner.py` runs every five minutes, reads the ledgers of this repository, and for each open question past its deadline finds the asking session. If that session is idle or waiting, and its screen shows an empty prompt, the runner types the standard wake prompt. It never types into a busy session or over a draft. It wakes at most once per ten minutes and at most three times per question; after that it tells the principal and stops. It types through aplexer, so it works for every engine.
-3. Claude's Stop hook and cron, as extras. Claude sessions can also be held at the end of a turn by the Stop guard, or woken by cron. These add coverage for Claude only and are never the only mechanism.
+3. Claude's Stop hook, as an extra. Claude sessions can also be held at the end of a turn by the Stop guard. This adds coverage for Claude only and is never the only mechanism. Built-in cron and schedule tools are not used for this.
+
+Interim, until `aplexer wake` is installed: `scripts/ping/ask-ledger.py wake-fallback <id> --in 20m --live`. It starts a detached process that types the standard wake prompt into your own session at the deadline, only if the session is idle at an empty prompt (busy: retry every 60 seconds for 10 minutes, then give up and log). It writes the wake-armed marker itself, so do not also run `wake-armed`; `answer` and `proceed` cancel it; it never arms twice for one question. When `aplexer wake --help` fails, `wake-command`, the turn-end hook and the Stop guard all print this command in place of `aplexer wake set`. Tested against a fake aplexer only. Not run live yet.
 
 ## What happens on wake
 
@@ -24,17 +26,17 @@ The agent checks whether the answer came. If not, it checks that the principal i
 
 | Engine | Instruction file it reads | Wake |
 | --- | --- | --- |
-| Claude | AGENTS.md | aplexer wake, runner, Stop guard |
-| Codex, zcodex | AGENTS.md | aplexer wake, runner |
-| OpenCode | AGENTS.md | aplexer wake, runner |
-| Grok | AGENTS.md | aplexer wake, runner |
-| Gemini, Antigravity | AGENTS.md (configure it to read AGENTS.md) | aplexer wake, runner |
+| Claude | AGENTS.md | aplexer wake (not installed), interim self-ping, runner, Stop guard |
+| Codex, zcodex | AGENTS.md | aplexer wake (not installed), interim self-ping, runner |
+| OpenCode | AGENTS.md | aplexer wake (not installed), interim self-ping, runner |
+| Grok | AGENTS.md | aplexer wake (not installed), interim self-ping, runner |
+| Gemini, Antigravity | AGENTS.md (configure it to read AGENTS.md) | aplexer wake (not installed), interim self-ping, runner |
 
 AGENTS.md is the only instruction file in this organization's projects, for every engine. If an engine needs configuration to read it, configure it to read AGENTS.md. The runner wakes any engine that forgets, because it needs nothing from the engine.
 
 ## Hook that checks the wake is armed
 
-The instruction alone can be forgotten, so an end-of-turn hook checks it. `scripts/ping/turn-end-check.py` runs when the agent's turn ends. It finds the session (`--session`, ASK_SESSION, APLEXER_TAG, `aplexer whoami`) and reminds it when either an open question in `.local/ask/<session>.json` has no armed wake, or the hook is told the session is about to wait (`--waiting`) and no wake exists at all. A wake counts as armed when `aplexer wake list --json` is non-empty, or, where that subcommand does not exist, when the marker `.local/ask/<session>.wake` names the question. The reminder carries the exact `ask-ledger.py wake-command <id>` line and the fallback: use the engine's own scheduler with the same prompt. Output is `--format claude-stop` (a block reason), `plain` or `json`; `--also-bus` also sends the reminder to the session over the bus.
+The instruction alone can be forgotten, so an end-of-turn hook checks it. `scripts/ping/turn-end-check.py` runs when the agent's turn ends. It finds the session (`--session`, ASK_SESSION, APLEXER_TAG, `aplexer whoami`) and reminds it when either an open question in `.local/ask/<session>.json` has no armed wake, or the hook is told the session is about to wait (`--waiting`) and no wake exists at all. A wake counts as armed when `aplexer wake list --json` is non-empty, or, where that subcommand does not exist, when the marker `.local/ask/<session>.wake` names the question. The reminder carries the exact `ask-ledger.py wake-command <id>` line, which is the `wake-fallback` command while `aplexer wake` is missing (no cron or scheduler is suggested). Output is `--format claude-stop` (a block reason), `plain` or `json`; `--also-bus` also sends the reminder to the session over the bus.
 
 It acts only in a project that carries `.follows-principal-process` (the workspace or any parent up to its git root). Anywhere else it exits 0 and does nothing.
 

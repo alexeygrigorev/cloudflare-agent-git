@@ -17,7 +17,7 @@ This applies to projects that opted in with a `.follows-principal-process` file 
 
 - If you asked the principal anything, or wait on anything, do this before you end the turn.
 - Register it: `scripts/ping/ask-ledger.py ask <to> <id> --text ... --default ... --live`.
-- Arm the wake with the exact command printed by `scripts/ping/ask-ledger.py wake-command <id>` (aplexer wake). If aplexer wake is not installed, run `scripts/ping/ask-ledger.py wake-armed <id>` instead; `scripts/ping/ask-wake-runner.py` then wakes you.
+- Arm the wake with the exact command printed by `scripts/ping/ask-ledger.py wake-command <id>` (aplexer wake). While aplexer wake is not installed that command is the interim self-ping `scripts/ping/ask-ledger.py wake-fallback <id> --in 20m --live`, which writes the wake-armed marker itself; do not use cron or a scheduler. The principal answers by typing into your session, so end the turn at an empty prompt.
 - Never end a turn with an open question and no armed wake.
 - On wake: check for the answer, check the principal is alive (restart it per `recovery/principal.md` if not), otherwise proceed on the best option and inform the principal.
 - Details: [_docs/team/08-turn-end.md](_docs/team/08-turn-end.md).
