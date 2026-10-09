@@ -74,6 +74,8 @@ Target state: aplexer itself expires claims (a native 30 minute lifetime, a `wor
 
 ## Asking the principal: answer or proceed after 20 minutes
 
+The canonical description of this process, with its failure modes, is [asking the principal](08-asking-the-principal.md).
+
 Target state. An agent that needs a decision asks its principal, never the founder. The process is the same everywhere:
 
 - The question states the best-judgement default: what the asker will do if nobody answers. It goes to the principal on the bus with the footer "Reply by typing the answer into my session (aplexer send <tag> --enter) AND a bus message; I check again in 20 minutes and then proceed with: <default>".

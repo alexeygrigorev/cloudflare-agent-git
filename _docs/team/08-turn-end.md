@@ -1,5 +1,7 @@
 # End of turn
 
+The whole ask-wake-proceed process, with its failure modes, is in [asking the principal](../08-asking-the-principal.md).
+
 ## End-of-turn wake is universal
 
 Every agent in this organisation ends its turn the same way, whatever engine it runs on. If it asked the principal something, or waits on anything, it registers the question and arms a wake before it stops. A turn never ends with an open question and nothing that will bring the agent back.
