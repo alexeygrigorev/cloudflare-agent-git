@@ -9,6 +9,8 @@ Opt-in per project: only sessions whose workspace (or a parent up to its git roo
 .follows-principal-process are ever woken or messaged; every other workspace is ignored. Never types into a busy session or one with a draft. At most one wake per question per 10 minutes,
 at most 3 per question; after that it messages the principal once and stops.
 
+With --inbox it also sends a one-line nudge to idle, empty-prompt, opted-in sessions that have unread aplexer
+messages (inbox-guard.py holds the text and the per-message loop guard).
 Dry-run unless --live. State: <ask dir>/<tag>.wakes.json. Override the ledger dir with ASK_DIR.
 Exit 0 always for findings; 2 for usage errors.
 """
@@ -160,13 +162,74 @@ def process(tag, d, now, live, top, log):
         save_json(sp, state)
 
 
+def inbox_guard():
+    import importlib.util
+    s = importlib.util.spec_from_file_location("inbox_guard", os.path.join(HERE, "inbox-guard.py"))
+    m = importlib.util.module_from_spec(s)
+    s.loader.exec_module(m)
+    return m
+
+
+def inbox_pass(now, live, log):
+    """Engine-neutral incoming-message nudge: for each running, opted-in session that is idle with an empty prompt
+    and has unread aplexer messages, send a one-line `aplexer send` nudge. Loop guard and text come from
+    inbox-guard.py (per message id: 10 minute cooldown, at most 3 nudges). Fails open on any aplexer error."""
+    G = inbox_guard()
+    sessions = aplexer_json(["list"]) or []
+    for s in sessions:
+        tag, ws = s.get("tag"), s.get("workspace")
+        if not tag or not ws or s.get("phase", "running") != "running" or not s.get("worker_alive", True):
+            continue
+        if sum(1 for x in sessions if x.get("tag") == tag and x.get("workspace") == ws) != 1:
+            log(f"{tag}: skip, ambiguous session"); continue
+        root = G.find_root(ws)
+        if root is None:
+            continue  # not opted in: never inspected, messaged or typed into
+        msgs = G.fetch_unread(tag)
+        if msgs is None:
+            continue
+        sess, sdir = G.clean(tag), G.state_dir(root)
+        st = G.read_state(sdir, sess)
+        if not msgs:
+            if st:
+                G.write_state(sdir, sess, {})  # everything was read: forget the ids
+            continue
+        due = G.eligible(msgs, st, now)
+        if not due:
+            continue
+        sel = f"{ws}:{tag}"
+        info = aplexer_json(["status", sel]) or {}
+        rs = info.get("reported_state", s.get("reported_state"))
+        if rs not in ("idle", "waiting"):
+            log(f"{tag}: inbox skip, session is {rs or 'unknown'}"); continue
+        scr, err = aplexer(["capture", sel, "--screen", "--plain"])
+        ps = prompt_state(scr) if not err else "unknown"
+        if ps != "empty":
+            log(f"{tag}: inbox skip, prompt {ps}"); continue
+        text = G.prompt_text(due, oneline=True)
+        log(f"{tag}: INBOX NUDGE ({len(due)} message(s)) -> {sel}")
+        if not live:
+            continue
+        _, err = aplexer(["send", sel, text, "--enter"])
+        if err:
+            log(f"{tag}: inbox send failed ({err})"); continue
+        G.commit(sdir, sess, msgs, due, st, now)
+
+
 def main(argv=None, now=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--live", action="store_true", help="really type wakes / message the principal (default: dry-run)")
+    ap.add_argument("--inbox", action="store_true",
+                    help="also nudge idle opted-in sessions that have unread aplexer messages (see inbox-guard.py)")
     a = ap.parse_args(argv)
     now = time.time() if now is None else now
     d, top = ask_dir(), repo_top()
     log = lambda m: print(("" if a.live else "[dry-run] ") + m)
+    if a.inbox:
+        try:
+            inbox_pass(now, a.live, log)
+        except Exception as e:  # noqa: BLE001  fail open: the wake pass below must still run
+            log(f"inbox pass failed: {type(e).__name__}")
     for p in sorted(glob.glob(os.path.join(d, "*.json"))):
         if p.endswith(".wakes.json"):
             continue
