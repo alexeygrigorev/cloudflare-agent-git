@@ -6,6 +6,16 @@ Root restores the principal; the principal owns head recovery, and heads own the
 - [Principal → head](../recovery/head.md): independently placed interactive recovery, parallel scoped agents, preserved workers and resumed project work.
 - [Root startup](team/02-root.md): concise priorities, existing check custody and human delivery.
 
+## Win root custody: recorded state on 9 October
+
+The [incident report](incidents/2026-10-08-root-custody-outage.md) records an actual automatic whole-family recovery pass in its bounded observation window. The successor later lost authority because genuine completed periodic checks were missing; the Guardian also failed to report the failed recovery command. The current model/history are preserved, but the elected role is expired. A historical kill pass does not prove current or sustained custody.
+
+At startup, read the latest [issue 102 disposition](https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102), then verify the exact current role tuple, activation, fresh lease, completed-check deadline, native model action and Guardian result. Do not infer health from a local active flag or a running process. Preserve the expired actor and productive children; replacement requires the accepted disposition and genuine kernel/history evidence.
+
+The published [receiver checkpoint](../recovery/root-accountability/receiver-source/README.md) is source-only. The corrected managed Win producer/receiver pair has separate source acceptance; full host binding, native positive rehearsal, cold adoption and continued useful cycles remain unaccepted. The desktop check contract and explicit managed candidate are distinguished in the [check guide](../recovery/README.md#win-managed-check-candidate).
+
+New paid Codex effects are currently held by the actual reserve gate. The next runtime trigger is a fresh passing admission result through the existing owned Guardian/controller and an independently accepted joint plan, not a new watcher or a stale quota reading. An alternate provider's available capacity alone does not authorize its tool surface or substitute for the required Luna check. Keep the dependency, owner and next evidence check durable; no held check counts as completed.
+
 ## Required controls and installed evidence
 
 The target is one durable supervisor using the maintained tracker, launcher and bus, with recoverable ownership and workers that survive coordinator death. What the supervisor does today is in [supervision](07-supervision.md). This target does not certify an installed guardian, periodic launcher or unattended recovery path.

@@ -22,6 +22,14 @@ Replace the task name with a unique permitted lowercase/digit/underscore name. D
 3. Give a small factual brief: this run's purpose and time, parent identity/task, current human steering verbatim, relevant due issue links and explicitly verified custody evidence if available. Label observations with their time/source and unknowns as unknown. Do not supply an old narrative as current truth or assume a native bus identity, host, principal or channel binding.
 4. Require the delegate to read `AGENTS.md`, `_docs/team/02-root.md`, `_docs/04-communication.md`, `_docs/03-way-of-working.md` and `_docs/05-recovery.md`, then follow the focused check below. Link this guide and applicable principal recovery; do not paste the whole chat into its prompt.
 
+## Win managed check candidate
+
+The desktop/native harness contract above remains `collaboration.spawn_agent` with Luna/max and no inherited history. A separately reviewed Win source candidate uses genuine parent `root_spawn_check` and `root_wait_check` custom calls, fixed host-owned admission and fresh SDK child creation. Its child has no native `parentThreadId` relationship: the causal proof is the observed parent custom call, immutable host intent, actual child execution context/reads/final and observed parent wait/result. Do not call this built-in spawn ancestry.
+
+The corrected producer/receiver pair has source acceptance only. The published [receiver checkpoint](root-accountability/receiver-source/README.md) precedes that pair correction; it does not contain a deployed Win producer. Full host event approval, admitted native child rehearsal and cold joint adoption remain unaccepted. A helper completion or fixture pass cannot extend the completed-check deadline.
+
+The [incident/current custody disposition](../_docs/05-recovery.md#win-root-custody-recorded-state-on-9-october) distinguishes the historical automatic kill pass from the later check-expiry failure. The actual reserve gate currently holds new paid child effects. Preserve the required Luna obligation and its next fresh admission check; do not silently substitute another model, report a held dispatch as a passed check or revive an expired role. The existing owned Guardian/controller is the continuation route; this candidate creates no timer or watcher.
+
 ## Focused delegate instructions
 
 You are a fresh root-check delegate of the named parent. Discover the actual host, current principal, monitoring custody and genuine channel before acting. Inspect Hetzner and Win35 ownership/work where reachable; connection failure means unknown, not dead. Resolve current actors from the catalog and actual owner reports; do not trust historical tags or an old singleton identity.

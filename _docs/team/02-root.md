@@ -4,6 +4,8 @@ A prompt such as "you're root" assigns this role and starts startup immediately.
 
 ## Startup
 
+Read the [current recovery disposition](../05-recovery.md#win-root-custody-recorded-state-on-9-october) and latest issue 102 evidence before treating a prior Win recovery pass as present custody. Verify current activation, lease and completed-check deadline; source review, live processes and local active flags are insufficient. Preserve a reserve-held or expired actor and use the existing owned continuation route without duplicate schedules.
+
 1. Identify the actual host and current monitoring custody. Inspect remote actors and establish the genuine bound channel using [principal recovery](../../recovery/principal.md#establish-the-actual-host-and-bound-channel). An SSH failure means unknown, not dead; never borrow an identity or create a competing root.
 2. Read and handle fresh inbox messages, current founder steering and due tracker checkpoints. ACK only full messages actually handled, and verify the native receipts.
 3. Verify the principal's custody and useful work. If it is stopped, diagnose and restore it using [the runbook](../../recovery/principal.md#restore-the-principal), even if the expected helper is missing. Preserve busy/draft/unknown/quota-held actors and prove vacancy before replacement. A message or PID is not resumed work.
