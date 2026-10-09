@@ -31,3 +31,29 @@ The agent checks whether the answer came. If not, it checks that the principal i
 | Gemini, Antigravity | AGENTS.md (configure it to read AGENTS.md) | aplexer wake, runner |
 
 AGENTS.md is the only instruction file in this organization's projects, for every engine. If an engine needs configuration to read it, configure it to read AGENTS.md. The runner wakes any engine that forgets, because it needs nothing from the engine.
+
+## Hook that checks the wake is armed
+
+The instruction alone can be forgotten, so an end-of-turn hook checks it. `scripts/ping/turn-end-check.py` runs when the agent's turn ends. It finds the session (`--session`, ASK_SESSION, APLEXER_TAG, `aplexer whoami`) and reminds it when either an open question in `.local/ask/<session>.json` has no armed wake, or the hook is told the session is about to wait (`--waiting`) and no wake exists at all. A wake counts as armed when `aplexer wake list --json` is non-empty, or, where that subcommand does not exist, when the marker `.local/ask/<session>.wake` names the question. The reminder carries the exact `ask-ledger.py wake-command <id>` line and the fallback: use the engine's own scheduler with the same prompt. Output is `--format claude-stop` (a block reason), `plain` or `json`; `--also-bus` also sends the reminder to the session over the bus.
+
+It acts only in a project that carries `.follows-principal-process` (the workspace or any parent up to its git root). Anywhere else it exits 0 and does nothing.
+
+Loop guard, so a reminder can never become a loop:
+
+- State per session in `.local/ask/<session>.reminders.json`, keyed by a hash of the unresolved condition (question ids and armed state).
+- At most one reminder per condition every 10 minutes, and at most 3 per condition. After that it stays silent and logs once to `.local/ask/turn-end.log`.
+- The entry is cleared when the wake is armed or the question is answered.
+- A re-entrancy guard (env `TURN_END_CHECK_ACTIVE` and a lock file with a 60 second life) stops a turn that ends because of a reminder from re-firing at once. An invocation within 30 seconds of the previous one does nothing.
+- Claude's Stop variant never blocks when the hook input says `stop_hook_active` is true, so it blocks at most once per stop sequence.
+- It always exits 0 and swallows its own errors, so it cannot break the host hook.
+
+Installation is per project, never in user-global config: `scripts/ping/install-turn-end-hooks.sh <project-dir> [--engine claude|codex|zcodex|gemini|opencode|all] [--check] [--join]`. It refuses a project without the marker unless `--join` is given, which creates the marker. `--check` reports each engine and exits 3 if one is missing. `scripts/checks/turn-end-hooks.sh` runs the check in marked projects: it fails for a missing Claude hook and only warns for the other engines.
+
+| Engine | Project-scope mechanism | Status |
+| --- | --- | --- |
+| Claude | `.claude/settings.json` Stop hook | verified, in use |
+| Codex, zcodex | `.codex/hooks.json` Stop hook (same schema as the user-level file) | schema verified, project-file loading and first-run trust not exercised |
+| Gemini | `.gemini/settings.json` AfterAgent hook (project hooks need trust) | verified in the installed CLI code, not exercised |
+| OpenCode | `.opencode/plugin/turn-end-check.js` on `session.idle` | plugin API verified from the installed global plugin, project path not exercised |
+
+Where a hook is missing or does not fire, the wake runner and wake audit remain the backstop.
