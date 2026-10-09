@@ -18,10 +18,10 @@ Work never stops because a question is waiting, and the founder is never the one
 
 1. Ask with a default. The asker writes the question, the options, its recommendation and the best-judgement default: what it will do if nobody answers. It registers and sends it in one step:
    `scripts/ping/ask-ledger.py ask <principal-tag> <id> --text "<question>" --default "<what I will do>" --live`.
-   This records the question in the asker's ledger with a 20-minute deadline and sends it on the bus with the footer "Reply by typing the answer into my session (aplexer send <tag> --enter) AND a bus message; I check again in 20m and then proceed with: <default>".
+   This records the question in the asker's ledger with a 20-minute deadline and sends it on the bus. The message itself carries the reply instruction: the exact command `aplexer send <asker-tag> "<answer>" --enter` to type into the asker's session, the state that session was in when the question was sent (idle at an empty prompt, busy, or unknown, read with read-only aplexer calls), the rule that nothing is typed into a busy, draft or unknown composer, an optional bus copy command, and the footer "I check again in 20m and then proceed with: <default>". A bus message alone is not the answer to an ask.
 2. Keep working. While it waits, the asker continues on the recommended path where that is reversible, and on any other independent work.
 3. Arm the wake before the turn ends. Before the asker ends its tool-call loop it arms a wake for 20 minutes or less, with the standard prompt below, by the first available mechanism in [the mechanisms list](#mechanisms-in-priority-order). An open question with no armed wake is a failure, because nothing will bring the asker back.
-4. The principal answers. It types the answer into the asker's session (`aplexer send <asker-tag> "<answer>" --enter`, only at an idle, empty prompt) and also replies on the bus. Either one counts as the answer. The asker records it with `ask-ledger.py answer <id>`, acts on it and turns the wake off.
+4. The principal answers synchronously. The asker ends its turn right after asking, so its session is normally idle at an empty prompt by the time the principal reads the question. The principal checks that (`aplexer status`, then `aplexer capture --screen --plain`), types the answer into the asker's session (`aplexer send <asker-tag> "<answer>" --enter`) and sends the bus copy too. Only when the session is busy, holds a draft or is in an unknown state does it send the bus copy alone, and it says so in that message. The principal never types into a protected, busy or unknown composer. Either the typed reply or the bus copy counts as the answer (`due` and the wake prompt look at both: the inbox and what was typed into the session). The asker records it with `ask-ledger.py answer <id>`, acts on it and turns the wake off; `answer` and `proceed` also stop the interim self-ping if one was armed.
 5. The wake fires. The asker runs the standard prompt: it looks for the answer in its inbox and its own session. If there is none, it checks that the principal is alive, restarts it if it is dead (see [restarting a dead principal](#restarting-a-dead-principal)), and asks once more.
 6. Proceed and inform. If there is still no answer at the deadline, the asker goes ahead with its default, runs `ask-ledger.py proceed <id> --note "<what I did>"`, tells the principal "no answer after 20 min; proceeding with <default>; tell me to change", and turns the wake off.
 7. The principal may reverse. A later answer from the principal wins. The asker undoes or adjusts what it did, as in [late answers](#a-late-answer-after-the-asker-went-ahead).
@@ -54,19 +54,21 @@ The asker does not start a principal by hand. "Restart" means the asker triggers
 
 1. aplexer wake. `aplexer wake set --once --in 20m --text '<prompt>'` (or `--every 15m` for a repeating ping until `aplexer wake off`). aplexer types the prompt into the agent's own session, and only while it is idle. It works for every engine because it needs nothing from the engine.
 2. The wake runner. `scripts/ping/ask-wake-runner.py`, run every five minutes, reads the ledgers, finds each open question past its deadline and types the standard prompt into the asking session, but only when that session is idle or waiting with an empty prompt. The asker marks its wake with `ask-ledger.py wake-armed <id>`. This also works for every engine and is the backstop when the agent forgets.
-3. Claude extras. A Claude session is also held at the end of its turn by the Stop hook (`scripts/ping/stop-guard.py`), and may set a cron or schedule wake-up with the same prompt. These add coverage for Claude only and are never the only mechanism.
+3. Claude extra. A Claude session is also held at the end of its turn by the Stop hook (`scripts/ping/stop-guard.py`). This adds coverage for Claude only and is never the only mechanism. Built-in cron and schedule tools are not a mechanism here; the founder rejected them for this.
+
+Interim, while `aplexer wake` is not installed: the self-ping fallback, which sits first in practice. `scripts/ping/ask-ledger.py wake-fallback <id> [--in 20m] --live` starts a detached process (its own session, so it survives the shell) that sleeps until the deadline and then types the standard wake prompt into the asker's own session with `aplexer send ... --enter`, only if the session is idle with an empty prompt. If it is busy or has a draft, it retries every 60 seconds for up to 10 minutes, then gives up and logs to `.local/ask/<session>.fallback.log`. It writes the `wake-armed` marker itself, records its pid in the ledger (shown by `ask-ledger.py status`), is killed by `answer` or `proceed`, and refuses to arm a second time for the same question. It is dry-run unless `--live`. The hooks and `wake-command` print this command instead of `aplexer wake set` whenever `aplexer wake --help` fails. It is a stopgap: once `aplexer wake` is installed, `wake-command` goes back to printing `aplexer wake set` and the fallback is no longer instructed. It needs no scheduler or timer, but it dies with the host or a reboot, and then the runner (2) is the backstop once its timer is installed.
 
 AGENTS.md is the only instruction file for every engine in this organisation's projects. Where an engine has to be configured to read it, the launch owner configures it that way.
 
 | Engine | Wake mechanisms |
 | --- | --- |
-| Codex, zcodex | aplexer wake, runner |
-| OpenCode (Muse, Space Bunny) | aplexer wake, runner |
-| Grok | aplexer wake, runner |
-| Claude | aplexer wake, runner, Stop hook, cron |
-| Gemini, Antigravity | aplexer wake, runner |
+| Codex, zcodex | aplexer wake (not installed), interim self-ping, runner (timer not installed) |
+| OpenCode (Muse, Space Bunny) | aplexer wake (not installed), interim self-ping, runner (timer not installed) |
+| Grok | aplexer wake (not installed), interim self-ping, runner (timer not installed) |
+| Claude | aplexer wake (not installed), interim self-ping, runner (timer not installed), Stop hook |
+| Gemini, Antigravity | aplexer wake (not installed), interim self-ping, runner (timer not installed) |
 
-The runner and the wake audit cover every engine mechanically even when an agent misses the instruction.
+The interim self-ping is the only one of these that works today without anything new installed, and it has been tested only against a fake aplexer. The runner and the wake audit cover every engine mechanically even when an agent misses the instruction.
 
 ## Enforcement
 
@@ -90,7 +92,8 @@ All of this applies only to projects that take part in this organisation. A proj
 | Piece | Status |
 | --- | --- |
 | `aplexer wake` | Not installed. The installed aplexer is 0.1.10 and has no `wake` or ping command. The feature exists only on the reviewed branch `self-wakeup-20261007` and awaits an authorized build, merge and install. |
-| Ask ledger, standard prompt, wake command | In the repo, working. |
+| Ask ledger, standard prompt, wake command | In the repo, working. The ask text carries the synchronous-reply command. |
+| Interim self-ping (`ask-ledger.py wake-fallback`) | In the repo and instructed by `wake-command`, `turn-end-check.py` and `stop-guard.py` while `aplexer wake --help` fails. Tested against a fake aplexer only; never run against a live session. Not yet enforced: nothing checks that the principal actually types its reply synchronously, and the process does not survive a host reboot. Replaced by `aplexer wake` once installed. |
 | Wake runner | In the repo, with a 5-minute timer template. Timer not installed. |
 | Claude Stop hook | Installed in this repo's local `.claude/settings.json`. |
 | Wake audit | In the repo, with a 15-minute timer template. Timer not installed, and it exits without acting while aplexer has no `wake`. |
