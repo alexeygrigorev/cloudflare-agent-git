@@ -59,7 +59,13 @@ A claim says "I am editing these paths". It is a declaration made with `aplexer 
 
 - The rule. A claim not renewed for more than 30 minutes is EXPIRED. The clock is the declaration's `updated_at_ms`. The limit can be changed with `CLAIM_TTL_MINUTES`, and the default is 30.
 - Renewing. The holder re-runs `aplexer work join` with the same scopes, which sets `updated_at_ms` to now. Nothing else renews a claim. For a file bus claim the equivalent is to write the claim again. A holder who is done runs `aplexer work leave`.
-- What expired means. It stops blocking others: the claims check shows it as a warning and lets their commit pass. It also stops authorizing its holder: a commit that touches files covered only by the holder's own expired claim fails with `claim expired N min ago: re-run aplexer work join to reclaim`.
+- What expired means. Expiry is a reminder, a stale-status annotation and a prompt for the holder to re-claim. It is never a release, and age never authorizes taking over unknown live product-writer edits, launcher leases, file bus claims or protected drafts. Four points:
+  1. An expired peer claim that overlaps a staged file is a warning: `claim by <tag> expired N min ago: owner unconfirmed; ask the owner or the principal before editing; age never releases a claim`. It does not authorize the committer: a file outside the committer's own fresh claim fails exactly as an unclaimed path does.
+  2. The committer's own expired claim fails with `claim expired N min ago: re-run aplexer work join to reclaim`. This is the only effect of expiry, and it falls on the holder.
+  3. Read mode stays non-blocking.
+  4. `scripts/ping/claims-audit.py` labels expired entries `EXPIRED (annotation only, not released)`.
+
+  Expiry never transfers ownership; only the owner's release, the principal's reconciliation or authoritative terminal custody does.
 - Who is reminded. `scripts/ping/claims-audit.py` lists every declaration with its age and marks the expired ones. With `--live` it sends each holder that is still running the message "your claim expired; reclaim with aplexer work join or release with aplexer work leave", at most once per holder per 30 minutes. The default is a dry-run that sends nothing and changes nothing.
 - File bus claims. The audit reads them only when a local store is readable. Otherwise it prints `FileBus claims: no reader, expiry unenforced`, and those claims keep their old behaviour until the owners of aplexer add native expiry.
 - Exceptions. A declaration in read mode never blocks anyone, so its age does not matter. `PRINCIPAL_OVERRIDE` still passes the commit check, with its reason logged.

@@ -24,7 +24,8 @@ import time
 ROOT = os.environ.get("CLAIMS_AUDIT_ROOT") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 APLEXER = os.environ.get("CLAIMS_AUDIT_APLEXER", "aplexer")
 REMIND_EVERY_S = 30 * 60
-REMINDER = "your claim expired; reclaim with aplexer work join or release with aplexer work leave"
+EXPIRED_LABEL = "EXPIRED (annotation only, not released)"
+REMINDER ="your claim expired; reclaim with aplexer work join or release with aplexer work leave"
 NO_READER = "FileBus claims: no reader, expiry unenforced"
 
 
@@ -103,14 +104,14 @@ def main(argv=None):
     print(f"claims (TTL {ttl:g} min){'' if a.live else '  [dry-run]'}")
     for r in rows:
         age = "no timestamp" if r["age_min"] is None else f"{r['age_min']:.0f} min"
-        print(f"{'EXPIRED' if r['expired'] else 'ok     '} {r['mode'] or '?':5} {r['tag']} [{r['state']}] age {age} "
+        print(f"{EXPIRED_LABEL if r['expired'] else 'ok     '} {r['mode'] or '?':5} {r['tag']} [{r['state']}] age {age} "
               f"{r['workspace']} scopes={','.join(r['scopes'][:3])}{'...' if len(r['scopes']) > 3 else ''}")
     fb, note = filebus_claims(now_ms, ttl)
     if fb is None:
         print(note)
     else:
         for c in fb:
-            print(f"{'EXPIRED' if c['expired'] else 'ok     '} filebus {c['tag']} age {c['age_min']:.0f} min")
+            print(f"{EXPIRED_LABEL if c['expired'] else 'ok     '} filebus {c['tag']} age {c['age_min']:.0f} min")
 
     state_path = os.path.join(a.local_dir, "claims-audit-state.json")
     try:

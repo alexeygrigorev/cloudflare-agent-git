@@ -43,8 +43,10 @@ def is_expired(d, now_ms, ttl):
 
 
 def evaluate(files, ctx, now_ms=None, ttl=None):
-    """A declaration not renewed (updated_at_ms) within the TTL is EXPIRED: it neither
-    blocks others nor authorizes its holder. Renew by re-running `aplexer work join`."""
+    """A declaration not renewed (updated_at_ms) within the TTL is EXPIRED: a reminder and
+    stale-status annotation only. It never releases the claim and never authorizes anyone
+    to take over; the committer still needs their own fresh claim (holder re-claims with
+    `aplexer work join`). An expired peer claim is a warning, not permission."""
     ws = ctx.get("workspace")
     now_ms = now_ms if now_ms is not None else int(time.time() * 1000)
     ttl = ttl if ttl is not None else ttl_minutes()
@@ -73,7 +75,8 @@ def evaluate(files, ctx, now_ms=None, ttl=None):
                     key = (peer["session"].get("tag"), tuple(d.get("scopes", [])))
                     if key not in seen_expired and match(f, d.get("scopes", [])):
                         seen_expired.add(key)
-                        warns.append(f"{f}: claim of {key[0]} expired {age_minutes(d, now_ms):.0f} min ago; not blocking")
+                        warns.append(f"{f}: claim by {key[0]} expired {age_minutes(d, now_ms):.0f} min ago: owner unconfirmed; "
+                                     "ask the owner or the principal before editing; age never releases a claim")
                     continue
                 if match(f, d.get("scopes", [])):
                     msg = f"{f}: claimed by live session {peer['session'].get('tag')}"

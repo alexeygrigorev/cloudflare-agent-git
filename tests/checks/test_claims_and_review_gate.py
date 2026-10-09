@@ -28,8 +28,16 @@ class Claims(unittest.TestCase):
                                "declarations": [{"workspace": "/w", "scopes": ["a/**"], "stale": False, "mode": peer_mode,
                                                  "updated_at_ms": now - peer_age * 60000}]}]}
         ev = lambda x: C.evaluate(["a/x"], x, now_ms=now, ttl=30)
-        self.assertEqual(ev(c(5, 100))[0], [])                      # expired peer does not block
-        self.assertTrue(any("expired" in w for w in ev(c(5, 100))[1]))
+        self.assertEqual(ev(c(5, 100))[0], [])                      # inside own fresh claim: warning only
+        w = ev(c(5, 100))[1]
+        self.assertTrue(any("claim by p expired 100 min ago: owner unconfirmed; ask the owner or the principal "
+                            "before editing; age never releases a claim" in x for x in w))
+        self.assertFalse(any(k in x.lower() for x in w for k in ("released", "free", "available")))
+        # expired peer does not authorize the committer: outside own claim still fails
+        outside = {**c(5, 100), "you": {"declaration": {"scopes": ["z/**"], "updated_at_ms": now - 5 * 60000}}}
+        self.assertEqual(C.evaluate(["a/x"], outside, now_ms=now, ttl=30)[0], ["a/x: outside own claim"])
+        unclaimed = {**c(5, 100), "you": {"declaration": {}}}
+        self.assertTrue(any("expired" in x for x in C.evaluate(["a/x"], unclaimed, now_ms=now, ttl=30)[1]))
         self.assertTrue(ev(c(5, 5))[1])                              # live peer, shared: warning
         e = ev(c(45, 5))[0]                                          # own expired: no authority
         self.assertTrue(e and "claim expired 45 min ago: re-run aplexer work join to reclaim" in e[0])
@@ -67,6 +75,7 @@ class ClaimsAudit(unittest.TestCase):
             self.assertEqual(r.returncode, 1)
             self.assertIn("DRY-RUN would send to old", r.stdout)
             self.assertNotIn("to new", r.stdout)
+            self.assertIn("EXPIRED (annotation only, not released)", r.stdout)
             self.assertIn("FileBus claims: no reader, expiry unenforced", r.stdout)
             self.assertEqual(os.listdir(t), ["ctx.json"])
 
