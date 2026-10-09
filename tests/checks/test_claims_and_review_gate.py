@@ -1,4 +1,4 @@
-import os, subprocess, sys, tempfile, unittest, json
+import os, subprocess, sys, tempfile, time, unittest, json
 from pathlib import Path
 R = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(R / "scripts" / "guards"))
@@ -59,6 +59,53 @@ class Claims(unittest.TestCase):
     def test_script_skips_in_ci(self):
         r = subprocess.run(["bash", str(R/"scripts/checks/claims.sh")], env={**os.environ, "CI": "1"}, capture_output=True, text=True)
         self.assertEqual(r.returncode, 0)
+
+class ClaimsRange(unittest.TestCase):
+    """Pre-push range mode: only paths in the pushed commit range are checked (C-0506)."""
+    NOW = 10_000_000_000
+
+    def run_range(self, own, peers, pushed, staged, own_age=5):
+        c = ctx(own, peers)
+        c["you"]["declaration"]["updated_at_ms"] = int(time.time() * 1000) - own_age * 60000
+        with tempfile.TemporaryDirectory() as t:
+            git = lambda *a: subprocess.run(["git", "-C", t, "-c", "user.name=t", "-c", "user.email=t@t", *a],
+                                            check=True, capture_output=True, text=True)
+            git("init", "-q")
+            Path(t, "base.txt").write_text("b")
+            git("add", "base.txt"); git("commit", "-q", "-m", "base")
+            for p in pushed:
+                Path(t, p).parent.mkdir(parents=True, exist_ok=True); Path(t, p).write_text("x")
+                git("add", p)
+            git("commit", "-q", "-m", "pushed")
+            for p in staged:
+                Path(t, p).parent.mkdir(parents=True, exist_ok=True); Path(t, p).write_text("y")
+                git("add", p)
+            Path(t, "ctx.json").write_text(json.dumps(c))
+            env = {k: v for k, v in os.environ.items() if k != "PRINCIPAL_OVERRIDE"}
+            env.update(CHECK_MODE="range", CHECK_RANGE="HEAD~1..HEAD")
+            return subprocess.run([sys.executable, str(R / "scripts/guards/claims_check.py"), "--context",
+                                   str(Path(t, "ctx.json"))], cwd=t, env=env, capture_output=True, text=True)
+
+    def test_sibling_staged_path_outside_range_ignored(self):
+        r = self.run_range(["README.md"], [], ["README.md"], ["recovery/principal.md"])
+        self.assertEqual((r.returncode, r.stderr), (0, ""))
+
+    def test_pushed_path_outside_own_claim_still_fails(self):
+        r = self.run_range(["README.md"], [], ["README.md", "other/x.md"], [])
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("other/x.md: outside own claim", r.stderr)
+
+    def test_pushed_path_with_peer_claim_fails(self):
+        r = self.run_range([], [("p", "running", ["docs/**"], False)], ["docs/a.md"], ["zzz/staged.md"])
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("docs/a.md: claimed by live session p", r.stderr)
+        self.assertNotIn("zzz/staged.md", r.stderr)
+
+    def test_own_expired_claim_still_fails_in_range(self):
+        r = self.run_range(["README.md"], [], ["README.md"], [], own_age=45)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("claim expired 45 min ago: re-run aplexer work join to reclaim", r.stderr)
+
 
 class ClaimsAudit(unittest.TestCase):
     def test_dry_run_flags_expired_and_never_sends(self):

@@ -84,13 +84,25 @@ def evaluate(files, ctx, now_ms=None, ttl=None):
     return errs, warns
 
 
+def default_files(env=None):
+    """Files to check when --files is absent. Range mode (pre-push, CI: CHECK_MODE=range with
+    CHECK_RANGE=A..B) considers only paths in the pushed range, never unrelated staged paths;
+    otherwise the staged diff (pre-commit)."""
+    env = os.environ if env is None else env
+    if env.get("CHECK_MODE") == "range" and env.get("CHECK_RANGE"):
+        cmd = ["git", "diff", "--name-only", "--diff-filter=AMR", env["CHECK_RANGE"], "--"]
+    else:
+        cmd = ["git", "diff", "--cached", "--name-only"]
+    return subprocess.check_output(cmd, text=True).split()
+
+
 def main(argv=None):
     p = argparse.ArgumentParser()
     p.add_argument("--context")
     p.add_argument("--files", nargs="*")
     a = p.parse_args(argv)
     ctx = json.load(open(a.context)) if a.context else json.loads(subprocess.check_output(["aplexer", "context", "--json"], text=True))
-    files = a.files if a.files is not None else subprocess.check_output(["git", "diff", "--cached", "--name-only"], text=True).split()
+    files = a.files if a.files is not None else default_files()
     errs, warns = evaluate(files, ctx)
     for w in warns:
         print("claims: warn: " + w, file=sys.stderr)
