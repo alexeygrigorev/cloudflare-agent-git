@@ -13,6 +13,7 @@ import hashlib
 import json
 import logging
 import os
+import socket
 import sys
 import uuid
 from dataclasses import asdict, dataclass, field
@@ -384,7 +385,8 @@ class ConsumerExecutionAdapter:
             "artifact_path": unit.artifact_path,
             "artifact_sha256": unit.artifact_sha256,
             "session_id": None,
-            "execution_target": resolve_execution_target(device_id=unit.device_id),
+            # Work executes where this consumer runs (the bus hub), not on the requesting device.
+            "execution_target": resolve_execution_target(hostname=socket.gethostname()),
         }
         if unit.error:
             reply_data["error"] = unit.error

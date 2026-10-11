@@ -33,7 +33,7 @@ class MachineStatus(unittest.TestCase):
         with open(os.path.join(self.tmp, "_docs/ok.md"), "w") as f:
             f.write("Machines are listed in coordination/MACHINES.json.\n")
         with open(os.path.join(self.tmp, "AGENTS.md"), "w") as f:
-            f.write("Root reaches work machines by ssh.\n")
+            f.write("Root reaches Hetzner by ssh; home machines use the Agent Bus.\n")
         sh(self.tmp, "git", "add", "-A")
         sh(self.tmp, "git", "commit", "-qm", "init")
 

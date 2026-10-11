@@ -1,36 +1,97 @@
 {
-  "version": 1,
+  "version": 2,
   "root": {
     "identity": "Grok Bot Cloudflare Root",
     "host": "Alexey's shared Linux computer",
-    "reaches_machines_by": "ssh",
-    "note": "No competing root on any machine."
+    "reaches_machines_by": "ssh to Hetzner only; home-network machines only through the Agent Bus on Hetzner, which they connect out to",
+    "note": "No competing root on any machine. Root coordinates across machines; it never opens a connection into a home machine."
   },
-  "rule": "If a machine is on and reachable, work runs on it; otherwise work runs on the machines that are reachable.",
+  "rule": "Work runs on available machines. Hetzner is available when its ssh probe answers. A home-network machine (no inbound connections) is available when it has checked in on the Agent Bus within the freshness window; it receives work as bus messages it pulls and talks to other machines through the bus. Root coordinates.",
+  "bus": {
+    "hub": "hetzner",
+    "store": "~/.local/share/agent-bus-win35/store",
+    "store_kind": "agent-bus FileBus (identities.json, messages.json)",
+    "role_authority_config": "~/git/cloudflare-agent-git/.local/win35-root-authority/authority.json",
+    "endpoints": {
+      "role_authority": {
+        "port": 8801,
+        "service": "win35-role-authority.service",
+        "auth": "mTLS client certificate scoped to enrolled actors",
+        "paths": [
+          "/v1/role-control",
+          "/v1/native-channel",
+          "/v1/sink-proof",
+          "/v1/host-recovery"
+        ]
+      },
+      "win35_adapter": {
+        "port": 8788,
+        "service": "agent-bus-win35-adapter.service",
+        "auth": "mTLS client certificate plus allowlisted device/project scope",
+        "paths": [
+          "/v1/register",
+          "/v1/send",
+          "/v1/inbox",
+          "/v1/ack",
+          "/v1/accept",
+          "/v1/complete"
+        ]
+      }
+    },
+    "checkin_window_seconds": 900,
+    "checkin_signals": "role authority agents.seen and live role leases (mTLS, port 8801); bus messages sent and ack/accept/complete of messages addressed to the machine's identities. Identity registration alone does not count (Hetzner-side enrollment registers identities on a home machine's behalf)."
+  },
   "machines": [
     {
       "id": "hetzner",
       "name": "Hetzner devbox",
       "hostname": "RMTHZ",
-      "ssh": "hetzner",
+      "network": "public",
+      "connect": {
+        "mode": "inbound-ssh",
+        "ssh": "hetzner"
+      },
       "execution_target": "hetzner-rmthz",
-      "roles": ["work"]
+      "roles": [
+        "work",
+        "bus-hub"
+      ]
     },
     {
       "id": "win35",
       "name": "Win35",
       "hostname": "DESKTOP-FP4OP26",
-      "ssh": "win35",
+      "network": "home",
+      "connect": {
+        "mode": "outbound-bus",
+        "inbound_ssh": false,
+        "bus_device_ids": [
+          "DESKTOP-FP4OP26",
+          "win35-device-01"
+        ]
+      },
       "execution_target": "win35-desktop-fp4op26",
-      "roles": ["work", "desktop"]
+      "roles": [
+        "work",
+        "desktop"
+      ]
     },
     {
       "id": "founder-laptop",
       "name": "Founder's laptop",
-      "hostname": null,
-      "ssh": "laptop",
+      "hostname": "LAPTOP-PHA6TCNC",
+      "network": "home",
+      "connect": {
+        "mode": "outbound-bus",
+        "inbound_ssh": false,
+        "bus_device_ids": [
+          "LAPTOP-PHA6TCNC"
+        ]
+      },
       "execution_target": "founder-laptop",
-      "roles": ["work"]
+      "roles": [
+        "work"
+      ]
     }
   ]
 }

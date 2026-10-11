@@ -26,9 +26,15 @@ Each of the five products has its own team, repo and tracker. A team is the head
 
 ## Machines
 
-Work machines available to the team are listed in [coordination/MACHINES.json](../../coordination/MACHINES.json) (Hetzner devbox RMTHZ; Win35 / DESKTOP-FP4OP26; the founder's laptop; and any others added there). That file has names, ssh routes and roles, and no on/off status field. Rule: if a machine is on and reachable, work runs on it; otherwise work runs on the machines that are reachable. Probe at run time with `python3 scripts/machines.py reachable` (or `scripts/launch_gates.py --reachable-hosts`).
+Work machines are listed in [coordination/MACHINES.json](../../coordination/MACHINES.json), with how each one connects and no on/off status field:
 
-Root is the Grok Bot 'Cloudflare Root' on Alexey's shared Linux computer. It reaches work machines by ssh and talks to the principal and heads through the desktop-orchestrator mailbox. There is no competing root on any machine; do not start a Win35 root while the Grok Bot is root.
+- **Hetzner devbox** (`RMTHZ`, public): accepts inbound ssh (alias `hetzner`). It also hosts the Agent Bus: the role authority on port 8801 (`win35-role-authority.service`, mTLS) and the Agent Bus adapter on port 8788 (`agent-bus-win35-adapter.service`, mTLS), both over the FileBus store `~/.local/share/agent-bus-win35/store`.
+- **Win35** (`DESKTOP-FP4OP26`, home network): outbound only. Nothing can ssh into it; it connects out to the Agent Bus on Hetzner.
+- **Founder's laptop** (`LAPTOP-PHA6TCNC`, home network): outbound only, the same way as Win35.
+
+Rule: work runs on available machines. Hetzner is available when its ssh probe answers. A home machine is available when it has checked in on the bus within the freshness window (default 15 minutes, `bus.checkin_window_seconds` or `MACHINES_CHECKIN_WINDOW_SECONDS`). A check-in is a record the machine itself caused: role-authority presence (`agents.seen`, a live role lease) or bus traffic (a message sent, or an ack/accept/complete of a message addressed to it). Registering an identity alone does not count. Home machines receive work as bus messages they pull from their inbox, and they talk to each other through the bus. Nobody, including root, opens a connection into a home machine. Check at run time with `python3 scripts/machines.py available` (or `scripts/launch_gates.py --reachable-hosts`); `python3 scripts/machines.py route <machine>` prints how work reaches a machine (ssh for Hetzner, a bus message for home machines).
+
+Root is the Grok Bot 'Cloudflare Root' on Alexey's shared Linux computer. It reaches Hetzner by ssh, talks to the principal and heads through the desktop-orchestrator mailbox, and coordinates the home machines through the Agent Bus on Hetzner. There is no competing root on any machine; do not start a Win35 root while the Grok Bot is root.
 
 ## Where they run
 

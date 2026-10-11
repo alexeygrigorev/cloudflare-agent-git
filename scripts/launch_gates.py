@@ -76,12 +76,18 @@ def check_launch(memory, pids, free_bytes, promised_bytes=0,
     return {"launch_allowed": True, "cleanup_agent": cleanup}
 
 
-def reachable_work_hosts(probe=None, path=None):
-    """Return work machines that answer the ssh probe (skip unreachable)."""
+def reachable_work_hosts(probe=None, path=None, checkins=None, now=None, window=None):
+    """Return available work machines (skip the rest).
+
+    Hetzner (inbound-ssh) is available when the ssh probe answers. Home-network
+    machines (outbound-bus) are never ssh-probed: they are available iff they
+    checked in on the Agent Bus within the freshness window, and work reaches
+    them as bus messages they pull (see machines.work_route).
+    """
     if select_reachable is None:
         raise LaunchRefused("machines module unavailable")
     pool = list_machines(path, roles=["work"])
-    return select_reachable(pool, probe=probe, path=path)
+    return select_reachable(pool, probe=probe, path=path, checkins=checkins, now=now, window=window)
 
 
 def main(argv=None):
@@ -94,11 +100,12 @@ def main(argv=None):
     ap.add_argument("--reviewer-model")
     ap.add_argument("--reviewer", action="store_true", help="this launch is a reviewer")
     ap.add_argument("--reachable-hosts", action="store_true",
-                    help="probe MACHINES.json ssh aliases and print reachable work hosts")
+                    help="print available work hosts (ssh probe for Hetzner, bus check-ins for home machines)")
     a = ap.parse_args(argv)
     if a.reachable_hosts:
         hosts = reachable_work_hosts()
-        print(json.dumps({"reachable": [m["id"] for m in hosts], "count": len(hosts)}))
+        print(json.dumps({"reachable": [m["id"] for m in hosts], "count": len(hosts),
+                          "routes": {m["id"]: (m.get("connect") or {}).get("mode") for m in hosts}}))
         return 0 if hosts else 75
     try:
         out = check_launch(a.memory, a.pids, shutil.disk_usage(a.disk_path).free,
