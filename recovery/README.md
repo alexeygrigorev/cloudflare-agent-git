@@ -28,7 +28,7 @@ The desktop/native harness contract above remains `collaboration.spawn_agent` wi
 
 The corrected producer/receiver pair has source acceptance only. The published [receiver checkpoint](root-accountability/receiver-source/README.md) precedes that pair correction; it does not contain a deployed Win producer. Full host event approval, admitted native child rehearsal and cold joint adoption remain unaccepted. A helper completion or fixture pass cannot extend the completed-check deadline.
 
-The [incident/current custody disposition](../_docs/05-recovery.md#win-root-custody-recorded-state-on-9-october) distinguishes the historical automatic kill pass from the later check-expiry failure. The actual reserve gate currently holds new paid child effects. Preserve the required Luna obligation and its next fresh admission check; do not silently substitute another model, report a held dispatch as a passed check or revive an expired role. The existing owned Guardian/controller is the continuation route; this candidate creates no timer or watcher.
+The [retired Win35 root history](../_docs/05-recovery.md#retired-win35-root-history) distinguishes the historical automatic kill pass from the later check-expiry failure. Alexey retired the Win35 root on 11 October 2026; its Guardian/controller is not the continuation route. Periodic checks now run as fresh Grok Bot subagents owned by the Grok Bot root ([root](../_docs/team/02-root.md#existing-checks-and-delivery)). Do not report a held dispatch as a passed check or revive an expired role.
 
 ## Focused delegate instructions
 

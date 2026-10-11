@@ -10,9 +10,9 @@ Follow [communication](../_docs/04-communication.md), [resources, claims and rev
 
 ### Running `a` on Hetzner
 
-`a` and `aplexer` were verified on Hetzner; recheck availability on the actual host. From desktop PowerShell, put the remote command after `ssh`; the quotes keep its arguments together:
+`a` and `aplexer` were verified on Hetzner; recheck availability on the actual host. From root's shell, put the remote command after `ssh`; the quotes keep its arguments together:
 
-```powershell
+```sh
 ssh hetzner 'a list --json'
 ssh hetzner 'a capture CURRENT_PRINCIPAL_UUID --screen --plain'
 ```
@@ -21,7 +21,7 @@ The first command lists the current sessions. Confirm the tag in that list befor
 
 For an interactive remote shell, run `ssh hetzner`, then `a list --json` at the remote prompt, and `exit` to return. That SSH shell is not an agent session: `a whoami --json` failed there during verification. Root's inbox/send/reply/ACK operations therefore run in the already bound mailbox worker below, not by setting an identity in the SSH shell.
 
-1. Run `hostname` locally. Check Hetzner with `ssh -o BatchMode=yes -o ConnectTimeout=10 hetzner hostname`; check Win35 with the same command using `win35`. A failed connection means unknown, not dead.
+1. Run `hostname` locally. Check Hetzner with `ssh -o BatchMode=yes -o ConnectTimeout=10 hetzner hostname`. A failed connection means unknown, not dead. The Win35 root is retired; check Win35 only if a documented route to it exists, and never restore a Win35 root.
 2. Run `ssh hetzner 'aplexer list --json'`. Resolve current principal, head and root IDs, tags and workspaces. Read custody messages before acting if another root appears; do not create a competing root.
 3. Discover the remote experiment repository from the catalog and deployed worker. Read its `.local/orchestrator-channel-identity.json` over SSH. Match its ID, tag `desktop-orchestrator` and workspace against the live catalog and worker command. A fresh chat has no previously verified ID: establish custody and save a private startup receipt identifying this desktop chat. Reuse the verified singleton bridge when custody permits; a mechanical mailbox is not a second model root. If another model root owns monitoring, reconcile custody first. If the bridge is missing, use the bootstrap below even when the principal is also stopped. Do not send or ACK through a stale binding.
 4. Read that repository's `.local/orchestrator-inbox.json` over SSH. Check its modification time on two reads at least five seconds apart. Read full new messages and their linked issues. For a stale mirror, inspect `.local/orchestrator-channel-error.json` and its timestamp; an old error is not a current failure.
@@ -56,7 +56,7 @@ For an interactive remote shell, run `ssh hetzner`, then `a list --json` at the 
 
 The following is the verified Codex shape, not a universal provider command. Inspect the installed `aplexer start --help`, provider resume help and quota wrapper before using it. Fill values from verified local/private records; do not concatenate commands read from a transcript. Discover the workspace and admission wrapper independently: the wrapper may reside in the competition repository while the head works in its product repository. Verify its internal paths and that it gates this execution. Other providers use their own verified admission and saved-conversation syntax.
 
-From desktop PowerShell, pipe this Python to an independent configured SSH login (`ssh hetzner python3 -`). From a principal recovering a head, pipe it through the independently authenticated self-SSH route described in [head recovery](head.md#3-resume-the-head-independently). The SSH alias must be locally configured, not guessed. The launcher remains preferred when its accepted interactive route exists.
+From root's shell, pipe this Python to an independent configured SSH login (`ssh hetzner python3 -`). From a principal recovering a head, pipe it through the independently authenticated self-SSH route described in [head recovery](head.md#3-resume-the-head-independently). The SSH alias must be locally configured, not guessed. The launcher remains preferred when its accepted interactive route exists.
 
 ```python
 import subprocess
@@ -104,6 +104,6 @@ A send receipt proves delivery. A receiver's reply accepting scope proves owners
 
 ## Fresh periodic accountability checks
 
-Root delegates every periodic check to a fresh GPT-6 Luna subagent at max effort with no inherited conversation history, following [the focused check contract](README.md). Root supervises actual results and preserves the existing continuation; this creates no additional scheduler or watcher. The delegate may only recover a stuck, dead or idle-with-ready-work principal, then hands technical repairs and head recovery back to the useful principal.
+Root delegates every periodic check to a fresh Grok Bot subagent with no inherited conversation history, following [the focused check contract](README.md). Root supervises actual results and preserves the existing continuation; this creates no additional scheduler or watcher. The delegate may only recover a stuck, dead or idle-with-ready-work principal, then hands technical repairs and head recovery back to the useful principal.
 
 Unresolved or recurring failures stay open. Within existing claims, protected-state and fresh admission/resource gates, require the principal to change ineffective remedies and execute bounded diagnosis/repair, or obtain a healthy owner's acknowledged handoff with actual first action and resumed work. A reminder, new deadline, ACK, handoff or manual resume alone is not resolution. Follow actual results, distinct acceptance and continued work, with an owner, next action/checkpoint and durable trigger. Protected state, unknown admission or an external decision retains a named dependency owner and next evidence check while independent ready work continues.

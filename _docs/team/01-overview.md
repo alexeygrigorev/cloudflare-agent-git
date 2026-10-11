@@ -5,7 +5,7 @@ The team is the founder plus AI agents, each in one role. Your launch prompt ass
 ## Leadership
 
 - Founder (Alexey, the human). Accountable for goals, money, accounts, the final contest entry and the daily standup. He never babysits agents or chases status.
-- Root. One GUI session on the founder's laptop or on Win35. Watches the principal and the heads and makes sure they are running, relays what the founder says to the principal or the head it concerns, and brings back what he needs. See 02-root.md.
+- Root. The Grok Bot 'Cloudflare Root', the only root, appointed by Alexey on 11 October 2026. The Win35 root is retired. Root watches the principal and the heads and makes sure they are running, relays what the founder says to the principal or the head it concerns, and brings back what he needs. See 02-root.md.
 - Principal. One aplexer session, or two peers. Accountable for the big picture across all products, and for the high-level tasks. See 03-principal.md.
 
 ## Product teams
@@ -29,7 +29,7 @@ Each of the five products has its own team, repo and tracker. A team is the head
 Every TUI launch or resume owner follows [the screen check](../04-communication.md#checking-a-tui-launch), including root starting a principal, a principal starting heads, and heads starting TUI workers or reviewers. Accept the known project trust prompt only after verifying the intended session and authorized workspace; verify readiness and first useful action after it clears.
 
 - The principal and the heads run in aplexer sessions. When one is missing, root or the principal restarts it by hand with the runbooks in `_docs/05-recovery.md`; automatic launching is tracked in issue 102.
-- Root runs in a GUI session on the founder's laptop or on Win35. It never runs on Hetzner, which is a server without a GUI, and never headless. It reaches Hetzner and the other machine with ssh.
+- Root is the Grok Bot 'Cloudflare Root'. It runs headless on Alexey's shared Linux computer, not on Hetzner. It reaches Hetzner with ssh and talks to the principal and heads through the desktop-orchestrator mailbox. The Win35 root was retired on 11 October 2026.
 - Implementers and reviewers run headless. They never get their own aplexer session.
 
 ## Who talks to whom

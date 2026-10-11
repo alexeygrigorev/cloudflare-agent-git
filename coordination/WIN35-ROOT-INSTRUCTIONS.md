@@ -1,3 +1,5 @@
+> **SUPERSEDED.** Alexey retired the Win35 root on 11 October 2026. The only root is now the Grok Bot 'Cloudflare Root' (see [AGENTS.md](../AGENTS.md#root--alexey-11-october-2026)). This file is history: do not start, restore or follow a Win35 root from it.
+
 # Win35 root: operational ownership and startup
 
 Authority: [human instruction, 7 October 2026](../experiment/human-win35-new-root-instructions-20261007.txt). Read the [desktop failure analysis](../research/orchestrator/WIN35-ROOT-LESSONS-20261007.md). This mandate supersedes older descriptions of root as merely a forwarding interface or rules prohibiting the operational monitoring necessary here. It does not waive product ownership, distinct review, identity, privacy, quotas, resources, spending or recovery safeguards.

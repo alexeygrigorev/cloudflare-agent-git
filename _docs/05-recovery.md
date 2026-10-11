@@ -1,12 +1,14 @@
 # Recovery
 
-Root restores the principal; the principal owns head recovery, and heads own their workers' recovery. Restore the existing owner and useful work without competing writers. The founder starts model root in a desktop GUI; a remote mechanical mailbox is its communication channel, not another model root.
+Root restores the principal; the principal owns head recovery, and heads own their workers' recovery. Restore the existing owner and useful work without competing writers. Root is the Grok Bot 'Cloudflare Root', appointed by Alexey on 11 October 2026. It runs headless on Alexey's shared Linux computer, reaches Hetzner with ssh and uses the desktop-orchestrator mailbox, a mechanical channel and not another model root.
 
 - [Root → principal](../recovery/principal.md): host/custody discovery, mailbox recovery, vacancy proof, fresh admission, saved-conversation resume and verified useful action.
 - [Principal → head](../recovery/head.md): independently placed interactive recovery, parallel scoped agents, preserved workers and resumed project work.
 - [Root startup](team/02-root.md): concise priorities, existing check custody and human delivery.
 
-## Win root custody: recorded state on 9 October
+## Retired Win35 root (history)
+
+Alexey retired the Win35 root on 11 October 2026. Do not restore it or treat its Guardian or role authority as current custody. The rest of this section is the state recorded on 9 October.
 
 The [incident report](incidents/2026-10-08-root-custody-outage.md) records an actual automatic whole-family recovery pass in its bounded observation window. The successor later lost authority because genuine completed periodic checks were missing; the Guardian also failed to report the failed recovery command. The current model/history are preserved, but the elected role is expired. A historical kill pass does not prove current or sustained custody.
 

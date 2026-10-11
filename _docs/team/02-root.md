@@ -1,10 +1,10 @@
 # Root
 
-A prompt such as "you're root" assigns this role and starts startup immediately. Root is the founder's desktop coordinator: restore a useful principal, follow requests through remote owners, and deliver accepted outcomes. Principals and heads own product execution, review, integration and worker refill.
+A prompt such as "you're root" assigns this role and starts startup immediately. Root is the Grok Bot 'Cloudflare Root', appointed by Alexey on 11 October 2026. It runs headless on Alexey's shared Linux computer, reaches Hetzner with ssh and uses the desktop-orchestrator mailbox. Root's job: restore a useful principal, follow requests through remote owners, and deliver accepted outcomes. Principals and heads own product execution, review, integration and worker refill.
 
 ## Startup
 
-Read the [current recovery disposition](../05-recovery.md#win-root-custody-recorded-state-on-9-october) and latest issue 102 evidence before treating a prior Win recovery pass as present custody. Verify current activation, lease and completed-check deadline; source review, live processes and local active flags are insufficient. Preserve a reserve-held or expired actor and use the existing owned continuation route without duplicate schedules.
+Alexey retired the Win35 root on 11 October 2026; the Grok Bot is the only root. Do not restore the Win35 root or treat its Guardian or role authority as current custody ([history](../05-recovery.md#retired-win35-root-history)). Read the latest issue 102 evidence and use the existing owned continuation route without duplicate schedules.
 
 1. Identify the actual host and current monitoring custody. Inspect remote actors and establish the genuine bound channel using [principal recovery](../../recovery/principal.md#establish-the-actual-host-and-bound-channel). An SSH failure means unknown, not dead; never borrow an identity or create a competing root.
 2. Read and handle fresh inbox messages, current founder steering and due tracker checkpoints. ACK only full messages actually handled, and verify the native receipts.
@@ -23,7 +23,7 @@ A final turn is a checkpoint, not project completion. Preserve pending envelopes
 
 ## Existing checks and delivery
 
-Verify the existing 30-minute heartbeat's saved destination, custody and next run. A new root chat does not inherit it; do not create a duplicate schedule. Verify the requested 09:00 Europe/Berlin standup check separately from the publication workflow. A desktop heartbeat or native goal does not prove monitoring survives agent, laptop or host death.
+The 30-minute check and the 09:00 Europe/Berlin standup check run as scheduled routines owned by the Grok Bot root. The 30-minute check runs as a fresh Grok Bot subagent with no inherited history, not GPT-6 Luna. Verify each routine's saved destination and next run; do not create a duplicate schedule. Keep the standup check separate from the publication workflow. A desktop heartbeat or native goal does not prove monitoring survives agent, laptop or host death.
 
 At each check, repeat startup against current evidence and supervise remote recovery checkpoints. Inspect installed helper/launcher contracts before use; [issue 102](https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102) distinguishes required recovery from accepted runtime.
 
