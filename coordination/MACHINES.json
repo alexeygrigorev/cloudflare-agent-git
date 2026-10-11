@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "root": {
+    "identity": "Grok Bot Cloudflare Root",
+    "host": "Alexey's shared Linux computer",
+    "reaches_machines_by": "ssh",
+    "note": "No competing root on any machine."
+  },
+  "rule": "If a machine is on and reachable, work runs on it; otherwise work runs on the machines that are reachable.",
+  "machines": [
+    {
+      "id": "hetzner",
+      "name": "Hetzner devbox",
+      "hostname": "RMTHZ",
+      "ssh": "hetzner",
+      "execution_target": "hetzner-rmthz",
+      "roles": ["work"]
+    },
+    {
+      "id": "win35",
+      "name": "Win35",
+      "hostname": "DESKTOP-FP4OP26",
+      "ssh": "win35",
+      "execution_target": "win35-desktop-fp4op26",
+      "roles": ["work", "desktop"]
+    },
+    {
+      "id": "founder-laptop",
+      "name": "Founder's laptop",
+      "hostname": null,
+      "ssh": "laptop",
+      "execution_target": "founder-laptop",
+      "roles": ["work"]
+    }
+  ]
+}

@@ -28,7 +28,7 @@ The desktop/native harness contract above remains `collaboration.spawn_agent` wi
 
 The corrected producer/receiver pair has source acceptance only. The published [receiver checkpoint](root-accountability/receiver-source/README.md) precedes that pair correction; it does not contain a deployed Win producer. Full host event approval, admitted native child rehearsal and cold joint adoption remain unaccepted. A helper completion or fixture pass cannot extend the completed-check deadline.
 
-The [Win35 root recorded state](../_docs/05-recovery.md#win35-root-recorded-state-on-9-october) distinguishes the historical automatic kill pass from the later check-expiry failure. The Win35 root role is not active while the Grok Bot is root, so its Guardian/controller is not the continuation route. Win35 itself is temporarily offline, not retired. Periodic checks now run as fresh Grok Bot subagents owned by the Grok Bot root ([root](../_docs/team/02-root.md#existing-checks-and-delivery)). Do not report a held dispatch as a passed check or revive an expired role.
+The [Win35 root recorded state](../_docs/05-recovery.md#win35-root-recorded-state-on-9-october) distinguishes the historical automatic kill pass from the later check-expiry failure. The Win35 root role is not active while the Grok Bot is root, so its Guardian/controller is not the continuation route. Win35 stays a work machine on the team ([Machines](../_docs/team/01-overview.md#machines)). Periodic checks now run as fresh Grok Bot subagents owned by the Grok Bot root ([root](../_docs/team/02-root.md#existing-checks-and-delivery)). Do not report a held dispatch as a passed check or revive an expired role.
 
 ## Focused delegate instructions
 

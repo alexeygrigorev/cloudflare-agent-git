@@ -5,7 +5,7 @@ The team is the founder plus AI agents, each in one role. Your launch prompt ass
 ## Leadership
 
 - Founder (Alexey, the human). Accountable for goals, money, accounts, the final contest entry and the daily standup. He never babysits agents or chases status.
-- Root. The Grok Bot 'Cloudflare Root', the current root, appointed by Alexey on 11 October 2026. Win35 stays on the team as a work machine; its root role is not active while the Grok Bot is root. Root watches the principal and the heads and makes sure they are running, relays what the founder says to the principal or the head it concerns, and brings back what he needs. See 02-root.md.
+- Root. The Grok Bot 'Cloudflare Root', the current root, appointed by Alexey on 11 October 2026. The Win35 root role is not active while the Grok Bot is root. Root watches the principal and the heads and makes sure they are running, relays what the founder says to the principal or the head it concerns, and brings back what he needs. See 02-root.md.
 - Principal. One aplexer session, or two peers. Accountable for the big picture across all products, and for the high-level tasks. See 03-principal.md.
 
 ## Product teams
@@ -24,12 +24,18 @@ Each of the five products has its own team, repo and tracker. A team is the head
 
 - Writer. The existing dedicated Claude Opus writer owns the daily report and every prose change. Root contacts it directly for requests, corrections, progress and delivery; the publication coordinator retains review, release and recovery. Reuse the current article and writer, with the existing privacy, quota and edit-scope gates. See 07-writer.md.
 
+## Machines
+
+Work machines available to the team are listed in [coordination/MACHINES.json](../../coordination/MACHINES.json) (Hetzner devbox RMTHZ; Win35 / DESKTOP-FP4OP26; the founder's laptop; and any others added there). That file has names, ssh routes and roles, and no on/off status field. Rule: if a machine is on and reachable, work runs on it; otherwise work runs on the machines that are reachable. Probe at run time with `python3 scripts/machines.py reachable` (or `scripts/launch_gates.py --reachable-hosts`).
+
+Root is the Grok Bot 'Cloudflare Root' on Alexey's shared Linux computer. It reaches work machines by ssh and talks to the principal and heads through the desktop-orchestrator mailbox. There is no competing root on any machine; do not start a Win35 root while the Grok Bot is root.
+
 ## Where they run
 
 Every TUI launch or resume owner follows [the screen check](../04-communication.md#checking-a-tui-launch), including root starting a principal, a principal starting heads, and heads starting TUI workers or reviewers. Accept the known project trust prompt only after verifying the intended session and authorized workspace; verify readiness and first useful action after it clears.
 
 - The principal and the heads run in aplexer sessions. When one is missing, root or the principal restarts it by hand with the runbooks in `_docs/05-recovery.md`; automatic launching is tracked in issue 102.
-- Root is the Grok Bot 'Cloudflare Root'. It runs headless on Alexey's shared Linux computer, not on Hetzner. It reaches Hetzner with ssh and talks to the principal and heads through the desktop-orchestrator mailbox. Win35 is temporarily offline (since about 9 October); when it is back, heads and cross-computer work resume on it. Do not start a competing root on Win35.
+- Root and the work machines: see [Machines](#machines).
 - Implementers and reviewers run headless. They never get their own aplexer session.
 
 ## Who talks to whom

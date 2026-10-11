@@ -12,6 +12,14 @@ import json
 import re
 import shutil
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    from machines import select_reachable, list_machines
+except ImportError:  # pragma: no cover - direct module load in tests
+    select_reachable = None  # type: ignore
+    list_machines = None  # type: ignore
 
 MAX_MEMORY_BYTES = 1500 * 1024 * 1024
 MAX_PIDS = 256
@@ -68,6 +76,14 @@ def check_launch(memory, pids, free_bytes, promised_bytes=0,
     return {"launch_allowed": True, "cleanup_agent": cleanup}
 
 
+def reachable_work_hosts(probe=None, path=None):
+    """Return work machines that answer the ssh probe (skip unreachable)."""
+    if select_reachable is None:
+        raise LaunchRefused("machines module unavailable")
+    pool = list_machines(path, roles=["work"])
+    return select_reachable(pool, probe=probe, path=path)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--memory", default=None)
@@ -77,7 +93,13 @@ def main(argv=None):
     ap.add_argument("--implementer-model")
     ap.add_argument("--reviewer-model")
     ap.add_argument("--reviewer", action="store_true", help="this launch is a reviewer")
+    ap.add_argument("--reachable-hosts", action="store_true",
+                    help="probe MACHINES.json ssh aliases and print reachable work hosts")
     a = ap.parse_args(argv)
+    if a.reachable_hosts:
+        hosts = reachable_work_hosts()
+        print(json.dumps({"reachable": [m["id"] for m in hosts], "count": len(hosts)}))
+        return 0 if hosts else 75
     try:
         out = check_launch(a.memory, a.pids, shutil.disk_usage(a.disk_path).free,
                            a.promised_bytes, a.implementer_model, a.reviewer_model, a.reviewer)

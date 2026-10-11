@@ -20,6 +20,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+# Team machine registry (coordination/MACHINES.json); no hardcoded host status.
+_SCRIPTS = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+try:
+    from machines import resolve_execution_target
+except ImportError:  # pragma: no cover
+    def resolve_execution_target(device_id=None, hostname=None, **_kw):
+        return device_id or "unknown"
+
 # sys.path handling for /home/alexey/git/agent-coordination and /home/alexey/git/agent-bus
 def _setup_sys_path() -> None:
     this_file = Path(__file__).resolve() if "__file__" in globals() else Path.cwd()
@@ -374,7 +384,7 @@ class ConsumerExecutionAdapter:
             "artifact_path": unit.artifact_path,
             "artifact_sha256": unit.artifact_sha256,
             "session_id": None,
-            "execution_target": "hetzner-rmthz",
+            "execution_target": resolve_execution_target(device_id=unit.device_id),
         }
         if unit.error:
             reply_data["error"] = unit.error

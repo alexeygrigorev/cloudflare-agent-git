@@ -1,6 +1,6 @@
 # Recovery
 
-Root restores the principal; the principal owns head recovery, and heads own their workers' recovery. Restore the existing owner and useful work without competing writers. Root is the Grok Bot 'Cloudflare Root', appointed by Alexey on 11 October 2026. It runs headless on Alexey's shared Linux computer, reaches Hetzner with ssh and uses the desktop-orchestrator mailbox, a mechanical channel and not another model root.
+Root restores the principal; the principal owns head recovery, and heads own their workers' recovery. Restore the existing owner and useful work without competing writers. Root is the Grok Bot 'Cloudflare Root', appointed by Alexey on 11 October 2026. Work machines and the reachability rule are in [Machines](team/01-overview.md#machines). The desktop-orchestrator mailbox is a mechanical channel and not another model root.
 
 - [Root → principal](../recovery/principal.md): host/custody discovery, mailbox recovery, vacancy proof, fresh admission, saved-conversation resume and verified useful action.
 - [Principal → head](../recovery/head.md): independently placed interactive recovery, parallel scoped agents, preserved workers and resumed project work.
@@ -8,7 +8,7 @@ Root restores the principal; the principal owns head recovery, and heads own the
 
 ## Win35 root: recorded state on 9 October
 
-Win35 is not retired. It stays on the team as a work machine and is temporarily offline (since about 9 October) while Alexey is away; when it is back, heads and cross-computer work resume on it, and its services stay in place. The Win35 root role is not active while the Grok Bot is root: do not start a competing root on Win35 or treat its Guardian as current root custody. The rest of this section is the state recorded on 9 October.
+Win35 stays on the team as a work machine (see [Machines](team/01-overview.md#machines)). The Win35 root role is not active while the Grok Bot is root: do not start a competing root on Win35 or treat its Guardian as current root custody. The rest of this section is the state recorded on 9 October.
 
 The [incident report](incidents/2026-10-08-root-custody-outage.md) records an actual automatic whole-family recovery pass in its bounded observation window. The successor later lost authority because genuine completed periodic checks were missing; the Guardian also failed to report the failed recovery command. The current model/history are preserved, but the elected role is expired. A historical kill pass does not prove current or sustained custody.
 
