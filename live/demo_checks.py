@@ -34,7 +34,40 @@ import itertools
 import json
 import os
 import pathlib
+import re
 import shutil
+
+def extract_test_counts(stdout: str) -> Optional[Dict[str, int]]:
+    """Extract test counts from TAP or spec reporter output."""
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    clean_stdout = ansi_escape.sub('', stdout)
+
+    counts = {
+        "tests": None,
+        "suites": None,
+        "pass": None,
+        "fail": None,
+        "cancelled": None,
+        "skipped": None,
+        "todo": None,
+    }
+
+    pattern = re.compile(r'^(?:#|ℹ|\u2139|i|\u2714|\u2718|v|x)\s*(tests|suites|pass|fail|cancelled|skipped|todo)\s+(\d+)$', re.IGNORECASE)
+
+    found_any = False
+    for line in clean_stdout.splitlines():
+        line_s = line.strip()
+        m = pattern.match(line_s)
+        if m:
+            found_any = True
+            key = m.group(1).lower()
+            counts[key] = int(m.group(2))
+
+    if not found_any:
+        return None
+
+    return counts
+
 import subprocess
 import signal
 import sys
@@ -442,33 +475,35 @@ def run_checks(session_path: str) -> Dict[str, Any]:
                         timeout=30.0,
                     )
                     # Parse test output for counts
-                    # Node --test outputs: "# pass N", "# fail N"
-                    pass_count = 0
-                    fail_count = 0
-                    for line in t_proc.stdout.splitlines():
-                        line_s = line.strip()
-                        if line_s.startswith("# pass "):
-                            try:
-                                pass_count = int(line_s.split()[2])
-                            except (IndexError, ValueError):
-                                pass
-                        elif line_s.startswith("# fail "):
-                            try:
-                                fail_count = int(line_s.split()[2])
-                            except (IndexError, ValueError):
-                                pass
+                    counts = extract_test_counts(t_proc.stdout)
 
-                    tests_in_pair = pass_count + fail_count
-                    total_tests_collected += tests_in_pair
+                    if counts is None:
+                        tests_in_pair = None
+                        pass_count_str = "unknown"
+                        fail_count_str = "unknown"
+                    else:
+                        if counts["tests"] is not None:
+                            tests_in_pair = counts["tests"]
+                        else:
+                            tests_in_pair = None
+
+                        pass_count_str = str(counts["pass"]) if counts["pass"] is not None else "unknown"
+                        fail_count_str = str(counts["fail"]) if counts["fail"] is not None else "unknown"
+
+                    if tests_in_pair is None:
+                        all_tests_known = False
+                        total_tests_collected = None
+                    elif total_tests_collected is not None:
+                        total_tests_collected += tests_in_pair
 
                     if t_proc.returncode == 0:
                         status = "clean"
                         kind = None
-                        summary = f"Actual Git merge-tree exit 0; clean source tree tests passed ({pass_count} passed)"
+                        summary = f"Actual Git merge-tree exit 0; clean source tree tests passed ({pass_count_str} passed)"
                     else:
                         status = "conflict"
                         kind = "test"
-                        summary = f"Actual Git merge-tree exit 0, but tests failed ({fail_count} failed, {pass_count} passed)"
+                        summary = f"Actual Git merge-tree exit 0, but tests failed ({fail_count_str} failed, {pass_count_str} passed)"
 
                     output_tail = "\n".join(t_proc.stdout.splitlines()[-10:])
                     pair_results.append({
@@ -479,12 +514,13 @@ def run_checks(session_path: str) -> Dict[str, Any]:
                         "evidence": {
                             "summary": summary,
                             "test_output_tail": output_tail,
-                            "tests_collected": tests_in_pair,
+                            **({"tests_collected": tests_in_pair} if tests_in_pair is not None else {}),
                         },
                     })
                 else:
-                    # Clean merge but no test files found: coverage unknown
-                    all_tests_known = False
+                    # Clean merge but no test files found: coverage known as 0
+                    if total_tests_collected is not None:
+                        total_tests_collected += 0
                     pair_results.append({
                         "pair": pair_key,
                         "heads": pair_heads,
@@ -532,12 +568,14 @@ def run_checks(session_path: str) -> Dict[str, Any]:
                 "budget_s": 15.0,
             },
         },
-        "coverage": {
-            "pairs_checked": len(pair_results),
-            "tests_collected": total_tests_collected,
-        },
         "results": pair_results,
     }
+
+    if total_tests_collected is not None:
+        checks_payload["coverage"] = {
+            "pairs_checked": len(pair_results),
+            "tests_collected": total_tests_collected,
+        }
 
     # 4. Submit typed POST /checks to coordinator
     checks_url = f"{coordinator_url}/checks"
