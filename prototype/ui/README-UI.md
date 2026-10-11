@@ -3,12 +3,18 @@
 Plain static screens for reviewing what concurrent coding agents did:
 `index.html` (overview of all agent tasks) and `task.html?id=…` (one agent's
 change story). No frameworks, no build step, no dependencies — HTML, CSS and
-vanilla JS only. The Worker is expected to serve this folder as static assets
-later; today it runs from any static file server.
+vanilla JS only.
+
+> **Status & Deployment Architecture:**
+> - **Current accepted implementation:** Plain Node + Git on existing Hetzner servers. There is **no Cloudflare deployment or Worker-serving plan**; earlier plans for Worker static asset serving are obsolete and not planned.
+> - **Serving model:** The UI is a pure client-side static asset bundle served from any standard static file server (e.g. `python3 -m http.server 8765`). It connects directly to the plain Node coordinator's REST endpoints (`GET /status`, `GET /tasks/:id`).
+> - **CORS:** The plain Node coordinator (`prototype/src/local/main.ts`) includes CORS headers (`Access-Control-Allow-Origin: *`, `Access-Control-Allow-Headers: Authorization, Content-Type`) and handles OPTIONS preflights cleanly, enabling direct browser access via `?api=http://...`.
+> - **Supported protocol walkthrough:** See [`prototype/README.md`](../README.md) for the verified, self-contained Python protocol walkthrough and portable plain Node test suites.
+> - **Runtime status:** Actual 15:25 live runtime run exited with code 1 (`exit 1`); submitted actors later completed after runtime cleanup. Runtime repair is ongoing; native push, current checks, owner ACK, and physical two-host transport (AC59) remain unaccepted (AC60 interface-only accepted at `f389b716`). The dependent live CLI command gate remains open.
 
 ## Open with fixtures (no server needed for data)
 
-The UI can demo itself from `fixtures/`:
+The UI can demo itself from `fixtures/` without connecting to a live coordinator:
 
 ```bash
 cd prototype/ui
@@ -21,8 +27,7 @@ python3 -m http.server 8765
 #   http://localhost:8765/task.html?id=task-0009&fixture=lost-push
 ```
 
-Rendered evidence (captured with the headless Chromium shell, 2026-10-03):
-`ui-evidence/` — index + task pages for the base and lost-push sets.
+Rendered evidence in `ui-evidence/` (index and task page captures) and historical run 3 screenshots (`live/evidence/run-3/ui-index.png`) represent archival evidence from the 2026-10-03 run, not current execution instructions.
 
 `?fixture=1` loads `status.json`; any other value `<name>` loads
 `status-<name>.json` (and task pages load `<name>-<taskId>.json`).
@@ -31,7 +36,7 @@ Any static file server works. Opening `index.html` directly from disk
 (`file://`) does **not** work, because browsers block `fetch()` of local JSON
 from `file://` pages — the folder must be served over HTTP.
 
-## Live updates (CONTRACT 0.1.3)
+## Live updates (CONTRACT 0.1.3+)
 
 Both pages re-fetch `GET /status` every 3 s and pause while the tab is hidden
 (resuming — with an immediate catch-up fetch — when it becomes visible).
@@ -50,11 +55,11 @@ banner. See `request-guard.js` and `tests/generation-guard.test.js`.
 Newly appeared warnings and pushes are highlighted (amber outline + a “New”
 badge) for 5 s. The first page load only establishes a baseline — nothing is
 highlighted just for being there. In fixture mode the same machinery re-reads
-the fixture files, so editing a fixture is a honest way to demo the
+the fixture files, so editing a fixture is an honest way to demo the
 highlighting and the state transitions.
 
 Warnings are displayed with their acknowledgements from
-`POST /warnings/:id/ack` (the `acks[]` records of the 0.1.3
+`POST /warnings/:id/ack` (the `acks[]` records of the Contract
 `WarningRecord`): who acknowledged, at which head, when, and with which
 note. The legacy `acknowledgedBy[]/acknowledgedAt` shape still renders
 (without head/note). Each agent card and the task page carry a compact
@@ -129,24 +134,36 @@ cd prototype/ui
 node --test        # or: npm test
 ```
 
-## Open against `wrangler dev`
+> **Test Provenance & Status (Historical-Unverified):**
+> - Earlier drafts asserted an assumption of "75/75 pure Node tests pass cleanly". In this entrypoint documentation scope, that assumption is explicitly archived as **unknown / historical-unverified** (HELD/UNVERIFIED).
+> - There is no pinned historical receipt log or fresh execution receipt for `node --test` or `npm test` in the reviewed entrypoint artifacts.
+> - Missing original installed-tree provenance and absence of fresh broad test execution in review scope stay an explicit limitation.
 
-```bash
-cd prototype
-npx wrangler dev --local        # http://localhost:8787
-```
+## Open against Plain Node Coordinator (Hetzner / Local)
 
-Then serve `prototype/ui/` from any static server (as above) and open:
+The accepted coordinator implementation runs on plain Node + Git on Hetzner or locally on loopback. It includes native CORS support, allowing any static file server hosting `prototype/ui/` to query coordinator endpoints directly.
 
-```
-http://localhost:8765/index.html?api=http://localhost:8787
-http://localhost:8765/task.html?id=task-0001&api=http://localhost:8787
-```
+1. **Serve `prototype/ui/` from any static server:**
 
-Caveat: the Worker does not send CORS headers yet, so a browser may block
-cross-origin calls from `:8765` to `:8787`. Same-origin use (no `?api=`)
-works once the Worker serves this folder as static assets — that integration
-is planned on the Worker side and will land with the expected branch merge.
+   ```bash
+   cd prototype/ui
+   python3 -m http.server 8765
+   ```
+
+2. **Open in browser targeting the coordinator API port:**
+
+   Assuming the Node coordinator is listening on port `8787` (or the dynamic port allocated by the walkthrough in [`../README.md`](../README.md)):
+
+   ```
+   http://localhost:8765/index.html?api=http://localhost:8787
+   http://localhost:8765/task.html?id=task-0001&api=http://localhost:8787
+   ```
+
+3. **Authentication:**
+
+   Sensitive coordinator endpoints (`GET /status`, `GET /tasks/:id`) require authentication. When prompted by the UI banner, provide a valid bearer token (`ADMIN_TOKEN`, `RUNNER_TOKEN`, or per-task agent write token). Tokens are passed in `Authorization: Bearer <TOKEN>` headers and persisted only in `sessionStorage` (never in `argv` or URL).
+
+> **No Worker Serving:** Serving this UI from a Cloudflare Worker static asset bundle is neither implemented nor planned. The plain Node coordinator over HTTP with standard static serving is the sole accepted architecture.
 
 ## Data sources and honest fallbacks
 
@@ -155,17 +172,12 @@ is planned on the Worker side and will land with the expected branch merge.
 | `index.html` | `GET /status` | agents, heads, warnings, radar log |
 | `task.html` | `GET /tasks/:id` (+ `GET /status`) | task detail, agent record; status supplies warnings for this agent |
 
-The current L1 scaffold does not yet carry `intent`, `baseSha`, `pushLog`,
-warning acknowledgement (`acknowledgedBy`/`acknowledgedAt`) or
-`testEvidence`. All are optional: when missing, the UI shows plain
-“not recorded / not stated” fallbacks and treats safety as **unknown**, never
-as safe. Fixtures demonstrate the richer shapes the contract is expected to
-grow into.
+In the plain Node coordinator (CONTRACT 0.1.4), endpoints supply `intent`, `baseSha`, and push/warning logs. If fields are omitted or unrecorded, the UI displays clear “not recorded / not stated” fallbacks and treats safety as **unknown**, never as safe.
 
 ## Safety labels (the important rule)
 
 Pair states come **only** from that pair's own radar result in `/status`
-(`status.pairs`, the L1 contract v0.1 `PairStatusView`):
+(`status.pairs`, the Contract `PairStatusView`):
 
 - **conflict** — the pair result says `conflict` at the current heads of both
   agents (any kind, including `test`: each side passes alone, the combination
