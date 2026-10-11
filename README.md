@@ -21,23 +21,23 @@ More and more people run several coding agents on one repository at once. Two th
 - **"Unknown" is never shown as safe.** A pair is shown as clean only if it was checked at the current commits and its combined test run actually ran tests. Anything else shows as "not checked".
 - **A review page.** For each agent: its task, starting commit, pushes and test results. For each pair: clash, clean or not checked, and why.
 
-![The review page from the recorded run: three agents, three pairs, all three marked Conflict](live/evidence/run-3/ui-index.png)
+![The review page from historical scripted run: three agents, three pairs, all three marked Conflict](live/evidence/run-3/ui-index.png)
 
 ## What is built and verified
 
 | What | Status | Evidence |
 | --- | --- | --- |
-| Full flow with 3 agents: fork, push, checker, warnings, review page | Accepted scripted regression harness (`d725eec`, `prototype/demo/concurrent.mjs`) demonstrates 3-agent forks, concurrent pushes, merge conflicts, and review status. Canonical GitHub restore verified 5 exact source hashes match accepted source `928a838d` with git fsck exit 0 at `b4a261b6` main. Operator recheck (not a new model run; native model traces separately retained) on actual author commits A772 (`77202c16`), B421 (`4211e0e8`), C343 (`343c00b2`) demonstrates clean `git merge-tree` (exit 0) and merged-tree tests (A+B: 7 tests, A+C: 11 tests, B+C: 6 tests; all exit 0). Typed checks endpoint returned HTTP 200, stale prior vector returned HTTP 409. | [`_docs/agent-branches-demo.md`](_docs/agent-branches-demo.md), [`live/evidence/run-3/`](live/evidence/run-3/) |
-| A stale checker result is rejected after a new push | Verified (HTTP 409 returned when submitting checks against stale head vector; verified in operator recheck and evidence) | [`live/evidence/run-3/stale-409.json`](live/evidence/run-3/stale-409.json) |
+| Full flow with 3 agents: fork, push, checker, warnings, review page | Accepted same-host core verified on main `76cc378` (focused + independent restore, git fsck exit 0, exact matched API cleanup). 3 native agents (all Gemini 3.1 Pro, tasks a/b/c) executed concurrently with a measured 113-second native active overlap; Git pushes were sequential (B -> A -> C). Original B genuine empty warning regression acknowledged both warnings via own credentials and retracted earlier claim, pushing `8fc` single parent repair (NOT a native 2-parent merge). Submitting against stale vector yielded real HTTP 409 (state unchanged); trusted checks across current heads yielded 107/102/105 = 314 test executions across 3 pairs clean. Original unborn repeat checker failure and missed finite cleanup retained in log; fresh checker artifact on same original forks/vector (no new models) succeeded. | [Public milestone receipt](https://github.com/alexeygrigorev/agent-branches/issues/53#issuecomment-6113990757) |
+| A stale checker result is rejected after a new push | Verified (HTTP 409 returned when submitting checks against stale head vector; verified in operator recheck and evidence) | [`live/evidence/run-3/stale-409.json`](live/evidence/run-3/stale-409.json) (historical operator proof) |
 | Real Cloudflare Artifacts: create repo, fork, per-repo tokens, clone, push; a read-only token cannot push | 28 operations run against the real service on 3 Oct | [`artifacts-spike/RESULTS.md`](artifacts-spike/RESULTS.md) |
-| Coordinator test suites | Plain Node (`npm run test:node`, 64 passed) and Git sidecar (`npm run test:sidecar`, 16 passed) suites pass today. Standard clean install (`npm install`) verified; core verification commands verified (exit 0). Regarding aggregate `npm run test:all`, both initial exit 1 (cause unverified) and re-run exit 0 are preserved with no stability claim. | [`prototype/`](prototype/) |
-| Python CLI integration (CLI680) | Source-only CLI680 accepted via head-registered terminal independent Pro eleven mock tests; normal guard integration `93e4d096` pushed and read back from GitHub (exit 0) at 15:05 UTC. Explicitly distinguishes mock tests from fresh 3-model execution and physical gates. | [`prototype/`](prototype/) |
+| Coordinator test suites | Plain Node (`npm run test:node`, 64 passed) and Git sidecar (`npm run test:sidecar`, 16 passed) suites pass today (accepted scoped 194 test:all receipts / 16 focused tests). Standard clean install (`npm install`) and full command verification remain PENDING (literal install unverified on cached source; no blanket all-command PASS). Regarding aggregate `npm run test:all`, both initial exit 1 (cause unverified) and re-run exit 0 receipts are preserved with no stability claim. | [`prototype/`](prototype/) |
+| Python CLI integration (CLI680) | Source-only CLI680 accepted via head-registered terminal independent Pro eleven mock tests; normal guard integration `93e4d096` pushed and read back from GitHub (exit 0) at 15:05 UTC. Explicitly distinguishes mock tests from fresh 3-agent execution (all same Gemini Pro) and physical gates. | [`prototype/`](prototype/) |
 
 **Not done yet:**
 
 - The contest deployment runs locally and on Hetzner on a plain Node HTTP server; Cloudflare Workers and Durable Objects adapter source exists as an architectural reference implementation (no Cloudflare deployment plans or instructions).
 - Physical two-host proof (AC59) remains pending; AgentBus consistency interface AC60 is accepted on main at `f389b716` with consumer three-case acceptance.
-- Live fresh 3-model concurrent proof: Fresh actual runtime feature-free 680 seed / 3 forks at 15:05, dispatcher hardcoded historical IDs held prelaunch; bounded Flash repair `6eb045` live, not new 3-model proof (existing same-host native owner A772, operator checks HTTP 200, stale HTTP 409 are separate earlier receipts).
+- Actual video recording and full contest acceptance remain PENDING (source main `76cc378` accepted focused + independent restore only; no full contest, physical, or video acceptance claimed).
 - The checker is trusted, not sandboxed, and it only looks at pairs of agents.
 
 **What our own tests found.** When two real agents worked side by side, seeing each other's unfinished work changed nothing: neither broke the other ([research](_docs/research/research.md#experiments-that-changed-our-mind)). Outside studies agree that such clashes are real but rare. For a single agent, plain Git is simpler and faster. The demo uses tasks designed to overlap, so it shows what the tool can detect, not how often clashes happen.
@@ -70,7 +70,7 @@ Checked on Linux with Node 24.
 
 For local service execution, see [`prototype/README.md`](prototype/README.md) for the self-contained protocol walkthrough script. It provisions isolated sidecar and coordinator services, executes multi-agent tasks, performs real Git clone and push operations with path-scoped authentication, updates the head vector via native hooks, and verifies Contract 0.1 typed checks and access controls.
 
-The live demo runbook is at [`_docs/agent-branches-demo.md`](_docs/agent-branches-demo.md) (uses accepted scripted regression harness `prototype/demo/concurrent.mjs`).
+The live demo runbook is at [`_docs/agent-branches-demo.md`](_docs/agent-branches-demo.md) (historical scripted proof using regression harness `prototype/demo/concurrent.mjs`).
 
 Going further: the API is in [`prototype/CONTRACT.md`](prototype/CONTRACT.md). [`docs-submission/DEMO-SCRIPT.md`](docs-submission/DEMO-SCRIPT.md) is the script for the demo video.
 
@@ -87,12 +87,12 @@ The experiment is written up in public, including what failed:
 
 ## Status and what's next
 
-Working prototype, verified locally.
+Working prototype, verified locally on same-host core.
 
-1. Source-only CLI680 accepted via head-registered terminal independent Pro eleven mock tests; normal guard integration `93e4d096` pushed and read back from GitHub (exit 0) at 15:05 UTC (distinguishing mock tests from fresh 3-model execution and physical gates).
-2. Fresh actual runtime feature-free 680 seed / 3 forks at 15:05, dispatcher hardcoded historical IDs held prelaunch; bounded Flash repair `6eb045` live, not new 3-model proof.
-3. Advance physical two-host transport gate (AC59; interface AC60 accepted at `f389b716`).
-4. Record and submit the 5 to 10 minute demo video.
+1. Accepted same-host core verified on main `76cc378` (focused + independent restore, git fsck exit 0, exact matched API cleanup).
+2. 3 native agents (all Gemini 3.1 Pro, tasks a/b/c) demonstrated in 113s active overlap window, sequential Git pushes, Agent B empty warning regression acknowledged and fixed via `8fc` single parent repair (NOT a native 2-parent merge), and 314 test executions clean across 3 pairs (107/102/105).
+3. Physical two-host transport gate (AC59) remains pending (AC60 interface accepted on main at `f389b716`).
+4. Practical 8-minute demo video recording remains pending (no video already recorded).
 
 ## Where to find things
 

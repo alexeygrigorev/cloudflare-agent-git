@@ -10,7 +10,7 @@ vanilla JS only.
 > - **Serving model:** The UI is a pure client-side static asset bundle served from any standard static file server (e.g. `python3 -m http.server 8765`). It connects directly to the plain Node coordinator's REST endpoints (`GET /status`, `GET /tasks/:id`).
 > - **CORS:** The plain Node coordinator (`prototype/src/local/main.ts`) includes CORS headers (`Access-Control-Allow-Origin: *`, `Access-Control-Allow-Headers: Authorization, Content-Type`) and handles OPTIONS preflights cleanly, enabling direct browser access via `?api=http://...`.
 > - **Supported protocol walkthrough:** See [`prototype/README.md`](../README.md) for the verified, self-contained Python protocol walkthrough and portable plain Node test suites.
-> - **Runtime status:** Actual 15:25 live runtime run exited with code 1 (`exit 1`); submitted actors later completed after runtime cleanup. Runtime repair is ongoing; native push, current checks, owner ACK, and physical two-host transport (AC59) remain unaccepted (AC60 interface-only accepted at `f389b716`). The dependent live CLI command gate remains open.
+> - **Runtime status & accepted same-host core:** Accepted same-host core verified on main `76cc378` (focused + independent restore, git fsck exit 0, exact matched API cleanup). 3 native agents (all Gemini 3.1 Pro, tasks a/b/c) executed concurrently in a measured 113-second native active overlap window with sequential Git pushes (B -> A -> C). Original Agent B empty warning regression acknowledged both warnings via own credentials, retracted earlier claim, and pushed `8fc` single parent repair (NOT a native 2-parent merge). Submitting against stale vector yielded real HTTP 409 (state unchanged); trusted checks across current heads yielded 107/102/105 = 314 test executions across 3 pairs clean. Original unborn repeat checker failure and missed finite cleanup retained in log; fresh checker artifact on same original forks/vector (no new models) verified actual success. Physical two-host transport gate (AC59) and actual video recording remain PENDING (AC60 interface accepted on main at `f389b716`). Evidence replay qualifies recorded actual run vs seeded fixture (no claim new models launched or video already recorded).
 
 ## Open with fixtures (no server needed for data)
 
@@ -159,7 +159,7 @@ The accepted coordinator implementation runs on plain Node + Git on Hetzner or l
    http://localhost:8765/index.html?api=http://localhost:8787
    http://localhost:8765/task.html?id=task-0001&api=http://localhost:8787
    ```
-   *(Note real R3 behavior: A runner token gets overview 200 but task 401 negative; using the own agent token yields task 200 pending headcheck).*
+   *(Note real behavior: In UI localStorage, a runner token gets overview 200 but task 401 negative; using the own per-task credential yields task 200).*
 
 3. **Authentication:**
 

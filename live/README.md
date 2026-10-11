@@ -10,14 +10,14 @@
 The current demo entrypoint `live/run-demo.sh` is a thin POSIX wrapper delegating to `python3 -m live.demo_runtime "$@"`.
 *(Note: Running `python3 live/demo_runtime.py` directly fails missing `live.demo_actors` under a clean systemd process unless `PYTHONPATH` is set to root).*
 
-> **Important Gate Status (Do NOT imply full wrapper is accepted):**
-> - The actual 15:25 run exited with code 1 (`exit 1`).
-> - Submitted actors later completed only after runtime cleanup.
-> - Runtime repair is ongoing.
-> - Native push event propagation, current checks validation, owner acknowledgement (ACK), and the physical two-host transport gate (**AC59**) remain **unaccepted**.
-> - AgentBus consistency interface (**AC60**) is **interface-only** accepted on main at `f389b716` with consumer three-case acceptance.
-> - The dependent live CLI command gate (`--live` or full wrapper run) remains **OPEN / HELD** rather than claiming successful rehearsal.
-> - Do not run old bare scripts or external APIs.
+> **Accepted Same-Host Core & Gate Status:**
+> - **Same-host core accepted on main `76cc378`**: Verified focused + independent restore, git fsck exit 0, exact matched API cleanup.
+> - **3-agent native concurrency (all same Gemini Pro)**: 3 native agents (all Gemini 3.1 Pro, tasks a/b/c) executed in a measured 113-second native active overlap window; Git pushes were sequential (B -> A -> C).
+> - **Owner regression repair**: Original Agent B genuine empty warning regression acknowledged both warnings via own credentials, retracted earlier claim, and pushed `8fc` single parent repair (NOT a native 2-parent merge).
+> - **Stale 409 & clean checks**: Stale check vector returned real HTTP 409 (state unchanged); trusted checks across current heads yielded 107/102/105 = 314 test executions across 3 pairs clean.
+> - **Checker failure & repair provenance**: Original unborn repeat checker failure and missed finite cleanup retained in log; fresh checker artifact on same original forks/vector (no new models) verified actual success.
+> - **Pending gates**: Physical two-host transport gate (**AC59**) and actual video recording remain **PENDING** (no claim that video is already recorded or new models launched; AgentBus consistency interface **AC60** accepted on main at `f389b716`). Evidence replay qualifies recorded actual run vs seeded fixture.
+> - **Command safety**: Preserve canonical module root `python3 -m live.demo_runtime`. Flags `--source-root` and `--cached-main` are valid (exit 0 on `--help`). Keep reader commands valid; mark gated model / cross-host paths pending meaningful proof rather than fake executed PASS. Do not run old bare scripts or external APIs.
 
 ### Safe CLI Commands (Help & Preflight)
 
@@ -52,7 +52,7 @@ The split runner CLI (`python3 -m live.demo_runtime`) accepts the following conf
   - `checks`: Evaluates radar mergeability and submits typed checks.
   - `owner`: Runs owner followup review and acknowledgement.
   - `cleanup`: Terminates owned process groups and releases allocated resources.
-- `--live`: Full live setup, actor execution (models), checks, and cleanup. (*Gate notice: HELD / UNVERIFIED. Runtime repair is ongoing; do not run without verified environment and approved gate closure.*) Note: `--live` currently defaults to models/checks/cleanup; it does NOT complete owner/full video. To run `--stage owner`, you must have preserved own services/state resumed.
+- `--live`: Executes models, checks, and cleanup. Note: `--live` only handles models/checks/cleanup; it does NOT automate the owner workflow or record the full video (to run `--stage owner`, preserved services/state must be resumed). Gated model and cross-host paths remain pending meaningful proof rather than fake executed PASS. In the UI, localStorage stores auth keys, where runner credentials yield 401 for task details while own task credentials yield 200.
 
 ## Archival Run 3 Evidence (Historical Record, 2026-10-03)
 
