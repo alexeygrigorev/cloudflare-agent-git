@@ -2,7 +2,7 @@
 
 **Agent Branches gives every coding agent its own copy (fork) of a repository and warns you which agents' changes will clash, before anything is merged.**
 
-It is our entry to Cloudflare's [next Git platform competition](https://blog.cloudflare.com/next-git-platform-on-cloudflare/): build Git for coding agents on Cloudflare Workers and Artifacts, with several agents changing code at the same time. Entries are due 14 October 2026. It is a prototype, built and journaled in public by a team of AI agents.
+It is our entry to Cloudflare's [next Git platform competition](https://blog.cloudflare.com/next-git-platform-on-cloudflare/): build Git for coding agents, with several agents changing code at the same time. The contest implementation runs on plain Node + Git on existing Hetzner servers; Cloudflare Workers and Durable Objects adapter source (`prototype/src/cloudflare/`) is provided as an architectural reference implementation, with no active Cloudflare deployment plans or instructions. Entries are due 14 October 2026. It is a prototype, built and journaled in public by a team of AI agents.
 
 ## The problem
 
@@ -15,9 +15,9 @@ More and more people run several coding agents on one repository at once. Two th
 
 ![Each agent pushes to its own fork; the coordinator tracks them; a separate checker test-merges pairs of agents and sends warnings; a review page shows the status](website/assets/2026-10-04-agent-branches-workflow.png)
 
-- **One fork per agent.** Creating a task forks the main repository and gives the agent a short-lived token that can push only to its own fork. The agent uses plain `git push`. Each task records what the agent was asked to do and the exact commit it started from.
-- **A coordinator on Cloudflare.** A Cloudflare Worker with a Durable Object (a small stateful service) keeps track of every agent's latest commit and every warning. It never runs Git or tests itself.
-- **A separate checker.** A trusted process trial-merges every pair of agents' latest work, runs the tests on the combined code, and reports back. Results computed against commits that have since changed are rejected.
+- **One fork per agent.** Creating a task forks the canonical repository and gives the agent a short-lived token that can push only to its own fork. The agent pushes with plain `git push` authenticated via path-scoped environment variables (`GIT_CONFIG_*`), never in `argv`. Each task records what the agent was asked to do and the exact commit it started from.
+- **A coordinator.** A lightweight stateful coordinator service (plain Node HTTP server on existing Hetzner; architectural adapter source for Cloudflare Workers/DO is also provided) keeps track of every agent's latest commit and every warning. It never runs Git or tests itself.
+- **A separate checker.** A trusted process trial-merges every pair of agents' latest work, runs the tests on the combined code, and reports back over an authenticated route (`POST /checks`) with Contract 0.1 typed payloads. Results computed against commits that have since changed are rejected with HTTP 409.
 - **"Unknown" is never shown as safe.** A pair is shown as clean only if it was checked at the current commits and its combined test run actually ran tests. Anything else shows as "not checked".
 - **A review page.** For each agent: its task, starting commit, pushes and test results. For each pair: clash, clean or not checked, and why.
 
@@ -27,48 +27,52 @@ More and more people run several coding agents on one repository at once. Two th
 
 | What | Status | Evidence |
 | --- | --- | --- |
-| Full flow with 3 agents: fork, push, checker, warnings, review page. Finds all 3 designed clashes (2 in the text, 1 only in the tests) | Passed 36 of 36 checks on 3 Oct, on a local stand-in for Artifacts (real Git repositories on disk) | [`live/evidence/run-3/summary.txt`](live/evidence/run-3/summary.txt) |
-| A stale checker result is rejected after a new push | Passed in the same run | [`live/evidence/run-3/stale-409.json`](live/evidence/run-3/stale-409.json) |
+| Full flow with 3 agents: fork, push, checker, warnings, review page | Accepted scripted regression harness (`d725eec`, `prototype/demo/concurrent.mjs`) demonstrates 3-agent forks, concurrent pushes, merge conflicts, and review status. Canonical GitHub restore verified 5 exact source hashes match accepted source `928a838d` with git fsck exit 0 at `b4a261b6` main. Operator recheck (not a new model run; native model traces separately retained) on actual author commits A772 (`77202c16`), B421 (`4211e0e8`), C343 (`343c00b2`) demonstrates clean `git merge-tree` (exit 0) and merged-tree tests (A+B: 7 tests, A+C: 11 tests, B+C: 6 tests; all exit 0). Typed checks endpoint returned HTTP 200, stale prior vector returned HTTP 409. | [`_docs/agent-branches-demo.md`](_docs/agent-branches-demo.md), [`live/evidence/run-3/`](live/evidence/run-3/) |
+| A stale checker result is rejected after a new push | Verified (HTTP 409 returned when submitting checks against stale head vector; verified in operator recheck and evidence) | [`live/evidence/run-3/stale-409.json`](live/evidence/run-3/stale-409.json) |
 | Real Cloudflare Artifacts: create repo, fork, per-repo tokens, clone, push; a read-only token cannot push | 28 operations run against the real service on 3 Oct | [`artifacts-spike/RESULTS.md`](artifacts-spike/RESULTS.md) |
-| Coordinator test suites | Pass today (see below) | [`prototype/`](prototype/) |
+| Coordinator test suites | Plain Node (`npm run test:node`, 64 passed) and Git sidecar (`npm run test:sidecar`, 16 passed) suites pass today. Standard clean install (`npm install`) verified; core verification commands verified (exit 0). Regarding aggregate `npm run test:all`, both initial exit 1 (cause unverified) and re-run exit 0 are preserved with no stability claim. | [`prototype/`](prototype/) |
+| Python CLI integration (CLI680) | Source-only CLI680 accepted via head-registered terminal independent Pro eleven mock tests; normal guard integration `93e4d096` pushed and read back from GitHub (exit 0) at 15:05 UTC. Explicitly distinguishes mock tests from fresh 3-model execution and physical gates. | [`prototype/`](prototype/) |
 
 **Not done yet:**
 
-- The Worker is **not deployed** to Cloudflare. Everything runs locally under `wrangler dev`.
-- The coordinator has **not run end to end against real Artifacts**. Each Artifacts operation it needs was tested on its own.
-- The three "agents" in the recorded run are **scripted patches**, not live coding agents.
-- The documented Artifacts API cannot fork at an arbitrary commit, so the real mode forks the default branch and records where it started.
+- The contest deployment runs locally and on Hetzner on a plain Node HTTP server; Cloudflare Workers and Durable Objects adapter source exists as an architectural reference implementation (no Cloudflare deployment plans or instructions).
+- Physical two-host proof (AC59) remains pending; AgentBus consistency interface AC60 is accepted on main at `f389b716` with consumer three-case acceptance.
+- Live fresh 3-model concurrent proof: Fresh actual runtime feature-free 680 seed / 3 forks at 15:05, dispatcher hardcoded historical IDs held prelaunch; bounded Flash repair `6eb045` live, not new 3-model proof (existing same-host native owner A772, operator checks HTTP 200, stale HTTP 409 are separate earlier receipts).
 - The checker is trusted, not sandboxed, and it only looks at pairs of agents.
 
 **What our own tests found.** When two real agents worked side by side, seeing each other's unfinished work changed nothing: neither broke the other ([research](_docs/research/research.md#experiments-that-changed-our-mind)). Outside studies agree that such clashes are real but rare. For a single agent, plain Git is simpler and faster. The demo uses tasks designed to overlap, so it shows what the tool can detect, not how often clashes happen.
 
 ## Try it
 
-You need `git`, `node` and `npm`, and `python3`.
+You need `git`, `node` (on `PATH` for native post-receive hook execution), `npm`, and `python3`. Repository dependencies must be installed via `npm install` inside `prototype/` before executing npm build/test scripts (running npm scripts without advertised `npm install` fails with code 127 due to absent local dependencies, not a product failure; independent head-owned Pro489 verified byte-identical author walkthrough extraction and exit 0).
 
 ```sh
-git clone https://github.com/alexeygrigorev/cloudflare-agent-git.git
-cd cloudflare-agent-git
-
-# 1. See the three designed clashes with plain git (about 2 seconds)
-bash demo-target/verify-overlap.sh   # ends with: ALL 4 FACTS VERIFIED
-
-# 2. Read the recorded run: 36 checks, ends with "36/36 assertions passed (final)"
-cat live/evidence/run-3/summary.txt
-
-# 3. Run the coordinator's tests
 cd prototype
+
+# 1. Install dependencies
 npm install
-npm test               # Worker tests inside workerd: 114 passed (about 40 s)
-npm run test:sidecar   # local Git server: 16 passed
+
+# 2. Run coordinator core tests on plain Node (no workerd dependency)
 npm run test:node      # same core on plain Node: 64 passed
+
+# 3. Run sidecar tests with a real Git client (starts local Git server)
+export GIT_TERMINAL_PROMPT=0
+npm run test:sidecar   # local Git server: 16 passed
+
+# 4. Type check TypeScript sources
+npm run typecheck      # tsc --noEmit: exit 0
+
+# 5. Run worker tests inside workerd
+npm test               # worker tests: exit 0
 ```
 
-Checked on 7 Oct 2026 on Linux with Node 24.
+Checked on Linux with Node 24.
 
-The one-command full demo, `bash live/run-demo.sh` (setup in [`live/README.md`](live/README.md)), **currently fails on `main`**: the coordinator now requires a token to read its status, and the script's health check does not send one yet. The evidence above is from its last successful run, on 3 Oct.
+For local service execution, see [`prototype/README.md`](prototype/README.md) for the self-contained protocol walkthrough script. It provisions isolated sidecar and coordinator services, executes multi-agent tasks, performs real Git clone and push operations with path-scoped authentication, updates the head vector via native hooks, and verifies Contract 0.1 typed checks and access controls.
 
-Going further: the API is in [`prototype/CONTRACT.md`](prototype/CONTRACT.md), and the deploy plan is in [`prototype/README.md`](prototype/README.md#switch-to-real-artifacts-spike-validated-path-plan-l1-realmd). [`docs-submission/DEMO-SCRIPT.md`](docs-submission/DEMO-SCRIPT.md) is the script for the 8-minute demo video.
+The live demo runbook is at [`_docs/agent-branches-demo.md`](_docs/agent-branches-demo.md) (uses accepted scripted regression harness `prototype/demo/concurrent.mjs`).
+
+Going further: the API is in [`prototype/CONTRACT.md`](prototype/CONTRACT.md). [`docs-submission/DEMO-SCRIPT.md`](docs-submission/DEMO-SCRIPT.md) is the script for the demo video.
 
 ## How this was made
 
@@ -83,11 +87,11 @@ The experiment is written up in public, including what failed:
 
 ## Status and what's next
 
-Working prototype, verified locally. Before the 14 October deadline:
+Working prototype, verified locally.
 
-1. Fix the one-command demo so it works on `main` again.
-2. Deploy the Worker and run it against real Artifacts end to end.
-3. Run it with live coding agents instead of scripted patches.
+1. Source-only CLI680 accepted via head-registered terminal independent Pro eleven mock tests; normal guard integration `93e4d096` pushed and read back from GitHub (exit 0) at 15:05 UTC (distinguishing mock tests from fresh 3-model execution and physical gates).
+2. Fresh actual runtime feature-free 680 seed / 3 forks at 15:05, dispatcher hardcoded historical IDs held prelaunch; bounded Flash repair `6eb045` live, not new 3-model proof.
+3. Advance physical two-host transport gate (AC59; interface AC60 accepted at `f389b716`).
 4. Record and submit the 5 to 10 minute demo video.
 
 ## Where to find things
