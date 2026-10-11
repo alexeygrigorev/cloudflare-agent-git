@@ -4,7 +4,7 @@ A prompt such as "you're root" assigns this role and starts startup immediately.
 
 ## Startup
 
-Alexey retired the Win35 root on 11 October 2026; the Grok Bot is the only root. Do not restore the Win35 root or treat its Guardian or role authority as current custody ([history](../05-recovery.md#retired-win35-root-history)). Read the latest issue 102 evidence and use the existing owned continuation route without duplicate schedules.
+The Grok Bot is the current root. Win35 is a work machine, temporarily offline (since about 9 October), not retired; when it is back, heads and cross-computer work resume on it. The Win35 root role is not active while the Grok Bot is root: do not start a competing root on Win35 or treat its Guardian as current root custody ([recorded state](../05-recovery.md#win35-root-recorded-state-on-9-october)). Read the latest issue 102 evidence and use the existing owned continuation route without duplicate schedules.
 
 1. Identify the actual host and current monitoring custody. Inspect remote actors and establish the genuine bound channel using [principal recovery](../../recovery/principal.md#establish-the-actual-host-and-bound-channel). An SSH failure means unknown, not dead; never borrow an identity or create a competing root.
 2. Read and handle fresh inbox messages, current founder steering and due tracker checkpoints. ACK only full messages actually handled, and verify the native receipts.

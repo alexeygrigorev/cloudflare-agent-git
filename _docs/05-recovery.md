@@ -6,9 +6,9 @@ Root restores the principal; the principal owns head recovery, and heads own the
 - [Principal → head](../recovery/head.md): independently placed interactive recovery, parallel scoped agents, preserved workers and resumed project work.
 - [Root startup](team/02-root.md): concise priorities, existing check custody and human delivery.
 
-## Retired Win35 root (history)
+## Win35 root: recorded state on 9 October
 
-Alexey retired the Win35 root on 11 October 2026. Do not restore it or treat its Guardian or role authority as current custody. The rest of this section is the state recorded on 9 October.
+Win35 is not retired. It stays on the team as a work machine and is temporarily offline (since about 9 October) while Alexey is away; when it is back, heads and cross-computer work resume on it, and its services stay in place. The Win35 root role is not active while the Grok Bot is root: do not start a competing root on Win35 or treat its Guardian as current root custody. The rest of this section is the state recorded on 9 October.
 
 The [incident report](incidents/2026-10-08-root-custody-outage.md) records an actual automatic whole-family recovery pass in its bounded observation window. The successor later lost authority because genuine completed periodic checks were missing; the Guardian also failed to report the failed recovery command. The current model/history are preserved, but the elected role is expired. A historical kill pass does not prove current or sustained custody.
 

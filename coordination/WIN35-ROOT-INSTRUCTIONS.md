@@ -1,4 +1,4 @@
-> **SUPERSEDED.** Alexey retired the Win35 root on 11 October 2026. The only root is now the Grok Bot 'Cloudflare Root' (see [AGENTS.md](../AGENTS.md#root--alexey-11-october-2026)). This file is history: do not start, restore or follow a Win35 root from it.
+> **Not active while the Grok Bot is root.** Since 11 October 2026 the current root is the Grok Bot 'Cloudflare Root' (see [AGENTS.md](../AGENTS.md#root--alexey-11-october-2026)). Win35 is not retired: it stays on the team as a work machine and is temporarily offline (since about 9 October) while Alexey is away. When it is back, heads and cross-computer work resume on it. Do not start a competing Win35 root from this file while the Grok Bot is root.
 
 # Win35 root: operational ownership and startup
 
