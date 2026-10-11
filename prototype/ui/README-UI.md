@@ -25,6 +25,7 @@ python3 -m http.server 8765
 #   http://localhost:8765/index.html?fixture=lost-push    # lost-push (unprocessed) demo
 #   http://localhost:8765/task.html?id=task-0001&fixture=1
 #   http://localhost:8765/task.html?id=task-0009&fixture=lost-push
+# (Note: These six fixture URLs are explicitly fixture-only and not models proof.)
 ```
 
 Rendered evidence in `ui-evidence/` (index and task page captures) and historical run 3 screenshots (`live/evidence/run-3/ui-index.png`) represent archival evidence from the 2026-10-03 run, not current execution instructions.
@@ -152,16 +153,17 @@ The accepted coordinator implementation runs on plain Node + Git on Hetzner or l
 
 2. **Open in browser targeting the coordinator API port:**
 
-   Assuming the Node coordinator is listening on port `8787` (or the dynamic port allocated by the walkthrough in [`../README.md`](../README.md)):
+   Assuming the Node coordinator is listening on port `8787` (or the dynamic actual port provided by `--coordinator-port` parameter first lookup, checking free ports and preserving existing listeners):
 
    ```
    http://localhost:8765/index.html?api=http://localhost:8787
    http://localhost:8765/task.html?id=task-0001&api=http://localhost:8787
    ```
+   *(Note real R3 behavior: A runner token gets overview 200 but task 401 negative; using the own agent token yields task 200 pending headcheck).*
 
 3. **Authentication:**
 
-   Sensitive coordinator endpoints (`GET /status`, `GET /tasks/:id`) require authentication. When prompted by the UI banner, provide a valid bearer token (`ADMIN_TOKEN`, `RUNNER_TOKEN`, or per-task agent write token). Tokens are passed in `Authorization: Bearer <TOKEN>` headers and persisted only in `sessionStorage` (never in `argv` or URL).
+   Sensitive coordinator endpoints require appropriate read authentication. `GET /status` accepts admin, runner, or valid agent tokens. `GET /tasks/:id` strictly requires the OWN per-task agent token or admin (runner returns 401, foreign agent returns 403). When prompted by the UI banner, provide a valid bearer token. Tokens are passed in `Authorization: Bearer` headers (never in `argv` or URL) and are persisted in `localStorage` under `agent-branches-auth-token`. They can be cleared via the UI.
 
 > **No Worker Serving:** Serving this UI from a Cloudflare Worker static asset bundle is neither implemented nor planned. The plain Node coordinator over HTTP with standard static serving is the sole accepted architecture.
 

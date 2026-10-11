@@ -7,7 +7,8 @@
 
 ## Current CLI Runner & Runtime Status (AB53 Split Runner)
 
-The current demo entrypoint `live/run-demo.sh` is a thin POSIX wrapper delegating to `python3 live/demo_runtime.py "$@"`.
+The current demo entrypoint `live/run-demo.sh` is a thin POSIX wrapper delegating to `python3 -m live.demo_runtime "$@"`.
+*(Note: Running `python3 live/demo_runtime.py` directly fails missing `live.demo_actors` under a clean systemd process unless `PYTHONPATH` is set to root).*
 
 > **Important Gate Status (Do NOT imply full wrapper is accepted):**
 > - The actual 15:25 run exited with code 1 (`exit 1`).
@@ -25,7 +26,7 @@ Safe offline inspection commands can be executed without launching models, mutat
 1. **Safe CLI Help (offline inspection):**
 
    ```sh
-   python3 live/demo_runtime.py --help
+   python3 -m live.demo_runtime --help
    ```
 
 2. **Safe Preflight Environment Check:**
@@ -33,16 +34,16 @@ Safe offline inspection commands can be executed without launching models, mutat
    Validates system `node` and `git` binaries, sidecar source, compiled Node coordinator cache, and listener port status without model launch or state mutation:
 
    ```sh
-   python3 live/demo_runtime.py --preflight --source-root . --cached-main prototype/.build/node/src/local/main.js
+   python3 -m live.demo_runtime --preflight --source-root . --cached-main prototype/.build/node/src/local/main.js
    ```
 
 ### Runtime Configuration & Required Options
 
-The split runner CLI (`live/demo_runtime.py`) accepts the following configuration options and environment variables:
+The split runner CLI (`python3 -m live.demo_runtime`) accepts the following configuration options and environment variables:
 
 - `--source-root <DIR>`: Path to repository source root (defaults to parent of `live/`).
 - `--cached-main <PATH>`: Path to compiled Node coordinator (`prototype/.build/node/src/local/main.js`). Required for starting the local coordinator without recompilation.
-- `--run-root <DIR>`: Path to runtime scratch directory for isolated session state (permissions 0700).
+- `--run-root <DIR>`: Path to runtime scratch directory for isolated session state (permissions 0700). Existing canonical wide root lease means this must be outside the protected canonical tree in its own isolated AgentBranches fork (not a new Git worktree).
 - `--launcher-root <DIR>` (or `LAUNCHER_ROOT` env var): Path to `agent-quota-launcher` package directory containing the model launcher.
 - `--launcher-config <DIR>` (or `LAUNCHER_CONFIG` env var): Path to launcher configuration directory.
 - `--session <PATH>`: Path to private session JSON file (mode 0600) required for stage-specific execution (`--stage {models,checks,owner,cleanup}`).
@@ -51,7 +52,7 @@ The split runner CLI (`live/demo_runtime.py`) accepts the following configuratio
   - `checks`: Evaluates radar mergeability and submits typed checks.
   - `owner`: Runs owner followup review and acknowledgement.
   - `cleanup`: Terminates owned process groups and releases allocated resources.
-- `--live`: Full live setup, actor execution, checks, and cleanup. (*Gate notice: HELD / UNVERIFIED. Runtime repair is ongoing; do not run without verified environment and approved gate closure.*)
+- `--live`: Full live setup, actor execution (models), checks, and cleanup. (*Gate notice: HELD / UNVERIFIED. Runtime repair is ongoing; do not run without verified environment and approved gate closure.*) Note: `--live` currently defaults to models/checks/cleanup; it does NOT complete owner/full video. To run `--stage owner`, you must have preserved own services/state resumed.
 
 ## Archival Run 3 Evidence (Historical Record, 2026-10-03)
 
