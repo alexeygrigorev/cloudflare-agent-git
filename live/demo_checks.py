@@ -269,21 +269,88 @@ def load_session(session_path: str) -> Dict[str, Any]:
 
 def ensure_checker_repo(run_root: str) -> str:
     """Initialize or verify uniquely owned checker repository on main with NO branches/worktrees."""
-    checker_dir = pathlib.Path(run_root) / "checker_repo"
-    checker_dir.mkdir(parents=True, exist_ok=True)
+    run_root_path = pathlib.Path(run_root)
+    checker_dir = run_root_path / "checker_repo"
     git_dir = checker_dir / ".git"
 
-    if not git_dir.exists():
-        run_git(["init", "-b", "main"], cwd=str(checker_dir))
+    # Explicitly reject symlinks BEFORE .exists including broken links
+    if os.path.islink(run_root) or run_root_path.is_symlink():
+        raise RuntimeError(f"run_root cannot be a symlink: {run_root}")
+    if os.path.islink(checker_dir) or checker_dir.is_symlink():
+        raise RuntimeError(f"checker_repo cannot be a symlink: {checker_dir}")
+    if os.path.islink(git_dir) or git_dir.is_symlink():
+        raise RuntimeError(f".git cannot be a symlink: {git_dir}")
+
+    # Reject each symlink component/ancestor in supplied path (rooted/relative/dotdot forms)
+    raw_parts = checker_dir.parts
+    if raw_parts:
+        acc = pathlib.Path(raw_parts[0])
+        if os.path.islink(acc) or acc.is_symlink():
+            raise RuntimeError(f"Symlink component rejected: {acc}")
+        for part in raw_parts[1:]:
+            acc = acc / part
+            if os.path.islink(acc) or acc.is_symlink():
+                raise RuntimeError(f"Symlink component rejected: {acc}")
+
+    # Inspect all ancestors of checker_dir and run_root up to root (including broken ancestors)
+    abs_checker = pathlib.Path(os.path.abspath(str(checker_dir)))
+    curr = abs_checker
+    while curr != curr.parent:
+        if os.path.islink(curr) or curr.is_symlink():
+            raise RuntimeError(f"Symlink ancestor rejected: {curr}")
+        curr = curr.parent
+    if os.path.islink(curr) or curr.is_symlink():
+        raise RuntimeError(f"Symlink ancestor rejected: {curr}")
+
+    # Enforce strict owned root / checker containment before any init/fetch/config
+    abs_root = pathlib.Path(os.path.abspath(run_root))
+    if not abs_checker.is_relative_to(abs_root) or abs_checker == abs_root:
+        raise RuntimeError("checker_repo escapes run_root")
+    if abs_checker != (abs_root / "checker_repo"):
+        raise RuntimeError("checker_repo does not match owned run_root / checker_repo")
+
+    resolved_root = run_root_path.resolve()
+    resolved_checker = checker_dir.resolve()
+    if not resolved_checker.is_relative_to(resolved_root) or resolved_checker == resolved_root:
+        raise RuntimeError("checker_repo escapes run_root")
+    if resolved_checker != (resolved_root / "checker_repo"):
+        raise RuntimeError("checker_repo does not resolve to owned run_root / checker_repo")
+
+    if run_root_path.exists() and not run_root_path.is_dir():
+        raise RuntimeError(f"run_root is not a directory: {run_root}")
+
+    if checker_dir.exists():
+        if not checker_dir.is_dir():
+            raise RuntimeError(f"Existing checker_repo is not a directory: {checker_dir}")
+        if not git_dir.exists():
+            raise RuntimeError("Existing directory is not a git repository (missing .git).")
+        if not git_dir.is_dir():
+            raise RuntimeError("Existing .git is not a directory (gitfile external rejected).")
+
+        # Use revparse identity to verify genuine owned repository
+        proc_top = run_git(["rev-parse", "--show-toplevel"], cwd=str(checker_dir), check=False)
+        if proc_top.returncode != 0:
+            raise RuntimeError("Existing directory contains corrupt or invalid git repository.")
+        actual_top = pathlib.Path(proc_top.stdout.strip()).resolve()
+        if actual_top != resolved_checker:
+            raise RuntimeError("Git repository top-level does not match checker_repo (nested parent Git rejected).")
+
+        proc_git = run_git(["rev-parse", "--absolute-git-dir"], cwd=str(checker_dir), check=False)
+        if proc_git.returncode != 0:
+            raise RuntimeError("Existing directory contains corrupt or invalid git repository.")
+        actual_git = pathlib.Path(proc_git.stdout.strip()).resolve()
+        if actual_git != (resolved_checker / ".git").resolve():
+            raise RuntimeError("Git repository git-dir does not match checker_repo/.git (external gitdir rejected).")
+
+        proc_inside = run_git(["rev-parse", "--is-inside-work-tree"], cwd=str(checker_dir), check=False)
+        if proc_inside.returncode != 0 or proc_inside.stdout.strip() != "true":
+            raise RuntimeError("Existing directory is not a valid git work tree.")
+    else:
+        checker_dir.mkdir(parents=True, exist_ok=True)
+        run_git(["init"], cwd=str(checker_dir))
         # Ensure user config locally for clean state
         run_git(["config", "user.name", "Checks Implementer"], cwd=str(checker_dir))
         run_git(["config", "user.email", "checks@agent-branches.local"], cwd=str(checker_dir))
-    else:
-        # Ensure it is on main
-        branch_proc = run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=str(checker_dir), check=False)
-        current_branch = branch_proc.stdout.strip()
-        if current_branch != "main":
-            run_git(["checkout", "main"], cwd=str(checker_dir))
 
     return str(checker_dir)
 
