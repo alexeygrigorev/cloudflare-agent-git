@@ -1,4 +1,4 @@
-> **Not active while the Grok Bot is root.** Since 11 October 2026 the current root is the Grok Bot 'Cloudflare Root' (see [AGENTS.md](../AGENTS.md#root--alexey-11-october-2026)). Win35 stays on the team as a work machine ([Machines](../_docs/team/01-overview.md#machines)). Do not start a competing Win35 root from this file while the Grok Bot is root.
+> **Stood down - do not run.** Since 11 October 2026 the only root is the Grok Bot 'Cloudflare Root' (see [AGENTS.md](../AGENTS.md#root--alexey-11-october-2026)). Win35 stays on the team as a work machine ([Machines](../_docs/team/01-overview.md#machines)) on the agents bus. Do not start a Win35 root from this file, do not renew a Win35 root lease, and do not re-enable the Hetzner role-authority root listener without a new Alexey decision ([stand-down record](../_docs/05-recovery.md#win35-root-stood-down-11-october-2026)).
 
 # Win35 root: operational ownership and startup
 

@@ -5,7 +5,7 @@ The team is the founder plus AI agents, each in one role. Your launch prompt ass
 ## Leadership
 
 - Founder (Alexey, the human). Accountable for goals, money, accounts, the final contest entry and the daily standup. He never babysits agents or chases status.
-- Root. The Grok Bot 'Cloudflare Root', the current root, appointed by Alexey on 11 October 2026. The Win35 root role is not active while the Grok Bot is root. Root watches the principal and the heads and makes sure they are running, relays what the founder says to the principal or the head it concerns, and brings back what he needs. See 02-root.md.
+- Root. The Grok Bot 'Cloudflare Root', the only root, appointed by Alexey on 11 October 2026. The Win35 root has stood down and must not run. Root watches the principal and the heads and makes sure they are running, relays what the founder says to the principal or the head it concerns, and brings back what he needs. See 02-root.md.
 - Principal. One aplexer session, or two peers. Accountable for the big picture across all products, and for the high-level tasks. See 03-principal.md.
 
 ## Product teams
@@ -28,13 +28,13 @@ Each of the five products has its own team, repo and tracker. A team is the head
 
 Work machines are listed in [coordination/MACHINES.json](../../coordination/MACHINES.json), with how each one connects and no on/off status field:
 
-- **Hetzner devbox** (`RMTHZ`, public): accepts inbound ssh (alias `hetzner`). It also hosts the Agent Bus: the role authority on port 8801 (`win35-role-authority.service`, mTLS) and the Agent Bus adapter on port 8788 (`agent-bus-win35-adapter.service`, mTLS), both over the FileBus store `~/.local/share/agent-bus-win35/store`.
+- **Hetzner devbox** (`RMTHZ`, public): accepts inbound ssh (alias `hetzner`). It also hosts the Agent Bus adapter on port 8788 (`agent-bus-win35-adapter.service`, mTLS) over the FileBus store `~/.local/share/agent-bus-win35/store`. The former Win35 root role authority on port 8801 (`win35-role-authority.service`) is stood down and disabled ([stand-down record](../05-recovery.md#win35-root-stood-down-11-october-2026)).
 - **Win35** (`DESKTOP-FP4OP26`, home network): outbound only. Nothing can ssh into it; it connects out to the Agent Bus on Hetzner.
 - **Founder's laptop** (`LAPTOP-PHA6TCNC`, home network): outbound only, the same way as Win35.
 
 Rule: work runs on available machines. Hetzner is available when its ssh probe answers. A home machine is available when it has checked in on the bus within the freshness window (default 15 minutes, `bus.checkin_window_seconds` or `MACHINES_CHECKIN_WINDOW_SECONDS`). A check-in is a record the machine itself caused: role-authority presence (`agents.seen`, a live role lease) or bus traffic (a message sent, or an ack/accept/complete of a message addressed to it). Registering an identity alone does not count. Home machines receive work as bus messages they pull from their inbox, and they talk to each other through the bus. Nobody, including root, opens a connection into a home machine. Check at run time with `python3 scripts/machines.py available` (or `scripts/launch_gates.py --reachable-hosts`); `python3 scripts/machines.py route <machine>` prints how work reaches a machine (ssh for Hetzner, a bus message for home machines).
 
-Root is the Grok Bot 'Cloudflare Root' on Alexey's shared Linux computer. It reaches Hetzner by ssh, talks to the principal and heads through the desktop-orchestrator mailbox, and coordinates the home machines through the Agent Bus on Hetzner. There is no competing root on any machine; do not start a Win35 root while the Grok Bot is root.
+Root is the Grok Bot 'Cloudflare Root' on Alexey's shared Linux computer. It reaches Hetzner by ssh, talks to the principal and heads through the desktop-orchestrator mailbox, and coordinates the home machines through the Agent Bus on Hetzner. There is only one root; Win35 is a work machine on the bus and must not run a root ([stand-down record](../05-recovery.md#win35-root-stood-down-11-october-2026)).
 
 ## Where they run
 

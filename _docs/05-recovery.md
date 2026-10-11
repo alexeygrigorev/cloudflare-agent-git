@@ -6,9 +6,15 @@ Root restores the principal; the principal owns head recovery, and heads own the
 - [Principal → head](../recovery/head.md): independently placed interactive recovery, parallel scoped agents, preserved workers and resumed project work.
 - [Root startup](team/02-root.md): concise priorities, existing check custody and human delivery.
 
-## Win35 root: recorded state on 9 October
+## Win35 root: stood down (11 October 2026)
 
-Win35 stays on the team as a work machine (see [Machines](team/01-overview.md#machines)). The Win35 root role is not active while the Grok Bot is root: do not start a competing root on Win35 or treat its Guardian as current root custody. The rest of this section is the state recorded on 9 October.
+There is only one root: the Grok Bot 'Cloudflare Root', appointed by Alexey on 11 October 2026. Win35 stays on the team as a work machine (see [Machines](team/01-overview.md#machines)) and remains reachable via the agents bus. Win35 must not run a root, hold a root lease, or renew one. Do not start a competing root on Win35, do not treat its Guardian as current root custody, and do not re-enable `win35-role-authority.service` for root grants without a new Alexey decision.
+
+Stand-down evidence (Hetzner, 11 October 2026): binding `0b276ae9-31aa-4d56-a74e-156034a99b2c` marked `retired` in the role-authority config; `win35-root`/`root` CAS-fenced to epoch 19 with holder cleared and candidates emptied; `win35-role-authority.service` stopped and disabled. Bus endpoint on port 8788 left running. Backups: `~/backups/cagit-20261011/win35-root-standdown/`.
+
+### Recorded state on 9 October (historical)
+
+The rest of this subsection is the state recorded on 9 October, kept for recovery archaeology only.
 
 The [incident report](incidents/2026-10-08-root-custody-outage.md) records an actual automatic whole-family recovery pass in its bounded observation window. The successor later lost authority because genuine completed periodic checks were missing; the Guardian also failed to report the failed recovery command. The current model/history are preserved, but the elected role is expired. A historical kill pass does not prove current or sustained custody.
 
