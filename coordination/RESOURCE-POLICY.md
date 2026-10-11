@@ -17,7 +17,7 @@
 |---|---|
 | Root disk | Free bytes minus aggregate outstanding growth reservations minus candidate bounded growth >=20GiB. Unknown measurements/growth fail closed. |
 | Cleanup warning | Below30GiB, continue otherwise eligible work and claim exactly one bounded cleanup actor per episode. Warning is not refusal. |
-| Worker containment | Each actual worker independently bounded MemoryMax=1500M / TasksMax=100. A1500M head containing many workers does not provide independent containment. Preserve productive jobs. |
+| Worker containment | Each actual worker independently bounded MemoryMax=1500M / TasksMax=256. A1500M head containing many workers does not provide independent containment. Preserve productive jobs. |
 | RAM override | For this50-worker initiative, do not refuse dispatch on RAM estimates/MemAvailable floor. Measure RSS and preserve per-process containment and all other gates. |
 | Scratch/spike | Aggregate512MiB maximum; budget actual bounded incremental growth, not a compulsory512MiB reservation per tiny job. |
 | Compilation/install | Rust/build hold remains until actual preventive accounting/budget and reviewed release are proved. No blind rebuild, global installation or expansion of shared targets. |

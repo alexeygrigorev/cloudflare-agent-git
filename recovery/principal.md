@@ -67,7 +67,7 @@ conversation = "VERIFIED_SAVED_CONVERSATION_ID"
 prompt = "VERIFIED_RECOVERY_PROMPT"
 args = [
     "aplexer", "start", "--workspace", repo, "--tag", tag,
-    "--engine", "codex", "--memory", "1500M", "--pids", "100", "--json",
+    "--engine", "codex", "--memory", "1500M", "--pids", "256", "--json",
     "--", "timeout", "12h", "bash", quota_wrapper,
     "--disable", "shell_snapshot", "resume", conversation,
     "--dangerously-bypass-approvals-and-sandbox", prompt,

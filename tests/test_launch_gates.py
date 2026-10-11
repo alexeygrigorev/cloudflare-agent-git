@@ -13,8 +13,8 @@ GIB = 1024 ** 3
 
 
 @pytest.mark.parametrize("mem,pids", [
-    (None, "100"), ("", "100"), ("2G", "100"), ("1501M", "100"),
-    ("1500M", None), ("1500M", "101"), ("1500M", "0"), ("1500M", "x"),
+    (None, "256"), ("", "256"), ("2G", "256"), ("1501M", "256"),
+    ("1500M", None), ("1500M", "257"), ("1500M", "0"), ("1500M", "x"),
 ])
 def test_limits_refused(mem, pids):
     with pytest.raises(g.LaunchRefused):
@@ -22,6 +22,7 @@ def test_limits_refused(mem, pids):
 
 
 def test_limits_accepted():
+    g.check_limits("1500M", "256")
     g.check_limits("1500M", "100")
     g.check_limits("1G", 50)
 
@@ -44,15 +45,15 @@ def test_reviewer_must_differ():
 
 
 def test_check_launch_end_to_end():
-    ok = g.check_launch("1500M", 100, 25 * GIB, implementer_model="a",
+    ok = g.check_launch("1500M", 256, 25 * GIB, implementer_model="a",
                         reviewer_model="b", reviewer_launch=True)
     assert ok == {"launch_allowed": True, "cleanup_agent": True}
     with pytest.raises(g.LaunchRefused):
-        g.check_launch("1500M", 100, 40 * GIB, implementer_model="a",
+        g.check_launch("1500M", 256, 40 * GIB, implementer_model="a",
                        reviewer_model="a", reviewer_launch=True)
 
 
 def test_cli_exit_codes(capsys):
-    assert g.main(["--memory", "1500M", "--pids", "100", "--disk-path", "/"]) in (0, 75)
-    assert g.main(["--pids", "100"]) == 75
+    assert g.main(["--memory", "1500M", "--pids", "256", "--disk-path", "/"]) in (0, 75)
+    assert g.main(["--pids", "256"]) == 75
     assert json.loads(capsys.readouterr().out.splitlines()[-1])["launch_allowed"] is False

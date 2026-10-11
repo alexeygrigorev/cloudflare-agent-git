@@ -2,7 +2,7 @@
 """Launch gates from _docs/03-way-of-working.md (resources, disk floor, review).
 
 A launch of a worker or reviewer is refused (exit 75, like quota-gate.py) when:
-- the memory or task limit is missing or above 1500M / 100 tasks;
+- the memory or task limit is missing or above 1500M / 256 tasks;
 - free space on the root disk, after promised growth, is under 20 GiB;
 - the reviewer model is missing or equals the implementer model.
 Below 30 GiB free the launch is allowed but a cleanup agent is requested.
@@ -14,7 +14,7 @@ import shutil
 import sys
 
 MAX_MEMORY_BYTES = 1500 * 1024 * 1024
-MAX_PIDS = 100
+MAX_PIDS = 256
 DISK_FLOOR = 20 * 1024 ** 3
 DISK_CLEANUP = 30 * 1024 ** 3
 
@@ -40,7 +40,7 @@ def check_limits(memory, pids):
     except (TypeError, ValueError):
         raise LaunchRefused(f"task limit missing or unreadable: {pids!r}")
     if not 0 < n <= MAX_PIDS:
-        raise LaunchRefused(f"task limit {n} is not within 1..100")
+        raise LaunchRefused(f"task limit {n} is not within 1..{MAX_PIDS}")
 
 
 def check_disk(free_bytes, promised_bytes=0):
