@@ -26,6 +26,14 @@ export function formatAgentSummary(status) {
 
     const formatted = parts.join(' | ');
 
+    if (status.stale === true) {
+        return `[STALE] ${formatted}`;
+    }
+
+    if (status.status === 'not_checked' || status.status === 'unknown') {
+        return `[NOT_CHECKED] ${formatted}`;
+    }
+
     if (hasMissing) {
         return `[DIRTY/INCOMPLETE] ${formatted}`;
     }
@@ -37,28 +45,38 @@ export function formatWarnings(status) {
   if (!status || !Array.isArray(status.warnings)) {
     return "No warnings data available.";
   }
+  if (status.warnings.length === 0) {
+    return "";
+  }
 
   const sortedWarnings = [...status.warnings].sort((a, b) => {
-    const idA = String(a.id || '');
-    const idB = String(b.id || '');
+    const idA = a.id !== undefined && a.id !== null ? String(a.id) : 'unknown';
+    const idB = b.id !== undefined && b.id !== null ? String(b.id) : 'unknown';
     return idA.localeCompare(idB);
   });
 
   return sortedWarnings.map(warning => {
-    const id = warning.id || 'unknown';
-    const message = warning.message || 'No message';
-    const owner = warning.owner || 'unassigned';
-    const resolution = warning.resolution || 'pending';
+    const id = warning.id !== undefined && warning.id !== null ? String(warning.id) : 'unknown';
+    const message = warning.message !== undefined && warning.message !== null ? String(warning.message) : 'No message';
+    const owner = warning.owner !== undefined && warning.owner !== null ? String(warning.owner) : 'unassigned';
+    const resolution = warning.resolution !== undefined && warning.resolution !== null ? String(warning.resolution) : 'pending';
     const checks = warning.checks;
 
     let ackStr = 'No ACK';
     if (warning.ack) {
-       const ackOwner = typeof warning.ack === 'object' ? warning.ack.owner : (warning.ackOwner || owner);
+       let ackOwner = owner;
+       if (typeof warning.ack === 'object' && warning.ack.owner !== undefined) {
+           ackOwner = String(warning.ack.owner);
+       } else if (warning.ackOwner !== undefined) {
+           ackOwner = String(warning.ackOwner);
+       } else if (typeof warning.ack === 'string') {
+           ackOwner = warning.ack;
+       }
        ackStr = `ACK by ${ackOwner} (Note: ACK does not imply approved merge)`;
     }
 
     let checksStr = '';
-    if (!checks || (Array.isArray(checks) && checks.length === 0)) {
+    if (!checks || !Array.isArray(checks) || checks.length === 0) {
       checksStr = ' | State: Dirty (missing checks never clean)';
     }
 

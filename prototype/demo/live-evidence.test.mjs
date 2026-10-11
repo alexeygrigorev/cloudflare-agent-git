@@ -54,7 +54,18 @@ test('retains explicit unknown values (not zero)', () => {
   const input = {
     val1: 'unknown',
     val2: 0,
-    val3: null
+    val3: null,
+    secret: 'unknown',
+    token: 'unknown',
+    password: 0
   };
-  assert.deepEqual(sanitizeEvidence(input), input);
+  const expected = {
+    val1: 'unknown',
+    val2: 0,
+    val3: null,
+    secret: 'unknown',
+    token: 'unknown',
+    password: 'REDACTED'
+  };
+  assert.deepEqual(sanitizeEvidence(input), expected);
 });

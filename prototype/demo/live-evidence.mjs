@@ -4,6 +4,9 @@ export function sanitizeEvidence(receipt) {
   }
   
   if (typeof receipt === 'string') {
+    if (receipt === 'unknown') {
+      return receipt;
+    }
     try {
       if (receipt.includes('://')) {
         const url = new URL(receipt);
@@ -27,7 +30,9 @@ export function sanitizeEvidence(receipt) {
     const sanitized = {};
     const redactKeys = ['token', 'password', 'authorization', 'secret'];
     for (const [key, value] of Object.entries(receipt)) {
-      if (redactKeys.some(k => key.toLowerCase().includes(k))) {
+      if (value === 'unknown') {
+        sanitized[key] = value;
+      } else if (redactKeys.some(k => key.toLowerCase().includes(k))) {
         sanitized[key] = 'REDACTED';
       } else {
         sanitized[key] = sanitizeEvidence(value);
