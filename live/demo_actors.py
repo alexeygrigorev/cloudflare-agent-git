@@ -28,10 +28,58 @@ import os
 import pathlib
 import re
 import subprocess
+import signal
 import sys
 import tempfile
 import time
 from typing import Any, Dict, List, Optional, Tuple
+
+def _safe_run(*args, **kwargs):
+    timeout = kwargs.pop("timeout", 15)
+    check = kwargs.pop("check", False)
+    capture_output = kwargs.pop("capture_output", False)
+    input_data = kwargs.pop("input", None)
+    text = kwargs.pop("text", False)
+
+    if capture_output:
+        if "stdout" not in kwargs:
+            kwargs["stdout"] = subprocess.PIPE
+        if "stderr" not in kwargs:
+            kwargs["stderr"] = subprocess.PIPE
+
+    if text:
+        kwargs["universal_newlines"] = True
+
+    kwargs["start_new_session"] = True
+
+    proc = subprocess.Popen(*args, **kwargs)
+    try:
+        stdout, stderr = proc.communicate(input=input_data, timeout=timeout)
+    except subprocess.TimeoutExpired as e:
+        try:
+            import os, signal
+            os.killpg(proc.pid, signal.SIGKILL)
+        except OSError:
+            pass
+        try:
+            stdout, stderr = proc.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            stdout, stderr = None, None
+        raise subprocess.TimeoutExpired(proc.args, timeout, output=stdout, stderr=stderr) from e
+
+    ret = subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
+    if check and ret.returncode != 0:
+        raise subprocess.CalledProcessError(ret.returncode, ret.args, output=ret.stdout, stderr=ret.stderr)
+    return ret
+def _safe_check_output(*args, **kwargs):
+    kwargs["check"] = True
+    if "stdout" in kwargs:
+        del kwargs["stdout"]
+    kwargs["stdout"] = subprocess.PIPE
+    ret = _safe_run(*args, **kwargs)
+    return ret.stdout
+
+
 
 
 def sha256_file(path: pathlib.Path) -> Optional[str]:
@@ -43,16 +91,62 @@ def sha256_file(path: pathlib.Path) -> Optional[str]:
         return None
 
 
+def parse_token_expiry(token: Optional[str], metadata: Optional[Dict[str, Any]] = None) -> Optional[float]:
+    """Extract expiration epoch seconds from token string or authorization metadata.
+    Returns unix timestamp float if found, None if no expiry metadata present.
+    """
+    if token:
+        m = re.search(r"[?&]expires=(\d+(?:\.\d+)?)", token)
+        if m:
+            try:
+                return float(m.group(1))
+            except ValueError:
+                pass
+    if metadata:
+        for key in ("expires_unix", "expiresAt", "expires_at", "expires"):
+            val = metadata.get(key)
+            if val is not None:
+                if isinstance(val, (int, float)):
+                    return float(val)
+                if isinstance(val, str):
+                    try:
+                        return float(val)
+                    except ValueError:
+                        try:
+                            dt = datetime.datetime.fromisoformat(val.replace("Z", "+00:00"))
+                            return dt.timestamp()
+                        except Exception:
+                            pass
+    return None
+
+
+def is_token_expired(
+    token: Optional[str], metadata: Optional[Dict[str, Any]] = None, buffer_seconds: float = 0.0
+) -> Tuple[bool, Optional[float]]:
+    """Check if token is expired based on documented authorization metadata.
+    Returns (is_expired, expiry_timestamp).
+    Never invents fake validity; if no expiry metadata is documented, returns (False, None).
+    """
+    exp = parse_token_expiry(token, metadata)
+    if exp is None:
+        return False, None
+    now = time.time()
+    return (now + buffer_seconds >= exp), exp
+
+
+
 def git_oid(path: pathlib.Path, cwd: Optional[pathlib.Path] = None) -> Optional[str]:
     """Compute 40-hex Git object OID for a file, or None if failed."""
     if not path.exists():
         return None
     try:
-        proc = subprocess.run(
+        proc = _safe_run(
             ["git", "hash-object", str(path)],
             cwd=cwd or path.parent,
             capture_output=True,
             text=True,
+            timeout=15.0,
+            stdin=subprocess.DEVNULL,
             check=False,
         )
         if proc.returncode == 0:
@@ -65,11 +159,13 @@ def git_oid(path: pathlib.Path, cwd: Optional[pathlib.Path] = None) -> Optional[
 def get_git_head(cwd: pathlib.Path) -> Optional[str]:
     """Get current git HEAD commit SHA in cwd."""
     try:
-        proc = subprocess.run(
+        proc = _safe_run(
             ["git", "rev-parse", "HEAD"],
             cwd=cwd,
             capture_output=True,
             text=True,
+            timeout=15.0,
+            stdin=subprocess.DEVNULL,
             check=False,
         )
         if proc.returncode == 0:
@@ -201,16 +297,20 @@ def run_launcher_command(
         subcmd,
     ] + extra_args
 
-    proc = subprocess.run(
-        cmd,
-        cwd=launcher_root,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        env=env,
-        check=False,
-    )
-    return proc.returncode, proc.stdout, proc.stderr
+    try:
+        proc = _safe_run(
+            cmd,
+            cwd=launcher_root,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            stdin=subprocess.DEVNULL,
+            env=env,
+            check=False,
+        )
+        return proc.returncode, proc.stdout, proc.stderr
+    except subprocess.TimeoutExpired as e:
+        return 124, "", f"launcher command '{subcmd}' timed out after {timeout}s"
 
 
 def build_actor_specs(
@@ -218,11 +318,11 @@ def build_actor_specs(
     launcher_config: pathlib.Path,
 ) -> List[Dict[str, Any]]:
     """Construct authentic actor task definitions from session tasks.
-    
+
     Derives stable per-run unique launcher IDs and idempotency keys from
     session run_id plus role, preserving identity across multiple invocations
     of the same run.
-    
+
     Actor A: Presenter formatAgentSummary(status) in prototype/demo/live-view.mjs
     Actor B: Presenter formatWarnings(status) in prototype/demo/live-view.mjs (same path, separate fork)
     Actor C: Sanitizer sanitizeEvidence(receipt) in prototype/demo/live-evidence.mjs (disjoint)
@@ -269,7 +369,7 @@ def build_actor_specs(
                 ws_root = str(pathlib.Path(run_root_val) / "workspaces")
             else:
                 ws_root = str(pathlib.Path(tempfile.gettempdir()) / "agent-branches-workspaces")
-        
+
         # Ensure workspace uses actual workspace childcwd
         if task_info.get("workspace"):
             workspace = pathlib.Path(task_info["workspace"]).resolve()
@@ -439,6 +539,14 @@ def admit_and_launch_actor(
         "launch_timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
 
+    # Token expiry preflight
+    expired, exp_ts = is_token_expired(spec.get("token"))
+    if expired:
+        launch_record["error"] = f"expired local bearer token (expired at {exp_ts})"
+        launch_record["status"] = "cancelled"
+        launch_record["cancelled"] = True
+        return launch_record
+
     # Collision/replay check: inspect existing task in launcher store
     rc_st, out_st, _ = run_launcher_command(
         launcher_root,
@@ -478,7 +586,52 @@ def admit_and_launch_actor(
                 launch_record["run_data"] = {"status": "already_running", "task_id": task_id}
                 return launch_record
 
-    # 1. Idempotent Submit
+    # 1. Quota & Gate Admission (Plan BEFORE submit)
+    rc, out, err = run_launcher_command(
+        launcher_root,
+        launcher_config,
+        "plan",
+        ["--payload", payload_str],
+    )
+    if rc != 0:
+        err_msg = f"plan admission failed (rc={rc}): {err or out}"
+        launch_record["error"] = err_msg
+        return launch_record
+
+    try:
+        plan_json = json.loads(out)
+        launch_record["plan_data"] = plan_json
+        chosen = plan_json.get("chosen")
+
+        if not chosen:
+            # Bounded retry for transient quse route glitches
+            for attempt in range(2):
+                time.sleep(1.0)
+                rc_retry, out_retry, _ = run_launcher_command(
+                    launcher_root, launcher_config, "plan", ["--payload", payload_str]
+                )
+                if rc_retry == 0:
+                    try:
+                        p_retry = json.loads(out_retry)
+                        if p_retry.get("chosen"):
+                            plan_json = p_retry
+                            chosen = plan_json.get("chosen")
+                            launch_record["plan_data"] = plan_json
+                            break
+                    except Exception:
+                        pass
+        if not chosen:
+            rejections = plan_json.get("rejections", {})
+            err_msg = f"admission gate rejected all routes: {rejections}"
+            launch_record["error"] = err_msg
+            return launch_record
+    except json.JSONDecodeError:
+        err_msg = f"invalid plan JSON: {out[:200]}"
+        launch_record["error"] = err_msg
+        return launch_record
+    launch_record["planned"] = True
+
+    # 2. Idempotent Submit
     rc, out, err = run_launcher_command(
         launcher_root,
         launcher_config,
@@ -495,35 +648,10 @@ def admit_and_launch_actor(
         return launch_record
     launch_record["submitted"] = True
 
-    # 2. Quota & Gate Admission (Plan)
-    rc, out, err = run_launcher_command(
-        launcher_root,
-        launcher_config,
-        "plan",
-        ["--id", task_id],
-    )
-    if rc != 0:
-        launch_record["error"] = f"plan admission failed (rc={rc}): {err or out}"
-        return launch_record
-
-    try:
-        plan_json = json.loads(out)
-        launch_record["plan_data"] = plan_json
-        # Fail-closed checks on candidate selection
-        chosen = plan_json.get("chosen")
-        if not chosen:
-            rejections = plan_json.get("rejections", {})
-            launch_record["error"] = f"admission gate rejected all routes: {rejections}"
-            return launch_record
-    except json.JSONDecodeError:
-        launch_record["error"] = f"invalid plan JSON: {out[:200]}"
-        return launch_record
-    launch_record["planned"] = True
-
     # 3. Launch via task-units backend
     tmpdir = str(spec["workspace"] / ".local" / "tmp" / task_id)
     pathlib.Path(tmpdir).mkdir(parents=True, exist_ok=True)
-    
+
     rc, out, err = run_launcher_command(
         launcher_root,
         launcher_config,
@@ -536,12 +664,15 @@ def admit_and_launch_actor(
         ],
     )
     if rc != 0:
-        launch_record["error"] = f"run failed (rc={rc}): {err or out}"
+        err_msg = f"run failed (rc={rc}): {err or out}"
+        launch_record["error"] = err_msg
         return launch_record
 
     try:
         run_json = json.loads(out)
         launch_record["run_data"] = run_json
+        launch_record["detached_controller"] = run_json.get("detached_controller", False)
+        launch_record["controller_unit"] = run_json.get("controller_unit")
     except json.JSONDecodeError:
         launch_record["run_data"] = {"raw_output": out}
 
@@ -587,6 +718,8 @@ def monitor_actor_state(
         "push_start_iso": None,
         "push_end_iso": None,
         "push_timestamp_iso": None,
+        "native_state": "unknown",
+        "native_witness": None,
     }
 
     # Query launcher status
@@ -603,48 +736,178 @@ def monitor_actor_state(
             state_info["launcher_state"] = l_state
             state_info["launcher_reason"] = st.get("reason")
             state_info["controller_admission_state"] = l_state
-            state_info["controller_admitted"] = l_state in (
-                "starting", "running", "completed-awaiting-review", "accepted"
+            state_info["queued"] = (l_state == "queued")
+            state_info["controller_starting"] = (l_state == "starting")
+            state_info["native_model_admitted"] = l_state in (
+                "running", "completed-awaiting-review", "accepted"
             )
+            state_info["controller_admitted"] = state_info["native_model_admitted"]
         except json.JSONDecodeError:
             state_info["launcher_state"] = "unparsable"
 
-    # Inspect stream init and first tool privately from logs/telemetry
-    stdout_file = launcher_config / f"{task_id}-stdout.log"
+
+    expected_model = "unresolved"
+    try:
+        mr = spec.get("payload", {}).get("model_requirements", {})
+        if isinstance(mr, dict):
+            mlist = mr.get("models")
+            if isinstance(mlist, list) and mlist:
+                expected_model = mlist[0]
+        elif isinstance(mr, str):
+            expected_model = mr
+    except Exception:
+        pass
+
     telemetry_file = launcher_config / f"{task_id}-telemetry.jsonl"
-    if not telemetry_file.exists():
-        telemetry_file = ws / f"{task_id}-telemetry.jsonl"
-    if not stdout_file.exists():
-        stdout_file = ws / ".local" / f"{task_id}-stdout.log"
+    stdout_file = launcher_config / f"{task_id}-stdout.log"
 
-    if stdout_file.exists() and stdout_file.stat().st_size > 0:
-        state_info["stream_init"] = True
+    def parse_stream(s_file):
+        if not s_file.exists():
+            return None, False
+        if s_file.stat().st_size > 64 * 1024 * 1024:
+            return None, True
 
-    if telemetry_file.exists() and telemetry_file.stat().st_size > 0:
-        state_info["stream_init"] = True
+        t_conv = None
+        t_model = None
+        t_cwd = None
+        t_first_tool = None
+        t_status = None
+        t_init_count = 0
+        t_terminal_count = 0
+        t_terminal_line = None
+        p_error = False
+
         try:
-            with open(telemetry_file, "r", encoding="utf-8", errors="replace") as f:
-                for line in f:
+            with open(s_file, "r", encoding="utf-8", errors="replace") as f:
+                for line_idx, line in enumerate(f):
+                    if line_idx > 100000:
+                        p_error = True
+                        break
                     line = line.strip()
-                    if not line:
-                        continue
+                    if not line: continue
                     try:
                         ev = json.loads(line)
-                        ev_name = ev.get("tool_name") or ev.get("name")
-                        step = ev.get("step_update") or {}
-                        if isinstance(step, dict) and step.get("tool_calls"):
-                            tc = step["tool_calls"][0]
-                            ev_name = tc.get("name") or tc.get("tool_name")
-                        if ev_name:
-                            state_info["first_tool_action"] = ev_name
-                            state_info["first_tool_source"] = "telemetry_jsonl"
+                        if not isinstance(ev, dict):
+                            p_error = True
                             break
+                        e_type = ev.get("event")
+                        if e_type == "init":
+                            t_init_count += 1
+                            t_conv = ev.get("conversation_id")
+                            init_d = ev.get("init")
+                            if isinstance(init_d, dict):
+                                t_model = init_d.get("model")
+                                t_cwd = init_d.get("cwd")
+                        elif e_type == "step_update" and not t_first_tool:
+                            step = ev.get("step_update")
+                            if isinstance(step, dict):
+                                s_type = step.get("step_type")
+                                s_state = step.get("state")
+                                if s_type == "tool" and s_state == "DONE":
+                                    t_first_tool = step.get("tool_name")
+                        elif e_type == "result":
+                            t_terminal_count += 1
+                            res_d = ev.get("result")
+                            if isinstance(res_d, dict):
+                                r_conv = res_d.get("conversation_id")
+                                if r_conv == t_conv:
+                                    t_status = res_d.get("status")
+                                    t_terminal_line = line_idx + 1
+                                else:
+                                    p_error = True # Mismatched conversation ID
                     except Exception:
-                        continue
+                        p_error = True
+                        break
         except Exception:
-            pass
+            p_error = True
 
-    # Inspect .local/progress.md for real first tool telemetry & native provider identity
+        if p_error:
+            return None, True
+
+        return {
+            "conv": t_conv,
+            "model": t_model,
+            "cwd": t_cwd,
+            "first_tool": t_first_tool,
+            "status": t_status,
+            "init_count": t_init_count,
+            "terminal_count": t_terminal_count,
+            "terminal_line": t_terminal_line,
+            "file": s_file
+        }, False
+
+    telem_data, telem_err = parse_stream(telemetry_file)
+    stdout_data, stdout_err = parse_stream(stdout_file)
+
+    parse_error = telem_err or stdout_err
+    chosen_data = None
+
+    if not parse_error:
+        if telem_data and stdout_data:
+            conflicts = False
+            for k in ["conv", "model", "cwd", "status"]:
+                if telem_data[k] != stdout_data[k]:
+                    conflicts = True
+                    break
+            if conflicts:
+                parse_error = True
+            else:
+                chosen_data = telem_data
+        elif telem_data:
+            chosen_data = telem_data
+        elif stdout_data:
+            chosen_data = stdout_data
+
+    if not parse_error and chosen_data and chosen_data["init_count"] == 1:
+        c_cwd = chosen_data.get("cwd")
+        if c_cwd is not None and c_cwd != str(ws.absolute()):
+            parse_error = True
+        elif chosen_data.get("model") != expected_model:
+            parse_error = True
+        else:
+            t_conv = chosen_data["conv"]
+            t_model = chosen_data["model"]
+            t_status = chosen_data["status"]
+            stream_file = chosen_data["file"]
+            t_first_tool = chosen_data["first_tool"]
+            t_terminal_count = chosen_data["terminal_count"]
+            t_terminal_line = chosen_data["terminal_line"]
+
+            state_info["stream_init"] = True
+            state_info["provider_conversation"] = t_conv
+            state_info["model_identity"] = t_model
+            state_info["native_model_admitted"] = True
+            state_info["controller_admitted"] = True
+
+            src_name = "telemetry_jsonl" if stream_file == telemetry_file else "stdout_log"
+
+            if t_first_tool:
+                state_info["first_tool_action"] = t_first_tool
+                state_info["first_tool_source"] = src_name
+
+            if t_terminal_count == 1 and t_status in ("SUCCESS", "ERROR"):
+                state_info["native_state"] = "completed-awaiting-review" if t_status == "SUCCESS" else "error"
+
+                t_sha = None
+                try:
+                    t_sha = sha256_file(stream_file)
+                except Exception:
+                    pass
+
+                state_info["native_witness"] = {
+                    "task_id": task_id,
+                    "provider_conversation": t_conv,
+                    "model_identity": t_model,
+                    "trace_status": t_status,
+                    "source": src_name,
+                    "log_sha256": t_sha,
+                    "line": t_terminal_line
+                }
+                if t_status == "SUCCESS":
+                    state_info["launcher_state"] = "completed-awaiting-review"
+
+
+    # Task workspace fallback progress/result.json are ADVISORY ONLY NEVER native terminal witness
     progress_file = ws / ".local" / "progress.md"
     if progress_file.exists():
         state_info["progress_present"] = True
@@ -652,15 +915,8 @@ def monitor_actor_state(
             content = progress_file.read_text(errors="replace")
             for line in content.splitlines():
                 line_str = line.strip()
-                if "Conversation:" in line_str or "Native Provider Conversation:" in line_str:
-                    state_info["provider_conversation"] = line_str.split(":", 1)[1].strip()
-                elif "Model:" in line_str:
-                    state_info["model_identity"] = line_str.split(":", 1)[1].strip()
-                elif "Time:" in line_str or "Timestamp:" in line_str:
+                if "Time:" in line_str or "Timestamp:" in line_str:
                     state_info["coding_start_iso"] = line_str.split(":", 1)[1].strip()
-            if not state_info["first_tool_action"]:
-                state_info["first_tool_action"] = "write_progress_md"
-                state_info["first_tool_source"] = "progress_md"
         except Exception:
             pass
 
@@ -673,13 +929,11 @@ def monitor_actor_state(
     test_file = ws / spec["test_rel"]
     state_info["test_present"] = test_file.exists() and test_file.stat().st_size > 0
 
-    # Inspect semantic ownership intent response
     ownership_file = ws / ".local" / "ownership-reply.md"
     if not ownership_file.exists():
         ownership_file = ws / ".local" / "ownership-handoff.json"
     state_info["ownership_intent_present"] = ownership_file.exists() and ownership_file.stat().st_size > 0
 
-    # Inspect actor result receipt
     result_file = ws / ".local" / "result.json"
     if not result_file.exists():
         result_file = ws / ".local" / "result-repair.json"
@@ -708,6 +962,8 @@ def monitor_actor_state(
     return state_info
 
 
+
+
 def run_parallel(
     session_path: str | pathlib.Path,
     launcher_root: str | pathlib.Path,
@@ -716,7 +972,7 @@ def run_parallel(
     poll_interval: float = 5.0,
 ) -> Dict[str, Any]:
     """Execute maintained-launcher parallel model phase over session.tasks.
-    
+
     Adheres strictly to AB53 phase-interface contract:
     - Launch all three model tasks before waiting
     - Shared existing launcher config passed explicitly
@@ -797,9 +1053,33 @@ def run_parallel(
     # If any launch failed outright, record failure
     failed_launches = [l for l in launches if not l.get("launched")]
     if failed_launches:
-        receipt["status"] = "launch_rejected"
+        is_cancelled = any(l.get("cancelled") for l in failed_launches)
+        receipt["status"] = "cancelled" if is_cancelled else "launch_rejected"
         receipt["error"] = f"{len(failed_launches)} actor(s) failed admission or launch"
         receipt["failed_launches"] = failed_launches
+
+        # If no supported API can prevent an orphan at deadline, return exact missing operation and HELD checkpoint
+        for l in launches:
+            if l.get("submitted") and not l.get("launched"):
+                receipt["missing_operation"] = "cancellation support missing"
+                receipt["status"] = "HELD"
+
+        recovery_ckpt = {
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "status": receipt["status"],
+            "launches": launches,
+            "failed_launches": failed_launches,
+            "recovery_action": "admission gate rejected routes; unlaunched queue entries retired; preserve checkpoint",
+        }
+        receipt["recovery_checkpoint"] = recovery_ckpt
+        try:
+            ckpt_dir = l_config.parent / "runtime-lifetime-repair"
+            ckpt_dir.mkdir(parents=True, exist_ok=True)
+            (ckpt_dir / f"recovery-checkpoint-{session_data.get('run_id', 'unknown')}.json").write_text(
+                json.dumps(recovery_ckpt, indent=2)
+            )
+        except Exception:
+            pass
         return receipt
 
     # 5. Bounded Monitor Loop
@@ -877,19 +1157,40 @@ def run_parallel(
         "push_overlap_note": push_overlap_note,
     }
 
-    # Determine overall status
+    # Determine overall status with finite bounds
     if all_terminal:
         # Check if all completed
+        # No success from detached controller or queued-only receipt
         all_completed = all(
             act.get("launcher_state") in ("completed", "completed-awaiting-review")
             for act in receipt["actors"].values()
         )
-        if all_completed:
+        has_incomplete = any(
+            act.get("launcher_state") in ("queued", "starting")
+            for act in receipt["actors"].values()
+        )
+        if all_completed and not has_incomplete:
             receipt["status"] = "completed-awaiting-review"
+        elif has_incomplete:
+            receipt["status"] = "admission_incomplete"
         else:
             receipt["status"] = "completed_with_failures"
     else:
-        receipt["status"] = "timeout_bounded"
+        # Finite timeout bounds reached:
+        # If no supported API can prevent an orphan at deadline, return exact missing operation and HELD checkpoint
+        has_orphan = False
+        for spec in specs:
+            st = receipt["actors"].get(spec["role"], {})
+            l_st = st.get("launcher_state")
+            if l_st in ("queued", "starting"):
+                has_orphan = True
+
+        if has_orphan:
+            receipt["missing_operation"] = "cancellation support missing"
+            receipt["status"] = "HELD"
+        else:
+            # Note: productive actors in 'running' are never killed merely to change providers
+            receipt["status"] = "timeout_bounded"
 
     receipt["end_time_utc"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
     return receipt

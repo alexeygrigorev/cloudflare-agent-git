@@ -37,6 +37,53 @@ import urllib.error
 import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
+def _safe_run(*args, **kwargs):
+    timeout = kwargs.pop("timeout", 15)
+    check = kwargs.pop("check", False)
+    capture_output = kwargs.pop("capture_output", False)
+    input_data = kwargs.pop("input", None)
+    text = kwargs.pop("text", False)
+
+    if capture_output:
+        if "stdout" not in kwargs:
+            kwargs["stdout"] = subprocess.PIPE
+        if "stderr" not in kwargs:
+            kwargs["stderr"] = subprocess.PIPE
+
+    if text:
+        kwargs["universal_newlines"] = True
+
+    kwargs["start_new_session"] = True
+
+    proc = subprocess.Popen(*args, **kwargs)
+    try:
+        stdout, stderr = proc.communicate(input=input_data, timeout=timeout)
+    except subprocess.TimeoutExpired as e:
+        try:
+            import os, signal
+            os.killpg(proc.pid, signal.SIGKILL)
+        except OSError:
+            pass
+        try:
+            stdout, stderr = proc.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            stdout, stderr = None, None
+        raise subprocess.TimeoutExpired(proc.args, timeout, output=stdout, stderr=stderr) from e
+
+    ret = subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
+    if check and ret.returncode != 0:
+        raise subprocess.CalledProcessError(ret.returncode, ret.args, output=ret.stdout, stderr=ret.stderr)
+    return ret
+def _safe_check_output(*args, **kwargs):
+    kwargs["check"] = True
+    if "stdout" in kwargs:
+        del kwargs["stdout"]
+    kwargs["stdout"] = subprocess.PIPE
+    ret = _safe_run(*args, **kwargs)
+    return ret.stdout
+
+
+
 _RUNNING_POPENS: Dict[int, subprocess.Popen] = {}
 
 
@@ -228,7 +275,7 @@ def check_preflight(options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     # 1. Commands
     try:
         node_bin = find_node_executable()
-        node_ver = subprocess.check_output([node_bin, "-v"], text=True).strip()
+        node_ver = _safe_check_output([node_bin, "-v"], text=True).strip()
         results["commands"]["node"] = {"path": node_bin, "version": node_ver}
     except Exception as e:
         results["errors"].append(f"node missing or failed: {e}")
@@ -237,7 +284,7 @@ def check_preflight(options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     git_bin = shutil.which("git")
     if git_bin:
         try:
-            git_ver = subprocess.check_output([git_bin, "--version"], text=True).strip()
+            git_ver = _safe_check_output([git_bin, "--version"], text=True).strip()
             results["commands"]["git"] = {"path": git_bin, "version": git_ver}
         except Exception as e:
             results["errors"].append(f"git version check failed: {e}")
@@ -346,7 +393,7 @@ def start_runtime(options: Optional[Dict[str, Any]] = None) -> str:
         if not tsc_bin:
             raise RuntimeError("No compiled main.js and no tsc found to compile prototype (provide --cached-main or set CACHED_MAIN_JS).")
         tsconfig = source_root / "prototype" / "tsconfig.node.json"
-        subprocess.run([tsc_bin, "-p", str(tsconfig)], check=True)
+        _safe_run([tsc_bin, "-p", str(tsconfig)], check=True)
         coordinator_entry = source_root / "prototype" / ".build" / "node" / "src" / "local" / "main.js"
         if not coordinator_entry.exists():
             raise RuntimeError(f"tsc build did not produce expected {coordinator_entry}")
@@ -455,15 +502,15 @@ def start_runtime(options: Optional[Dict[str, Any]] = None) -> str:
 
     # Clone canonical repo
     clone_env = git_auth_env(canon_remote, canon_plaintext_token)
-    subprocess.run([git_bin, "clone", "-q", canon_remote, str(seed_dir)], env=clone_env, check=True)
+    _safe_run([git_bin, "clone", "-q", canon_remote, str(seed_dir)], env=clone_env, check=True)
 
     # Archive prototype from source_root and extract to seed_dir
-    archive_bytes = subprocess.check_output([git_bin, "archive", "HEAD", "prototype"], cwd=str(source_root))
+    archive_bytes = _safe_check_output([git_bin, "archive", "HEAD", "prototype"], cwd=str(source_root))
     with tarfile.open(fileobj=io.BytesIO(archive_bytes)) as t:
         t.extractall(seed_dir, filter="data")
 
-    subprocess.run([git_bin, "add", "prototype"], cwd=str(seed_dir), check=True)
-    subprocess.run(
+    _safe_run([git_bin, "add", "prototype"], cwd=str(seed_dir), check=True)
+    _safe_run(
         [
             git_bin,
             "-c", "user.name=Agent Branches Demo",
@@ -474,8 +521,8 @@ def start_runtime(options: Optional[Dict[str, Any]] = None) -> str:
         cwd=str(seed_dir),
         check=True
     )
-    subprocess.run([git_bin, "push", "-q", "origin", "main"], cwd=str(seed_dir), env=clone_env, check=True)
-    base_sha = subprocess.check_output([git_bin, "rev-parse", "HEAD"], cwd=str(seed_dir), text=True).strip()
+    _safe_run([git_bin, "push", "-q", "origin", "main"], cwd=str(seed_dir), env=clone_env, check=True)
+    base_sha = _safe_check_output([git_bin, "rev-parse", "HEAD"], cwd=str(seed_dir), text=True).strip()
 
     # 4. Create three real task forks
     task_specs = [
@@ -500,7 +547,7 @@ def start_runtime(options: Optional[Dict[str, Any]] = None) -> str:
         # Clone task fork into workspace_root / task_id
         task_workspace = workspace_root / task_id
         task_env = git_auth_env(fork_remote, fork_token)
-        subprocess.run([git_bin, "clone", "-q", fork_remote, str(task_workspace)], env=task_env, check=True)
+        _safe_run([git_bin, "clone", "-q", fork_remote, str(task_workspace)], env=task_env, check=True)
 
         tasks_record.append({
             "task_id": task_id,
@@ -511,7 +558,7 @@ def start_runtime(options: Optional[Dict[str, Any]] = None) -> str:
         })
 
     # Source commit pin
-    source_commit = subprocess.check_output([git_bin, "rev-parse", "HEAD"], cwd=str(source_root), text=True).strip()
+    source_commit = _safe_check_output([git_bin, "rev-parse", "HEAD"], cwd=str(source_root), text=True).strip()
 
     # 5. Build session dictionary matching phase-interface.md contract
     session_data = {
@@ -823,32 +870,107 @@ def run_cli():
             if not is_models_receipt_successful(models_receipt):
                 print(f"[live] Models phase rejected or failed: {models_receipt}", file=sys.stderr)
                 exit_code = 1
+            else:
+                print("[live] Executing checks phase...")
+                checks_receipt = demo_checks.run_checks(session_path)
+                print(f"[live] Checks phase completed: {checks_receipt}")
 
-            print("[live] Executing checks phase...")
-            checks_receipt = demo_checks.run_checks(session_path)
-            print(f"[live] Checks phase completed: {checks_receipt}")
-
-            if not is_checks_receipt_successful(checks_receipt):
-                print(f"[live] Checks phase rejected or failed: {checks_receipt}", file=sys.stderr)
-                exit_code = 1
+                if not is_checks_receipt_successful(checks_receipt):
+                    print(f"[live] Checks phase rejected or failed: {checks_receipt}", file=sys.stderr)
+                    exit_code = 1
 
         except Exception as e:
             print(f"[live] Execution error: {e}", file=sys.stderr)
             exit_code = 1
         finally:
             if session_path:
-                print("[live] Cleaning up owned processes...")
-                try:
-                    cleanup_receipt = stop_runtime(session_path)
-                    print(f"[live] Cleanup complete: {json.dumps(cleanup_receipt)}")
-                    if cleanup_receipt.get("status") != "stopped":
-                        exit_code = exit_code or 1
-                    for p_rec in cleanup_receipt.get("processes", []):
-                        if p_rec.get("action") in ("error", "skipped"):
-                            exit_code = exit_code or 1
-                except Exception as ce:
-                    print(f"[live] Cleanup error: {ce}", file=sys.stderr)
+                rec = locals().get('models_receipt')
+
+                # Independently evidence if ALL actual submitted actors are terminal
+                all_terminal = False
+                if isinstance(rec, dict):
+                    manifest = rec.get("launch_manifest")
+                    actors = rec.get("actors")
+                    if isinstance(actors, dict) and actors and isinstance(manifest, list):
+                        terminal_states = {"completed", "completed-awaiting-review", "accepted", "failed"}
+                        all_terminal_check = True
+
+                        for item in manifest:
+                            if isinstance(item, dict) and item.get("submitted"):
+                                role = item.get("role")
+                                actor_data = actors.get(role)
+                                if not isinstance(actor_data, dict):
+                                    all_terminal_check = False
+                                    break
+                                if actor_data.get("launcher_state") not in terminal_states:
+                                    all_terminal_check = False
+                                    break
+                                if actor_data.get("native_state") not in terminal_states or not actor_data.get("native_witness"):
+                                    all_terminal_check = False
+                                    break
+
+                        if all_terminal_check:
+                            for role, actor_data in actors.items():
+                                if not isinstance(actor_data, dict):
+                                    all_terminal_check = False
+                                    break
+                                if actor_data.get("launcher_state") not in terminal_states:
+                                    all_terminal_check = False
+                                    break
+                                if actor_data.get("native_state") not in terminal_states or not actor_data.get("native_witness"):
+                                    all_terminal_check = False
+                                    break
+
+                        if all_terminal_check:
+                            all_terminal = True
+
+                if not all_terminal:
+                    # Default custody must retain parent cleanupZERO whenever actor liveness UNKNOWN
+                    # or any runnable missing/errors/non-dict/exception.
+                    st = rec.get("status") if isinstance(rec, dict) else "unknown/error"
+                    print(f"[live] Skipping runtime cleanup to retain custody (all_terminal=False, status={st}).")
+                    print(f"[live] Stage/resume instruction: Use --stage models --session {session_path} to resume.")
                     exit_code = exit_code or 1
+
+                    import uuid
+                    handoff_data = {
+                        "session_path": session_path,
+                        "status": st,
+                        "instruction": f"Use --stage models --session {session_path} to resume.",
+                        "owner_handoff": "pending",
+                        "provenance": {"pid": os.getpid()}
+                    }
+                    if isinstance(rec, dict):
+                        actors_info = {}
+                        actors_dict = rec.get("actors", {})
+                        if isinstance(actors_dict, dict):
+                            for role, a_data in actors_dict.items():
+                                if isinstance(a_data, dict):
+                                    actors_info[role] = {
+                                        "launcher_state": a_data.get("launcher_state", "unknown"),
+                                        "native_state": a_data.get("native_state", "unknown")
+                                    }
+                        handoff_data["actors"] = actors_info
+
+                    handoff_path = pathlib.Path(session_path).parent / f"custody-resume-handoff-{uuid.uuid4().hex[:8]}.json"
+                    tmp_path = handoff_path.with_suffix('.tmp')
+                    with open(tmp_path, "w") as f:
+                        json.dump(handoff_data, f, indent=2)
+                    os.chmod(tmp_path, 0o600)
+                    os.rename(tmp_path, handoff_path)
+                else:
+                    print("[live] Cleaning up owned processes...")
+                    try:
+                        cleanup_receipt = stop_runtime(session_path)
+                        print(f"[live] Cleanup complete: {json.dumps(cleanup_receipt)}")
+                        if cleanup_receipt.get("status") != "stopped":
+                            exit_code = exit_code or 1
+                        for p_rec in cleanup_receipt.get("processes", []):
+                            if p_rec.get("action") in ("error", "skipped"):
+                                exit_code = exit_code or 1
+                    except Exception as ce:
+                        print(f"[live] Cleanup error: {ce}", file=sys.stderr)
+                        exit_code = exit_code or 1
 
         sys.exit(exit_code)
 

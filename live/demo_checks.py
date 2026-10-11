@@ -36,12 +36,60 @@ import os
 import pathlib
 import shutil
 import subprocess
+import signal
 import sys
 import tempfile
 import time
 import urllib.error
 import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
+
+def _safe_run(*args, **kwargs):
+    timeout = kwargs.pop("timeout", 15)
+    check = kwargs.pop("check", False)
+    capture_output = kwargs.pop("capture_output", False)
+    input_data = kwargs.pop("input", None)
+    text = kwargs.pop("text", False)
+
+    if capture_output:
+        if "stdout" not in kwargs:
+            kwargs["stdout"] = subprocess.PIPE
+        if "stderr" not in kwargs:
+            kwargs["stderr"] = subprocess.PIPE
+
+    if text:
+        kwargs["universal_newlines"] = True
+
+    kwargs["start_new_session"] = True
+
+    proc = subprocess.Popen(*args, **kwargs)
+    try:
+        stdout, stderr = proc.communicate(input=input_data, timeout=timeout)
+    except subprocess.TimeoutExpired as e:
+        try:
+            import os, signal
+            os.killpg(proc.pid, signal.SIGKILL)
+        except OSError:
+            pass
+        try:
+            stdout, stderr = proc.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            stdout, stderr = None, None
+        raise subprocess.TimeoutExpired(proc.args, timeout, output=stdout, stderr=stderr) from e
+
+    ret = subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
+    if check and ret.returncode != 0:
+        raise subprocess.CalledProcessError(ret.returncode, ret.args, output=ret.stdout, stderr=ret.stderr)
+    return ret
+def _safe_check_output(*args, **kwargs):
+    kwargs["check"] = True
+    if "stdout" in kwargs:
+        del kwargs["stdout"]
+    kwargs["stdout"] = subprocess.PIPE
+    ret = _safe_run(*args, **kwargs)
+    return ret.stdout
+
+
 
 
 # Core proof categories
@@ -95,7 +143,7 @@ def http_request(
     timeout: float = 15.0,
 ) -> Tuple[int, Dict[str, Any]]:
     """Execute HTTP request with direct urllib and finite timeout.
-    
+
     Credentials are sent in HTTP Authorization header only, never in URL.
     """
     headers: Dict[str, str] = {
@@ -146,7 +194,7 @@ def run_git(
         env["GIT_CONFIG_KEY_0"] = "http.extraHeader"
         env["GIT_CONFIG_VALUE_0"] = f"Authorization: Bearer {token}"
 
-    return subprocess.run(
+    return _safe_run(
         ["git"] + cmd,
         cwd=cwd,
         env=env,
@@ -213,7 +261,7 @@ def classify_warning_owner(
     owner_agent_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Evaluate warning ownership using real core schema without fictional DTOs.
-    
+
     Core WarningRecord schema:
       - id: str
       - pair: [str, str]
@@ -272,7 +320,7 @@ def classify_warning_owner(
 
 def run_checks(session_path: str) -> Dict[str, Any]:
     """Run trusted Git checks and post typed contract 0.1 payload.
-    
+
     1. Fetch exact actual task heads via Git auth ENV into uniquely owned checker repository.
     2. Real merge-tree across all pairs.
     3. Source tree tests for clean merges via git archive to private scratch without copying node_modules.
@@ -385,7 +433,7 @@ def run_checks(session_path: str) -> Dict[str, Any]:
                         test_env["NODE_PATH"] = cached_modules
 
                     test_cmd = ["node", "--test"] + sorted(test_files)
-                    t_proc = subprocess.run(
+                    t_proc = _safe_run(
                         test_cmd,
                         cwd=str(scratch_dir),
                         env=test_env,
@@ -553,7 +601,7 @@ def run_launcher_command(
         subcmd,
     ] + extra_args
 
-    proc = subprocess.run(
+    proc = _safe_run(
         cmd,
         cwd=str(launcher_root),
         capture_output=True,
@@ -573,7 +621,7 @@ def dispatch_owner_followup(
     gate_source_edits: bool = True,
 ) -> Dict[str, Any]:
     """Submit, plan quota admission, and launch owner followup via task-units backend.
-    
+
     Contract rules:
     - Real owner bound to coordinator warning.owner and own task token.
     - Semantic response in _docs/live-demo-owner-resolution.md and .local/ownership-reply.md.
@@ -757,14 +805,14 @@ def verify_merge_ancestry(
     parent_b: str,
 ) -> Dict[str, Any]:
     """Programmatically verify genuine two-parent merge ancestry using git rev-list / log.
-    
+
     Verifies:
     1. target_head parents count >= 2 (for a merge commit) or contains both parent_a and parent_b in ancestry.
     2. parent_a is an ancestor of target_head (git merge-base --is-ancestor parent_a target_head).
     3. parent_b is an ancestor of target_head (git merge-base --is-ancestor parent_b target_head).
     4. Exact parent hashes from git rev-list --parents -n 1.
     """
-    proc = subprocess.run(
+    proc = _safe_run(
         ["git", "rev-list", "--parents", "-n", "1", target_head],
         cwd=repo_dir,
         capture_output=True,
@@ -789,7 +837,7 @@ def verify_merge_ancestry(
     parents = parts[1:] if len(parts) > 1 else []
 
     # Check ancestry of parent A
-    proc_a = subprocess.run(
+    proc_a = _safe_run(
         ["git", "merge-base", "--is-ancestor", parent_a, target_head],
         cwd=repo_dir,
         capture_output=True,
@@ -798,7 +846,7 @@ def verify_merge_ancestry(
     is_a_ancestor = (proc_a.returncode == 0)
 
     # Check ancestry of parent B
-    proc_b = subprocess.run(
+    proc_b = _safe_run(
         ["git", "merge-base", "--is-ancestor", parent_b, target_head],
         cwd=repo_dir,
         capture_output=True,
@@ -849,7 +897,7 @@ def verify_native_push_delivery(
     push_stderr: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Verify native coordinator delivery through hooked Git push, rejecting manual POST API fallbacks.
-    
+
     Verifies:
     1. Git push exited with code 0.
     2. Head advanced from initial_head to current_remote_head.
@@ -860,7 +908,7 @@ def verify_native_push_delivery(
     agent_id = owner_task.get("agent_id", "")
     coord_head = status_data.get("heads", {}).get(agent_id)
     unprocessed = status_data.get("unprocessedPushes", [])
-    
+
     # Check if this agent or fork has unprocessed push
     unprocessed_match = any(
         u.get("agentId") == agent_id or u.get("repo") == owner_task.get("fork_remote")
@@ -869,7 +917,7 @@ def verify_native_push_delivery(
 
     # Check for manual POST events marker in session or receipts
     manual_post_detected = bool(session.get("manual_post_events_used", False))
-    
+
     head_advanced = bool(initial_head and current_remote_head != initial_head)
     coord_head_matched = (coord_head == current_remote_head)
 
@@ -918,7 +966,7 @@ def run_owner_followup(
     timeout_seconds: int = 1200,
 ) -> Dict[str, Any]:
     """Execute native owner follow-up workflow and verify ownership lifecycle.
-    
+
     1. Inspect coordinator status for active conflict warnings.
     2. Evaluate warning ownership using real core schema (pair, headsAtIssue, acks, status)
        distinguishing unrelated, expired, not-owner, and valid owner cases.
@@ -1169,14 +1217,14 @@ def preflight() -> int:
         return 1
 
     # Verify git is available
-    git_proc = subprocess.run(["git", "--version"], capture_output=True, text=True)
+    git_proc = _safe_run(["git", "--version"], capture_output=True, text=True)
     if git_proc.returncode != 0:
         print("FATAL: git executable not found", file=sys.stderr)
         return 1
     print(f"[checks-preflight] Git: {git_proc.stdout.strip()}")
 
     # Verify node is available
-    node_proc = subprocess.run(["node", "--version"], capture_output=True, text=True)
+    node_proc = _safe_run(["node", "--version"], capture_output=True, text=True)
     if node_proc.returncode != 0:
         print("FATAL: node executable not found", file=sys.stderr)
         return 1
