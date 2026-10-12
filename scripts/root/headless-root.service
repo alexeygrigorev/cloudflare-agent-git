@@ -1,0 +1,8 @@
+[Unit]
+Description=Interim headless Codex root run (cloudflare-agent-git)
+
+[Service]
+Type=oneshot
+Environment=PATH=%h/.local/bin:%h/bin:%h/.nvm/versions/node/v24.13.1/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/git/cloudflare-agent-git/scripts/root/headless-root-launch.sh
+TimeoutStartSec=35min

@@ -1,0 +1,10 @@
+[Unit]
+Description=Interim headless Codex root every 30 min (until agent-hub M4 scheduler)
+
+[Timer]
+OnCalendar=*:07,37
+Persistent=false
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target
