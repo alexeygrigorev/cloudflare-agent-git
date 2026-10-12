@@ -37,6 +37,11 @@ report() { echo "hygiene: $1: $2"; bad=1; }
 
 while IFS= read -r path; do
   [ -n "$path" ] || continue
+  # Alexey explicitly requested these contest delivery filenames (12 Oct 2026).
+  # Other submission documents and all secret/content checks remain unchanged.
+  case "$path" in
+    docs-submission/VIDEO.md|docs-submission/SUBMISSION.md|docs-submission/COST.md) continue ;;
+  esac
   base=${path##*/}
   lower=$(printf '%s' "$base" | tr 'A-Z' 'a-z')
   stem=${lower%.*}
