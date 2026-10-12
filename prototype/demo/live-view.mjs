@@ -3,83 +3,136 @@ export function formatAgentSummary(status) {
         return '[STALE/UNKNOWN] Invalid status object';
     }
 
-    // Do not copy secrets (e.g. token). Read actual core coordinator/status shape.
-    const safeData = {
-        agentId: status.agentId || 'UNKNOWN',
-        base: status.baseSha || status.base_sha || status.base || 'UNKNOWN',
-        head: status.head || 'UNKNOWN',
-        taskId: status.taskId || 'UNKNOWN'
-    };
-    
+    const agents = Array.isArray(status.agents) ? status.agents : [];
+    if (agents.length === 0) {
+        return '[UNKNOWN] No agents found';
+    }
+
     // Deterministic sorting
-    const keys = Object.keys(safeData).sort();
-    
-    let hasMissing = false;
-    const parts = keys.map(k => {
-        const val = safeData[k];
-        if (val === 'UNKNOWN' || val === null || val === undefined || val === '') {
-            hasMissing = true;
-            return `${k}: NOT_CHECKED/UNKNOWN`;
-        }
-        return `${k}: ${val}`;
+    const sortedAgents = [...agents].sort((a, b) => {
+        const idA = a.agentId || '';
+        const idB = b.agentId || '';
+        return idA.localeCompare(idB);
     });
 
-    const formatted = parts.join(' | ');
+    return sortedAgents.map(agent => {
+        // Do not copy secrets (e.g. token). Read actual core coordinator/status shape.
+        const safeData = {
+            agentId: agent.agentId || 'UNKNOWN',
+            base: agent.baseSha || agent.base_sha || agent.base || 'UNKNOWN',
+            head: agent.head || 'UNKNOWN',
+            taskId: agent.taskId || 'UNKNOWN'
+        };
 
-    if (status.stale === true) {
-        return `[STALE] ${formatted}`;
-    }
+        // Deterministic sorting
+        const keys = Object.keys(safeData).sort();
 
-    if (status.status === 'not_checked' || status.status === 'unknown') {
-        return `[NOT_CHECKED] ${formatted}`;
-    }
+        let hasMissing = false;
+        const parts = keys.map(k => {
+            const val = safeData[k];
+            if (val === 'UNKNOWN' || val === null || val === undefined || val === '') {
+                hasMissing = true;
+                return `${k}: NOT_CHECKED/UNKNOWN`;
+            }
+            return `${k}: ${val}`;
+        });
 
-    if (hasMissing) {
-        return `[DIRTY/INCOMPLETE] ${formatted}`;
-    }
+        // Determine state from pairs
+        let isClean = !hasMissing;
+        let isStale = false;
+        let isNotChecked = false;
+        let isUnknown = false;
 
-    return `[COMPLETE] ${formatted}`;
+        if (Array.isArray(status.pairs)) {
+            const pairs = status.pairs.filter(p => p.pair && p.pair.includes(agent.agentId));
+            if (pairs.length === 0) {
+                isUnknown = true;
+                isClean = false;
+            } else {
+                for (const p of pairs) {
+                    if (p.stale) isStale = true;
+                    if (p.status === 'not_checked') isNotChecked = true;
+                    if (p.status === 'unknown') isUnknown = true;
+                }
+            }
+        } else {
+            isUnknown = true;
+            isClean = false;
+        }
+
+        if (isStale) isClean = false;
+        if (isNotChecked) isClean = false;
+        if (isUnknown) isClean = false;
+
+        const prefix = isStale ? '[STALE]' :
+                       isNotChecked ? '[NOT_CHECKED]' :
+                       isUnknown || hasMissing ? '[DIRTY/INCOMPLETE]' :
+                       '[CLEAN]';
+
+        return `${prefix} ${parts.join(' | ')}`;
+    }).join('\n');
 }
 
 export function formatWarnings(status) {
-  if (!status || !Array.isArray(status.warnings)) {
-    return "No warnings data available.";
-  }
-  if (status.warnings.length === 0) {
-    return "";
-  }
-
-  const sortedWarnings = [...status.warnings].sort((a, b) => {
-    const idA = a.id !== undefined && a.id !== null ? String(a.id) : 'unknown';
-    const idB = b.id !== undefined && b.id !== null ? String(b.id) : 'unknown';
-    return idA.localeCompare(idB);
-  });
-
-  return sortedWarnings.map(warning => {
-    const id = warning.id !== undefined && warning.id !== null ? String(warning.id) : 'unknown';
-    const message = warning.message !== undefined && warning.message !== null ? String(warning.message) : 'No message';
-    const owner = warning.owner !== undefined && warning.owner !== null ? String(warning.owner) : 'unassigned';
-    const resolution = warning.resolution !== undefined && warning.resolution !== null ? String(warning.resolution) : 'pending';
-    const checks = warning.checks;
-
-    let ackStr = 'No ACK';
-    if (warning.ack) {
-       let ackOwner = owner;
-       if (typeof warning.ack === 'object' && warning.ack.owner !== undefined) {
-           ackOwner = String(warning.ack.owner);
-       } else if (warning.ackOwner !== undefined) {
-           ackOwner = String(warning.ackOwner);
-       } else if (typeof warning.ack === 'string') {
-           ackOwner = warning.ack;
-       }
-       ackStr = `ACK by ${ackOwner} (Note: ACK does not imply approved merge)`;
+    if (!status || typeof status !== 'object' || !Array.isArray(status.warnings)) {
+        return "No warnings data available.";
+    }
+    if (status.warnings.length === 0) {
+        return "";
     }
 
-    let checksStr = '';
-    if (!checks || !Array.isArray(checks) || checks.length === 0) {
-      checksStr = ' | State: Dirty (missing checks never clean)';
-    }
+    const sortedWarnings = [...status.warnings].sort((a, b) => {
+        const idA = a.id !== undefined && a.id !== null ? String(a.id) : 'unknown';
+        const idB = b.id !== undefined && b.id !== null ? String(b.id) : 'unknown';
+        return idA.localeCompare(idB);
+    });
 
-    return `[Warning ${id}] ${message} | Owner: ${owner} | Status: ${resolution} | ${ackStr}${checksStr}`;
-  }).join('\n');
+    return sortedWarnings.map(warning => {
+        const id = warning.id !== undefined && warning.id !== null ? String(warning.id) : 'unknown';
+        const reason = warning.reason !== undefined && warning.reason !== null
+            ? String(warning.reason)
+            : (warning.message !== undefined && warning.message !== null ? String(warning.message) : 'No reason');
+
+        // Use pair if available (actual shape), fallback to owner
+        let owners = 'unassigned';
+        if (Array.isArray(warning.pair) && warning.pair.length > 0) {
+            owners = [...warning.pair].sort().join(', ');
+        } else if (warning.owner !== undefined && warning.owner !== null) {
+            owners = String(warning.owner);
+        }
+
+        const resolution = warning.status !== undefined && warning.status !== null
+            ? String(warning.status)
+            : (warning.resolution !== undefined && warning.resolution !== null ? String(warning.resolution) : 'pending');
+
+        let acksStr = 'No ACK';
+        if (Array.isArray(warning.acks) && warning.acks.length > 0) {
+            const sortedAcks = [...warning.acks].sort((a, b) => {
+                const agentA = a.agent !== undefined && a.agent !== null ? String(a.agent) : '';
+                const agentB = b.agent !== undefined && b.agent !== null ? String(b.agent) : '';
+                return agentA.localeCompare(agentB);
+            });
+            acksStr = sortedAcks.map(ack => {
+                const ackOwner = ack.agent !== undefined && ack.agent !== null ? String(ack.agent) : 'unknown';
+                return `ACK by ${ackOwner} (Note: ACK does not imply approved merge)`;
+            }).join(' | ');
+        } else if (warning.ack) { // fallback to old format
+            let ackOwner = owners;
+            if (typeof warning.ack === 'object' && warning.ack.owner !== undefined) {
+                ackOwner = String(warning.ack.owner);
+            } else if (warning.ackOwner !== undefined) {
+                ackOwner = String(warning.ackOwner);
+            } else if (typeof warning.ack === 'string') {
+                ackOwner = warning.ack;
+            }
+            acksStr = `ACK by ${ackOwner} (Note: ACK does not imply approved merge)`;
+        }
+
+        let checksStr = '';
+        if (!warning.checks || !Array.isArray(warning.checks) || warning.checks.length === 0) {
+            checksStr = ' | State: Dirty (missing checks never clean)';
+        }
+
+        return `[Warning ${id}] ${reason} | Owner: ${owners} | Status: ${resolution} | ${acksStr}${checksStr}`;
+    }).join('\n');
 }

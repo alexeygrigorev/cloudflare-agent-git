@@ -17,7 +17,7 @@ export function sanitizeEvidence(receipt) {
         }
       }
     } catch (e) {
-      // Not a valid URL
+      // Ignore URL parsing errors
     }
     return receipt;
   }
@@ -33,7 +33,7 @@ export function sanitizeEvidence(receipt) {
       if (value === 'unknown') {
         sanitized[key] = value;
       } else if (redactKeys.some(k => key.toLowerCase().includes(k))) {
-        sanitized[key] = 'REDACTED';
+        sanitized[key] = '[REDACTED]';
       } else {
         sanitized[key] = sanitizeEvidence(value);
       }

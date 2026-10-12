@@ -25,11 +25,11 @@ test('recursively redacts sensitive keys', () => {
   };
   const expected = {
     normal: 'value',
-    token: 'REDACTED',
+    token: '[REDACTED]',
     nested: {
-      myPassword: 'REDACTED',
-      Authorization: 'REDACTED',
-      SECRET_KEY: 'REDACTED'
+      myPassword: '[REDACTED]',
+      Authorization: '[REDACTED]',
+      SECRET_KEY: '[REDACTED]'
     }
   };
   assert.deepEqual(sanitizeEvidence(input), expected);
@@ -65,7 +65,7 @@ test('retains explicit unknown values (not zero)', () => {
     val3: null,
     secret: 'unknown',
     token: 'unknown',
-    password: 'REDACTED'
+    password: '[REDACTED]'
   };
   assert.deepEqual(sanitizeEvidence(input), expected);
 });
