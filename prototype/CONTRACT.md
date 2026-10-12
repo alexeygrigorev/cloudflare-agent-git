@@ -341,9 +341,10 @@ bounded to the latest 16 pushes per agent (muse-r46 D2).
 Accepts the documented `cf.artifacts.repo.pushed` envelope (see
 docs-notes.md source 3); resolves the fork to an agent and behaves like
 /events/push. Unknown forks => 202 `{accepted:false}`. Authenticated with
-the shared subscription bearer (the sidecar's `SIDECAR_TOKEN` == the
-Worker's `LOCAL_ARTIFACTS_TOKEN` in local mode; a real deployment must
-configure a dedicated secret — pre-deploy checklist).
+the dedicated shared bearer between the Hetzner sidecar (`SIDECAR_TOKEN`)
+and coordinator (`LOCAL_ARTIFACTS_TOKEN`). Cloudflare Worker adapter source
+is reference-only, with no implied real deployment checklist; secret isolation
+between per-task tokens and the shared bearer is preserved.
 
 ### POST /checks — RUNNER_TOKEN (trusted radar runner, L3)
 
