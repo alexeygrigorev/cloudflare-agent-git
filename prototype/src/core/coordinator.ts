@@ -143,6 +143,7 @@ export interface CoordinatorAccess {
   createTask(input: CreateTaskInput): Promise<CreateTaskResult>;
   recordPush(input: RecordPushInput): Promise<RecordPushResult>;
   status(): Promise<StatusResult>;
+  snapshot(): Promise<any>;
   getTask(taskId: string): Promise<TaskDetail>;
   ackWarning(warningId: string, input: { agent: string; note?: string }): Promise<{ warning: WarningRecord }>;
   recordTestProvenance(
@@ -202,6 +203,10 @@ export class CoordinatorCore implements CoordinatorAccess {
 
   private async persist(): Promise<void> {
     await this.ports.store.put(MODEL_KEY, this.model);
+  }
+
+  clearModel(): void {
+    this.model = null;
   }
 
   private async setupNow(): Promise<SetupResult> {
@@ -447,6 +452,26 @@ export class CoordinatorCore implements CoordinatorAccess {
       newWarnings,
       radarChecks: radarOutcome.checks.length,
       receipt: newReceipt,
+    };
+  }
+
+
+  async snapshot(): Promise<any> {
+    const model = await this.load();
+    return {
+      canonical: { name: model.canonicalName, remote: model.canonicalRemote },
+      agents: Object.values(model.agents).map((agent) => {
+        const task = model.tasks[agent.taskId];
+        return {
+          agentId: agent.agentId,
+          taskId: agent.taskId,
+          intent: task ? task.intent : null,
+          baseSha: task ? task.baseSha : null,
+        };
+      }),
+      heads: { ...model.heads },
+      pairs: this.pairViews(model, new Set()),
+      warnings: [ ...model.warnings ]
     };
   }
 

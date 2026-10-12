@@ -321,7 +321,8 @@ function json(body: unknown, status = 200): HttpResponse {
 async function readJson(request: HttpRequest): Promise<Record<string, unknown>> {
   try {
     return (await request.json()) as Record<string, unknown>;
-  } catch {
+  } catch (error) {
+    if ((error as any)?.status === 413 || (error as any)?.status === 503) throw error;
     throw new Error("request body must be valid JSON");
   }
 }
@@ -429,6 +430,13 @@ function errorResponse(error: unknown): HttpResponse {
   const message = (error as Error).message ?? "internal error";
   if (/^unknown (task|warning)/.test(message)) {
     return json({ error: message }, 404);
+  }
+  if ((error as any).status === 413) return json({ error: "request body exceeded bounds" }, 413);
+  if ((error as any).status === 429 || /Budget exceeded/i.test(message)) {
+    return json({ error: message }, 429);
+  }
+  if ((error as any).status === 503 || /(Store error|Corrupted counter|Invalid config)/i.test(message)) {
+    return json({ error: message }, 503);
   }
   const status = /^(unknown agent|fork |commit |repo already|repo not found|request body|unsupported event|missing artifacts|pushed payload|invalid radar status|invalid radar kind|check result requires|runner results must|result heads|results must|base_sha|test provenance|command \(string\)|no Artifacts backend)/.test(
     message,

@@ -50,7 +50,7 @@ export interface ArtifactsRepoCapability {
     description: string | null;
     readOnly: boolean;
   }>;
-  createToken(scope?: TokenScope, ttl?: number): Promise<ArtifactsTokenResult>;
+  createToken(scope?: TokenScope, ttl?: number): Promise<ArtifactsTokenResult | { token: string; expires_at?: string | number }>;
   listTokens(): Promise<{ total: number; tokens: unknown[] }>;
   revokeToken(tokenOrId: string): Promise<boolean>;
   fork(name: RepoName, opts?: ForkOptions): Promise<ArtifactsCreateRepoResult>;
@@ -86,7 +86,7 @@ export interface ArtifactsNamespaceBinding {
 export interface RealArtifactsOptions {
   /**
    * Fork-readiness polling (spike: forks observed ready within ~2–4.5 s,
-   * O9–O12). Defaults: 20 attempts × 500 ms.
+   * O9–O12). Defaults: 3 attempts × 2500 ms.
    */
   readiness?: {
     maxAttempts?: number;
@@ -94,24 +94,51 @@ export interface RealArtifactsOptions {
   };
   /** Injectable sleeper for tests; default a real setTimeout. */
   sleep?: (ms: number) => Promise<void>;
+  beforeOperation?: () => Promise<void>;
 }
 
-const DEFAULT_READINESS_ATTEMPTS = 20;
-const DEFAULT_READINESS_DELAY_MS = 500;
+const DEFAULT_READINESS_ATTEMPTS = 3;
+const DEFAULT_READINESS_DELAY_MS = 2500;
 
 const defaultSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+export function normalizeTokenResult(raw: unknown, requestedScope: TokenScope): ArtifactsTokenResult {
+  if (typeof raw === "string") {
+    return {
+      plaintext: raw,
+      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+      scope: requestedScope,
+    };
+  }
+  const obj = raw as Record<string, unknown> | null | undefined;
+  const plaintext = String(obj?.plaintext ?? obj?.token ?? "");
+  let expiresAt = obj?.expiresAt ?? obj?.expires_at;
+  if (typeof expiresAt === "number") {
+    expiresAt = new Date(expiresAt < 1e11 ? expiresAt * 1000 : expiresAt).toISOString();
+  } else if (!expiresAt || typeof expiresAt !== "string") {
+    expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
+  }
+  const scope = (obj?.scope as TokenScope) || requestedScope;
+  return {
+    plaintext,
+    expiresAt: String(expiresAt),
+    scope,
+  };
+}
 
 export class RealArtifacts implements ArtifactsPort {
   private readonly binding: ArtifactsNamespaceBinding;
   private readonly readinessMaxAttempts: number;
   private readonly readinessDelayMs: number;
   private readonly sleep: (ms: number) => Promise<void>;
+  private readonly beforeOperation?: () => Promise<void>;
 
   constructor(binding: ArtifactsNamespaceBinding, options: RealArtifactsOptions = {}) {
     this.binding = binding;
     this.readinessMaxAttempts = options.readiness?.maxAttempts ?? DEFAULT_READINESS_ATTEMPTS;
     this.readinessDelayMs = options.readiness?.delayMs ?? DEFAULT_READINESS_DELAY_MS;
     this.sleep = options.sleep ?? defaultSleep;
+    this.beforeOperation = options.beforeOperation;
   }
 
   /**
@@ -121,6 +148,9 @@ export class RealArtifacts implements ArtifactsPort {
    * through untouched.
    */
   private async guarded<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.beforeOperation) {
+      await this.beforeOperation();
+    }
     try {
       return await fn();
     } catch (err) {
@@ -132,38 +162,49 @@ export class RealArtifacts implements ArtifactsPort {
     }
   }
 
+  private wrapCapability(repo: ArtifactsRepoCapability): ArtifactsRepoCapability {
+    return {
+      info: () => this.guarded(() => repo.info()),
+      createToken: (scope, ttl) => this.guarded(() => repo.createToken(scope, ttl)),
+      listTokens: () => this.guarded(() => repo.listTokens()),
+      revokeToken: (tokenOrId) => this.guarded(() => repo.revokeToken(tokenOrId)),
+      fork: (name, opts) => this.guarded(() => repo.fork(name, opts)),
+      log: (opts) => this.guarded(() => repo.log(opts)),
+      readCommit: (hash) => this.guarded(() => repo.readCommit(hash)),
+      readTree: (hash) => this.guarded(() => repo.readTree(hash)),
+      readBlob: (hash) => this.guarded(() => repo.readBlob(hash)),
+      readFile: (args) => this.guarded(() => repo.readFile(args)),
+      [Symbol.dispose]: () => {
+        if (typeof repo[Symbol.dispose] === "function") {
+          repo[Symbol.dispose]();
+        }
+      },
+    };
+  }
+
+  private async getRepoCapability(name: RepoName): Promise<ArtifactsRepoCapability> {
+    const raw = await this.guarded(() => this.binding.get(name));
+    return this.wrapCapability(raw);
+  }
+
   async createRepo(name: RepoName, opts?: CreateRepoOptions): Promise<ArtifactsCreateRepoResult> {
     return this.guarded(() => this.binding.create(name, opts));
   }
 
   async fork(source: RepoName, target: RepoName, opts?: ForkOptions): Promise<ForkResult> {
-    // muse-r46 D3 + spike F (CONFIRMED): the real service can only fork the
-    // source's DEFAULT branch — there is no fork-at-commit parameter. Strip
-    // baseSha (it would be silently ignored anyway), fork, then REPORT the
-    // realized base (the fork's head at creation) so the coordinator records
-    // the truth.
     const { baseSha, ...bindingOpts } = opts ?? {};
-    using repo = await this.guarded(() => this.binding.get(source));
-    const created = await this.guarded(() =>
-      repo.fork(target, Object.keys(bindingOpts).length > 0 ? bindingOpts : undefined),
-    );
-    // Readiness (finding 2): poll the LIST status — single GET has no status
-    // field and last_push_at is always null, so neither may decide readiness.
+    using repo = await this.getRepoCapability(source);
+    const created = await repo.fork(target, Object.keys(bindingOpts).length > 0 ? bindingOpts : undefined);
     await this.waitForRepoReady(created.name);
     if (baseSha === undefined) {
       return created;
     }
-    using fresh = await this.guarded(() => this.binding.get(created.name));
-    const head = await this.guarded(() => fresh.log({ limit: 1 }));
+    using fresh = await this.getRepoCapability(created.name);
+    const head = await fresh.log({ limit: 1 });
     const realized = head.length > 0 ? mapRawCommit(head[0]).id : null;
     return { ...created, baseSha: realized ?? baseSha };
   }
 
-  /**
-   * Bounded readiness poll against the LIST response (the only surface that
-   * carries `status`). A repo that never appears or never reaches "ready"
-   * throws ArtifactsForkNotReadyError after `readinessMaxAttempts` polls.
-   */
   async waitForRepoReady(name: RepoName): Promise<void> {
     for (let attempt = 1; attempt <= this.readinessMaxAttempts; attempt += 1) {
       const page = await this.guarded(() => this.binding.list({ limit: 100 }));
@@ -183,29 +224,26 @@ export class RealArtifacts implements ArtifactsPort {
     scope: TokenScope = "write",
     ttlSeconds = 3600,
   ): Promise<ArtifactsTokenResult> {
-    // Opaque passthrough: real tokens look like
-    // `art_v2_x_<40hex>?expires=<unix>`; no prefix validation anywhere.
-    using handle = await this.guarded(() => this.binding.get(repo));
-    return this.guarded(() => handle.createToken(scope, ttlSeconds));
+    using handle = await this.getRepoCapability(repo);
+    const raw = await handle.createToken(scope, ttlSeconds);
+    return normalizeTokenResult(raw, scope);
   }
 
   async log(repo: RepoName, opts?: LogOptions): Promise<CommitMetadata[]> {
-    using handle = await this.guarded(() => this.binding.get(repo));
-    const raw = await this.guarded(() => handle.log(opts));
+    using handle = await this.getRepoCapability(repo);
+    const raw = await handle.log(opts);
     return raw.map(mapRawCommit);
   }
 
   async headCommit(repo: RepoName, ref = "HEAD"): Promise<string | null> {
-    using handle = await this.guarded(() => this.binding.get(repo));
-    // Only documented operation: log({ref, limit:1}) yields the tip commit
-    // (no refs-enumeration API exists — ASSUMED-A, spike-CONFIRMED).
-    const commits = await this.guarded(() => handle.log({ ref, limit: 1 }));
+    using handle = await this.getRepoCapability(repo);
+    const commits = await handle.log({ ref, limit: 1 });
     return commits.length > 0 ? mapRawCommit(commits[0]).id : null;
   }
 
   async hasCommit(repo: RepoName, sha: string): Promise<boolean> {
-    using handle = await this.guarded(() => this.binding.get(repo));
-    return (await this.guarded(() => handle.readCommit(sha))) !== null;
+    using handle = await this.getRepoCapability(repo);
+    return (await handle.readCommit(sha)) !== null;
   }
 
   async listRepos(limit = 100): Promise<RepoSummary[]> {
@@ -217,12 +255,6 @@ export class RealArtifacts implements ArtifactsPort {
     return this.guarded(() => this.binding.delete(name));
   }
 
-  /**
-   * codex C-1357: the callback-loss ledger is a LOCAL sidecar mechanism. A
-   * real deployment gets push events (and their delivery state) from the
-   * Artifacts event subscription itself, so there is nothing to report here
-   * (docs-notes ASSUMED-G; subscription wiring itself is UNVERIFIED — E).
-   */
   async unprocessedPushes(): Promise<UnprocessedPush[]> {
     return [];
   }

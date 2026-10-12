@@ -14,6 +14,17 @@ declare global {
     RUNNER_TOKEN?: string;
     LOCAL_ARTIFACTS_URL?: string;
     LOCAL_ARTIFACTS_TOKEN?: string;
+    MAX_DAILY_OPS?: number | string;
+    MAX_MONTHLY_OPS?: number | string;
+    MAX_REPOS?: number | string;
+    MAX_TOTAL_BYTES?: number | string;
+    MAX_BODY_BYTES?: number | string;
+    BUDGET_MAX_DAILY_OPS?: number | string;
+    BUDGET_MAX_MONTHLY_OPS?: number | string;
+    BUDGET_MAX_REPOS?: number | string;
+    BUDGET_MAX_TOTAL_BYTES?: number | string;
+    BUDGET_MAX_BODY_BYTES?: number | string;
+    ENFORCE_CLOUD_BUDGET?: boolean | string;
   }
 }
 
@@ -27,6 +38,17 @@ declare module "cloudflare:workers" {
       RUNNER_TOKEN?: string;
       LOCAL_ARTIFACTS_URL?: string;
       LOCAL_ARTIFACTS_TOKEN?: string;
+      MAX_DAILY_OPS?: number | string;
+      MAX_MONTHLY_OPS?: number | string;
+      MAX_REPOS?: number | string;
+      MAX_TOTAL_BYTES?: number | string;
+      MAX_BODY_BYTES?: number | string;
+      BUDGET_MAX_DAILY_OPS?: number | string;
+      BUDGET_MAX_MONTHLY_OPS?: number | string;
+      BUDGET_MAX_REPOS?: number | string;
+      BUDGET_MAX_TOTAL_BYTES?: number | string;
+      BUDGET_MAX_BODY_BYTES?: number | string;
+      ENFORCE_CLOUD_BUDGET?: boolean | string;
     }
   }
 }

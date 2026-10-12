@@ -1,8 +1,23 @@
-import { execSync, spawn } from "child_process";
-import { resolve, join } from "path";
+import { randomUUID } from "node:crypto";
+import { execSync, spawn, spawnSync } from "child_process";
+import { resolve, join, dirname } from "path";
 import { mkdirSync, rmSync, writeFileSync } from "fs";
 
-const root = resolve(".local/tmp/harness-" + Date.now());
+import { tmpdir } from "os";
+import { fileURLToPath } from "url";
+
+if (process.env.BASE_URL) {
+  console.log("Remote smoke uses scripted Git clients; model execution remains on your computer.");
+  const script = join(dirname(fileURLToPath(import.meta.url)), "cloud-smoke.py");
+  const result = spawnSync("python3", [script, ...process.argv.slice(2)], {
+    env: process.env, stdio: "inherit", timeout: 180_000,
+  });
+  if (result.error || result.signal || result.status === null) process.exit(1);
+  process.exit(result.status);
+}
+
+const prototypeRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const root = resolve(process.env.TMPDIR || tmpdir(), "harness-" + Date.now());
 const childProcs = [];
 const commandsRun = [];
 
@@ -26,7 +41,7 @@ const globalTimeout = setTimeout(() => {
 }, 60000);
 
 function runGitSync(args, dir, token) {
-  const env = { ...process.env };
+  const env = { ...process.env, GIT_TERMINAL_PROMPT: "0" };
   if (token) {
     env.GIT_CONFIG_COUNT = "1";
     env.GIT_CONFIG_KEY_0 = "http.extraHeader";
@@ -34,7 +49,7 @@ function runGitSync(args, dir, token) {
   }
   const cmd = `git ${args.join(" ")}`;
   try {
-    execSync(cmd, { cwd: dir, env, stdio: "ignore" });
+    execSync(cmd, { cwd: dir, env, stdio: "ignore", timeout: 30_000 });
     commandsRun.push({ command: cmd, exit: 0 });
   } catch (e) {
     commandsRun.push({ command: cmd, exit: e.status || 1 });
@@ -44,7 +59,7 @@ function runGitSync(args, dir, token) {
 
 function runGitAsync(args, dir, token, name) {
   return new Promise((res) => {
-    const env = { ...process.env };
+    const env = { ...process.env, GIT_TERMINAL_PROMPT: "0" };
     if (token) {
       env.GIT_CONFIG_COUNT = "1";
       env.GIT_CONFIG_KEY_0 = "http.extraHeader";
@@ -52,12 +67,24 @@ function runGitAsync(args, dir, token, name) {
     }
     const cmdStr = `git ${args.join(" ")}`;
     const s = Date.now();
-    const child = spawn("git", args, { cwd: dir, env, stdio: "ignore" });
+    const child = spawn("git", args, { cwd: dir, env, stdio: "ignore", timeout: 30_000 });
+    child.on("error", () => res({ name, s, e: Date.now(), code: 127 }));
     childProcs.push(child);
     child.on("close", (code) => {
       const e = Date.now();
       commandsRun.push({ command: cmdStr, exit: code });
       res({ name, s, e, code });
+    });
+  });
+}
+
+function waitForListening(child, label) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(label + " startup timed out")), 10_000);
+    child.once("error", () => { clearTimeout(timer); reject(new Error(label + " could not start")); });
+    child.once("exit", (code) => { clearTimeout(timer); reject(new Error(label + " exited " + code)); });
+    child.stderr.on("data", data => {
+      if (data.toString().includes("listening on")) { clearTimeout(timer); resolve(); }
     });
   });
 }
@@ -68,37 +95,30 @@ async function main() {
 
   const pSidecar = 8790 + Math.floor(Math.random() * 100);
   const pCoord = pSidecar + 100;
-  const sharedToken = "shared-" + Date.now();
-  const adminToken = "admin-" + Date.now();
-  const runnerToken = "runner-" + Date.now();
+  const sharedToken = "shared-" + randomUUID();
+  const adminToken = "admin-" + randomUUID();
+  const runnerToken = "runner-" + randomUUID();
 
-  const sidecarProcess = spawn("node", ["prototype/local-artifacts/sidecar.mjs"], {
+  const sidecarProcess = spawn("node", [join(prototypeRoot, "local-artifacts/sidecar.mjs")], {
     env: { ...process.env, SIDECAR_PORT: pSidecar, SIDECAR_TOKEN: sharedToken, SIDECAR_NOTIFY_URL: `http://127.0.0.1:${pCoord}/events/push`, SIDECAR_ROOT: join(root, "sidecar") },
     stdio: ["ignore", "pipe", "pipe"]
   });
   childProcs.push(sidecarProcess);
   
-  await new Promise(res => {
-    sidecarProcess.stderr.on("data", d => {
-      if (d.toString().includes("listening on")) res();
-    });
-  });
+  await waitForListening(sidecarProcess, "sidecar");
 
-  const coordProcess = spawn("node", ["prototype/.build/node/src/local/main.js"], {
+  const coordProcess = spawn("node", [join(prototypeRoot, ".build/node/src/local/main.js")], {
     env: { ...process.env, PORT: pCoord, LOCAL_ARTIFACTS_URL: `http://127.0.0.1:${pSidecar}`, LOCAL_ARTIFACTS_TOKEN: sharedToken, ADMIN_TOKEN: adminToken, RUNNER_TOKEN: runnerToken, COORDINATOR_STATE_FILE: join(root, "coord.json") },
     stdio: ["ignore", "pipe", "pipe"]
   });
   childProcs.push(coordProcess);
   
-  await new Promise(res => {
-    coordProcess.stderr.on("data", d => {
-      if (d.toString().includes("listening on")) res();
-    });
-  });
+  await waitForListening(coordProcess, "coordinator");
 
   const postAuth = async (path, body, token) => {
     const res = await fetch(`http://127.0.0.1:${pCoord}${path}`, {
       method: "POST",
+      signal: AbortSignal.timeout(10_000),
       headers: { "content-type": "application/json", ...(token ? { "authorization": `Bearer ${token}` } : {}) },
       body: JSON.stringify(body)
     });
@@ -108,7 +128,7 @@ async function main() {
   const getAuth = async (path, token) => {
     const headers = {};
     if (token) headers.authorization = `Bearer ${token}`;
-    const res = await fetch(`http://127.0.0.1:${pCoord}${path}`, { headers });
+    const res = await fetch(`http://127.0.0.1:${pCoord}${path}`, { headers, signal: AbortSignal.timeout(10_000) });
     return { status: res.status, ok: res.ok, body: await res.json().catch(()=>null) };
   };
 
@@ -304,7 +324,9 @@ async function main() {
       testResults: "Success",
       nextStep: "Finished"
     };
-    writeFileSync(resolve(".local", "result.json"), JSON.stringify(resultObj, null, 2));
+    const resultPath = process.env.RESULT_JSON_PATH || resolve(".local", "result.json");
+    mkdirSync(dirname(resultPath), { recursive: true });
+    writeFileSync(resultPath, JSON.stringify(resultObj, null, 2));
     
   } finally {
     clearTimeout(globalTimeout);

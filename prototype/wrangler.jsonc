@@ -3,6 +3,12 @@
   "name": "agent-branches",
   "main": "src/index.ts",
   "compatibility_date": "2025-06-01",
+  "artifacts": [
+    {
+      "binding": "ARTIFACTS",
+      "namespace": "agent-branches-dev"
+    }
+  ],
   "durable_objects": {
     "bindings": [
       {
@@ -16,5 +22,31 @@
       "tag": "v1",
       "new_sqlite_classes": ["Coordinator"]
     }
-  ]
+  ],
+  "vars": {
+    "MAX_DAILY_OPS": 200,
+    "MAX_MONTHLY_OPS": 6000,
+    "MAX_REPOS": 4,
+    "MAX_TOTAL_BYTES": 16777216,
+    "MAX_BODY_BYTES": 262144
+  },
+  "env": {
+    "test": {
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "COORDINATOR",
+            "class_name": "Coordinator"
+          }
+        ]
+      },
+      "vars": {
+        "MAX_DAILY_OPS": 200,
+        "MAX_MONTHLY_OPS": 6000,
+        "MAX_REPOS": 4,
+        "MAX_TOTAL_BYTES": 16777216,
+        "MAX_BODY_BYTES": 262144
+      }
+    }
+  }
 }

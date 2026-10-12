@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [
     cloudflareTest((ctx) => ({
-      wrangler: { configPath: "./wrangler.jsonc" },
+      wrangler: { configPath: "./wrangler.jsonc", environment: "test" },
       miniflare: {
         bindings: {
           // Test-only values injected into the worker under test. Real
