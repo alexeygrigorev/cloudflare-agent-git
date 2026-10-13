@@ -9,8 +9,14 @@ def summarize():
     all_files = list(STORE.glob('snapshots-*'))
     if archive_dir.is_dir():
         all_files.extend(archive_dir.glob('snapshots-*'))
-    for file in sorted(all_files, key=lambda p:(p.name[:20], p.stat().st_mtime)):
-        handle=gzip.open(file,'rt') if file.suffix=='.gz' else file.open()
+    def _mtime(p):
+        try: return p.stat().st_mtime
+        except FileNotFoundError: return 0
+    for file in sorted(all_files, key=lambda p:(p.name[:20], _mtime(p))):
+        try:
+            handle=gzip.open(file,'rt') if file.suffix=='.gz' else file.open()
+        except FileNotFoundError:
+            continue  # rotated into archive by the live collector after listing
         for line in handle:
             try: snap=json.loads(line); at=datetime.datetime.fromisoformat(snap['at']).timestamp()
             except (ValueError,KeyError): continue
