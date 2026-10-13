@@ -17,6 +17,10 @@ import urllib.request
 VM_URL = 'http://127.0.0.1:8428'
 IMPORT_PATH = '/api/v1/import/prometheus'
 
+# Roles the live collector marks with counted_as_agent. Archived history rows
+# predate that flag, so it is inferred from the role when absent.
+COUNT_ROLES = frozenset({'principal', 'head', 'executor', 'subagent'})
+
 
 def _esc(value):
     return str(value).replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
@@ -90,7 +94,16 @@ def build_series(snap, ts_ms=None):
             lines.append(row)
 
     sessions = snap.get('sessions', []) if isinstance(snap, dict) else []
-    counted = [s for s in sessions if isinstance(s, dict) and s.get('counted_as_agent')]
+    counted = []
+    for s in sessions:
+        if not isinstance(s, dict):
+            continue
+        flag = s.get('counted_as_agent')
+        if flag is None:
+            # Archived history rows predate the flag: infer it from the role.
+            flag = s.get('role') in COUNT_ROLES
+        if flag:
+            counted.append(s)
 
     agents_registered = collections.Counter()
     agents_live = collections.Counter()
@@ -98,10 +111,15 @@ def build_series(snap, ts_ms=None):
     agents_idle = collections.Counter()
     for s in counted:
         key = (str(s.get('role') or 'unknown'), str(s.get('team_id') or 'unknown'))
+        working = s.get('hook_working')
+        if working is None:
+            # Archived history rows predate hook_working: derive it the same
+            # way the live collector does.
+            working = bool(s.get('pid_live')) and s.get('reported_state') == 'working'
         agents_registered[key] += 1
         if s.get('pid_live'):
             agents_live[key] += 1
-            if s.get('hook_working'):
+            if working:
                 agents_working[key] += 1
             if s.get('reported_state') in ('idle', 'waiting'):
                 agents_idle[key] += 1

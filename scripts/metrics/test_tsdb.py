@@ -96,6 +96,20 @@ class SeriesTests(unittest.TestCase):
         lines = tsdb.build_series(snap, ts_ms=1)
         self.assertTrue(any('team="we\\"ird\\\\team"' in l for l in lines))
 
+    def test_history_rows_without_flags_infer_role_and_working(self):
+        # Archived history projections predate counted_as_agent/hook_working.
+        snap = make_snap()
+        for s in snap['sessions']:
+            s.pop('counted_as_agent', None)
+            s.pop('hook_working', None)
+        lines = tsdb.build_series(snap, ts_ms=1000)
+        joined = '\n'.join(lines)
+        self.assertIn('exp_agents_registered{role="head",team="T1"} 1 1000', joined)
+        self.assertIn('exp_agents_working{role="head",team="T1"} 1 1000', joined)
+        self.assertIn('exp_agents_idle{role="executor",team="T1"} 1 1000', joined)
+        # Services stay excluded even under inference.
+        self.assertNotIn('role="service"', joined)
+
 
 class ClientTests(unittest.TestCase):
     def test_push_and_query_roundtrip_against_stub(self):
