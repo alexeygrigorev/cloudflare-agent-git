@@ -1,0 +1,17 @@
+[Unit]
+Description=VictoriaMetrics single-node TSDB for experiment metrics (127.0.0.1:8428)
+Documentation=https://docs.victoriametrics.com/
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/.local/bin/victoria-metrics -storageDataPath=%h/.local/share/victoriametrics -httpListenAddr=127.0.0.1:8428 -retentionPeriod=400d
+Restart=always
+RestartSec=15
+MemoryMax=1500M
+Nice=5
+
+[Install]
+WantedBy=default.target
