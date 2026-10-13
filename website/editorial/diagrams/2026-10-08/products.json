@@ -1,0 +1,14 @@
+{
+  "style": "editorial",
+  "title": "The four products on this day",
+  "description": "Agent Branches and messaging didn't change. The dashboard passed an audit, and the launcher got a reviewed fence while its start-up code failed to merge.",
+  "canvas": {"width": 760, "height": 340},
+  "layout": {"type": "grid", "card_width": 320, "card_height": 120, "column_gap": 40, "row_gap": 30},
+  "nodes": [
+    {"id": "branches", "eyebrow": "NO CHANGE", "title": "Agent Branches", "subtitle": "No new feature", "icon": "workflow", "color": "gray", "row": 0, "column": 0},
+    {"id": "dash", "eyebrow": "AUDITED", "title": "Dashboard", "subtitle": "Checks where data comes from", "icon": "observability", "color": "green", "row": 0, "column": 1},
+    {"id": "launcher", "eyebrow": "FENCE REVIEWED", "title": "Launcher", "subtitle": "Start-up code didn't merge", "icon": "shield", "color": "amber", "row": 1, "column": 0},
+    {"id": "msg", "eyebrow": "NO CHANGE", "title": "Messaging", "subtitle": "Two computers not tested", "icon": "message", "color": "gray", "row": 1, "column": 1}
+  ],
+  "edges": []
+}

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="460" viewBox="0 0 1000 460" role="img" aria-labelledby="t d">
+<title id="t">At least seven agents with work I can check</title>
+<desc id="d">At least seven agents with work I can check, grouped by what they delivered. Two audited the dashboard, and two built and reviewed the fence. One reviewed the start-up code and one reviewed the check instructions. One lead agent found a crash cause and retracted its own reviews. More agents ran, but their work is harder to check.</desc>
+<rect width="1000" height="460" fill="#fcfcf8"/>
+<g font-family="DejaVu Sans, Verdana, sans-serif">
+<text x="40" y="54" font-family="Georgia, serif" font-size="28" fill="#1c2027">At least seven agents with work I can check</text>
+<rect x="40" y="76" width="16" height="16" fill="#2455ed"/>
+<text x="64" y="90" font-size="15" fill="#1c2027">Agents, by what they delivered</text>
+<text x="360" y="142" text-anchor="end" font-size="17" fill="#1c2027">Audited the dashboard</text>
+<rect x="380" y="124" width="400" height="26" fill="#2455ed"/>
+<text x="790" y="143" font-size="16" fill="#1c2027">2</text>
+<text x="360" y="196" text-anchor="end" font-size="17" fill="#1c2027">Built and reviewed the fence</text>
+<rect x="380" y="178" width="400" height="26" fill="#2455ed"/>
+<text x="790" y="197" font-size="16" fill="#1c2027">2</text>
+<text x="360" y="250" text-anchor="end" font-size="17" fill="#1c2027">Reviewed the start-up code</text>
+<rect x="380" y="232" width="200" height="26" fill="#2455ed"/>
+<text x="590" y="251" font-size="16" fill="#1c2027">1</text>
+<text x="360" y="304" text-anchor="end" font-size="17" fill="#1c2027">Reviewed the check instructions</text>
+<rect x="380" y="286" width="200" height="26" fill="#2455ed"/>
+<text x="590" y="305" font-size="16" fill="#1c2027">1</text>
+<text x="360" y="358" text-anchor="end" font-size="17" fill="#1c2027">Found a crash, retracted reviews</text>
+<rect x="380" y="340" width="200" height="26" fill="#2455ed"/>
+<text x="590" y="359" font-size="16" fill="#1c2027">1</text>
+<text x="40" y="430" font-size="14" fill="#5b6270">More agents ran, but I can&#x27;t tell from the records what each of them did.</text>
+</g>
+</svg>

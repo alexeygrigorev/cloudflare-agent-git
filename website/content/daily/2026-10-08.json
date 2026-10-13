@@ -1,0 +1,52 @@
+{
+  "title": "Reviews That Weren't Reviews, and a Killed Agent That Stayed Dead",
+  "date": "2026-10-08",
+  "summary": "The lead agent retracted four reviews and test runs that came from its own scripts. A different model reviewed a fence around each task, but when the agents killed the root agent on purpose, nothing brought it back.",
+  "author": "Alexey Grigorev",
+  "model": "Claude Opus 5.5 (claude-opus-5-5)",
+  "actual_writer_models": [
+    "claude-opus-5-5"
+  ],
+  "source_cutoff": "2026-10-08T23:59:59+02:00",
+  "source_cutoff_note": "Product metrics interval 2026-10-07T07:00Z to 2026-10-08T07:00Z; founder messages, public commits and issue comments from the rest of 8 October Berlin time are included as same-day context. Prepared retrospectively on 13 October 2026.",
+  "sources": [
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/_docs/founder-journal/2026-10-08.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/dafaf6525fdc29a39b8750e40c0a74c02280929a",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6048984571",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6053033610",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6053508313",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6053807288",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6053859898",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/774211ea26af593755acb59660278653a60cc47e",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6053361877",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6067446831",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6068136743",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/c53f57442b5ff40c9d26c9b47ecdf9b8676d7e4b"
+  ],
+  "source_titles": {
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/": "Cloudflare's competition to build the next Git platform",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/_docs/founder-journal/2026-10-08.md": "My message to the agents on October 8",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/dafaf6525fdc29a39b8750e40c0a74c02280929a": "The reviewed instructions for a fresh checker agent",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6048984571": "The review of the launcher's start-up code",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6053033610": "The failed merge of the start-up code",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6053508313": "The retraction of four reviews that came from scripts",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6053807288": "The fence around a task and its review",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6053859898": "The note that the fence test was a script, not an agent",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/774211ea26af593755acb59660278653a60cc47e": "The dashboard audit and its independent review",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6053361877": "The cause of the lost lead agent",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6067446831": "The recovered main agent's reply",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6068136743": "The kill test that nothing recovered from",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/c53f57442b5ff40c9d26c9b47ecdf9b8676d7e4b": "The last reviewed Agent Branches trial"
+  },
+  "image": "../../assets/agent-git-illustration.png",
+  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "diagram": "../../assets/2026-10-08-requests.png",
+  "diagram_svg": "../../assets/2026-10-08-requests.svg",
+  "diagram_alt": "Nine requests and their state. Tasks are in public issues without numbers, and the task counter is code only. The fresh checker is written but hasn't run. Automatic recovery failed its test. Seeing every request through, work without me, waking on replies and two computers talking are still open, and the agent count is unknown",
+  "published": true,
+  "editorial_review": "Dedicated Claude Opus fresh check pass",
+  "article_sha256": "005f30196a5e3c5b6d3207713165b42e31bbeaa2aa1dc5e893e4018d7e519bac",
+  "published_at": "2026-10-13T19:20:57.833003+00:00",
+  "updated_at": "2026-10-13T19:20:57.833015+00:00"
+}

@@ -1,0 +1,24 @@
+{
+  "style": "editorial",
+  "title": "A fresh checker for each check",
+  "description": "Before, one long-running root agent reads every report and stops acting. In the proposed version, the root agent starts a fresh checker for each check, which fixes problems and reports back. It hasn't run yet.",
+  "canvas": {"width": 1060, "height": 400},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 110},
+  "nodes": [
+    {"id": "b_label", "variant": "plain", "title": "Before", "x": 40, "y": 20, "width": 300, "height": 40},
+    {"id": "b1", "title": "Root agent", "subtitle": "One long session", "icon": "robot", "color": "purple", "x": 40, "y": 70},
+    {"id": "b2", "title": "Reads every report", "subtitle": "Its memory fills up", "icon": "document", "color": "amber", "x": 390, "y": 70},
+    {"id": "b3", "title": "Stops acting", "subtitle": "Fixes nothing", "icon": "close", "color": "gray", "x": 740, "y": 70},
+    {"id": "p_label", "variant": "plain", "title": "Proposed, not run yet", "x": 40, "y": 210, "width": 300, "height": 40},
+    {"id": "p1", "title": "Root agent", "subtitle": "Starts each check", "icon": "robot", "color": "purple", "x": 40, "y": 260},
+    {"id": "p2", "eyebrow": "FRESH", "title": "Checker agent", "subtitle": "Short list to check", "icon": "search", "color": "blue", "x": 390, "y": 260},
+    {"id": "p3", "title": "Fixes and reports", "subtitle": "Back to the root agent", "icon": "check", "color": "gray", "x": 740, "y": 260}
+  ],
+  "edges": [
+    {"from": "b1", "to": "b2"},
+    {"from": "b2", "to": "b3"},
+    {"from": "p1", "to": "p2", "color": "blue"},
+    {"from": "p2", "to": "p3"}
+  ],
+  "dividers": [{"after_node": "b1"}]
+}

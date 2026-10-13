@@ -1,0 +1,16 @@
+{
+  "style": "editorial",
+  "title": "Why the task numbers are missing",
+  "description": "Old finished tasks moved from one file into GitHub issues and closed in one batch, so their closing dates show the move, not the work.",
+  "canvas": {"width": 1060, "height": 280},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 110},
+  "nodes": [
+    {"id": "file", "title": "One task file", "subtitle": "Old finished tasks", "icon": "document", "color": "blue", "x": 40, "y": 85},
+    {"id": "issues", "title": "GitHub issues", "subtitle": "Closed in one batch", "icon": "github", "color": "purple", "x": 390, "y": 85},
+    {"id": "dates", "title": "Closing dates", "subtitle": "Show the move, not the work", "icon": "warning", "color": "gray", "x": 740, "y": 85}
+  ],
+  "edges": [
+    {"from": "file", "to": "issues"},
+    {"from": "issues", "to": "dates"}
+  ]
+}

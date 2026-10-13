@@ -1,0 +1,112 @@
+{
+  "style": "editorial",
+  "title": "Killing the root agent on purpose",
+  "description": "The expected path goes from the killed root agent to the guard noticing and a replacement starting. In reality the guard rejected the dead agent, and nothing started.",
+  "canvas": {
+    "width": 1060,
+    "height": 400
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 280,
+    "card_height": 110
+  },
+  "nodes": [
+    {
+      "id": "e_label",
+      "variant": "plain",
+      "title": "What I expected",
+      "x": 40,
+      "y": 20,
+      "width": 300,
+      "height": 40
+    },
+    {
+      "id": "e1",
+      "title": "Root agent killed",
+      "subtitle": "On my Windows desktop",
+      "icon": "robot",
+      "color": "blue",
+      "x": 40,
+      "y": 70
+    },
+    {
+      "id": "e2",
+      "title": "Guard notices",
+      "subtitle": "Sees the dead agent",
+      "icon": "shield",
+      "color": "amber",
+      "x": 390,
+      "y": 70
+    },
+    {
+      "id": "e3",
+      "title": "Replacement starts",
+      "subtitle": "No human needed",
+      "icon": "check",
+      "color": "green",
+      "x": 740,
+      "y": 70
+    },
+    {
+      "id": "a_label",
+      "variant": "plain",
+      "title": "What happened",
+      "x": 40,
+      "y": 210,
+      "width": 300,
+      "height": 40
+    },
+    {
+      "id": "a1",
+      "title": "Root agent killed",
+      "subtitle": "On my Windows desktop",
+      "icon": "robot",
+      "color": "blue",
+      "x": 40,
+      "y": 260
+    },
+    {
+      "id": "a2",
+      "title": "Guard restarts",
+      "subtitle": "Rejects the dead agent",
+      "icon": "warning",
+      "color": "amber",
+      "x": 390,
+      "y": 260
+    },
+    {
+      "id": "a3",
+      "title": "Nothing starts",
+      "subtitle": "Within two minutes",
+      "icon": "close",
+      "color": "gray",
+      "x": 740,
+      "y": 260
+    }
+  ],
+  "edges": [
+    {
+      "from": "e1",
+      "to": "e2"
+    },
+    {
+      "from": "e2",
+      "to": "e3",
+      "color": "green"
+    },
+    {
+      "from": "a1",
+      "to": "a2"
+    },
+    {
+      "from": "a2",
+      "to": "a3"
+    }
+  ],
+  "dividers": [
+    {
+      "after_node": "e1"
+    }
+  ]
+}

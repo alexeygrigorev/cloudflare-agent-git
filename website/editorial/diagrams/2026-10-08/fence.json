@@ -1,0 +1,18 @@
+{
+  "style": "editorial",
+  "title": "The fence around a task",
+  "description": "A task under the fence can write to its own folder. Writes to the project files and to the rest of the system are refused.",
+  "canvas": {"width": 820, "height": 440},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 110},
+  "nodes": [
+    {"id": "task", "eyebrow": "UNDER THE FENCE", "title": "Task", "subtitle": "Started by the launcher", "icon": "robot", "color": "purple", "x": 40, "y": 165},
+    {"id": "own", "title": "Its own folder", "subtitle": "Write works", "icon": "check", "color": "green", "x": 500, "y": 30},
+    {"id": "project", "title": "Project files", "subtitle": "Write refused", "icon": "close", "color": "gray", "x": 500, "y": 165},
+    {"id": "system", "title": "Rest of the system", "subtitle": "Write refused", "icon": "close", "color": "gray", "x": 500, "y": 300}
+  ],
+  "edges": [
+    {"from": "task", "to": "own", "route": "orthogonal", "color": "green"},
+    {"from": "task", "to": "project"},
+    {"from": "task", "to": "system", "route": "orthogonal"}
+  ]
+}

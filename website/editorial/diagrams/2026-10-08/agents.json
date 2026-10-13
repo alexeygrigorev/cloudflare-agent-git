@@ -1,0 +1,28 @@
+{
+  "title": "At least seven agents with work I can check",
+  "description": "At least seven agents with work I can check, grouped by what they delivered. Two audited the dashboard, and two built and reviewed the fence. One reviewed the start-up code and one reviewed the check instructions. One lead agent found a crash cause and retracted its own reviews. More agents ran, but their work is harder to check.",
+  "source": "Public commits and issue comments for 8 October 2026; distinct agent sessions with a checkable result, a minimum, not a census",
+  "groups": [
+    {
+      "label": "Audited the dashboard",
+      "agents": 2
+    },
+    {
+      "label": "Built and reviewed the fence",
+      "agents": 2
+    },
+    {
+      "label": "Reviewed the start-up code",
+      "agents": 1
+    },
+    {
+      "label": "Reviewed the check instructions",
+      "agents": 1
+    },
+    {
+      "label": "Found a crash, retracted reviews",
+      "agents": 1
+    }
+  ],
+  "note": "More agents ran, but I can't tell from the records what each of them did."
+}

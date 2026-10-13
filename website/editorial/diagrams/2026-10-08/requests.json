@@ -1,0 +1,107 @@
+{
+  "style": "editorial",
+  "title": "My open requests and their state",
+  "description": "Nine requests and their state. Tasks are in public issues without numbers, and the task counter is code only. The fresh checker is written but hasn't run. Automatic recovery failed its test. Seeing every request through, work without me, waking on replies and two computers talking are still open, and the agent count is unknown.",
+  "canvas": {
+    "width": 760,
+    "height": 820
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 320,
+    "card_height": 120
+  },
+  "nodes": [
+    {
+      "id": "issues",
+      "eyebrow": "NO NUMBERS YET",
+      "title": "Tasks in public issues",
+      "subtitle": "Closing dates show the move",
+      "icon": "issue",
+      "color": "amber",
+      "x": 40,
+      "y": 50
+    },
+    {
+      "id": "count",
+      "eyebrow": "CODE ONLY",
+      "title": "Count resolved tasks",
+      "subtitle": "Not on the dashboard yet",
+      "icon": "observability",
+      "color": "amber",
+      "x": 400,
+      "y": 50
+    },
+    {
+      "id": "checker",
+      "eyebrow": "WRITTEN",
+      "title": "Fresh agent per check",
+      "subtitle": "Hasn't run yet",
+      "icon": "search",
+      "color": "amber",
+      "x": 40,
+      "y": 200
+    },
+    {
+      "id": "recover",
+      "eyebrow": "TEST FAILED",
+      "title": "Lost agents come back",
+      "subtitle": "Only by hand so far",
+      "icon": "close",
+      "color": "gray",
+      "x": 400,
+      "y": 200
+    },
+    {
+      "id": "follow",
+      "eyebrow": "OPEN",
+      "title": "Every request seen through",
+      "subtitle": "Not enforced yet",
+      "icon": "check",
+      "color": "gray",
+      "x": 40,
+      "y": 350
+    },
+    {
+      "id": "continue",
+      "eyebrow": "OPEN",
+      "title": "Work goes on without me",
+      "subtitle": "Not seen yet",
+      "icon": "workflow",
+      "color": "gray",
+      "x": 400,
+      "y": 350
+    },
+    {
+      "id": "wake",
+      "eyebrow": "OPEN",
+      "title": "Replies wake agents",
+      "subtitle": "Replies still sit unread",
+      "icon": "message",
+      "color": "gray",
+      "x": 40,
+      "y": 500
+    },
+    {
+      "id": "two",
+      "eyebrow": "NOT TESTED",
+      "title": "Two computers talking",
+      "subtitle": "Desktop not reached",
+      "icon": "environment",
+      "color": "gray",
+      "x": 400,
+      "y": 500
+    },
+    {
+      "id": "fifty",
+      "eyebrow": "UNKNOWN",
+      "title": "Fifty agents at work",
+      "subtitle": "Can't count them yet",
+      "icon": "robot",
+      "color": "gray",
+      "x": 220,
+      "y": 650
+    }
+  ],
+  "edges": []
+}

@@ -1,0 +1,113 @@
+{
+  "style": "editorial",
+  "title": "Reviews that weren't reviews",
+  "description": "The recorded path goes from the lead agent to a review or run by another model. The real path went from the lead agent to its own script, and all four results were retracted.",
+  "canvas": {
+    "width": 1060,
+    "height": 400
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 280,
+    "card_height": 110
+  },
+  "nodes": [
+    {
+      "id": "c_label",
+      "variant": "plain",
+      "title": "What was recorded",
+      "x": 40,
+      "y": 20,
+      "width": 300,
+      "height": 40
+    },
+    {
+      "id": "c1",
+      "title": "Lead agent",
+      "subtitle": "Asks for a check",
+      "icon": "robot",
+      "color": "purple",
+      "x": 40,
+      "y": 70
+    },
+    {
+      "id": "c2",
+      "title": "Another model",
+      "subtitle": "Reviews or runs it",
+      "icon": "search",
+      "color": "blue",
+      "x": 390,
+      "y": 70
+    },
+    {
+      "id": "c3",
+      "title": "Accepted",
+      "subtitle": "Four times",
+      "icon": "check",
+      "color": "green",
+      "x": 740,
+      "y": 70
+    },
+    {
+      "id": "r_label",
+      "variant": "plain",
+      "title": "What happened",
+      "x": 40,
+      "y": 210,
+      "width": 300,
+      "height": 40
+    },
+    {
+      "id": "r1",
+      "title": "Lead agent",
+      "subtitle": "Asks for a check",
+      "icon": "robot",
+      "color": "purple",
+      "x": 40,
+      "y": 260
+    },
+    {
+      "id": "r2",
+      "title": "Its own script",
+      "subtitle": "No other model",
+      "icon": "terminal",
+      "color": "amber",
+      "x": 390,
+      "y": 260
+    },
+    {
+      "id": "r3",
+      "title": "Retracted",
+      "subtitle": "All four",
+      "icon": "close",
+      "color": "gray",
+      "x": 740,
+      "y": 260
+    }
+  ],
+  "edges": [
+    {
+      "from": "c1",
+      "to": "c2",
+      "color": "blue"
+    },
+    {
+      "from": "c2",
+      "to": "c3",
+      "color": "green"
+    },
+    {
+      "from": "r1",
+      "to": "r2"
+    },
+    {
+      "from": "r2",
+      "to": "r3"
+    }
+  ],
+  "dividers": [
+    {
+      "after_node": "c1"
+    }
+  ]
+}

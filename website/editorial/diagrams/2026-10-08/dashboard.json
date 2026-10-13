@@ -1,0 +1,18 @@
+{
+  "style": "editorial",
+  "title": "Two new checks in the dashboard",
+  "description": "A usage record that names no agent or computer is dropped and counted as missing. An agent that says it's idle while its terminal stays busy is flagged and gets no new task.",
+  "canvas": {"width": 740, "height": 330},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 110},
+  "nodes": [
+    {"id": "rec", "title": "Usage record", "subtitle": "Names no agent", "icon": "document", "color": "blue", "x": 40, "y": 40},
+    {"id": "drop", "title": "Dropped", "subtitle": "Counted as missing", "icon": "close", "color": "amber", "x": 420, "y": 40},
+    {"id": "idle", "title": "Agent says idle", "subtitle": "Terminal still busy", "icon": "terminal", "color": "blue", "x": 40, "y": 180},
+    {"id": "flag", "title": "Flagged", "subtitle": "Gets no new task", "icon": "warning", "color": "amber", "x": 420, "y": 180}
+  ],
+  "edges": [
+    {"from": "rec", "to": "drop", "color": "amber"},
+    {"from": "idle", "to": "flag", "color": "amber"}
+  ],
+  "dividers": [{"after_node": "rec"}]
+}
