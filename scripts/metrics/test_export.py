@@ -368,6 +368,11 @@ class TestResolvedTasksFileLoading(unittest.TestCase):
             self.assertEqual(res["resolved_task_count"], 1)
 
     def test_load_from_default_repo_tasks(self):
+        # Default load uses coordination/TASKS.json, which is untracked live
+        # runtime state (absent in fresh checkouts/worktrees): skip there.
+        default_tasks = ROOT / "coordination" / "TASKS.json"
+        if not default_tasks.exists():
+            self.skipTest("coordination/TASKS.json is untracked runtime state, absent here")
         # Default load uses coordination/TASKS.json
         res = summarize_resolved_tasks(as_of="2026-10-07T04:00:00Z", window_seconds="all")
         self.assertGreater(res["resolved_task_count"], 100)
