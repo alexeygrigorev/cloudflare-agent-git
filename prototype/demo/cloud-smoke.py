@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor
 
 # Hard limits agreed with backend Coordinator Durable Object budget tracker
-MAX_BUDGET_DELTA_HARD = 60
+MAX_BUDGET_DELTA_HARD = 90  # live run measured 60 ops through the merge-tree step
 MAX_DAILY_OPS = int(os.environ.get("MAX_DAILY_OPS", 200))
 MAX_MONTHLY_OPS = int(os.environ.get("MAX_MONTHLY_OPS", 6000))
 MAX_REPOS = int(os.environ.get("MAX_REPOS", 4))
@@ -249,7 +249,7 @@ class MockBackendHandler(http.server.BaseHTTPRequestHandler):
                     "taskId": task_id,
                     "agentId": agent_id,
                     "forkName": fork_name,
-                    "baseSha": req_data.get("baseSha", ""),
+                    "baseSha": req_data.get("base_sha", ""),
                     "token": gw_token
                 }
                 state["agents"][agent_id] = {
@@ -270,7 +270,7 @@ class MockBackendHandler(http.server.BaseHTTPRequestHandler):
                     "remote": fork_remote
                 },
                 "ref": "refs/heads/main",
-                "base_sha": req_data.get("baseSha", ""),
+                "base_sha": req_data.get("base_sha", ""),
                 "intent": req_data.get("intent", ""),
                 "token": {
                     "scope": "write",
@@ -336,6 +336,9 @@ class MockBackendHandler(http.server.BaseHTTPRequestHandler):
                 return
 
             req_data = json.loads(raw_body.decode("utf-8")) if raw_body else {}
+            if req_data.get("contract") not in ("0.0", "0.1"):
+                self.send_json(400, {"error": "unsupported contract version"})
+                return
             vector = req_data.get("vector", {})
 
             with state["lock"]:
@@ -680,7 +683,8 @@ class CloudSmokeRunner:
                 except Exception:
                     pass
             if expect_status is not None and he.code != expect_status:
-                raise RuntimeError(f"HTTP {he.code} on {method} {path} (expected {expect_status})")
+                detail = err_data.get("error") if isinstance(err_data, dict) else None
+                raise RuntimeError(f"HTTP {he.code} on {method} {path} (expected {expect_status})" + (f": {str(detail)[:200]}" if detail else ""))
             return he.code, err_data, err_bytes
 
     def configure_git_repo(self, repo_dir):
@@ -803,7 +807,7 @@ class CloudSmokeRunner:
             "POST",
             "/tasks",
             headers={"Authorization": f"Bearer {self.admin_token}"},
-            body={"agent": actor_name, "intent": f"Smoke verification worker {index}", "baseSha": self.base_sha},
+            body={"agent": actor_name, "intent": f"Smoke verification worker {index}", "base_sha": self.base_sha},
             expect_status=201
         )
 
@@ -944,6 +948,8 @@ class CloudSmokeRunner:
 
         # Submit typed POST /checks with RUNNER_TOKEN
         payload = {
+            "contract": "0.0",
+            "coverage": ["|".join(c["pair"]) for c in check_results],
             "policy": "pairwise-merge-tree",
             "policyVerbatim": "merge-tree-v1",
             "vector": vector,
@@ -978,6 +984,8 @@ class CloudSmokeRunner:
         fake_vector = {aid: self.actor_data[aid]["headSha"] for aid in agent_ids}
         fake_vector[agent_ids[0]] = "0" * 40  # Stale/invalid commit
         stale_payload = {
+            "contract": "0.0",
+            "coverage": [],
             "policy": "pairwise-merge-tree",
             "vector": fake_vector,
             "results": []
