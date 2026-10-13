@@ -9,7 +9,16 @@ ssh -N -L 8766:127.0.0.1:8766 hetzner
 http://127.0.0.1:8766/
 ```
 
-Data stays private in `.local/metrics/`: `latest.json`, dated snapshot JSONL, locks and optional exports. Files use mode 600 and directory mode 700. History uses verified gzip chunk rotations after 2 MiB and at day boundaries. All snapshot bytes are preserved; only metrics-owned uncompressed originals are replaced after original/decompressed SHA256 and byte-count verification. A retention manifest records every archive. The 256 MiB total hard cap preserves existing history and pauses new appends with a latest-snapshot error; it never deletes experimental data or existing worktrees. Compression is expected to keep a 14-day metadata-only experiment well below the cap; monitor the actual manifest, not a promise. Keep the service alive through its genuine `experiment-metrics` aplexer session. The dashboard source is public, its collected data is **not**.
+Data stays private in `.local/metrics/`: `latest.json`, `state.sqlite`, locks and optional exports. Files use mode 600 and directory mode 700. Per-minute numeric series go to a local VictoriaMetrics single-node TSDB (one sample/minute, ~150 series); task/evidence details go to `state.sqlite` only when they change. Unknown stays absent, never zero.
+
+```text
+bash scripts/metrics/install-victoriametrics.sh   # pinned binary, sha256-verified, user unit on 127.0.0.1:8428, 400d retention
+python3 scripts/metrics/backfill.py --store /path/to/.local/metrics   # one-time archive import (read-only on archives)
+python3 scripts/metrics/export.py --output .local/metrics/experiment-summary.json
+python3 -m unittest discover -s scripts/metrics -p 'test_metrics.py'
+```
+
+The pre-TSDB per-minute `.gz` snapshot archives are frozen and untouched; the collector no longer writes them. `latest.json` is still written every sample (dashboard, liveness guard, principal metrics).
 
 ```text
 python3 scripts/metrics/export.py --output .local/metrics/experiment-summary.json
@@ -23,7 +32,7 @@ Useful measures: registered/live/freshness counts, per-team ownership, tasks rea
 Native Codex usage comes from the existing saved `transcript.json` binding and the latest cumulative `token_count` event in a bounded 2 MiB tail. Conversation IDs deduplicate resumed sessions. Cached input and reasoning tokens are subsets when the native harness says so, not additional tokens added to the total. If no event is observed, usage is null. Claude completed writer results may be explicitly registered using `telemetry: {type: "claude-result", path: ".local/journal/first-writer-response.json"}`. Their provider list-price cost is an estimate, **not a subscription charge/bill**. OpenCode, Grok, Gemini and native harness subagents without an exact telemetry binding remain unknown, not zero. No credentials, message contents or raw transcripts are retained.
 
 
-The live dashboard separates principal/head/executor/subagent counts, reported idle, stale/unknown state and longest sampled idle. It shows CPU/RSS, host load/free GiB, raw task statuses including noncanonical values, task transition history, native input/output/cache counter breakdown, first-observed baselines and observation-interval token deltas. Provider windows are read through real `quse` calls at most every five minutes and show query errors; account quota never becomes cost or agent usage. Hook seconds are observations, not productive work.
+The live dashboard separates principal/head/executor/subagent counts, reported idle, stale/unknown state and longest sampled idle. It shows CPU/RSS, host load/free GiB, raw task statuses including noncanonical values, task transition history, native input/output/cache counter breakdown, first-observed baselines and observation-interval token deltas. Below the live snapshot it charts 24-hour history with hourly breakdowns (agents, transitions/hour, tokens/hour by provider, host load) from VictoriaMetrics through a same-origin read-only `/api/vm` proxy. Provider windows are read through real `quse` calls at most every five minutes and show query errors; account quota never becomes cost or agent usage. Hook seconds are observations, not productive work.
 
 Register missing harness usage only from actual metadata (never estimate counters):
 
