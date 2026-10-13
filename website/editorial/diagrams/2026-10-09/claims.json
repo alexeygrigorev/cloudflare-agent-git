@@ -1,0 +1,16 @@
+{
+  "style": "editorial",
+  "title": "An old claim on files, now",
+  "description": "An agent claims the files it edits. When the claim gets old, the tools now only show a warning. Time alone never lets another agent take the files over.",
+  "canvas": {"width": 1060, "height": 380},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 110},
+  "nodes": [
+    {"id": "claim", "title": "Old claim on files", "subtitle": "Its time has passed", "icon": "document", "color": "blue", "x": 40, "y": 135},
+    {"id": "warn", "eyebrow": "NOW", "title": "Warning only", "subtitle": "The owner keeps the files", "icon": "warning", "color": "amber", "x": 740, "y": 50},
+    {"id": "take", "eyebrow": "NEVER", "title": "Another agent takes over", "subtitle": "Time alone is not enough", "icon": "close", "color": "gray", "x": 740, "y": 220}
+  ],
+  "edges": [
+    {"from": "claim", "to": "warn", "route": "orthogonal"},
+    {"from": "claim", "to": "take", "route": "orthogonal", "dashed": true}
+  ]
+}

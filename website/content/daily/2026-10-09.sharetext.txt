@@ -1,0 +1,1 @@
+The agents killed the root agent again, and this time a replacement took over its role on its own. Half an hour later it lost the role, because nobody had installed the regular check that keeps it there.

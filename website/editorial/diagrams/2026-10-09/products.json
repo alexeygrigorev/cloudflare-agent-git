@@ -1,0 +1,14 @@
+{
+  "style": "editorial",
+  "title": "The four products on this day",
+  "description": "Agent Branches sent the team's own recovery code to GitHub but got no new feature. The dashboard didn't change, and a fix is proposed after the launcher's fence blocked a real agent's own output folder. Messaging between two computers didn't move.",
+  "canvas": {"width": 760, "height": 360},
+  "layout": {"type": "manual", "card_width": 320, "card_height": 120},
+  "nodes": [
+    {"id": "branches", "eyebrow": "USED, NO NEW FEATURE", "title": "Agent Branches", "subtitle": "Sent recovery code to GitHub", "icon": "github", "color": "purple", "x": 40, "y": 50},
+    {"id": "dashboard", "eyebrow": "NO CHANGE", "title": "Dashboard", "subtitle": "Usage numbers still missing", "icon": "observability", "color": "gray", "x": 400, "y": 50},
+    {"id": "launcher", "eyebrow": "FIX PROPOSED", "title": "Launcher", "subtitle": "Fence blocked its own output", "icon": "warning", "color": "amber", "x": 40, "y": 200},
+    {"id": "messaging", "eyebrow": "NO CHANGE", "title": "Two computers talking", "subtitle": "Server lost my desktop", "icon": "message", "color": "gray", "x": 400, "y": 200}
+  ],
+  "edges": []
+}

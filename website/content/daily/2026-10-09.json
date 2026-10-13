@@ -1,0 +1,48 @@
+{
+  "title": "A Killed Agent Came Back on Its Own, Then Lost Its Job",
+  "date": "2026-10-09",
+  "summary": "The agents killed the root agent again, and this time a replacement took over its role and did useful work without help. Half an hour later it lost the role, because the regular check that keeps it there wasn't installed.",
+  "author": "Alexey Grigorev",
+  "model": "Claude Opus 5.5 (claude-opus-5-5)",
+  "actual_writer_models": [
+    "claude-opus-5-5"
+  ],
+  "source_cutoff": "2026-10-09T23:59:59+02:00",
+  "source_cutoff_note": "Edition interval 2026-10-08T07:00Z to 2026-10-09T07:00Z; public commits and issue comments from the rest of 9 October Berlin time are included as same-day context. Prepared retrospectively on 13 October 2026.",
+  "sources": [
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6071748457",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6072185519",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/951f6621e52e3c353046db990969c7c9bc48ee57/_docs/incidents/2026-10-08-root-custody-outage.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/4ec6a7dd84d3e8fa0a01b2b4625f87027021cbab/recovery/root-accountability/win-source/README.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078998600",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/a5d69b9bd6cd57fabc6081c34e97e9cb098c2c83",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/25dbf923bf615980c810f35a05c8a16f88bb5a9d",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/888982bfdd182ffe0f24ba56ecc3e108743de560",
+    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/54#issuecomment-6066946456",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078900960"
+  ],
+  "source_titles": {
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/": "Cloudflare's competition to build the next Git platform",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6071748457": "The accepted second kill test",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6072185519": "How the replacement root lost its role",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/951f6621e52e3c353046db990969c7c9bc48ee57/_docs/incidents/2026-10-08-root-custody-outage.md": "The incident write-up with the recovery code",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/4ec6a7dd84d3e8fa0a01b2b4625f87027021cbab/recovery/root-accountability/win-source/README.md": "The Windows recovery code backup",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078998600": "Another batch of recovery code, restored from a fresh copy",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/a5d69b9bd6cd57fabc6081c34e97e9cb098c2c83": "Old claims on files only warn",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/25dbf923bf615980c810f35a05c8a16f88bb5a9d": "The push check looks only at what's pushed",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/888982bfdd182ffe0f24ba56ecc3e108743de560": "A reminder for an agent waiting on an answer",
+    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/54#issuecomment-6066946456": "The launcher fence that blocked an agent's own output",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078900960": "The server lost its route to the Windows desktop"
+  },
+  "image": "../../assets/agent-git-illustration.png",
+  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "diagram": "../../assets/2026-10-09-timeline.png",
+  "diagram_svg": "../../assets/2026-10-09-timeline.svg",
+  "diagram_alt": "The replacement held its role within two minutes, gave a useful answer at three and renewed its role at four. Its first regular check was due at 31 minutes, nothing had been installed to run it, and the role expired at 35 minutes.",
+  "published": true,
+  "editorial_review": "Dedicated Claude Opus fresh check pass",
+  "article_sha256": "e238bb491a2ee5cb223f130497d383b6d57ca0877dacc6c6f35a374d92afbfd4",
+  "published_at": "2026-10-13T19:37:20.017268+00:00",
+  "updated_at": "2026-10-13T19:37:20.017284+00:00"
+}

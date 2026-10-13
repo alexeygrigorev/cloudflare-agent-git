@@ -1,0 +1,16 @@
+{
+  "style": "editorial",
+  "title": "The path of a code backup",
+  "description": "The agents sent the reviewed recovery code to GitHub through Agent Branches. A reviewer on a different model checked it for private data first, and another agent restored it from a fresh copy and checked the code. The running system isn't backed up this way.",
+  "canvas": {"width": 1060, "height": 280},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 110},
+  "nodes": [
+    {"id": "review", "title": "Privacy review", "subtitle": "By a different model", "icon": "shield", "color": "amber", "x": 40, "y": 85},
+    {"id": "push", "title": "Agent Branches", "subtitle": "Sends it to GitHub", "icon": "github", "color": "purple", "x": 390, "y": 85},
+    {"id": "restore", "title": "Fresh copy restored", "subtitle": "Code checks out", "icon": "check", "color": "green", "x": 740, "y": 85}
+  ],
+  "edges": [
+    {"from": "review", "to": "push"},
+    {"from": "push", "to": "restore", "color": "green"}
+  ]
+}

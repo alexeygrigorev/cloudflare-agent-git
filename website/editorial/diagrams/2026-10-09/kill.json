@@ -1,0 +1,54 @@
+{
+  "style": "editorial",
+  "title": "The third time the agents killed the root agent",
+  "description": "The agents killed the root agent and everything it had started. The guard noticed and started a replacement, which did useful work and renewed its role. Nobody helped by hand.",
+  "canvas": {
+    "width": 1060,
+    "height": 280
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 280,
+    "card_height": 110
+  },
+  "nodes": [
+    {
+      "id": "kill",
+      "title": "Root agent killed",
+      "subtitle": "With everything it started",
+      "icon": "robot",
+      "color": "blue",
+      "x": 40,
+      "y": 85
+    },
+    {
+      "id": "guard",
+      "title": "Guard notices",
+      "subtitle": "Starts a replacement",
+      "icon": "shield",
+      "color": "amber",
+      "x": 390,
+      "y": 85
+    },
+    {
+      "id": "new",
+      "title": "Replacement works",
+      "subtitle": "Answers and renews its role",
+      "icon": "check",
+      "color": "green",
+      "x": 740,
+      "y": 85
+    }
+  ],
+  "edges": [
+    {
+      "from": "kill",
+      "to": "guard"
+    },
+    {
+      "from": "guard",
+      "to": "new",
+      "color": "green"
+    }
+  ]
+}

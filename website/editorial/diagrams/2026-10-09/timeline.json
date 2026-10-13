@@ -1,0 +1,34 @@
+{
+  "title": "Minutes after the third kill",
+  "description": "The replacement held its role within two minutes, gave a useful answer at three and renewed its role at four. Its first regular check was due at 31 minutes, nothing had been installed to run it, and the role expired at 35 minutes.",
+  "source": "Independent checkpoints on the recovery issue, 9 October 2026, rounded to whole minutes after the kill",
+  "axis_max": 40,
+  "events": [
+    {
+      "minute": 2,
+      "label": "Holds the role",
+      "kind": "ok"
+    },
+    {
+      "minute": 3,
+      "label": "Useful answer",
+      "kind": "ok"
+    },
+    {
+      "minute": 4,
+      "label": "Renews the role",
+      "kind": "ok"
+    },
+    {
+      "minute": 31,
+      "label": "First check due, none ran",
+      "kind": "miss"
+    },
+    {
+      "minute": 35,
+      "label": "Role expires",
+      "kind": "fail"
+    }
+  ],
+  "note": "The agent stayed alive the whole time. Only its role ran out."
+}

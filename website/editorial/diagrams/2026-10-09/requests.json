@@ -1,0 +1,18 @@
+{
+  "style": "editorial",
+  "title": "My open requests and their state",
+  "description": "Eight requests and their state. Public issues and public code backups are in place. A lost root agent came back on its own once, but lost its role later. Regular checks, demoting a root that stops answering, two computers talking, scheduled reports and usage numbers are still open.",
+  "canvas": {"width": 760, "height": 630},
+  "layout": {"type": "manual", "card_width": 320, "card_height": 120},
+  "nodes": [
+    {"id": "issues", "eyebrow": "IN PLACE", "title": "Tasks in public issues", "subtitle": "Day counts unknown", "icon": "issue", "color": "green", "x": 40, "y": 50},
+    {"id": "backup", "eyebrow": "IN PLACE", "title": "Code backed up on GitHub", "subtitle": "Code only, not the system", "icon": "github", "color": "green", "x": 400, "y": 50},
+    {"id": "restart", "eyebrow": "PASSED ONCE", "title": "Lost agents come back", "subtitle": "Role lapsed afterwards", "icon": "check", "color": "amber", "x": 40, "y": 190},
+    {"id": "checks", "eyebrow": "OPEN", "title": "Regular checks keep going", "subtitle": "Not installed", "icon": "search", "color": "gray", "x": 400, "y": 190},
+    {"id": "demote", "eyebrow": "OPEN", "title": "Silent root loses its role", "subtitle": "Code only", "icon": "close", "color": "gray", "x": 40, "y": 330},
+    {"id": "talk", "eyebrow": "OPEN", "title": "Two computers talking", "subtitle": "No native route yet", "icon": "message", "color": "gray", "x": 400, "y": 330},
+    {"id": "reports", "eyebrow": "OPEN", "title": "Scheduled reports", "subtitle": "No accepted schedule", "icon": "document", "color": "gray", "x": 40, "y": 470},
+    {"id": "usage", "eyebrow": "UNKNOWN", "title": "Usage and agent counts", "subtitle": "No hourly numbers", "icon": "observability", "color": "gray", "x": 400, "y": 470}
+  ],
+  "edges": []
+}
