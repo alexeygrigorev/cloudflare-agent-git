@@ -29,12 +29,16 @@ npm run build:node     # outputs .build/node/src/local/main.js
 
 ### Executable Protocol Walkthrough
 
-The self-contained executable script [`demo/walkthrough.py`](demo/walkthrough.py) implements the multi-agent coordination protocol. It now starts its own bounded coordinator and sidecar servers automatically on dynamic loopback ports with temporary state; no manual server startup is needed. For remote smoke tests, setting `BASE_URL` delegates to a deployed coordinator . The `--mock` flag runs explicit source-only client tests, not real Cloud Artifacts or native agents.
+The self-contained executable script [`demo/walkthrough.py`](demo/walkthrough.py) implements the multi-agent coordination protocol. It starts its own bounded coordinator and sidecar servers automatically on dynamic loopback ports with temporary state; no manual server startup is needed. When `BASE_URL` is set, `walkthrough.py` delegates to [`demo/cloud-smoke.py`](demo/cloud-smoke.py).
 
 ```bash
 npm run build:node
 python3 demo/walkthrough.py
 ```
+
+### Cloud Smoke and Mock Verification
+
+Deploy-config and smoke verification are handled by [`demo/cloud-smoke.py`](demo/cloud-smoke.py). Setting `BASE_URL` (strict HTTPS required) runs live verification against a deployed coordinator. The `--mock` flag on `cloud-smoke.py` (`python3 demo/cloud-smoke.py --mock`) runs explicit source-only client tests against an in-memory loopback mock backend, not real Cloud Artifacts or native agents.
 
 ## Auth
 

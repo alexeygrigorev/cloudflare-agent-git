@@ -59,7 +59,8 @@ def main():
     if os.environ.get("BASE_URL"):
         smoke_script = pathlib.Path(__file__).resolve().parent / "cloud-smoke.py"
         if not smoke_script.exists():
-            smoke_script = pathlib.Path.cwd() / ".local" / "cloud-smoke-review-r2" / "source" / "prototype" / "demo" / "cloud-smoke.py"
+            sys.stderr.write(f"Error: expected cloud-smoke script not found at {smoke_script}\n")
+            sys.exit(1)
         cmd = [sys.executable, str(smoke_script)] + sys.argv[1:]
         res = subprocess.run(cmd)
         sys.exit(res.returncode)
