@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="470" viewBox="0 0 820 470" role="img" aria-labelledby="t d">
+<title id="t">The documented commands on one machine</title>
+<desc id="d">All 194 tests passed: 114 for the Cloudflare version, 16 for the Git helper and 64 for the local version. On this machine, the server let signed-in requests through and refused anonymous ones. Six commands were still unchecked.</desc>
+<rect width="820" height="470" fill="#fcfcf8"/>
+<g font-family="DejaVu Sans, Verdana, sans-serif">
+<text x="40" y="50" font-family="Georgia, serif" font-size="28" fill="#1c2027">194 tests passed on one machine</text>
+<text x="40" y="84" font-size="15" fill="#4a505a">Tests passed, by part of the entry</text>
+<text x="186" y="137" text-anchor="end" font-size="16" fill="#1c2027">Cloudflare server</text><rect x="200" y="120" width="456.0" height="24" fill="#2455ed"/><text x="664.0" y="138" font-size="15" fill="#1c2027">114 passed</text>
+<text x="186" y="177" text-anchor="end" font-size="16" fill="#1c2027">Git helper</text><rect x="200" y="160" width="64.0" height="24" fill="#2455ed"/><text x="272.0" y="178" font-size="15" fill="#1c2027">16 passed</text>
+<text x="186" y="217" text-anchor="end" font-size="16" fill="#1c2027">Local server</text><rect x="200" y="200" width="256.0" height="24" fill="#2455ed"/><text x="464.0" y="218" font-size="15" fill="#1c2027">64 passed</text>
+<text x="40" y="270" font-family="Georgia, serif" font-size="20" fill="#1c2027">Other checks</text>
+<circle cx="50" cy="299" r="7" fill="#2455ed"/><text x="68" y="304" font-size="16" fill="#1c2027">Signed-in request</text><text x="330" y="304" font-size="16" fill="#4a505a">Let through</text>
+<circle cx="50" cy="329" r="7" fill="#2455ed"/><text x="68" y="334" font-size="16" fill="#1c2027">Anonymous request</text><text x="330" y="334" font-size="16" fill="#4a505a">Refused</text>
+<circle cx="50" cy="359" r="7" fill="#2455ed"/><text x="68" y="364" font-size="16" fill="#1c2027">Six example addresses</text><text x="330" y="364" font-size="16" fill="#4a505a">Expected result, sample data</text>
+<circle cx="50" cy="389" r="7" fill="none" stroke="#ef7134" stroke-width="2"/><text x="68" y="394" font-size="16" fill="#1c2027">Six more commands</text><text x="330" y="394" font-size="16" fill="#4a505a">Not checked yet</text>
+</g>
+</svg>

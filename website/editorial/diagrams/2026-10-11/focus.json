@@ -1,0 +1,16 @@
+{
+  "style": "editorial",
+  "title": "One product until the deadline",
+  "description": "Agent Branches is the only active product until the deadline. The dashboard, the launcher and the messaging work are paused. The Grok chat bot is the only root, and the Windows desktop is an offline work machine.",
+  "canvas": {"width": 760, "height": 560},
+  "layout": {"type": "grid", "card_width": 320, "card_height": 110, "column_gap": 40, "row_gap": 30},
+  "nodes": [
+    {"id": "entry", "eyebrow": "ACTIVE", "title": "Agent Branches", "subtitle": "Contest entry, due Oct 14", "icon": "pull-request", "color": "green", "row": 0, "column": 0},
+    {"id": "root", "eyebrow": "ONLY ROOT", "title": "Grok chat bot", "subtitle": "Checks and talks to me", "icon": "robot", "color": "purple", "row": 0, "column": 1},
+    {"id": "dash", "eyebrow": "PAUSED", "title": "Dashboard", "subtitle": "Until the deadline", "icon": "observability", "color": "gray", "row": 1, "column": 0},
+    {"id": "desk", "eyebrow": "OFFLINE", "title": "Windows desktop", "subtitle": "Work machine, no root", "icon": "environment", "color": "gray", "row": 1, "column": 1},
+    {"id": "launch", "eyebrow": "PAUSED", "title": "Launcher", "subtitle": "Repairs for the entry only", "icon": "queue", "color": "gray", "row": 2, "column": 0},
+    {"id": "msg", "eyebrow": "PAUSED", "title": "Messaging", "subtitle": "Repairs for the entry only", "icon": "message", "color": "gray", "row": 2, "column": 1}
+  ],
+  "edges": []
+}

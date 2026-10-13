@@ -1,0 +1,69 @@
+{
+  "style": "editorial",
+  "title": "The paused products",
+  "description": "The launcher showed two bugs that stay open. The messaging team finished a checker for demo evidence, and two real computers haven't talked yet. The dashboard is paused with nothing new.",
+  "canvas": {
+    "width": 760,
+    "height": 500
+  },
+  "layout": {
+    "type": "grid",
+    "card_width": 320,
+    "card_height": 110,
+    "column_gap": 40,
+    "row_gap": 30
+  },
+  "nodes": [
+    {
+      "id": "ro",
+      "eyebrow": "OPEN BUG",
+      "title": "Launcher",
+      "subtitle": "Coder got a read-only copy",
+      "icon": "queue",
+      "color": "amber",
+      "row": 0,
+      "column": 0
+    },
+    {
+      "id": "rev",
+      "eyebrow": "OPEN BUG",
+      "title": "Launcher",
+      "subtitle": "Reviewer couldn't save",
+      "icon": "queue",
+      "color": "amber",
+      "row": 0,
+      "column": 1
+    },
+    {
+      "id": "check",
+      "eyebrow": "DONE",
+      "title": "Messaging checker",
+      "subtitle": "Adopted by the entry",
+      "icon": "check",
+      "color": "green",
+      "row": 1,
+      "column": 0
+    },
+    {
+      "id": "two",
+      "eyebrow": "NOT YET",
+      "title": "Two real computers",
+      "subtitle": "No proof so far",
+      "icon": "close",
+      "color": "gray",
+      "row": 1,
+      "column": 1
+    },
+    {
+      "id": "dash",
+      "eyebrow": "PAUSED",
+      "title": "Dashboard",
+      "subtitle": "Nothing new",
+      "icon": "observability",
+      "color": "gray",
+      "row": 2,
+      "column": 0
+    }
+  ],
+  "edges": []
+}

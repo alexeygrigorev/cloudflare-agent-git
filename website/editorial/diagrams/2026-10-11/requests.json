@@ -1,0 +1,99 @@
+{
+  "style": "editorial",
+  "title": "My requests and their state",
+  "description": "The contest entry is in progress and the other products are paused, with one root in place. The older commits went to GitHub and the thread limit went up. Two computers talking, automatic recovery of a lost agent and daily reports on schedule are still open.",
+  "canvas": {
+    "width": 760,
+    "height": 700
+  },
+  "layout": {
+    "type": "grid",
+    "card_width": 320,
+    "card_height": 110,
+    "column_gap": 40,
+    "row_gap": 30
+  },
+  "nodes": [
+    {
+      "id": "entry",
+      "eyebrow": "IN PROGRESS",
+      "title": "Contest entry by Oct 14",
+      "subtitle": "Final run review open",
+      "icon": "workflow",
+      "color": "amber",
+      "row": 0,
+      "column": 0
+    },
+    {
+      "id": "root",
+      "eyebrow": "DONE",
+      "title": "One root only",
+      "subtitle": "Desktop root stood down",
+      "icon": "robot",
+      "color": "green",
+      "row": 0,
+      "column": 1
+    },
+    {
+      "id": "commits",
+      "eyebrow": "DONE",
+      "title": "35 older commits",
+      "subtitle": "Sent, not re-reviewed",
+      "icon": "github",
+      "color": "green",
+      "row": 1,
+      "column": 0
+    },
+    {
+      "id": "threads",
+      "eyebrow": "DONE",
+      "title": "Thread limit",
+      "subtitle": "Raised from 100 to 256",
+      "icon": "settings",
+      "color": "green",
+      "row": 1,
+      "column": 1
+    },
+    {
+      "id": "paused",
+      "eyebrow": "PAUSED",
+      "title": "Other products",
+      "subtitle": "Until the deadline",
+      "icon": "close",
+      "color": "gray",
+      "row": 2,
+      "column": 0
+    },
+    {
+      "id": "cloud",
+      "eyebrow": "HELD",
+      "title": "Cloudflare and spending",
+      "subtitle": "Only on the root's message",
+      "icon": "shield",
+      "color": "gray",
+      "row": 2,
+      "column": 1
+    },
+    {
+      "id": "two",
+      "eyebrow": "OPEN",
+      "title": "Two computers talking",
+      "subtitle": "Desktop offline",
+      "icon": "message",
+      "color": "gray",
+      "row": 3,
+      "column": 0
+    },
+    {
+      "id": "recover",
+      "eyebrow": "OPEN",
+      "title": "Recovery and reports",
+      "subtitle": "Lost agent, daily schedule",
+      "icon": "issue",
+      "color": "gray",
+      "row": 3,
+      "column": 1
+    }
+  ],
+  "edges": []
+}

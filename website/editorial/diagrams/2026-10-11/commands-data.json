@@ -1,0 +1,11 @@
+{
+  "source": "Agent Branches issue 53, accepted local command checkpoint on 11 October 2026",
+  "parts": ["Cloudflare server", "Git helper", "Local server"],
+  "tests_passed": [114, 16, 64],
+  "checks": [
+    ["Signed-in request", "Let through"],
+    ["Anonymous request", "Refused"],
+    ["Six example addresses", "Expected result, sample data"],
+    ["Six more commands", "Not checked yet"]
+  ]
+}

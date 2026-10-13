@@ -1,0 +1,77 @@
+{
+  "style": "editorial",
+  "title": "Three agents and two clash warnings",
+  "description": "Three agents, A, B and C, push from their own copies to the coordinating server. The server warns agent B about two clashes. Agent B confirms them, fixes its code and pushes again.",
+  "canvas": {
+    "width": 820,
+    "height": 520
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 230,
+    "card_height": 100
+  },
+  "nodes": [
+    {
+      "id": "a",
+      "eyebrow": "OWN COPY",
+      "title": "Agent A",
+      "subtitle": "Gemini Pro",
+      "icon": "robot",
+      "color": "blue",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "b",
+      "eyebrow": "OWN COPY",
+      "title": "Agent B",
+      "subtitle": "Confirms, fixes, pushes",
+      "icon": "robot",
+      "color": "blue",
+      "x": 40,
+      "y": 210
+    },
+    {
+      "id": "c",
+      "eyebrow": "OWN COPY",
+      "title": "Agent C",
+      "subtitle": "Gemini Pro",
+      "icon": "robot",
+      "color": "blue",
+      "x": 40,
+      "y": 380
+    },
+    {
+      "id": "server",
+      "title": "Coordinating server",
+      "subtitle": "Records every push",
+      "icon": "database",
+      "color": "green",
+      "x": 550,
+      "y": 210
+    }
+  ],
+  "edges": [
+    {
+      "from": "a",
+      "to": "server",
+      "route": "orthogonal",
+      "from_anchor": "right",
+      "to_anchor": "top"
+    },
+    {
+      "from": "c",
+      "to": "server",
+      "route": "orthogonal",
+      "from_anchor": "right",
+      "to_anchor": "bottom"
+    },
+    {
+      "from": "server",
+      "to": "b",
+      "label": "Two warnings",
+      "color": "amber"
+    }
+  ]
+}

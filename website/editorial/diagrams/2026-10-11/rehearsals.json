@@ -1,0 +1,68 @@
+{
+  "style": "editorial",
+  "title": "From a scripted test to a real rehearsal",
+  "description": "The scripted test passed, but the first real rehearsal failed when the runner shut down too early. A reviewer then found six failures in nine cases, and the repaired runner passed.",
+  "canvas": {
+    "width": 760,
+    "height": 420
+  },
+  "layout": {
+    "type": "grid",
+    "card_width": 320,
+    "card_height": 120,
+    "column_gap": 40,
+    "row_gap": 40
+  },
+  "nodes": [
+    {
+      "id": "scripted",
+      "eyebrow": "PASSED",
+      "title": "Scripted test",
+      "subtitle": "Small programs, no models",
+      "icon": "number-1",
+      "color": "green",
+      "row": 0,
+      "column": 0
+    },
+    {
+      "id": "real",
+      "eyebrow": "FAILED",
+      "title": "Real rehearsal",
+      "subtitle": "Runner shut down too early",
+      "icon": "number-2",
+      "color": "red",
+      "row": 0,
+      "column": 1
+    },
+    {
+      "id": "review",
+      "eyebrow": "SENT BACK",
+      "title": "First fix",
+      "subtitle": "6 failures in 9 cases",
+      "icon": "number-3",
+      "color": "amber",
+      "row": 1,
+      "column": 0
+    },
+    {
+      "id": "fixed",
+      "eyebrow": "PASSED",
+      "title": "Repaired runner",
+      "subtitle": "32 review cases",
+      "icon": "check",
+      "color": "green",
+      "row": 1,
+      "column": 1
+    }
+  ],
+  "edges": [
+    {
+      "from": "scripted",
+      "to": "real"
+    },
+    {
+      "from": "review",
+      "to": "fixed"
+    }
+  ]
+}

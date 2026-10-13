@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="420" viewBox="0 0 760 420" role="img" aria-labelledby="title desc">
+  <title id="title">From a scripted test to a real rehearsal</title>
+  <desc id="desc">The scripted test passed, but the first real rehearsal failed when the runner shut down too early. A reviewer then found six failures in nine cases, and the repaired runner passed.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#1c2027" flood-opacity="0.04"/>
+    </filter>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <symbol id="icon-check" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m7.5 12 3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <symbol id="icon-number-1" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 9.5 12.4 8v8M10.2 16h4.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <symbol id="icon-number-2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.4 9.6a2.6 2.6 0 1 1 5.2.4c0 2-5.2 3.6-5.2 6h5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <symbol id="icon-number-3" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9a2.5 2.5 0 1 1 2.7 3h-.7.7a2.6 2.6 0 1 1-2.8 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <style>
+      text { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1c2027; }
+      symbol [stroke] { vector-effect: non-scaling-stroke; }
+      .node rect { stroke-width: 2; }
+      .node-boundary rect { stroke-width: 2; stroke-dasharray: 8 8; }
+      .boundary-title { font-size: 16px; font-weight: 750; text-anchor: start; }
+      .node-title { font-weight: 750; text-anchor: middle; }
+      .node-title.icon-copy { text-anchor: start; }
+      .node-subtitle { font-weight: 500; fill: #1c2027; text-anchor: middle; }
+      .eyebrow { font-weight: 750; letter-spacing: 1px; fill: #1c2027; text-anchor: middle; }
+      .mention-icon { font-size: 27px; font-weight: 750; text-anchor: middle; }
+      .standalone-mention { font-size: 52px; font-weight: 750; text-anchor: middle; }
+      .icon-node-title { font-size: 16px; font-weight: 750; text-anchor: middle; }
+      .edge { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .edge-label rect { stroke-width: 2; }
+      .edge-label text { font-size: 14px; font-weight: 750; text-anchor: middle; dominant-baseline: central; }
+      .divider { stroke: #1c2027; stroke-width: 2; stroke-dasharray: 6 8; stroke-linecap: round; }
+      .center-annotation { fill: #fcfcf8; stroke: none; }
+      .center-title { font-weight: 800; letter-spacing: 0.08em; fill: #1c2027; text-anchor: middle; }
+      .center-detail { font-weight: 600; fill: #1c2027; text-anchor: middle; }
+    </style>
+  </defs>
+  <rect width="760" height="420" fill="#fcfcf8"/>
+
+  <path class="edge" d="M360 130L400 130" stroke="#1c2027" marker-end="url(#arrow-gray)"/>
+  <path class="edge" d="M360 290L400 290" stroke="#1c2027" marker-end="url(#arrow-gray)"/>
+
+  <g class="node node-green" transform="translate(40 70)" filter="url(#shadow)">
+    <rect width="320" height="120" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="160" y="30" font-size="13">PASSED</text>
+    <use href="#icon-number-1" x="16" y="40" width="34" height="34" color="#1c2027"/>
+    <text class="node-title icon-copy" x="62" y="64.2" font-size="20">Scripted test</text>
+    <text class="node-subtitle" x="160" y="95" font-size="16">Small programs, no models</text>
+  </g>
+  <g class="node node-red" transform="translate(400 70)" filter="url(#shadow)">
+    <rect width="320" height="120" rx="18" fill="#fcfcf8" stroke="#ef7134"/>
+    <text class="eyebrow" x="160" y="30" font-size="13">FAILED</text>
+    <use href="#icon-number-2" x="16" y="40" width="34" height="34" color="#ef7134"/>
+    <text class="node-title icon-copy" x="62" y="64.2" font-size="20">Real rehearsal</text>
+    <text class="node-subtitle" x="160" y="95" font-size="16">Runner shut down too early</text>
+  </g>
+  <g class="node node-amber" transform="translate(40 230)" filter="url(#shadow)">
+    <rect width="320" height="120" rx="18" fill="#fcfcf8" stroke="#ef7134"/>
+    <text class="eyebrow" x="160" y="30" font-size="13">SENT BACK</text>
+    <use href="#icon-number-3" x="16" y="40" width="34" height="34" color="#ef7134"/>
+    <text class="node-title icon-copy" x="62" y="64.2" font-size="20">First fix</text>
+    <text class="node-subtitle" x="160" y="95" font-size="16">6 failures in 9 cases</text>
+  </g>
+  <g class="node node-green" transform="translate(400 230)" filter="url(#shadow)">
+    <rect width="320" height="120" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="160" y="30" font-size="13">PASSED</text>
+    <use href="#icon-check" x="16" y="40" width="34" height="34" color="#1c2027"/>
+    <text class="node-title icon-copy" x="62" y="64.2" font-size="20">Repaired runner</text>
+    <text class="node-subtitle" x="160" y="95" font-size="16">32 review cases</text>
+  </g>
+</svg>
