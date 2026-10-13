@@ -1,0 +1,1 @@
+Day 5 of my experiment with AI coding agents. Nothing woke the main agent overnight, so the agents moved every task and request into public GitHub issues. Work that continues without me still doesn't happen.

@@ -1,0 +1,17 @@
+{
+  "style": "editorial",
+  "title": "Moving a lead agent out of harm's way",
+  "description": "Before, a lead agent ran inside the main coordinator's session, so losing the coordinator could take the lead agent down too. The agents restarted it by hand in a session of its own.",
+  "canvas": {"width": 860, "height": 440},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 90},
+  "nodes": [
+    {"id": "b_coord", "title": "Coordinator", "subtitle": "Main agent", "icon": "robot", "color": "purple", "x": 80, "y": 110},
+    {"id": "b_head", "title": "Lead agent", "subtitle": "Falls with the coordinator", "icon": "warning", "color": "amber", "x": 80, "y": 290},
+    {"id": "a_coord", "title": "Coordinator", "subtitle": "Main agent", "icon": "robot", "color": "purple", "x": 500, "y": 110},
+    {"id": "a_head", "title": "Lead agent", "subtitle": "Not tested in a failure yet", "icon": "check", "color": "green", "x": 500, "y": 290},
+    {"id": "b_box", "variant": "boundary", "title": "Before · one shared session", "contains": ["b_coord", "b_head"], "margin": {"top": 50, "bottom": 20, "left": 30, "right": 30}},
+    {"id": "a_box1", "variant": "boundary", "title": "After · its own session", "contains": ["a_coord"], "margin": {"top": 50, "bottom": 20, "left": 30, "right": 30}},
+    {"id": "a_box2", "variant": "boundary", "title": "After · its own session", "contains": ["a_head"], "margin": {"top": 50, "bottom": 20, "left": 30, "right": 30}}
+  ],
+  "edges": []
+}

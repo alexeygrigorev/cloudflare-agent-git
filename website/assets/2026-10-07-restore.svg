@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="440" viewBox="0 0 860 440" role="img" aria-labelledby="title desc">
+  <title id="title">Moving a lead agent out of harm&#x27;s way</title>
+  <desc id="desc">Before, a lead agent ran inside the main coordinator&#x27;s session, so losing the coordinator could take the lead agent down too. The agents restarted it by hand in a session of its own.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#1c2027" flood-opacity="0.04"/>
+    </filter>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <symbol id="icon-check" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m7.5 12 3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <symbol id="icon-robot" viewBox="0 0 24 24">
+        <path d="M12 5V2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="12" cy="2.5" r="1" fill="currentColor"/>
+        <rect x="4" y="5" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M4 10H2.5v5H4M20 10h1.5v5H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="11" r="1.3" fill="currentColor"/>
+        <circle cx="15" cy="11" r="1.3" fill="currentColor"/>
+        <path d="M8.5 16h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </symbol>
+    <symbol id="icon-warning" viewBox="0 0 24 24">
+        <path d="M12 3 2.5 21h19Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.1" fill="currentColor"/>
+      </symbol>
+    <style>
+      text { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1c2027; }
+      symbol [stroke] { vector-effect: non-scaling-stroke; }
+      .node rect { stroke-width: 2; }
+      .node-boundary rect { stroke-width: 2; stroke-dasharray: 8 8; }
+      .boundary-title { font-size: 16px; font-weight: 750; text-anchor: start; }
+      .node-title { font-weight: 750; text-anchor: middle; }
+      .node-title.icon-copy { text-anchor: start; }
+      .node-subtitle { font-weight: 500; fill: #1c2027; text-anchor: middle; }
+      .eyebrow { font-weight: 750; letter-spacing: 1px; fill: #1c2027; text-anchor: middle; }
+      .mention-icon { font-size: 27px; font-weight: 750; text-anchor: middle; }
+      .standalone-mention { font-size: 52px; font-weight: 750; text-anchor: middle; }
+      .icon-node-title { font-size: 16px; font-weight: 750; text-anchor: middle; }
+      .edge { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .edge-label rect { stroke-width: 2; }
+      .edge-label text { font-size: 14px; font-weight: 750; text-anchor: middle; dominant-baseline: central; }
+      .divider { stroke: #1c2027; stroke-width: 2; stroke-dasharray: 6 8; stroke-linecap: round; }
+      .center-annotation { fill: #fcfcf8; stroke: none; }
+      .center-title { font-weight: 800; letter-spacing: 0.08em; fill: #1c2027; text-anchor: middle; }
+      .center-detail { font-weight: 600; fill: #1c2027; text-anchor: middle; }
+    </style>
+  </defs>
+  <rect width="860" height="440" fill="#fcfcf8"/>
+
+  <g class="node-boundary node-blue" transform="translate(50 60)">
+    <rect width="340" height="340" rx="22" fill="none" stroke="#2455ed"/>
+    <text class="boundary-title" x="20" y="31">Before · one shared session</text>
+  </g>
+  <g class="node-boundary node-blue" transform="translate(470 60)">
+    <rect width="340" height="160" rx="22" fill="none" stroke="#2455ed"/>
+    <text class="boundary-title" x="20" y="31">After · its own session</text>
+  </g>
+  <g class="node-boundary node-blue" transform="translate(470 240)">
+    <rect width="340" height="160" rx="22" fill="none" stroke="#2455ed"/>
+    <text class="boundary-title" x="20" y="31">After · its own session</text>
+  </g>
+
+  <g class="node node-purple" transform="translate(80 110)" filter="url(#shadow)">
+    <rect width="280" height="90" rx="18" fill="#fcfcf8" stroke="#2455ed"/>
+    <use href="#icon-robot" x="16" y="15" width="34" height="34" color="#2455ed"/>
+    <text class="node-title icon-copy" x="62" y="39.2" font-size="20">Coordinator</text>
+    <text class="node-subtitle" x="140" y="70" font-size="16">Main agent</text>
+  </g>
+  <g class="node node-amber" transform="translate(80 290)" filter="url(#shadow)">
+    <rect width="280" height="90" rx="18" fill="#fcfcf8" stroke="#ef7134"/>
+    <use href="#icon-warning" x="16" y="15" width="34" height="34" color="#ef7134"/>
+    <text class="node-title icon-copy" x="62" y="39.2" font-size="20">Lead agent</text>
+    <text class="node-subtitle" x="140" y="70" font-size="16">Falls with the coordinator</text>
+  </g>
+  <g class="node node-purple" transform="translate(500 110)" filter="url(#shadow)">
+    <rect width="280" height="90" rx="18" fill="#fcfcf8" stroke="#2455ed"/>
+    <use href="#icon-robot" x="16" y="15" width="34" height="34" color="#2455ed"/>
+    <text class="node-title icon-copy" x="62" y="39.2" font-size="20">Coordinator</text>
+    <text class="node-subtitle" x="140" y="70" font-size="16">Main agent</text>
+  </g>
+  <g class="node node-green" transform="translate(500 290)" filter="url(#shadow)">
+    <rect width="280" height="90" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <use href="#icon-check" x="16" y="15" width="34" height="34" color="#1c2027"/>
+    <text class="node-title icon-copy" x="62" y="39.2" font-size="20">Lead agent</text>
+    <text class="node-subtitle" x="140" y="70" font-size="16">Not tested in a failure yet</text>
+  </g>
+</svg>

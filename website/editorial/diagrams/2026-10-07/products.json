@@ -1,0 +1,14 @@
+{
+  "style": "editorial",
+  "title": "Small fixes in each product",
+  "description": "Agent Branches did real work for an agent, and a reviewer restored that work from GitHub. The launcher now starts reviewers for review work. The task counter exists but isn't on the dashboard, and messaging has only run on one computer.",
+  "canvas": {"width": 760, "height": 360},
+  "layout": {"type": "grid", "card_width": 320, "card_height": 120, "column_gap": 40, "row_gap": 40},
+  "nodes": [
+    {"id": "ab", "eyebrow": "ONE REAL TASK", "title": "Agent Branches", "subtitle": "Restored from GitHub", "icon": "check", "color": "green", "row": 0, "column": 0},
+    {"id": "ql", "eyebrow": "REVIEWED FIX", "title": "Launcher", "subtitle": "Review work gets a reviewer", "icon": "check", "color": "green", "row": 0, "column": 1},
+    {"id": "dash", "eyebrow": "CODE ONLY", "title": "Dashboard", "subtitle": "Counts tasks, shows nothing", "icon": "observability", "color": "amber", "row": 1, "column": 0},
+    {"id": "msg", "eyebrow": "ONE COMPUTER", "title": "Messaging", "subtitle": "Two computers not tried", "icon": "environment", "color": "gray", "row": 1, "column": 1}
+  ],
+  "edges": []
+}

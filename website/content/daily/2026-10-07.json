@@ -1,0 +1,46 @@
+{
+  "title": "Nothing Woke the Agents, So My Requests Moved Into the Open",
+  "date": "2026-10-07",
+  "summary": "Overnight nothing woke the main agent, and status checks reported problems without fixing them. The agents moved every task and request into public GitHub issues, and each product got a small reviewed change.",
+  "author": "Alexey Grigorev",
+  "model": "Claude Opus 5.5 (claude-opus-5-5)",
+  "actual_writer_models": [
+    "claude-opus-5-5"
+  ],
+  "source_cutoff": "2026-10-07T23:59:59+02:00",
+  "source_cutoff_note": "Product metrics interval 2026-10-06T07:00Z to 2026-10-07T07:00Z; founder messages, public commits and issue comments from the rest of 7 October Berlin time are included as same-day context. Prepared retrospectively on 13 October 2026.",
+  "sources": [
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/_docs/founder-journal/2026-10-07.md",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/a6182098dd3232bd17c6dcca307b6ae79d44a37a",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/905b592247085707c1c05a00bee95d155a1ea299",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/c53f57442b5ff40c9d26c9b47ecdf9b8676d7e4b",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/06244d46a16f5f44a242ec35b21911bd32709f9e",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/826f5d9e969ced257c6ce91299d184467b6b702e",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/22e2b29a563fe466561070260c2fad8c78158fee",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/cf79a045c308045ba199febc3adbd2931969dcd1"
+  ],
+  "source_titles": {
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/": "Cloudflare's competition to build the next Git platform",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/_docs/founder-journal/2026-10-07.md": "My messages to the agents on October 7",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/a6182098dd3232bd17c6dcca307b6ae79d44a37a": "The move of every task into public GitHub issues",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/905b592247085707c1c05a00bee95d155a1ea299": "The resolved-task counter and its review",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/c53f57442b5ff40c9d26c9b47ecdf9b8676d7e4b": "Review of an agent using Agent Branches and restoring the work from GitHub",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/06244d46a16f5f44a242ec35b21911bd32709f9e": "Review of the launcher fix for review requests",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/826f5d9e969ced257c6ce91299d184467b6b702e": "The desktop message receiver and its review",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102": "The open task for a script that brings agents back",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/22e2b29a563fe466561070260c2fad8c78158fee": "The regular check on the main agent",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/cf79a045c308045ba199febc3adbd2931969dcd1": "The note that the check only raises an alert"
+  },
+  "image": "../../assets/agent-git-illustration.png",
+  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "diagram": "../../assets/2026-10-07-requests.png",
+  "diagram_svg": "../../assets/2026-10-07-requests.svg",
+  "diagram_alt": "Eight requests and their state. Public issues and tidy documentation are done. The task counter is code only, and lost agents come back only by hand. The agent that should fix the rest has instructions and a planned test. Work without me and two computers talking are still open, and the process article waits for my review",
+  "published": true,
+  "editorial_review": "Dedicated Claude Opus fresh check pass",
+  "article_sha256": "009050ac605f8f10fdf5d39471bf3fd5cd1c7c6c9371db92b5d9f5a37fce455b",
+  "published_at": "2026-10-13T19:01:11.868033+00:00",
+  "updated_at": "2026-10-13T19:01:11.868048+00:00"
+}

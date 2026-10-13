@@ -1,0 +1,18 @@
+{
+  "style": "editorial",
+  "title": "My open requests and their state",
+  "description": "Eight requests and their state. Public issues and tidy documentation are done. The task counter is code only, and lost agents come back only by hand. The agent that should fix the rest has instructions and a planned test. Work without me and two computers talking are still open, and the process article waits for my review.",
+  "canvas": {"width": 760, "height": 670},
+  "layout": {"type": "grid", "card_width": 320, "card_height": 120, "column_gap": 40, "row_gap": 30},
+  "nodes": [
+    {"id": "issues", "eyebrow": "DONE", "title": "Requests in public issues", "subtitle": "Each product has a tracker", "icon": "check", "color": "green", "row": 0, "column": 0},
+    {"id": "docs", "eyebrow": "DONE", "title": "Tidy documentation", "subtitle": "My messages in one journal", "icon": "check", "color": "green", "row": 0, "column": 1},
+    {"id": "count", "eyebrow": "CODE ONLY", "title": "Count resolved tasks", "subtitle": "Not on the dashboard yet", "icon": "observability", "color": "amber", "row": 1, "column": 0},
+    {"id": "restore", "eyebrow": "BY HAND ONLY", "title": "Restore lost agents", "subtitle": "No script does it yet", "icon": "warning", "color": "amber", "row": 1, "column": 1},
+    {"id": "root", "eyebrow": "TEST PLANNED", "title": "An agent that fixes the rest", "subtitle": "Instructions written", "icon": "shield", "color": "amber", "row": 2, "column": 0},
+    {"id": "article", "eyebrow": "WAITS FOR ME", "title": "Article on the process", "subtitle": "After I review the plan", "icon": "document", "color": "gray", "row": 2, "column": 1},
+    {"id": "continue", "eyebrow": "OPEN", "title": "Work goes on without me", "subtitle": "Replies don't wake agents", "icon": "close", "color": "gray", "row": 3, "column": 0},
+    {"id": "two", "eyebrow": "NOT RUN", "title": "Two computers talking", "subtitle": "Tested on one computer", "icon": "environment", "color": "gray", "row": 3, "column": 1}
+  ],
+  "edges": []
+}

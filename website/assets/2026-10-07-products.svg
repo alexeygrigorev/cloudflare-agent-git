@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="360" viewBox="0 0 760 360" role="img" aria-labelledby="title desc">
+  <title id="title">What each product got</title>
+  <desc id="desc">Agent Branches handled one real task and a reviewer restored it from GitHub. The launcher now starts reviewers for review work. The task counter exists but isn&#x27;t on the dashboard, and messaging has only run on one computer.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#1c2027" flood-opacity="0.04"/>
+    </filter>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <symbol id="icon-check" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m7.5 12 3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <symbol id="icon-environment" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="3" y="13" width="18" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M7 7h7M7 17h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="17" cy="7" r="1" fill="currentColor"/><circle cx="17" cy="17" r="1" fill="currentColor"/>
+      </symbol>
+    <symbol id="icon-observability" viewBox="0 0 24 24">
+        <rect x="2" y="3" width="17" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M6 13v-3M10 13V7M14 13V9M7 21h7M10.5 17v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="18" cy="15" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <circle cx="18" cy="15" r="1" fill="currentColor"/>
+        <path d="m21 18 2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </symbol>
+    <style>
+      text { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1c2027; }
+      symbol [stroke] { vector-effect: non-scaling-stroke; }
+      .node rect { stroke-width: 2; }
+      .node-boundary rect { stroke-width: 2; stroke-dasharray: 8 8; }
+      .boundary-title { font-size: 16px; font-weight: 750; text-anchor: start; }
+      .node-title { font-weight: 750; text-anchor: middle; }
+      .node-title.icon-copy { text-anchor: start; }
+      .node-subtitle { font-weight: 500; fill: #1c2027; text-anchor: middle; }
+      .eyebrow { font-weight: 750; letter-spacing: 1px; fill: #1c2027; text-anchor: middle; }
+      .mention-icon { font-size: 27px; font-weight: 750; text-anchor: middle; }
+      .standalone-mention { font-size: 52px; font-weight: 750; text-anchor: middle; }
+      .icon-node-title { font-size: 16px; font-weight: 750; text-anchor: middle; }
+      .edge { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .edge-label rect { stroke-width: 2; }
+      .edge-label text { font-size: 14px; font-weight: 750; text-anchor: middle; dominant-baseline: central; }
+      .divider { stroke: #1c2027; stroke-width: 2; stroke-dasharray: 6 8; stroke-linecap: round; }
+      .center-annotation { fill: #fcfcf8; stroke: none; }
+      .center-title { font-weight: 800; letter-spacing: 0.08em; fill: #1c2027; text-anchor: middle; }
+      .center-detail { font-weight: 600; fill: #1c2027; text-anchor: middle; }
+    </style>
+  </defs>
+  <rect width="760" height="360" fill="#fcfcf8"/>
+
+
+  <g class="node node-green" transform="translate(40 40)" filter="url(#shadow)">
+    <rect width="320" height="120" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="160" y="30" font-size="13">ONE REAL TASK</text>
+    <use href="#icon-check" x="16" y="40" width="34" height="34" color="#1c2027"/>
+    <text class="node-title icon-copy" x="62" y="64.2" font-size="20">Agent Branches</text>
+    <text class="node-subtitle" x="160" y="95" font-size="16">Restored from GitHub</text>
+  </g>
+  <g class="node node-green" transform="translate(400 40)" filter="url(#shadow)">
+    <rect width="320" height="120" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="160" y="30" font-size="13">REVIEWED FIX</text>
+    <use href="#icon-check" x="16" y="40" width="34" height="34" color="#1c2027"/>
+    <text class="node-title icon-copy" x="62" y="64.2" font-size="20">Launcher</text>
+    <text class="node-subtitle" x="160" y="95" font-size="16">Review work gets a reviewer</text>
+  </g>
+  <g class="node node-amber" transform="translate(40 200)" filter="url(#shadow)">
+    <rect width="320" height="120" rx="18" fill="#fcfcf8" stroke="#ef7134"/>
+    <text class="eyebrow" x="160" y="30" font-size="13">CODE ONLY</text>
+    <use href="#icon-observability" x="16" y="40" width="34" height="34" color="#ef7134"/>
+    <text class="node-title icon-copy" x="62" y="64.2" font-size="20">Dashboard</text>
+    <text class="node-subtitle" x="160" y="95" font-size="16">Counts tasks, shows nothing</text>
+  </g>
+  <g class="node node-gray" transform="translate(400 200)" filter="url(#shadow)">
+    <rect width="320" height="120" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="160" y="30" font-size="13">ONE COMPUTER</text>
+    <use href="#icon-environment" x="16" y="40" width="34" height="34" color="#1c2027"/>
+    <text class="node-title icon-copy" x="62" y="64.2" font-size="20">Messaging</text>
+    <text class="node-subtitle" x="160" y="95" font-size="16">Two computers not tried</text>
+  </g>
+</svg>

@@ -1,0 +1,24 @@
+{
+  "style": "editorial",
+  "title": "A reply that wakes nobody",
+  "description": "I expected a reply to wake the waiting agent so it starts its next task. Instead the reply sat in its inbox and the work stopped until I noticed.",
+  "canvas": {"width": 1060, "height": 400},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 110},
+  "nodes": [
+    {"id": "e_label", "variant": "plain", "title": "What I expected", "x": 40, "y": 20, "width": 300, "height": 40},
+    {"id": "e1", "title": "Reply arrives", "subtitle": "Another agent answers", "icon": "message", "color": "blue", "x": 40, "y": 70},
+    {"id": "e2", "title": "Agent wakes up", "subtitle": "Reads the reply", "icon": "robot", "color": "green", "x": 390, "y": 70},
+    {"id": "e3", "title": "Next task starts", "subtitle": "Nobody nudges it", "icon": "check", "color": "green", "x": 740, "y": 70},
+    {"id": "a_label", "variant": "plain", "title": "What happened", "x": 40, "y": 210, "width": 300, "height": 40},
+    {"id": "a1", "title": "Reply arrives", "subtitle": "Another agent answers", "icon": "message", "color": "blue", "x": 40, "y": 260},
+    {"id": "a2", "title": "Reply sits unread", "subtitle": "The agent keeps waiting", "icon": "warning", "color": "amber", "x": 390, "y": 260},
+    {"id": "a3", "title": "Work stops", "subtitle": "Until I notice", "icon": "close", "color": "gray", "x": 740, "y": 260}
+  ],
+  "edges": [
+    {"from": "e1", "to": "e2", "color": "green"},
+    {"from": "e2", "to": "e3", "color": "green"},
+    {"from": "a1", "to": "a2"},
+    {"from": "a2", "to": "a3"}
+  ],
+  "dividers": [{"after_node": "e1"}]
+}
