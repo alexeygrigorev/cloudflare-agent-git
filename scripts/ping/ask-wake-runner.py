@@ -24,6 +24,7 @@ MAX_WAKES = 3
 MARKER = ".follows-principal-process"
 PROMPT_MARK = re.compile(r"^[\s│┃|]*[>❯›»$]\s?(.*?)[\s│┃|]*$")
 PLACEHOLDER = re.compile(r"^(Try \"|Ask anything|Type your message|Type a message|Write |Plan, |Send a message|Message )", re.I)
+EXACT_PLACEHOLDERS = frozenset({"Ask Codex to do anything"})
 FALLBACK_PROMPT = ("Wake: check the answer to question {id} (inbox and anything typed into this session). "
                    "If none, check the principal is alive, then proceed on the best option and inform the principal.")
 
@@ -73,7 +74,7 @@ def prompt_state(screen):
             last = m.group(1).strip()
     if last is None:
         return "unknown"
-    return "empty" if last == "" or PLACEHOLDER.match(last) else "draft"
+    return "empty" if last == "" or last in EXACT_PLACEHOLDERS or PLACEHOLDER.match(last) else "draft"
 
 
 def opted_in(workspace):

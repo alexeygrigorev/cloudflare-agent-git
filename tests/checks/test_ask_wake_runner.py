@@ -1,7 +1,11 @@
-import json, os, subprocess, sys, tempfile, time, unittest
+import importlib.util, json, os, subprocess, sys, tempfile, time, unittest
 from pathlib import Path
 R = Path(__file__).resolve().parents[2]
 RUNNER = str(R / "scripts/ping/ask-wake-runner.py")
+_spec = importlib.util.spec_from_file_location("ask_wake_runner", RUNNER)
+_mod = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_mod)
+prompt_state = _mod.prompt_state
 FAKE = """#!/usr/bin/env python3
 import json, os, sys
 d = os.environ["FAKE_DIR"]; a = sys.argv[1:]
@@ -16,6 +20,7 @@ elif a[0] == "capture": print(cfg["screen"])
 class T(unittest.TestCase):
     def setUp(self):
         self.t = tempfile.TemporaryDirectory(); d = self.t.name
+        (Path(d) / ".git").mkdir()
         fake = Path(d) / "aplexer"; fake.write_text(FAKE); fake.chmod(0o755)
         self.env = {**os.environ, "ASK_DIR": d, "FAKE_DIR": d, "APLEXER": str(fake)}
         self.d = d
@@ -76,7 +81,7 @@ class T(unittest.TestCase):
         self.assertEqual(len(self.sends()), 1)
 
     def test_markerless_workspace_never_woken(self):
-        bare = os.path.join(self.d, "other"); os.makedirs(bare)
+        bare = os.path.join(self.d, "other"); os.makedirs(os.path.join(bare, ".git"), exist_ok=True)
         self.cfg("idle", "> ", sessions=[{"tag": "w1", "workspace": bare, "phase": "running"}])
         out = self.run_("--live")
         self.assertIn("no .follows-principal-process", out)
@@ -108,6 +113,115 @@ class T(unittest.TestCase):
         self.assertEqual(len(self.sends()), 3)
         esc = [c for c in self.calls() if c.startswith("message send --to principal")]
         self.assertEqual(len(esc), 1)
+
+    def test_native_codex_placeholder_wakes_idle_session(self):
+        self.cfg(state="idle", screen="Welcome to Codex\n› Ask Codex to do anything")
+        self.run_("--live")
+        s = self.sends()
+        self.assertEqual(len(s), 1)
+        self.assertTrue(s[0].startswith(f"send {self.ws}:w1 Wake:"))
+        self.assertTrue(s[0].endswith("--enter"))
+
+    def test_native_codex_placeholder_boxed_and_variants(self):
+        self.cfg(state="waiting", screen="│ › Ask Codex to do anything │")
+        self.run_("--live")
+        self.assertEqual(len(self.sends()), 1)
+
+    def test_continuation_and_extra_text_negatives(self):
+        for text in [
+            "› Ask Codex to do anything now",
+            "› Ask Codex to do anything please",
+            "› Ask Codex to do anything ...",
+            "› Ask Codex to do anything and run tests",
+        ]:
+            with self.subTest(text=text):
+                self.cfg(state="idle", screen=text)
+                self.run_("--live")
+                self.assertEqual(self.sends(), [], f"Should not wake with continuation: {text}")
+
+    def test_case_and_altered_placeholder_negatives(self):
+        for text in [
+            "› ask codex to do anything",
+            "› ASK CODEX TO DO ANYTHING",
+            "› Ask codex to do anything",
+            "› Ask Codex to do something",
+            "› Ask Codex",
+            "› Ask Codex to do anything!",
+            "› Ask Codex to do everything",
+        ]:
+            with self.subTest(text=text):
+                self.cfg(state="idle", screen=text)
+                self.run_("--live")
+                self.assertEqual(self.sends(), [], f"Should not wake with altered placeholder: {text}")
+
+    def test_busy_negatives_preserve_reported_state_gating(self):
+        for bad_state in ["working", "busy", "starting", "unknown"]:
+            with self.subTest(state=bad_state):
+                self.cfg(state=bad_state, screen="› Ask Codex to do anything")
+                self.run_("--live")
+                self.assertEqual(self.sends(), [], f"Should not wake when state is {bad_state}")
+
+    def test_menu_and_unknown_negatives(self):
+        menu_screens = [
+            "Select an option:\n[1] Run tests\n[2] Deploy\nChoice: ",
+            "? Which model would you like to use? [Use arrows to move]",
+            "Compiling ask-wake-runner.py...\nDone in 0.4s",
+            "",
+        ]
+        for screen in menu_screens:
+            with self.subTest(screen=screen):
+                self.cfg(state="idle", screen=screen)
+                self.run_("--live")
+                self.assertEqual(self.sends(), [], f"Should not wake for menu/unknown: {screen}")
+
+    def test_last_prompt_semantics_no_stale_fallback(self):
+        screen_earlier_placeholder_last_draft = (
+            "› Ask Codex to do anything\n"
+            "some command output\n"
+            "› user draft in progress"
+        )
+        self.cfg(state="idle", screen=screen_earlier_placeholder_last_draft)
+        self.run_("--live")
+        self.assertEqual(self.sends(), [], "Should not fall back to earlier placeholder when last prompt is draft")
+
+        screen_earlier_draft_last_placeholder = (
+            "› previous command executed\n"
+            "some command output\n"
+            "› Ask Codex to do anything"
+        )
+        self.cfg(state="idle", screen=screen_earlier_draft_last_placeholder)
+        self.run_("--live")
+        self.assertEqual(len(self.sends()), 1, "Should wake when latest prompt is placeholder")
+
+    def test_prompt_state_unit_positive_and_negatives(self):
+        self.assertEqual(prompt_state("› Ask Codex to do anything"), "empty")
+        self.assertEqual(prompt_state("> Ask Codex to do anything"), "empty")
+        self.assertEqual(prompt_state("│ › Ask Codex to do anything │"), "empty")
+        self.assertEqual(prompt_state("❯ Ask Codex to do anything"), "empty")
+        self.assertEqual(prompt_state("» Ask Codex to do anything"), "empty")
+
+        self.assertEqual(prompt_state("› Ask Codex to do anything now"), "draft")
+        self.assertEqual(prompt_state("› Ask Codex to do anything ..."), "draft")
+        self.assertEqual(prompt_state("› Ask Codex to do anything and write code"), "draft")
+
+        self.assertEqual(prompt_state("› ask codex to do anything"), "draft")
+        self.assertEqual(prompt_state("› ASK CODEX TO DO ANYTHING"), "draft")
+        self.assertEqual(prompt_state("› Ask codex to do anything"), "draft")
+
+        self.assertEqual(prompt_state("› Ask Codex to do something"), "draft")
+        self.assertEqual(prompt_state("› Ask Codex"), "draft")
+        self.assertEqual(prompt_state("› Ask Codex to do anything!"), "draft")
+
+        self.assertEqual(prompt_state("› draft reply"), "draft")
+        self.assertEqual(prompt_state("> half typed"), "draft")
+
+        self.assertEqual(prompt_state("Select an option:\n1) Continue\n2) Exit"), "unknown")
+        self.assertEqual(prompt_state("? Choose engine: "), "unknown")
+        self.assertEqual(prompt_state("pure terminal log output"), "unknown")
+        self.assertEqual(prompt_state(""), "unknown")
+
+        self.assertEqual(prompt_state("› Ask Codex to do anything\n› partial draft"), "draft")
+        self.assertEqual(prompt_state("› partial draft\n› Ask Codex to do anything"), "empty")
 
 
 if __name__ == "__main__":
