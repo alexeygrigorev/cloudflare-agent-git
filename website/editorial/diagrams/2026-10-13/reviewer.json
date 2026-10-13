@@ -1,0 +1,59 @@
+{
+  "style": "editorial",
+  "title": "Reviewer launches fail and still report success",
+  "description": "The launcher starts a reviewer with a setting the model rejects. The model quits before doing anything, the launcher records success anyway, and no review happens.",
+  "canvas": {
+    "width": 1000,
+    "height": 560
+  },
+  "layout": {
+    "type": "staircase",
+    "direction": "descending",
+    "card_width": 300,
+    "card_height": 96
+  },
+  "nodes": [
+    {
+      "id": "launcher",
+      "title": "Launcher",
+      "subtitle": "Adds an extra setting",
+      "icon": "settings",
+      "color": "amber"
+    },
+    {
+      "id": "model",
+      "title": "Gemini reviewer",
+      "subtitle": "Rejects it and quits",
+      "icon": "robot",
+      "color": "purple"
+    },
+    {
+      "id": "record",
+      "title": "Run record",
+      "subtitle": "Says success",
+      "icon": "warning",
+      "color": "red"
+    },
+    {
+      "id": "review",
+      "title": "Review",
+      "subtitle": "Never happens",
+      "icon": "close",
+      "color": "gray"
+    }
+  ],
+  "edges": [
+    {
+      "from": "launcher",
+      "to": "model"
+    },
+    {
+      "from": "model",
+      "to": "record"
+    },
+    {
+      "from": "record",
+      "to": "review"
+    }
+  ]
+}

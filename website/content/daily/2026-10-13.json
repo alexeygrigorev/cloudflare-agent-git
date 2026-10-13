@@ -1,0 +1,48 @@
+{
+  "title": "The Contest Entry Runs From Scratch. Two Computers Still Wait",
+  "date": "2026-10-13",
+  "summary": "The contest entry installs and passes its tests from a fresh copy, and the headless root kept checking all day. Current usage readings are fresh again, but the missing hours and the amount of useful work are still unknown.",
+  "author": "Alexey Grigorev",
+  "model": "Claude Opus 5.5 (claude-opus-5-5)",
+  "source_cutoff": "2026-10-13T20:30:41Z",
+  "source_cutoff_note": "Original fact packet for 2026-10-12T07:00Z to 2026-10-13T07:00Z, plus later evidence through 2026-10-13T20:30:41Z: a fresh read of the usage recorder's latest sample, the recorder restart commit with its stated cause, metrics storage source commits and the open metrics issue. Later evidence is not backdated into the original interval.",
+  "sources": [
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/7bbf9f55bd403b2245366b4e83bb3115902de20f",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/30e47986336cdff20917d8ac42eb34dba2066fb3",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/c73492ef62456b554b61861a925f9c08a7fadc92/prototype/README.md",
+    "https://github.com/alexeygrigorev/agent-branches/issues/53#issuecomment-6123223642",
+    "https://github.com/alexeygrigorev/agent-coordination/issues/59#issuecomment-6129114468",
+    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/65",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/266ef9e4658be6254cbbfd92ab898c94df112956",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/774112d123eacef29a1c18176978b536e282bd5e",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/110"
+  ],
+  "source_titles": {
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/": "Cloudflare's competition to build the next Git platform",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/7bbf9f55bd403b2245366b4e83bb3115902de20f": "The change that added the headless root on a server timer",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102": "The open task for bringing back a dead agent without help",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/30e47986336cdff20917d8ac42eb34dba2066fb3": "The change that limits calls to Cloudflare's Git storage",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/c73492ef62456b554b61861a925f9c08a7fadc92/prototype/README.md": "Run instructions for the contest entry",
+    "https://github.com/alexeygrigorev/agent-branches/issues/53#issuecomment-6123223642": "The accepted fresh-copy check of the contest entry",
+    "https://github.com/alexeygrigorev/agent-coordination/issues/59#issuecomment-6129114468": "The messaging test with a receiver restart on one machine",
+    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/65": "The launcher bug that stopped reviewers from starting",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/266ef9e4658be6254cbbfd92ab898c94df112956": "Why the usage recorder stopped, and its automatic restart",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/774112d123eacef29a1c18176978b536e282bd5e": "The source change that sends usage samples to a time-series database",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/110": "The open task to measure useful work and accepted tasks truthfully"
+  },
+  "image": "../../assets/agent-git-illustration.png",
+  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "diagram": "../../assets/2026-10-13-status.png",
+  "diagram_svg": "../../assets/2026-10-13-status.svg",
+  "diagram_alt": "The entry runs from scratch and messages arrive after a restart on one machine, but two real computers haven't been tried",
+  "published": true,
+  "actual_writer_models": [
+    "claude-opus-5-5"
+  ],
+  "editorial_review": "Dedicated Claude Opus fresh check pass",
+  "article_sha256": "c71e2812324f950476fa3f7d5b7e5d852caa098dbbc69fffca45a0568dded397",
+  "published_at": "2026-10-13T21:14:31.647051+00:00",
+  "updated_at": "2026-10-13T21:14:31.647072+00:00"
+}

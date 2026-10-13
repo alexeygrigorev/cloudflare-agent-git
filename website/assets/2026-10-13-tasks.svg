@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="440" viewBox="0 0 820 440" role="img" aria-labelledby="t d">
+<title id="t">Tasks closed and still open, by project</title>
+<desc id="d">Total tasks closed and still open in each project's tracker. Agent Branches has closed the most, and the launcher has the most open. In the past day, one task was created and none were closed.</desc>
+<rect width="820" height="440" fill="#fcfcf8"/>
+<g font-family="DejaVu Sans, Verdana, sans-serif">
+<text x="40" y="50" font-family="Georgia, serif" font-size="28" fill="#1c2027">Tasks closed and still open, so far</text>
+<rect x="40" y="70" width="16" height="16" fill="#2455ed"/><text x="64" y="84" font-size="15" fill="#1c2027">Closed in total</text>
+<rect x="240" y="70" width="16" height="16" fill="none" stroke="#ef7134" stroke-width="2"/><text x="264" y="84" font-size="15" fill="#1c2027">Still open</text>
+<text x="176" y="152" text-anchor="end" font-size="16" fill="#1c2027">Agent Branches</text>
+<rect x="190" y="130" width="504.0" height="20" fill="#2455ed"/><text x="702.0" y="146" font-size="14" fill="#1c2027">42</text>
+<rect x="190" y="154" width="144.0" height="20" fill="none" stroke="#ef7134" stroke-width="2"/><text x="342.0" y="170" font-size="14" fill="#1c2027">12</text>
+<text x="176" y="218" text-anchor="end" font-size="16" fill="#1c2027">Messaging</text>
+<rect x="190" y="196" width="264.0" height="20" fill="#2455ed"/><text x="462.0" y="212" font-size="14" fill="#1c2027">22</text>
+<rect x="190" y="220" width="468.0" height="20" fill="none" stroke="#ef7134" stroke-width="2"/><text x="666.0" y="236" font-size="14" fill="#1c2027">39</text>
+<text x="176" y="284" text-anchor="end" font-size="16" fill="#1c2027">Launcher</text>
+<rect x="190" y="262" width="276.0" height="20" fill="#2455ed"/><text x="474.0" y="278" font-size="14" fill="#1c2027">23</text>
+<rect x="190" y="286" width="504.0" height="20" fill="none" stroke="#ef7134" stroke-width="2"/><text x="702.0" y="302" font-size="14" fill="#1c2027">42</text>
+<text x="176" y="350" text-anchor="end" font-size="16" fill="#1c2027">Dashboard</text>
+<rect x="190" y="328" width="204.0" height="20" fill="#2455ed"/><text x="402.0" y="344" font-size="14" fill="#1c2027">17</text>
+<rect x="190" y="352" width="252.0" height="20" fill="none" stroke="#ef7134" stroke-width="2"/><text x="450.0" y="368" font-size="14" fill="#1c2027">21</text>
+<text x="40" y="414" font-size="15" fill="#4a505a">In the past day: 1 task created, 0 closed.</text>
+</g>
+</svg>

@@ -1,0 +1,79 @@
+{
+  "style": "editorial",
+  "title": "Open requests and their state",
+  "description": "The contest entry runs from a fresh copy and still needs my submission. The headless root is running and other products are paused. Cloud use stays held under the $5 budget, two computers haven't talked yet, and the daily reports are behind.",
+  "canvas": {
+    "width": 760,
+    "height": 520
+  },
+  "layout": {
+    "type": "grid",
+    "card_width": 320,
+    "card_height": 120,
+    "column_gap": 40,
+    "row_gap": 30
+  },
+  "nodes": [
+    {
+      "id": "entry",
+      "eyebrow": "RUNS, NOT SUBMITTED",
+      "title": "Contest entry by Oct 14",
+      "subtitle": "I submit the form",
+      "icon": "check",
+      "color": "green",
+      "row": 0,
+      "column": 0
+    },
+    {
+      "id": "root",
+      "eyebrow": "RUNNING",
+      "title": "Root off the chat bot",
+      "subtitle": "Headless root on a timer",
+      "icon": "robot",
+      "color": "green",
+      "row": 0,
+      "column": 1
+    },
+    {
+      "id": "paused",
+      "eyebrow": "PAUSED",
+      "title": "Other products",
+      "subtitle": "Until Oct 14",
+      "icon": "close",
+      "color": "gray",
+      "row": 1,
+      "column": 1
+    },
+    {
+      "id": "budget",
+      "eyebrow": "HELD",
+      "title": "Cloud under $5 a month",
+      "subtitle": "Nothing new in the cloud",
+      "icon": "shield",
+      "color": "amber",
+      "row": 1,
+      "column": 0
+    },
+    {
+      "id": "two",
+      "eyebrow": "NOT RUN",
+      "title": "Two computers talking",
+      "subtitle": "Desktop is offline",
+      "icon": "environment",
+      "color": "gray",
+      "row": 2,
+      "column": 0
+    },
+    {
+      "id": "reports",
+      "eyebrow": "BEHIND",
+      "title": "A report every morning",
+      "subtitle": "Running late",
+      "icon": "document",
+      "color": "amber",
+      "row": 2,
+      "column": 1
+    }
+  ],
+  "edges": []
+}

@@ -1,0 +1,68 @@
+{
+  "style": "editorial",
+  "title": "Messages between two programs on one server",
+  "description": "The client and the receiver run as separate programs on one server and talk over HTTP. The receiver restarted with messages waiting, and each one arrived once. A second computer isn't connected yet.",
+  "canvas": {
+    "width": 840,
+    "height": 520
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 280,
+    "card_height": 110
+  },
+  "nodes": [
+    {
+      "id": "box",
+      "variant": "boundary",
+      "title": "One server",
+      "contains": [
+        "kit",
+        "receiver"
+      ]
+    },
+    {
+      "id": "kit",
+      "title": "Client",
+      "subtitle": "Sends and acknowledges",
+      "icon": "message",
+      "color": "purple",
+      "x": 60,
+      "y": 130
+    },
+    {
+      "id": "receiver",
+      "title": "Receiver",
+      "subtitle": "Restarted, lost nothing",
+      "icon": "database",
+      "color": "amber",
+      "x": 500,
+      "y": 130
+    },
+    {
+      "id": "second",
+      "eyebrow": "NOT CONNECTED YET",
+      "title": "Second computer",
+      "subtitle": "Desktop is offline",
+      "icon": "environment",
+      "color": "gray",
+      "x": 500,
+      "y": 370
+    }
+  ],
+  "edges": [
+    {
+      "from": "kit",
+      "to": "receiver",
+      "bidirectional": true,
+      "label": "HTTP"
+    },
+    {
+      "from": "second",
+      "to": "receiver",
+      "dashed": true,
+      "from_anchor": "top",
+      "to_anchor": "bottom"
+    }
+  ]
+}

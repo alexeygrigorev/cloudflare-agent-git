@@ -1,0 +1,14 @@
+{
+  "style": "editorial",
+  "title": "Fresh readings, missing hours",
+  "description": "The hours since Sunday evening are still missing. Current readings are fresh again, nobody has confirmed the new history store is running, and the amount of useful work is unknown.",
+  "canvas": {"width": 760, "height": 420},
+  "layout": {"type": "grid", "card_width": 320, "card_height": 140, "column_gap": 40, "row_gap": 40},
+  "nodes": [
+    {"id": "gap", "eyebrow": "STILL MISSING", "title": "Hours since Sunday", "subtitle": "Not recovered", "icon": "warning", "color": "amber", "row": 0, "column": 0},
+    {"id": "fresh", "eyebrow": "FRESH AGAIN", "title": "Current readings", "subtitle": "Checked by another agent", "icon": "check", "color": "green", "row": 0, "column": 1},
+    {"id": "store", "eyebrow": "CODE WRITTEN", "title": "New history store", "subtitle": "Not confirmed running", "icon": "database", "color": "gray", "row": 1, "column": 0},
+    {"id": "work", "eyebrow": "UNKNOWN", "title": "Useful work", "subtitle": "Agents and accepted tasks", "icon": "close", "color": "gray", "row": 1, "column": 1}
+  ],
+  "edges": []
+}

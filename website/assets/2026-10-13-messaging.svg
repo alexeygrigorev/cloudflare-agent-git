@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="520" viewBox="0 0 840 520" role="img" aria-labelledby="title desc">
+  <title id="title">Messages between two programs on one server</title>
+  <desc id="desc">The client and the receiver run as separate programs on one server and talk over HTTP. The receiver restarted with messages waiting, and each one arrived once. A second computer isn&#x27;t connected yet.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#1c2027" flood-opacity="0.04"/>
+    </filter>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <marker id="arrow-start-gray" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <symbol id="icon-database" viewBox="0 0 24 24">
+        <ellipse cx="12" cy="5" rx="8" ry="3" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M4 5v7c0 1.66 3.58 3 8 3s8-1.34 8-3V5M4 12v7c0 1.66 3.58 3 8 3s8-1.34 8-3v-7" fill="none" stroke="currentColor" stroke-width="2"/>
+      </symbol>
+    <symbol id="icon-environment" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="3" y="13" width="18" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M7 7h7M7 17h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="17" cy="7" r="1" fill="currentColor"/><circle cx="17" cy="17" r="1" fill="currentColor"/>
+      </symbol>
+    <symbol id="icon-message" viewBox="0 0 24 24">
+        <path d="M4 4h16v12H9l-5 4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 9h8M8 13h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </symbol>
+    <style>
+      text { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1c2027; }
+      symbol [stroke] { vector-effect: non-scaling-stroke; }
+      .node rect { stroke-width: 2; }
+      .node-boundary rect { stroke-width: 2; stroke-dasharray: 8 8; }
+      .boundary-title { font-size: 16px; font-weight: 750; text-anchor: start; }
+      .node-title { font-weight: 750; text-anchor: middle; }
+      .node-title.icon-copy { text-anchor: start; }
+      .node-subtitle { font-weight: 500; fill: #1c2027; text-anchor: middle; }
+      .eyebrow { font-weight: 750; letter-spacing: 1px; fill: #1c2027; text-anchor: middle; }
+      .mention-icon { font-size: 27px; font-weight: 750; text-anchor: middle; }
+      .standalone-mention { font-size: 52px; font-weight: 750; text-anchor: middle; }
+      .icon-node-title { font-size: 16px; font-weight: 750; text-anchor: middle; }
+      .edge { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .edge-label rect { stroke-width: 2; }
+      .edge-label text { font-size: 14px; font-weight: 750; text-anchor: middle; dominant-baseline: central; }
+      .divider { stroke: #1c2027; stroke-width: 2; stroke-dasharray: 6 8; stroke-linecap: round; }
+      .center-annotation { fill: #fcfcf8; stroke: none; }
+      .center-title { font-weight: 800; letter-spacing: 0.08em; fill: #1c2027; text-anchor: middle; }
+      .center-detail { font-weight: 600; fill: #1c2027; text-anchor: middle; }
+    </style>
+  </defs>
+  <rect width="840" height="520" fill="#fcfcf8"/>
+
+  <g class="node-boundary node-blue" transform="translate(40 70)">
+    <rect width="760" height="200" rx="22" fill="none" stroke="#2455ed"/>
+    <text class="boundary-title" x="20" y="31">One server</text>
+  </g>
+  <path class="edge" d="M340 185L500 185" stroke="#1c2027" marker-start="url(#arrow-start-gray)" marker-end="url(#arrow-gray)"/>
+  <g class="edge-label" transform="translate(420 185)">
+    <rect x="-32.83" y="-16" width="65.65" height="32" rx="16.0" fill="#fcfcf8" stroke="#1c2027"/>
+    <text fill="#1c2027">HTTP</text>
+  </g>
+  <path class="edge-boundary-halo" d="M640 370L640 240" fill="none" stroke="#fcfcf8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="edge" d="M640 370L640 240" stroke="#1c2027" stroke-dasharray="8 8" marker-end="url(#arrow-gray)"/>
+
+  <g class="node node-purple" transform="translate(60 130)" filter="url(#shadow)">
+    <rect width="280" height="110" rx="18" fill="#fcfcf8" stroke="#2455ed"/>
+    <use href="#icon-message" x="16" y="25" width="34" height="34" color="#2455ed"/>
+    <text class="node-title icon-copy" x="62" y="49.2" font-size="20">Client</text>
+    <text class="node-subtitle" x="140" y="80" font-size="16">Sends and acknowledges</text>
+  </g>
+  <g class="node node-amber" transform="translate(500 130)" filter="url(#shadow)">
+    <rect width="280" height="110" rx="18" fill="#fcfcf8" stroke="#ef7134"/>
+    <use href="#icon-database" x="16" y="25" width="34" height="34" color="#ef7134"/>
+    <text class="node-title icon-copy" x="62" y="49.2" font-size="20">Receiver</text>
+    <text class="node-subtitle" x="140" y="80" font-size="16">Restarted, lost nothing</text>
+  </g>
+  <g class="node node-gray" transform="translate(500 370)" filter="url(#shadow)">
+    <rect width="280" height="110" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="140" y="25" font-size="13">NOT CONNECTED YET</text>
+    <use href="#icon-environment" x="16" y="35" width="34" height="34" color="#1c2027"/>
+    <text class="node-title icon-copy" x="62" y="59.2" font-size="20">Second computer</text>
+    <text class="node-subtitle" x="140" y="90" font-size="16">Desktop is offline</text>
+  </g>
+</svg>

@@ -1,0 +1,8 @@
+{
+  "source": "GitHub issue queries of the four project trackers, current totals read on 13 October 2026; cancelled tasks excluded (none found)",
+  "projects": ["Agent Branches", "Messaging", "Launcher", "Dashboard"],
+  "closed_total": [42, 22, 23, 17],
+  "open_total": [12, 39, 42, 21],
+  "past_day_created": 1,
+  "past_day_closed": 0
+}

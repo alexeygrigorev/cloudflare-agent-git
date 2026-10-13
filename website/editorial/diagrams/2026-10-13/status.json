@@ -1,0 +1,59 @@
+{
+  "style": "editorial",
+  "title": "The state of the experiment, eleven days in",
+  "description": "The contest entry runs from a fresh copy and messages arrive after a restart on one machine. Reviewer launches are broken, and two real computers haven't been tried.",
+  "canvas": {
+    "width": 760,
+    "height": 420
+  },
+  "layout": {
+    "type": "grid",
+    "card_width": 320,
+    "card_height": 140,
+    "column_gap": 40,
+    "row_gap": 40
+  },
+  "nodes": [
+    {
+      "id": "entry",
+      "eyebrow": "WORKS ON A FRESH COPY",
+      "title": "Contest entry",
+      "subtitle": "Installs, tests pass",
+      "icon": "check",
+      "color": "green",
+      "row": 0,
+      "column": 0
+    },
+    {
+      "id": "msg",
+      "eyebrow": "WORKS ON ONE MACHINE",
+      "title": "Messaging",
+      "subtitle": "Arrives after a restart",
+      "icon": "message",
+      "color": "green",
+      "row": 0,
+      "column": 1
+    },
+    {
+      "id": "rev",
+      "eyebrow": "BROKEN",
+      "title": "Reviewer launches",
+      "subtitle": "Waiting for a fix",
+      "icon": "warning",
+      "color": "amber",
+      "row": 1,
+      "column": 0
+    },
+    {
+      "id": "two",
+      "eyebrow": "NOT TRIED YET",
+      "title": "Two real computers",
+      "subtitle": "Desktop is offline",
+      "icon": "environment",
+      "color": "gray",
+      "row": 1,
+      "column": 1
+    }
+  ],
+  "edges": []
+}

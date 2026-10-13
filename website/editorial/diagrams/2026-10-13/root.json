@@ -1,0 +1,97 @@
+{
+  "style": "editorial",
+  "title": "The root moves from the chat bot to a timer",
+  "description": "Before, the Grok chat bot checked the lead agents on a schedule. After, a server timer starts a short headless root every half hour, and the Grok bot looks in about every three hours.",
+  "canvas": {
+    "width": 800,
+    "height": 560
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 210,
+    "card_height": 110
+  },
+  "nodes": [
+    {
+      "id": "grok_before",
+      "eyebrow": "BEFORE",
+      "title": "Grok chat bot",
+      "subtitle": "Checks on a schedule",
+      "icon": "robot",
+      "color": "amber",
+      "x": 300,
+      "y": 40
+    },
+    {
+      "id": "leads_before",
+      "title": "Lead agents",
+      "subtitle": "Four of them",
+      "icon": "robot",
+      "color": "blue",
+      "x": 550,
+      "y": 40
+    },
+    {
+      "id": "timer",
+      "title": "Server timer",
+      "subtitle": "Fires every half hour",
+      "icon": "settings",
+      "color": "amber",
+      "x": 40,
+      "y": 250
+    },
+    {
+      "id": "root",
+      "eyebrow": "AFTER",
+      "title": "Headless root",
+      "subtitle": "One check, then exits",
+      "icon": "robot",
+      "color": "purple",
+      "x": 300,
+      "y": 250
+    },
+    {
+      "id": "leads_after",
+      "title": "Lead agents",
+      "subtitle": "Four of them",
+      "icon": "robot",
+      "color": "blue",
+      "x": 550,
+      "y": 250
+    },
+    {
+      "id": "grok_after",
+      "title": "Grok chat bot",
+      "subtitle": "Every 3 hours",
+      "icon": "robot",
+      "color": "gray",
+      "x": 300,
+      "y": 420
+    }
+  ],
+  "dividers": [
+    {
+      "after_node": "grok_before"
+    }
+  ],
+  "edges": [
+    {
+      "from": "grok_before",
+      "to": "leads_before"
+    },
+    {
+      "from": "timer",
+      "to": "root"
+    },
+    {
+      "from": "root",
+      "to": "leads_after",
+      "color": "purple"
+    },
+    {
+      "from": "grok_after",
+      "to": "root",
+      "dashed": true
+    }
+  ]
+}

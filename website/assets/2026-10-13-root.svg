@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="560" viewBox="0 0 800 560" role="img" aria-labelledby="title desc">
+  <title id="title">The root moves from the chat bot to a timer</title>
+  <desc id="desc">Before, the Grok chat bot checked the lead agents on a schedule. After, a server timer starts a short headless root every half hour, and the Grok bot looks in about every three hours.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#1c2027" flood-opacity="0.04"/>
+    </filter>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <symbol id="icon-robot" viewBox="0 0 24 24">
+        <path d="M12 5V2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="12" cy="2.5" r="1" fill="currentColor"/>
+        <rect x="4" y="5" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M4 10H2.5v5H4M20 10h1.5v5H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="11" r="1.3" fill="currentColor"/>
+        <circle cx="15" cy="11" r="1.3" fill="currentColor"/>
+        <path d="M8.5 16h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </symbol>
+    <style>
+      text { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1c2027; }
+      symbol [stroke] { vector-effect: non-scaling-stroke; }
+      .node rect { stroke-width: 2; }
+      .node-boundary rect { stroke-width: 2; stroke-dasharray: 8 8; }
+      .boundary-title { font-size: 16px; font-weight: 750; text-anchor: start; }
+      .node-title { font-weight: 750; text-anchor: middle; }
+      .node-title.icon-copy { text-anchor: start; }
+      .node-subtitle { font-weight: 500; fill: #1c2027; text-anchor: middle; }
+      .eyebrow { font-weight: 750; letter-spacing: 1px; fill: #1c2027; text-anchor: middle; }
+      .mention-icon { font-size: 27px; font-weight: 750; text-anchor: middle; }
+      .standalone-mention { font-size: 52px; font-weight: 750; text-anchor: middle; }
+      .icon-node-title { font-size: 16px; font-weight: 750; text-anchor: middle; }
+      .edge { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .edge-label rect { stroke-width: 2; }
+      .edge-label text { font-size: 14px; font-weight: 750; text-anchor: middle; dominant-baseline: central; }
+      .divider { stroke: #1c2027; stroke-width: 2; stroke-dasharray: 6 8; stroke-linecap: round; }
+      .center-annotation { fill: #fcfcf8; stroke: none; }
+      .center-title { font-weight: 800; letter-spacing: 0.08em; fill: #1c2027; text-anchor: middle; }
+      .center-detail { font-weight: 600; fill: #1c2027; text-anchor: middle; }
+    </style>
+  </defs>
+  <rect width="800" height="560" fill="#fcfcf8"/>
+
+  <line class="divider" x1="16" y1="200" x2="784" y2="200"/>
+
+  <path class="edge" d="M510 95L550 95" stroke="#1c2027" marker-end="url(#arrow-gray)"/>
+  <path class="edge" d="M250 305L300 305" stroke="#1c2027" marker-end="url(#arrow-gray)"/>
+  <path class="edge" d="M510 305L550 305" stroke="#2455ed" marker-end="url(#arrow-purple)"/>
+  <path class="edge" d="M405 420L405 360" stroke="#1c2027" stroke-dasharray="8 8" marker-end="url(#arrow-gray)"/>
+
+  <g class="node node-amber" transform="translate(300 40)" filter="url(#shadow)">
+    <rect width="210" height="110" rx="18" fill="#fcfcf8" stroke="#ef7134"/>
+    <text class="eyebrow" x="105" y="25" font-size="13">BEFORE</text>
+    <use href="#icon-robot" x="16" y="35" width="34" height="34" color="#ef7134"/>
+    <text class="node-title icon-copy" x="62" y="57.76" font-size="16">Grok chat bot</text>
+    <text class="node-subtitle" x="105" y="90" font-size="16">Checks on a schedule</text>
+  </g>
+  <g class="node node-blue" transform="translate(550 40)" filter="url(#shadow)">
+    <rect width="210" height="110" rx="18" fill="#fcfcf8" stroke="#2455ed"/>
+    <use href="#icon-robot" x="16" y="25" width="34" height="34" color="#2455ed"/>
+    <text class="node-title icon-copy" x="62" y="47.76" font-size="16">Lead agents</text>
+    <text class="node-subtitle" x="105" y="80" font-size="16">Four of them</text>
+  </g>
+  <g class="node node-amber" transform="translate(40 250)" filter="url(#shadow)">
+    <rect width="210" height="110" rx="18" fill="#fcfcf8" stroke="#ef7134"/>
+    <use href="#icon-settings" x="16" y="25" width="34" height="34" color="#ef7134"/>
+    <text class="node-title icon-copy" x="62" y="47.76" font-size="16">Server timer</text>
+    <text class="node-subtitle" x="105" y="80" font-size="16">Fires every half hour</text>
+  </g>
+  <g class="node node-purple" transform="translate(300 250)" filter="url(#shadow)">
+    <rect width="210" height="110" rx="18" fill="#fcfcf8" stroke="#2455ed"/>
+    <text class="eyebrow" x="105" y="25" font-size="13">AFTER</text>
+    <use href="#icon-robot" x="16" y="35" width="34" height="34" color="#2455ed"/>
+    <text class="node-title icon-copy" x="62" y="57.76" font-size="16">Headless root</text>
+    <text class="node-subtitle" x="105" y="90" font-size="16">One check, then exits</text>
+  </g>
+  <g class="node node-blue" transform="translate(550 250)" filter="url(#shadow)">
+    <rect width="210" height="110" rx="18" fill="#fcfcf8" stroke="#2455ed"/>
+    <use href="#icon-robot" x="16" y="25" width="34" height="34" color="#2455ed"/>
+    <text class="node-title icon-copy" x="62" y="47.76" font-size="16">Lead agents</text>
+    <text class="node-subtitle" x="105" y="80" font-size="16">Four of them</text>
+  </g>
+  <g class="node node-gray" transform="translate(300 420)" filter="url(#shadow)">
+    <rect width="210" height="110" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <use href="#icon-robot" x="16" y="25" width="34" height="34" color="#1c2027"/>
+    <text class="node-title icon-copy" x="62" y="47.76" font-size="16">Grok chat bot</text>
+    <text class="node-subtitle" x="105" y="80" font-size="16">Every 3 hours</text>
+  </g>
+</svg>
