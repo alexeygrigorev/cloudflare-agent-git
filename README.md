@@ -21,7 +21,7 @@ The walkthrough script starts a local coordinator and Git sidecar, then pushes a
 
 ## Watch the demo
 
-[Watch the approved eight-minute video](docs-submission/videos/agent-branches-demo-draft.mp4). It shows earlier agent activity and protocol evidence from the Node runtime. The Cloudflare Worker is now live at https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev. The latest live smoke run used 60 operations to run two concurrent agents against real Artifacts repositories, up to the trusted-runner checks step (see [COST.md](docs-submission/COST.md)). [Recording details and SHA-256](docs-submission/VIDEO.md).
+[Watch the approved eight-minute video](docs-submission/videos/agent-branches-demo-draft.mp4). It shows earlier agent activity and protocol evidence from the Node runtime. The Cloudflare Worker is now live at https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev. The full live smoke run passed (14/14 checks, 60 operations): two concurrent agents on real Artifacts repositories, merge-tree checks, and the auth and stale-vector refusals (see [COST.md](docs-submission/COST.md)). [Recording details and SHA-256](docs-submission/VIDEO.md).
 
 ## Cloudflare entry
 
