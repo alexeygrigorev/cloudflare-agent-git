@@ -105,4 +105,5 @@ The end-of-turn wake that works on every engine is described in [end of turn](te
 - Claims. The supervisor does not read or write claims. It edits no files except its own private ones. The word claim in its messages ("claim ready work") means a head takes ownership of a task. It is not a claim on files.
 - Founder journal. It writes nothing there and sends the founder nothing. Its evidence stays private in `.local/supervision/`.
 - Recovery. It detects and records a dead or silent head and emits a failover candidate event. Restoring the agent stays with [recovery](05-recovery.md).
-- Metrics. Its idle episodes and pending-request ages are inputs to idle time in [metrics](06-metrics.md). It does not compute the metrics, and the target of 50 active agents is not something it counts.
+- Metrics. The principal owns the metrics and root asks for its status report on every headless run; see [principal](team/03-principal.md#owning-the-metrics) and [root](team/02-root.md).
+- Metrics inputs. Its idle episodes and pending-request ages are inputs to idle time in [metrics](06-metrics.md). It does not compute the metrics, and the target of 50 active agents is not something it counts.

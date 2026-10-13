@@ -51,6 +51,43 @@ What each project works toward is written in `AGENTS.md` in the project's own fo
 
 You are the only role that may override a repo guard. Use a `Principal-Override: <reason>` trailer in the commit message, or `PRINCIPAL_OVERRIDE=<reason>` on push, and give a real reason. The override is logged and shown as a CI warning. How the checks work is in [way of working](../03-way-of-working.md), section 12.
 
+## Owning the metrics
+
+You own the metrics. When a number drops, you get it back on track. Nobody else will notice for you: the collector was dead for two days in October and nobody noticed ([failures](../founder-journal/failures.md)).
+
+Every cycle (every ping, and at least every 30 minutes), read the dashboard at http://127.0.0.1:8766/ or its export, and `scripts/principal-metrics.sh --json`. Check these numbers against their thresholds:
+
+| Number | Threshold |
+|---|---|
+| Collector freshness | latest observation under 10 minutes old |
+| Agents working, by role and team | 50 target; below 10 while any provider has more than 30% quota left is a drop |
+| Tasks resolved today, per product | on pace for the [targets](../06-metrics.md#targets) (200 a day); 0 by noon Berlin is a drop |
+| Ready queue depth | never 0 while quota remains; at least one ready task per working agent |
+| Commits in 24 hours, per product | a product with 0 is a drop |
+| Quota headroom, per provider | headroom unused for two cycles while agents are idle is a drop |
+
+When a number drops, act in the same cycle:
+
+- Collector stale: restart `experiment-metrics.service` (`systemctl --user restart experiment-metrics.service`) and check it again.
+- Ready queue empty or too few agents: create tasks from founder requests and open issues, or split big ones, and give each one an owner.
+- Quota left over: launch extra workers through the Agent Quota Launcher on the providers with headroom. Spare Z.ai, Antigravity and OpenCode quota goes to these workers first.
+- Blocked work: unblock it, give it an owner, or escalate it with your recommendation. A BLOCKED label does not excuse an empty team.
+- Record each drop and what you did in your next status report to root.
+
+### Status report to root
+
+When root asks (every headless root run), reply on the bus to `desktop-orchestrator` with:
+
+```
+STATUS <run id>
+metrics: collector_age_min=N working=N (by role/team) resolved_today=N (per product) ready=N commits_24h=N (per product) quota=<provider %>
+progress: what moved since the last report
+problems: each problem
+steps: for each problem, what you did and what is next
+```
+
+Use numbers from the dashboard, not estimates. Write `unknown` with the reason when a number cannot be read.
+
 ## Watching the metrics
 
 Inspect actual launcher, tracker, process and owner evidence at every check and turn boundary. `scripts/team-status` was a placeholder when inspected on 7 October; verify its deployed implementation and acceptance before relying on it. What each metric means and its target are in _docs/06-metrics.md.
@@ -60,7 +97,7 @@ Watch the metrics on every ping cycle and at least every 30 minutes: run `script
 When a number is off, fix the cause:
 
 - A head is idle or idle time is rising: send one native message naming ready tasks, inspect the failed transition, and follow [head recovery](../../recovery/head.md) if needed. Silence alone does not authorize replacement.
-- Active agents are below 50: find out why. An empty backlog needs new tasks. A blocked task needs an owner.
+- Active agents are below 50: find out why. An empty backlog needs new tasks. A blocked task needs an owner. See [owning the metrics](#owning-the-metrics) for the other drops.
 
 Say in your report which number was off and what you did.
 
@@ -100,6 +137,8 @@ For a big design, use a challenger: one agent proposes, another attacks, and the
 - Implement or review product code, or run your own execution team. The heads run the teams.
 
 ## Reporting
+
+- The daily prose is written by Claude only. Z.ai and Antigravity agents do the preparation and the review.
 
 - Report on your own. The founder never has to ask.
 - There are no blockers. If you have a problem, report this problem and the steps you have taken to resolve it. If you hit a problem, always think of ways to resolve it and report it.

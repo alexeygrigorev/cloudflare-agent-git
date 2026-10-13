@@ -59,7 +59,9 @@ These are the things we track. Every number is measured, never estimated, and an
 
 ## Where they are tracked
 
-- Collector: `scripts/metrics/collect.py` in this repo takes a metadata-only observation of the fleet every minute and keeps the data private, in `.local/metrics/` on the host. It runs as a service on the Hetzner host.
+- Collector: `scripts/metrics/collect.py` in this repo takes a metadata-only observation of the fleet every minute and keeps the data private, in `.local/metrics/` on the host. It runs as the systemd user unit `experiment-metrics.service` on Hetzner. The headless root checks on every run that it is alive and fresh (the liveness guard in `scripts/root/headless-root-run.sh`).
+- Planned storage: VictoriaMetrics, being built in the OpenCode session `metrics-tsdb`. Until it lands, the files in `.local/metrics/` are the store.
+- Owner: the principal owns these numbers and acts when they drop ([principal](team/03-principal.md#owning-the-metrics)). Root asks for them on every run.
 - Private live dashboard: the collector serves it on port 8766, bound to localhost on Hetzner. Open it from your computer with `ssh -N -L 8766:127.0.0.1:8766 hetzner` and then http://127.0.0.1:8766/. It shows agents by role, task states, idle and stale counts, host load and free disk, token usage and provider quota readings.
 - Agent Dashboard: the product in `~/git/agent-dashboard` (GitHub alexeygrigorev/agent-dashboard) turns those observations into the hourly history, usage accounting and accepted-feature tracking per project and per team.
 - Public site: the hourly history is published as charts at https://alexeygrigorev.com/cloudflare-agent-git/history/, built by `website/history.py`. It shows sanitized summaries only.

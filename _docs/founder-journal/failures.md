@@ -5,6 +5,16 @@ What went wrong in this project, newest first, in plain words. Each entry says w
 Evidence links point to the git tag `pre-cleanup-20261007`, the last state before the documentation cleanup. A path written in backticks, such as `experiment/...`, `coordination/...` or `research/...`, is no longer in the tree: read it with `git show pre-cleanup-20261007:<path>`. The full incident log is on the `history` branch: `git show history:INCIDENTS.md`. Your own words, including older wording saved from agent documents, are in the day files of this folder, one file per day.
 
 
+## 26. Nobody noticed the metrics stop for two days (11-13 October)
+
+The metrics collector was dead from 11 October 21:20 to 13 October 21:26 and nobody noticed. On the evening of 13 October only 3 agents were working, 0 tasks were resolved that day and the ready queue was empty, while quota was plentiful (Codex 90%, Claude 80%, Gemini 57%, Z.ai 39% weekly). You said: "if they drop get back on track and it obviously wasn't happening let's find out why."
+Why it happened:
+- The principal's file asked it to "watch the metrics", but gave no freshness check for the collector and no list of actions for a low resolved count, an empty ready queue or unused quota. The only fix it named was for idle heads. Its last `principal-metrics.sh` snapshot is from 11 October 20:50, just before the collector died.
+- The principal spent its turns on pings, ask-ledger wakes and protected-state bookkeeping, and sat at "Goal stalled" with its next wake set. The root's 6a7dcba steering (keep BLOCKED and stalled states quiet, no resume each tick) was right about not forcing input, but it made "nothing changed" an accepted answer.
+- The headless root never asked for numbers. Its prompt checked the mailbox, liveness and hung calls, not output. 1 of 71 run handoffs mentions metrics.
+**Changed:** the principal owns the metrics, with thresholds and required actions ([principal](../team/03-principal.md#owning-the-metrics)). Every headless root run demands a status report and checks it against the dashboard ([root](../team/02-root.md)). The collector is a systemd unit, and the root checks that it is alive.
+Evidence: `.local/metrics/principal-metrics-20261011T185041Z.json` (the last snapshot), `~/.local/state/headless-root/runs/` (71 handoffs), commits 266ef9e and 9435470.
+
 ## 1. The documentation itself became the problem (7 October)
 
 Agents wrote a new document or a new dated section for almost every event. Rules were repeated in many places, and no agent could read everything at startup.
