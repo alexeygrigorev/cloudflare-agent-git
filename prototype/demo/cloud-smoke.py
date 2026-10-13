@@ -186,7 +186,7 @@ class MockBackendHandler(http.server.BaseHTTPRequestHandler):
                     subprocess.run(["git", "init", "--bare", can_dir], check=True, capture_output=True, timeout=5)
                     subprocess.run(["git", "-C", can_dir, "config", "http.receivepack", "true"], check=True, timeout=5)
 
-            self.send_json(200, {
+            self.send_json(201, {
                 "canonical": {
                     "name": can_name,
                     "remote": f"/git/{can_name}.git"
@@ -752,7 +752,7 @@ class CloudSmokeRunner:
             "POST",
             "/setup",
             headers={"Authorization": f"Bearer {self.admin_token}"},
-            expect_status=200
+            expect_status=201
         )
         if not data or not data.get("canonical"):
             raise RuntimeError(f"Setup returned invalid response: {data}")

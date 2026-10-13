@@ -28,11 +28,11 @@ The Cloudflare adapter is designed to reserve budget before each binding or Git 
 - Planned operation caps: Design enforces a limit of 200 operations per UTC day and 6,000 operations per calendar month.
 - Included operations: The quota counts every binding call, including get, capability checks, polls, failed attempts, git operations, and deletes. The system persists counts before executing each call.
 - Storage guardrails: Limits allow at most 4 application repositories, a cumulative upload ceiling of 16 MiB, and a request body ceiling of 256 KiB.
-- Status: These controls are planned software safeguards in the prototype design, not already proven in production.
+- Status: These controls are deployed. The live Worker reports `dailyCap=200`, `monthlyCap=6000`, `maxRepos=4`, `maxTotalBytes=16 MiB` and `maxBodyBytes=256 KiB` on its budget endpoint, and returns HTTP 429 once a cap is reached. The hard ceilings are compiled into `budget.ts`, so config vars can only lower them. Bearer requests are also rate-limited per token.
 
-## Deployment checks
+## Live deployment (13 October 2026)
 
-Deployment requires these checks:
-- Implementation acceptance: Genuine Cloudflare Workers, SQLite-backed Durable Objects, real Cloudflare Artifacts, and runtime code caps remain pending acceptance.
-- Conditional deployment: the deployment operator handles deployment conditionally from a clean GitHub clone, subject to the total $5.00/month shared account budget (including the existing Paid base shared with `agenthub`).
-- Measurement status: The actual live deployment URL and real operational metrics remain unknown until the deployment operator completes live predeploy verification.
+- URL: https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev (Worker `agent-branches`, version `e962956f`; Durable Object `Coordinator`; Artifacts namespace `agent-branches-dev`).
+- Plan: the founder confirmed Workers Paid on 13 October 2026 (USD 5.00/month base, already paid and shared with `agenthub`). Nothing was bought and the plan was not changed.
+- First live smoke run: 4 Artifacts operations (counter went from 0 to 4 out of 200/day and 6,000/month). Preflight, public status, canonical repo create (HTTP 201) and cleanup passed. The run stopped after setup because of a client status-code mismatch, which is now fixed. A full run is estimated at about 24 operations (mock measurement; the client refuses to run if it would use more than 60).
+- Cost estimate: the 6,000/month cap is below the 10,000 operations/month included with Artifacts, and stored data stays at or under 16 MiB, well inside the included 1 GB-month. Worker and Durable Object requests at demo volume are covered by the Workers Paid allowance. Expected extra cost is USD 0.00 on top of the USD 5.00 base. Worst case: if `agenthub` already used the whole included Artifacts allowance, this entry would add at most 6,000 x USD 0.15/1,000 = USD 0.90/month.

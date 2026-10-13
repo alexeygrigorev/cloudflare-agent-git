@@ -41,7 +41,7 @@ The approved submission video has these details:
 
 ## Run Instructions
 
-Cloudflare deployment verification is pending. The approved video records the earlier Node runtime.
+The Cloudflare Worker is live at https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev (Worker `agent-branches`, version `e962956f`, deployed 13 October 2026 ~22:57 Europe/Berlin with a SQLite Durable Object coordinator and the Artifacts namespace `agent-branches-dev`). `GET /public/status` is public; every write needs a bearer token. The first live smoke run (`python3 prototype/demo/cloud-smoke.py`) passed preflight, sanitized public status, a real canonical repository create through Artifacts (HTTP 201), and cleanup, using 4 budgeted operations. It stopped after setup because the smoke client expected HTTP 200 where the Worker returns 201. That client bug is fixed in this commit and the fixed client passes `--mock` (24 ops). The full live concurrent-actor run has not been repeated yet. The approved video records the earlier Node runtime.
 
 Local reproduction requires Node.js 22 or newer and Python 3.10 or newer, plus Git and npm.
 
@@ -64,7 +64,7 @@ For an explicit local mock of the cloud smoke client:
 python3 demo/cloud-smoke.py --mock
 ```
 
-Root will keep Cloudflare deployment on hold until the founder confirms Workers Paid and Root verifies the shared account budget.
+The founder approved the live deployment on 13 October 2026 (the account is on Workers Paid). To smoke-test the live Worker yourself you need the deployment's admin and runner tokens: `BASE_URL=https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev ADMIN_TOKEN=... RUNNER_TOKEN=... python3 demo/cloud-smoke.py`.
 
 ## Privacy and Intake Notice
 
