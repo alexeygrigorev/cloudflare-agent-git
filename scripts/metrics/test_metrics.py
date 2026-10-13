@@ -2,6 +2,15 @@ import unittest, tempfile, pathlib, types, json
 from unittest.mock import patch
 import collect
 class MetricsTests(unittest.TestCase):
+    def setUp(self):
+        # Hermetic VictoriaMetrics push: capture series, report success.
+        self.pushed_series = []
+        def _fake_push(lines, vm_url=collect.VM_URL, timeout=15):
+            self.pushed_series.extend(lines)
+            return True, ''
+        p = patch.object(collect.tsdb, 'push_series', side_effect=_fake_push)
+        p.start()
+        self.addCleanup(p.stop)
     def test_identity_dedup_unknown_and_roles(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=pathlib.Path(tmp); store=root/'.local/metrics'; store.mkdir(parents=True); (root/'coordination').mkdir()
@@ -19,10 +28,26 @@ class MetricsTests(unittest.TestCase):
             self.assertEqual(snap['aggregate']['tasks_by_status']['blocked'],1)
             self.assertIsNone(snap['sessions'][0]['usage']['cost_usd'])
             self.assertTrue((store/'latest.json').is_file())
-            history=json.loads(next(store.glob('snapshots-*.jsonl')).read_text().splitlines()[-1])
-            task=history['tasks'][0]; self.assertEqual(task['team_id'],'alpha'); self.assertEqual(task['next_action'],'independent replay'); self.assertEqual(task['evidence_paths'],['result.txt']); self.assertFalse(task['assignment_ack']); self.assertEqual(task['acceptance_status'],'pending')
-            worker=next(r for r in history['sessions'] if r['tag']=='worker'); self.assertEqual(worker['evidence'][0]['path'],'result.txt'); self.assertEqual(worker['evidence'][0]['bytes'],15); self.assertEqual(worker['tasks'][0]['id'],'t1')
-            self.assertNotIn('prompt',history); self.assertNotIn('transcript',worker)
+            # No new per-minute snapshot files are written; numeric history
+            # goes to VictoriaMetrics and details to SQLite on change.
+            self.assertEqual(list(store.glob('snapshots-*.jsonl')), [])
+            self.assertEqual(list(store.glob('snapshots-*.gz')), [])
+            joined = '\n'.join(self.pushed_series)
+            self.assertIn('exp_agents_registered{role="head"', joined)
+            self.assertIn('exp_tasks{status="blocked"', joined)
+            import state as state_store
+            stored_tasks = {t['id']: t for t in state_store.read_tasks(store)}
+            self.assertEqual(stored_tasks['t1']['status'], 'blocked')
+            self.assertEqual(stored_tasks['t1']['next_action'], 'independent replay')
+            self.assertEqual(stored_tasks['t1']['evidence_paths'], ['result.txt'])
+            stored_evidence = state_store.read_evidence(store)
+            self.assertEqual(len(stored_evidence), 1)
+            self.assertEqual(stored_evidence[0]['path'], 'result.txt')
+            self.assertEqual(stored_evidence[0]['bytes'], 15)
+            self.assertTrue(snap['tsdb']['push_ok'])
+            latest = json.loads((store/'latest.json').read_text())
+            self.assertTrue(latest['tsdb']['push_ok'])
+            self.assertNotIn('prompt', latest); self.assertNotIn('transcript', json.dumps(latest['sessions'][0]))
     def test_ambiguous_tag_is_not_falsely_live(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=pathlib.Path(tmp); store=root/'.local/metrics'; store.mkdir(parents=True); (root/'coordination').mkdir()

@@ -40,8 +40,12 @@ try:
 except OSError:
     pass
 
-from adapters import quotas, temporal, archive_history
+from adapters import quotas, temporal
 from opencode_usage import read_usage as read_opencode_usage, SOURCE as OPENCODE_SOURCE
+from state import record_sample as record_state_sample
+import tsdb
+
+VM_URL = os.environ.get('METRICS_VM_URL', tsdb.VM_URL)
 
 COUNT_ROLES = {'principal', 'head', 'executor', 'subagent'}
 APLEXER_STATE = pathlib.Path.home() / '.local/state/aplexer/sessions'
@@ -986,32 +990,27 @@ def _collect():
 
     with (STORE / 'collector.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        daily = STORE / ('snapshots-' + dt.date.today().isoformat() + '.jsonl')
-        retention = archive_history(STORE, daily)
-        if retention['total_bytes'] > 256 * 1024 * 1024:
-            errors.append('daily snapshot cap reached; latest continues, history paused')
-        else:
-            history = {
-                'at': snap['at'],
-                'aggregate': snap['aggregate'],
-                'teams': snap['teams'],
-                'opencode_usage': opencode,
-                'errors': snap['errors'],
-                'sessions': [
-                    {k: r.get(k) for k in ['id', 'tag', 'team_id', 'role', 'workspace', 'pid_live', 'reported_state', 'hook_age_seconds', 'stale_hook', 'cpu_seconds', 'rss_bytes', 'proc_start_ticks', 'usage', 'observed_idle_seconds', 'evidence', 'evidence_coverage', 'tasks']}
-                    for r in observations
-                ],
-                'tasks': [
-                    {key: t.get(key) for key in ['id', 'status', 'owner_tag', 'team_id', 'next_action', 'acceptance', 'acceptance_status', 'reviewer_tag', 'evidence_paths', 'blocked_on', 'assignment_ack', 'updated_at']}
-                    for t in tasks
-                ]
-            }
-            with daily.open('a') as f:
-                f.write(json.dumps(history) + '\n')
-            try:
-                os.chmod(daily, 0o600)
-            except OSError:
-                pass
+        # Numeric series go to VictoriaMetrics every minute; unknown stays
+        # absent, never zero. Existing snapshot archives are left untouched
+        # and no new per-minute snapshot files are written.
+        try:
+            ts_ms = int(dt.datetime.fromisoformat(snap['at']).timestamp() * 1000)
+        except (ValueError, KeyError):
+            ts_ms = int(time.time() * 1000)
+        series = tsdb.build_series(snap, ts_ms)
+        pushed, push_error = tsdb.push_series(series, VM_URL)
+        if not pushed and push_error != 'no series to push':
+            errors.append('tsdb push failed: ' + push_error)
+        # Task/evidence details go to SQLite, only on change.
+        try:
+            state_changes = record_state_sample(STORE, snap, snap['at'])
+        except Exception as exc:
+            errors.append('state store failed: %s: %s' % (type(exc).__name__, exc))
+            state_changes = {'tasks_changed': 0, 'evidence_changed': 0, 'transitions_added': 0}
+        snap['tsdb'] = {'series_pushed': len(series) if pushed else 0,
+                        'push_ok': pushed, 'push_error': None if pushed else push_error,
+                        'vm_url': VM_URL}
+        snap['state_changes'] = state_changes
         atomic(STORE / 'latest.json', snap)
 
     return snap
