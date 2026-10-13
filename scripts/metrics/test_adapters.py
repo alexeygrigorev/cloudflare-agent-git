@@ -19,17 +19,43 @@ class AdapterTests(unittest.TestCase):
    store=pathlib.Path(tmp);r={'id':'x','tag':'worker','team_id':'a','pid_live':True,'reported_state':'working','stale_hook':False,'usage':{'source':'native','conversation_id':'same','total_tokens':500}}
    adapters.temporal(store,[r],[],'2026-10-03T00:00:00Z');r['usage']['total_tokens']=100
    result=adapters.temporal(store,[r],[],'2026-10-03T00:01:00Z');self.assertEqual(result['tokens_since_observer_known'],0);self.assertEqual(result['conversations'][0]['latest_cumulative_tokens'],500)
- def test_export_reads_compressed_and_live_history(self):
-  import importlib.util
-  from unittest.mock import patch
-  path=pathlib.Path(__file__).with_name('export.py');spec=importlib.util.spec_from_file_location('metrics_export',path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
-  with tempfile.TemporaryDirectory() as tmp:
-   store=pathlib.Path(tmp)
-   rows=[{'at':'2026-10-03T00:00:00Z','sessions':[{'id':'s','tag':'w','usage':{'source':'native','conversation_id':'c','total_tokens':100}}]},{'at':'2026-10-03T00:01:00Z','sessions':[{'id':'s','tag':'w','usage':{'source':'native','conversation_id':'c','total_tokens':180}}]}]
-   with gzip.open(store/'snapshots-2026-10-03.jsonl.1.gz','wt') as f:f.write(json.dumps(rows[0])+'\n')
-   (store/'snapshots-2026-10-03.jsonl').write_text(json.dumps(rows[1])+'\n')
-   with patch.object(module,'STORE',store):result=module.summarize()
-   self.assertEqual(result['snapshots'],2);self.assertEqual(result['conversations'][0]['tokens_delta_during_observation'],80)
+  def test_export_reads_history_from_vm(self):
+   import importlib.util
+   from unittest.mock import patch
+   path=pathlib.Path(__file__).with_name('export.py');spec=importlib.util.spec_from_file_location('metrics_export',path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+   with tempfile.TemporaryDirectory() as tmp:
+    store=pathlib.Path(tmp)
+    live_matrix=[{'metric':{'role':'executor','team':'T1'},'values':[[1000,'1'],[1300,'1']]},{'metric':{'role':'head','team':'T1'},'values':[[1000,'0'],[1300,'1']]}]
+    token_matrix=[{'metric':{'provider':'zai','model':'glm','source':'s','conversation':'c'},'values':[[1000,'100'],[1300,'180']]}]
+    def fake_range(expr,start,end,step):
+     if expr=='exp_agents_live':return live_matrix
+     if expr=='exp_tokens_cumulative':return token_matrix
+     if expr=='exp_task_transitions':return [{'metric':{'from_status':'ready','to_status':'running'},'values':[[1000,'1'],[1300,'0']]}]
+     return []
+    def fake_query(expr,at):
+     if expr=='exp_tasks':return [{'metric':{'status':'running'},'value':[1300,'2']}]
+     if expr=='exp_quota_remaining':return [{'metric':{'provider':'zai','window':'5h'},'value':[1300,'86']}]
+     return []
+    result=module.summarize(store=store,window_seconds=3600,end='1970-01-01T00:21:40Z',query_fn=fake_query,range_fn=fake_range)
+    self.assertTrue(result['vm_reachable'])
+    live={tuple(sorted(s['metric'].items())):s for s in result['agents_live']}
+    self.assertEqual(live[(('role','executor'),('team','T1'))]['covered_seconds'],600.0)
+    self.assertEqual(result['tasks_current_by_status'],{'running':2.0})
+    self.assertEqual(result['task_transitions_in_window'],[{'from_status':'ready','to_status':'running','events':1.0}])
+    self.assertEqual(result['tokens_delta_by_provider_model'],[{'provider':'zai','model':'glm','tokens':80.0}])
+    self.assertEqual(result['quota_remaining'],{'zai':{'5h':86.0}})
+    self.assertEqual(result['sqlite'],{'tasks_tracked':0,'tasks_by_status':{},'evidence_files_tracked':0,'transitions_in_window':0})
+  def test_export_vm_failure_marks_unknown(self):
+   import importlib.util
+   path=pathlib.Path(__file__).with_name('export.py');spec=importlib.util.spec_from_file_location('metrics_export_down',path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+   with tempfile.TemporaryDirectory() as tmp:
+    def boom(*a,**k):raise ConnectionError('vm down')
+    result=module.summarize(store=pathlib.Path(tmp),window_seconds=3600,query_fn=boom,range_fn=boom)
+    self.assertFalse(result['vm_reachable'])
+    self.assertIn('ConnectionError',result['vm_error'])
+    self.assertIsNone(result['agents_live'])
+    self.assertIsNone(result['tasks_current_by_status'])
+    self.assertIsNone(result['tokens_delta_by_provider_model'])
  def test_failed_archive_digest_preserves_original(self):
   import io
   from unittest.mock import patch
@@ -39,16 +65,18 @@ class AdapterTests(unittest.TestCase):
    with patch.object(adapters.gzip,'open',side_effect=corrupt):
     with self.assertRaisesRegex(OSError,'SHA256'):adapters.archive_history(store,store/'snapshots-2026-10-03.jsonl')
    self.assertEqual(source.read_bytes(),b'X'*100);self.assertEqual(len(list(store.glob('*.gz'))),0);self.assertTrue(list(store.glob('.archive-*.pending')))
- def test_export_distinct_evidence_and_missing_unknown(self):
-  import importlib.util
-  from unittest.mock import patch
-  path=pathlib.Path(__file__).with_name('export.py');spec=importlib.util.spec_from_file_location('metrics_export_evidence',path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
-  with tempfile.TemporaryDirectory() as tmp:
-   root=pathlib.Path(tmp);store=root/'.local/metrics';store.mkdir(parents=True);(root/'result.txt').write_text('actual output');(root/'directory').mkdir()
-   snap={'at':'2026-10-03T00:00:00Z','sessions':[{'id':'a','tag':'worker'},{'id':'b','tag':'missing-only'}]};(store/'snapshots-2026-10-03.jsonl').write_text(json.dumps(snap)+'\n')
-   latest={'tasks':[{'id':'t1','owner_tag':'worker','evidence_paths':['result.txt','result.txt','missing.txt','directory']},{'id':'t2','owner_tag':'missing-only','evidence_paths':['absent.txt']} ]};(store/'latest.json').write_text(json.dumps(latest))
-   with patch.object(module,'STORE',store),patch.object(module,'ROOT',root):result=module.summarize()
-   worker=result['per_tag']['worker'];self.assertEqual(worker['evidence_files_latest'],1);self.assertEqual(worker['evidence_coverage']['status'],'partial');self.assertEqual(worker['evidence_coverage']['unsupported_directory_paths'],['directory']);self.assertEqual(worker['evidence_coverage']['missing_paths'],['missing.txt']);self.assertIsNone(result['per_tag']['missing-only']['evidence_files_latest'])
+  def test_export_sqlite_detail_counts(self):
+   import importlib.util
+   path=pathlib.Path(__file__).with_name('export.py');spec=importlib.util.spec_from_file_location('metrics_export_evidence',path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+   with tempfile.TemporaryDirectory() as tmp:
+    root=pathlib.Path(tmp);store=root/'.local/metrics';store.mkdir(parents=True)
+    import state as state_store
+    snap={'tasks':[{'id':'t1','status':'running','owner_tag':'worker','team_id':'T1','evidence_paths':['result.txt']}],'sessions':[{'id':'a','tag':'worker','tasks':[{'id':'t1'}],'evidence':[{'path':'result.txt','bytes':13,'mtime':5.0}]}],'observation':{'task_transitions_this_sample':[]}}
+    state_store.record_sample(store,snap,'2026-10-03T00:00:00+00:00')
+    result=module.summarize(store=store,window_seconds='all',query_fn=lambda e,a:[],range_fn=lambda e,s,x,st:[])
+    self.assertEqual(result['sqlite']['tasks_tracked'],1)
+    self.assertEqual(result['sqlite']['tasks_by_status'],{'running':1})
+    self.assertEqual(result['sqlite']['evidence_files_tracked'],1)
  def test_rolling_retention_relocates_old_chunks_below_threshold(self):
   with tempfile.TemporaryDirectory() as tmp:
    store=pathlib.Path(tmp)

@@ -1,57 +1,201 @@
 #!/usr/bin/env python3
 """Export PRIVATE aggregate observation history, never raw transcripts."""
-import argparse, collections, datetime, json, pathlib, gzip, subprocess
+import argparse, collections, datetime, json, pathlib, subprocess, sys
 ROOT=pathlib.Path(__file__).resolve().parents[2]; STORE=ROOT/'.local/metrics'
-def summarize():
-    totals=collections.defaultdict(lambda:{'snapshots':0,'pid_live_observed_seconds':0,'hook_working_observed_seconds':0,'hook_idle_observed_seconds':0,'cpu_seconds_observed_delta':0,'evidence_files_latest':None})
-    conversations={}; previous={}; first=None; last=None; rows=0
-    archive_dir = STORE / 'archive'
-    all_files = list(STORE.glob('snapshots-*'))
-    if archive_dir.is_dir():
-        all_files.extend(archive_dir.glob('snapshots-*'))
-    def _mtime(p):
-        try: return p.stat().st_mtime
-        except FileNotFoundError: return 0
-    for file in sorted(all_files, key=lambda p:(p.name[:20], _mtime(p))):
+METRICS_DIR = pathlib.Path(__file__).resolve().parent
+if str(METRICS_DIR) not in sys.path:
+    sys.path.insert(0, str(METRICS_DIR))
+import tsdb
+import state as state_store
+
+VM_URL = tsdb.VM_URL
+RETENTION_SECONDS = 400 * 86400
+
+
+def _range_stats(matrix, step_seconds):
+    """Aggregate a query_range matrix into per-series summaries.
+
+    Gauge samples are treated as covering the step interval; unknown stays
+    unknown (a series with no points yields None fields, never zero).
+    """
+    out = []
+    for series in matrix:
+        metric = series.get('metric', {})
         try:
-            handle=gzip.open(file,'rt') if file.suffix=='.gz' else file.open()
-        except FileNotFoundError:
-            continue  # rotated into archive by the live collector after listing
-        for line in handle:
-            try: snap=json.loads(line); at=datetime.datetime.fromisoformat(snap['at']).timestamp()
-            except (ValueError,KeyError): continue
-            first=snap['at'] if first is None else first; last=snap['at']; rows+=1
-            for r in snap.get('sessions',[]):
-                tag=r.get('tag','unknown'); val=totals[tag]; val['team_id']=r.get('team_id'); val['role']=r.get('role'); val['snapshots']+=1
-                old=previous.get(r.get('id')); interval=min(120,max(0,at-old[0])) if old else 0
-                if r.get('pid_live'): val['pid_live_observed_seconds']+=interval
-                if r.get('pid_live') and not r.get('stale_hook'):
-                    if r.get('reported_state')=='working': val['hook_working_observed_seconds']+=interval
-                    if r.get('reported_state') in ('idle','waiting'): val['hook_idle_observed_seconds']+=interval
-                if old and old[1].get('proc_start_ticks')==r.get('proc_start_ticks') and isinstance(r.get('cpu_seconds'),(int,float)) and isinstance(old[1].get('cpu_seconds'),(int,float)):
-                    val['cpu_seconds_observed_delta']+=max(0,r['cpu_seconds']-old[1]['cpu_seconds'])
-                previous[r.get('id')]=(at,r)
-                u=r.get('usage')
-                if u and u.get('conversation_id') and isinstance(u.get('total_tokens'),int):
-                    key=u['source']+':'+u['conversation_id']; c=conversations.setdefault(key,{'source':u['source'],'conversation_id':u['conversation_id'],'observed_tags':[],'first_observed_cumulative_tokens':u['total_tokens'],'latest_observed_cumulative_tokens':u['total_tokens'],'reported_list_price_cost_usd':u.get('cost_usd'),'cost_basis':u.get('cost_basis')})
-                    if tag not in c['observed_tags']:c['observed_tags'].append(tag)
-                    c['latest_observed_cumulative_tokens']=max(c['latest_observed_cumulative_tokens'],u['total_tokens'])
-        handle.close()
-    for c in conversations.values():c['tokens_delta_during_observation']=c['latest_observed_cumulative_tokens']-c['first_observed_cumulative_tokens']
-    latest=json.loads((STORE/'latest.json').read_text()) if (STORE/'latest.json').exists() else {}
-    tasks=latest.get('tasks',[])
-    for tag,value in totals.items():
-        registered=sorted({rel for task in tasks if task.get('owner_tag')==tag for rel in (task.get('evidence_paths') or [])})
-        observed={};missing=[];unsupported=[];outside=[]
-        for rel in registered:
-            path=(ROOT/rel).resolve()
-            if ROOT not in path.parents:outside.append(rel)
-            elif path.is_file():observed[str(path)]={'path':rel,'bytes':path.stat().st_size,'mtime':path.stat().st_mtime}
-            elif path.is_dir():unsupported.append(rel)
-            else:missing.append(rel)
-        value['evidence_files_latest']=len(observed) if observed or (registered and not (missing or unsupported or outside)) else None
-        value['evidence_coverage']={'registered_distinct_paths':len(registered),'observed_distinct_files':len(observed),'missing_paths':missing,'unsupported_directory_paths':unsupported,'out_of_scope_paths':outside,'status':'unregistered' if not registered else ('partial' if missing or unsupported or outside else 'observed'),'scope':'Current registered file metadata, not validated outcomes or historical authorship','observed_at':datetime.datetime.now(datetime.timezone.utc).isoformat()}
-    return {'schema_version':1,'first_observation':first,'last_observation':last,'snapshots':rows,'per_tag':dict(totals),'conversations':list(conversations.values()),'tasks_done_by_owner':dict(collections.Counter(t.get('owner_tag','unknown') for t in tasks if t.get('status')=='done')),'latest_task_states':latest.get('aggregate',{}).get('tasks_by_status',{}),'limits':['Observed hook seconds are sampling estimates, NOT useful work or billable time.','Conversation cumulative totals can include pre-observation history; only the difference is interval usage.','Unknown/missing telemetry is not zero. Reused conversations are counted once across session resumes.','Nested executor provider costs are not inferred from subscription quota or list-price metadata.','Task completion is registered status; independently accepted outcomes require task evidence and reviewer signoff.']}
+            values = [(ts, float(v)) for ts, v in series.get('values', [])]
+        except (TypeError, ValueError):
+            values = []
+        if not values:
+            out.append({'metric': metric, 'points': 0, 'last': None,
+                        'avg': None, 'min': None, 'max': None,
+                        'covered_seconds': 0})
+            continue
+        nums = [v for _, v in values]
+        out.append({'metric': metric, 'points': len(values), 'last': nums[-1],
+                    'avg': sum(nums) / len(nums), 'min': min(nums), 'max': max(nums),
+                    'covered_seconds': len(values) * step_seconds})
+    return out
+
+
+def _delta_in_window(matrix):
+    """Per-series last-minus-first over the window; None when unknowable."""
+    out = []
+    for series in matrix:
+        metric = series.get('metric', {})
+        try:
+            nums = [float(v) for _, v in series.get('values', [])]
+        except (TypeError, ValueError):
+            nums = []
+        out.append({'metric': metric,
+                    'delta': (nums[-1] - nums[0]) if len(nums) >= 2 else None,
+                    'first': nums[0] if nums else None,
+                    'last': nums[-1] if nums else None})
+    return out
+
+
+def summarize(vm_url=VM_URL, store=STORE, window_seconds='24h', end=None, step='5m',
+              query_fn=None, range_fn=None):
+    """Summarize observation history from VictoriaMetrics + SQLite state.
+
+    window_seconds accepts the same shorthand as parse_window_seconds
+    ('30m', '24h', 'all'); 'all'/None covers the 400d retention. Every
+    section is marked with its source; anything VM or SQLite cannot answer
+    is null, never zero or an estimate dressed as measurement.
+    """
+    query_fn = query_fn or (lambda expr, at: tsdb.query(vm_url, expr, at))
+    range_fn = range_fn or (lambda expr, s, e, st: tsdb.query_range(vm_url, expr, s, e, st))
+    store = pathlib.Path(store)
+    end_dt = parse_iso_datetime(end)
+    end_ts = int(end_dt.timestamp())
+    parsed_window = parse_window_seconds(window_seconds, end_dt)
+    if parsed_window is None:
+        parsed_window = float(RETENTION_SECONDS)
+    start_ts = int(end_ts - parsed_window)
+    step_seconds = 300.0
+    try:
+        if isinstance(step, str) and step.endswith('m'):
+            step_seconds = float(step[:-1]) * 60.0
+        elif isinstance(step, str) and step.endswith('h'):
+            step_seconds = float(step[:-1]) * 3600.0
+        elif isinstance(step, str) and step.endswith('s'):
+            step_seconds = float(step[:-1])
+    except ValueError:
+        pass
+
+    result = {
+        'schema_version': 2,
+        'source': 'victoriametrics+sqlite',
+        'vm_url': vm_url,
+        'window_seconds': parsed_window,
+        'window_start': datetime.datetime.fromtimestamp(start_ts, datetime.timezone.utc).isoformat(),
+        'window_end': end_dt.isoformat(),
+        'step': step,
+        'vm_reachable': True,
+        'vm_error': None,
+    }
+
+    def safe_range(expr):
+        try:
+            return range_fn(expr, start_ts, end_ts, step)
+        except Exception as exc:
+            result['vm_reachable'] = False
+            result['vm_error'] = '%s: %s' % (type(exc).__name__, exc)
+            return None
+
+    def safe_query(expr):
+        try:
+            return query_fn(expr, end_ts)
+        except Exception as exc:
+            result['vm_reachable'] = False
+            result['vm_error'] = '%s: %s' % (type(exc).__name__, exc)
+            return None
+
+    agents_live = safe_range('exp_agents_live')
+    result['agents_live'] = _range_stats(agents_live, step_seconds) if agents_live is not None else None
+    agents_working = safe_range('exp_agents_working')
+    result['agents_working'] = _range_stats(agents_working, step_seconds) if agents_working is not None else None
+
+    tasks_now = safe_query('exp_tasks')
+    tasks_by_status = collections.Counter()
+    if tasks_now is not None:
+        for row in tasks_now:
+            try:
+                tasks_by_status[row['metric'].get('status', 'unknown')] += float(row['value'][1])
+            except (KeyError, TypeError, ValueError):
+                pass
+    result['tasks_current_by_status'] = dict(sorted(tasks_by_status.items())) if tasks_now is not None else None
+
+    transitions = safe_range('exp_task_transitions')
+    transition_totals = collections.Counter()
+    if transitions is not None:
+        for series in transitions:
+            metric = series.get('metric', {})
+            try:
+                total = sum(float(v) for _, v in series.get('values', []))
+            except (TypeError, ValueError):
+                continue
+            transition_totals[(metric.get('from_status', 'unknown'),
+                               metric.get('to_status', 'unknown'))] += total
+    result['task_transitions_in_window'] = [
+        {'from_status': k[0], 'to_status': k[1], 'events': v}
+        for k, v in sorted(transition_totals.items())] if transitions is not None else None
+
+    tokens = safe_range('exp_tokens_cumulative')
+    token_deltas = collections.Counter()
+    token_latest = collections.Counter()
+    if tokens is not None:
+        for row in _delta_in_window(tokens):
+            provider = row['metric'].get('provider', 'unknown')
+            model = row['metric'].get('model', 'unknown')
+            if row['delta'] is not None and row['delta'] > 0:
+                token_deltas[(provider, model)] += row['delta']
+            if row['last'] is not None:
+                token_latest[(provider, model)] += row['last']
+    result['tokens_delta_by_provider_model'] = [
+        {'provider': k[0], 'model': k[1], 'tokens': v}
+        for k, v in sorted(token_deltas.items())] if tokens is not None else None
+    result['tokens_cumulative_by_provider_model'] = [
+        {'provider': k[0], 'model': k[1], 'tokens': v}
+        for k, v in sorted(token_latest.items())] if tokens is not None else None
+
+    quota_now = safe_query('exp_quota_remaining')
+    quota = {}
+    if quota_now is not None:
+        for row in quota_now:
+            try:
+                quota.setdefault(row['metric'].get('provider', 'unknown'), {})[
+                    row['metric'].get('window', 'unknown')] = float(row['value'][1])
+            except (KeyError, TypeError, ValueError):
+                pass
+    result['quota_remaining'] = quota if quota_now is not None else None
+
+    load = safe_range('exp_host_load')
+    result['host_load'] = _range_stats(load, step_seconds) if load is not None else None
+    disks = safe_range('exp_disk_free_bytes')
+    result['disk_free'] = _range_stats(disks, step_seconds) if disks is not None else None
+
+    try:
+        tasks = state_store.read_tasks(store)
+        evidence = state_store.read_evidence(store)
+        changes = state_store.read_transitions(
+            store, since=result['window_start'])
+        result['sqlite'] = {
+            'tasks_tracked': len(tasks),
+            'tasks_by_status': dict(sorted(collections.Counter(
+                (t.get('status') or 'unknown') for t in tasks).items())),
+            'evidence_files_tracked': len(evidence),
+            'transitions_in_window': len(changes),
+        }
+    except Exception as exc:
+        result['sqlite'] = {'error': '%s: %s' % (type(exc).__name__, exc)}
+
+    result['limits'] = [
+        'Agent-minutes integrate 5-minute gauge samples; sparse coverage yields null, not zero.',
+        'Token deltas are last-minus-first cumulative per conversation; resets or shrinks are excluded, not negatived.',
+        'Per-tag cumulative history predates the TSDB migration and is not rebuilt; role/team aggregates are the history.',
+        'Quota readings are account state, never usage or cost. Unknown telemetry is null.',
+    ]
+    return result
 
 def parse_window_seconds(val, ref_dt):
     if val is None:

@@ -1027,6 +1027,9 @@ def collect(product_workspaces=None):
 
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
+        if self.path.startswith('/api/vm/'):
+            self._proxy_vm()
+            return
         if self.path in ('/api/latest', '/api/tasks'):
             value = read_json(STORE / 'latest.json', {})
             if self.path == '/api/tasks':
@@ -1045,6 +1048,34 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'")
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _proxy_vm(self):
+        """Same-origin proxy to the localhost VictoriaMetrics for dashboard charts.
+
+        Only read-only query endpoints are forwarded; everything else 404s.
+        The dashboard keeps working (with a VM-unavailable note) when the
+        TSDB is down: failures relay as 502, never as invented data.
+        """
+        sub = self.path[len('/api/vm'):]
+        allowed = sub.startswith('/api/v1/query') or sub.startswith('/api/v1/label')
+        if not allowed or '..' in sub:
+            self.send_error(404)
+            return
+        import urllib.request as _urlrequest
+        try:
+            request = _urlrequest.Request(
+                VM_URL.rstrip('/') + sub, headers={'Accept': 'application/json'})
+            with _urlrequest.urlopen(request, timeout=30) as response:
+                data = response.read()
+        except Exception:
+            self.send_error(502, 'VictoriaMetrics unavailable')
+            return
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('X-Content-Type-Options', 'nosniff')
         self.end_headers()
         self.wfile.write(data)
 
