@@ -14,15 +14,15 @@ The coordinator doesn't execute agent code, Git commands, or tests. It tracks br
 
 ## Cloudflare Platform Usage
 
-Agent Branches uses Cloudflare's serverless platform to provide a distributed coordination service:
+Agent Branches implements a Cloudflare serverless coordination architecture in prototype source (`prototype/src/cloudflare/`, `prototype/wrangler.jsonc`), deployed to Cloudflare Workers with edge storage:
 
-1. Cloudflare Workers: The Worker acts as the public API router and smart gateway proxy. It routes REST requests for task tracking, handles CORS preflight requests, verifies role-based Bearer credentials (ADMIN_TOKEN, RUNNER_TOKEN, and per-task agent tokens), and proxies Git Smart HTTP requests (git-upload-pack and git-receive-pack).
+1. Cloudflare Workers: The Worker implementation acts as the public API router and smart gateway proxy. It routes REST requests for task tracking, handles CORS preflight requests, verifies role-based Bearer credentials (`ADMIN_TOKEN`, `RUNNER_TOKEN`, and per-task agent tokens), and proxies Git Smart HTTP requests (`git-upload-pack` and `git-receive-pack`).
 
-2. Durable Objects with SQLite storage: The coordinator core runs inside a single-instance Durable Object named Coordinator. Using Durable Objects with embedded SQLite storage gives the coordinator atomic transactions, linearizable head updates, and consistent warning records across concurrent agents without requiring an external database service.
+2. Durable Objects with SQLite storage: The coordinator core runs inside a single-instance Durable Object named `Coordinator`. Embedded SQLite storage gives the coordinator atomic transactions, linearizable head updates, and consistent warning records across concurrent agents without requiring an external database service.
 
-3. Cloudflare Artifacts: Agent Branches binds to Cloudflare Artifacts using namespace agent-branches-dev to store Git repositories and packfiles at the edge. Storing agent forks directly in Artifacts provides durable, low-latency object storage for Git repositories without requiring dedicated server infrastructure.
+3. Cloudflare Artifacts: The architecture binds to Cloudflare Artifacts using namespace `agent-branches-dev` to store Git repositories and packfiles at the edge. Storing agent forks directly in Artifacts provides durable, low-latency object storage for Git repositories without requiring dedicated server infrastructure.
 
-Agents execute tasks and test suites on local developer machines or dedicated runner nodes, completely isolated from Cloudflare edge execution. The architecture also preserves a zero-dependency plain Node coordinator fallback, allowing developers to test the complete protocol locally without cloud credentials.
+Deployment Status & Local Verification: Agents execute tasks and test suites on local developer machines or dedicated runner nodes, completely isolated from Cloudflare edge execution. The architecture preserves a zero-dependency plain Node coordinator runtime (`prototype/src/local/`), allowing developers to test and verify the complete protocol locally without cloud credentials. Live Cloudflare edge deployment verification was completed by Root per receipt issue #55 (commit `99f3fca5`).
 
 ## Repository Public URL
 
@@ -31,7 +31,9 @@ You can find the project repository at [Agent Branches on GitHub](https://github
 ## Approved Video, Path, and Hash
 
 The approved submission video has these details:
-- Public video path: `~/contest-submission/agent-branches-video-r2.mp4`
+- Public video URL (GitHub blob viewer): `https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/docs-submission/videos/agent-branches-demo-draft.mp4`
+- Public video direct download (raw URL): `https://raw.githubusercontent.com/alexeygrigorev/cloudflare-agent-git/main/docs-submission/videos/agent-branches-demo-draft.mp4`
+- Local host portable path: `~/contest-submission/agent-branches-video-r2.mp4` (machine-local filesystem path on the recording host, not an external URL)
 - Repository video link: `docs-submission/videos/agent-branches-demo-draft.mp4` (immutable commit `7459ff4` in `cloudflare-agent-git`)
 - SHA-256 hash: `0e110c48c9b1083b18027d2649a115b68a57539edd61accd985fdec2e9a8ccc4`
 - File size: 13,289,068 bytes
@@ -41,7 +43,7 @@ The approved submission video has these details:
 
 ## Run Instructions
 
-The Cloudflare Worker is live at https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev (Worker `agent-branches`, version `e962956f`, deployed 13 October 2026 ~22:57 Europe/Berlin with a SQLite Durable Object coordinator and the Artifacts namespace `agent-branches-dev`). `GET /public/status` is public; every write needs a bearer token. The full live smoke run (`python3 prototype/demo/cloud-smoke.py`, commit `898caf0`) PASSED on 13 October 2026 at ~23:03 Europe/Berlin in 17.5 s, with all 14 verifications passing and 60 budgeted operations used. Covered: preflight budget headroom, sanitized public status, a real canonical Artifacts repository create, the seed push, two concurrent scripted agents forking and pushing, push callbacks, a clean pairwise `git merge-tree` check, typed trusted-runner `POST /checks`, and refusals for 405 (method), 409 (stale vector), 403 (cross-task and cross-repo push) and 401 (unauthenticated). Demo repositories were cleaned up afterwards. The approved video records the earlier Node runtime.
+The Cloudflare Worker is live at https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev (Worker `agent-branches`, version `e962956f`, deployed 13 October 2026 ~22:57 Europe/Berlin with a SQLite Durable Object coordinator and the Artifacts namespace `agent-branches-dev`). `GET /public/status` is public; every write needs a bearer token. The full live smoke run (`python3 prototype/demo/cloud-smoke.py`, commit `898caf0`) PASSED on 13 October 2026 at ~23:03 Europe/Berlin in 17.5 s, with all 14 verifications passing and 60 budgeted operations used (reported day counter 138 of 200 daily cap). Covered: preflight budget headroom, sanitized public status, a real canonical Artifacts repository create, the seed push, two concurrent scripted agents forking and pushing, push callbacks, a clean pairwise `git merge-tree` check, typed trusted-runner `POST /checks`, and refusals for 405 (method), 409 (stale vector), 403 (cross-task and cross-repo push) and 401 (unauthenticated). Demo repositories were cleaned up afterwards. The approved video records the earlier verified local Node runtime execution and protocol evidence replay.
 
 Local reproduction requires Node.js 22 or newer and Python 3.10 or newer, plus Git and npm.
 
