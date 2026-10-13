@@ -1,0 +1,13 @@
+{
+  "style": "editorial",
+  "title": "Task numbers for this day",
+  "description": "The counts of tasks created, still open and closed on this day are unknown, not zero. The issues show their state today, but not how they looked on this day.",
+  "canvas": {"width": 1060, "height": 280},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 110},
+  "nodes": [
+    {"id": "created", "eyebrow": "UNKNOWN", "title": "Tasks created", "subtitle": "Not zero, not counted", "icon": "issue", "color": "gray", "x": 40, "y": 85},
+    {"id": "open", "eyebrow": "UNKNOWN", "title": "Still open", "subtitle": "Not zero, not counted", "icon": "issue", "color": "gray", "x": 390, "y": 85},
+    {"id": "closed", "eyebrow": "UNKNOWN", "title": "Closed", "subtitle": "Not zero, not counted", "icon": "issue", "color": "gray", "x": 740, "y": 85}
+  ],
+  "edges": []
+}

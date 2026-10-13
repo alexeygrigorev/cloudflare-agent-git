@@ -1,0 +1,16 @@
+{
+  "style": "editorial",
+  "title": "Swapping the guard on my Windows desktop",
+  "description": "The first switch stopped safely when a new program appeared at the last step. The agent retried the same switch, and the new guard took over without killing anything. Then the new guard reported a missing file and started no root.",
+  "canvas": {"width": 1060, "height": 280},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 110},
+  "nodes": [
+    {"id": "first", "eyebrow": "STOPPED SAFELY", "title": "First try", "subtitle": "New program appeared", "icon": "shield", "color": "amber", "x": 40, "y": 85},
+    {"id": "retry", "eyebrow": "WENT THROUGH", "title": "Same switch again", "subtitle": "Nothing was killed", "icon": "check", "color": "green", "x": 390, "y": 85},
+    {"id": "stuck", "eyebrow": "STUCK", "title": "New guard waits", "subtitle": "Missing file, no root", "icon": "warning", "color": "gray", "x": 740, "y": 85}
+  ],
+  "edges": [
+    {"from": "first", "to": "retry", "color": "green"},
+    {"from": "retry", "to": "stuck"}
+  ]
+}

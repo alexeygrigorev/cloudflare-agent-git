@@ -1,0 +1,16 @@
+{
+  "style": "editorial",
+  "title": "Why the replacement wasn't let in",
+  "description": "The replacement's profile named the field expected_host, while the server looked for host, so the admission failed. The fix passes six tests in a separate copy and isn't installed yet.",
+  "canvas": {"width": 1060, "height": 280},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 110},
+  "nodes": [
+    {"id": "profile", "eyebrow": "REPLACEMENT", "title": "Profile says", "subtitle": "expected_host", "icon": "document", "color": "blue", "x": 40, "y": 85},
+    {"id": "server", "eyebrow": "SERVER", "title": "Server looks for", "subtitle": "host", "icon": "close", "color": "amber", "x": 390, "y": 85},
+    {"id": "fix", "eyebrow": "NOT INSTALLED", "title": "Fix in a copy", "subtitle": "Six tests pass", "icon": "check", "color": "gray", "x": 740, "y": 85}
+  ],
+  "edges": [
+    {"from": "profile", "to": "server"},
+    {"from": "server", "to": "fix"}
+  ]
+}

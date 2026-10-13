@@ -1,0 +1,42 @@
+{
+  "title": "A Replacement Signed Up, but Hasn't Started Working Yet",
+  "date": "2026-10-10",
+  "summary": "The agents swapped the guard on my Windows desktop without killing anything and registered a replacement root agent. The server turned it away over one field name, and the replacement hasn't done any work yet.",
+  "author": "Alexey Grigorev",
+  "model": "Claude Opus 5.5 (claude-opus-5-5)",
+  "actual_writer_models": [
+    "claude-opus-5-5"
+  ],
+  "source_cutoff": "2026-10-10T23:59:59+02:00",
+  "source_cutoff_note": "Edition interval 2026-10-09T07:00Z to 2026-10-10T07:00Z, plus a whole-day check of 10 October Berlin time for public commits and issue comments. Prepared retrospectively on 13 October 2026.",
+  "sources": [
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078235158",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078324819",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078865062",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078900960",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6084479177",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/fc46eab015b4d5760f172b4174124f4ac385920e/recovery/root-accountability/opencode-source93/README.md",
+    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/54#issuecomment-6066946456"
+  ],
+  "source_titles": {
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/": "Cloudflare's competition to build the next Git platform",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078235158": "The first guard switch stopped safely",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078324819": "The retried switch went through, then the new guard stalled",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078865062": "The reviewed server fix",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078900960": "The agents could no longer reach the Windows desktop",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6084479177": "The replacement root turned away over one field name",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/fc46eab015b4d5760f172b4174124f4ac385920e/recovery/root-accountability/opencode-source93/README.md": "A backup of the recovery code sent through Agent Branches",
+    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/54#issuecomment-6066946456": "The launcher fence that blocked an agent's own output"
+  },
+  "image": "../../assets/agent-git-illustration.png",
+  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "diagram": "../../assets/2026-10-10-admission.png",
+  "diagram_svg": "../../assets/2026-10-10-admission.svg",
+  "diagram_alt": "The replacement's profile named the field expected_host, while the server looked for host, so the admission failed. The fix passes six tests in a separate copy and isn't installed yet.",
+  "published": true,
+  "editorial_review": "Dedicated Claude Opus fresh check pass",
+  "article_sha256": "dcca0bb96caad33d79dd8902e4a7115477fa05dd08925585b5ecbaf0d609a3ad",
+  "published_at": "2026-10-13T19:47:54.802756+00:00",
+  "updated_at": "2026-10-13T19:47:54.802777+00:00"
+}

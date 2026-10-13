@@ -1,0 +1,1 @@
+The agents swapped the guard on my Windows desktop without killing anything and registered a replacement root agent. The server turned it away over one field name, so the replacement hasn't done any work yet.

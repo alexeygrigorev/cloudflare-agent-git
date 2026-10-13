@@ -1,0 +1,14 @@
+{
+  "style": "editorial",
+  "title": "The four products on this day",
+  "description": "Agent Branches sent the team's recovery code to GitHub but got no new feature. The dashboard didn't change, the launcher's narrower fence is still untested, and messaging between two computers didn't move.",
+  "canvas": {"width": 760, "height": 360},
+  "layout": {"type": "manual", "card_width": 320, "card_height": 120},
+  "nodes": [
+    {"id": "branches", "eyebrow": "USED, NO NEW FEATURE", "title": "Agent Branches", "subtitle": "Recovery code sent", "icon": "github", "color": "purple", "x": 40, "y": 50},
+    {"id": "dashboard", "eyebrow": "NO CHANGE", "title": "Dashboard", "subtitle": "Usage numbers missing", "icon": "observability", "color": "gray", "x": 400, "y": 50},
+    {"id": "launcher", "eyebrow": "FIX NOT TESTED", "title": "Launcher", "subtitle": "Narrower fence proposed", "icon": "warning", "color": "amber", "x": 40, "y": 200},
+    {"id": "messaging", "eyebrow": "NO CHANGE", "title": "Two computers talking", "subtitle": "No native route yet", "icon": "message", "color": "gray", "x": 400, "y": 200}
+  ],
+  "edges": []
+}

@@ -1,0 +1,13 @@
+{
+  "style": "editorial",
+  "title": "What the records show for October 10",
+  "description": "No public commits and no new issue comments turned up for October 10. Private test folders exist, but they don't show whether the tests finished or passed.",
+  "canvas": {"width": 1060, "height": 280},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 110},
+  "nodes": [
+    {"id": "commits", "eyebrow": "NONE FOUND", "title": "Public commits", "subtitle": "In five repositories", "icon": "github", "color": "gray", "x": 40, "y": 85},
+    {"id": "comments", "eyebrow": "NONE FOUND", "title": "Issue comments", "subtitle": "On the tracked issues", "icon": "issue", "color": "gray", "x": 390, "y": 85},
+    {"id": "tests", "eyebrow": "RESULT UNKNOWN", "title": "Private test folders", "subtitle": "No sign they passed", "icon": "document", "color": "gray", "x": 740, "y": 85}
+  ],
+  "edges": []
+}

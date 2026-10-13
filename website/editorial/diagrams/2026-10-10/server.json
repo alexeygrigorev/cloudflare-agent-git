@@ -1,0 +1,16 @@
+{
+  "style": "editorial",
+  "title": "The server fix and its review",
+  "description": "The lead agent fixed a wrong file path on the server. A reviewer on Gemini read the code and ran 14 tests of its own before accepting it. A check after the update confirmed the server ran the corrected file.",
+  "canvas": {"width": 1060, "height": 280},
+  "layout": {"type": "manual", "card_width": 280, "card_height": 110},
+  "nodes": [
+    {"id": "fix", "eyebrow": "LEAD AGENT", "title": "Path fixed", "subtitle": "Wrong file in settings", "icon": "settings", "color": "amber", "x": 40, "y": 85},
+    {"id": "review", "eyebrow": "GEMINI REVIEWER", "title": "14 tests passed", "subtitle": "Read the actual code", "icon": "search", "color": "purple", "x": 390, "y": 85},
+    {"id": "check", "eyebrow": "AFTER THE UPDATE", "title": "Server checked", "subtitle": "Runs the corrected file", "icon": "check", "color": "green", "x": 740, "y": 85}
+  ],
+  "edges": [
+    {"from": "fix", "to": "review"},
+    {"from": "review", "to": "check", "color": "green"}
+  ]
+}
