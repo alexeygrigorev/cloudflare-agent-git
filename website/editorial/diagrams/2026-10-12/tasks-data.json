@@ -1,0 +1,6 @@
+{
+  "source": "GitHub issue queries of the four project trackers, read on 13 October 2026, for issues created or closed in the day ending on the morning of 12 October 2026 Europe/Berlin; no cancelled closures found",
+  "projects": ["Agent Branches", "Launcher", "Messaging", "Dashboard"],
+  "created": [2, 8, 2, 0],
+  "closed": [0, 0, 1, 0]
+}

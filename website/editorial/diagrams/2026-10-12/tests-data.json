@@ -1,0 +1,6 @@
+{
+  "source": "Independent acceptance of the fresh same-host rehearsal on the agent-branches tracker, issue 53; counts are test executions across the three pairs, not unique tests",
+  "labels": ["First check", "After agent B's fix"],
+  "passed": [319, 323],
+  "failed": [2, 0]
+}

@@ -1,0 +1,18 @@
+{
+  "style": "editorial",
+  "title": "My requests and their state",
+  "description": "The demo video is approved and frozen, and a timer now runs the root. The contest entry is still in progress, the scheduler is in review, and the other products are paused. Deployment and the contest form are held, while two computers talking, automatic recovery of a lost agent and daily reports on schedule are still open.",
+  "canvas": {"width": 760, "height": 700},
+  "layout": {"type": "grid", "card_width": 320, "card_height": 110, "column_gap": 40, "row_gap": 30},
+  "nodes": [
+    {"id": "video", "eyebrow": "DONE", "title": "Demo video", "subtitle": "Approved and frozen", "icon": "video", "color": "green", "row": 0, "column": 0},
+    {"id": "root", "eyebrow": "DONE FOR NOW", "title": "Headless root", "subtitle": "Server timer, every 30 min", "icon": "terminal", "color": "green", "row": 0, "column": 1},
+    {"id": "entry", "eyebrow": "IN PROGRESS", "title": "Contest entry by Oct 14", "subtitle": "Run accepted overnight", "icon": "workflow", "color": "amber", "row": 1, "column": 0},
+    {"id": "hub", "eyebrow": "IN REVIEW", "title": "Agent Hub scheduler", "subtitle": "First version sent back", "icon": "settings", "color": "amber", "row": 1, "column": 1},
+    {"id": "cloud", "eyebrow": "HELD", "title": "Deploy and contest form", "subtitle": "Form is mine to submit", "icon": "shield", "color": "gray", "row": 2, "column": 0},
+    {"id": "paused", "eyebrow": "PAUSED", "title": "Other products", "subtitle": "Until the deadline", "icon": "close", "color": "gray", "row": 2, "column": 1},
+    {"id": "two", "eyebrow": "OPEN", "title": "Two computers talking", "subtitle": "Desktop offline", "icon": "message", "color": "gray", "row": 3, "column": 0},
+    {"id": "recover", "eyebrow": "OPEN", "title": "Recovery and reports", "subtitle": "Lost agent, daily schedule", "icon": "issue", "color": "gray", "row": 3, "column": 1}
+  ],
+  "edges": []
+}

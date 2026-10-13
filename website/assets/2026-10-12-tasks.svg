@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="420" viewBox="0 0 820 420" role="img" aria-labelledby="t d">
+<title id="t">Tasks created and closed in one day</title>
+<desc id="d">Tasks created and closed in the day before Monday morning. The launcher opened eight tasks and Agent Branches two, with none closed. Messaging opened two and closed one, and the dashboard opened none.</desc>
+<rect width="820" height="420" fill="#fcfcf8"/>
+<g font-family="DejaVu Sans, Verdana, sans-serif">
+<text x="40" y="50" font-family="Georgia, serif" font-size="28" fill="#1c2027">Tasks created and closed in one day</text>
+<rect x="40" y="70" width="16" height="16" fill="#2455ed"/><text x="64" y="84" font-size="15" fill="#1c2027">Created</text>
+<rect x="180" y="70" width="16" height="16" fill="none" stroke="#ef7134" stroke-width="2"/><text x="204" y="84" font-size="15" fill="#1c2027">Closed</text>
+<text x="176" y="142" text-anchor="end" font-size="16" fill="#1c2027">Agent Branches</text>
+<rect x="190" y="120" width="120.0" height="20" fill="#2455ed"/><text x="318.0" y="136" font-size="14" fill="#1c2027">2 created</text>
+<rect x="190" y="144" width="0.0" height="20" fill="none" stroke="#ef7134" stroke-width="2"/><text x="198.0" y="160" font-size="14" fill="#1c2027">0 closed</text>
+<text x="176" y="208" text-anchor="end" font-size="16" fill="#1c2027">Launcher</text>
+<rect x="190" y="186" width="480.0" height="20" fill="#2455ed"/><text x="678.0" y="202" font-size="14" fill="#1c2027">8 created</text>
+<rect x="190" y="210" width="0.0" height="20" fill="none" stroke="#ef7134" stroke-width="2"/><text x="198.0" y="226" font-size="14" fill="#1c2027">0 closed</text>
+<text x="176" y="274" text-anchor="end" font-size="16" fill="#1c2027">Messaging</text>
+<rect x="190" y="252" width="120.0" height="20" fill="#2455ed"/><text x="318.0" y="268" font-size="14" fill="#1c2027">2 created</text>
+<rect x="190" y="276" width="60.0" height="20" fill="none" stroke="#ef7134" stroke-width="2"/><text x="258.0" y="292" font-size="14" fill="#1c2027">1 closed</text>
+<text x="176" y="340" text-anchor="end" font-size="16" fill="#1c2027">Dashboard</text>
+<rect x="190" y="318" width="0.0" height="20" fill="#2455ed"/><text x="198.0" y="334" font-size="14" fill="#1c2027">0 created</text>
+<rect x="190" y="342" width="0.0" height="20" fill="none" stroke="#ef7134" stroke-width="2"/><text x="198.0" y="358" font-size="14" fill="#1c2027">0 closed</text>
+<text x="40" y="394" font-size="15" fill="#4a505a">Total open tasks for that day aren't available.</text>
+</g>
+</svg>

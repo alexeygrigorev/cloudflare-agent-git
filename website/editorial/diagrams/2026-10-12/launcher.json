@@ -1,0 +1,15 @@
+{
+  "style": "editorial",
+  "title": "Launcher bugs opened in one day",
+  "description": "Eight open launcher bugs in five groups. Three stop an agent before its first step, and two give a coding agent a read-only copy. The others stop a reviewer saving its report, leave hung agents unwatched and block a handoff the scheduler needs.",
+  "canvas": {"width": 760, "height": 440},
+  "layout": {"type": "grid", "card_width": 320, "card_height": 110, "column_gap": 40, "row_gap": 30},
+  "nodes": [
+    {"id": "tools", "eyebrow": "OPEN · 3", "title": "Tools fail first", "subtitle": "No first real step", "icon": "warning", "color": "amber", "row": 0, "column": 0},
+    {"id": "readonly", "eyebrow": "OPEN · 2", "title": "Read-only copy", "subtitle": "Coder can't write", "icon": "volume", "color": "amber", "row": 0, "column": 1},
+    {"id": "review", "eyebrow": "OPEN · 1", "title": "Reviewer can't save", "subtitle": "Report never written", "icon": "document", "color": "amber", "row": 1, "column": 0},
+    {"id": "hang", "eyebrow": "OPEN · 1", "title": "No hang watcher", "subtitle": "Stuck agents go unseen", "icon": "observability", "color": "amber", "row": 1, "column": 1},
+    {"id": "hub", "eyebrow": "OPEN · 1", "title": "Root handoff", "subtitle": "Needed by the scheduler", "icon": "settings", "color": "gray", "row": 2, "column": 0}
+  ],
+  "edges": []
+}

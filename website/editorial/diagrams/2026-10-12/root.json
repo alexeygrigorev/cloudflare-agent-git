@@ -1,0 +1,17 @@
+{
+  "style": "editorial",
+  "title": "The root now runs on a timer",
+  "description": "My Grok chat bot checked the agents on a schedule and drained my usage. Now a timer on my server starts a short headless root every half hour, and the Grok bot still looks in. A scheduler in Agent Hub should replace the timer, but a reviewer sent its first version back.",
+  "canvas": {"width": 760, "height": 400},
+  "layout": {"type": "grid", "card_width": 320, "card_height": 110, "column_gap": 40, "row_gap": 40},
+  "nodes": [
+    {"id": "grok", "eyebrow": "BEFORE", "title": "Grok chat bot", "subtitle": "Scheduled checks drained usage", "icon": "robot", "color": "gray", "row": 0, "column": 0},
+    {"id": "timer", "eyebrow": "NOW", "title": "Headless root", "subtitle": "Server timer, every 30 min", "icon": "terminal", "color": "green", "row": 0, "column": 1},
+    {"id": "watch", "eyebrow": "STAYS", "title": "Grok chat bot", "subtitle": "Looks in, talks to me", "icon": "message", "color": "blue", "row": 1, "column": 0},
+    {"id": "hub", "eyebrow": "PLANNED", "title": "Agent Hub scheduler", "subtitle": "First version sent back", "icon": "workflow", "color": "amber", "row": 1, "column": 1}
+  ],
+  "edges": [
+    {"from": "grok", "to": "timer"},
+    {"from": "timer", "to": "hub", "dashed": true}
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "style": "editorial",
+  "title": "Recovering from the morning crash",
+  "description": "The coordinating agent and the lead agents stopped together. The root checked that nothing was still running, restarted the coordinating agent, and that agent resumed the lead agents from their saved conversations. The cause of the crash isn't known.",
+  "canvas": {"width": 760, "height": 340},
+  "layout": {"type": "grid", "card_width": 320, "card_height": 110, "column_gap": 40, "row_gap": 40},
+  "nodes": [
+    {"id": "crash", "eyebrow": "CAUSE UNKNOWN", "title": "Agents stop together", "subtitle": "Coordinator and three leads", "icon": "alert", "color": "red", "row": 0, "column": 0},
+    {"id": "root", "eyebrow": "ROOT", "title": "Restart coordinator", "subtitle": "After checking no copy runs", "icon": "robot", "color": "purple", "row": 0, "column": 1},
+    {"id": "leads", "eyebrow": "COORDINATOR", "title": "Resume lead agents", "subtitle": "From saved conversations", "icon": "check", "color": "green", "row": 1, "column": 1}
+  ],
+  "edges": [
+    {"from": "crash", "to": "root"},
+    {"from": "root", "to": "leads"}
+  ]
+}

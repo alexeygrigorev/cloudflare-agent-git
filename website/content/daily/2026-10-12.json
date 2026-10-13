@@ -1,0 +1,48 @@
+{
+  "title": "The Demo Video Is Approved. The Agents Around It Are Still Fragile",
+  "date": "2026-10-12",
+  "summary": "A reviewer accepted the three-agent run, and I approved the demo video. I moved the root off my Grok chat bot because it drained my usage, but lost agents still need another agent to restart them.",
+  "author": "Alexey Grigorev",
+  "model": "Claude Opus 5.5 (claude-opus-5-5)",
+  "actual_writer_models": [
+    "claude-opus-5-5"
+  ],
+  "source_cutoff": "2026-10-12T23:59:59+02:00",
+  "source_cutoff_note": "Whole-day 12 October Berlin catch-up: fact packet plus the founder journal, public issue comments, issue events and commits for that date. Prepared retrospectively on 13 October 2026.",
+  "sources": [
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/",
+    "https://github.com/alexeygrigorev/agent-branches/issues/53#issuecomment-6115851621",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/d215e9b7ba5e58dcbd041494641fc383a50b0427",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/7459ff4ab03dafe8ccd7a8e5f0502869caee1a48/docs-submission/videos/agent-branches-demo-draft.mp4",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/7bbf9f55bd403b2245366b4e83bb3115902de20f",
+    "https://github.com/alexeygrigorev/agent-hub/issues/6#issuecomment-6118271163",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6120247296",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102",
+    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/60",
+    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/61",
+    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/62"
+  ],
+  "source_titles": {
+    "https://blog.cloudflare.com/next-git-platform-on-cloudflare/": "Cloudflare's competition to build the next Git platform",
+    "https://github.com/alexeygrigorev/agent-branches/issues/53#issuecomment-6115851621": "The reviewer accepts the three-agent run",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/d215e9b7ba5e58dcbd041494641fc383a50b0427": "The accepted code from the three-agent run",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/7459ff4ab03dafe8ccd7a8e5f0502869caee1a48/docs-submission/videos/agent-branches-demo-draft.mp4": "The approved eight-minute demo video",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/7bbf9f55bd403b2245366b4e83bb3115902de20f": "The headless root on a server timer",
+    "https://github.com/alexeygrigorev/agent-hub/issues/6#issuecomment-6118271163": "The review that sent the first scheduler back",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6120247296": "Resuming the lead agents after the crash",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102": "The open task for bringing back a lost agent automatically",
+    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/60": "The launcher bug where tools fail before the first output",
+    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/61": "The launcher bug where a reviewer retries an unsupported tool",
+    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/62": "The task for a watcher that spots hung agents"
+  },
+  "image": "../../assets/agent-git-illustration.png",
+  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "diagram": "../../assets/2026-10-12-root.png",
+  "diagram_svg": "../../assets/2026-10-12-root.svg",
+  "diagram_alt": "Before, the Grok chat bot checked on a schedule and drained usage. Now a server timer starts a headless root every half hour, while the Grok bot still looks in. A planned Agent Hub scheduler should replace the timer",
+  "published": true,
+  "editorial_review": "Dedicated Claude Opus fresh check pass",
+  "article_sha256": "697550cefe8bef3549815777ac5805a19d92bf7f56c2951d4a35987c042cedf0",
+  "published_at": "2026-10-13T20:25:24.575817+00:00",
+  "updated_at": "2026-10-13T20:25:24.575837+00:00"
+}
