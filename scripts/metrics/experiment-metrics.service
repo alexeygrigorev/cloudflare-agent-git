@@ -1,0 +1,14 @@
+[Unit]
+Description=Cloudflare Agent Git - experiment metrics collector + dashboard (127.0.0.1:8766)
+
+[Service]
+Type=simple
+WorkingDirectory=%h/git/cloudflare-agent-git
+ExecStart=/usr/bin/python3 scripts/metrics/collect.py --loop --serve --interval 60 --port 8766
+Restart=always
+RestartSec=15
+MemoryMax=1500M
+Nice=5
+
+[Install]
+WantedBy=default.target

@@ -104,6 +104,20 @@ OUT=$RUNS/$RUN_ID.codex.log
 HB=$!
 trap 'pkill -P $HB 2>/dev/null; kill $HB 2>/dev/null || true' EXIT
 
+# Metrics liveness guard: latest.json older than 10 min -> report + restart the
+# experiment-metrics systemd --user unit (scripts/metrics/experiment-metrics.service).
+METRICS_LATEST=$REPO/.local/metrics/latest.json
+metrics_note="ok"
+if [[ -z ${HR_SKIP_METRICS_GUARD:-} ]]; then
+  m_age=$(( $(now) - $(stat -c %Y "$METRICS_LATEST" 2>/dev/null || echo 0) ))
+  if (( m_age > ${HR_METRICS_STALE_SEC:-600} )); then
+    if systemctl --user restart experiment-metrics.service 2>>"$LOG"; then m_act=restarted; else m_act=restart-failed; fi
+    metrics_note="STALE latest.json age=${m_age}s; experiment-metrics $m_act"
+    log "metrics guard: $metrics_note (run=$RUN_ID)"
+    printf -- "- %s metrics collector stale (latest.json %ss old); %s by headless root %s\n" "$(ts)" "$m_age" "$m_act" "$RUN_ID" >>"$STATE/NEEDS-ALEXEY.md"
+  fi
+fi
+
 status=ok; rc=0; gate=""
 if gate=$(python3 "$REPO/scripts/quota-gate.py" 2>&1); then :; else
   status=quota_held; rc=75
@@ -118,6 +132,7 @@ if [[ $status == ok ]]; then
       "$RUN_ID" "$EPOCH" "$(ts)" "$(date -d @$((START+WINDOW-180)) '+%H:%M %Z')"
     printf -- '- write handoff notes to: %s\n- write summary JSON to: %s\n- NEEDS-ALEXEY file: %s/NEEDS-ALEXEY.md\n' "$HANDOFF" "$AGENT_JSON" "$STATE"
     printf -- '- quota gate: %s\n' "$gate"
+    printf -- '- metrics collector: %s\n' "$metrics_note"
     printf '\n## Previous run handoff (%s)\n\n' "${PREV_RUN:-none}"
     if [[ -n $PREV_RUN && -f $RUNS/$PREV_RUN.handoff.md ]]; then cat "$RUNS/$PREV_RUN.handoff.md"; else echo "(none)"; fi
     [[ -f $RUNS/$PREV_RUN.superseded.json ]] && { echo; echo "Previous run outcome:"; cat "$RUNS/$PREV_RUN.superseded.json"; }
