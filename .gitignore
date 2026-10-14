@@ -9,6 +9,10 @@ node_modules/
 # Local junk
 __pycache__/
 *.pyc
+/.venv/
+/*.egg-info/
+/build/
+/dist/
 *.lock
 scratch/
 local-coordinator-state.json

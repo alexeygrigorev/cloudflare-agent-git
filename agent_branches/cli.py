@@ -3,8 +3,12 @@
 import argparse
 import json
 import os
+from pathlib import Path
+import shlex
+import subprocess
 import sys
 from typing import List, Optional
+from agent_branches.config import config_path, save_settings
 
 from agent_branches.client import (
     AgentBranchesAPIError,
@@ -99,7 +103,7 @@ def format_push_result(res: dict) -> str:
             if isinstance(evidence, dict) and evidence.get("details"):
                 lines.append(f"    Details: {evidence.get('details')}")
     else:
-        lines.append("  Status:       Clean (no new conflict warnings)")
+        lines.append("  Status:       Push recorded; compatibility requires current check results")
 
     lines.append("========================================")
     return "\n".join(lines)
@@ -146,7 +150,7 @@ def format_status_result(res: dict, task_id: Optional[str] = None) -> str:
                     f"    Resolution: run `agent-branches ack --task-id {tid} --warning-id {wid} --action rebased_locally`"
                 )
         else:
-            lines.append("\n  Radar Warnings: None (Clean)")
+            lines.append("\n  Radar Warnings: None (compatibility is not inferred from absent warnings)")
 
     else:
         # Global coordinator status
@@ -157,7 +161,7 @@ def format_status_result(res: dict, task_id: Optional[str] = None) -> str:
             c_name = canonical.get("name") or "canonical"
             lines.append(f"  Canonical: {c_name}")
 
-        tasks = res.get("tasks", [])
+        tasks = res.get("agents", res.get("tasks", []))
         lines.append(f"  Active Tasks ({len(tasks)}):")
         for t in tasks:
             tid = t.get("task_id") or t.get("taskId") or t.get("id") or "unknown"
@@ -166,6 +170,43 @@ def format_status_result(res: dict, task_id: Optional[str] = None) -> str:
             thead = (t.get("head_sha") or t.get("head") or "")[:8]
             agent_str = f", agent: {t_agent}" if t_agent else ""
             lines.append(f"    - {tid} (branch: {tbranch or 'main'}, head: {thead}{agent_str})")
+
+        pairs = res.get("pairs", [])
+        lines.append(f"\n  Compatibility Checks ({len(pairs)}):")
+        if not pairs:
+            lines.append("    UNKNOWN: no pair checks reported")
+        for pair in pairs:
+            agents = pair.get("pair", [])
+            pair_heads = pair.get("heads", {})
+            current_heads = res.get("heads", {})
+            current = (len(agents) == 2 and all(pair_heads.get(agent) and pair_heads.get(agent) == current_heads.get(agent) for agent in agents))
+            stale = bool(pair.get("stale")) or not current
+            evidence = pair.get("evidence")
+            evidence = evidence if isinstance(evidence, dict) else {}
+            coverage = pair.get("coverage") or {}
+            tests = coverage.get("tests_collected", evidence.get("tests_collected", 0))
+            tested = isinstance(tests, (int, float)) and not isinstance(tests, bool) and tests > 0
+            status = pair.get("status")
+            if stale or pair.get("unprocessedReason"):
+                label = "UNKNOWN (stale or missing current-head evidence)"
+            elif status == "conflict":
+                label = "CONFLICT"
+            elif status == "clean" and tested:
+                label = f"CLEAN ({tests} combined test(s) passed)"
+            else:
+                label = "UNKNOWN (current combination has not passed combined tests)"
+            lines.append(f"    {' + '.join(agents) or 'unknown pair'}: {label}")
+            files = evidence.get("files") or evidence.get("conflicting_files") or []
+            if status == "conflict" and not stale and files:
+                lines.append(f"      Conflicting files: {', '.join(str(path) for path in files)}")
+            if status == "conflict" and not stale and evidence.get("summary"):
+                lines.append(f"      {evidence['summary']}")
+
+        if "plannedOverlaps" in res and not res["plannedOverlaps"]:
+            lines.append("\n  Planned overlaps: None reported (plans may be undeclared)")
+        for overlap in res.get("plannedOverlaps", []):
+            lines.append(f"\n  Planned overlap (not a proven conflict): {' + '.join(overlap.get('agents', []))}")
+            lines.append(f"    Planned files: {', '.join(overlap.get('paths', []))}")
 
         warnings = res.get("warnings", [])
         active_warnings = [w for w in warnings if w.get("status") == "active"]
@@ -177,7 +218,7 @@ def format_status_result(res: dict, task_id: Optional[str] = None) -> str:
                 kind = w.get("kind", "textual")
                 lines.append(f"    * [{wid}] ({kind}) Pair: {pair}")
         else:
-            lines.append("\n  Active Warnings: None (Clean)")
+            lines.append("\n  Active Warnings: None")
 
     lines.append("========================================")
     return "\n".join(lines)
@@ -258,6 +299,7 @@ def build_parser() -> argparse.ArgumentParser:
     task_create.add_argument("--branch", help="Working branch name (defaults to git branch)")
     task_create.add_argument("--agent", help="Agent identifier / name prefix")
     task_create.add_argument("--ttl-seconds", type=int, help="Fork token TTL in seconds")
+    task_create.add_argument("--files", help="Comma-separated planned file paths, declared before editing")
     task_create.add_argument(
         "--admin-token",
         help="Admin bearer token for authorized task creation (or $ADMIN_TOKEN)",
@@ -330,20 +372,51 @@ def build_parser() -> argparse.ArgumentParser:
     checks_parser.add_argument("--server", help="Coordinator URL")
     checks_parser.add_argument("--json", action="store_true", help="Output raw JSON")
 
+    configure = subparsers.add_parser("configure", help="Save private per-project coordinator settings")
+    configure.add_argument("--server")
+    configure.add_argument("--repo")
+    configure.add_argument("--base-sha")
+    configure.add_argument("--branch")
+    configure.add_argument("--runner-token-file")
+    configure.add_argument("--admin-token-file")
+    configure.add_argument("--task-id")
+    configure.add_argument("--task-token-file")
+    configure.add_argument("--test-command", help="Explicit operator-owned combined-test command; executed without a shell")
+
+    plan = subparsers.add_parser("plan", help="Declare planned file paths for an existing task")
+    plan.add_argument("--task-id", required=True)
+    plan.add_argument("--files", required=True, help="Comma-separated paths; an empty value clears the plan")
+    plan.add_argument("--server")
+    plan.add_argument("--json", action="store_true")
+
+    publish = subparsers.add_parser("publish", help="Push HEAD to this task's verified own fork, then notify the coordinator")
+    publish.add_argument("--task-id", required=True)
+    publish.add_argument("--server")
+    publish.add_argument("--json", action="store_true")
+
+    watch = subparsers.add_parser("watch", help="Continuously check independently published agent changes on this computer")
+    watch.add_argument("--server")
+    watch.add_argument("--test-command", help="Explicit python -m unittest/pytest command with structured results (or private configuration)")
+    watch.add_argument("--test-timeout", type=float, default=60)
+    watch.add_argument("--poll-interval", type=float, default=10)
+    watch.add_argument("--duration", type=float, help="Stop after this many seconds")
+    watch.add_argument("--once", action="store_true", help="Check the current vector once and exit")
+
     return parser
 
 
 
 def handle_task_create(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
-    repo = args.repo or get_remote_url()
+    settings = client.settings if isinstance(getattr(client, "settings", None), dict) else {}
+    repo = args.repo or os.environ.get("AGENT_BRANCHES_REPO") or settings.get("repo") or get_remote_url()
     if not repo:
         repo = "https://github.com/agent-branches/repo.git"
 
-    base_sha = args.base_sha or get_current_head_sha()
+    base_sha = args.base_sha or os.environ.get("AGENT_BRANCHES_BASE_SHA") or settings.get("base_sha") or get_current_head_sha()
     if not base_sha:
         base_sha = "0000000000000000000000000000000000000000"
 
-    branch = args.branch or get_current_branch() or "feat/task"
+    branch = args.branch or os.environ.get("AGENT_BRANCHES_BRANCH") or settings.get("branch") or get_current_branch() or "feat/task"
     intent = args.intent or ""
     agent = getattr(args, "agent", None)
     ttl = getattr(args, "ttl_seconds", None)
@@ -358,10 +431,15 @@ def handle_task_create(args: argparse.Namespace, client: AgentBranchesClient, as
         ttl_seconds=ttl,
         admin_token=admin_token,
     )
+    client.remember_task(res, defaults={"repo": repo, "base_sha": base_sha, "branch": branch})
+    if getattr(args, "files", None) is not None:
+        res["plan"] = client.plan_task(res["taskId"], [path.strip() for path in args.files.split(",") if path.strip()])
     if as_json:
         print(json.dumps(res, indent=2))
     else:
         print(format_task_created(res))
+        if "plan" in res:
+            print(format_plan_result(res["plan"]))
     return 0
 
 
@@ -506,6 +584,69 @@ def handle_checks(args: argparse.Namespace, client: AgentBranchesClient, as_json
     return 0
 
 
+def format_plan_result(result):
+    lines = [f"Planned files for {result.get('agentId', result.get('taskId', 'task'))}: "
+             + (", ".join(result.get("plannedPaths", [])) or "none (plan cleared)")]
+    for overlap in result.get("plannedOverlaps", []):
+        lines.append(f"PLANNED OVERLAP: {' + '.join(overlap['agents'])}: {', '.join(overlap['paths'])}")
+    if result.get("plannedOverlaps"):
+        lines.append("Coordinate ownership before editing. This overlap is not a proven merge conflict.")
+    else:
+        lines.append("No reported planned overlaps; other agents may have undeclared plans.")
+    return "\n".join(lines)
+
+
+def handle_configure(args, client):
+    changes = {}
+    for key in ("repo", "base_sha", "branch"):
+        value = getattr(args, key, None) or os.environ.get("AGENT_BRANCHES_" + key.upper())
+        if value:
+            changes[key] = value
+    for role in ("runner", "admin"):
+        token_file = getattr(args, role + "_token_file")
+        token = Path(token_file).read_text().strip() if token_file else os.environ.get(role.upper() + "_TOKEN")
+        if token:
+            changes[role + "_token"] = token
+    if args.test_command:
+        changes["test_command"] = shlex.split(args.test_command)
+    client.settings = save_settings(client.server_url, changes=changes)
+    if args.task_id or args.task_token_file:
+        if not args.task_id or not args.task_token_file:
+            raise ValueError("Importing a task requires both --task-id and --task-token-file")
+        token = Path(args.task_token_file).read_text().strip()
+        task = client.get_task(args.task_id, token=token)
+        task["token"] = {"plaintext": token}
+        client.remember_task(task)
+    print(f"Private project configuration saved to {config_path()}. Credentials are not printed.")
+    return 0
+
+
+def handle_publish(args, client, as_json):
+    from agent_branches.checker import validated_remote
+    token = client.task_tokens.get(args.task_id) or os.environ.get("TASK_TOKEN")
+    if not token:
+        raise ValueError("Register or import this task's private credential before publishing")
+    task = client.get_task(args.task_id, token=token)
+    expected = task.get("forkRemote") or (task.get("fork") or {}).get("remote")
+    expected = validated_remote(client.server_url, expected or "")
+    actual = get_remote_url()
+    if not actual or validated_remote(client.server_url, actual) != expected:
+        raise ValueError("Refusing publish: origin is not this task's own registered fork")
+    head = get_current_head_sha()
+    ref = task.get("ref", "refs/heads/main")
+    if not head or not ref.startswith("refs/heads/") or any(character in ref for character in (" ", ":", "..")):
+        raise ValueError("Cannot verify the current commit or registered destination ref")
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_CONFIG_COUNT": "2",
+           "GIT_CONFIG_KEY_0": "http.extraHeader", "GIT_CONFIG_VALUE_0": f"Authorization: Bearer {token}",
+           "GIT_CONFIG_KEY_1": "http.followRedirects", "GIT_CONFIG_VALUE_1": "false"}
+    result = subprocess.run(["git", "push", "origin", "HEAD:" + ref], env=env, capture_output=True, timeout=60)
+    if result.returncode:
+        raise ValueError("Git push to the verified task fork failed; no coordinator notification was sent")
+    recorded = client.push(task_id=args.task_id, agent_id=task.get("agentId"), head_sha=head, token=token)
+    print(json.dumps(recorded, indent=2) if as_json else format_push_result(recorded))
+    return 0
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     """Main CLI entrypoint."""
     parser = build_parser()
@@ -517,9 +658,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     server_url = getattr(args, "server", None)
     as_json = bool(getattr(args, "json", False))
-    client = AgentBranchesClient(server_url=server_url)
-
     try:
+        client = AgentBranchesClient(server_url=server_url)
         if args.command == "task":
             if getattr(args, "task_action", None) == "create":
                 return handle_task_create(args, client, as_json)
@@ -534,6 +674,22 @@ def main(argv: Optional[List[str]] = None) -> int:
             return handle_ack(args, client, as_json)
         elif args.command == "checks":
             return handle_checks(args, client, as_json)
+        elif args.command == "configure":
+            return handle_configure(args, client)
+        elif args.command == "plan":
+            result = client.plan_task(args.task_id, [path.strip() for path in args.files.split(",") if path.strip()])
+            print(json.dumps(result, indent=2) if as_json else format_plan_result(result))
+            return 0
+        elif args.command == "publish":
+            return handle_publish(args, client, as_json)
+        elif args.command == "watch":
+            from agent_branches.checker import watch
+            if not (os.environ.get("RUNNER_TOKEN") or client.settings.get("runner_token")):
+                raise ValueError("Configure the authenticated client's runner credential before starting watch")
+            command = shlex.split(args.test_command) if args.test_command else client.settings.get("test_command")
+            watch(client, command, poll_interval=args.poll_interval, duration=args.duration, once=args.once,
+                  test_timeout=args.test_timeout)
+            return 0
         else:
             parser.print_help()
             return 1

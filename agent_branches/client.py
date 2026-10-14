@@ -2,11 +2,13 @@
 
 import copy
 import json
+import math
 import os
 import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any, Dict, List, Optional, Union
+from agent_branches.config import save_settings, settings_for
 
 
 class AgentBranchesError(Exception):
@@ -66,12 +68,9 @@ class AgentBranchesClient:
     DEFAULT_SERVER = "http://127.0.0.1:8787"
 
     def __init__(self, server_url: Optional[str] = None, timeout: float = 10.0):
-        url = (
-            server_url
-            or os.environ.get("AGENT_BRANCHES_SERVER")
-            or os.environ.get("COORDINATOR_URL")
-            or self.DEFAULT_SERVER
-        )
+        if not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or not 0 < timeout <= 300:
+            raise ValueError("HTTP timeout must be finite, positive and at most 300 seconds")
+        url, self.settings = settings_for(server_url)
         self.server_url = url.rstrip("/")
         self.timeout = timeout
         self.task_to_agent: Dict[str, str] = {}
@@ -79,6 +78,25 @@ class AgentBranchesClient:
         # taskId -> per-task bearer token minted at create_task (C1499); used
         # to authenticate owner-scoped reads such as GET /tasks/:id.
         self.task_tokens: Dict[str, str] = {}
+        for task_id, task in self.settings.get("tasks", {}).items():
+            if not isinstance(task, dict):
+                continue
+            self.known_tasks[task_id] = task
+            if task.get("agentId"):
+                self.task_to_agent[task_id] = task["agentId"]
+            token = task.get("token", {})
+            plaintext = token.get("plaintext") if isinstance(token, dict) else token
+            if isinstance(plaintext, str) and plaintext:
+                self.task_tokens[task_id] = plaintext
+
+    def remember_task(self, task, defaults=None):
+        """Persist only this server's scoped registration credentials privately."""
+        record = {key: task[key] for key in ("taskId", "agentId", "fork", "ref", "base_sha", "token") if key in task}
+        self.settings = save_settings(self.server_url, changes=defaults, task=record)
+
+    def task_token(self, task_id):
+        return (self.task_tokens.get(task_id) or os.environ.get("TASK_TOKEN")
+                or os.environ.get("ADMIN_TOKEN") or self.settings.get("admin_token"))
 
     def _request(
         self,
@@ -104,7 +122,11 @@ class AgentBranchesClient:
         req = urllib.request.Request(full_url, data=data, headers=req_headers, method=method)
 
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as response:
+            class NoRedirect(urllib.request.HTTPRedirectHandler):
+                def redirect_request(self, *args, **kwargs):
+                    return None
+
+            with urllib.request.build_opener(NoRedirect).open(req, timeout=self.timeout) as response:
                 resp_bytes = response.read()
                 if not resp_bytes:
                     return {}
@@ -164,9 +186,11 @@ class AgentBranchesClient:
             payload["agent"] = agent
         if ttl_seconds is not None:
             payload["ttlSeconds"] = ttl_seconds
+        if os.environ.get("AGENT_BRANCHES_DEMO_RUN_ID"):
+            payload["runId"] = os.environ["AGENT_BRANCHES_DEMO_RUN_ID"]
 
         req_headers: Dict[str, str] = {}
-        token = admin_token or os.environ.get("ADMIN_TOKEN")
+        token = admin_token or os.environ.get("ADMIN_TOKEN") or self.settings.get("admin_token")
         if token:
             req_headers["Authorization"] = f"Bearer {token}"
 
@@ -235,6 +259,7 @@ class AgentBranchesClient:
             or self.task_tokens.get(task_id)
             or os.environ.get("TASK_TOKEN")
             or os.environ.get("ADMIN_TOKEN")
+            or self.settings.get("admin_token")
         )
         req_headers: Optional[Dict[str, str]] = None
         if effective_token:
@@ -291,6 +316,7 @@ class AgentBranchesClient:
             or (self.task_tokens.get(task_id) if task_id else None)
             or admin_token
             or os.environ.get("ADMIN_TOKEN")
+            or self.settings.get("admin_token")
         )
 
         # Resolve agent_id if not explicitly provided
@@ -363,7 +389,7 @@ class AgentBranchesClient:
         ``runner_token`` (defaults to $RUNNER_TOKEN) for authenticated reads.
         """
         req_headers: Dict[str, str] = {}
-        token = runner_token or os.environ.get("RUNNER_TOKEN")
+        token = runner_token or os.environ.get("RUNNER_TOKEN") or self.settings.get("runner_token")
         if token:
             req_headers["Authorization"] = f"Bearer {token}"
         return self._request("GET", "/status", headers=req_headers or None)
@@ -377,11 +403,22 @@ class AgentBranchesClient:
         """Acknowledge a radar warning (POST /warnings/:id/ack)."""
         encoded_id = urllib.parse.quote(warning_id, safe="")
         payload: Dict[str, Any] = {"action": action}
+        token = self.task_token(task_id)
         if task_id:
             payload["task_id"] = task_id
             payload["taskId"] = task_id
+            task = self.get_task(task_id, token=token)
+            payload["agent"] = task.get("agentId") or task.get("agent_id")
+            payload["note"] = action
 
-        return self._request("POST", f"/warnings/{encoded_id}/ack", payload)
+        headers = {"Authorization": f"Bearer {token}"} if token else None
+        return self._request("POST", f"/warnings/{encoded_id}/ack", payload, headers=headers)
+
+    def plan_task(self, task_id, paths):
+        token = self.task_token(task_id)
+        headers = {"Authorization": f"Bearer {token}"} if token else None
+        return self._request("POST", f"/tasks/{urllib.parse.quote(task_id, safe='')}/plan",
+                             {"plannedPaths": paths}, headers=headers)
 
     def send_checks(
         self,
@@ -418,7 +455,7 @@ class AgentBranchesClient:
             raise ValueError("checks payload missing required 'results' list")
 
         req_headers: Dict[str, str] = {}
-        token = runner_token or os.environ.get("RUNNER_TOKEN")
+        token = runner_token or os.environ.get("RUNNER_TOKEN") or self.settings.get("runner_token")
         if token:
             req_headers["Authorization"] = f"Bearer {token}"
 
