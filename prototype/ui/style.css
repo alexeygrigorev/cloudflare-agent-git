@@ -2,8 +2,9 @@
    Built on dakit (vendor/dakit/dist/dakit.css, loaded first): this file uses
    only dakit semantic tokens (--dk-*), no raw colors. Every state is written
    out in words and carries an icon; color is only ever a secondary signal.
-   No colored edge accents: status is a badge with text, or a status
-   triplet's full 1px perimeter and tint — never a left stripe. */
+   No colored borders (dakit forbids accent borders): every border is a
+   neutral 1px --dk-border-* role, and status is a tinted background plus
+   a badge with icon and word — never a colored edge or stripe. */
 
 .wrap {
   max-width: 58rem;
@@ -59,7 +60,7 @@ h1 code, h2 code, h3 code { background: none; padding: 0; }
   border-radius: var(--dk-radius-sm);
   border: 1px solid var(--dk-border-strong);
 }
-.tag.demo { background: var(--dk-warning-bg); border-color: var(--dk-warning-border); color: var(--dk-warning-text); }
+.tag.demo { background: var(--dk-warning-bg); border-color: var(--dk-border-default); color: var(--dk-warning-text); }
 
 .banner {
   border: 1px solid var(--dk-border-default);
@@ -68,8 +69,8 @@ h1 code, h2 code, h3 code { background: none; padding: 0; }
   margin: var(--dk-space-3) 0 var(--dk-space-5);
   background: var(--dk-bg-surface);
 }
-.banner.demo { background: var(--dk-warning-bg); border-color: var(--dk-warning-border); color: var(--dk-warning-text); }
-.banner.error { background: var(--dk-danger-bg); border-color: var(--dk-danger-border); color: var(--dk-danger-text); }
+.banner.demo { background: var(--dk-warning-bg); color: var(--dk-warning-text); }
+.banner.error { background: var(--dk-danger-bg); color: var(--dk-danger-text); }
 .banner form { display: flex; flex-wrap: wrap; gap: var(--dk-space-2); align-items: center; margin: var(--dk-space-2) 0; }
 .banner input {
   min-height: var(--dk-size-control-md);
@@ -115,11 +116,11 @@ summary:focus-visible, [tabindex]:focus-visible {
   vertical-align: middle;
 }
 .badge-icon { font-weight: var(--dk-weight-bold); line-height: 1; }
-.badge.conflict { background: var(--dk-danger-bg); border-color: var(--dk-danger-border); color: var(--dk-danger-text); }
-.badge.clean { background: var(--dk-success-bg); border-color: var(--dk-success-border); color: var(--dk-success-text); }
-/* Unknown is an active "not safe" gate, so it gets the warning triplet —
+.badge.conflict { background: var(--dk-danger-bg); color: var(--dk-danger-text); }
+.badge.clean { background: var(--dk-success-bg); color: var(--dk-success-text); }
+/* Unknown is an active "not safe" gate, so it gets the warning fill —
    distinct from the neutral dashed outline of "not checked". */
-.badge.unknown { background: var(--dk-warning-bg); border-color: var(--dk-warning-border); color: var(--dk-warning-text); }
+.badge.unknown { background: var(--dk-warning-bg); color: var(--dk-warning-text); }
 .badge.not_checked {
   background: var(--dk-bg-surface);
   border-color: var(--dk-border-strong);
@@ -136,9 +137,9 @@ summary:focus-visible, [tabindex]:focus-visible {
   padding: var(--dk-space-5) var(--dk-space-6);
   margin: var(--dk-space-2) 0 0;
 }
-.verdict.tone-danger { background: var(--dk-danger-bg); border-color: var(--dk-danger-border); }
-.verdict.tone-caution { background: var(--dk-warning-bg); border-color: var(--dk-warning-border); }
-.verdict.tone-ok { background: var(--dk-success-bg); border-color: var(--dk-success-border); }
+.verdict.tone-danger { background: var(--dk-danger-bg); }
+.verdict.tone-caution { background: var(--dk-warning-bg); }
+.verdict.tone-ok { background: var(--dk-success-bg); }
 .verdict-title {
   margin: 0;
   font-weight: var(--dk-weight-bold);
@@ -159,7 +160,7 @@ summary:focus-visible, [tabindex]:focus-visible {
   font-size: var(--dk-text-body);
   font-weight: var(--dk-weight-bold);
   flex: none;
-  border: 2px solid currentColor;
+  border: 1px solid var(--dk-border-default);
   background: var(--dk-bg-surface);
 }
 .tone-danger .verdict-icon { color: var(--dk-danger-text); }
@@ -188,9 +189,9 @@ summary:focus-visible, [tabindex]:focus-visible {
   border-radius: var(--dk-radius-md);
   padding: var(--dk-space-3) var(--dk-space-4);
 }
-/* Pairs that need attention get their status triplet's full perimeter. */
-.pair.is-conflict { border-color: var(--dk-danger-border); }
-.pair.is-unknown { border-color: var(--dk-warning-border); }
+/* Pairs that need attention get their status tint; the border stays neutral. */
+.pair.is-conflict { background: var(--dk-danger-bg); }
+.pair.is-unknown { background: var(--dk-warning-bg); }
 .pair-head { display: flex; align-items: center; justify-content: space-between; gap: var(--dk-space-3); flex-wrap: wrap; }
 .pair .who { font-weight: var(--dk-weight-semibold); font-size: var(--dk-text-lg); }
 .pair .who code { font-size: 0.9em; background: none; padding: 0; }
@@ -202,7 +203,7 @@ summary:focus-visible, [tabindex]:focus-visible {
 .lost-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--dk-space-2); }
 .lost-item {
   background: var(--dk-warning-bg);
-  border: 1px solid var(--dk-warning-border);
+  border: 1px solid var(--dk-border-default);
   border-radius: var(--dk-radius-md);
   padding: var(--dk-space-3) var(--dk-space-4);
 }
@@ -283,18 +284,17 @@ details.more + details.more { margin-top: var(--dk-space-2); }
 }
 .tl-icon { font-weight: var(--dk-weight-bold); }
 .tl-push .tl-icon { color: var(--dk-text-link); }
-.tl-warning { border-color: var(--dk-danger-border); background: var(--dk-danger-bg); color: var(--dk-danger-text); }
-.tl-ack { border-color: var(--dk-success-border); background: var(--dk-success-bg); color: var(--dk-success-text); }
+.tl-warning { background: var(--dk-danger-bg); color: var(--dk-danger-text); }
+.tl-ack { background: var(--dk-success-bg); color: var(--dk-success-text); }
 .timeline-legend { margin: var(--dk-space-1) 0 0; font-size: var(--dk-text-sm); }
 
-/* Newly appeared warnings/pushes — highlighted for 5 s (even outline + tint). */
-.fresh { outline: 2px solid var(--dk-warning-border); outline-offset: 1px; }
+/* Newly appeared warnings/pushes — highlighted for 5 s (neutral outline + tint). */
+.fresh { outline: 1px solid var(--dk-border-strong); outline-offset: 1px; }
 tr.fresh td, tr.fresh th, li.fresh, p.fresh, div.fresh, article.fresh {
   background: var(--dk-warning-bg);
 }
 .badge.new {
   background: var(--dk-warning-bg);
-  border-color: var(--dk-warning-border);
   color: var(--dk-warning-text);
 }
 
@@ -337,7 +337,7 @@ thead th { background: var(--dk-bg-muted); }
 
 .warning {
   background: var(--dk-danger-bg);
-  border: 1px solid var(--dk-danger-border);
+  border: 1px solid var(--dk-border-default);
   border-radius: var(--dk-radius-md);
   padding: var(--dk-space-3) var(--dk-space-4);
   margin-bottom: var(--dk-space-2);
@@ -359,7 +359,7 @@ thead th { background: var(--dk-bg-muted); }
 
 .notice-unknown {
   background: var(--dk-warning-bg);
-  border: 1px solid var(--dk-warning-border);
+  border: 1px solid var(--dk-border-default);
   border-radius: var(--dk-radius-md);
   padding: var(--dk-space-3) var(--dk-space-4);
 }
@@ -398,10 +398,10 @@ button {
   white-space: nowrap;
 }
 button:hover { background: var(--dk-bg-hover); border-color: var(--dk-border-control-hover); }
-button.primary { background: var(--dk-accent-default); border-color: var(--dk-accent-default); color: var(--dk-text-on-accent); }
-button.primary:hover { background: var(--dk-accent-hover); border-color: var(--dk-accent-hover); }
-/* Selection is accent-soft fill plus the accent perimeter — no inset edge. */
-button[aria-pressed="true"] { border-color: var(--dk-accent-border); background: var(--dk-accent-soft); color: var(--dk-text-link); }
+button.primary { background: var(--dk-accent-default); border-color: transparent; color: var(--dk-text-on-accent); }
+button.primary:hover { background: var(--dk-accent-hover); border-color: transparent; }
+/* Selection is accent-soft fill with a neutral border, as dakit's filter chip. */
+button[aria-pressed="true"] { border-color: var(--dk-border-default); background: var(--dk-accent-soft); color: var(--dk-text-link); }
 button[aria-pressed="true"]::before { content: "✓ "; }
 
 .legend { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--dk-space-2); }
