@@ -73,8 +73,9 @@ function gitAuthArgs(token) {
 }
 
 async function git(args, opts = {}) {
-  const { stdout } = await run("git", args, {
+  const { stdout } = await run("git", ["-c", "credential.helper=", ...args], {
     ...opts,
+    timeout: 15_000,
     env: {
       ...process.env,
       GIT_AUTHOR_NAME: "tester",
@@ -82,6 +83,10 @@ async function git(args, opts = {}) {
       GIT_COMMITTER_NAME: "tester",
       GIT_COMMITTER_EMAIL: "tester@test",
       ...(opts.env ?? {}),
+      GIT_TERMINAL_PROMPT: "0",
+      GCM_INTERACTIVE: "never",
+      GIT_ASKPASS: "false",
+      SSH_ASKPASS: "false",
     },
   });
   return stdout;

@@ -13,17 +13,28 @@ async function getBudget(token: string = ADMIN_TOKEN) {
 }
 
 describe("budget constraints", () => {
+  const generalSidecarUrl = env.LOCAL_ARTIFACTS_URL;
+  let runId: string;
   beforeEach(async () => {
+     runId = crypto.randomUUID().replaceAll("-", "");
      (env as any).ENFORCE_CLOUD_BUDGET = true;
-     const cleanup = await SELF.fetch("http://localhost/cloud/demo-repos", {
-       method: "DELETE",
-       headers: { authorization: `Bearer ${ADMIN_TOKEN}` }
+     (env as any).LOCAL_ARTIFACTS_URL = (env as any).TEST_BUDGET_SIDECAR_URL;
+     const setup = await SELF.fetch("http://localhost/setup", {
+       method: "POST", headers: { authorization: `Bearer ${ADMIN_TOKEN}`, "content-type": "application/json" },
+       body: JSON.stringify({ runId }),
      });
-     await cleanup.json();
+     expect(setup.status).toBe(201);
   });
 
   afterEach(async () => {
+     const cleanup = await SELF.fetch("http://localhost/cloud/demo-repos", {
+       method: "DELETE", headers: { authorization: `Bearer ${ADMIN_TOKEN}`, "content-type": "application/json" },
+       body: JSON.stringify({ runId }),
+     });
+     expect(cleanup.status).toBe(200);
+     expect((await cleanup.json() as any).complete).toBe(true);
      (env as any).ENFORCE_CLOUD_BUDGET = false;
+     (env as any).LOCAL_ARTIFACTS_URL = generalSidecarUrl;
   });
 
   it("enforces repo count <= 4 and tracks operations", async () => {
@@ -33,7 +44,7 @@ describe("budget constraints", () => {
         responses.push(await SELF.fetch("http://localhost/tasks", {
          method: "POST",
          headers: { authorization: `Bearer ${ADMIN_TOKEN}`, "content-type": "application/json" },
-         body: JSON.stringify({ agent: `agent-${i}` })
+         body: JSON.stringify({ agent: `agent-${i}`, runId })
        }));
      }
      for (const r of responses) {
@@ -45,7 +56,7 @@ describe("budget constraints", () => {
      const failRes = await SELF.fetch("http://localhost/tasks", {
        method: "POST",
        headers: { authorization: `Bearer ${ADMIN_TOKEN}`, "content-type": "application/json" },
-       body: JSON.stringify({ agent: `agent-4` })
+       body: JSON.stringify({ agent: `agent-4`, runId })
      });
      expect(failRes.status).toBe(429); // 429 for budget exceeded
      await failRes.json();
@@ -60,7 +71,7 @@ describe("budget constraints", () => {
      const created = await SELF.fetch("http://localhost/tasks", {
        method: "POST",
        headers: { authorization: `Bearer ${ADMIN_TOKEN}`, "content-type": "application/json" },
-       body: JSON.stringify({ agent: `agent-restart-1` })
+       body: JSON.stringify({ agent: `agent-restart-1`, runId })
      });
      expect(created.status).toBe(201);
      await created.json();
@@ -94,12 +105,13 @@ describe("budget constraints", () => {
      const created = await SELF.fetch("http://localhost/tasks", {
        method: "POST",
        headers: { authorization: `Bearer ${ADMIN_TOKEN}`, "content-type": "application/json" },
-       body: JSON.stringify({ agent: `agent-cleanup` })
+       body: JSON.stringify({ agent: `agent-cleanup`, runId })
      });
   
      const delRes = await SELF.fetch("http://localhost/cloud/demo-repos", {
        method: "DELETE",
-       headers: { authorization: `Bearer ${ADMIN_TOKEN}` }
+       headers: { authorization: `Bearer ${ADMIN_TOKEN}`, "content-type": "application/json" },
+       body: JSON.stringify({ runId })
      });
      expect(delRes.status).toBe(200);
      const delBody = await delRes.json() as any;

@@ -432,6 +432,12 @@ function errorResponse(error: unknown): HttpResponse {
     return json({ error: message }, 404);
   }
   if ((error as any).status === 413) return json({ error: "request body exceeded bounds" }, 413);
+  // Durable Object RPC transports Error messages, not custom status properties.
+  if (/^(demo run |canonical repository belongs|demo repository name|demo fork name)/.test(message)) return json({ error: message }, 409);
+  if (message === "unknown demo run") return json({ error: message }, 404);
+  if (message.startsWith("runId must be")) return json({ error: message }, 400);
+  if ([400, 404, 409].includes((error as any).status)) return json({ error: message }, (error as any).status);
+  if ((error as any).status === 400 && message.startsWith("plannedPaths ")) return json({ error: message }, 400);
   if ((error as any).status === 429 || /Budget exceeded/i.test(message)) {
     return json({ error: message }, 429);
   }
@@ -468,7 +474,16 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
       if (denied) {
         return denied;
       }
-      return json(await coordinator.setup(), 201);
+      const body = await readJson(request);
+      return json(await coordinator.setup({ runId: body.runId as string | undefined }), 201);
+    }
+
+    if (path === "/demo-runs/cleanup") {
+      const denied = await requireBearer(request, services, services.tokens.admin, "ADMIN_TOKEN");
+      if (denied) return denied;
+      if (method !== "POST") return json({ error: "method not allowed" }, 405);
+      const body = await readJson(request);
+      return json(await coordinator.cleanupDemoRun(body.runId as string));
     }
 
     if (method === "POST" && path === "/tasks") {
@@ -478,6 +493,7 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
       }
       const body = await readJson(request);
       const created = await coordinator.createTask({
+        runId: body.runId as string | undefined,
         agent: typeof body.agent === "string" ? body.agent : undefined,
         intent: typeof body.intent === "string" ? body.intent : undefined,
         baseSha: typeof body.base_sha === "string" ? body.base_sha : undefined,
@@ -641,6 +657,19 @@ export async function handleRoute(services: RouterServices, request: HttpRequest
         }
         throw error;
       }
+    }
+
+    const taskPlanMatch = /^\/tasks\/([^/]+)\/plan$/.exec(path);
+    if (method === "POST" && taskPlanMatch) {
+      const unreadable = await requireReadAuth(request, services);
+      if (unreadable) return unreadable;
+      const taskId = decodeURIComponent(taskPlanMatch[1]);
+      const owner = await coordinator.taskOwner(taskId);
+      if (owner === null) return json({ error: `unknown task: ${taskId}` }, 404);
+      const denied = await requireMutatingAuth(request, services, { agent: owner });
+      if (denied) return denied;
+      const body = await readJson(request);
+      return json(await coordinator.updateTaskPlan(taskId, body?.plannedPaths));
     }
 
     const taskTestsMatch = /^\/tasks\/([^/]+)\/tests$/.exec(path);

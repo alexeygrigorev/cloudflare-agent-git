@@ -13,6 +13,9 @@ export default defineConfig({
           RUNNER_TOKEN: "test-runner-token",
           LOCAL_ARTIFACTS_URL: ctx.inject<string>("sidecarUrl"),
           LOCAL_ARTIFACTS_TOKEN: "test-sidecar-token",
+          // Cleanup/budget fixtures own an isolated provider namespace. Other
+          // suites intentionally leave unscoped repositories on the general one.
+          TEST_BUDGET_SIDECAR_URL: ctx.inject<string>("budgetSidecarUrl"),
         },
       },
     })),

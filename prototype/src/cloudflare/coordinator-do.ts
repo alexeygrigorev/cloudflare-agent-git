@@ -169,112 +169,31 @@ export class Coordinator extends DurableObject {
     await this.budgetTracker.reserveBytes(bytes);
   }
 
-  async deleteDemoRepos(): Promise<number> {
-    const reposMap = await this.ctx.storage.list({ prefix: "repo:" });
-    const repoNames = new Set<string>();
-    for (const key of reposMap.keys()) {
-      const match = /^repo:([^:]+):(upstream|pending)$/.exec(key);
-      if (match) repoNames.add(match[1]);
-    }
+  async deleteDemoRepos(runId: string) {
+    return this.core.cleanupDemoRun(runId);
+  }
 
-    const realOpts = {
-      readiness: { maxAttempts: 3, delayMs: 2500 },
-    };
-    const gitHost = gitHostFromEnv(this.env, realOpts);
-    let deleted = 0;
-    const successfullyDeleted = new Set<string>();
-    let firstError: unknown = null;
-
-    for (const name of repoNames) {
-      let ok = false;
-      try {
-        await this.budgetTracker.reserveOp();
-        ok = await gitHost.deleteRepo(name);
-      } catch (err) {
-        // Only ignore NotFound errors, propagate BudgetError and others!
-        if (
-          (err && (err as any).name === "ArtifactsNotFoundError") ||
-          (err && err instanceof Error && err.message.includes("repo not found"))
-        ) {
-          ok = true;
-        } else {
-          if (!firstError) firstError = err;
-        }
-      }
-      if (ok) {
-        successfullyDeleted.add(name);
-        deleted++;
-      }
-    }
-
-    // Atomic persistence of cleaned inventory and credentials
-    let completelyCleaned = false;
-    await this.ctx.storage.transaction(async (txn) => {
-      for (const name of successfullyDeleted) {
-        await txn.delete(`repo:${name}:upstream`);
-        await txn.delete(`repo:${name}:pending`);
-      }
-      const remainingRepos = await txn.list({ prefix: "repo:" });
-      let remainingCount = 0;
-      for (const k of remainingRepos.keys()) {
-        if (/^repo:([^:]+):(upstream|pending)$/.test(k)) {
-          remainingCount++;
-        }
-      }
-
-      if (remainingCount === 0) {
-        completelyCleaned = true;
-        await txn.delete("canonical:repo");
-        await txn.delete("canonical:token");
-        await txn.delete("canonical:upstream_token");
-        // Clear all gateway credentials
-        const tokens = await txn.list({ prefix: "token:" });
-        for (const tokenKey of tokens.keys()) {
-          await txn.delete(tokenKey);
-        }
-        // Clear core model from storage
-        await txn.delete("model");
-      } else {
-        // Remove tokens for deleted repos
-        const tokens = await txn.list({ prefix: "token:" });
-        for (const [key, val] of tokens.entries()) {
-          if (val && typeof val === "object" && successfullyDeleted.has((val as any).repo)) {
-            await txn.delete(key);
-          }
-        }
-      }
-      // BUDGET COUNTERS ARE NEVER RESET!
-    });
-
-    if (completelyCleaned) {
-      // Reset in-memory core model and cache!
-      this.core.clearModel();
-    }
-
-    if (firstError) {
-      throw firstError;
-    }
-
-    return deleted;
+  async cleanupDemoRun(runId: string) {
+    return this.core.cleanupDemoRun(runId);
   }
 
   // Core RPC wrappers
-  async setup(): Promise<SetupResult> {
-    return this.core.setup();
+  async setup(input?: { runId?: string }): Promise<SetupResult> {
+    return this.core.setup(input);
   }
 
   async createTask(input: CreateTaskInput): Promise<CreateTaskResult> {
-    const result = await this.core.createTask(input);
-    if (result.token?.plaintext) {
-      const key = `token:${result.token.plaintext}`;
-      const existing = await this.ctx.storage.get<any>(key);
-      if (existing) {
-        existing.agentId = result.agentId;
-        existing.taskId = result.taskId;
-        await this.ctx.storage.put(key, existing);
+    return this.core.createTask(input, async (result) => {
+      if (result.token?.plaintext) {
+        const key = `token:${result.token.plaintext}`;
+        const existing = await this.ctx.storage.get<any>(key);
+        if (existing) {
+          existing.agentId = result.agentId;
+          existing.taskId = result.taskId;
+          await this.ctx.storage.put(key, existing);
+        }
       }
-    }
-    return result;
+    });
   }
 
   recordPush(input: RecordPushInput): Promise<RecordPushResult> {
@@ -291,6 +210,10 @@ export class Coordinator extends DurableObject {
 
   getTask(taskId: string): Promise<TaskDetail> {
     return this.core.getTask(taskId);
+  }
+
+  updateTaskPlan(taskId: string, paths: unknown) {
+    return this.core.updateTaskPlan(taskId, paths);
   }
 
   ackWarning(warningId: string, input: { agent: string; note?: string }): Promise<{ warning: WarningRecord }> {

@@ -13,20 +13,29 @@ interface GlobalSetupContext {
  * fetch via the LOCAL_ARTIFACTS_URL binding injected in vitest.config.ts.
  */
 export default async function setup(vitest: GlobalSetupContext): Promise<() => Promise<void>> {
-  const root = mkdtempSync(join(tmpdir(), "agent-branches-sidecar-vitest-"));
-  const handle = await startSidecar({
-    root,
-    host: "127.0.0.1",
-    port: 0,
-    token: "test-sidecar-token",
-    notifyUrl: null,
-  });
-  const sidecarUrl = `http://127.0.0.1:${handle.port}`;
-  vitest.provide("sidecarUrl", sidecarUrl);
-  vitest.provide("sidecarToken", "test-sidecar-token");
-  console.error(`[global-setup] sidecar on ${sidecarUrl} (root ${root})`);
-  return async () => {
-    await handle.close();
-    rmSync(root, { recursive: true, force: true });
+  const resources: { root: string; handle: Awaited<ReturnType<typeof startSidecar>> | null }[] = [];
+  const close = async () => {
+    for (const { root, handle } of [...resources].reverse()) {
+      if (handle) await handle.close();
+      // Every path was created by this setup invocation, never discovered.
+      rmSync(root, { recursive: true, force: true });
+    }
   };
+  try {
+    for (const [label, key] of [["general", "sidecarUrl"], ["budget", "budgetSidecarUrl"]]) {
+      const resource = { root: mkdtempSync(join(tmpdir(), `agent-branches-sidecar-vitest-${label}-`)), handle: null as Awaited<ReturnType<typeof startSidecar>> | null };
+      resources.push(resource);
+      resource.handle = await startSidecar({
+        root: resource.root, host: "127.0.0.1", port: 0,
+        token: "test-sidecar-token", notifyUrl: null,
+      });
+      vitest.provide(key, `http://127.0.0.1:${resource.handle.port}`);
+      console.error(`[global-setup] ${label} sidecar on port ${resource.handle.port}`);
+    }
+  } catch (error) {
+    await close();
+    throw error;
+  }
+  vitest.provide("sidecarToken", "test-sidecar-token");
+  return close;
 }

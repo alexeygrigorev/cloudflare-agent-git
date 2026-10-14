@@ -67,7 +67,7 @@ const DUMMY_ENV = {
         remainingRepos: 2,
         remainingTotalBytes: 16776192,
       }),
-      deleteDemoRepos: async () => 2,
+      deleteDemoRepos: async () => ({ deleted: 2, remaining: [], repositories: ["owned1", "owned2"], complete: true }),
       snapshot: async () => ({
         canonical: { name: "canonical", remote: "/git/canonical.git" },
         agents: [{ agentId: "agent-1", taskId: "task-1", intent: "test", baseSha: "abc" }],
@@ -266,7 +266,8 @@ describe("Worker Management Endpoints — Budget, Cleanup, Public Status", () =>
   test("DELETE /cloud/demo-repos requires admin and returns deleted count", async () => {
     const req = new Request("http://localhost/cloud/demo-repos", {
       method: "DELETE",
-      headers: { Authorization: "Bearer admin-secret-token" },
+      headers: { Authorization: "Bearer admin-secret-token", "content-type": "application/json" },
+      body: JSON.stringify({ runId: "a".repeat(32) }),
     });
     const res = await worker.fetch(req, DUMMY_ENV);
     expect(res.status).toBe(200);

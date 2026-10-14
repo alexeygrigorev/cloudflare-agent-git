@@ -33,6 +33,7 @@ import {
   type CoordinatorModel,
   type PairCheckRecord,
   type PairStatusView,
+  type PlannedOverlap,
   type RadarLogEntry,
   type RunnerReport,
   type TaskRecord,
@@ -58,6 +59,7 @@ export interface SetupResult {
 }
 
 export interface CreateTaskInput {
+  runId?: string;
   agent?: string;
   intent?: string;
   baseSha?: string;
@@ -100,7 +102,7 @@ export interface StatusResult {
    * agent is doing and which commit it started from without a per-task
    * round trip. Additive fields on the 0.1.2 wire; values mirror the
    * TaskRecord (null = not stated / not recorded, the UI's muted case). */
-  agents: (AgentRecord & { intent: string | null; baseSha: string | null })[];
+  agents: (AgentRecord & { intent: string | null; baseSha: string | null; plannedPaths: string[] | null })[];
   heads: Record<string, string>;
   pairs: PairStatusView[];
   warnings: WarningRecord[];
@@ -108,6 +110,8 @@ export interface StatusResult {
   lastRunnerReport: RunnerReport | null;
   /** codex C-1357: pushes the Worker never accepted (callback lost). */
   unprocessedPushes: (UnprocessedPush & { agentId: string | null })[];
+  /** Declared file overlap is an early coordination signal, not a merge result. */
+  plannedOverlaps?: PlannedOverlap[];
 }
 
 export interface TaskDetail extends TaskRecord {
@@ -139,7 +143,8 @@ export interface StaleChecksResult {
  * the CoordinatorCore directly.
  */
 export interface CoordinatorAccess {
-  setup(): Promise<SetupResult>;
+  setup(input?: { runId?: string }): Promise<SetupResult>;
+  cleanupDemoRun(runId: string): Promise<DemoCleanupResult>;
   createTask(input: CreateTaskInput): Promise<CreateTaskResult>;
   recordPush(input: RecordPushInput): Promise<RecordPushResult>;
   status(): Promise<StatusResult>;
@@ -154,7 +159,21 @@ export interface CoordinatorAccess {
   credentialAgent(presented: string, nowMs?: number): Promise<string | null>;
   revokeAgentToken(agentId: string, revokedAt?: string): Promise<boolean>;
   taskOwner(taskId: string): Promise<string | null>;
+  updateTaskPlan(taskId: string, paths: unknown): Promise<{ taskId: string; agentId: string; plannedPaths: string[]; plannedOverlaps: PlannedOverlap[] }>;
   forkOwner(fork: string): Promise<string | null>;
+}
+
+export interface DemoCleanupResult {
+  deleted: number;
+  repositories: string[];
+  remaining: string[];
+  complete: boolean;
+}
+
+export function validateDemoRunId(runId: unknown): asserts runId is string {
+  if (typeof runId !== "string" || !/^[a-f0-9]{32}$/.test(runId)) {
+    throw Object.assign(new Error("runId must be 32 lowercase hex characters"), { status: 400 });
+  }
 }
 
 /**
@@ -209,8 +228,22 @@ export class CoordinatorCore implements CoordinatorAccess {
     this.model = null;
   }
 
-  private async setupNow(): Promise<SetupResult> {
+  private async setupNow(input?: { runId?: string }): Promise<SetupResult> {
     const model = await this.load();
+    const runId = input?.runId;
+    if (runId !== undefined) {
+      validateDemoRunId(runId);
+      const existing = model.demoRuns[runId];
+      if (existing && (existing.complete || model.canonicalName !== existing.canonical)) {
+        throw Object.assign(new Error("demo run requires cleanup before reuse"), { status: 409 });
+      }
+      if (model.canonicalName && existing?.canonical !== model.canonicalName) {
+        throw Object.assign(new Error("canonical repository belongs to other work"), { status: 409 });
+      }
+      if (!existing && Object.keys(model.demoRuns).length >= 32) {
+        throw Object.assign(new Error("demo run ledger is full"), { status: 409 });
+      }
+    }
     if (model.canonicalName) {
       return {
         canonical: { name: model.canonicalName, remote: model.canonicalRemote ?? "" },
@@ -219,9 +252,21 @@ export class CoordinatorCore implements CoordinatorAccess {
       };
     }
     const git = this.ports.git;
+    if (Object.values(model.demoRuns).some((run) => !run.complete && run.repositories.length > 0)) {
+      throw Object.assign(new Error("demo run requires cleanup before another setup"), { status: 409 });
+    }
     // Per-instance suffix so isolated storage (tests) never collides on the
     // sidecar's on-disk repo namespace.
     const name = `${CANONICAL_BASE}-${this.ports.ids.suffix()}`;
+    if (runId !== undefined) {
+      const inventory = await git.listRepos(100);
+      if (inventory.length >= 100 || inventory.some((repo) => repo.name === name)) {
+        throw Object.assign(new Error("demo repository name already exists"), { status: 409 });
+      }
+      model.demoRuns[runId] = { canonical: name, repositories: [name], complete: false };
+      // Persist before provider I/O: a lost create response still has an exact cleanup target.
+      await this.persist();
+    }
     const created = await git.createRepo(name, {
       description: "Agent Branches canonical baseline",
       setDefaultBranch: "main",
@@ -239,6 +284,13 @@ export class CoordinatorCore implements CoordinatorAccess {
 
   private async createTaskNow(input: CreateTaskInput): Promise<CreateTaskResult> {
     const model = await this.load();
+    if (input.runId !== undefined) {
+      validateDemoRunId(input.runId);
+      const run = model.demoRuns[input.runId];
+      if (!run || run.complete || run.canonical !== model.canonicalName) {
+        throw Object.assign(new Error("demo run does not own the canonical repository"), { status: 409 });
+      }
+    }
     const now = this.ports.clock.iso();
     if (!model.canonicalName) {
       await this.setupNow();
@@ -267,6 +319,14 @@ export class CoordinatorCore implements CoordinatorAccess {
     const agentId = `${slug}-${seq}`;
     const taskId = `task-${seq}`;
     const forkName = `${canonical}-${agentId}`;
+    if (input.runId !== undefined) {
+      const inventory = await git.listRepos(100);
+      if (inventory.length >= 100 || inventory.some((repo) => repo.name === forkName)) {
+        throw Object.assign(new Error("demo fork name already exists"), { status: 409 });
+      }
+      model.demoRuns[input.runId].repositories.push(forkName);
+      await this.persist();
+    }
     const fork = await git.fork(canonical, forkName, {
       description: `Agent Branches fork for ${agentId}`,
       defaultBranchOnly: true,
@@ -485,12 +545,14 @@ export class CoordinatorCore implements CoordinatorAccess {
     );
     return {
       canonical: { name: model.canonicalName, remote: model.canonicalRemote },
+      plannedOverlaps: this.plannedOverlaps(model),
       agents: Object.values(model.agents).map((agent) => {
         const task = model.tasks[agent.taskId];
         return {
           ...agent,
           intent: task ? task.intent : null,
           baseSha: task ? task.baseSha : null,
+          plannedPaths: task?.plannedPaths ? [...task.plannedPaths] : null,
         };
       }),
       // Snapshot: over RPC/wire this was always cloned; the direct core API
@@ -507,6 +569,39 @@ export class CoordinatorCore implements CoordinatorAccess {
         agentId: this.agentForFork(model, push.repo)?.agentId ?? null,
       })),
     };
+  }
+
+  private plannedOverlaps(model: CoordinatorModel): PlannedOverlap[] {
+    const tasks = Object.values(model.tasks).filter((task) => task.plannedPaths?.length)
+      .sort((a, b) => a.agentId.localeCompare(b.agentId));
+    const overlaps: PlannedOverlap[] = [];
+    for (let i = 0; i < tasks.length; i++) {
+      for (let j = i + 1; j < tasks.length; j++) {
+        const otherPaths = new Set(tasks[j].plannedPaths);
+        const shared = tasks[i].plannedPaths!.filter((path) => otherPaths.has(path));
+        if (shared.length) overlaps.push({ agents: [tasks[i].agentId, tasks[j].agentId],
+          tasks: [tasks[i].taskId, tasks[j].taskId], paths: [...shared], kind: "planned_overlap" });
+      }
+    }
+    return overlaps;
+  }
+
+  updateTaskPlan(taskId: string, paths: unknown): Promise<{ taskId: string; agentId: string; plannedPaths: string[]; plannedOverlaps: PlannedOverlap[] }> {
+    return this.serialized(async () => {
+      const model = await this.load();
+      const task = model.tasks[taskId];
+      if (!task) throw new Error(`unknown task: ${taskId}`);
+      if (!Array.isArray(paths) || paths.length > 128 || paths.some((path) =>
+        typeof path !== "string" || path.length === 0 || path.length > 512 || path !== path.trim()
+        || /[\\:*?\[\]\x00-\x1f\x7f]/.test(path) || /%[0-9a-f]{2}/i.test(path)
+        || path.split("/").some((part) => part === "" || part === "." || part === ".." || part !== part.trim()))) {
+        throw Object.assign(new Error("plannedPaths must be at most 128 exact relative file paths, without absolute paths, traversal, globs or backslashes"), { status: 400 });
+      }
+      const normalized = [...new Set(paths as string[])].sort();
+      task.plannedPaths = normalized;
+      await this.persist();
+      return { taskId, agentId: task.agentId, plannedPaths: [...normalized], plannedOverlaps: this.plannedOverlaps(model) };
+    });
   }
 
   private agentForFork(model: CoordinatorModel, repo: string): AgentRecord | undefined {
@@ -538,6 +633,7 @@ export class CoordinatorCore implements CoordinatorAccess {
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     return {
       ...task,
+      plannedPaths: [...(task.plannedPaths ?? [])],
       base_sha: task.baseSha,
       agent,
       head: agent?.head ?? null,
@@ -599,12 +695,73 @@ export class CoordinatorCore implements CoordinatorAccess {
     return { testProvenance: task.testProvenance };
   }
 
-  setup(): Promise<SetupResult> {
-    return this.serialized(() => this.setupNow());
+  setup(input?: { runId?: string }): Promise<SetupResult> {
+    return this.serialized(() => this.setupNow(input));
   }
 
-  createTask(input: CreateTaskInput): Promise<CreateTaskResult> {
-    return this.serialized(() => this.createTaskNow(input));
+  cleanupDemoRun(runId: string): Promise<DemoCleanupResult> {
+    return this.serialized(async () => {
+      validateDemoRunId(runId);
+      const model = await this.load();
+      const run = model.demoRuns[runId];
+      if (!run) throw Object.assign(new Error("unknown demo run"), { status: 404 });
+      const repositories: string[] = [];
+      // Forks first. Never remove a canonical still referenced by another task,
+      // including a peer creation that completed before this serialized operation.
+      const targets = [...run.repositories.filter((name) => name !== run.canonical), run.canonical]
+        .filter((name, index, all) => all.indexOf(name) === index && run.repositories.includes(name));
+      for (const name of targets) {
+        if (name === run.canonical) {
+          if (Object.values(model.tasks).some((task) => !run.repositories.includes(task.forkName))) continue;
+          // Include provider inventory, not just completed task records: a peer
+          // may have created a fork but lost the response before model persistence.
+          const inventory = await this.ports.git.listRepos(100);
+          if (inventory.length >= 100 || inventory.some((repo) => repo.name.startsWith(run.canonical + "-") && !run.repositories.includes(repo.name))) continue;
+        }
+        try {
+          await this.ports.git.deleteRepo(name);
+        } catch (error) {
+          if (!(error instanceof Error && (error.name === "ArtifactsNotFoundError" || error.message.startsWith("repo not found")))) throw error;
+        }
+        repositories.push(name);
+        for (const [taskId, task] of Object.entries(model.tasks)) {
+          if (task.forkName !== name) continue;
+          delete model.tasks[taskId];
+          delete model.agents[task.agentId];
+          delete model.heads[task.agentId];
+          delete model.seenPushes[task.agentId];
+          delete model.agentTokenHashes[task.agentId];
+          delete model.agentTokens[task.agentId];
+        }
+        if (model.canonicalName === name) {
+          model.canonicalName = null;
+          model.canonicalRemote = null;
+        }
+        const alive = (agent: string) => !!model.agents[agent];
+        model.warnings = model.warnings.filter((warning) => warning.pair.every(alive));
+        model.radarLog = model.radarLog.filter((entry) => entry.pair.every(alive));
+        for (const [key, check] of Object.entries(model.pairChecks)) if (!check.pair.every(alive)) delete model.pairChecks[key];
+        for (const [key, receipt] of Object.entries(model.receipts)) if (!alive(receipt.agentId)) delete model.receipts[key];
+        if (model.lastRunnerReport && Object.keys(model.lastRunnerReport.vector).some((agent) => !alive(agent))) {
+          model.lastRunnerReport = null;
+        }
+        run.repositories = run.repositories.filter((repo) => repo !== name);
+        run.complete = run.repositories.length === 0;
+        // Checkpoint each successful deletion; failed/budget-limited targets remain retryable.
+        await this.persist();
+      }
+      return { deleted: repositories.length, repositories, remaining: [...run.repositories], complete: run.complete };
+    });
+  }
+
+  createTask(input: CreateTaskInput, afterCreate?: (result: CreateTaskResult) => Promise<void>): Promise<CreateTaskResult> {
+    return this.serialized(async () => {
+      const result = await this.createTaskNow(input);
+      // Adapter credential linkage belongs to this same mutation. Otherwise
+      // cleanup could delete a token while the DO wrapper writes it back.
+      if (afterCreate) await afterCreate(result);
+      return result;
+    });
   }
 
   recordPush(input: RecordPushInput): Promise<RecordPushResult> {

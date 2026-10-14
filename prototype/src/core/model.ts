@@ -31,8 +31,17 @@ export interface TaskRecord {
   baseSha: string;
   /** Free-form intent text supplied at task creation (codex C-1306). */
   intent: string | null;
+  /** Exact repository-relative paths declared before editing; [] clears the plan. */
+  plannedPaths?: string[];
   /** Last posted test provenance (codex C-1306); agents POST /tasks/:id/tests. */
   testProvenance: TestProvenance | null;
+}
+
+export interface PlannedOverlap {
+  agents: [string, string];
+  tasks: [string, string];
+  paths: string[];
+  kind: "planned_overlap";
 }
 
 export interface TestProvenance {
@@ -127,6 +136,8 @@ export interface RunnerReport {
 }
 
 export interface CoordinatorModel {
+  /** Exact, write-ahead ownership for disposable demo runs; never inferred from inventory. */
+  demoRuns: Record<string, { canonical: string; repositories: string[]; complete: boolean }>;
   canonicalName: string | null;
   canonicalRemote: string | null;
   seq: number;
@@ -174,6 +185,7 @@ export const SEEN_PUSHES_CAP_PER_AGENT = 16;
 
 export function emptyModel(): CoordinatorModel {
   return {
+    demoRuns: {},
     canonicalName: null,
     canonicalRemote: null,
     seq: 0,
@@ -198,6 +210,7 @@ export function emptyModel(): CoordinatorModel {
  */
 export function migrateStoredModel(stored: CoordinatorModel | undefined): CoordinatorModel {
   const model = stored ?? emptyModel();
+  model.demoRuns ??= {};
   model.pairChecks ??= {};
   model.warnSeq ??= model.warnings.length;
   model.lastRunnerReport ??= null;

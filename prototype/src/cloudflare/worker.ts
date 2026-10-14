@@ -1,4 +1,5 @@
 import type { CoordinatorAccess } from "../core/coordinator.js";
+import { validateDemoRunId } from "../core/coordinator.js";
 import { BearerRateLimiter, handleRoute, type HttpRequest, type RouterServices } from "../core/router.js";
 import { artifactsPushEvents, directPushEvents } from "./push-events.js";
 import { HARD_CEILINGS, parseConfigLimit } from "./budget.js";
@@ -170,23 +171,30 @@ const handler: FetchHandler = {
       }
       const doStub = getCoordinatorDO(env) as any;
       const stats = await doStub.getBudgetStats();
-      return new Response(JSON.stringify(stats), {
+      return new Response(JSON.stringify({ ...stats, capabilities: { ownedDemoCleanup: true } }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    if (method === "DELETE" && path === "/cloud/demo-repos") {
+    if (path === "/cloud/demo-repos") {
       const token = getBearer();
       if (!token || !env.ADMIN_TOKEN || token !== env.ADMIN_TOKEN) {
         return new Response("Unauthorized", { status: 401 });
       }
-      const doStub = getCoordinatorDO(env) as any;
-      const count = await doStub.deleteDemoRepos();
-      return new Response(JSON.stringify({ deleted: count }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      if (method !== "DELETE") return new Response("Method not allowed", { status: 405 });
+      try {
+        const body = await toHttpRequest(request, env).json() as { runId?: unknown };
+        validateDemoRunId(body?.runId);
+        const doStub = getCoordinatorDO(env) as any;
+        return toResponse({ status: 200, body: await doStub.deleteDemoRepos(body?.runId) });
+      } catch (error) {
+        const message = String((error as Error)?.message ?? "");
+        const status = (error as any)?.status ?? (message === "unknown demo run" ? 404 : /Budget exceeded/.test(message) ? 429 : undefined);
+        return toResponse({ status: [400, 404, 409, 413, 429, 503].includes(status) ? status :
+          error instanceof SyntaxError ? 400 : 500,
+          body: { error: status || error instanceof SyntaxError ? String((error as Error).message) : "cleanup failed" } });
+      }
     }
 
     if (path === "/public/status") {

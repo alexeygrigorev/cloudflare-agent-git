@@ -117,15 +117,42 @@ export class BudgetAwareGitHost implements GitHost {
   }
 
   async listRepos(limit?: number): Promise<RepoSummary[]> {
-    return this.delegate.listRepos(limit);
+    if (this.delegate.constructor.name !== "RealArtifacts") await this.tracker.reserveOp();
+    const repos = await this.delegate.listRepos(limit);
+    const known = new Set(repos.map((repo) => repo.name));
+    const records = await this.state.storage.list({ prefix: "repo:" });
+    for (const key of records.keys()) {
+      const match = /^repo:([^:]+):(upstream|pending)$/.exec(key);
+      if (match && !known.has(match[1])) {
+        repos.push({ name: match[1], status: "importing" });
+        known.add(match[1]);
+      }
+    }
+    return repos;
   }
 
   async deleteRepo(name: RepoName): Promise<boolean> {
-    const ok = await this.delegate.deleteRepo(name);
-    if (ok) {
+    if (this.delegate.constructor.name !== "RealArtifacts") await this.tracker.reserveOp();
+    let ok: boolean;
+    try {
+      ok = await this.delegate.deleteRepo(name);
+    } catch (error) {
+      if (!(error instanceof Error && (error.name === "ArtifactsNotFoundError" || error.message.startsWith("repo not found")))) throw error;
+      ok = false; // Already absent: still remove this repository's stale gateway records.
+    }
+    {
       await this.state.storage.transaction(async (txn) => {
         await txn.delete(`repo:${name}:upstream`);
         await txn.delete(`repo:${name}:pending`);
+        const tokens = await txn.list({ prefix: "token:" });
+        for (const [key, value] of tokens) {
+          if (value && typeof value === "object" && (value as any).repo === name) await txn.delete(key);
+        }
+        if (await txn.get("canonical:repo") === name) {
+          await txn.delete("canonical:repo");
+          await txn.delete("canonical:token");
+          await txn.delete("canonical:upstream_token");
+        }
       });
     }
     return ok;

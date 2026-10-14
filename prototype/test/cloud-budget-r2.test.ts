@@ -8,6 +8,7 @@ import {
   parseConfigLimit,
 } from "../src/cloudflare/budget.js";
 import { Coordinator } from "../src/cloudflare/coordinator-do.js";
+import { emptyModel } from "../src/core/model.js";
 
 class FakeTxn {
   private data: Map<string, any>;
@@ -411,6 +412,7 @@ describe("Token Expiration and Revocation Integration in Coordinator DO", () => 
   });
 
   test("cleanup clears inventory, credentials, and core cache but NEVER resets budget counters", async () => {
+    (env as any).ENFORCE_CLOUD_BUDGET = true;
     const stub = env.COORDINATOR.get(env.COORDINATOR.idFromName("test-cleanup"));
     await runInDurableObject(stub, async (coordinator: Coordinator, state: DurableObjectState) => {
       const storage = state.storage;
@@ -424,14 +426,17 @@ describe("Token Expiration and Revocation Integration in Coordinator DO", () => 
       await storage.put("repo:demo2:upstream", "http://127.0.0.1:4000/git/demo2.git");
       await storage.put("token:gw1", { repo: "demo1", realToken: "rt1" });
       await storage.put("token:gw2", { repo: "demo2", realToken: "rt2" });
-      await storage.put("canonical:repo", "demo1");
-      await storage.put("canonical:token", "gw1");
+      await storage.put("canonical:repo", "demo2");
+      await storage.put("canonical:token", "gw2");
       await storage.put("canonical:upstream_token", "legacysecret");
-      await storage.put("model", { canonicalName: "demo1" });
+      const model = emptyModel();
+      model.canonicalName = "demo2";
+      model.demoRuns["a".repeat(32)] = { canonical: "demo2", repositories: ["demo1", "demo2"], complete: false };
+      await storage.put("model", model);
 
       // Perform cleanup
-      const deleted = await coordinator.deleteDemoRepos();
-      expect(deleted).toBeGreaterThanOrEqual(0);
+      const deleted = await coordinator.deleteDemoRepos("a".repeat(32));
+      expect(deleted.complete).toBe(true);
 
       // Verify tokens, model, and repos are cleared
       expect(await storage.get("canonical:repo")).toBeUndefined();
@@ -439,7 +444,7 @@ describe("Token Expiration and Revocation Integration in Coordinator DO", () => 
       expect(await storage.get("canonical:upstream_token")).toBeUndefined();
       expect(await storage.get("token:gw1")).toBeUndefined();
       expect(await storage.get("token:gw2")).toBeUndefined();
-      expect(await storage.get("model")).toBeUndefined();
+      expect((await storage.get<any>("model")).demoRuns["a".repeat(32)].complete).toBe(true);
 
       // BUDGET COUNTERS ARE PRESERVED! NEVER RESET!
       const stats = await coordinator.getBudgetStats();
@@ -450,6 +455,7 @@ describe("Token Expiration and Revocation Integration in Coordinator DO", () => 
   });
   
   test("cleanup partial failure/budget exhaustion inventory/token preservation case", async () => {
+    (env as any).ENFORCE_CLOUD_BUDGET = true;
     const stub = env.COORDINATOR.get(env.COORDINATOR.idFromName("test-cleanup-partial"));
     await runInDurableObject(stub, async (coordinator: Coordinator, state: DurableObjectState) => {
       const storage = state.storage;
@@ -458,9 +464,12 @@ describe("Token Expiration and Revocation Integration in Coordinator DO", () => 
       await storage.put("repo:demo2:upstream", "http://127.0.0.1:4000/git/demo2.git");
       await storage.put("token:gw1", { repo: "demo1", realToken: "rt1" });
       await storage.put("token:gw2", { repo: "demo2", realToken: "rt2" });
-      await storage.put("canonical:repo", "demo1");
-      await storage.put("canonical:token", "gw1");
-      await storage.put("model", { canonicalName: "demo1" });
+      await storage.put("canonical:repo", "demo2");
+      await storage.put("canonical:token", "gw2");
+      const model = emptyModel();
+      model.canonicalName = "demo2";
+      model.demoRuns["a".repeat(32)] = { canonical: "demo2", repositories: ["demo1", "demo2"], complete: false };
+      await storage.put("model", model);
       
       // Exhaust budget ops so deleteRepo fails mid-way
       const stats = await coordinator.getBudgetStats();
@@ -472,7 +481,7 @@ describe("Token Expiration and Revocation Integration in Coordinator DO", () => 
       // deleteDemoRepos will reserve 1 op for demo1 (making it 500) and then fail on demo2
       let error;
       try {
-        await coordinator.deleteDemoRepos();
+        await coordinator.deleteDemoRepos("a".repeat(32));
       } catch (e) {
         error = e;
       }
@@ -484,7 +493,7 @@ describe("Token Expiration and Revocation Integration in Coordinator DO", () => 
       expect(gw2).toBeDefined();
       
       // Canonical stays since demo2 remains
-      expect(await storage.get("canonical:repo")).toBe("demo1");
+      expect(await storage.get("canonical:repo")).toBe("demo2");
     });
   });
 });

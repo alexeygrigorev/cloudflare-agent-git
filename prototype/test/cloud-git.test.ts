@@ -1,15 +1,31 @@
 import { env } from "cloudflare:workers";
 import { SELF } from "cloudflare:test";
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { ADMIN_TOKEN } from "./helpers.js";
 
 describe("git gateway", () => {
+  const generalSidecarUrl = env.LOCAL_ARTIFACTS_URL;
+  let runId: string;
   beforeEach(async () => {
+     runId = crypto.randomUUID().replaceAll("-", "");
      (env as any).ENFORCE_CLOUD_BUDGET = true;
-     await SELF.fetch("http://localhost/cloud/demo-repos", {
-       method: "DELETE",
-       headers: { authorization: `Bearer ${ADMIN_TOKEN}` }
+     (env as any).LOCAL_ARTIFACTS_URL = (env as any).TEST_BUDGET_SIDECAR_URL;
+     const setup = await SELF.fetch("http://localhost/setup", {
+       method: "POST", headers: { authorization: `Bearer ${ADMIN_TOKEN}`, "content-type": "application/json" },
+       body: JSON.stringify({ runId }),
      });
+     expect(setup.status).toBe(201);
+  });
+
+  afterEach(async () => {
+     const cleanup = await SELF.fetch("http://localhost/cloud/demo-repos", {
+       method: "DELETE", headers: { authorization: `Bearer ${ADMIN_TOKEN}`, "content-type": "application/json" },
+       body: JSON.stringify({ runId }),
+     });
+     expect(cleanup.status).toBe(200);
+     expect((await cleanup.json() as any).complete).toBe(true);
+     (env as any).LOCAL_ARTIFACTS_URL = generalSidecarUrl;
+     (env as any).ENFORCE_CLOUD_BUDGET = false;
   });
 
   it("proxies info/refs and enforces token isolation", async () => {
@@ -17,7 +33,7 @@ describe("git gateway", () => {
      const createRes = await SELF.fetch("http://localhost/tasks", {
        method: "POST",
        headers: { authorization: `Bearer ${ADMIN_TOKEN}`, "content-type": "application/json" },
-       body: JSON.stringify({ agent: `agent-git-test` })
+       body: JSON.stringify({ agent: `agent-git-test`, runId })
      });
      expect(createRes.status).toBe(201);
      const task = await createRes.json() as any;
