@@ -212,3 +212,7 @@ Record every new human continuation directive in the [founder journal](_docs/fou
 ## Latest human correction — external maintained head task loop, 7 October 2026
 
 Read [the head loop](_docs/03-way-of-working.md#6-the-head-loop) at head/executor/reviewer startup. Heads orchestrate task → external implementer → distinct external reviewer → implementer repair until approved → integration → next ready task. Request these execution/review agents through the existing maintained Agent Quota Launcher; Claude built-in subagents and raw CLI fallback do not substitute for this loop. Principals coordinate only. Preserve all ownership/resource/privacy/recovery gates and obtain actual head ACK, launcher admission, first-tool and exact pinned review/integration receipts. This latest correction supersedes earlier built-in-agent shortcuts for the requested project execution loop; it does not authorize a duplicate head, edit-scope claim transfer or bypass. The human-created Sonnet head's “our git” scope remains pending clarification/ACK.
+
+## Model routing rule: OpenCode never runs GLM (Alexey, 2026-10-14)
+
+OpenCode (`oc`, `--engine opencode`, `opencode run`) must always use Muse Spark 1.3 (`opencode-go/muse-spark-1.3-contributor`) and must never run a GLM / Z.ai Coding Plan model (`zai-coding-plan/*`, `opencode-go/glm-*`). All GLM / Z.ai work goes through zcodex (`--profile zcodex`, the launcher `zai` route). Heads and principals: never pass a GLM model to OpenCode; route Z.ai tasks to zcodex.

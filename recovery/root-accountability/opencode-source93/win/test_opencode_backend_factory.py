@@ -11,7 +11,7 @@ class BackendFactoryTests(unittest.TestCase):
             lambda c:None,lambda:gate,forbidden,forbidden,forbidden,forbidden,lambda:100)
         return factory,{'operation':'root-start','payload':{},'owner':owner,'key':'owned-key'}
     def test_unknown_admission_denies_before_key_or_process_or_journal(self):
-        factory,command=self.factory({'provider':'zai-coding-plan','launch_allowed':False})
+        factory,command=self.factory({'provider':'opencode-go','launch_allowed':False})
         with self.assertRaises(RuntimeError):factory.start(command)
         self.assertEqual(self.calls,[])
     def test_existing_intent_is_reconcile_only_before_new_effect(self):

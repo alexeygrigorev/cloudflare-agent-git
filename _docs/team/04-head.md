@@ -66,3 +66,7 @@ Integrate when the reviewer accepts. Push the accepted work to Git, straight to 
 When you finish a unit of work, report to the principal and ask for a synchronous reply. While you wait on anything, rely on the promised synchronous reply, and register `aplexer wake` only if `aplexer wake --help` shows it is installed; turn it off when done. Never end a turn with an unresolved dependency and no promised reply or wake. See [keeping heads moving](../04-communication.md#keeping-heads-moving).
 
 Start the next ready task at once. Do not wait to be told. Run as many workers as there are independent tasks and capacity. There is no fixed cap, and you do not invent work to raise the count. While one task is blocked, keep the other independent work moving.
+
+## Model routing rule: OpenCode never runs GLM (Alexey, 2026-10-14)
+
+OpenCode (`oc`, `--engine opencode`, `opencode run`) must always use Muse Spark 1.3 (`opencode-go/muse-spark-1.3-contributor`) and must never run a GLM / Z.ai Coding Plan model (`zai-coding-plan/*`, `opencode-go/glm-*`). All GLM / Z.ai work goes through zcodex (`--profile zcodex`, the launcher `zai` route). Heads and principals: never pass a GLM model to OpenCode; route Z.ai tasks to zcodex.

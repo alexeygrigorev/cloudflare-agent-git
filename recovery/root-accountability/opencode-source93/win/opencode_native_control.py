@@ -52,7 +52,7 @@ class NativeControl:
                     try:post_ready=self.post_start_ready(command) is True
                     except Exception:post_ready=False
             self.selected(command)
-            allowed=(gate.get('provider')=='zai-coding-plan' and gate.get('model')=='glm-5.3-flash'
+            allowed=(gate.get('provider')=='opencode-go' and gate.get('model')=='muse-spark-1.3-contributor'
                 and gate.get('launch_allowed') is True and gate.get('physical_allowed') is True
                 and gate.get('account_binding')==self.binding.get('provider_account_binding')
                 and bool(self.binding.get('provider_account_binding'))

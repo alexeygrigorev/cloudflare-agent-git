@@ -142,3 +142,7 @@ For a big design, use a challenger: one agent proposes, another attacks, and the
 
 - Report on your own. The founder never has to ask.
 - There are no blockers. If you have a problem, report this problem and the steps you have taken to resolve it. If you hit a problem, always think of ways to resolve it and report it.
+
+## Model routing rule: OpenCode never runs GLM (Alexey, 2026-10-14)
+
+OpenCode (`oc`, `--engine opencode`, `opencode run`) must always use Muse Spark 1.3 (`opencode-go/muse-spark-1.3-contributor`) and must never run a GLM / Z.ai Coding Plan model (`zai-coding-plan/*`, `opencode-go/glm-*`). All GLM / Z.ai work goes through zcodex (`--profile zcodex`, the launcher `zai` route). Heads and principals: never pass a GLM model to OpenCode; route Z.ai tasks to zcodex.

@@ -32,7 +32,7 @@ def validate_profile(profile,directory,expected_source_sha256):
         raise RuntimeError('fixed outer/inner native slot pair required')
     if (type(profile.get('session_id')) is not str or not re.fullmatch(r'ses_[A-Za-z0-9]+',profile['session_id'])
         or type(profile.get('native_password')) is not str or len(profile['native_password'])<32
-        or profile.get('provider')!='zai-coding-plan' or profile.get('model')!='glm-5.3-flash'
+        or profile.get('provider')!='opencode-go' or profile.get('model')!='muse-spark-1.3-contributor'
         or profile.get('agent')!='root_contingency'):
         raise RuntimeError('fixed own authenticated native session/provider required')
     return copy.deepcopy(profile)

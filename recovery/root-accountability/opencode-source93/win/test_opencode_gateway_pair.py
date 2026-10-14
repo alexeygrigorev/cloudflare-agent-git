@@ -4,7 +4,7 @@ import test_opencode_root_producer as fixtures
 from opencode_native_proof import fixed_reader_context
 
 SOURCE=pathlib.Path(__file__).with_name('opencode_native76.reference.py')
-EXPECTED='e0bb320a5c0d502ac4848ad25698423a3ac279146370156f6b74ce0dc6ccf66e'
+EXPECTED='cb50d2e83bdf4d34d75ca603f3d83d47d6a362cb3c2c010652611e965ed020e2'
 def actual_verifier():
     if hashlib.sha256(SOURCE.read_bytes()).hexdigest()!=EXPECTED:raise RuntimeError('actual paired verifier source drift')
     spec=importlib.util.spec_from_file_location('exact_native76',SOURCE);module=importlib.util.module_from_spec(spec)

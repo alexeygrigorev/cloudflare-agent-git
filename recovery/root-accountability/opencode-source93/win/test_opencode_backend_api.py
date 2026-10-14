@@ -4,7 +4,7 @@ from opencode_backend_api import BackendAPI
 class BackendAPITests(unittest.TestCase):
     def test_prompt_guard_is_mandatory_and_fixed_provider_before_kernel(self):
         api=BackendAPI(None,lambda:(_ for _ in ()).throw(AssertionError('guard called')))
-        payload={'model':{'providerID':'zai-coding-plan','modelID':'glm-5.3-flash'},'agent':'root_contingency',
+        payload={'model':{'providerID':'opencode-go','modelID':'muse-spark-1.3-contributor'},'agent':'root_contingency',
                  'parts':[{'type':'text','text':'fixed source'}]}
         with self.assertRaises(RuntimeError):api.prompt_async(None,None,8815,'sentinel','ses_owned',payload,None)
         payload['model']['providerID']='zai'

@@ -32,7 +32,7 @@ class BackendAPI:
     def prompt_async(self,backend,job,port,password,session_id,payload,pre_effect):
         if (port not in (8815,8816) or not re.fullmatch('ses_[A-Za-z0-9]+',session_id)
             or type(payload) is not dict or set(payload)!={'model','agent','parts'}
-            or payload['model']!={'providerID':'zai-coding-plan','modelID':'glm-5.3-flash'}
+            or payload['model']!={'providerID':'opencode-go','modelID':'muse-spark-1.3-contributor'}
             or payload['agent']!='root_contingency' or type(payload['parts']) is not list
             or len(payload['parts'])!=1 or set(payload['parts'][0])!={'type','text'}
             or payload['parts'][0]['type']!='text' or type(payload['parts'][0]['text']) is not str

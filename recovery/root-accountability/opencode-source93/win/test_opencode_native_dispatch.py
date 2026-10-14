@@ -7,7 +7,7 @@ class DispatchTests(unittest.TestCase):
         self.owner={'role':'root','actor':'genuine-source-fixture'}
         self.selected={'body':'Server fixed meaningful input','input_sha256':hashlib.sha256(b'Server fixed meaningful input').hexdigest(),
             'challenge':'nonce','envelope':'server-envelope','issued_at':100,'deadline':220}
-        self.gate={'provider':'zai-coding-plan','model':'glm-5.3-flash','account_binding':'own','launch_allowed':True,
+        self.gate={'provider':'opencode-go','model':'muse-spark-1.3-contributor','account_binding':'own','launch_allowed':True,
             'physical_allowed':True,'source_ref':'provider-fixture','resource_ref':'physical-fixture','observed_at':100,'valid_until':105}
         self.d=NativeDispatch(self.owner,'ses_actualFixture','own',lambda:copy.deepcopy(self.saved),self.save,
             lambda:self.history,self.post,lambda:self.gate,lambda *a:None,lambda:self.now)

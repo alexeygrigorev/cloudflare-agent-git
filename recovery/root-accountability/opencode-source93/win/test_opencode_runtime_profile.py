@@ -12,7 +12,7 @@ class RuntimeProfileTests(unittest.TestCase):
             'owner':self.owner,'native':{'id':'native','engine':'shell','workspace':'C:/Users/User/git/cloudflare-agent-git'},
             'controller_credential':{'scope':'fixed-root-controller','identity_id':'new-own','token':'sentinel-only'},
             'api_port':8814,'native_port':8816,'session_id':'ses_fixture','native_password':'x'*32,
-            'provider':'zai-coding-plan','model':'glm-5.3-flash','agent':'root_contingency'}
+            'provider':'opencode-go','model':'muse-spark-1.3-contributor','agent':'root_contingency'}
     def test_candidate_profile_preserves_own_enrolled_identity(self):
         result=module.validate_profile(self.profile,self.dir,'b'*64)
         self.assertEqual(result,self.profile);self.assertIsNot(result,self.profile)

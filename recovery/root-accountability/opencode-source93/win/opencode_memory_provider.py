@@ -6,10 +6,10 @@ The fixed gateway/event verifier and authority plan remain separate prerequisite
 import hashlib,json,os,pathlib
 
 AUTH=pathlib.Path('C:/Users/User/.zcode/cli/config.json')
-PROVIDER='zai-coding-plan'
+PROVIDER='opencode-go'
 NATIVE_ORIGIN='https://api.z.ai/api/anthropic'
 CODING_ORIGIN='https://api.z.ai/api/coding/paas/v4'
-MODEL='glm-5.3-flash'
+MODEL='muse-spark-1.3-contributor'
 ENV_KEY='ROOT_CODING_PLAN_KEY'
 
 def native_slot(config):
@@ -34,7 +34,7 @@ class MemoryProvider:
         return {'permission':{'*':'deny'},'plugin':[],'mcp':{},
             'provider':{PROVIDER:{'npm':'@ai-sdk/openai-compatible','name':'Fixed machine-local CodingPlan',
                 'options':{'baseURL':CODING_ORIGIN,'apiKey':'{env:'+ENV_KEY+'}'},
-                'models':{MODEL:{'name':'Fixed GLM 5.3 Flash'}}}},
+                'models':{MODEL:{'name':'Fixed Muse Spark 1.3'}}}},
             'agent':{'root_contingency':{'mode':'primary','description':'Candidate only; gateway absent',
                 'permission':{'*':'deny'}}}}
     def private_environment(self,base):

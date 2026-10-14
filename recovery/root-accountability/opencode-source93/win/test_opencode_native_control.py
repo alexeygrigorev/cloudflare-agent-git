@@ -35,7 +35,7 @@ class ControlTests(unittest.TestCase):
         self.assertEqual(datetime.datetime.fromisoformat(observed.replace('Z','+00:00')).timestamp(),100)
     def post_started(self):
         self.control.binding['provider_account_binding']='a'*64
-        self.control.admission=lambda:dict(provider='zai-coding-plan',model='glm-5.3-flash',launch_allowed=True,
+        self.control.admission=lambda:dict(provider='opencode-go',model='muse-spark-1.3-contributor',launch_allowed=True,
             physical_allowed=True,account_binding='a'*64,source_ref='own-fixture-monitor',resource_ref='own-fixture-resource',observed_at=100,valid_until=125)
         self.control.factory.read=lambda:{'phase':'completed'}
         self.state[0]=dict(phase='native-fence-active',owner=self.owner)

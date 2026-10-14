@@ -33,3 +33,7 @@ If a route fails, preserve its exact request and inspect quota, tool permissions
 ## Stuck drafts
 
 Stuck drafts: only text a human or the session's own agent typed is a protected draft. Text left by an automated injector (ask-ledger wake, principal-ping, ask-wake-runner, mailbox deliver, any scripted `a send`/paste), identified by its marker or the injector's own log, is not protected. A composer that is non-empty and idle for more than 10 minutes is a stuck-draft alert. Any draft of either kind older than 15 minutes that blocks delivery is saved to `.local/drafts/` with metadata (session, source, first-seen time, text), then cleared, the pending messages are delivered, the case is recorded on the ledger and the owner is told. Injectors verify submission after pasting (a leftover `[Pasted Content…]` badge gets one more Enter; if still unsubmitted they clear only their own text, log it and report to the principal). See failures #27 and issue #113.
+
+## Model routing rule: OpenCode never runs GLM (Alexey, 2026-10-14)
+
+OpenCode (`oc`, `--engine opencode`, `opencode run`) must always use Muse Spark 1.3 (`opencode-go/muse-spark-1.3-contributor`) and must never run a GLM / Z.ai Coding Plan model (`zai-coding-plan/*`, `opencode-go/glm-*`). All GLM / Z.ai work goes through zcodex (`--profile zcodex`, the launcher `zai` route). Heads and principals: never pass a GLM model to OpenCode; route Z.ai tasks to zcodex.

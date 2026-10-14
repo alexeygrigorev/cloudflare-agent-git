@@ -12,7 +12,7 @@ class OwnAdmission:
         self.resource=resource_reader;self.clock=clock
     def __call__(self):
         started=self.clock();self.guard()
-        result={'provider':'zai-coding-plan','model':'glm-5.3-flash','account_binding':self.account,
+        result={'provider':'opencode-go','model':'muse-spark-1.3-contributor','account_binding':self.account,
             'launch_allowed':False,'physical_allowed':False,'source_ref':None,'resource_ref':None,
             'observed_at':started,'valid_until':started+30,'status':'READ_UNKNOWN','model_started':False}
         connection=None

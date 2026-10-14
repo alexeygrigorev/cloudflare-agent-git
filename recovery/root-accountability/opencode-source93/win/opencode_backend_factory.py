@@ -29,8 +29,8 @@ class BackendFactory:
             # previous attempt. A persisted boolean cannot authorize re-spawn.
             raise RuntimeError('native backend start already reserved; reconcile only')
         gate=self.admission();now=self.clock()
-        if (type(gate) is not dict or gate.get('provider')!='zai-coding-plan'
-            or gate.get('model')!='glm-5.3-flash' or gate.get('launch_allowed') is not True
+        if (type(gate) is not dict or gate.get('provider')!='opencode-go'
+            or gate.get('model')!='muse-spark-1.3-contributor' or gate.get('launch_allowed') is not True
             or gate.get('physical_allowed') is not True or not gate.get('source_ref') or not gate.get('resource_ref')
             or gate.get('account_binding')!=self.profile['provider_account_binding']
             or type(gate.get('observed_at')) not in (int,float) or type(gate.get('valid_until')) not in (int,float)

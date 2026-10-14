@@ -63,7 +63,7 @@ class NativeVerifier:
                     'provider_id', 'model_id', 'helper', 'revision'}
         if type(before) is not dict or set(before) != required:
             raise ValueError('fixed context schema')
-        if before['provider_id'] != 'zai-coding-plan' or before['model_id'] != 'glm-5.3-flash':
+        if before['provider_id'] != 'opencode-go' or before['model_id'] != 'muse-spark-1.3-contributor':
             raise ValueError('production provider binding')
         now = self.clock()
         if not all(finite(x) for x in (now, before['issued_at'], before['deadline'])):

@@ -6,7 +6,7 @@ class RootProducerTests(unittest.TestCase):
     def setUp(self):
         self.context={'owner':{'project':'fixture-project','role':'ROOT','actor':'owned-fixture','generation':'owned-generation','epoch':1},'kernel':{'pid':123,'creation_filetime':456},
             'session_id':'ses_fixture','user_message_id':'msg_user','user_input_sha256':text_sha('owned input'),
-            'provider_id':'zai-coding-plan','model_id':'glm-5.3-flash','agent':'root_contingency',
+            'provider_id':'opencode-go','model_id':'muse-spark-1.3-contributor','agent':'root_contingency',
             'nonce':'fixed-nonce','envelope':'fixed-envelope','body':'fixed challenge','challenge_ref':'server-owned',
             'issued_at_ms':900,'deadline_ms':120900,'input_accepted_at_ms':1000,'profile_sha256':'a'*64,'kernel_ref':'private-source-ref','revision':1}
         self.journal=[];self.effects=[]
@@ -23,7 +23,7 @@ class RootProducerTests(unittest.TestCase):
         self.call();handled=self.journal[-1][1]
         user={'info':{'id':'msg_user','role':'user','sessionID':'ses_fixture','time':{'created':1000}},'parts':[{'type':'text','text':'owned input'}]}
         assistant={'info':{'id':'msg_assistant','role':'assistant','sessionID':'ses_fixture','parentID':'msg_user',
-            'providerID':'zai-coding-plan','modelID':'glm-5.3-flash','agent':'root_contingency','time':{'created':1000,'completed':2000}},
+            'providerID':'opencode-go','modelID':'muse-spark-1.3-contributor','agent':'root_contingency','time':{'created':1000,'completed':2000}},
             'parts':[{'type':'tool','id':'prt_tool','callID':'provider-call','sessionID':'ses_fixture','messageID':'msg_assistant',
             'tool':'root_gateway_root_role_reply','state':{'status':'completed','input':handled['arguments'],'output':handled['output'],'time':{'start':1200,'end':1900}}}]}
         return [user,assistant],handled

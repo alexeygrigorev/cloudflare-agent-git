@@ -31,7 +31,7 @@ class ProfileWriter:
             'owner':enrolled['owner'],'native':enrolled['native'],'controller_credential':controller_credential,
             'api_port':enrolled['api_port'],'native_port':enrolled['native_port'],
             'session_id':backend['session_id'],'native_password':backend['native_password'],
-            'provider':'zai-coding-plan','model':'glm-5.3-flash','agent':'root_contingency',
+            'provider':'opencode-go','model':'muse-spark-1.3-contributor','agent':'root_contingency',
             'kernel':kernel,'authority':plan['authority'],'snapshot_sha256':plan['snapshot_sha256']}
         profile_path=self.directory/'opencode-controller.private.json'
         binding_path=self.directory/'opencode-controller-binding.private.json'

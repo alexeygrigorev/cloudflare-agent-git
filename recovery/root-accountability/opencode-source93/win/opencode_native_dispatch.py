@@ -6,7 +6,7 @@ No model selects provider/session/body or supplies admission proof.
 """
 import copy,hashlib,time,threading,json,re
 
-PROVIDER='zai-coding-plan';MODEL='glm-5.3-flash';AGENT='root_contingency'
+PROVIDER='opencode-go';MODEL='muse-spark-1.3-contributor';AGENT='root_contingency'
 def digest(value):return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 
 class NativeDispatch:

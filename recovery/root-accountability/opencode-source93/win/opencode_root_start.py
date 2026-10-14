@@ -60,7 +60,7 @@ class RootStart:
                 'owner':copy.deepcopy(command['owner']),'native_actor':copy.deepcopy(selected['native']),
                 'profile_sha256':written['profile_sha256'],'kernel_ref':before['kernel_ref'],
                 'holding_profile_sha256':selected['holding_profile_sha256'],
-                'session_id':old['session_id'],'provider_id':'zai-coding-plan','model_id':'glm-5.3-flash',
+                'session_id':old['session_id'],'provider_id':'opencode-go','model_id':'muse-spark-1.3-contributor',
                 'revision':1,'history_empty':True,'initial_message_count':0,
                 'history_receipt_sha256':sha(history),'kernel_before':before,'kernel_after':after,
                 'model_turn_submitted':False,'authority_effect':False}
