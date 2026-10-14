@@ -382,7 +382,7 @@ a.src{display:inline-flex;align-items:center;min-height:24px;align-self:flex-sta
 .callout-text{font-size:14px;line-height:1.55;color:var(--body)}
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
 .kpi-card{border:1px solid var(--line);background:var(--paper);padding:16px 18px;display:flex;flex-direction:column;gap:4px}
-.kpi-card.is-highlight{border-top:3px solid var(--blue)}
+.kpi-card.is-highlight{border-color:var(--blue);background:var(--hover)}
 .kpi-num{font-family:var(--serif);font-size:32px;font-weight:500;line-height:1.1;color:var(--ink)}
 .kpi-label{font-size:14px;font-weight:600;color:var(--ink)}
 .kpi-note{font-size:12px;color:var(--muted);line-height:1.4}
