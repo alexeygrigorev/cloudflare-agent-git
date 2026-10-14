@@ -35,14 +35,19 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/8fbdbfa/research/antigravity/reviews/REV-DASHBOARD-USAGE-ACCOUNTING-20261005.md": "Review of how the dashboard counts missing usage",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/c98f46e/research/orchestrator/ROLE-FAILOVER-PROTOCOL-20261006.md": "The agents' plan for taking over a missing agent's role"
   },
-  "image": "../../assets/agent-git-illustration.png",
-  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "image": "../../assets/daily-2026-10-06-illustration.png",
+  "image_alt": "Conceptual illustration: agents pass a task forward, but the continuation path stops beside an overnight queue.",
   "diagram": "../../assets/2026-10-06-status.png",
   "diagram_svg": "../../assets/2026-10-06-status.svg",
   "diagram_alt": "The task chain works in a trial and the overnight wake-up broke. Many agents on one project hasn't been tried",
-  "article_sha256": "254b8bad4e4f99d4442a11be51c259b52fbe2c72d9b6f6a435f3350bfd61f5ad",
+  "article_sha256": "f33f462c745021e7654b1aa960980bdcb7494bca815048db39b8732bc0db7e8d",
   "published": true,
   "editorial_review": "Evidence, privacy, full stylint and asset checks by publication coordinator (public-journal-site)",
   "published_at": "2026-10-06T07:45:51.360005+00:00",
-  "updated_at": "2026-10-06T07:45:51.360018+00:00"
+  "updated_at": "2026-10-14T22:31:59.542446+00:00",
+  "visual_refresh": {
+    "scope": "Report numbering and day-specific conceptual hero illustration; original prose preserved.",
+    "image_generation": "Built-in imagegen",
+    "style_check": "Stylint skipped at the user's explicit instruction for this update."
+  }
 }

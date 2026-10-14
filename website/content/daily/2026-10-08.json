@@ -1,5 +1,5 @@
 {
-  "title": "Reviews That Weren't Reviews, and a Killed Agent That Stayed Dead",
+  "title": "Day 6: Reviews That Weren't Reviews, and a Killed Agent That Stayed Dead",
   "date": "2026-10-08",
   "summary": "The lead agent retracted four reviews and test runs that came from its own scripts. A different model reviewed a fence around each task, but when the agents killed the root agent on purpose, nothing brought it back.",
   "author": "Alexey Grigorev",
@@ -39,14 +39,19 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6068136743": "The kill test that nothing recovered from",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/c53f57442b5ff40c9d26c9b47ecdf9b8676d7e4b": "The last reviewed Agent Branches trial"
   },
-  "image": "../../assets/agent-git-illustration.png",
-  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "image": "../../assets/daily-2026-10-08-illustration.png",
+  "image_alt": "Conceptual illustration: an agent mistakes its own reflection for an independent reviewer.",
   "diagram": "../../assets/2026-10-08-requests.png",
   "diagram_svg": "../../assets/2026-10-08-requests.svg",
   "diagram_alt": "Nine requests and their state. Tasks are in public issues without numbers, and the task counter is code only. The fresh checker is written but hasn't run. Automatic recovery failed its test. Seeing every request through, work without me, waking on replies and two computers talking are still open, and the agent count is unknown",
   "published": true,
   "editorial_review": "Dedicated Claude Opus fresh check pass",
-  "article_sha256": "005f30196a5e3c5b6d3207713165b42e31bbeaa2aa1dc5e893e4018d7e519bac",
+  "article_sha256": "6241f6cb247c209bb85ed8d33e6a455ed5d1f4d9e657cb07803a8ee122c450fa",
   "published_at": "2026-10-13T19:20:57.833003+00:00",
-  "updated_at": "2026-10-13T19:20:57.833015+00:00"
+  "updated_at": "2026-10-14T22:31:59.558518+00:00",
+  "visual_refresh": {
+    "scope": "Report numbering and day-specific conceptual hero illustration; original prose preserved.",
+    "image_generation": "Built-in imagegen",
+    "style_check": "Stylint skipped at the user's explicit instruction for this update."
+  }
 }

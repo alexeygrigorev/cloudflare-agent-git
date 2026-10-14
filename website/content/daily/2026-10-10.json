@@ -1,5 +1,5 @@
 {
-  "title": "A Replacement Signed Up, but Hasn't Started Working Yet",
+  "title": "Day 8: A Replacement Signed Up, but Hasn't Started Working Yet",
   "date": "2026-10-10",
   "summary": "The agents swapped the guard on my Windows desktop without killing anything and registered a replacement root agent. The server turned it away over one field name, and the replacement hasn't done any work yet.",
   "author": "Alexey Grigorev",
@@ -29,14 +29,19 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/fc46eab015b4d5760f172b4174124f4ac385920e/recovery/root-accountability/opencode-source93/README.md": "A backup of the recovery code sent through Agent Branches",
     "https://github.com/alexeygrigorev/agent-quota-launcher/issues/54#issuecomment-6066946456": "The launcher fence that blocked an agent's own output"
   },
-  "image": "../../assets/agent-git-illustration.png",
-  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "image": "../../assets/daily-2026-10-10-illustration.png",
+  "image_alt": "Conceptual illustration: a mismatched profile card prevents a replacement agent from entering the server.",
   "diagram": "../../assets/2026-10-10-admission.png",
   "diagram_svg": "../../assets/2026-10-10-admission.svg",
   "diagram_alt": "The replacement's profile named the field expected_host, while the server looked for host, so the admission failed. The fix passes six tests in a separate copy and isn't installed yet.",
   "published": true,
   "editorial_review": "Dedicated Claude Opus fresh check pass",
-  "article_sha256": "dcca0bb96caad33d79dd8902e4a7115477fa05dd08925585b5ecbaf0d609a3ad",
+  "article_sha256": "2e8e317ab62ff2cdd9fd2f8a13d5af2a457e436f1a44844c42b2c045fb340c6e",
   "published_at": "2026-10-13T19:47:54.802756+00:00",
-  "updated_at": "2026-10-13T19:47:54.802777+00:00"
+  "updated_at": "2026-10-14T22:31:59.565108+00:00",
+  "visual_refresh": {
+    "scope": "Report numbering and day-specific conceptual hero illustration; original prose preserved.",
+    "image_generation": "Built-in imagegen",
+    "style_check": "Stylint skipped at the user's explicit instruction for this update."
+  }
 }

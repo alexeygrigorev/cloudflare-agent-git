@@ -1,5 +1,5 @@
 {
-  "title": "The Demo Video Is Approved. The Agents Around It Are Still Fragile",
+  "title": "Day 10: The Demo Video Is Approved. The Agents Around It Are Still Fragile",
   "date": "2026-10-12",
   "summary": "A reviewer accepted the three-agent run, and I approved the demo video. I moved the root off my Grok chat bot because it drained my usage, but lost agents still need another agent to restart them.",
   "author": "Alexey Grigorev",
@@ -35,14 +35,19 @@
     "https://github.com/alexeygrigorev/agent-quota-launcher/issues/61": "The launcher bug where a reviewer retries an unsupported tool",
     "https://github.com/alexeygrigorev/agent-quota-launcher/issues/62": "The task for a watcher that spots hung agents"
   },
-  "image": "../../assets/agent-git-illustration.png",
-  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "image": "../../assets/daily-2026-10-12-illustration.png",
+  "image_alt": "Conceptual illustration: an accepted demo stands beside a fragile clock-driven agent workflow.",
   "diagram": "../../assets/2026-10-12-root.png",
   "diagram_svg": "../../assets/2026-10-12-root.svg",
   "diagram_alt": "Before, the Grok chat bot checked on a schedule and drained usage. Now a server timer starts a headless root every half hour, while the Grok bot still looks in. A planned Agent Hub scheduler should replace the timer",
   "published": true,
   "editorial_review": "Dedicated Claude Opus fresh check pass",
-  "article_sha256": "697550cefe8bef3549815777ac5805a19d92bf7f56c2951d4a35987c042cedf0",
+  "article_sha256": "1e9d2f92b952a33152e03b4d67951fdab813e4a25dc3396c1633e9a87393419c",
   "published_at": "2026-10-13T20:25:24.575817+00:00",
-  "updated_at": "2026-10-13T20:25:24.575837+00:00"
+  "updated_at": "2026-10-14T22:31:59.572127+00:00",
+  "visual_refresh": {
+    "scope": "Report numbering and day-specific conceptual hero illustration; original prose preserved.",
+    "image_generation": "Built-in imagegen",
+    "style_check": "Stylint skipped at the user's explicit instruction for this update."
+  }
 }

@@ -1,5 +1,5 @@
 {
-  "title": "A Killed Agent Came Back on Its Own, Then Lost Its Job",
+  "title": "Day 7: A Killed Agent Came Back on Its Own, Then Lost Its Job",
   "date": "2026-10-09",
   "summary": "The agents killed the root agent again, and this time a replacement took over its role and did useful work without help. Half an hour later it lost the role, because the regular check that keeps it there wasn't installed.",
   "author": "Alexey Grigorev",
@@ -35,14 +35,19 @@
     "https://github.com/alexeygrigorev/agent-quota-launcher/issues/54#issuecomment-6066946456": "The launcher fence that blocked an agent's own output",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6078900960": "The server lost its route to the Windows desktop"
   },
-  "image": "../../assets/agent-git-illustration.png",
-  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "image": "../../assets/daily-2026-10-09-illustration.png",
+  "image_alt": "Conceptual illustration: a replacement agent returns to work but loses its role at a missing recurring check.",
   "diagram": "../../assets/2026-10-09-timeline.png",
   "diagram_svg": "../../assets/2026-10-09-timeline.svg",
   "diagram_alt": "The replacement held its role within two minutes, gave a useful answer at three and renewed its role at four. Its first regular check was due at 31 minutes, nothing had been installed to run it, and the role expired at 35 minutes.",
   "published": true,
   "editorial_review": "Dedicated Claude Opus fresh check pass",
-  "article_sha256": "e238bb491a2ee5cb223f130497d383b6d57ca0877dacc6c6f35a374d92afbfd4",
+  "article_sha256": "46c38d4514f3d8b758a5569a8e34a4eae23bc7ff07e80c6702225e41a980876e",
   "published_at": "2026-10-13T19:37:20.017268+00:00",
-  "updated_at": "2026-10-13T19:37:20.017284+00:00"
+  "updated_at": "2026-10-14T22:31:59.561624+00:00",
+  "visual_refresh": {
+    "scope": "Report numbering and day-specific conceptual hero illustration; original prose preserved.",
+    "image_generation": "Built-in imagegen",
+    "style_check": "Stylint skipped at the user's explicit instruction for this update."
+  }
 }

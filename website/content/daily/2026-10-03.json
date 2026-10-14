@@ -29,14 +29,14 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/claude/standup-2026-10-03.md",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/approaches-20.md"
   ],
-  "image": "../../assets/agent-git-illustration.png",
-  "image_alt": "Conceptual illustration for the agent Git experiment; not measurement evidence",
+  "image": "../../assets/daily-2026-10-03-illustration.png",
+  "image_alt": "Conceptual illustration: an agent examines duplicated project folders beside a spread of research ideas.",
   "published": true,
   "actual_writer_models": [
     "claude-opus-5-5"
   ],
   "editorial_review": "Evidence, privacy, full stylint and asset checks by desktop orchestrator",
-  "article_sha256": "44a2ccae552a05a1ef7cb69db15caa0b403f07dfea76b3af54a4daffdbcbe202",
+  "article_sha256": "50a6ab60a4e3363904a9c52af265de6aa54dcbeb986e28b8f972f8caadd9f63c",
   "published_at": "2026-10-03T03:12:10.216532+00:00",
   "corrected_at": "2026-10-03T10:51:35+00:00",
   "corrections": [
@@ -104,5 +104,11 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/4321187/research/codex/standup-2026-10-03.md": "Codex's notes for the morning summary",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/claude/standup-2026-10-03.md": "Claude's notes for the morning summary",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/blob/377ac4d1cc5763a7c8836b27ba0922ffd51cc39b/research/approaches-20.md": "The 20 approaches the agents collected (morning update)"
+  },
+  "updated_at": "2026-10-14T22:31:59.533981+00:00",
+  "visual_refresh": {
+    "scope": "Report numbering and day-specific conceptual hero illustration; original prose preserved.",
+    "image_generation": "Built-in imagegen",
+    "style_check": "Stylint skipped at the user's explicit instruction for this update."
   }
 }

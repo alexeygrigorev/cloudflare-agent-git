@@ -1,5 +1,5 @@
 {
-  "title": "All In on the Contest Entry. Real Agents Shared It on One Machine",
+  "title": "Day 9: All In on the Contest Entry. Real Agents Shared It on One Machine",
   "date": "2026-10-11",
   "summary": "I paused everything except the contest entry and made my Grok chat bot the only root. After a failed rehearsal and a reviewed fix, three real agents worked on the entry at the same time on one machine.",
   "author": "Alexey Grigorev",
@@ -43,14 +43,19 @@
     "https://github.com/alexeygrigorev/agent-coordination/issues/60#issuecomment-6109240366": "The entry adopts the messaging team's evidence checker",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102": "The open task for bringing back a lost agent automatically"
   },
-  "image": "../../assets/agent-git-illustration.png",
-  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "image": "../../assets/daily-2026-10-11-illustration.png",
+  "image_alt": "Conceptual illustration: three agents work on separate branches toward one shared workstation while other projects are paused.",
   "diagram": "../../assets/2026-10-11-focus.png",
   "diagram_svg": "../../assets/2026-10-11-focus.svg",
   "diagram_alt": "Agent Branches is the only active product until the deadline. The dashboard, the launcher and the messaging work are paused. The Grok chat bot is the only root, and the Windows desktop is an offline work machine",
   "published": true,
   "editorial_review": "Dedicated Claude Opus fresh check pass",
-  "article_sha256": "a4418dce5f7344e25c23cc4c811c2a4d58b1a8aefa0d05e7b517ba5f21a65707",
+  "article_sha256": "7043dc7f439ce6e2ba9ba2723c2167941f5611a05f1fe4c6a72b186b9cfd285e",
   "published_at": "2026-10-13T20:07:07.480759+00:00",
-  "updated_at": "2026-10-13T20:07:07.480777+00:00"
+  "updated_at": "2026-10-14T22:31:59.568664+00:00",
+  "visual_refresh": {
+    "scope": "Report numbering and day-specific conceptual hero illustration; original prose preserved.",
+    "image_generation": "Built-in imagegen",
+    "style_check": "Stylint skipped at the user's explicit instruction for this update."
+  }
 }

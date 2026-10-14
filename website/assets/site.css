@@ -148,7 +148,7 @@ a.hyp-card:hover{background:var(--hover);color:var(--ink)}
 .proj-title{display:flex;flex-direction:column;gap:16px;min-width:0}
 .proj-status{display:flex;gap:10px;align-items:center;font-size:15px;font-weight:500;line-height:1.4;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);padding:10px 0}
 .proj-status svg{flex:none}
-.proj-figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0;width:100%;max-width:640px}
+.proj-figure{margin:0 auto;display:flex;flex-direction:column;gap:6px;min-width:0;width:100%;max-width:640px}
 .proj-figure img{width:100%;aspect-ratio:2/1}
 .proj-figure figcaption{font-family:var(--mono);font-size:12px;line-height:1.5;letter-spacing:.04em;color:var(--muted)}
 .proj-body{width:100%;max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:40px;padding-bottom:16px}

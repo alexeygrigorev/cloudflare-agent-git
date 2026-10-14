@@ -1,5 +1,5 @@
 {
-  "title": "The Contest Entry Runs From Scratch. Two Computers Still Wait",
+  "title": "Day 11: The Contest Entry Runs From Scratch. Two Computers Still Wait",
   "date": "2026-10-13",
   "summary": "The contest entry installs and passes its tests from a fresh copy, and the headless root kept checking all day. Current usage readings are fresh again, but the missing hours and the amount of useful work are still unknown.",
   "author": "Alexey Grigorev",
@@ -32,8 +32,8 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/774112d123eacef29a1c18176978b536e282bd5e": "The source change that sends usage samples to a time-series database",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/110": "The open task to measure useful work and accepted tasks truthfully"
   },
-  "image": "../../assets/agent-git-illustration.png",
-  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "image": "../../assets/daily-2026-10-13-illustration.png",
+  "image_alt": "Conceptual illustration: a fresh project copy passes checks on one workstation while the connection to a second computer remains unfinished.",
   "diagram": "../../assets/2026-10-13-status.png",
   "diagram_svg": "../../assets/2026-10-13-status.svg",
   "diagram_alt": "The entry runs from scratch and messages arrive after a restart on one machine, but two real computers haven't been tried",
@@ -42,7 +42,12 @@
     "claude-opus-5-5"
   ],
   "editorial_review": "Dedicated Claude Opus fresh check pass",
-  "article_sha256": "c71e2812324f950476fa3f7d5b7e5d852caa098dbbc69fffca45a0568dded397",
+  "article_sha256": "d855d6d3f8a74f31074ee38edb382b4c9a0eddfcdbb25040c684c44d4b4c9781",
   "published_at": "2026-10-13T21:14:31.647051+00:00",
-  "updated_at": "2026-10-13T21:14:31.647072+00:00"
+  "updated_at": "2026-10-14T22:31:59.575597+00:00",
+  "visual_refresh": {
+    "scope": "Report numbering and day-specific conceptual hero illustration; original prose preserved.",
+    "image_generation": "Built-in imagegen",
+    "style_check": "Stylint skipped at the user's explicit instruction for this update."
+  }
 }

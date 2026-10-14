@@ -1,5 +1,5 @@
 {
-  "title": "Nothing Woke the Agents, So My Requests Moved Into the Open",
+  "title": "Day 5: Nothing Woke the Agents, So My Requests Moved Into the Open",
   "date": "2026-10-07",
   "summary": "Overnight nothing woke the main agent, and status checks reported problems without fixing them. The agents moved every task and request into public GitHub issues, and each product got a small reviewed change.",
   "author": "Alexey Grigorev",
@@ -33,14 +33,19 @@
     "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/22e2b29a563fe466561070260c2fad8c78158fee": "The regular check on the main agent",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/cf79a045c308045ba199febc3adbd2931969dcd1": "The note that the check only raises an alert"
   },
-  "image": "../../assets/agent-git-illustration.png",
-  "image_alt": "Conceptual illustration of agent markers working on folders and Git branches",
+  "image": "../../assets/daily-2026-10-07-illustration.png",
+  "image_alt": "Conceptual illustration: an unread message waits beside an idle agent while requests are moved onto an open task board.",
   "diagram": "../../assets/2026-10-07-requests.png",
   "diagram_svg": "../../assets/2026-10-07-requests.svg",
   "diagram_alt": "Eight requests and their state. Public issues and tidy documentation are done. The task counter is code only, and lost agents come back only by hand. The agent that should fix the rest has instructions and a planned test. Work without me and two computers talking are still open, and the process article waits for my review",
   "published": true,
   "editorial_review": "Dedicated Claude Opus fresh check pass",
-  "article_sha256": "009050ac605f8f10fdf5d39471bf3fd5cd1c7c6c9371db92b5d9f5a37fce455b",
+  "article_sha256": "bbc4003879c260c431916e773bd25d7223e6bbfe6f817e180830bb4e7fa9b488",
   "published_at": "2026-10-13T19:01:11.868033+00:00",
-  "updated_at": "2026-10-13T19:01:11.868048+00:00"
+  "updated_at": "2026-10-14T22:31:59.550808+00:00",
+  "visual_refresh": {
+    "scope": "Report numbering and day-specific conceptual hero illustration; original prose preserved.",
+    "image_generation": "Built-in imagegen",
+    "style_check": "Stylint skipped at the user's explicit instruction for this update."
+  }
 }
