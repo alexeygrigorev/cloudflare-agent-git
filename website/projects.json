@@ -9,7 +9,8 @@
     "idea": "Test exact combinations of work-in-progress heads and deliver evidence-bound warnings to the agents while they can still change course.",
     "evidence": "The equal-policy live pair produced compatible first source commits, no notices, and zero subsequent source repairs in both arms. Both principals withdrew the primary recommendation. This result does not establish warning uptake or prove that interference never occurs.",
     "test": "A useful neutral task family where a real agent discovers and consumes a warning. Preserve immutable candidate heads and compare against completion-time checks with equal task policy.",
-    "falsifier": "If agents do not change useful outcomes or measured repair effort compared with ordinary worktrees and final integration tests, this should remain a capability rather than the primary product."
+    "falsifier": "If agents do not change useful outcomes or measured repair effort compared with ordinary worktrees and final integration tests, this should remain a capability rather than the primary product.",
+    "pain_summary": "Parallel changes can pass their own tests and still fail when combined."
   },
   {
     "id": "A16",
@@ -21,7 +22,8 @@
     "idea": "Account for source, immutable dependencies, mutable outputs, caches, and logs separately. Compare ordinary package sharing, sparse or copy-on-write worktrees, and remote execution without hiding allocation costs.",
     "evidence": "3 October: the principals proposed parking the local competition product after repeated whole-footprint gate failures. The latest fixture measured 47.76% savings against a greater-than-50% gate, with incumbent clone 47.38% near-equal. These tiny fixtures do not establish host-wide savings or safe removal of existing worktrees; remote mode remains unvalidated.",
     "test": "Keep useful storage advice and read-only diagnostics. Reopen a product only with new user/task evidence beyond ordinary sharing and lifecycle tools; do not move the gate or extrapolate a passing third-workspace result.",
-    "falsifier": "If ordinary package and workspace lifecycle tools solve the pain with less complexity, an Artifacts-specific local product may not be needed. A useful workspace diagnostic could still survive."
+    "falsifier": "If ordinary package and workspace lifecycle tools solve the pain with less complexity, an Artifacts-specific local product may not be needed. A useful workspace diagnostic could still survive.",
+    "pain_summary": "Separate agent workspaces can fill the disk with repeated dependencies and builds."
   },
   {
     "id": "A05",
@@ -33,7 +35,8 @@
     "idea": "Run the same versioned task in a few forks, compare accepted behavior and independent checks, allow ties or neither, and preserve the losing attempts with their evidence.",
     "evidence": "This remains a hypothesis supported by reports from existing best-of-N users. A comparative live trial and advantage over current vendor selection workflows have not been demonstrated.",
     "test": "Compare a single attempt and existing vendor-style selection on a declared small task set. Give reviewers equal test evidence and measure accepted outcomes, review effort, and usage.",
-    "falsifier": "Equal outcomes with higher model usage, review burden, or operational complexity are grounds to park it."
+    "falsifier": "Equal outcomes with higher model usage, review burden, or operational complexity are grounds to park it.",
+    "pain_summary": "Comparing several agents' attempts takes time, and a plausible answer can still be wrong."
   },
   {
     "id": "A06",
@@ -45,7 +48,8 @@
     "idea": "Connect a task contract, exact diff, tested behavior, impacted consumers, and evidence links in a concise review artifact. Keep transcripts optional.",
     "evidence": "3 October: the first real internal review (N=1) kept the same APPROVE verdict and confidence 80 with and without the story card. The card prompted extra checking and contained a timing error. This is descriptive internal use, not a controlled timing benefit or external demand; incumbent overlap remains.",
     "test": "A prospective unfamiliar review decision with equal evidence and an ordinary PR-list control. Measure review effort and defect catch without manufacturing a helpful bug.",
-    "falsifier": "If a story hides a defect, biases the reviewer, or fails to reduce effort with equal quality, a generated summary is not an improvement."
+    "falsifier": "If a story hides a defect, biases the reviewer, or fails to reduce effort with equal quality, a generated summary is not an improvement.",
+    "pain_summary": "Agent-generated changes increase review work; long summaries can hide mistakes or mislead reviewers."
   },
   {
     "id": "A10",
@@ -57,7 +61,8 @@
     "idea": "Keep a versioned task manifest with exact base and current SHAs, unresolved decisions, actual checks, and a receiver acknowledgement. Exclude private traces and credentials.",
     "evidence": "3 October: both principals provisionally parked A10 after actual ordinary Git/file recovery succeeded in two observed tasks. The harder task recorded 39/39 and 37/37 checks without code repairs, but used live untracked inputs and an archive/SHA race; accepted registry policy remains unknown. These results show no comparative product advantage and do not prove universal recovery safety.",
     "test": "Reopen only with firsthand demand, a gap against incumbent recovery, and an actual ordinary-baseline failure. Do not manufacture harder fixtures to retain a product place.",
-    "falsifier": "If correct-base recovery, preserved acceptance, time, and review effort do not improve over ordinary tools, avoid adding another coordination layer."
+    "falsifier": "If correct-base recovery, preserved acceptance, time, and review effort do not improve over ordinary tools, avoid adding another coordination layer.",
+    "pain_summary": "When an agent restarts or hands off a task, its intent, unfinished work and correct code version can get lost."
   },
   {
     "id": "A02",
@@ -69,7 +74,8 @@
     "idea": "Agent claims paths/symbols with a lease (TTL, renewable) via MCP; overlapping claims are allowed but negotiated; landing rejects any diff touching paths outside the agent's claim or under another active lease unless the human approves.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: homegrown merge locks/intent logs (E-C105, E-C109, E-C362); prompt-only rules ignored (E-C136, E-C140); shell bypass of guards (E-X012). Counter: claims don't earn their keep (E-C113), scope not knowable upfront (E-C112).",
     "test": "Not yet scheduled. Smallest demo on record: two agents request overlapping claims; second is redirected; a third agent edits outside claim and is quarantined at landing.",
-    "falsifier": "Expired-lease/remote-publisher race (Codex X2): if a racing publisher can land a diff inside another's live lease, or if claims reduce conflicts by <30% vs no claims on replayed tasks, kill."
+    "falsifier": "Expired-lease/remote-publisher race (Codex X2): if a racing publisher can land a diff inside another's live lease, or if claims reduce conflicts by <30% vs no claims on replayed tasks, kill.",
+    "pain_summary": "Stop two agents from silently doing overlapping work."
   },
   {
     "id": "A03",
@@ -81,7 +87,8 @@
     "idea": "Candidate held unchanged; runner tests canonical+candidate; on failure, the original versioned task contract is re-run by an agent in a new fork from the new base; scope drift is diffed against the first attempt; human approves if intent/test policy changed; receipt records parent attempt.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: E-X004, E-X008 (60 branches on stale base), E-C101 (would rather rewrite than resolve), E-C103; fixture research/codex/local-validation.md.",
     "test": "Not yet scheduled. Smallest demo on record: two agents; A lands; B's clean-merge breaks; platform re-runs B's contract on fresh base, passes, lands with receipt.",
-    "falsifier": "On tasks with hidden acceptance criteria or flaky tests, if reapplication changes scope without detection in >1 of 5 runs, or median loop >15 min, kill as a product (keep as feature)."
+    "falsifier": "On tasks with hidden acceptance criteria or flaky tests, if reapplication changes scope without detection in >1 of 5 runs, or median loop >15 min, kill as a product (keep as feature).",
+    "pain_summary": "A change made against an older code version can break newer work when it is merged."
   },
   {
     "id": "A04",
@@ -93,7 +100,8 @@
     "idea": "When an agent changes an exported symbol, the platform extracts the contract (signature + existing tests/call sites) and runs sibling agents' new call sites against it in the runner; violations notify both agents.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: E-A001, E-X004, Codex fixture; E-C106 (modularity is not enough).",
     "test": "Not yet scheduled. Smallest demo on record: TypeScript repo, A changes behavior of `greet()`, B adds caller; sentinel flags it pre-landing.",
-    "falsifier": "If a plain \"run full test suite on merged state\" (A01/A03) catches every case the sentinel catches on 10 fixtures, it adds no value; kill."
+    "falsifier": "If a plain \"run full test suite on merged state\" (A01/A03) catches every case the sentinel catches on 10 fixtures, it adds no value; kill.",
+    "pain_summary": "Changes can merge without text conflicts but break behavior that other code depends on."
   },
   {
     "id": "A07",
@@ -105,7 +113,8 @@
     "idea": "Contributors (human or agent) push to a quarantine fork, never a PR. Platform requires a reproducer + test, runs it on canonical base and on the patch (fails-then-passes), minimizes diff, checks the project's machine-readable AI policy (E-C225), and only then surfaces a compact card to maintainers. Non-reproducing submissions never reach a human.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: curl ~20% slop, 5% valid (E-C202, E-C203); GitHub \"Eternal September\" (E-C205); tldraw/Ghostty auto-close (E-C208, E-C234); 1-open-PR asks (E-C223); \"DoS\" (E-C152); effort asymmetry (E-C121). Counter: curl merges ~50 AI-analyzer fixes (E-C227) -> verified AI work is welcome.",
     "test": "Not yet scheduled. Smallest demo on record: 5 submissions from agents (2 slop, 1 duplicate, 2 real fixes); maintainer sees 2 verified cards.",
-    "falsifier": "On 20 real historical slop/valid reports (public curl/HackerOne disclosures), if the gate does not filter >=70% of slop while passing >=90% of valid, kill."
+    "falsifier": "On 20 real historical slop/valid reports (public curl/HackerOne disclosures), if the gate does not filter >=70% of slop while passing >=90% of valid, kill.",
+    "pain_summary": "Maintainers spend time reviewing AI contributions that lack a working fix or evidence."
   },
   {
     "id": "A08",
@@ -117,7 +126,8 @@
     "idea": "Push event -> N lens reviewers (security, perf, API) in isolated read-only forks; disagreements escalate.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: reviewer must be independent of the author agent (E-C243); prompt injection via PR content (E-C131); PostHog qa-swarm practice (social-evidence).",
     "test": "Not yet scheduled. Smallest demo on record: 3 reviewers comment on agent pushes.",
-    "falsifier": "Seeded-bug benchmark vs Copilot review; if not better, kill. Kept for completeness; likely feature of A06."
+    "falsifier": "Seeded-bug benchmark vs Copilot review; if not better, kill. Kept for completeness; likely feature of A06.",
+    "pain_summary": "Bugs in agent-written code can reach human review without an independent check."
   },
   {
     "id": "A09",
@@ -129,7 +139,8 @@
     "idea": "Runner signs a receipt {source SHA, base SHA, merged SHA, test policy version, results, environment digest} stored as git note; UI and CLI `verify` check signature and recompute merged SHA.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: provenance wanted as compact decisions not transcripts (E-C153 vs E-C154/E-C155); \"deliver code you have proven to work\" (E-C239); kernel \"unverified reports\" / Assisted-by (E-C214); Codex X3.",
     "test": "Not yet scheduled. Smallest demo on record: agent claims green; receipt shows tests ran on stale base; platform rejects; after rerun receipt verifies.",
-    "falsifier": "If a reviewer cannot detect a tampered or stale receipt in <60 s in a blind test, kill."
+    "falsifier": "If a reviewer cannot detect a tampered or stale receipt in <60 s in a blind test, kill.",
+    "pain_summary": "A passing test report may refer to an older change or a different combination of commits."
   },
   {
     "id": "A11",
@@ -141,7 +152,8 @@
     "idea": "Every landing records chosen candidate, rejected candidates (links to read-only forks), conflict resolutions, reviewer decision, as Agent-Trace-compatible notes; `why <file:line>` walks blame -> ledger.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: E-C161; Agent Trace leaves rebase/storage open (E-C335); \"why\" in announcement (E-C005); workflows gap 5 (provenance that survives integration).",
     "test": "Not yet scheduled. Smallest demo on record: after a tournament (A05) or conflict, `why` shows the losing alternative and reason.",
-    "falsifier": "If in a blind archaeology task the ledger does not change the engineer's answer vs plain blame+PR text, kill."
+    "falsifier": "If in a blind archaeology task the ledger does not change the engineer's answer vs plain blame+PR text, kill.",
+    "pain_summary": "Git history can show what changed without explaining why or which alternatives were rejected."
   },
   {
     "id": "A12",
@@ -153,7 +165,8 @@
     "idea": "Agents only ever get a TTL write token to their own fork; canonical has a single publisher; publication = platform re-validates head and fast-forwards; every token mint/revoke audited.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: force-push/reset/stash races (E-C135, E-C136, E-C138); wrong-checkout writes (E-X006, E-X009); unrelated deletions (E-X010); prompt rules ignored (E-C140).",
     "test": "Not yet scheduled. Smallest demo on record: rogue agent runs `git push --force` and `reset --hard`; canonical untouched; footprint visible.",
-    "falsifier": "If any documented path lets a raw git client modify canonical state, or if equivalent GitHub setup takes <10 min, product value is low; keep as primitive."
+    "falsifier": "If any documented path lets a raw git client modify canonical state, or if equivalent GitHub setup takes <10 min, product value is low; keep as primitive.",
+    "pain_summary": "An agent with broad Git access can overwrite shared history or affect another agent's work."
   },
   {
     "id": "A13",
@@ -165,7 +178,8 @@
     "idea": "Platform records every ref change by agent identity (it is the only publisher), builds an operation log; `undo session S` computes revert commits for landed changes and deletes/archives forks; shows dependency impact (other agents built on S).",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: losing work / destructive ops (E-X001, E-X010, E-C138); jj op log used for this locally (E-C331, E-C148).",
     "test": "Not yet scheduled. Smallest demo on record: 3 agents; one corrupts behavior; one-click undo of its session while keeping others' later work.",
-    "falsifier": "If undo leaves the repo broken (tests) in >1 of 5 scenarios where later work depended on the undone session, scope down."
+    "falsifier": "If undo leaves the repo broken (tests) in >1 of 5 scenarios where later work depended on the undone session, scope down.",
+    "pain_summary": "One agent's changes can spread across several branches, making them hard to find and undo safely."
   },
   {
     "id": "A14",
@@ -177,7 +191,8 @@
     "idea": "Agent pushes; platform builds a Worker preview with isolated D1/KV (seeded fixture); agent calls `verify(url)` with Playwright-like checks; reviewers click the URL linked from the commit.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: top complaint \"manually verifying everything is working\" (E-C321); ports/DBs/secrets per worktree (E-C319, E-C322, E-C363); runtime collisions (E-X002, E-X005); slow batch CI feedback (E-C142).",
     "test": "Not yet scheduled. Smallest demo on record: 3 agents change the same app; 3 live preview URLs with separate data; one regression caught by its preview.",
-    "falsifier": "Z6 — if per-agent preview URLs for fork-per-agent cannot be made to work by Oct 7, pivot to data isolation only."
+    "falsifier": "Z6 — if per-agent preview URLs for fork-per-agent cannot be made to work by Oct 7, pivot to data isolation only.",
+    "pain_summary": "Agents running separate changes can still collide over ports, databases and shared runtime data."
   },
   {
     "id": "A15",
@@ -189,7 +204,8 @@
     "idea": "Push event -> test impact analysis -> runner executes subset -> result posted to agent MCP channel.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: CI usage 100x (E-C141), Actions batch-only (E-C142), agents miss red CI (E-C139).",
     "test": "Not yet scheduled. Smallest demo on record: agent loop with sub-30 s feedback vs full CI.",
-    "falsifier": "If impacted-subset misses >5% of failures on a seeded set, kill."
+    "falsifier": "If impacted-subset misses >5% of failures on a seeded set, kill.",
+    "pain_summary": "Slow or expensive test runs delay feedback, and agents can miss failed checks."
   },
   {
     "id": "A17",
@@ -201,7 +217,8 @@
     "idea": "there's no separate task board.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: weak; manual orchestration overhead (social-evidence sawyerhood, search-level); Vibe Kanban popularity (E-C357) shows demand but crowded.",
     "test": "Not yet scheduled. Smallest demo on record: kanban driven by Artifacts events.",
-    "falsifier": "If users prefer existing kanban + worktrees in a 3-person trial, kill. Retained as UX shell candidate rather than product."
+    "falsifier": "If users prefer existing kanban + worktrees in a 3-person trial, kill. Retained as UX shell candidate rather than product.",
+    "pain_summary": "People must keep task-board status in sync with the code agents are actually working on."
   },
   {
     "id": "A18",
@@ -213,7 +230,8 @@
     "idea": "Change set object lists repos + order; agents work per repo fork; platform tests consumers against producer candidate; lands in order; on failure, rolls forward/back per protocol.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: worktrees break across repos, \"the git remote becomes the only integration point\" (E-C361); multi-repo coordination (E-C108).",
     "test": "Not yet scheduled. Smallest demo on record: 3 repos (lib, service, client); API rename landed in order with consumer tests.",
-    "falsifier": "If the recovery protocol cannot restore consistency after an injected mid-sequence failure, kill."
+    "falsifier": "If the recovery protocol cannot restore consistency after an injected mid-sequence failure, kill.",
+    "pain_summary": "Changes across related repositories can leave incompatible versions if integration fails partway."
   },
   {
     "id": "A19",
@@ -225,7 +243,8 @@
     "idea": "Platform splits a migration into items; each agent gets a fork; trial-merges batches (from A01 machinery), lands compatible batches, re-queues failures.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: agents do routine maintenance (announcement framing); CI cost of many small PRs (E-C141); merge queue as bottleneck. Evidence is moderate.",
     "test": "Not yet scheduled. Smallest demo on record: 10 agents fix 10 lint/dep items concurrently; platform lands in 2-3 batches.",
-    "falsifier": "If batch landing does not cut total wall time/CI runs vs serial merge queue by >=40%, kill."
+    "falsifier": "If batch landing does not cut total wall time/CI runs vs serial merge queue by >=40%, kill.",
+    "pain_summary": "Many small maintenance changes can create a backlog of test runs and merges."
   },
   {
     "id": "A20",
@@ -237,6 +256,7 @@
     "idea": "Platform tracks per agent-config (model+prompt+tools hash) land/revert/defect rates; policy maps risk tier x trust to autonomy.",
     "evidence": "Not tested. The agents gathered reports of the pain behind this idea and scored it on paper only; no experiment has been run on it. Cited pain: Copilot approvals counting toward required approvals (E-C246) shows demand; review fatigue (E-C228). Counter: reputation dies on disposable accounts (E-C202) — applies to inbound, less to internal configs.",
     "test": "Not yet scheduled. Smallest demo on record: two configs; one earns auto-land, other demoted after revert.",
-    "falsifier": "If trust score does not predict reverts better than path-risk alone on historical data, kill."
+    "falsifier": "If trust score does not predict reverts better than path-risk alone on historical data, kill.",
+    "pain_summary": "Reviewing every small agent change takes time, but letting all changes merge automatically risks defects."
   }
 ]

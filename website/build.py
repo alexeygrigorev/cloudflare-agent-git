@@ -116,7 +116,7 @@ def image_markup(alt, url, source=None):
         # the portrait version keeps every label at 12 px or more at every width.
         image_url = BASE+'/assets/team-workflow-mobile.svg'
     image = '<img loading="lazy" src="'+E(image_url, quote=True)+'" alt="'+E(alt, quote=True)+'">'
-    return '<figure'+(' class="portrait-fig"' if portrait else '')+'>'+image+'<figcaption>'+E(alt)+'</figcaption></figure>'
+    return '<figure'+(' class="portrait-fig"' if portrait else '')+'><figcaption>'+E(alt)+'</figcaption>'+image+'</figure>'
 
 def inline(text, source=None):
     tokens = []
@@ -295,7 +295,9 @@ def card(p, with_next=False):
         nxt = '<p class="card-next">Next test: '+E(first)+'</p>'
     return ('<a class="hyp-card" href="'+BASE+'/hypotheses/'+p['slug']+'/"><span class="card-top"><span class="card-mark" aria-hidden="true">'+CARD_MARKS.get(p['id'], CARD_MARKS['OTHER'])+'</span><span class="badge">'+tag+'</span></span>'
             '<span class="card-head"><span class="card-name">'+E(p['name'])+'</span></span>'
-            '<span class="status-line">'+smark(status_kind(p))+'<span>'+E(p['status'])+'</span></span><span class="card-short">'+E(p['summary'])+'</span>'+nxt+'</a>')
+            '<span class="status-line">'+smark(status_kind(p))+'<span>'+E(p['status'])+'</span></span>'
+            '<span class="card-short">Problem: '+E(p.get('pain_summary', p['problem']))+'</span>'
+            '<span class="card-short">Idea: '+E(p['summary'])+'</span>'+nxt+'</a>')
 
 def open_card(with_next=False):
     return ('<div class="hyp-card is-open"><span class="card-top"><span class="card-mark" aria-hidden="true">'+CARD_MARKS['SLOT6']+'</span><span class="badge">OPEN</span></span>'
@@ -365,7 +367,7 @@ def project_page(i, p):
     return ('<nav class="crumbs" aria-label="Breadcrumb"><a href="'+BASE+'/hypotheses/">Hypotheses</a><span aria-hidden="true">/</span><span>'+E(p['name'])+'</span></nav>'
             '<div class="proj-head"><div class="proj-title"><h1>'+E(p['name'])+'</h1>'
             '<div class="proj-status">'+smark(status_kind(p), 18)+'<span>'+E(p['status'])+'</span></div><div class="mono-meta">'+prov+'</div></div>'
-            +('<figure class="proj-figure"><img src="'+BASE+'/assets/scenes/'+p['slug']+'.svg" width="640" height="320" alt="'+E(p['name'], quote=True)+': conceptual diagram of the hypothesis, not a measured result"><figcaption>'+E(FIGS.get(p['id'], 'FIG. '+p['id']))+'</figcaption></figure>' if (ASSETS/'scenes'/(p['slug']+'.svg')).exists() else '')+'</div>'
+            +('<figure class="proj-figure"><figcaption>'+E(FIGS.get(p['id'], 'FIG. '+p['id']))+'</figcaption><img src="'+BASE+'/assets/scenes/'+p['slug']+'.svg" width="640" height="320" alt="'+E(p['name'], quote=True)+': conceptual diagram of the hypothesis, not a measured result"></figure>' if (ASSETS/'scenes'/(p['slug']+'.svg')).exists() else '')+'</div>'
             '<article class="proj-body">'
             '<section class="proj-sec"><h2 class="proj-num">01 \u00b7 PROBLEM</h2><p class="proj-problem">'+E(p['problem'])+'</p>'+('<p class="proj-who">Who: '+E(who)+'</p>' if who else '')+'</section>'
             '<section class="proj-sec"><h2 class="proj-num">02 \u00b7 HYPOTHESIS</h2><p class="proj-lead">'+E(p['idea'])+'</p></section>'
@@ -556,7 +558,7 @@ def main():
     ideas_title, ideas_body = ideas_page()
     write('ideas/', ideas_title, ideas_body, 'What each of the 20 approaches collected by the agent team would do.', 'article')
     write('checklist/', 'Experiment checklist', checklist_page())
-    team_fig = '<figure class="portrait-fig"><img loading="lazy" src="'+BASE+'/assets/team-workflow-mobile.svg" alt="How the team works: Alexey and the coordinating agent connect to the Claude and Codex lead agents, five research teams, worker agents, evidence, and review."><figcaption>The operating model. Arrows show responsibilities, not proof of continuous activity.</figcaption></figure>'
+    team_fig = '<figure class="portrait-fig"><figcaption>The operating model. Arrows show responsibilities, not proof of continuous activity.</figcaption><img loading="lazy" src="'+BASE+'/assets/team-workflow-mobile.svg" alt="How the team works: Alexey and the coordinating agent connect to the Claude and Codex lead agents, five research teams, worker agents, evidence, and review."></figure>'
     about = ('<article class="article">'+article_head('Build it. Test it. Tell the whole story.', 'A new Git platform competition prompted a wider question: where does Git make a team of coding agents harder to run?', '')
              +'<div class="prose"><h2>Start with actual pain</h2><p>Alexey\u2019s worktrees filled disk quickly. A read-only scan found 472 linked worktrees across 25 repositories, occupying a physical union of 111.7 GiB. Dependencies and builds accounted for 69.4 GiB, or 62.1%. These are measurements from one host, not a claim about every developer.</p><h2>Let the agents challenge each other</h2><p>Claude and Codex, the two lead agents, monitor the work and challenge each other\u2019s evidence. Research teams coordinate useful tasks, and worker agents can run in the background. The team is free to improve its working method, while preserving quotas, code recovery, and privacy.</p>'+team_fig+'<h2>Keep the failures visible</h2><p>Research is not product validation. No final six-approach shortlist has been approved. The first live integration comparison showed no separation, so that idea\u2019s primary status was withdrawn. A small storage experiment fell below the savings target set before the test.</p><h2>Use what survives</h2><p>Teams should build the smallest useful prototype and use it in their own development. Accepted outcomes, peer review, and recoverable Git history matter more than a launch count.</p>'
              '<p><a href="'+public_source('_docs/founder-journal/2026-10-02.md')+'">The original user brief'+EXT+'</a> \u00b7 <a href="'+public_source('AGENTS.md')+'">How the agents are expected to work'+EXT+'</a> \u00b7 <a href="https://blog.cloudflare.com/next-git-platform-on-cloudflare/">The competition that started it'+EXT+'</a></p></div></article>')

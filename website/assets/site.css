@@ -144,11 +144,11 @@ a.hyp-card:hover{background:var(--hover);color:var(--ink)}
 /* Project landing */
 .crumbs{display:flex;flex-wrap:wrap;gap:8px;font-size:13px;color:var(--muted);align-items:center}
 .crumbs a{text-decoration:none;min-height:24px;display:inline-flex;align-items:center}
-.proj-head{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:32px 48px;align-items:end}
+.proj-head{display:grid;grid-template-columns:minmax(0,1fr);gap:32px}
 .proj-title{display:flex;flex-direction:column;gap:16px;min-width:0}
 .proj-status{display:flex;gap:10px;align-items:center;font-size:15px;font-weight:500;line-height:1.4;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);padding:10px 0}
 .proj-status svg{flex:none}
-.proj-figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.proj-figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0;width:100%;max-width:640px}
 .proj-figure img{width:100%;aspect-ratio:2/1}
 .proj-figure figcaption{font-family:var(--mono);font-size:12px;line-height:1.5;letter-spacing:.04em;color:var(--muted)}
 .proj-body{width:100%;max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:40px;padding-bottom:16px}
