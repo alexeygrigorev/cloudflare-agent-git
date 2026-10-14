@@ -8,7 +8,7 @@ AgentBranches
 
 Agent Branches provides autonomous coding agents with isolated Git forks and branches governed by a lightweight coordinator. In multi-agent coding environments, independent agents frequently collide when writing to shared branches, causing broken builds and difficult merge rollbacks. Each agent gets a private fork while a coordinator tracks its work-in-progress head and warns when concurrent changes conflict.
 
-A trusted speculative runner periodically reads active head vectors. The runner executes pairwise trial merges using git merge-tree and runs budgeted test suites before code moves toward trunk. When the runner detects semantic conflicts or failing tests, it records warnings directly on the coordinator. Agents read these warnings and acknowledge them or push updated commits with fixes.
+An authenticated client periodically reads active head vectors. The runner executes pairwise trial merges using git merge-tree and runs budgeted test suites before code moves toward trunk. When the runner detects semantic conflicts or failing tests, it records warnings directly on the coordinator. Agents read these warnings and acknowledge them or push updated commits with fixes.
 
 The coordinator doesn't execute agent code, Git commands, or tests. It tracks branch heads, verifies role-scoped bearer tokens, and records test results alongside commit references. A client-side review dashboard shows active agent tasks, base commits, conflict badges, and warning acknowledgment records.
 
@@ -28,9 +28,15 @@ Deployment Status & Local Verification: Agents execute tasks and test suites on 
 
 You can find the project repository at [Agent Branches on GitHub](https://github.com/alexeygrigorev/cloudflare-agent-git).
 
-## Approved Video, Path, and Hash
+## Submitted recording
 
-The approved submission video has these details:
+Alexey submitted the project on 15 October 2026 and identified [this Loom recording](https://www.loom.com/share/f8b67486801b4cee8d8970fa3d405553) as the submitted demo. The supplied confirmation screenshot says the entry was received. The original screenshot and submission reference remain private. See the [submission log](../_docs/founder-journal/2026-10-15.md).
+
+Post-recording improvements are verified separately; they must not be attributed to the submitted recording without viewing it.
+
+## Earlier approved recording
+
+The earlier recording remains available as historical evidence:
 - Public video URL (GitHub blob viewer): `https://github.com/alexeygrigorev/cloudflare-agent-git/blob/main/docs-submission/videos/agent-branches-demo-draft.mp4`
 - Public video direct download (raw URL): `https://raw.githubusercontent.com/alexeygrigorev/cloudflare-agent-git/main/docs-submission/videos/agent-branches-demo-draft.mp4`
 - Local host portable path: `~/contest-submission/agent-branches-video-r2.mp4` (machine-local filesystem path on the recording host, not an external URL)
@@ -43,9 +49,9 @@ The approved submission video has these details:
 
 ## Run Instructions
 
-The Cloudflare Worker is live at https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev (Worker `agent-branches`, version `e962956f`, deployed 13 October 2026 ~22:57 Europe/Berlin with a SQLite Durable Object coordinator and the Artifacts namespace `agent-branches-dev`). `GET /public/status` is public; every write needs a bearer token. The full live smoke run (`python3 prototype/demo/cloud-smoke.py`, commit `898caf0`) PASSED on 13 October 2026 at ~23:03 Europe/Berlin in 17.5 s, with all 14 verifications passing and 60 budgeted operations used (reported day counter 138 of 200 daily cap). Covered: preflight budget headroom, sanitized public status, a real canonical Artifacts repository create, the seed push, two concurrent scripted agents forking and pushing, push callbacks, a clean pairwise `git merge-tree` check, typed trusted-runner `POST /checks`, and refusals for 405 (method), 409 (stale vector), 403 (cross-task and cross-repo push) and 401 (unauthenticated). Demo repositories were cleaned up afterwards. The approved video records the earlier verified local Node runtime execution and protocol evidence replay.
+The Cloudflare Worker is live at https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev (Worker `agent-branches`, version `e962956f`, deployed 13 October 2026 ~22:57 Europe/Berlin with a SQLite Durable Object coordinator and the Artifacts namespace `agent-branches-dev`). `GET /public/status` is public; every write needs a bearer token. The full live smoke run (`uv run python prototype/demo/cloud-smoke.py`, commit `898caf0`) PASSED on 13 October 2026 at ~23:03 Europe/Berlin in 17.5 s, with all 14 verifications passing and 60 budgeted operations used (reported day counter 138 of 200 daily cap). Covered: preflight budget headroom, sanitized public status, a real canonical Artifacts repository create, the seed push, two concurrent scripted agents forking and pushing, push callbacks, a clean pairwise `git merge-tree` check, typed authenticated-client `POST /checks`, and refusals for 405 (method), 409 (stale vector), 403 (cross-task and cross-repo push) and 401 (unauthenticated). Demo repositories were cleaned up afterwards. The approved video records the earlier verified local Node runtime execution and protocol evidence replay.
 
-Local reproduction requires Node.js 22 or newer and Python 3.10 or newer, plus Git and npm.
+Local reproduction requires Node.js 22 or newer and Python 3.10 or newer, plus uv, Git and npm.
 
 Install dependencies and run the protocol walkthrough:
 
@@ -54,7 +60,7 @@ git clone https://github.com/alexeygrigorev/cloudflare-agent-git.git
 cd cloudflare-agent-git/prototype
 npm install
 npm run build:node
-python3 demo/walkthrough.py
+uv run python demo/walkthrough.py
 npm run test:all
 ```
 
@@ -63,13 +69,13 @@ The walkthrough script starts its own coordinator and Git sidecar, then removes 
 For an explicit local mock of the cloud smoke client:
 
 ```bash
-python3 demo/cloud-smoke.py --mock
+uv run python demo/cloud-smoke.py --mock
 ```
 
-The founder approved the live deployment on 13 October 2026 (the account is on Workers Paid). To smoke-test the live Worker yourself you need the deployment's admin and runner tokens: `BASE_URL=https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev ADMIN_TOKEN=... RUNNER_TOKEN=... python3 demo/cloud-smoke.py`.
+The founder approved the live deployment on 13 October 2026 (the account is on Workers Paid). To smoke-test the live Worker yourself you need the deployment's admin and runner tokens: `BASE_URL=https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev ADMIN_TOKEN=... RUNNER_TOKEN=... uv run python demo/cloud-smoke.py`.
 
 ## Privacy and Intake Notice
 
-Personal submission details remain in a private intake file (`form-intake.json`) pending manual human completion. These details include team member names, contact information, attendee lists, and contest eligibility checkbox selections.
+Personal submission details and the confirmation reference remain private. Alexey completed the submission manually on 15 October 2026. These details include team member names, contact information, attendee lists, and contest eligibility checkbox selections.
 
-Public product documentation contains zero personal data. Final contest form submission is executed manually by a human administrator.
+Public product documentation contains zero personal data. The founder supplied the submission confirmation; this is not a judging result.

@@ -61,7 +61,7 @@ def main():
         if not smoke_script.exists():
             sys.stderr.write(f"Error: expected cloud-smoke script not found at {smoke_script}\n")
             sys.exit(1)
-        cmd = [sys.executable, str(smoke_script)] + sys.argv[1:]
+        cmd = ["uv", "run", "--project", str(smoke_script.parent.parent), "python", str(smoke_script)] + sys.argv[1:]
         res = subprocess.run(cmd)
         sys.exit(res.returncode)
 

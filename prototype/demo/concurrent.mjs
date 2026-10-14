@@ -9,7 +9,7 @@ import { fileURLToPath } from "url";
 if (process.env.BASE_URL) {
   console.log("Remote smoke uses scripted Git clients; model execution remains on your computer.");
   const script = join(dirname(fileURLToPath(import.meta.url)), "cloud-smoke.py");
-  const result = spawnSync("python3", [script, ...process.argv.slice(2)], {
+  const result = spawnSync("uv", ["run", "--project", join(dirname(script), ".."), "python", script, ...process.argv.slice(2)], {
     env: process.env, stdio: "inherit", timeout: 180_000,
   });
   if (result.error || result.signal || result.status === null) process.exit(1);

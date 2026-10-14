@@ -1,8 +1,16 @@
 # Agent Branches prototype — HTTP + integration contract
 
-version: 0.1.4
+version: 0.1.5
 (Pin this version when building against it: L2 review UI, L3 radar runner,
 L4/L5 demo lanes. Any breaking change bumps the version.)
+
+Changes since 0.1.4 (post-demo coordination and owned cleanup, 15 October 2026):
+
+- `POST /setup` optionally accepts `{runId}` and `POST /tasks` accepts the same run ID for owned demo resources. A run ID is exactly 32 lowercase hexadecimal characters. Ordinary unscoped setup/tasks remain supported.
+- Admin-only `DELETE /cloud/demo-repos` now requires `{runId}`. Missing or malformed IDs return 400; unknown runs return 404. The response is `{deleted, repositories, remaining, complete}`. Names are persisted before provider I/O so a lost response remains recoverable. Cleanup is serialized with creation and preserves resources referenced by other tasks. Failure leaves names retryable; no global sweep fallback exists.
+- Authenticated `GET /cloud/budget` advertises `capabilities.ownedDemoCleanup`. Clients must require it before creating demo resources. Public status does not expose the private ownership manifest.
+- Owner/admin `POST /tasks/:id/plan` accepts `{plannedPaths: string[]}`. Paths are exact repository-relative files, not globs; at most 128 paths of at most 512 characters. `[]` clears the declaration. `GET /status` exposes nullable per-agent `plannedPaths` and derived `plannedOverlaps` entries `{agents, tasks, paths, kind: "planned_overlap"}`. Declarations do not change heads or manufacture check evidence.
+- Checks still use payload contract `"0.1"`. The continuous authenticated client executes Git previews/tests on user-owned compute and submits exact-vector evidence; 409 discards stale evidence. Zero tests or unavailable evidence cannot establish clean status.
 
 Changes since 0.1.3 (facade extraction, 2026-10-03 — DOCS ONLY):
 

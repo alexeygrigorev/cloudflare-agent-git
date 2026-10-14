@@ -1,0 +1,23 @@
+{
+  "title": "Artifacts stores Git, Workers coordinates agents",
+  "description": "Two agents send Git requests to our Worker API. The API authorizes access to each agent's fork, coordinates tasks and records check reports. Cloudflare Artifacts stores the Git repositories.",
+  "style": "editorial",
+  "canvas": {"width": 940, "height": 520},
+  "layout": {"type": "manual", "card_width": 240, "card_height": 100, "font_scale": 1.0, "icon_position": "inline", "fixed_icon_axis": false},
+  "nodes": [
+    {"id": "agents", "title": "Coding agents", "variant": "boundary", "color": "gray", "x": 20, "y": 20, "width": 280, "height": 480},
+    {"id": "agent-a", "title": "Agent A", "subtitle": "Pushes its own changes", "icon": "robot", "color": "blue", "x": 40, "y": 95},
+    {"id": "agent-b", "title": "Agent B", "subtitle": "Pushes its own changes", "icon": "robot", "color": "blue", "x": 40, "y": 325},
+    {"id": "workers", "title": "Workers · our coordination", "variant": "boundary", "color": "blue", "x": 320, "y": 20, "width": 290, "height": 480},
+    {"id": "api", "title": "Our API", "subtitle": "Authorize and coordinate", "icon": "api", "color": "gray", "x": 345, "y": 210},
+    {"id": "artifacts", "title": "Artifacts · Git storage", "variant": "boundary", "color": "gray", "x": 630, "y": 20, "width": 290, "height": 480},
+    {"id": "fork-a", "title": "Fork A", "subtitle": "Agent A write token", "icon": "database", "color": "gray", "x": 655, "y": 95},
+    {"id": "fork-b", "title": "Fork B", "subtitle": "Agent B write token", "icon": "database", "color": "gray", "x": 655, "y": 325}
+  ],
+  "edges": [
+    {"from": "agent-a", "to": "api", "route": "orthogonal", "from_anchor": "right", "to_anchor": "left_top"},
+    {"from": "agent-b", "to": "api", "route": "orthogonal", "from_anchor": "right", "to_anchor": "left_bottom"},
+    {"from": "api", "to": "fork-a", "route": "orthogonal", "from_anchor": "right_top", "to_anchor": "left"},
+    {"from": "api", "to": "fork-b", "route": "orthogonal", "from_anchor": "right_bottom", "to_anchor": "left"}
+  ]
+}

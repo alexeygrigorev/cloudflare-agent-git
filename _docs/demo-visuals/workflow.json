@@ -1,0 +1,20 @@
+{
+  "title": "Separate forks, one combined check",
+  "description": "Agent A and Agent B push to separate forks at the same time. The authenticated client fetches both exact head commits to check their changes together. Separate forks alone don't prove that the combined changes are safe.",
+  "style": "editorial",
+  "canvas": {"width": 940, "height": 520},
+  "layout": {"type": "manual", "card_width": 240, "card_height": 100, "font_scale": 1.0, "icon_position": "inline", "fixed_icon_axis": false},
+  "nodes": [
+    {"id": "agent-a", "title": "Agent A", "subtitle": "Pushes its change", "icon": "robot", "color": "blue", "x": 40, "y": 65},
+    {"id": "agent-b", "title": "Agent B", "subtitle": "Pushes its change", "icon": "robot", "color": "blue", "x": 40, "y": 355},
+    {"id": "fork-a", "title": "Fork A", "subtitle": "Exact head A", "icon": "database", "color": "gray", "x": 350, "y": 65},
+    {"id": "fork-b", "title": "Fork B", "subtitle": "Exact head B", "icon": "database", "color": "gray", "x": 350, "y": 355},
+    {"id": "runner", "title": "Authenticated client", "subtitle": "Checks A + B together", "icon": "terminal", "color": "gray", "x": 660, "y": 210}
+  ],
+  "edges": [
+    {"from": "agent-a", "to": "fork-a"},
+    {"from": "agent-b", "to": "fork-b"},
+    {"from": "fork-a", "to": "runner", "route": "orthogonal", "from_anchor": "right", "to_anchor": "left_top"},
+    {"from": "fork-b", "to": "runner", "route": "orthogonal", "from_anchor": "right", "to_anchor": "left_bottom"}
+  ]
+}

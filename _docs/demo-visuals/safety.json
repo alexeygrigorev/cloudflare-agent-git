@@ -1,0 +1,14 @@
+{
+  "title": "Four reasons a pair isn't safe",
+  "description": "Compare a Git conflict with failing combined tests despite passing individual tests. A missing push leaves the current head unknown, while checks on older heads don't prove the current changes safe. These conceptual examples explain the fixture screens.",
+  "style": "editorial",
+  "canvas": {"width": 940, "height": 460},
+  "layout": {"type": "manual", "card_width": 400, "card_height": 160, "font_scale": 1.0},
+  "nodes": [
+    {"id": "conflict", "title": "Text conflict", "color": "gray", "variant": "specimen", "x": 40, "y": 40, "specimen": {"mode": "record", "items": ["Change A: same lines", "Change B: same lines", "Trial merge: conflict"]}},
+    {"id": "semantic", "title": "Combined failure", "color": "gray", "variant": "specimen", "x": 500, "y": 40, "specimen": {"mode": "record", "items": ["Agent A tests: pass", "Agent B tests: pass", "Combined tests: fail"]}},
+    {"id": "unknown", "title": "Missing push", "color": "gray", "variant": "specimen", "x": 40, "y": 260, "specimen": {"mode": "record", "items": ["Latest push: missing", "Current head: unknown", "Verdict: not safe"]}},
+    {"id": "stale", "title": "Stale evidence", "color": "gray", "variant": "specimen", "x": 500, "y": 260, "specimen": {"mode": "record", "items": ["Tested head: older", "Current head: newer", "Verdict: not proven safe"]}}
+  ],
+  "edges": []
+}

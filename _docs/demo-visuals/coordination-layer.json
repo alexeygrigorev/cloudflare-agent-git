@@ -1,0 +1,20 @@
+{
+  "title": "A coordination layer on top of Git",
+  "description": "Git holds each agent's separate change. Agent Branches brings both current commits into one combined check and records a shared pair status. The authenticated client runs the check, and the coordinator records whether the pair is clean, conflicting or unknown.",
+  "style": "editorial",
+  "canvas": {"width": 940, "height": 520},
+  "layout": {"type": "manual", "card_width": 240, "card_height": 100, "font_scale": 1.0, "icon_position": "inline", "fixed_icon_axis": false},
+  "nodes": [
+    {"id": "git", "title": "Git · separate work", "variant": "boundary", "color": "gray", "x": 20, "y": 20, "width": 280, "height": 480},
+    {"id": "change-a", "title": "Change A", "subtitle": "Agent A's current commit", "icon": "document", "color": "gray", "x": 40, "y": 95},
+    {"id": "change-b", "title": "Change B", "subtitle": "Agent B's current commit", "icon": "document", "color": "gray", "x": 40, "y": 325},
+    {"id": "coordination", "title": "Agent Branches · coordination layer", "variant": "boundary", "color": "blue", "x": 320, "y": 20, "width": 600, "height": 480},
+    {"id": "checks", "title": "Combined check", "subtitle": "Merge and test A + B", "icon": "terminal", "color": "blue", "x": 350, "y": 210},
+    {"id": "evidence", "title": "Pair status", "subtitle": "Clean, conflict or unknown", "icon": "observability", "color": "blue", "x": 660, "y": 210}
+  ],
+  "edges": [
+    {"from": "change-a", "to": "checks", "route": "orthogonal", "from_anchor": "right", "to_anchor": "left_top"},
+    {"from": "change-b", "to": "checks", "route": "orthogonal", "from_anchor": "right", "to_anchor": "left_bottom"},
+    {"from": "checks", "to": "evidence"}
+  ]
+}

@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="520" viewBox="0 0 940 520" role="img" aria-labelledby="title desc">
+  <title id="title">Artifacts stores Git, Workers coordinates agents</title>
+  <desc id="desc">Two agents send Git requests to our Worker API. The API authorizes access to each agent&#x27;s fork, coordinates tasks and records check reports. Cloudflare Artifacts stores the Git repositories.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#1c2027" flood-opacity="0.04"/>
+    </filter>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <symbol id="icon-api" viewBox="0 0 24 24">
+        <path d="m8 5-5 7 5 7M16 5l5 7-5 7M14 3l-4 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <symbol id="icon-database" viewBox="0 0 24 24">
+        <ellipse cx="12" cy="5" rx="8" ry="3" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M4 5v7c0 1.66 3.58 3 8 3s8-1.34 8-3V5M4 12v7c0 1.66 3.58 3 8 3s8-1.34 8-3v-7" fill="none" stroke="currentColor" stroke-width="2"/>
+      </symbol>
+    <symbol id="icon-robot" viewBox="0 0 24 24">
+        <path d="M12 5V2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="12" cy="2.5" r="1" fill="currentColor"/>
+        <rect x="4" y="5" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M4 10H2.5v5H4M20 10h1.5v5H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="11" r="1.3" fill="currentColor"/>
+        <circle cx="15" cy="11" r="1.3" fill="currentColor"/>
+        <path d="M8.5 16h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </symbol>
+    <style>
+      text { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1c2027; }
+      symbol [stroke] { vector-effect: non-scaling-stroke; }
+      .node rect { stroke-width: 2; }
+      .node-boundary rect { stroke-width: 2; stroke-dasharray: 8 8; }
+      .boundary-title { font-size: 16px; font-weight: 750; text-anchor: start; }
+      .node-title { font-weight: 750; text-anchor: middle; }
+      .node-title.icon-copy { text-anchor: start; }
+      .node-subtitle { font-weight: 500; fill: #1c2027; text-anchor: middle; }
+      .eyebrow { font-weight: 750; letter-spacing: 1px; fill: #1c2027; text-anchor: middle; }
+      .mention-icon { font-size: 27px; font-weight: 750; text-anchor: middle; }
+      .standalone-mention { font-size: 52px; font-weight: 750; text-anchor: middle; }
+      .icon-node-title { font-size: 16px; font-weight: 750; text-anchor: middle; }
+      .edge { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .edge-label rect { stroke-width: 2; }
+      .edge-label text { font-size: 14px; font-weight: 750; text-anchor: middle; dominant-baseline: central; }
+      .divider { stroke: #1c2027; stroke-width: 2; stroke-dasharray: 6 8; stroke-linecap: round; }
+      .center-annotation { fill: #fcfcf8; stroke: none; }
+      .center-title { font-weight: 800; letter-spacing: 0.08em; fill: #1c2027; text-anchor: middle; }
+      .center-detail { font-weight: 600; fill: #1c2027; text-anchor: middle; }
+    </style>
+  </defs>
+  <rect width="940" height="520" fill="#fcfcf8"/>
+
+  <g class="node-boundary node-gray" transform="translate(20 20)">
+    <rect width="280" height="480" rx="22" fill="none" stroke="#1c2027"/>
+    <text class="boundary-title" x="20" y="31">Coding agents</text>
+  </g>
+  <g class="node-boundary node-blue" transform="translate(320 20)">
+    <rect width="290" height="480" rx="22" fill="none" stroke="#2455ed"/>
+    <text class="boundary-title" x="20" y="31">Workers · our coordination</text>
+  </g>
+  <g class="node-boundary node-gray" transform="translate(630 20)">
+    <rect width="290" height="480" rx="22" fill="none" stroke="#1c2027"/>
+    <text class="boundary-title" x="20" y="31">Artifacts · Git storage</text>
+  </g>
+  <path class="edge-boundary-halo" d="M280 145H312.5V243.33H345" fill="none" stroke="#fcfcf8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="edge" d="M280 145H312.5V243.33H345" stroke="#1c2027" marker-end="url(#arrow-gray)"/>
+  <path class="edge-boundary-halo" d="M280 375H312.5V276.67H345" fill="none" stroke="#fcfcf8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="edge" d="M280 375H312.5V276.67H345" stroke="#1c2027" marker-end="url(#arrow-gray)"/>
+  <path class="edge-boundary-halo" d="M585 243.33H620V145H655" fill="none" stroke="#fcfcf8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="edge" d="M585 243.33H620V145H655" stroke="#1c2027" marker-end="url(#arrow-gray)"/>
+  <path class="edge-boundary-halo" d="M585 276.67H620V375H655" fill="none" stroke="#fcfcf8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="edge" d="M585 276.67H620V375H655" stroke="#1c2027" marker-end="url(#arrow-gray)"/>
+
+  <g class="node node-blue" transform="translate(40 95)" filter="url(#shadow)">
+    <rect width="240" height="100" rx="18" fill="#fcfcf8" stroke="#2455ed"/>
+    <use href="#icon-robot" x="52.34" y="20" width="34" height="34" color="#2455ed"/>
+    <text class="node-title icon-copy" x="96.23" y="44.2" font-size="20">Agent A</text>
+    <text class="node-subtitle" x="120" y="75" font-size="16">Pushes its own changes</text>
+  </g>
+  <g class="node node-blue" transform="translate(40 325)" filter="url(#shadow)">
+    <rect width="240" height="100" rx="18" fill="#fcfcf8" stroke="#2455ed"/>
+    <use href="#icon-robot" x="52.41" y="20" width="34" height="34" color="#2455ed"/>
+    <text class="node-title icon-copy" x="96.3" y="44.2" font-size="20">Agent B</text>
+    <text class="node-subtitle" x="120" y="75" font-size="16">Pushes its own changes</text>
+  </g>
+  <g class="node node-gray" transform="translate(345 210)" filter="url(#shadow)">
+    <rect width="240" height="100" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <use href="#icon-api" x="54.34" y="20" width="34" height="34" color="#1c2027"/>
+    <text class="node-title icon-copy" x="97.52" y="44.2" font-size="20">Our API</text>
+    <text class="node-subtitle" x="120" y="75" font-size="16">Authorize and coordinate</text>
+  </g>
+  <g class="node node-gray" transform="translate(655 95)" filter="url(#shadow)">
+    <rect width="240" height="100" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <use href="#icon-database" x="60.59" y="20" width="34" height="34" color="#1c2027"/>
+    <text class="node-title icon-copy" x="102.34" y="44.2" font-size="20">Fork A</text>
+    <text class="node-subtitle" x="120" y="75" font-size="16">Agent A write token</text>
+  </g>
+  <g class="node node-gray" transform="translate(655 325)" filter="url(#shadow)">
+    <rect width="240" height="100" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <use href="#icon-database" x="60.66" y="20" width="34" height="34" color="#1c2027"/>
+    <text class="node-title icon-copy" x="102.41" y="44.2" font-size="20">Fork B</text>
+    <text class="node-subtitle" x="120" y="75" font-size="16">Agent B write token</text>
+  </g>
+</svg>

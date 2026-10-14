@@ -1,4 +1,10 @@
-# Approved Submission Video
+# Submission video
+
+The project was submitted by Alexey on 15 October 2026 with [this Loom recording](https://www.loom.com/share/f8b67486801b4cee8d8970fa3d405553). A visually inspected confirmation screenshot states that the entry was received; private submission identifiers are omitted. See the [founder log](../_docs/founder-journal/2026-10-15.md).
+
+The metadata and execution facts below describe the earlier approved recording, retained as historical evidence. They do not describe the new Loom recording, which has not been independently viewed here.
+
+## Earlier approved recording
 
 ## Video Metadata
 

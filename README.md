@@ -1,19 +1,20 @@
 # Agent Branches
 
-Give each coding agent a repository fork, track its latest commit, and check how concurrent changes combine before merging them. A trusted runner tests pairs of changes and records conflict warnings for the agents to acknowledge or fix.
+Give each coding agent a repository fork, track its latest commit, and check how concurrent changes combine before merging them. An authenticated client tests pairs of changes and records conflict warnings for the agents to acknowledge or fix.
 
 ![Agent Branches review interface](prototype/ui/ui-evidence/index-base.png)
 
 ## Try it locally
 
-Requires Node.js 22 or newer (tested with Node 24), Python 3.10 or newer, Git, and npm.
+Requires Node.js 22 or newer (tested with Node 24), Python 3.10 or newer, uv, Git, and npm.
 
 ```bash
 git clone https://github.com/alexeygrigorev/cloudflare-agent-git.git
 cd cloudflare-agent-git/prototype
 npm install
 npm run build:node
-python3 demo/walkthrough.py
+uv sync
+uv run python demo/pair-example.py --backend local --interactive
 npm run test:all
 ```
 
@@ -21,7 +22,7 @@ The walkthrough script starts a local coordinator and Git sidecar, then pushes a
 
 ## Watch the demo
 
-[Watch the approved eight-minute video](docs-submission/videos/agent-branches-demo-draft.mp4). It shows earlier agent activity and protocol evidence from the Node runtime. The Cloudflare Worker is now live at https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev. The full live smoke run passed (14/14 checks, 60 operations): two concurrent agents on real Artifacts repositories, merge-tree checks, and the auth and stale-vector refusals (see [COST.md](docs-submission/COST.md)). [Recording details and SHA-256](docs-submission/VIDEO.md).
+[Watch the submitted demo on Loom](https://www.loom.com/share/f8b67486801b4cee8d8970fa3d405553). Alexey submitted the project on 15 October 2026; [submission confirmation](_docs/founder-journal/2026-10-15.md). The [earlier approved recording](docs-submission/videos/agent-branches-demo-draft.mp4) remains historical evidence from the Node runtime. The Cloudflare Worker is now live at https://agent-branches.cloudflare-ai-agent-de9ca0.workers.dev. The full live smoke run passed (14/14 checks, 60 operations): two concurrent agents on real Artifacts repositories, merge-tree checks, and the auth and stale-vector refusals (see [COST.md](docs-submission/COST.md)). [Recording details and SHA-256](docs-submission/VIDEO.md).
 
 ## Cloudflare entry
 

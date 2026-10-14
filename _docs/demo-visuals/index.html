@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agent Branches · Demo diagrams</title>
+<style>
+  :root {color-scheme: light; background:#fcfcf8; color:#1c2027; font:18px/1.5 system-ui,sans-serif}
+  * {box-sizing:border-box} body {margin:0} main {max-width:1300px; margin:auto; padding:24px 32px}
+  header {display:flex; justify-content:space-between; gap:20px; align-items:center; border-bottom:1px solid #1c2027; padding-bottom:16px}
+  .brand {font-size:15px; letter-spacing:.07em} .label {font-size:13px; border:1px solid #1c2027; border-radius:30px; padding:5px 12px}
+  h1 {font:normal clamp(28px,4vw,48px)/1.1 Georgia,serif; margin:24px 0 10px}
+  .caption {max-width:900px; margin:0 0 12px} figure {margin:0} .image-scroll {overflow:auto}
+  img {width:100%; display:block; min-width:740px; max-height:65vh; object-fit:contain}
+  nav {display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center; margin-top:14px}
+  button, a {font:inherit; color:#1c2027; background:transparent; border:1px solid #1c2027; padding:6px 14px; text-decoration:none; cursor:pointer}
+  button:hover, a:hover, a[aria-current=page] {background:#2455ed; color:white; border-color:#2455ed}
+  :focus-visible {outline:3px solid #2455ed; outline-offset:4px} .help {font-size:13px; text-align:center; margin:12px 0 0}
+  [hidden] {display:none!important}
+  @media(max-width:650px) {main {padding:16px} header {gap:8px} img {width:940px; max-height:none} .caption {font-size:16px} nav {justify-content:flex-start}}
+</style>
+<main>
+  <noscript><p>Open a diagram directly: <a href="architecture.svg">Architecture</a>, <a href="workflow.svg">Concurrent work</a>, or <a href="safety.svg">Safety states</a>.</p></noscript>
+  <header><span class="brand">AGENT BRANCHES · DEMO</span><span class="label">Conceptual diagrams</span></header>
+  <article id="architecture" hidden>
+    <h1>Git in the cloud, tests on your computer</h1>
+    <p class="caption">Cloudflare hosts Git storage and coordination. Your authenticated client handles code checks on a user-owned computer. The coordinator records reports and never executes agent code.</p>
+    <figure class="image-scroll"><img src="architecture.svg" alt="The authenticated client runs on a user-owned computer. Through the Worker gateway it exchanges Git data and check reports with Artifacts storage and the SQLite Durable Object coordinator."></figure>
+  </article>
+  <article id="coordination-layer" hidden>
+    <h1>A coordination layer on top of Git</h1>
+    <p class="caption">Git already manages changes. Agent Branches tracks agents' current commits, checks their changes together and shows failures or missing evidence. The same idea can use Artifacts forks or Git worktrees.</p>
+    <figure class="image-scroll"><img src="coordination-layer.svg" alt="Two separate Git changes feed a combined check in the Agent Branches coordination layer. The check produces a shared pair status: clean, conflict or unknown."></figure>
+  </article>
+  <article id="cloudflare-roles" hidden>
+    <h1>Artifacts stores Git, Workers coordinates agents</h1>
+    <p class="caption">Each agent writes to its own fork in Artifacts. Our Worker API handles permissions, tasks and check reports.</p>
+    <figure class="image-scroll"><img src="cloudflare-roles.svg" alt="Agent A and Agent B send requests through our Worker API, which authorizes access to their separately scoped forks in Cloudflare Artifacts."></figure>
+  </article>
+  <article id="workflow" hidden>
+    <h1>Separate forks, one combined check</h1>
+    <p class="caption">Each agent pushes to its own fork. The authenticated client checks both exact head commits together. In the smoke demo, it runs a Git merge-tree check and submits typed reports. Application test failures appear in the UI fixtures.</p>
+    <figure class="image-scroll"><img src="workflow.svg" alt="Two parallel lanes connect Agent A to Fork A and Agent B to Fork B. Both forks feed the same authenticated client, which checks the pair of exact heads."></figure>
+  </article>
+  <article id="safety" hidden>
+    <h1>Four reasons a pair isn't safe</h1>
+    <p class="caption">A clean merge alone can't establish safety. Tests can fail when changes are combined, a push can be missing, or checks can refer to older heads. These examples explain the local fixture screens.</p>
+    <figure class="image-scroll"><img src="safety.svg" alt="Four independent example cards: changes conflict on the same lines; individual tests pass but combined tests fail; a missing push leaves the current head unknown; tests refer to an older head and do not prove the newer head safe."></figure>
+  </article>
+  <nav aria-label="Choose diagram">
+    <button type="button" id="previous" aria-label="Previous diagram">←</button>
+    <a href="#coordination-layer">Coordination layer</a><a href="#cloudflare-roles">Cloudflare roles</a><a href="#architecture">Architecture</a><a href="#workflow">Concurrent work</a><a href="#safety">Safety states</a>
+    <button type="button" id="next" aria-label="Next diagram">→</button>
+    <button type="button" id="fullscreen">Full screen</button>
+  </nav>
+  <p class="help">Use ← and → to change diagrams. These pictures explain the protocol, while the terminal report provides run evidence. On a narrow screen, scroll across the picture to read every label.</p>
+</main>
+<script>
+  const scenes = ['architecture','coordination-layer','cloudflare-roles','workflow','safety'];
+  function selected() {const value=location.hash.slice(1); return scenes.includes(value)?value:scenes[0]}
+  function show() {const id=selected(); for(const scene of scenes) document.getElementById(scene).hidden=scene!==id;
+    for(const link of document.querySelectorAll('nav a')) {if(link.hash==='#'+id) link.setAttribute('aria-current','page'); else link.removeAttribute('aria-current')}
+    document.title=document.getElementById(id).querySelector('h1').textContent+' · Agent Branches';}
+  function move(delta) {location.hash=scenes[(scenes.indexOf(selected())+delta+scenes.length)%scenes.length]}
+  document.getElementById('previous').onclick=()=>move(-1); document.getElementById('next').onclick=()=>move(1);
+  document.getElementById('fullscreen').onclick=async()=>{if(document.fullscreenElement) await document.exitFullscreen(); else if(document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen()};
+  document.addEventListener('keydown',event=>{if(event.altKey||event.ctrlKey||event.metaKey) return; if(event.key==='ArrowRight') {event.preventDefault();move(1)} if(event.key==='ArrowLeft') {event.preventDefault();move(-1)}});
+  window.addEventListener('hashchange',show);show();
+</script>
+</html>

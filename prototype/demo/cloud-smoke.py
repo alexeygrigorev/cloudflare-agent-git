@@ -13,6 +13,7 @@ import json
 import time
 import uuid
 import shutil
+import stat
 import urllib.request
 import urllib.error
 import subprocess
@@ -33,6 +34,25 @@ MAX_BODY_BYTES = int(os.environ.get("MAX_BODY_BYTES", 262144))
 
 SUBPROCESS_TIMEOUT = 15
 HTTP_TIMEOUT = 15
+
+
+def valid_run_id(value):
+    return isinstance(value, str) and len(value) == 32 and all(c in "0123456789abcdef" for c in value)
+
+
+def remove_owned_tree(path, root):
+    """Remove one verified owned tree, including Git's read-only Windows objects."""
+    target = os.path.realpath(path)
+    boundary = os.path.realpath(root)
+    if target == boundary or os.path.commonpath([target, boundary]) != boundary:
+        raise ValueError("Cleanup target escapes owned root")
+    def writable(function, failed_path, error):
+        if not isinstance(error[1], PermissionError):
+            raise error[1]
+        os.chmod(failed_path, stat.S_IWRITE | stat.S_IREAD)
+        function(failed_path)
+    if os.path.exists(target):
+        shutil.rmtree(target, onerror=writable)
 
 
 def get_utc_iso():
@@ -59,9 +79,13 @@ def get_tool_versions():
     return {
         "git_version": git_ver,
         "python_version": sys.version.split()[0],
-        "node_version": node_ver,
-        "cwd": os.getcwd()
+        "node_version": node_ver
     }
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
 class MockBackendHandler(http.server.BaseHTTPRequestHandler):
@@ -130,7 +154,8 @@ class MockBackendHandler(http.server.BaseHTTPRequestHandler):
                     "maxRepos": MAX_REPOS,
                     "maxTotalBytes": MAX_TOTAL_BYTES,
                     "remainingDayOps": max(0, MAX_DAILY_OPS - day_ops),
-                    "remainingMonthOps": max(0, MAX_MONTHLY_OPS - month_ops)
+                    "remainingMonthOps": max(0, MAX_MONTHLY_OPS - month_ops),
+                    "capabilities": {"ownedDemoCleanup": True}
                 })
             return
 
@@ -170,10 +195,21 @@ class MockBackendHandler(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 return
 
+            try:
+                run_id = json.loads(raw_body or b"{}").get("runId")
+            except (ValueError, AttributeError):
+                run_id = None
+            if not valid_run_id(run_id):
+                self.send_json(400, {"error": "valid runId required"})
+                return
             with state["lock"]:
+                if state["canonical_name"]:
+                    self.send_json(409, {"error": "canonical already exists"})
+                    return
                 state["utc_day_ops"] += 1
                 state["calendar_month_ops"] += 1
                 can_name = "agent-branches-canonical"
+                state["runs"][run_id] = {can_name}
                 state["canonical_name"] = can_name
                 state["repos"][can_name] = {
                     "name": can_name,
@@ -212,6 +248,10 @@ class MockBackendHandler(http.server.BaseHTTPRequestHandler):
                     pass
 
             with state["lock"]:
+                run_id = req_data.get("runId")
+                if run_id not in state["runs"]:
+                    self.send_json(404, {"error": "unknown run"})
+                    return
                 if len(state["repos"]) >= MAX_REPOS:
                     self.send_response(500)
                     self.end_headers()
@@ -225,6 +265,8 @@ class MockBackendHandler(http.server.BaseHTTPRequestHandler):
                 agent_id = f"{agent_raw}-{seq:04d}"
                 task_id = f"task-{seq:04d}"
                 fork_name = f"canonical-{agent_id}"
+
+                state["runs"][run_id].add(fork_name)
 
                 # Clone canonical bare repo to fork bare repo
                 can_dir = os.path.join(self.server.git_root, f"{state['canonical_name']}.git")
@@ -417,25 +459,43 @@ class MockBackendHandler(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 return
 
+            try:
+                raw = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                run_id = json.loads(raw or b"{}").get("runId")
+            except (ValueError, AttributeError):
+                run_id = None
+            if not valid_run_id(run_id):
+                self.send_json(400, {"error": "valid runId required"})
+                return
             with state["lock"]:
-                count = len(state["repos"])
-                state["repos"].clear()
-                state["tokens"].clear()
-                state["tasks"].clear()
-                state["agents"].clear()
-                state["heads"].clear()
-                state["canonical_name"] = None
-                state["utc_day_ops"] += 1
-                state["calendar_month_ops"] += 1
-
-                # Clean all git repositories from disk in git_root
-                if os.path.exists(self.server.git_root):
-                    for item in os.listdir(self.server.git_root):
-                        target = os.path.join(self.server.git_root, item)
-                        if os.path.isdir(target):
-                            shutil.rmtree(target, ignore_errors=True)
-
-            self.send_json(200, {"deleted": count})
+                if run_id not in state["runs"]:
+                    self.send_json(404, {"error": "unknown run"})
+                    return
+                owned = state["runs"][run_id]
+                deleted = []
+                remaining = []
+                for name in sorted(owned, key=lambda name: name == state["canonical_name"]):
+                    if name == state["canonical_name"] and any(n not in owned for n in state["repos"]):
+                        remaining.append(name)
+                        continue
+                    if name in state["repos"]:
+                        remove_owned_tree(os.path.join(self.server.git_root, name + ".git"), self.server.git_root)
+                        del state["repos"][name]
+                        deleted.append(name)
+                    task_ids = {tid for tid, task in state["tasks"].items() if task["forkName"] == name}
+                    agents = {state["tasks"][tid]["agentId"] for tid in task_ids}
+                    for tid in task_ids:
+                        del state["tasks"][tid]
+                    for aid in agents:
+                        state["agents"].pop(aid, None)
+                        state["heads"].pop(aid, None)
+                    state["tokens"] = {key: token for key, token in state["tokens"].items() if token["repo"] != name}
+                    if name == state["canonical_name"]:
+                        state["canonical_name"] = None
+                state["runs"][run_id] = set(remaining)
+                state["utc_day_ops"] += len(deleted)
+                state["calendar_month_ops"] += len(deleted)
+            self.send_json(200, {"deleted": len(deleted), "repositories": deleted, "remaining": remaining, "complete": not remaining})
             return
 
         self.send_response(404)
@@ -495,6 +555,7 @@ class MockBackendHandler(http.server.BaseHTTPRequestHandler):
 
         # Execute git-http-backend
         cgi_env = {
+            **os.environ,
             "GIT_PROJECT_ROOT": self.server.git_root,
             "GIT_HTTP_EXPORT_ALL": "1",
             "PATH_INFO": f"/{repo_name}.git/{action}",
@@ -505,18 +566,21 @@ class MockBackendHandler(http.server.BaseHTTPRequestHandler):
         if "Content-Type" in self.headers:
             cgi_env["CONTENT_TYPE"] = self.headers["Content-Type"]
 
-        backend_bin = "/usr/lib/git-core/git-http-backend"
-        if not os.path.exists(backend_bin):
-            backend_bin = "git-http-backend"
-
         proc = subprocess.Popen(
-            [backend_bin],
+            ["git", "http-backend"],
             env=cgi_env,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
-        out, err = proc.communicate(input=body, timeout=SUBPROCESS_TIMEOUT)
+        try:
+            out, err = proc.communicate(input=body, timeout=SUBPROCESS_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.communicate()
+            self.send_response(504)
+            self.end_headers()
+            return
 
         if b"\r\n\r\n" not in out:
             self.send_response(500)
@@ -561,6 +625,7 @@ class MockServerManager:
             "calendar_month_ops": 0,
             "total_bytes_uploaded": 0,
             "repos": {},
+            "runs": {},
             "tasks": {},
             "agents": {},
             "tokens": {},
@@ -581,7 +646,7 @@ class MockServerManager:
         except Exception:
             pass
         if os.path.exists(self.git_root):
-            shutil.rmtree(self.git_root, ignore_errors=True)
+            remove_owned_tree(self.git_root, tempfile.gettempdir())
 
 
 class CloudSmokeRunner:
@@ -596,6 +661,10 @@ class CloudSmokeRunner:
         self.actors_count = actors_count
         self.report_path = report_path
         self.is_mock = is_mock
+        self.run_id = uuid.uuid4().hex
+        self.setup_attempted = False
+        self.cleanup_deleted = 0
+        self.cleanup_remaining_count = None
 
         self.temp_dirs = []
         self.start_time = None
@@ -638,7 +707,7 @@ class CloudSmokeRunner:
         for td in self.temp_dirs:
             if os.path.exists(td):
                 try:
-                    shutil.rmtree(td, ignore_errors=True)
+                    remove_owned_tree(td, tempfile.gettempdir())
                 except Exception:
                     pass
         self.temp_dirs.clear()
@@ -661,7 +730,7 @@ class CloudSmokeRunner:
 
         req = urllib.request.Request(url, data=data, headers=req_headers, method=method)
         try:
-            with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
+            with urllib.request.build_opener(NoRedirect()).open(req, timeout=HTTP_TIMEOUT) as resp:
                 resp_status = resp.status
                 resp_bytes = resp.read()
                 resp_data = None
@@ -719,6 +788,9 @@ class CloudSmokeRunner:
         if not budget:
             raise RuntimeError("Failed to retrieve initial budget stats")
 
+        if budget.get("capabilities", {}).get("ownedDemoCleanup") is not True:
+            raise RuntimeError("Backend lacks owned demo cleanup; deploy current backend before writing")
+
         # Track ownrun: refuse initial unrelated inventory
         initial_repo_count = budget.get("repoCount", 0)
         if initial_repo_count > 0:
@@ -752,10 +824,19 @@ class CloudSmokeRunner:
 
     def run_setup(self):
         print("[2/8] Setting up canonical baseline repository via gateway ADMIN credential...")
+        if not self.is_mock:
+            recovery_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".local", "smoke-runs")
+            os.makedirs(recovery_dir, mode=0o700, exist_ok=True)
+            recovery_path = os.path.join(recovery_dir, self.run_id + ".json")
+            with os.fdopen(os.open(recovery_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as recovery:
+                json.dump({"runId": self.run_id, "baseUrl": self.base_url, "createdAt": get_utc_iso()}, recovery)
+            print(f"      Cleanup recovery ID: {self.run_id} (saved privately before setup)")
+        self.setup_attempted = True
         status, data, _ = self.http_request(
             "POST",
             "/setup",
             headers={"Authorization": f"Bearer {self.admin_token}"},
+            body={"runId": self.run_id},
             expect_status=201
         )
         if not data or not data.get("canonical"):
@@ -807,7 +888,7 @@ class CloudSmokeRunner:
             "POST",
             "/tasks",
             headers={"Authorization": f"Bearer {self.admin_token}"},
-            body={"agent": actor_name, "intent": f"Smoke verification worker {index}", "base_sha": self.base_sha},
+            body={"agent": actor_name, "intent": f"Smoke verification worker {index}", "base_sha": self.base_sha, "runId": self.run_id},
             expect_status=201
         )
 
@@ -1045,13 +1126,17 @@ class CloudSmokeRunner:
     def run_cleanup(self):
         print("[7/8] Cleaning up demo repos via DELETE /cloud/demo-repos...")
         try:
+            if not self.setup_attempted:
+                return 0, None
             status, resp_data, _ = self.http_request(
                 "DELETE",
                 "/cloud/demo-repos",
                 headers={"Authorization": f"Bearer {self.admin_token}"},
+                body={"runId": self.run_id},
                 expect_status=200
             )
             deleted_count = resp_data.get("deleted", 0) if isinstance(resp_data, dict) else 0
+            self.cleanup_deleted = deleted_count
 
             # Verify remaining repos on backend
             _, check_b, _ = self.http_request(
@@ -1061,8 +1146,9 @@ class CloudSmokeRunner:
                 expect_status=200
             )
             repo_count_after = check_b.get("repoCount", 0) if isinstance(check_b, dict) else -1
-            if repo_count_after != 0:
-                raise RuntimeError(f"Cleanup verification failed: remaining repo count is {repo_count_after} (expected 0)")
+            self.cleanup_remaining_count = repo_count_after
+            if not isinstance(resp_data, dict) or resp_data.get("complete") is not True or resp_data.get("remaining") != []:
+                raise RuntimeError("Run-owned cleanup incomplete; unrelated repositories were preserved")
 
             self.verifications["cleanup_demo_repos_ok"] = True
             print(f"      Cleanup complete: {deleted_count} demo repos deleted; remaining repos: {repo_count_after}")
@@ -1110,12 +1196,14 @@ class CloudSmokeRunner:
 
         report = {
             "timestamp_utc": get_utc_iso(),
+            "run_id": self.run_id,
             "sanitized": True,
             "environment": get_tool_versions(),
             "proof": {
                 "is_mock": self.is_mock,
-                "real_cloudflare_proof": False if self.is_mock else True,
-                "notice": "Local explicit mock tests validate protocol and bounds; NOT real Cloudflare deployment proof." if self.is_mock else "Executed against live Cloudflare deployment."
+                "real_cloudflare_proof": False,
+                "successful_endpoint_run": bool(not self.is_mock and exit_code == 0 and all(self.verifications.values())),
+                "notice": "Local explicit mock tests validate protocol and bounds; NOT real Cloudflare deployment proof." if self.is_mock else "Endpoint results alone do not independently establish Cloudflare hosting or Artifacts storage."
             },
             "metrics": {
                 "duration_seconds": duration,
@@ -1161,7 +1249,11 @@ class CloudSmokeRunner:
             try:
                 deleted_count, repo_count_after = self.run_cleanup()
             except Exception as ce:
+                deleted_count = self.cleanup_deleted
+                repo_count_after = self.cleanup_remaining_count
                 print(f"[WARN] Cleanup failure: {ce}", file=sys.stderr)
+                if self.setup_attempted and not self.is_mock:
+                    print(f"From prototype/, retry owned cleanup: uv run python demo/cloud-smoke.py --cleanup-run-id {self.run_id}", file=sys.stderr)
                 if exit_code == 0:
                     exit_code = 2
             try:
@@ -1218,7 +1310,10 @@ def main():
     parser.add_argument("--mock", action="store_true", help="Launch local loopback mock backend server (explicit MOCK only)")
     parser.add_argument("--actors", type=int, default=2, help="Number of concurrent scripted Git actors (default: 2)")
     parser.add_argument("--output", type=str, default="report.json", help="Path to write sanitized report.json")
+    parser.add_argument("--cleanup-run-id", help="Retry only cleanup for an existing run; uses configured BASE_URL and ADMIN_TOKEN")
     args = parser.parse_args()
+    if args.cleanup_run_id and (args.mock or not valid_run_id(args.cleanup_run_id)):
+        parser.error("cleanup requires an existing 32-character run ID and a real configured endpoint")
 
     load_dotenv()
     base_url = os.environ.get("BASE_URL")
@@ -1233,7 +1328,7 @@ def main():
         if not base_url.startswith("https://"):
             print(f"Error: Strict HTTPS required for deployed BASE_URL: '{base_url}'. Only explicit --mock permits loopback HTTP.", file=sys.stderr)
             sys.exit(1)
-        if not admin_token or not runner_token:
+        if not admin_token or (not runner_token and not args.cleanup_run_id):
             print("Error: ADMIN_TOKEN and RUNNER_TOKEN environment variables must be set for live verification.", file=sys.stderr)
             sys.exit(1)
     else:
@@ -1252,7 +1347,16 @@ def main():
             report_path=args.output,
             is_mock=bool(args.mock)
         )
-        exit_code = runner.run_all()
+        if args.cleanup_run_id:
+            runner.run_id = args.cleanup_run_id
+            _, budget, _ = runner.http_request("GET", "/cloud/budget", headers={"Authorization": f"Bearer {admin_token}"}, expect_status=200)
+            if budget.get("capabilities", {}).get("ownedDemoCleanup") is not True:
+                raise RuntimeError("Backend lacks owned demo cleanup")
+            runner.setup_attempted = True
+            runner.run_cleanup()
+            exit_code = 0
+        else:
+            exit_code = runner.run_all()
     finally:
         if mock_mgr:
             mock_mgr.shutdown()
