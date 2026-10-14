@@ -96,6 +96,33 @@ Installing it in a project. Run `scripts/ping/install-ask-guard.sh <project-dir>
 
 The end-of-turn wake that works on every engine is described in [end of turn](team/08-turn-end.md).
 
+## The root scheduling switch it must not automate
+
+`scripts/root/rootctl` turns the interim headless root on and off as a whole:
+`stop` turns BOTH the Hub scheduling flag and `headless-root.timer` off, `start`
+turns BOTH on, and `status` is readonly. It is a person-authorized control, not
+a supervision action. The supervisor never runs it, never infers a stop from
+idle time, agent health, quota or a quiet period, and never treats a non-zero
+exit as permission to retry. `stop` and `start` change how much supervision the
+headless root does; they must never happen because the supervisor thinks the
+root looks idle. Only an explicit human or root instruction, recorded with the
+returned report, changes either scheduler.
+
+What supervision should do instead: read `rootctl status --json` when it needs
+to know whether the interim root is scheduled at all, and treat any verdict that
+is not `both_on` or `both_off` (`hub_on_timer_off`, `hub_off_timer_on`,
+`hub_on_timer_unknown`, `hub_off_timer_unknown`, `hub_unknown_timer_on`,
+`hub_unknown_timer_off`, `hub_unknown_timer_unknown`) as a real finding to
+report rather than to repair automatically. A verdict of `both_off` is a
+deliberate recorded state, not a stall to recover. `status` is an observation, so
+its report carries `linearizable` as held-and-uncontended (true only for an
+uncontended shared-lock observation; false beside a mutating rootctl) and
+`lock.contended` as the concurrent-mutator signal: supervision must not infer a
+state change from two non-linearizable reads.
+The supervisor stays quiet about the switch while the state is deliberate, and
+it never edits `root.lock`, `state.json` or the runs of a root that is in
+flight.
+
 ## How it maps to these docs
 
 - Supervisor. It is the service in the [team overview](team/01-overview.md): wake-ups, due checks and safe delivery, with no judgment and no approvals. It is the one supervisor that [way of working](03-way-of-working.md) section 12 asks for.

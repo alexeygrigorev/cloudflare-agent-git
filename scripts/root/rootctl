@@ -1,0 +1,1272 @@
+#!/usr/bin/env python3
+"""rootctl - one switch for BOTH schedulers of the interim headless root.
+
+    rootctl stop     -> Hub scheduling OFF and headless-root.timer OFF (both off)
+    rootctl start    -> Hub scheduling ON  and headless-root.timer ON  (both on)
+    rootctl status   -> readonly observation of both actual states
+
+This is NOT a cutover switch: nothing here turns one scheduler off because the
+other exists, and `stop` is never inverted. `start` is deliberately fail-closed:
+Hub first, verified, then the timer, verified; any unknown, malformed,
+mismatched, auth-denied, timed-out or unreachable readback exits non-zero with
+the truthful partial state. A failed `start` restores the state its own pre-check
+observed instead of disabling scheduling it did not enable. `stop` is
+best-effort on both sides and never re-enables the Hub when the timer step fails.
+
+In-flight root runs are never disturbed: rootctl never stops or kills
+headless-root.service or its transient scopes, and never touches root.lock,
+state.json or the runs/ directory.
+
+Verdicts are derived from actual readbacks only, never assumed:
+hub (on|off|unknown) x timer (on|off|unknown) ->
+    both_on | both_off | hub_on_timer_off | hub_off_timer_on
+    hub_on_timer_unknown | hub_off_timer_unknown
+    hub_unknown_timer_on | hub_unknown_timer_off | hub_unknown_timer_unknown
+
+Hub contract (owned by Hub head 6e966c):
+    GET  /api/root/scheduling -> {"enabled": <strict bool>, "updated_at": <UTC>}
+    PUT  /api/root/scheduling <- {"enabled": <strict bool>}
+Only /api/root/scheduling is ever called; rootctl never reads offers, never
+claims a start and never creates a run. While the Hub reports disabled it
+guards its own offers/claims/start transitions.
+
+Admin credential: rootctl never guesses which credential it holds. The config
+must state `auth_mode` explicitly. A bearer `token` must be an ADMIN credential
+of the Hub; the shared host-quota token in .local/quota-hub.json is a host
+quota credential and is NOT an admin credential, so that file cannot be used
+unqualified. Session auth uses the CSRF token and cookie already held by an
+existing Hub custodian session (`csrf_token`, `cookie`), pasted into the config
+by the custodian. rootctl creates no credential, reads no credential store and
+never prints one.
+
+There is no session pause: the Hub defines no pause endpoint, so `--pause-session`
+does not exist and argparse refuses it. Any later pause needs a Hub contract
+first and a new explicit human decision.
+
+Configuration uses the existing supported formats only (scripts/quota-gate.py):
+a JSON config with hub_url/token/auth_mode/host_id/timeout_sec (default
+.local/quota-hub.json, overridable by ROOTCTL_HUB_CONFIG or QUOTA_HUB_CONFIG),
+and the ROOTCTL_HUB_URL / ROOTCTL_HUB_TOKEN / ROOTCTL_HUB_HOST_ID /
+ROOTCTL_HUB_TIMEOUT environment overrides. The host quota-launcher variables
+QUOTA_HUB_URL / QUOTA_HUB_TOKEN / QUOTA_HUB_HOST_ID / QUOTA_HUB_TIMEOUT are
+never read here, so a host quota credential can never silently override the
+admin config. No credential value is ever printed; the Hub URL is printed as
+scheme://host:port only, never with a path, query or fragment.
+
+Test knobs (offline author stage): ROOTCTL_SYSTEMCTL, ROOTCTL_TIMER_UNIT,
+ROOTCTL_LOCK, ROOTCTL_LOCK_WAIT, ROOTCTL_HTTP_TIMEOUT.
+"""
+from __future__ import annotations
+
+import argparse
+import fcntl
+import http.client
+import json
+import os
+import re
+import signal
+import socket
+import stat
+import subprocess
+import sys
+import threading
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[2]
+
+SCHEDULING_PATH = "/api/root/scheduling"
+DEFAULT_TIMER_UNIT = "headless-root.timer"
+DEFAULT_HTTP_TIMEOUT = 10.0
+MAX_HTTP_TIMEOUT = 60.0
+DEFAULT_SYSTEMCTL_TIMEOUT = 20.0
+DEFAULT_LOCK_WAIT = 0.0
+MAX_RESPONSE_BYTES = 65536
+READ_CHUNK = 4096
+
+EXIT_OK = 0
+EXIT_USAGE = 1
+EXIT_FAILED = 2
+EXIT_UNKNOWN = 3
+EXIT_AUTH = 4
+EXIT_BUSY = 5
+
+UTC_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?(Z|\+00:00)$"
+)
+
+SECRET_KEYS = ("token", "csrf_token", "cookie", "authorization", "password", "secret")
+
+# systemd-faithful states. `systemctl is-enabled/is-active` print the state on
+# stdout and exit NON-ZERO for the negative states: is-enabled disabled -> rc 1,
+# is-active inactive -> rc 3 (man systemctl: "non-zero otherwise"). A non-zero
+# rc with a recognised state word is therefore a KNOWN OFF state, not unknown.
+# Only an empty or unrecognised stdout (for example "Failed to connect to bus")
+# is unknown, and unknown stays fail-closed.
+ENABLED_ON_STATES = frozenset(
+    ("enabled", "enabled-runtime", "linked", "linked-runtime", "alias"))
+ENABLED_KNOWN_STATES = ENABLED_ON_STATES | frozenset((
+    "disabled", "static", "indirect", "generated", "transient", "masked",
+    "masked-runtime", "bad"))
+ACTIVE_ON_STATES = frozenset(("active", "reloading"))
+# `activating` and `deactivating` are transitional: the timer is neither
+# cleanly on nor cleanly off while they are reported, so they are unknown and
+# fail-closed. `reloading` stays ON (it reports active with a reload in
+# progress); `inactive`/`failed` stay OFF.
+ACTIVE_KNOWN_STATES = frozenset((
+    "active", "reloading", "inactive", "failed"))
+ACTIVE_TRANSITIONAL_STATES = frozenset((
+    "activating", "deactivating", "maintenance", "refreshing"))
+
+KNOWN_STATES = {"is-enabled": ENABLED_KNOWN_STATES, "is-active": ACTIVE_KNOWN_STATES}
+ON_STATES = {"is-enabled": ENABLED_ON_STATES, "is-active": ACTIVE_ON_STATES}
+
+
+class RootctlError(Exception):
+    def __init__(self, message, exit_code=EXIT_FAILED, detail=None):
+        super().__init__(message)
+        self.exit_code = exit_code
+        self.detail = detail
+
+
+class HubAuthError(RootctlError):
+    def __init__(self, message, detail=None):
+        super().__init__(message, EXIT_AUTH, detail)
+
+
+class HubUnknownError(RootctlError):
+    def __init__(self, message, detail=None):
+        super().__init__(message, EXIT_UNKNOWN, detail)
+
+
+class HubFailedError(RootctlError):
+    def __init__(self, message, detail=None):
+        super().__init__(message, EXIT_FAILED, detail)
+
+
+class HubTimeoutError(HubUnknownError):
+    def __init__(self, message, detail=None):
+        super().__init__(message, detail)
+
+
+class ConfigError(RootctlError):
+    def __init__(self, message, detail=None):
+        super().__init__(message, EXIT_USAGE, detail)
+
+
+# ---------------------------------------------------------------- redaction
+
+class Redactor:
+    """Replaces known credential values wherever output is produced."""
+
+    def __init__(self):
+        self.values = []
+
+    def add(self, value):
+        if isinstance(value, str) and len(value) >= 4:
+            if value not in self.values:
+                self.values.append(value)
+
+    def scrub(self, text):
+        if text is None:
+            return text
+        text = str(text)
+        for value in sorted(self.values, key=len, reverse=True):
+            text = text.replace(value, "***redacted***")
+        return text
+
+    def discard(self, value):
+        """Stop redacting a value that was proven harmless (a validated URL)."""
+        if value in self.values:
+            self.values.remove(value)
+
+    def scrub_obj(self, obj):
+        if isinstance(obj, dict):
+            return {
+                k: ("***redacted***" if k.lower() in SECRET_KEYS else self.scrub_obj(v))
+                for k, v in obj.items()
+            }
+        if isinstance(obj, list):
+            return [self.scrub_obj(v) for v in obj]
+        if isinstance(obj, str):
+            return self.scrub(obj)
+        return obj
+
+
+REDACTOR = Redactor()
+
+
+def safe(text):
+    """Every human-readable line goes through this."""
+    return REDACTOR.scrub(text)
+
+
+# ---------------------------------------------------------------- config
+
+def _env_float(name, default, low, high):
+    raw = os.environ.get(name)
+    if raw is None or raw == "":
+        return default
+    try:
+        value = float(raw)
+    except (TypeError, ValueError, OverflowError):
+        raise ConfigError("%s is not a number" % name)
+    if value != value or value in (float("inf"), float("-inf")):
+        raise ConfigError("%s is not finite" % name)
+    return max(low, min(high, value))
+
+
+def _coerce_timeout(value, source):
+    """Finite numeric timeout, clamped to 1..60; every bad value is ConfigError."""
+    if value is None or (isinstance(value, str) and value == ""):
+        return DEFAULT_HTTP_TIMEOUT
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        raise ConfigError("%s is not a number" % source)
+    if number != number or number in (float("inf"), float("-inf")):
+        raise ConfigError("%s is not finite" % source)
+    return max(1.0, min(MAX_HTTP_TIMEOUT, number))
+
+
+def _reject_bad_credential(value, field):
+    """Refuse control characters and non-latin-1 without ever echoing the value."""
+    if value is None:
+        return
+    if not isinstance(value, str):
+        raise ConfigError("%s must be a string" % field)
+    for ch in value:
+        if ord(ch) < 32 or ord(ch) == 127 or ord(ch) > 255:
+            raise ConfigError(
+                "%s contains a control character or non-latin-1 character; "
+                "paste the credential without trailing newlines" % field)
+
+
+def resolve_timer_unit():
+    """The timer knob may only name a .timer unit, never a .service or scope."""
+    unit = os.environ.get("ROOTCTL_TIMER_UNIT", DEFAULT_TIMER_UNIT)
+    if not isinstance(unit, str) or not unit.endswith(".timer"):
+        raise ConfigError(
+            "ROOTCTL_TIMER_UNIT must name a .timer unit, not %r; refusing to "
+            "touch a .service unit or scope" % (unit,))
+    return unit
+
+
+def config_candidates(explicit):
+    if explicit:
+        return [explicit]
+    out = []
+    for name in ("ROOTCTL_HUB_CONFIG", "QUOTA_HUB_CONFIG"):
+        value = os.environ.get(name)
+        if value:
+            out.append(value)
+    out.append(str(REPO / ".local" / "quota-hub.json"))
+    return out
+
+
+def check_config_mode(path):
+    """A config that may hold an admin credential must be 0600.
+
+    Warns, never refuses: a group-writable-by-umask file is common on this
+    fleet and refusing it would break the documented configuration. The message
+    carries the file name and the octal mode only, never a path, a body or a
+    value, so a warning cannot leak a credential.
+    """
+    try:
+        mode = stat.S_IMODE(os.stat(str(path)).st_mode)
+    except OSError:
+        return None
+    if mode == 0o600:
+        return None
+    name = Path(str(path)).name
+    if mode & 0o022:
+        return ("hub config %s is writable beyond its owner (mode %04o, expected "
+                "0600); it may hold an admin credential" % (name, mode))
+    return ("hub config %s is readable beyond its owner (mode %04o, expected 0600); "
+            "it may hold an admin credential" % (name, mode))
+
+
+def load_config(explicit):
+    path = None
+    for candidate in config_candidates(explicit):
+        if Path(candidate).is_file():
+            path = Path(candidate)
+            break
+    data = {}
+    mode_warning = None
+    if path is not None:
+        mode_warning = check_config_mode(path)
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise ConfigError("hub config %s is unreadable or malformed: %s"
+                              % (path.name, exc.__class__.__name__))
+        if not isinstance(data, dict):
+            raise ConfigError("hub config %s must be a JSON object" % path.name)
+    elif explicit:
+        raise ConfigError("hub config %s does not exist" % Path(explicit).name)
+
+    if data.get("session_pause") or data.get("session_pause_path"):
+        raise ConfigError(
+            "hub config declares session_pause, but the Hub defines no pause "
+            "contract; remove the key instead of assuming a pause")
+
+    # ROOTCTL_-prefixed overrides only: the host quota-launcher environment
+    # (QUOTA_HUB_TOKEN / QUOTA_HUB_URL / ...) is never consulted, so a host
+    # quota credential cannot silently replace the admin credential in the
+    # config, and a foreign QUOTA_HUB_URL can never receive the admin token.
+    url = os.environ.get("ROOTCTL_HUB_URL") or data.get("hub_url")
+    token = os.environ.get("ROOTCTL_HUB_TOKEN") or data.get("token")
+    host_id = os.environ.get("ROOTCTL_HUB_HOST_ID") or data.get("host_id")
+    csrf = data.get("csrf_token") or os.environ.get("ROOTCTL_HUB_CSRF_TOKEN")
+    cookie = data.get("cookie") or os.environ.get("ROOTCTL_HUB_COOKIE")
+
+    _reject_bad_credential(token, "token")
+    _reject_bad_credential(csrf, "csrf_token")
+    _reject_bad_credential(cookie, "cookie")
+
+    base_timeout = _coerce_timeout(
+        data.get("timeout_sec") if data.get("timeout_sec") is not None
+        else DEFAULT_HTTP_TIMEOUT, "timeout_sec")
+    if os.environ.get("ROOTCTL_HUB_TIMEOUT") not in (None, ""):
+        timeout = _coerce_timeout(
+            os.environ.get("ROOTCTL_HUB_TIMEOUT"), "ROOTCTL_HUB_TIMEOUT")
+    else:
+        timeout = base_timeout
+
+    # Redact before any message can carry them, including the raw URL itself.
+    for value in (token, csrf, cookie, str(url) if url else None):
+        REDACTOR.add(value)
+
+    if not url:
+        raise ConfigError(
+            "no configured Hub URL: set hub_url in the hub config file or "
+            "ROOTCTL_HUB_URL")
+    url = str(url)
+    if any(ch.isspace() or ord(ch) < 32 for ch in url):
+        raise ConfigError("configured Hub URL contains whitespace or control characters")
+    try:
+        parsed = urllib.parse.urlsplit(url)
+    except ValueError:
+        raise ConfigError("configured Hub URL is malformed")
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise ConfigError("configured Hub URL must be an absolute http(s) URL")
+    # A credential in the URL would be printed back in every report; refuse it.
+    if parsed.username or parsed.password or "@" in parsed.netloc:
+        raise ConfigError(
+            "configured Hub URL must not carry userinfo; put credentials in the "
+            "token or cookie fields of the config instead")
+    if parsed.query:
+        raise ConfigError(
+            "configured Hub URL must not carry a query string; put credentials in "
+            "the token or cookie fields of the config instead")
+    if parsed.fragment:
+        raise ConfigError("configured Hub URL must not carry a fragment")
+    # The display URL is the origin only (scheme://host:port): path segments
+    # may carry a secret and are never printed. Userinfo, query and fragment
+    # were already refused above, so the origin is safe to print.
+    display = "%s://%s" % (parsed.scheme, parsed.netloc)
+    if display.rstrip("/") == url.rstrip("/"):
+        REDACTOR.discard(display)
+
+    declared = data.get("auth_mode")
+    if declared is None:
+        if path is None:
+            raise ConfigError(
+                "hub config must state auth_mode explicitly (bearer or "
+                "session); rootctl does not guess which credential it holds")
+        raise ConfigError(
+            "hub config %s must state auth_mode explicitly (bearer or session); "
+            "rootctl does not guess which credential it holds"
+            % Path(str(path)).name)
+    auth_mode = str(declared)
+    if auth_mode not in ("bearer", "session"):
+        raise ConfigError("auth_mode must be bearer or session")
+    if auth_mode == "bearer" and not token:
+        raise ConfigError("bearer auth_mode requires an admin token in the config")
+    if auth_mode == "session" and not (csrf and cookie):
+        raise ConfigError(
+            "session auth requires the CSRF token and cookie already held by an "
+            "existing Hub custodian session")
+
+    return {
+        "path": str(path) if path else None,
+        "hub_url": url.rstrip("/"),
+        "hub_url_display": display.rstrip("/"),
+        "token": token,
+        "host_id": host_id,
+        "auth_mode": auth_mode,
+        "csrf_token": csrf,
+        "cookie": cookie,
+        "timeout": timeout,
+        "mode_warning": mode_warning,
+    }
+
+
+# ---------------------------------------------------------------- hub client
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    """A 3xx is never followed: the credentialed request is not re-sent."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+_OPENER = None
+
+
+def _opener():
+    """ProxyHandler({}) disables any environment proxy for a credentialed call."""
+    global _OPENER
+    if _OPENER is None:
+        _OPENER = urllib.request.build_opener(
+            urllib.request.ProxyHandler({}), NoRedirect())
+    return _OPENER
+
+
+def _headers(config, method):
+    # Only headers the Hub actually reads for admin auth: Authorization, or
+    # Cookie + X-CSRF-Token (Hub verifyCsrf reads x-csrf-token). No Origin is
+    # sent and no unused marker headers are added.
+    headers = {"Accept": "application/json", "User-Agent": "rootctl/1"}
+    if method == "PUT":
+        headers["Content-Type"] = "application/json"
+    if config["auth_mode"] == "bearer":
+        headers["Authorization"] = "Bearer %s" % config["token"]
+    else:
+        headers["Cookie"] = config["cookie"]
+        headers["X-CSRF-Token"] = config["csrf_token"]
+    return headers
+
+
+class _TotalDeadline:
+    """Total wall-clock bound for one HTTP call: DNS, connect and body.
+
+    signal.setitimer is the only bound that also covers name resolution; the
+    socket timeout is re-armed with the remaining budget for every chunk so a
+    slow-drip body cannot keep rootctl (and its lock) alive past the budget.
+    """
+
+    def __init__(self, budget):
+        self.budget = budget
+        self.end = time.monotonic() + budget
+        self.previous_handler = None
+        self.active = False
+
+    def _fire(self, signum, frame):
+        raise HubTimeoutError(
+            "hub call exceeded its total budget of %ss" % self.budget)
+
+    def __enter__(self):
+        if (hasattr(signal, "SIGALRM")
+                and threading.current_thread() is threading.main_thread()):
+            self.previous_handler = signal.signal(signal.SIGALRM, self._fire)
+            signal.setitimer(signal.ITIMER_REAL, self.budget)
+            self.active = True
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        if self.active:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.signal(signal.SIGALRM, self.previous_handler)
+            self.active = False
+        return False
+
+    def remaining(self):
+        return self.end - time.monotonic()
+
+
+def _set_socket_timeout(response, remaining):
+    try:
+        sock = response.fp.raw._sock
+    except AttributeError:
+        try:
+            sock = response.fp.raw._sock
+        except AttributeError:
+            sock = None
+    if sock is not None:
+        sock.settimeout(max(0.05, remaining))
+    return sock
+
+
+def _read_bounded(response, deadline):
+    chunks = []
+    total = 0
+    while True:
+        left = deadline.remaining()
+        if left <= 0:
+            raise HubTimeoutError(
+                "hub response body exceeded the total budget of %ss" % deadline.budget)
+        _set_socket_timeout(response, left)
+        chunk = response.read(min(READ_CHUNK, MAX_RESPONSE_BYTES - total))
+        if not chunk:
+            break
+        chunks.append(chunk)
+        total += len(chunk)
+        if total >= MAX_RESPONSE_BYTES:
+            break
+    return b"".join(chunks)
+
+
+def http_json(config, method, path, payload=None):
+    """Returns (status, parsed_json_or_None, raw_text). Raises Hub*Error."""
+    url = config["hub_url"] + path
+    data = None
+    if payload is not None:
+        data = json.dumps(payload).encode("utf-8")
+    try:
+        request = urllib.request.Request(url, data=data, method=method,
+                                         headers=_headers(config, method))
+    except (ValueError, UnicodeError) as exc:
+        raise HubUnknownError("hub %s %s unreachable (%s)" % (method, path, exc.__class__.__name__))
+    with _TotalDeadline(config["timeout"]) as deadline:
+        try:
+            response = _opener().open(request, timeout=max(0.1, deadline.remaining()))
+            try:
+                status = response.getcode()
+                raw = _read_bounded(response, deadline)
+            finally:
+                response.close()
+        except urllib.error.HTTPError as exc:
+            status = exc.code
+            try:
+                raw = exc.read(MAX_RESPONSE_BYTES)
+            except HubTimeoutError:
+                raise
+            except Exception:
+                raw = b""
+            exc.close()
+        except HubTimeoutError:
+            raise
+        except (urllib.error.URLError, socket.timeout, TimeoutError, OSError) as exc:
+            reason = getattr(exc, "reason", None)
+            kind = type(exc).__name__
+            if isinstance(reason, BaseException):
+                kind = type(reason).__name__
+            raise HubUnknownError("hub %s %s unreachable (%s)" % (method, path, kind))
+        except (http.client.HTTPException, ValueError, UnicodeError) as exc:
+            raise HubUnknownError("hub %s %s unreachable (%s)" % (method, path, type(exc).__name__))
+        except RootctlError:
+            raise
+        except Exception as exc:
+            raise HubUnknownError("hub %s %s failed (%s)" % (method, path, exc.__class__.__name__))
+    text = raw.decode("utf-8", "replace") if raw else ""
+    parsed = None
+    if text.strip():
+        try:
+            parsed = json.loads(text)
+        except (ValueError, RecursionError, MemoryError):
+            parsed = None
+        except Exception:
+            parsed = None
+    return status, parsed, text
+
+
+def _as_hub_unknown(exc, what):
+    """Map any unexpected Hub-operation failure to a safe HubUnknownError.
+
+    The main catch-all can only sanitize output; it cannot resume an
+    abandoned command. Every Hub step in stop/start must therefore convert
+    non-RootctlError (RecursionError from deeply nested JSON, MemoryError
+    from oversized semantic structure, etc.) here so stop still disables
+    the timer and start still compensates an applied PUT. Only the class
+    name is kept, never a body or traceback, so no credential can leak.
+    """
+    if isinstance(exc, RootctlError):
+        return exc
+    return HubUnknownError("hub %s failed (%s)" % (what, exc.__class__.__name__))
+
+
+def parse_scheduling(parsed, where):
+    """Strict: enabled must be a real JSON boolean and updated_at must be UTC."""
+    if not isinstance(parsed, dict):
+        raise HubUnknownError("hub scheduling reply %s is not a JSON object" % where)
+    enabled = parsed.get("enabled")
+    if not isinstance(enabled, bool):
+        raise HubUnknownError(
+            "hub scheduling reply %s has a non-boolean enabled" % where)
+    updated_at = parsed.get("updated_at")
+    if not isinstance(updated_at, str) or not UTC_RE.match(updated_at):
+        raise HubUnknownError(
+            "hub scheduling reply %s has a missing or non-UTC updated_at" % where)
+    try:
+        datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+    except ValueError:
+        raise HubUnknownError(
+            "hub scheduling reply %s has an unparsable updated_at" % where)
+    return enabled, updated_at
+
+
+def hub_get(config):
+    status, parsed, text = http_json(config, "GET", SCHEDULING_PATH)
+    if status in (401, 403):
+        raise HubAuthError("hub refused admin auth with HTTP %d" % status)
+    if 300 <= status < 400:
+        raise HubFailedError(
+            "hub GET %s answered HTTP %d redirect, which rootctl refuses to "
+            "follow and does not forward the admin credential to" % (SCHEDULING_PATH, status))
+    if status >= 500:
+        raise HubUnknownError("hub GET %s returned HTTP %d" % (SCHEDULING_PATH, status))
+    if status != 200:
+        raise HubFailedError("hub GET %s returned HTTP %d" % (SCHEDULING_PATH, status))
+    enabled, updated_at = parse_scheduling(parsed, "GET")
+    return {"enabled": enabled, "updated_at": updated_at}
+
+
+def hub_put(config, enabled):
+    status, parsed, text = http_json(config, "PUT", SCHEDULING_PATH, {"enabled": enabled})
+    if status in (401, 403):
+        raise HubAuthError("hub refused admin auth with HTTP %d" % status)
+    if 300 <= status < 400:
+        raise HubFailedError(
+            "hub PUT %s answered HTTP %d redirect, which rootctl refuses to "
+            "follow and does not forward the admin credential to" % (SCHEDULING_PATH, status))
+    if status >= 500:
+        raise HubUnknownError("hub PUT %s returned HTTP %d" % (SCHEDULING_PATH, status))
+    if status not in (200, 204):
+        raise HubFailedError("hub PUT %s returned HTTP %d" % (SCHEDULING_PATH, status))
+    if parsed is None:
+        raise HubUnknownError("hub PUT %s returned no JSON reply" % SCHEDULING_PATH)
+    got, updated_at = parse_scheduling(parsed, "PUT")
+    if got is not enabled:
+        raise HubFailedError(
+            "hub PUT %s acknowledged enabled=%s but read back enabled=%s"
+            % (SCHEDULING_PATH, "true" if enabled else "false",
+               "true" if got else "false"))
+    return {"enabled": got, "updated_at": updated_at}
+
+
+# ---------------------------------------------------------------- systemctl
+
+def systemctl_bin():
+    return os.environ.get("ROOTCTL_SYSTEMCTL") or "systemctl"
+
+
+def systemctl(*args, timeout=None):
+    timeout = DEFAULT_SYSTEMCTL_TIMEOUT if timeout is None else timeout
+    argv = [systemctl_bin()] + list(args)
+    try:
+        proc = subprocess.run(argv, capture_output=True, text=True,
+                              timeout=timeout, check=False)
+    except subprocess.TimeoutExpired:
+        return 124, "", "systemctl %s timed out after %ss" % (" ".join(args), timeout)
+    except (OSError, ValueError) as exc:
+        return 127, "", "systemctl %s not runnable (%s)" % (" ".join(args), exc.__class__.__name__)
+    return proc.returncode, proc.stdout or "", proc.stderr or ""
+
+
+def _unit_flag(unit, verb):
+    """systemd-faithful: read the state word on stdout whatever the exit code.
+
+    is-enabled exits 1 for disabled/masked and is-active exits 3 for inactive,
+    so a non-zero rc with a recognised state is a KNOWN OFF state. Only empty or
+    unrecognised stdout (e.g. "Failed to connect to bus") stays unknown.
+    """
+    rc, out, err = systemctl("--user", verb, unit)
+    raw = None
+    for line in out.splitlines():
+        if line.strip():
+            raw = line.strip().split()[0].lower()
+            break
+    if raw in KNOWN_STATES[verb]:
+        return (raw in ON_STATES[verb]), raw, rc, None
+    return None, raw, rc, "%s %s returned rc=%d without a recognised state (stdout=%r %s)" % (
+        verb, unit, rc, raw or "", (err or "").strip())
+
+
+def timer_state(unit):
+    enabled, enabled_raw, enabled_rc, err_en = _unit_flag(unit, "is-enabled")
+    active, active_raw, active_rc, err_act = _unit_flag(unit, "is-active")
+    known = enabled is not None and active is not None
+    divergence = None
+    if known and enabled != active:
+        divergence = "enabled_only" if enabled else "active_only"
+    notes = [n for n in (err_en, err_act) if n]
+    return {
+        "unit": unit,
+        "enabled": enabled,
+        "active": active,
+        "known": known,
+        "divergence": divergence,
+        "is_enabled_raw": enabled_raw,
+        "is_active_raw": active_raw,
+        "is_enabled_rc": enabled_rc,
+        "is_active_rc": active_rc,
+        "error": "; ".join(notes) if notes else None,
+    }
+
+
+def timer_label(state):
+    """(on|off|unknown, basis) from a timer readback only."""
+    if not state or not state.get("known"):
+        return "unknown", "unreadable"
+    if state["enabled"] and state["active"]:
+        return "on", "read"
+    if not state["enabled"] and not state["active"]:
+        return "off", "read"
+    # Readable but divergent (enabled without active, or the reverse): the timer
+    # is neither cleanly on nor cleanly off, so it is reported as unknown with
+    # the divergence kept explicit instead of being called on or off.
+    return "unknown", "divergent:%s" % (state.get("divergence") or "unknown")
+
+
+def timer_off(unit):
+    """Disables the timer only. Never stops headless-root.service or scopes."""
+    rc, out, err = systemctl("--user", "disable", "--now", unit)
+    return rc == 0, ("systemctl disable --now rc=%d %s" % (rc, (err or out).strip()) if rc else None)
+
+
+def timer_on(unit):
+    rc, out, err = systemctl("--user", "enable", "--now", unit)
+    return rc == 0, ("systemctl enable --now rc=%d %s" % (rc, (err or out).strip()) if rc else None)
+
+
+# ---------------------------------------------------------------- lock
+
+LOCK_INFO = {"mode": "none", "created": False, "contended": False, "held": False}
+
+
+def acquire_lock(path, wait, exclusive=True):
+    """Mutating commands take the exclusive lock; status takes a shared one.
+
+    status never creates the lock file or its directory: a readonly observation
+    must not leave a lock file behind.
+    """
+    lock_path = Path(path)
+
+    def publish(info):
+        LOCK_INFO.update(info)
+        return info
+
+    if not exclusive:
+        if not lock_path.exists():
+            return None, publish({"mode": "shared", "created": False,
+                                  "contended": False, "held": False})
+        try:
+            handle = open(str(lock_path), "a+")
+        except OSError:
+            return None, publish({"mode": "shared", "created": False,
+                                  "contended": True, "held": False})
+        deadline = time.time() + max(0.0, wait)
+        while True:
+            try:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_SH | fcntl.LOCK_NB)
+                return handle, publish({"mode": "shared", "created": False,
+                                        "contended": False, "held": True})
+            except OSError:
+                if time.time() >= deadline:
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                    handle.close()
+                    return None, publish({"mode": "shared", "created": False,
+                                          "contended": True, "held": False})
+                time.sleep(0.1)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    handle = open(str(lock_path), "a+")
+    deadline = time.time() + max(0.0, wait)
+    while True:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return handle, publish({"mode": "exclusive", "created": True,
+                                    "contended": False, "held": True})
+        except OSError:
+            if time.time() >= deadline:
+                handle.close()
+                raise RootctlError("another rootctl holds %s" % lock_path.name, EXIT_BUSY)
+            time.sleep(0.1)
+
+
+def default_lock_path():
+    return os.environ.get("ROOTCTL_LOCK") or os.path.expanduser(
+        "~/.local/state/headless-root/rootctl.lock")
+
+
+# ---------------------------------------------------------------- reporting
+
+def now_utc():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+UNKNOWN_HUB = {"known": False, "enabled": None, "updated_at": None}
+
+
+class Report:
+    def __init__(self, command, args, config):
+        self.command = command
+        self.args = args
+        self.config = config
+        self.steps = []
+        self.hub = dict(UNKNOWN_HUB)
+        self.timer = {"unit": DEFAULT_TIMER_UNIT, "enabled": None, "active": None,
+                      "known": False}
+        self.errors = []
+        self.warnings = []
+        self.exit_code = EXIT_OK
+        self.verdict = None
+        self.lock = dict(LOCK_INFO)
+        if config and config.get("mode_warning"):
+            self.warnings.append(config["mode_warning"])
+
+    def step(self, name, ok, detail=None):
+        entry = {"step": name, "ok": bool(ok)}
+        if detail:
+            entry["detail"] = safe(detail)
+        self.steps.append(entry)
+        return entry
+
+    def warn(self, message):
+        self.warnings.append(safe(message))
+
+    def fail(self, message, exit_code):
+        self.errors.append(safe(message))
+        # First failure defines the exit code; an unreadable readback escalates it.
+        if self.exit_code == EXIT_OK or exit_code == EXIT_UNKNOWN:
+            self.exit_code = exit_code
+        return self.exit_code
+
+    def as_dict(self):
+        out = {
+            "command": self.command,
+            "at_utc": now_utc(),
+            "exit_code": self.exit_code,
+            "verdict": self.verdict,
+            "hub_url": (self.config.get("hub_url_display") if self.config else None),
+            "hub_auth_mode": (self.config["auth_mode"] if self.config else None),
+            "config_path": (os.path.basename(self.config["path"])
+                            if self.config and self.config["path"] else None),
+            "lock": self.lock,
+            "linearizable": bool(self.lock.get("held")
+                                 and not self.lock.get("contended")),
+            "hub": self.hub,
+            "timer": self.timer,
+            "steps": self.steps,
+            "warnings": self.warnings,
+            "errors": self.errors,
+        }
+        return REDACTOR.scrub_obj(out)
+
+
+def hub_label(report):
+    hub = report.hub
+    if hub.get("known") and hub.get("enabled") is True:
+        return "on"
+    if hub.get("known") and hub.get("enabled") is False:
+        return "off"
+    return "unknown"
+
+
+def verdict_for(report):
+    timer_word, basis = timer_label(report.timer)
+    report.timer["verdict_basis"] = basis
+    hub_word = hub_label(report)
+    if hub_word == "on" and timer_word == "on":
+        return "both_on"
+    if hub_word == "off" and timer_word == "off":
+        return "both_off"
+    return "hub_%s_timer_%s" % (hub_word, timer_word)
+
+
+def emit(report, args):
+    if report.verdict is None:
+        report.verdict = verdict_for(report)
+    if args.json:
+        sys.stdout.write(json.dumps(report.as_dict(), indent=1, sort_keys=True) + "\n")
+    else:
+        hub = report.hub
+        timer = report.timer
+        lines = []
+        lines.append("rootctl %s at %s" % (report.command, now_utc()))
+        lines.append("  hub  : %s -> %s (updated_at %s)"
+                     % (report.config["hub_url_display"] if report.config else "?",
+                        ("enabled=" + ("true" if hub["enabled"] else "false"))
+                        if hub["known"] else "unknown",
+                        hub["updated_at"] or "unknown"))
+        lines.append("  timer: %s -> enabled=%s active=%s (verdict basis %s)"
+                     % (timer["unit"],
+                        timer["enabled"] if timer["enabled"] is not None else "unknown",
+                        timer["active"] if timer["active"] is not None else "unknown",
+                        timer.get("verdict_basis", "unknown")))
+        lines.append("  verdict: %s" % report.verdict)
+        lines.append("  lock: %s%s" % (report.lock.get("mode"),
+                                      " (not linearizable with a mutating rootctl)"
+                                      if report.lock.get("contended") else ""))
+        for step in report.steps:
+            lines.append("  [%s] %s%s" % ("ok" if step["ok"] else "!!", step["step"],
+                                          (" - " + step["detail"]) if step.get("detail") else ""))
+        for warning in report.warnings:
+            lines.append("  warn: %s" % warning)
+        for line in lines:
+            # Every human-readable line is redacted, headers included.
+            sys.stdout.write(safe(line) + "\n")
+        for error in report.errors:
+            sys.stdout.write(safe("  error: %s\n" % error))
+    return report.exit_code
+
+
+def read_timer(report, unit):
+    state = timer_state(unit)
+    report.timer = state
+    return state
+
+
+def settle(report, config, unit, refresh_hub=True):
+    """Final truthful observation: read both sides, then derive the verdict."""
+    read_timer(report, unit)
+    final_failed = False
+    if refresh_hub or not report.hub.get("known"):
+        try:
+            read = hub_get(config)
+            report.hub = {"known": True, **read}
+        except Exception as exc:
+            exc = _as_hub_unknown(exc, "final readback")
+            final_failed = True
+            if not report.hub.get("known"):
+                report.hub = dict(UNKNOWN_HUB)
+            report.warn("final Hub readback failed: %s" % exc)
+            # A failed final GET leaves only a stale earlier observation: it
+            # is never a verified success. A verified-ok report becomes
+            # unknown; a definite auth refusal keeps exit 4 (still non-zero).
+            if report.exit_code == EXIT_OK:
+                report.fail("final Hub readback failed and the earlier observation "
+                            "is stale, not verified: %s" % exc, EXIT_UNKNOWN)
+            else:
+                report.warn("earlier Hub observation is stale, not verified: %s" % exc)
+    report.verdict = verdict_for(report)
+    return report.verdict
+
+
+# ---------------------------------------------------------------- commands
+
+def cmd_start(args):
+    config = load_config(args.config)
+    report = Report("start", args, config)
+    unit = resolve_timer_unit()
+    report.timer["unit"] = unit
+    previous = {"hub_enabled": None, "timer": None}
+
+    # Pre-checks are readonly and capture the state a later failure restores.
+    try:
+        before = hub_get(config)
+        report.hub = {"known": True, **before}
+        previous["hub_enabled"] = before["enabled"]
+        report.step("pre-check GET hub scheduling", True,
+                    "enabled=%s" % ("true" if before["enabled"] else "false"))
+    except Exception as exc:
+        exc = _as_hub_unknown(exc, "pre-check GET")
+        report.fail("start refused before any change: %s" % exc, exc.exit_code)
+        settle(report, config, unit)
+        return emit(report, args)
+
+    previous["timer"] = read_timer(report, unit)
+    report.step("pre-check timer readback", previous["timer"]["known"],
+                "enabled=%s active=%s" % (previous["timer"]["enabled"],
+                                          previous["timer"]["active"]))
+
+    # Fail-closed order: an unreadable timer pre-check refuses the start
+    # before any Hub change, so a transient outage can never open a brief
+    # scheduling-on window that is then compensated away.
+    if not previous["timer"]["known"]:
+        report.fail(
+            "start refused before any change: timer pre-check is unknown "
+            "(%s); Hub left untouched"
+            % (previous["timer"]["error"] or "unreadable"), EXIT_UNKNOWN)
+        settle(report, config, unit)
+        return emit(report, args)
+
+    # Fail-closed order: Hub on and verified first, then the timer.
+    put_acknowledged = False
+    try:
+        put = hub_put(config, True)
+        put_acknowledged = True
+        report.hub = {"known": True, **put}
+        report.step("PUT hub scheduling enabled=true", True)
+        read = hub_get(config)
+        report.hub = {"known": True, **read}
+        if read["enabled"] is not True:
+            raise HubFailedError("hub readback still reports enabled=false after PUT")
+        report.step("GET hub scheduling readback", True)
+    except Exception as exc:
+        exc = _as_hub_unknown(exc, "PUT+readback")
+        report.fail("start failed before any timer change: %s" % exc, exc.exit_code)
+        restore_previous(report, config, unit, previous, start_error=exc,
+                         put_acknowledged=put_acknowledged, timer_touched=False)
+        settle(report, config, unit, refresh_hub=False)
+        return emit(report, args)
+
+    ok, detail = timer_on(unit)
+    report.step("systemctl --user enable --now %s" % unit, ok, detail)
+    if not ok:
+        report.fail("timer enable failed: %s" % detail, EXIT_FAILED)
+        restore_previous(report, config, unit, previous, timer_touched=True)
+        settle(report, config, unit, refresh_hub=False)
+        return emit(report, args)
+
+    state = read_timer(report, unit)
+    if not state["known"] or state["enabled"] is not True or state["active"] is not True:
+        report.fail(
+            "timer readback is not enabled+active (enabled=%s active=%s %s)"
+            % (state["enabled"], state["active"], state["error"] or ""), EXIT_UNKNOWN)
+        restore_previous(report, config, unit, previous, timer_touched=True)
+        settle(report, config, unit, refresh_hub=False)
+        return emit(report, args)
+    report.step("timer readback enabled+active", True)
+
+    try:
+        final = hub_get(config)
+        report.hub = {"known": True, **final}
+        if final["enabled"] is not True:
+            raise HubFailedError("hub scheduling no longer reports enabled=true")
+        report.step("final GET hub scheduling readback", True)
+    except Exception as exc:
+        exc = _as_hub_unknown(exc, "final GET")
+        report.step("final GET hub scheduling readback", False, str(exc))
+        report.fail("final hub readback failed: %s" % exc, exc.exit_code)
+        restore_previous(report, config, unit, previous, timer_touched=True)
+        settle(report, config, unit, refresh_hub=False)
+        return emit(report, args)
+
+    report.verdict = verdict_for(report)
+    return emit(report, args)
+
+
+def restore_previous(report, config, unit, previous, start_error=None,
+                     timer_touched=False, put_acknowledged=False):
+    """Deliberate compensation: return both sides to the pre-check intent.
+
+    If the pre-check saw the Hub scheduling or the timer on, rootctl did not
+    create that state and does not turn it off because of a transient read
+    failure. Only a definite PUT refusal (HTTP 401/403 from the PUT itself,
+    before it is acknowledged) never took effect, so no compensating PUT is
+    sent and the auth cause keeps the exit code. If the PUT was acknowledged
+    and a later GET readback returns 401/403, the Hub may have been changed,
+    so a compensating PUT is attempted and the step never claims nothing was
+    changed. Only a definite PUT 401/403 skips the compensating PUT; other
+    4xx/5xx failures still compensate because the write may have taken
+    effect. If the compensation itself fails, the report says the state is
+    unknown; an unknown is never called safe, off or restored. Each timer
+    flag is restored to its own pre-check value when the timer was actually
+    touched; when start never attempted timer_on, the timer is reported as
+    left as found and never mutated. A divergent pre-check (enabled xor
+    active) cannot be restored exactly with enable/disable --now, so after a
+    timer change it is reported truthfully as changed-but-not-restored,
+    never as left untouched.
+    """
+    hub_prev = previous.get("hub_enabled")
+    if isinstance(start_error, HubAuthError) and not put_acknowledged:
+        # Definite PUT refusal: the PUT never took effect, so compensating
+        # would only send a second doomed PUT and mask the auth exit with
+        # unknown.
+        report.step("compensation PUT hub scheduling", True,
+                    "Hub PUT was refused with HTTP 401/403; nothing was "
+                    "changed so no compensation was sent")
+    elif hub_prev is True:
+        report.step("compensation PUT hub scheduling", True,
+                    "Hub was already scheduling before start; left exactly as found")
+    elif hub_prev is False:
+        try:
+            hub_put(config, False)
+            read = hub_get(config)
+            if read["enabled"] is not False:
+                raise HubFailedError("Hub readback still reports enabled=true")
+            report.hub = {"known": True, **read}
+            report.step("compensation PUT hub scheduling enabled=false", True)
+        except Exception as exc:
+            exc = _as_hub_unknown(exc, "compensation PUT")
+            report.hub = dict(UNKNOWN_HUB)
+            report.step("compensation PUT hub scheduling enabled=false", False, str(exc))
+            report.fail(
+                "hub scheduling state is now unknown and could not be restored: %s"
+                % exc, EXIT_UNKNOWN)
+    else:
+        report.fail("hub scheduling state was unknown before start and remains "
+                    "unknown; it was not changed and cannot be restored", EXIT_UNKNOWN)
+
+    timer_prev = previous.get("timer") or {}
+    if not timer_prev.get("known"):
+        report.step("compensation systemctl timer", False,
+                    "pre-check timer state was unknown; timer left untouched, its "
+                    "state is unknown")
+    elif timer_prev["enabled"] is False and timer_prev["active"] is False:
+        if not timer_touched:
+            report.step("compensation systemctl timer", True,
+                        "timer was off before start and start never attempted "
+                        "timer_on; left as found, no disable sent")
+        else:
+            ok, detail = timer_off(unit)
+            report.step("compensation systemctl --user disable --now %s" % unit, ok, detail)
+            if not ok:
+                report.fail("timer compensation failed: %s" % detail, EXIT_FAILED)
+    elif timer_prev["enabled"] is True and timer_prev["active"] is True:
+        report.step("compensation systemctl timer", True,
+                    "timer was already enabled+active before start; left as found")
+    else:
+        if not timer_touched:
+            report.step("compensation systemctl timer", False,
+                        "pre-check timer was divergent (enabled=%s active=%s); "
+                        "start never touched the timer, divergence left as found"
+                        % (timer_prev.get("enabled"), timer_prev.get("active")))
+            report.fail(
+                "timer pre-check was divergent (enabled=%s active=%s); start "
+                "never touched the timer so it was left as found"
+                % (timer_prev.get("enabled"), timer_prev.get("active")),
+                EXIT_FAILED)
+        else:
+            report.step("compensation systemctl timer", False,
+                        "pre-check timer was divergent (enabled=%s active=%s); "
+                        "start changed the timer with enable --now and the "
+                        "divergence was not restored to its exact pre-check flags"
+                        % (timer_prev.get("enabled"), timer_prev.get("active")))
+            report.fail(
+                "timer pre-check was divergent (enabled=%s active=%s); start "
+                "changed the timer and the exact pre-check flags were not "
+                "restored"
+                % (timer_prev.get("enabled"), timer_prev.get("active")),
+                EXIT_FAILED)
+
+
+def cmd_stop(args):
+    config = load_config(args.config)
+    report = Report("stop", args, config)
+    unit = resolve_timer_unit()
+    report.timer["unit"] = unit
+
+    # A failed pre-check never aborts stop: stop stays best effort on both sides.
+    try:
+        before = hub_get(config)
+        report.hub = {"known": True, **before}
+        report.step("pre-check GET hub scheduling", True,
+                    "enabled=%s" % ("true" if before["enabled"] else "false"))
+    except Exception as exc:
+        exc = _as_hub_unknown(exc, "pre-check GET")
+        report.fail("stop: hub state unknown before change: %s" % exc, exc.exit_code)
+        report.step("pre-check GET hub scheduling", False, str(exc))
+
+    # Best effort on BOTH, in this order: Hub off, then timer off.
+    try:
+        put = hub_put(config, False)
+        report.hub = {"known": True, **put}
+        report.step("PUT hub scheduling enabled=false", True)
+        read = hub_get(config)
+        report.hub = {"known": True, **read}
+        if read["enabled"] is not False:
+            raise HubFailedError("hub readback still reports enabled=true after PUT")
+        report.step("GET hub scheduling readback", True)
+    except Exception as exc:
+        exc = _as_hub_unknown(exc, "PUT+readback")
+        report.fail("hub scheduling not confirmed off: %s" % exc, exc.exit_code)
+        report.step("PUT hub scheduling enabled=false", False, str(exc))
+
+    ok, detail = timer_off(unit)
+    report.step("systemctl --user disable --now %s" % unit, ok, detail)
+    if not ok:
+        report.fail("timer disable failed: %s" % detail, EXIT_FAILED)
+
+    state = read_timer(report, unit)
+    if not state["known"]:
+        report.fail("timer readback unknown: %s" % (state["error"] or ""), EXIT_UNKNOWN)
+    elif state["enabled"] is not False or state["active"] is not False:
+        # Readable but divergent: a verified failure, not an unknown one.
+        report.fail(
+            "timer readback is not disabled+inactive (enabled=%s active=%s)"
+            % (state["enabled"], state["active"]), EXIT_FAILED)
+
+    # Deliberately never re-enables the Hub when the timer step fails. The
+    # final verdict always comes from a fresh Hub GET taken after the timer
+    # step (like start does): a Hub re-enabled in between is never reported
+    # as both_off, and an exit 3 with both_off means the pre-check was
+    # unverified but the final state verified off.
+    settle(report, config, unit, refresh_hub=True)
+    return emit(report, args)
+
+
+def cmd_status(args):
+    config = load_config(args.config)
+    report = Report("status", args, config)
+    unit = resolve_timer_unit()
+    report.timer["unit"] = unit
+
+    state = read_timer(report, unit)
+    try:
+        read = hub_get(config)
+        report.hub = {"known": True, **read}
+        report.step("GET hub scheduling", True,
+                    "enabled=%s" % ("true" if read["enabled"] else "false"))
+    except Exception as exc:
+        exc = _as_hub_unknown(exc, "GET")
+        report.fail("hub scheduling state unknown: %s" % exc, exc.exit_code)
+
+    report.verdict = verdict_for(report)
+    if not report.hub["known"] or not state["known"]:
+        # Preserve a definite auth refusal (exit 4): an auth-denied Hub is
+        # unknown as a state but the cause is auth, not a generic unknown.
+        if report.exit_code != EXIT_AUTH:
+            report.exit_code = EXIT_UNKNOWN
+    elif report.exit_code == EXIT_OK and report.verdict != "both_on" \
+            and report.verdict != "both_off":
+        report.exit_code = EXIT_FAILED
+    return emit(report, args)
+
+
+COMMANDS = {"start": cmd_start, "stop": cmd_stop, "status": cmd_status}
+
+
+def build_parser():
+    ap = argparse.ArgumentParser(
+        prog="rootctl",
+        description="Turn the interim headless root on or off as a whole: "
+                    "stop turns BOTH the Hub scheduling flag and headless-root.timer "
+                    "OFF; start turns BOTH ON. status is a readonly observation.")
+    ap.add_argument("command", choices=("start", "stop", "status"))
+    ap.add_argument("--config", default=None,
+                    help="Hub admin config JSON (default: ROOTCTL_HUB_CONFIG, "
+                         "QUOTA_HUB_CONFIG, then .local/quota-hub.json)")
+    ap.add_argument("--json", action="store_true", help="machine-readable single object")
+    ap.add_argument("--lock", default=None, help="lock file path")
+    ap.add_argument("--lock-wait", type=float, default=None,
+                    help="seconds to wait for the rootctl lock (default 0)")
+    return ap
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
+    exclusive = args.command != "status"
+    try:
+        wait = args.lock_wait if args.lock_wait is not None else _env_float(
+            "ROOTCTL_LOCK_WAIT", DEFAULT_LOCK_WAIT, 0.0, 60.0)
+        handle, _lock_info = acquire_lock(
+            args.lock or default_lock_path(), wait, exclusive=exclusive)
+    except RootctlError as exc:
+        sys.stderr.write("rootctl: %s\n" % safe(exc))
+        return exc.exit_code
+    except Exception as exc:
+        sys.stderr.write("rootctl: %s\n" % safe("%s: %s" % (exc.__class__.__name__, exc)))
+        return EXIT_UNKNOWN
+    try:
+        try:
+            report = COMMANDS[args.command](args)
+        except RootctlError as exc:
+            report_args = vars(args)
+            report_args["command"] = "error"
+            return emit(_error_report(exc, report_args), args)
+        except Exception as exc:
+            sys.stderr.write("rootctl: %s\n" % safe("%s" % exc.__class__.__name__))
+            return EXIT_UNKNOWN
+        return report
+    finally:
+        if handle is not None:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            handle.close()
+
+
+def _error_report(exc, args):
+    report = Report(args.get("command", "error"), args, None)
+    report.fail(str(exc), exc.exit_code)
+    report.verdict = "error"
+    return report
+
+
+if __name__ == "__main__":
+    sys.exit(main())

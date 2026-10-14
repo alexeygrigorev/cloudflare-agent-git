@@ -52,3 +52,88 @@ Each run, check every session for a composer that is non-empty and idle more tha
 ## Fresh-session test
 
 With only "you're root", startup should find and act on the first consequential gap: verify a healthy principal or recover a stopped one, obtain genuine custody and first useful action, then follow priority head recovery through the principal. Preserve protected states and existing schedules. Report what actually resumed and its next checkpoint; missing bindings, helper absence and requests sent alone do not pass.
+
+## rootctl, the on/off switch for both schedulers (14 October 2026)
+
+The interim root has two schedulers: the Hub scheduling flag and the systemd
+user timer `headless-root.timer`. `scripts/root/rootctl` turns both as a unit,
+exactly as Alexey specified: `stop` turns BOTH off and `start` turns BOTH on.
+This is deliberately not the cutover that the head's own review challenged:
+rootctl never disables one scheduler because the other exists, and `stop` is
+never inverted. See [README.md](../../README.md#root-scheduling-switch-scriptsrootrootctl)
+for the literal usage, configuration, exit codes and recovery.
+
+How root uses it: when Alexey asks for quiet hours, a maintenance window, or a
+pause of the 30-minute root, root runs `rootctl stop`, records the returned
+report and then reads back `rootctl status`. When he asks for the root to run
+again, root runs `rootctl start` and confirms `both_on`. A non-zero exit is
+reported with its truthful partial state and is never smoothed over: root does
+not retry a `start` that failed a readback and does not declare success from a
+report it did not read. `status` is readonly and safe to run at any time.
+
+What rootctl never does: it does not stop or kill an in-flight root run,
+`headless-root.service`, its transient scopes, `root.lock`, `state.json` or
+`runs/`. A run that is already going finishes on its own. It does not claim
+offers or starts, and while the Hub reports disabled the Hub guards its own
+offers, claims and start transitions. It does not invent a session pause: there
+is no `--pause-session` flag at all, because the Hub defines no pause contract,
+and argparse refuses it on every subcommand rather than silently ignoring it.
+
+The admin credential is explicit. rootctl requires `auth_mode` in the config and
+does not guess: a bearer `token` must be an admin credential of the Hub, while
+the token in the shared `.local/quota-hub.json` is the host quota credential and
+is NOT an admin credential. The supported alternatives are an admin bearer token
+or the CSRF token plus cookie of an existing Hub custodian session. root creates
+no credential, key, service or config file, and reads no secret file to find one.
+Root reports the `auth_mode` a command used and never prints a credential value.
+
+Recovery. If `start` fails, read the report's steps, errors and verdict: an auth
+exit means the configured Hub credentials or admin auth are not usable (rotate
+or repair the existing configuration, do not add a new credential); exit 3 means
+the Hub or the timer could not be read, or a compensating write did not confirm,
+so the state is unknown rather than failed and `status` must be repeated later;
+exit 5 means another rootctl holds the lock and the previous invocation is still
+finishing. Verdicts are the full Hub x timer grid (`both_on`, `both_off`,
+`hub_on_timer_off`, `hub_off_timer_on`, `hub_*_timer_unknown`,
+`hub_unknown_timer_*`), each derived from an actual readback, and a verdict can
+be `both_on` while the exit is non-zero: the verdict is the observed state, the
+errors say what failed.
+
+rootctl's compensation restores the intent its own pre-check observed. It
+disables the Hub only if the Hub was off before the attempt, and turns the timer
+off again only after `timer_on` was actually attempted; a Hub-stage failure that
+never touched the timer sends no `disable --now`, so a transient read failure on
+an already healthy system does not turn either scheduler off. Only a definite
+PUT refusal (HTTP 401/403 from the PUT itself, before it is acknowledged) never
+took effect, so no compensating PUT is sent and the auth exit is preserved; if
+the PUT is acknowledged and a later GET readback returns 401/403, a
+compensating PUT is attempted and the step never claims nothing was changed. A
+divergent pre-check (enabled xor active) cannot be
+restored exactly: when start never touched the timer it is left as found, and
+when start did change it the report records the exact pre-check flags as
+changed-but-not-restored, never as left untouched and never as already
+enabled+active. An unreadable timer
+pre-check refuses `start` before any Hub change. If the
+compensating write itself fails, the report states the state is now unknown and
+exits 3. Unknown is never called safe, off or restored. The rollback for a
+deliberate change is `rootctl stop` (or `rootctl start`); rootctl has exactly
+two target states and no generic restore-previous mode.
+
+Unknowns stated plainly. The offline test suite (97 tests, a fake `systemctl`
+that reproduces real systemd exit codes and local mock Hubs, reading no
+gitignored file) proves the client contract, ordering, fail-closed behaviour,
+compensation, idempotence, redaction, URL hygiene, redirect and proxy refusal,
+the total HTTP budget, deep-JSON boundary, PUT-ack vs readback-auth, urlsplit
+usage, the verdict vocabulary and concurrency. It does not prove
+live Hub behaviour, that the live admin credential works, that the Hub honours
+the disabled guard on real offers and claims, or that two real Hub-dispatched
+root cycles occurred. The interim timer therefore stays in place until TWO
+verified Hub-dispatched root cycles exist. Any reversible rootctl test is a
+separate, explicitly human-authorized step, its rollback is a recorded
+`rootctl stop`, and neither the author nor root may present a mock test as the
+two-cycle evidence.
+
+A Hub-only mode (Hub scheduling with the interim timer off) is NOT implemented
+here. It is a future change that needs its own explicit custody decision and its
+own evidence, and until that decision exists rootctl keeps turning both
+schedulers as a unit.
