@@ -104,6 +104,9 @@
       hour: "2-digit",
       minute: "2-digit",
     });
+    /* Fixture timestamps are fixed sample dates; "(10 d ago)" next to them
+       is noise, so the relative suffix is live-mode only. */
+    if (FIXTURE) return "<time datetime='" + esc(iso) + "'>" + esc(abs) + "</time>";
     var rel = relative(iso, d);
     return (
       "<time datetime='" + esc(iso) + "'>" + esc(abs) + "</time> <span class='muted small'>(" + esc(rel) + ")</span>"
@@ -131,6 +134,42 @@
     return Math.floor(s / 86400) + " d ago";
   }
 
+  /* Machine warning reasons such as "radar-conflict:test" read as words. */
+  function warningReason(reason) {
+    var m = /^radar-conflict:(\w+)$/.exec(String(reason || ""));
+    if (!m) return String(reason || "");
+    if (m[1] === "test") return "semantic conflict: the combined tests fail";
+    if (m[1] === "textual") return "textual conflict: both changed the same lines";
+    return "conflict (" + m[1] + ")";
+  }
+
+  /* One neutral line per agent card: did this agent's OWN tests pass at its
+     latest change? Deliberately not a .badge.clean — an agent's own green
+     run never makes any pair safe. */
+  function ownTestHtml(ag, lost) {
+    var ev = ag.testEvidence;
+    var label, icon;
+    if (lost) {
+      icon = "?";
+      label = "Own tests: unknown — latest change never arrived";
+    } else if (!ev) {
+      icon = "?";
+      label = "Own tests: no run recorded";
+    } else if (ev.exitCode !== 0) {
+      icon = "✕";
+      label = "Own tests: " + (ev.command || "tests") + " failed (exit " + ev.exitCode + ")";
+    } else if (ev.head && ag.head && ev.head !== ag.head) {
+      icon = "?";
+      label = "Own tests: passed on an older change (" + shortSha(ev.head) + ")";
+    } else {
+      icon = "✓";
+      label = "Own tests: " + (ev.command || "tests") + " passed alone (exit 0)";
+    }
+    return (
+      "<p class='own-test'><span class='own-test-icon' aria-hidden='true'>" + icon + "</span>" + esc(label) + "</p>"
+    );
+  }
+
   function plainRef(ref) {
     var m = /^refs\/heads\/(.+)$/.exec(String(ref || ""));
     return m ? m[1] : ref || "not recorded";
@@ -151,6 +190,31 @@
 
   function newBadge() {
     return " <span class='badge new'>New</span>";
+  }
+
+  /* Disclosures survive live re-renders: the page re-renders every 3 s, so
+     a <details data-key> the viewer opened or closed keeps that state
+     instead of snapping back to its default. */
+  var disclosureState = {};
+
+  document.addEventListener(
+    "toggle",
+    function (ev) {
+      var el = ev.target;
+      if (el && el.tagName === "DETAILS" && el.hasAttribute("data-key")) {
+        disclosureState[el.getAttribute("data-key")] = el.open;
+      }
+    },
+    true
+  );
+
+  function restoreDisclosures() {
+    document.querySelectorAll("details[data-key]").forEach(function (el) {
+      var key = el.getAttribute("data-key");
+      if (Object.prototype.hasOwnProperty.call(disclosureState, key)) {
+        el.open = disclosureState[key];
+      }
+    });
   }
 
   /* ---------- data loading ---------- */
@@ -414,16 +478,89 @@
     return PairLogic.pairStatus(agentA, agentB, status);
   }
 
+  /* Every badge carries an icon as well as words, so no state is signalled
+     by color alone. */
   var BADGES = {
-    conflict: { cls: "conflict", label: "Conflict" },
-    clean: { cls: "clean", label: "Clean — tests ran" },
-    unknown: { cls: "unknown", label: "Unknown — not safe" },
-    not_checked: { cls: "not_checked", label: "Not checked" },
+    conflict: { cls: "conflict", label: "Conflict", icon: "✕" },
+    clean: { cls: "clean", label: "Clean — tests ran", icon: "✓" },
+    unknown: { cls: "unknown", label: "Unknown — not safe", icon: "?" },
+    not_checked: { cls: "not_checked", label: "Not checked", icon: "–" },
   };
+
+  var PAIR_RANK = { conflict: 0, unknown: 1, not_checked: 2, clean: 3 };
 
   function badgeHtml(type) {
     var b = BADGES[type];
-    return "<span class='badge " + b.cls + "'>" + esc(b.label) + "</span>";
+    return (
+      "<span class='badge " + b.cls + "'><span class='badge-icon' aria-hidden='true'>" + b.icon + "</span>" +
+      esc(b.label) + "</span>"
+    );
+  }
+
+  /* Small inline badge with an icon, for states outside the pair BADGES. */
+  function stateBadge(cls, icon, label) {
+    return (
+      "<span class='badge " + cls + "'><span class='badge-icon' aria-hidden='true'>" + icon + "</span>" +
+      esc(label) + "</span>"
+    );
+  }
+
+  function plural(n, one, many) {
+    return n + " " + (n === 1 ? one : many);
+  }
+
+  /* The page's one key message: can these changes be combined? Built only
+     from the (already stale-downgraded) pair badges, so it can never say
+     "safe" when any pair is unknown, not checked or out of date. */
+  function verdictHtml(counts, total, lostCount, stale) {
+    var notProven = counts.unknown + counts.not_checked;
+    var tone, icon, title, sub;
+    if (!total) {
+      tone = "caution";
+      icon = "?";
+      title = "Nothing to compare yet";
+      sub = "Safety is checked per pair of agents; fewer than two agents are working right now.";
+    } else if (counts.conflict) {
+      tone = "danger";
+      icon = "✕";
+      title = "Not safe to combine: " + plural(counts.conflict, "conflict", "conflicts");
+      sub =
+        plural(counts.conflict, "pair clashes", "pairs clash") + " when tested together" +
+        (notProven ? ", and " + plural(notProven, "more pair is", "more pairs are") + " not proven safe" : "") +
+        ".";
+    } else if (notProven) {
+      tone = "caution";
+      icon = "?";
+      title = "Not proven safe";
+      sub =
+        plural(notProven, "pair has", "pairs have") +
+        " not been proven safe together. Unknown is never treated as safe.";
+    } else {
+      tone = "ok";
+      icon = "✓";
+      title = "All " + plural(total, "pair", "pairs") + " tested clean together";
+      sub = "Every pair was combined at its latest changes and the combined tests ran without a clash.";
+    }
+    if (lostCount) {
+      sub += " " + plural(lostCount, "push", "pushes") + " never arrived, so an agent's latest change is unknown.";
+    }
+    if (stale) {
+      sub = "Live status is out of date (" + stale.error.message + "), so nothing below counts as clean. " + sub;
+    }
+    function tally(n, label) {
+      return "<li" + (n ? "" : " class='zero'") + "><strong>" + n + "</strong> " + esc(label) + "</li>";
+    }
+    return (
+      "<div class='verdict tone-" + tone + "'>" +
+      "<p class='verdict-title'><span class='verdict-icon' aria-hidden='true'>" + icon + "</span>" + esc(title) + "</p>" +
+      "<p class='verdict-sub'>" + esc(sub) + "</p>" +
+      "<ul class='tally' role='list' aria-label='Pairs by result'>" +
+      tally(counts.conflict, "conflict") +
+      tally(counts.unknown, "unknown") +
+      tally(counts.not_checked, "not checked") +
+      tally(counts.clean, "clean") +
+      "</ul></div>"
+    );
   }
 
   /* ---------- warning acknowledgements (POST /warnings/:id/ack) ---------- */
@@ -498,7 +635,7 @@
     });
     return (
       (dropped > 0 ? "<span class='muted small'>+" + dropped + " earlier</span>" : "") +
-      "<ol class='timeline' aria-label='Timeline for " + esc(agent.agentId) + "'>" + chips.join("") + "</ol>" +
+      "<ol class='timeline' role='list' aria-label='Timeline for " + esc(agent.agentId) + "'>" + chips.join("") + "</ol>" +
       "<p class='muted small timeline-legend'>+ push &middot; ! warning &middot; \u2713 acknowledged</p>"
     );
   }
@@ -507,9 +644,9 @@
 
   function unknownHeadHtml(reason) {
     return (
-      "<span class='badge unknown'>Unknown</span> <span class='muted small'>true latest change UNKNOWN — " +
+      stateBadge("unknown", "?", "Unknown") + " <span class='small'>true latest change UNKNOWN — " +
       esc(reason) +
-      ". Nothing can be called clean for this agent until the push is delivered.</span>"
+      ". Nothing is clean for this agent until the push is delivered.</span>"
     );
   }
 
@@ -525,19 +662,23 @@
         : "<span class='muted'>an unknown agent</span>";
       return (
         "<li class='lost-item'>" +
-        "<span class='badge unknown'>Not processed</span> A push by " + who +
-        " to <code>" + esc(r.repo || "unknown repo") + "</code>, branch <code>" + esc(plainRef(r.ref)) +
-        "</code>, change " + shaHtml(r.sha) + ", could not be recorded" +
+        "<p class='lead'>" + stateBadge("unknown", "?", "Not processed") + " A push by " + who +
+        " could not be recorded" +
         (typeof r.attempts === "number" ? " after " + esc(r.attempts) + " attempt" + (r.attempts === 1 ? "" : "s") : "") +
-        (r.lastError ? " — last error: <code>" + esc(r.lastError) + "</code>" : "") +
-        ". <span class='muted small'>First seen " + whenText(r.firstAt) + ", last try " + whenText(r.lastAt) + ".</span>" +
-        "<p class='why muted small'>Until this push is delivered, " +
+        ".</p>" +
+        "<p class='why small'>Until it is delivered, " +
         (r.agentId ? "<code>" + esc(r.agentId) + "</code>'s" : "the agent's") +
         " true latest change is UNKNOWN, and every pair involving the agent stays not checked — never clean.</p>" +
+        "<details class='inline' data-key='lost-" + esc(r.agentId || "") + "-" + esc(r.sha || "") + "'><summary>Delivery details</summary>" +
+        "<p class='small muted' style='margin:0'>Repo <code>" + esc(r.repo || "unknown repo") + "</code>, branch <code>" +
+        esc(plainRef(r.ref)) + "</code>, change " + shaHtml(r.sha) +
+        (r.lastError ? " · last error: <code>" + esc(r.lastError) + "</code>" : "") +
+        " · first seen " + whenText(r.firstAt) + ", last try " + whenText(r.lastAt) + ".</p>" +
+        "</details>" +
         "</li>"
       );
     });
-    document.getElementById("lost-list").innerHTML = "<ul class='lost-list'>" + items.join("") + "</ul>";
+    document.getElementById("lost-list").innerHTML = "<ul class='lost-list' role='list'>" + items.join("") + "</ul>";
   }
 
   /* ---------- stale status view (C-1385) ----------
@@ -548,7 +689,7 @@
   function staleNoteHtml(stale) {
     return (
       "<div class='notice-unknown'>" +
-      "<span class='badge unknown'>Status out of date</span> " +
+      stateBadge("unknown", "?", "Status out of date") + " " +
       "<p style='margin:0.4rem 0 0'>The live status could not be refreshed (" +
       esc(stale.error.message) +
       "), so this section comes from the last successful load and may be missing " +
@@ -569,30 +710,32 @@
 
     var canon = document.getElementById("canonical");
     canon.innerHTML =
-      (stale ? staleNoteHtml(stale) : "") +
-      (status.canonical && status.canonical.name
+      status.canonical && status.canonical.name
         ? "Shared starting repo: <code>" + esc(status.canonical.name) + "</code>"
-        : "<span class='muted'>Shared starting repo not created yet.</span>");
+        : "Shared starting repo not created yet.";
 
     var cards = agents.map(function (ag) {
-      var intent = ag.intent ? esc(ag.intent) : "<span class='muted'>Not stated yet</span>";
+      var intent = ag.intent ? esc(ag.intent) : "<span class='muted'>Intent not stated yet</span>";
       var lost = View.unknownHeadReason(ag.agentId, status);
       var latest = lost
-        ? unknownHeadHtml(lost)
+        ? stateBadge("unknown", "?", "Unknown — push never arrived")
         : shaHtml(ag.head) +
           (isFreshPush(ag.agentId, ag.head) ? newBadge() : "");
+      var cardOpen = isFreshPush(ag.agentId, ag.head);
       return (
         "<article class='card" + (isFreshPush(ag.agentId, ag.head) ? " fresh" : "") + "' aria-label='Agent " + esc(ag.agentId) + "'>" +
         "<h3><code>" + esc(ag.agentId) + "</code></h3>" +
-        "<p class='kv'><span>Doing:</span> " + intent + "</p>" +
-        "<p class='kv'><span>Started from:</span> " +
-        (ag.baseSha ? shaHtml(ag.baseSha) : "<span class='muted'>not recorded</span>") + "</p>" +
-        "<p class='kv'><span>Latest change:</span> " + latest + "</p>" +
-        "<p class='kv'><span>Changes pushed:</span> " + esc(ag.pushes) +
-        (ag.lastPushAt ? " <span class='muted small'>(last " + fmtWhen(ag.lastPushAt) + ")</span>" : "") +
-        "</p>" +
+        "<p class='intent'>" + intent + "</p>" +
+        "<p class='kv'>Latest change: " + latest + "</p>" +
+        ownTestHtml(ag, lost) +
+        "<details class='inline' data-key='card-" + esc(ag.agentId) + "'" + (cardOpen ? " open" : "") + "><summary>" +
+        esc(plural(Number(ag.pushes) || 0, "push", "pushes")) + " · timeline</summary>" +
+        "<p class='kv'>Started from " +
+        (ag.baseSha ? shaHtml(ag.baseSha) : "<span class='muted'>not recorded</span>") +
+        (ag.lastPushAt ? " · last push " + fmtWhen(ag.lastPushAt) : "") + "</p>" +
         "<div class='timeline-wrap'>" + timelineHtml(ag, allWarnings) + "</div>" +
-        "<p class='actions'><a href='" + taskHref(ag.taskId) + "'>Read the change story →</a></p>" +
+        "</details>" +
+        "<p class='actions'><a href='" + taskHref(ag.taskId) + "'>Open change story <span aria-hidden='true'>→</span></a></p>" +
         "</article>"
       );
     });
@@ -600,6 +743,7 @@
       cards.length ? "<div class='cards'>" + cards.join("") + "</div>" : "<p class='muted'>No agent tasks yet.</p>";
 
     var pairs = [];
+    var counts = { conflict: 0, clean: 0, unknown: 0, not_checked: 0 };
     for (var i = 0; i < agents.length; i++) {
       for (var j = i + 1; j < agents.length; j++) {
         var st = pairStatus(agents[i], agents[j], status);
@@ -613,30 +757,47 @@
             stale.error.message +
             "); treated as unknown, not clean";
         }
-        pairs.push(
-          "<li class='pair'>" +
-          "<span class='who'><code>" + esc(agents[i].agentId) + "</code> ↔ <code>" + esc(agents[j].agentId) + "</code></span> " +
-          badgeHtml(badgeType) +
-          "<p class='why'>" + esc(why) + "</p>" +
-          "</li>"
-        );
+        counts[badgeType] += 1;
+        pairs.push({
+          rank: PAIR_RANK[badgeType],
+          html:
+            "<li class='pair is-" + badgeType + "'>" +
+            "<div class='pair-head'>" +
+            "<span class='who'><code>" + esc(agents[i].agentId) + "</code><span class='vs' aria-label='and'>↔</span><code>" +
+            esc(agents[j].agentId) + "</code></span> " +
+            badgeHtml(badgeType) +
+            "</div>" +
+            "<p class='why'>" + esc(why) + "</p>" +
+            "</li>",
+        });
       }
     }
+    /* Most urgent first: conflicts, then unknown, then not checked, then clean. */
+    pairs.sort(function (x, y) { return x.rank - y.rank; });
     document.getElementById("pairs").innerHTML = pairs.length
-      ? "<ul class='pair-list'>" + pairs.join("") + "</ul>"
+      ? "<ul class='pair-list' role='list'>" + pairs.map(function (p) { return p.html; }).join("") + "</ul>"
       : "<p class='muted'>With fewer than two agents there is nothing to compare yet.</p>";
 
+    var lostCount = Array.isArray(status.unprocessedPushes) ? status.unprocessedPushes.length : 0;
+    var verdict = document.getElementById("verdict");
+    if (verdict) {
+      verdict.innerHTML = verdictHtml(counts, pairs.length, lostCount, stale);
+      verdict.hidden = false;
+    }
+
     var warnings = allWarnings;
+    var activeCount = 0;
     var rows = warnings.map(function (w) {
+      if (w.status === "active") activeCount += 1;
       var state = w.status === "active"
-        ? "<span class='badge conflict'>Active</span>"
-        : "<span class='badge not_checked'>Resolved</span>";
+        ? stateBadge("conflict", "!", "Active")
+        : stateBadge("not_checked", "✓", "Resolved");
       var fresh = isFreshWarning(w.id);
       return (
         "<tr class='" + (fresh ? "fresh" : "") + "'>" +
         "<td><code>" + esc(w.id) + "</code>" + (fresh ? newBadge() : "") + "</td>" +
         "<td><code>" + esc(w.pair.join(" ↔ ")) + "</code></td>" +
-        "<td>" + esc(w.reason) + "</td>" +
+        "<td>" + esc(warningReason(w.reason)) + "</td>" +
         "<td>" + fmtWhen(w.createdAt) + "</td>" +
         "<td>" + state + (w.invalidatedAt ? " <span class='muted small'>" + fmtWhen(w.invalidatedAt) + "</span>" : "") + "</td>" +
         "<td>" + ackCellHtml(w) + "</td>" +
@@ -645,6 +806,11 @@
     });
     document.getElementById("warnings-body").innerHTML = rows.join("");
     document.getElementById("warnings-section").hidden = rows.length === 0;
+    var wCount = document.getElementById("warnings-count");
+    if (wCount) {
+      wCount.textContent = "(" + rows.length + " · " + activeCount + " active)";
+    }
+    restoreDisclosures();
   }
 
   /* ---------- task page ---------- */
@@ -658,6 +824,16 @@
     var currentHead = lost ? null : heads[agent.agentId] || agent.head || null;
 
     document.title = "Change story — " + (agent.agentId || task.taskId);
+
+    var intentText = task.intent || agent.intent;
+    var titleEl = document.getElementById("task-title");
+    if (titleEl) {
+      titleEl.innerHTML = "<code>" + esc(agent.agentId || task.agentId || task.taskId) + "</code>";
+    }
+    var ledeEl = document.getElementById("task-lede");
+    if (ledeEl) {
+      ledeEl.textContent = intentText ? intentText : "This agent has not stated what it is doing yet.";
+    }
 
     var dl =
       "<dt>Agent</dt><dd><code>" + esc(agent.agentId || task.agentId) + "</code></dd>" +
@@ -676,9 +852,18 @@
       "</code>, branch <code>" + esc(plainRef(task.ref || agent.ref)) + "</code></span></dd>" +
       "<dt>Task created</dt><dd>" + fmtWhen(task.createdAt) + "</dd>";
     document.getElementById("task-head").innerHTML =
-      (stale ? staleNoteHtml(stale) : "") + "<dl>" + dl + "</dl>";
+      (stale ? staleNoteHtml(stale) : "") +
+      "<ul class='facts'>" +
+      "<li>Latest change: " + (lost ? stateBadge("unknown", "?", "Unknown") : shaHtml(currentHead)) + "</li>" +
+      "<li>Started from: " +
+      ((task.base_sha || agent.baseSha) ? shaHtml(task.base_sha || agent.baseSha) : "not recorded") + "</li>" +
+      "<li>Task: <code>" + esc(task.taskId) + "</code></li>" +
+      "</ul>" +
+      "<details class='inline' data-key='task-details'><summary>All task details</summary><dl>" + dl + "</dl></details>";
 
-    document.getElementById("timeline").innerHTML = timelineHtml(agent, allWarnings);
+    document.getElementById("timeline").innerHTML =
+      "<details class='inline' data-key='task-timeline'><summary>Timeline strip: pushes, warnings, acknowledgements</summary>" +
+      timelineHtml(agent, allWarnings) + "</details>";
 
     /* Story of changes */
     var log = Array.isArray(agent.pushLog) ? agent.pushLog : [];
@@ -686,9 +871,8 @@
     if (lost) {
       changes =
         "<div class='notice-unknown' style='margin-bottom:0.6rem'>" +
-        "<span class='badge unknown'>Unknown — not safe</span> " +
-        "<p style='margin:0.4rem 0 0'>This agent's newest push could not be recorded (" + esc(lost) +
-        "), so the list below may be missing its true latest change.</p></div>" +
+        badgeHtml("unknown") + " " +
+        "<p>This list may be missing the agent's true latest change: its newest push never reached the server.</p></div>" +
         changesListHtml(agent, log, currentHead);
     } else {
       changes = changesListHtml(agent, log, currentHead);
@@ -704,51 +888,127 @@
       /* A stale status must never read as "no warnings" (C-1385): without a
          fresh fetch, an empty list is unknown, not clean. */
       warnHtml = stale
-        ? "<div class='notice-unknown'><span class='badge unknown'>Unknown</span> " +
-          "<p style='margin:0.4rem 0 0'>No warnings are recorded as of the last successful load, " +
+        ? "<div class='notice-unknown'>" + stateBadge("unknown", "?", "Unknown") +
+          "<p>No warnings are recorded as of the last successful load, " +
           "but the live status could not be refreshed (" + esc(stale.error.message) +
           ") — a newer warning may be missing.</p></div>"
         : "<p class='muted'>No warnings received.</p>";
     } else {
-      warnHtml = mine
-        .map(function (w) {
+      var cardsOf = function (list) {
+        return list.map(function (w) {
           var other = w.pair[0] === agent.agentId ? w.pair[1] : w.pair[0];
           var resolved = w.status !== "active";
           var fresh = isFreshWarning(w.id);
+          var acks = View.ackRows(w);
+          var ackHtml = acks.length
+            ? "<details class='inline' data-key='ack-" + esc(w.id) + "'><summary>" +
+              esc(plural(acks.length, "acknowledgement", "acknowledgements")) + "</summary>" +
+              "<p class='meta'>" + ackCellHtml(w, agent.agentId) + "</p></details>"
+            : "<p class='meta'>" + ackCellHtml(w, agent.agentId) + "</p>";
           return (
             "<div class='warning" + (resolved ? " resolved" : "") + (fresh ? " fresh" : "") + "'>" +
             (resolved
-              ? "<span class='badge not_checked'>Resolved</span> "
-              : "<span class='badge conflict'>Conflict — needs attention</span> ") +
+              ? stateBadge("not_checked", "✓", "Resolved")
+              : stateBadge("conflict", "!", "Conflict — needs attention")) +
             (fresh ? newBadge() : "") +
-            "<p><strong>" + esc(w.reason) + "</strong></p>" +
+            "<p class='reason'>" + esc(warningReason(w.reason)) + "</p>" +
             "<p class='meta'>With <code>" + esc(other) + "</code> · sent " + fmtWhen(w.createdAt) +
             (resolved ? " · went away " + fmtWhen(w.invalidatedAt) : "") + "</p>" +
-            "<p class='meta'>Acknowledgement: " + ackCellHtml(w, agent.agentId) + "</p>" +
+            ackHtml +
             "</div>"
           );
-        })
-        .join("");
+        }).join("");
+      };
+      var activeList = mine.filter(function (w) { return w.status === "active"; });
+      var resolvedList = mine.filter(function (w) { return w.status !== "active"; });
+      /* Active warnings lead; resolved history folds away once something
+         active needs attention. */
+      warnHtml = activeList.length && resolvedList.length
+        ? cardsOf(activeList) +
+          "<details class='inline' data-key='resolved-warnings'><summary>" +
+          esc(plural(resolvedList.length, "resolved earlier warning", "resolved earlier warnings")) +
+          "</summary>" + cardsOf(resolvedList) + "</details>"
+        : cardsOf(mine);
     }
     document.getElementById("warnings").innerHTML = warnHtml;
 
     /* Test provenance */
     document.getElementById("evidence").innerHTML = evidenceHtml(agent, currentHead, lost);
 
+    var activeMine = mine.filter(function (w) { return w.status === "active"; }).length;
+    var verdictEl = document.getElementById("task-verdict");
+    if (verdictEl) {
+      verdictEl.innerHTML = taskVerdictHtml(agent, currentHead, lost, stale, activeMine);
+      verdictEl.hidden = false;
+    }
+
+    restoreDisclosures();
     initReviewOnce(task.taskId);
+  }
+
+  /* The task page's one key message. Mirrors evidenceHtml: only a passing
+     run recorded at the current head, with fresh status, reads as tested —
+     and even then it never claims the agent is safe to combine with others. */
+  function taskVerdictHtml(agent, currentHead, lost, stale, activeWarnings) {
+    var ev = agent.testEvidence;
+    var tone, icon, title, sub;
+    if (lost) {
+      tone = "caution";
+      icon = "?";
+      title = "Unknown — a push never arrived";
+      sub = "The server never recorded this agent's newest push, so its latest change is unknown and not proven safe.";
+    } else if (stale) {
+      tone = "caution";
+      icon = "?";
+      title = "Unknown — live status is out of date";
+      sub = "Whether tests ran at the true latest change is unknown, not safe.";
+    } else if (!ev) {
+      tone = "caution";
+      icon = "?";
+      title = "Not proven safe — no test run recorded";
+      sub = "There is no test run for the latest change.";
+    } else if (ev.exitCode !== 0) {
+      tone = "danger";
+      icon = "✕";
+      title = "Tests failed (exit " + ev.exitCode + ")";
+      sub = "The latest recorded test run did not pass.";
+    } else if (currentHead && ev.head && ev.head !== currentHead) {
+      tone = "caution";
+      icon = "?";
+      title = "Not proven safe — tests ran on an older change";
+      sub = "The last passing run was for " + shortSha(ev.head) + ", not the latest change " + shortSha(currentHead) + ".";
+    } else {
+      tone = "ok";
+      icon = "✓";
+      title = "Its own tests passed at the latest change";
+      sub = "Own tests alone never make a pair safe — see the Pair Safety Radar for combined results.";
+    }
+    if (activeWarnings) {
+      tone = "danger";
+      icon = "!";
+      sub = plural(activeWarnings, "active conflict warning needs", "active conflict warnings need") + " attention. " + sub;
+    }
+    return (
+      "<div class='verdict tone-" + tone + "'>" +
+      "<p class='verdict-title'><span class='verdict-icon' aria-hidden='true'>" + icon + "</span>" + esc(title) + "</p>" +
+      "<p class='verdict-sub'>" + esc(sub) + "</p></div>"
+    );
   }
 
   function changesListHtml(agent, log, currentHead) {
     if (log.length) {
       return (
-        "<ol class='changes' reversed>" +
+        "<ol class='changes' role='list' reversed>" +
         log
           .slice()
           .reverse()
           .map(function (p) {
             var fresh = isFreshPush(agent.agentId, p.sha);
+            var tested = agent.testEvidence && agent.testEvidence.head === p.sha;
             return (
               "<li class='" + (fresh ? "fresh" : "") + "'><span class='when'>" + fmtWhen(p.at) + "</span> — " + shaHtml(p.sha) +
+              (currentHead && p.sha === currentHead ? " <span class='tag'>Latest</span>" : "") +
+              (tested ? " <span class='tag'>Last tested</span>" : "") +
               (fresh ? newBadge() : "") +
               (p.message ? "<br><span class='muted'>" + esc(p.message) + "</span>" : "") +
               "</li>"
@@ -776,10 +1036,10 @@
     if (lost) {
       return (
         "<div class='notice-unknown'>" +
-        "<span class='badge unknown'>Unknown — not safe</span> " +
-        "<p style='margin:0.4rem 0 0'>The agent's true latest change is UNKNOWN (" + esc(lost) +
-        "). Whatever was tested before, there is no recorded test run for a change the server never saw — " +
-        "this change is not proven safe.</p></div>"
+        badgeHtml("unknown") + " " +
+        "<p>The agent's true latest change is UNKNOWN, and no test run can exist for a change the server never saw — " +
+        "this change is not proven safe.</p>" +
+        "<p class='small muted'>Why: " + esc(lost) + ".</p></div>"
       );
     }
     if (ev) {
@@ -787,11 +1047,15 @@
       var passed = ev.exitCode === 0;
       var resultBadge = stale
         ? (passed
-          ? "<span class='badge not_checked'>Passed (unconfirmed)</span>"
-          : "<span class='badge unknown'>Failed — exit " + esc(ev.exitCode) + "</span>")
+          ? stateBadge("not_checked", "?", "Passed (unconfirmed)")
+          : stateBadge("conflict", "✕", "Failed — exit " + ev.exitCode))
         : (passed
-          ? "<span class='badge clean'>Passed</span>"
-          : "<span class='badge unknown'>Failed — exit " + esc(ev.exitCode) + "</span>");
+          ? (matchesHead
+            ? stateBadge("clean", "✓", "Passed")
+            /* A pass on an older change is not green: it proves nothing
+               about the latest change. */
+            : stateBadge("not_checked", "?", "Passed — on an older change"))
+          : stateBadge("conflict", "✕", "Failed — exit " + ev.exitCode));
       return (
         "<div class='evidence'><dl>" +
         "<dt>Command</dt><dd><code>" + esc(ev.command) + "</code></dd>" +
@@ -806,10 +1070,10 @@
         "<dt>When</dt><dd>" + fmtWhen(ev.at) + "</dd>" +
         "</dl>" +
         (stale
-          ? "<p class='small' style='margin-bottom:0'><span class='badge unknown'>Unknown — not safe</span> " +
+          ? "<p class='bottom-line'>" + badgeHtml("unknown") + " " +
             "Live status could not be refreshed (" + esc(stale.error.message) + "); whether tests ran at the true current head is unknown, not safe.</p>"
           : (!matchesHead || !passed
-            ? "<p class='small' style='margin-bottom:0'><span class='badge unknown'>Unknown — not safe</span> " +
+            ? "<p class='bottom-line'>" + badgeHtml("unknown") + " " +
               "There is no passing test run for the latest change, so this change is not proven safe.</p>"
             : "")) +
         "</div>"
@@ -817,7 +1081,7 @@
     }
     return (
       "<div class='notice-unknown'>" +
-      "<span class='badge unknown'>Unknown — not safe</span> " +
+      badgeHtml("unknown") + " " +
       "<p style='margin:0.4rem 0 0'>No test run is recorded for this change. Without a test run at the " +
       "latest change, safety is unknown — this is never shown as safe.</p></div>"
     );

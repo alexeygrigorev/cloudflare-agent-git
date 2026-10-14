@@ -55,6 +55,23 @@ test("conflict(kind test): both agents individually green still renders Conflict
   assert.ok(st.why.length > 0);
 });
 
+test("conflict with structured evidence explains which combined tests failed and why", function () {
+  var heads = {};
+  heads[A] = HA;
+  heads[B] = HB;
+  var status = statusWith(
+    [pairView(A, B, HA, HB, "conflict", {
+      kind: "test",
+      evidence: { tests_collected: 8, tests_failed: 2, details: "both agents rewrote the same auth helper" },
+    })],
+    heads
+  );
+  var st = logic.pairStatus(greenAgent(A, HA), greenAgent(B, HB), status);
+  assert.equal(st.type, "conflict");
+  assert.match(st.why, /2 of 8 combined tests failed/);
+  assert.match(st.why, /both agents rewrote the same auth helper/);
+});
+
 test("unknown pair result renders Unknown — not safe, not clean, despite green agents", function () {
   var heads = {};
   heads[A] = HA;

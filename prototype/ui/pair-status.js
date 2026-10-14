@@ -64,11 +64,28 @@
     return !view.stale && checkedAtCurrentHeads(view, status);
   }
 
+  var KIND_WORDS = { textual: "textual conflict", test: "semantic conflict" };
+
+  function clip(text) {
+    return text.length > 160 ? text.slice(0, 157) + "…" : text;
+  }
+
+  /* Evidence is either a string or a structured record
+     ({tests_collected, tests_failed, details}); both are surfaced so a
+     semantic (test) conflict shows which combined tests failed and why. */
   function detail(view) {
     var bits = [];
-    if (view.kind) bits.push("kind: " + view.kind);
-    if (typeof view.evidence === "string" && view.evidence) {
-      bits.push(view.evidence.length > 160 ? view.evidence.slice(0, 157) + "…" : view.evidence);
+    if (view.kind) bits.push(KIND_WORDS[view.kind] || "kind: " + view.kind);
+    var ev = view.evidence;
+    if (typeof ev === "string" && ev) {
+      bits.push(clip(ev));
+    } else if (ev && typeof ev === "object" && !Array.isArray(ev)) {
+      var failed = typeof ev.tests_failed === "number" ? ev.tests_failed : ev.testsFailed;
+      var total = typeof ev.tests_collected === "number" ? ev.tests_collected : ev.testsCollected;
+      if (typeof failed === "number" && failed > 0 && typeof total === "number") {
+        bits.push(failed + " of " + total + " combined tests failed");
+      }
+      if (typeof ev.details === "string" && ev.details) bits.push(clip(ev.details));
     }
     return bits.length ? " (" + bits.join("; ") + ")" : "";
   }
@@ -104,8 +121,7 @@
     return (
       lost.agentId +
       "'s latest change is UNKNOWN: a push notification was lost" + detail +
-      ". The pair cannot be compared or called safe until the push is delivered" +
-      " and a fresh comparison at the true latest changes succeeds."
+      ". This pair cannot be called safe until the push is delivered and re-checked."
     );
   }
 
@@ -162,9 +178,9 @@
       return {
         type: "conflict",
         why:
-          "The radar tried these two changes together at their latest versions and found a conflict" +
+          "Tested together at their latest changes, these two clash" +
           detail(view) +
-          ". The changes clash — one of them needs fixing before they can be combined.",
+          ". One of them needs fixing before they can be combined.",
       };
     }
 
@@ -172,7 +188,7 @@
       return {
         type: "unknown",
         why:
-          "The radar checked these two changes together but could not prove they are safe" +
+          "Checked together, but not proven safe" +
           detail(view) +
           ". Do not treat this pair as safe.",
       };
@@ -184,15 +200,15 @@
         return {
           type: "clean",
           why:
-            "The radar combined these two changes at their latest versions, ran their tests together " +
-            "(" + collected + " test" + (collected === 1 ? "" : "s") + " collected), and found no conflict.",
+            "Combined at their latest changes, the tests ran together " +
+            "(" + collected + " test" + (collected === 1 ? "" : "s") + " collected) and found no conflict.",
         };
       }
       return {
         type: "not_checked",
         why:
-          "The radar saw no merge conflict, but it did not record a combined test run with collected " +
-          "tests. Without that, the pair is not proven to work together, so it stays not checked.",
+          "No merge conflict, but no combined tests ran — so the pair is not proven to work together " +
+          "and stays not checked.",
       };
     }
 

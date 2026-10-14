@@ -193,6 +193,8 @@ class TestDOMNegativeBrowser(unittest.TestCase):
         clean_badges = page.locator(".pair .badge.clean")
         self.assertEqual(clean_badges.count(), 1, "Expected exactly 1 clean pair badge on fresh load")
         self.assertIn("Clean — tests ran", clean_badges.first.text_content())
+        self.assertEqual(page.locator("#verdict .tone-ok").count(), 1, "All-clean fresh status shows the green verdict")
+        self.assertIn("tested clean together", page.locator("#verdict").text_content())
 
         # 2. Switch server to 503 outage
         self.server.ui_state = {"mode": "503", "delay_s": 0}
@@ -221,6 +223,13 @@ class TestDOMNegativeBrowser(unittest.TestCase):
         self.assertIn("treated as unknown, not clean", why_text)
         self.assertIn("HTTP 503", why_text)
 
+        # The page-level verdict must never read as safe during the outage.
+        self.assertEqual(page.locator("#verdict .tone-ok").count(), 0, "Verdict must not be green while status is stale")
+        verdict_text = page.locator("#verdict").text_content()
+        self.assertIn("Not proven safe", verdict_text)
+        self.assertIn("Live status is out of date", verdict_text)
+        self.assertNotIn("tested clean", verdict_text)
+
         # 3. Recovery: Switch server back to 200 Clean
         self.server.ui_state = {"mode": "clean", "delay_s": 0}
         page.evaluate("window.AgentBranchesUI.bootIndex()")
@@ -229,6 +238,7 @@ class TestDOMNegativeBrowser(unittest.TestCase):
         recovered_clean = page.locator(".pair .badge.clean")
         self.assertEqual(recovered_clean.count(), 1, "Expected green .badge.clean to recover on successful 200")
         self.assertIn("Clean — tests ran", recovered_clean.first.text_content())
+        self.assertEqual(page.locator("#verdict .tone-ok").count(), 1, "Green verdict returns after recovery")
 
         page.close()
         self.assertEqual(page_errors, [], f"Unexpected page errors: {page_errors}")
@@ -402,6 +412,8 @@ class TestDOMNegativeBrowser(unittest.TestCase):
         self.assertEqual(page.locator("#evidence .badge.unknown").count(), 1, "Evidence must surface Unknown — not safe during outage")
         self.assertIn("Unknown — not safe", page.locator("#evidence .badge.unknown").first.text_content())
         self.assertIn("whether tests ran at the true current head is unknown, not safe", page.locator("#evidence").text_content())
+        self.assertEqual(page.locator("#task-verdict .tone-ok").count(), 0, "Task verdict must not be green while status is stale")
+        self.assertIn("live status is out of date", page.locator("#task-verdict").text_content())
 
         # 3. Recovery: Switch server back to 200 Clean
         self.server.ui_state = {"mode": "clean", "delay_s": 0}
