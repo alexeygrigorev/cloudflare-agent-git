@@ -75,12 +75,23 @@ class MockUIHandler(http.server.SimpleHTTPRequestHandler):
             if delay_s > 0:
                 time.sleep(delay_s)
 
-            if mode == "clean":
+            if mode in ("clean", "clean-lost", "no-heads"):
+                body = json.loads(json.dumps(CLEAN_STATUS))
+                if mode == "clean-lost":
+                    # The listed pair is clean, but a third agent's push never arrived.
+                    body["unprocessedPushes"] = [{
+                        "agentId": "agent-gamma", "repo": "agent-branches-canonical-agent-gamma",
+                        "ref": "refs/heads/main", "sha": "cccccccccccccccccccccccccccccccccccccccc",
+                        "attempts": 3, "lastError": "worker responded 401",
+                        "firstAt": "2026-10-03T12:00:00.000Z", "lastAt": "2026-10-03T12:01:00.000Z",
+                    }]
+                if mode == "no-heads":
+                    body["heads"] = {}
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
-                self.wfile.write(json.dumps(CLEAN_STATUS).encode("utf-8"))
+                self.wfile.write(json.dumps(body).encode("utf-8"))
             elif mode == "503":
                 self.send_response(503)
                 self.send_header("Content-Type", "application/json")
@@ -133,6 +144,8 @@ class MockUIHandler(http.server.SimpleHTTPRequestHandler):
                 },
                 "warnings": []
             }
+            if self.server.ui_state.get("mode") == "no-heads":
+                del task_data["agent"]["head"]
             self.wfile.write(json.dumps(task_data).encode("utf-8"))
         else:
             super().do_GET()
@@ -425,6 +438,40 @@ class TestDOMNegativeBrowser(unittest.TestCase):
         self.assertEqual(page.locator("#evidence .badge.unknown").count(), 0, "Unknown badge removed upon 200 recovery")
 
         page.close()
+        self.assertEqual(page_errors, [], f"Page threw unhandled exceptions: {page_errors}")
+
+    def test_06_lost_push_keeps_verdict_off_green(self):
+        """Every listed pair is clean, but an unprocessed push exists: the page
+        verdict must not turn green (an agent's latest change is unknown)."""
+        self.server.ui_state = {"mode": "clean-lost", "delay_s": 0}
+        page = self.browser.new_page()
+        page_errors = []
+        page.on("pageerror", lambda err: page_errors.append(str(err)))
+        page.goto(f"http://127.0.0.1:{self.port}/index.html?api=http://127.0.0.1:{self.port}")
+        page.wait_for_selector(".pair", timeout=5000)
+        page.wait_for_function("document.getElementById('loading').hidden === true")
+        self.assertEqual(page.locator("#verdict .tone-ok").count(), 0, "Lost push must keep the verdict off green")
+        self.assertIn("a push never arrived", page.locator("#verdict").text_content())
+        self.assertFalse(page.locator("#lost-section").is_hidden())
+        page.close()
+        self.server.ui_state = {"mode": "clean", "delay_s": 0}
+        self.assertEqual(page_errors, [], f"Page threw unhandled exceptions: {page_errors}")
+
+    def test_07_task_view_missing_head_is_not_green(self):
+        """No known current head: a passing run cannot be matched to the
+        latest change, so neither the evidence nor the verdict may be green."""
+        self.server.ui_state = {"mode": "no-heads", "delay_s": 0}
+        page = self.browser.new_page()
+        page_errors = []
+        page.on("pageerror", lambda err: page_errors.append(str(err)))
+        page.goto(f"http://127.0.0.1:{self.port}/task.html?id=task-alpha&api=http://127.0.0.1:{self.port}")
+        page.wait_for_selector("#evidence .evidence", timeout=5000)
+        self.assertEqual(page.locator("#evidence .badge.clean").count(), 0, "No green Passed without a known head")
+        self.assertNotIn("(the latest change)", page.locator("#evidence").text_content())
+        self.assertEqual(page.locator("#evidence .badge.unknown").count(), 1)
+        self.assertEqual(page.locator("#task-verdict .tone-ok").count(), 0, "Task verdict must not be green without a known head")
+        page.close()
+        self.server.ui_state = {"mode": "clean", "delay_s": 0}
         self.assertEqual(page_errors, [], f"Page threw unhandled exceptions: {page_errors}")
 
     def test_05_scratch_directory_pinned(self):

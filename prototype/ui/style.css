@@ -42,7 +42,7 @@ body {
 .wrap {
   max-width: 58rem;
   margin: 0 auto;
-  padding: 2rem 1rem 3rem;
+  padding: 1.25rem 1rem 3rem;
 }
 
 .skip-link {
@@ -83,7 +83,7 @@ header.page h1 {
   color: var(--ink-soft);
   font-size: 1.05rem;
   max-width: 44rem;
-  margin: 0 0 1.25rem;
+  margin: 0 0 1rem;
 }
 
 .tag {
@@ -110,7 +110,7 @@ header.page h1 {
 
 h2 {
   font-size: 1.15rem;
-  margin: 2.25rem 0 0.75rem;
+  margin: 1.6rem 0 0.6rem;
   letter-spacing: -0.01em;
 }
 

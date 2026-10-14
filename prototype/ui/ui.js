@@ -146,7 +146,7 @@
   /* One neutral line per agent card: did this agent's OWN tests pass at its
      latest change? Deliberately not a .badge.clean — an agent's own green
      run never makes any pair safe. */
-  function ownTestHtml(ag, lost) {
+  function ownTestHtml(ag, lost, stale) {
     var ev = ag.testEvidence;
     var label, icon;
     if (lost) {
@@ -158,9 +158,15 @@
     } else if (ev.exitCode !== 0) {
       icon = "✕";
       label = "Own tests: " + (ev.command || "tests") + " failed (exit " + ev.exitCode + ")";
-    } else if (ev.head && ag.head && ev.head !== ag.head) {
+    } else if (!ev.head || !ag.head) {
+      icon = "?";
+      label = "Own tests: passed, but the tested change is unknown";
+    } else if (ev.head !== ag.head) {
       icon = "?";
       label = "Own tests: passed on an older change (" + shortSha(ev.head) + ")";
+    } else if (stale) {
+      icon = "?";
+      label = "Own tests: passed (unconfirmed — status out of date)";
     } else {
       icon = "✓";
       label = "Own tests: " + (ev.command || "tests") + " passed alone (exit 0)";
@@ -177,6 +183,7 @@
 
   function taskHref(taskId) {
     var keep = FIXTURE ? "&fixture=" + encodeURIComponent(FIXTURE_NAME) : "";
+    if (!FIXTURE && API) keep += "&api=" + encodeURIComponent(API);
     return "task.html?id=" + encodeURIComponent(taskId) + keep;
   }
 
@@ -539,13 +546,20 @@
       sub =
         plural(notProven, "pair has", "pairs have") +
         " not been proven safe together. Unknown is never treated as safe.";
+    } else if (lostCount) {
+      /* Every listed pair may be clean, but a push the server never saw
+         means some agent's real latest change is unknown: never green. */
+      tone = "caution";
+      icon = "?";
+      title = "Not proven safe — a push never arrived";
+      sub = "The listed pairs passed, but an agent's latest change is unknown.";
     } else {
       tone = "ok";
       icon = "✓";
       title = "All " + plural(total, "pair", "pairs") + " tested clean together";
       sub = "Every pair was combined at its latest changes and the combined tests ran without a clash.";
     }
-    if (lostCount) {
+    if (lostCount && (counts.conflict || notProven)) {
       sub += " " + plural(lostCount, "push", "pushes") + " never arrived, so an agent's latest change is unknown.";
     }
     if (stale) {
@@ -730,7 +744,7 @@
         "<h3><code>" + esc(ag.agentId) + "</code></h3>" +
         "<p class='intent'>" + intent + "</p>" +
         "<p class='kv'>Latest change: " + latest + "</p>" +
-        ownTestHtml(ag, lost) +
+        ownTestHtml(ag, lost, stale) +
         "<details class='inline' data-key='card-" + esc(ag.agentId) + "'" + (cardOpen ? " open" : "") + "><summary>" +
         esc(plural(Number(ag.pushes) || 0, "push", "pushes")) + " · timeline</summary>" +
         "<p class='kv'>Started from " +
@@ -975,7 +989,12 @@
       icon = "✕";
       title = "Tests failed (exit " + ev.exitCode + ")";
       sub = "The latest recorded test run did not pass.";
-    } else if (currentHead && ev.head && ev.head !== currentHead) {
+    } else if (!currentHead || !ev.head) {
+      tone = "caution";
+      icon = "?";
+      title = "Not proven safe — tested change unknown";
+      sub = "The passing run cannot be matched to the latest change, so it does not count.";
+    } else if (ev.head !== currentHead) {
       tone = "caution";
       icon = "?";
       title = "Not proven safe — tests ran on an older change";
@@ -1046,7 +1065,9 @@
       );
     }
     if (ev) {
-      var matchesHead = !currentHead || !ev.head || ev.head === currentHead;
+      /* Strict: a run only covers the latest change when both heads are
+         known and equal; a missing head is never treated as a match. */
+      var matchesHead = !!(currentHead && ev.head && ev.head === currentHead);
       var passed = ev.exitCode === 0;
       var resultBadge = stale
         ? (passed

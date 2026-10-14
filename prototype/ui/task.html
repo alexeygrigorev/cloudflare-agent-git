@@ -72,7 +72,10 @@
       var p = new URLSearchParams(window.location.search);
       var back = document.getElementById("back");
       var fx = p.get("fixture");
-      back.setAttribute("href", "index.html" + (fx ? "?fixture=" + encodeURIComponent(fx) : ""));
+      var api = p.get("api");
+      back.setAttribute("href", "index.html" + (fx
+        ? "?fixture=" + encodeURIComponent(fx)
+        : (api ? "?api=" + encodeURIComponent(api) : "")));
     })();
   </script>
   <script src="pair-status.js"></script>
