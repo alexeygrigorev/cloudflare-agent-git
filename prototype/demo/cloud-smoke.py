@@ -1190,6 +1190,28 @@ class CloudSmokeRunner:
         return exit_code
 
 
+def load_dotenv(path=None):
+    """Load KEY=VALUE lines from prototype/.env; real environment variables win."""
+    if path is None:
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+    if not os.path.isfile(path):
+        return
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            if key.startswith("export "):
+                key = key[7:].strip()
+            value = value.strip()
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+                value = value[1:-1]
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="Agent Branches Cloudflare Deploy-Config / Smoke Verification")
@@ -1198,6 +1220,7 @@ def main():
     parser.add_argument("--output", type=str, default="report.json", help="Path to write sanitized report.json")
     args = parser.parse_args()
 
+    load_dotenv()
     base_url = os.environ.get("BASE_URL")
     admin_token = os.environ.get("ADMIN_TOKEN")
     runner_token = os.environ.get("RUNNER_TOKEN")
