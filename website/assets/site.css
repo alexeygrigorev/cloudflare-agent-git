@@ -258,7 +258,7 @@ a.hyp-card:hover{background:var(--hover);color:var(--ink)}
 .prose figure img{width:100%}
 .prose picture{display:block}
 .prose figcaption{font-family:var(--sans);font-size:13px;line-height:1.5;color:var(--muted)}
-.prose blockquote{border-left:3px solid var(--blue);padding-left:20px;color:var(--deck)}
+.prose blockquote{background:var(--hover);padding:14px 20px;color:var(--deck)}
 .prose code{font-family:var(--mono);font-size:.8em;background:#F0F0EB;padding:1px 4px;overflow-wrap:anywhere}
 .prose pre{font-family:var(--mono);font-size:13px;line-height:1.6;background:#F0F0EB;padding:16px;overflow:auto;max-width:100%;white-space:pre}
 .prose pre code{background:none;padding:0;font-size:inherit}
@@ -294,8 +294,8 @@ th{border-top:2px solid var(--ink);font-weight:600}
 .signup-consent input{margin:2px 0 0;width:20px;height:20px;flex:none;accent-color:var(--blue)}
 .signup-detail{font-size:13px;line-height:1.6;color:var(--muted)}
 .signup-setup-note{font-size:13px;line-height:1.6;color:var(--muted)}
-.signup-status{padding:12px 14px;border-left:3px solid var(--blue);background:var(--hover);font-size:14px;line-height:1.6}
-.signup-status.is-error{border-left-color:var(--orange);background:var(--fail-tint)}
+.signup-status{padding:12px 14px;border:1px solid var(--line);background:var(--hover);font-size:14px;line-height:1.6}
+.signup-status.is-error{border-color:var(--orange);background:var(--fail-tint)}
 .signup-form[aria-busy=true]{opacity:.85}
 .dedicated-signup{margin-top:0}
 
