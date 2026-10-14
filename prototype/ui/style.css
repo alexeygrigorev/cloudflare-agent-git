@@ -60,7 +60,6 @@ h1 code, h2 code, h3 code { background: none; padding: 0; }
   border-radius: var(--dk-radius-sm);
   border: 1px solid var(--dk-border-strong);
 }
-.tag.demo { background: var(--dk-warning-bg); border-color: var(--dk-border-default); color: var(--dk-warning-text); }
 
 .banner {
   border: 1px solid var(--dk-border-default);
@@ -69,7 +68,6 @@ h1 code, h2 code, h3 code { background: none; padding: 0; }
   margin: var(--dk-space-3) 0 var(--dk-space-5);
   background: var(--dk-bg-surface);
 }
-.banner.demo { background: var(--dk-warning-bg); color: var(--dk-warning-text); }
 .banner.error { background: var(--dk-danger-bg); color: var(--dk-danger-text); }
 .banner form { display: flex; flex-wrap: wrap; gap: var(--dk-space-2); align-items: center; margin: var(--dk-space-2) 0; }
 .banner input {

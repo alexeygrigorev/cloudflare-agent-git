@@ -1353,7 +1353,6 @@
       return authState.snapshot();
     },
     bootIndex: function () {
-      if (FIXTURE) document.getElementById("demo-banner").hidden = false;
       initAuthUI();
       var loading = document.getElementById("loading");
       currentTaskId = null;
@@ -1362,7 +1361,6 @@
       setLiveState();
     },
     bootTask: function () {
-      if (FIXTURE) document.getElementById("demo-banner").hidden = false;
       initAuthUI();
       var loading = document.getElementById("loading");
       var id = params.get("id");
