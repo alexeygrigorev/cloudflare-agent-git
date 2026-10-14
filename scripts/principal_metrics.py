@@ -28,7 +28,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BERLIN = zoneinfo.ZoneInfo("Europe/Berlin")
 OWNER = "alexeygrigorev"
 REPOS = ("cloudflare-agent-git", "agent-branches", "agent-quota-launcher",
-         "agent-coordination", "agent-dashboard", "agent-bus")
+         "agent-coordination", "agent-dashboard", "agent-hub")
+# Verified owner for the legacy bus repo. The default OWNER above is wrong for
+# agent-bus (it 404s under alexeygrigorev); explicit "agent-bus" still resolves,
+# but only to this verified fully-qualified path, never a silent zero.
+AGENT_BUS_CANONICAL = "PocketShell-io/agent-bus"
 HEAD_RE = re.compile(r"(^|-)(head|principal)(-|$)")
 IDLE_LIMIT_S = 300
 TARGETS = {"active_agents": 50, "ready_reserve": 50, "free_disk_gib": 20,
@@ -56,6 +60,73 @@ def val(v, **extra):
     d = {"value": v}
     d.update(extra)
     return d
+
+
+def canonical_repo_path(repo):
+    """Resolve a --repos entry to a fully-qualified "owner/name" path.
+
+    Bare names resolve under OWNER, except the legacy "agent-bus" which
+    resolves to the verified AGENT_BUS_CANONICAL owner. Entries already
+    containing "/" pass through only when exactly "owner/name". Anything
+    else returns None so callers report UNKNOWN, never a silent zero.
+    """
+    repo = (repo or "").strip()
+    if not repo:
+        return None
+    if "/" in repo:
+        owner, _, name = repo.partition("/")
+        if owner and name and "/" not in name:
+            return f"{owner}/{name}"
+        return None
+    if repo == "agent-bus":
+        return AGENT_BUS_CANONICAL
+    return f"{OWNER}/{repo}"
+
+
+def parse_utc(ts):
+    """Parse an ISO-8601 timestamp to aware UTC, or None when invalid.
+
+    Lenient convenience for caller-supplied window bounds (since/now):
+    naive values are assumed UTC. Committer rows MUST NOT use this;
+    they use parse_strict_utc() below.
+    """
+    try:
+        if not isinstance(ts, str) or not ts:
+            return None
+        dt = datetime.datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except (ValueError, AttributeError):
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
+    return dt.astimezone(datetime.timezone.utc)
+
+
+_STRICT_TZ_RE = re.compile(r"[+-]\d{2}:?\d{2}(:\d{2}(\.\d+)?)?$|[+-]\d{4}$")
+
+
+def parse_strict_utc(ts):
+    """Parse a committer timestamp strictly, or None when not fully qualified.
+
+    Requires a full datetime with an explicit timezone: the string must
+    contain a 'T' time separator and end with 'Z' (or 'z') or a numeric
+    UTC offset. Naive values ('2026-10-14T11:00:00') and date-only values
+    ('2026-10-14') return None so callers report UNKNOWN instead of
+    silently assuming UTC.
+    """
+    if not isinstance(ts, str) or not ts:
+        return None
+    s = ts.strip()
+    if "T" not in s and "t" not in s:
+        return None
+    if not (s.endswith("Z") or s.endswith("z") or _STRICT_TZ_RE.search(s)):
+        return None
+    try:
+        dt = datetime.datetime.fromisoformat(s.replace("Z", "+00:00").replace("z", "+00:00"))
+    except (ValueError, AttributeError):
+        return None
+    if dt.tzinfo is None:
+        return None
+    return dt.astimezone(datetime.timezone.utc)
 
 
 def collect_fleet(local_dir):
@@ -122,7 +193,10 @@ def gh_json(args):
 
 
 def issue_counts(repo, day):
-    data, err = gh_json(["issue", "list", "-R", f"{OWNER}/{repo}", "--state", "all", "--limit", "1000",
+    full = canonical_repo_path(repo)
+    if not full:
+        return unk(f"unresolvable repo '{repo}': refusing silent zero")
+    data, err = gh_json(["issue", "list", "-R", full, "--state", "all", "--limit", "1000",
                          "--json", "state,createdAt,closedAt"])
     if err:
         return unk(err)
@@ -139,13 +213,72 @@ def issue_counts(repo, day):
                note="issues, Berlin calendar day; closed is not acceptance")
 
 
-def commits_24h(repo, since_iso):
+def commits_24h(repo, since_iso, now=None):
+    """Count unique main-branch commit SHAs by strict committer-UTC window.
+
+    Canonical query always pins sha=main. The local cutoff keeps only rows
+    whose commit.committer.date falls in the genuine preceding-24h interval
+    (since, now] in UTC: committer <= since and committer > now are filtered
+    as old/future. Author dates never substitute. Any shape error, missing
+    sha, missing/invalid committer timestamp, or API error is UNKNOWN; a
+    valid empty window is 0. Pagination (--paginate --slurp: list of pages)
+    is consumed page by page and SHAs are deduped.
+
+    Strictness notes (F1/F2/F4):
+    - Committer rows require a full datetime with an explicit Z/offset
+      (parse_strict_utc); naive and date-only rows are UNKNOWN, never
+      assumed UTC. The lenient parse_utc() is used only for the
+      caller-supplied since/now bounds.
+    - Row sha must be a nonempty string; non-string (int/bool/None/
+      list/dict), missing, or empty sha is UNKNOWN and never counted or
+      added to the dedup set (so unhashable values cannot crash). A
+      strict 40-hex sha is deliberately NOT required: existing fixtures
+      use short names and real-API truth prefers leniency on sha shape
+      while staying strict on time shape.
+    - Zero pages: both [] (no pages under --slurp) and [[]] (one empty
+      page) are treated as a valid empty window 0; any non-list shape
+      or non-list page is UNKNOWN.
+    """
+    full = canonical_repo_path(repo)
+    if not full:
+        return unk(f"unresolvable repo '{repo}': refusing silent zero")
+    since_dt = parse_utc(since_iso)
+    if since_dt is None:
+        return unk(f"invalid since timestamp {since_iso!r}")
+    now_dt = now if now is not None else datetime.datetime.now(datetime.timezone.utc)
+    if now_dt.tzinfo is None:
+        now_dt = now_dt.replace(tzinfo=datetime.timezone.utc)
+    now_dt = now_dt.astimezone(datetime.timezone.utc)
     data, err = gh_json(["api", "--paginate", "--slurp",
-                         f"repos/{OWNER}/{repo}/commits?since={since_iso}&per_page=100"])
+                         f"repos/{full}/commits?sha=main&since={since_iso}&per_page=100"])
     if err:
         return unk(err)
-    shas = {c["sha"] for page in data for c in page}
-    return val(len(shas), note="unique SHAs by committer time, rolling 24h, merges included")
+    if not isinstance(data, list):
+        return unk("gh commits returned unexpected shape")
+    seen = set()
+    for page in data:
+        if not isinstance(page, list):
+            return unk("gh commits returned unexpected page shape")
+        for c in page:
+            if not isinstance(c, dict):
+                return unk("gh commits returned row without sha")
+            sha = c.get("sha")
+            if not isinstance(sha, str) or not sha:
+                return unk("gh commits returned row without sha")
+            commit = c.get("commit")
+            if not isinstance(commit, dict):
+                return unk("gh commits returned row without commit timestamps")
+            committer = commit.get("committer")
+            ts = committer.get("date") if isinstance(committer, dict) else None
+            if not ts:
+                return unk("gh commits row missing committer date")
+            dt = parse_strict_utc(ts)
+            if dt is None:
+                return unk(f"gh commits row has invalid committer date {ts!r}")
+            if dt <= since_dt or dt > now_dt:
+                continue
+            seen.add(sha)
+    return val(len(seen), note="unique SHAs on main by committer time, strict (since, now] UTC, merges included")
 
 
 def sum_known(per_repo, key):
@@ -162,7 +295,7 @@ def build(now, local_dir, repos):
     free = shutil.disk_usage("/").free / 1024 ** 3
     m["free_disk_gib"] = val(round(free, 1))
     m["tasks"] = {r: issue_counts(r, day) for r in repos}
-    m["commits_24h"] = {r: commits_24h(r, since) for r in repos}
+    m["commits_24h"] = {r: commits_24h(r, since, now) for r in repos}
     m["unmeasured"] = {k: unk("no reader yet; see _docs/06-metrics.md") for k in
                        ("founder_reminders_and_rescues", "cloud_cost", "memory_per_worker",
                         "resolved_tasks_accepted", "features_done", "tokens_used")}
