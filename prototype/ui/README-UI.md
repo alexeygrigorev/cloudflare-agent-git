@@ -37,6 +37,20 @@ Any static file server works. Opening `index.html` directly from disk
 (`file://`) does **not** work, because browsers block `fetch()` of local JSON
 from `file://` pages — the folder must be served over HTTP.
 
+## Layout: one key message per view
+
+- `index.html` (Pair Safety Radar): a verdict card answers "can these
+  changes be combined?" with a count per pair result, then the pair list
+  (most urgent first), any lost pushes above it, and one card per agent.
+  The verdict is computed from the same stale-downgraded pair badges, so it
+  never turns green while the status is out of date. Warnings table, label
+  legend and each agent's timeline sit in `<details>` disclosures.
+- `task.html`: the agent id and intent, a verdict callout, then "Did the
+  tests really run?" (conclusion first), warnings received (resolved ones
+  folded), and changes newest first. Task details, the timeline strip and
+  the local review form are disclosures.
+- Disclosures keep their open/closed state across the 3 s re-render.
+
 ## Live updates (CONTRACT 0.1.3+)
 
 Both pages re-fetch `GET /status` every 3 s and pause while the tab is hidden
@@ -193,7 +207,8 @@ Pair states come **only** from that pair's own radar result in `/status`
   moved since the check), `not_checked`, a `clean` result with no recorded
   combined test run, or an unprocessed (lost) push for either agent.
 
-Each agent's own test evidence is shown on its task page, but it is **never**
+Each agent's own test evidence is shown on its task page and as a neutral
+"Own tests" line on its overview card (never a green badge), but it is **never**
 an input to the pair badge: two individually green agents can still clash
 when combined — that is exactly the semantic-conflict case, so it must never
 upgrade a pair to safe.
