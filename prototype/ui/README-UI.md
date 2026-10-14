@@ -79,7 +79,7 @@ affected sections “Status out of date” (an empty warning list reads as
 unknown, not as “no warnings”), and only a later successful fetch clears the
 banner. See `request-guard.js` and `tests/generation-guard.test.js`.
 
-Newly appeared warnings and pushes are highlighted (amber outline + a “New”
+Newly appeared warnings and pushes are highlighted (yellow tint, neutral outline + a “New”
 badge) for 5 s. The first page load only establishes a baseline — nothing is
 highlighted just for being there. In fixture mode the same machinery re-reads
 the fixture files, so editing a fixture is an honest way to demo the
