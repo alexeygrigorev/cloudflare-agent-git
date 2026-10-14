@@ -51,6 +51,16 @@ from `file://` pages — the folder must be served over HTTP.
   the local review form are disclosures.
 - Disclosures keep their open/closed state across the 3 s re-render.
 
+## Styling: dakit
+
+The UI is styled with the [dakit](https://github.com/DataTalksClub/dakit)
+design system, vendored in `vendor/dakit/` (built CSS and self-hosted fonts,
+commit recorded in its README), so it works offline with no CDN.
+`style.css` uses only dakit semantic tokens (`--dk-*`). `theme.js` follows the
+OS light/dark preference, or a stored `dakit-theme` choice. There are no
+colored edge stripes: a state is a badge with an icon and words, and a
+callout that needs attention gets its status tint and an even 1px border.
+
 ## Live updates (CONTRACT 0.1.3+)
 
 Both pages re-fetch `GET /status` every 3 s and pause while the tab is hidden
