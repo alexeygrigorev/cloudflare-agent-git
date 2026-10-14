@@ -58,8 +58,10 @@ design system, vendored in `vendor/dakit/` (built CSS and self-hosted fonts,
 commit recorded in its README), so it works offline with no CDN.
 `style.css` uses only dakit semantic tokens (`--dk-*`). `theme.js` follows the
 OS light/dark preference, or a stored `dakit-theme` choice. There are no
-colored edge stripes: a state is a badge with an icon and words, and a
-callout that needs attention gets its status tint and an even 1px border.
+colored borders, as dakit requires: every border is a neutral 1px
+`--dk-border-*` role, a state is a badge with an icon and words, and a
+callout or pair that needs attention gets its status tint. Check with
+`node <dakit>/scripts/check-borders.mjs prototype/ui/style.css prototype/ui/*.html website/assets/site.css`.
 
 ## Live updates (CONTRACT 0.1.3+)
 
