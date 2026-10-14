@@ -5,6 +5,17 @@ What went wrong in this project, newest first, in plain words. Each entry says w
 Evidence links point to the git tag `pre-cleanup-20261007`, the last state before the documentation cleanup. A path written in backticks, such as `experiment/...`, `coordination/...` or `research/...`, is no longer in the tree: read it with `git show pre-cleanup-20261007:<path>`. The full incident log is on the `history` branch: `git show history:INCIDENTS.md`. Your own words, including older wording saved from agent documents, are in the day files of this folder, one file per day.
 
 
+## 27. An unsent wake prompt blocked a head for three hours (14 October)
+
+agent-hub-head had an ask-ledger wake prompt (`scripts/ping/ask-ledger.py` wake_prompt for question hub96-owned-0640-bound-20261014) pasted into its composer but never submitted, from 04:10 UTC (06:10 Berlin) to 07:29 Berlin. It was the known "staged paste needs a second Enter" problem (issue #113). Every supervisor treated the text as a protected draft, so `a message deliver` refused, the head never received the M6 task, and nobody noticed until the root saved the text to `agent-hub/.local/drafts/` and cleared it at 07:29. You said: "Let's make sure we fix the process so it doesn't happen again."
+Why it happened:
+- Injectors pasted and moved on without checking that the prompt was submitted.
+- The protected-draft rule did not distinguish a human's draft from an injector's leftover text, and had no age limit, so protection became a permanent block.
+- No metric or root check looked for a composer that stayed non-empty and idle.
+**Changed:** injectors verify submission and retry Enter once, then clear only their own text and report; injector text is not a protected draft; any blocking draft older than 15 minutes is saved to `.local/drafts/`, cleared and delivered past, with a ledger record; the metrics collector, headless root and principal flag "composer non-empty and idle more than 10 minutes" (blocked-delivery count must be 0).
+Evidence: `agent-hub/.local/drafts/` (saved draft), issue #113, spec handoff to codex-principal 14 October (mailbox id 01a138f3).
+
+
 ## 26. Nobody noticed the metrics stop for two days (11-13 October)
 
 The metrics collector was dead from 11 October 21:20 to 13 October 21:26 and nobody noticed. On the evening of 13 October only 3 agents were working, 0 tasks were resolved that day and the ready queue was empty, while quota was plentiful (Codex 90%, Claude 80%, Gemini 57%, Z.ai 39% weekly). You said: "if they drop get back on track and it obviously wasn't happening let's find out why."

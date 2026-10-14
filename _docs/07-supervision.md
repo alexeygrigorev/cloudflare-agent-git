@@ -14,7 +14,7 @@ Every 60 seconds the supervisor takes one pass:
 - It records new ready tasks for the Agent Quota Launcher queue and imports the launcher's finished-task state, so that a task whose dependency has an accepted review becomes ready.
 - It checks its own health: it halts if its own source or the aplexer binary it pinned at start changes, and it pauses all sending if its private storage reaches the hard limit.
 
-It never types into a busy screen, a menu or a human draft. It sends only when two fresh observations show an idle session with an empty prompt, and it never sends Enter on its own. A message that was delivered is not a started task: only a reply from the recipient or a native read acknowledgement clears the request, and neither proves the work is done.
+It never types into a busy screen, a menu or a human draft. It sends only when two fresh observations show an idle session with an empty prompt, and it never sends Enter on its own. Exception: an automated injector must verify its own paste was submitted (one extra Enter if a `[Pasted Content…]` badge or its text remains) and must never leave its text in the composer. A message that was delivered is not a started task: only a reply from the recipient or a native read acknowledgement clears the request, and neither proves the work is done.
 
 ## How it works
 
@@ -33,6 +33,10 @@ It never types into a busy screen, a menu or a human draft. It sends only when t
 - To stop it, create `.local/supervision/stop` and let it finish its pass. Do not kill it, and do not delete an uncertain receipt. Remove the stop file before starting it again.
 - To change it, treat it like product code: a head owns the change, a different agent on a different model reviews the exact version, and the service is restarted on purpose afterwards. Any edit to `service.py` makes the running copy exit at its next pass. Tests are in `scripts/supervision/`, for example `python3 scripts/supervision/test_service.py`.
 - Who runs it: it runs by itself. The principal that owns recovery keeps it alive and acts on what it reports. Root checks that it is alive. A systemd unit and watcher in `scripts/supervision/systemd/` restart it, and the migration runbook next to them is the plan for that. Recovery status is in [recovery](05-recovery.md): a live supervisor is not proof that unattended recovery works.
+
+## Stuck drafts
+
+Stuck drafts: only text a human or the session's own agent typed is a protected draft. Text left by an automated injector (ask-ledger wake, principal-ping, ask-wake-runner, mailbox deliver, any scripted `a send`/paste), identified by its marker or the injector's own log, is not protected. A composer that is non-empty and idle for more than 10 minutes is a stuck-draft alert. Any draft of either kind older than 15 minutes that blocks delivery is saved to `.local/drafts/` with metadata (session, source, first-seen time, text), then cleared, the pending messages are delivered, the case is recorded on the ledger and the owner is told. Injectors verify submission after pasting (a leftover `[Pasted Content…]` badge gets one more Enter; if still unsubmitted they clear only their own text, log it and report to the principal). See failures #27 and issue #113. The blocked-delivery count in the metrics must be 0.
 
 ## Waiting requires a wake
 

@@ -45,6 +45,10 @@ For the standup, find the existing dated issue and reviewed artifact first. Reus
 
 Show the reviewed standup once as unpublished. For a released article, verify the public URL and deliver it with a short share-ready summary and material limitations. Writing, visuals, independent review and release stay with existing publication owners; never create a second writer or post automatically.
 
+## Stuck drafts
+
+Each run, check every session for a composer that is non-empty and idle more than 10 minutes and fix it per this rule. Stuck drafts: only text a human or the session's own agent typed is a protected draft. Text left by an automated injector (ask-ledger wake, principal-ping, ask-wake-runner, mailbox deliver, any scripted `a send`/paste), identified by its marker or the injector's own log, is not protected. A composer that is non-empty and idle for more than 10 minutes is a stuck-draft alert. Any draft of either kind older than 15 minutes that blocks delivery is saved to `.local/drafts/` with metadata (session, source, first-seen time, text), then cleared, the pending messages are delivered, the case is recorded on the ledger and the owner is told. Injectors verify submission after pasting (a leftover `[Pasted Content…]` badge gets one more Enter; if still unsubmitted they clear only their own text, log it and report to the principal). See failures #27 and issue #113.
+
 ## Fresh-session test
 
 With only "you're root", startup should find and act on the first consequential gap: verify a healthy principal or recover a stopped one, obtain genuine custody and first useful action, then follow priority head recovery through the principal. Preserve protected states and existing schedules. Report what actually resumed and its next checkpoint; missing bindings, helper absence and requests sent alone do not pass.

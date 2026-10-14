@@ -31,7 +31,8 @@ Read first (briefly): `AGENTS.md`, `_docs/team/02-root.md`, `recovery/principal.
 - Never ssh to home machines (Win35, the laptop) or anywhere else; local Hetzner only.
 - No Cloudflare deploys, no spending, no purchases, no secret changes.
 - Never delete commits, branches, worktrees or sessions' history; heads own commits (you do not commit product work; leave the repo working tree untouched).
-- Do not type into busy panes, menus or human drafts except the hung-call rule above. Do not kill sessions you were not asked to recover.
+- Stuck drafts: each run, flag any session whose composer is non-empty and idle >10 min. Injector text (ask-ledger/principal-ping/ask-wake-runner/mailbox deliver marker or matching injector log) is NOT a protected draft. Any draft (either kind) >15 min old that blocks delivery: save to <workspace>/.local/drafts/<tag>-<ts>.md with metadata (session, source, first seen, text), clear it, deliver pending messages, record on the ledger, tell the owner, and count it in summary `stuck_drafts`.
+- Do not type into busy panes, menus or human drafts except the hung-call rule and the stuck-draft rule above. Do not kill sessions you were not asked to recover.
 - Privacy: raw inboxes, identities, transcripts stay in `.local/` / the state dir; public comments are sanitized.
 
 ## Output (required before the hard stop)
