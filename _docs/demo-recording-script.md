@@ -32,7 +32,7 @@ The live Cloudflare Worker (`agent-branches`, SQLite Durable Object `Coordinator
 ### How Many Rehearsals Are Affordable Today?
 
 1. **Raw Daily Cap Math (`200 ops/day`)**:
-   - `3 full runs × 60 ops = 180 ops <= 200 ops/day` (at most **2 live rehearsals + 1 live take**, leaving 20 ops of margin).
+   - `3 full runs × 60 ops = 180 ops <= 200 ops/day` on raw cap alone, but the preflight gate below cuts this to **2 live runs total** today.
 2. **Critical Preflight Gate (`MAX_BUDGET_DELTA_HARD = 90` in `prototype/demo/cloud-smoke.py`)**:
    - Before starting step `[2/8]`, `cloud-smoke.py` checks `GET /cloud/budget` and **refuses to start unless `remainingDayOps >= 90`**.
    - **Run 1**: Starts at `0` used (`200` remaining $\ge 90$) $\rightarrow$ uses `60` ops $\rightarrow$ ends at **`60 / 200`** (`140` remaining).
@@ -128,7 +128,7 @@ clear
 ## 4. Scene-by-Scene Live Recording Script
 
 - **6-Minute Full Cut (`5:30–6:00`)**: Follow the **Time (5–6m)** column; meets the official 5–10 minute contest requirement.
-- **3-Minute Fast Cut (`~3:15`)**: Follow the **Fast Cut (~3m)** column (skip the extra commands marked *(Optional for 6m cut)*).
+- **3-Minute Fast Cut (`~3:15`)**: below the official 5-minute minimum, so do not submit it as the contest video; use only as a companion/teaser. Follow the **Fast Cut (~3m)** column (skip the extra commands marked *(Optional for 6m cut)*).
 
 | Scene | Time (5–6m) | Fast Cut (~3m) | On-Screen | Exact Commands or Clicks | Exact Words to Say |
 | :--- | :--- | :--- | :--- | :--- | :--- |
