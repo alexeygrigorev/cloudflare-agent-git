@@ -411,9 +411,13 @@
       ? "Demo — re-reading the fixture files"
       : "Live — fetching GET /status";
     var every = " every " + Math.round(View.POLL_MS / 1000) + " s";
-    var loaded = lastLoadAt ? " · last loaded " + whenText(new Date(lastLoadAt).toISOString()) : "";
+    /* Fixture data never changes, so no load timestamp there; and the
+       polite live region is only rewritten when its text really changes,
+       so screen readers are not re-told the same line every poll. */
+    var loaded = lastLoadAt && !FIXTURE ? " · last loaded " + whenText(new Date(lastLoadAt).toISOString()) : "";
     var failed = lastError ? " · last update failed (" + lastError.message + "), retrying" : "";
-    el.textContent = mode + every + loaded + failed + ".";
+    var text = mode + every + loaded + failed + ".";
+    if (el.textContent !== text) el.textContent = text;
   }
 
   /* ---------- highlight bookkeeping ---------- */
@@ -625,7 +629,7 @@
           " — " + whenText(e.at);
       }
       return (
-        "<li class='tl " + m.cls + fresh + "' title='" + esc(title) + "'" +
+        "<li class='tl " + m.cls + fresh + "' tabindex='0' title='" + esc(title) + "'" +
         " aria-label='" + esc(m.word + ": " + title) + "'>" +
         "<span class='tl-icon' aria-hidden='true'>" + m.icon + "</span>" +
         "<span class='tl-word'>" + esc(m.word) + "</span>" +
@@ -635,8 +639,7 @@
     });
     return (
       (dropped > 0 ? "<span class='muted small'>+" + dropped + " earlier</span>" : "") +
-      "<ol class='timeline' role='list' aria-label='Timeline for " + esc(agent.agentId) + "'>" + chips.join("") + "</ol>" +
-      "<p class='muted small timeline-legend'>+ push &middot; ! warning &middot; \u2713 acknowledged</p>"
+      "<ol class='timeline' role='list' aria-label='Timeline for " + esc(agent.agentId) + "'>" + chips.join("") + "</ol>"
     );
   }
 
@@ -1056,8 +1059,17 @@
                about the latest change. */
             : stateBadge("not_checked", "?", "Passed — on an older change"))
           : stateBadge("conflict", "✕", "Failed — exit " + ev.exitCode));
+      /* Conclusion first, nuance after: a reader never sees a pass before
+         learning that it does not cover the latest change. */
+      var conclusion = stale
+        ? "<p class='bottom-line'>" + badgeHtml("unknown") + " " +
+          "Live status could not be refreshed (" + esc(stale.error.message) + "); whether tests ran at the true current head is unknown, not safe.</p>"
+        : (!matchesHead || !passed
+          ? "<p class='bottom-line'>" + badgeHtml("unknown") + " " +
+            "There is no passing test run for the latest change, so this change is not proven safe.</p>"
+          : "");
       return (
-        "<div class='evidence'><dl>" +
+        "<div class='evidence'>" + conclusion + "<dl>" +
         "<dt>Command</dt><dd><code>" + esc(ev.command) + "</code></dd>" +
         "<dt>Result</dt><dd>" + resultBadge + "</dd>" +
         "<dt>Tested change</dt><dd>" + shaHtml(ev.head) +
@@ -1069,13 +1081,6 @@
         "</dd>" +
         "<dt>When</dt><dd>" + fmtWhen(ev.at) + "</dd>" +
         "</dl>" +
-        (stale
-          ? "<p class='bottom-line'>" + badgeHtml("unknown") + " " +
-            "Live status could not be refreshed (" + esc(stale.error.message) + "); whether tests ran at the true current head is unknown, not safe.</p>"
-          : (!matchesHead || !passed
-            ? "<p class='bottom-line'>" + badgeHtml("unknown") + " " +
-              "There is no passing test run for the latest change, so this change is not proven safe.</p>"
-            : "")) +
         "</div>"
       );
     }
