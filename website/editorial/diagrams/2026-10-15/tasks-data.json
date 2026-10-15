@@ -1,0 +1,7 @@
+{
+  "source": "GitHub issue queries of each tracker, read on 15 October 2026; past day means since 09:00 Berlin on 14 October, so the day was not yet complete; cancelled tasks excluded (none found)",
+  "projects": ["Main repository", "Scheduler", "Launcher", "Agent Branches", "Messaging", "Dashboard"],
+  "created_past_day": [1, 0, 0, 0, 0, 0],
+  "closed_past_day": [0, 0, 0, 0, 0, 0],
+  "open_now": [49, 9, 44, 12, 39, 21]
+}

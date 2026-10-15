@@ -1,0 +1,49 @@
+{
+  "style": "editorial",
+  "title": "One example, two outcomes",
+  "description": "The same two agents push twice. Changes to different files come back clean. When both edit shared.txt, the status shows a conflict warning. The main branch stays unchanged.",
+  "canvas": {
+    "width": 600,
+    "height": 638
+  },
+  "layout": {
+    "type": "grid",
+    "card_width": 520,
+    "card_height": 170,
+    "column_gap": 20,
+    "row_gap": 24,
+    "font_scale": 1.6
+  },
+  "nodes": [
+    {
+      "id": "fit",
+      "eyebrow": "FIRST PUSH",
+      "title": "Different files",
+      "subtitle": "Status: clean",
+      "icon": "check",
+      "color": "green",
+      "row": 0,
+      "column": 0
+    },
+    {
+      "id": "clash",
+      "eyebrow": "SECOND PUSH",
+      "title": "Both edit shared.txt",
+      "subtitle": "Status: conflict warning",
+      "icon": "warning",
+      "color": "red",
+      "row": 1,
+      "column": 0
+    },
+    {
+      "id": "main",
+      "title": "Main branch",
+      "subtitle": "Unchanged both times",
+      "icon": "database",
+      "color": "gray",
+      "row": 2,
+      "column": 0
+    }
+  ],
+  "edges": []
+}

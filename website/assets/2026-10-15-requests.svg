@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="1220" viewBox="0 0 600 1220" role="img" aria-labelledby="title desc">
+  <title id="title">My open requests</title>
+  <desc id="desc">The entry is submitted and the new code is reviewed but not deployed. The wake-up bug is open, the scheduler isn&#x27;t installed and cloud work is held. Nobody has new checked evidence about two computers talking.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#1c2027" flood-opacity="0.04"/>
+    </filter>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <symbol id="icon-check" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m7.5 12 3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <symbol id="icon-document" viewBox="0 0 24 24">
+        <path d="M6 2h8l4 4v16H6Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 2v5h4M9 12h6M9 16h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </symbol>
+    <symbol id="icon-message" viewBox="0 0 24 24">
+        <path d="M4 4h16v12H9l-5 4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 9h8M8 13h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </symbol>
+    <symbol id="icon-shield" viewBox="0 0 24 24">
+        <path d="M12 2.5 20 6v5.5c0 5-3.1 8.6-8 10-4.9-1.4-8-5-8-10V6Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="m8.5 12 2.2 2.2 4.8-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <symbol id="icon-warning" viewBox="0 0 24 24">
+        <path d="M12 3 2.5 21h19Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.1" fill="currentColor"/>
+      </symbol>
+    <symbol id="icon-workflow" viewBox="0 0 24 24">
+        <path d="M4 11A8.5 8.5 0 0 1 19.5 8.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M19.5 4.5v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M20 13A8.5 8.5 0 0 1 4.5 15.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M4.5 19.5v-4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <style>
+      text { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1c2027; }
+      symbol [stroke] { vector-effect: non-scaling-stroke; }
+      .node rect { stroke-width: 2; }
+      .node-boundary rect { stroke-width: 2; stroke-dasharray: 8 8; }
+      .boundary-title { font-size: 16px; font-weight: 750; text-anchor: start; }
+      .node-title { font-weight: 750; text-anchor: middle; }
+      .node-title.icon-copy { text-anchor: start; }
+      .node-subtitle { font-weight: 500; fill: #1c2027; text-anchor: middle; }
+      .eyebrow { font-weight: 750; letter-spacing: 1px; fill: #1c2027; text-anchor: middle; }
+      .mention-icon { font-size: 27px; font-weight: 750; text-anchor: middle; }
+      .standalone-mention { font-size: 52px; font-weight: 750; text-anchor: middle; }
+      .icon-node-title { font-size: 16px; font-weight: 750; text-anchor: middle; }
+      .edge { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .edge-label rect { stroke-width: 2; }
+      .edge-label text { font-size: 14px; font-weight: 750; text-anchor: middle; dominant-baseline: central; }
+      .divider { stroke: #1c2027; stroke-width: 2; stroke-dasharray: 6 8; stroke-linecap: round; }
+      .center-annotation { fill: #fcfcf8; stroke: none; }
+      .center-title { font-weight: 800; letter-spacing: 0.08em; fill: #1c2027; text-anchor: middle; }
+      .center-detail { font-weight: 600; fill: #1c2027; text-anchor: middle; }
+    </style>
+  </defs>
+  <rect width="600" height="1220" fill="#fcfcf8"/>
+
+
+  <g class="node node-green" transform="translate(40 40)" filter="url(#shadow)">
+    <rect width="520" height="170" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="260" y="37.2" font-size="21">SUBMITTED</text>
+    <use href="#icon-check" x="16" y="53.2" width="54" height="54" color="#1c2027"/>
+    <text class="node-title icon-copy" x="89.2" y="91.72" font-size="32">Contest entry</text>
+    <text class="node-subtitle" x="260" y="140.8" font-size="26">Receipt confirmed</text>
+  </g>
+  <g class="node node-amber" transform="translate(40 234)" filter="url(#shadow)">
+    <rect width="520" height="170" rx="18" fill="#fcfcf8" stroke="#ef7134"/>
+    <text class="eyebrow" x="260" y="37.2" font-size="21">REVIEWED</text>
+    <use href="#icon-document" x="16" y="53.2" width="54" height="54" color="#ef7134"/>
+    <text class="node-title icon-copy" x="89.2" y="91.72" font-size="32">Work after recording</text>
+    <text class="node-subtitle" x="260" y="140.8" font-size="26">Not deployed</text>
+  </g>
+  <g class="node node-amber" transform="translate(40 428)" filter="url(#shadow)">
+    <rect width="520" height="170" rx="18" fill="#fcfcf8" stroke="#ef7134"/>
+    <text class="eyebrow" x="260" y="37.2" font-size="21">OPEN</text>
+    <use href="#icon-warning" x="16" y="53.2" width="54" height="54" color="#ef7134"/>
+    <text class="node-title icon-copy" x="89.2" y="91.72" font-size="32">Wake-up bug</text>
+    <text class="node-subtitle" x="260" y="140.8" font-size="26">A message can sit unsent</text>
+  </g>
+  <g class="node node-gray" transform="translate(40 622)" filter="url(#shadow)">
+    <rect width="520" height="170" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="260" y="37.2" font-size="21">NOT INSTALLED</text>
+    <use href="#icon-workflow" x="16" y="53.2" width="54" height="54" color="#1c2027"/>
+    <text class="node-title icon-copy" x="89.2" y="91.72" font-size="32">New scheduler</text>
+    <text class="node-subtitle" x="260" y="140.8" font-size="26">The timer still runs</text>
+  </g>
+  <g class="node node-gray" transform="translate(40 816)" filter="url(#shadow)">
+    <rect width="520" height="170" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="260" y="37.2" font-size="21">HELD</text>
+    <use href="#icon-shield" x="16" y="53.2" width="54" height="54" color="#1c2027"/>
+    <text class="node-title icon-copy" x="89.2" y="91.72" font-size="32">More cloud work</text>
+    <text class="node-subtitle" x="260" y="140.8" font-size="26">$5 a month budget</text>
+  </g>
+  <g class="node node-gray" transform="translate(40 1010)" filter="url(#shadow)">
+    <rect width="520" height="170" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="260" y="37.2" font-size="21">UNKNOWN</text>
+    <use href="#icon-message" x="16" y="53.2" width="54" height="54" color="#1c2027"/>
+    <text class="node-title icon-copy" x="89.2" y="91.72" font-size="32">Two computers</text>
+    <text class="node-subtitle" x="260" y="140.8" font-size="26">No new checked evidence</text>
+  </g>
+</svg>

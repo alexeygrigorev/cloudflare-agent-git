@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="832" viewBox="0 0 600 832" role="img" aria-labelledby="title desc">
+  <title id="title">Thirteen days in</title>
+  <desc id="desc">The entry is submitted, and the check after a push works for one scripted pair. Early warnings cover only declared plans, and the new version isn&#x27;t live.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#1c2027" flood-opacity="0.04"/>
+    </filter>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2455ed"/></marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#ef7134"/></marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#1c2027"/></marker>
+    <symbol id="icon-check" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m7.5 12 3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8 8 8 8M16 8l-8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </symbol>
+    <symbol id="icon-terminal" viewBox="0 0 24 24">
+        <rect x="2.5" y="3" width="19" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M3 7.5h18" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <circle cx="5.5" cy="5.25" r=".75" fill="currentColor"/>
+        <circle cx="8" cy="5.25" r=".75" fill="currentColor"/>
+        <path d="m7 12 3 2.5-3 2.5M12.5 17h4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    <symbol id="icon-warning" viewBox="0 0 24 24">
+        <path d="M12 3 2.5 21h19Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.1" fill="currentColor"/>
+      </symbol>
+    <style>
+      text { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1c2027; }
+      symbol [stroke] { vector-effect: non-scaling-stroke; }
+      .node rect { stroke-width: 2; }
+      .node-boundary rect { stroke-width: 2; stroke-dasharray: 8 8; }
+      .boundary-title { font-size: 16px; font-weight: 750; text-anchor: start; }
+      .node-title { font-weight: 750; text-anchor: middle; }
+      .node-title.icon-copy { text-anchor: start; }
+      .node-subtitle { font-weight: 500; fill: #1c2027; text-anchor: middle; }
+      .eyebrow { font-weight: 750; letter-spacing: 1px; fill: #1c2027; text-anchor: middle; }
+      .mention-icon { font-size: 27px; font-weight: 750; text-anchor: middle; }
+      .standalone-mention { font-size: 52px; font-weight: 750; text-anchor: middle; }
+      .icon-node-title { font-size: 16px; font-weight: 750; text-anchor: middle; }
+      .edge { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .edge-label rect { stroke-width: 2; }
+      .edge-label text { font-size: 14px; font-weight: 750; text-anchor: middle; dominant-baseline: central; }
+      .divider { stroke: #1c2027; stroke-width: 2; stroke-dasharray: 6 8; stroke-linecap: round; }
+      .center-annotation { fill: #fcfcf8; stroke: none; }
+      .center-title { font-weight: 800; letter-spacing: 0.08em; fill: #1c2027; text-anchor: middle; }
+      .center-detail { font-weight: 600; fill: #1c2027; text-anchor: middle; }
+    </style>
+  </defs>
+  <rect width="600" height="832" fill="#fcfcf8"/>
+
+
+  <g class="node node-green" transform="translate(40 40)" filter="url(#shadow)">
+    <rect width="520" height="170" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="260" y="37.2" font-size="21">SUBMITTED</text>
+    <use href="#icon-check" x="16" y="53.2" width="54" height="54" color="#1c2027"/>
+    <text class="node-title icon-copy" x="89.2" y="90.28" font-size="28">Contest entry</text>
+    <text class="node-subtitle" x="260" y="140.8" font-size="26">Video and form done</text>
+  </g>
+  <g class="node node-green" transform="translate(40 234)" filter="url(#shadow)">
+    <rect width="520" height="170" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="260" y="37.2" font-size="21">WORKS</text>
+    <use href="#icon-terminal" x="16" y="53.2" width="54" height="54" color="#1c2027"/>
+    <text class="node-title icon-copy" x="89.2" y="90.28" font-size="28">Check after a push</text>
+    <text class="node-subtitle" x="260" y="140.8" font-size="26">One scripted pair</text>
+  </g>
+  <g class="node node-amber" transform="translate(40 428)" filter="url(#shadow)">
+    <rect width="520" height="170" rx="18" fill="#fcfcf8" stroke="#ef7134"/>
+    <text class="eyebrow" x="260" y="37.2" font-size="21">PARTLY</text>
+    <use href="#icon-warning" x="16" y="53.2" width="54" height="54" color="#ef7134"/>
+    <text class="node-title icon-copy" x="89.2" y="90.28" font-size="28">Early warnings</text>
+    <text class="node-subtitle" x="260" y="140.8" font-size="26">Declared files only</text>
+  </g>
+  <g class="node node-gray" transform="translate(40 622)" filter="url(#shadow)">
+    <rect width="520" height="170" rx="18" fill="#fcfcf8" stroke="#1c2027"/>
+    <text class="eyebrow" x="260" y="37.2" font-size="21">NOT LIVE</text>
+    <use href="#icon-close" x="16" y="53.2" width="54" height="54" color="#1c2027"/>
+    <text class="node-title icon-copy" x="89.2" y="90.28" font-size="28">New version on Cloudflare</text>
+    <text class="node-subtitle" x="260" y="140.8" font-size="26">Not deployed</text>
+  </g>
+</svg>

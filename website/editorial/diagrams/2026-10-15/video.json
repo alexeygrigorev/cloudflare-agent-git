@@ -1,0 +1,70 @@
+{
+  "style": "editorial",
+  "title": "The recorded script, and what came after",
+  "description": "The recorded script has titled steps, one two-agent example and a check after the push. The command, planned-file warnings, the watcher and owned cleanup came after the recording.",
+  "canvas": {
+    "width": 600,
+    "height": 1026
+  },
+  "layout": {
+    "type": "grid",
+    "card_width": 520,
+    "card_height": 170,
+    "column_gap": 20,
+    "row_gap": 24,
+    "font_scale": 1.6
+  },
+  "nodes": [
+    {
+      "id": "v",
+      "eyebrow": "IN THE RECORDED SCRIPT",
+      "title": "Titled steps, one example",
+      "subtitle": "Check after a push",
+      "icon": "video",
+      "color": "blue",
+      "row": 0,
+      "column": 0
+    },
+    {
+      "id": "a1",
+      "eyebrow": "ADDED AFTER RECORDING",
+      "title": "branches command",
+      "subtitle": "Installs with the project",
+      "icon": "shell",
+      "color": "purple",
+      "row": 1,
+      "column": 0
+    },
+    {
+      "id": "a2",
+      "eyebrow": "ADDED AFTER RECORDING",
+      "title": "Planned-file warnings",
+      "subtitle": "Before anyone edits",
+      "icon": "warning",
+      "color": "purple",
+      "row": 2,
+      "column": 0
+    },
+    {
+      "id": "a3",
+      "eyebrow": "ADDED AFTER RECORDING",
+      "title": "Watcher",
+      "subtitle": "Checks after any push",
+      "icon": "observability",
+      "color": "purple",
+      "row": 3,
+      "column": 0
+    },
+    {
+      "id": "a4",
+      "eyebrow": "ADDED AFTER RECORDING",
+      "title": "Owned cleanup",
+      "subtitle": "Leaves other work alone",
+      "icon": "shield",
+      "color": "purple",
+      "row": 4,
+      "column": 0
+    }
+  ],
+  "edges": []
+}

@@ -1,0 +1,80 @@
+{
+  "style": "editorial",
+  "title": "My open requests",
+  "description": "The entry is submitted and the new code is reviewed but not deployed. The wake-up bug is open, the scheduler isn't installed and cloud work is held. Nobody has new checked evidence about two computers talking.",
+  "canvas": {
+    "width": 600,
+    "height": 1220
+  },
+  "layout": {
+    "type": "grid",
+    "card_width": 520,
+    "card_height": 170,
+    "column_gap": 20,
+    "row_gap": 24,
+    "font_scale": 1.6
+  },
+  "nodes": [
+    {
+      "id": "entry",
+      "eyebrow": "SUBMITTED",
+      "title": "Contest entry",
+      "subtitle": "Receipt confirmed",
+      "icon": "check",
+      "color": "green",
+      "row": 0,
+      "column": 0
+    },
+    {
+      "id": "code",
+      "eyebrow": "REVIEWED",
+      "title": "Work after recording",
+      "subtitle": "Not deployed",
+      "icon": "document",
+      "color": "amber",
+      "row": 1,
+      "column": 0
+    },
+    {
+      "id": "wake",
+      "eyebrow": "OPEN",
+      "title": "Wake-up bug",
+      "subtitle": "A message can sit unsent",
+      "icon": "warning",
+      "color": "amber",
+      "row": 2,
+      "column": 0
+    },
+    {
+      "id": "sched",
+      "eyebrow": "NOT INSTALLED",
+      "title": "New scheduler",
+      "subtitle": "The timer still runs",
+      "icon": "workflow",
+      "color": "gray",
+      "row": 3,
+      "column": 0
+    },
+    {
+      "id": "cloud",
+      "eyebrow": "HELD",
+      "title": "More cloud work",
+      "subtitle": "$5 a month budget",
+      "icon": "shield",
+      "color": "gray",
+      "row": 4,
+      "column": 0
+    },
+    {
+      "id": "two",
+      "eyebrow": "UNKNOWN",
+      "title": "Two computers",
+      "subtitle": "No new checked evidence",
+      "icon": "message",
+      "color": "gray",
+      "row": 5,
+      "column": 0
+    }
+  ],
+  "edges": []
+}

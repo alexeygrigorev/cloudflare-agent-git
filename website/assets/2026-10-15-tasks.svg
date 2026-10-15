@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="836" viewBox="0 0 600 836" role="img" aria-labelledby="t d">
+<title id="t">Tasks created and closed since yesterday morning, and open now</title>
+<desc id="d">The counts start yesterday morning and cover only part of the day. So far, agents opened one task in the main repository and no tracker closed any. The right column shows each tracker's open tasks.</desc>
+<rect width="600" height="836" fill="#fcfcf8"/>
+<g font-family="DejaVu Sans, Verdana, sans-serif">
+<text x="40" y="60" font-family="Georgia, serif" font-size="36" fill="#1c2027">Tasks since yesterday</text>
+<text x="40" y="104" font-size="26" fill="#4a505a">Covers only part of the day</text>
+<text x="560" y="150" text-anchor="end" font-size="26" fill="#4a505a">Open now</text>
+<text x="40" y="190" font-size="28" fill="#1c2027">Main repository</text><text x="560" y="190" text-anchor="end" font-size="28" fill="#1c2027">49</text>
+<rect x="40" y="204" width="60.0" height="22" fill="#2455ed"/><text x="110.0" y="223" font-size="26" fill="#1c2027">1 created</text>
+<rect x="280" y="204" width="3.0" height="22" fill="none" stroke="#ef7134" stroke-width="2"/><text x="293.0" y="223" font-size="26" fill="#1c2027">0 closed</text>
+<text x="40" y="286" font-size="28" fill="#1c2027">Scheduler</text><text x="560" y="286" text-anchor="end" font-size="28" fill="#1c2027">9</text>
+<rect x="40" y="300" width="3.0" height="22" fill="#2455ed"/><text x="53.0" y="319" font-size="26" fill="#1c2027">0 created</text>
+<rect x="280" y="300" width="3.0" height="22" fill="none" stroke="#ef7134" stroke-width="2"/><text x="293.0" y="319" font-size="26" fill="#1c2027">0 closed</text>
+<text x="40" y="382" font-size="28" fill="#1c2027">Launcher</text><text x="560" y="382" text-anchor="end" font-size="28" fill="#1c2027">44</text>
+<rect x="40" y="396" width="3.0" height="22" fill="#2455ed"/><text x="53.0" y="415" font-size="26" fill="#1c2027">0 created</text>
+<rect x="280" y="396" width="3.0" height="22" fill="none" stroke="#ef7134" stroke-width="2"/><text x="293.0" y="415" font-size="26" fill="#1c2027">0 closed</text>
+<text x="40" y="478" font-size="28" fill="#1c2027">Agent Branches</text><text x="560" y="478" text-anchor="end" font-size="28" fill="#1c2027">12</text>
+<rect x="40" y="492" width="3.0" height="22" fill="#2455ed"/><text x="53.0" y="511" font-size="26" fill="#1c2027">0 created</text>
+<rect x="280" y="492" width="3.0" height="22" fill="none" stroke="#ef7134" stroke-width="2"/><text x="293.0" y="511" font-size="26" fill="#1c2027">0 closed</text>
+<text x="40" y="574" font-size="28" fill="#1c2027">Messaging</text><text x="560" y="574" text-anchor="end" font-size="28" fill="#1c2027">39</text>
+<rect x="40" y="588" width="3.0" height="22" fill="#2455ed"/><text x="53.0" y="607" font-size="26" fill="#1c2027">0 created</text>
+<rect x="280" y="588" width="3.0" height="22" fill="none" stroke="#ef7134" stroke-width="2"/><text x="293.0" y="607" font-size="26" fill="#1c2027">0 closed</text>
+<text x="40" y="670" font-size="28" fill="#1c2027">Dashboard</text><text x="560" y="670" text-anchor="end" font-size="28" fill="#1c2027">21</text>
+<rect x="40" y="684" width="3.0" height="22" fill="#2455ed"/><text x="53.0" y="703" font-size="26" fill="#1c2027">0 created</text>
+<rect x="280" y="684" width="3.0" height="22" fill="none" stroke="#ef7134" stroke-width="2"/><text x="293.0" y="703" font-size="26" fill="#1c2027">0 closed</text>
+<text x="40" y="806" font-size="26" fill="#4a505a">No cancelled tasks were found.</text>
+</g>
+</svg>

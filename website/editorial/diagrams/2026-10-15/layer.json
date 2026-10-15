@@ -1,0 +1,58 @@
+{
+  "style": "editorial",
+  "title": "A coordination layer on top of Git",
+  "description": "Git holds each agent's latest commit. The coordination layer checks both commits together and records whether the pair is clean, conflicting or unknown.",
+  "canvas": {
+    "width": 600,
+    "height": 690
+  },
+  "layout": {
+    "type": "grid",
+    "card_width": 520,
+    "card_height": 170,
+    "column_gap": 20,
+    "row_gap": 50,
+    "font_scale": 1.6
+  },
+  "nodes": [
+    {
+      "id": "git",
+      "eyebrow": "GIT",
+      "title": "Changes A and B",
+      "subtitle": "Each agent's latest commit",
+      "icon": "document",
+      "color": "gray",
+      "row": 0,
+      "column": 0
+    },
+    {
+      "id": "checks",
+      "eyebrow": "COORDINATION LAYER",
+      "title": "Combined check",
+      "subtitle": "Merge and test A + B",
+      "icon": "terminal",
+      "color": "blue",
+      "row": 1,
+      "column": 0
+    },
+    {
+      "id": "evidence",
+      "title": "Pair status",
+      "subtitle": "Clean, conflict or unknown",
+      "icon": "observability",
+      "color": "blue",
+      "row": 2,
+      "column": 0
+    }
+  ],
+  "edges": [
+    {
+      "from": "git",
+      "to": "checks"
+    },
+    {
+      "from": "checks",
+      "to": "evidence"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "style": "editorial",
+  "title": "Checked locally, not on Cloudflare",
+  "description": "A separate agent reviewed the new code. It passed local tests with real Git pushes and a test against a stand-in for Cloudflare, but nobody has deployed it yet.",
+  "canvas": {
+    "width": 600,
+    "height": 832
+  },
+  "layout": {
+    "type": "grid",
+    "card_width": 520,
+    "card_height": 170,
+    "column_gap": 20,
+    "row_gap": 24,
+    "font_scale": 1.6
+  },
+  "nodes": [
+    {
+      "id": "review",
+      "eyebrow": "DONE",
+      "title": "Separate review",
+      "subtitle": "Accepted the changes",
+      "icon": "check",
+      "color": "green",
+      "row": 0,
+      "column": 0
+    },
+    {
+      "id": "local",
+      "eyebrow": "DONE",
+      "title": "Local tests",
+      "subtitle": "With real Git pushes",
+      "icon": "terminal",
+      "color": "green",
+      "row": 1,
+      "column": 0
+    },
+    {
+      "id": "mock",
+      "eyebrow": "DONE",
+      "title": "Stand-in for Cloudflare",
+      "subtitle": "Not proof of the cloud",
+      "icon": "api",
+      "color": "amber",
+      "row": 2,
+      "column": 0
+    },
+    {
+      "id": "live",
+      "eyebrow": "NOT YET",
+      "title": "Live on Cloudflare",
+      "subtitle": "Not deployed",
+      "icon": "close",
+      "color": "gray",
+      "row": 3,
+      "column": 0
+    }
+  ],
+  "edges": []
+}

@@ -1,0 +1,1 @@
+I submitted my Cloudflare Git contest entry, explained as a coordination layer on top of Git rather than a better Git. After the recording, I asked my agents to fix the remaining problems, and they added a watcher and early warnings for planned files. They're reviewed but not on Cloudflare yet.

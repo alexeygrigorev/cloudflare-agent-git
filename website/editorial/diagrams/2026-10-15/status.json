@@ -1,0 +1,60 @@
+{
+  "style": "editorial",
+  "title": "Thirteen days in",
+  "description": "The entry is submitted, and the check after a push works for one scripted pair. Early warnings cover only declared plans, and the new version isn't live.",
+  "canvas": {
+    "width": 600,
+    "height": 832
+  },
+  "layout": {
+    "type": "grid",
+    "card_width": 520,
+    "card_height": 170,
+    "column_gap": 20,
+    "row_gap": 24,
+    "font_scale": 1.6
+  },
+  "nodes": [
+    {
+      "id": "entry",
+      "eyebrow": "SUBMITTED",
+      "title": "Contest entry",
+      "subtitle": "Video and form done",
+      "icon": "check",
+      "color": "green",
+      "row": 0,
+      "column": 0
+    },
+    {
+      "id": "check",
+      "eyebrow": "WORKS",
+      "title": "Check after a push",
+      "subtitle": "One scripted pair",
+      "icon": "terminal",
+      "color": "green",
+      "row": 1,
+      "column": 0
+    },
+    {
+      "id": "early",
+      "eyebrow": "PARTLY",
+      "title": "Early warnings",
+      "subtitle": "Declared files only",
+      "icon": "warning",
+      "color": "amber",
+      "row": 2,
+      "column": 0
+    },
+    {
+      "id": "live",
+      "eyebrow": "NOT LIVE",
+      "title": "New version on Cloudflare",
+      "subtitle": "Not deployed",
+      "icon": "close",
+      "color": "gray",
+      "row": 3,
+      "column": 0
+    }
+  ],
+  "edges": []
+}
