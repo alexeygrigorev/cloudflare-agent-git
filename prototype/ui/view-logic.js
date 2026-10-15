@@ -219,6 +219,34 @@
     return bits.join(" — ");
   }
 
+  /* Plans are declarations, independent of commit/check safety. null/missing
+     is undeclared; [] is an explicit declaration of no files. */
+  function plannedFiles(agent) {
+    var paths = agent && agent.plannedPaths;
+    if (!Array.isArray(paths) || !paths.every(function (p) { return typeof p === "string" && p.length > 0; })) return null;
+    return paths.slice();
+  }
+
+  function plannedWork(status, agentId) {
+    var agents = asArray(status && status.agents).filter(function (agent) { return agent && typeof agent.agentId === "string"; });
+    var available = !!(status && Array.isArray(status.plannedOverlaps));
+    var records = asArray(status && status.plannedOverlaps);
+    var valid = records.filter(function (overlap) {
+      return overlap && Array.isArray(overlap.agents) && overlap.agents.length === 2 &&
+        overlap.agents.every(function (a) { return typeof a === "string" && a.length > 0; }) &&
+        overlap.agents[0] !== overlap.agents[1] &&
+        Array.isArray(overlap.paths) && overlap.paths.length > 0 &&
+        overlap.paths.every(function (p) { return typeof p === "string" && p.length > 0; });
+    });
+    return {
+      available: available,
+      malformed: records.length - valid.length,
+      overlaps: valid.filter(function (overlap) { return !agentId || overlap.agents.indexOf(agentId) !== -1; }),
+      undeclared: agents.filter(function (agent) { return plannedFiles(agent) === null; }).map(function (agent) { return agent.agentId; }),
+      agent: agents.filter(function (agent) { return agent.agentId === agentId; })[0] || null,
+    };
+  }
+
   return {
     POLL_MS: POLL_MS,
     FRESH_MS: FRESH_MS,
@@ -235,5 +263,7 @@
     buildTimeline: buildTimeline,
     unprocessedByAgent: unprocessedByAgent,
     unknownHeadReason: unknownHeadReason,
+    plannedFiles: plannedFiles,
+    plannedWork: plannedWork,
   };
 });

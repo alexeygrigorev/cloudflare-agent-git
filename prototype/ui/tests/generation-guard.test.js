@@ -15,6 +15,113 @@ var fs = require("node:fs");
 var path = require("node:path");
 var Guard = require("../request-guard.js");
 
+/* Use the real UI render/poll path; actual browser geometry is checked too. */
+function planUiHarness(initial, task) {
+  var vm = require("node:vm");
+  var nodes = {};
+  function node(id) {
+    if (!nodes[id]) nodes[id] = { innerHTML: "", textContent: "", hidden: true, value: "",
+      attrs: {}, addEventListener: function () {},
+      getAttribute: function (key) { return this.attrs[key]; },
+      setAttribute: function (key, value) { this.attrs[key] = value; },
+      querySelectorAll: function () { return []; } };
+    return nodes[id];
+  }
+  var status = initial;
+  var failed = false;
+  var poll;
+  var context = { URLSearchParams: URLSearchParams, Date: Date, Promise: Promise,
+    setTimeout: function () { return 1; }, clearTimeout: function () {},
+    setInterval: function (fn) { poll = fn; return 1; }, clearInterval: function () {},
+    document: { hidden: false, addEventListener: function () {}, getElementById: node,
+      querySelectorAll: function () { return []; } },
+    fetch: function (url) { var isStatus = /\/status$/.test(url); return Promise.resolve(failed && isStatus ? { ok: false, status: 503 } :
+      { ok: true, json: function () { return Promise.resolve(isStatus ? status : task); } }); },
+    window: { location: { search: task ? "?id=" + task.taskId : "", protocol: "http:" },
+      localStorage: { getItem: function () { return null; } },
+      AgentBranchesViewLogic: require("../view-logic.js"), AgentBranchesRequestGuard: Guard,
+      AgentBranchesPairStatus: require("../pair-status.js"), AgentBranchesAuth: require("../auth.js") } };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "ui.js"), "utf8"), context);
+  return { nodes: nodes, boot: function () { if (task) context.window.AgentBranchesUI.bootTask(); else context.window.AgentBranchesUI.bootIndex(); },
+    poll: function () { poll(); }, fail: function () { failed = true; },
+    setStatus: function (value) { status = value; failed = false; } };
+}
+
+test("real overview renders pre-push plans, escapes paths, clears overlaps, and labels stale plans", async function () {
+  var dangerous = "<img src=x onerror=alert(1)>";
+  var status = { agents: [{ agentId: "a", taskId: "ta", head: "h", plannedPaths: [dangerous] },
+    { agentId: "b", taskId: "tb", head: "h", plannedPaths: [] },
+    { agentId: "c", taskId: "tc", head: "h", plannedPaths: null }],
+    heads: { a: "h", b: "h", c: "h" }, warnings: [], pairs: [],
+    plannedOverlaps: [{ agents: ["a", "b"], paths: [dangerous] }] };
+  var ui = planUiHarness(status);
+  var settled = function () { return new Promise(function (resolve) { setImmediate(resolve); }); };
+  ui.boot(); await settled();
+  assert.match(ui.nodes["planned-work"].innerHTML, /Planned overlap — agree ownership/);
+  assert.match(ui.nodes["planned-work"].innerHTML, /not a proven Git conflict/);
+  assert.match(ui.nodes["planned-work"].innerHTML, /&lt;img/);
+  assert.doesNotMatch(ui.nodes["planned-work"].innerHTML, /<img/);
+  assert.match(ui.nodes.agents.innerHTML, /no files currently declared/);
+  assert.match(ui.nodes.agents.innerHTML, /not declared\. File ownership is unknown/);
+  assert.doesNotMatch(ui.nodes.pairs.innerHTML, /badge clean/);
+  ui.fail(); ui.poll(); await settled();
+  assert.match(ui.nodes["planned-work"].innerHTML, /Last reported planned overlap/);
+  assert.match(ui.nodes["planned-work"].innerHTML, /Current plans are unknown/);
+  status = JSON.parse(JSON.stringify(status)); status.plannedOverlaps = [];
+  ui.setStatus(status); ui.poll(); await settled();
+  assert.doesNotMatch(ui.nodes["planned-work"].innerHTML, /Planned overlap — agree ownership/);
+  assert.match(ui.nodes["planned-work"].innerHTML, /No shared planned files reported/);
+});
+
+test("malformed overlap records stay unknown in the real overview", async function () {
+  var ui = planUiHarness({ agents: [], heads: {}, pairs: [], warnings: [],
+    plannedOverlaps: [{ agents: ["a", "b", "c"], paths: ["x"] }] });
+  ui.boot(); await new Promise(setImmediate);
+  assert.match(ui.nodes["planned-work"].innerHTML, /unknown: 1 planned-overlap record/);
+  assert.doesNotMatch(ui.nodes["planned-work"].innerHTML, /No shared planned files reported/);
+});
+
+test("task plans are scoped, preserve safety evidence and become historical on failure", async function () {
+  var status = { agents: [{ agentId: "a", plannedPaths: ["own.txt"] },
+    { agentId: "b", plannedPaths: [] }, { agentId: "c", plannedPaths: null }], heads: {}, pairs: [], warnings: [],
+    plannedOverlaps: [{ agents: ["a", "b"], paths: ["own.txt"] }, { agents: ["b", "c"], paths: ["other.txt"] }] };
+  var task = { taskId: "ta", agentId: "a", agent: { agentId: "a", head: null, pushes: 0 }, intent: "coordinate" };
+  var ui = planUiHarness(status, task);
+  var tick = function () { return new Promise(setImmediate); };
+  ui.boot(); await tick();
+  assert.match(ui.nodes["planned-work"].innerHTML, /Planned files:.*own.txt/);
+  assert.match(ui.nodes["planned-work"].innerHTML, /Planned overlap/);
+  assert.doesNotMatch(ui.nodes["planned-work"].innerHTML, /other.txt/);
+  var verdict = ui.nodes["task-verdict"].innerHTML;
+  var evidence = ui.nodes.evidence.innerHTML;
+  var noPlans = JSON.parse(JSON.stringify(status)); delete noPlans.plannedOverlaps;
+  noPlans.agents.forEach(function (agent) { delete agent.plannedPaths; });
+  ui.setStatus(noPlans); ui.poll(); await tick();
+  assert.equal(ui.nodes["task-verdict"].innerHTML, verdict);
+  assert.equal(ui.nodes.evidence.innerHTML, evidence);
+  status.agents[0].plannedPaths = [];
+  ui.setStatus(status); ui.poll(); await tick();
+  assert.match(ui.nodes["planned-work"].innerHTML, /no files currently declared/);
+  status.agents[0].plannedPaths = null;
+  ui.setStatus(status); ui.poll(); await tick();
+  assert.match(ui.nodes["planned-work"].innerHTML, /not declared\. File ownership is unknown/);
+  status.agents[0].plannedPaths = ["own.txt"];
+  ui.setStatus(status); ui.poll(); await tick();
+  ui.fail(); ui.poll(); await tick();
+  assert.match(ui.nodes["planned-work"].innerHTML, /Last reported planned files/);
+  assert.match(ui.nodes["planned-work"].innerHTML, /Last reported planned overlap/);
+  assert.match(ui.nodes["planned-work"].innerHTML, /Current plans are unknown/);
+});
+
+test("first status failure asserts no historical plan on either page", async function () {
+  var task = { taskId: "ta", agentId: "a", agent: { agentId: "a" } };
+  for (var detail of [undefined, task]) {
+    var ui = planUiHarness({}, detail); ui.fail(); ui.boot(); await new Promise(setImmediate);
+    assert.match(ui.nodes["planned-work"].innerHTML, /unknown.*status has not loaded/);
+    assert.doesNotMatch(ui.nodes["planned-work"].innerHTML, /Last reported|not declared|last successful load/);
+  }
+});
+
 function delay(ms) {
   return new Promise(function (resolve) {
     setTimeout(resolve, ms);

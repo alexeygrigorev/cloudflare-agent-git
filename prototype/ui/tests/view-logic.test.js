@@ -10,6 +10,42 @@ var test = require("node:test");
 var assert = require("node:assert/strict");
 var V = require("../view-logic.js");
 
+test("plans distinguish undeclared files from an explicit empty declaration", function () {
+  assert.equal(V.plannedFiles({}), null);
+  assert.equal(V.plannedFiles({ plannedPaths: null }), null);
+  assert.deepEqual(V.plannedFiles({ plannedPaths: [] }), []);
+  var paths = ["shared.txt"];
+  var copy = V.plannedFiles({ plannedPaths: paths });
+  copy.push("another.txt");
+  assert.deepEqual(paths, ["shared.txt"]);
+  assert.equal(V.plannedFiles({ plannedPaths: [4] }), null);
+});
+
+test("planned overlaps are server declarations, scoped to the task, and never change pair safety", function () {
+  var status = { agents: [{ agentId: "a", plannedPaths: ["shared.txt"] },
+    { agentId: "b", plannedPaths: [] }, { agentId: "c", plannedPaths: null }],
+    plannedOverlaps: [{ agents: ["a", "b"], paths: ["shared.txt"] }], pairs: [] };
+  var before = JSON.stringify(status);
+  assert.equal(V.plannedWork(status).available, true);
+  assert.deepEqual(V.plannedWork(status).undeclared, ["c"]);
+  assert.equal(V.plannedWork(status, "a").overlaps.length, 1);
+  assert.equal(V.plannedWork(status, "c").overlaps.length, 0);
+  assert.equal(V.plannedWork({ agents: status.agents }).available, false);
+  assert.equal(JSON.stringify(status), before);
+  status.plannedOverlaps = [];
+  assert.equal(V.plannedWork(status).overlaps.length, 0);
+});
+
+test("malformed plans retain uncertainty even when valid overlaps concern another task", function () {
+  var plans = V.plannedWork({ agents: [null, { agentId: "a", plannedPaths: [] }], plannedOverlaps: [
+    { agents: ["a", "b", "c"], paths: ["x"] }, { agents: ["a", "b"], paths: ["x", ""] },
+    { agents: ["a", "a"], paths: ["x"] }, { agents: ["b", "c"], paths: ["x"] }
+  ] }, "a");
+  assert.equal(plans.malformed, 3);
+  assert.equal(plans.overlaps.length, 0);
+  assert.deepEqual(plans.undeclared, []);
+});
+
 var HA = "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a";
 var HB = "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2";
 var HC = "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3";

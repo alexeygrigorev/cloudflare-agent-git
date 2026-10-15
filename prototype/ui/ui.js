@@ -716,12 +716,57 @@
 
   /* ---------- index page ---------- */
 
+  function plannedFilesHtml(agent, stale) {
+    var paths = View.plannedFiles(agent);
+    var label = stale ? "Last reported planned files: " : "Planned files: ";
+    if (paths === null) return "<p class='kv'>" + label + "not declared. File ownership is unknown.</p>";
+    if (!paths.length) return "<p class='kv'>" + label + "no files currently declared.</p>";
+    return "<p class='kv'>" + label + paths.map(function (path) {
+      return "<code class='sha'>" + esc(path) + "</code>";
+    }).join(", ") + "</p>";
+  }
+
+  function renderPlannedWork(status, stale, agentId) {
+    var target = document.getElementById("planned-work");
+    if (!target) return;
+    if (!status) {
+      target.innerHTML = "<p class='notice-unknown'>Planned work is unknown — status has not loaded. No planned files or overlaps have been established.</p>";
+      return;
+    }
+    var plans = View.plannedWork(status, agentId);
+    var html = stale ? staleNoteHtml(stale) : "";
+    if (agentId) html += plannedFilesHtml(plans.agent, stale);
+    html += "<p class='section-note'>Plans are declarations, not a proven Git conflict or a safety check. Commit combinations and tests are checked separately.</p>";
+    if (!plans.available) {
+      html += "<p class='muted'>Plan overlap data is unavailable from this server. Shared work is unknown.</p>";
+    } else if (plans.overlaps.length) {
+      html += plans.overlaps.map(function (overlap) {
+        return "<article class='notice-unknown'>" + stateBadge("unknown", "!", stale ? "Last reported planned overlap" : "Planned overlap — agree ownership") +
+          "<p>" + overlap.agents.map(function (id) { return "<code class='sha'>" + esc(id) + "</code>"; }).join(" and ") +
+          (stale ? " previously declared the same files: " : " plan to edit the same files: ") +
+          overlap.paths.map(function (path) { return "<code class='sha'>" + esc(path) + "</code>"; }).join(", ") + "</p>" +
+          "<p>Agree who owns these files or split the work before editing." + (stale ? " Current plans are unknown until status refreshes." : "") + "</p></article>";
+      }).join("");
+    } else if (!plans.malformed) {
+      html += "<p class='muted'>" + (stale ? "The last successful load reported no shared planned files. Current plans are unknown." :
+        "No shared planned files reported. This does not establish that changes are safe to combine.") + "</p>";
+    }
+    if (plans.malformed) html += "<p class='notice-unknown'>Shared planned work is unknown: " + plans.malformed +
+      " planned-overlap record(s) could not be read. Coordinate ownership before editing.</p>";
+    if (plans.undeclared.length && !agentId) html += "<p class='small muted'>" +
+      (stale ? "Plans were not declared for: " : "Plans not declared for: ") +
+      plans.undeclared.map(function (id) { return "<code class='sha'>" + esc(id) + "</code>"; }).join(", ") + ". Their file ownership is unknown.</p>";
+    target.innerHTML = html;
+  }
+
   function renderIndex(status) {
     var stale = statusFresh.describe();
     var agents = (status.agents || []).slice().sort(function (x, y) {
       return String(x.agentId).localeCompare(String(y.agentId));
     });
     var allWarnings = status.warnings || [];
+
+    renderPlannedWork(status, stale);
 
     renderLost(status);
 
@@ -743,6 +788,7 @@
         "<article class='card" + (isFreshPush(ag.agentId, ag.head) ? " fresh" : "") + "' aria-label='Agent " + esc(ag.agentId) + "'>" +
         "<h3><code>" + esc(ag.agentId) + "</code></h3>" +
         "<p class='intent'>" + intent + "</p>" +
+        plannedFilesHtml(ag, stale) +
         "<p class='kv'>Latest change: " + latest + "</p>" +
         ownTestHtml(ag, lost, stale) +
         "<details class='inline' data-key='card-" + esc(ag.agentId) + "'" + (cardOpen ? " open" : "") + "><summary>" +
@@ -839,6 +885,8 @@
     var stale = statusFresh.describe();
     var lost = agent.agentId ? View.unknownHeadReason(agent.agentId, status) : null;
     var currentHead = lost ? null : heads[agent.agentId] || agent.head || null;
+
+    renderPlannedWork(status, stale, agent.agentId || task.agentId);
 
     document.title = "Change story — " + (agent.agentId || task.taskId);
 
@@ -1267,6 +1315,8 @@
             /* Index view re-render marked stale (C-1399): downgrades clean badges to unknown */
             renderIndex(lastStatus);
             everRendered = true;
+          } else if (!lastStatus) {
+            renderPlannedWork(null, statusFresh.describe());
           }
           return;
         }
