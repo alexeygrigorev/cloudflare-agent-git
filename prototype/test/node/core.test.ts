@@ -556,3 +556,93 @@ test("BearerRateLimiter: unidentifiable clients share one conservative bucket (C
   strictEqual(limiter.recordFailure(null), true, "null-key callers share the unknown bucket");
   strictEqual(limiter.size, 1, "exactly one bucket entry");
 });
+
+// Owner-task early warnings use the real core, with no host/network fixtures.
+test("owner task visibility: declarations, scoped overlaps and exact-vector pairs", async () => {
+  const rig = makeRig();
+  const a = await rig.core.createTask({ agent: "a" });
+  const b = await rig.core.createTask({ agent: "b" });
+  const c = await rig.core.createTask({ agent: "c" });
+  strictEqual((await rig.core.getTask(a.taskId)).plannedPathsDeclared, false);
+  await rig.core.updateTaskPlan(a.taskId, []);
+  strictEqual((await rig.core.getTask(a.taskId)).plannedPathsDeclared, true);
+  deepStrictEqual((await rig.core.getTask(a.taskId)).plannedPaths, []);
+  await rig.core.updateTaskPlan(a.taskId, ["shared.ts"]);
+  await rig.core.updateTaskPlan(b.taskId, ["shared.ts", "unrelated.ts"]);
+  await rig.core.updateTaskPlan(c.taskId, ["unrelated.ts"]);
+  let detail = await rig.core.getTask(a.taskId);
+  strictEqual(detail.plannedOverlaps.length, 1);
+  deepStrictEqual(detail.plannedOverlaps[0].paths, ["shared.ts"]);
+  ok(detail.pairs.every(pair => pair.pair.includes(a.agentId)));
+  strictEqual(detail.pairs.length, 2);
+  const vector = (await rig.core.status()).heads;
+  await rig.core.submitChecks(parseChecksPayload({ contract: "0.0", vector, policy: "p",
+    results: [{pair: [a.agentId, b.agentId], status: "clean"}] }));
+  detail = await rig.core.getTask(a.taskId);
+  strictEqual(detail.pairs.find(p => p.pair.includes(b.agentId))!.status, "clean");
+  deepStrictEqual(detail.heads, vector);
+  await rig.core.recordPush({agent: b.agentId, sha: rig.git.commit(b.fork.name, "moved")});
+  detail = await rig.core.getTask(a.taskId);
+  strictEqual(detail.pairs.find(p => p.pair.includes(b.agentId))!.status, "not_checked");
+  strictEqual(detail.pairs.find(p => p.pair.includes(b.agentId))!.stale, true);
+  // Returned nested values must not mutate the stored model.
+  detail.agent!.ref = "tamper";
+  detail.plannedOverlaps[0].paths.push("tamper");
+  detail.plannedPaths!.push("tamper");
+  const unchanged = await rig.core.getTask(a.taskId);
+  ok(!unchanged.plannedPaths!.includes("tamper"));
+  strictEqual(unchanged.agent!.ref, a.ref);
+  deepStrictEqual(unchanged.plannedOverlaps[0].paths, ["shared.ts"]);
+});
+
+test("owner task visibility: pending, unreadable and absent callback ledgers fail closed", async () => {
+  const rig = makeRig();
+  const a = await rig.core.createTask({agent: "a"});
+  const b = await rig.core.createTask({agent: "b"});
+  const vector = (await rig.core.status()).heads;
+  await rig.core.submitChecks(parseChecksPayload({contract: "0.0", vector, policy: "p",
+    results: [{pair: [a.agentId, b.agentId], status: "clean", evidence: "old clean"}]}));
+  const ledger = rig.git.unprocessedPushes.bind(rig.git);
+  rig.git.unprocessed = [{repo: b.fork.name, ref: b.ref, sha: "f".repeat(40), before: b.head,
+    attempts: 1, firstAt: "now", lastAt: "now", lastError: "private failure"}];
+  let detail = await rig.core.getTask(a.taskId);
+  strictEqual(detail.pushLedger, "available");
+  strictEqual(detail.pairs[0].status, "not_checked");
+  strictEqual(detail.pairs[0].evidence, undefined);
+  rig.git.unprocessedPushes = async () => { throw new Error("private secret"); };
+  detail = await rig.core.getTask(a.taskId);
+  strictEqual(detail.pushLedger, "unavailable");
+  strictEqual(detail.pairs[0].status, "not_checked");
+  ok(detail.pairs[0].unprocessedReason!.includes("unavailable"));
+  ok(!JSON.stringify(detail).includes("private secret"));
+  rig.git.unprocessedPushes = async () => [null] as any;
+  strictEqual((await rig.core.getTask(a.taskId)).pushLedger, "unavailable");
+  strictEqual((await rig.core.getTask(a.taskId)).pairs[0].status, "not_checked");
+  (rig.git as any).unprocessedPushes = undefined;
+  strictEqual((await rig.core.getTask(a.taskId)).pairs[0].status, "not_checked");
+  rig.git.unprocessedPushes = ledger;
+  rig.git.unprocessed = [];
+  strictEqual((await rig.core.getTask(a.taskId)).pairs[0].status, "clean");
+});
+
+test("owner task visibility: one coherent snapshot while ledger read yields", async () => {
+  const rig = makeRig();
+  const a = await rig.core.createTask({agent: "a"});
+  const b = await rig.core.createTask({agent: "b"});
+  const old = (await rig.core.status()).heads;
+  let release!: () => void;
+  let entered!: () => void;
+  const started = new Promise<void>(r => { entered = r; });
+  rig.git.unprocessedPushes = async () => { entered(); await new Promise<void>(r => {release = r;}); return []; };
+  const pending = rig.core.getTask(a.taskId);
+  for (let turn = 0; turn < 10 && !release; turn++) await Promise.resolve();
+  ok(release, "ledger was not read after bounded microtask turns");
+  await started;
+  await rig.core.updateTaskPlan(a.taskId, ["later.ts"]);
+  await rig.core.recordPush({agent: b.agentId, sha: rig.git.commit(b.fork.name, "later")});
+  release();
+  const detail = await pending;
+  deepStrictEqual(detail.heads, old);
+  strictEqual(detail.plannedPathsDeclared, false);
+  deepStrictEqual(detail.pairs[0].heads, old);
+});

@@ -493,3 +493,28 @@ test("latent seam: services.rateLimiter omitted is an explicit fail-open pass-th
     strictEqual(response.status, 401, `invalid bearer ${i + 1} stays an un-counted 401 without a limiter`);
   }
 });
+
+
+test("owner task warning payload stays behind unchanged owner/admin authorization", async () => {
+  const rig = makeRig();
+  const a = await rig.core.createTask({agent: "a"});
+  const b = await rig.core.createTask({agent: "b"});
+  await rig.core.updateTaskPlan(a.taskId, ["shared.ts"]);
+  await rig.core.updateTaskPlan(b.taskId, ["shared.ts"]);
+  for (const token of [a.token.plaintext, "admin-t"]) {
+    const response = await call(rig, "GET", `/tasks/${a.taskId}`, undefined, token);
+    strictEqual(response.status, 200);
+    const body = response.body as any;
+    strictEqual(body.plannedOverlaps.length, 1);
+    strictEqual(body.pairs.length, 1);
+    strictEqual(body.plannedPathsDeclared, true);
+    ok(!JSON.stringify(body).includes(a.token.plaintext));
+    ok(!JSON.stringify(body).includes(b.token.plaintext));
+  }
+  strictEqual((await call(rig, "GET", `/tasks/${a.taskId}`, undefined, b.token.plaintext)).status, 403);
+  strictEqual((await call(rig, "GET", `/tasks/${a.taskId}`)).status, 401);
+  const expired = await rig.core.createTask({agent: "expired", ttlSeconds: -1});
+  strictEqual((await call(rig, "GET", `/tasks/${expired.taskId}`, undefined, expired.token.plaintext)).status, 401);
+  await rig.core.revokeAgentToken(a.agentId);
+  strictEqual((await call(rig, "GET", `/tasks/${a.taskId}`, undefined, a.token.plaintext)).status, 401);
+});

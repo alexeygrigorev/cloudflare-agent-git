@@ -436,6 +436,27 @@ unknown, so a stored clean never presents as current.
                       "head_sha": "<40-hex>", "at": "ISO" } | null }
 ```
 
+Owner-task visibility is additive: `plannedPaths` remains an array (`[]` for both
+undeclared and explicitly empty plans); `plannedPathsDeclared` distinguishes those
+cases. `plannedOverlaps` contains only entries involving this task, including
+pre-push declarations. `pairs` contains only pairs involving its agent, using the
+same `PairStatusView` shape as `/status`; `heads` contains the recorded vector for
+this agent and those pair participants. These shared coordination fields expose
+counterpart agent/task IDs and overlapping paths, never counterpart credentials
+or unrelated pair/overlap entries. Owner/admin authorization is unchanged.
+
+All these fields, the task, warnings and check vectors are copied from one model
+snapshot before asynchronous callback-ledger I/O. They describe recorded state,
+not a claim that repository tips cannot move after the read. `pushLedger` is
+`"available"` only when the optional callback-loss ledger was successfully read;
+missing or unreadable ledgers produce `"unavailable"`, not an empty healthy ledger.
+Unavailable delivery evidence forces every returned pair to `not_checked`, hides
+old clean/conflict evidence and sets an explanatory `unprocessedReason`. Known
+pending callbacks likewise suppress checks for affected pairs; moved recorded
+heads make old vectors stale. Ledger errors and raw callback details are not
+returned. An overlap is an early ownership warning, not proof of merge conflict;
+no pairs or warnings is not proof that a merge was checked.
+
 ### POST /tasks/:id/tests — the task's agent token | ADMIN_TOKEN
 
 ```json

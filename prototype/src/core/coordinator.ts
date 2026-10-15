@@ -115,6 +115,13 @@ export interface StatusResult {
 }
 
 export interface TaskDetail extends TaskRecord {
+  /** plannedPaths stays [] for legacy clients; this preserves declaration intent. */
+  plannedPathsDeclared: boolean;
+  plannedOverlaps: PlannedOverlap[];
+  pairs: PairStatusView[];
+  heads: Record<string, string>;
+  /** An absent or failed callback ledger cannot establish current check freshness. */
+  pushLedger: "available" | "unavailable";
   base_sha: string;
   agent: AgentRecord | null;
   head: string | null;
@@ -622,18 +629,46 @@ export class CoordinatorCore implements CoordinatorAccess {
   }
 
   async getTask(taskId: string): Promise<TaskDetail> {
-    const model = await this.load();
+    // load() returns the live cached model. Freeze it before asynchronous host
+    // I/O so heads, plans, warnings and checks all describe one model read.
+    const model: CoordinatorModel = JSON.parse(JSON.stringify(await this.load()));
     const task = model.tasks[taskId];
     if (!task) {
       throw new Error(`unknown task: ${taskId}`);
     }
     const agent = model.agents[task.agentId] ?? null;
+    let pushLedger: TaskDetail["pushLedger"] = "unavailable";
+    let pending: UnprocessedPush[] = [];
+    try {
+      if (this.ports.git.unprocessedPushes) {
+        pending = await this.ports.git.unprocessedPushes();
+        if (Array.isArray(pending) && pending.every(push => push && typeof push.repo === "string")) {
+          pushLedger = "available";
+        }
+      }
+    } catch {
+      // Do not expose provider errors or infer an empty, healthy ledger.
+    }
+    const uncertain = pushLedger === "unavailable"
+      ? new Set(Object.keys(model.heads))
+      : new Set(pending.map(push => this.agentForFork(model, push.repo)?.agentId)
+          .filter((id): id is string => id !== undefined));
+    const pairs = this.pairViews(model, uncertain).filter(pair => pair.pair.includes(task.agentId));
+    if (pushLedger === "unavailable") {
+      for (const pair of pairs) pair.unprocessedReason = "callback-loss ledger unavailable; true head freshness is unknown";
+    }
+    const visibleAgents = new Set([task.agentId, ...pairs.flatMap(pair => pair.pair)]);
     const warnings = model.warnings
       .filter((warning) => warning.pair.includes(task.agentId))
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     return {
       ...task,
       plannedPaths: [...(task.plannedPaths ?? [])],
+      plannedPathsDeclared: Array.isArray(task.plannedPaths),
+      plannedOverlaps: this.plannedOverlaps(model).filter(overlap => overlap.tasks.includes(taskId)),
+      pairs,
+      heads: Object.fromEntries(Object.entries(model.heads).filter(([id]) => visibleAgents.has(id))),
+      pushLedger,
       base_sha: task.baseSha,
       agent,
       head: agent?.head ?? null,
