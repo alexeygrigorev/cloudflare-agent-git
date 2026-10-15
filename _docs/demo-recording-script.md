@@ -93,11 +93,7 @@ The optional `--plans` flag adds declared-file overlap warnings before the edit 
 
 ### 3. Compatible changes
 
-Continue the interactive example started above. From `prototype/`, the Cloudflare command is:
-
-```bash
-uv run python demo/pair-example.py --backend cloudflare --interactive
-```
+Continue the interactive example started above. The following blocks run within that same process.
 
 Space executes the displayed command or block; Enter also works. After the output, another Space reveals the next command. This leaves each result visible for explanation before the next block appears. Blank lines and separators distinguish the blocks. Ctrl+C stops the demo and cleans up the demo repositories and temporary local services.
 
@@ -197,7 +193,7 @@ uv run python demo/pair-example.py
 It must complete both stages: a real clean merge with one passing combined test, followed by a real conflict in `shared.txt` and an active warning. The default command runs locally. A successful Cloudflare run must use `--backend cloudflare`; local results do not establish that the deployed Worker and Artifacts worked.
 
 
-### 5. Coordination outside the recording
+### 6. Coordination outside the recording
 
 The reusable CLI is installed by `uv sync` from the repository's local package. Configure the coordinator once per project, then create tasks without repeating repository, branch or starting-commit flags:
 
