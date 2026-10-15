@@ -168,3 +168,7 @@ human-authorized test are separate, explicitly authorized steps, and the rollbac
 for such a test is a recorded `stop`.
 
 MIT licensed.
+
+## Stopping and starting
+
+See [_docs/stop-start.md](_docs/stop-start.md) for how to stop and start the Hetzner headless root and the Win35 guardian.
