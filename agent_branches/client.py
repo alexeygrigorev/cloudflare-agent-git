@@ -163,10 +163,10 @@ class AgentBranchesClient:
 
     def create_task(
         self,
-        repo: str,
-        base_sha: str,
-        intent: str,
-        branch: str,
+        repo: Optional[str] = None,
+        base_sha: Optional[str] = None,
+        intent: str = "",
+        branch: Optional[str] = None,
         agent: Optional[str] = None,
         ttl_seconds: Optional[int] = None,
         admin_token: Optional[str] = None,
@@ -176,12 +176,10 @@ class AgentBranchesClient:
         Supports --admin-token (or $ADMIN_TOKEN) via Authorization: Bearer <token>.
         Returns dictionary containing distinct task ID, agent ID, fork URL, branch, token, etc.
         """
-        payload: Dict[str, Any] = {
-            "repo": repo,
-            "base_sha": base_sha,
-            "intent": intent,
-            "branch": branch,
-        }
+        payload: Dict[str, Any] = {"intent": intent}
+        for key, value in (("repo", repo), ("base_sha", base_sha), ("branch", branch)):
+            if value is not None:
+                payload[key] = value
         if agent:
             payload["agent"] = agent
         if ttl_seconds is not None:

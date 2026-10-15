@@ -293,10 +293,10 @@ def build_parser() -> argparse.ArgumentParser:
     task_sub = task_parser.add_subparsers(dest="task_action", help="Task actions")
 
     task_create = task_sub.add_parser("create", help="Register a new task")
-    task_create.add_argument("--repo", help="Repository URL (defaults to git remote origin)")
-    task_create.add_argument("--base-sha", help="Base commit SHA (defaults to git HEAD)")
+    task_create.add_argument("--repo", help="Optional repository context (or private configuration)")
+    task_create.add_argument("--base-sha", help="Optional base commit override (defaults to coordinator canonical HEAD)")
     task_create.add_argument("--intent", default="", help="High-level task intent description")
-    task_create.add_argument("--branch", help="Working branch name (defaults to git branch)")
+    task_create.add_argument("--branch", help="Optional branch context (defaults to coordinator task ref)")
     task_create.add_argument("--agent", help="Agent identifier / name prefix")
     task_create.add_argument("--ttl-seconds", type=int, help="Fork token TTL in seconds")
     task_create.add_argument("--files", help="Comma-separated planned file paths, declared before editing")
@@ -408,15 +408,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def handle_task_create(args: argparse.Namespace, client: AgentBranchesClient, as_json: bool) -> int:
     settings = client.settings if isinstance(getattr(client, "settings", None), dict) else {}
-    repo = args.repo or os.environ.get("AGENT_BRANCHES_REPO") or settings.get("repo") or get_remote_url()
-    if not repo:
-        repo = "https://github.com/agent-branches/repo.git"
-
-    base_sha = args.base_sha or os.environ.get("AGENT_BRANCHES_BASE_SHA") or settings.get("base_sha") or get_current_head_sha()
-    if not base_sha:
-        base_sha = "0000000000000000000000000000000000000000"
-
-    branch = args.branch or os.environ.get("AGENT_BRANCHES_BRANCH") or settings.get("branch") or get_current_branch() or "feat/task"
+    # The coordinator owns canonical Git context. Cwd may be unrelated Git.
+    repo = args.repo or os.environ.get("AGENT_BRANCHES_REPO") or settings.get("repo")
+    base_sha = args.base_sha or os.environ.get("AGENT_BRANCHES_BASE_SHA") or settings.get("base_sha")
+    branch = args.branch or os.environ.get("AGENT_BRANCHES_BRANCH") or settings.get("branch")
     intent = args.intent or ""
     agent = getattr(args, "agent", None)
     ttl = getattr(args, "ttl_seconds", None)
@@ -431,7 +426,7 @@ def handle_task_create(args: argparse.Namespace, client: AgentBranchesClient, as
         ttl_seconds=ttl,
         admin_token=admin_token,
     )
-    client.remember_task(res, defaults={"repo": repo, "base_sha": base_sha, "branch": branch})
+    client.remember_task(res)
     if getattr(args, "files", None) is not None:
         res["plan"] = client.plan_task(res["taskId"], [path.strip() for path in args.files.split(",") if path.strip()])
     if as_json:

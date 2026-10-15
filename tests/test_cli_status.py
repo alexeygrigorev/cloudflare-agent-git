@@ -63,14 +63,14 @@ class StatusFormattingTests(unittest.TestCase):
 
 
 class TaskDefaultsTests(unittest.TestCase):
-    def test_explicit_arguments_override_environment_and_environment_overrides_git(self):
+    def test_explicit_environment_private_precedence_without_cwd_git_defaults(self):
         cases = [
             ({"repo": "explicit-repo", "base_sha": "explicit-sha", "branch": "explicit-branch"},
              {"AGENT_BRANCHES_REPO": "env-repo", "AGENT_BRANCHES_BASE_SHA": "env-sha", "AGENT_BRANCHES_BRANCH": "env-branch"},
              ("explicit-repo", "explicit-sha", "explicit-branch")),
             ({}, {"AGENT_BRANCHES_REPO": "env-repo", "AGENT_BRANCHES_BASE_SHA": "env-sha", "AGENT_BRANCHES_BRANCH": "env-branch"},
              ("env-repo", "env-sha", "env-branch")),
-            ({}, {}, ("git-repo", "git-sha", "git-branch")),
+            ({}, {}, (None, None, None)),
         ]
         for explicit, environment, expected in cases:
             with self.subTest(explicit=explicit, environment=environment):
@@ -78,6 +78,8 @@ class TaskDefaultsTests(unittest.TestCase):
                 for key, value in explicit.items():
                     setattr(args, key, value)
                 client = Mock()
+                client.settings = ({"repo": "private-repo", "base_sha": "private-sha", "branch": "private-branch"}
+                                   if environment or explicit else {})
                 client.create_task.return_value = {"taskId": "task-a"}
                 with patch.dict(os.environ, environment, clear=True), \
                      patch("agent_branches.cli.get_remote_url", return_value="git-repo") as git_repo, \
@@ -87,10 +89,28 @@ class TaskDefaultsTests(unittest.TestCase):
                     self.assertEqual(handle_task_create(args, client, as_json=False), 0)
                 actual = client.create_task.call_args.kwargs
                 self.assertEqual((actual["repo"], actual["base_sha"], actual["branch"]), expected)
-                if environment or explicit:
-                    git_repo.assert_not_called()
-                    git_sha.assert_not_called()
-                    git_branch.assert_not_called()
+                git_repo.assert_not_called()
+                git_sha.assert_not_called()
+                git_branch.assert_not_called()
+                client.remember_task.assert_called_once_with({"taskId": "task-a"})
+                client.settings = {"repo": "private-repo", "base_sha": "private-sha", "branch": "private-branch"}
+                if not environment and not explicit:
+                    with patch.dict(os.environ, {}, clear=True), contextlib.redirect_stdout(io.StringIO()):
+                        handle_task_create(args, client, as_json=False)
+                    actual = client.create_task.call_args.kwargs
+                    self.assertEqual((actual["repo"], actual["base_sha"], actual["branch"]),
+                                     ("private-repo", "private-sha", "private-branch"))
+
+    def test_client_omits_unknown_context_and_preserves_explicit_library_arguments(self):
+        from agent_branches.client import AgentBranchesClient
+        client = AgentBranchesClient("https://coordinator.invalid")
+        client._request = Mock(return_value={})
+        with patch.dict(os.environ, {}, clear=True):
+            client.create_task(agent="a", intent="Configure checkout")
+            self.assertEqual(client._request.call_args.args[2], {"agent": "a", "intent": "Configure checkout"})
+            client.create_task("repo", "a" * 40, "intent", "branch")
+            self.assertEqual(client._request.call_args.args[2],
+                             {"repo": "repo", "base_sha": "a" * 40, "intent": "intent", "branch": "branch"})
 
 
 class RedirectSafetyTests(unittest.TestCase):

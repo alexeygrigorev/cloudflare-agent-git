@@ -48,6 +48,8 @@ class IndependentPushWatchTests(unittest.TestCase):
                        "PYTHONUNBUFFERED": "1", "PYTHONIOENCODING": "utf-8"}
         environment.pop("AGENT_BRANCHES_DEMO_RUN_ID", None)
         environment.pop("TASK_TOKEN", None)
+        for key in ("AGENT_BRANCHES_REPO", "AGENT_BRANCHES_BASE_SHA", "AGENT_BRANCHES_BRANCH"):
+            environment.pop(key, None)
 
         def start(command, extra, name, group=False):
             log = open(state / (name + ".log"), "wb")
@@ -66,10 +68,12 @@ class IndependentPushWatchTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, f"git {arguments[0]} failed")
             return result.stdout.decode().strip()
 
-        def cli(arguments, *, raw=False):
-            command = ["uv", "run", "branches", *arguments, *(["--json"] if raw else [])]
-            result = subprocess.run(command, cwd=ROOT, env=environment, capture_output=True, encoding="utf-8", timeout=30)
+        def cli(arguments, *, raw=False, cwd=ROOT):
+            command = ["uv", "run", "--project", str(ROOT), "branches", *arguments, *(["--json"] if raw else [])]
+            result = subprocess.run(command, cwd=cwd, env=environment, capture_output=True, encoding="utf-8", timeout=30)
             self.assertEqual(result.returncode, 0, result.stderr[-500:])
+            if not raw:
+                self.assertNotIn(admin, result.stdout + result.stderr)
             return json.loads(result.stdout) if raw else result.stdout
 
         client = AgentBranchesClient(api)
@@ -122,10 +126,24 @@ class IndependentPushWatchTests(unittest.TestCase):
             git(["commit", "-m", "Track actual combined configuration test"], baseline)
             git(["push", "origin", "main"], baseline)
             base = git(["rev-parse", "HEAD"], baseline)
-            environment.update(AGENT_BRANCHES_REPO=setup["canonical"]["remote"], AGENT_BRANCHES_BASE_SHA=base, AGENT_BRANCHES_BRANCH="main")
             cli(["configure", "--test-command", shlex.join([sys.executable, "-m", "unittest", "discover", "-v"])])
-            tasks = [cli(["task", "create", "--agent", name, "--intent", "Independent actor", "--files", path], raw=True)
-                     for name, path in (("actor-a", "rate.py"), ("actor-b", "region.py"))]
+            fresh, unrelated = state / "fresh", state / "unrelated"
+            fresh.mkdir()
+            unrelated.mkdir()
+            git(["init"], unrelated)
+            git(["config", "user.name", "Unrelated user"], unrelated)
+            git(["config", "user.email", "unrelated@example.invalid"], unrelated)
+            git(["commit", "--allow-empty", "-m", "Unrelated repository"], unrelated)
+            git(["remote", "add", "origin", "https://github.com/example/unrelated.git"], unrelated)
+            self.assertNotEqual(git(["rev-parse", "HEAD"], unrelated), base)
+            tasks = [cli(["task", "create", "--agent", name, "--intent", "Independent actor", "--files", path], raw=True, cwd=folder)
+                     for name, path, folder in (("actor-a", "rate.py", fresh), ("actor-b", "region.py", unrelated))]
+            for task in tasks:
+                self.assertEqual(task["base_sha"], base)
+                self.assertEqual(task["ref"], "refs/heads/main")
+            private = json.loads((state / "private.json").read_text())["servers"][api]
+            self.assertNotIn("base_sha", private)
+            self.assertEqual(private["tasks"][tasks[0]["taskId"]]["base_sha"], base)
             actors = []
             for index, task in enumerate(tasks):
                 folder = state / f"actor-{index}"
@@ -204,6 +222,25 @@ class IndependentPushWatchTests(unittest.TestCase):
             self.assertNotIn(admin, output)
             self.assertNotIn(runner, output)
             self.assertFalse((state / "private.watch.lock").exists())
+            # Omitted context follows the server's next canonical HEAD; an
+            # explicit historical base remains an intentional supported override.
+            git(["commit", "--allow-empty", "-m", "Advance canonical after watcher verification"], baseline)
+            git(["push", "origin", "main"], baseline)
+            advanced = git(["rev-parse", "HEAD"], baseline)
+            next_task = cli(["task", "create", "--agent", "next", "--intent", "Current canonical"], raw=True, cwd=fresh)
+            self.assertEqual(next_task["base_sha"], advanced)
+            old_task = cli(["task", "create", "--agent", "historical", "--base-sha", base], raw=True, cwd=unrelated)
+            self.assertEqual(old_task["base_sha"], base)
+            invalid = subprocess.run(["uv", "run", "--project", str(ROOT), "branches", "task", "create", "--agent", "invalid",
+                                      "--base-sha", "not-a-sha"], cwd=fresh, env=environment, capture_output=True, text=True, timeout=30)
+            self.assertNotEqual(invalid.returncode, 0)
+            self.assertIn("base_sha", invalid.stderr)
+            self.assertNotIn(admin, invalid.stdout + invalid.stderr)
+            readable = cli(["task", "create", "--agent", "readable", "--intent", "Token stays private"], cwd=fresh)
+            self.assertIn(advanced, readable)
+            private = json.loads((state / "private.json").read_text())["servers"][api]
+            self.assertNotIn("base_sha", private)
+            self.assertEqual(private["tasks"][old_task["taskId"]]["base_sha"], base)
         finally:
             for child in reversed(children):
                 if child.poll() is None:
