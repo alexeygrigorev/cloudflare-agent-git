@@ -1,0 +1,91 @@
+{
+  "style": "editorial",
+  "title": "The pieces of Agent Branches",
+  "description": "Agents send plans and pushes to the Cloudflare Worker and ask it for status, and the replies list any warnings. The Worker writes each push only to that agent's own fork in Artifacts. An authenticated checker on my computer polls for the latest pair, runs the tests and reports the results.",
+  "canvas": {
+    "width": 600,
+    "height": 860
+  },
+  "layout": {
+    "type": "manual",
+    "card_width": 230,
+    "card_height": 150,
+    "font_scale": 1.6
+  },
+  "nodes": [
+    {
+      "id": "agents",
+      "eyebrow": "AGENTS",
+      "title": "Agents",
+      "subtitle": "A and B",
+      "icon": "robot",
+      "color": "blue",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "ch1",
+      "variant": "plain",
+      "title": "Plan, push, ask",
+      "subtitle": "Replies list warnings",
+      "x": 170,
+      "y": 215,
+      "width": 330,
+      "height": 110
+    },
+    {
+      "id": "worker",
+      "eyebrow": "CLOUDFLARE",
+      "title": "Worker",
+      "subtitle": "Plans, status",
+      "icon": "api",
+      "color": "purple",
+      "x": 40,
+      "y": 355
+    },
+    {
+      "id": "artifacts",
+      "eyebrow": "OWN FORK ONLY",
+      "title": "Artifacts",
+      "subtitle": "Scoped writes",
+      "icon": "database",
+      "color": "green",
+      "x": 330,
+      "y": 355
+    },
+    {
+      "id": "ch2",
+      "variant": "plain",
+      "title": "Polls latest pair",
+      "subtitle": "Runs tests, reports",
+      "x": 170,
+      "y": 530,
+      "width": 330,
+      "height": 110
+    },
+    {
+      "id": "checker",
+      "eyebrow": "MY COMPUTER",
+      "title": "Checker",
+      "subtitle": "Authenticated",
+      "icon": "terminal",
+      "color": "amber",
+      "x": 40,
+      "y": 670
+    }
+  ],
+  "edges": [
+    {
+      "from": "agents",
+      "to": "worker"
+    },
+    {
+      "from": "worker",
+      "to": "artifacts"
+    },
+    {
+      "from": "checker",
+      "to": "worker"
+    }
+  ]
+}

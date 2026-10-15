@@ -1,48 +1,39 @@
 {
-  "title": "Day 13: The Entry Is In. The Agents Kept Building After the Recording",
+  "title": "Day 13: I Recorded the Demo and Submitted the Entry",
   "date": "2026-10-15",
-  "summary": "I recorded the demo and submitted the contest entry, explaining it as a coordination layer on top of Git. After the recording, I asked agents to fix the remaining problems, and they added a watcher and early warnings for planned files. Both are reviewed but not yet on Cloudflare.",
+  "summary": "I submitted my entry after changing the pitch: not a better Git, but a coordination layer that warns agents before they overlap. After the recording, I asked agents to add planned-file warnings and a watcher, reviewed but not yet on Cloudflare.",
   "author": "Alexey Grigorev",
   "model": "Claude Opus 5.5 (claude-opus-5-5)",
   "source_cutoff": "2026-10-15T00:09:56+00:00",
   "source_cutoff_note": "Requested interval 2026-10-14T07:00Z to 2026-10-15T07:00Z was incomplete when written. Fact packet cut off at 2026-10-15T00:01:06Z; the writer read tracker counts, issue comments and commits until 2026-10-15T00:09:56Z and finished at 00:16:46Z. The check pass re-read the trackers and linked issues between about 00:19Z and 00:23Z and found the same counts and states. Later hours are not covered.",
   "sources": [
     "https://blog.cloudflare.com/next-git-platform-on-cloudflare/",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/4f3ce9d6f00c883ec0b46e243b10b1d8dfda8297",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/da767886aa0e9656225d3a5a01ca1a1ec7efbab9",
     "https://www.loom.com/share/f8b67486801b4cee8d8970fa3d405553",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/114#issuecomment-6181165157",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/b24ea10ba5f0a6d76ad295e7dbfdcc24efab3e17",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/1689f47cb6c37d8a5a589241b3aba3f952c9f44c",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/985f7567cfc4b8b7f7ceed9465fe4140a799b1fa",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6176259369",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/113",
-    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/66"
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/985f7567cfc4b8b7f7ceed9465fe4140a799b1fa"
   ],
   "source_titles": {
     "https://blog.cloudflare.com/next-git-platform-on-cloudflare/": "Cloudflare's competition to build the next Git platform",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/4f3ce9d6f00c883ec0b46e243b10b1d8dfda8297": "Hypothesis cards that state their problems",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/da767886aa0e9656225d3a5a01ca1a1ec7efbab9": "Daily reports numbered by day",
     "https://www.loom.com/share/f8b67486801b4cee8d8970fa3d405553": "The submitted demo video",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/114#issuecomment-6181165157": "The accepted work after the recording",
     "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/b24ea10ba5f0a6d76ad295e7dbfdcc24efab3e17": "Planned files and run-owned cleanup",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/1689f47cb6c37d8a5a589241b3aba3f952c9f44c": "The branches command and the watcher",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/985f7567cfc4b8b7f7ceed9465fe4140a799b1fa": "The polished demo",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/102#issuecomment-6176259369": "The root resuming the coordinating agent",
-    "https://github.com/alexeygrigorev/cloudflare-agent-git/issues/113": "The open bug where a wake-up message stays unsent",
-    "https://github.com/alexeygrigorev/agent-quota-launcher/issues/66": "The bug where reviewers received code with values missing"
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/1689f47cb6c37d8a5a589241b3aba3f952c9f44c": "The packaged command and the watcher",
+    "https://github.com/alexeygrigorev/cloudflare-agent-git/commit/985f7567cfc4b8b7f7ceed9465fe4140a799b1fa": "The polished demo"
   },
   "image": "../../assets/2026-10-15.png",
   "image_alt": "Conceptual illustration: two agents bring folder paths to a meeting point that leads to a submitted sheet. Another agent keeps working at a separate desk",
-  "diagram": "../../assets/2026-10-15-status.png",
-  "diagram_svg": "../../assets/2026-10-15-status.svg",
-  "diagram_alt": "The entry is submitted, and the check after a push works for one scripted pair. Early warnings cover only declared plans, and the new version isn't live",
+  "diagram": "../../assets/2026-10-15-architecture.png",
+  "diagram_svg": "../../assets/2026-10-15-architecture.svg",
+  "diagram_alt": "Agents push through the Cloudflare Worker, which lets each agent write only to its own fork in Artifacts, Cloudflare's Git storage. The Worker keeps plans, results and warnings, and a checker on my computer tests the latest pair and reports back",
   "published": true,
   "actual_writer_models": [
     "claude-opus-5-5"
   ],
-  "editorial_review": "daily15_r1_abstract_visual; daily15_r1_noun; daily15_r1_rhetoric; daily15_r1_simplify (independent journal reviewers)",
-  "article_sha256": "4fba4b03ccc644bc9ad621b2e0c1dd37cc15390eabc7fe3e07e4379061592005",
   "published_at": "2026-10-15T04:39:45.148199+00:00",
-  "updated_at": "2026-10-15T04:39:45.148215+00:00"
+  "updated_at": "2026-10-15T05:17:06.402346+00:00",
+  "editorial_review": "Independent critical editorial: daily15_r3_critical_editor; visual and abstract: daily15_r1_abstract_visual; noun: daily15_r1_noun; simplify: daily15_r1_simplify; genuine fresh Opus checks verified by daily-catchup",
+  "article_sha256": "7faa9a293daa61db2e7c0888b1c20973d291f7ad3495344c4cb3fa833f38d4a3",
+  "revised_at": "2026-10-15T05:17:06.402346+00:00"
 }
