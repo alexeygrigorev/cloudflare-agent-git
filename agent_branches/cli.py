@@ -521,7 +521,7 @@ def handle_push(args: argparse.Namespace, client: AgentBranchesClient, as_json: 
             test_provenance=args.test_provenance,
         )
     except ValueError as exc:
-        print(f"Error: {exc}", file=sys.stderr)
+        print(f"Error: {_display(exc)}", file=sys.stderr)
         return 1
 
     if as_json:
@@ -584,7 +584,7 @@ def handle_checks(args: argparse.Namespace, client: AgentBranchesClient, as_json
             with open(args.file, "r", encoding="utf-8") as f:
                 payload_raw = f.read()
         except OSError as exc:
-            print(f"Error reading file '{args.file}': {exc}", file=sys.stderr)
+            print(f"Error reading file '{_display(args.file)}': {_display(exc)}", file=sys.stderr)
             return 1
     else:
         if sys.stdin.isatty():
@@ -595,7 +595,7 @@ def handle_checks(args: argparse.Namespace, client: AgentBranchesClient, as_json
     try:
         payload = json.loads(payload_raw)
     except json.JSONDecodeError as exc:
-        print(f"Error parsing JSON payload: {exc}", file=sys.stderr)
+        print(f"Error parsing JSON payload: {_display(exc)}", file=sys.stderr)
         return 1
 
     runner_token = getattr(args, "runner_token", None) or os.environ.get("RUNNER_TOKEN")
@@ -617,15 +617,15 @@ def handle_checks(args: argparse.Namespace, client: AgentBranchesClient, as_json
                 file=sys.stderr,
             )
         else:
-            print(f"Conflict Error (409): Stale vector - {exc.message}", file=sys.stderr)
+            print(f"Conflict Error (409): Stale vector - {_display(exc.message)}", file=sys.stderr)
             if exc.payload:
-                print(f"Details: {exc.payload}", file=sys.stderr)
+                print(f"Details: {_display(exc.payload)}", file=sys.stderr)
         return 1
     except TokenExpiredError as exc:
         print(
             f"Authentication Error ({exc.status_code}): Bearer token expired - "
             f"credentials reported expired by coordinator. Halting (no retry). "
-            f"Refresh the token and try again. Details: {exc.message}",
+            f"Refresh the token and try again. Details: {_display(exc.message)}",
             file=sys.stderr,
         )
         return 1
@@ -633,12 +633,12 @@ def handle_checks(args: argparse.Namespace, client: AgentBranchesClient, as_json
         print(
             f"Authentication Error ({exc.status_code}): Bearer token revoked - "
             f"failing closed, retrying cannot succeed. "
-            f"Issuer a new token. Details: {exc.message}",
+            f"Issuer a new token. Details: {_display(exc.message)}",
             file=sys.stderr,
         )
         return 1
     except (ValueError, AgentBranchesAPIError) as exc:
-        print(f"Error: {exc}", file=sys.stderr)
+        print(f"Error: {_display(exc)}", file=sys.stderr)
         return 1
 
     if as_json:
@@ -766,16 +766,16 @@ def main(argv: Optional[List[str]] = None) -> int:
             parser.print_help()
             return 1
     except AgentBranchesConnectionError as exc:
-        print(f"Connection Error: {exc}", file=sys.stderr)
+        print(f"Connection Error: {_display(exc)}", file=sys.stderr)
         return 2
     except StaleVectorError as exc:
-        print(f"Conflict Error (409): Stale vector - {exc.message}", file=sys.stderr)
+        print(f"Conflict Error (409): Stale vector - {_display(exc.message)}", file=sys.stderr)
         return 1
     except TokenExpiredError as exc:
         print(
             f"Authentication Error ({exc.status_code}): Bearer token expired - "
             f"credentials reported expired by coordinator. Halting (no retry). "
-            f"Refresh the token and try again. Details: {exc.message}",
+            f"Refresh the token and try again. Details: {_display(exc.message)}",
             file=sys.stderr,
         )
         return 1
@@ -783,15 +783,15 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(
             f"Authentication Error ({exc.status_code}): Bearer token revoked - "
             f"failing closed, retrying cannot succeed. "
-            f"Issuer a new token. Details: {exc.message}",
+            f"Issuer a new token. Details: {_display(exc.message)}",
             file=sys.stderr,
         )
         return 1
     except AgentBranchesAPIError as exc:
-        print(f"API Error ({exc.status_code}): {exc.message}", file=sys.stderr)
+        print(f"API Error ({exc.status_code}): {_display(exc.message)}", file=sys.stderr)
         return 1
     except Exception as exc:
-        print(f"Error: {exc}", file=sys.stderr)
+        print(f"Error: {_display(exc)}", file=sys.stderr)
         return 1
 
 

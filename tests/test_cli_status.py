@@ -390,5 +390,45 @@ class ReviewRecoveryTests(unittest.TestCase):
         self.assertNotIn("legacy\nsummary", text)
 
 
+class ErrorOutputTests(unittest.TestCase):
+    def test_main_error_variants_escape_server_text_and_keep_exit_codes(self):
+        from agent_branches.client import (AgentBranchesConnectionError, StaleVectorError,
+                                          TokenExpiredError, TokenRevokedError)
+        attack = "server\nFORGED-CLEAN\x1b[2J\x1b]0;title\x07\x85\u202e"
+        cases = [(AgentBranchesConnectionError(attack), 2), (StaleVectorError(409, attack), 1),
+                 (TokenExpiredError(401, attack), 1), (TokenRevokedError(401, attack), 1),
+                 (AgentBranchesAPIError(400, attack), 1), (ValueError(attack), 1)]
+        for error, expected in cases:
+            with self.subTest(error=type(error).__name__), \
+                 patch("agent_branches.cli.AgentBranchesClient") as factory, \
+                 contextlib.redirect_stderr(io.StringIO()) as output:
+                factory.return_value.get_status.side_effect = error
+                self.assertEqual(main(["status"]), expected)
+                self.assertEqual(factory.return_value.get_status.call_count, 1)
+            self.assertIn("\\nFORGED-CLEAN", output.getvalue())
+            for control in ("\nFORGED", "\x1b", "\x07", "\x85", "\u202e"):
+                self.assertNotIn(control, output.getvalue())
+
+    def test_checks_error_output_escapes_payload_without_altering_json_contract(self):
+        from agent_branches.cli import handle_checks
+        from agent_branches.client import StaleVectorError, TokenExpiredError, TokenRevokedError
+        import json
+        attack = "server\nFORGED-CLEAN\x1b[2J\x85"
+        for error in (StaleVectorError(409, attack, attack), TokenExpiredError(401, attack),
+                      TokenRevokedError(401, attack), AgentBranchesAPIError(400, attack), ValueError(attack)):
+            client = Mock()
+            client.send_checks.side_effect = error
+            with patch("sys.stdin", io.StringIO("{}")), contextlib.redirect_stderr(io.StringIO()) as output:
+                self.assertEqual(handle_checks(argparse.Namespace(file=None, runner_token=None), client, False), 1)
+            self.assertIn("\\nFORGED-CLEAN", output.getvalue())
+            for control in ("\nFORGED", "\x1b", "\x85"):
+                self.assertNotIn(control, output.getvalue())
+        client.send_checks.side_effect = StaleVectorError(409, attack, {"details": attack})
+        with patch("sys.stdin", io.StringIO("{}")), contextlib.redirect_stderr(io.StringIO()) as output:
+            self.assertEqual(handle_checks(argparse.Namespace(file=None, runner_token=None), client, True), 1)
+        self.assertEqual(json.loads(output.getvalue())["message"], attack)
+        self.assertEqual(json.loads(output.getvalue())["details"], {"details": attack})
+
+
 if __name__ == "__main__":
     unittest.main()
