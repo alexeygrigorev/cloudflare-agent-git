@@ -21,14 +21,22 @@ The user's central critique is that plain Git can already perform the conflict c
 
 ## Current status and verification boundary
 
+The accepted post-recording release is on `main` in commits `b24ea10b`, `1689f47c` and `985f7567`. It includes the filesystem-installed `uv run branches` CLI, private server-bound configuration, an independently running checker and persistent run-owned cleanup. Independent review accepted the exact source. Verification covered 162 Worker tests, 75 Node tests, 16 real-Git sidecar tests and 56 combined Python tests. A separate real-Git integration started the checker before independent pushes and verified clean results, combined-test failure, repair, textual conflict, planned overlap and safe publication to the task's own fork.
+
+The original smoke client was repaired and rerun against its explicit mock: 14 checks passed with 26 simulated operations and owned cleanup. This does not replace the original failed report or establish new live Cloudflare proof. The historical 13 October live run remains separate evidence.
+
+Task creation from a fresh directory is now accepted and pushed in `2651cc64`: omitted Git context comes from the coordinator, and an explicit base on one task does not freeze the base for later tasks. Focused CLI and real-service integration tests passed. The dashboard's planned-overlap display was independently accepted and pushed in `6b1f4bf7`; all 83 UI tests passed after correcting malformed-overlap and first-load failure handling. Actual browser checks covered warnings before any push, removing a declared overlap, task-specific warnings, escaped filenames, and a 390-pixel viewport without horizontal overflow. A failed status update labels the previous overlap as historical and current plans as unknown.
+
+The current deployed Worker still needs the newer APIs deployed; the existing contest head owns deployment admission. A read-only account inspection did not establish an aggregate preventive dollar bound or Artifacts allowance. No optional live write run is authorized by a passing local test or an application operation allowance alone.
+
 - Implemented in the demo source: explicit local/Cloudflare backend selection, Space or Enter progression for displayed commands or logical blocks, descriptive titles and visible block separators, task-registration explanations and sanitized response output, and automatic checks after the demo's pushes. Fetch/comparison/report transport stays internal by default; the next status read exposes the recorded result.
 - The final presentation revision completed an actual Windows terminal run: descriptive block titles, Space before execution, output held until Space reveals the next command, one passing combined test, a stale result after new pushes, a conflict warning naming both agents and `shared.txt`, unchanged canonical main and successful cleanup. Cloudflare read-only startup and cancellation before sending setup also passed; this is not a live write run.
 - The final CLI integration passed a complete local run, including optional planned-path warnings before the conflicting edits. The current backend passed 39 core/router/plan tests, and nine targeted Python CLI/client tests passed. An actual CLI status request to the deployed Worker also succeeded without writes. Optional `--plans` needs the new backend deployed on Cloudflare; it is available locally now.
 - The local/Cloudflare visible-flow correction is implemented and independently reviewed: one common preparation action, then the same task, edit, push and status sequence. Two offline parity tests and a real local interactive run passed. Offline cloud transports are not evidence of a live Cloudflare write run.
-- A completed live Cloudflare write run has not been established. Local success is not Cloudflare proof.
+- A live Cloudflare write run of the post-recording changes has not been established. Local success is not Cloudflare proof.
 - The original smoke report failed at the seed push, so its later checks also failed. Do not replace that evidence with a blanket “all checks passed” statement; diagnose or rerun that path separately if it is used as submission evidence.
 - The website title/image stacking and centering have been reviewed on desktop and mobile. The daily-report update has been accepted and deployed: eleven `Day X: ...` titles and distinct day-specific illustrations. Preserve that work rather than regenerate it unnecessarily.
-- The demo article and architecture illustrations have been updated locally. Publication of a website change does not imply that every local demo file has been committed or published.
+- The demo article and architecture illustrations are committed in `985f7567` and available on GitHub. Publication of the website is separate from deploying the latest Worker code.
 
 ## Priority 0: finish the submission presentation
 
@@ -56,7 +64,7 @@ The name `main` in an agent's fork caused confusion. State the destination clear
 
 `git merge-tree` also caused confusion: it previews the combined tree without updating either branch. Explain that distinction plainly. This uses Git's existing conflict detection; it does not implement the earlier warning about agents starting overlapping work.
 
-The user asked to remove this manual command from the demo, then clarified that committing and pushing should trigger the check automatically. Present the pushes followed by a status read and its result, with the comparison running internally. Do not claim that hiding the command removes the need for the comparison or proves early overlap detection. The current helper automates checks after its own observed push sequence; a continuously running client that reacts to arbitrary external pushes is a separate acceptance requirement.
+The user asked to remove this manual command from the demo, then clarified that committing and pushing should trigger the check automatically. Present the pushes followed by a status read and its result, with the comparison running internally. Do not claim that hiding the command removes the need for the comparison or proves early overlap detection. The helper automates checks after its observed push sequence; the separately verified `branches watch` client reacts to independent external pushes. Checks are asynchronous. A status read before current evidence arrives must show unknown or stale evidence, rather than promise an immediate completed check.
 
 Keep one continuous example with the same two agents: first compatible checkout settings, then conflicting values in `shared.txt`. The audience should see what changed, what was checked and why the warning appeared.
 
@@ -78,7 +86,7 @@ The local and Cloudflare demonstrations must follow exactly the same visible set
 
 Before a later live Cloudflare run, resolve the existing review findings:
 
-- Cleanup uses the application's global repository inventory. An initial empty-inventory check does not protect repositories created concurrently by somebody else. Prove run-specific ownership or serialization and preserve unrelated repositories.
+- The original cleanup used the application's global repository inventory. An initial empty-inventory check did not protect repositories created concurrently by somebody else. The accepted implementation records run-owned names before provider calls, serializes creation and cleanup, preserves unrelated repositories, and retains incomplete runs for retry. The updated API must be deployed before a new live demo.
 - Preserve strict gateway-path validation, including rejection of encoded and dot-segment paths. The demo's validation was narrowed during the final verification pass.
 - An early read-only cancellation exposed a Windows temporary-log sharing error. A bounded cleanup retry was implemented and the final read-only cancellation test passed.
 - Record live results only after the real run, including canonical-head preservation, owned cleanup and applicable operation limits. Do not claim that an allowance is a verified account-wide dollar spending cap.
@@ -89,7 +97,7 @@ We already have a Branches CLI, but the initial demonstration used raw Git and A
 
 The desired interaction is closer to “these two agents are changing the same file; coordinate their work” than a sequence of authenticated fetch commands.
 
-After the demo, package the existing CLI as a local filesystem dependency of the uv project and expose a `branches` console entry point. The requested invocation is `uv run branches ...`, replacing `uv run python ../agent-branches ...`. Reuse the existing implementation and preserve its behavior; do not create another CLI. Verify installation from the filesystem dependency with `uv sync` and execute task registration and status without a global installation or manual `PYTHONPATH`. This packaging change is explicitly deferred until after the demo.
+The CLI is now packaged as a local filesystem dependency of the uv project with a `branches` console entry point. The requested invocation is `uv run branches ...`, replacing `uv run python ../agent-branches ...`. It reuses the existing implementation. Fresh-install tests execute task registration and status without a global installation or manual `PYTHONPATH`. This change followed the recording, as requested.
 
 Acceptance criteria:
 

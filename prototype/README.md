@@ -23,7 +23,7 @@ npm install
 npm run typecheck      # tsc --noEmit
 npm test               # worker tests inside workerd: exit 0
 npm run test:sidecar   # local Git server: 16 passed
-npm run test:node      # core + router + local adapters: 64 passed
+npm run test:node      # core + router + local adapters: exit 0
 npm run build:node     # outputs .build/node/src/local/main.js
 ```
 
@@ -53,7 +53,7 @@ uv run python demo/pair-example.py --backend local --interactive
 
 For Cloudflare, use `--backend cloudflare` with private `BASE_URL`, `ADMIN_TOKEN` and `RUNNER_TOKEN` settings in `.env`. Both backends follow the same visible task/edit/push/status flow. Space executes a displayed block; another Space after output reveals the next one. `--plans` adds declared-file overlap warnings before edits. Cloudflare mode refuses an older backend without run-owned cleanup before any write.
 
-The local dependency exposes `uv run branches`. Configure server/repository and private token files once with `branches configure`; create a task with `branches task create --agent agent-a --intent "Configure checkout" --files rate.py`. Explicit arguments override environment and private project settings.
+The local dependency exposes `uv run branches`. Configure the server and private token files once with `branches configure`; create a task with `branches task create --agent agent-a --intent "Configure checkout" --files rate.py`. Omitted repository, branch and base context comes from the coordinator's canonical repository. Task creation works from a fresh directory or an unrelated checkout without copying its local HEAD. Explicit arguments override environment and private project settings; an automatically selected base is recorded for that task, rather than freezing future tasks to the same commit.
 
 Run `uv run branches watch --test-command 'python -m unittest discover -v'` on a user-owned computer. It checks independently pushed heads and records exact-commit results. Use `branches publish --task-id ...` from an agent checkout to push to its verified own fork, and `branches status` to see current evidence. The older `branches push` command only sends a notification; it does not perform a Git push. See the [complete example](../_docs/demo-recording-script.md).
 
