@@ -18,24 +18,49 @@ def env_int(name, default):
 
 
 def aplexer_full(args, timeout=30):
+    """Capture bytes: PTY slices need not start or end on a UTF-8 boundary."""
     try:
-        p = subprocess.run(["aplexer", *args], capture_output=True, text=True, timeout=timeout)
+        p = subprocess.run(["aplexer", *args], capture_output=True, timeout=timeout)
         return p.returncode, p.stdout, p.stderr
     except (OSError, subprocess.TimeoutExpired):
-        return 127, "", ""
+        return 127, b"", b""
 
 
 def aplexer(args, timeout=30):
     rc, out, _ = aplexer_full(args, timeout)
-    return rc, out
+    try:
+        return rc, out.decode("utf-8")
+    except UnicodeDecodeError:
+        # Unreadable structured output cannot acknowledge a ping.
+        return rc, ""
 
 
 DEAD, PROGRESSING, STUCK, IDLE, UNKNOWN = "DEAD", "ALIVE-PROGRESSING", "STUCK", "IDLE-NOT-ACKING", "UNKNOWN"
 ABSENT = "ABSENT"  # aplexer has no session with this tag at all
 
 
-def digest(text):
-    return hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()[:16]
+def digest(raw):
+    return hashlib.sha256(raw).hexdigest()[:16]
+
+
+def valid_fields(data, fields, nullable=()):
+    """Validate present JSON fields before defaults, comparisons or filesystem use."""
+    for key, kind in fields.items():
+        if key not in data:
+            continue
+        value = data[key]
+        if value is None and key in nullable:
+            continue
+        if type(value) is not kind or (kind is int and value < 0):
+            return False
+        if kind is str:
+            try:
+                value.encode("utf-8")
+            except UnicodeEncodeError:
+                return False
+            if "\0" in value:
+                return False
+    return True
 
 
 def collect(tag):
@@ -44,6 +69,11 @@ def collect(tag):
     rc, out, err = aplexer_full(["status", tag, "--json"])
     if rc == 127:
         ev["unknown"] = "aplexer cannot be run"
+        return ev
+    try:
+        out, err = out.decode("utf-8"), err.decode("utf-8")
+    except UnicodeDecodeError:
+        ev["unknown"] = "aplexer status gave invalid UTF-8"
         return ev
     if rc != 0 and "no session" in (err + out).lower():
         ev["absent"] = f"principal session does not exist: aplexer has no session tagged {tag!r}"
@@ -58,6 +88,13 @@ def collect(tag):
     except ValueError:
         ev["unknown"] = "aplexer status gave unreadable JSON"
         return ev
+    if not valid_fields(d, {"phase": str, "state": str, "reported_state": str,
+                            "reported_state_at_ms": int, "worker_alive": bool,
+                            "workload_pid": int, "last_activity_ms": int, "history_path": str},
+                        nullable=("workload_pid", "history_path", "reported_state_at_ms", "last_activity_ms")) \
+            or any(d.get(key) == "" for key in ("phase", "state", "reported_state")):
+        ev["unknown"] = "aplexer status gave malformed metadata"
+        return ev
     pid = d.get("workload_pid")
     ev.update(phase=d.get("phase"), state=d.get("state"), reported_state=d.get("reported_state"),
               reported_state_at_ms=d.get("reported_state_at_ms"), worker_alive=d.get("worker_alive"),
@@ -70,11 +107,15 @@ def collect(tag):
             ev["history_size"], ev["history_mtime"] = stt.st_size, int(stt.st_mtime)
         except OSError:
             pass
-    rc, out = aplexer(["capture", tag, "--bytes", "4096"])
+    rc, out, _ = aplexer_full(["capture", tag, "--bytes", "4096"])
     ev["capture_hash"] = digest(out) if rc == 0 else None
-    rc, out = aplexer(["transcript", tag])
+    if rc != 0:
+        ev["unknown"] = f"aplexer capture exited {rc}: output evidence unavailable"
+    rc, out, _ = aplexer_full(["transcript", tag])
     if rc == 0:
         ev["transcript_hash"], ev["transcript_size"] = digest(out), len(out)
+    else:
+        ev["unknown"] = f"aplexer transcript exited {rc}: output evidence unavailable"
     return ev
 
 
@@ -145,18 +186,27 @@ def print_schedule(a):
 
 
 def acked(tag, nonce):
+    """True/False for a readable log; None when ACK evidence is unavailable."""
     rc, out = aplexer(["message", "log", "--json"])
     if rc != 0:
-        return False
+        return None
     try:
         msgs = json.loads(out)
     except ValueError:
-        return False
+        return None
+    if not isinstance(msgs, list) or any(not isinstance(m, dict) for m in msgs):
+        return None
+    found = False
     for m in msgs:
-        if (m.get("from") or {}).get("tag") == tag and nonce in (m.get("body") or "") \
+        if not valid_fields(m, {"from": dict, "body": str, "kind": str}):
+            return None
+        sender, body = m.get("from", {}), m.get("body", "")
+        if not valid_fields(sender, {"tag": str}):
+            return None
+        if sender.get("tag") == tag and nonce in body \
                 and m.get("kind") in ("reply", "note", "ack"):
-            return True
-    return False
+            found = True
+    return found
 
 
 def load_state(path):
@@ -243,8 +293,9 @@ def alert_absent(a, st, reason, state_path, live):
 def wait_ack(a, nonce, seconds):
     deadline = time.time() + seconds
     while True:
-        if acked(a.tag, nonce):
-            return True
+        ack = acked(a.tag, nonce)
+        if ack is not False:
+            return ack
         if time.time() >= deadline:
             return False
         time.sleep(a.poll)
@@ -329,9 +380,16 @@ def main(argv=None):
         aplexer(["message", "send", "--to", a.tag, "--kind", "note", text])
         if ev.get("reported_state") == "idle":
             aplexer(["send", a.tag, keys, "--enter"])
-    if cls not in (DEAD, ABSENT) and wait_ack(a, nonce, a.timeout):
-        return got_ack(a, st, state_path, collect(a.tag))
-    ev, cls, reason = assess(a, st)
+    ack = False
+    if cls not in (DEAD, ABSENT):
+        ack = wait_ack(a, nonce, a.timeout)
+        if ack is True:
+            return got_ack(a, st, state_path, collect(a.tag))
+    if ack is None:
+        ev = {"unknown": "aplexer message log gave unreadable ACK evidence"}
+        cls, reason = UNKNOWN, ev["unknown"]
+    else:
+        ev, cls, reason = assess(a, st)
     if cls in (DEAD, ABSENT):
         time.sleep(a.recheck)
         ev2, c2, r2 = assess(a, st)
@@ -343,9 +401,14 @@ def main(argv=None):
     if cls == IDLE:
         print("idle and no ack: retrying once with send-keys")
         aplexer(["send", a.tag, keys, "--enter"])
-        if wait_ack(a, nonce, a.timeout):
+        ack = wait_ack(a, nonce, a.timeout)
+        if ack is True:
             return got_ack(a, st, state_path, collect(a.tag))
-        ev, cls, reason = assess(a, st)
+        if ack is None:
+            ev = {"unknown": "aplexer message log gave unreadable ACK evidence"}
+            cls, reason = UNKNOWN, ev["unknown"]
+        else:
+            ev, cls, reason = assess(a, st)
     commit_evidence(st, ev, cls)
     print(f"no ack: {cls}: {reason}")
     rc = 1
