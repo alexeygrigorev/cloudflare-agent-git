@@ -23,6 +23,7 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 import warnings
 
 logger = logging.getLogger('collect')
@@ -118,7 +119,7 @@ def get_product_workspaces(root=None, registry=None, catalog=None):
             if proj.get('workspace'):
                 try: ws.add(str(pathlib.Path(proj['workspace']).resolve()))
                 except Exception: ws.add(str(proj['workspace']))
-        for exe in registry.get('delivery_executors', []):
+        for exe in delivery_executor_records(registry):
             if exe.get('workspace'):
                 try: ws.add(str(pathlib.Path(exe['workspace']).resolve()))
                 except Exception: ws.add(str(exe['workspace']))
@@ -214,6 +215,178 @@ def atomic(p, obj):
     except OSError:
         pass
     tmp.replace(p)
+
+
+NATIVE_PROJECT_IDS = {
+    'agent-branches': 'agent-branches',
+    'agent-dashboard': 'agent-dashboard',
+    'agent-quota-launcher': 'quota-launcher',
+    'quota-launcher': 'quota-launcher',
+    'agent-coordination': 'agent-coordination',
+    'agent-bus': 'agent-bus',
+    'agent-hub': 'agent-hub',
+    'agent-liveness': 'agent-liveness',
+}
+
+
+def is_native_child(item):
+    """A native task path is registry metadata, never an aplexer session ID."""
+    if not isinstance(item, dict):
+        return False
+    path = item.get('native_session_id')
+    native_path = isinstance(path, str) and path.startswith('/root/') and not path.endswith('/')
+    return isinstance(item, dict) and bool(
+        native_path or
+        item.get('provider') == 'codex native harness' or
+        item.get('mode') in ('native-harness', 'native_harness'))
+
+
+def _delivery_executor_shape(item):
+    # These fields become mapping keys or filesystem paths downstream. Keep
+    # malformed model/receipt values for coverage to describe as unknown.
+    return isinstance(item, dict) and all(
+        item.get(key) is None or isinstance(item[key], str)
+        for key in ('id', 'project_id', 'tag', 'workspace', 'session_id',
+                    'harness_conversation_id', 'conversation_id'))
+
+
+def delivery_executor_records(registry):
+    """Normalize the same runtime input for discovery, ingestion and coverage."""
+    value = registry.get('delivery_executors') if isinstance(registry, dict) else None
+    return [item for item in value if _delivery_executor_shape(item)] if isinstance(value, list) else []
+
+
+def _receipt_id(value):
+    try:
+        return isinstance(value, str) and str(uuid.UUID(value)) == value
+    except (ValueError, AttributeError):
+        return False
+
+
+def native_harness_coverage(registry, tasks, now=None):
+    """Project qualified registry receipts without probing harnesses or logs.
+
+    These are recorded references, not replayed Bus authentication or current
+    harness observations. They deliberately never enter session/PID totals.
+    """
+    now = now or dt.datetime.now(dt.timezone.utc)
+    executors = registry.get('delivery_executors') if isinstance(registry, dict) else None
+    input_status = 'observed' if isinstance(executors, list) else 'missing or malformed delivery_executors'
+    malformed_entries = sum(not _delivery_executor_shape(e) for e in executors) if isinstance(executors, list) else None
+    if malformed_entries:
+        input_status = 'malformed delivery_executors entries'
+    executors = delivery_executor_records(registry)
+    tasks = tasks if isinstance(tasks, list) else []
+    candidates = [e for e in executors if is_native_child(e)]
+    groups = {}
+    for item in candidates:
+        path = item.get('native_session_id')
+        key = path if isinstance(path, str) and path else item.get('id')
+        if not isinstance(key, str):
+            key = None
+        # Missing identity records remain visible, without collapsing together.
+        groups.setdefault(key or ('missing', len(groups)), []).append(item)
+    rows = []
+    for group in groups.values():
+        item = group[0]
+        task_id = item.get('id')
+        matches = [t for t in tasks if isinstance(t, dict) and task_id and t.get('id') == task_id]
+        task = matches[0] if len(matches) == 1 else {}
+        path = item.get('native_session_id')
+        native = (item.get('provider') == 'codex native harness' or
+                  item.get('mode') in ('native-harness', 'native_harness'))
+        issues = []
+        if len(group) > 1:
+            issues.append('duplicate taskpath')
+        if len(matches) != 1:
+            issues.append('missing or ambiguous tracker task')
+        if not native:
+            issues.append('unsupported native source')
+        valid_path = isinstance(path, str) and path.startswith('/root/') and not path.endswith('/')
+        if not valid_path:
+            issues.append('missing or unsupported native taskpath')
+        if task.get('worker_native') != path:
+            issues.append('tracker taskpath mismatch')
+        project_ref = item.get('project_id') or task.get('team_id')
+        project = NATIVE_PROJECT_IDS.get(project_ref) if isinstance(project_ref, str) else None
+        tracker_ref = task.get('team_id')
+        tracker_project = NATIVE_PROJECT_IDS.get(tracker_ref) if isinstance(tracker_ref, str) else None
+        if not project:
+            issues.append('missing or unsupported project')
+        elif tracker_project and tracker_project != project:
+            project = None
+            issues.append('tracker project mismatch')
+        actor = item.get('worker_bus_actor')
+        if not _receipt_id(actor) or task.get('worker_bus_actor') != actor:
+            issues.append('missing or mismatched own Bus actor')
+        parent = item.get('parent_native_session')
+        if not parent or task.get('parent_native_session') != parent:
+            issues.append('missing or mismatched native parent')
+        first = task.get('first_action')
+        registry_model = item.get('model')
+        tracker_model = task.get('worker_model')
+        first_model = first.get('actual_model') if isinstance(first, dict) else None
+        model_refs = {'registry': registry_model, 'tracker': tracker_model, 'first_action': first_model}
+        model_refs = {k: v if isinstance(v, str) and v else 'UNKNOWN' for k, v in model_refs.items()}
+        model = model_refs['registry']
+        if model == 'UNKNOWN' or any(v != model for v in model_refs.values()):
+            model = 'UNKNOWN'
+            issues.append('missing or mismatched native model references')
+        receipt = {'status': 'missing', 'claim_message_id': None, 'scope_ACK': None,
+                   'own_actor': None, 'qualified_utc': None, 'first_tool_exit': None}
+        if isinstance(first, dict):
+            receipt.update({k: first.get(k) for k in ('claim_message_id', 'scope_ACK', 'own_actor', 'qualified_utc')})
+            receipt['first_tool_exit'] = first.get('actual_first_tool_exit')
+            authorized = any(first.get(k) is True for k in
+                             ('edit_authorized', 'review_authorized', 'design_authorized'))
+            try:
+                at = dt.datetime.fromisoformat(first.get('qualified_utc', '').replace('Z', '+00:00'))
+                dated = at.tzinfo is not None and at <= now
+            except (ValueError, TypeError, AttributeError):
+                dated = False
+            receipt_ok = (authorized and dated and _receipt_id(first.get('claim_message_id')) and
+                          _receipt_id(first.get('scope_ACK')) and first.get('own_actor') == actor and
+                          first.get('actual_native_session') == path and
+                          first.get('actual_provider') == 'codex native harness' and
+                          type(first.get('actual_first_tool_exit')) is int and first['actual_first_tool_exit'] == 0 and
+                          first.get('actual_model') == model and model != 'UNKNOWN')
+            receipt['status'] = 'recorded' if receipt_ok and not issues else 'invalid'
+        elif first is not None:
+            receipt['status'] = 'invalid'
+        checkpoint = task.get('actual_checkpoint')
+        checkpoint_ref = ({k: checkpoint.get(k) for k in
+                           ('scope_ACK', 'claim_message_id', 'qualified_utc',
+                            'actual_native_session', 'actual_first_tool_exit')}
+                          if isinstance(checkpoint, dict) else None)
+        release = task.get('ownrelease')
+        released = _receipt_id(release)
+        terminal = task.get('status') in ('done', 'cancelled', 'completed', 'changes_requested', 'reviewed')
+        if release is not None and not released:
+            issues.append('malformed release reference')
+        rows.append({
+            'task_id': task_id, 'taskpath': path, 'project_id': project,
+            'task_role': item.get('role'), 'category': 'subagent' if native and valid_path else 'UNKNOWN',
+            'parent_native_session': parent, 'worker_bus_actor': actor,
+            'provider': item.get('provider') or 'UNKNOWN', 'model': model,
+            'model_references': model_refs,
+            'first_action': receipt, 'checkpoint_references': checkpoint_ref,
+            'terminal_status': task.get('status') if terminal else None,
+            'release_message_id': release if released else None,
+            'receipt_state': 'released' if released else ('terminal_reported' if terminal else
+                             ('first_action_recorded' if receipt['status'] == 'recorded' else 'UNKNOWN')),
+            'current_state': 'UNKNOWN', 'pid_live': None, 'hook_working': None,
+            'active': False if released or terminal else None,
+            'unknowns': issues,
+        })
+    return {
+        'input_status': input_status, 'malformed_entries': malformed_entries,
+        'records': rows, 'registered_records': len(rows),
+        'registered_taskpaths': sum(r['category'] == 'subagent' for r in rows),
+        'first_action_receipts_recorded': sum(r['first_action']['status'] == 'recorded' for r in rows),
+        'terminal_or_released': sum(r['active'] is False for r in rows),
+        'current_live': None, 'accepted_today': None,
+        'scope': 'Registry-qualified receipt references only; Bus AUTH is not replayed. Historical first tools, terminal states and releases do not prove current liveness or accepted outcomes. No task status or updated_at is an acceptance date.',
+    }
 
 
 def disk_session(session_id, workspace=None):
@@ -538,9 +711,9 @@ def _collect():
                     existing['workspace'] = proj['workspace']
 
     # Ingest delivery executors into their respective teams
-    raw_executors = registry.get('delivery_executors', []) if isinstance(registry, dict) else []
+    raw_executors = delivery_executor_records(registry)
     for exe in raw_executors:
-        if isinstance(exe, dict):
+        if isinstance(exe, dict) and not is_native_child(exe):
             pid = exe.get('project_id')
             if pid and pid in teams_by_id:
                 team_agents = teams_by_id[pid].setdefault('agents', [])
@@ -576,6 +749,8 @@ def _collect():
             if head_sid: seen_team_sids.add(head_sid)
 
         for item in agents_list:
+            if is_native_child(item):
+                continue
             if team_ws and not item.get('workspace'):
                 item['workspace'] = team_ws
             tag = item.get('tag')
@@ -590,6 +765,8 @@ def _collect():
 
     # Also accept top-level agent list
     for item in registry.get('agents', []):
+        if is_native_child(item):
+            continue
         tag = item.get('tag')
         cid = item.get('harness_conversation_id') or item.get('conversation_id')
         sid = item.get('session_id')
@@ -970,6 +1147,7 @@ def _collect():
         'aggregate': aggregate,
         'teams': {tid: count_status([r for r in counted if r['team_id'] == tid]) for tid in sorted(set(r['team_id'] for r in observations))},
         'sessions': observations,
+        'native_harness_coverage': native_harness_coverage(registry, tasks),
         'tasks': tasks,
         'observation': observation,
         'opencode_usage': opencode,
@@ -979,6 +1157,7 @@ def _collect():
         'errors': errors,
         'limits': [
             'PID live and hook working are observations, never proof of useful work.',
+            'Native harness coverage is separate registry receipt metadata; current native liveness and accepted outcomes remain unknown and do not enter aplexer/PID counts.',
             'Missing token/cost telemetry remains null; known token total is a partial lower bound.',
             'Completed sessions pruned from the live catalog are attributed from on-disk aplexer records or saved rollout telemetry when available; otherwise they stay null.',
             'Cumulative native conversation usage deduplicated across resumed session IDs, rollout files and nested subagents with separate native identity.',
