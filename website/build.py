@@ -245,7 +245,7 @@ def nav_html(route):
     out = []
     for label, path in NAV:
         current = (route == '') if path == '' else route.startswith(path)
-        href = BASE+'/'+(LATEST['route'] if path == 'daily/' and LATEST else path)
+        href = BASE+'/'+path
         out.append('<a '+('aria-current="page" ' if current else '')+'href="'+href+'">'+label+'</a>')
     return ''.join(out)
 
