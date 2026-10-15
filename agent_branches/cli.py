@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 import os
 from pathlib import Path
 import shlex
@@ -48,17 +49,17 @@ def format_task_created(res: dict) -> str:
         "========================================",
         "  TASK REGISTERED SUCCESSFULLY",
         "========================================",
-        f"  Task ID:   {task_id}",
+        f"  Task ID:   {_display(task_id)}",
     ]
     if agent_id:
-        lines.append(f"  Agent ID:  {agent_id}")
+        lines.append(f"  Agent ID:  {_display(agent_id)}")
     if branch:
-        lines.append(f"  Branch:    {branch}")
+        lines.append(f"  Branch:    {_display(branch)}")
     if fork_url:
-        lines.append(f"  Fork URL:  {fork_url}")
-    lines.append(f"  Head SHA:  {head}")
+        lines.append(f"  Fork URL:  {_display(fork_url)}")
+    lines.append(f"  Head SHA:  {_display(head)}")
     if res.get("intent"):
-        lines.append(f"  Intent:    {res.get('intent')}")
+        lines.append(f"  Intent:    {_display(res.get('intent'))}")
     lines.append("========================================")
     return "\n".join(lines)
 
@@ -79,14 +80,14 @@ def format_push_result(res: dict) -> str:
         "========================================",
     ]
     if task_id:
-        lines.append(f"  Task ID:      {task_id}")
+        lines.append(f"  Task ID:      {_display(task_id)}")
     if agent_id:
-        lines.append(f"  Agent ID:     {agent_id}")
+        lines.append(f"  Agent ID:     {_display(agent_id)}")
     lines.extend([
-        f"  Head SHA:     {head_sha}",
-        f"  Accepted:     {accepted}",
-        f"  Deduped:      {deduped}",
-        f"  Radar Checks: {checks}",
+        f"  Head SHA:     {_display(head_sha)}",
+        f"  Accepted:     {_display(accepted)}",
+        f"  Deduped:      {_display(deduped)}",
+        f"  Radar Checks: {_display(checks)}",
     ])
 
     if new_warnings:
@@ -97,11 +98,13 @@ def format_push_result(res: dict) -> str:
             pair = w.get("pair", [])
             evidence = w.get("evidence", {})
             files = evidence.get("conflicting_files", []) if isinstance(evidence, dict) else []
-            lines.append(f"  - [{wid}] ({kind}) Pair: {pair}")
+            lines.append(f"  - [{_display(wid)}] ({_display(kind)}) Pair: {_display(pair)}")
             if files:
-                lines.append(f"    Conflicting files: {', '.join(files)}")
+                lines.append(f"    Conflicting files: {', '.join(_display(path) for path in files)}")
+            if isinstance(evidence, str):
+                lines.append("    Details: " + _display(evidence))
             if isinstance(evidence, dict) and evidence.get("details"):
-                lines.append(f"    Details: {evidence.get('details')}")
+                lines.append(f"    Details: {_display(evidence.get('details'))}")
     else:
         lines.append("  Status:       Push recorded; compatibility requires current check results")
 
@@ -109,117 +112,167 @@ def format_push_result(res: dict) -> str:
     return "\n".join(lines)
 
 
-def format_status_result(res: dict, task_id: Optional[str] = None) -> str:
-    """Format status response (either task-specific or global)."""
-    lines = ["========================================"]
+def _display(value):
+    """Keep peer text on its labelled terminal line without interpreting controls."""
+    return "".join(char.encode("unicode_escape").decode("ascii")
+                   if ord(char) < 32 or 127 <= ord(char) < 160 or char in "\u2028\u2029\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
+                   else char for char in str(value))
 
-    if task_id or "task_id" in res or "taskId" in res:
-        # Task-specific status
-        tid = res.get("task_id") or res.get("taskId") or task_id
-        lines.append(f"  TASK STATUS: {tid}")
-        lines.append("========================================")
-        status_val = res.get("status", "active")
-        branch = res.get("branch") or res.get("ref", "").replace("refs/heads/", "")
-        head = res.get("head_sha") or res.get("head") or "N/A"
-        agent = res.get("agent_id") or res.get("agentId") or res.get("agent") or ""
-        lines.append(f"  Status:    {status_val}")
-        if agent:
-            lines.append(f"  Agent ID:  {agent}")
-        if branch:
-            lines.append(f"  Branch:    {branch}")
-        lines.append(f"  Head SHA:  {head}")
-        if res.get("intent"):
-            lines.append(f"  Intent:    {res.get('intent')}")
-        if res.get("test_provenance"):
-            lines.append(f"  Tests:     {res.get('test_provenance')}")
 
-        warnings = res.get("warnings", [])
-        active_warnings = [w for w in warnings if w.get("status") == "active"]
-        if active_warnings:
-            lines.append(f"\n  Active Radar Warnings ({len(active_warnings)}):")
-            for w in active_warnings:
-                wid = w.get("warning_id") or w.get("id") or "unknown"
-                kind = w.get("kind", "textual")
-                pair = w.get("pair", [])
-                evidence = w.get("evidence", {})
-                files = evidence.get("conflicting_files", []) if isinstance(evidence, dict) else []
-                lines.append(f"  * [{wid}] ({kind}) Overlap with: {pair}")
-                if files:
-                    lines.append(f"    Conflicting files: {', '.join(files)}")
-                lines.append(
-                    f"    Resolution: run `agent-branches ack --task-id {tid} --warning-id {wid} --action rebased_locally`"
-                )
-        else:
-            lines.append("\n  Radar Warnings: None (compatibility is not inferred from absent warnings)")
+def _valid_pair(pair):
+    return (isinstance(pair, list) and len(pair) == 2
+            and all(isinstance(agent, str) and agent for agent in pair) and pair[0] != pair[1])
 
+
+def _valid_overlap(overlap):
+    return (isinstance(overlap, dict) and _valid_pair(overlap.get("agents"))
+            and isinstance(overlap.get("paths"), list) and bool(overlap["paths"])
+            and all(isinstance(path, str) and path for path in overlap["paths"]))
+
+
+def _scoped_records(records, agent_id, field, validator=None):
+    if not isinstance(records, list):
+        return records
+    valid = validator or (lambda record: isinstance(record, dict) and _valid_pair(record.get(field)))
+    # Unscopable records might concern this agent: retain their uncertainty.
+    return [record for record in records if not valid(record) or agent_id in record[field]]
+
+
+def _coordination_lines(res):
+    lines = []
+    pairs = res.get("pairs")
+    if not isinstance(pairs, list):
+        lines.append("\n  Compatibility Checks: UNKNOWN (no readable pair evidence)")
+        pairs = []
     else:
-        # Global coordinator status
-        lines.append("  RADAR / COORDINATOR STATUS")
-        lines.append("========================================")
-        canonical = res.get("canonical", {})
-        if isinstance(canonical, dict):
-            c_name = canonical.get("name") or "canonical"
-            lines.append(f"  Canonical: {c_name}")
-
-        tasks = res.get("agents", res.get("tasks", []))
-        lines.append(f"  Active Tasks ({len(tasks)}):")
-        for t in tasks:
-            tid = t.get("task_id") or t.get("taskId") or t.get("id") or "unknown"
-            t_agent = t.get("agent_id") or t.get("agentId") or t.get("agent") or ""
-            tbranch = t.get("branch") or t.get("ref", "").replace("refs/heads/", "")
-            thead = (t.get("head_sha") or t.get("head") or "")[:8]
-            agent_str = f", agent: {t_agent}" if t_agent else ""
-            lines.append(f"    - {tid} (branch: {tbranch or 'main'}, head: {thead}{agent_str})")
-
-        pairs = res.get("pairs", [])
         lines.append(f"\n  Compatibility Checks ({len(pairs)}):")
         if not pairs:
             lines.append("    UNKNOWN: no pair checks reported")
-        for pair in pairs:
-            agents = pair.get("pair", [])
-            pair_heads = pair.get("heads", {})
-            current_heads = res.get("heads", {})
-            current = (len(agents) == 2 and all(pair_heads.get(agent) and pair_heads.get(agent) == current_heads.get(agent) for agent in agents))
-            stale = bool(pair.get("stale")) or not current
-            evidence = pair.get("evidence")
-            evidence = evidence if isinstance(evidence, dict) else {}
-            coverage = pair.get("coverage") or {}
-            tests = coverage.get("tests_collected", evidence.get("tests_collected", 0))
-            tested = isinstance(tests, (int, float)) and not isinstance(tests, bool) and tests > 0
-            status = pair.get("status")
-            if stale or pair.get("unprocessedReason"):
-                label = "UNKNOWN (stale or missing current-head evidence)"
-            elif status == "conflict":
-                label = "CONFLICT"
-            elif status == "clean" and tested:
-                label = f"CLEAN ({tests} combined test(s) passed)"
-            else:
-                label = "UNKNOWN (current combination has not passed combined tests)"
-            lines.append(f"    {' + '.join(agents) or 'unknown pair'}: {label}")
-            files = evidence.get("files") or evidence.get("conflicting_files") or []
-            if status == "conflict" and not stale and files:
-                lines.append(f"      Conflicting files: {', '.join(str(path) for path in files)}")
-            if status == "conflict" and not stale and evidence.get("summary"):
-                lines.append(f"      {evidence['summary']}")
-
-        if "plannedOverlaps" in res and not res["plannedOverlaps"]:
-            lines.append("\n  Planned overlaps: None reported (plans may be undeclared)")
-        for overlap in res.get("plannedOverlaps", []):
-            lines.append(f"\n  Planned overlap (not a proven conflict): {' + '.join(overlap.get('agents', []))}")
-            lines.append(f"    Planned files: {', '.join(overlap.get('paths', []))}")
-
-        warnings = res.get("warnings", [])
-        active_warnings = [w for w in warnings if w.get("status") == "active"]
-        if active_warnings:
-            lines.append(f"\n  Active Warnings ({len(active_warnings)}):")
-            for w in active_warnings:
-                wid = w.get("warning_id") or w.get("id") or "unknown"
-                pair = w.get("pair", [])
-                kind = w.get("kind", "textual")
-                lines.append(f"    * [{wid}] ({kind}) Pair: {pair}")
+    for pair in pairs:
+        if not isinstance(pair, dict) or not _valid_pair(pair.get("pair")):
+            lines.append("    UNKNOWN: unreadable pair record")
+            continue
+        agents = pair["pair"]
+        pair_heads = pair.get("heads") if isinstance(pair.get("heads"), dict) else {}
+        current_heads = res.get("heads") if isinstance(res.get("heads"), dict) else {}
+        current = all(isinstance(pair_heads.get(agent), str) and pair_heads[agent]
+                      and pair_heads[agent] == current_heads.get(agent) for agent in agents)
+        stale = bool(pair.get("stale")) or not current or bool(pair.get("unprocessedReason"))
+        evidence = pair.get("evidence") if isinstance(pair.get("evidence"), dict) else {}
+        coverage = pair.get("coverage") if isinstance(pair.get("coverage"), dict) else {}
+        tests = coverage.get("passed", coverage.get("tests_collected", evidence.get("tests_collected", 0)))
+        tested = ((isinstance(tests, int) and not isinstance(tests, bool) and tests > 0)
+                  or (isinstance(tests, float) and math.isfinite(tests) and tests.is_integer() and tests > 0))
+        tested = tested and (pair.get("coverage") is None or isinstance(pair.get("coverage"), dict))
+        status = pair.get("status")
+        if stale:
+            label = "UNKNOWN (stale or missing current-head evidence)"
+        elif status == "conflict":
+            label = "CONFLICT"
+        elif status == "clean" and tested:
+            metric = "passed" if "passed" in coverage else "collected"
+            label = f"CLEAN ({tests} combined test(s) {metric})"
         else:
-            lines.append("\n  Active Warnings: None")
+            label = "UNKNOWN (current combination has not passed combined tests)"
+        lines.append(f"    {' + '.join(_display(agent) for agent in agents)}: {label}")
+        lines.append("      Checked commits: " + ", ".join(f"{_display(agent)}@{_display(pair_heads.get(agent) or 'unknown')[:8]}" for agent in agents))
+        files = evidence.get("files") or evidence.get("conflicting_files")
+        if status == "conflict" and not stale:
+            if isinstance(files, list):
+                lines.append("      Conflicting files: " + ", ".join(_display(path) for path in files))
+            if evidence.get("summary"):
+                lines.append("      " + _display(evidence["summary"]))
+            elif isinstance(pair.get("evidence"), str):
+                lines.append("      " + _display(pair["evidence"]))
+    overlaps = res.get("plannedOverlaps")
+    if not isinstance(overlaps, list):
+        lines.append("\n  Planned overlaps: UNKNOWN (server did not report readable plan evidence)")
+        return lines
+    malformed = sum(not _valid_overlap(overlap) for overlap in overlaps)
+    if malformed:
+        lines.append(f"\n  Planned overlaps: UNKNOWN ({malformed} unreadable record(s))")
+    if not overlaps:
+        lines.append("\n  Planned overlaps: None reported (plans may be undeclared)")
+    for overlap in overlaps:
+        if _valid_overlap(overlap):
+            lines.append("\n  Planned overlap (not a proven conflict): " + " + ".join(_display(agent) for agent in overlap["agents"]))
+            lines.append("    Planned files: " + ", ".join(_display(path) for path in overlap["paths"]))
+            lines.append("    Next: agree file ownership or split the work before editing.")
+    return lines
 
+
+def _warning_lines(res, task_id=None):
+    title = "Radar Warnings" if task_id else "Active Warnings"
+    warnings = res.get("warnings")
+    if not isinstance(warnings, list):
+        return [f"\n  {title}: UNKNOWN (no readable warning evidence)"]
+    valid = [warning for warning in warnings if isinstance(warning, dict)
+             and _valid_pair(warning.get("pair")) and isinstance(warning.get("status"), str)
+             and warning["status"] in ("active", "invalidated", "acknowledged", "resolved")]
+    unknown = len(warnings) - len(valid)
+    lines = [f"\n  {title}: UNKNOWN ({unknown} unreadable record(s))"] if unknown else []
+    active = [warning for warning in valid if warning["status"] == "active"]
+    if not active:
+        if not unknown:
+            lines.append(f"\n  {title}: None (compatibility is not inferred from absent warnings)")
+        return lines
+    lines.append(f"\n  Active {title} ({len(active)}):" if task_id else f"\n  {title} ({len(active)}):")
+    for warning in active:
+        wid = warning.get("warning_id") or warning.get("id") or "unknown"
+        lines.append(f"    * [{_display(wid)}] ({_display(warning.get('kind', 'textual'))}) Pair: "
+                     + " + ".join(_display(agent) for agent in warning["pair"]))
+        evidence = warning.get("evidence") if isinstance(warning.get("evidence"), dict) else {}
+        files = evidence.get("conflicting_files") or evidence.get("files")
+        if isinstance(files, list):
+            lines.append("      Conflicting files: " + ", ".join(_display(path) for path in files))
+        if task_id:
+            lines.append("      Next: coordinate a fix, publish the updated change and wait for current checks. "
+                         f"Acknowledge with `uv run branches ack --task-id {shlex.quote(_display(task_id))} --warning-id {shlex.quote(_display(wid))} --action rebased_locally`.")
+    return lines
+
+
+def format_status_result(res: dict, task_id: Optional[str] = None) -> str:
+    """Render coordinator evidence without treating missing data as a clean result."""
+    if not isinstance(res, dict):
+        return "UNKNOWN: coordinator status is not a readable object"
+    lines = ["========================================"]
+    if task_id or "task_id" in res or "taskId" in res:
+        tid = res.get("task_id") or res.get("taskId") or task_id
+        lines.extend([f"  TASK STATUS: {_display(tid)}", "========================================",
+                      f"  Status:    {_display(res.get('status', 'active'))}"])
+        agent = res.get("agent_id") or res.get("agentId") or res.get("agent") or ""
+        if agent:
+            lines.append(f"  Agent ID:  {_display(agent)}")
+        branch = res.get("branch") or str(res.get("ref") or "").removeprefix("refs/heads/")
+        if branch:
+            lines.append(f"  Branch:    {_display(branch)}")
+        lines.append(f"  Head SHA:  {_display(res.get('head_sha') or res.get('head') or 'N/A')}")
+        if res.get("intent"):
+            lines.append(f"  Intent:    {_display(res['intent'])}")
+        if res.get("test_provenance"):
+            lines.append(f"  Recorded tests: {_display(res['test_provenance'])}")
+        lines.extend(_warning_lines(res, tid))
+    else:
+        lines.extend(["  RADAR / COORDINATOR STATUS", "========================================"])
+        canonical = res.get("canonical")
+        if isinstance(canonical, dict):
+            lines.append(f"  Canonical: {_display(canonical.get('name') or 'canonical')}")
+        tasks = res.get("agents", res.get("tasks"))
+        if isinstance(tasks, list):
+            lines.append(f"  Active Tasks ({len(tasks)}):")
+            for task in tasks:
+                if not isinstance(task, dict):
+                    lines.append("    UNKNOWN: unreadable agent record")
+                    continue
+                tid = task.get("task_id") or task.get("taskId") or task.get("id") or "unknown"
+                agent = task.get("agent_id") or task.get("agentId") or task.get("agent") or ""
+                branch = task.get("branch") or str(task.get("ref") or "").removeprefix("refs/heads/") or "main"
+                head = _display(task.get("head_sha") or task.get("head") or "")[:8]
+                lines.append(f"    - {_display(tid)} (branch: {_display(branch)}, head: {head}, agent: {_display(agent)})")
+        else:
+            lines.append("  Active Tasks: UNKNOWN (no readable agent evidence)")
+        lines.extend(_warning_lines(res))
+    lines.extend(_coordination_lines(res))
     lines.append("========================================")
     return "\n".join(lines)
 
@@ -235,10 +288,10 @@ def format_ack_result(res: dict) -> str:
         "========================================",
         "  WARNING ACKNOWLEDGED",
         "========================================",
-        f"  Warning ID: {wid}",
-        f"  Task ID:    {tid}",
-        f"  Action:     {action}",
-        f"  Time:       {time_str}",
+        f"  Warning ID: {_display(wid)}",
+        f"  Task ID:    {_display(tid)}",
+        f"  Action:     {_display(action)}",
+        f"  Time:       {_display(time_str)}",
         "========================================",
     ])
 
@@ -254,7 +307,7 @@ def format_checks_result(res: dict) -> str:
         "========================================",
         "  RADAR CHECKS SUBMITTED (CONTRACT v0.1)",
         "========================================",
-        f"  Accepted:  {accepted} check(s)",
+        f"  Accepted:  {_display(accepted)} check(s)",
         f"  Pairs:     {len(pairs)}",
         f"  Warnings:  {len(created)} created",
     ]
@@ -264,7 +317,7 @@ def format_checks_result(res: dict) -> str:
             wid = w.get("id") or w.get("warning_id") or "unknown"
             status = w.get("status", "active")
             reason = w.get("reason", "unknown")
-            lines.append(f"  - [{wid}] ({status}) {reason}")
+            lines.append(f"  - [{_display(wid)}] ({_display(status)}) {_display(reason)}")
     lines.append("========================================")
     return "\n".join(lines)
 
@@ -485,6 +538,22 @@ def handle_status(args: argparse.Namespace, client: AgentBranchesClient, as_json
         if as_json:
             print(json.dumps(res, indent=2))
         else:
+            agent_id = res.get("agentId") or res.get("agent_id")
+            if not isinstance(agent_id, str) or not agent_id.strip():
+                raise ValueError("Task response lacks a valid agent identity; coordination evidence is UNKNOWN")
+            credential = client.task_token(args.task_id)
+            if not credential:
+                raise ValueError("No credential for selected task; coordination evidence is UNKNOWN")
+            snapshot = client.get_status(token=credential)
+            if not isinstance(snapshot, dict):
+                raise ValueError("Coordinator status is unreadable; coordination evidence is UNKNOWN")
+            res = {key: res[key] for key in ("taskId", "task_id", "agentId", "agent_id", "status", "ref", "branch", "intent", "test_provenance") if key in res}
+            res["heads"] = snapshot.get("heads") if isinstance(snapshot.get("heads"), dict) else {}
+            res["head"] = res["heads"].get(agent_id)
+            res["head_sha"] = res["head"]
+            res["pairs"] = _scoped_records(snapshot.get("pairs"), agent_id, "pair")
+            res["plannedOverlaps"] = _scoped_records(snapshot.get("plannedOverlaps"), agent_id, "agents", _valid_overlap)
+            res["warnings"] = _scoped_records(snapshot.get("warnings"), agent_id, "pair")
             print(format_status_result(res, task_id=args.task_id))
     else:
         res = client.get_status()
@@ -580,13 +649,21 @@ def handle_checks(args: argparse.Namespace, client: AgentBranchesClient, as_json
 
 
 def format_plan_result(result):
-    lines = [f"Planned files for {result.get('agentId', result.get('taskId', 'task'))}: "
-             + (", ".join(result.get("plannedPaths", [])) or "none (plan cleared)")]
-    for overlap in result.get("plannedOverlaps", []):
-        lines.append(f"PLANNED OVERLAP: {' + '.join(overlap['agents'])}: {', '.join(overlap['paths'])}")
-    if result.get("plannedOverlaps"):
+    paths = result.get("plannedPaths")
+    readable = isinstance(paths, list) and all(isinstance(path, str) for path in paths)
+    lines = [f"Planned files for {_display(result.get('agentId', result.get('taskId', 'task')))}: "
+             + ((", ".join(_display(path) for path in paths) or "none (plan cleared)") if readable else "UNKNOWN")]
+    overlaps = result.get("plannedOverlaps")
+    unknown = not isinstance(overlaps, list) or any(not _valid_overlap(overlap) for overlap in overlaps)
+    if unknown:
+        lines.append("Planned overlaps: UNKNOWN (unreadable or missing plan evidence)")
+    for overlap in overlaps if isinstance(overlaps, list) else []:
+        if _valid_overlap(overlap):
+            lines.append("PLANNED OVERLAP: " + " + ".join(_display(agent) for agent in overlap["agents"])
+                         + ": " + ", ".join(_display(path) for path in overlap["paths"]))
+    if isinstance(overlaps, list) and any(_valid_overlap(overlap) for overlap in overlaps):
         lines.append("Coordinate ownership before editing. This overlap is not a proven merge conflict.")
-    else:
+    elif not unknown:
         lines.append("No reported planned overlaps; other agents may have undeclared plans.")
     return "\n".join(lines)
 

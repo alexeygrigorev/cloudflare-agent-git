@@ -380,14 +380,21 @@ class AgentBranchesClient:
 
         return self._request("POST", "/events/push", payload, headers=req_headers)
 
-    def get_status(self, runner_token: Optional[str] = None) -> Dict[str, Any]:
+    def get_status(self, runner_token: Optional[str] = None, *, token: Optional[str] = None) -> Dict[str, Any]:
         """Fetch current global coordinator and radar status (GET /status).
 
-        GET /status is bearer-protected on current L1 deployments: pass
-        ``runner_token`` (defaults to $RUNNER_TOKEN) for authenticated reads.
+        Precedence: explicit token, explicit runner_token, environment runner,
+        saved runner, environment task, environment admin, saved admin, then
+        the last saved task credential (configuration insertion order). The
+        coordinator permits every valid task token to read global status;
+        task-specific CLI status always selects its own credential explicitly.
+        Saved credentials are server-bound; rejection never retries as another role.
         """
         req_headers: Dict[str, str] = {}
-        token = runner_token or os.environ.get("RUNNER_TOKEN") or self.settings.get("runner_token")
+        token = (token or runner_token or os.environ.get("RUNNER_TOKEN") or self.settings.get("runner_token")
+                 or os.environ.get("TASK_TOKEN") or os.environ.get("ADMIN_TOKEN") or self.settings.get("admin_token"))
+        if not token and self.task_tokens:
+            token = next(reversed(self.task_tokens.values()))
         if token:
             req_headers["Authorization"] = f"Bearer {token}"
         return self._request("GET", "/status", headers=req_headers or None)

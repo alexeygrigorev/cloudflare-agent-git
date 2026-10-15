@@ -48,6 +48,10 @@ class IndependentPushWatchTests(unittest.TestCase):
                        "PYTHONUNBUFFERED": "1", "PYTHONIOENCODING": "utf-8"}
         environment.pop("AGENT_BRANCHES_DEMO_RUN_ID", None)
         environment.pop("TASK_TOKEN", None)
+        # uv may select another Python version; never combine its DLLs with
+        # the parent interpreter's standard library or active environment.
+        for key in ("PYTHONHOME", "PYTHONPATH", "UV_INTERNAL__PYTHONHOME", "VIRTUAL_ENV"):
+            environment.pop(key, None)
         for key in ("AGENT_BRANCHES_REPO", "AGENT_BRANCHES_BASE_SHA", "AGENT_BRANCHES_BRANCH"):
             environment.pop(key, None)
 
@@ -182,13 +186,13 @@ class IndependentPushWatchTests(unittest.TestCase):
             (actors[0] / "rate.py").write_text("LIMIT = 20\n")
             git(["add", "rate.py"], actors[0])
             git(["commit", "-m", "Independent CLI publication"], actors[0])
-            module = [sys.executable, "-m", "agent_branches", "publish", "--task-id", tasks[0]["taskId"], "--json"]
+            publish_command = ["uv", "run", "--project", str(ROOT), "branches", "publish", "--task-id", tasks[0]["taskId"], "--json"]
             refused_remote = "https://github.com/example/unrelated.git"
             git(["remote", "set-url", "origin", refused_remote], actors[0])
-            refused = subprocess.run(module, cwd=actors[0], env=environment, capture_output=True, text=True, timeout=20)
+            refused = subprocess.run(publish_command, cwd=actors[0], env=environment, capture_output=True, text=True, timeout=20)
             self.assertNotEqual(refused.returncode, 0)
             git(["remote", "set-url", "origin", tasks[0]["fork"]["remote"]], actors[0])
-            published = subprocess.run(module, cwd=actors[0], env=environment, capture_output=True, text=True, timeout=30)
+            published = subprocess.run(publish_command, cwd=actors[0], env=environment, capture_output=True, text=True, timeout=30)
             self.assertEqual(published.returncode, 0, published.stderr[-500:])
             self.assertTrue(json.loads(published.stdout)["accepted"])
             heads[0] = git(["rev-parse", "HEAD"], actors[0])
@@ -200,6 +204,14 @@ class IndependentPushWatchTests(unittest.TestCase):
             planned = cli(["plan", "--task-id", tasks[1]["taskId"], "--files", "shared.txt"])
             self.assertIn("PLANNED OVERLAP", planned)
             self.assertIn("not a proven merge conflict", planned)
+            for task in tasks:
+                current = cli(["status", "--task-id", task["taskId"]])
+                self.assertIn("Planned files: shared.txt", current)
+                self.assertIn("CLEAN (1 combined test(s) collected)", current)
+                self.assertIn("agree file ownership", current)
+                self.assertIn("Radar Warnings: None", current)
+                self.assertNotIn("Warnings: UNKNOWN", current)
+                self.assertNotIn(task["token"]["plaintext"], current)
             for actor, head in zip(actors, heads):
                 self.assertEqual(git(["rev-parse", "HEAD"], actor), head)
                 self.assertEqual(git(["status", "--porcelain"], actor), "")
@@ -209,6 +221,9 @@ class IndependentPushWatchTests(unittest.TestCase):
                 heads = [a.result(), b.result()]
             pair = wait_pair(heads, "conflict", "textual")
             self.assertIn("shared.txt", pair["evidence"]["files"])
+            current = cli(["status", "--task-id", tasks[0]["taskId"]])
+            self.assertIn("CONFLICT", current)
+            self.assertIn("Conflicting files: shared.txt", current)
             self.assertEqual(git(["rev-parse", "refs/heads/main"], bare), base)
             self.assertIsNone(watcher.poll(), "The same foreground watcher must remain alive throughout external pushes")
             if os.name == "nt":
