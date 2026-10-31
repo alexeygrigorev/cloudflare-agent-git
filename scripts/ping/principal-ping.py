@@ -221,13 +221,13 @@ def save_state(path, st):
     path.write_text(json.dumps(st, indent=1))
 
 
-def alert(msg, live, st=None, key=None, state_path=None, window=1800):
-    """Run the alert hook. With st/key, send at most one alert per key per window (never zero)."""
+def alert(msg, live, st=None, key=None, state_path=None):
+    """Run the alert hook. With st/key, alert once per key per outage: only on the fresh
+    transition into a bad class. Keys clear when the principal is healthy again (clear_alerts)."""
     cmd = os.environ.get("PRINCIPAL_ALERT_CMD")
     if st is not None and key:
-        last = st.setdefault("alerts", {}).get(key, 0)
-        if time.time() - last < window:
-            print(f"alert suppressed by rate limit ({key}: next in {int(last + window - time.time())}s): {msg}")
+        if key in st.setdefault("alerts", {}):
+            print(f"alert already sent for this outage ({key}); no repeat until the principal is healthy: {msg}")
             return
         if live:
             st["alerts"][key] = time.time()
@@ -240,11 +240,17 @@ def alert(msg, live, st=None, key=None, state_path=None, window=1800):
         print("dry-run: would run PRINCIPAL_ALERT_CMD")
 
 
+def clear_alerts(st):
+    """The principal is healthy: end the outage so the next bad transition alerts again."""
+    if st.pop("alerts", None):
+        print("principal healthy: alert dedup cleared")
+
+
 def recover(a, st, cls, reason, state_dir, state_path, live):
     print(f"RECOVERY DECISION: {cls}: {reason}")
     if st["attempts"] >= a.max_retries:
         alert(f"principal {a.tag} unresponsive ({cls}); recovery retries exhausted ({st['attempts']})",
-              live, st, f"{cls}:exhausted", state_path, a.alert_window)
+              live, st, f"{cls}:exhausted", state_path)
         return
     wait = st["last_recovery"] + a.cooldown - time.time()
     if wait > 0:
@@ -254,7 +260,7 @@ def recover(a, st, cls, reason, state_dir, state_path, live):
     if not cmd:
         print("recovery command not configured")
         alert(f"principal {a.tag} needs recovery ({cls}: {reason}) and no PRINCIPAL_RECOVERY_CMD is set",
-              live, st, cls, state_path, a.alert_window)
+              live, st, cls, state_path)
         return
     if not live:
         print(f"dry-run: would run recovery: {cmd}")
@@ -281,13 +287,13 @@ def recover(a, st, cls, reason, state_dir, state_path, live):
         except subprocess.TimeoutExpired:
             rc = 124
         if rc != 0:
-            alert(f"recovery of {a.tag} failed with exit {rc}", live, st, f"{cls}:failed", state_path, a.alert_window)
+            alert(f"recovery of {a.tag} failed with exit {rc}", live, st, f"{cls}:failed", state_path)
 
 
 def alert_absent(a, st, reason, state_path, live):
-    """The principal session is missing: alert on every run, rate-limited per window, never silent."""
+    """The principal session is missing: alert once when it goes missing, not on every run."""
     tail = "" if os.environ.get("PRINCIPAL_RECOVERY_CMD") else "; no PRINCIPAL_RECOVERY_CMD is set, so nothing will recover it"
-    alert(f"principal {a.tag} ABSENT: {reason}. Recovery needed{tail}", live, st, ABSENT, state_path, a.alert_window)
+    alert(f"principal {a.tag} ABSENT: {reason}. Recovery needed{tail}", live, st, ABSENT, state_path)
 
 
 def wait_ack(a, nonce, seconds):
@@ -341,8 +347,6 @@ def main(argv=None):
                    help="working with no PTY/transcript change this long means STUCK")
     p.add_argument("--stuck-grace", type=int, default=env_int("PING_STUCK_GRACE", 900),
                    help="seconds between the STUCK alert and recovery")
-    p.add_argument("--alert-window", type=int, default=env_int("PING_ALERT_WINDOW", 1800),
-                   help="at most one identical-class alert per this many seconds (never fully suppressed)")
     p.add_argument("--recheck", type=float, default=float(os.environ.get("PING_RECHECK", 5)),
                    help="seconds before the confirming re-check of DEAD")
     p.add_argument("--interval", type=int, default=env_int("PING_INTERVAL", 600),
@@ -368,7 +372,7 @@ def main(argv=None):
         print(f"dry-run: would wait up to {a.timeout}s for ack, record the evidence snapshot in {state_path}; "
               f"if no ack: {cls} -> " + {
                   DEAD: "re-check once, then recover now",
-                  ABSENT: "re-check once, alert 'session does not exist' (at most once per alert window), recover now", PROGRESSING: "not a miss, defer the deadline",
+                  ABSENT: "re-check once, alert 'session does not exist' (once per outage), recover now", PROGRESSING: "not a miss, defer the deadline",
                   STUCK: "alert, recover after the grace", UNKNOWN: "alert, never recover",
                   IDLE: f"retry send-keys once, then recover after {a.threshold} misses"}[cls])
         if cls in (DEAD, ABSENT) or (cls == IDLE and st["misses"] + 1 >= a.threshold):
@@ -429,6 +433,7 @@ def main(argv=None):
             recover(a, st, cls, f"{reason}; {st['misses']} consecutive misses", state_dir, state_path, True)
     elif cls == PROGRESSING:
         st["misses"] = 0
+        clear_alerts(st)
         save_state(state_path, st)
         print("NOT A MISS: principal is busy and making progress; the deadline is extended "
               f"until it has been busy {a.max_busy}s or quiet {a.stuck_threshold}s")
@@ -440,7 +445,7 @@ def main(argv=None):
             st["stuck_alert_ts"] = time.time()
             save_state(state_path, st)
             alert(f"principal {a.tag} looks STUCK: {reason}; recovery in {a.stuck_grace}s if it does not recover",
-                  True, st, STUCK, state_path, a.alert_window)
+                  True, st, STUCK, state_path)
         elif time.time() - first >= a.stuck_grace:
             recover(a, st, cls, f"{reason}; grace {a.stuck_grace}s after alert expired", state_dir, state_path, True)
         else:
@@ -448,7 +453,7 @@ def main(argv=None):
     else:
         st["unknown_runs"] = st.get("unknown_runs", 0) + 1
         save_state(state_path, st)
-        alert(f"principal {a.tag} liveness UNKNOWN ({reason}); not recovering", True, st, UNKNOWN, state_path, a.alert_window)
+        alert(f"principal {a.tag} liveness UNKNOWN ({reason}); not recovering", True, st, UNKNOWN, state_path)
     if cls != STUCK and "stuck_alert_ts" in st:
         st.pop("stuck_alert_ts")
         save_state(state_path, st)
@@ -458,6 +463,7 @@ def main(argv=None):
 def got_ack(a, st, state_path, ev):
     print("ack received")
     st.update(misses=0, attempts=0, unknown_runs=0)
+    clear_alerts(st)
     for k in ("busy_since", "stuck_alert_ts"):
         st.pop(k, None)
     commit_evidence(st, ev, "ACK")

@@ -226,21 +226,39 @@ class PingTest(unittest.TestCase):
         for k in ("evidence", "busy_since", "stuck_alert_ts"):
             self.assertNotIn(k, st)
 
-    def test_alerts_rate_limited_per_class_but_never_suppressed(self):
+    def test_alerts_once_per_outage_until_healthy(self):
         alert = self.t / "alert"
         env = dict(FAKE_STATE="absent", PRINCIPAL_ALERT_CMD=f"echo x >> {alert}")
         for _ in range(3):
             r = self.run_ping("--live", **env)
         self.assertEqual(alert.read_text().count("x"), 1)
-        self.assertIn("suppressed by rate limit", r.stdout)
+        self.assertIn("alert already sent for this outage", r.stdout)
         st = self.state()
-        st["alerts"]["ABSENT"] -= 1801  # window over: alerts again
+        st["alerts"]["ABSENT"] -= 10 ** 6  # time passing alone never repeats it
         (self.t / "state" / "codex-principal.json").write_text(json.dumps(st))
         self.run_ping("--live", **env)
+        self.assertEqual(alert.read_text().count("x"), 1)
+        # a different class in the same outage is a fresh transition: one alert, then quiet
+        unknown = {**env, "FAKE_STATE": "idle", "FAKE_STATUS_RAW": "not json"}
+        self.run_ping("--live", **unknown)
+        self.run_ping("--live", **unknown)
         self.assertEqual(alert.read_text().count("x"), 2)
-        # a different class is not rate-limited by ABSENT
-        self.run_ping("--live", FAKE_STATE="idle", FAKE_STATUS_RAW="not json", **{k: v for k, v in env.items() if k != "FAKE_STATE"})
+        # a healthy ack ends the outage; the next disappearance alerts again, once
+        self.run_ping("--live", FAKE_STATE="idle", FAKE_ACK="1")
+        self.assertNotIn("alerts", self.state())
+        self.run_ping("--live", **env)
+        self.run_ping("--live", **env)
         self.assertEqual(alert.read_text().count("x"), 3)
+
+    def test_existing_outage_state_stays_quiet_after_upgrade(self):
+        """State written by the old rate-limited version must not trigger a new e-mail."""
+        alert = self.t / "alert"
+        (self.t / "state").mkdir()
+        (self.t / "state" / "codex-principal.json").write_text(json.dumps(
+            {"misses": 2294, "attempts": 0, "last_recovery": 0, "last_class": "ABSENT",
+             "alerts": {"ABSENT": time.time() - 7200}}))
+        self.run_ping("--live", FAKE_STATE="absent", PRINCIPAL_ALERT_CMD=f"echo x >> {alert}")
+        self.assertFalse(alert.exists())
 
     def test_absent_dry_run_changes_nothing(self):
         r = self.run_ping(FAKE_STATE="absent")
